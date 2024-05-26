@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package eventstore.connectors;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "protocol.proto";
+import "management/resources.proto";
+
+option csharp_namespace = "EventStore.Connectors.Management.Contracts.Events";
+
+message ConnectorCreated {
+  Connector connector = 1;
+}
+
+message ConnectorReconfigured {
+  string                                   connector_id    = 1;
+  int32                                    revision        = 3;
+  map<string, google.protobuf.StringValue> settings        = 5;
+  google.protobuf.Timestamp                reconfigured_at = 7;
+}
+
+message ConnectorDeleted {
+  string                    connector_id = 1;
+  google.protobuf.Timestamp deleted_at   = 3;
+}
+
+message ConnectorRenamed {
+  string                    connector_id = 1;
+  string                    name         = 3;
+  google.protobuf.Timestamp renamed_at   = 5;
+}
+
+// from start
+message ConnectorActivating {
+  string                                   connector_id  = 1;
+  int32                                    revision      = 3;
+  map<string, google.protobuf.StringValue> settings      = 5;
+  google.protobuf.Timestamp                timestamp     = 9;
+}
+
+// from stop
+message ConnectorDeactivating {
+  string                                   connector_id  = 1;
+  int32                                    revision      = 3;
+  map<string, google.protobuf.StringValue> settings      = 5;
+  google.protobuf.Timestamp                timestamp     = 9;
+}
+
+// from recorded connector state changed CONNECTOR_STATE_RUNNING
+message ConnectorRunning {
+  string                                   connector_id = 1;
+  int32                                    revision     = 2;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  google.protobuf.Timestamp                timestamp    = 6;
+}
+
+// from recorded connector state changed CONNECTOR_STATE_STOPPED or CONNECTOR_STATE_FAILED ?
+message ConnectorStopped {
+  string                                   connector_id  = 1;
+  int32                                    revision      = 2;
+  map<string, google.protobuf.StringValue> settings      = 5;
+  Error                                    error_details = 7;
+  google.protobuf.Timestamp                timestamp     = 6;
+}
+
+// from connector state changed CONNECTOR_STATE_FAILED
+message ConnectorFailed {
+  string                    connector_id  = 1;
+  int32                     revision      = 2;
+  Error                     error_details = 3;
+  google.protobuf.Timestamp timestamp     = 4;
+}
+
+message ConnectorStateChanged {
+  string                    connector_id  = 1;
+  int32                     revision      = 3;
+  ConnectorState            from          = 5;
+  ConnectorState            to            = 6;
+  Error                     error_details = 7;
+  google.protobuf.Timestamp changed_at    = 9;
+}
+
+message ConnectorPositionsCommitted {
+  string                    connector_id = 1;
+  repeated RecordPosition   positions    = 3;
+  google.protobuf.Timestamp committed_at = 5;
+}

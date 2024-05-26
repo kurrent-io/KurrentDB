@@ -1,0 +1,31 @@
+<Project>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <PropertyGroup>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        
+        
+    </PropertyGroup>
+    
+    <ItemGroup Condition="'$(IsPackable)' == 'true'">
+        <PackageReference Include="MinVer" Version="4.3.0" PrivateAssets="All" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" PrivateAssets="All" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Using Include="JetBrains.Annotations" />
+    </ItemGroup>
+    
+    <Target Name="CustomVersion" AfterTargets="MinVer">
+        <PropertyGroup>
+            <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</FileVersion>
+            <AssemblyVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</AssemblyVersion>
+        </PropertyGroup>
+    </Target>
+</Project>

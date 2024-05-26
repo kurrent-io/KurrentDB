@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package eventstore.connectors;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/code.proto";
+
+option csharp_namespace = "EventStore.Connectors.Contracts";
+
+message Status {
+  google.rpc.Code code    = 1;
+  string          message = 2;
+}
+
+message CommandResult {
+  string              request_id = 1;
+  map<string, string> headers    = 2;
+
+  // status of the request.
+  Status status = 4;
+}
+
+message Error {
+  // Standardized string to programmatically identify the error.
+  string code = 1;
+
+  // Detailed error description and debugging information.
+  string message = 2;
+}
+
+message SystemData {
+  google.protobuf.Timestamp   created_at      = 1;  // The timestamp of resource creation (UTC).
+  google.protobuf.StringValue created_by      = 2;  // The identity that created the resource.
+  google.protobuf.StringValue created_by_type = 3;  // The type of identity that created the resource.
+
+  google.protobuf.Timestamp   last_modified_at      = 4;  // The timestamp of resource last modification (UTC).
+  google.protobuf.StringValue last_modified_by      = 5;  // The identity that last modified the resource.
+  google.protobuf.StringValue last_Modified_by_type = 6;  // The type of identity that last modified the resource.
+
+  bool is_deleted = 7;  // Indicates if the resource is deleted.
+}

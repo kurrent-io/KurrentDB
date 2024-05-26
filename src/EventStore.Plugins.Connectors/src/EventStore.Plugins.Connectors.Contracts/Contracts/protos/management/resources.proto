@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package eventstore.connectors;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "protocol.proto";
+
+option csharp_namespace = "EventStore.Connectors.Management.Contracts";
+
+//message EventStoreRecord {
+//  string                    id          = 1;
+//  RecordPosition            position    = 2;
+//  google.protobuf.Timestamp timestamp   = 3;
+//  SchemaInfo                schema      = 4;
+//  bool                      is_redacted = 5;
+//  int64                     sequence_id = 6;
+//  map<string, string>       headers     = 7;
+//  google.protobuf.Any       value       = 8;  // this or data?
+//  bytes                     data        = 9;  // this or value?
+//}
+
+//message LogPosition {
+//  // The commit position of the log.
+//  google.protobuf.UInt64Value commit_position = 1;
+//
+//  // The prepare position of the log.
+//  google.protobuf.UInt64Value prepare_position = 2;
+//}
+
+//enum SchemaType {
+//  SCHEMA_INFO_UNDEFINED = 0;
+//  SCHEMA_INFO_JSON      = 1;
+//  SCHEMA_INFO_PROTOBUF  = 2;
+//  SCHEMA_INFO_AVRO      = 3;
+//  SCHEMA_INFO_BYTES     = 4;
+//}
+//
+//message SchemaInfo {
+//  SchemaType          type       = 1;
+//  string              name       = 2;
+//  bytes               schema     = 3;
+//  map<string, string> properties = 4;
+//}
+
+message RecordPosition {
+  string stream_id    = 1;
+  int32  partition_id = 3;
+  uint64 log_position = 5;
+}
+
+enum NodeAffinity {
+  NODE_AFFINITY_ANY = 0;
+
+  // The connector prefers to read/write from/to the leader node.
+  NODE_AFFINITY_LEADER = 1;
+
+  // The connector prefers to read/write from/to a follower node.
+  NODE_AFFINITY_FOLLOWER = 2;
+
+  // The connector prefers to read/write from/to a read-only replica node.
+  NODE_AFFINITY_READONLY_REPLICA = 3;
+}
+
+enum ConnectorType {
+  CONNECTOR_TYPE_UNSPECIFIED = 0;  // Do not use this default value.
+  CONNECTOR_TYPE_SINK        = 1;
+  CONNECTOR_TYPE_SOURCE      = 2;
+}
+
+// Enum representing the various states a connector can be in.
+enum ConnectorState {
+  // The state of the connector is unknown.
+  CONNECTOR_STATE_UNKNOWN = 0;
+
+  // The connector is in the process of being activated.
+  CONNECTOR_STATE_ACTIVATING = 1;
+
+  // The connector is currently running.
+  CONNECTOR_STATE_RUNNING = 2;
+
+  // The connector is currently suspended.
+  CONNECTOR_STATE_SUSPENDED = 3;
+ 
+  // The connector is in the process of being deactivated.
+  CONNECTOR_STATE_DEACTIVATING = 4;
+  
+  // The connector is currently stopped.
+  CONNECTOR_STATE_STOPPED = 5;
+
+  // The connector has encountered a failure.
+  CONNECTOR_STATE_FAILED = 6;
+}
+
+// enum ConnectorRunningState {
+//   CONNECTOR_RUNNING_STATE_UNKNOWN    = 0;
+//   CONNECTOR_RUNNING_STATE_PROCESSING = 1; // The connector is in the process of being activated or deactivated.
+//   CONNECTOR_RUNNING_STATE_STOPPED    = 2;
+//   CONNECTOR_RUNNING_STATE_RUNNING    = 3;
+//   CONNECTOR_RUNNING_STATE_FAILED     = 4;
+// }
+//
+// enum RevisionState {
+//   REVISION_STATE_UNKNOWN               = 0; // CONNECTOR_RUNNING_STATE_UNKNOWN
+//   REVISION_STATE_ACTIVATING            = 1; // CONNECTOR_RUNNING_STATE_PROCESSING
+//   REVISION_STATE_ACTIVATED             = 2; // CONNECTOR_RUNNING_STATE_RUNNING
+//   REVISION_STATE_ACTIVATION_FAILED     = 3; // CONNECTOR_RUNNING_STATE_FAILED
+//   REVISION_STATE_DEACTIVATING          = 4; // CONNECTOR_RUNNING_STATE_PROCESSING
+//   REVISION_STATE_DEACTIVATED           = 5; // CONNECTOR_RUNNING_STATE_STOPPED
+//   REVISION_STATE_DEACTIVATION_FAILED   = 6; // CONNECTOR_RUNNING_STATE_FAILED
+// }
+
+// Revision of the connector. Only changes when the configuration settings are updated.
+message ConnectorRevision {
+  int32                                    number     = 1;
+  map<string, google.protobuf.StringValue> settings   = 3;
+  google.protobuf.Timestamp                created_at = 8;
+}
+
+message Connector {
+  // Unique identifier of the connector
+  string connector_id = 1;
+
+  // Name of the connector
+  string name = 2;
+
+  // Type of the connector, which can be a source or a sink
+  ConnectorType connector_type = 3;
+
+  // The type of the connector implementation
+  string instance_type = 4;  // from SinkConnectorType or SourceConnectorType
+
+  map<int32, ConnectorRevision> revisions = 5;  // Revision number to revision. The latest revision is the current configuration.
+
+  int32 current_revision = 6;  // The current revision number
+
+  repeated RecordPosition last_positions = 7;  // The last position of the connector in the log
+
+  // Current running state of the connector
+  ConnectorState state = 8;
+
+  // Metadata pertaining to creation and last modification of the connector.
+  SystemData system = 50;
+}
+
+message ConnectorStatus {
+  string                  connector_id   = 1;
+  ConnectorType           connector_type = 2;
+  string                  instance_type  = 3;
+  ConnectorRevision       revision       = 4;
+  ConnectorState          state          = 5;
+  repeated RecordPosition positions      = 6;
+}

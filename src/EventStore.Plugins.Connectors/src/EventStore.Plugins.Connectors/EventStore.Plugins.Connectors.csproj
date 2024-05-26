@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<RootNamespace>EventStore.Connectors</RootNamespace>
+		<IsPackable>true</IsPackable>
+
+<!--		<IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>-->
+<!--		<GenerateDocumentationFile>true</GenerateDocumentationFile>-->
+		<NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655</NoWarn>
+		
+		<Description>EventStore IO Connectors</Description>
+		<PackageId>EventStore.Plugins.Connectors</PackageId>
+		<PackageIcon>ouro.png</PackageIcon>
+		<PackageProjectUrl>https://github.com/EventStore/EventStore.Plugins.Connectors</PackageProjectUrl>
+		<PackageTags>eventstore streaming connectors experimental</PackageTags>
+
+		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<EmbedAllSources>true</EmbedAllSources>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<DebugType>full</DebugType>
+
+		<UpdateVersionProperties>true</UpdateVersionProperties>
+		<MinVerTagPrefix>v</MinVerTagPrefix>
+		<MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!--		<PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.22" />-->
+		<PackageReference Include="Eventuous.Application" Version="0.15.0-beta.10" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-beta.10" />
+		<PackageReference Include="Humanizer.Core" Version="2.14.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj" />
+		<ProjectReference Include="..\EventStore.Plugins.Connectors.Contracts\EventStore.Plugins.Connectors.Contracts.csproj" />
+		<ProjectReference Include="..\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<InternalsVisibleTo Include="EventStore.Plugins.Connectors.Tests" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <Folder Include="Planes\Control\" />
+	  <Folder Include="Planes\Management\" />
+	</ItemGroup>
+
+<!--	<Target Name="PostBuild" AfterTargets="PostBuildEvent">-->
+<!--		<ItemGroup>-->
+<!--			<MySourceFiles Include="$(OutDir)\*.Plugins.Connectors.*" />-->
+<!--		</ItemGroup>-->
+<!--		<Copy SourceFiles="@(MySourceFiles)" DestinationFolder="..\..\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)" />-->
+<!--	</Target>-->
+
+<!--	<Target Name="PublishPlugin" AfterTargets="Publish">-->
+<!--		<ItemGroup>-->
+<!--			<PluginOutputFiles Include="$(PublishDir)\EventStore.TcpPlugin.deps.json" />-->
+<!--			<PluginOutputFiles Include="$(PublishDir)\EventStore.TcpPlugin.dll" />-->
+<!--		</ItemGroup>-->
+<!--		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)/package" />-->
+<!--	</Target>-->
+</Project>

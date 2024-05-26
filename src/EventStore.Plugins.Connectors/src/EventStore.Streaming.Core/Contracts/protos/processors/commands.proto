@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package eventstore.streaming;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option csharp_namespace = "EventStore.Streaming.Contracts.Processors";
+
+message SuspendProcessor { 
+  string processor_id = 1; // only as safeguard
+}
+
+message ResumeProcessor {
+  string processor_id = 1; // only as safeguard
+}
+
+message ReconfigureProcessor {
+  string                                   processor_id = 1; // only as safeguard
+  map<string, google.protobuf.StringValue> settings     = 2;
+}

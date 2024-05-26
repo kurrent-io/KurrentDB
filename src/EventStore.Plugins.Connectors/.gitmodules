@@ -1,0 +1,3 @@
+[submodule "submodules/EventStore"]
+	path = submodules/EventStore
+	url = https://github.com/EventStore/EventStore.git

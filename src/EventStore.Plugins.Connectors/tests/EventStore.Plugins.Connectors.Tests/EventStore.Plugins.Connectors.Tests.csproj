@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<IsTestProject>true</IsTestProject>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="NewId" Version="4.0.1" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" /> <!-- Required for running tests -->
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\EventStore.Plugins.Connectors\EventStore.Plugins.Connectors.csproj" />
+		<ProjectReference Include="..\EventStore.Testing\EventStore.Testing.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Bogus" />
+		<Using Include="Humanizer" />
+		<Using Include="JetBrains.Annotations" />
+		<Using Include="FluentAssertions" />
+		<Using Include="Xunit" />
+		<Using Include="Xunit.Abstractions" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="EventStore.Plugins.Connectors.Tests.csproj.DotSettings" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Management\" />
+	</ItemGroup>
+</Project>
