@@ -366,6 +366,6 @@ certs-cluster/
 .DS_Store
 docs/public
 
-submodules/EventStore/
-submodules/
+#submodules/EventStore/
+#submodules/
 pub/

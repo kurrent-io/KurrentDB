@@ -35,8 +35,8 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj" />
+		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />
 		<ProjectReference Include="..\EventStore.Plugins.Connectors.Contracts\EventStore.Plugins.Connectors.Contracts.csproj" />
-		<ProjectReference Include="..\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />
 	</ItemGroup>
 	
 	<ItemGroup>
@@ -46,6 +46,10 @@
 	<ItemGroup>
 	  <Folder Include="Planes\Control\" />
 	  <Folder Include="Planes\Management\" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
 	</ItemGroup>
 
 <!--	<Target Name="PostBuild" AfterTargets="PostBuildEvent">-->

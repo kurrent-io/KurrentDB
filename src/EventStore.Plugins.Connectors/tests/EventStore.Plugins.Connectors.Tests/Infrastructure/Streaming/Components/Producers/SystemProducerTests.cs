@@ -63,11 +63,11 @@ public class SystemProducerTests(ITestOutputHelper output, StreamingFixture fixt
 
         static Message MapRecordToMessage(EventStoreRecord record) =>
             new() {
-                Value      = record.Value,
-                Key        = record.Key,
-                Headers    = record.Headers,
-                RecordId   = record.Id,
-                SchemaType = record.SchemaInfo.SchemaType
+                Value    = record.Value,
+                Key      = record.Key,
+                Headers  = record.Headers,
+                RecordId = record.Id,
+                Schema   = record.SchemaInfo
             };
 	}
 	

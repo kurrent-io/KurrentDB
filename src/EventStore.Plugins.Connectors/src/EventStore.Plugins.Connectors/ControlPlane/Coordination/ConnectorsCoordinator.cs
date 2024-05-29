@@ -113,7 +113,7 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
                     var activeConnectors = await listActiveConnectors(ctx.CancellationToken);
                     State.Connectors = new(activeConnectors.ToDictionary(x => x.ConnectorId));
                     
-                    Diagnostics.Dispatch("ConnectorsLoaded", new {
+                    Diagnostics.Publish("ConnectorsLoaded", new {
                         NodeInstanceId = NodeInstance.InstanceId,
                         Connectors     = activeConnectors,
                         Timestamp      = DateTimeOffset.UtcNow
@@ -123,7 +123,7 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
                 // update the current topology
                 State.CurrentTopology = evt.ToClusterTopology();
                 
-                Diagnostics.Dispatch("ClusterTopologyChanged", new {
+                Diagnostics.Publish("ClusterTopologyChanged", new {
                     NodeInstanceId = NodeInstance.InstanceId,
                     Nodes          = State.CurrentTopology,
                     Timestamp      = DateTimeOffset.UtcNow
@@ -149,7 +149,7 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
                     )
                 );
                 
-                Diagnostics.Dispatch("NewConnectorsAssignment", new {
+                Diagnostics.Publish("NewConnectorsAssignment", new {
                     NodeInstanceId   = NodeInstance.InstanceId,
                     Assignment       = State.CurrentAssignment,
                     PendingTransfers = State.PendingTransfers,
@@ -222,7 +222,7 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
                     return;
                 }
                 
-                Diagnostics.Dispatch(evt);
+                Diagnostics.Publish(evt);
                 
                 // *******************************
                 // * trigger rebalance
@@ -235,7 +235,7 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
                     )
                 );
                 
-                Diagnostics.Dispatch("NewConnectorsAssignment", new {
+                Diagnostics.Publish("NewConnectorsAssignment", new {
                     NodeInstanceId   = NodeInstance.InstanceId,
                     Assignment       = State.CurrentAssignment,
                     PendingTransfers = State.PendingTransfers,
@@ -288,7 +288,7 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
                     return;
                 }
                 
-                Diagnostics.Dispatch(evt);
+                Diagnostics.Publish(evt);
 
                 // *******************************
                 // * trigger rebalance
@@ -301,7 +301,7 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
                     )
                 );
                 
-                Diagnostics.Dispatch("NewConnectorsAssignment", new {
+                Diagnostics.Publish("NewConnectorsAssignment", new {
                     NodeInstanceId   = NodeInstance.InstanceId,
                     Assignment       = State.CurrentAssignment,
                     PendingTransfers = State.PendingTransfers,
@@ -323,7 +323,7 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
     
         ProcessOnLeaderNode<ControlPlaneContracts.Activation.ConnectorsDeactivated>(
             async (evt, ctx) => {
-                Diagnostics.Dispatch(evt);
+                Diagnostics.Publish(evt);
                 
                 var deactivatedConnectors  = evt.Connectors.ToConnectorIds();
                 var assignedNodesByCluster = State.PendingTransfers.GetAssignedNodesByCluster(deactivatedConnectors);
@@ -356,7 +356,7 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
         
         ProcessOnLeaderNode<ControlPlaneContracts.Activation.ConnectorsActivated>(
             async (evt, ctx) => {
-                Diagnostics.Dispatch(evt);
+                Diagnostics.Publish(evt);
                 
                 var connectors = evt.Connectors.ToConnectorIds();
                 var transfers  = State.PendingTransfers.Complete(connectors);

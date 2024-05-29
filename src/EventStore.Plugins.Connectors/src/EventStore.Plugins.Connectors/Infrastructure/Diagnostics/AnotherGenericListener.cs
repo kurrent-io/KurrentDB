@@ -1,7 +1,6 @@
 using System.Diagnostics;
-using EventStore.Connectors.Infrastructure.Diagnostics.Metrics;
 
-namespace EventStore.Connectors.Infrastructure.Diagnostics;
+namespace EventStore.Connectors.Diagnostics;
 
 abstract class GenericListener {
 	readonly IDisposable? _listenerSubscription;
@@ -35,4 +34,13 @@ abstract class GenericListener {
 		_networkSubscription?.Dispose();
 		_listenerSubscription?.Dispose();
 	}
+}
+
+class GenericObserver<T>(Action<T>? onNext, Action? onCompleted = null) : IObserver<T> {
+    readonly Action    _onCompleted = onCompleted ?? (() => { });
+    readonly Action<T> _onNext      = onNext      ?? (_ => { });
+
+    public void OnNext(T value)          => _onNext(value);
+    public void OnCompleted()            => _onCompleted();
+    public void OnError(Exception error) { }
 }

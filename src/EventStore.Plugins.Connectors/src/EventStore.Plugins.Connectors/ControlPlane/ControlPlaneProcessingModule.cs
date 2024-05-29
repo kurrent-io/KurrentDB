@@ -1,6 +1,6 @@
 using EventStore.Connectors.ControlPlane.Coordination;
 using EventStore.Connectors.ControlPlane.Diagnostics;
-using EventStore.Connectors.Infrastructure.Telemetry;
+using EventStore.Connectors.Diagnostics;
 using EventStore.Core.Data;
 using EventStore.Streaming.Processors;
 using Microsoft.Extensions.Logging;
@@ -18,7 +18,7 @@ public abstract class ControlPlaneProcessingModule : ProcessingModule {
 				DateTimeOffset.UtcNow
 			);
 			
-			Diagnostics.Dispatch("NodeInstanceInfoUpdated", new {
+			Diagnostics.Publish("NodeInstanceInfoUpdated", new {
 				NodeInstanceId = NodeInstance.InstanceId,
 				IsLeader       = NodeInstance.IsLeader,
 				Timestamp      = NodeInstance.Timestamp
@@ -26,7 +26,7 @@ public abstract class ControlPlaneProcessingModule : ProcessingModule {
 		});
 	}
 
-	protected DiagnosticsDispatcher Diagnostics { get; } = new(DiagnosticsName.BaseName);
+	protected DiagnosticsPublisher Diagnostics { get; } = new(DiagnosticsName.BaseName);
 	
 	protected NodeInstanceInfo NodeInstance { get; private set; }
     

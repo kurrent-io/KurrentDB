@@ -74,7 +74,6 @@ public interface ISubscriptionsOperations {
     Task SubscribeToAll(Position? position, IEventFilter filter, Channel<ResolvedEvent> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
 }
 
-
 [PublicAPI]
 public class SystemClient : ISystemClient {
 	public SystemClient(IPublisher publisher, ILoggerFactory? loggerFactory = null) {

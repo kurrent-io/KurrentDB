@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
-namespace EventStore.Connectors.Infrastructure.Diagnostics.Metrics;
+namespace EventStore.Connectors.Diagnostics.Metrics;
 
 sealed class MetricsListener<T>(string name, Histogram<double> duration, Counter<long> errors, Func<T, TagList> getTags)
 	: GenericListener(name), IDisposable {

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace EventStore.Connectors.Infrastructure.Diagnostics.Metrics;
+namespace EventStore.Connectors.Diagnostics.Metrics;
 
 sealed class Measure(DiagnosticSource diagnosticSource, object context) : IDisposable {
 	public static Measure Start(DiagnosticSource source, object context) => new(source, context);

@@ -3,8 +3,6 @@
 
     <PropertyGroup>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        
-        
     </PropertyGroup>
     
     <ItemGroup Condition="'$(IsPackable)' == 'true'">

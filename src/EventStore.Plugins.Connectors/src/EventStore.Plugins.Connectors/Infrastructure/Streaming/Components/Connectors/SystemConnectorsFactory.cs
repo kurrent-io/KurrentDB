@@ -27,10 +27,9 @@ public record SystemConnectorsFactory(IServiceProvider ServiceProvider) : IConne
             throw new("Sink configuration not found.");
         
         if (string.IsNullOrWhiteSpace(options.SinkTypeName))
-            throw new("Sink type name not found.");
+            throw new("Sink type name is invalid.");
 
-        var sinkProxy = new SinkProxy(connectorId, CreateSink(options.SinkTypeName), configuration, ServiceProvider)
-            .With(x => x.Initialize());
+        var sinkProxy = new SinkProxy(connectorId, CreateSinkInstance(options.SinkTypeName), configuration, ServiceProvider);
 
         var clientSettings = ServiceProvider.GetRequiredService<IPublisher>();
         var loggerFactory  = ServiceProvider.GetRequiredService<ILoggerFactory>();
@@ -38,7 +37,7 @@ public record SystemConnectorsFactory(IServiceProvider ServiceProvider) : IConne
         var stateStore     = ServiceProvider.GetRequiredService<IStateStore>();
         
         var builder = SystemProcessor.Builder
-            .OverrideProcessorId(connectorId)
+            //.OverrideProcessorId(connectorId)
             .ProcessorName(connectorId)
             .SubscriptionName(options.Subscription.SubscriptionName)
             .Publisher(clientSettings)
@@ -59,7 +58,7 @@ public record SystemConnectorsFactory(IServiceProvider ServiceProvider) : IConne
 
         return builder.Create();
 
-        static ISink CreateSink(string sinkTypeName) {
+        static ISink CreateSinkInstance(string sinkTypeName) {
             try {
                 return (ISink)Activator.CreateInstance(Type.GetType(sinkTypeName)!)!;
             }
