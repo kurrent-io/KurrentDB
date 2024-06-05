@@ -14,15 +14,15 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
 			}
 		};
 	}
-	
+
 	public override SystemProcessor Create() {
 		Ensure.NotNullOrWhiteSpace(Options.ProcessorName);
 		Ensure.NotNullOrWhiteSpace(Options.SubscriptionName);
         Ensure.NotNullOrEmpty(Options.RouterRegistry.Endpoints);
 		Ensure.NotNull(Options.Publisher);
-		
+
 		var options = Options with { };
-		
+
 		return new(options);
 	}
 }

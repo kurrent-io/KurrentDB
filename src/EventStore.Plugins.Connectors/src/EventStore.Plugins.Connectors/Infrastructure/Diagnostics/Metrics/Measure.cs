@@ -12,11 +12,11 @@ sealed class Measure(DiagnosticSource diagnosticSource, object context) : IDispo
 	readonly long _startedAt = TimeProvider.System.GetTimestamp();
 
 	bool _error;
-	
+
 	void Record() {
 		var duration = TimeProvider.System.GetElapsedTime(_startedAt);
 		diagnosticSource.Write(EventName, new MeasureContext(duration, _error, context));
 	}
-	
+
 	public void Dispose() => Record();
 }

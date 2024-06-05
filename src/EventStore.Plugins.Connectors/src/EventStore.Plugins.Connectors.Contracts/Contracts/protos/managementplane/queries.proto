@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package eventstore.connectors;
+
+import "google/protobuf/wrappers.proto";
+import "managementplane/resources.proto";
+
+option csharp_namespace = "EventStore.Connectors.Management.Contracts.Queries";
+
+service EventStoreConnectorQueryService {
+  rpc Query(ConnectorQueryFilter) returns (stream Connector);
+}
+
+message ConnectorQueryFilter {
+  repeated ConnectorType  type          = 1;
+  repeated ConnectorState state         = 2;
+  repeated NodeAffinity   node_affinity = 3;
+
+  repeated google.protobuf.StringValue instance_type = 4;
+  repeated google.protobuf.StringValue connector_id  = 5;
+}
+
+message ConnectorQueryResult {
+  oneof result {
+    Connector         connector = 10;
+    ConnectorRevision revision  = 11;
+    ConnectorStatus   status    = 12;
+  }
+}

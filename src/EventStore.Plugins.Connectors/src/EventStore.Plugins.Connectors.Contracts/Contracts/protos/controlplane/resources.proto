@@ -4,7 +4,7 @@ package eventstore.connectors;
 
 import "google/protobuf/wrappers.proto";
 
-option csharp_namespace = "EventStore.Connectors.ControlPlane.Contracts";
+option csharp_namespace = "EventStore.Connectors.Control.Contracts";
 
 enum ClusterNodeState {
   Unmapped        = 0;

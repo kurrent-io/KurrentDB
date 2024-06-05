@@ -4,7 +4,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+        <PackageReference Include="Ductus.FluentDocker" Version="2.10.59" />
 		<PackageReference Include="Bogus" Version="35.5.1" />
+		<PackageReference Include="EventStore.Client.Grpc.Streams" Version="23.3.1" />
 		<PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
 		<PackageReference Include="Humanizer.Core" Version="2.14.1" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
@@ -37,7 +39,6 @@
 		<PackageReference Include="Serilog.Sinks.Observable" Version="2.0.2" />
 		<PackageReference Include="Serilog.Sinks.Seq" Version="7.0.1" />
 		<PackageReference Include="Serilog.Sinks.XUnit" Version="3.0.5" />
-		<PackageReference Include="Shouldly" Version="4.2.1" />
 		<PackageReference Include="System.Reactive" Version="6.0.0" />
 		<PackageReference Include="SerilogTimings" Version="3.1.0" />
 	</ItemGroup>

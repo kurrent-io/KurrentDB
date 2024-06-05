@@ -11,7 +11,7 @@ public static class EventStoreBuilderExtensions {
         builder.AddSinkConnectorFactory();
         return builder;
     }
-    
+
     public static EventStoreStreamingBuilder AddSinkConnectorFactory(this EventStoreStreamingBuilder builder) {
         builder.Services.AddSingleton<IConnectorsFactory>(ctx => new SystemConnectorsFactory(ctx));
         return builder;

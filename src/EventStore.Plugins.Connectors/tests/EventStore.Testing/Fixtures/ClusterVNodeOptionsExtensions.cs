@@ -4,8 +4,8 @@ using EventStore.Plugins;
 namespace EventStore.Testing.Fixtures;
 
 static class ClusterVNodeOptionsExtensions {
-	public static ClusterVNodeOptions WithPlugableComponent(this ClusterVNodeOptions options, IPlugableComponent plugableComponent) =>
-		options with { PlugableComponents = [..options.PlugableComponents, plugableComponent] };
+	public static ClusterVNodeOptions WithPlugin(this ClusterVNodeOptions options, IPlugableComponent plugin) =>
+		options with { PlugableComponents = [..options.PlugableComponents, plugin] };
 
 	// public static ClusterVNodeOptions NoTelemetry(this ClusterVNodeOptions options) => options with {
 	// 	Application = options.Application with {

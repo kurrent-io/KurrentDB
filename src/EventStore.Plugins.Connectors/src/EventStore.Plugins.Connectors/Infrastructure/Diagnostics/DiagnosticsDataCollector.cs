@@ -15,7 +15,7 @@ public class DiagnosticsDataCollector : IDisposable {
 	public DiagnosticsDataCollector(string[] sources, int capacity = 10, OnEventCollected? onEventCollected = null) {
 		Listener = new(sources, 0, (source, data) => {
 			if (data is not DiagnosticsData pluginData) return;
-			
+
 			CollectedEventsByPlugin.AddOrUpdate(
 				source,
 				static (_, state) => [state.PluginData],
@@ -41,13 +41,13 @@ public class DiagnosticsDataCollector : IDisposable {
 										evt.Data[key] = value;
 								}
 							}
-							
+
 							break;
 					}
 
 					if (collected.Count > state.Capacity)
 						collected.Remove(collected.Min);
-					
+
 					return collected;
 				},
 				(PluginData: pluginData, Capacity: capacity)
@@ -56,14 +56,14 @@ public class DiagnosticsDataCollector : IDisposable {
 			try {
 				onEventCollected?.Invoke(pluginData);
 			}
-			catch (Exception) {
+			catch {
 				// stay on target
 			}
 		});
 	}
 
 	MultiSourceDiagnosticsListener Listener { get; }
-	
+
 	ConcurrentDictionary<string, SortedSet<DiagnosticsData>> CollectedEventsByPlugin { get; } = new();
 
 	public IEnumerable<DiagnosticsData> CollectedEvents(string source) =>
@@ -76,7 +76,7 @@ public class DiagnosticsDataCollector : IDisposable {
 		if (CollectedEventsByPlugin.TryGetValue(source, out var data))
 			data.Clear();
 	}
-	
+
 	public void ClearAllCollectedEvents() {
 		foreach (var data in CollectedEventsByPlugin.Values)
 			data.Clear();
@@ -86,7 +86,7 @@ public class DiagnosticsDataCollector : IDisposable {
 		Listener.Dispose();
 		CollectedEventsByPlugin.Clear();
 	}
-	
+
 	/// <summary>
 	///     Starts the <see cref="DiagnosticsDataCollector" /> with the specified delegate and sources.
 	///     This method is a convenient way to create a new instance of the <see cref="DiagnosticsDataCollector" /> and start collecting data immediately.
@@ -95,7 +95,7 @@ public class DiagnosticsDataCollector : IDisposable {
 	/// <param name="sources">The plugin diagnostic names to collect diagnostics data from.</param>
 	public static DiagnosticsDataCollector Start(OnEventCollected onEventCollected, params string[] sources) =>
 			new(sources, 10, onEventCollected);
-	
+
 	/// <summary>
 	///     Starts the <see cref="DiagnosticsDataCollector" /> with the specified delegate and sources.
 	///     This method is a convenient way to create a new instance of the <see cref="DiagnosticsDataCollector" /> and start collecting data immediately.

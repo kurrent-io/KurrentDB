@@ -1,5 +1,3 @@
-using EventStore.Plugins.Diagnostics;
-
 namespace EventStore.Connectors.Diagnostics;
 
 public delegate void OnSourceEvent(string source, object data);
@@ -12,7 +10,7 @@ public class MultiSourceDiagnosticsListener : IDisposable {
 		foreach (var source in sources)
 			Listeners.TryAdd(source, new(source, capacity, data => onEvent?.Invoke(source, data)));
 	}
-	
+
 	Dictionary<string, SingleSourceDiagnosticsListener> Listeners { get; } = new();
 
 	public IEnumerable<object> CollectedEvents(string source) =>
@@ -25,7 +23,7 @@ public class MultiSourceDiagnosticsListener : IDisposable {
 		if (Listeners.TryGetValue(source, out var listener))
 			listener.ClearCollectedEvents();
 	}
-	
+
 	public void ClearAllCollectedEvents() {
 		foreach (var listener in Listeners.Values)
 			listener.ClearCollectedEvents();
@@ -34,17 +32,17 @@ public class MultiSourceDiagnosticsListener : IDisposable {
 	public void Dispose() {
 		foreach (var listener in Listeners.Values)
 			listener.Dispose();
-		
+
 		Listeners.Clear();
 	}
 
     public static MultiSourceDiagnosticsListener Start(OnSourceEvent onEvent, params string[] sources) =>
         new(sources, 10, onEvent);
-	
+
 	public static MultiSourceDiagnosticsListener Start(OnSourceEvent onEvent, int capacity, params string[] sources) =>
 		new(sources, capacity, onEvent);
-	
-	public static MultiSourceDiagnosticsListener Start(params string[] sources) => 
+
+	public static MultiSourceDiagnosticsListener Start(params string[] sources) =>
 		new(sources);
 
 	public static MultiSourceDiagnosticsListener Start(int capacity, params string[] sources) =>

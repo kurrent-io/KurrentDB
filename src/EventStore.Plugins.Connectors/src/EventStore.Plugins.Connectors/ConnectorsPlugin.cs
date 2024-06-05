@@ -1,5 +1,5 @@
-using EventStore.Connectors.ControlPlane;
-using EventStore.Connectors.ControlPlane.Coordination;
+using EventStore.Connectors.Control;
+using EventStore.Connectors.Control.Coordination;
 using EventStore.Connectors.Management;
 using EventStore.Core;
 using EventStore.Core.Bus;
@@ -13,28 +13,31 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EventStore.Connectors;
 
-public sealed class ConnectorsPlugin : SubsystemsPlugin {
+public sealed class ConnectorsPlugin : Plugin {
     public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-	    services.AddSingleton<IPublisher>(ctx => ctx.GetRequiredService<StandardComponents>().MainQueue);
+        // because (unfortunately) the gossip listener service raises a schemaless event,
+        // a proper schema must be registered for it to be consumed by the control plane
+        SchemaRegistry.Global.RegisterSchema<GossipUpdatedInMemory>(
+            GossipListenerService.EventType, SchemaDefinitionType.Json
+        ).AsTask().GetAwaiter().GetResult();
+
+        services.AddSingleton(SchemaRegistry.Global);
+
+        services.AddSingleton<IPublisher>(ctx => ctx.GetRequiredService<StandardComponents>().MainQueue);
 	    services.AddSingleton<ISubscriber>(ctx => ctx.GetRequiredService<StandardComponents>().MainBus);
-	    
+
+        services.AddSingleton<SystemClient>();
+
 	    services.AddSingleton<SystemConnectorsFactory>();
-        
+
         services
             .AddGrpc()
-            .AddJsonTranscoding();
-        
+            .AddJsonTranscoding(x => x.JsonSettings.WriteIndented = true);
+
         services.AddConnectorsControlPlane();
     }
 
-    public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) =>
+    public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
         app.UseConnectorsManagement();
-
-    public override async Task Start() {
-	    // because (unfortunately) the gossip listener service raises a schemaless event,
-	    // a proper schema must be registered for it to be consumed by the control plane
-	    await SchemaRegistry.Global.RegisterSchema<GossipUpdatedInMemory>(
-		    GossipListenerService.EventType, SchemaDefinitionType.Json
-		);
     }
 }

@@ -2,8 +2,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Testing", "tests\EventStore.Testing\EventStore.Testing.csproj", "{19448357-ECD8-407A-9E22-F06F860A0881}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Streaming.Core", "src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj", "{42755F3D-B083-492C-9F46-E95BC5BE5026}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Plugins.Telemetry", "src\EventStore.Plugins.Telemetry\EventStore.Plugins.Telemetry.csproj", "{3F958C5A-B524-488C-A54F-03BC3E398B26}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Plugins.Connectors.Tests", "tests\EventStore.Plugins.Connectors.Tests\EventStore.Plugins.Connectors.Tests.csproj", "{803CE3CA-C382-436B-B6DE-87B604F2DD78}"
@@ -54,6 +52,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "EventStore.Streaming", "Eve
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Streaming.Core", "submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj", "{26B3FA61-7683-4608-99F5-72FBDFBB33AE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Streaming.OpenTelemetry", "submodules\EventStore.Streaming\src\EventStore.Streaming.OpenTelemetry\EventStore.Streaming.OpenTelemetry.csproj", "{F24919B4-63B6-46DA-B926-0A58133DEC15}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -64,10 +64,6 @@ Global
 		{19448357-ECD8-407A-9E22-F06F860A0881}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{19448357-ECD8-407A-9E22-F06F860A0881}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{19448357-ECD8-407A-9E22-F06F860A0881}.Release|Any CPU.Build.0 = Release|Any CPU
-		{42755F3D-B083-492C-9F46-E95BC5BE5026}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{42755F3D-B083-492C-9F46-E95BC5BE5026}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{42755F3D-B083-492C-9F46-E95BC5BE5026}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{42755F3D-B083-492C-9F46-E95BC5BE5026}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3F958C5A-B524-488C-A54F-03BC3E398B26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3F958C5A-B524-488C-A54F-03BC3E398B26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F958C5A-B524-488C-A54F-03BC3E398B26}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -148,6 +144,10 @@ Global
 		{26B3FA61-7683-4608-99F5-72FBDFBB33AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26B3FA61-7683-4608-99F5-72FBDFBB33AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26B3FA61-7683-4608-99F5-72FBDFBB33AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F24919B4-63B6-46DA-B926-0A58133DEC15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F24919B4-63B6-46DA-B926-0A58133DEC15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F24919B4-63B6-46DA-B926-0A58133DEC15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F24919B4-63B6-46DA-B926-0A58133DEC15}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1FFE9B22-1994-47B1-814E-7DCB8E838D10} = {B4DAA225-6158-4BB6-9426-242032A94EA7}
@@ -167,10 +167,10 @@ Global
 		{65A7F6F0-D40B-492E-B910-E61ED1230907} = {1FFE9B22-1994-47B1-814E-7DCB8E838D10}
 		{12359767-A6E6-480E-A3A8-3278D4E2C6B7} = {1FFE9B22-1994-47B1-814E-7DCB8E838D10}
 		{3F958C5A-B524-488C-A54F-03BC3E398B26} = {A65E9833-F98F-4AB4-96E8-31D0F1106193}
-		{42755F3D-B083-492C-9F46-E95BC5BE5026} = {B4DAA225-6158-4BB6-9426-242032A94EA7}
 		{803CE3CA-C382-436B-B6DE-87B604F2DD78} = {1D2C51BC-8126-4F7D-8720-18E1C978FF32}
 		{19448357-ECD8-407A-9E22-F06F860A0881} = {1D2C51BC-8126-4F7D-8720-18E1C978FF32}
 		{F70EDE68-D91A-4FCC-8019-4416400476F2} = {B4DAA225-6158-4BB6-9426-242032A94EA7}
 		{26B3FA61-7683-4608-99F5-72FBDFBB33AE} = {F70EDE68-D91A-4FCC-8019-4416400476F2}
+		{F24919B4-63B6-46DA-B926-0A58133DEC15} = {F70EDE68-D91A-4FCC-8019-4416400476F2}
 	EndGlobalSection
 EndGlobal

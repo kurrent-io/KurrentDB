@@ -1,5 +1,4 @@
 using System.Collections;
-using EventStore.Plugins.Diagnostics;
 
 namespace EventStore.Connectors.Diagnostics;
 
@@ -13,38 +12,38 @@ public class SingleSourceDiagnosticsListener : IEnumerable<object>, IDisposable 
                 onEvent?.Invoke(data.Value);
         });
     }
-	
+
     GenericDiagnosticsListener Listener { get; }
 
     List<object> ValidEvents => Listener.CollectedEvents
         .Where(x => x.Value is not null)
         .Select(x => x.Value!)
         .ToList();
-	
+
     public string Source   => Listener.Source;
     public int    Capacity => Listener.Capacity;
-	
+
     public IReadOnlyList<object> CollectedEvents => ValidEvents;
-	
+
     public bool HasCollectedEvents => Listener.HasCollectedEvents;
-	
+
     public void ClearCollectedEvents() => Listener.ClearCollectedEvents();
-	
+
     public IEnumerator<object> GetEnumerator() => ValidEvents.GetEnumerator();
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public void Dispose() => Listener.Dispose();
-	
-    public static SingleSourceDiagnosticsListener Start(string source, int capacity) => 
+
+    public static SingleSourceDiagnosticsListener Start(string source, int capacity) =>
         new(source, capacity);
-	
-    public static SingleSourceDiagnosticsListener Start(string source) => 
+
+    public static SingleSourceDiagnosticsListener Start(string source) =>
         new(source);
-	
+
     public static SingleSourceDiagnosticsListener Start(Action<object> onEvent, string source) =>
         new(source, 10, onEvent);
-	
+
     public static SingleSourceDiagnosticsListener Start(Action<object> onEvent, int capacity, string source) =>
         new(source, capacity, onEvent);
 }

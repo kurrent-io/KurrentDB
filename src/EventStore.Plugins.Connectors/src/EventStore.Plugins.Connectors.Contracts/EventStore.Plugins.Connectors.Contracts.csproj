@@ -8,7 +8,7 @@
 	<ItemGroup>
 		<PackageReference Include="Google.Protobuf" Version="3.27.0" />
 		<PackageReference Include="Grpc" Version="2.46.6" />
-		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.5" />
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.6" />
 		<!--		<PackageReference Include="Grpc.StatusProto" Version="2.62.0" />-->
 		<PackageReference Include="Grpc.Tools" Version="2.64.0" PrivateAssets="All" />
 
@@ -26,13 +26,13 @@
 				ProtoRoot="Contracts/protos"
 				Include="Contracts/protos/controlplane/**/*.proto"
 				Link="Contracts\protos\controlplane\%(RecursiveDir)/%(FileName)%(Extension)"
-				GrpcServices="None"
+				GrpcServices="Server"
 		/>
 
 		<Protobuf
 				ProtoRoot="Contracts/protos"
-				Include="Contracts/protos/management/**/*.proto"
-				Link="Contracts\protos\management\%(RecursiveDir)/%(FileName)%(Extension)"
+				Include="Contracts/protos/managementplane/**/*.proto"
+				Link="Contracts\protos\managementplane\%(RecursiveDir)/%(FileName)%(Extension)"
 				GrpcServices="Server"
 		/>
 	</ItemGroup>

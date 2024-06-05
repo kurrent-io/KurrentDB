@@ -10,7 +10,6 @@ using EventStore.Streaming.Schema.Serializers;
 namespace EventStore.Streaming.Consumers;
 
 public static class ConsumeFilterExtensions {
-
 	public static IEventFilter ToEventFilter(this ConsumeFilter filter) =>
 		filter.Scope switch {
 			ConsumeFilterScope.Stream when filter.HasPrefixes  => EventFilter.StreamName.Prefixes(true, filter.Prefixes),
@@ -29,7 +28,7 @@ public static class ResolvedEventExtensions {
 		// debugging purposes out of the box.
 
 		var headers = Headers.Decode(resolvedEvent.OriginalEvent.Metadata);
-		
+
 		// handle backwards compatibility with old schema
 		// by injecting the legacy schema in the headers.
 		// the legacy schema is generated using the event
@@ -37,24 +36,24 @@ public static class ResolvedEventExtensions {
 		var schema = headers.ContainsKey(HeaderKeys.SchemaSubject)
 			? SchemaInfo.FromHeaders(headers)
 			: SchemaInfo.FromContentType(
-				resolvedEvent.OriginalEvent.EventType, 
+				resolvedEvent.OriginalEvent.EventType,
 				resolvedEvent.OriginalEvent.IsJson ? "application/json" : "application/octet-stream"
 			).InjectIntoHeaders(headers);
-		
+
 		var value = await deserialize(resolvedEvent.Event.Data, headers);
 
 		var position = new RecordPosition {
 			StreamId       = StreamId.From(resolvedEvent.OriginalEvent.EventStreamId),
 			StreamRevision = StreamRevision.From(resolvedEvent.OriginalEvent.EventNumber),
 			LogPosition    = LogPosition.From(
-				resolvedEvent.OriginalPosition!.Value.CommitPosition, 
+				resolvedEvent.OriginalPosition!.Value.CommitPosition,
 				resolvedEvent.OriginalPosition!.Value.PreparePosition
 			)
 		};
 
 		var isRedacted = resolvedEvent.OriginalEvent.Flags
 			.HasAllOf(PrepareFlags.IsRedacted);
-		
+
 		var record = new EventStoreRecord {
 			Id         = RecordId.From(resolvedEvent.OriginalEvent.EventId),
 			Position   = position,
@@ -69,7 +68,7 @@ public static class ResolvedEventExtensions {
 
 		return record;
 	}
-	
+
 	public static async ValueTask<EventStoreRecord> ToRecord(this ResolvedEvent resolvedEvent, Deserialize deserialize, int nextSequenceId) =>
 		await resolvedEvent.ToRecord(deserialize, () => SequenceId.From((ulong)nextSequenceId));
 }
@@ -82,7 +81,7 @@ public static class RecordPositionExtensions {
 				? Position.End
 				: new Position(position.LogPosition.CommitPosition!.Value, position.LogPosition.PreparePosition!.Value);
 	}
-	
+
 	public static Position ToPosition2(this RecordPosition position) {
 		return position == RecordPosition.Unset || position.LogPosition == LogPosition.Earliest
 			? Position.Start

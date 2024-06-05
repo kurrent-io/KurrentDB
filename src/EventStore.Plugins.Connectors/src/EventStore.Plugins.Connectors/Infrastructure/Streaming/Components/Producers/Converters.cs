@@ -21,12 +21,12 @@ public static class SendRequestExtensions {
             var schema   = SchemaInfo.FromHeaders(message.Headers);
             var metadata = Headers.Encode(message.Headers);
             var isJson   = schema.SchemaType == SchemaDefinitionType.Json;
-            
+
             return new(
-                eventId, 
-                schema.Subject, 
-                isJson, 
-                data.ToArray(), 
+                eventId,
+                schema.Subject,
+                isJson,
+                data.ToArray(),
                 metadata.ToArray()
             );
         }

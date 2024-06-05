@@ -27,6 +27,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Management\" />
+		<Folder Include="Planes\Management\" />
 	</ItemGroup>
 </Project>

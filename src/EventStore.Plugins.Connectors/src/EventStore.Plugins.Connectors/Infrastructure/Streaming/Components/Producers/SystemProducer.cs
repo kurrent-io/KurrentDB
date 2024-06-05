@@ -18,16 +18,16 @@ public class SystemProducer : IProducer {
 	public SystemProducer(SystemProducerOptions options) {
 		Options = options;
 		Client  = options.Publisher;
-        
+
 		Serialize = (value, headers) => Options.SchemaRegistry.As<ISchemaSerializer>().Serialize(value, headers);
-		
+
 		Flushing = new(true);
 
 		if (options.EnableLogging)
 			options.Interceptors.TryAddUniqueFirst(new ProducerLogger(nameof(SystemProducer)));
-		
+
         Interceptors = new(Options.Interceptors, Options.LoggerFactory.CreateLogger(nameof(SystemProducer)));
-        
+
 		Intercept = evt => Interceptors.Intercept(evt, CancellationToken.None);
 	}
 
@@ -41,29 +41,29 @@ public class SystemProducer : IProducer {
 	public string  ProducerName     => Options.ProducerName;
 	public string? Stream           => Options.DefaultStream;
 	public int     InFlightMessages => 0;
-    
-    public Task Send(SendRequest request, OnSendResult onResult) => 
+
+    public Task Send(SendRequest request, OnSendResult onResult) =>
         SendInternal(request, new SendResultCallback(onResult));
-	
-    public Task Send<TState>(SendRequest request, OnSendResult<TState> onResult, TState state) => 
+
+    public Task Send<TState>(SendRequest request, OnSendResult<TState> onResult, TState state) =>
         SendInternal(request, new SendResultCallback<TState>(onResult, state));
-	
-    public Task Send<TState>(SendRequest request, SendResultCallback<TState> callback) => 
+
+    public Task Send<TState>(SendRequest request, SendResultCallback<TState> callback) =>
         SendInternal(request, callback);
-	
+
     public Task Send(SendRequest request, SendResultCallback callback) =>
         SendInternal(request, callback);
 
     public async Task SendInternal(SendRequest request, ISendResultCallback callback) {
 		Ensure.NotDefault(request, SendRequest.Empty);
 		Ensure.NotNull(callback);
-	
+
 		var validRequest = request.EnsureStreamIsSet(Options.DefaultStream);
-	
+
 		await Intercept(new SendRequestReceived(this, validRequest));
-	
+
 		Flushing.Wait();
-	
+
 		var events = await validRequest
 			.ToEvents(
 				headers => headers
@@ -71,22 +71,22 @@ public class SystemProducer : IProducer {
 					.Add(HeaderKeys.ProducerRequestId, validRequest.RequestId),
 				Serialize
 			);
-		
+
         await Intercept(new SendRequestReady(this, request));
-        
+
 		SendResult result;
-		
+
 		try {
 			var (position, streamRevision) = await Client.WriteEvents(validRequest.Stream, events);
-			
+
 			var recordPosition = new RecordPosition {
 				StreamId       = StreamId.From(validRequest.Stream),
 				StreamRevision = StreamRevision.From(streamRevision.ToInt64()),
 				LogPosition    = LogPosition.From(position.CommitPosition, position.PreparePosition),
 			};
-			
+
 			result = SendResult.Succeeded(validRequest, recordPosition);
-			
+
 			//await Intercept(new SendRequestSucceeded(this, validRequest, recordPosition));
 		}
 		catch (Exception ex) {
@@ -106,12 +106,12 @@ public class SystemProducer : IProducer {
 				ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
 				_                                               => new StreamingCriticalError(ex.Message, ex)
 			};
-			
+
 			result = SendResult.Failed(validRequest, error);
-			
+
 			//await Intercept(new SendRequestFailed(this, validRequest, error));
 		}
-        
+
         await Intercept(new SendRequestProcessed(this, result));
 
         try {
@@ -120,7 +120,7 @@ public class SystemProducer : IProducer {
         catch (Exception uex) {
             await Intercept(new SendRequestCallbackError(this, result, uex));
         }
-        
+
 	}
 
     public async Task<(int Flushed, int Inflight)> Flush(CancellationToken cancellationToken = default) {
@@ -137,7 +137,7 @@ public class SystemProducer : IProducer {
 	public virtual async ValueTask DisposeAsync() {
 		try {
 			await Flush();
-			
+
 			await Intercept(new ProducerStopped(this));
 		}
 		catch (Exception ex) {

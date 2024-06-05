@@ -44,11 +44,6 @@
 	</ItemGroup>
 	
 	<ItemGroup>
-	  <Folder Include="Planes\Control\" />
-	  <Folder Include="Planes\Management\" />
-	</ItemGroup>
-	
-	<ItemGroup>
 	  <None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
 	</ItemGroup>
 

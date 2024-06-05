@@ -2,11 +2,29 @@ syntax = "proto3";
 
 package eventstore.connectors;
 
+import "google/api/annotations.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
 import "controlplane/resources.proto";
+import "protocol.proto";
 
-option csharp_namespace = "EventStore.Connectors.ControlPlane.Contracts.Activation";
+option csharp_namespace = "EventStore.Connectors.Control.Contracts.Activation";
+
+service ActivationApi {
+  rpc Activate(ActivateConnectors) returns (CommandResult){
+    option (google.api.http) = {
+      post: "/connectors/control/activation/activate",
+      body: "*"
+    };
+  }
+
+  rpc Deactivate(DeactivateConnectors) returns (CommandResult){
+    option (google.api.http) = {
+      post: "/connectors/control/activation/deactivate",
+      body: "*"
+    };
+  }
+}
 
 message ActivateConnectors {
   string             activation_id = 1;

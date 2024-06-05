@@ -5,7 +5,7 @@ package eventstore.connectors;
 import "google/protobuf/timestamp.proto";
 import "controlplane/resources.proto";
 
-option csharp_namespace = "EventStore.Connectors.ControlPlane.Contracts.Gossip";
+option csharp_namespace = "EventStore.Connectors.Control.Contracts.Gossip";
 
 message ClusterTopologyChanged {
   repeated ClusterNode      nodes      = 1;

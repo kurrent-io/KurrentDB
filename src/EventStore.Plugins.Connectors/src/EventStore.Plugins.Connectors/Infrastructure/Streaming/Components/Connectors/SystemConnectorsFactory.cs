@@ -20,12 +20,12 @@ public record SystemConnectorsFactory(IServiceProvider ServiceProvider) : IConne
     public IProcessor Create(string connectorId, IConfiguration configuration) {
         Ensure.NotNullOrWhiteSpace(connectorId);
         Ensure.NotNull(configuration);
-        
+
         var options = configuration.Get<SinkOptions>();
 
         if (options is null)
             throw new("Sink configuration not found.");
-        
+
         if (string.IsNullOrWhiteSpace(options.SinkTypeName))
             throw new("Sink type name is invalid.");
 
@@ -35,7 +35,7 @@ public record SystemConnectorsFactory(IServiceProvider ServiceProvider) : IConne
         var loggerFactory  = ServiceProvider.GetRequiredService<ILoggerFactory>();
         var schemaRegistry = ServiceProvider.GetRequiredService<SchemaRegistry>();
         var stateStore     = ServiceProvider.GetRequiredService<IStateStore>();
-        
+
         var builder = SystemProcessor.Builder
             //.OverrideProcessorId(connectorId)
             .ProcessorName(connectorId)

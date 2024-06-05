@@ -6,7 +6,23 @@ import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
 import "controlplane/resources.proto";
 
-option csharp_namespace = "EventStore.Connectors.ControlPlane.Contracts.Coordination";
+option csharp_namespace = "EventStore.Connectors.Control.Contracts.Coordination";
+
+message RebalanceConnectors {
+  RebalancingTrigger        trigger       = 5;
+  google.protobuf.Timestamp requested_by  = 10;
+  google.protobuf.Timestamp requested_at  = 11;
+}
+
+message RebalancingInitiated {
+  string                    activation_id = 1;
+  repeated ClusterNode      nodes         = 2;
+  repeated Connector        connectors    = 3;
+  repeated NodeAssignment   assignment    = 4;
+  RebalancingTrigger        trigger       = 5;
+  google.protobuf.Timestamp initiated_by  = 10;
+  google.protobuf.Timestamp initiated_at  = 11;
+}
 
 message RebalancingComplete {
   string                    activation_id = 1;
@@ -18,14 +34,12 @@ message RebalancingComplete {
   google.protobuf.Timestamp completed_at  = 11;
 }
 
-message RebalancingInitiated {
+message ConnectorsAssignment {
   string                    activation_id = 1;
-  repeated ClusterNode      nodes         = 2;
-  repeated Connector        connectors    = 3;
-  repeated NodeAssignment   assignment    = 4;
-  RebalancingTrigger        trigger       = 5;
-  google.protobuf.Timestamp initiated_by  = 10;
-  google.protobuf.Timestamp initiated_at  = 11;
+  repeated NodeAssignment   assignment    = 2;
+  RebalancingTrigger        trigger       = 3;
+  string                    completed_by  = 10;
+  google.protobuf.Timestamp completed_at  = 11;
 }
 
 enum RebalancingTrigger {

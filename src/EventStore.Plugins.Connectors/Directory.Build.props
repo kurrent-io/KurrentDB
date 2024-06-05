@@ -8,7 +8,7 @@
         <Deterministic>true</Deterministic>
 		<InvariantGlobalization>true</InvariantGlobalization>
 
-		<Authors>Sérgio Silveira</Authors>
+		<Authors>Sérgio Silveira and Contributors</Authors>
 		<Company>Event Store Ltd</Company>
 		<Copyright>Copyright © 2012-$([System.DateTime]::Now.Year) $(Company) $(Authors)</Copyright>
     </PropertyGroup>

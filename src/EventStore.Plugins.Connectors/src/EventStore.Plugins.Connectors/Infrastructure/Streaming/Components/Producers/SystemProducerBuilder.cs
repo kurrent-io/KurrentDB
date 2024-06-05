@@ -16,11 +16,11 @@ public record SystemProducerBuilder : ProducerBuilder<SystemProducerBuilder, Sys
 			}
 		};
 	}
-	
+
 	public override SystemProducer Create() {
 		Ensure.NotNullOrWhiteSpace(Options.ProducerName);
 		Ensure.NotNull(Options.Publisher);
-		
+
 		var options = Options with {
 			ResiliencePipelineBuilder = Options.ResiliencePipelineBuilder.ConfigureTelemetry(
 				Options.EnableLogging

@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package eventstore.connectors;
 
+import "google/protobuf/any.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
 import "google/rpc/code.proto";
@@ -19,6 +20,8 @@ message CommandResult {
 
   // status of the request.
   Status status = 4;
+
+  google.protobuf.Any payload = 5;
 }
 
 message Error {

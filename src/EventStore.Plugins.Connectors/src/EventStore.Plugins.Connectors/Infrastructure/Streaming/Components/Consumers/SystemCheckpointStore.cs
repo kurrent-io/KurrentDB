@@ -17,14 +17,13 @@ namespace EventStore.Streaming.Consumers.Checkpoints;
 /// The coordinator needs to be implemented in the database
 /// and provide its own endpoints for the consumer groups.
 /// </summary>
-
 public class SystemCheckpointStore : ICheckpointStore {
 	public SystemCheckpointStore(IPublisher client, string groupId, string consumerId, int streamMaxSize = 3) {
 		Client        = client;
 		GroupId       = groupId;
 		ConsumerId    = consumerId;
 		StreamMaxSize = streamMaxSize;
-		
+
 		CheckpointStreamId = $"$consumer-positions-{groupId}";
 	}
 
@@ -32,7 +31,6 @@ public class SystemCheckpointStore : ICheckpointStore {
 	int              StreamMaxSize          { get; }
 	RecordPosition[] LastCommittedPositions { get; set; } = [];
 
-	
 	public string GroupId            { get; }
 	public string ConsumerId         { get; }
 	public string CheckpointStreamId { get; }
@@ -40,7 +38,7 @@ public class SystemCheckpointStore : ICheckpointStore {
 
 	public async Task Initialize(CancellationToken cancellationToken = default) {
 		cancellationToken.ThrowIfCancellationRequested();
-		
+
 		try {
 			var (metadata, revision) = await Client.GetStreamMetadata(CheckpointStreamId, cancellationToken);
 
@@ -62,11 +60,11 @@ public class SystemCheckpointStore : ICheckpointStore {
 			throw new Exception("Failed to initialize System Checkpoint Store", ex);
 		}
 	}
-	
+
 	public async Task<RecordPosition[]> GetLatestPositions(CancellationToken cancellationToken = default) {
-		if (!Initialized) 
+		if (!Initialized)
 			await Initialize(cancellationToken);
-		
+
 		ResolvedEvent? re = null;
 
 		try {
@@ -100,15 +98,15 @@ public class SystemCheckpointStore : ICheckpointStore {
 			).ToArray();
 		}
 	}
-	
+
 	public async Task<RecordPosition[]> CommitPositions(RecordPosition[] positions, CancellationToken cancellationToken = default) {
 		Ensure.NotNullOrEmpty(positions);
-		
-		if (!Initialized) 
+
+		if (!Initialized)
 			await Initialize(cancellationToken);
-		
+
 		var lastPositionsByStream = positions.GroupBy(x => (x.StreamId, x.PartitionId)).Select(x => x.Last()).ToArray();
-		
+
 		var positionsCommitted = MapToPositionsCommitted(GroupId, ConsumerId, lastPositionsByStream);
 
 		var data = new[] {
@@ -120,12 +118,12 @@ public class SystemCheckpointStore : ICheckpointStore {
 				metadata: null
 			)
 		};
-		
+
 		var (position, streamRevision) = await Client
 			.WriteEvents(CheckpointStreamId, data, cancellationToken: cancellationToken);
 
 		LastCommittedPositions = lastPositionsByStream;
-		
+
 		return positions;
 
 		static Contracts.PositionsCommitted MapToPositionsCommitted(string groupId, string consumerId, RecordPosition[] recordPositions) {
@@ -142,7 +140,7 @@ public class SystemCheckpointStore : ICheckpointStore {
 		}
 	}
 
-	public Task DeletePositions(CancellationToken cancellationToken = default) => 
+	public Task DeletePositions(CancellationToken cancellationToken = default) =>
 		Client.DeleteStream(CheckpointStreamId, cancellationToken: cancellationToken);
 
 	public Task ResetPositions(CancellationToken cancellationToken = default) =>
@@ -172,9 +170,9 @@ static class Contracts {
 
 public static class CheckpointStoreExtensions {
 	public static async Task<RecordPosition> ResolveStartPosition(
-		this ICheckpointStore checkpointStore, 
+		this ICheckpointStore checkpointStore,
 		SubscriptionInitialPosition initialPosition,
-		RecordPosition startPosition, 
+		RecordPosition startPosition,
 		CancellationToken cancellationToken = default
 	) {
 		if (startPosition != RecordPosition.Unset)
@@ -188,7 +186,7 @@ public static class CheckpointStoreExtensions {
 				? RecordPosition.Unset
 				: new() { LogPosition = LogPosition.Latest }
 			: positions.Last();
-		
+
 		return subscriptionPosition;
 	}
 }

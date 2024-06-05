@@ -20,7 +20,7 @@ public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemRea
 	public override SystemReader Create() {
         Ensure.NotNullOrWhiteSpace(Options.ReaderName);
         Ensure.NotNull(Options.Publisher);
-		
+
         var options = Options with {
             ResiliencePipelineBuilder = Options.ResiliencePipelineBuilder.ConfigureTelemetry(
                 Options.EnableLogging
@@ -29,7 +29,7 @@ public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemRea
                 "ReaderResilienceTelemetryLogger"
             )
         };
-        
+
 		return new(options);
 	}
 }

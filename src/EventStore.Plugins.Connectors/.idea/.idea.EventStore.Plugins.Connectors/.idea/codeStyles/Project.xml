@@ -1,0 +1,10 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <option name="AUTODETECT_INDENTS" value="false" />
+    <option name="RIGHT_MARGIN" value="160" />
+    <option name="SOFT_MARGINS" value="160" />
+    <editorconfig>
+      <option name="ENABLED" value="false" />
+    </editorconfig>
+  </code_scheme>
+</component>

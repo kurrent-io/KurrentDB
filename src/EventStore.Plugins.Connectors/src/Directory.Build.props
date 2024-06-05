@@ -3,10 +3,11 @@
 
     <PropertyGroup>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <NoWarn>RCS1194</NoWarn>
     </PropertyGroup>
-    
+
     <ItemGroup Condition="'$(IsPackable)' == 'true'">
-        <PackageReference Include="MinVer" Version="4.3.0" PrivateAssets="All" />
+        <PackageReference Include="MinVer" Version="5.0.0" PrivateAssets="All" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
         <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
@@ -14,12 +15,20 @@
 
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" PrivateAssets="All" />
+        <PackageReference Include="Roslynator.Analyzers" Version="4.12.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.12.4">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
-    
+
     <ItemGroup>
         <Using Include="JetBrains.Annotations" />
     </ItemGroup>
-    
+
     <Target Name="CustomVersion" AfterTargets="MinVer">
         <PropertyGroup>
             <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</FileVersion>
