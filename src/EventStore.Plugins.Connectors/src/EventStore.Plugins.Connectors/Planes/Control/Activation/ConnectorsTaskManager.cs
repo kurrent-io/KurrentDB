@@ -104,7 +104,7 @@ public class ConnectorsTaskManager(CreateConnectorInstance createConnectorInstan
             )
         ).ToList();
 
-    public async ValueTask DisposeAsync() {
+    public async ValueTask StopAllProcesses() {
         await Parallel.ForEachAsync(
             Processes.Values,
             async (process, _) => {
@@ -114,6 +114,10 @@ public class ConnectorsTaskManager(CreateConnectorInstance createConnectorInstan
         );
 
         Processes.Clear();
+    }
+
+    public async ValueTask DisposeAsync() {
+        await StopAllProcesses();
     }
 
     public record ConnectorProcessInfo(ConnectorId ConnectorId, int Revision, ProcessorState State, Exception? Error = null);

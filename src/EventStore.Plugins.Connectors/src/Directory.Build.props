@@ -4,17 +4,25 @@
     <PropertyGroup>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
         <NoWarn>RCS1194</NoWarn>
+        <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
     </PropertyGroup>
 
     <ItemGroup Condition="'$(IsPackable)' == 'true'">
-        <PackageReference Include="MinVer" Version="5.0.0" PrivateAssets="All" />
+<!--        <PackageReference Include="MinVer" Version="5.0.0" PrivateAssets="All" />-->
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
         <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
     </ItemGroup>
 
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DebugType>none</DebugType>
+    </PropertyGroup>
+
     <ItemGroup>
-        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" PrivateAssets="All" />
+        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" PrivateAssets="All" >
+<!--            <PrivateAssets>all</PrivateAssets>-->
+<!--            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
+        </PackageReference>
         <PackageReference Include="Roslynator.Analyzers" Version="4.12.4">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

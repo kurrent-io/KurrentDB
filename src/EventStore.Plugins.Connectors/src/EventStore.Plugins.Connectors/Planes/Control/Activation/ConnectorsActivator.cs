@@ -65,6 +65,10 @@ public class ConnectorsActivator {
         };
     }
 
+    public async Task DeactivateAll() {
+        await TaskManager.StopAllProcesses();
+    }
+
     public async Task<List<Connector>> Connectors(CancellationToken cancellationToken = default) {
         return TaskManager.GetProcesses()
             .ConvertAll(process => new Connector {

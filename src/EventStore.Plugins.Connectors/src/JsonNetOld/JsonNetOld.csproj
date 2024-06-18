@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--	<PropertyGroup>-->
+    <!--		<TargetFramework>netstandard2.0</TargetFramework>-->
+    <!--		<AssemblyVersion>2.0.0.0</AssemblyVersion>-->
+    <!--		<Version>2.0.0.0</Version>-->
+    <!--		<FileVersion>2.0.0.0</FileVersion>-->
+    <!--	</PropertyGroup>-->
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <!--        <PublishAot>true</PublishAot>-->
+
+        <AssemblyVersion>2.0.0.0</AssemblyVersion>
+        <Version>2.0.0.0</Version>
+        <FileVersion>2.0.0.0</FileVersion>
+        <NoWarn>NU1903</NoWarn>
+    </PropertyGroup>
+
+<!--    <PropertyGroup>-->
+<!--        <OutputPath>..\bin\JsonOld</OutputPath>-->
+<!--    </PropertyGroup>-->
+
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" Version="11.0.2"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Plugins\McMaster.NETCore.Plugins.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -12,9 +12,6 @@ class ConnectorsCoordinatorState {
     public ClusterConnectorsAssignment CurrentAssignment { get; private set; }
     public ConnectorTransfers          PendingTransfers  { get; private set; } = new();
 
-    public bool IsNew       => CurrentTopology.IsUnknown;
-    public bool Rebalancing => PendingTransfers.Count > 0;
-
     public void SetNewAssignment(ClusterConnectorsAssignment assignment) {
         CurrentAssignment = assignment;
         PendingTransfers  = ConnectorTransfers.FromGroupAssignment(assignment);
@@ -127,4 +124,3 @@ class ConnectorsCoordinatorState {
         public record ConnectorTransfer(ConnectorId ConnectorId, ClusterNodeId From, ClusterNodeId To);
     }
 }
-

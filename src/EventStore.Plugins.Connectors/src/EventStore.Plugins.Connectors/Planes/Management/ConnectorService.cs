@@ -1,5 +1,6 @@
 using EventStore.Connectors.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
+using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using static EventStore.Connectors.Management.Contracts.Commands.ConnectorCommand.CommandOneofCase;
 using Status = EventStore.Connectors.Contracts.Status;
@@ -11,14 +12,17 @@ namespace EventStore.Connectors.Management;
 /// <summary>
 ///  Connector service implementation.
 /// </summary>
-public class ConnectorService(ConnectorApplication application) : ConnectorCommandService.ConnectorCommandServiceBase {
+public class ConnectorService(ConnectorApplication application, IAuthorizationProvider authorizationProvider) : ConnectorCommandService.ConnectorCommandServiceBase {
 	ConnectorApplication Application { get; } = application;
 
 	/// <summary>
 	///  Executes a command on the connector.
 	/// </summary>
 	public override async Task<CommandResult> Execute(ConnectorCommand request, ServerCallContext context) {
-		var execute = request.CommandCase switch {
+        var user = context.GetHttpContext().User;
+        await authorizationProvider.CheckAccessAsync(user, new Operation("connectors", "write"), context.CancellationToken);
+
+        var execute = request.CommandCase switch {
 			Create         => Application.Handle(request.Create, context.CancellationToken),
 			// UpdateSettings => Application.Handle(request.UpdateSettings, context.CancellationToken),
 			Delete => Application.Handle(request.Delete, context.CancellationToken),

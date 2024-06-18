@@ -6,13 +6,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Google.Protobuf" Version="3.27.0" />
-		<PackageReference Include="Grpc" Version="2.46.6" />
-		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.6" />
-		<!--		<PackageReference Include="Grpc.StatusProto" Version="2.62.0" />-->
-		<PackageReference Include="Grpc.Tools" Version="2.64.0" PrivateAssets="All" />
-
-	</ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.6" />
+        <PackageReference Include="Grpc.Tools" Version="2.64.0" PrivateAssets="All" />
+    </ItemGroup>
 
 	<ItemGroup>
 		<Protobuf

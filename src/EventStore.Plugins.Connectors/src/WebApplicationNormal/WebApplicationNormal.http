@@ -1,0 +1,6 @@
+@WebApplicationNormal_HostAddress = http://localhost:20000
+
+GET {{WebApplicationNormal_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,8 +1,10 @@
 using System.Net;
 using DotNext.Collections.Generic;
+using EventStore.Connectors.Control.Activation;
 using EventStore.Connectors.Control.Assignment;
 using EventStore.Core.Cluster;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.Control.Assignment.ConnectorAssignmentStrategy;
 
@@ -12,88 +14,81 @@ using ControlPlaneContracts = EventStore.Connectors.Control.Contracts;
 namespace EventStore.Connectors.Control.Coordination;
 
 public class ConnectorsCoordinator : ControlPlaneProcessingModule {
-    public ConnectorsCoordinator(GetConnectorAssignor getConnectorAssignor, GetManagedConnectors getManagedConnectors) {
+    public ConnectorsCoordinator(GetActiveConnectors getActiveConnectors, ConnectorsActivator activator) {
+        Process<SystemMessage.BecomeLeader>(
+            async (_, ctx) => {
+                // // if the topology is unknown, the node is new, and we have no connectors loaded
+                // if (State.CurrentTopology.IsUnknown) {
+                //     var activeConnectors = await getManagedConnectors(ctx.CancellationToken);
+                //     State.Connectors = new(activeConnectors.ToDictionary(x => x.ConnectorId));
+                //
+                //     Diagnostics.Publish(
+                //         "ConnectorsLoaded",
+                //         new {
+                //             NodeInstanceId = NodeInstance.InstanceId,
+                //             Connectors     = activeConnectors,
+                //             Timestamp      = DateTimeOffset.UtcNow
+                //         }
+                //     );
+                // }
+
+                var activeConnectors = await getActiveConnectors(ctx.CancellationToken);
+                State.Connectors = new(activeConnectors.ToDictionary(x => x.ConnectorId));
+
+                Diagnostics.Publish("ConnectorsLoaded", new {
+                    NodeInstanceId = NodeInstance.InstanceId,
+                    Connectors     = activeConnectors,
+                    Timestamp      = DateTimeOffset.UtcNow
+                });
+
+                var activationRequest = new ControlPlaneContracts.Activation.ActivateConnectors {
+                    ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
+                    NodeId       = NodeInstance.InstanceId.ToString(),
+                    Connectors   = { State.Connectors.Select(x => x.Value.MapToConnector()) }
+                };
+
+                await activator.Activate(activationRequest, ctx.CancellationToken);
+            });
+
+        Process<SystemMessage.BecomeResigningLeader>(
+            async (evt, ctx) => {
+                await activator.DeactivateAll();
+            });
+
         Process<GossipUpdatedInMemory>(
-	        async (evt, ctx) => {
+            async (evt, ctx) => {
                 // if the topology is unknown, the node is new, and we have no connectors loaded
                 if (State.CurrentTopology.IsUnknown) {
-                    var activeConnectors = await getManagedConnectors(ctx.CancellationToken);
+                    var activeConnectors = await getActiveConnectors(ctx.CancellationToken);
                     State.Connectors = new(activeConnectors.ToDictionary(x => x.ConnectorId));
 
-                    Diagnostics.Publish("ConnectorsLoaded", new {
-                        NodeInstanceId = NodeInstance.InstanceId,
-                        Connectors     = activeConnectors,
-                        Timestamp      = DateTimeOffset.UtcNow
-                    });
+                    Diagnostics.Publish(
+                        "ConnectorsLoaded",
+                        new {
+                            NodeInstanceId = NodeInstance.InstanceId,
+                            Connectors     = activeConnectors,
+                            Timestamp      = DateTimeOffset.UtcNow
+                        }
+                    );
                 }
 
                 // update the current topology
                 State.CurrentTopology = evt.ToClusterTopology();
 
-                Diagnostics.Publish("ClusterTopologyChanged", new {
-                    NodeInstanceId = NodeInstance.InstanceId,
-                    Nodes          = State.CurrentTopology,
-                    Timestamp      = DateTimeOffset.UtcNow
-                });
-
-                if (!NodeInstance.IsLeader) {
-                    ctx.Logger.LogTrace(
-                        "{NodeInstanceId} {State} not a leader, ignoring {MessageName}",
-                        NodeInstance.InstanceId, NodeInstance.MemberInfo.State, nameof(GossipUpdatedInMemory)
-                    );
-
-                    return;
-                }
-
-                // *******************************
-                // * trigger rebalance
-                // *******************************
-                State.SetNewAssignment(
-                    getConnectorAssignor(StickyWithAffinity).Assign(
-                        State.CurrentTopology,
-                        State.Connectors.Values.Select(x => x.Resource),
-                        State.CurrentAssignment
-                    )
+                Diagnostics.Publish(
+                    "ClusterTopologyChanged",
+                    new {
+                        NodeInstanceId = NodeInstance.InstanceId,
+                        Nodes          = State.CurrentTopology,
+                        Timestamp      = DateTimeOffset.UtcNow
+                    }
                 );
-
-                Diagnostics.Publish("NewConnectorsAssignment", new {
-                    NodeInstanceId   = NodeInstance.InstanceId,
-                    Assignment       = State.CurrentAssignment,
-                    PendingTransfers = State.PendingTransfers,
-                    Timestamp        = DateTimeOffset.UtcNow
-                });
-
-                // request activation of all newly assigned connectors
-                var activationRequests = State.PendingTransfers
-                    .GetNewlyAssignedConnectorsByCluster()
-                    .Select(x => new ControlPlaneContracts.Activation.ActivateConnectors {
-                        ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
-                        NodeId       = x.Key,
-                        Connectors   = { x.Value.Select(cid => State.Connectors[cid].MapToConnector()) }
-                    });
-
-                activationRequests.ForEach(ctx.Output);
-
-                // request deactivation of all revoked connectors, regardless of the fact that they might be reassigned
-                var deactivationRequests = State.PendingTransfers
-                    .GetRevokedConnectorsByCluster()
-                    .Select(x => new ControlPlaneContracts.Activation.DeactivateConnectors {
-                        ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
-                        NodeId       = x.Key,
-                        Connectors   = { x.Value.Select(cid => State.Connectors[cid].MapToConnector()) }
-                    });
-
-                deactivationRequests.ForEach(ctx.Output);
             }
         );
 
-        Process<ManagementContracts.ConnectorActivating>(
+        ProcessOnLeaderNode<ManagementContracts.ConnectorActivating>(
             async (evt, ctx) => {
                 ConnectorId connectorId = evt.ConnectorId;
-
-                if (NodeInstance.IsLeader && State.Rebalancing) {
-                    // TODO SS: How to handle connector activation requests while rebalancing?
-                }
 
                 // *******************************
                 // * update state
@@ -103,15 +98,11 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
                     static (connectorId, state) => new(
                         connectorId,
                         state.Revision,
-                        state.Settings,
-                        state.Position,
-                        state.Timestamp
+                        state.Settings
                     ),
                     static (_, existing, state) => existing with {
                         Revision  = state.Revision,
                         Settings  = state.Settings,
-                        Position  = state.Position,
-                        Timestamp = state.Timestamp
                     },
                     (
                         Revision: evt.Revision,
@@ -121,219 +112,30 @@ public class ConnectorsCoordinator : ControlPlaneProcessingModule {
                     )
                 );
 
-                if (NodeInstance.IsNotLeader) {
-                    ctx.Logger.LogTrace(
-                        "{NodeInstanceId} {State} not a leader, ignoring {MessageName}",
-                        NodeInstance.InstanceId, NodeInstance.MemberInfo.State, nameof(ManagementContracts.ConnectorActivating)
-                    );
-                    return;
-                }
-
-                Diagnostics.Publish(evt);
-
-                // *******************************
-                // * trigger rebalance
-                // *******************************
-                State.SetNewAssignment(
-                    getConnectorAssignor(StickyWithAffinity).Assign(
-                        State.CurrentTopology,
-                        State.Connectors.Values.Select(x => x.Resource),
-                        State.CurrentAssignment
-                    )
+                await activator.Activate(
+                    new ControlPlaneContracts.Activation.ActivateConnectors {
+                        ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
+                        NodeId       = NodeInstance.InstanceId.ToString(),
+                        Connectors   = { State.Connectors[connectorId].MapToConnector() }
+                    }
                 );
-
-                Diagnostics.Publish("NewConnectorsAssignment", new {
-                    NodeInstanceId   = NodeInstance.InstanceId,
-                    Assignment       = State.CurrentAssignment,
-                    PendingTransfers = State.PendingTransfers,
-                    Timestamp        = DateTimeOffset.UtcNow
-                });
-
-                //TODO SS: Double check if the only possible newly assigned connectors are the single one being activated
-                // request activation of all newly assigned connectors
-                var activationRequests = State.PendingTransfers
-                    .GetNewlyAssignedConnectorsByCluster()
-                    .Select(x => new ControlPlaneContracts.Activation.ActivateConnectors {
-                        ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
-                        NodeId       = x.Key,
-                        Connectors   = { x.Value.Select(cid => State.Connectors[cid].MapToConnector()) }
-                    });
-
-                activationRequests.ForEach(ctx.Output);
-
-                // request deactivation of all revoked connectors
-                var deactivationRequests = State.PendingTransfers
-                    .GetRevokedConnectorsByCluster()
-                    .Select(x => new ControlPlaneContracts.Activation.DeactivateConnectors {
-                        ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
-                        NodeId       = x.Key,
-                        Connectors   = { x.Value.Select(cid => State.Connectors[cid].MapToConnector()) }
-                    });
-
-                deactivationRequests.ForEach(ctx.Output);
             }
         );
 
-        Process<ManagementContracts.ConnectorDeactivating>(
+        ProcessOnLeaderNode<ManagementContracts.ConnectorDeactivating>(
             async (evt, ctx) => {
                 ConnectorId connectorId = evt.ConnectorId;
-
-                if (NodeInstance.IsLeader && State.Rebalancing) {
-                    // TODO SS: How to handle connector activation requests while rebalancing?
-                }
 
                 // *******************************
                 // * update state
                 // *******************************
                 State.Connectors.Remove(connectorId, out _);
 
-                if (NodeInstance.IsNotLeader) {
-                    ctx.Logger.LogTrace(
-                        "{NodeInstanceId} {State} not a leader, ignoring {MessageName}",
-                        NodeInstance.InstanceId, NodeInstance.MemberInfo.State, nameof(ManagementContracts.ConnectorDeactivating)
-                    );
-                    return;
-                }
-
-                Diagnostics.Publish(evt);
-
-                // *******************************
-                // * trigger rebalance
-                // *******************************
-                State.SetNewAssignment(
-                    getConnectorAssignor(StickyWithAffinity).Assign(
-                        State.CurrentTopology,
-                        State.Connectors.Values.Select(x => x.Resource),
-                        State.CurrentAssignment
-                    )
-                );
-
-                Diagnostics.Publish("NewConnectorsAssignment", new {
-                    NodeInstanceId   = NodeInstance.InstanceId,
-                    Assignment       = State.CurrentAssignment,
-                    PendingTransfers = State.PendingTransfers,
-                    Timestamp        = DateTimeOffset.UtcNow
+                await activator.Deactivate(new ControlPlaneContracts.Activation.DeactivateConnectors {
+                    ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
+                    NodeId       = NodeInstance.InstanceId.ToString(),
+                    Connectors   = { State.Connectors[connectorId].MapToConnector() }
                 });
-
-                // request deactivation of all revoked connectors
-                var deactivationRequests = State.PendingTransfers
-                    .GetRevokedConnectorsByCluster()
-                    .Select(x => new ControlPlaneContracts.Activation.DeactivateConnectors {
-                        ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
-                        NodeId     = x.Key,
-                        Connectors = { x.Value.Select(cid => State.Connectors[cid].MapToConnector()) }
-                    });
-
-                deactivationRequests.ForEach(ctx.Output);
-            }
-        );
-
-        ProcessOnLeaderNode<ControlPlaneContracts.Activation.ConnectorsDeactivated>(
-            async (evt, ctx) => {
-                Diagnostics.Publish(evt);
-
-                var deactivatedConnectors  = evt.Connectors.ToConnectorIds();
-                var assignedNodesByCluster = State.PendingTransfers.GetAssignedNodesByCluster(deactivatedConnectors);
-
-                //  log connectors that are permanently deactivated
-                if (assignedNodesByCluster.TryGetValue(ClusterNodeId.None, out var deadConnectors)) {
-                    State.PendingTransfers.Complete(deadConnectors.ToArray());
-
-                    ctx.Logger.LogDebug(
-                        "({Count}) connectors permanently deactivated on node {NodeId}: {Connectors}",
-                        deadConnectors.Count, evt.NodeId, deadConnectors
-                    );
-                }
-
-                // continue with the rebalance by requesting activation of all connectors that are being reassigned
-                foreach (var (nodeId, connectors) in assignedNodesByCluster.Where(x => x.Key != ClusterNodeId.None)) {
-                    ctx.Logger.LogDebug(
-                        "({Count}) connectors deactivated on node {NodeId} and awaiting activation: {Connectors}",
-                        connectors.Count, evt.NodeId, connectors.Select(x => $"{x} >> {nodeId} node")
-                    );
-
-                    ctx.Output(new ControlPlaneContracts.Activation.ActivateConnectors {
-                        ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
-                        NodeId     = nodeId,
-                        Connectors = { connectors.Select(cid => State.Connectors[cid].MapToConnector()) }
-                    });
-                }
-            }
-        );
-
-        ProcessOnLeaderNode<ControlPlaneContracts.Activation.ConnectorsActivated>(
-            async (evt, ctx) => {
-                Diagnostics.Publish(evt);
-
-                var connectors = evt.Connectors.ToConnectorIds();
-                var transfers  = State.PendingTransfers.Complete(connectors);
-
-                ctx.Logger.LogDebug(
-                    "({Count}) connectors activated on node {NodeId}: {Connectors}",
-                    transfers.Count, evt.NodeId, connectors
-                );
-            }
-        );
-
-        Process<ControlPlaneContracts.Coordination.RebalanceConnectors>(
-            async (cmd, ctx) => {
-                if (!NodeInstance.IsLeader) {
-                    ctx.Logger.LogTrace(
-                        "{NodeInstanceId} {State} not a leader, ignoring {MessageName}",
-                        NodeInstance.InstanceId,
-                        NodeInstance.MemberInfo.State,
-                        nameof(GossipUpdatedInMemory)
-                    );
-
-                    return;
-                }
-
-                // *******************************
-                // * trigger rebalance
-                // *******************************
-                State.SetNewAssignment(
-                    getConnectorAssignor(StickyWithAffinity).Assign(
-                        State.CurrentTopology,
-                        State.Connectors.Values.Select(x => x.Resource),
-                        State.CurrentAssignment
-                    )
-                );
-
-                Diagnostics.Publish(
-                    "NewConnectorsAssignment",
-                    new {
-                        NodeInstanceId   = NodeInstance.InstanceId,
-                        Assignment       = State.CurrentAssignment,
-                        PendingTransfers = State.PendingTransfers,
-                        Timestamp        = DateTimeOffset.UtcNow
-                    }
-                );
-
-                // request activation of all newly assigned connectors
-                var activationRequests = State.PendingTransfers
-                    .GetNewlyAssignedConnectorsByCluster()
-                    .Select(
-                        x => new ControlPlaneContracts.Activation.ActivateConnectors {
-                            ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
-                            NodeId       = x.Key,
-                            Connectors   = { x.Value.Select(cid => State.Connectors[cid].MapToConnector()) }
-                        }
-                    );
-
-                activationRequests.ForEach(ctx.Output);
-
-                // request deactivation of all revoked connectors, regardless of the fact that they might be reassigned
-                var deactivationRequests = State.PendingTransfers
-                    .GetRevokedConnectorsByCluster()
-                    .Select(
-                        x => new ControlPlaneContracts.Activation.DeactivateConnectors {
-                            ActivationId = State.CurrentAssignment.AssignmentId.ToString(),
-                            NodeId       = x.Key,
-                            Connectors   = { x.Value.Select(cid => State.Connectors[cid].MapToConnector()) }
-                        }
-                    );
-
-                deactivationRequests.ForEach(ctx.Output);
             }
         );
     }

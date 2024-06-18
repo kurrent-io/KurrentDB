@@ -25,7 +25,7 @@ public static class ControlPlaneWireUp {
             }
         );
 
-        services.AddConnectorsControlPlaneActivation();
+        // services.AddConnectorsControlPlaneActivation();
         services.AddConnectorsCoordination();
     }
 }

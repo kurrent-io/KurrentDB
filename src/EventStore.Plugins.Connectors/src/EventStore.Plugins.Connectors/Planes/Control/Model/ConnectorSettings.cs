@@ -1,8 +1,8 @@
 namespace EventStore.Connectors.Control;
 
 public class ConnectorSettings(IDictionary<string, string?> settings) : Dictionary<string, string?>(settings) {
-    public ClusterNodeState NodeAffinity {
-        get => TryGetValue("Subscription:NodeAffinity", out var value)
+    public ClusterNodeState NodeAffinity =>
+        TryGetValue("Subscription:NodeAffinity", out var value)
             ? value switch {
                 "Leader"          => ClusterNodeState.Leader,
                 "Follower"        => ClusterNodeState.Follower,
@@ -10,5 +10,4 @@ public class ConnectorSettings(IDictionary<string, string?> settings) : Dictiona
                 _                 => ClusterNodeState.Unmapped
             }
             : ClusterNodeState.Unmapped;
-    }
 }

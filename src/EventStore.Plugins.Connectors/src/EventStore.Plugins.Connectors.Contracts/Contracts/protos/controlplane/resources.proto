@@ -3,6 +3,7 @@ syntax = "proto3";
 package eventstore.connectors;
 
 import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
 
 option csharp_namespace = "EventStore.Connectors.Control.Contracts";
 
@@ -30,4 +31,10 @@ message NodeAssignment {
   repeated Connector assigned   = 2;
   repeated Connector stationary = 3;
   repeated Connector revoked    = 4;
+}
+
+message RegisteredConnectors {
+  repeated Connector        connectors   = 1;
+  uint64                    log_position = 2;
+  google.protobuf.Timestamp updated_at   = 3;
 }

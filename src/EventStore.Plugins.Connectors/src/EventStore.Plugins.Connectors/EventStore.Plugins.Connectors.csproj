@@ -1,64 +1,107 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<RootNamespace>EventStore.Connectors</RootNamespace>
-		<IsPackable>true</IsPackable>
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>true</ImplicitUsings>
+        <LangVersion>preview</LangVersion>
+        <IsPackable>true</IsPackable>
+        <InvariantGlobalization>true</InvariantGlobalization>
 
-<!--		<IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>-->
-<!--		<GenerateDocumentationFile>true</GenerateDocumentationFile>-->
-		<NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655</NoWarn>
-		
-		<Description>EventStore IO Connectors</Description>
-		<PackageId>EventStore.Plugins.Connectors</PackageId>
-		<PackageIcon>ouro.png</PackageIcon>
-		<PackageProjectUrl>https://github.com/EventStore/EventStore.Plugins.Connectors</PackageProjectUrl>
-		<PackageTags>eventstore streaming connectors experimental</PackageTags>
+        <RootNamespace>EventStore.Connectors</RootNamespace>
 
-		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
-		<IncludeSymbols>true</IncludeSymbols>
-		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-		<EmbedAllSources>true</EmbedAllSources>
-		<EmbedUntrackedSources>true</EmbedUntrackedSources>
-		<DebugType>full</DebugType>
+        <NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655</NoWarn>
 
-		<UpdateVersionProperties>true</UpdateVersionProperties>
-		<MinVerTagPrefix>v</MinVerTagPrefix>
-		<MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
-	</PropertyGroup>
+        <Description>EventStore Connectors</Description>
+        <PackageId>EventStore.Plugins.Connectors</PackageId>
+        <PackageIcon>ouro.png</PackageIcon>
+        <PackageProjectUrl>https://github.com/EventStore/EventStore.Plugins.Connectors</PackageProjectUrl>
+        <PackageTags>eventstore streaming connectors experimental</PackageTags>
 
-	<ItemGroup>
-		<!--		<PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.22" />-->
-		<PackageReference Include="Eventuous.Application" Version="0.15.0-beta.10" />
-		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-beta.10" />
-		<PackageReference Include="Humanizer.Core" Version="2.14.1" />
-	</ItemGroup>
+        <!--		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>-->
+        <!--		<IncludeSymbols>true</IncludeSymbols>-->
+        <!--		<SymbolPackageFormat>snupkg</SymbolPackageFormat>-->
+        <!--		<EmbedAllSources>true</EmbedAllSources>-->
+        <!--		<EmbedUntrackedSources>true</EmbedUntrackedSources>-->
+        <!--		<DebugType>full</DebugType>-->
 
-	<ItemGroup>
-		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj" />
-		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />
-		<ProjectReference Include="..\EventStore.Plugins.Connectors.Contracts\EventStore.Plugins.Connectors.Contracts.csproj" />
-	</ItemGroup>
-	
-	<ItemGroup>
-		<InternalsVisibleTo Include="EventStore.Plugins.Connectors.Tests" />
-	</ItemGroup>
-	
-	<ItemGroup>
-	  <None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
-	</ItemGroup>
+        <!--		<UpdateVersionProperties>true</UpdateVersionProperties>-->
+        <!--		<MinVerTagPrefix>v</MinVerTagPrefix>-->
+        <!--		<MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>-->
+    </PropertyGroup>
 
-<!--	<Target Name="PostBuild" AfterTargets="PostBuildEvent">-->
-<!--		<ItemGroup>-->
-<!--			<MySourceFiles Include="$(OutDir)\*.Plugins.Connectors.*" />-->
-<!--		</ItemGroup>-->
-<!--		<Copy SourceFiles="@(MySourceFiles)" DestinationFolder="..\..\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)" />-->
-<!--	</Target>-->
+    <PropertyGroup>
+        <OutputType>library</OutputType>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+<!--        <AssemblyVersion>1.0.0.1</AssemblyVersion>-->
+    </PropertyGroup>
 
-<!--	<Target Name="PublishPlugin" AfterTargets="Publish">-->
-<!--		<ItemGroup>-->
-<!--			<PluginOutputFiles Include="$(PublishDir)\EventStore.TcpPlugin.deps.json" />-->
-<!--			<PluginOutputFiles Include="$(PublishDir)\EventStore.TcpPlugin.dll" />-->
-<!--		</ItemGroup>-->
-<!--		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)/package" />-->
-<!--	</Target>-->
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj"/>
+
+        <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
+<!--            <Private>false</Private>-->
+<!--            <ExcludeAssets>all</ExcludeAssets>-->
+        </ProjectReference>
+
+        <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>all</ExcludeAssets>
+        </ProjectReference>
+
+        <ProjectReference Include="..\EventStore.Plugins.Connectors.Contracts\EventStore.Plugins.Connectors.Contracts.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DotNext.Threading" Version="5.5.0" />
+        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha4">
+            <Private>false</Private>
+            <IncludeAssets>compile</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Eventuous.Application" Version="0.15.0-beta.10"/>
+        <PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-beta.10" />
+        <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-beta.10"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="EventStore.Plugins.Connectors.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="EventStore.Plugins.Connectors.csproj.DotSettings"/>
+        <None Remove="Planes\Control\Leases\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Planes\Control\Leases\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Planes\Control\Leases\**" />
+    </ItemGroup>
+
+        <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+            <ItemGroup>
+    <!--            <MySourceFiles Include="$(OutDir)\EventStore.Plugins.Connectors.*" />-->
+    <!--            <MySourceFiles Include="$(OutDir)\EventStore.Streaming.*" />-->
+                <MySourceFiles Include="$(OutDir)\*.*" />
+            </ItemGroup>
+            <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="..\..\submodules\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)" />
+        </Target>
+
+    <!--	<Target Name="PublishPlugin" AfterTargets="Publish">-->
+    <!--		<ItemGroup>-->
+    <!--            <PluginOutputFiles Include="$(PublishDir)\*.*" />-->
+    <!--&lt;!&ndash;			<PluginOutputFiles Include="$(PublishDir)\EventStore.Plugins.Connectors.deps.json" />&ndash;&gt;-->
+    <!--&lt;!&ndash;			<PluginOutputFiles Include="$(PublishDir)\EventStore.Plugins.Connectors.dll" />&ndash;&gt;-->
+    <!--&lt;!&ndash;            <PluginOutputFiles Include="$(PublishDir)\EventStore.Plugins.Connectors.Contracts.dll" />&ndash;&gt;-->
+    <!--&lt;!&ndash;            <PluginOutputFiles Include="$(PublishDir)\EventStore.Streaming.Core.dll" />&ndash;&gt;-->
+    <!--		</ItemGroup>-->
+    <!--		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)/package" />-->
+    <!--	</Target>-->
 </Project>

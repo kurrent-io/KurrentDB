@@ -22,8 +22,7 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
                     var result = await validateSettings(cmd.InstanceType, cmd.Settings.ToDictionary(), ct);
 
                     if (!result.Valid)
-                        ConnectorDomainExceptions.InvalidConnectorSettings
-                            .Throw(cmd.ConnectorId, result.InvalidSettings);
+                        ConnectorDomainExceptions.InvalidConnectorSettings.Throw(cmd.ConnectorId, result.InvalidSettings);
 
                     var now = time.GetUtcNow().ToTimestamp();
 
@@ -232,12 +231,12 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
 
         static void EnsureConnectorStopped(ConnectorEntity connector) {
             if (connector.State is not (ConnectorState.Stopped or ConnectorState.Failed))
-                throw new DomainException($"Connector {connector.ConnectorId} must be stopped");
+                throw new DomainException($"Connector {connector.ConnectorId} must be stopped. Current state: {connector.State}");
         }
 
         static void EnsureConnectorRunning(ConnectorEntity connector) {
             if (connector.State is not (ConnectorState.Running or ConnectorState.Activating))
-                throw new DomainException($"Connector {connector.ConnectorId} must be running");
+                throw new DomainException($"Connector {connector.ConnectorId} must be running. Current state: {connector.State}");
         }
     }
 }

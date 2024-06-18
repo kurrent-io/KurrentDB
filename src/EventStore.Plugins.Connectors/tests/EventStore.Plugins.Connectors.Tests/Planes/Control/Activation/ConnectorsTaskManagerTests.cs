@@ -54,9 +54,7 @@ public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fi
         var connector = new RegisteredConnector(
             ConnectorId: ConnectorId.From(Guid.NewGuid()),
             Revision: 1,
-            Settings: new(new Dictionary<string, string?>()),
-            Position: LogPosition.Latest,
-            Timestamp: DateTimeOffset.UtcNow
+            Settings: new(new Dictionary<string, string?>())
         );
 
         var expectedResult = new ConnectorProcessInfo(
@@ -80,9 +78,7 @@ public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fi
         var connector = new RegisteredConnector(
             ConnectorId: ConnectorId.From(Guid.NewGuid()),
             Revision: 1,
-            Settings: new(new Dictionary<string, string?>()),
-            Position: LogPosition.Latest,
-            Timestamp: DateTimeOffset.UtcNow
+            Settings: new(new Dictionary<string, string?>())
         );
 
         var expectedResult = new ConnectorProcessInfo(
@@ -108,9 +104,7 @@ public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fi
         var connector = new RegisteredConnector(
             ConnectorId: ConnectorId.From(Guid.NewGuid()),
             Revision: 1,
-            Settings: new(new Dictionary<string, string?>()),
-            Position: LogPosition.Latest,
-            Timestamp: DateTimeOffset.UtcNow
+            Settings: new(new Dictionary<string, string?>())
         );
 
         var expectedResult = new ConnectorProcessInfo(
@@ -140,9 +134,7 @@ public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fi
         var connector = new RegisteredConnector(
             ConnectorId: ConnectorId.From(Guid.NewGuid()),
             Revision: 1,
-            Settings: new(new Dictionary<string, string?>()),
-            Position: LogPosition.Latest,
-            Timestamp: DateTimeOffset.UtcNow
+            Settings: new(new Dictionary<string, string?>())
         );
 
         var expectedResult = new ConnectorProcessInfo(
@@ -151,8 +143,9 @@ public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fi
             ProcessorState.Running
         );
 
-        await using var                   testProcessor = new TestProcessor();
-        await using ConnectorsTaskManager sut           = new((_, _) => testProcessor);
+        await using var testProcessor = new TestProcessor();
+
+        await using ConnectorsTaskManager sut = new((_, _) => testProcessor);
 
         await sut.StartProcess(connector.ConnectorId, connector.Revision, connector.Settings);
 
