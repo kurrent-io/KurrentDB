@@ -14,7 +14,7 @@ public partial class StreamingFixture : ClusterVNodeFixture {
         SchemaSerializer = SchemaRegistry;
 
         Producer = SystemProducer.Builder
-            .ProducerName("streaming-test-producer")
+            .ProducerId("streaming-test-producer")
             .Publisher(Publisher)
             .SchemaRegistry(SchemaRegistry)
             //.LoggerFactory(LoggerFactory)
@@ -27,7 +27,7 @@ public partial class StreamingFixture : ClusterVNodeFixture {
     public IProducer         Producer         { get; }
 }
 
-// public abstract class StreamingTests(ITestOutputHelper output, StreamingFixture fixture) 
+// public abstract class StreamingTests(ITestOutputHelper output, StreamingFixture fixture)
 // 	: ClusterVNodeTests<StreamingFixture>(output, fixture);
 
 public abstract class StreamingTests<TFixture> : IClassFixture<TFixture> where TFixture : StreamingFixture {

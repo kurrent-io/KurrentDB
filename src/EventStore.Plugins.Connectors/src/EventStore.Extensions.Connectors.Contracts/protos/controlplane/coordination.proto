@@ -1,0 +1,49 @@
+//syntax = "proto3";
+//
+//package eventstore.connectors;
+//
+//import "google/protobuf/wrappers.proto";
+//import "google/protobuf/timestamp.proto";
+//import "controlplane/resources.proto";
+//
+//option csharp_namespace = "EventStore.Connectors.Control.Contracts.Coordination";
+//
+//message RebalanceConnectors {
+//  RebalancingTrigger        trigger       = 5;
+//  google.protobuf.Timestamp requested_by  = 10;
+//  google.protobuf.Timestamp requested_at  = 11;
+//}
+//
+//message RebalancingInitiated {
+//  string                    activation_id = 1;
+//  repeated ClusterNode      nodes         = 2;
+//  repeated Connector        connectors    = 3;
+//  repeated NodeAssignment   assignment    = 4;
+//  RebalancingTrigger        trigger       = 5;
+//  google.protobuf.Timestamp initiated_by  = 10;
+//  google.protobuf.Timestamp initiated_at  = 11;
+//}
+//
+//message RebalancingComplete {
+//  string                    activation_id = 1;
+//  repeated ClusterNode      nodes         = 2;
+//  repeated Connector        connectors    = 3;
+//  repeated NodeAssignment   assignment    = 4;
+//  RebalancingTrigger        trigger       = 5;
+//  string                    completed_by  = 10;
+//  google.protobuf.Timestamp completed_at  = 11;
+//}
+//
+//message ConnectorsAssignment {
+//  string                    activation_id = 1;
+//  repeated NodeAssignment   assignment    = 2;
+//  RebalancingTrigger        trigger       = 3;
+//  string                    completed_by  = 10;
+//  google.protobuf.Timestamp completed_at  = 11;
+//}
+//
+//enum RebalancingTrigger {
+//  REBALANCING_TRIGGER_UNDEFINED        = 0;
+//  REBALANCING_TRIGGER_TOPOLOGY_CHANGED = 1;
+//  REBALANCING_TRIGGER_USER_REQUEST     = 2;
+//}

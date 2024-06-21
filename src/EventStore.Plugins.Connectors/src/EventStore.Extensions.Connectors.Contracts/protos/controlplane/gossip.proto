@@ -1,0 +1,13 @@
+//syntax = "proto3";
+//
+//package eventstore.connectors;
+//
+//import "google/protobuf/timestamp.proto";
+//import "controlplane/resources.proto";
+//
+//option csharp_namespace = "EventStore.Connectors.Control.Contracts.Gossip";
+//
+//message ClusterTopologyChanged {
+//  repeated ClusterNode      nodes      = 1;
+//  google.protobuf.Timestamp changed_at = 2;
+//}

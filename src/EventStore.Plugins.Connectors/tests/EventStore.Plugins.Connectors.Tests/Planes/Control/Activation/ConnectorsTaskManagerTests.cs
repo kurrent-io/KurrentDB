@@ -1,52 +1,37 @@
 // ReSharper disable AccessToDisposedClosure
 
-using EventStore.Connectors.Control;
+using EventStore.Connect.Connectors;
 using EventStore.Connectors.Control.Activation;
 using EventStore.Connectors.Control.Coordination;
-using EventStore.Streaming;
-using EventStore.Streaming.Connectors;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Processors;
-using EventStore.Streaming.Routing;
 using EventStore.Testing.Fixtures;
+using Microsoft.Extensions.Configuration;
 using static EventStore.Connectors.Control.Activation.ConnectorsTaskManager;
 
 namespace EventStore.Plugins.Connectors.Tests.Control.Activation;
 
-class TestProcessor : IProcessor {
-    public string                            ProcessorId      { get; } = "test-processor-id";
-    public string                            ProcessorName    { get; } = "test-processor-name";
-    public string                            SubscriptionName { get; } = "test-processor-subscription-name";
-    public string[]                          Streams          { get; } = [];
-    public ConsumeFilter                     Filter           { get; } = ConsumeFilter.None;
-    public IReadOnlyCollection<EndpointInfo> Endpoints        { get; } = [];
-    public Type                              ProcessorType    { get; } = typeof(TestProcessor);
+class TestConnector : IConnector {
+    public ConnectorId ConnectorId => "test-connector-id";
 
-    public ProcessorState State   { get; private set; } = ProcessorState.Unspecified;
-    public Task           Stopped { get; private set; } = Task.CompletedTask;
+    public ConnectorState State { get; private set; } = ConnectorState.Unspecified;
 
-    public Task Activate(CancellationToken stoppingToken) {
-        State = ProcessorState.Running;
+    public Task Connect(CancellationToken stoppingToken) {
+        State = ConnectorState.Running;
         return Task.CompletedTask;
     }
 
-    public Task Suspend() => throw new NotImplementedException();
-
-    public Task Resume() => throw new NotImplementedException();
-
-    public Task Deactivate() {
-        State = ProcessorState.Stopped;
+    public Task Disconnect() {
+        State = ConnectorState.Stopped;
         return Task.CompletedTask;
     }
 
-    public async ValueTask DisposeAsync() => await Deactivate();
+    public async ValueTask DisposeAsync() => await Disconnect();
 
 
-    public void OverrideState(ProcessorState state) => State = state;
+    public void OverrideState(ConnectorState state) => State = state;
 }
 
 public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fixture) : FastTests(output, fixture) {
-    static readonly CreateConnectorInstance CreateTestConnector = (_, _) => new TestProcessor();
+    static readonly CreateConnector CreateTestConnector = (_, _) => new TestConnector();
 
 	[Fact]
 	public async Task starts_process() {
@@ -60,13 +45,13 @@ public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fi
         var expectedResult = new ConnectorProcessInfo(
             connector.ConnectorId,
             connector.Revision,
-            ProcessorState.Running
+            ConnectorState.Running
         );
 
         await using ConnectorsTaskManager sut = new(CreateTestConnector);
 
         // Act
-        var result = await sut.StartProcess(connector.ConnectorId, connector.Revision, connector.Settings);
+        var result = await sut.StartProcess(connector.ConnectorId, connector.Revision, new ConfigurationManager().AddInMemoryCollection(connector.Settings).Build());
 
         // Assert
         result.Should().BeEquivalentTo(expectedResult);
@@ -84,12 +69,12 @@ public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fi
         var expectedResult = new ConnectorProcessInfo(
             connector.ConnectorId,
             connector.Revision,
-            ProcessorState.Stopped
+            ConnectorState.Stopped
         );
 
         await using ConnectorsTaskManager sut = new(CreateTestConnector);
 
-        await sut.StartProcess(connector.ConnectorId, connector.Revision, connector.Settings);
+        await sut.StartProcess(connector.ConnectorId, connector.Revision, new ConfigurationManager().AddInMemoryCollection(connector.Settings).Build());
 
         // Act
         var result = await sut.StopProcess(connector.ConnectorId);
@@ -110,26 +95,25 @@ public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fi
         var expectedResult = new ConnectorProcessInfo(
             connector.ConnectorId,
             connector.Revision,
-            ProcessorState.Running
+            ConnectorState.Running
         );
 
         await using ConnectorsTaskManager sut = new(CreateTestConnector);
 
-        await sut.StartProcess(connector.ConnectorId, connector.Revision, connector.Settings);
+        await sut.StartProcess(connector.ConnectorId, connector.Revision, new ConfigurationManager().AddInMemoryCollection(connector.Settings).Build());
 
         // Act
-        var result = await sut.StartProcess(connector.ConnectorId, connector.Revision, connector.Settings);
+        var result = await sut.StartProcess(connector.ConnectorId, connector.Revision, new ConfigurationManager().AddInMemoryCollection(connector.Settings).Build());
 
         // Assert
         result.Should().BeEquivalentTo(expectedResult);
     }
 
     [Theory]
-    [InlineData(ProcessorState.Unspecified)]  // should not be possible
-    [InlineData(ProcessorState.Suspended)]    // must resume
-    [InlineData(ProcessorState.Deactivating)] // must wait
-    [InlineData(ProcessorState.Stopped)]
-    public async Task restarts_process_if_not_running(ProcessorState stateOverride) {
+    [InlineData(ConnectorState.Unspecified)]  // should not be possible
+    [InlineData(ConnectorState.Deactivating)] // must wait
+    [InlineData(ConnectorState.Stopped)]
+    public async Task restarts_process_if_not_running(ConnectorState stateOverride) {
         // Arrange
         var connector = new RegisteredConnector(
             ConnectorId: ConnectorId.From(Guid.NewGuid()),
@@ -140,20 +124,20 @@ public class ConnectorsTaskManagerTests(ITestOutputHelper output, FastFixture fi
         var expectedResult = new ConnectorProcessInfo(
             connector.ConnectorId,
             connector.Revision + 1,
-            ProcessorState.Running
+            ConnectorState.Running
         );
 
-        await using var testProcessor = new TestProcessor();
+        await using var testProcessor = new TestConnector();
 
         await using ConnectorsTaskManager sut = new((_, _) => testProcessor);
 
-        await sut.StartProcess(connector.ConnectorId, connector.Revision, connector.Settings);
+        await sut.StartProcess(connector.ConnectorId, connector.Revision, new ConfigurationManager().AddInMemoryCollection(connector.Settings).Build());
 
 
         testProcessor.OverrideState(stateOverride);
 
         // Act
-        var result = await sut.StartProcess(connector.ConnectorId, connector.Revision + 1, connector.Settings);
+        var result = await sut.StartProcess(connector.ConnectorId, connector.Revision + 1, new ConfigurationManager().AddInMemoryCollection(connector.Settings).Build());
 
         // Assert
         result.Should().BeEquivalentTo(expectedResult);

@@ -34,7 +34,7 @@
         <OutputType>library</OutputType>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-<!--        <AssemblyVersion>1.0.0.1</AssemblyVersion>-->
+        <!--        <AssemblyVersion>1.0.0.1</AssemblyVersion>-->
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
@@ -42,29 +42,28 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj"/>
-
+        <ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj"/>
+        
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
-<!--            <Private>false</Private>-->
-<!--            <ExcludeAssets>all</ExcludeAssets>-->
+            <Private>false</Private>
+            <ExcludeAssets>all</ExcludeAssets>
         </ProjectReference>
 
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj">
             <Private>false</Private>
             <ExcludeAssets>all</ExcludeAssets>
         </ProjectReference>
-
-        <ProjectReference Include="..\EventStore.Plugins.Connectors.Contracts\EventStore.Plugins.Connectors.Contracts.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DotNext.Threading" Version="5.5.0" />
-        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha4">
-            <Private>false</Private>
-            <IncludeAssets>compile</IncludeAssets>
-        </PackageReference>
+        <PackageReference Include="DotNext.Threading" Version="5.5.0"/>
+        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9"/>
+        <!--        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha4">-->
+        <!--            <Private>false</Private>-->
+        <!--            <IncludeAssets>compile</IncludeAssets>-->
+        <!--        </PackageReference>-->
         <PackageReference Include="Eventuous.Application" Version="0.15.0-beta.10"/>
-        <PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-beta.10" />
+        <PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-beta.10"/>
         <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-beta.10"/>
     </ItemGroup>
 
@@ -74,25 +73,25 @@
 
     <ItemGroup>
         <None Remove="EventStore.Plugins.Connectors.csproj.DotSettings"/>
-        <None Remove="Planes\Control\Leases\**" />
+        <None Remove="Planes\Control\Leases\**"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="Planes\Control\Leases\**" />
+        <Compile Remove="Planes\Control\Leases\**"/>
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Remove="Planes\Control\Leases\**" />
+        <EmbeddedResource Remove="Planes\Control\Leases\**"/>
     </ItemGroup>
 
-        <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-            <ItemGroup>
-    <!--            <MySourceFiles Include="$(OutDir)\EventStore.Plugins.Connectors.*" />-->
-    <!--            <MySourceFiles Include="$(OutDir)\EventStore.Streaming.*" />-->
-                <MySourceFiles Include="$(OutDir)\*.*" />
-            </ItemGroup>
-            <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="..\..\submodules\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)" />
-        </Target>
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <ItemGroup>
+            <!--            <MySourceFiles Include="$(OutDir)\EventStore.Plugins.Connectors.*" />-->
+            <!--            <MySourceFiles Include="$(OutDir)\EventStore.Streaming.*" />-->
+            <MySourceFiles Include="$(OutDir)\*.*"/>
+        </ItemGroup>
+        <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="..\..\submodules\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)"/>
+    </Target>
 
     <!--	<Target Name="PublishPlugin" AfterTargets="Publish">-->
     <!--		<ItemGroup>-->

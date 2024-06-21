@@ -8,7 +8,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Plugins.Connecto
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SubModules", "SubModules", "{B4DAA225-6158-4BB6-9426-242032A94EA7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Plugins.Connectors.Contracts", "src\EventStore.Plugins.Connectors.Contracts\EventStore.Plugins.Connectors.Contracts.csproj", "{B47150EA-CCB0-420B-8B14-32764A3A505C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors.Contracts", "src\EventStore.Extensions.Connectors.Contracts\EventStore.Extensions.Connectors.Contracts.csproj", "{B47150EA-CCB0-420B-8B14-32764A3A505C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Plugins.Connectors", "src\EventStore.Plugins.Connectors\EventStore.Plugins.Connectors.csproj", "{CC2602A2-26ED-41B6-8D5B-FF65EE6C672C}"
 EndProject
@@ -69,6 +69,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcServiceAOT", "src\GrpcServiceAOT\GrpcServiceAOT.csproj", "{5F8AFE86-AD05-4318-A21F-F66C1B73D00C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApplicationNormal", "src\WebApplicationNormal\WebApplicationNormal.csproj", "{4FECA43B-9110-46FA-AA4E-D0EB85F1661F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors", "src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj", "{157A55A0-AE97-40F9-9A38-8A756C4B4785}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -196,6 +198,10 @@ Global
 		{4FECA43B-9110-46FA-AA4E-D0EB85F1661F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4FECA43B-9110-46FA-AA4E-D0EB85F1661F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4FECA43B-9110-46FA-AA4E-D0EB85F1661F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{157A55A0-AE97-40F9-9A38-8A756C4B4785}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{157A55A0-AE97-40F9-9A38-8A756C4B4785}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{157A55A0-AE97-40F9-9A38-8A756C4B4785}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{157A55A0-AE97-40F9-9A38-8A756C4B4785}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1FFE9B22-1994-47B1-814E-7DCB8E838D10} = {B4DAA225-6158-4BB6-9426-242032A94EA7}

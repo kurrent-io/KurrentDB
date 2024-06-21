@@ -33,7 +33,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha4">
+        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9">
             <Private>false</Private>
             <IncludeAssets>compile</IncludeAssets>
         </PackageReference>

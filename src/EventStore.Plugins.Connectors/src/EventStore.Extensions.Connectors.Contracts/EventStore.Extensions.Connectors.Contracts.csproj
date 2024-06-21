@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <RootNamespace>EventStore.Connectors.Contracts</RootNamespace>
+        <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.6"/>
+        <PackageReference Include="Grpc.Tools" Version="2.64.0" PrivateAssets="All"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Protobuf
+                ProtoRoot="protos"
+                Include="protos/protocol.proto"
+                Link="protos\%(RecursiveDir)/%(FileName)%(Extension)"
+                GrpcServices="None"
+        />
+
+        <Protobuf
+                ProtoRoot="protos"
+                Include="protos/controlplane/**/*.proto"
+                Link="protos\controlplane\%(RecursiveDir)/%(FileName)%(Extension)"
+                GrpcServices="None"
+        />
+
+        <Protobuf
+                ProtoRoot="protos"
+                Include="protos/managementplane/**/*.proto"
+                Link="protos\managementplane\%(RecursiveDir)/%(FileName)%(Extension)"
+                GrpcServices="Server"
+        />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="Contracts\"/>
+    </ItemGroup>
+</Project>
