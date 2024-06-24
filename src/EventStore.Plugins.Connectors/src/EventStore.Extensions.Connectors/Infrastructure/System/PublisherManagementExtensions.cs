@@ -73,6 +73,10 @@ public static class PublisherManagementExtensions {
 		this IPublisher publisher, string stream, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
 		publisher.DeleteStream(stream, expectedRevision, false, cancellationToken);
 
+    public static Task<(Position Position, StreamRevision Revision)> SoftDeleteStream(
+        this IPublisher publisher, string stream, CancellationToken cancellationToken = default) =>
+        publisher.DeleteStream(stream, -2, false, cancellationToken);
+
 	public static Task<(Position Position, StreamRevision Revision)> HardDeleteStream(
 		this IPublisher publisher, string stream, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
 		publisher.DeleteStream(stream, expectedRevision, true, cancellationToken);
