@@ -3,7 +3,7 @@ using EventStore.Streaming;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Schema;
 
-namespace EventStore.Plugins.Connectors.Tests;
+namespace EventStore.Extensions.Connectors.Tests;
 
 public partial class StreamingFixture {
 	public string NewStreamId([CallerMemberName] string? name = null) => 

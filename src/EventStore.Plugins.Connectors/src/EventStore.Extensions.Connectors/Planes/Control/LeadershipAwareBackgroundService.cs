@@ -7,10 +7,14 @@ using Timeout = System.Threading.Timeout;
 namespace EventStore.Connectors.Control;
 
 public sealed class LeadershipAwareBackgroundService : BackgroundService {
-    public LeadershipAwareBackgroundService(INodeLifetimeService nodeLifetime, Func<CancellationToken, Task> action, ILoggerFactory? loggerFactory = null) {
+    public LeadershipAwareBackgroundService(
+        INodeLifetimeService nodeLifetime,
+        Func<CancellationToken, Task> action,
+        ILogger<LeadershipAwareBackgroundService>? logger = null
+    ) {
         NodeLifetime = nodeLifetime;
         Action       = action;
-        Logger       = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<LeadershipAwareBackgroundService>();
+        Logger       = logger ?? NullLoggerFactory.Instance.CreateLogger<LeadershipAwareBackgroundService>();
     }
 
     INodeLifetimeService          NodeLifetime { get; }
@@ -27,7 +31,10 @@ public sealed class LeadershipAwareBackgroundService : BackgroundService {
             var cancellator = token.LinkTo(stoppingToken);
 
             try {
+                // it only runs on a leader node, so if the cancellation
+                // token is cancelled, it means the node lost leadership
                 await Action(cancellator!.Token);
+                // lost leadership...
             }
             catch (OperationCanceledException) when (cancellator?.CancellationOrigin == stoppingToken) {
                 Logger.LogServiceStopped();

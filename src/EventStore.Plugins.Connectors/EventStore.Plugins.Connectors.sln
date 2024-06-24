@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Testing", "tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Plugins.Telemetry", "src\EventStore.Plugins.Telemetry\EventStore.Plugins.Telemetry.csproj", "{3F958C5A-B524-488C-A54F-03BC3E398B26}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Plugins.Connectors.Tests", "tests\EventStore.Plugins.Connectors.Tests\EventStore.Plugins.Connectors.Tests.csproj", "{803CE3CA-C382-436B-B6DE-87B604F2DD78}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors.Tests", "tests\EventStore.Extensions.Connectors.Tests\EventStore.Extensions.Connectors.Tests.csproj", "{803CE3CA-C382-436B-B6DE-87B604F2DD78}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SubModules", "SubModules", "{B4DAA225-6158-4BB6-9426-242032A94EA7}"
 EndProject

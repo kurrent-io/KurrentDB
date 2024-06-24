@@ -8,8 +8,6 @@
         <IsPackable>true</IsPackable>
         <InvariantGlobalization>true</InvariantGlobalization>
 
-        <RootNamespace>EventStore.Connectors</RootNamespace>
-
         <NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655</NoWarn>
 
         <Description>EventStore Connectors</Description>
@@ -73,11 +71,6 @@
 
     <ItemGroup>
         <None Remove="EventStore.Plugins.Connectors.csproj.DotSettings"/>
-        <None Remove="Planes\Control\Leases\**"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <Compile Remove="Planes\Control\Leases\**"/>
     </ItemGroup>
 
     <ItemGroup>

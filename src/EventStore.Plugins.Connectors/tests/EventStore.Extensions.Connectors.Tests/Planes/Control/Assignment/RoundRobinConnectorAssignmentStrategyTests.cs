@@ -4,7 +4,7 @@ using EventStore.Connectors.Control.Assignment.Assignors;
 using EventStore.Testing.Fixtures;
 using MassTransit;
 
-namespace EventStore.Plugins.Connectors.Tests.Control.Assignment;
+namespace EventStore.Extensions.Connectors.Tests.Control.Assignment;
 
 [Trait("Category", "Assignment")]
 public class RoundRobinConnectorAssignmentStrategyTests(ITestOutputHelper output, FastFixture fixture) : FastTests(output, fixture) {

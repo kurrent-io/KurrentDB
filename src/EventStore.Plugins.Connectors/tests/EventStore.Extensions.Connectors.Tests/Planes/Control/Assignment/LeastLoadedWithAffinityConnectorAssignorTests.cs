@@ -5,7 +5,7 @@ using EventStore.Testing.Fixtures;
 using EventStore.Testing.Xunit;
 using MassTransit;
 
-namespace EventStore.Plugins.Connectors.Tests.Control.Assignment;
+namespace EventStore.Extensions.Connectors.Tests.Control.Assignment;
 
 [Trait("Category", "Assignment")]
 public class LeastLoadedWithAffinityConnectorAssignorTests(ITestOutputHelper output, FastFixture fixture) : FastTests(output, fixture) {

@@ -3,7 +3,7 @@
 using EventStore.Core;
 using EventStore.Core.Data;
 
-namespace EventStore.Plugins.Connectors.Tests;
+namespace EventStore.Extensions.Connectors.Tests;
 
 [Trait("Category", "Integration")]
 public class PublisherManagementExtensionsTests(ITestOutputHelper output, StreamingFixture fixture) : StreamingTests(output, fixture) {

@@ -4,7 +4,7 @@ using EventStore.Core;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
 
-namespace EventStore.Plugins.Connectors.Tests.Streaming.Consumers;
+namespace EventStore.Extensions.Connectors.Tests.Streaming.Consumers;
 
 [Trait("Category", "Integration")]
 public class SystemConsumerTests(ITestOutputHelper output, StreamingFixture fixture) : StreamingTests(output, fixture) {

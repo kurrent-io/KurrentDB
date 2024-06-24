@@ -14,9 +14,9 @@ public interface INodeLifetimeService {
 public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessage>, INodeLifetimeService, IDisposable {
     volatile LeadershipCompletionSource? _leadershipEvent = new();
 
-    public NodeLifetimeService(ISubscriber? subscriber = null, ILoggerFactory? loggerFactory = null) {
-        Logger = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<NodeLifetimeService>();
+    public NodeLifetimeService(ISubscriber? subscriber = null, ILogger<NodeLifetimeService>? logger = null) {
         subscriber?.Subscribe(this);
+        Logger = logger ?? NullLoggerFactory.Instance.CreateLogger<NodeLifetimeService>();
     }
 
     ILogger Logger { get; }

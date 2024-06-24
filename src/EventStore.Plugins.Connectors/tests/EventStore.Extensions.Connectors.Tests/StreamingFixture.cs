@@ -5,7 +5,7 @@ using EventStore.Streaming.Schema.Serializers;
 using EventStore.Testing;
 using EventStore.Testing.Fixtures;
 
-namespace EventStore.Plugins.Connectors.Tests;
+namespace EventStore.Extensions.Connectors.Tests;
 
 [PublicAPI]
 public partial class StreamingFixture : ClusterVNodeFixture {

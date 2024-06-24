@@ -13,7 +13,7 @@
     <ItemGroup>
         <PackageReference Include="DotNext.Threading" Version="5.7.0" />
         <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9" />
-        <!--        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha4">-->
+        <!--        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9">-->
         <!--            <Private>false</Private>-->
         <!--            <IncludeAssets>compile</IncludeAssets>-->
         <!--        </PackageReference>-->
@@ -44,15 +44,4 @@
         <InternalsVisibleTo Include="EventStore.Plugins.Connectors.Tests"/>
     </ItemGroup>
 
-    <ItemGroup>
-      <Compile Remove="Planes\Control\Leases\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <EmbeddedResource Remove="Planes\Control\Leases\**" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Remove="Planes\Control\Leases\**" />
-    </ItemGroup>
 </Project>

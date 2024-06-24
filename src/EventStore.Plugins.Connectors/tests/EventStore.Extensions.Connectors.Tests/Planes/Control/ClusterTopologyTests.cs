@@ -4,7 +4,7 @@ using EventStore.Testing.Fixtures;
 using EventStore.Testing.Xunit;
 using MassTransit;
 
-namespace EventStore.Plugins.Connectors.Tests.Control;
+namespace EventStore.Extensions.Connectors.Tests.Control;
 
 public class ClusterTopologyTests(ITestOutputHelper output, FastFixture fixture) : FastTests(output, fixture) {
 	[Fact]

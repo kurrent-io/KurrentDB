@@ -4,7 +4,7 @@ using EventStore.Core;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers.Checkpoints;
 
-namespace EventStore.Plugins.Connectors.Tests.Consumers.Checkpoints;
+namespace EventStore.Extensions.Connectors.Tests.Consumers.Checkpoints;
 
 [Trait("Category", "Integration")]
 public class SystemCheckpointStoreTests(ITestOutputHelper output, StreamingFixture fixture) : StreamingTests(output, fixture) {

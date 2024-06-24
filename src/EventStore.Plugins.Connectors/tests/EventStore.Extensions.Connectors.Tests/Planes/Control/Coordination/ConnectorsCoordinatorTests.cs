@@ -9,7 +9,7 @@
 // using Microsoft.Extensions.DependencyInjection;
 // using Microsoft.Extensions.Logging;
 //
-// namespace EventStore.Plugins.Connectors.Tests.ControlPlane.Coordination;
+// namespace EventStore.Extensions.Connectors.Tests.ControlPlane.Coordination;
 //
 // [Trait("Category", "Integration")]
 // [Trait("ControlPlane", "Coordination")]

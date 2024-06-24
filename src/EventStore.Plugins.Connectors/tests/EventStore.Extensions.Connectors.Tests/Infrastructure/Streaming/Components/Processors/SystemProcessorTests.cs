@@ -6,7 +6,7 @@ using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Processors;
 
-namespace EventStore.Plugins.Connectors.Tests.Streaming.Processors;
+namespace EventStore.Extensions.Connectors.Tests.Streaming.Processors;
 
 [Trait("Category", "Integration")]
 public class SystemProcessorTests(ITestOutputHelper output, StreamingFixture fixture) : StreamingTests(output, fixture) {

@@ -7,7 +7,7 @@
 // using Microsoft.Extensions.Configuration;
 // using static EventStore.Connectors.Control.Activation.ConnectorsTaskManager;
 //
-// namespace EventStore.Plugins.Connectors.Tests.Control.Activation;
+// namespace EventStore.Extensions.Connectors.Tests.Control.Activation;
 //
 // class TestConnector : IConnector {
 //     public ConnectorId ConnectorId => "test-connector-id";
