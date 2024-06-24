@@ -1,8 +1,6 @@
 using System.Collections.Concurrent;
 using DotNext.Collections.Generic;
 using EventStore.Connect.Connectors;
-using EventStore.Connectors.Control.Contracts;
-using EventStore.Connectors.Control.Contracts.Activation;
 using EventStore.Streaming;
 using FluentValidation.Results;
 using Microsoft.Extensions.Configuration;

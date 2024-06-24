@@ -9,40 +9,40 @@ import "protocol.proto";
 
 option csharp_namespace = "EventStore.Connectors.Management.Contracts";
 
-//message EventStoreRecord {
-//  string                    id          = 1;
-//  RecordPosition            position    = 2;
-//  google.protobuf.Timestamp timestamp   = 3;
-//  SchemaInfo                schema      = 4;
-//  bool                      is_redacted = 5;
-//  int64                     sequence_id = 6;
-//  map<string, string>       headers     = 7;
-//  google.protobuf.Any       value       = 8;  // this or data?
-//  bytes                     data        = 9;  // this or value?
-//}
+// message EventStoreRecord {
+//   string                    id          = 1;
+//   RecordPosition            position    = 2;
+//   google.protobuf.Timestamp timestamp   = 3;
+//   SchemaInfo                schema      = 4;
+//   bool                      is_redacted = 5;
+//   int64                     sequence_id = 6;
+//   map<string, string>       headers     = 7;
+//   google.protobuf.Any       value       = 8;  // this or data?
+//   bytes                     data        = 9;  // this or value?
+// }
 
-//message LogPosition {
-//  // The commit position of the log.
-//  google.protobuf.UInt64Value commit_position = 1;
+// message LogPosition {
+//   // The commit position of the log.
+//   google.protobuf.UInt64Value commit_position = 1;
 //
-//  // The prepare position of the log.
-//  google.protobuf.UInt64Value prepare_position = 2;
-//}
+//   // The prepare position of the log.
+//   google.protobuf.UInt64Value prepare_position = 2;
+// }
 
-//enum SchemaType {
-//  SCHEMA_INFO_UNDEFINED = 0;
-//  SCHEMA_INFO_JSON      = 1;
-//  SCHEMA_INFO_PROTOBUF  = 2;
-//  SCHEMA_INFO_AVRO      = 3;
-//  SCHEMA_INFO_BYTES     = 4;
-//}
+// enum SchemaType {
+//   SCHEMA_INFO_UNDEFINED = 0;
+//   SCHEMA_INFO_JSON      = 1;
+//   SCHEMA_INFO_PROTOBUF  = 2;
+//   SCHEMA_INFO_AVRO      = 3;
+//   SCHEMA_INFO_BYTES     = 4;
+// }
 //
-//message SchemaInfo {
-//  SchemaType          type       = 1;
-//  string              name       = 2;
-//  bytes               schema     = 3;
-//  map<string, string> properties = 4;
-//}
+// message SchemaInfo {
+//   SchemaType          type       = 1;
+//   string              name       = 2;
+//   bytes               schema     = 3;
+//   map<string, string> properties = 4;
+// }
 
 message RecordPosition {
   string stream_id    = 1;
@@ -82,10 +82,10 @@ enum ConnectorState {
 
   // The connector is currently suspended.
   CONNECTOR_STATE_SUSPENDED = 3;
- 
+
   // The connector is in the process of being deactivated.
   CONNECTOR_STATE_DEACTIVATING = 4;
-  
+
   // The connector is currently stopped.
   CONNECTOR_STATE_STOPPED = 5;
 

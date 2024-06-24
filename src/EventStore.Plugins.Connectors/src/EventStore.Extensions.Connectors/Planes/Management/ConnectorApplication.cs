@@ -3,9 +3,13 @@ using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
 using Eventuous;
+using FluentValidation.Results;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using static EventStore.Connectors.Management.ConnectorDomainServices;
 using static Eventuous.FuncServiceDelegates;
+using Status = Grpc.Core.Status;
+using ValidationFailure = FluentValidation.Results.ValidationFailure;
 
 namespace EventStore.Connectors.Management;
 
@@ -19,10 +23,10 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
             .GetStream(FromCommand())
             .ActAsync(
                 async (_, _, cmd, ct) => {
-                    var result = await validateSettings(cmd.InstanceType, cmd.Settings.ToDictionary(), ct);
+                    var result = validateSettings(cmd.Settings.ToDictionary());
 
-                    if (!result.Valid)
-                        ConnectorDomainExceptions.InvalidConnectorSettings.Throw(cmd.ConnectorId, result.InvalidSettings);
+                    if (!result.IsValid)
+                        ConnectorDomainExceptions.InvalidConnectorSettings.Throw(cmd.ConnectorId, result.Errors);
 
                     var now = time.GetUtcNow().ToTimestamp();
 
@@ -302,8 +306,7 @@ public record ConnectorEntity : State<ConnectorEntity> {
 }
 
 public static class ConnectorDomainServices {
-    public delegate Task<(Dictionary<string, string> InvalidSettings, bool Valid)> ValidateConnectorSettings(string connectorInstanceType,
-        Dictionary<string, string> settings, CancellationToken cancellationToken = default);
+    public delegate ValidationResult ValidateConnectorSettings(Dictionary<string, string?> settings);
 }
 
 public static class ConnectorDomainExceptions {
@@ -325,12 +328,20 @@ public static class ConnectorDomainExceptions {
             throw new ConnectorInvalidState(connectorId, currentState, requestedState);
     }
 
-    public class InvalidConnectorSettings(string connectorId, Dictionary<string, string> invalidSettings)
+    public class InvalidConnectorSettings(string connectorId, IDictionary<string, string[]> errors)
         : DomainException($"Connector {connectorId} invalid settings detected") {
-        public string                     ConnectorId     { get; } = connectorId;
-        public Dictionary<string, string> InvalidSettings { get; } = invalidSettings;
+        public string                        ConnectorId { get; } = connectorId;
+        public IDictionary<string, string[]> Errors      { get; } = errors;
 
-        public static void Throw(string connectorId, Dictionary<string, string> invalidSettings) =>
-            throw new InvalidConnectorSettings(connectorId, invalidSettings);
+        public static void Throw(string connectorId, List<ValidationFailure> failures) {
+            var errors = failures
+                .GroupBy(x => x.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.ErrorMessage).ToArray()
+                );
+
+            throw new InvalidConnectorSettings(connectorId, errors);
+        }
     }
 }

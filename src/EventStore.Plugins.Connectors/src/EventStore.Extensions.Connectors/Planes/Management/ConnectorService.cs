@@ -1,6 +1,7 @@
 using EventStore.Connectors.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Plugins.Authorization;
+using Eventuous;
 using Grpc.Core;
 using static EventStore.Connectors.Management.Contracts.Commands.ConnectorCommand.CommandOneofCase;
 using Status = EventStore.Connectors.Contracts.Status;
@@ -23,10 +24,11 @@ public class ConnectorService(ConnectorApplication application, IAuthorizationPr
         await authorizationProvider.CheckAccessAsync(user, new Operation("connectors", "write"), context.CancellationToken);
 
         var execute = request.CommandCase switch {
-			Create         => Application.Handle(request.Create, context.CancellationToken),
-			// UpdateSettings => Application.Handle(request.UpdateSettings, context.CancellationToken),
-			Delete => Application.Handle(request.Delete, context.CancellationToken),
-			Rename => Application.Handle(request.Rename, context.CancellationToken),
+            Create      => Application.Handle(request.Create, context.CancellationToken),
+            Reconfigure => Application.Handle(request.Reconfigure, context.CancellationToken),
+            Reset       => Application.Handle(request.Reset, context.CancellationToken),
+            Delete      => Application.Handle(request.Delete, context.CancellationToken),
+            Rename      => Application.Handle(request.Rename, context.CancellationToken),
 
 			Start => Application.Handle(request.Start, context.CancellationToken),
 			Stop  => Application.Handle(request.Stop, context.CancellationToken),
@@ -37,21 +39,44 @@ public class ConnectorService(ConnectorApplication application, IAuthorizationPr
 			_ => throw new ArgumentOutOfRangeException(nameof(request.CommandCase))
 		};
 
-		var result = await execute;
+        try {
+        	var result = await execute;
 
-		return new CommandResult {
-			RequestId = request.RequestId, Status = new Status {
-                // Code    = Google.Rpc.Code.Ok, // ambiguos reference ffs....
-                Message = null
-            }
+            return new CommandResult {
+                RequestId = request.RequestId, Status = new Status {
+                    // Code    = Google.Rpc.Code.Ok, // ambiguos reference ffs....
+                    Message = null
+                }
 
-            //
-			//  Status = new Status {
-			//  	//Code    = Code.Ok,
-			//  	Message = null
-			//  },
-			// Events = { ConvertChangesToEvents(result.Changes).ToArray() }
-		};
+                //
+                //  Status = new Status {
+                //  	//Code    = Code.Ok,
+                //  	Message = null
+                //  },
+                // Events = { ConvertChangesToEvents(result.Changes).ToArray() }
+            };
+        }
+        catch (DomainException dex) {
+        	// return a failed result
+        	return new CommandResult {
+        		RequestId = request.RequestId,
+        		Status = new Status {
+        			// Code    = Google.Rpc.Code.Fai.InvalidArgument,
+        			Message = dex.Message
+        		}
+        	};
+        }
+        catch (Exception) {
+        	return new CommandResult {
+        		RequestId = request.RequestId,
+        		// Status = new Status {
+        		// 	//Code    = Code.Internal,
+        		// 	Message = ex.Message
+        		// },
+        	};
+        }
+
+
 
 		// try {
 		// 	var result = await execute;

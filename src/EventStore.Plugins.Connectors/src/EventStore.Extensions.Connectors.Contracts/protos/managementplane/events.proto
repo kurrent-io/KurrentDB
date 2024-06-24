@@ -33,18 +33,18 @@ message ConnectorRenamed {
 
 // from start
 message ConnectorActivating {
-  string                                   connector_id  = 1;
-  int32                                    revision      = 3;
-  map<string, google.protobuf.StringValue> settings      = 5;
-  google.protobuf.Timestamp                timestamp     = 9;
+  string                                   connector_id = 1;
+  int32                                    revision     = 3;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  google.protobuf.Timestamp                timestamp    = 9;
 }
 
 // from stop
 message ConnectorDeactivating {
-  string                                   connector_id  = 1;
-  int32                                    revision      = 3;
-  map<string, google.protobuf.StringValue> settings      = 5;
-  google.protobuf.Timestamp                timestamp     = 9;
+  string                                   connector_id = 1;
+  int32                                    revision     = 3;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  google.protobuf.Timestamp                timestamp    = 9;
 }
 
 // from recorded connector state changed CONNECTOR_STATE_RUNNING

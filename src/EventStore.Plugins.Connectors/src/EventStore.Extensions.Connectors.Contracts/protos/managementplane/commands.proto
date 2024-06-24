@@ -10,18 +10,14 @@ import "managementplane/resources.proto";
 
 option csharp_namespace = "EventStore.Connectors.Management.Contracts.Commands";
 
- service ConnectorCommandService {
-   rpc Execute(ConnectorCommand) returns (CommandResult){
-     option (google.api.http) = {
-       post: "/v1/connectors/execute",
-       body: "*"
-     };
-   }
- }
-
-//service ConnectorCommandService {
-//  rpc Execute(ConnectorCommand) returns (CommandResult);
-//}
+service ConnectorCommandService {
+  rpc Execute(ConnectorCommand) returns (CommandResult) {
+    option (google.api.http) = {
+      post: "/v1/connectors/execute",
+      body: "*"
+    };
+  }
+}
 
 message ConnectorCommand {
   string                                   request_id = 1;
@@ -30,9 +26,9 @@ message ConnectorCommand {
   oneof command {
     CreateConnector      create      = 10;
     ReconfigureConnector reconfigure = 11;
-    DeleteConnector      delete      = 12;
-    ResetConnector       reset       = 13;
-    RenameConnector      rename      = 14;
+    DeleteConnector delete           = 12;
+    ResetConnector  reset            = 13;
+    RenameConnector rename           = 14;
 
     StartConnector start = 30;
     StopConnector  stop  = 31;

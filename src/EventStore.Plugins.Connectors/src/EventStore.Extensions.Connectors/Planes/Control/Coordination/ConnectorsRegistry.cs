@@ -2,6 +2,7 @@
 
 using DotNext.Collections.Generic;
 using EventStore.Connect.Connectors;
+using EventStore.Connectors.Control.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
@@ -12,13 +13,11 @@ using Google.Protobuf.WellKnownTypes;
 
 namespace EventStore.Connectors.Control.Coordination;
 
-public record Connector {
-    public string                      Id       { get; init; }
-    public int                         Revision { get; init; }
-    public Dictionary<string, string?> Settings { get; init; } = [];
-}
-
-
+// public record Connector {
+//     public string                      ConnectorId { get; init; }
+//     public int                         Revision    { get; init; }
+//     public Dictionary<string, string?> Settings    { get; init; } = [];
+// }
 
 public delegate Task<RegisteredConnector[]> GetActiveConnectors(CancellationToken cancellationToken);
 
