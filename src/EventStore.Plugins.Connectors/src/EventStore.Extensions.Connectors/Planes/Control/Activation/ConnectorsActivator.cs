@@ -1,13 +1,40 @@
 using System.Collections.Concurrent;
 using DotNext.Collections.Generic;
 using EventStore.Connect.Connectors;
+using EventStore.Connect.Leases;
 using EventStore.Streaming;
 using FluentValidation.Results;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using NodaTime;
+
+using ILeaseManager = EventStore.Connect.Leases.ILeaseManager;
+using ReleaseLease = EventStore.Connect.Leases.ReleaseLease;
+using AcquireOrRenewLease = EventStore.Connect.Leases.AcquireOrRenewLease;
 
 namespace EventStore.Connectors.Control.Activation;
+
+public record VersionedLease : Lease {
+    public long? Version { get; init; }
+}
+
+// public static class LeaseManagerExtensions {
+//     public static Task<(AcquireOrRenewLeaseResult, VersionedLease)> AcquireOrRenew(
+//         this ILeaseManager leaseManager, string resourceId, string resourceNamespace, string clientId, Duration duration, long version, CancellationToken token
+//     ) {
+//         return leaseManager.AcquireOrRenew(
+//             new AcquireOrRenewLease {
+//                 ResourceId        = resourceId,
+//                 ResourceNamespace = resourceNamespace,
+//                 ClientId          = clientId,
+//                 Duration          = duration,
+//                 Version           = version
+//             },
+//             token
+//         );
+//     }
+// }
 
 // /// <summary>
 // /// Activates or deactivates connectors
@@ -84,14 +111,6 @@ namespace EventStore.Connectors.Control.Activation;
 //     }
 // }
 
-public record Lease(string Resource, string Owner, TimeSpan Duration, DateTimeOffset ExpiresAt, long Version);
-
-public interface ILeaseManager {
-    Task<Lease?> AcquireLease(string resource, string owner, TimeSpan duration, CancellationToken cancellationToken = default);
-    Task<Lease?> AcquireOrRenewLease(string resource, string owner, TimeSpan duration, long? leaseVersion = null, CancellationToken cancellationToken = default);
-    Task        ReleaseLease(string resource, string owner, long leaseVersion, CancellationToken cancellationToken = default);
-}
-
 public record ActivateResult {
     public record Activated : ActivateResult;
 
@@ -138,32 +157,33 @@ public class ConnectorsActivator {
                     async (leasedConnector, loopToken) => {
                         var lease = leasedConnector.Lease;
 
-                        if (DateTimeOffset.UtcNow.AddMinutes(1) > lease.ExpiresAt) {
-                            // renew lease
-                            // if renew fails because it expired already we must disconnect the connector
-                            // should we lock to avoid multiple renewals?
-
-                            var newLease = await leaseManager
-                                .AcquireOrRenewLease(
-                                    lease.Resource,
-                                    lease.Owner,
-                                    lease.Duration,
-                                    lease.Version,
-                                    loopToken
-                                );
-
-                            if (newLease is null) {
-                                await Deactivate(leasedConnector.Connector.ConnectorId);
-                            }
-                            else {
-                                LeasedConnectors[leasedConnector.Connector.ConnectorId] = (
-                                    leasedConnector.Connector,
-                                    leasedConnector.Configuration,
-                                    leasedConnector.Revision,
-                                    newLease
-                                );
-                            }
-                        }
+                        // if (DateTimeOffset.UtcNow.AddMinutes(1) > lease.ExpiresAt) {
+                        //     // renew lease
+                        //     // if renew fails because it expired already we must disconnect the connector
+                        //     // should we lock to avoid multiple renewals?
+                        //
+                        //     var newLease = await leaseManager
+                        //         .AcquireOrRenew(
+                        //             new AcquireOrRenewLease {
+                        //                 ResourceId = lease.Resource,
+                        //                 ClientId   = clientId,
+                        //                 Duration   = duration,
+                        //                 Version    = version
+                        //             }, loopToken
+                        //         );
+                        //
+                        //     if (newLease is null) {
+                        //         await Deactivate(leasedConnector.Connector.ConnectorId);
+                        //     }
+                        //     else {
+                        //         LeasedConnectors[leasedConnector.Connector.ConnectorId] = (
+                        //             leasedConnector.Connector,
+                        //             leasedConnector.Configuration,
+                        //             leasedConnector.Revision,
+                        //             newLease
+                        //         );
+                        //     }
+                        // }
                     },
                     timerToken
                 );
@@ -180,58 +200,126 @@ public class ConnectorsActivator {
     CancellationTokenSource LifetimeTokenSource { get; }
     CancellationToken       LifetimeToken       { get; }
 
-    ConcurrentDictionary<ConnectorId, (IConnector Connector, IConfiguration Configuration, int Revision, Lease Lease)> LeasedConnectors { get; }
+    ConcurrentDictionary<ConnectorId, (IConnector Connector, IConfiguration Configuration, int Revision, VersionedLease Lease)> LeasedConnectors { get; }
 
     public async Task<ActivateResult> Activate(
         ConnectorId connectorId, int revision, Dictionary<string, string?> settings, CancellationToken stoppingToken = default
     ) {
-        // link to lifetime token?
+        // // link to lifetime token?
+        //
+        // // TODO SS: Seriously consider exposing the configuration settings on IConnector along with the ConnectorId and State
+        // var config = new ConfigurationBuilder()
+        //     .AddInMemoryCollection(settings)
+        //     .Build();
+        //
+        // var result = new ConnectorsValidation().ValidateConfiguration(config);
+        //
+        // if (!result.IsValid)
+        //     return new ActivateResult.InvalidConfiguration(result);
+        //
+        // try {
+        //     var now = SystemClock.Instance.GetCurrentInstant();
+        //
+        //     VersionedLease lease;
+        //
+        //     // lease = new VersionedLease {
+        //     //     ResourceId        = connectorId,
+        //     //     AcquiredBy        = NodeId,
+        //     //     AcquiredAt        = SystemClock.Instance.GetCurrentInstant(),
+        //     //     ExpiresAt         = now.Plus(Duration.FromMinutes(1)),
+        //     //     ResourceNamespace = "",
+        //     //     Version           = null
+        //     // };
+        //
+        //     if (!LeasedConnectors.TryGetValue(connectorId, out var app)) {
+        //         var acquireResult = await LeaseManager.AcquireOrRenew(
+        //             new AcquireOrRenewLease {
+        //                 ResourceId = connectorId,
+        //                 ClientId   = NodeId,
+        //                 Duration   = Duration.FromMinutes(1)
+        //             },
+        //             stoppingToken
+        //         );
+        //
+        //         switch (acquireResult) {
+        //             case AcquireOrRenewLeaseResult.Acquired acquired: {
+        //                 var newLease = new VersionedLease {
+        //                     ResourceId        = connectorId,
+        //                     AcquiredBy        = NodeId,
+        //                     AcquiredAt        = SystemClock.Instance.GetCurrentInstant(),
+        //                     ExpiresAt         = acquired.ExpiresAt,
+        //                     ResourceNamespace = "",
+        //                     Version           = acquired.Version
+        //                 };
+        //
+        //                 var connector = ConnectorFactory.CreateConnector(connectorId, config);
+        //
+        //                 LeasedConnectors[connectorId] = (connector, config, revision, newLease);
+        //
+        //                 await connector.Connect(stoppingToken);
+        //
+        //                 Logger.LogConnectorActivated(NodeId, connector.ConnectorId);
+        //
+        //                 return new ActivateResult.Activated();
+        //             }
+        //
+        //             case AcquireOrRenewLeaseResult.Renewed:
+        //                 return new ActivateResult.LeaseAcquisitionFailed();
+        //
+        //             case AcquireOrRenewLeaseResult.Taken:
+        //                 return new ActivateResult.LeaseAcquisitionFailed();
+        //
+        //             case AcquireOrRenewLeaseResult.VersionMismatch:
+        //                 return new ActivateResult.LeaseAcquisitionFailed();
+        //         }
+        //     } else {
+        //         AcquireOrRenewLeaseResult acquireResult = await LeaseManager.AcquireOrRenew(
+        //             new AcquireOrRenewLease {
+        //                 ResourceId        = app.Lease.ResourceId,
+        //                 ClientId          = app.Lease.AcquiredBy,
+        //                 Duration          = Duration.FromMinutes(1),
+        //                 ResourceNamespace = app.Lease.ResourceNamespace,
+        //                 Version           = app.Lease.Version
+        //             },
+        //             stoppingToken
+        //         );
+        //
+        //         switch (acquireResult) {
+        //             case AcquireOrRenewLeaseResult.Acquired:
+        //                 return new ActivateResult.();
+        //
+        //             case AcquireOrRenewLeaseResult.Renewed:
+        //                 return new ActivateResult.LeaseAcquisitionFailed();
+        //
+        //             case AcquireOrRenewLeaseResult.Taken:
+        //                 return new ActivateResult.LeaseAcquisitionFailed();
+        //
+        //             case AcquireOrRenewLeaseResult.VersionMismatch:
+        //                 return new ActivateResult.LeaseAcquisitionFailed();
+        //         }
+        //
+        //         // if deactivating we should wait, but without the stopped task or an event of sorts we cant...
+        //         if (app.Revision != revision || app.Connector.State == ConnectorState.Stopped) {
+        //             await app.Connector.DisposeAsync();
+        //             LeasedConnectors.Remove(connectorId, out _);
+        //         }
+        //     }
+        //
+        //     // var connector = ConnectorFactory.CreateConnector(connectorId, config);
+        //     //
+        //     // LeasedConnectors[connectorId] = (connector, config, revision, lease);
+        //     //
+        //     // await connector.Connect(stoppingToken);
+        //     //
+        //     // Logger.LogConnectorActivated(NodeId, connector.ConnectorId);
+        //     //
+        //     // return new ActivateResult.Activated();
+        // }
+        // catch (Exception ex) {
+        //     return new ActivateResult.ActivationError(ex);
+        // }
 
-        // TODO SS: Seriously consider exposing the configuration settings on IConnector along with the ConnectorId and State
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
-
-        var result = new ConnectorsValidation().ValidateConfiguration(config);
-
-        if (!result.IsValid)
-            return new ActivateResult.InvalidConfiguration(result);
-
-        try {
-            Lease? lease;
-
-            if (LeasedConnectors.TryGetValue(connectorId, out var app)){
-                lease = await LeaseManager.AcquireOrRenewLease(connectorId, NodeId, TimeSpan.FromMinutes(1), app.Lease.Version, stoppingToken);
-
-                if (lease is null)
-                    return new ActivateResult.LeaseAcquisitionFailed();
-
-                // if deactivating we should wait, but without the stopped task or an event of sorts we cant...
-                if (app.Revision != revision || app.Connector.State == ConnectorState.Stopped) {
-                    await app.Connector.Disconnect();
-                    LeasedConnectors.Remove(connectorId, out _);
-                }
-            }
-            else {
-                lease = await LeaseManager.AcquireLease(connectorId, NodeId, TimeSpan.FromMinutes(1), stoppingToken);
-
-                if (lease is null)
-                    return new ActivateResult.LeaseAcquisitionFailed();
-            }
-
-            var connector = ConnectorFactory.CreateConnector(connectorId, config);
-
-            LeasedConnectors[connectorId] = (connector, config, revision, lease);
-
-            await connector.Connect(stoppingToken);
-
-            Logger.LogConnectorActivated(NodeId, connector.ConnectorId);
-
-            return new ActivateResult.Activated();
-        }
-        catch (Exception ex) {
-            return new ActivateResult.ActivationError(ex);
-        }
+        throw new NotImplementedException();
     }
 
     public async Task<DeactivateResult> Deactivate(ConnectorId connectorId, CancellationToken cancellationToken = default) {
@@ -242,11 +330,15 @@ public class ConnectorsActivator {
 
         // should disconnect receive a token that would work as a timeout?
         // it never fails but internally it captures errors
-        await app.Connector.Disconnect();
+        await app.Connector.DisposeAsync(); //Disconnect();
 
-        // try to release forever?
-        // should return a result that we can check to see if it was successful
-        await LeaseManager.ReleaseLease(connectorId, app.Lease.Owner, app.Lease.Version, cancellationToken);
+        // // try to release forever?
+        // // should return a result that we can check to see if it was successful
+        // await LeaseManager.Release(new ReleaseLease {
+        //     ResourceId        = connectorId,
+        //     ClientId          = app.Lease.Owner,
+        //     Version           = app.Lease.Version
+        // }, cancellationToken);
 
         return new DeactivateResult.Deactivated();
     }

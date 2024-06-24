@@ -18,7 +18,7 @@ public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemRea
     }
 
 	public override SystemReader Create() {
-        Ensure.NotNullOrWhiteSpace(Options.ReaderName);
+        Ensure.NotNullOrWhiteSpace(Options.ReaderId);
         Ensure.NotNull(Options.Publisher);
 
         var options = Options with {

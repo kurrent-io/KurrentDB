@@ -15,7 +15,7 @@ public static class ControlPlaneWireUp {
                 var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
                 var reader = SystemReader.Builder
-                    .ReaderName("connectors-reader")
+                    .ReaderId("connectors-reader")
                     .Publisher(publisher)
                     .LoggerFactory(loggerFactory)
                     .EnableLogging()

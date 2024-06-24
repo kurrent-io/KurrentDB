@@ -156,13 +156,13 @@ public class ConnectorsTaskManager : IAsyncDisposable {
             Connector.Connect(stoppingToken);
 
         public async Task Stop() =>
-            await Connector.Disconnect();
+            await Connector.DisposeAsync();
 
-        // // TODO SS: without the Stopped Task we dont know if the connector stopped without exceptions
-        // public bool IsFaulted(out Exception? error) {
-        //     error = Processor.Stopped.Exception?.Flatten();
-        //     return Processor.Stopped.IsFaulted;
-        // }
+        // TODO SS: without the Stopped Task we dont know if the connector stopped without exceptions
+        public bool IsFaulted(out Exception? error) {
+            error = Connector.Stopped.Exception?.Flatten();
+            return Connector.Stopped.IsFaulted;
+        }
 
         public void Deconstruct(out IConnector connector, out int revision) {
             connector = Connector;

@@ -43,7 +43,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj"/>
-        
+
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
             <Private>false</Private>
             <ExcludeAssets>all</ExcludeAssets>
@@ -56,7 +56,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="DotNext.Threading" Version="5.5.0"/>
+        <PackageReference Include="DotNext.Threading" Version="5.7.0"/>
         <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9"/>
         <!--        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha4">-->
         <!--            <Private>false</Private>-->
