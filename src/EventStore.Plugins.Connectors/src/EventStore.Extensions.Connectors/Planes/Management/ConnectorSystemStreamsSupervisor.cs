@@ -9,28 +9,37 @@ using ManagementContracts = EventStore.Connectors.Management.Contracts.Events;
 
 namespace EventStore.Connectors.Management;
 
+[PublicAPI]
+public record ConnectorSystemStreamsOptions {
+    public SystemStreamOptions Leases       { get; init; } = new(MaxCount: 1);
+    public SystemStreamOptions Positions    { get; init; } = new(MaxCount: 5);
+    public SystemStreamOptions StateChanges { get; init; } = new(MaxCount: 10);
+}
+
+public record SystemStreamOptions(int? MaxCount = null, TimeSpan? MaxAge = null);
+
 /// <summary>
 /// Responsible for configuring and deleting the system streams for a connector.
 /// </summary>
 public class ConnectorSystemStreamsSupervisor : ProcessingModule {
-    public ConnectorSystemStreamsSupervisor(IPublisher client) {
+    public ConnectorSystemStreamsSupervisor(IPublisher client, ConnectorSystemStreamsOptions options) {
         Process<ManagementContracts.ConnectorCreated>(
             async (evt, ctx) => {
                 await client.SetStreamMetadata(
                     GetLeasesStream(evt.Connector.ConnectorId),
-                    new StreamMetadata(maxCount: 1),
+                    new StreamMetadata(maxCount: options.Leases.MaxCount, maxAge: options.Leases.MaxAge),
                     cancellationToken: ctx.CancellationToken
                 );
 
                 await client.SetStreamMetadata(
                     GetPositionsStream(evt.Connector.ConnectorId),
-                    new StreamMetadata(maxCount: 10),
+                    new StreamMetadata(maxCount: options.Positions.MaxCount, maxAge: options.Positions.MaxAge),
                     cancellationToken: ctx.CancellationToken
                 );
 
                 await client.SetStreamMetadata(
                     GetStateChangesStream(evt.Connector.ConnectorId),
-                    new StreamMetadata(maxCount: 10),
+                    new StreamMetadata(maxCount: options.StateChanges.MaxCount, maxAge: options.StateChanges.MaxAge),
                     cancellationToken: ctx.CancellationToken
                 );
             }
