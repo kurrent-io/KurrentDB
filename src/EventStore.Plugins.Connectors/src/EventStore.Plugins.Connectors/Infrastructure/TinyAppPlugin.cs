@@ -41,7 +41,7 @@ public abstract class TinyAppPlugin : SubsystemsPlugin, IAsyncDisposable {
             )
         );
 
-        return (enabled, "Please check the documentation for instruction on out to enable the plugin.");
+        return (enabled, "Please check the documentation for instruction on how to enable the plugin.");
     }
 
     public override void ConfigureApplication(IApplicationBuilder esdb, IConfiguration configuration) {

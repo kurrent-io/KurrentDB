@@ -26,19 +26,19 @@ public class ConnectorSystemStreamsSupervisor : ProcessingModule {
         Process<ManagementContracts.ConnectorCreated>(
             async (evt, ctx) => {
                 await client.SetStreamMetadata(
-                    GetLeasesStream(evt.Connector.ConnectorId),
+                    GetLeasesStream(evt.ConnectorId),
                     new StreamMetadata(maxCount: options.Leases.MaxCount, maxAge: options.Leases.MaxAge),
                     cancellationToken: ctx.CancellationToken
                 );
 
                 await client.SetStreamMetadata(
-                    GetPositionsStream(evt.Connector.ConnectorId),
+                    GetPositionsStream(evt.ConnectorId),
                     new StreamMetadata(maxCount: options.Positions.MaxCount, maxAge: options.Positions.MaxAge),
                     cancellationToken: ctx.CancellationToken
                 );
 
                 await client.SetStreamMetadata(
-                    GetStateChangesStream(evt.Connector.ConnectorId),
+                    GetStateChangesStream(evt.ConnectorId),
                     new StreamMetadata(maxCount: options.StateChanges.MaxCount, maxAge: options.StateChanges.MaxAge),
                     cancellationToken: ctx.CancellationToken
                 );

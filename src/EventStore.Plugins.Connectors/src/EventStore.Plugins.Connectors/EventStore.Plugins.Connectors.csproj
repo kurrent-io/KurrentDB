@@ -72,7 +72,7 @@
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <PropertyGroup>
-            <EventStorePluginsOutputPath>..\..\submodules\EventStore\src\EventStore.ClusterNode\plugins</EventStorePluginsOutputPath>
+            <EventStorePluginsOutputPath>..\..\submodules\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)</EventStorePluginsOutputPath>
         </PropertyGroup>
         <ItemGroup>
              <!-- <MySourceFiles Include="$(OutDir)\EventStore.Plugins.Connectors.*" />
@@ -80,9 +80,9 @@
              <MySourceFiles Include="$(OutDir)\Eventuous*" /> -->
             <MySourceFiles Include="$(OutDir)\*.*"/>
         </ItemGroup>
-        <RemoveDir Directories="$(EventStorePluginsOutputPath)\$(ProjectName)" />
-        <MakeDir Directories="$(EventStorePluginsOutputPath)\$(ProjectName)" />
-        <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="$(EventStorePluginsOutputPath)\$(ProjectName)"/>
+        <RemoveDir Directories="$(EventStorePluginsOutputPath)" />
+        <MakeDir Directories="$(EventStorePluginsOutputPath)" />
+        <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="$(EventStorePluginsOutputPath)"/>
     </Target>
 
  	<Target Name="PublishPlugin" AfterTargets="Publish">

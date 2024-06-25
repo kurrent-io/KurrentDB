@@ -6,12 +6,10 @@ using EventStore.Streaming.Connectors.Sinks;
 using Eventuous;
 using FluentValidation.Results;
 using Google.Protobuf.WellKnownTypes;
-using Grpc.Core;
 using Microsoft.Extensions.Configuration;
 using static EventStore.Connectors.Management.ConnectorDomainServices;
 using static Eventuous.FuncServiceDelegates;
 using ConfigurationExtensions = EventStore.Streaming.ConfigurationExtensions;
-using Status = Grpc.Core.Status;
 using ValidationFailure = FluentValidation.Results.ValidationFailure;
 
 namespace EventStore.Connectors.Management;
@@ -20,12 +18,14 @@ namespace EventStore.Connectors.Management;
 public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
     static GetStreamNameFromCommand<dynamic> FromCommand() => cmd => new($"$connector-{cmd.ConnectorId}");
 
-    public ConnectorApplication(ValidateConnectorSettings validateSettings, IEventStore store, TimeProvider time) : base(store) {
+    public ConnectorApplication(
+        ValidateConnectorSettings validateSettings, IEventStore store, TimeProvider time
+    ) : base(store) {
         On<CreateConnector>()
             .InState(ExpectedState.New)
             .GetStream(FromCommand())
-            .ActAsync(
-                async (_, _, cmd, ct) => {
+            .Act(
+                (connector, events, cmd) => {
                     var result = validateSettings(cmd.Settings.ToDictionary());
 
                     if (!result.IsValid)
@@ -37,30 +37,37 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
 
                     var sinkOptions = ConfigurationExtensions.GetRequiredOptions<SinkOptions>(config);
 
-                    var now = time.GetUtcNow().ToTimestamp();
-
-                    var revision = new ConnectorRevision {
-                        Number    = 0,
-                        Settings  = { cmd.Settings },
-                        CreatedAt = now
-                    };
-
                     return [
                         new ConnectorCreated {
-                            Connector = new() {
-                                ConnectorId     = cmd.ConnectorId,
-                                // Name            = cmd.Name,
-                                // ConnectorType   = cmd.ConnectorType,
-                                // InstanceType    = cmd.InstanceType,
-                                CurrentRevision = revision.Number,
-                                Revisions       = { { revision.Number, revision } },
-                                State           = ConnectorState.Stopped,
-                                // LastPositions = { Array.Empty<RecordPosition>() },
-                                System = new() {
-                                    CreatedAt      = revision.CreatedAt,
-                                    LastModifiedAt = revision.CreatedAt
-                                }
-                            }
+                            ConnectorId  = cmd.ConnectorId,
+                            Name         = cmd.Name,
+                            Type         = ConnectorType.Sink,
+                            InstanceType = sinkOptions.ConnectorTypeName,
+                            Settings     = { cmd.Settings },
+                            Timestamp    = time.GetUtcNow().ToTimestamp()
+                        }
+                    ];
+                }
+            );
+
+        On<ReconfigureConnector>()
+            .InState(ExpectedState.Existing)
+            .GetStream(FromCommand())
+            .Act(
+                (connector, events, cmd) => {
+                    EnsureConnectorNotDeleted(connector);
+
+                    var result = validateSettings(cmd.Settings.ToDictionary());
+
+                    if (!result.IsValid)
+                        ConnectorDomainExceptions.InvalidConnectorSettings.Throw(cmd.ConnectorId, result.Errors);
+
+                    return [
+                        new ConnectorReconfigured {
+                            ConnectorId = connector.Id,
+                            Revision    = connector.CurrentRevision.Number + 1,
+                            Settings    = { cmd.Settings },
+                            Timestamp   = time.GetUtcNow().ToTimestamp()
                         }
                     ];
                 }
@@ -72,13 +79,12 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
             .Act(
                 (connector, events, cmd) => {
                     EnsureConnectorNotDeleted(connector);
-
                     EnsureConnectorStopped(connector);
 
                     return [
                         new ConnectorDeleted {
-                            ConnectorId = connector.ConnectorId,
-                            DeletedAt   = time.GetUtcNow().ToTimestamp()
+                            ConnectorId = connector.Id,
+                            Timestamp   = time.GetUtcNow().ToTimestamp()
                         }
                     ];
                 }
@@ -90,8 +96,7 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
             .Act(
                 (connector, events, cmd) => {
                     EnsureConnectorNotDeleted(connector);
-
-                    EnsureConnectorStopped(connector); // or should we be nice?
+                    EnsureConnectorStopped(connector);
 
                     if (connector.State
                         is ConnectorState.Running
@@ -101,9 +106,7 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
 
                     return [
                         new ConnectorActivating {
-                            ConnectorId = connector.ConnectorId,
-                            Revision    = connector.CurrentRevision.Number,
-                            Settings    = { connector.CurrentRevision.Settings },
+                            ConnectorId = connector.Id,
                             Timestamp   = time.GetUtcNow().ToTimestamp()
                         }
                     ];
@@ -116,8 +119,7 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
             .Act(
                 (connector, events, cmd) => {
                     EnsureConnectorNotDeleted(connector);
-
-                    EnsureConnectorRunning(connector);  // or should we be nice?
+                    EnsureConnectorRunning(connector);
 
                     if (connector.State
                         is ConnectorState.Stopped
@@ -127,9 +129,24 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
 
                     return [
                         new ConnectorDeactivating {
-                            ConnectorId = connector.ConnectorId,
-                            Revision    = connector.CurrentRevision.Number,
-                            Settings    = { connector.CurrentRevision.Settings },
+                            ConnectorId = connector.Id,
+                            Timestamp   = time.GetUtcNow().ToTimestamp()
+                        }
+                    ];
+                }
+            );
+
+        On<ResetConnector>()
+            .InState(ExpectedState.Existing)
+            .GetStream(FromCommand())
+            .Act(
+                (connector, events, cmd) => {
+                    EnsureConnectorNotDeleted(connector);
+
+                    return [
+                        new ConnectorReset {
+                            ConnectorId = connector.Id,
+                            Positions = { cmd.Positions },
                             Timestamp   = time.GetUtcNow().ToTimestamp()
                         }
                     ];
@@ -148,9 +165,9 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
 
                     return [
                         new ConnectorRenamed {
-                            ConnectorId = connector.ConnectorId,
+                            ConnectorId = connector.Id,
                             Name        = cmd.Name,
-                            RenamedAt   = time.GetUtcNow().ToTimestamp()
+                            Timestamp   = time.GetUtcNow().ToTimestamp()
                         }
                     ];
                 }
@@ -163,56 +180,30 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
                 (connector, events, cmd) => {
                     EnsureConnectorNotDeleted(connector);
 
-                    // some quick and dirty state transitions
-
-                    if (cmd.ToState == ConnectorState.Running) {
-                        return [
+                    return cmd switch {
+                        { ToState: ConnectorState.Running } => [
                             new ConnectorRunning {
-                                ConnectorId = connector.ConnectorId,
-                                Revision    = connector.CurrentRevision.Number,
-                                // Settings    = { connector.CurrentRevision.Settings }, // do we need this?
+                                ConnectorId = connector.Id,
                                 Timestamp   = cmd.Timestamp
                             }
-                        ];
-                    }
+                        ],
+                        { ToState: ConnectorState.Stopped } => [
+                            new ConnectorStopped {
+                                ConnectorId = connector.Id,
+                                Timestamp   = cmd.Timestamp
+                            }
+                        ],
+                        { ToState: ConnectorState.Failed, ErrorDetails: not null } => [
+                            new ConnectorFailed {
+                                ConnectorId  = connector.Id,
+                                ErrorDetails = cmd.ErrorDetails,
+                                Timestamp    = cmd.Timestamp
+                            }
+                        ],
+                        _ => []
+                    };
 
-                    if (cmd.ToState == ConnectorState.Stopped) {
-                        return cmd.ErrorDetails is null
-                            ? [
-                                new ConnectorStopped {
-                                    ConnectorId  = connector.ConnectorId,
-                                    Revision     = connector.CurrentRevision.Number,
-                                    // Settings     = { connector.CurrentRevision.Settings }, // do we need this?
-                                    Timestamp    = cmd.Timestamp
-                                }
-                            ]
-                            : [
-                                new ConnectorFailed {
-                                    ConnectorId  = connector.ConnectorId,
-                                    Revision     = connector.CurrentRevision.Number,
-                                    // Settings     = { connector.CurrentRevision.Settings }, // do we need this?
-                                    ErrorDetails = cmd.ErrorDetails,
-                                    Timestamp    = cmd.Timestamp
-                                }
-                            ];
-                    }
-
-                    // // I think failed is not a direct state, but a stopped state transition with an error
-                    // if (cmd.ToState == ConnectorState.Failed) {
-                    //     return [
-                    //         new ConnectorFailed {
-                    //             ConnectorId  = connector.ConnectorId,
-                    //             Revision     = connector.CurrentRevision.Number,
-                    //             Settings     = { connector.CurrentRevision.Settings }, // do we need this?
-                    //             ErrorDetails = cmd.ErrorDetails,
-                    //             Timestamp    = cmd.Timestamp
-                    //         }
-                    //     ];
-                    // }
-
-                    // skip the rest of the states for now
-
-                    return [];
+                    // TODO JC: Are there any other states to handle?
                 }
             );
 
@@ -223,11 +214,11 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
                 (connector, events, cmd) => {
                     EnsureConnectorNotDeleted(connector);
 
-                    // TODO SS: check if the positions are older than the last committed positions?
+                    // TODO SS: Should we check if the positions are older than the last committed positions?
 
                     return [
                         new ConnectorPositionsCommitted {
-                            ConnectorId = connector.ConnectorId,
+                            ConnectorId = connector.Id,
                             Positions   = { cmd.Positions },
                             CommittedAt = cmd.Timestamp
                         }
@@ -244,73 +235,191 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
 
         static void EnsureConnectorStopped(ConnectorEntity connector) {
             if (connector.State is not (ConnectorState.Stopped or ConnectorState.Failed))
-                throw new DomainException($"Connector {connector.ConnectorId} must be stopped. Current state: {connector.State}");
+                throw new DomainException(
+                    $"Connector {connector.Id} must be stopped. Current state: {connector.State}"
+                );
         }
 
         static void EnsureConnectorRunning(ConnectorEntity connector) {
             if (connector.State is not (ConnectorState.Running or ConnectorState.Activating))
-                throw new DomainException($"Connector {connector.ConnectorId} must be running. Current state: {connector.State}");
+                throw new DomainException(
+                    $"Connector {connector.Id} must be running. Current state: {connector.State}"
+                );
         }
     }
 }
 
 public record ConnectorEntity : State<ConnectorEntity> {
     public ConnectorEntity() {
-        // On<ConnectorCreated>((state, evt) => state with {
-        // 	ConnectorId   = evt.ConnectorId,
-        // 	Name          = evt.Name,
-        // 	ConnectorType = evt.ConnectorType,
-        // 	Subscription  = evt.Subscription,
-        // 	Settings      = evt.Settings,
-        // 	TenantId      = evt.TenantId
-        // });
-        //
-        // On<ConnectorUpdated>((state, evt) => state with {
-        // 	Revisions = state.Revisions
-        // });
-        //
-        // On<ConnectorDeleted>((state, evt) => state with {
-        // 	// System = state.System.With(x => x.IsDeleted = true)
-        // });
-        //
-        // On<ConnectorEnabled>((state, evt) => state with {
-        // 	RunningState = ConnectorState.Enabled
-        // });
-        //
-        // On<ConnectorDisabled>((state, evt) => state with {
-        // 	RunningState = ConnectorState.Disabled
-        // });
-        //
-        // On<ConnectorStateChanged>((state, evt) => state with {
-        // 	RunningState = evt.CurrentState
-        // });
-        //
-        // On<ConnectorRenamed>((state, evt) => state with {
-        // 	Name = evt.Name
-        // });
+        On<ConnectorCreated>(
+            (state, evt) => {
+                var initialRevision = new ConnectorRevision {
+                    Number    = 0,
+                    Settings  = { evt.Settings },
+                    CreatedAt = evt.Timestamp
+                };
+
+                return state with {
+                    Id = evt.ConnectorId,
+                    Name = evt.Name,
+                    Type = evt.Type,
+                    Revisions = new Dictionary<int, ConnectorRevision> {
+                        { initialRevision.Number, initialRevision }
+                    },
+                    CurrentRevision = initialRevision,
+                    System = new SystemData {
+                        CreatedAt      = evt.Timestamp,
+                        LastModifiedAt = evt.Timestamp
+                    }
+                };
+            }
+        );
+
+        On<ConnectorReconfigured>(
+            (state, evt) => {
+                var newState = state with {
+                    CurrentRevision = new ConnectorRevision {
+                        Number    = evt.Revision,
+                        Settings  = { evt.Settings },
+                        CreatedAt = evt.Timestamp
+                    }
+                };
+
+                newState.Revisions[evt.Revision] = newState.CurrentRevision;
+                newState.System.LastModifiedAt   = evt.Timestamp;
+
+                return newState;
+            }
+        );
+
+        On<ConnectorDeleted>(
+            (state, evt) => {
+                var newState = state with {
+                    // TODO JC: What do we want to do here?
+                };
+
+                newState.System.LastModifiedAt = evt.Timestamp;
+
+                return newState;
+            }
+        );
+
+        On<ConnectorRenamed>(
+            (state, evt) => {
+                var newState = state with { Name = evt.Name };
+                newState.System.LastModifiedAt = evt.Timestamp;
+
+                return newState;
+            }
+        );
+
+        On<ConnectorActivating>(
+            (state, evt) => {
+                var newState = state with { State = ConnectorState.Activating };
+                newState.System.LastModifiedAt = evt.Timestamp;
+
+                return newState;
+            }
+        );
+
+        On<ConnectorDeactivating>(
+            (state, evt) => {
+                var newState = state with { State = ConnectorState.Deactivating };
+                newState.System.LastModifiedAt = evt.Timestamp;
+
+                return newState;
+            }
+        );
+
+        On<ConnectorRunning>(
+            (state, evt) => {
+                var newState = state with { State = ConnectorState.Running };
+                newState.System.LastModifiedAt = evt.Timestamp;
+
+                return newState;
+            }
+        );
+
+        On<ConnectorStopped>(
+            (state, evt) => {
+                var newState = state with { State = ConnectorState.Stopped };
+                newState.System.LastModifiedAt = evt.Timestamp;
+
+                return newState;
+            }
+        );
+
+        On<ConnectorFailed>(
+            (state, evt) => {
+                var newState = state with { State = ConnectorState.Failed };
+                newState.System.LastModifiedAt = evt.Timestamp;
+
+                // TODO JC: What do we want to do with evt.ErrorDetails?
+
+                return newState;
+            }
+        );
+
+        On<ConnectorReset>(
+            (state, evt) => {
+                var newState = state with {
+                    // TODO JC: What do we want to do here?
+                };
+
+                newState.System.LastModifiedAt = evt.Timestamp;
+
+                return newState;
+            }
+        );
+
+        On<ConnectorPositionsCommitted>(
+            (state, evt) => {
+                var newState = state with { Positions = evt.Positions.Concat(state.Positions).ToList() };
+                state.System.LastModifiedAt = evt.CommittedAt;
+
+                return newState;
+            }
+        );
     }
 
     /// <summary>
-    /// Unique identifier of the connector
+    /// Unique identifier of the connector.
     /// </summary>
-    public string ConnectorId { get; init; } = Guid.Empty.ToString();
+    public string Id { get; init; } = Guid.Empty.ToString();
 
     /// <summary>
-    /// Name of the connector
+    /// Name of the connector.
     /// </summary>
     public string Name { get; init; } = "";
 
     /// <summary>
-    /// Custom settings for the connector
+    /// The type of the connector.
+    /// </summary>
+    public ConnectorType Type { get; init; } = ConnectorType.Unspecified;
+
+    /// <summary>
+    /// Revision history of the connector settings.
     /// </summary>
     public Dictionary<int, ConnectorRevision> Revisions { get; init; } = [];
 
+    /// <summary>
+    /// The current connector settings.
+    /// </summary>
     public ConnectorRevision CurrentRevision { get; init; } = new();
 
+    /// <summary>
+    /// The state of the connector.
+    /// </summary>
     public ConnectorState State { get; init; } = ConnectorState.Unknown;
 
-    public List<RecordPosition> Positions { get; init; } = new();
+    /// <summary>
+    /// A list of the last recorded positions of the connector.
+    /// </summary>
+    public List<RecordPosition> Positions { get; init; } = [];
 
+    /// <summary>
+    /// Metadata pertaining to the creation and last modification of the connector.
+    /// </summary>
     public SystemData System { get; init; } = new();
 }
 
@@ -324,11 +433,13 @@ public static class ConnectorDomainExceptions {
         public string ConnectorId { get; } = connectorId;
 
         public static void Throw(ConnectorEntity connector) =>
-            throw new ConnectorDeleted(connector.ConnectorId);
+            throw new ConnectorDeleted(connector.Id);
     }
 
     public class ConnectorInvalidState(string connectorId, ConnectorState currentState, ConnectorState requestedState)
-        : DomainException($"Connector {connectorId} invalid state change from {currentState} to {requestedState} detected") {
+        : DomainException(
+            $"Connector {connectorId} invalid state change from {currentState} to {requestedState} detected"
+        ) {
         public string         ConnectorId    { get; } = connectorId;
         public ConnectorState CurrentState   { get; } = currentState;
         public ConnectorState RequestedState { get; } = requestedState;
