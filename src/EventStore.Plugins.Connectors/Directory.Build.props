@@ -1,13 +1,12 @@
 <Project>
     <PropertyGroup>
-        <TargetFrameworks>net8.0;</TargetFrameworks>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>true</ImplicitUsings>
         <LangVersion>preview</LangVersion>
         <IsPackable>false</IsPackable>
         <Deterministic>true</Deterministic>
 		<InvariantGlobalization>true</InvariantGlobalization>
-
 		<Authors>Sérgio Silveira and Contributors</Authors>
 		<Company>Event Store Ltd</Company>
 		<Copyright>Copyright © 2012-$([System.DateTime]::Now.Year) $(Company) $(Authors)</Copyright>

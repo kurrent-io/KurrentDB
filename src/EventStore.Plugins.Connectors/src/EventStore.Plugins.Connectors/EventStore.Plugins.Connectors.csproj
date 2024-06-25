@@ -1,15 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
     <PropertyGroup>
-        <TargetFrameworks>net8.0;</TargetFrameworks>
         <Nullable>enable</Nullable>
         <ImplicitUsings>true</ImplicitUsings>
         <LangVersion>preview</LangVersion>
         <IsPackable>true</IsPackable>
         <InvariantGlobalization>true</InvariantGlobalization>
-
         <NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655</NoWarn>
-
         <Description>EventStore Connectors</Description>
         <PackageId>EventStore.Plugins.Connectors</PackageId>
         <PackageIcon>ouro.png</PackageIcon>
@@ -22,7 +18,6 @@
         <!--		<EmbedAllSources>true</EmbedAllSources>-->
         <!--		<EmbedUntrackedSources>true</EmbedUntrackedSources>-->
         <!--		<DebugType>full</DebugType>-->
-
         <!--		<UpdateVersionProperties>true</UpdateVersionProperties>-->
         <!--		<MinVerTagPrefix>v</MinVerTagPrefix>-->
         <!--		<MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>-->
@@ -32,7 +27,7 @@
         <OutputType>library</OutputType>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-        <!--        <AssemblyVersion>1.0.0.1</AssemblyVersion>-->
+        <!-- <AssemblyVersion>1.0.0.1</AssemblyVersion> -->
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
@@ -41,25 +36,23 @@
 
     <ItemGroup>
         <ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj"/>
-
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
             <Private>false</Private>
             <ExcludeAssets>all</ExcludeAssets>
         </ProjectReference>
-
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj">
             <Private>false</Private>
             <ExcludeAssets>all</ExcludeAssets>
         </ProjectReference>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="DotNext.Threading" Version="5.7.0"/>
-<!--        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9"/>-->
+        <!-- <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9"/> -->
 		<PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9">
 			<Private>false</Private>
 			<IncludeAssets>compile</IncludeAssets>
 		</PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DotNext.Threading" Version="5.7.0"/>
         <PackageReference Include="Eventuous.Application" Version="0.15.0-beta.10"/>
         <PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-beta.10"/>
         <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-beta.10"/>
@@ -70,31 +63,38 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Remove="EventStore.Plugins.Connectors.csproj.DotSettings"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <EmbeddedResource Remove="Planes\Control\Leases\**"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
+    </ItemGroup>
+
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <PropertyGroup>
+            <EventStorePluginsOutputPath>..\..\submodules\EventStore\src\EventStore.ClusterNode\plugins</EventStorePluginsOutputPath>
+        </PropertyGroup>
         <ItemGroup>
-            <!--            <MySourceFiles Include="$(OutDir)\EventStore.Plugins.Connectors.*" />-->
-            <!--            <MySourceFiles Include="$(OutDir)\EventStore.Streaming.*" />-->
+             <!-- <MySourceFiles Include="$(OutDir)\EventStore.Plugins.Connectors.*" />
+             <MySourceFiles Include="$(OutDir)\EventStore.Streaming.Core.*" />
+             <MySourceFiles Include="$(OutDir)\Eventuous*" /> -->
             <MySourceFiles Include="$(OutDir)\*.*"/>
         </ItemGroup>
-		<Delete Files="..\..\submodules\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)\*.*" ContinueOnError="true" />
-        <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="..\..\submodules\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)"/>
+        <RemoveDir Directories="$(EventStorePluginsOutputPath)\$(ProjectName)" />
+        <MakeDir Directories="$(EventStorePluginsOutputPath)\$(ProjectName)" />
+        <Copy SourceFiles="@(MySourceFiles)" DestinationFolder="$(EventStorePluginsOutputPath)\$(ProjectName)"/>
     </Target>
 
-    <!--	<Target Name="PublishPlugin" AfterTargets="Publish">-->
-    <!--		<ItemGroup>-->
-    <!--            <PluginOutputFiles Include="$(PublishDir)\*.*" />-->
-    <!--&lt;!&ndash;			<PluginOutputFiles Include="$(PublishDir)\EventStore.Plugins.Connectors.deps.json" />&ndash;&gt;-->
-    <!--&lt;!&ndash;			<PluginOutputFiles Include="$(PublishDir)\EventStore.Plugins.Connectors.dll" />&ndash;&gt;-->
-    <!--&lt;!&ndash;            <PluginOutputFiles Include="$(PublishDir)\EventStore.Plugins.Connectors.Contracts.dll" />&ndash;&gt;-->
-    <!--&lt;!&ndash;            <PluginOutputFiles Include="$(PublishDir)\EventStore.Streaming.Core.dll" />&ndash;&gt;-->
-    <!--		</ItemGroup>-->
-    <!--		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)/package" />-->
-    <!--	</Target>-->
+ 	<Target Name="PublishPlugin" AfterTargets="Publish">
+ 		<ItemGroup>
+ 			<!-- <PluginOutputFiles Include="$(PublishDir)\EventStore.Plugins.Connectors.deps.json" />
+ 			<PluginOutputFiles Include="$(PublishDir)\EventStore.Plugins.Connectors.dll" />
+ 			<PluginOutputFiles Include="$(PublishDir)\EventStore.Extensions.Connectors.dll" />
+ 			<PluginOutputFiles Include="$(PublishDir)\EventStore.Extensions.Connectors.Contracts.dll" />
+ 			<PluginOutputFiles Include="$(PublishDir)\EventStore.Streaming.Core.dll" />
+ 			<PluginOutputFiles Include="$(PublishDir)\Eventuous*.dll" /> -->
+ 			<PluginOutputFiles Include="$(PublishDir)\*.*" />
+ 		</ItemGroup>
+ 		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)/package" />
+ 	</Target>
 </Project>
