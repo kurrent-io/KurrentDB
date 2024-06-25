@@ -1,6 +1,14 @@
+[submodule "EventStore.Streaming"]
+ 	path = submodules/EventStore.Streaming
+ 	url = https://github.com/EventStore/EventStore-Streaming
+ 	branch = main
+ [submodule "EventStore"]
+ 	path = submodules/EventStore
+ 	url = https://github.com/EventStore/EventStore
+ 	branch = origin/clustervnode-hosted-service-refactor
 [submodule "submodules/EventStore"]
 	path = submodules/EventStore
-	url = https://github.com/EventStore/EventStore.git
+	url = https://github.com/EventStore/EventStore
 [submodule "submodules/EventStore.Streaming"]
 	path = submodules/EventStore.Streaming
-	url = git@github.com:EventStore/EventStore-Streaming.git
+	url = https://github.com/EventStore/EventStore-Streaming
