@@ -2,12 +2,15 @@ using EventStore.Connectors.Contracts;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
+using EventStore.Streaming.Connectors.Sinks;
 using Eventuous;
 using FluentValidation.Results;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Microsoft.Extensions.Configuration;
 using static EventStore.Connectors.Management.ConnectorDomainServices;
 using static Eventuous.FuncServiceDelegates;
+using ConfigurationExtensions = EventStore.Streaming.ConfigurationExtensions;
 using Status = Grpc.Core.Status;
 using ValidationFailure = FluentValidation.Results.ValidationFailure;
 
@@ -28,6 +31,12 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
                     if (!result.IsValid)
                         ConnectorDomainExceptions.InvalidConnectorSettings.Throw(cmd.ConnectorId, result.Errors);
 
+                    var config = new ConfigurationBuilder()
+                        .AddInMemoryCollection(cmd.Settings)
+                        .Build();
+
+                    var sinkOptions = ConfigurationExtensions.GetRequiredOptions<SinkOptions>(config);
+
                     var now = time.GetUtcNow().ToTimestamp();
 
                     var revision = new ConnectorRevision {
@@ -40,9 +49,9 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
                         new ConnectorCreated {
                             Connector = new() {
                                 ConnectorId     = cmd.ConnectorId,
-                                Name            = cmd.Name,
-                                ConnectorType   = cmd.ConnectorType,
-                                InstanceType    = cmd.InstanceType,
+                                // Name            = cmd.Name,
+                                // ConnectorType   = cmd.ConnectorType,
+                                // InstanceType    = cmd.InstanceType,
                                 CurrentRevision = revision.Number,
                                 Revisions       = { { revision.Number, revision } },
                                 State           = ConnectorState.Stopped,

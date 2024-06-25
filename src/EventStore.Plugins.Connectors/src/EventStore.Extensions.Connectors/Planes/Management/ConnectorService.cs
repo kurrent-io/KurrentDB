@@ -16,16 +16,50 @@ namespace EventStore.Connectors.Management;
 public class ConnectorService(ConnectorApplication application, IAuthorizationProvider authorizationProvider) : ConnectorCommandService.ConnectorCommandServiceBase {
 	ConnectorApplication Application { get; } = application;
 
-	/// <summary>
+    public override Task<CommandResult> Create(CreateConnector request, ServerCallContext context) => Execute(request, context);
+
+    async Task<CommandResult> Execute<TCommand>(TCommand command, ServerCallContext context) where TCommand : class {
+        var user = context.GetHttpContext().User;
+        await authorizationProvider.CheckAccessAsync(user, new Operation("connectors", "write"), context.CancellationToken);
+
+        try {
+            var result = await Application.Handle(command, context.CancellationToken);
+
+            return new CommandResult {
+                RequestId = context.GetHttpContext().TraceIdentifier,
+                Status    = new Status { Code = Code.Ok }
+            };
+        }
+        catch (DomainException dex) {
+            return new CommandResult {
+                RequestId = context.GetHttpContext().TraceIdentifier,
+                Status = new Status {
+                    Code    = Code.FailedPrecondition,
+                    Message = dex.Message
+                }
+            };
+        }
+        catch (Exception ex) {
+            return new CommandResult {
+                RequestId = context.GetHttpContext().TraceIdentifier,
+                Status = new Status {
+                    Code    = Code.Internal,
+                    Message = ex.Message
+                },
+            };
+        }
+    }
+
+    /// <summary>
 	///  Executes a command on the connector.
 	/// </summary>
-	public override async Task<CommandResult> Execute(ConnectorCommand request, ServerCallContext context) {
+	public async Task<CommandResult> Execute(ConnectorCommand request, ServerCallContext context) {
         var user = context.GetHttpContext().User;
         await authorizationProvider.CheckAccessAsync(user, new Operation("connectors", "write"), context.CancellationToken);
 
         var execute = request.CommandCase switch {
-            Create      => Application.Handle(request.Create, context.CancellationToken),
-            Reconfigure => Application.Handle(request.Reconfigure, context.CancellationToken),
+            // Create      => Application.Handle(request.Create, context.CancellationToken),
+            // Reconfigure => Application.Handle(request.Reconfigure, context.CancellationToken),
             Reset       => Application.Handle(request.Reset, context.CancellationToken),
             Delete      => Application.Handle(request.Delete, context.CancellationToken),
             Rename      => Application.Handle(request.Rename, context.CancellationToken),

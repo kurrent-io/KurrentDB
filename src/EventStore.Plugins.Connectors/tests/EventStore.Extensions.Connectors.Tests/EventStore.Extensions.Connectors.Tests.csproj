@@ -23,7 +23,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Remove="EventStore.Plugins.Connectors.Tests.csproj.DotSettings" />
+		<None Remove="EventStore.Extensions.Connectors.Tests.csproj.DotSettings" />
 	</ItemGroup>
 
 	<ItemGroup>

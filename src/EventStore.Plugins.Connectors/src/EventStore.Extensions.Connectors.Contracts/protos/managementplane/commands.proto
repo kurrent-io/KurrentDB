@@ -11,9 +11,23 @@ import "managementplane/resources.proto";
 option csharp_namespace = "EventStore.Connectors.Management.Contracts.Commands";
 
 service ConnectorCommandService {
-  rpc Execute(ConnectorCommand) returns (CommandResult) {
+//  rpc Execute(ConnectorCommand) returns (CommandResult) {
+//    option (google.api.http) = {
+//      post: "/v1/connectors/execute",
+//      body: "*"
+//    };
+//  }
+
+  rpc Create(CreateConnector) returns (CommandResult) {
     option (google.api.http) = {
-      post: "/v1/connectors/execute",
+      post: "/v1/connectors/create",
+      body: "*"
+    };
+  }
+
+  rpc Reconfigure(ReconfigureConnector) returns (CommandResult) {
+    option (google.api.http) = {
+      post: "/v1/connectors/reconfigure",
       body: "*"
     };
   }
@@ -41,10 +55,7 @@ message ConnectorCommand {
 message CreateConnector {
   string              connector_id   = 1;
   string              name           = 2;
-  ConnectorType       connector_type = 3;
-  string              instance_type  = 4;
-  NodeAffinity        node_affinity  = 5;
-  map<string, string> settings       = 6;  // everything else even if it could come from the settings.
+  map<string, string> settings       = 3;  // everything else even if it could come from the settings.
 }
 
 message ReconfigureConnector {
