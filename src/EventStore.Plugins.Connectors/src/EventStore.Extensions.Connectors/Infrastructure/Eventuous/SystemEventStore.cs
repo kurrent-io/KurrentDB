@@ -25,10 +25,10 @@ public class SystemEventStore : IEventStore {
     SystemProducer Producer { get; }
 
     /// <inheritdoc/>
-    public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken) {
+    public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken = default) {
         var exists = await Reader
-            .ReadBackwards(LogPosition.Latest, ConsumeFilter.Streams(stream), 1, cancellationToken: cancellationToken)
-            .AnyAsync(cancellationToken: cancellationToken);
+            .ReadBackwards(LogPosition.Latest, ConsumeFilter.Streams(stream), 1, cancellationToken)
+            .AnyAsync(cancellationToken);
 
         return exists; // lol, not that easy yet, but it should be.
     }
@@ -38,13 +38,16 @@ public class SystemEventStore : IEventStore {
         StreamName stream,
         ExpectedStreamVersion expectedVersion,
         IReadOnlyCollection<StreamEvent> events,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     ) {
         var messages = events.Select(
             evt => {
                 ArgumentNullException.ThrowIfNull(evt.Payload, nameof(evt.Payload)); // must do it better
 
-                var headers    = (Headers)evt.Metadata.ToHeaders();
+                var headers = new Headers();
+                foreach (var kvp in evt.Metadata.ToHeaders())
+                    headers.Add(kvp.Key, kvp.Value);
+
                 var schemaInfo = SchemaInfo.FromContentType(evt.Payload.GetType().FullName!, evt.ContentType);
 
                 var message = Message.Builder
@@ -58,18 +61,18 @@ public class SystemEventStore : IEventStore {
             }
         ).ToArray();
 
-        var requestbuilder = SendRequest.Builder
+        var requestBuilder = SendRequest.Builder
             .Stream(stream)
             .Messages(messages);
 
         if (expectedVersion == ExpectedStreamVersion.NoStream)
-            requestbuilder = requestbuilder.ExpectedStreamState(StreamState.Missing);
+            requestBuilder = requestBuilder.ExpectedStreamState(StreamState.Missing);
         else if (expectedVersion == ExpectedStreamVersion.Any)
-            requestbuilder = requestbuilder.ExpectedStreamState(StreamState.Any);
+            requestBuilder = requestBuilder.ExpectedStreamState(StreamState.Any);
         else
-            requestbuilder = requestbuilder.ExpectedStreamRevision(StreamRevision.From(expectedVersion.Value));
+            requestBuilder = requestBuilder.ExpectedStreamRevision(StreamRevision.From(expectedVersion.Value));
 
-        var request = requestbuilder.Create();
+        var request = requestBuilder.Create();
 
         var result = await Producer.Send(request);
 
@@ -80,12 +83,17 @@ public class SystemEventStore : IEventStore {
                     result.Position.StreamRevision
                 ),
             { Error: StreamNotFoundError } => throw new StreamNotFound(stream),
-            { Error: not null }            => throw new AppendToStreamException($"Unable to appends events to {stream}", result.Error),
+            { Error: not null } => throw new AppendToStreamException(
+                $"Unable to appends events to {stream}",
+                result.Error
+            ),
         };
     }
 
     /// <inheritdoc/>
-    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
+    public async Task<StreamEvent[]> ReadEvents(
+        StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default
+    ) {
         var from = start.Value == 0
             ? LogPosition.Earliest
             : LogPosition.From((ulong?)start.Value);
@@ -106,14 +114,15 @@ public class SystemEventStore : IEventStore {
                 .ToArrayAsync(cancellationToken);
 
             return result;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             throw new ReadFromStreamException($"Unable to read {count} starting at {start} events from {stream}", ex);
         }
     }
 
     /// <inheritdoc/>
-    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) {
+    public async Task<StreamEvent[]> ReadEventsBackwards(
+        StreamName stream, int count, CancellationToken cancellationToken = default
+    ) {
         try {
             var result = await Reader
                 .ReadBackwards(ConsumeFilter.Streams(stream), count, cancellationToken)
@@ -130,8 +139,7 @@ public class SystemEventStore : IEventStore {
                 .ToArrayAsync(cancellationToken);
 
             return result;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             throw new ReadFromStreamException($"Unable to read {count} events backwards from {stream}", ex);
         }
     }
@@ -141,14 +149,16 @@ public class SystemEventStore : IEventStore {
         StreamName stream,
         StreamTruncatePosition truncatePosition,
         ExpectedStreamVersion expectedVersion,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken = default
     ) {
         throw new NotImplementedException();
         //new TruncateStreamException($"Unable to truncate stream {stream} at {truncatePosition}");
     }
 
     /// <inheritdoc/>
-    public Task DeleteStream(StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken) {
+    public Task DeleteStream(
+        StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken = default
+    ) {
         throw new NotImplementedException();
         //new DeleteStreamException($"Unable to delete stream {stream}");
     }
