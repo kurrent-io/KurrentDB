@@ -46,8 +46,8 @@ option csharp_namespace = "EventStore.Connectors.Management.Contracts";
 
 message RecordPosition {
   string stream_id    = 1;
-  int32  partition_id = 3;
-  uint64 log_position = 5;
+  int32  partition_id = 2;
+  uint64 log_position = 3;
 }
 
 enum NodeAffinity {
@@ -63,8 +63,26 @@ enum NodeAffinity {
   NODE_AFFINITY_READONLY_REPLICA = 3;
 }
 
+message Connector {
+  // Unique identifier of the connector
+  string connector_id = 1;
+
+  // Name of the connector
+  string name = 2;
+
+  // The current revision number
+  int32 current_revision = 3;
+
+  // Current log position of the connector
+  uint64 log_position = 4;
+
+  // Whether the connector has been deleted
+  bool is_deleted = 5;
+}
+
 enum ConnectorType {
-  CONNECTOR_TYPE_UNSPECIFIED = 0;  // Do not use this default value.
+  // Do not use this default value.
+  CONNECTOR_TYPE_UNSPECIFIED = 0;
   CONNECTOR_TYPE_SINK        = 1;
   CONNECTOR_TYPE_SOURCE      = 2;
 }
@@ -88,60 +106,13 @@ enum ConnectorState {
 
   // The connector is currently stopped.
   CONNECTOR_STATE_STOPPED = 5;
-
-  // The connector has encountered a failure.
-  CONNECTOR_STATE_FAILED = 6;
 }
-
-// enum ConnectorRunningState {
-//   CONNECTOR_RUNNING_STATE_UNKNOWN    = 0;
-//   CONNECTOR_RUNNING_STATE_PROCESSING = 1; // The connector is in the process of being activated or deactivated.
-//   CONNECTOR_RUNNING_STATE_STOPPED    = 2;
-//   CONNECTOR_RUNNING_STATE_RUNNING    = 3;
-//   CONNECTOR_RUNNING_STATE_FAILED     = 4;
-// }
-//
-// enum RevisionState {
-//   REVISION_STATE_UNKNOWN               = 0; // CONNECTOR_RUNNING_STATE_UNKNOWN
-//   REVISION_STATE_ACTIVATING            = 1; // CONNECTOR_RUNNING_STATE_PROCESSING
-//   REVISION_STATE_ACTIVATED             = 2; // CONNECTOR_RUNNING_STATE_RUNNING
-//   REVISION_STATE_ACTIVATION_FAILED     = 3; // CONNECTOR_RUNNING_STATE_FAILED
-//   REVISION_STATE_DEACTIVATING          = 4; // CONNECTOR_RUNNING_STATE_PROCESSING
-//   REVISION_STATE_DEACTIVATED           = 5; // CONNECTOR_RUNNING_STATE_STOPPED
-//   REVISION_STATE_DEACTIVATION_FAILED   = 6; // CONNECTOR_RUNNING_STATE_FAILED
-// }
 
 // Revision of the connector. Only changes when the configuration settings are updated.
 message ConnectorRevision {
   int32                                    number     = 1;
-  map<string, google.protobuf.StringValue> settings   = 3;
-  google.protobuf.Timestamp                created_at = 8;
-}
-
-message Connector {
-  // Unique identifier of the connector
-  string connector_id = 1;
-
-  // Name of the connector
-  string name = 2;
-
-  // Type of the connector, which can be a source or a sink
-  ConnectorType connector_type = 3;
-
-  // The type of the connector implementation
-  string instance_type = 4;  // from SinkConnectorType or SourceConnectorType
-
-  map<int32, ConnectorRevision> revisions = 5;  // Revision number to revision. The latest revision is the current configuration.
-
-  int32 current_revision = 6;  // The current revision number
-
-  repeated RecordPosition last_positions = 7;  // The last position of the connector in the log
-
-  // Current running state of the connector
-  ConnectorState state = 8;
-
-  // Metadata pertaining to creation and last modification of the connector.
-  SystemData system = 50;
+  map<string, google.protobuf.StringValue> settings   = 2;
+  google.protobuf.Timestamp                created_at = 3;
 }
 
 message ConnectorStatus {

@@ -10,71 +10,71 @@ import "managementplane/resources.proto";
 option csharp_namespace = "EventStore.Connectors.Management.Contracts.Events";
 
 message ConnectorCreated {
-  string connector_id = 1;
-  string name = 2;
-  ConnectorType type = 3;
-  string instance_type = 4;
-  map<string, google.protobuf.StringValue> settings = 5;
-  google.protobuf.Timestamp                timestamp = 6;
+  string                                   connector_id = 1;
+  string                                   name         = 2;
+  map<string, google.protobuf.StringValue> settings     = 3;
+  google.protobuf.Timestamp                timestamp    = 4;
 }
 
 message ConnectorReconfigured {
-  string                                   connector_id    = 1;
-  int32                                    revision        = 3;
-  map<string, google.protobuf.StringValue> settings        = 5;
-  google.protobuf.Timestamp                timestamp = 7;
+  string                                   connector_id = 1;
+  int32                                    revision     = 3;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  google.protobuf.Timestamp                timestamp    = 7;
 }
 
 message ConnectorDeleted {
   string                    connector_id = 1;
-  google.protobuf.Timestamp timestamp   = 3;
+  google.protobuf.Timestamp timestamp    = 3;
 }
 
 message ConnectorRenamed {
   string                    connector_id = 1;
   string                    name         = 3;
-  google.protobuf.Timestamp timestamp   = 5;
+  google.protobuf.Timestamp timestamp    = 5;
 }
 
 // Occurs when connector is started.
 message ConnectorActivating {
   string                                   connector_id = 1;
-  google.protobuf.Timestamp                timestamp    = 2;
+  int32                                    revision     = 2;
+  map<string, google.protobuf.StringValue> settings     = 3;
+  google.protobuf.Timestamp                timestamp    = 4;
 }
 
 // Occurs when connector is stopped.
 message ConnectorDeactivating {
-  string                                   connector_id = 1;
-  google.protobuf.Timestamp                timestamp    = 2;
+  string                    connector_id = 1;
+  google.protobuf.Timestamp timestamp    = 2;
 }
 
 // Occurs when connector state changes to CONNECTOR_STATE_RUNNING.
 message ConnectorRunning {
-  string                                   connector_id = 1;
-  google.protobuf.Timestamp                timestamp    = 2;
+  string                    connector_id = 1;
+  google.protobuf.Timestamp timestamp    = 2;
 }
 
 // Occurs when connector state changes to CONNECTOR_STATE_STOPPED and an error is not present.
 message ConnectorStopped {
-  string                                   connector_id  = 1;
-  google.protobuf.Timestamp                timestamp     = 2;
+  string                    connector_id = 1;
+  google.protobuf.Timestamp timestamp    = 2;
 }
 
 // Occurs when connector state changes to CONNECTOR_STATE_STOPPED and an error is present.
 message ConnectorFailed {
   string                    connector_id  = 1;
-  Error                     error_details = 2; // TODO JC: What do we want to do with the error details?
+  Error                     error_details = 2;
   google.protobuf.Timestamp timestamp     = 3;
 }
 
 message ConnectorReset {
-  string                                   connector_id = 1;
-  repeated RecordPosition                  positions    = 2;  // optional, if not provided, reset to the config default earliest/latest
-  google.protobuf.Timestamp                timestamp    = 3;
+  string                    connector_id = 1;
+  repeated RecordPosition   positions    = 2;  // optional, if not provided, reset to the config default earliest/latest
+  google.protobuf.Timestamp timestamp    = 3;
 }
 
 message ConnectorPositionsCommitted {
   string                    connector_id = 1;
-  repeated RecordPosition   positions    = 3;
-  google.protobuf.Timestamp committed_at = 4;
+  repeated RecordPosition   positions    = 2;
+  google.protobuf.Timestamp committed_at = 3;
 }

@@ -7,7 +7,6 @@ import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
 
 option csharp_namespace = "EventStore.Connectors.Contracts";
-
 // SS: Had to copy this because the google.rpc.Code conflicts with the ESDB assemblies...
 //
 // The canonical error codes for gRPC APIs.
@@ -17,7 +16,7 @@ option csharp_namespace = "EventStore.Connectors.Contracts";
 // the most specific error code that applies.  For example, prefer
 // `OUT_OF_RANGE` over `FAILED_PRECONDITION` if both codes apply.
 // Similarly prefer `NOT_FOUND` or `ALREADY_EXISTS` over `FAILED_PRECONDITION`.
-enum Code {
+enum RpcStatusCode {
   // Not an error; returned on success.
   //
   // HTTP Mapping: 200 OK
@@ -173,9 +172,9 @@ enum Code {
   DATA_LOSS = 15;
 }
 
-message Status {
-  Code   code    = 1;
-  string message = 2;
+message RpcStatus {
+  RpcStatusCode code    = 1;
+  string        message = 2;
 }
 
 message Error {
@@ -192,27 +191,13 @@ message ValidationFailure {
 }
 
 message ValidationProblem {
-  repeated ValidationFailure failures = 2;
+  repeated ValidationFailure failures = 1;
 }
 
 message CommandResult {
-  string              request_id = 1;
-  map<string, string> headers    = 2;
-
-  Status status = 4;
-
-  google.protobuf.Any payload            = 5;
-  ValidationProblem   validation_problem = 6;
-}
-
-message SystemData {
-  google.protobuf.Timestamp   created_at      = 1;  // The timestamp of resource creation (UTC).
-  google.protobuf.StringValue created_by      = 2;  // The identity that created the resource.
-  google.protobuf.StringValue created_by_type = 3;  // The type of identity that created the resource.
-
-  google.protobuf.Timestamp   last_modified_at      = 4;  // The timestamp of resource last modification (UTC).
-  google.protobuf.StringValue last_modified_by      = 5;  // The identity that last modified the resource.
-  google.protobuf.StringValue last_Modified_by_type = 6;  // The type of identity that last modified the resource.
-
-  bool is_deleted = 7;  // Indicates if the resource is deleted.
+  string              request_id         = 1;
+  map<string, string> headers            = 2;
+  RpcStatus              status             = 3;
+  google.protobuf.Any payload            = 4;
+  ValidationProblem   validation_problem = 5;
 }

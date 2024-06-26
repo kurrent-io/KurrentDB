@@ -3,7 +3,6 @@ using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Plugins.Authorization;
 using Eventuous;
 using Grpc.Core;
-using Status = EventStore.Connectors.Contracts.Status;
 
 namespace EventStore.Connectors.Management;
 
@@ -56,21 +55,21 @@ public class ConnectorService(ConnectorApplication application, IAuthorizationPr
 
             return new CommandResult {
                 RequestId = requestId,
-                Status    = new Status { Code = Code.Ok }
+                Status    = new RpcStatus { Code = RpcStatusCode.Ok }
             };
         } catch (DomainException dex) {
             return new CommandResult {
                 RequestId = requestId,
-                Status = new Status {
-                    Code    = Code.FailedPrecondition,
+                Status = new RpcStatus {
+                    Code    = RpcStatusCode.FailedPrecondition,
                     Message = dex.Message
                 }
             };
         } catch (Exception ex) {
             return new CommandResult {
                 RequestId = requestId,
-                Status = new Status {
-                    Code    = Code.Internal,
+                Status = new RpcStatus {
+                    Code    = RpcStatusCode.Internal,
                     Message = ex.Message
                 },
             };
