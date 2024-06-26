@@ -56,30 +56,21 @@ class ConnectorsRegistry {
 
         var lastReadPosition = checkpoint;
 
-        // TODO JC: We are performing an 'on the fly' projection here. Can we get this information elsewhere where it is already projected?
         await foreach (var record in Reader.ReadForwards(
                            checkpoint.LogPosition,
                            ConnectorsConsumeFilter,
                            cancellationToken: cancellationToken
                        )) {
             switch (record.Value) {
-                case ConnectorCreated evt:
+                case ConnectorActivating evt:
                     state.Add(
                         evt.ConnectorId,
                         new(
                             evt.ConnectorId,
-                            Revision: 0,
+                            evt.Revision,
                             new ConnectorSettings(evt.Settings.ToDictionary())
                         )
                     );
-
-                    break;
-
-                case ConnectorReconfigured evt:
-                    state[evt.ConnectorId] = state[evt.ConnectorId] with {
-                        Revision = evt.Revision,
-                        Settings = new ConnectorSettings(evt.Settings.ToDictionary())
-                    };
 
                     break;
 
