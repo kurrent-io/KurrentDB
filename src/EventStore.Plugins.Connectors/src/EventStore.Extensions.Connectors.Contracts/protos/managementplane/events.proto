@@ -69,7 +69,7 @@ message ConnectorFailed {
 
 message ConnectorReset {
   string                    connector_id = 1;
-  repeated uint64           positions    = 2;  // optional, if not provided, reset to the config default earliest/latest
+  repeated uint64           positions    = 2;
   google.protobuf.Timestamp timestamp    = 3;
 }
 
