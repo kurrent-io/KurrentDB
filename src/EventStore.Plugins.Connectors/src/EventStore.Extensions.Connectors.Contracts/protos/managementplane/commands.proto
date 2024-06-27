@@ -59,20 +59,6 @@ service ConnectorCommandService {
       body: "*"
     };
   }
-
-  rpc RecordStateChange(RecordConnectorStateChange) returns (CommandResult) {
-    option (google.api.http) = {
-      post: "/v1/connectors/record-state-change",
-      body: "*"
-    };
-  }
-
-  rpc RecordPositions(RecordConnectorPositions) returns (CommandResult) {
-    option (google.api.http) = {
-      post: "/v1/connectors/record-positions",
-      body: "*"
-    };
-  }
 }
 
 message CreateConnector {

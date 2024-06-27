@@ -34,12 +34,6 @@ public class ConnectorService(ConnectorApplication application, IAuthorizationPr
     public override Task<CommandResult> Rename(RenameConnector request, ServerCallContext context) =>
         Execute(request, context);
 
-    public override Task<CommandResult>
-        RecordStateChange(RecordConnectorStateChange request, ServerCallContext context) => Execute(request, context);
-
-    public override Task<CommandResult> RecordPositions(RecordConnectorPositions request, ServerCallContext context) =>
-        Execute(request, context);
-
     async Task<CommandResult> Execute<TCommand>(TCommand command, ServerCallContext context) where TCommand : class {
         var user      = context.GetHttpContext().User;
         var requestId = context.GetHttpContext().TraceIdentifier;
