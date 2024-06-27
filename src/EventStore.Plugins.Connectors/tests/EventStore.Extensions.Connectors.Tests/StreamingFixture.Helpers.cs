@@ -70,7 +70,7 @@ public partial class StreamingFixture {
         );
     }
 
-    public IEnumerable<StreamEvent> CreateStreamEvents(int count) {
+    public IEnumerable<StreamEvent> CreateStreamEvents(int count = 1) {
         for (var i = 0; i < count; i++)
             yield return CreateStreamEvent(count);
     }

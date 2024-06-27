@@ -77,8 +77,20 @@ public class SystemProducer : IProducer {
 
 		SendResult result;
 
+        var expectedRevision = request.ExpectedStreamRevision != StreamRevision.Unset
+            ? request.ExpectedStreamRevision.Value
+            : request.ExpectedStreamState switch {
+                StreamState.Missing => Core.Data.ExpectedVersion.NoStream,
+                StreamState.Exists  => Core.Data.ExpectedVersion.StreamExists,
+                StreamState.Any     => Core.Data.ExpectedVersion.Any
+            };
+
 		try {
-			var (position, streamRevision) = await Client.WriteEvents(validRequest.Stream, events);
+            var (position, streamRevision) = await Client.WriteEvents(
+                validRequest.Stream,
+                events,
+                expectedRevision
+            );
 
 			var recordPosition = new RecordPosition {
 				StreamId       = StreamId.From(validRequest.Stream),
