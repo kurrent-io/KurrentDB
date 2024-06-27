@@ -44,12 +44,6 @@ option csharp_namespace = "EventStore.Connectors.Management.Contracts";
 //   map<string, string> properties = 4;
 // }
 
-message RecordPosition {
-  string stream_id    = 1;
-  int32  partition_id = 2;
-  uint64 log_position = 3;
-}
-
 enum NodeAffinity {
   NODE_AFFINITY_ANY = 0;
 
@@ -116,10 +110,10 @@ message ConnectorRevision {
 }
 
 message ConnectorStatus {
-  string                  connector_id   = 1;
-  ConnectorType           connector_type = 2;
-  string                  instance_type  = 3;
-  ConnectorRevision       revision       = 4;
-  ConnectorState          state          = 5;
-  repeated RecordPosition positions      = 6;
+  string            connector_id   = 1;
+  ConnectorType     connector_type = 2;
+  string            instance_type  = 3;
+  ConnectorRevision revision       = 4;
+  ConnectorState    state          = 5;
+  repeated uint64   positions      = 6;
 }

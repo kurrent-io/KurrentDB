@@ -318,14 +318,14 @@ public record ConnectorEntity : State<ConnectorEntity> {
         On<ConnectorReset>(
             (state, evt) =>
                 state with {
-                    // TODO JC: What do we want to do here?
+                    Positions = evt.Positions.ToList()
                 }
         );
 
         On<ConnectorPositionsCommitted>(
             (state, evt) =>
                 state with {
-                    LogPosition = evt.Positions[^1].LogPosition
+                    Positions = Positions.Concat(evt.Positions).ToList()
                 }
         );
     }
@@ -353,7 +353,12 @@ public record ConnectorEntity : State<ConnectorEntity> {
     /// <summary>
     /// The current log position of the connector.
     /// </summary>
-    public ulong LogPosition { get; init; }
+    public ulong LogPosition => Positions[^1];
+
+    /// <summary>
+    /// The positions of the connector.
+    /// </summary>
+    public List<ulong> Positions { get; init; } = [];
 
     /// <summary>
     /// Indicator if the connector is deleted.

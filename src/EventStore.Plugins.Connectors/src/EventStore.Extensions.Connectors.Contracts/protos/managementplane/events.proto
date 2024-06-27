@@ -69,12 +69,12 @@ message ConnectorFailed {
 
 message ConnectorReset {
   string                    connector_id = 1;
-  repeated RecordPosition   positions    = 2;  // optional, if not provided, reset to the config default earliest/latest
+  repeated uint64           positions    = 2;  // optional, if not provided, reset to the config default earliest/latest
   google.protobuf.Timestamp timestamp    = 3;
 }
 
 message ConnectorPositionsCommitted {
   string                    connector_id = 1;
-  repeated RecordPosition   positions    = 2;
+  repeated uint64           positions    = 2;
   google.protobuf.Timestamp committed_at = 3;
 }

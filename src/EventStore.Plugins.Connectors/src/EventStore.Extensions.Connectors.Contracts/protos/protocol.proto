@@ -197,7 +197,7 @@ message ValidationProblem {
 message CommandResult {
   string              request_id         = 1;
   map<string, string> headers            = 2;
-  RpcStatus              status             = 3;
+  RpcStatus           status             = 3;
   google.protobuf.Any payload            = 4;
   ValidationProblem   validation_problem = 5;
 }

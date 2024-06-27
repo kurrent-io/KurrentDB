@@ -85,8 +85,8 @@ message StopConnector {
 }
 
 message ResetConnector {
-  string                  connector_id = 1;
-  repeated RecordPosition positions    = 2;  // optional, if not provided, reset to the config default earliest/latest
+  string          connector_id = 1;
+  repeated uint64 positions    = 2;
 }
 
 message RenameConnector {
@@ -104,6 +104,6 @@ message RecordConnectorStateChange {
 
 message RecordConnectorPositions {
   string                    connector_id = 1;
-  repeated RecordPosition   positions    = 2;
+  repeated uint64           positions    = 2;
   google.protobuf.Timestamp timestamp    = 3;
 }
