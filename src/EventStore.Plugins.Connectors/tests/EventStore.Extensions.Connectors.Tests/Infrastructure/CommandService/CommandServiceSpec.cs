@@ -13,7 +13,7 @@ public class CommandServiceSpec<TState, TCommand>
     dynamic[]        ThenEvents          { get; set; } = [];
     DomainException? ThenDomainException { get; set; }
 
-    InMemoryEventStore     EventStore { get; set; } = null!;
+    InMemoryEventStore     EventStore { get; set; } = new InMemoryEventStore();
     CommandService<TState> Service    { get; set; } = null!;
 
     public static CommandServiceSpec<TState, TCommand> Builder => new CommandServiceSpec<TState, TCommand>();
@@ -21,8 +21,7 @@ public class CommandServiceSpec<TState, TCommand>
     public CommandServiceSpec<TState, TCommand> WithService(
         Func<IEventStore, CommandService<TState>> serviceFactory
     ) {
-        EventStore = new InMemoryEventStore();
-        Service    = serviceFactory(EventStore);
+        Service = serviceFactory(EventStore);
         return this;
     }
 
@@ -64,16 +63,16 @@ public class CommandServiceSpec<TState, TCommand>
         // When I send the following command to my service.
         var commandResult = await Service.Handle(WhenCommand, CancellationToken.None);
 
-        // Then I expect a domain exception to be thrown.
-        if (ThenDomainException is not null) {
-            commandResult.Should().BeOfType<ErrorResult<TState>>();
-            commandResult.As<ErrorResult<TState>>().Exception.Should().BeOfType(ThenDomainException.GetType());
+        // Then I expect the following events to be emitted.
+        if (ThenDomainException is null) {
+            var actualEvents = commandResult.Changes?.Select(c => c.Event);
+            actualEvents.Should().BeEquivalentTo(ThenEvents);
             return;
         }
 
-        // OR I expect the following events to be emitted.
-        var actualEvents = commandResult.Changes?.Select(c => c.Event);
-        actualEvents.Should().BeEquivalentTo(ThenEvents);
+        // OR I expect a domain exception to be thrown.
+        commandResult.Should().BeOfType<ErrorResult<TState>>();
+        commandResult.As<ErrorResult<TState>>().Exception.Should().BeOfType(ThenDomainException.GetType());
     }
 
     static void RegisterEventsInTypeMap(params object[] events) =>
