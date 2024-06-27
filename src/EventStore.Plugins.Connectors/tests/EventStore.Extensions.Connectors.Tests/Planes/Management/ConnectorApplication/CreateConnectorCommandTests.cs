@@ -3,16 +3,14 @@ using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Extensions.Connectors.Tests.CommandService;
 using EventStore.Testing.Fixtures;
-using Eventuous;
 using FluentValidation.Results;
 using Google.Protobuf.WellKnownTypes;
 using ValidationResult = FluentValidation.Results.ValidationResult;
-using ConnectorsManagement = EventStore.Connectors.Management;
 
 namespace EventStore.Extensions.Connectors.Tests.Management.ConnectorApplication;
 
-public class CreateConnectorCommandTests(ITestOutputHelper output, FastFixture fixture)
-    : FastTests<FastFixture>(output, fixture) {
+public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServiceFixture fixture)
+    : FastTests<CommandServiceFixture>(output, fixture) {
     [Fact]
     public async Task ShouldCreateConnectorWhenConnectorDoesNotAlreadyExist() {
         var connectorId   = Fixture.NewConnectorId();
@@ -20,7 +18,7 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, FastFixture f
         var settings      = new Dictionary<string, string> { { "Setting1Key", "Setting1Value" } };
 
         await CommandServiceSpec<ConnectorEntity, CreateConnector>.Builder
-            .WithService(CreateConnectorApplication)
+            .WithService(Fixture.CreateConnectorApplication)
             .When(
                 new CreateConnector {
                     ConnectorId = connectorId,
@@ -46,7 +44,7 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, FastFixture f
 
         await CommandServiceSpec<ConnectorEntity, CreateConnector>.Builder
             .WithService(
-                eventStore => CreateConnectorApplication(
+                eventStore => Fixture.CreateConnectorApplication(
                     eventStore,
                     forcedValidationResult
                 )
@@ -65,20 +63,4 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, FastFixture f
                 )
             );
     }
-
-    ConnectorsManagement.ConnectorApplication CreateConnectorApplication(IEventStore eventStore)
-        => CreateConnectorApplication(
-            eventStore,
-            validationResult: new ValidationResult()
-        );
-
-    ConnectorsManagement.ConnectorApplication CreateConnectorApplication(
-        IEventStore eventStore,
-        ValidationResult validationResult
-    ) =>
-        new ConnectorsManagement.ConnectorApplication(
-            _ => validationResult,
-            eventStore,
-            Fixture.TimeProvider
-        );
 }
