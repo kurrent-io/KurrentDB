@@ -3,6 +3,8 @@ using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Plugins.Authorization;
 using Eventuous;
 using Grpc.Core;
+using OkHandleResult = Eventuous.OkResult<EventStore.Connectors.Management.ConnectorEntity>;
+using ErrorHandleResult = Eventuous.ErrorResult<EventStore.Connectors.Management.ConnectorEntity>;
 
 namespace EventStore.Connectors.Management;
 
@@ -44,29 +46,59 @@ public class ConnectorService(ConnectorApplication application, IAuthorizationPr
             context.CancellationToken
         );
 
-        try {
-            await Application.Handle(command, context.CancellationToken);
+        var handleResult = await Application.Handle(command, context.CancellationToken);
 
-            return new CommandResult {
-                RequestId = requestId,
-                Status    = new RpcStatus { Code = RpcStatusCode.Ok }
-            };
-        } catch (DomainException dex) {
-            return new CommandResult {
-                RequestId = requestId,
-                Status = new RpcStatus {
-                    Code    = RpcStatusCode.FailedPrecondition,
-                    Message = dex.Message
-                }
-            };
-        } catch (Exception ex) {
-            return new CommandResult {
-                RequestId = requestId,
-                Status = new RpcStatus {
-                    Code    = RpcStatusCode.Internal,
-                    Message = ex.Message
+        // TODO JC: Need to tidy this up and break it down into smaller methods.
+        return handleResult switch {
+            OkHandleResult
+                => new CommandResult {
+                    RequestId = requestId,
+                    Status    = new RpcStatus { Code = RpcStatusCode.Ok }
                 },
-            };
-        }
+            ErrorHandleResult {
+                    Exception: ConnectorDomainExceptions.InvalidConnectorSettings invalidConnectorSettings
+                } errorResult
+                => new CommandResult {
+                    RequestId = requestId,
+                    ValidationProblem = new ValidationProblem {
+                        Failures = {
+                            invalidConnectorSettings.Errors.Select(
+                                err => new ValidationFailure {
+                                    PropertyName = err.Key,
+                                    Errors       = { err.Value }
+                                }
+                            )
+                        }
+                    },
+                    Status = new RpcStatus {
+                        Code    = RpcStatusCode.FailedPrecondition,
+                        Message = errorResult.Exception!.Message,
+                    }
+                },
+            ErrorHandleResult { Exception: DomainException } errorResult
+                => new CommandResult {
+                    RequestId = requestId,
+                    Status = new RpcStatus {
+                        Code    = RpcStatusCode.FailedPrecondition,
+                        Message = errorResult.Exception!.Message
+                    }
+                },
+            ErrorHandleResult { Exception: not DomainException } errorResult
+                => new CommandResult {
+                    RequestId = requestId,
+                    Status = new RpcStatus {
+                        Code    = RpcStatusCode.Internal,
+                        Message = errorResult.Exception?.Message
+                    }
+                },
+            _
+                => new CommandResult {
+                    RequestId = requestId,
+                    Status = new RpcStatus {
+                        Code    = RpcStatusCode.Unknown,
+                        Message = "Unknown error"
+                    }
+                }
+        };
     }
 }

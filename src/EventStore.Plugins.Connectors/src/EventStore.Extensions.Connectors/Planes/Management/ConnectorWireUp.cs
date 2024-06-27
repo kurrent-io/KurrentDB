@@ -1,8 +1,12 @@
 using EventStore.Connect.Connectors;
 using EventStore.Connectors.Eventuous;
+using EventStore.Core.Bus;
+using EventStore.Streaming.Producers;
+using EventStore.Streaming.Readers;
 using Eventuous;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
 namespace EventStore.Connectors.Management;
@@ -22,7 +26,22 @@ public static class ConnectorWireUp {
                 )
             );
 
-        // TODO JC: Need to wire up SystemProducer.
+        services.AddSingleton<SystemProducer>(
+            serviceProvider => {
+                var publisher     = serviceProvider.GetRequiredService<IPublisher>();
+                var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+
+                var reader = SystemProducer.Builder
+                    .ProducerId("connectors-producer")
+                    .Publisher(publisher)
+                    .LoggerFactory(loggerFactory)
+                    .EnableLogging()
+                    .Create();
+
+                return reader;
+            }
+        );
+
         services.AddAggregateStore<SystemEventStore>();
         services.AddCommandService<ConnectorApplication, ConnectorEntity>();
 

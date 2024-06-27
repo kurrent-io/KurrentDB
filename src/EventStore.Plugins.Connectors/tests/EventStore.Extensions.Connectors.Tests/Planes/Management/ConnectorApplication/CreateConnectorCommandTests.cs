@@ -41,7 +41,7 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServic
     public async Task ShouldThrowDomainExceptionWhenConnectorSettingsAreInvalid() {
         var connectorId = Fixture.NewConnectorId();
         var forcedValidationResult =
-            new ValidationResult(new[] { new ValidationFailure("SomeProperty", "Validation failure!") });
+            new ValidationResult([new ValidationFailure("SomeProperty", "Validation failure!")]);
 
         await CommandServiceSpec<ConnectorEntity, CreateConnector>.Builder
             .WithService(
