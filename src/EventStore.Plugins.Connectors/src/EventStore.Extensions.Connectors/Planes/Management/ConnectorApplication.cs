@@ -147,6 +147,7 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
             .GetStream(FromCommand())
             .Act(
                 (connector, events, cmd) => {
+                    // TODO JC: Should we validate ConnectorExists?
                     EnsureConnectorNotDeleted(connector);
 
                     if (connector.Name == cmd.Name)
@@ -386,7 +387,7 @@ public static class ConnectorDomainExceptions {
             throw new ConnectorInvalidState(connectorId, currentState, requestedState);
     }
 
-    public class InvalidConnectorSettings(string connectorId, IDictionary<string, string[]> errors)
+    public class InvalidConnectorSettings(string connectorId, Dictionary<string, string[]> errors)
         : DomainException($"Connector {connectorId} invalid settings detected") {
         public string                        ConnectorId { get; } = connectorId;
         public IDictionary<string, string[]> Errors      { get; } = errors;

@@ -5,7 +5,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="NewId" Version="4.0.1" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" /> <!-- Required for running tests -->
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+		<PackageReference Include="Shouldly" Version="4.2.1" /> <!-- Required for running tests -->
 	</ItemGroup>
 
 	<ItemGroup>
@@ -24,9 +25,5 @@
 
 	<ItemGroup>
 		<None Remove="EventStore.Extensions.Connectors.Tests.csproj.DotSettings" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Folder Include="Planes\Management\" />
 	</ItemGroup>
 </Project>
