@@ -11,13 +11,6 @@ import "managementplane/resources.proto";
 option csharp_namespace = "EventStore.Connectors.Management.Contracts.Commands";
 
 service ConnectorCommandService {
-//  rpc Execute(ConnectorCommand) returns (CommandResult) {
-//    option (google.api.http) = {
-//      post: "/v1/connectors/execute",
-//      body: "*"
-//    };
-//  }
-
   rpc Create(CreateConnector) returns (CommandResult) {
     option (google.api.http) = {
       post: "/v1/connectors/create",
@@ -31,36 +24,66 @@ service ConnectorCommandService {
       body: "*"
     };
   }
-}
 
-message ConnectorCommand {
-  string                                   request_id = 1;
-  map<string, google.protobuf.StringValue> headers    = 2;
+  rpc Delete(DeleteConnector) returns (CommandResult) {
+    option (google.api.http) = {
+      post: "/v1/connectors/delete",
+      body: "*"
+    };
+  }
+  
+  rpc Start(StartConnector) returns (CommandResult) {
+    option (google.api.http) = {
+      post: "/v1/connectors/start",
+      body: "*"
+    };
+  }
 
-  oneof command {
-    CreateConnector      create      = 10;
-    ReconfigureConnector reconfigure = 11;
-    DeleteConnector delete           = 12;
-    ResetConnector  reset            = 13;
-    RenameConnector rename           = 14;
+  rpc Stop(StopConnector) returns (CommandResult) {
+    option (google.api.http) = {
+      post: "/v1/connectors/stop",
+      body: "*"
+    };
+  }
 
-    StartConnector start = 30;
-    StopConnector  stop  = 31;
+  rpc Reset(ResetConnector) returns (CommandResult) {
+    option (google.api.http) = {
+      post: "/v1/connectors/reset",
+      body: "*"
+    };
+  }
 
-    RecordConnectorStateChange record_state_change = 40;
-    RecordConnectorPositions   record_positions    = 42;
+  rpc Rename(RenameConnector) returns (CommandResult) {
+    option (google.api.http) = {
+      post: "/v1/connectors/rename",
+      body: "*"
+    };
+  }
+
+  rpc RecordStateChange(RecordConnectorStateChange) returns (CommandResult) {
+    option (google.api.http) = {
+      post: "/v1/connectors/record-state-change",
+      body: "*"
+    };
+  }
+
+  rpc RecordPositions(RecordConnectorPositions) returns (CommandResult) {
+    option (google.api.http) = {
+      post: "/v1/connectors/record-positions",
+      body: "*"
+    };
   }
 }
 
 message CreateConnector {
-  string              connector_id   = 1;
-  string              name           = 2;
-  map<string, string> settings       = 3;  // everything else even if it could come from the settings.
+  string              connector_id = 1;
+  string              name = 2;
+  map<string, string> settings = 3;  // everything else even if it could come from the settings.
 }
 
 message ReconfigureConnector {
   string                                   connector_id = 1;
-  map<string, google.protobuf.StringValue> settings     = 2;
+  map<string, google.protobuf.StringValue> settings = 2;
 }
 
 message DeleteConnector {
@@ -77,24 +100,24 @@ message StopConnector {
 
 message ResetConnector {
   string                  connector_id = 1;
-  repeated RecordPosition positions    = 2;  // optional, if not provided, reset to the config default earliest/latest
+  repeated RecordPosition positions = 2;  // optional, if not provided, reset to the config default earliest/latest
 }
 
 message RenameConnector {
   string connector_id = 1;
-  string name         = 2;
+  string name = 2;
 }
 
 message RecordConnectorStateChange {
-  string                    connector_id  = 1;
-  ConnectorState            from_state    = 3;
-  ConnectorState            to_state      = 4;
-  Error                     error_details = 5;
-  google.protobuf.Timestamp timestamp     = 6;
+  string                    connector_id = 1;
+  ConnectorState            from_state = 2;
+  ConnectorState            to_state = 3;
+  Error                     error_details = 4;
+  google.protobuf.Timestamp timestamp = 5;
 }
 
 message RecordConnectorPositions {
   string                    connector_id = 1;
-  repeated RecordPosition   positions    = 2;
-  google.protobuf.Timestamp timestamp    = 3;
+  repeated RecordPosition   positions = 2;
+  google.protobuf.Timestamp timestamp = 3;
 }
