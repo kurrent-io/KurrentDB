@@ -19,6 +19,7 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServic
 
         await CommandServiceSpec<ConnectorEntity, CreateConnector>.Builder
             .WithService(Fixture.CreateConnectorApplication)
+            .GivenNoState()
             .When(
                 new CreateConnector {
                     ConnectorId = connectorId,
@@ -49,6 +50,7 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServic
                     forcedValidationResult
                 )
             )
+            .GivenNoState()
             .When(
                 new CreateConnector {
                     ConnectorId = connectorId,

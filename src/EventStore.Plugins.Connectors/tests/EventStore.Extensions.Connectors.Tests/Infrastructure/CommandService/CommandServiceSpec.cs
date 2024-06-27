@@ -4,6 +4,7 @@ using Eventuous;
 
 namespace EventStore.Extensions.Connectors.Tests.CommandService;
 
+// TODO JC: Bring in fixture logger so we can log for GWT steps.
 public class CommandServiceSpec<TState, TCommand>
     where TState : State<TState>, new()
     where TCommand : class, new() {
@@ -24,6 +25,8 @@ public class CommandServiceSpec<TState, TCommand>
         Service    = serviceFactory(EventStore);
         return this;
     }
+
+    public CommandServiceSpec<TState, TCommand> GivenNoState() => Given([]);
 
     public CommandServiceSpec<TState, TCommand> Given(params object[] events) {
         GivenEvents = events;
