@@ -24,7 +24,7 @@ public static class ConnectorWireUp {
 
         // TODO JC: Need to wire up SystemProducer.
         services.AddAggregateStore<SystemEventStore>();
-        services.AddFunctionalService<ConnectorApplication, ConnectorEntity>();
+        services.AddCommandService<ConnectorApplication, ConnectorEntity>();
 
         services.AddSingleton<ConnectorDomainServices.ValidateConnectorSettings>(
             settings => {

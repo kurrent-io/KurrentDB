@@ -13,13 +13,13 @@ public class CommandServiceSpec<TState, TCommand>
     dynamic[]        ThenEvents          { get; set; } = [];
     DomainException? ThenDomainException { get; set; }
 
-    InMemoryEventStore               EventStore { get; set; } = null!;
-    FunctionalCommandService<TState> Service    { get; set; } = null!;
+    InMemoryEventStore     EventStore { get; set; } = null!;
+    CommandService<TState> Service    { get; set; } = null!;
 
     public static CommandServiceSpec<TState, TCommand> Builder => new CommandServiceSpec<TState, TCommand>();
 
     public CommandServiceSpec<TState, TCommand> WithService(
-        Func<IEventStore, FunctionalCommandService<TState>> serviceFactory
+        Func<IEventStore, CommandService<TState>> serviceFactory
     ) {
         EventStore = new InMemoryEventStore();
         Service    = serviceFactory(EventStore);

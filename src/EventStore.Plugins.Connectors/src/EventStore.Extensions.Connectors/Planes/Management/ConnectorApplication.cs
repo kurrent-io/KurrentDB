@@ -11,7 +11,7 @@ using ValidationFailure = FluentValidation.Results.ValidationFailure;
 namespace EventStore.Connectors.Management;
 
 [PublicAPI]
-public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
+public class ConnectorApplication : CommandService<ConnectorEntity> {
     static GetStreamNameFromCommand<dynamic> FromCommand() => cmd => new($"$connector-{cmd.ConnectorId}");
 
     public ConnectorApplication(
@@ -147,7 +147,6 @@ public class ConnectorApplication : FunctionalCommandService<ConnectorEntity> {
             .GetStream(FromCommand())
             .Act(
                 (connector, events, cmd) => {
-                    // TODO JC: Should we validate ConnectorExists?
                     EnsureConnectorNotDeleted(connector);
 
                     if (connector.Name == cmd.Name)
