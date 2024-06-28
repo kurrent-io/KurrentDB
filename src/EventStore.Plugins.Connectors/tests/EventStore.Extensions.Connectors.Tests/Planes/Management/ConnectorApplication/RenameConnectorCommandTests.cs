@@ -66,4 +66,27 @@ public class RenameConnectorCommandTests(ITestOutputHelper output, CommandServic
             )
             .Then(new ConnectorDomainExceptions.ConnectorDeleted(connectorId));
     }
+
+    [Fact]
+    public async Task connector_renamed_with_same_name() {
+        var connectorId      = Fixture.NewConnectorId();
+        var connectorName    = Fixture.NewConnectorName();
+
+        await CommandServiceSpec<ConnectorEntity, RenameConnector>.Builder
+            .WithService(Fixture.CreateConnectorApplication)
+            .Given(
+                new ConnectorCreated {
+                    ConnectorId = connectorId,
+                    Name        = connectorName,
+                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+                }
+            )
+            .When(
+                new RenameConnector {
+                    ConnectorId = connectorId,
+                    Name        = connectorName
+                }
+            )
+            .Then();
+    }
 }

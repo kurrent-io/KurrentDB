@@ -84,13 +84,14 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
             .Act(
                 (connector, events, cmd) => {
                     EnsureConnectorNotDeleted(connector);
-                    EnsureConnectorStopped(connector);
 
                     if (connector.State
                         is ConnectorState.Running
                         or ConnectorState.Activating
                         or ConnectorState.Deactivating)
                         return [];
+
+                    EnsureConnectorStopped(connector);
 
                     return [
                         new ConnectorActivating {
@@ -107,13 +108,14 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
             .Act(
                 (connector, events, cmd) => {
                     EnsureConnectorNotDeleted(connector);
-                    EnsureConnectorRunning(connector);
 
                     if (connector.State
                         is ConnectorState.Stopped
                         or ConnectorState.Deactivating
                         or ConnectorState.Activating)
                         return [];
+
+                    EnsureConnectorRunning(connector);
 
                     return [
                         new ConnectorDeactivating {
@@ -131,6 +133,14 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
                 (connector, events, cmd) => {
                     EnsureConnectorNotDeleted(connector);
                     EnsureConnectorStopped(connector);
+
+                    if (cmd.Positions == null || cmd.Positions.Count == 0) {
+                        ConnectorDomainExceptions.ConnectorInvalidState.Throw(
+                            connector.Id,
+                            connector.State,
+                            ConnectorState.Stopped
+                        );
+                    }
 
                     return [
                         new ConnectorReset {
