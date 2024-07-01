@@ -211,7 +211,18 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
                 (connector, events, cmd) => {
                     EnsureConnectorNotDeleted(connector);
 
-                    // TODO SS: Should we check if the positions are older than the last committed positions?
+                    if (cmd.Positions == null || cmd.Positions.Count == 0) {
+                        throw new DomainException("Positions list cannot be null or empty.");
+                    }
+
+                    if (cmd.Positions.Any() && connector.Positions.Count != 0) {
+                        // TODO SS: Should we check if the positions are older than the last committed positions?
+                        if (cmd.Positions.Any(p => p < connector.Positions.Max())) {
+                            throw new DomainException(
+                                "New positions cannot be older than the last committed positions."
+                            );
+                        }
+                    }
 
                     return [
                         new ConnectorPositionsCommitted {
