@@ -17,6 +17,9 @@ jobs:
             -
               name: Checkout
               uses: actions/checkout@v4
+              with:
+                submodules: recursive
+                token: ${{ secrets.ORG_GH_BOT_AUTOMATION }}
             -
               name: Setup .NET
               uses: actions/setup-dotnet@v4
