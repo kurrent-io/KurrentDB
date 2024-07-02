@@ -2,8 +2,8 @@
 
 using EventStore.Core.Bus;
 using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Consumers.Configuration;
 using EventStore.Streaming.Producers;
+using EventStore.Streaming.Consumers.Configuration;
 
 namespace EventStore.Streaming.Processors.Configuration;
 

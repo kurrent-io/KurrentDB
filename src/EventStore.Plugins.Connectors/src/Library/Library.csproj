@@ -36,7 +36,7 @@
             <Private>false</Private>
             <IncludeAssets>compile</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.48" />
+        <PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.54" />
     </ItemGroup>
 
 </Project>

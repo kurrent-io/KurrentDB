@@ -13,7 +13,7 @@
     <ItemGroup>
         <PackageReference Include="DotNext.Threading" Version="5.7.0" />
         <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9" />
-        <PackageReference Include="Eventstore.Streaming.Core" Version="1.0.0-alpha.0.48" />
+        <PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.54" />
         <!--        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9">-->
         <!--            <Private>false</Private>-->
         <!--            <IncludeAssets>compile</IncludeAssets>-->

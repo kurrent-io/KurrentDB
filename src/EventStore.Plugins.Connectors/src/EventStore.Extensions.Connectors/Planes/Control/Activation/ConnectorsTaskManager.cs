@@ -1,14 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Channels;
-using DotNext.Collections.Generic;
 using EventStore.Connect.Connectors;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers.Checkpoints;
-using FluentValidation.Results;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EventStore.Connectors.Control.Activation;
 
