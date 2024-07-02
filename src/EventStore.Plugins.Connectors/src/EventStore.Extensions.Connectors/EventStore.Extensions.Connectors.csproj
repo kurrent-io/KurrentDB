@@ -13,6 +13,7 @@
     <ItemGroup>
         <PackageReference Include="DotNext.Threading" Version="5.7.0" />
         <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9" />
+        <PackageReference Include="Eventstore.Streaming.Core" Version="1.0.0-alpha.0.48" />
         <!--        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9">-->
         <!--            <Private>false</Private>-->
         <!--            <IncludeAssets>compile</IncludeAssets>-->
@@ -27,7 +28,6 @@
     </ItemGroup>
   
     <ItemGroup>
-        <ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj"/>
 
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
             <Private>false</Private>

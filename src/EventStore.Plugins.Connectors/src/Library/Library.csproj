@@ -18,7 +18,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj"/>
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
             <Private>false</Private>
             <ExcludeAssets>all</ExcludeAssets>
@@ -37,6 +36,7 @@
             <Private>false</Private>
             <IncludeAssets>compile</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.48" />
     </ItemGroup>
 
 </Project>
