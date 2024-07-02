@@ -2,9 +2,7 @@ using EventStore.Connectors;
 using EventStore.Connectors.Control;
 using EventStore.Connectors.Control.Coordination;
 using EventStore.Connectors.Management;
-using EventStore.Core.Authorization;
 using EventStore.Core.Services.Storage.InMemory;
-using EventStore.Plugins.Authorization;
 using EventStore.Streaming.Schema;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +12,7 @@ namespace EventStore.Plugins.Connectors;
 [UsedImplicitly]
 public class ConnectorsPlugin : TinyAppPlugin {
     protected override WebApplication BuildApp(TinyAppBuildContext ctx) {
-        // because (unfortunately) the gossip listener service raises a schemaless event,
+        // Because (unfortunately) the gossip listener service raises a schemaless event,
         // a proper schema must be registered for it to be consumed by the control plane
         SchemaRegistry.Global.RegisterSchema<GossipUpdatedInMemory>(
                 GossipListenerService.EventType,
@@ -24,9 +22,6 @@ public class ConnectorsPlugin : TinyAppPlugin {
 
         ctx.AppBuilder.Services.AddSingleton(SchemaRegistry.Global);
         ctx.AppBuilder.Services.AddSingleton<INodeLifetimeService, NodeLifetimeService>();
-
-        // TODO JC: What do we want to do with IAuthorizationProvider?
-        ctx.AppBuilder.Services.AddSingleton<IAuthorizationProvider, PassthroughAuthorizationProvider>();
 
         ctx.AppBuilder.Services.AddConnectorsManagement();
         ctx.AppBuilder.Services.AddConnectorsControlPlane();

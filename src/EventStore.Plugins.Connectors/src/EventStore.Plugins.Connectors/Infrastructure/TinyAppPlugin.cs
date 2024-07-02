@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Connectors;
 
 public readonly record struct TinyAppBuildContext(

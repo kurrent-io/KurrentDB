@@ -1,7 +1,7 @@
 using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
-using EventStore.Extensions.Connectors.Tests.CommandService;
+using EventStore.Extensions.Connectors.Tests.Eventuous;
 using EventStore.Testing.Fixtures;
 using FluentValidation.Results;
 using Google.Protobuf.WellKnownTypes;
@@ -12,7 +12,7 @@ namespace EventStore.Extensions.Connectors.Tests.Management.ConnectorApplication
 public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServiceFixture fixture)
     : FastTests<CommandServiceFixture>(output, fixture) {
     [Fact]
-    public async Task ShouldCreateConnectorWhenConnectorDoesNotAlreadyExist() {
+    public async Task should_create_connector_when_connector_does_not_already_exist() {
         var connectorId   = Fixture.NewConnectorId();
         var connectorName = Fixture.NewConnectorName();
         var settings      = new Dictionary<string, string> { { "Setting1Key", "Setting1Value" } };
@@ -38,7 +38,7 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServic
     }
 
     [Fact]
-    public async Task ShouldThrowDomainExceptionWhenConnectorSettingsAreInvalid() {
+    public async Task should_throw_domain_exception_when_connector_settings_are_invalid() {
         var connectorId = Fixture.NewConnectorId();
         var forcedValidationResult =
             new ValidationResult([new ValidationFailure("SomeProperty", "Validation failure!")]);

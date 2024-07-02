@@ -2,7 +2,7 @@ using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
-using EventStore.Extensions.Connectors.Tests.CommandService;
+using EventStore.Extensions.Connectors.Tests.Eventuous;
 using EventStore.Testing.Fixtures;
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;

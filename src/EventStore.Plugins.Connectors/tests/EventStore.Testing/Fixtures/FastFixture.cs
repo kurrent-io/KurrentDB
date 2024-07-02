@@ -6,65 +6,76 @@ namespace EventStore.Testing.Fixtures;
 
 [PublicAPI]
 public partial class FastFixture : IAsyncLifetime, IAsyncDisposable {
-	static readonly ILogger FixtureLogger;
+    static readonly ILogger FixtureLogger;
 
-	static FastFixture() {
-		// Logging.Initialize();
-		FixtureLogger = Log.ForContext<FastFixture>();
+    static FastFixture() {
+        // Logging.Initialize();
+        FixtureLogger = Log.ForContext<FastFixture>();
 
-		AssertionOptions.AssertEquivalencyUsing(
-			options => options
-				.Using<ReadOnlyMemory<byte>>(ctx => ctx.Subject.Span.SequenceEqual(ctx.Expectation.Span).Should().BeTrue(ctx.Because, ctx.BecauseArgs))
-				.WhenTypeIs<ReadOnlyMemory<byte>>()
-				.Using<Memory<byte>>(ctx => ctx.Subject.Span.SequenceEqual(ctx.Expectation.Span).Should().BeTrue(ctx.Because, ctx.BecauseArgs))
-				.WhenTypeIs<Memory<byte>>()
-		);
-	}
+        AssertionOptions.AssertEquivalencyUsing(
+            options => options
+                .Using<ReadOnlyMemory<byte>>(
+                    ctx => ctx.Subject.Span.SequenceEqual(ctx.Expectation.Span).Should()
+                        .BeTrue(ctx.Because, ctx.BecauseArgs)
+                )
+                .WhenTypeIs<ReadOnlyMemory<byte>>()
+                .Using<Memory<byte>>(
+                    ctx => ctx.Subject.Span.SequenceEqual(ctx.Expectation.Span).Should()
+                        .BeTrue(ctx.Because, ctx.BecauseArgs)
+                )
+                .WhenTypeIs<Memory<byte>>()
+        );
+    }
 
     List<Guid> TestRuns { get; } = [];
 
-    public ILogger Logger => FixtureLogger;
+    protected ITestOutputHelper OutputHelper { get; private set; } = null!;
+    public    ILogger           Logger       => FixtureLogger;
 
-	public SerilogLoggerFactory LoggerFactory { get; } = new(FixtureLogger);
+    public SerilogLoggerFactory LoggerFactory { get; } = new(FixtureLogger);
     public Faker                Faker         { get; } = new();
     public FakeTimeProvider     TimeProvider  { get; } = new();
 
-	public Func<Task> OnSetup    { get; init; } = () => Task.CompletedTask;
-	public Func<Task> OnTearDown { get; init; } = () => Task.CompletedTask;
+    public Func<Task> OnSetup    { get; init; } = () => Task.CompletedTask;
+    public Func<Task> OnTearDown { get; init; } = () => Task.CompletedTask;
 
-	public void CaptureTestRun(ITestOutputHelper outputHelper) {
-		var testRunId = Logging.CaptureLogs(outputHelper);
-		TestRuns.Add(testRunId);
-		FixtureLogger.Information(">>> test run {TestRunId} {Operation} <<<", testRunId, "started");
-	}
+    public void CaptureTestRun(ITestOutputHelper outputHelper) {
+        OutputHelper = outputHelper;
 
-	public async Task InitializeAsync() {
-		await OnSetup();
-	}
+        var testRunId = Logging.CaptureLogs(outputHelper);
+        TestRuns.Add(testRunId);
+        FixtureLogger.Information(">>> test run {TestRunId} {Operation} <<<", testRunId, "started");
+    }
 
-	public async Task DisposeAsync() {
-		await OnTearDown();
+    public async Task InitializeAsync() {
+        await OnSetup();
+    }
 
-		// try {
-		// 	await OnTearDown();
-		// }
-		// catch(Exception ex) {
-		// 	FixtureLogger.Warning(ex, "fixture tear down error");
-		// }
+    public async Task DisposeAsync() {
+        await OnTearDown();
 
-		foreach (var testRunId in TestRuns) {
-			FixtureLogger.Information(">>> test run {TestRunId} {Operation} <<<", testRunId, "completed");
-			Logging.ReleaseLogs(testRunId);
-		}
-	}
+        // try {
+        // 	await OnTearDown();
+        // }
+        // catch(Exception ex) {
+        // 	FixtureLogger.Warning(ex, "fixture tear down error");
+        // }
 
-	async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
+        foreach (var testRunId in TestRuns) {
+            FixtureLogger.Information(">>> test run {TestRunId} {Operation} <<<", testRunId, "completed");
+            Logging.ReleaseLogs(testRunId);
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
 }
 
 public abstract class FastTests<TFixture> : IClassFixture<TFixture> where TFixture : FastFixture {
-	protected FastTests(ITestOutputHelper output, TFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
+    protected FastTests(ITestOutputHelper output, TFixture fixture) =>
+        Fixture = fixture.With(x => x.CaptureTestRun(output));
 
-	protected TFixture Fixture { get; }
+    protected TFixture Fixture { get; }
 }
 
-public abstract class FastTests(ITestOutputHelper output, FastFixture fixture) : FastTests<FastFixture>(output, fixture);
+public abstract class FastTests(ITestOutputHelper output, FastFixture fixture)
+    : FastTests<FastFixture>(output, fixture);

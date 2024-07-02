@@ -1,6 +1,8 @@
 using EventStore.Connect.Connectors;
 using EventStore.Connectors.Eventuous;
+using EventStore.Core.Authorization;
 using EventStore.Core.Bus;
+using EventStore.Plugins.Authorization;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Readers;
 using Eventuous;
@@ -9,9 +11,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Connectors.Management;
 
-public static class ConnectorWireUp {
+public static class ManagementWireUp {
     public static void AddConnectorsManagement(this IServiceCollection services) {
         services
             .AddGrpcSwagger()
@@ -25,6 +28,22 @@ public static class ConnectorWireUp {
                     }
                 )
             );
+
+        services.AddSingleton<SystemReader>(
+            serviceProvider => {
+                var publisher     = serviceProvider.GetRequiredService<IPublisher>();
+                var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+
+                var reader = SystemReader.Builder
+                    .ReaderId("connectors-reader")
+                    .Publisher(publisher)
+                    .LoggerFactory(loggerFactory)
+                    .EnableLogging()
+                    .Create();
+
+                return reader;
+            }
+        );
 
         services.AddSingleton<SystemProducer>(
             serviceProvider => {
@@ -45,6 +64,9 @@ public static class ConnectorWireUp {
         services.AddAggregateStore<SystemEventStore>();
         services.AddCommandService<ConnectorApplication, ConnectorEntity>();
 
+        // TODO JC: What do we want to do with IAuthorizationProvider?
+        services.AddSingleton<IAuthorizationProvider, PassthroughAuthorizationProvider>();
+
         services.AddSingleton<ConnectorDomainServices.ValidateConnectorSettings>(
             settings => {
                 var validation = new ConnectorsValidation();
@@ -63,15 +85,19 @@ public static class ConnectorWireUp {
 
         return;
 
-        static void RegisterEventuousEvent<T>() => TypeMap.Instance.AddType<T>(typeof(T).FullName!);
+        static void RegisterEventuousEvent<T>() {
+            if (!TypeMap.Instance.IsTypeRegistered<T>())
+                TypeMap.Instance.AddType<T>(typeof(T).FullName!);
+        }
     }
 
-    public static void UseConnectorsManagement(this WebApplication app) {
+    public static void UseConnectorsManagement(this IApplicationBuilder app) {
         app.UseSwagger();
         app.UseSwaggerUI(
             c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Connectors Management API v1")
         ); // TODO JC: Do we always want to expose the UI? It's common to only expose for development.
 
-        app.MapGrpcService<ConnectorService>();
+        app.UseRouting();
+        app.UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorService>());
     }
 }

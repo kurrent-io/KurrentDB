@@ -1,7 +1,7 @@
 using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
-using EventStore.Extensions.Connectors.Tests.CommandService;
+using EventStore.Extensions.Connectors.Tests.Eventuous;
 using EventStore.Testing.Fixtures;
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
@@ -11,8 +11,7 @@ namespace EventStore.Extensions.Connectors.Tests.Management.ConnectorApplication
 public class RecordConnectorPositionsConnectorStateChangeCommandTests(
     ITestOutputHelper output,
     CommandServiceFixture fixture
-)
-    : FastTests<CommandServiceFixture>(output, fixture) {
+) : FastTests<CommandServiceFixture>(output, fixture) {
     [Fact]
     public async Task record_positions_successfully() {
         var connectorId   = Fixture.NewConnectorId();

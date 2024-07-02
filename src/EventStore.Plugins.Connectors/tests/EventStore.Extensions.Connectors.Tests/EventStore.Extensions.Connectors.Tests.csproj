@@ -11,6 +11,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
+		<ProjectReference Include="..\EventStore.Extensions.Connectors.Management.TestServer\EventStore.Extensions.Connectors.Management.TestServer.csproj" />
 		<ProjectReference Include="..\EventStore.Testing\EventStore.Testing.csproj" />
 	</ItemGroup>
 

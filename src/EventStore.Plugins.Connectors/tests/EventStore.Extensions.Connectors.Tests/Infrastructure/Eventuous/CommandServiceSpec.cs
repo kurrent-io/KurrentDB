@@ -1,8 +1,7 @@
 using DotNext.Collections.Generic;
-using EventStore.Extensions.Connectors.Tests.Eventuous;
 using Eventuous;
 
-namespace EventStore.Extensions.Connectors.Tests.CommandService;
+namespace EventStore.Extensions.Connectors.Tests.Eventuous;
 
 // TODO JC: Bring in fixture logger so we can log for GWT steps.
 public class CommandServiceSpec<TState, TCommand>

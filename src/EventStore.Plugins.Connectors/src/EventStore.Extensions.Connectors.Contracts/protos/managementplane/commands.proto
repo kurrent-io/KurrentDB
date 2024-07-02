@@ -5,55 +5,56 @@ package eventstore.connectors;
 import "google/api/annotations.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 import "protocol.proto";
 import "managementplane/resources.proto";
 
 option csharp_namespace = "EventStore.Connectors.Management.Contracts.Commands";
 
 service ConnectorCommandService {
-  rpc Create(CreateConnector) returns (CommandResult) {
+  rpc Create(CreateConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/create",
       body: "*"
     };
   }
 
-  rpc Reconfigure(ReconfigureConnector) returns (CommandResult) {
+  rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/reconfigure",
       body: "*"
     };
   }
 
-  rpc Delete(DeleteConnector) returns (CommandResult) {
+  rpc Delete(DeleteConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/delete",
       body: "*"
     };
   }
 
-  rpc Start(StartConnector) returns (CommandResult) {
+  rpc Start(StartConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/start",
       body: "*"
     };
   }
 
-  rpc Stop(StopConnector) returns (CommandResult) {
+  rpc Stop(StopConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/stop",
       body: "*"
     };
   }
 
-  rpc Reset(ResetConnector) returns (CommandResult) {
+  rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/reset",
       body: "*"
     };
   }
 
-  rpc Rename(RenameConnector) returns (CommandResult) {
+  rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/rename",
       body: "*"

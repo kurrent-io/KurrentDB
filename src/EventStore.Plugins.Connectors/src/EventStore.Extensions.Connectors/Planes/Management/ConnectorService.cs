@@ -1,11 +1,12 @@
-using EventStore.Connectors.Contracts;
+using System.Text.Json;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Plugins.Authorization;
 using Eventuous;
+using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using OkHandleResult = Eventuous.OkResult<EventStore.Connectors.Management.ConnectorEntity>;
 using ErrorHandleResult = Eventuous.ErrorResult<EventStore.Connectors.Management.ConnectorEntity>;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Connectors.Management;
 
 /// <summary>
@@ -15,90 +16,88 @@ public class ConnectorService(ConnectorApplication application, IAuthorizationPr
     : ConnectorCommandService.ConnectorCommandServiceBase {
     ConnectorApplication Application { get; } = application;
 
-    public override Task<CommandResult> Create(CreateConnector request, ServerCallContext context) =>
+    public override Task<Empty> Create(CreateConnector request, ServerCallContext context) =>
         Execute(request, context);
 
-    public override Task<CommandResult> Reconfigure(ReconfigureConnector request, ServerCallContext context) =>
+    public override Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) =>
         Execute(request, context);
 
-    public override Task<CommandResult> Delete(DeleteConnector request, ServerCallContext context) =>
+    public override Task<Empty> Delete(DeleteConnector request, ServerCallContext context) =>
         Execute(request, context);
 
-    public override Task<CommandResult> Start(StartConnector request, ServerCallContext context) =>
+    public override Task<Empty> Start(StartConnector request, ServerCallContext context) =>
         Execute(request, context);
 
-    public override Task<CommandResult> Stop(StopConnector request, ServerCallContext context) =>
+    public override Task<Empty> Stop(StopConnector request, ServerCallContext context) =>
         Execute(request, context);
 
-    public override Task<CommandResult> Reset(ResetConnector request, ServerCallContext context) =>
+    public override Task<Empty> Reset(ResetConnector request, ServerCallContext context) =>
         Execute(request, context);
 
-    public override Task<CommandResult> Rename(RenameConnector request, ServerCallContext context) =>
+    public override Task<Empty> Rename(RenameConnector request, ServerCallContext context) =>
         Execute(request, context);
 
-    async Task<CommandResult> Execute<TCommand>(TCommand command, ServerCallContext context) where TCommand : class {
-        var user      = context.GetHttpContext().User;
-        var requestId = context.GetHttpContext().TraceIdentifier;
+    // Constraints for code in the below method due to the fact that EventStore exposes Google.Rpc.Status and Google.Rpc.Code:
+    // 1. We are forced to use the static invocation of RpcStatusExtensions.ToRpcException to
+    //    avoid explicitly referencing Google.Rpc.Status (leading to unresolvable ambiguous reference).
+    // TODO JC: Can we stop EventStore exposing these types explicitly?
+    async Task<Empty> Execute<TCommand>(TCommand command, ServerCallContext context) where TCommand : class {
+        var user = context.GetHttpContext().User;
 
-        await authorizationProvider.CheckAccessAsync(
+        var authorized = await authorizationProvider.CheckAccessAsync(
             user,
             new Operation("connectors", "write"),
             context.CancellationToken
         );
 
+        if (!authorized) {
+            throw new RpcException(
+                new Status(
+                    StatusCode.PermissionDenied,
+                    "Not authorized to perform this connectors operation."
+                )
+            );
+        }
+
         var handleResult = await Application.Handle(command, context.CancellationToken);
 
-        // TODO JC: Need to tidy this up and break it down into smaller methods.
-        return handleResult switch {
-            OkHandleResult
-                => new CommandResult {
-                    RequestId = requestId,
-                    Status    = new RpcStatus { Code = RpcStatusCode.Ok }
-                },
-            ErrorHandleResult {
-                    Exception: ConnectorDomainExceptions.InvalidConnectorSettings invalidConnectorSettings
-                } errorResult
-                => new CommandResult {
-                    RequestId = requestId,
-                    ValidationProblem = new ValidationProblem {
-                        Failures = {
-                            invalidConnectorSettings.Errors.Select(
-                                err => new ValidationFailure {
-                                    PropertyName = err.Key,
-                                    Errors       = { err.Value }
-                                }
-                            )
+        if (handleResult is not ErrorHandleResult errorHandleResult)
+            return new Empty();
+
+        throw errorHandleResult.Exception switch {
+            // TODO JC: Just stringify and put the validation errors in the message.
+            // Because of https://github.com/dotnet/aspnetcore/pull/51394.
+            ConnectorDomainExceptions.InvalidConnectorSettings invalidConnectorSettings =>
+                RpcStatusExtensions.ToRpcException(
+                    new() {
+                        Code    = (int)StatusCode.InvalidArgument,
+                        Message = $"Invalid connector settings: {JsonSerializer.Serialize(invalidConnectorSettings.Errors)}",
+                        Details = {
+                            // TODO JC: Reimplement when above is fixed (.NET 9)
+                            // Any.Pack(
+                            //     new BadRequest {
+                            //         FieldViolations = {
+                            //             invalidConnectorSettings.Errors.SelectMany(
+                            //                     kvp => kvp.Value.Select(
+                            //                         error => new BadRequest.Types.FieldViolation {
+                            //                             Field       = kvp.Key,
+                            //                             Description = error
+                            //                         }
+                            //                     )
+                            //                 )
+                            //                 .ToList()
+                            //         }
+                            //     }
+                            // )
                         }
-                    },
-                    Status = new RpcStatus {
-                        Code    = RpcStatusCode.FailedPrecondition,
-                        Message = errorResult.Exception!.Message,
                     }
-                },
-            ErrorHandleResult { Exception: DomainException } errorResult
-                => new CommandResult {
-                    RequestId = requestId,
-                    Status = new RpcStatus {
-                        Code    = RpcStatusCode.FailedPrecondition,
-                        Message = errorResult.Exception!.Message
-                    }
-                },
-            ErrorHandleResult { Exception: not DomainException } errorResult
-                => new CommandResult {
-                    RequestId = requestId,
-                    Status = new RpcStatus {
-                        Code    = RpcStatusCode.Internal,
-                        Message = errorResult.Exception?.Message
-                    }
-                },
-            _
-                => new CommandResult {
-                    RequestId = requestId,
-                    Status = new RpcStatus {
-                        Code    = RpcStatusCode.Unknown,
-                        Message = "Unknown error"
-                    }
-                }
+                ),
+
+            DomainException domainException =>
+                new RpcException(new Status(StatusCode.FailedPrecondition, domainException.Message)),
+
+            _ =>
+                new RpcException(new Status(StatusCode.Internal, errorHandleResult.Exception!.Message))
         };
     }
 }
