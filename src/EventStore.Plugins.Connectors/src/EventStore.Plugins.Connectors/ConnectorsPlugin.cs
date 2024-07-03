@@ -1,6 +1,7 @@
 using EventStore.Connectors;
 using EventStore.Connectors.Control;
 using EventStore.Connectors.Control.Coordination;
+using EventStore.Connectors.Management;
 using EventStore.Core.Services.Storage.InMemory;
 using EventStore.Streaming.Schema;
 using Microsoft.AspNetCore.Builder;
@@ -11,40 +12,23 @@ namespace EventStore.Plugins.Connectors;
 [UsedImplicitly]
 public class ConnectorsPlugin : TinyAppPlugin {
     protected override WebApplication BuildApp(TinyAppBuildContext ctx) {
-        // because (unfortunately) the gossip listener service raises a schemaless event,
+        // Because (unfortunately) the gossip listener service raises a schemaless event,
         // a proper schema must be registered for it to be consumed by the control plane
-        SchemaRegistry.Global.RegisterSchema<GossipUpdatedInMemory>(GossipListenerService.EventType, SchemaDefinitionType.Json)
+        SchemaRegistry.Global.RegisterSchema<GossipUpdatedInMemory>(
+                GossipListenerService.EventType,
+                SchemaDefinitionType.Json
+            )
             .AsTask().GetAwaiter().GetResult();
 
         ctx.AppBuilder.Services.AddSingleton(SchemaRegistry.Global);
-
         ctx.AppBuilder.Services.AddSingleton<INodeLifetimeService, NodeLifetimeService>();
 
+        ctx.AppBuilder.Services.AddConnectorsManagement();
         ctx.AppBuilder.Services.AddConnectorsControlPlane();
 
         var app = ctx.AppBuilder.Build();
 
-        var summaries = new[] {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
-
-        app.MapGet(
-            "/weatherforecast",
-            () => {
-                var forecast = Enumerable.Range(1, 5)
-                    .Select(
-                        index =>
-                            new WeatherForecast(
-                                DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                                Random.Shared.Next(-20, 55),
-                                summaries[Random.Shared.Next(summaries.Length)]
-                            )
-                    )
-                    .ToArray();
-
-                return forecast;
-            }
-        );
+        app.UseConnectorsManagement();
 
         return app;
     }

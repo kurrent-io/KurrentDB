@@ -21,7 +21,8 @@ public class StickyWithAffinityConnectorAssignor : AffinityConnectorAssignorBase
 
         var assignments = connectors.Select(
             connector => AssignConnector(
-                connector.ConnectorId, distributionTable,
+                connector.ConnectorId,
+                distributionTable,
                 connectorId => GetRoundRobinNode(connectorId, clusterNodes),
                 currentClusterAssignment.GetAssignedNode
             )
@@ -53,8 +54,13 @@ public class StickyWithAffinityConnectorAssignor : AffinityConnectorAssignorBase
         // var calculatedNodeLoadDifference        = distributionTable[mostLoadedNode] - distributionTable[calculatedNode];
         // var calculatedNodeLoadThresholdExceeded = calculatedNodeLoadDifference > MaximumLoadThreshold;
 
-        var calculatedNodeLoadPercentile        = distributionTable[calculatedNode] * 100 / distributionTable[mostLoadedNode];
-        var calculatedNodeLoadThresholdExceeded = calculatedNodeLoadPercentile > MaximumLoadThresholdPercentile;
+        var calculatedNodeLoadThresholdExceeded = false;
+        if (distributionTable[mostLoadedNode] != 0 && distributionTable[calculatedNode] != 0) {
+            var calculatedNodeLoadPercentile =
+                distributionTable[calculatedNode] * 100 / distributionTable[mostLoadedNode];
+
+            calculatedNodeLoadThresholdExceeded = calculatedNodeLoadPercentile > MaximumLoadThresholdPercentile;
+        }
 
         // ---------------------------------------------------------------------------------------------------
         // in case the connector is already assigned to a node, we check if the calculated node is different

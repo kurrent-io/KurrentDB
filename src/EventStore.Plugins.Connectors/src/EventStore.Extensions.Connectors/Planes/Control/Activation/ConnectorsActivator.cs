@@ -7,7 +7,6 @@ using FluentValidation.Results;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using NodaTime;
 
 using ILeaseManager = EventStore.Connect.Leases.ILeaseManager;
 using ReleaseLease = EventStore.Connect.Leases.ReleaseLease;

@@ -6,7 +6,7 @@ using EventStore.Streaming.Schema;
 namespace EventStore.Extensions.Connectors.Tests;
 
 public partial class StreamingFixture {
-	public string NewStreamId([CallerMemberName] string? name = null) => 
+	public string NewStreamId([CallerMemberName] string? name = null) =>
 		$"{name.Underscore()}-{GenerateShortId()}".ToLowerInvariant();
 
 	public string NewProcessorId(string? prefix = null) =>
@@ -24,12 +24,12 @@ public partial class StreamingFixture {
 				}
 			)
 			.ToArray();
-	
+
 		var request = SendRequest.Builder
 			.Messages(messages)
 			.Stream(streamId)
 			.Create();
-		
+
 		return request;
 	}
 
@@ -40,12 +40,12 @@ public partial class StreamingFixture {
 
 	public async Task<List<SendResult>> ProduceTestEvents(string streamId, int numberOfRequests = 1, int batchSize = 3, SchemaDefinitionType schemaType = SchemaDefinitionType.Json) {
 		var requests = GenerateTestSendRequests(streamId, numberOfRequests, batchSize, schemaType);
-	
+
 		var results = new List<SendResult>();
-		
+
 		foreach (var request in requests)
 			results.Add(await Producer.Send(request));
-		
+
 		return results;
 	}
 }

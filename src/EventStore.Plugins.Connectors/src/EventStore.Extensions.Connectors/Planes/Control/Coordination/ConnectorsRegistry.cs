@@ -56,13 +56,22 @@ class ConnectorsRegistry {
 
         var lastReadPosition = checkpoint;
 
-        await foreach (var record in Reader.ReadForwards(checkpoint.LogPosition, ConnectorsConsumeFilter, cancellationToken: cancellationToken)) {
+        await foreach (var record in Reader.ReadForwards(
+                           checkpoint.LogPosition,
+                           ConnectorsConsumeFilter,
+                           cancellationToken: cancellationToken
+                       )) {
             switch (record.Value) {
                 case ConnectorActivating evt:
-                    state.Add(evt.ConnectorId, new(
-                        evt.ConnectorId, evt.Revision,
-                        new ConnectorSettings(evt.Settings.ToDictionary())
-                    ));
+                    state.Add(
+                        evt.ConnectorId,
+                        new(
+                            evt.ConnectorId,
+                            evt.Revision,
+                            new ConnectorSettings(evt.Settings.ToDictionary())
+                        )
+                    );
+
                     break;
 
                 case ConnectorDeactivating evt:
@@ -82,7 +91,9 @@ class ConnectorsRegistry {
 
         return result;
 
-        async Task<(RecordPosition SnapshotPosition, Dictionary<ConnectorId, RegisteredConnector> State)> LoadSnapshot(CancellationToken ct) {
+        async Task<(RecordPosition SnapshotPosition, Dictionary<ConnectorId, RegisteredConnector> State)> LoadSnapshot(
+            CancellationToken ct
+        ) {
             var record = await Reader
                 .ReadBackwards(ConsumeFilter.Streams(SnapshotStreamId), 1, ct)
                 .FirstOrNullAsync(ct) ?? EventStoreRecord.None;
@@ -93,7 +104,8 @@ class ConnectorsRegistry {
             var snapshotState = snapshot.Connectors.ToDictionary(
                 x => ConnectorId.From(x.ConnectorId),
                 x => new RegisteredConnector(
-                    x.ConnectorId, x.Revision,
+                    x.ConnectorId,
+                    x.Revision,
                     new ConnectorSettings(x.Settings.ToDictionary())
                 )
             );
@@ -116,7 +128,7 @@ class ConnectorsRegistry {
                 UpdatedAt   = TimeProvider.GetUtcNow().ToTimestamp()
             };
 
-           await Producer.Send(
+            await Producer.Send(
                 SendRequest.Builder
                     .Message(newSnapshot, SchemaDefinitionType.Protobuf)
                     .Stream(SnapshotStreamId)

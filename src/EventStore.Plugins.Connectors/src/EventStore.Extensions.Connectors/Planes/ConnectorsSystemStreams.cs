@@ -15,7 +15,7 @@ public static class ConnectorsSystemStreams {
     //
     // IMPORTANT:
     // these streams can all be configured as a reaction to a connector being created,
-    // and they can be deleted when the connector is deleted too.
+    // and they can be deleted when the connector is deleted too (Note: metadata streams are not deleted)
     //
     // leases: max count 1 (playing with max age would require a bit of coupling between the db and the lease manager)
     // positions: max count 3 maybe

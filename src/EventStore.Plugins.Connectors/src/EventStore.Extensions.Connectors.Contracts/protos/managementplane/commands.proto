@@ -5,71 +5,58 @@ package eventstore.connectors;
 import "google/api/annotations.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 import "protocol.proto";
 import "managementplane/resources.proto";
 
 option csharp_namespace = "EventStore.Connectors.Management.Contracts.Commands";
 
 service ConnectorCommandService {
-  rpc Create(CreateConnector) returns (CommandResult) {
+  rpc Create(CreateConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/create",
       body: "*"
     };
   }
 
-  rpc Reconfigure(ReconfigureConnector) returns (CommandResult) {
+  rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/reconfigure",
       body: "*"
     };
   }
 
-  rpc Delete(DeleteConnector) returns (CommandResult) {
+  rpc Delete(DeleteConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/delete",
       body: "*"
     };
   }
-  
-  rpc Start(StartConnector) returns (CommandResult) {
+
+  rpc Start(StartConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/start",
       body: "*"
     };
   }
 
-  rpc Stop(StopConnector) returns (CommandResult) {
+  rpc Stop(StopConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/stop",
       body: "*"
     };
   }
 
-  rpc Reset(ResetConnector) returns (CommandResult) {
+  rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/reset",
       body: "*"
     };
   }
 
-  rpc Rename(RenameConnector) returns (CommandResult) {
+  rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/v1/connectors/rename",
-      body: "*"
-    };
-  }
-
-  rpc RecordStateChange(RecordConnectorStateChange) returns (CommandResult) {
-    option (google.api.http) = {
-      post: "/v1/connectors/record-state-change",
-      body: "*"
-    };
-  }
-
-  rpc RecordPositions(RecordConnectorPositions) returns (CommandResult) {
-    option (google.api.http) = {
-      post: "/v1/connectors/record-positions",
       body: "*"
     };
   }
@@ -77,13 +64,13 @@ service ConnectorCommandService {
 
 message CreateConnector {
   string              connector_id = 1;
-  string              name = 2;
-  map<string, string> settings = 3;  // everything else even if it could come from the settings.
+  string              name         = 2;
+  map<string, string> settings     = 3;
 }
 
 message ReconfigureConnector {
   string                                   connector_id = 1;
-  map<string, google.protobuf.StringValue> settings = 2;
+  map<string, google.protobuf.StringValue> settings     = 2;
 }
 
 message DeleteConnector {
@@ -99,25 +86,25 @@ message StopConnector {
 }
 
 message ResetConnector {
-  string                  connector_id = 1;
-  repeated RecordPosition positions = 2;  // optional, if not provided, reset to the config default earliest/latest
+  string          connector_id = 1;
+  repeated uint64 positions    = 2;
 }
 
 message RenameConnector {
   string connector_id = 1;
-  string name = 2;
+  string name         = 2;
 }
 
 message RecordConnectorStateChange {
-  string                    connector_id = 1;
-  ConnectorState            from_state = 2;
-  ConnectorState            to_state = 3;
+  string                    connector_id  = 1;
+  ConnectorState            from_state    = 2;
+  ConnectorState            to_state      = 3;
   Error                     error_details = 4;
-  google.protobuf.Timestamp timestamp = 5;
+  google.protobuf.Timestamp timestamp     = 5;
 }
 
 message RecordConnectorPositions {
   string                    connector_id = 1;
-  repeated RecordPosition   positions = 2;
-  google.protobuf.Timestamp timestamp = 3;
+  repeated uint64           positions    = 2;
+  google.protobuf.Timestamp timestamp    = 3;
 }
