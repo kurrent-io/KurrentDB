@@ -8,7 +8,11 @@
     <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
         <OutputType>Exe</OutputType>
     </PropertyGroup>
-    
+
+    <ItemGroup>
+        <PackageReference Include="Shouldly" Version="4.2.1" />
+    </ItemGroup>
+
 <!--    <ItemGroup>-->
 <!--        <PackageReference Include="Bogus" Version="35.5.1" />-->
 <!--        <PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />-->
