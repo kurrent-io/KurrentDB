@@ -6,6 +6,7 @@ using EventStore.Plugins.Authorization;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Readers;
 using Eventuous;
+using FluentValidation.Results;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -69,8 +70,12 @@ public static class ManagementWireUp {
 
         services.AddSingleton<ConnectorDomainServices.ValidateConnectorSettings>(
             settings => {
-                var validation = new ConnectorsValidation();
-                return validation.ValidateConfiguration(settings);
+                try {
+                    return new ConnectorsValidation().ValidateConfiguration(settings);
+                } catch (InvalidConnectorTypeName ex) {
+                    // TODO JC: Should be done in the Connect Core.
+                    return new([new ValidationFailure("ConnectorTypeName", ex.Message)]);
+                }
             }
         );
 
