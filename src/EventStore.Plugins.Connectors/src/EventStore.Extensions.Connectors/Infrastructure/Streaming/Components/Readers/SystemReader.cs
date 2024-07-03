@@ -128,7 +128,7 @@ public class SystemReader : IReader {
 
             var result = await Client.ReadEvent(esdbPosition, cancellationToken);
 
-            return !Equals(result, ResolvedEvent.EmptyEvent)
+            return !result.Equals(ResolvedEvent.EmptyEvent)
                 ? await result.ToRecord(Deserialize, () => SequenceId.From(1))
                 : EventStoreRecord.None;
         } catch (ReadResponseException.StreamNotFound) {

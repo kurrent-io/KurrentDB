@@ -53,9 +53,9 @@
 
     <ItemGroup>
         <PackageReference Include="DotNext.Threading" Version="5.7.0"/>
-        <PackageReference Include="Eventuous.Application" Version="0.15.0-beta.10"/>
-        <PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-beta.10"/>
-        <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-beta.10"/>
+        <PackageReference Include="Eventuous.Application" Version="0.15.0-rc.1" />
+        <PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-rc.1" />
+        <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-rc.1" />
     </ItemGroup>
 
     <ItemGroup>

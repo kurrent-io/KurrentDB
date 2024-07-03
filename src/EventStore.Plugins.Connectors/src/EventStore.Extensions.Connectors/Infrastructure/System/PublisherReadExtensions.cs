@@ -184,7 +184,7 @@ public static class PublisherReadExtensions {
 			.ReadStreamBackwards(stream, StreamRevision.End, 1, cancellationToken)
 			.FirstOrDefaultAsync(cancellationToken);
 
-		return Equals(last, ResolvedEvent.EmptyEvent) ? null : last;
+		return last == ResolvedEvent.EmptyEvent ? null : last;
 	}
 
 	public static async Task<ResolvedEvent?> ReadStreamFirstEvent(this IPublisher publisher, string stream, CancellationToken cancellationToken = default) {
@@ -194,7 +194,7 @@ public static class PublisherReadExtensions {
 			.ReadStreamForwards(stream, StreamRevision.Start, 1, cancellationToken)
 			.FirstOrDefaultAsync(cancellationToken);
 
-		return Equals(first, ResolvedEvent.EmptyEvent) ? null : first;
+		return first == ResolvedEvent.EmptyEvent ? null : first;
 	}
 
 	public static async Task<ResolvedEvent> ReadEvent(this IPublisher publisher, Position position, CancellationToken cancellationToken = default) {

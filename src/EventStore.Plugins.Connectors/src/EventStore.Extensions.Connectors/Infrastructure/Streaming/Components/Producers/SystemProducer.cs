@@ -3,8 +3,10 @@
 using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Services.Transport.Enumerators;
-using EventStore.Streaming.Interceptors;
 using EventStore.Streaming.Producers.Configuration;
+using EventStore.Streaming;
+using EventStore.Streaming.Interceptors;
+using EventStore.Streaming.Producers;
 using EventStore.Streaming.Producers.Interceptors;
 using EventStore.Streaming.Producers.LifecycleEvents;
 using EventStore.Streaming.Schema.Serializers;

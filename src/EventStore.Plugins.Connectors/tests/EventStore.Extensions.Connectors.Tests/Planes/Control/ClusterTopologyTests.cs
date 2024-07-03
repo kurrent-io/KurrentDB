@@ -9,7 +9,7 @@ namespace EventStore.Extensions.Connectors.Tests.Control;
 public class ClusterTopologyTests(ITestOutputHelper output, FastFixture fixture) : FastTests(output, fixture) {
 	[Fact]
 	public void cluster_members_are_always_in_order() {
-		List<EventStore.Connectors.Control.ClusterNode> ordered = [
+		List<global::EventStore.Connectors.Control.ClusterNode> ordered = [
 			new(NewId.Next().ToGuid(), ClusterNodeState.Unmapped),
 			new(NewId.Next().ToGuid(), ClusterNodeState.Unmapped),
 			new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
@@ -109,7 +109,7 @@ public class ClusterTopologyTests(ITestOutputHelper output, FastFixture fixture)
 
 	[Theory, FallbackTestCases]
 	public void cluster_members_falls_back_when_affinity_not_matched(ClusterNodeState affinity, ClusterNodeState expected, ClusterNodeState[] activeStates) {
-		var ordered  = activeStates.Select(x => new EventStore.Connectors.Control.ClusterNode(NewId.Next().ToGuid(), x));
+		var ordered  = activeStates.Select(x => new global::EventStore.Connectors.Control.ClusterNode(NewId.Next().ToGuid(), x));
 		var topology = ClusterTopology.From(ordered);
 
 		var result = topology.GetNodesByAffinity(affinity);

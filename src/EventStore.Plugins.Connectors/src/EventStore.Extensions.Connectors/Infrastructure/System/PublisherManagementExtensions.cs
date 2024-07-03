@@ -160,7 +160,7 @@ public static class PublisherManagementExtensions {
 
 		var result = await publisher.ReadEvent(position, cancellationToken);
 
-		return !Equals(result, ResolvedEvent.EmptyEvent)
+		return !result.Equals(ResolvedEvent.EmptyEvent)
 			? (result.OriginalStreamId, StreamRevision.FromInt64(result.OriginalEventNumber))
 			: null;
 	}

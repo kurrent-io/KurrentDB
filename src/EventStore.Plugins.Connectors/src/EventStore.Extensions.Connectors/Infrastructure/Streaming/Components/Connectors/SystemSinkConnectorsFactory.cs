@@ -2,8 +2,8 @@
 
 using EventStore.Connect.Connectors;
 using EventStore.Connect.Connectors.Sinks;
-using EventStore.Core.Bus;
 using EventStore.Streaming.Connectors.Sinks;
+using EventStore.Core.Bus;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Persistence.State;
 using EventStore.Streaming.Processors;

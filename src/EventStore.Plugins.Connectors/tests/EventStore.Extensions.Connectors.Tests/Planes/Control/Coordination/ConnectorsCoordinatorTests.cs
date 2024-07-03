@@ -25,36 +25,36 @@
 // 				services.AddSingleton(Fixture.Publisher);
 // 				services.AddSingleton(Fixture.Subscriber);
 // 				services.AddSingleton(Fixture.NodeOptions);
-// 				
+//
 // 				services.AddSingleton<SystemReader>(
 // 					serviceProvider => {
 // 						var publisher     = serviceProvider.GetRequiredService<IPublisher>();
 // 						var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-// 		
+//
 // 						var reader = SystemReader.Builder
 // 							.ReaderName("connectors-reader")
 // 							.Publisher(publisher)
 // 							.LoggerFactory(loggerFactory)
 // 							.EnableLogging()
 // 							.Create();
-// 		
+//
 // 						return reader;
 // 					}
 // 				);
-// 				
+//
 // 				services.AddSingleton<ConnectorsManagementClient>();
 // 				services.AddSingleton<ConnectorAssignorProvider>();
 // 			});
 // 		});
-// 		
-// 		
+//
+//
 // 		// Act
 // 		var processor = CreateProcessor(webAppFactory.Services);
-// 		
+//
 // 		// Assert
-// 		
+//
 // 	}
-// 	
+//
 // 	public async Task works_2() {
 // 		// Arrange
 //
@@ -82,16 +82,16 @@
 //
 // 		services.AddSingleton<ConnectorsManagementClient>();
 // 		services.AddSingleton<ConnectorAssignorProvider>();
-// 		
+//
 // 		var serviceProvider = services.BuildServiceProvider();
-// 		
+//
 // 		// Act
 // 		var processor = CreateProcessor(serviceProvider);
-// 		
+//
 // 		// Assert
-// 		
+//
 // 	}
-// 	
+//
 // 	static SystemProcessor CreateProcessor(IServiceProvider serviceProvider) {
 // 		var publisher              = serviceProvider.GetRequiredService<IPublisher>();
 // 		var loggerFactory          = serviceProvider.GetRequiredService<ILoggerFactory>();

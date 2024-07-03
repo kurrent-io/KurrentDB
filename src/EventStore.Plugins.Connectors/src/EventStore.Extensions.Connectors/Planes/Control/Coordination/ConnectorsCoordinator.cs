@@ -1,6 +1,6 @@
 using System.Net;
 using DotNext.Collections.Generic;
-using EventStore.Connect.Connectors;
+using EventStore.Streaming.Connectors;
 using EventStore.Connectors.Control.Activation;
 using EventStore.Connectors.Control.Assignment;
 using EventStore.Core.Cluster;

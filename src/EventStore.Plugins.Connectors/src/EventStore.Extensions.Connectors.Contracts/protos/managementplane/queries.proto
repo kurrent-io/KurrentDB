@@ -12,10 +12,9 @@ service EventStoreConnectorQueryService {
 }
 
 message ConnectorQueryFilter {
-  repeated ConnectorType  type          = 1;
-  repeated ConnectorState state         = 2;
-  repeated NodeAffinity   node_affinity = 3;
-
+  repeated ConnectorType  type                       = 1;
+  repeated ConnectorState state                      = 2;
+  repeated NodeAffinity   node_affinity              = 3;
   repeated google.protobuf.StringValue instance_type = 4;
   repeated google.protobuf.StringValue connector_id  = 5;
 }
@@ -23,7 +22,7 @@ message ConnectorQueryFilter {
 message ConnectorQueryResult {
   oneof result {
     Connector         connector = 10;
-    ConnectorRevision revision  = 11;
-    ConnectorStatus   status    = 12;
+    ConnectorRevision revision  = 11;  // TODO JC: This is already present on the Connector, do we need it here?
+    ConnectorStatus   status    = 12;  // TODO JC: This is already present on the Connector, do we need it here?
   }
 }

@@ -6,8 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-                <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.6"/>
-        <PackageReference Include="Grpc.Tools" Version="2.64.0" PrivateAssets="All"/>
+        <PackageReference Include="Google.Api.CommonProtos" Version="2.13.0" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.63.0" PrivateAssets="All"/>
     </ItemGroup>
 
     <ItemGroup>

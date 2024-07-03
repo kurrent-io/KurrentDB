@@ -1,6 +1,6 @@
 // // ReSharper disable AccessToDisposedClosure
 //
-// using EventStore.Connect.Connectors;
+// using EventStore.Streaming.Connectors;
 // using EventStore.Connectors.Control.Activation;
 // using EventStore.Connectors.Control.Coordination;
 // using EventStore.Testing.Fixtures;
