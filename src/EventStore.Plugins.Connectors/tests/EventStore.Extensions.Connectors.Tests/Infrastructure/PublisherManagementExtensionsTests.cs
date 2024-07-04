@@ -6,7 +6,7 @@ using EventStore.Core.Data;
 namespace EventStore.Extensions.Connectors.Tests;
 
 [Trait("Category", "Integration")]
-public class PublisherManagementExtensionsTests(ITestOutputHelper output, StreamingFixture fixture) : StreamingTests(output, fixture) {
+public class PublisherManagementExtensionsTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
 	[Fact]
 	public async Task can_get_stream_metadata_when_stream_not_found() {
 		// Arrange
@@ -19,15 +19,15 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Stream
 		// Assert
 		result.Should().BeEquivalentTo(expectedResult);
 	}
-	
+
 	[Fact]
 	public async Task can_get_stream_metadata_when_stream_found() {
 		// Arrange
 		var streamName = Fixture.NewStreamId("stream");
 		var metadata   = new StreamMetadata(maxCount: 10);
-		
+
 		var expectedResult = (metadata, Core.Services.Transport.Common.StreamRevision.Start);
-		
+
 		await Publisher.SetStreamMetadata(streamName, metadata);
 
 		// Act
@@ -36,7 +36,7 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Stream
 		// Assert
 		result.Should().BeEquivalentTo(expectedResult);
 	}
-	
+
 	[Fact]
 	public async Task can_set_stream_metadata() {
 		// Arrange
@@ -50,7 +50,7 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Stream
 
 		// Assert
 		var result = await Publisher.GetStreamMetadata(streamName);
-		
+
 		result.Should().BeEquivalentTo(expectedResult);
 	}
 }

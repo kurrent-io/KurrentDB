@@ -5,22 +5,11 @@ using ValidationResult = FluentValidation.Results.ValidationResult;
 
 namespace EventStore.Extensions.Connectors.Tests.Eventuous;
 
-// ReSharper disable once MemberCanBePrivate.Global
 [UsedImplicitly]
 public class CommandServiceFixture : FastFixture {
-    public ConnectorsManagement.ConnectorApplication CreateConnectorApplication(IEventStore eventStore)
-        => CreateConnectorApplication(
-            eventStore,
-            validationResult: new ValidationResult()
-        );
+    public ConnectorsManagement.ConnectorApplication ConnectorApplication(IEventStore eventStore) =>
+        ConnectorApplication(eventStore, validationResult: new ValidationResult());
 
-    public ConnectorsManagement.ConnectorApplication CreateConnectorApplication(
-        IEventStore eventStore,
-        ValidationResult validationResult
-    ) =>
-        new ConnectorsManagement.ConnectorApplication(
-            _ => validationResult,
-            eventStore,
-            TimeProvider
-        );
+    public ConnectorsManagement.ConnectorApplication ConnectorApplication(IEventStore eventStore, ValidationResult validationResult) =>
+        new ConnectorsManagement.ConnectorApplication(_ => validationResult, eventStore, TimeProvider);
 }

@@ -4,6 +4,7 @@ using EventStore.Plugins.Authorization;
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using static EventStore.Connectors.Management.Contracts.Commands.ConnectorCommandService;
 using ErrorHandleResult = Eventuous.ErrorResult<EventStore.Connectors.Management.ConnectorEntity>;
 
 // ReSharper disable once CheckNamespace
@@ -12,30 +13,14 @@ namespace EventStore.Connectors.Management;
 /// <summary>
 ///  Connector service implementation.
 /// </summary>
-public class ConnectorService(ConnectorApplication application, IAuthorizationProvider authorizationProvider)
-    : ConnectorCommandService.ConnectorCommandServiceBase {
-    ConnectorApplication Application { get; } = application;
-
-    public override Task<Empty> Create(CreateConnector request, ServerCallContext context) =>
-        Execute(request, context);
-
-    public override Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) =>
-        Execute(request, context);
-
-    public override Task<Empty> Delete(DeleteConnector request, ServerCallContext context) =>
-        Execute(request, context);
-
-    public override Task<Empty> Start(StartConnector request, ServerCallContext context) =>
-        Execute(request, context);
-
-    public override Task<Empty> Stop(StopConnector request, ServerCallContext context) =>
-        Execute(request, context);
-
-    public override Task<Empty> Reset(ResetConnector request, ServerCallContext context) =>
-        Execute(request, context);
-
-    public override Task<Empty> Rename(RenameConnector request, ServerCallContext context) =>
-        Execute(request, context);
+public class ConnectorService(ConnectorApplication application, IAuthorizationProvider authorizationProvider) : ConnectorCommandServiceBase {
+    public override Task<Empty> Create(CreateConnector request, ServerCallContext context)           => Execute(request, context);
+    public override Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) => Execute(request, context);
+    public override Task<Empty> Delete(DeleteConnector request, ServerCallContext context)           => Execute(request, context);
+    public override Task<Empty> Start(StartConnector request, ServerCallContext context)             => Execute(request, context);
+    public override Task<Empty> Stop(StopConnector request, ServerCallContext context)               => Execute(request, context);
+    public override Task<Empty> Reset(ResetConnector request, ServerCallContext context)             => Execute(request, context);
+    public override Task<Empty> Rename(RenameConnector request, ServerCallContext context)           => Execute(request, context);
 
     // Constraints for code in the below method due to the fact that EventStore exposes Google.Rpc.Status and Google.Rpc.Code:
     // 1. We are forced to use the static invocation of RpcStatusExtensions.ToRpcException to
@@ -45,21 +30,17 @@ public class ConnectorService(ConnectorApplication application, IAuthorizationPr
         var user = context.GetHttpContext().User;
 
         var authorized = await authorizationProvider.CheckAccessAsync(
-            user,
-            new Operation("connectors", "write"),
-            context.CancellationToken
+            user, new Operation("connectors", "write"), context.CancellationToken
         );
 
         if (!authorized) {
-            throw new RpcException(
-                new Status(
-                    StatusCode.PermissionDenied,
-                    "Not authorized to perform this connectors operation."
-                )
-            );
+            throw new RpcException(new Status(
+                StatusCode.PermissionDenied,
+                "You do not have permission to perform this operation."
+            ));
         }
 
-        var handleResult = await Application.Handle(command, context.CancellationToken);
+        var handleResult = await application.Handle(command, context.CancellationToken);
 
         if (handleResult is not ErrorHandleResult errorHandleResult)
             return new Empty();
@@ -93,11 +74,9 @@ public class ConnectorService(ConnectorApplication application, IAuthorizationPr
                     }
                 ),
 
-            DomainException domainException =>
-                new RpcException(new Status(StatusCode.FailedPrecondition, domainException.Message)),
+            DomainException domainException => new RpcException(new Status(StatusCode.FailedPrecondition, domainException.Message)),
 
-            _ =>
-                new RpcException(new Status(StatusCode.Internal, errorHandleResult.Exception!.Message))
+            _ => new RpcException(new Status(StatusCode.Internal, errorHandleResult.Exception!.Message))
         };
     }
 }

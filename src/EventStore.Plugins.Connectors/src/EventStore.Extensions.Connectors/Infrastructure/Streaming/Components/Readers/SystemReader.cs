@@ -25,7 +25,7 @@ public class SystemReader : IReader {
 
 		Deserialize = Options.SkipDecoding
 			? (_, _) => ValueTask.FromResult<object?>(null)
-			: (data, headers) => options.GetSchemaRegistry().As<ISchemaSerializer>().Deserialize(data, headers);
+			: (data, headers) => options.SchemaRegistry.As<ISchemaSerializer>().Deserialize(data, headers);
 
 
 

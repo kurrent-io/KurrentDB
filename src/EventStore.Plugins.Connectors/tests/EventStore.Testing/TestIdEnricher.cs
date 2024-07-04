@@ -8,6 +8,6 @@ public class TestIdEnricher : ILogEventEnricher {
 
     public void UpdateId(string testRunId) => _testRunId = testRunId;
 
-    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory) => 
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory) =>
         logEvent.AddOrUpdateProperty(propertyFactory.CreateProperty("TestRunId", _testRunId));
 }

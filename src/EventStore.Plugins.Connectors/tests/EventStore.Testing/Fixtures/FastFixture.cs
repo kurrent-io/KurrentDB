@@ -71,11 +71,9 @@ public partial class FastFixture : IAsyncLifetime, IAsyncDisposable {
 }
 
 public abstract class FastTests<TFixture> : IClassFixture<TFixture> where TFixture : FastFixture {
-    protected FastTests(ITestOutputHelper output, TFixture fixture) =>
-        Fixture = fixture.With(x => x.CaptureTestRun(output));
+    protected FastTests(ITestOutputHelper output, TFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
     protected TFixture Fixture { get; }
 }
 
-public abstract class FastTests(ITestOutputHelper output, FastFixture fixture)
-    : FastTests<FastFixture>(output, fixture);
+public abstract class FastTests(ITestOutputHelper output, FastFixture fixture) : FastTests<FastFixture>(output, fixture);

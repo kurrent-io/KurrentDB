@@ -68,6 +68,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Conne
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors.Management.TestServer", "tests\EventStore.Extensions.Connectors.Management.TestServer\EventStore.Extensions.Connectors.Management.TestServer.csproj", "{26C2ED87-6169-4E2C-822E-756F68C95D53}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClusterVNodeConsole", "ClusterVNodeConsole\ClusterVNodeConsole.csproj", "{9D7D90DB-293A-416C-9404-3DB7B17952C9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Core.Tests", "submodules\EventStore\src\EventStore.Core.Tests\EventStore.Core.Tests.csproj", "{FB41E7F1-34A2-4BE4-A303-7463CCC6E239}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -194,6 +198,14 @@ Global
 		{26C2ED87-6169-4E2C-822E-756F68C95D53}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{26C2ED87-6169-4E2C-822E-756F68C95D53}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{26C2ED87-6169-4E2C-822E-756F68C95D53}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D7D90DB-293A-416C-9404-3DB7B17952C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D7D90DB-293A-416C-9404-3DB7B17952C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D7D90DB-293A-416C-9404-3DB7B17952C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D7D90DB-293A-416C-9404-3DB7B17952C9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB41E7F1-34A2-4BE4-A303-7463CCC6E239}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB41E7F1-34A2-4BE4-A303-7463CCC6E239}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB41E7F1-34A2-4BE4-A303-7463CCC6E239}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB41E7F1-34A2-4BE4-A303-7463CCC6E239}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1FFE9B22-1994-47B1-814E-7DCB8E838D10} = {B4DAA225-6158-4BB6-9426-242032A94EA7}
@@ -224,5 +236,7 @@ Global
 		{5F8AFE86-AD05-4318-A21F-F66C1B73D00C} = {A65E9833-F98F-4AB4-96E8-31D0F1106193}
 		{4FECA43B-9110-46FA-AA4E-D0EB85F1661F} = {A65E9833-F98F-4AB4-96E8-31D0F1106193}
 		{26C2ED87-6169-4E2C-822E-756F68C95D53} = {1D2C51BC-8126-4F7D-8720-18E1C978FF32}
+		{9D7D90DB-293A-416C-9404-3DB7B17952C9} = {A65E9833-F98F-4AB4-96E8-31D0F1106193}
+		{FB41E7F1-34A2-4BE4-A303-7463CCC6E239} = {1FFE9B22-1994-47B1-814E-7DCB8E838D10}
 	EndGlobalSection
 EndGlobal

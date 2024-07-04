@@ -9,7 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9" />
+		<PackageReference Include="EventStore.Plugins" Version="24.6.1" />
 		<PackageReference Include="OpenTelemetry" Version="1.8.1" />
 		<PackageReference Include="OpenTelemetry.Api" Version="1.8.1" />
 		<PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.8.1" />

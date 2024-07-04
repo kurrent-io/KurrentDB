@@ -16,7 +16,7 @@ public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, Co
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, RecordConnectorStateChange>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -45,7 +45,7 @@ public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, Co
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, RecordConnectorStateChange>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -75,7 +75,7 @@ public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, Co
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, RecordConnectorStateChange>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,

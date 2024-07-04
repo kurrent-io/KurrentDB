@@ -18,7 +18,7 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServic
         var settings      = new Dictionary<string, string> { { "Setting1Key", "Setting1Value" } };
 
         await CommandServiceSpec<ConnectorEntity, CreateConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .GivenNoState()
             .When(
                 new CreateConnector {
@@ -44,8 +44,8 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServic
             new ValidationResult([new ValidationFailure("SomeProperty", "Validation failure!")]);
 
         await CommandServiceSpec<ConnectorEntity, CreateConnector>.Builder
-            .WithService(
-                eventStore => Fixture.CreateConnectorApplication(
+            .ForService(
+                eventStore => Fixture.ConnectorApplication(
                     eventStore,
                     forcedValidationResult
                 )

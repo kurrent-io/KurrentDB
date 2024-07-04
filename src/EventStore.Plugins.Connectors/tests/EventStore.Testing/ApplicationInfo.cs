@@ -1,12 +1,10 @@
 using System.Diagnostics;
-using System.Runtime;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using static System.Console;
 using static System.Environment;
 using static System.StringComparison;
-using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 namespace EventStore.Testing;
 
@@ -26,6 +24,8 @@ public static class Application {
 			.AddJsonFile("appsettings.json", true)
 			.AddJsonFile($"appsettings.{Environment}.json", true)                    // Accept default naming convention
 			.AddJsonFile($"appsettings.{Environment.ToLowerInvariant()}.json", true) // Linux is case sensitive
+			.AddJsonFile($"otelsettings.{Environment}.json", true)
+			.AddJsonFile($"otel-tracing-settings.{Environment}.json", true)
 			.AddEnvironmentVariables();
 
 		Configuration = builder.Build();
@@ -39,20 +39,13 @@ public static class Application {
 		IsProduction  = IsEnvironment(Environments.Production);
 
 		DebuggerIsAttached = Debugger.IsAttached;
-		
+
 		ThreadPool.GetAvailableThreads(out var workerThreads, out var completionPortThreads);
 
 		ForegroundColor = ConsoleColor.Blue;
 
-		// var totalPhysicalMemory  = SystemRuntimeStats.GetTotalPhysicalMemory().Bytes();
-		// var totalAvailableMemory = SystemRuntimeStats.GetTotalAvailableMemory().Bytes();
-		// var totalFreeMemory      = SystemRuntimeStats.GetTotalFreeMemory().Bytes();
-		//
-		// WriteLine($"APP: Processor Count        : {ProcessorCount}");
-		// WriteLine($"APP: Total Physical Memory  : {totalPhysicalMemory.ToFullWords()}");
-		// WriteLine($"APP: Total Available Memory : {totalAvailableMemory.ToFullWords()}");
-		// WriteLine($"APP: Total Free Memory      : {totalFreeMemory.ToFullWords()}");
-		// WriteLine($"APP: Thread Pool            : {workerThreads} Worker | {completionPortThreads} Async");
+		WriteLine($"APP: Processor Count  : {ProcessorCount}");
+		WriteLine($"APP: ThreadPool       : {workerThreads} Worker | {completionPortThreads} Async");
 
 		ForegroundColor = ConsoleColor.Magenta;
 	}
@@ -65,4 +58,10 @@ public static class Application {
 	public static bool           DebuggerIsAttached { get; }
 
 	public static bool IsEnvironment(string environmentName) => Environment.Equals(environmentName, InvariantCultureIgnoreCase);
+
+	public static class OperatingSystem {
+		public static bool IsWindows => RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+		public static bool IsMacOS   => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+		public static bool IsLinux   => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+	}
 }

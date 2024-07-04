@@ -5,14 +5,14 @@ namespace EventStore.Testing;
 [PublicAPI]
 public static class TimeoutExtensions {
 	static readonly ObjectPool<CancellationTokenSource> TimeoutTokenSourcePool = ObjectPool.Create<CancellationTokenSource>();
-	
+
 	public static async Task<TResult> TimeoutAfter<TResult>(this Task<TResult> task, TimeSpan timeout, string? message, Func<Task<TResult>> onTimeout) {
 		var cancellator = TimeoutTokenSourcePool.Get().With(x => x.CancelAfter(timeout));
 
 		try {
 			if (await Task.WhenAny(task, Task.Delay(timeout, cancellator.Token)).ConfigureAwait(false) != task)
 				return await onTimeout().ConfigureAwait(false);
-			
+
 			await cancellator.CancelAsync().ConfigureAwait(false);
 			return await task.ConfigureAwait(false);
 		}
@@ -23,10 +23,10 @@ public static class TimeoutExtensions {
 				cancellator.Dispose();
 		}
 	}
-	
+
 	public static Task<TResult> TimeoutAfter<TResult>(this Task<TResult> task, TimeSpan timeout, string? message = null) =>
 		task.TimeoutAfter(timeout, message, () => throw new TimeoutException(message ?? $"Timed out after waiting {timeout.TotalMilliseconds}ms"));
-	
+
 	// public static async Task<TResult> TimeoutAfter<TResult>(this Task<TResult> task, TimeSpan timeout, string? message = null) {
 	// 	var cancellator = TimeoutTokenSourcePool.Get().With(x => x.CancelAfter(timeout));
 	//
@@ -49,13 +49,13 @@ public static class TimeoutExtensions {
 
 	public static Task TimeoutAfter(this Task task, TimeSpan timeout, string? message = null) =>
 		TimeoutAfter(task.ContinueWith(t => t.IsCompletedSuccessfully ? true : throw t.Exception!.InnerException ?? t.Exception), timeout, message);
-	
+
 	// public static Task TimeoutAfter(this Task task, int timeoutMs, string? message = null) =>
 	// 	task.TimeoutAfter(TimeSpan.FromMilliseconds(timeoutMs), message);
 
-	public static async ValueTask<TResult> TimeoutAfter<TResult>(this ValueTask<TResult> valueTask, TimeSpan timeout, string? message = null) => 
+	public static async ValueTask<TResult> TimeoutAfter<TResult>(this ValueTask<TResult> valueTask, TimeSpan timeout, string? message = null) =>
 		await valueTask.AsTask().TimeoutAfter(timeout, message).ConfigureAwait(false);
-	
+
 	// public static ValueTask<TResult> TimeoutAfter<TResult>(this ValueTask<TResult> valueTask, int timeoutMs, string? message = null) =>
 	// 	valueTask.TimeoutAfter(TimeSpan.FromMilliseconds(timeoutMs), message);
 }

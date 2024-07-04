@@ -7,7 +7,7 @@ using EventStore.Streaming.Consumers.Checkpoints;
 namespace EventStore.Extensions.Connectors.Tests.Consumers.Checkpoints;
 
 [Trait("Category", "Integration")]
-public class SystemCheckpointStoreTests(ITestOutputHelper output, StreamingFixture fixture) : StreamingTests(output, fixture) {
+public class SystemCheckpointStoreTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
 	[Fact]
 	public async Task returns_empty_positions_when_stream_not_found() {
 		// Arrange

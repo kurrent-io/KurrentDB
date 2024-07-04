@@ -61,7 +61,7 @@ public class SystemEventStore : IEventStore {
             }
         ).ToArray();
 
-        var requestBuilder = SendRequest.Builder
+        var requestBuilder = ProduceRequest.Builder
             .Stream(stream)
             .Messages(messages);
 
@@ -74,7 +74,7 @@ public class SystemEventStore : IEventStore {
 
         var request = requestBuilder.Create();
 
-        var result = await Producer.Send(request);
+        var result = await Producer.Produce(request);
 
         return result switch {
             { Success: true } =>

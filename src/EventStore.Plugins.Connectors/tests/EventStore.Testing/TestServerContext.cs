@@ -78,7 +78,7 @@ public class TestServerContext<TEntryPoint> : WebApplicationFactory<TEntryPoint>
             }
         );
     }
-    
+
     public T  Service<T>() where T : notnull         => Services.GetRequiredService<T>();
     public T? OptionalService<T>() where T : notnull => Services.GetService<T>();
 }

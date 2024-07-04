@@ -15,7 +15,7 @@ public class StopConnectorCommandTests(ITestOutputHelper output, CommandServiceF
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StopConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -46,7 +46,7 @@ public class StopConnectorCommandTests(ITestOutputHelper output, CommandServiceF
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StopConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -72,7 +72,7 @@ public class StopConnectorCommandTests(ITestOutputHelper output, CommandServiceF
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StopConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -98,7 +98,7 @@ public class StopConnectorCommandTests(ITestOutputHelper output, CommandServiceF
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StopConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -124,7 +124,7 @@ public class StopConnectorCommandTests(ITestOutputHelper output, CommandServiceF
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StopConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,

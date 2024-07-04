@@ -38,7 +38,7 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
         new() {
             Options = Options with {
                 LogPosition   = logPosition,
-                StartPosition = RecordPosition.FromLogPosition(logPosition)
+                StartPosition = logPosition
             }
         };
 

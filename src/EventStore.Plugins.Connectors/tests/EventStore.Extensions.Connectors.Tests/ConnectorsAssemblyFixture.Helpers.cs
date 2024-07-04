@@ -7,14 +7,18 @@ using ContentType = System.Net.Mime.MediaTypeNames.Application;
 
 namespace EventStore.Extensions.Connectors.Tests;
 
-public partial class StreamingFixture {
+public partial class ConnectorsAssemblyFixture {
     public string NewStreamId([CallerMemberName] string? name = null) =>
         $"{name.Underscore()}-{GenerateShortId()}".ToLowerInvariant();
+
+    public string GenerateShortId()  => Guid.NewGuid().ToString()[30..];
+    public string NewConnectorId()   => $"connector-id-{GenerateShortId()}".ToLowerInvariant();
+    public string NewConnectorName() => $"connector-name-{GenerateShortId()}".ToLowerInvariant();
 
     public string NewProcessorId(string? prefix = null) =>
         prefix is null ? $"{GenerateShortId()}-prx" : $"{prefix.Underscore()}-{GenerateShortId()}-prx";
 
-    public SendRequest GenerateTestSendRequest(
+    public ProduceRequest GenerateTestProduceRequest(
         string streamId, int batchSize = 3, SchemaDefinitionType schemaType = SchemaDefinitionType.Json
     ) {
         var messages = Enumerable.Range(1, batchSize)
@@ -30,7 +34,7 @@ public partial class StreamingFixture {
             )
             .ToArray();
 
-        var request = SendRequest.Builder
+        var request = ProduceRequest.Builder
             .Messages(messages)
             .Stream(streamId)
             .Create();
@@ -38,24 +42,24 @@ public partial class StreamingFixture {
         return request;
     }
 
-    public List<SendRequest> GenerateTestSendRequests(
+    public List<ProduceRequest> GenerateTestSendRequests(
         string streamId, int numberOfRequests = 1, int batchSize = 3,
         SchemaDefinitionType schemaType = SchemaDefinitionType.Json
     ) =>
         Enumerable.Range(1, numberOfRequests)
-            .Select(_ => GenerateTestSendRequest(streamId, batchSize, schemaType))
+            .Select(_ => GenerateTestProduceRequest(streamId, batchSize, schemaType))
             .ToList();
 
-    public async Task<List<SendResult>> ProduceTestEvents(
+    public async Task<List<ProduceResult>> ProduceTestEvents(
         string streamId, int numberOfRequests = 1, int batchSize = 3,
         SchemaDefinitionType schemaType = SchemaDefinitionType.Json
     ) {
         var requests = GenerateTestSendRequests(streamId, numberOfRequests, batchSize, schemaType);
 
-        var results = new List<SendResult>();
+        var results = new List<ProduceResult>();
 
         foreach (var request in requests)
-            results.Add(await Producer.Send(request));
+            results.Add(await Producer.Produce(request));
 
         return results;
     }

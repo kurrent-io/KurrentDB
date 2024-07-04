@@ -7,7 +7,7 @@ using EventStore.Streaming.Consumers;
 namespace EventStore.Extensions.Connectors.Tests.Streaming.Consumers;
 
 [Trait("Category", "Integration")]
-public class SystemConsumerTests(ITestOutputHelper output, StreamingFixture fixture) : StreamingTests(output, fixture) {
+public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
 	[Fact]
 	public async Task consumes_stream_from_earliest() {
 		// Arrange
@@ -24,7 +24,7 @@ public class SystemConsumerTests(ITestOutputHelper output, StreamingFixture fixt
 
 		await using var consumer = SystemConsumer.Builder
 			.ConsumerId($"{streamId}-csr")
-			.Streams(streamId)
+			.Stream(streamId)
 			.InitialPosition(SubscriptionInitialPosition.Earliest)
 			.AutoCommit(x => x with { AutoCommitEnabled = false })
 			.Publisher(Fixture.Publisher)
@@ -67,7 +67,7 @@ public class SystemConsumerTests(ITestOutputHelper output, StreamingFixture fixt
 
 		await using var consumer = SystemConsumer.Builder
 			.ConsumerId($"{streamId}-csr")
-			.Streams(streamId)
+			.Stream(streamId)
 			.InitialPosition(SubscriptionInitialPosition.Latest)
 			.DisableAutoCommit()
 			.Publisher(Fixture.Publisher)
@@ -99,7 +99,7 @@ public class SystemConsumerTests(ITestOutputHelper output, StreamingFixture fixt
 
 		await using var consumer = SystemConsumer.Builder
 			.ConsumerId($"{streamId}-csr")
-			.Streams(streamId)
+			.Stream(streamId)
 			.StartPosition(startPosition)
 			.DisableAutoCommit()
 			.Publisher(Fixture.Publisher)
@@ -139,7 +139,7 @@ public class SystemConsumerTests(ITestOutputHelper output, StreamingFixture fixt
 		await using var consumer = SystemConsumer.Builder
 			.ConsumerId($"{streamId}-csr")
 			.SubscriptionName($"{streamId}-csr")
-			.Streams(streamId)
+			.Stream(streamId)
 			.InitialPosition(SubscriptionInitialPosition.Earliest)
 			.DisableAutoCommit()
 			.Publisher(Fixture.Publisher)
@@ -178,7 +178,7 @@ public class SystemConsumerTests(ITestOutputHelper output, StreamingFixture fixt
 		await using var consumer = SystemConsumer.Builder
 			.ConsumerId($"{streamId}-csr")
 			.SubscriptionName($"{streamId}-csr")
-			.Streams(streamId)
+			.Stream(streamId)
 			.DisableAutoCommit()
 			.Publisher(Fixture.Publisher)
 			.LoggerFactory(Fixture.LoggerFactory)
@@ -215,7 +215,7 @@ public class SystemConsumerTests(ITestOutputHelper output, StreamingFixture fixt
 
 		var consumer = SystemConsumer.Builder
 			.ConsumerId($"{streamId}-csr")
-			.Streams(streamId)
+			.Stream(streamId)
 			.InitialPosition(SubscriptionInitialPosition.Earliest)
 			.AutoCommit(x => x with { RecordsThreshold = 1 })
 			.Publisher(Fixture.Publisher)

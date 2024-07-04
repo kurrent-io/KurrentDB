@@ -16,7 +16,7 @@ public class RenameConnectorCommandTests(ITestOutputHelper output, CommandServic
         var newConnectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, RenameConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -46,7 +46,7 @@ public class RenameConnectorCommandTests(ITestOutputHelper output, CommandServic
         var newConnectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, RenameConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -73,7 +73,7 @@ public class RenameConnectorCommandTests(ITestOutputHelper output, CommandServic
         var connectorName    = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, RenameConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,

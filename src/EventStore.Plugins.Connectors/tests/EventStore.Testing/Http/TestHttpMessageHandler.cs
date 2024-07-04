@@ -3,9 +3,9 @@ using static System.Threading.Tasks.TaskCreationOptions;
 namespace EventStore.Testing.Http;
 
 public class TestHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler {
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) => 
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
         send(request, cancellationToken);
-    
+
     public static TestHttpMessageHandler Create(Func<HttpRequestMessage, Task<HttpResponseMessage>> send) {
         var tcs = new TaskCompletionSource<HttpResponseMessage>(RunContinuationsAsynchronously);
         return new TestHttpMessageHandler(async (req, ct) => {
@@ -14,8 +14,4 @@ public class TestHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, 
             return await result;
         });
     }
-    
-    public static TestHttpMessageHandler Create(
-        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send
-    ) => new(send);
 }

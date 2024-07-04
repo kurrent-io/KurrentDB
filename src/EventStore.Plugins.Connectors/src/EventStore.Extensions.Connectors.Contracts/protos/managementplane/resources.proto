@@ -117,3 +117,9 @@ message ConnectorStatus {
   ConnectorState    state          = 5;
   repeated uint64   positions      = 6;
 }
+
+//message RecordPosition {
+//  string stream_id    = 1;
+//  int32  partition_id = 2;
+//  uint64 log_position = 3;
+//}

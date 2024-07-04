@@ -2,33 +2,59 @@ using EventStore.Connectors;
 using EventStore.Connectors.Control;
 using EventStore.Connectors.Control.Coordination;
 using EventStore.Connectors.Management;
+using EventStore.Core.Bus;
 using EventStore.Core.Services.Storage.InMemory;
 using EventStore.Streaming.Schema;
+using EventStore.Streaming.Schema.Serializers.Bytes;
+using EventStore.Streaming.Schema.Serializers.Json;
+using EventStore.Streaming.Schema.Serializers.Protobuf;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NodaTime.Serialization.SystemTextJson;
+using Timeout = DotNext.Threading.Timeout;
 
 namespace EventStore.Plugins.Connectors;
 
 [UsedImplicitly]
 public class ConnectorsPlugin : TinyAppPlugin {
     protected override WebApplication BuildApp(TinyAppBuildContext ctx) {
-        // Because (unfortunately) the gossip listener service raises a schemaless event,
-        // a proper schema must be registered for it to be consumed by the control plane
-        SchemaRegistry.Global.RegisterSchema<GossipUpdatedInMemory>(
-                GossipListenerService.EventType,
-                SchemaDefinitionType.Json
-            )
-            .AsTask().GetAwaiter().GetResult();
+        // // Because (unfortunately) the gossip listener service raises a schemaless event,
+        // // a proper schema must be registered for it to be consumed by the control plane
+        // SchemaRegistry.Global.RegisterSchema<GossipUpdatedInMemory>(
+        //         GossipListenerService.EventType,
+        //         SchemaDefinitionType.Json
+        //     )
+        //     .AsTask().GetAwaiter().GetResult();
 
-        ctx.AppBuilder.Services.AddSingleton(SchemaRegistry.Global);
-        ctx.AppBuilder.Services.AddSingleton<INodeLifetimeService, NodeLifetimeService>();
+        ctx.AppBuilder.Services.AddSingleton(
+            new SchemaRegistry(new InMemorySchemaRegistryClient())
+                .UseBytes()
+                .UseJson(new SystemJsonSerializerOptions(new() {
+                    Converters = { NodaConverters.InstantConverter, NodaConverters.DurationConverter }
+                }))
+                .UseProtobuf()
+        );
 
-        ctx.AppBuilder.Services.AddConnectorsManagement();
-        ctx.AppBuilder.Services.AddConnectorsControlPlane();
+        // ctx.AppBuilder.Services.AddSingleton<INodeLifetimeService, NodeLifetimeService>();
+
+        ctx.AppBuilder.Services.AddSingleton<INodeLifetimeService, NodeLifetimeService>(serviceProvider => new NodeLifetimeService(
+                serviceProvider.GetRequiredService<ISubscriber>(),
+                serviceProvider.GetRequiredService<ILogger<NodeLifetimeService>>()
+        ));
+
+        // ctx.AppBuilder.Services.AddConnectorsManagement();
+        // ctx.AppBuilder.Services.AddConnectorsControlPlane();
 
         var app = ctx.AppBuilder.Build();
 
-        app.UseConnectorsManagement();
+        // var signal = app.Services.GetRequiredService<INodeLifetimeService>().WaitForLeadershipAsync(Timeout.Infinite, CancellationToken.None).GetAwaiter().GetResult();
+        //
+        // app.Logger.LogWarning("Leadership acquired");
+        //
+        // signal.Register(() => app.Logger.LogWarning("Leadership lost"));
+
+        //app.UseConnectorsManagement();
 
         return app;
     }
@@ -107,6 +133,6 @@ public class ConnectorsPlugin : TinyAppPlugin {
 //     }
 // }
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary) {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+// record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary) {
+//     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+// }

@@ -6,7 +6,7 @@ using EventStore.Streaming.Producers;
 namespace EventStore.Extensions.Connectors.Tests.Streaming.Producers;
 
 [Trait("Category", "Integration")]
-public class SystemProducerTests(ITestOutputHelper output, StreamingFixture fixture) : StreamingTests(output, fixture) {
+public class SystemProducerTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
 	[Theory]
 	[InlineData(1, 1)]
 	[InlineData(1, 3)]
@@ -29,10 +29,10 @@ public class SystemProducerTests(ITestOutputHelper output, StreamingFixture fixt
 			.Create();
 
 		// Act
-		var results = new List<SendResult>();
+		var results = new List<ProduceResult>();
 
 		foreach (var request in requests)
-			results.Add(await producer.Send(request));
+			results.Add(await producer.Produce(request));
 
 		// Assert
 		results.Should().HaveCount(numberOfRequests, "because there should be one result for each request");

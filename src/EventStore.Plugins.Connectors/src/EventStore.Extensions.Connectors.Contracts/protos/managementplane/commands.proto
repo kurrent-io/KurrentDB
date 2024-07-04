@@ -64,13 +64,13 @@ service ConnectorCommandService {
 
 message CreateConnector {
   string              connector_id = 1;
-  string              name         = 2;
-  map<string, string> settings     = 3;
+  string              name         = 3;
+  map<string, string> settings     = 5;
 }
 
 message ReconfigureConnector {
   string                                   connector_id = 1;
-  map<string, google.protobuf.StringValue> settings     = 2;
+  map<string, google.protobuf.StringValue> settings     = 3;
 }
 
 message DeleteConnector {
@@ -86,25 +86,25 @@ message StopConnector {
 }
 
 message ResetConnector {
-  string          connector_id = 1;
-  repeated uint64 positions    = 2;
+  string                      connector_id = 1;
+  google.protobuf.UInt64Value log_position = 3;
 }
 
 message RenameConnector {
   string connector_id = 1;
-  string name         = 2;
+  string name         = 3;
 }
 
 message RecordConnectorStateChange {
   string                    connector_id  = 1;
-  ConnectorState            from_state    = 2;
-  ConnectorState            to_state      = 3;
-  Error                     error_details = 4;
-  google.protobuf.Timestamp timestamp     = 5;
+  ConnectorState            from_state    = 3;
+  ConnectorState            to_state      = 5;
+  Error                     error_details = 7;
+  google.protobuf.Timestamp timestamp     = 9;
 }
 
-message RecordConnectorPositions {
+message RecordConnectorPosition {
   string                    connector_id = 1;
-  repeated uint64           positions    = 2;
-  google.protobuf.Timestamp timestamp    = 3;
+  uint64                    log_position = 3;
+  google.protobuf.Timestamp timestamp    = 5;
 }

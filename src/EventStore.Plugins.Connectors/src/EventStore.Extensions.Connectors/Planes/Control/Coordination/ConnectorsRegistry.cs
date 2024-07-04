@@ -128,8 +128,8 @@ class ConnectorsRegistry {
                 UpdatedAt   = TimeProvider.GetUtcNow().ToTimestamp()
             };
 
-            await Producer.Send(
-                SendRequest.Builder
+            await Producer.Produce(
+                ProduceRequest.Builder
                     .Message(newSnapshot, SchemaDefinitionType.Protobuf)
                     .Stream(SnapshotStreamId)
                     .ExpectedStreamRevision(expectedPosition.StreamRevision)

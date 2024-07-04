@@ -11,9 +11,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DotNext.Threading" Version="5.7.0" />
-        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9" />
-        <PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.54" />
+        <PackageReference Include="DotNext.Threading" Version="5.9.0" />
+        <PackageReference Include="EventStore.Plugins" Version="24.6.1" />
+		<PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.58" />
         <!--        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9">-->
         <!--            <Private>false</Private>-->
         <!--            <IncludeAssets>compile</IncludeAssets>-->
@@ -21,6 +21,7 @@
         <PackageReference Include="Eventuous.Application" Version="0.15.0-rc.1" />
         <PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-rc.1" />
         <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-rc.1" />
+        <PackageReference Include="Google.Protobuf" Version="3.27.2" />
         <PackageReference Include="Grpc.StatusProto" Version="2.63.0" />
         <PackageReference Include="Microsoft.AspNetCore.Grpc.Swagger" Version="0.8.6" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
@@ -28,7 +29,8 @@
     </ItemGroup>
   
     <ItemGroup>
-
+<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj"/>-->
+		
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
             <Private>false</Private>
             <ExcludeAssets>all</ExcludeAssets>
@@ -46,6 +48,10 @@
         <InternalsVisibleTo Include="EventStore.Plugins.Connectors"/>
         <InternalsVisibleTo Include="EventStore.Extensions.Connectors.Tests"/>
         <InternalsVisibleTo Include="EventStore.Plugins.Connectors.Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="EventStore.Extensions.Connectors.csproj.DotSettings" />
     </ItemGroup>
 
 </Project>

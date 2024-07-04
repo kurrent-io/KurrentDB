@@ -7,8 +7,8 @@ using EventStore.Streaming.Schema.Serializers;
 
 namespace EventStore.Streaming.Producers;
 
-public static class SendRequestExtensions {
-    public static ValueTask<Event[]> ToEvents(this SendRequest request, Action<Headers> configureHeaders, Serialize serialize) {
+public static class ProduceRequestExtensions {
+    public static ValueTask<Event[]> ToEvents(this ProduceRequest request, Action<Headers> configureHeaders, Serialize serialize) {
         return request.Messages
             .ToAsyncEnumerable()
             .SelectAwait(async msg => await Map(msg.With(x => configureHeaders(x.Headers)), serialize))

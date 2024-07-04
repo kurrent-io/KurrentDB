@@ -125,7 +125,7 @@ public class SystemConsumer : IConsumer {
 		await Intercept(new RecordTracked(this, record));
 	}
 
-	public async Task Commit() {
+	public async Task Commit(CancellationToken cancellationToken = default) {
 		var positions = await CheckpointController.Commit(CancellationToken.None);
 		await Intercept(new PositionsCommitted(this, positions));
 	}

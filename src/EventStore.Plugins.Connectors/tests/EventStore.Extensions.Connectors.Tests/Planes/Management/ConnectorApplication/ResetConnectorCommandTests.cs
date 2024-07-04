@@ -15,10 +15,10 @@ public class ResetConnectorCommandTests(ITestOutputHelper output, CommandService
     public async Task reset_connector_when_connector_exists_and_stopped() {
         var connectorId   = Fixture.NewConnectorId();
         var connectorName = Fixture.NewConnectorName();
-        var positions     = new List<ulong> { 1, 2, 3 };
+        var logPosition   = Fixture.Faker.Random.ULong();
 
         await CommandServiceSpec<ConnectorEntity, ResetConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -33,13 +33,13 @@ public class ResetConnectorCommandTests(ITestOutputHelper output, CommandService
             .When(
                 new ResetConnector {
                     ConnectorId = connectorId,
-                    Positions   = { positions }
+                    LogPosition = logPosition
                 }
             )
             .Then(
                 new ConnectorReset {
                     ConnectorId = connectorId,
-                    Positions   = { positions },
+                    LogPosition = logPosition,
                     Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 }
             );
@@ -51,7 +51,7 @@ public class ResetConnectorCommandTests(ITestOutputHelper output, CommandService
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, ResetConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -66,7 +66,7 @@ public class ResetConnectorCommandTests(ITestOutputHelper output, CommandService
             .When(
                 new ResetConnector {
                     ConnectorId = connectorId,
-                    Positions   = { 1, 2, 3 }
+                    LogPosition = Fixture.Faker.Random.ULong()
                 }
             )
             .Then(new ConnectorDomainExceptions.ConnectorDeleted(connectorId));
@@ -78,7 +78,7 @@ public class ResetConnectorCommandTests(ITestOutputHelper output, CommandService
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, ResetConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -93,7 +93,7 @@ public class ResetConnectorCommandTests(ITestOutputHelper output, CommandService
             .When(
                 new ResetConnector {
                     ConnectorId = connectorId,
-                    Positions   = { 1, 2, 3 }
+                    LogPosition = Fixture.Faker.Random.ULong()
                 }
             )
             .Then(
@@ -107,7 +107,7 @@ public class ResetConnectorCommandTests(ITestOutputHelper output, CommandService
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, ResetConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -122,13 +122,11 @@ public class ResetConnectorCommandTests(ITestOutputHelper output, CommandService
             .When(
                 new ResetConnector {
                     ConnectorId = connectorId,
-                    Positions = {
-                        Capacity = 0
-                    }
+                    LogPosition = null
                 }
             )
             .Then(
-                new ConnectorDomainExceptions.ConnectorInvalidState(
+                new ConnectorDomainExceptions.InvalidConnectorStateChange(
                     connectorId,
                     ConnectorState.Stopped,
                     ConnectorState.Stopped

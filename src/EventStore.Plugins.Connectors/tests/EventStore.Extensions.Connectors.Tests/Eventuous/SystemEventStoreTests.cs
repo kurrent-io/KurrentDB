@@ -10,21 +10,12 @@ using Shouldly;
 namespace EventStore.Extensions.Connectors.Tests.Eventuous;
 
 [Trait("Category", "Integration")]
-public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fixture)
-    : StreamingTests(output, fixture) {
+public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests<ConnectorsAssemblyFixture>(output, fixture) {
     [Fact]
     public async Task stream_does_not_exists() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var eventstore = new SystemEventStore(reader, producer);
         var stream     = Fixture.NewStreamName();
+        var eventstore = new SystemEventStore(Fixture.NewReader().Create(), Fixture.NewProducer().Create());
 
         // Act
         var exists = await eventstore.StreamExists(stream);

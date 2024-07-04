@@ -4,9 +4,7 @@ using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Streaming.Producers.Configuration;
-using EventStore.Streaming;
 using EventStore.Streaming.Interceptors;
-using EventStore.Streaming.Producers;
 using EventStore.Streaming.Producers.Interceptors;
 using EventStore.Streaming.Producers.LifecycleEvents;
 using EventStore.Streaming.Schema.Serializers;
@@ -45,25 +43,25 @@ public class SystemProducer : IProducer {
     public string? Stream           => Options.DefaultStream;
     public int     InFlightMessages => 0;
 
-    public Task Send(SendRequest request, OnSendResult onResult) =>
-        SendInternal(request, new SendResultCallback(onResult));
+    public Task Produce(ProduceRequest request, OnProduceResult onResult) =>
+        ProduceInternal(request, new ProduceResultCallback(onResult));
 
-    public Task Send<TState>(SendRequest request, OnSendResult<TState> onResult, TState state) =>
-        SendInternal(request, new SendResultCallback<TState>(onResult, state));
+    public Task Produce<TState>(ProduceRequest request, OnProduceResult<TState> onResult, TState state) =>
+        ProduceInternal(request, new ProduceResultCallback<TState>(onResult, state));
 
-    public Task Send<TState>(SendRequest request, SendResultCallback<TState> callback) =>
-        SendInternal(request, callback);
+    public Task Produce<TState>(ProduceRequest request, ProduceResultCallback<TState> callback) =>
+        ProduceInternal(request, callback);
 
-    public Task Send(SendRequest request, SendResultCallback callback) =>
-        SendInternal(request, callback);
+    public Task Produce(ProduceRequest request, ProduceResultCallback callback) =>
+        ProduceInternal(request, callback);
 
-    public async Task SendInternal(SendRequest request, ISendResultCallback callback) {
-        Ensure.NotDefault(request, SendRequest.Empty);
+    public async Task ProduceInternal(ProduceRequest request, IProduceResultCallback callback) {
+        Ensure.NotDefault(request, ProduceRequest.Empty);
         Ensure.NotNull(callback);
 
         var validRequest = request.EnsureStreamIsSet(Options.DefaultStream);
 
-        await Intercept(new SendRequestReceived(this, validRequest));
+        await Intercept(new ProduceRequestReceived(this, validRequest));
 
         Flushing.Wait();
 
@@ -75,9 +73,9 @@ public class SystemProducer : IProducer {
                 Serialize
             );
 
-        await Intercept(new SendRequestReady(this, request));
+        await Intercept(new ProduceRequestReady(this, request));
 
-        SendResult result;
+        ProduceResult result;
 
         var expectedRevision = request.ExpectedStreamRevision != StreamRevision.Unset
             ? request.ExpectedStreamRevision.Value
@@ -100,9 +98,9 @@ public class SystemProducer : IProducer {
                 LogPosition    = LogPosition.From(position.CommitPosition, position.PreparePosition),
             };
 
-            result = SendResult.Succeeded(validRequest, recordPosition);
+            result = ProduceResult.Succeeded(validRequest, recordPosition);
 
-            //await Intercept(new SendRequestSucceeded(this, validRequest, recordPosition));
+            //await Intercept(new ProduceRequestSucceeded(this, validRequest, recordPosition));
         } catch (Exception ex) {
             StreamingError error = ex switch {
                 ReadResponseException.Timeout        => new RequestTimeoutError(validRequest.Stream, ex.Message),
@@ -121,17 +119,17 @@ public class SystemProducer : IProducer {
                 _                                               => new StreamingCriticalError(ex.Message, ex)
             };
 
-            result = SendResult.Failed(validRequest, error);
+            result = ProduceResult.Failed(validRequest, error);
 
-            //await Intercept(new SendRequestFailed(this, validRequest, error));
+            //await Intercept(new ProduceRequestFailed(this, validRequest, error));
         }
 
-        await Intercept(new SendRequestProcessed(this, result));
+        await Intercept(new ProduceRequestProcessed(this, result));
 
         try {
             await callback.Execute(result);
         } catch (Exception uex) {
-            await Intercept(new SendRequestCallbackError(this, result, uex));
+            await Intercept(new ProduceRequestCallbackError(this, result, uex));
         }
     }
 
