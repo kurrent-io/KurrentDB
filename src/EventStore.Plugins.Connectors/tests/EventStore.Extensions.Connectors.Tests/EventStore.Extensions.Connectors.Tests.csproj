@@ -1,26 +1,19 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<IsTestProject>true</IsTestProject>
+		<RootNamespace>EventStore.Connectors.Tests</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Eventuous.Testing" Version="0.15.0-rc.1" />
 		<PackageReference Include="NewId" Version="4.0.1" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
 		<ProjectReference Include="..\EventStore.Extensions.Connectors.Management.TestServer\EventStore.Extensions.Connectors.Management.TestServer.csproj" />
-		<ProjectReference Include="..\EventStore.Testing\EventStore.Testing.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Using Include="Bogus" />
-		<Using Include="Humanizer" />
-		<Using Include="JetBrains.Annotations" />
-		<Using Include="FluentAssertions" />
-		<Using Include="Xunit" />
-		<Using Include="Xunit.Abstractions" />
+		<ProjectReference Include="..\EventStore.System.Testing\EventStore.System.Testing.csproj" />
+		<ProjectReference Include="..\EventStore.Toolkit.Testing.Http\EventStore.Toolkit.Testing.Http.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

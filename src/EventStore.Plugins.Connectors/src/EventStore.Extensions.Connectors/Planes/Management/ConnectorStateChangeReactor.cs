@@ -2,6 +2,7 @@
 
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Streaming.Processors;
+using Eventuous;
 using Microsoft.Extensions.Logging;
 using StreamingContracts = EventStore.Streaming.Contracts.Processors;
 using ManagementContracts = EventStore.Connectors.Management.Contracts.Commands;
@@ -9,7 +10,7 @@ using ManagementContracts = EventStore.Connectors.Management.Contracts.Commands;
 namespace EventStore.Connectors.Management;
 
 public class ConnectorStateChangeReactor : ProcessingModule {
-    public ConnectorStateChangeReactor(ConnectorApplication application) {
+    public ConnectorStateChangeReactor(ICommandService<ConnectorEntity> application) {
         Process<StreamingContracts.ProcessorStateChanged>(
             (evt, ctx) => {
                 try {
@@ -25,7 +26,7 @@ public class ConnectorStateChangeReactor : ProcessingModule {
                     );
                 }
                 catch (Exception e) {
-                  ctx.Logger.LogError(e, "Failed to record connector state change.");
+                    ctx.Logger.LogError(e, "Failed to record connector state change.");
                 }
             }
         );

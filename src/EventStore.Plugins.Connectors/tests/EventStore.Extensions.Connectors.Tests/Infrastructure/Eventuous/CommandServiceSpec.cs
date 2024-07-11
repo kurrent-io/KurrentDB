@@ -1,47 +1,60 @@
-using DotNext.Collections.Generic;
 using Eventuous;
+using Eventuous.Testing;
+using Serilog;
+using static Serilog.Core.Constants;
 
 namespace EventStore.Extensions.Connectors.Tests.Eventuous;
 
-// TODO JC: Bring in fixture logger so we can log for GWT steps.
-public class CommandServiceSpec<TState, TCommand>
-    where TState : State<TState>, new()
-    where TCommand : class, new() {
-    dynamic[]        GivenEvents         { get; set; } = [];
+public class CommandServiceSpec<TState, TCommand> where TState : State<TState>, new() where TCommand : class, new() {
+    static readonly ILogger Logger = Log.ForContext(
+        SourceContextPropertyName, $"CommandServiceSpec<{typeof(TState).Name}, {typeof(TCommand).Name}>"
+    );
+
+    Queue<object>    GivenEvents         { get; set; } = [];
     TCommand         WhenCommand         { get; set; } = null!;
-    dynamic[]        ThenEvents          { get; set; } = [];
+    Queue<object>    ThenEvents          { get; set; } = [];
     DomainException? ThenDomainException { get; set; }
 
-    InMemoryEventStore     EventStore { get; set; } = new InMemoryEventStore();
-    CommandService<TState> Service    { get; set; } = null!;
+    IEventStore             EventStore { get; set; } = new InMemoryEventStore();
+    ICommandService<TState> Service    { get; set; } = null!;
 
     public static CommandServiceSpec<TState, TCommand> Builder => new CommandServiceSpec<TState, TCommand>();
 
-    public CommandServiceSpec<TState, TCommand> WithService(
-        Func<IEventStore, CommandService<TState>> serviceFactory
-    ) {
+    public CommandServiceSpec<TState, TCommand> ForService(Func<IEventStore, ICommandService<TState>> serviceFactory) {
         Service = serviceFactory(EventStore);
         return this;
     }
 
-    public CommandServiceSpec<TState, TCommand> GivenNoState() => Given([]);
+    public CommandServiceSpec<TState, TCommand> WithEventStore(IEventStore eventStore) {
+        EventStore = eventStore;
+        return this;
+    }
 
-    public CommandServiceSpec<TState, TCommand> Given(params object[] events) {
-        GivenEvents = events;
-        RegisterEventsInTypeMap(events);
+    public CommandServiceSpec<TState, TCommand> GivenNoState() => this;
+
+    public CommandServiceSpec<TState, TCommand> Given(params object[] domainEvents) {
+        foreach (var evt in domainEvents) {
+            GivenEvents.Enqueue(evt);
+            RegisterEventsInTypeMap(evt);
+        }
+
         return this;
     }
 
     public CommandServiceSpec<TState, TCommand> When(TCommand command) {
-        WhenCommand = command!;
+        WhenCommand = command;
         return this;
     }
 
-    public async Task Then(params object[] events) {
-        ThenEvents = events;
-        RegisterEventsInTypeMap(events);
+    public async Task Then(params object[] domainEvents) {
+        foreach (var evt in domainEvents) {
+            ThenEvents.Enqueue(evt);
+            RegisterEventsInTypeMap(evt);
+        }
+
         await Assert();
     }
+
 
     public async Task Then(DomainException domainException) {
         ThenDomainException = domainException;
@@ -52,28 +65,43 @@ public class CommandServiceSpec<TState, TCommand>
         var streamName = $"$connector-{((dynamic)WhenCommand).ConnectorId}";
 
         // Given the following events.
+        if (GivenEvents.Count != 0)
+            Logger.Information("Given events {GivenEvents}", GivenEvents.Select(x => x.GetType().Name));
+        else
+            Logger.Information("Given no state");
+
         await EventStore.AppendEvents(
             new StreamName(streamName),
             ExpectedStreamVersion.NoStream,
-            GivenEvents.Select(e => new StreamEvent(Guid.NewGuid(), e, new Metadata(), "application/json", 0)).ToList(),
+            GivenEvents.Select(evt => new StreamEvent(Guid.NewGuid(), evt, new Metadata(), "application/json", 0)).ToList(),
             CancellationToken.None
         );
 
         // When I send the following command to my service.
+        Logger.Information("When {CommandType} {Command}", WhenCommand.GetType().Name, WhenCommand);
+
         var commandResult = await Service.Handle(WhenCommand, CancellationToken.None);
 
-        // Then I expect the following events to be emitted.
+        // Then I expect the following events to be raised.
+
         if (ThenDomainException is null) {
+            if (commandResult.Changes?.Any() ?? false)
+                Logger.Information("Then events raised must be {ThenEvents}", ThenEvents.Select(x => x.GetType().Name));
+            else
+                Logger.Information("Then no events are raised");
+
             var actualEvents = commandResult.Changes?.Select(c => c.Event);
             actualEvents.Should().BeEquivalentTo(ThenEvents);
             return;
         }
+
+        Logger.Error(ThenDomainException, "Then {ThenDomainExceptionType} is thrown", ThenDomainException.GetType().Name);
 
         // OR I expect a domain exception to be thrown.
         commandResult.Should().BeOfType<ErrorResult<TState>>();
         commandResult.As<ErrorResult<TState>>().Exception.Should().BeOfType(ThenDomainException.GetType());
     }
 
-    static void RegisterEventsInTypeMap(params object[] events) =>
-        events.ForEach(evt => TypeMap.Instance.AddType(evt.GetType(), evt.GetType().Name));
+    static void RegisterEventsInTypeMap(object domainEvent) =>
+        TypeMap.Instance.AddType(domainEvent.GetType(), domainEvent.GetType().FullName!);
 }

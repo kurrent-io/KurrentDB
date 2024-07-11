@@ -2,22 +2,17 @@
 
 using DotNext.Collections.Generic;
 using EventStore.Connect.Connectors;
+using EventStore.Connect.Producers;
+using EventStore.Connect.Readers;
 using EventStore.Connectors.Control.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Readers;
-using EventStore.Streaming.Schema;
 using Google.Protobuf.WellKnownTypes;
 
 namespace EventStore.Connectors.Control.Coordination;
-
-// public record Connector {
-//     public string                      ConnectorId { get; init; }
-//     public int                         Revision    { get; init; }
-//     public Dictionary<string, string?> Settings    { get; init; } = [];
-// }
 
 public delegate Task<RegisteredConnector[]> GetActiveConnectors(CancellationToken cancellationToken);
 
@@ -30,52 +25,53 @@ class ConnectorsRegistry {
     public ConnectorsRegistry(
         SystemReader reader,
         SystemProducer producer,
-        ConsumeFilter connectorsConsumeFilter,
+        ConsumeFilter filter,
         StreamId snapshotStreamId,
-        TimeProvider timeProvider
+        TimeProvider time
     ) {
-        Reader                  = reader;
-        Producer                = producer;
-        ConnectorsConsumeFilter = connectorsConsumeFilter;
-        SnapshotStreamId        = snapshotStreamId;
-        TimeProvider            = timeProvider;
+        Reader           = reader;
+        Producer         = producer;
+        Filter           = filter;
+        SnapshotStreamId = snapshotStreamId;
+        Time             = time;
     }
 
-    SystemProducer Producer                { get; }
-    ConsumeFilter  ConnectorsConsumeFilter { get; }
-    SystemReader   Reader                  { get; }
-    StreamId       SnapshotStreamId        { get; }
-    TimeProvider   TimeProvider            { get; }
+    SystemReader   Reader           { get; }
+    SystemProducer Producer         { get; }
+    ConsumeFilter  Filter           { get; }
+    StreamId       SnapshotStreamId { get; }
+    TimeProvider   Time             { get; }
 
     /// <summary>
     /// Asynchronously retrieves an array of active connectors registered in the system.
     /// </summary>
     /// <param name="cancellationToken">A CancellationToken to observe while waiting for the task to complete.</param>
     public async Task<RegisteredConnector[]> GetConnectors(CancellationToken cancellationToken) {
-        var (checkpoint, state) = await LoadSnapshot(cancellationToken);
+        var (state, checkpoint) = await LoadSnapshot(cancellationToken);
 
         var lastReadPosition = checkpoint;
 
-        await foreach (var record in Reader.ReadForwards(
-                           checkpoint.LogPosition,
-                           ConnectorsConsumeFilter,
-                           cancellationToken: cancellationToken
-                       )) {
+        var records = Reader.ReadForwards(
+            checkpoint.LogPosition,
+            Filter,
+            cancellationToken: cancellationToken
+        );
+
+        await foreach (var record in records) {
             switch (record.Value) {
-                case ConnectorActivating evt:
+                case ConnectorActivating activating:
                     state.Add(
-                        evt.ConnectorId,
-                        new(
-                            evt.ConnectorId,
-                            evt.Revision,
-                            new ConnectorSettings(evt.Settings.ToDictionary())
+                        activating.ConnectorId,
+                        new RegisteredConnector(
+                            activating.ConnectorId,
+                            activating.Revision,
+                            new ConnectorSettings(activating.Settings.ToDictionary())
                         )
                     );
-
                     break;
 
-                case ConnectorDeactivating evt:
-                    state.Remove(evt.ConnectorId);
+                case ConnectorDeactivating deactivating:
+                    state.Remove(deactivating.ConnectorId);
                     break;
             }
 
@@ -91,15 +87,16 @@ class ConnectorsRegistry {
 
         return result;
 
-        async Task<(RecordPosition SnapshotPosition, Dictionary<ConnectorId, RegisteredConnector> State)> LoadSnapshot(
-            CancellationToken ct
-        ) {
+        async Task<(Dictionary<ConnectorId, RegisteredConnector> State, RecordPosition SnapshotPosition)> LoadSnapshot(CancellationToken ct) {
             var record = await Reader
                 .ReadBackwards(ConsumeFilter.Streams(SnapshotStreamId), 1, ct)
                 .FirstOrNullAsync(ct) ?? EventStoreRecord.None;
 
+            // if (record.Value is not RegisteredConnectors snapshot)
+            //     return ([], record.Position with { LogPosition = LogPosition.Earliest }); // this is nicer... need to get it back.
+
             if (record.Value is not RegisteredConnectors snapshot)
-                return (record.Position with { LogPosition = LogPosition.Earliest }, []);
+                return ([], RecordPosition.ForStream(record.Position.StreamId, record.Position.StreamRevision, LogPosition.Earliest));
 
             var snapshotState = snapshot.Connectors.ToDictionary(
                 x => ConnectorId.From(x.ConnectorId),
@@ -110,7 +107,7 @@ class ConnectorsRegistry {
                 )
             );
 
-            return (record.Position, snapshotState);
+            return (snapshotState, record.Position);
         }
 
         async Task UpdateSnapshot(RegisteredConnector[] connectors, RecordPosition expectedPosition) {
@@ -125,12 +122,12 @@ class ConnectorsRegistry {
                     )
                 },
                 LogPosition = expectedPosition.LogPosition.CommitPosition!.Value,
-                UpdatedAt   = TimeProvider.GetUtcNow().ToTimestamp()
+                UpdatedAt   = Time.GetUtcNow().ToTimestamp()
             };
 
-            await Producer.Send(
-                SendRequest.Builder
-                    .Message(newSnapshot, SchemaDefinitionType.Protobuf)
+            await Producer.Produce(
+                ProduceRequest.Builder
+                    .Message(newSnapshot)
                     .Stream(SnapshotStreamId)
                     .ExpectedStreamRevision(expectedPosition.StreamRevision)
                     .Create()

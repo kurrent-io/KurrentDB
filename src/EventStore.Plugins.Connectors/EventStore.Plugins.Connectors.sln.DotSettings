@@ -8,7 +8,7 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=submodules_002FEventStore_002Fsrc/@EntryIndexedValue"></s:String>
 	<s:Boolean x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=submodules_002FEventStore_002Fsrc/@EntryIndexRemoved">True</s:Boolean>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/GeneratedFilesAndFolders/=1FFE9B22_002D1994_002D47B1_002D814E_002D7DCB8E838D10/@EntryIndexedValue">1FFE9B22-1994-47B1-814E-7DCB8E838D10</s:String>
-	
+
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/GeneratedFilesAndFolders/=submodules_002FEventStore_002Fsrc/@EntryIndexedValue">submodules/EventStore/src</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=ArrangeDefaultValueWhenTypeNotEvident/@EntryIndexedValue">SUGGESTION</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=ArrangeNamespaceBody/@EntryIndexedValue">DO_NOT_SHOW</s:String>
@@ -327,7 +327,7 @@
         &lt;Kind Is="Constant" /&gt;
       &lt;/Entry.Match&gt;
     &lt;/Entry&gt;
-    
+
     &lt;Entry DisplayName="Static Fields" Priority="85"&gt;
       &lt;Entry.Match&gt;
         &lt;And&gt;
@@ -412,7 +412,7 @@
 	<s:Boolean x:Key="/Default/Environment/SettingsMigration/IsMigratorApplied/=JetBrains_002EReSharper_002EPsi_002ECSharp_002ECodeStyle_002ESettingsUpgrade_002EMigrateBlankLinesAroundFieldToBlankLinesAroundProperty/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/SettingsMigration/IsMigratorApplied/=JetBrains_002EReSharper_002EUnitTestFramework_002EMigrations_002EEnableDisabledProvidersMigration/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/UnitTesting/DisabledProviders/=VsTest/@EntryIndexedValue">False</s:Boolean>
-	
+
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=acked/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=appsettings/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Cancelator/@EntryIndexedValue">True</s:Boolean>
@@ -421,6 +421,8 @@
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=esbd/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=esdb/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=EVENTSTORE/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=eventuous/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Fixie/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/UserDictionary/Words/=mngt/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=rebalancing/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=westeurope/@EntryIndexedValue">True</s:Boolean></wpf:ResourceDictionary>

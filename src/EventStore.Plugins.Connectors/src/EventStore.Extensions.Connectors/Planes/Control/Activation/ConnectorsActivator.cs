@@ -1,346 +1,139 @@
 using System.Collections.Concurrent;
-using DotNext.Collections.Generic;
 using EventStore.Connect.Connectors;
-using EventStore.Connect.Leases;
-using EventStore.Streaming;
-using FluentValidation.Results;
-using Microsoft.Extensions.Configuration;
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-using ILeaseManager = EventStore.Connect.Leases.ILeaseManager;
-using ReleaseLease = EventStore.Connect.Leases.ReleaseLease;
-using AcquireOrRenewLease = EventStore.Connect.Leases.AcquireOrRenewLease;
-
 namespace EventStore.Connectors.Control.Activation;
 
-public record VersionedLease : Lease {
-    public long? Version { get; init; }
-}
-
-// public static class LeaseManagerExtensions {
-//     public static Task<(AcquireOrRenewLeaseResult, VersionedLease)> AcquireOrRenew(
-//         this ILeaseManager leaseManager, string resourceId, string resourceNamespace, string clientId, Duration duration, long version, CancellationToken token
-//     ) {
-//         return leaseManager.AcquireOrRenew(
-//             new AcquireOrRenewLease {
-//                 ResourceId        = resourceId,
-//                 ResourceNamespace = resourceNamespace,
-//                 ClientId          = clientId,
-//                 Duration          = duration,
-//                 Version           = version
-//             },
-//             token
-//         );
-//     }
-// }
-
-// /// <summary>
-// /// Activates or deactivates connectors
-// /// </summary>
-// public class ConnectorsActivator {
-//     public ConnectorsActivator(ConnectorsTaskManager taskManager, TimeProvider? time = null, ILoggerFactory? loggerFactory = null) {
-//         TaskManager = taskManager;
-//         Time        = time ?? TimeProvider.System;
-//         Logger      = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<ConnectorsActivator>();
-//     }
-//
-//     ConnectorsTaskManager TaskManager { get; }
-//     TimeProvider          Time        { get; }
-//     ILogger               Logger      { get; }
-//
-//     public async Task<ConnectorsActivated> Activate(ActivateConnectors command, CancellationToken cancellationToken = default) {
-//         var results = new List<ConnectorsTaskManager.ConnectorProcessInfo>();
-//
-//         foreach (var connector in command.Connectors) {
-//             var result = await TaskManager.StartProcess(
-//                 connector.ConnectorId,
-//                 connector.Revision,
-//                 new ConfigurationManager().AddInMemoryCollection(connector.Settings.ToDictionary()).Build(),
-//                 cancellationToken
-//             );
-//
-//             Logger.LogConnectorActivated(command.NodeId, connector.ConnectorId);
-//
-//             results.Add(result);
-//         }
-//
-//         return new ConnectorsActivated {
-//             ActivationId = command.ActivationId,
-//             NodeId       = command.NodeId,
-//             Connectors   = { results.MapToConnectors() },
-//             ActivatedAt  = Time.MapToUtcNowTimestamp()
-//         };
-//     }
-//
-//     public async Task<ConnectorsDeactivated> Deactivate(DeactivateConnectors command, CancellationToken cancellationToken = default) {
-//         var results = new List<ConnectorsTaskManager.ConnectorProcessInfo>();
-//
-//         foreach (var connector in command.Connectors) {
-//             var result = await TaskManager.StopProcess(
-//                 connector.ConnectorId,
-//                 cancellationToken
-//             );
-//
-//             Logger.LogConnectorDeactivated(result.Error, command.NodeId, connector.ConnectorId);
-//
-//             results.Add(result);
-//         }
-//
-//         return new ConnectorsDeactivated {
-//             ActivationId  = command.ActivationId,
-//             NodeId        = command.NodeId,
-//             Connectors    = { results.MapToConnectors() },
-//             DeactivatedAt = Time.MapToUtcNowTimestamp()
-//         };
-//     }
-//
-//     // public async Task DeactivateAll() {
-//     //     await TaskManager.StopAllProcesses();
-//     // }
-//
-//     public async Task<List<Connector>> Connectors(CancellationToken cancellationToken = default) {
-//         return TaskManager.GetProcesses()
-//             .ConvertAll(process => new Connector {
-//                 ConnectorId = process.ConnectorId,
-//                 Revision    = process.Revision,
-//                 // State       = process.State.MapToConnectorState(),
-//                 // Error       = process.Error?.Message
-//             });
-//     }
-// }
-
-public record ActivateResult {
-    public record Activated : ActivateResult;
-
-    public record InvalidConfiguration(ValidationResult ValidationResult) : ActivateResult;
-
-    public record InstanceTypeNotFound(ConnectorTypeName InstanceType) : ActivateResult;
-
-    public record LeaseAcquisitionFailed() : ActivateResult();
-
-    public record ActivationError(Exception Exception) : ActivateResult;
-}
-
-public record DeactivateResult {
-    public record Deactivated : DeactivateResult;
-
-    public record ConnectorNotFound() : DeactivateResult;
-
-    public record DeactivationError(Exception Exception) : DeactivateResult;
-}
-
 public class ConnectorsActivator {
-    public ConnectorsActivator(ClusterNodeId nodeId, ILeaseManager leaseManager, IConnectorFactory connectorFactory, TimeProvider? time = null, ILoggerFactory? loggerFactory = null) {
-        NodeId           = nodeId;
-        LeaseManager     = leaseManager;
+    public ConnectorsActivator(IConnectorFactory connectorFactory, ILogger<ConnectorsActivator>? logger = null) {
         ConnectorFactory = connectorFactory;
-        LeasedConnectors = [];
-        Time             = time ?? TimeProvider.System;
-        Logger           = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<ConnectorsActivator>();
+        Logger           = logger ?? NullLoggerFactory.Instance.CreateLogger<ConnectorsActivator>();
 
-        LifetimeTokenSource = new CancellationTokenSource();
-        LifetimeToken       = LifetimeTokenSource.Token;
-
-        var leaseCheckInterval = TimeSpan.FromSeconds(5);
-
-        Timer = new(leaseCheckInterval, OnLeaseCheck());
-
-        Timer.Start(LifetimeToken);
-
-        return;
-
-        OnPeriodicTimerTick OnLeaseCheck() =>
-            async (isLastTick, timerToken) => {
-                await LeasedConnectors.Values.ForEachAsync(
-                    async (leasedConnector, loopToken) => {
-                        var lease = leasedConnector.Lease;
-
-                        // if (DateTimeOffset.UtcNow.AddMinutes(1) > lease.ExpiresAt) {
-                        //     // renew lease
-                        //     // if renew fails because it expired already we must disconnect the connector
-                        //     // should we lock to avoid multiple renewals?
-                        //
-                        //     var newLease = await leaseManager
-                        //         .AcquireOrRenew(
-                        //             new AcquireOrRenewLease {
-                        //                 ResourceId = lease.Resource,
-                        //                 ClientId   = clientId,
-                        //                 Duration   = duration,
-                        //                 Version    = version
-                        //             }, loopToken
-                        //         );
-                        //
-                        //     if (newLease is null) {
-                        //         await Deactivate(leasedConnector.Connector.ConnectorId);
-                        //     }
-                        //     else {
-                        //         LeasedConnectors[leasedConnector.Connector.ConnectorId] = (
-                        //             leasedConnector.Connector,
-                        //             leasedConnector.Configuration,
-                        //             leasedConnector.Revision,
-                        //             newLease
-                        //         );
-                        //     }
-                        // }
-                    },
-                    timerToken
-                );
-            };
+        Connectors = [];
     }
 
-    ClusterNodeId      NodeId           { get; }
-    ILeaseManager      LeaseManager     { get; }
-    IConnectorFactory  ConnectorFactory { get; }
-    TimeProvider       Time             { get; }
-    ILogger            Logger           { get; }
-    AsyncPeriodicTimer Timer            { get; }
+    IConnectorFactory ConnectorFactory { get; }
+    ILogger           Logger           { get; }
 
-    CancellationTokenSource LifetimeTokenSource { get; }
-    CancellationToken       LifetimeToken       { get; }
-
-    ConcurrentDictionary<ConnectorId, (IConnector Connector, IConfiguration Configuration, int Revision, VersionedLease Lease)> LeasedConnectors { get; }
+    ConcurrentDictionary<ConnectorId, (IConnector Instance, int Revision)> Connectors { get; }
 
     public async Task<ActivateResult> Activate(
-        ConnectorId connectorId, int revision, Dictionary<string, string?> settings, CancellationToken stoppingToken = default
+        ConnectorId connectorId, Dictionary<string, string?> settings, int revision, ClusterNodeId ownerId, CancellationToken stoppingToken = default
     ) {
-        // // link to lifetime token?
-        //
-        // // TODO SS: Seriously consider exposing the configuration settings on IConnector along with the ConnectorId and State
-        // var config = new ConfigurationBuilder()
-        //     .AddInMemoryCollection(settings)
-        //     .Build();
-        //
-        // var result = new ConnectorsValidation().ValidateConfiguration(config);
-        //
-        // if (!result.IsValid)
-        //     return new ActivateResult.InvalidConfiguration(result);
-        //
-        // try {
-        //     var now = SystemClock.Instance.GetCurrentInstant();
-        //
-        //     VersionedLease lease;
-        //
-        //     // lease = new VersionedLease {
-        //     //     ResourceId        = connectorId,
-        //     //     AcquiredBy        = NodeId,
-        //     //     AcquiredAt        = SystemClock.Instance.GetCurrentInstant(),
-        //     //     ExpiresAt         = now.Plus(Duration.FromMinutes(1)),
-        //     //     ResourceNamespace = "",
-        //     //     Version           = null
-        //     // };
-        //
-        //     if (!LeasedConnectors.TryGetValue(connectorId, out var app)) {
-        //         var acquireResult = await LeaseManager.AcquireOrRenew(
-        //             new AcquireOrRenewLease {
-        //                 ResourceId = connectorId,
-        //                 ClientId   = NodeId,
-        //                 Duration   = Duration.FromMinutes(1)
-        //             },
-        //             stoppingToken
-        //         );
-        //
-        //         switch (acquireResult) {
-        //             case AcquireOrRenewLeaseResult.Acquired acquired: {
-        //                 var newLease = new VersionedLease {
-        //                     ResourceId        = connectorId,
-        //                     AcquiredBy        = NodeId,
-        //                     AcquiredAt        = SystemClock.Instance.GetCurrentInstant(),
-        //                     ExpiresAt         = acquired.ExpiresAt,
-        //                     ResourceNamespace = "",
-        //                     Version           = acquired.Version
-        //                 };
-        //
-        //                 var connector = ConnectorFactory.CreateConnector(connectorId, config);
-        //
-        //                 LeasedConnectors[connectorId] = (connector, config, revision, newLease);
-        //
-        //                 await connector.Connect(stoppingToken);
-        //
-        //                 Logger.LogConnectorActivated(NodeId, connector.ConnectorId);
-        //
-        //                 return new ActivateResult.Activated();
-        //             }
-        //
-        //             case AcquireOrRenewLeaseResult.Renewed:
-        //                 return new ActivateResult.LeaseAcquisitionFailed();
-        //
-        //             case AcquireOrRenewLeaseResult.Taken:
-        //                 return new ActivateResult.LeaseAcquisitionFailed();
-        //
-        //             case AcquireOrRenewLeaseResult.VersionMismatch:
-        //                 return new ActivateResult.LeaseAcquisitionFailed();
-        //         }
-        //     } else {
-        //         AcquireOrRenewLeaseResult acquireResult = await LeaseManager.AcquireOrRenew(
-        //             new AcquireOrRenewLease {
-        //                 ResourceId        = app.Lease.ResourceId,
-        //                 ClientId          = app.Lease.AcquiredBy,
-        //                 Duration          = Duration.FromMinutes(1),
-        //                 ResourceNamespace = app.Lease.ResourceNamespace,
-        //                 Version           = app.Lease.Version
-        //             },
-        //             stoppingToken
-        //         );
-        //
-        //         switch (acquireResult) {
-        //             case AcquireOrRenewLeaseResult.Acquired:
-        //                 return new ActivateResult.();
-        //
-        //             case AcquireOrRenewLeaseResult.Renewed:
-        //                 return new ActivateResult.LeaseAcquisitionFailed();
-        //
-        //             case AcquireOrRenewLeaseResult.Taken:
-        //                 return new ActivateResult.LeaseAcquisitionFailed();
-        //
-        //             case AcquireOrRenewLeaseResult.VersionMismatch:
-        //                 return new ActivateResult.LeaseAcquisitionFailed();
-        //         }
-        //
-        //         // if deactivating we should wait, but without the stopped task or an event of sorts we cant...
-        //         if (app.Revision != revision || app.Connector.State == ConnectorState.Stopped) {
-        //             await app.Connector.DisposeAsync();
-        //             LeasedConnectors.Remove(connectorId, out _);
-        //         }
-        //     }
-        //
-        //     // var connector = ConnectorFactory.CreateConnector(connectorId, config);
-        //     //
-        //     // LeasedConnectors[connectorId] = (connector, config, revision, lease);
-        //     //
-        //     // await connector.Connect(stoppingToken);
-        //     //
-        //     // Logger.LogConnectorActivated(NodeId, connector.ConnectorId);
-        //     //
-        //     // return new ActivateResult.Activated();
-        // }
-        // catch (Exception ex) {
-        //     return new ActivateResult.ActivationError(ex);
-        // }
+        if (stoppingToken.IsCancellationRequested)
+            return ActivateResult.OperationCanceled();
 
-        throw new NotImplementedException();
+        // TODO SS: the factory must validate the connector configuration
+        // var config = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
+        // var result = new ConnectorsValidation().ValidateConfiguration(config);
+        // if (!result.IsValid) return new ActivateResult.InvalidConfiguration(result);
+
+        // this should not happen and its more of a sanity check
+        if (Connectors.TryGetValue(connectorId, out var connector)) {
+            if (connector.Revision == revision && connector.Instance.State is ConnectorState.Activating or ConnectorState.Running)
+                return ActivateResult.RevisionAlreadyRunning();
+
+            try {
+                await connector.Instance.DisposeAsync();
+            }
+            catch {
+                // ignore
+            }
+        }
+
+        try {
+            //TODO SS: the factory must be refactored to accept a owner id to be used in lock acquisition
+            connector = Connectors[connectorId] = (ConnectorFactory.CreateConnector(connectorId, settings), revision);
+
+            if (stoppingToken.IsCancellationRequested)
+                return ActivateResult.OperationCanceled();
+
+            await connector.Instance.Connect(stoppingToken);
+
+            Logger.LogConnectorActivated(ownerId, connector.Instance.ConnectorId);
+
+            return ActivateResult.Activated();
+        }
+        catch (ValidationException ex) {
+            return ActivateResult.InvalidConfiguration(ex);
+        }
+        catch (Exception ex) {
+            return ActivateResult.UnknownError(ex);
+        }
     }
 
     public async Task<DeactivateResult> Deactivate(ConnectorId connectorId, CancellationToken cancellationToken = default) {
-        // link to lifetime token?
+        if (!Connectors.TryRemove(connectorId, out var app))
+            return DeactivateResult.ConnectorNotFound();
 
-        if (!LeasedConnectors.TryRemove(connectorId, out var app))
-            return new DeactivateResult.ConnectorNotFound();
+        try {
+            // should disconnect receive a token that would work as a timeout?
+            // it never fails but internally it captures errors
+            await app.Instance.DisposeAsync(); //Disconnect();
 
-        // should disconnect receive a token that would work as a timeout?
-        // it never fails but internally it captures errors
-        await app.Connector.DisposeAsync(); //Disconnect();
-
-        // // try to release forever?
-        // // should return a result that we can check to see if it was successful
-        // await LeaseManager.Release(new ReleaseLease {
-        //     ResourceId        = connectorId,
-        //     ClientId          = app.Lease.Owner,
-        //     Version           = app.Lease.Version
-        // }, cancellationToken);
-
-        return new DeactivateResult.Deactivated();
+            return DeactivateResult.Deactivated();
+        }
+        catch (OperationCanceledException) {
+            return DeactivateResult.OperationCanceled();
+        }
+        catch (Exception ex) {
+            return DeactivateResult.UnknownError(ex);
+        }
     }
+}
+
+public enum ActivateResultType {
+    Unknown                = 0,
+    Activated              = 1,
+    RevisionAlreadyRunning = 2,
+    InstanceTypeNotFound   = 3,
+    InvalidConfiguration   = 4,
+    UnableToAcquireLock    = 5,
+    OperationCanceled      = 6
+}
+
+public record ActivateResult(ActivateResultType Type, Exception? Error = null) {
+    public bool Success => Type is ActivateResultType.Activated;
+    public bool Failure => !Success;
+
+    public static ActivateResult Activated() => new(ActivateResultType.Activated);
+
+    public static ActivateResult RevisionAlreadyRunning() => new(ActivateResultType.RevisionAlreadyRunning);
+
+    public static ActivateResult InstanceTypeNotFound() => new(ActivateResultType.InstanceTypeNotFound);
+
+    public static ActivateResult InvalidConfiguration(ValidationException error) => new(ActivateResultType.InvalidConfiguration, error);
+
+    public static ActivateResult UnableToAcquireLock() => new(ActivateResultType.UnableToAcquireLock);
+
+    public static ActivateResult OperationCanceled() => new(ActivateResultType.OperationCanceled);
+
+    public static ActivateResult UnknownError(Exception error) => new(ActivateResultType.Unknown, error);
+}
+
+public enum DeactivateResultType {
+    Unknown              = 0,
+    Deactivated          = 1,
+    ConnectorNotFound    = 2,
+    UnableToReleaseLock  = 3,
+    OperationCanceled    = 4
+}
+
+public record DeactivateResult(DeactivateResultType Type, Exception? Error = null) {
+    public bool Success => Type is DeactivateResultType.Deactivated;
+    public bool Failure => !Success;
+
+    public static DeactivateResult Deactivated() => new(DeactivateResultType.Deactivated);
+
+    public static DeactivateResult ConnectorNotFound() => new(DeactivateResultType.ConnectorNotFound);
+
+    public static DeactivateResult UnableToReleaseLock() => new(DeactivateResultType.UnableToReleaseLock);
+
+    public static DeactivateResult OperationCanceled() => new(DeactivateResultType.OperationCanceled);
+
+    public static DeactivateResult UnknownError(Exception error) => new(DeactivateResultType.Unknown, error);
 }
 
 static partial class ConnectorsActivatorLogMessages {

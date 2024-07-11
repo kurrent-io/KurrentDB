@@ -1,7 +1,7 @@
 using EventStore.Connectors.Control;
-using EventStore.Testing;
-using EventStore.Testing.Fixtures;
-using EventStore.Testing.Xunit;
+using EventStore.Toolkit.Testing.Fixtures;
+using EventStore.Toolkit.Testing;
+using EventStore.Toolkit.Testing.Xunit;
 using MassTransit;
 
 namespace EventStore.Extensions.Connectors.Tests.Control;

@@ -1,6 +1,7 @@
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
+using EventStore.Streaming;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -12,7 +13,7 @@ public interface INodeLifetimeService {
 
 [UsedImplicitly]
 public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessage>, INodeLifetimeService, IDisposable {
-    volatile LeadershipCompletionSource? _leadershipEvent = new();
+    volatile TokenCompletionSource? _leadershipEvent = new();
 
     public NodeLifetimeService(ISubscriber? subscriber = null, ILogger<NodeLifetimeService>? logger = null) {
         subscriber?.Subscribe(this);
@@ -24,13 +25,13 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
     public void Handle(SystemMessage.StateChangeMessage message) {
         switch (_leadershipEvent) {
             case { Task.IsCompleted: false } when message.State is VNodeState.Leader:
-                _leadershipEvent.Assigned();
+                _leadershipEvent.Complete();
                 Logger.LogNodeLeadershipAssigned();
                 break;
 
             case { Task.IsCompleted: true } when message.State is not VNodeState.Leader:
                 using (var oldEvent = Interlocked.Exchange(ref _leadershipEvent, new()))
-                    oldEvent.Revoked();
+                    oldEvent.Cancel(null);
 
                 Logger.LogNodeLeadershipRevoked(message.State);
 
@@ -39,7 +40,7 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
             default:
                 if (message.State is VNodeState.ShuttingDown) {
                     using var oldEvent = Interlocked.Exchange(ref _leadershipEvent, null);
-                    oldEvent?.Revoked();
+                    oldEvent?.Cancel(null);
                     Logger.LogNodeLeadershipRevoked(message.State);
                 }
 
@@ -50,42 +51,12 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
     public Task<CancellationToken> WaitForLeadershipAsync(TimeSpan timeout, CancellationToken cancellationToken = default) =>
         _leadershipEvent?.Task.WaitAsync(timeout, cancellationToken) ?? Task.FromException<CancellationToken>(new ObjectDisposedException(GetType().Name));
 
-    sealed class LeadershipCompletionSource : TaskCompletionSource<CancellationToken>, IDisposable {
-        readonly CancellationTokenSource _cts;
-        readonly CancellationToken       _token; // cached to avoid ObjectDisposedException
-
-        public LeadershipCompletionSource() : base(TaskCreationOptions.RunContinuationsAsynchronously) {
-            _cts   = new();
-            _token = _cts.Token;
-        }
-
-        public void Assigned() => TrySetResult(_token);
-
-        public void Revoked() => _cts.Cancel();
-
-        void Dispose(bool disposing) {
-            if (!disposing)
-                return;
-
-            TrySetException(new ObjectDisposedException(GetType().Name));
-            _cts.Dispose();
-        }
-
-        public void Dispose() {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        ~LeadershipCompletionSource() => Dispose(false);
-    }
-
     void Dispose(bool disposing) {
         if (!disposing)
             return;
 
-        using (var oldEvent = Interlocked.Exchange(ref _leadershipEvent, null)) {
-            oldEvent?.Revoked();
-        }
+        using var oldEvent = Interlocked.Exchange(ref _leadershipEvent, null);
+        oldEvent?.Cancel(null);
     }
 
     public void Dispose() {
@@ -93,9 +64,7 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
         GC.SuppressFinalize(this);
     }
 
-    ~NodeLifetimeService() {
-        Dispose(false);
-    }
+    ~NodeLifetimeService() => Dispose(false);
 }
 
 static partial class NodeLifetimeServiceLogMessages {

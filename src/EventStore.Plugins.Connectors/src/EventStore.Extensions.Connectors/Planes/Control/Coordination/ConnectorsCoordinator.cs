@@ -1,16 +1,6 @@
 using System.Net;
-using DotNext.Collections.Generic;
-using EventStore.Streaming.Connectors;
-using EventStore.Connectors.Control.Activation;
-using EventStore.Connectors.Control.Assignment;
 using EventStore.Core.Cluster;
 using EventStore.Core.Data;
-using EventStore.Core.Messages;
-using Microsoft.Extensions.Logging;
-using static EventStore.Connectors.Control.Assignment.ConnectorAssignmentStrategy;
-
-using ManagementContracts   = EventStore.Connectors.Management.Contracts.Events;
-using ControlPlaneContracts = EventStore.Connectors.Control.Contracts;
 
 namespace EventStore.Connectors.Control.Coordination;
 

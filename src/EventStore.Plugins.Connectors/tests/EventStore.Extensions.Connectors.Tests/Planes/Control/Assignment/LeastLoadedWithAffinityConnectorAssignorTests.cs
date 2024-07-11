@@ -1,8 +1,8 @@
 using EventStore.Connectors.Control;
 using EventStore.Connectors.Control.Assignment;
 using EventStore.Connectors.Control.Assignment.Assignors;
-using EventStore.Testing.Fixtures;
-using EventStore.Testing.Xunit;
+using EventStore.Toolkit.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Xunit;
 using MassTransit;
 
 namespace EventStore.Extensions.Connectors.Tests.Control.Assignment;

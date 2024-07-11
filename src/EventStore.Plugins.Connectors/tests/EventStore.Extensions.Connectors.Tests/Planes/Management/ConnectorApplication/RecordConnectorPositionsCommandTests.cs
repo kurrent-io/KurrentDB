@@ -2,24 +2,22 @@ using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Extensions.Connectors.Tests.Eventuous;
-using EventStore.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Fixtures;
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
 
 namespace EventStore.Extensions.Connectors.Tests.Management.ConnectorApplication;
 
-public class RecordConnectorPositionsConnectorStateChangeCommandTests(
-    ITestOutputHelper output,
-    CommandServiceFixture fixture
-) : FastTests<CommandServiceFixture>(output, fixture) {
+[Trait("Category", "Management")]
+public class RecordConnectorPositionCommandTests(ITestOutputHelper output, CommandServiceFixture fixture) : FastTests<CommandServiceFixture>(output, fixture) {
     [Fact]
-    public async Task record_positions_successfully() {
+    public async Task records_position_successfully() {
         var connectorId   = Fixture.NewConnectorId();
         var connectorName = Fixture.NewConnectorName();
-        var positions     = new List<ulong> { 1, 2, 3 };
+        var logPosition   = Fixture.Faker.Random.ULong();
 
-        await CommandServiceSpec<ConnectorEntity, RecordConnectorPositions>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+        await CommandServiceSpec<ConnectorEntity, RecordConnectorPosition>.Builder
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -28,17 +26,18 @@ public class RecordConnectorPositionsConnectorStateChangeCommandTests(
                 }
             )
             .When(
-                new RecordConnectorPositions {
+                new RecordConnectorPosition {
                     ConnectorId = connectorId,
-                    Positions   = { positions },
+                    LogPosition = logPosition,
                     Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 }
             )
             .Then(
-                new ConnectorPositionsCommitted {
+                new ConnectorPositionCommitted {
                     ConnectorId = connectorId,
-                    Positions   = { positions },
-                    CommittedAt = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+                    LogPosition = logPosition,
+                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp(),
+                    RecordedAt  = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 }
             );
     }
@@ -47,10 +46,10 @@ public class RecordConnectorPositionsConnectorStateChangeCommandTests(
     public async Task should_throw_domain_exception_when_connector_is_deleted() {
         var connectorId   = Fixture.NewConnectorId();
         var connectorName = Fixture.NewConnectorName();
-        var positions     = new List<ulong> { 1, 2, 3 };
+        var logPosition   = Fixture.Faker.Random.ULong();
 
-        await CommandServiceSpec<ConnectorEntity, RecordConnectorPositions>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+        await CommandServiceSpec<ConnectorEntity, RecordConnectorPosition>.Builder
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -63,9 +62,9 @@ public class RecordConnectorPositionsConnectorStateChangeCommandTests(
                 }
             )
             .When(
-                new RecordConnectorPositions {
+                new RecordConnectorPosition {
                     ConnectorId = connectorId,
-                    Positions   = { positions },
+                    LogPosition = logPosition,
                     Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 }
             )
@@ -73,54 +72,31 @@ public class RecordConnectorPositionsConnectorStateChangeCommandTests(
     }
 
     [Fact]
-    public async Task should_throw_domain_exception_when_positions_are_null_or_empty() {
-        var connectorId   = Fixture.NewConnectorId();
-        var connectorName = Fixture.NewConnectorName();
-
-        await CommandServiceSpec<ConnectorEntity, RecordConnectorPositions>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
-            .Given(
-                new ConnectorCreated {
-                    ConnectorId = connectorId,
-                    Name        = connectorName,
-                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
-                }
-            )
-            .When(
-                new RecordConnectorPositions {
-                    ConnectorId = connectorId,
-                    Positions   = { },
-                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
-                }
-            )
-            .Then(new DomainException("Positions list cannot be null or empty."));
-    }
-
-    [Fact]
     public async Task should_throw_domain_exception_when_positions_are_older_than_last_committed() {
-        var connectorId      = Fixture.NewConnectorId();
-        var connectorName    = Fixture.NewConnectorName();
-        var initialPositions = new List<ulong> { 3, 4, 5 };
-        var newPositions     = new List<ulong> { 1, 2 };
+        var connectorId    = Fixture.NewConnectorId();
+        var connectorName  = Fixture.NewConnectorName();
+        var oldLogPosition = Fixture.Faker.Random.ULong(1);
+        var newLogPosition = oldLogPosition - 1;
 
-        await CommandServiceSpec<ConnectorEntity, RecordConnectorPositions>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+        await CommandServiceSpec<ConnectorEntity, RecordConnectorPosition>.Builder
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
                     Name        = connectorName,
                     Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 },
-                new ConnectorPositionsCommitted {
+                new ConnectorPositionCommitted {
                     ConnectorId = connectorId,
-                    Positions   = { initialPositions },
-                    CommittedAt = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+                    LogPosition = oldLogPosition,
+                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp(),
+                    RecordedAt  = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 }
             )
             .When(
-                new RecordConnectorPositions {
+                new RecordConnectorPosition {
                     ConnectorId = connectorId,
-                    Positions   = { newPositions },
+                    LogPosition = newLogPosition,
                     Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 }
             )

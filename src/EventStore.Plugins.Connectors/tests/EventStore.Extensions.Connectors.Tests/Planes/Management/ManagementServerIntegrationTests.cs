@@ -1,9 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using EventStore.Connectors.Management.Contracts.Commands;
-using EventStore.Extensions.Connectors.Tests.EventStore.Plugins;
-using EventStore.Extensions.Connectors.Tests.Fixtures;
-using EventStore.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Fixtures;
 using Grpc.Core;
 using Shouldly;
 

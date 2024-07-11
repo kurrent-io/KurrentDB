@@ -3,11 +3,12 @@ using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Extensions.Connectors.Tests.Eventuous;
-using EventStore.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Fixtures;
 using Google.Protobuf.WellKnownTypes;
 
 namespace EventStore.Extensions.Connectors.Tests.Management.ConnectorApplication;
 
+[Trait("Category", "Management")]
 public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, CommandServiceFixture fixture)
     : FastTests<CommandServiceFixture>(output, fixture) {
     [Fact]
@@ -16,7 +17,7 @@ public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, Co
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, RecordConnectorStateChange>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -45,7 +46,7 @@ public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, Co
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, RecordConnectorStateChange>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -75,7 +76,7 @@ public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, Co
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, RecordConnectorStateChange>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,

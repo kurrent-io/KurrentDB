@@ -2,11 +2,12 @@ using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Extensions.Connectors.Tests.Eventuous;
-using EventStore.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Fixtures;
 using Google.Protobuf.WellKnownTypes;
 
 namespace EventStore.Extensions.Connectors.Tests.Management.ConnectorApplication;
 
+[Trait("Category", "Management")]
 public class StartConnectorCommandTests(ITestOutputHelper output, CommandServiceFixture fixture)
     : FastTests<CommandServiceFixture>(output, fixture) {
     [Fact]
@@ -15,7 +16,7 @@ public class StartConnectorCommandTests(ITestOutputHelper output, CommandService
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StartConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -46,7 +47,7 @@ public class StartConnectorCommandTests(ITestOutputHelper output, CommandService
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StartConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -72,7 +73,7 @@ public class StartConnectorCommandTests(ITestOutputHelper output, CommandService
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StartConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -98,7 +99,7 @@ public class StartConnectorCommandTests(ITestOutputHelper output, CommandService
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StartConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,
@@ -124,7 +125,7 @@ public class StartConnectorCommandTests(ITestOutputHelper output, CommandService
         var connectorName = Fixture.NewConnectorName();
 
         await CommandServiceSpec<ConnectorEntity, StartConnector>.Builder
-            .WithService(Fixture.CreateConnectorApplication)
+            .ForService(Fixture.ConnectorApplication)
             .Given(
                 new ConnectorCreated {
                     ConnectorId = connectorId,

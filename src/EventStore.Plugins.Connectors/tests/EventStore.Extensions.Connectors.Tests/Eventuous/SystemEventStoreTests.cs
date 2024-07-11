@@ -2,29 +2,18 @@
 
 using EventStore.Connectors.Eventuous;
 using EventStore.Streaming;
-using EventStore.Streaming.Producers;
-using EventStore.Streaming.Readers;
 using Eventuous;
 using Shouldly;
 
 namespace EventStore.Extensions.Connectors.Tests.Eventuous;
 
 [Trait("Category", "Integration")]
-public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fixture)
-    : StreamingTests(output, fixture) {
+public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests<ConnectorsAssemblyFixture>(output, fixture) {
     [Fact]
     public async Task stream_does_not_exists() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var eventstore = new SystemEventStore(reader, producer);
         var stream     = Fixture.NewStreamName();
+        var eventstore = new SystemEventStore(Fixture.NewReader().Create(), Fixture.NewProducer().Create());
 
         // Act
         var exists = await eventstore.StreamExists(stream);
@@ -36,13 +25,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task stream_exists() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
         var stream     = Fixture.NewStreamName();
@@ -63,13 +47,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task appends_single() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(Fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(Fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventStore = new SystemEventStore(reader, producer);
 
@@ -104,13 +83,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task appends_many() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(Fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(Fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventStore = new SystemEventStore(reader, producer);
 
@@ -135,13 +109,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task append_duplicate_events_with_same_event_ids() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
 
@@ -162,13 +131,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task append_using_expected_stream_version_throws_wrong_stream_revision_error_when_() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
         var stream     = Fixture.NewStreamName();
@@ -192,13 +156,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task append_with_no_stream_expected_version_throws_wrong_stream_revision_error_() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
         var stream     = Fixture.NewStreamName();
@@ -223,13 +182,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task multiple_idempotent_writes_with_unique_event_ids() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
         var stream     = Fixture.NewStreamName();
@@ -247,13 +201,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task multiple_idempotent_writes_with_same_event_ids() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
         var stream     = Fixture.NewStreamName();
@@ -271,13 +220,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task append_with_custom_and_default_headers_are_correctly_parsed() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
@@ -328,13 +272,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task read_some_events_forward_from_non_existent_stream() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
 
@@ -352,13 +291,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task read_zero_events_forward_from_non_existent_stream() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
 
@@ -375,13 +309,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task read_some_events_backwards_from_nonexistent_stream() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
 
@@ -399,13 +328,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task read_zero_events_backwards_from_nonexistent_stream() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
 
@@ -422,13 +346,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task read_events_backwards() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
 
@@ -454,13 +373,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, StreamingFixture fi
     [Fact]
     public async Task read_events_exceeding_stream_size() {
         // Arrange
-        var reader = SystemReader.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(fixture.Publisher)
-            .Create();
+        var reader   = Fixture.NewReader().Create();
+        var producer = Fixture.NewProducer().Create();
 
         var eventstore = new SystemEventStore(reader, producer);
 

@@ -81,18 +81,18 @@ public abstract class TinyAppPlugin : SubsystemsPlugin, IAsyncDisposable {
 
         var builder = WebApplication.CreateSlimBuilder(appOptions);
 
-        // // this blows up because affects the HOST configuration...
-        // // builder.WebHost.UseConfiguration(appConfiguration);
-
-        // this needs to be automatically configured by the plugin based on available ports by default
-        // it could be overriden, but should be able to work out of the box (multiple apps running in different ports)
-        builder.WebHost.ConfigureKestrel(kestrel => {
-            kestrel.ListenAnyIP(20000, options => options.Protocols = HttpProtocols.Http1);
-            // kestrel.ListenAnyIP(21000, options => {
-            //     options.Protocols = HttpProtocols.Http1AndHttp2;
-            //     options.UseHttps();
-            // });
-        });
+        // // // this blows up because affects the HOST configuration...
+        // // // builder.WebHost.UseConfiguration(appConfiguration);
+        //
+        // // this needs to be automatically configured by the plugin based on available ports by default
+        // // it could be overriden, but should be able to work out of the box (multiple apps running in different ports)
+        // builder.WebHost.ConfigureKestrel(kestrel => {
+        //     kestrel.ListenAnyIP(20000, options => options.Protocols = HttpProtocols.Http1);
+        //     // kestrel.ListenAnyIP(21000, options => {
+        //     //     options.Protocols = HttpProtocols.Http1AndHttp2;
+        //     //     options.UseHttps();
+        //     // });
+        // });
 
         // // Logger.LogWarning("[{PluginName}] Plugin {Protocols} endpoint available without TLS on port {Port}", Name, HttpProtocols.Http1, 20000);
         // // Logger.LogWarning("[{PluginName}] Plugin {Protocols} endpoint available with TLS on port {Port}", Name, HttpProtocols.Http1AndHttp2, 21000);
@@ -115,45 +115,110 @@ public abstract class TinyAppPlugin : SubsystemsPlugin, IAsyncDisposable {
 
         Application = BuildApp(ctx);
 
+        // try {
+        //     var tmp = esdb.ApplicationServices.GetRequiredService<IPublisher>().ReadStreamLastEvent(SystemStreams.GossipStream).GetAwaiter().GetResult();
+        //     var evt = JsonSerializer.Deserialize<JsonNode>(tmp!.Value.Event.Data.Span);
+        // }
+        // catch (Exception e)
+        // {
+        //     Console.WriteLine(e);
+        //     //throw;
+        // }
+
         //Logger.LogWarning("[{PluginName}] Plugin application built", Name);
 
-        // ----------------------------------------------
-        // if the plugin is a subsystem plugin, it should be started and stopped with the host
-        // but just in case, we can go rogue and start/stop it here
-        // ----------------------------------------------
-        var lifetime = esdb.ApplicationServices.GetRequiredService<IHostApplicationLifetime>();
+        // // ----------------------------------------------
+        // // if the plugin is a subsystem plugin, it should be started and stopped with the host
+        // // but just in case, we can go rogue and start/stop it here
+        // // ----------------------------------------------
+        // var lifetime = esdb.ApplicationServices.GetRequiredService<IHostApplicationLifetime>();
+        //
+        // lifetime.ApplicationStarted.Register(() => {
+        //     _ = Application.StartAsync().ContinueWith(t => {
+        //         if (t.IsFaulted) {
+        //             Logger.LogError(t.Exception, "[{PluginName}] Plugin application failed to start", Name);
+        //         } else {
+        //             Logger.LogWarning("[{PluginName}] Plugin application started", Name);
+        //             Started = true;
+        //             Stopped = false;
+        //         }
+        //     });
+        // });
+        //
+        // lifetime.ApplicationStopping.Register(() => {
+        //     try {
+        //         var publisher = Application.Services.GetRequiredService<IPublisher>();
+        //
+        //         Application.StopAsync().GetAwaiter().GetResult();
+        //         Logger.LogInformation("[{PluginName}] Plugin application stopped", Name);
+        //
+        //         var tmp = publisher.ReadStreamLastEvent(SystemStreams.GossipStream).GetAwaiter().GetResult();
+        //         var evt = JsonSerializer.Deserialize<JsonNode>(tmp!.Value.Event.Data.Span);
+        //         Logger.LogWarning("[{PluginName}] Last gossip event: {Event}", Name, evt!.ToJsonString());
+        //
+        // }
+        //     catch (Exception ex) {
+        //         Logger.LogWarning(ex, "[{PluginName}] Plugin application stopped violently", Name);
+        //     }
+        //     finally {
+        //         Started = false;
+        //         Stopped = true;
+        //     }
+        // });
+    }
 
-        lifetime.ApplicationStarted.Register(() => {
-            _ = Application.StartAsync().ContinueWith(t => {
-                if (t.IsFaulted) {
-                    Logger.LogError(t.Exception, "[{PluginName}] Plugin application failed to start", Name);
-                } else {
-                    Logger.LogWarning("[{PluginName}] Plugin application started", Name);
-                    Started = true;
-                    Stopped = false;
-                }
-            });
-        });
+    public override Task Start() {
+        if (Disposed) {
+            Logger.LogWarning("[{PluginName}] Plugin application already disposed", Name);
+            return Task.CompletedTask;
+        }
 
-        lifetime.ApplicationStopping.Register(() => {
-            try {
-                var publisher = Application.Services.GetRequiredService<IPublisher>();
+        if (Started) {
+            Logger.LogWarning("[{PluginName}] Plugin application already started", Name);
+            return Task.CompletedTask;
+        }
 
-                Application.StopAsync().GetAwaiter().GetResult();
-                Logger.LogInformation("[{PluginName}] Plugin application stopped", Name);
+        _ = Application.RunAsync();
 
-                var tmp = publisher.ReadStreamLastEvent(SystemStreams.GossipStream).GetAwaiter().GetResult();
-                var evt = JsonSerializer.Deserialize<JsonNode>(tmp!.Value.Event.Data.Span);
-                Logger.LogWarning("[{PluginName}] Last gossip event: {Event}", Name, evt!.ToJsonString());
-            }
-            catch (Exception ex) {
-                Logger.LogWarning(ex, "[{PluginName}] Plugin application stopped violently", Name);
-            }
-            finally {
-                Started = false;
-                Stopped = true;
-            }
-        });
+        // _ = Application.StartAsync().ContinueWith(t => {
+        //     if (!t.IsFaulted) {
+        //         Logger.LogInformation("[{PluginName}] Plugin application started", Name);
+        //         Started = true;
+        //         Stopped = false;
+        //     }
+        //     else
+        //         Logger.LogError(t.Exception, "[{PluginName}] Plugin application failed to start", Name);
+        // });
+
+        return Task.CompletedTask;
+    }
+
+    public override async Task Stop() {
+        var tmp = Application.Services.GetRequiredService<IPublisher>().ReadStreamLastEvent(SystemStreams.GossipStream).GetAwaiter().GetResult();
+        var evt = JsonSerializer.Deserialize<JsonNode>(tmp!.Value.Event.Data.Span);
+        Logger.LogWarning("[{PluginName}] Last gossip event: {@Event}", Name, evt!.ToString());
+
+        if (Disposed) {
+            Logger.LogWarning("[{PluginName}] Plugin application already disposed", Name);
+            return;
+        }
+
+        if (Stopped) {
+            Logger.LogWarning("[{PluginName}] Plugin application already stopped", Name);
+            return;
+        }
+
+        try {
+            await Application.StopAsync();
+            Logger.LogInformation("[{PluginName}] Plugin application stopped", Name);
+        }
+        catch (Exception ex) {
+            Logger.LogWarning(ex, "[{PluginName}] Plugin application stopped violently", Name);
+        }
+        finally {
+            Started = false;
+            Stopped = true;
+        }
     }
 
     // public override Task Start() {

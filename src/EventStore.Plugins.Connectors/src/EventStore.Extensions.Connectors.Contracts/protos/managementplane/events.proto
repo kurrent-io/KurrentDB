@@ -11,9 +11,9 @@ option csharp_namespace = "EventStore.Connectors.Management.Contracts.Events";
 
 message ConnectorCreated {
   string                                   connector_id = 1;
-  string                                   name         = 2;
-  map<string, google.protobuf.StringValue> settings     = 3;
-  google.protobuf.Timestamp                timestamp    = 4;
+  string                                   name         = 3;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  google.protobuf.Timestamp                timestamp    = 7;
 }
 
 message ConnectorReconfigured {
@@ -34,47 +34,50 @@ message ConnectorRenamed {
   google.protobuf.Timestamp timestamp    = 5;
 }
 
+message ConnectorReset {
+  string                      connector_id = 1;
+  google.protobuf.UInt64Value log_position = 3;
+  google.protobuf.Timestamp   timestamp    = 5;
+}
+
 // Occurs when connector is started.
 message ConnectorActivating {
   string                                   connector_id = 1;
-  int32                                    revision     = 2;
-  map<string, google.protobuf.StringValue> settings     = 3;
-  google.protobuf.Timestamp                timestamp    = 4;
+  int32                                    revision     = 3;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  google.protobuf.Timestamp                timestamp    = 7;
 }
 
 // Occurs when connector is stopped.
 message ConnectorDeactivating {
   string                    connector_id = 1;
-  google.protobuf.Timestamp timestamp    = 2;
+  google.protobuf.Timestamp timestamp    = 3;
 }
 
 // Occurs when connector state changes to CONNECTOR_STATE_RUNNING.
 message ConnectorRunning {
   string                    connector_id = 1;
-  google.protobuf.Timestamp timestamp    = 2;
+  google.protobuf.Timestamp timestamp    = 3;
+  google.protobuf.Timestamp recorded_at  = 5;
 }
 
-// Occurs when connector state changes to CONNECTOR_STATE_STOPPED and an error is not present.
 message ConnectorStopped {
   string                    connector_id = 1;
-  google.protobuf.Timestamp timestamp    = 2;
+  google.protobuf.Timestamp timestamp    = 3;
+  google.protobuf.Timestamp recorded_at  = 5;
 }
 
-// Occurs when connector state changes to CONNECTOR_STATE_STOPPED and an error is present.
 message ConnectorFailed {
   string                    connector_id  = 1;
-  Error                     error_details = 2;
-  google.protobuf.Timestamp timestamp     = 3;
+  Error                     error_details = 3;
+  google.protobuf.Timestamp timestamp     = 5;
+  google.protobuf.Timestamp recorded_at   = 7;
 }
 
-message ConnectorReset {
-  string                    connector_id = 1;
-  repeated uint64           positions    = 2;
-  google.protobuf.Timestamp timestamp    = 3;
-}
 
-message ConnectorPositionsCommitted {
+message ConnectorPositionCommitted {
   string                    connector_id = 1;
-  repeated uint64           positions    = 2;
-  google.protobuf.Timestamp committed_at = 3;
+  uint64                    log_position = 3;
+  google.protobuf.Timestamp timestamp    = 5;
+  google.protobuf.Timestamp recorded_at  = 7;
 }

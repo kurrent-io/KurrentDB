@@ -4,7 +4,7 @@ using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Streaming.Processors;
-using static EventStore.Connectors.ConnectorsSystemStreams;
+using static EventStore.Connectors.ConnectorsSystemConventions;
 using ManagementContracts = EventStore.Connectors.Management.Contracts.Events;
 
 namespace EventStore.Connectors.Management;
@@ -38,7 +38,7 @@ public class ConnectorSystemStreamsSupervisor : ProcessingModule {
                 );
 
                 await client.SetStreamMetadata(
-                    GetStateChangesStream(evt.ConnectorId),
+                    GetLifetimeStream(evt.ConnectorId),
                     new StreamMetadata(maxCount: options.StateChanges.MaxCount, maxAge: options.StateChanges.MaxAge),
                     cancellationToken: ctx.CancellationToken
                 );
@@ -67,7 +67,7 @@ public class ConnectorSystemStreamsSupervisor : ProcessingModule {
                 );
 
                 await client.DeleteStream(
-                    GetStateChangesStream(evt.ConnectorId),
+                    GetLifetimeStream(evt.ConnectorId),
                     cancellationToken: ctx.CancellationToken
                 );
             }
