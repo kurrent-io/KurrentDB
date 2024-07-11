@@ -2,7 +2,7 @@ using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Extensions.Connectors.Tests.Eventuous;
-using EventStore.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Fixtures;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using ValidationResult = FluentValidation.Results.ValidationResult;
@@ -10,6 +10,7 @@ using ValidationFailure = FluentValidation.Results.ValidationFailure;
 
 namespace EventStore.Extensions.Connectors.Tests.Management.ConnectorApplication;
 
+[Trait("Category", "Management")]
 public class ReconfigureConnectorCommandTests(ITestOutputHelper output, CommandServiceFixture fixture)
     : FastTests<CommandServiceFixture>(output, fixture) {
     [Fact]

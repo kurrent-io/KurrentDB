@@ -3,7 +3,7 @@
 // using EventStore.Streaming.Connectors;
 // using EventStore.Connectors.Control.Activation;
 // using EventStore.Connectors.Control.Coordination;
-// using EventStore.Testing.Fixtures;
+// using EventStore.Toolkit.Testing.Fixtures;
 // using Microsoft.Extensions.Configuration;
 // using static EventStore.Connectors.Control.Activation.ConnectorsTaskManager;
 //

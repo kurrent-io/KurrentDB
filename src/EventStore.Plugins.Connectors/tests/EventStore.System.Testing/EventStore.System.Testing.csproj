@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<IsTestProject>false</IsTestProject>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\EventStore.Toolkit.Testing\EventStore.Toolkit.Testing.csproj" />
+		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.ClusterNode\EventStore.ClusterNode.csproj" />
+	</ItemGroup>
+</Project>

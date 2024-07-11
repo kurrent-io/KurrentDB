@@ -14,7 +14,7 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Connec
 		var expectedResult = (StreamMetadata.Empty, Core.Services.Transport.Common.StreamRevision.Start);
 
 		// Act
-		var result = await Publisher.GetStreamMetadata(streamName);
+		var result = await Fixture.Publisher.GetStreamMetadata(streamName);
 
 		// Assert
 		result.Should().BeEquivalentTo(expectedResult);
@@ -28,10 +28,10 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Connec
 
 		var expectedResult = (metadata, Core.Services.Transport.Common.StreamRevision.Start);
 
-		await Publisher.SetStreamMetadata(streamName, metadata);
+		await Fixture.Publisher.SetStreamMetadata(streamName, metadata);
 
 		// Act
-		var result = await Publisher.GetStreamMetadata(streamName);
+		var result = await Fixture.Publisher.GetStreamMetadata(streamName);
 
 		// Assert
 		result.Should().BeEquivalentTo(expectedResult);
@@ -46,10 +46,10 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Connec
 		var expectedResult = (metadata, Core.Services.Transport.Common.StreamRevision.Start);
 
 		// Act
-		await Publisher.SetStreamMetadata(streamName, metadata);
+		await Fixture.Publisher.SetStreamMetadata(streamName, metadata);
 
 		// Assert
-		var result = await Publisher.GetStreamMetadata(streamName);
+		var result = await Fixture.Publisher.GetStreamMetadata(streamName);
 
 		result.Should().BeEquivalentTo(expectedResult);
 	}

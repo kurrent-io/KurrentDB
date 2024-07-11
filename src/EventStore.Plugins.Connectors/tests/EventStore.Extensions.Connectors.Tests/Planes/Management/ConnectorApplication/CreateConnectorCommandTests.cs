@@ -2,13 +2,14 @@ using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Extensions.Connectors.Tests.Eventuous;
-using EventStore.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Fixtures;
 using FluentValidation.Results;
 using Google.Protobuf.WellKnownTypes;
 using ValidationResult = FluentValidation.Results.ValidationResult;
 
 namespace EventStore.Extensions.Connectors.Tests.Management.ConnectorApplication;
 
+[Trait("Category", "Management")]
 public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServiceFixture fixture)
     : FastTests<CommandServiceFixture>(output, fixture) {
     [Fact]

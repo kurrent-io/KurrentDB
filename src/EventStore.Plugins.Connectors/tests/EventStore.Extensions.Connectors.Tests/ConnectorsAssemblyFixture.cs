@@ -1,20 +1,19 @@
-using EventStore.Core.Bus;
+using EventStore.Connect.Consumers;
+using EventStore.Connect.Consumers.Configuration;
+using EventStore.Connect.Processors;
+using EventStore.Connect.Processors.Configuration;
+using EventStore.Connect.Producers;
+using EventStore.Connect.Producers.Configuration;
+using EventStore.Connect.Readers;
+using EventStore.Connect.Readers.Configuration;
 using EventStore.Extensions.Connectors.Tests;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Consumers.Configuration;
 using EventStore.Streaming.Producers;
-using EventStore.Streaming.Producers.Configuration;
 using EventStore.Streaming.Readers;
-using EventStore.Streaming.Readers.Configuration;
 using EventStore.Streaming.Schema;
 using EventStore.Streaming.Schema.Serializers;
-using EventStore.Streaming.Schema.Serializers.Bytes;
-using EventStore.Streaming.Schema.Serializers.Json;
-using EventStore.Streaming.Schema.Serializers.Protobuf;
-using EventStore.Testing;
-using EventStore.Testing.Fixtures;
-using EventStore.Testing.Xunit.Extensions.AssemblyFixture;
-using NodaTime.Serialization.SystemTextJson;
+using EventStore.System.Testing.Fixtures;
+using EventStore.Toolkit.Testing;
+using EventStore.Toolkit.Testing.Xunit.Extensions.AssemblyFixture;
 
 [assembly: TestFramework(XunitTestFrameworkWithAssemblyFixture.TypeName, XunitTestFrameworkWithAssemblyFixture.AssemblyName)]
 [assembly: AssemblyFixture(typeof(ConnectorsAssemblyFixture))]
@@ -24,29 +23,17 @@ namespace EventStore.Extensions.Connectors.Tests;
 [PublicAPI]
 public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
     public ConnectorsAssemblyFixture() {
-        SchemaRegistry = new SchemaRegistry(new InMemorySchemaRegistryClient())
-            .UseBytes()
-            .UseJson(new SystemJsonSerializerOptions(new() {
-                Converters = { NodaConverters.InstantConverter, NodaConverters.DurationConverter }
-            }))
-            .UseProtobuf();
-
+        SchemaRegistry   = SchemaRegistry.Global;
         SchemaSerializer = SchemaRegistry;
 
         OnSetup = () => {
-            Producer = SystemProducer.Builder
-                .Publisher(Publisher)
+            Producer = NewProducer()
                 .ProducerId("test-producer")
-                .SchemaRegistry(SchemaRegistry)
-                .LoggerFactory(LoggerFactory)
                 .EnableLogging()
                 .Create();
 
-            Reader = SystemReader.Builder
-                .Publisher(Publisher)
+            Reader = NewReader()
                 .ReaderId("test-reader")
-                .SchemaRegistry(SchemaRegistry)
-                .LoggerFactory(LoggerFactory)
                 .EnableLogging()
                 .Create();
 
@@ -57,14 +44,13 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
             await Producer.DisposeAsync();
             await Reader.DisposeAsync();
         };
-
     }
 
     public SchemaRegistry    SchemaRegistry   { get; }
     public ISchemaSerializer SchemaSerializer { get; }
-    public IProducer         Producer         { get; private set; } = null!;
-    public IReader           Reader           { get; private set; } = null!;
 
+    public IProducer Producer { get; private set; } = null!;
+    public IReader   Reader   { get; private set; } = null!;
 
     public SystemProducerBuilder NewProducer() => SystemProducer.Builder
         .Publisher(Publisher)
@@ -80,15 +66,17 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         .Publisher(Publisher)
         .LoggerFactory(LoggerFactory)
         .SchemaRegistry(SchemaRegistry);
+
+    public SystemProcessorBuilder NewProcessor() => SystemProcessor.Builder
+        .Publisher(Publisher)
+        .LoggerFactory(LoggerFactory)
+        .SchemaRegistry(SchemaRegistry);
 }
 
 public abstract class ConnectorsIntegrationTests<TFixture> where TFixture : ConnectorsAssemblyFixture {
     protected ConnectorsIntegrationTests(ITestOutputHelper output, TFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
     protected TFixture Fixture { get; }
-
-    public IPublisher  Publisher  => Fixture.Publisher;
-    public ISubscriber Subscriber => Fixture.Subscriber;
 }
 
 public abstract class ConnectorsIntegrationTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture)

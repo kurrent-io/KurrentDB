@@ -2,12 +2,12 @@ using EventStore.Connectors.Control;
 using EventStore.Connectors.Control.Assignment;
 using EventStore.Connectors.Control.Assignment.Assignors;
 using EventStore.Streaming;
-using EventStore.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Fixtures;
 using MassTransit;
 
 namespace EventStore.Extensions.Connectors.Tests.Control.Assignment;
 
-[Trait("Category", "Assignment")]
+// [Trait("Category", "Assignment")]
 public class StickyConnectorAssignmentStrategyTests(ITestOutputHelper output, FastFixture fixture)
     : FastTests(output, fixture) {
     [Fact]

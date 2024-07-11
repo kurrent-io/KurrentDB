@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -9,7 +9,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\tests\EventStore.Testing\EventStore.Testing.csproj" />
+	  <ProjectReference Include="..\src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
+	  <ProjectReference Include="..\tests\EventStore.System.Testing\EventStore.System.Testing.csproj" />
+	  <ProjectReference Include="..\tests\EventStore.Toolkit.Testing\EventStore.Toolkit.Testing.csproj" />
 	</ItemGroup>
 
 </Project>

@@ -174,27 +174,35 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
                     EnsureConnectorNotDeleted(connector);
 
                     // need to do all the state change validations here:
+                    // Stopped -> Activating (implicit)
+
                     // Activating -> Running
-                    // Activating -> Stopped
-                    // Activating -> Failed
+                    // Running -> Deactivating
                     // Deactivating -> Stopped
-                    // Deactivating -> Failed
-                    // Running -> Stopped
-                    // Running -> Failed
+
+                    // Activating -> Stopped * Faulted?
+                    // Running -> Stopped * Faulted?
+                    // Deactivating -> Stopped * Faulted?
+
+                    // ** Activating -> Failed (Stopped with error details)
+                    // ** Running -> Failed (Stopped with error details)
+                    // ** Deactivating -> Failed (Stopped with error details)
+
+                    var now = time.GetUtcNow().ToTimestamp();
 
                     return cmd switch {
                         { ToState: ConnectorState.Running } => [
                             new ConnectorRunning {
                                 ConnectorId = connector.Id,
                                 Timestamp   = cmd.Timestamp,
-                                RecordedAt  = time.GetUtcNow().ToTimestamp()
+                                RecordedAt  = now
                             }
                         ],
                         { ToState: ConnectorState.Stopped, ErrorDetails: null } => [
                             new ConnectorStopped {
                                 ConnectorId = connector.Id,
                                 Timestamp   = cmd.Timestamp,
-                                RecordedAt  = time.GetUtcNow().ToTimestamp()
+                                RecordedAt  = now
                             }
                         ],
                         { ToState: ConnectorState.Stopped, ErrorDetails: not null } => [
@@ -202,7 +210,7 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
                                 ConnectorId  = connector.Id,
                                 ErrorDetails = cmd.ErrorDetails,
                                 Timestamp    = cmd.Timestamp,
-                                RecordedAt   = time.GetUtcNow().ToTimestamp()
+                                RecordedAt   = now
                             }
                         ],
                         _ => []
@@ -244,8 +252,8 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
                 throw new DomainException($"Connector {connector.Id} must be running. Current state: {connector.State}");
         }
 
-        static void EnsureCommittedLogPositionIsValid(ConnectorEntity connector, ulong? newLogPosition) {
-            if (newLogPosition.GetValueOrDefault() < connector.LogPosition)
+        static void EnsureCommittedLogPositionIsValid(ConnectorEntity connector, ulong newLogPosition) {
+            if (newLogPosition < connector.LogPosition)
                 throw new DomainException($"Connector {connector.Id} new log position {newLogPosition} precedes the actual {connector.LogPosition}");
         }
     }

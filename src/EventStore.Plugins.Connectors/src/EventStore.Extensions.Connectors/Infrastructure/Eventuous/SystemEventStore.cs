@@ -1,3 +1,6 @@
+using EventStore.Connect.Producers;
+using EventStore.Connect.Readers;
+using EventStore.Core.Bus;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Producers;
@@ -9,15 +12,33 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EventStore.Connectors.Eventuous;
 
-public class SystemEventStore : IEventStore {
-    public SystemEventStore(
-        SystemReader reader,
-        SystemProducer producer,
-        ILoggerFactory? loggerFactory = null
-    ) {
+public class SystemEventStore : IEventStore, IAsyncDisposable {
+    public SystemEventStore(SystemReader reader, SystemProducer producer, ILoggerFactory? loggerFactory = null) {
         Reader   = reader;
         Producer = producer;
         Logger   = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<SystemEventStore>();
+    }
+
+    public SystemEventStore(IPublisher publisher, SchemaRegistry schemaRegistry, ILoggerFactory? loggerFactory = null) {
+        loggerFactory ??= NullLoggerFactory.Instance;
+
+        Reader = SystemReader.Builder
+            .ReaderId("rdr-cnx-eventuous")
+            .Publisher(publisher)
+            .SchemaRegistry(schemaRegistry)
+            .LoggerFactory(loggerFactory)
+            .EnableLogging()
+            .Create();
+
+        Producer = SystemProducer.Builder
+            .ProducerId("prd-cnx-eventuous")
+            .Publisher(publisher)
+            .SchemaRegistry(schemaRegistry)
+            .LoggerFactory(loggerFactory)
+            .EnableLogging()
+            .Create();
+
+        Logger = loggerFactory.CreateLogger<SystemEventStore>();
     }
 
     ILogger        Logger   { get; }
@@ -161,5 +182,10 @@ public class SystemEventStore : IEventStore {
     ) {
         throw new NotImplementedException();
         //new DeleteStreamException($"Unable to delete stream {stream}");
+    }
+
+    public async ValueTask DisposeAsync() {
+        await Reader.DisposeAsync();
+        await Producer.DisposeAsync();
     }
 }

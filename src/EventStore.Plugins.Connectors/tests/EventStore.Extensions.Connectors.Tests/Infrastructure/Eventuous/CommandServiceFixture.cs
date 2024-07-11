@@ -1,4 +1,4 @@
-using EventStore.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Fixtures;
 using Eventuous;
 using ConnectorsManagement = EventStore.Connectors.Management;
 using ValidationResult = FluentValidation.Results.ValidationResult;

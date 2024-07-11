@@ -2,12 +2,13 @@ using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Extensions.Connectors.Tests.Eventuous;
-using EventStore.Testing.Fixtures;
+using EventStore.Toolkit.Testing.Fixtures;
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
 
 namespace EventStore.Extensions.Connectors.Tests.Management.ConnectorApplication;
 
+[Trait("Category", "Management")]
 public class RecordConnectorPositionCommandTests(ITestOutputHelper output, CommandServiceFixture fixture) : FastTests<CommandServiceFixture>(output, fixture) {
     [Fact]
     public async Task records_position_successfully() {
