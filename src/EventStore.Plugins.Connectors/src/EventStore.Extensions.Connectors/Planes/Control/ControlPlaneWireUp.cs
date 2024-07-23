@@ -1,55 +1,57 @@
-using System.Text.Json;
+using EventStore.Connect.Connectors;
+using EventStore.Connect.Leases;
+using EventStore.Connect.Schema;
+using EventStore.Connectors.Control.Activation;
 using EventStore.Connectors.Control.Coordination;
-using EventStore.Core;
-using EventStore.Core.Bus;
-using EventStore.Core.Services;
 using EventStore.Streaming.Schema;
 using Microsoft.Extensions.DependencyInjection;
+
+using static EventStore.Connectors.ConnectorsSystemConventions;
+
+using ConnectContracts = EventStore.Streaming.Contracts;
+using ControlContracts = EventStore.Connectors.Control.Contracts;
 
 namespace EventStore.Connectors.Control;
 
 public static class ControlPlaneWireUp {
-    public static void AddConnectorsControlPlane(this IServiceCollection services, SchemaRegistry schemaRegistry) {
-        // // Because (unfortunately) the gossip listener service raises a schemaless event,
-        // // a proper schema must be registered for it to be consumed by the control plane
-        // schemaRegistry.RegisterSchema<GossipUpdatedInMemory>(GossipListenerService.EventType, SchemaDefinitionType.Json)
-        //     .AsTask().GetAwaiter().GetResult();
+    public static IServiceCollection AddConnectorsControlPlane(this IServiceCollection services) =>
+        services
+            .AddMessageSchemaRegistration()
+            .AddConnectorsActivator()
+            .AddConnectorsRegistry()
+            .AddSingleton<INodeLifetimeService, NodeLifetimeService>()
+            .AddHostedService<ControlPlaneCoordinatorService>();
 
-        // schemaRegistry.RegisterSchema<Streaming.Contracts.Processors.ProcessorStateChanged>(
-        //     GetLifetimeSystemEventName<Streaming.Contracts.Processors.ProcessorStateChanged>(),
-        //     SchemaDefinitionType.Protobuf
-        // ).AsTask().GetAwaiter().GetResult();
+    static IServiceCollection AddMessageSchemaRegistration(this IServiceCollection services) =>
+        services.AddSchemaRegistryStartupTask(
+            "Connectors Control Schema Registration",
+            static async (registry, ct) => {
+                await RegisterControlSchema<ControlContracts.ActivatedConnectorsSnapshot>(registry, SchemaDefinitionType.Json, ct);
+                await RegisterControlSchema<ConnectContracts.Processors.ProcessorStateChanged>(registry, SchemaDefinitionType.Json, ct);
+                await RegisterControlSchema<ConnectContracts.Consumers.Checkpoint>(registry, SchemaDefinitionType.Json, ct);
+                await RegisterControlSchema<Lease>(registry, SchemaDefinitionType.Json, ct); // must transform into a contract message...
+            }
+        );
 
-        // schemaRegistry.RegisterSchema<Streaming.Contracts.Consumers.Checkpoint>(
-        //     GetLifetimeSystemEventName<Streaming.Contracts.Consumers.Checkpoint>(),
-        //     SchemaDefinitionType.Protobuf
-        // ).AsTask().GetAwaiter().GetResult();
+    static IServiceCollection AddConnectorsActivator(this IServiceCollection services) =>
+        services
+            .AddSingleton(new SystemConnectorsFactoryOptions {
+                LifecycleStreamTemplate   = Streams.LifecycleStreamTemplate,
+                CheckpointsStreamTemplate = Streams.CheckpointsStreamTemplate,
+                LeasesStreamTemplate      = Streams.LeasesStreamTemplate
+            })
+            .AddSingleton<ConnectorsActivator>();
 
-        // services.AddSingleton<INodeLifetimeService, NodeLifetimeService>(sp => new NodeLifetimeService(
-        //     sp.GetRequiredService<ISubscriber>(),
-        //     sp.GetRequiredService<ILogger<NodeLifetimeService>>()
-        // ));
+    static IServiceCollection AddConnectorsRegistry(this IServiceCollection services) =>
+        services
+            .AddSingleton(new ConnectorsRegistryOptions {
+                Filter           = Filters.ManagementFilter,
+                SnapshotStreamId = Streams.ConnectorsRegistryStream
+            })
+            .AddSingleton<ConnectorsRegistry>()
+            .AddSingleton<GetActiveConnectors>(static ctx => {
+                var registry = ctx.GetRequiredService<ConnectorsRegistry>();
+                return registry.GetConnectors;
+            });
 
-        services.AddSingleton<INodeLifetimeService, NodeLifetimeService>();
-
-        services.AddSingleton<GetNodeInstanceInfo>(ctx => {
-            // TODO SS: Suggest that the node info is added to the services collection
-            var publisher = ctx.GetRequiredService<IPublisher>();
-            var time      = ctx.GetRequiredService<TimeProvider>();
-
-            return async () => {
-                var resolvedEvent = await publisher.ReadStreamLastEvent(SystemStreams.GossipStream);
-                var gossipUpdated = JsonSerializer.Deserialize<GossipUpdatedInMemory>(resolvedEvent!.Value.Event.Data.Span)!;
-
-                var nodeInfo = new NodeInstanceInfo(
-                    gossipUpdated.Members.Single(x => x.InstanceId == gossipUpdated.NodeId),
-                    time.GetUtcNow()
-                );
-
-                return nodeInfo;
-            };
-        });
-
-        services.AddHostedService<ControlPlaneCoordinatorService>();
-    }
 }

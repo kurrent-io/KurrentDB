@@ -1,3 +1,4 @@
+using EventStore.Connectors;
 using Eventuous;
 using Eventuous.Testing;
 using Serilog;
@@ -15,7 +16,7 @@ public class CommandServiceSpec<TState, TCommand> where TState : State<TState>, 
     Queue<object>    ThenEvents          { get; set; } = [];
     DomainException? ThenDomainException { get; set; }
 
-    IEventStore             EventStore { get; set; } = new InMemoryEventStore();
+    IEventStore             EventStore { get; set; } = new SystemInMemoryEventStore();
     ICommandService<TState> Service    { get; set; } = null!;
 
     public static CommandServiceSpec<TState, TCommand> Builder => new CommandServiceSpec<TState, TCommand>();
@@ -62,7 +63,8 @@ public class CommandServiceSpec<TState, TCommand> where TState : State<TState>, 
     }
 
     async Task Assert() {
-        var streamName = $"$connector-{((dynamic)WhenCommand).ConnectorId}";
+        // TODO SS: super hacky way to get the stream name. must fix soon. perhaps we should not be using the eventstore here...
+        var streamName = ConnectorsSystemConventions.Streams.ManagementStreamTemplate.GetStream(((dynamic)WhenCommand).ConnectorId);
 
         // Given the following events.
         if (GivenEvents.Count != 0)

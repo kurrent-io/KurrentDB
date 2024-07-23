@@ -22,7 +22,7 @@ public static class PublisherSubscribeExtensions {
 			expiryStrategy: new DefaultExpiryStrategy(), //TODO SS: what is this expiry strategy thing?
 			checkpoint: position,
 			resolveLinks: false,
-			eventFilter: filter, 
+			eventFilter: filter,
 			user: SystemAccounts.System,
 			requiresLeader: false,
 			maxSearchWindow: null,
@@ -36,7 +36,7 @@ public static class PublisherSubscribeExtensions {
 
 			if (sub.Current is ReadResponse.EventReceived eventReceived)
 				yield return eventReceived.Event;
-            
+
             // if (sub.Current is ReadResponse.SubscriptionCaughtUp caughtUp)
             //     yield return caughtUp;
 		}
@@ -49,7 +49,7 @@ public static class PublisherSubscribeExtensions {
 		// 		_              => position.Value
 		// 	};
 	}
-	
+
 	static async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(this IPublisher publisher, string stream, long? revision, [EnumeratorCancellation] CancellationToken cancellationToken) {
 		var startRevision = StartFrom(revision);
 
@@ -70,7 +70,7 @@ public static class PublisherSubscribeExtensions {
 
 			if (sub.Current is ReadResponse.EventReceived eventReceived)
 				yield return eventReceived.Event;
-            
+
             // if (sub.Current is ReadResponse.SubscriptionCaughtUp caughtUp)
             //     yield return caughtUp;
 		}
@@ -88,7 +88,7 @@ public static class PublisherSubscribeExtensions {
 	// public static async Task Execute<TState>(this ResiliencePipeline resiliencePipeline, string operationKey, Func<ResilienceContext, TState, ValueTask> action, TState state, CancellationToken cancellationToken) {
 	// 	var resilienceContext = ResilienceContextPool.Shared
 	// 		.Get(operationKey, cancellationToken);
-	// 	
+	//
 	// 	try {
 	// 		await resiliencePipeline.ExecuteAsync(action, resilienceContext, state);
 	// 	}
@@ -109,7 +109,7 @@ public static class PublisherSubscribeExtensions {
 						static async (ctx, state) => {
 							await foreach (var re in state.Publisher.SubscribeToAll(state.Checkpoint, state.Filter, ctx.CancellationToken)) {
 								state.Checkpoint = new Position(
-									(ulong)re.OriginalPosition!.Value.CommitPosition, 
+									(ulong)re.OriginalPosition!.Value.CommitPosition,
 									(ulong)re.OriginalPosition!.Value.PreparePosition
 								);
 
@@ -117,8 +117,8 @@ public static class PublisherSubscribeExtensions {
 							}
 						},
 						resilienceContext, (
-							Publisher : publisher, 
-							Checkpoint: position, 
+							Publisher : publisher,
+							Checkpoint: position,
 							Filter    : filter,
 							Channel   : channel
 						)

@@ -25,10 +25,10 @@ public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemRea
 
         var options = Options with {
             ResiliencePipelineBuilder = Options.ResiliencePipelineBuilder.ConfigureTelemetry(
-                Options.EnableLogging
-                    ? Options.LoggerFactory
+                Options.Logging.Enabled
+                    ? Options.Logging.LoggerFactory
                     : NullLoggerFactory.Instance,
-                "ReaderResilienceTelemetryLogger"
+                "ReaderResiliencePipelineTelemetryLogger"
             )
         };
 

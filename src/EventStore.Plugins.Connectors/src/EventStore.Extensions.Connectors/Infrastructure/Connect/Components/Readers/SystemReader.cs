@@ -31,8 +31,6 @@ public class SystemReader : IReader {
 			? (_, _) => ValueTask.FromResult<object?>(null)
 			: (data, headers) => options.SchemaRegistry.As<ISchemaSerializer>().Deserialize(data, headers);
 
-
-
         // if (options.EnableLogging)
         //     options.Interceptors.TryAddUniqueFirst(new ReaderLogger(nameof(SystemReader)));
         //
@@ -41,17 +39,18 @@ public class SystemReader : IReader {
         // Intercept = evt => Interceptors.Intercept(evt);
 
         ResiliencePipeline = options.ResiliencePipelineBuilder
-            .With(x => x.InstanceName = "SystemReaderPipeline")
+            .With(x => x.InstanceName = "SystemReaderResiliencePipeline")
             .Build();
 	}
 
     internal SystemReaderOptions Options { get; }
 
-    IPublisher                         Client             { get; }
-    ResiliencePipeline                 ResiliencePipeline { get; }
-    Deserialize                        Deserialize        { get; }
-    InterceptorController              Interceptors       { get; }
-    Func<ConsumerLifecycleEvent, Task> Intercept          { get; }
+    IPublisher         Client             { get; }
+    ResiliencePipeline ResiliencePipeline { get; }
+    Deserialize        Deserialize        { get; }
+
+    // InterceptorController              Interceptors       { get; }
+    // Func<ConsumerLifecycleEvent, Task> Intercept          { get; }
 
     public string ReaderId => Options.ReaderId;
 
@@ -113,7 +112,7 @@ public class SystemReader : IReader {
         try {
             var result = await Client.ReadStreamLastEvent(stream, cancellationToken);
 
-            return result != null
+            return result is not null
                 ? await result.Value.ToRecord(Deserialize, () => SequenceId.From(1))
                 : EventStoreRecord.None;
         } catch (ReadResponseException.StreamNotFound) {

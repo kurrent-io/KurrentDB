@@ -8,37 +8,45 @@
         <IsPackable>false</IsPackable>
         <NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655</NoWarn>
         <RootNamespace>EventStore.Connectors</RootNamespace>
+		<EnableDynamicLoading>true</EnableDynamicLoading>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="DotNext.Threading" Version="5.9.0" />
+		
+<!--        <PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.29" />-->
+        <PackageReference Include="eventstore.connectors.kafka" Version="1.0.0-alpha.0.29" />
         <PackageReference Include="EventStore.Plugins" Version="24.6.1" />
-		<PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.61" />
-        <!--        <PackageReference Include="EventStore.Plugins" Version="24.6.0-alpha9">-->
-        <!--            <Private>false</Private>-->
-        <!--            <IncludeAssets>compile</IncludeAssets>-->
-        <!--        </PackageReference>-->
+		<PackageReference Include="eventstore.streaming.core" Version="1.0.0-alpha.0.66" />
+		
         <PackageReference Include="Eventuous.Application" Version="0.15.0-rc.1" />
         <PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-rc.1" />
         <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-rc.1" />
-        <PackageReference Include="Google.Protobuf" Version="3.27.2" />
-        <PackageReference Include="Grpc.StatusProto" Version="2.63.0" />
-        <PackageReference Include="Microsoft.AspNetCore.Grpc.Swagger" Version="0.8.6" />
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-        <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.6.2" />
-    </ItemGroup>
-  
-    <ItemGroup>
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj"/>-->
 		
+        <PackageReference Include="Google.Protobuf" Version="3.27.2" />
+        <PackageReference Include="Grpc.StatusProto" Version="2.64.0" />
+		<PackageReference Include="Grpc.AspNetCore" Version="2.64.0"/>
+
+<!--		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.7" />-->
+		
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.7" />
+		
+<!--		<PackageReference Include="Microsoft.AspNetCore.Grpc.Swagger" Version="0.8.7" />-->
+<!--		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />-->
+<!--		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.6.2" />-->
+<!--		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.6.2" />-->
+<!--		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.6.2" />-->
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>all</ExcludeAssets>
+<!--            <Private>false</Private>-->
+<!--            <ExcludeAssets>all</ExcludeAssets>-->
         </ProjectReference>
 
         <ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>all</ExcludeAssets>
+<!--            <Private>false</Private>-->
+<!--            <ExcludeAssets>all</ExcludeAssets>-->
         </ProjectReference>
 
         <ProjectReference Include="..\EventStore.Extensions.Connectors.Contracts\EventStore.Extensions.Connectors.Contracts.csproj" />

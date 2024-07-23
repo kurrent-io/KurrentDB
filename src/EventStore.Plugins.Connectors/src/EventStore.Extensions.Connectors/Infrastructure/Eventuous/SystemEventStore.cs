@@ -12,46 +12,58 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EventStore.Connectors.Eventuous;
 
+static class SchemaRegistryExtensions {
+    public static async Task<RegisteredSchema> GetOrRegister(
+        this SchemaRegistry schemaRegistry, Type messageType, SchemaDefinitionType schemaType, CancellationToken cancellationToken = default
+    ) => await schemaRegistry.RegisterSchema(SchemaInfo.FromMessageType(messageType, schemaType), messageType, cancellationToken);
+}
+
+[UsedImplicitly]
 public class SystemEventStore : IEventStore, IAsyncDisposable {
-    public SystemEventStore(SystemReader reader, SystemProducer producer, ILoggerFactory? loggerFactory = null) {
-        Reader   = reader;
-        Producer = producer;
-        Logger   = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<SystemEventStore>();
+    public SystemEventStore(SystemReader reader, SystemProducer producer, SchemaRegistry schemaRegistry, ILoggerFactory? loggerFactory = null) {
+        Reader         = reader;
+        Producer       = producer;
+        SchemaRegistry = schemaRegistry;
+        Logger         = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<SystemEventStore>();
     }
 
     public SystemEventStore(IPublisher publisher, SchemaRegistry schemaRegistry, ILoggerFactory? loggerFactory = null) {
-        loggerFactory ??= NullLoggerFactory.Instance;
+        SchemaRegistry =   schemaRegistry;
+        loggerFactory  ??= NullLoggerFactory.Instance;
 
         Reader = SystemReader.Builder
-            .ReaderId("rdr-cnx-eventuous")
+            .ReaderId("rdx-eventuous")
             .Publisher(publisher)
             .SchemaRegistry(schemaRegistry)
             .LoggerFactory(loggerFactory)
-            .EnableLogging()
             .Create();
 
         Producer = SystemProducer.Builder
-            .ProducerId("prd-cnx-eventuous")
+            .ProducerId("pdx-eventuous")
             .Publisher(publisher)
             .SchemaRegistry(schemaRegistry)
             .LoggerFactory(loggerFactory)
-            .EnableLogging()
             .Create();
 
         Logger = loggerFactory.CreateLogger<SystemEventStore>();
     }
 
-    ILogger        Logger   { get; }
-    SystemReader   Reader   { get; }
-    SystemProducer Producer { get; }
+    SchemaRegistry SchemaRegistry { get; }
+    ILogger        Logger         { get; }
+    SystemReader   Reader         { get; }
+    SystemProducer Producer       { get; }
 
     /// <inheritdoc/>
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken = default) {
-        var exists = await Reader
-            .ReadBackwards(LogPosition.Latest, ConsumeFilter.Streams(stream), 1, cancellationToken)
-            .AnyAsync(cancellationToken);
+        try {
+            var exists = await Reader
+                .ReadBackwards(LogPosition.Latest, ConsumeFilter.Streams(stream), 1, cancellationToken)
+                .AnyAsync(cancellationToken);
 
-        return exists; // lol, not that easy yet, but it should be.
+            return exists;
+        } catch (Exception ex) when (ex is not StreamingError) {
+            throw new StreamingCriticalError($"Unable to check if stream {stream} exists", ex);
+        }
     }
 
     /// <inheritdoc/>
@@ -61,30 +73,35 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
         IReadOnlyCollection<StreamEvent> events,
         CancellationToken cancellationToken = default
     ) {
-        var messages = events.Select(
-            evt => {
-                ArgumentNullException.ThrowIfNull(evt.Payload, nameof(evt.Payload)); // must do it better
+        List<Message> messages = [];
 
-                var headers = new Headers();
-                foreach (var kvp in evt.Metadata.ToHeaders())
-                    headers.Add(kvp.Key, kvp.Value);
+        foreach (var evt in events) {
+            ArgumentNullException.ThrowIfNull(evt.Payload, nameof(evt.Payload)); // must do it better
 
-                var schemaInfo = SchemaInfo.FromContentType(evt.Payload.GetType().FullName!, evt.ContentType);
+            var headers = new Headers();
+            foreach (var kvp in evt.Metadata.ToHeaders())
+                headers.Add(kvp.Key, kvp.Value);
 
-                var message = Message.Builder
-                    .RecordId(evt.Id)
-                    .Value(evt.Payload)
-                    .Headers(headers)
-                    .WithSchema(schemaInfo)
-                    .Create();
+            // // TODO SS: the producer should handle this no? actually its the serializer. why is the schema info not being set?
+            // var schema = await SchemaRegistry
+            //     .GetOrRegister(evt.Payload.GetType(), SchemaDefinitionType.Json, cancellationToken);
+            //
+            // var schemaInfo = new SchemaInfo(schema.Subject, SchemaDefinitionType.Json);
 
-                return message;
-            }
-        ).ToArray();
+            var message = Message.Builder
+                .RecordId(evt.Id)
+                .Value(evt.Payload)
+                .Headers(headers)
+                .WithSchemaType(SchemaDefinitionType.Json)
+                // .WithSchema(schemaInfo)
+                .Create();
+
+            messages.Add(message);
+        }
 
         var requestBuilder = ProduceRequest.Builder
             .Stream(stream)
-            .Messages(messages);
+            .Messages(messages.ToArray());
 
         if (expectedVersion == ExpectedStreamVersion.NoStream)
             requestBuilder = requestBuilder.ExpectedStreamState(StreamState.Missing);
@@ -98,16 +115,8 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
         var result = await Producer.Produce(request);
 
         return result switch {
-            { Success: true } =>
-                new AppendEventsResult(
-                    (ulong)result.Position.LogPosition.CommitPosition!,
-                    result.Position.StreamRevision
-                ),
-            { Error: StreamNotFoundError } => throw new StreamNotFound(stream),
-            { Error: not null } => throw new AppendToStreamException(
-                $"Unable to appends events to {stream}",
-                result.Error
-            ),
+            { Success: true }                    => new AppendEventsResult((ulong)result.Position.LogPosition.CommitPosition!, result.Position.StreamRevision),
+            { Success: false, Error : not null } => throw result.Error
         };
     }
 
@@ -119,50 +128,48 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
             ? LogPosition.Earliest
             : LogPosition.From((ulong?)start.Value);
 
+        StreamEvent[] result = [];
+
         try {
-            var result = await Reader
+            result = await Reader
                 .ReadForwards(from, ConsumeFilter.Streams(stream), count, cancellationToken)
                 .Where(x => !"$".StartsWith(x.SchemaInfo.Subject))
-                .Select(
-                    record => new StreamEvent(
-                        record.Id,
-                        record.Value,
-                        Metadata.FromHeaders(record.Headers),
-                        record.SchemaInfo.ContentType,
-                        (long)record.Position.LogPosition.CommitPosition!.Value
-                    )
-                )
+                .Select(record => new StreamEvent(
+                    record.Id,
+                    record.Value,
+                    Metadata.FromHeaders(record.Headers),
+                    record.SchemaInfo.ContentType,
+                    record.Position.StreamRevision
+                ))
                 .ToArrayAsync(cancellationToken);
-
-            return result;
-        } catch (Exception ex) {
-            throw new ReadFromStreamException($"Unable to read {count} starting at {start} events from {stream}", ex);
+        } catch (Exception ex) when (ex is not StreamingError) {
+            throw new StreamingCriticalError($"Unable to read {count} starting at {start} events from {stream}", ex);
         }
+
+        return result.Length == 0 ? throw new StreamNotFoundError(stream) : result;
     }
 
     /// <inheritdoc/>
-    public async Task<StreamEvent[]> ReadEventsBackwards(
-        StreamName stream, int count, CancellationToken cancellationToken = default
-    ) {
+    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken = default) {
+        StreamEvent[] result = [];
+
         try {
-            var result = await Reader
+            result = await Reader
                 .ReadBackwards(ConsumeFilter.Streams(stream), count, cancellationToken)
                 .Where(x => !"$".StartsWith(x.SchemaInfo.Subject))
-                .Select(
-                    record => new StreamEvent(
-                        record.Id,
-                        record.Value,
-                        Metadata.FromHeaders(record.Headers),
-                        record.SchemaInfo.ContentType,
-                        (long)record.Position.LogPosition.CommitPosition!.Value
-                    )
-                )
+                .Select(record => new StreamEvent(
+                    record.Id,
+                    record.Value,
+                    Metadata.FromHeaders(record.Headers),
+                    record.SchemaInfo.ContentType,
+                    record.Position.StreamRevision
+                ))
                 .ToArrayAsync(cancellationToken);
-
-            return result;
-        } catch (Exception ex) {
-            throw new ReadFromStreamException($"Unable to read {count} events backwards from {stream}", ex);
+        } catch (Exception ex) when (ex is not StreamingError) {
+            throw new StreamingCriticalError($"Unable to read {count} events backwards from {stream}", ex);
         }
+
+        return result.Length == 0 ? throw new StreamNotFoundError(stream) : result;
     }
 
     /// <inheritdoc/>
@@ -171,18 +178,12 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
         StreamTruncatePosition truncatePosition,
         ExpectedStreamVersion expectedVersion,
         CancellationToken cancellationToken = default
-    ) {
-        throw new NotImplementedException();
-        //new TruncateStreamException($"Unable to truncate stream {stream} at {truncatePosition}");
-    }
+    ) => throw new NotImplementedException();
 
     /// <inheritdoc/>
     public Task DeleteStream(
         StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken = default
-    ) {
-        throw new NotImplementedException();
-        //new DeleteStreamException($"Unable to delete stream {stream}");
-    }
+    ) => throw new NotImplementedException();
 
     public async ValueTask DisposeAsync() {
         await Reader.DisposeAsync();

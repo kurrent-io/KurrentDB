@@ -1,10 +1,12 @@
 syntax = "proto3";
 
-package eventstore.connectors;
+package eventstore.connectors.v1;
 
 import "google/protobuf/any.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "EventStore.Connectors.Contracts";
 
 message Error {
   // Standardized string to programmatically identify the error.

@@ -7,6 +7,7 @@ using EventStore.Connect.Producers;
 using EventStore.Connect.Readers;
 using EventStore.Core.Bus;
 using EventStore.Streaming;
+using EventStore.Streaming.Configuration;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Consumers.Configuration;
 using EventStore.Streaming.Processors;
@@ -26,20 +27,20 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
             }
         };
 
-    public SystemProcessorBuilder Streams(params string[] streams) =>
-        Filter(ConsumeFilter.Streams(streams));
-
-    public SystemProcessorBuilder InitialPosition(SubscriptionInitialPosition subscriptionInitialPosition) =>
-        new() {
-            Options = Options with {
-                InitialPosition = subscriptionInitialPosition
-            }
-        };
+    public SystemProcessorBuilder Stream(StreamId stream) =>
+        Filter(ConsumeFilter.Stream(stream));
 
     public SystemProcessorBuilder StartPosition(RecordPosition recordPosition) =>
         new() {
             Options = Options with {
                 StartPosition = recordPosition,
+            }
+        };
+
+    public SystemProcessorBuilder AutoCommit(AutoCommitOptions autoCommitOptions) =>
+        new() {
+            Options = Options with {
+                AutoCommit = autoCommitOptions
             }
         };
 
@@ -50,18 +51,8 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
             }
         };
 
-    public SystemProcessorBuilder AutoCommit(int interval, int recordsThreshold) =>
-        new() {
-            Options = Options with {
-                AutoCommit = Options.AutoCommit with {
-                    Interval = TimeSpan.FromMilliseconds(interval),
-                    RecordsThreshold = recordsThreshold
-                }
-            }
-        };
-
     public SystemProcessorBuilder DisableAutoCommit() =>
-        AutoCommit(x => x with { AutoCommitEnabled = false });
+        AutoCommit(x => x with { Enabled = false });
 
     public SystemProcessorBuilder SkipDecoding(bool skipDecoding = true) =>
         new() {
@@ -69,6 +60,9 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
                 SkipDecoding = skipDecoding
             }
         };
+
+    public SystemProcessorBuilder DisableAutoLock() =>
+        AutoLock(x => x with { Enabled = false });
 
     public SystemProcessorBuilder Publisher(IPublisher publisher) {
 		Ensure.NotNull(publisher);
@@ -90,24 +84,41 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
 
         var reader = SystemReader.Builder
             .Publisher(options.Publisher)
-            .ReaderId($"{options.ProcessorId}-leases-rdr")
-            //.LoggerFactory(options.LoggerFactory)
-            //.EnableLogging(options.EnableLogging)
+            .ReaderId($"rdx-leases-{options.ProcessorId}")
             .SchemaRegistry(options.SchemaRegistry)
+            .Logging(new LoggingOptions {
+                Enabled       = options.Logging.Enabled,
+                LogName       = "LeaseManagerSystemReader",
+                LoggerFactory = options.Logging.LoggerFactory
+            })
             .Create();
 
         var producer = SystemProducer.Builder
             .Publisher(options.Publisher)
-            .ProducerId($"{options.ProcessorId}-leases-pdr")
-            //.LoggerFactory(options.LoggerFactory)
-            //.EnableLogging(options.EnableLogging)
+            .ProducerId($"pdx-leases-{options.ProcessorId}")
             .SchemaRegistry(options.SchemaRegistry)
+            .Logging(new LoggingOptions {
+                Enabled       = options.Logging.Enabled,
+                LogName       = "LeaseManagerSystemProducer",
+                LoggerFactory = options.Logging.LoggerFactory
+            })
             .Create();
 
         var leaseManager = new LeaseManager(
-            reader, producer, streamPrefix: options.AutoLock.StreamNamespace,
-            logger: options.LoggerFactory.CreateLogger<LeaseManager>()
+            reader, producer,
+            streamTemplate: options.AutoLock.StreamTemplate,
+            logger: options.Logging.LoggerFactory.CreateLogger<LeaseManager>()
         );
+
+        var serviceLockerOptions = new ServiceLockerOptions {
+            ResourceId    = options.ProcessorId,
+            OwnerId       = options.AutoLock.OwnerId,
+            LeaseDuration = options.AutoLock.LeaseDuration.ToDuration(),
+            Retry = new() {
+                Timeout = options.AutoLock.AcquisitionTimeout.ToDuration(),
+                Delay   = options.AutoLock.AcquisitionDelay.ToDuration()
+            }
+        };
 
         options = Options with {
             GetConsumer = () => SystemConsumer.Builder
@@ -115,35 +126,27 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
                 .ConsumerId(options.ProcessorId)
                 .SubscriptionName(options.SubscriptionName)
                 .Filter(options.Filter)
-                .InitialPosition(options.InitialPosition)
                 .StartPosition(options.StartPosition)
                 .AutoCommit(options.AutoCommit)
                 .SkipDecoding(options.SkipDecoding)
-                .LoggerFactory(options.LoggerFactory)
-                .EnableLogging(options.EnableLogging)
                 .SchemaRegistry(options.SchemaRegistry)
+                .Logging(new LoggingOptions {
+                    Enabled       = options.Logging.Enabled,
+                    LoggerFactory = options.Logging.LoggerFactory
+                })
                 .Create(),
 
             GetProducer = () => SystemProducer.Builder
                 .Publisher(options.Publisher)
                 .ProducerId(options.ProcessorId)
-                .LoggerFactory(options.LoggerFactory)
-                .EnableLogging(options.EnableLogging)
                 .SchemaRegistry(options.SchemaRegistry)
+                .Logging(new LoggingOptions {
+                    Enabled       = options.Logging.Enabled,
+                    LoggerFactory = options.Logging.LoggerFactory
+                })
                 .Create(),
 
-            GetLocker = () => new ServiceLocker(
-                new ServiceLockerOptions {
-                    ResourceId    = options.ProcessorId,
-                    OwnerId       = options.AutoLock.OwnerId,
-                    LeaseDuration = options.AutoLock.LeaseDuration.ToDuration(),
-                    Retry = new() {
-                        Timeout = options.AutoLock.AcquisitionTimeout.ToDuration(),
-                        Delay   = options.AutoLock.AcquisitionDelay.ToDuration()
-                    }
-                },
-                leaseManager
-            )
+            GetLocker = () => new ServiceLocker(serviceLockerOptions, leaseManager)
         };
 
         return new SystemProcessor(options);

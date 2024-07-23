@@ -41,16 +41,10 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServic
     [Fact]
     public async Task should_throw_domain_exception_when_connector_settings_are_invalid() {
         var connectorId = Fixture.NewConnectorId();
-        var forcedValidationResult =
-            new ValidationResult([new ValidationFailure("SomeProperty", "Validation failure!")]);
+        var forcedValidationResult = new ValidationResult([new ValidationFailure("SomeProperty", "Validation failure!")]);
 
         await CommandServiceSpec<ConnectorEntity, CreateConnector>.Builder
-            .ForService(
-                eventStore => Fixture.ConnectorApplication(
-                    eventStore,
-                    forcedValidationResult
-                )
-            )
+            .ForService(eventStore => Fixture.ConnectorApplication(eventStore, forcedValidationResult))
             .GivenNoState()
             .When(
                 new CreateConnector {
@@ -60,9 +54,9 @@ public class CreateConnectorCommandTests(ITestOutputHelper output, CommandServic
                 }
             )
             .Then(
-                new ConnectorDomainExceptions.InvalidConnectorSettings(
+                new ConnectorDomainExceptions.InvalidConnectorSettingsException(
                     connectorId,
-                    new() { { "SomeProperty", ["Validation failure!"] } }
+                    new Dictionary<string, string[]> { { "SomeProperty", ["Validation failure!"] } }
                 )
             );
     }

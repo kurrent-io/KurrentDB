@@ -90,7 +90,7 @@ public class StartConnectorCommandTests(ITestOutputHelper output, CommandService
                     ConnectorId = connectorId
                 }
             )
-            .Then(new ConnectorDomainExceptions.ConnectorDeleted(connectorId));
+            .Then(new ConnectorDomainExceptions.ConnectorDeletedException(connectorId));
     }
 
     [Fact]

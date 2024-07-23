@@ -29,12 +29,10 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         OnSetup = () => {
             Producer = NewProducer()
                 .ProducerId("test-producer")
-                .EnableLogging()
                 .Create();
 
             Reader = NewReader()
                 .ReaderId("test-reader")
-                .EnableLogging()
                 .Create();
 
             return Task.CompletedTask;

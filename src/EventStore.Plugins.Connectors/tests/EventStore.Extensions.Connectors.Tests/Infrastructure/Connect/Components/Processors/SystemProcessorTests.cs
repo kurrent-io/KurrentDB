@@ -13,7 +13,7 @@ namespace EventStore.Extensions.Connectors.Tests.Connect.Processors;
 public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
     [Theory]
     [InlineData(1)]
-    // [InlineData(100)]
+    [InlineData(10)]
     public Task processes_records_from_earliest(int numberOfMessages) => Fixture.TestWithTimeout(
         TimeSpan.FromSeconds(30),
         async cancellator => {
@@ -27,10 +27,9 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
 
             var processor = Fixture.NewProcessor()
                 .ProcessorId($"{streamId}-prx")
-                .Streams(streamId)
-                .InitialPosition(SubscriptionInitialPosition.Earliest)
+                .Stream(streamId)
+                .StartPosition(RecordPosition.Earliest)
                 .DisableAutoCommit()
-                .EnableLogging()
                 .Process<TestEvent>(
                     async (_, ctx) => {
                         processedRecords.Add(ctx.Record);
@@ -59,7 +58,7 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
 
     [Theory]
     [InlineData(1)]
-    // [InlineData(100)]
+    [InlineData(10)]
     public Task processes_records_and_produces_output(int numberOfMessages) => Fixture.TestWithTimeout(
         TimeSpan.FromSeconds(30),
         async cancellator => {
@@ -74,10 +73,9 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
 
             var processor = Fixture.NewProcessor()
                 .ProcessorId($"{inputStreamId}-prx")
-                .Streams(inputStreamId)
-                .InitialPosition(SubscriptionInitialPosition.Earliest)
+                .Stream(inputStreamId)
+                .StartPosition(RecordPosition.Earliest)
                 .AutoCommit(x => x with { RecordsThreshold = 1 })
-                .EnableLogging()
                 .Process<TestEvent>(
                     async (_, ctx) => {
                         var outputMessage = new TestEvent(Guid.NewGuid(), messagesSent.Count);
@@ -114,10 +112,9 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
 
             var processor = Fixture.NewProcessor()
                 .ProcessorId($"{streamId}-prx")
-                .Streams(streamId)
-                .InitialPosition(SubscriptionInitialPosition.Earliest)
+                .Stream(streamId)
+                .StartPosition(RecordPosition.Earliest)
                 .DisableAutoCommit()
-                .EnableLogging()
                 .Process<TestEvent>((_, _) => throw new ApplicationException("BOOM!"))
                 .Create();
 
@@ -140,10 +137,9 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
 
             var processor = Fixture.NewProcessor()
                 .ProcessorId($"{streamId}-prx")
-                .Streams(streamId)
-                .InitialPosition(SubscriptionInitialPosition.Earliest)
+                .Stream(streamId)
+                .StartPosition(RecordPosition.Earliest)
                 .DisableAutoCommit()
-                .EnableLogging()
                 .Process<TestEvent>((_, _) => Task.Delay(TimeSpan.MaxValue))
                 .Create();
 

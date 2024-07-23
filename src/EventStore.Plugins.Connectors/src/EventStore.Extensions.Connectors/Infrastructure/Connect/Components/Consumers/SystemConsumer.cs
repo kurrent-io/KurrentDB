@@ -37,14 +37,14 @@ public class SystemConsumer : IConsumer {
             SystemProducer.Builder.Publisher(Options.Publisher).ProducerId(Options.ConsumerId).Create(),
             SystemReader.Builder.Publisher(Options.Publisher).ReaderId(Options.ConsumerId).Create(),
             TimeProvider.System,
-            $"$consumers/{Options.ConsumerId}/checkpoint"
+            options.AutoCommit.StreamTemplate.GetStream(Options.ConsumerId)
         );
 
 		CheckpointController = new(
 			new CheckpointControllerOptions {
 				AutoCommit      = options.AutoCommit,
 				CommitPositions = (positions, _) => Commit(positions, CancellationToken.None),
-				LoggerFactory   = options.LoggerFactory
+				LoggerFactory   = options.Logging.LoggerFactory
 			}
 		);
 
@@ -58,15 +58,15 @@ public class SystemConsumer : IConsumer {
 
 		Sequence = new SequenceIdGenerator();
 
-		if (options.EnableLogging)
+		if (options.Logging.Enabled)
 			options.Interceptors.TryAddUniqueFirst(new ConsumerLogger(nameof(SystemConsumer)));
 
-        Interceptors = new(Options.Interceptors, Options.LoggerFactory.CreateLogger(nameof(SystemConsumer)));
+        Interceptors = new(Options.Interceptors, Options.Logging.LoggerFactory.CreateLogger(nameof(SystemConsumer)));
 
 		Intercept = evt => Interceptors.Intercept(evt);
 
 		ResiliencePipeline = options.ResiliencePipelineBuilder
-			.With(x => x.InstanceName = "SystemConsumerPipeline")
+			.With(x => x.InstanceName = "SystemConsumerResiliencePipeline")
 			.Build();
 
         // ResiliencePipeline = ResiliencePipeline.Empty;
@@ -99,7 +99,9 @@ public class SystemConsumer : IConsumer {
 		// ensure the positions stream exists and is correctly configured
 		await CheckpointStore.Initialize(Cancellator.Token);
 
-		var startPosition = await GetStartPosition();
+		var startPosition = await CheckpointStore
+            .ResolveStartPosition(Options.StartPosition, Cancellator.Token)
+            .Then(x => x.ToPosition());
 
         var filter = Options.Filter.ToEventFilter();
 
@@ -174,17 +176,5 @@ public class SystemConsumer : IConsumer {
         finally {
             await Interceptors.DisposeAsync();
         }
-    }
-
-    async Task<EventStore.Core.Services.Transport.Common.Position?> GetStartPosition() {
-        // not sure about this still... use log position or record position?
-        // if it's a stream sub then it should be the stream revision inside the record position...
-        var startPosition = await CheckpointStore.ResolveStartPosition(
-            Options.InitialPosition,
-            Options.StartPosition,
-            Cancellator.Token
-        );
-
-        return startPosition.ToPosition();
     }
 }

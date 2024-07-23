@@ -25,10 +25,10 @@ public record SystemProducerBuilder : ProducerBuilder<SystemProducerBuilder, Sys
 
 		var options = Options with {
 			ResiliencePipelineBuilder = Options.ResiliencePipelineBuilder.ConfigureTelemetry(
-				Options.EnableLogging
-					? Options.LoggerFactory
+				Options.Logging.Enabled
+					? Options.Logging.LoggerFactory
 					: NullLoggerFactory.Instance,
-				"ProducerResilienceTelemetryLogger"
+				"ProducerResiliencePipelineTelemetryLogger"
 			)
 		};
 

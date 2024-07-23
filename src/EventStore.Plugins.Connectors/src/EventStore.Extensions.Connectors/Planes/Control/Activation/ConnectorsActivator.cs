@@ -1,36 +1,28 @@
-using System.Collections.Concurrent;
 using EventStore.Connect.Connectors;
 using FluentValidation;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
+
+using ActivatedConnectors = System.Collections.Concurrent.ConcurrentDictionary<
+    EventStore.Connect.Connectors.ConnectorId,
+    (EventStore.Connect.Connectors.IConnector Instance, int Revision)
+>;
 
 namespace EventStore.Connectors.Control.Activation;
 
-public class ConnectorsActivator {
-    public ConnectorsActivator(IConnectorFactory connectorFactory, ILogger<ConnectorsActivator>? logger = null) {
-        ConnectorFactory = connectorFactory;
-        Logger           = logger ?? NullLoggerFactory.Instance.CreateLogger<ConnectorsActivator>();
+public delegate IConnector CreateConnector(ConnectorId connectorId, IDictionary<string, string?> settings, string ownerId);
 
-        Connectors = [];
-    }
+public class ConnectorsActivator(CreateConnector createConnector) {
+    public ConnectorsActivator(IConnectorFactory connectorFactory) : this(connectorFactory.CreateConnector) { }
 
-    IConnectorFactory ConnectorFactory { get; }
-    ILogger           Logger           { get; }
-
-    ConcurrentDictionary<ConnectorId, (IConnector Instance, int Revision)> Connectors { get; }
+    CreateConnector     CreateConnector { get; } = createConnector;
+    ActivatedConnectors Connectors      { get; } = [];
 
     public async Task<ActivateResult> Activate(
-        ConnectorId connectorId, Dictionary<string, string?> settings, int revision, ClusterNodeId ownerId, CancellationToken stoppingToken = default
+        ConnectorId connectorId,
+        IDictionary<string, string?> settings,
+        int revision, ClusterNodeId ownerId,
+        CancellationToken stoppingToken = default
     ) {
-        if (stoppingToken.IsCancellationRequested)
-            return ActivateResult.OperationCanceled();
-
-        // TODO SS: the factory must validate the connector configuration
-        // var config = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
-        // var result = new ConnectorsValidation().ValidateConfiguration(config);
-        // if (!result.IsValid) return new ActivateResult.InvalidConfiguration(result);
-
-        // this should not happen and its more of a sanity check
+        // at this moment, this should not happen and its more of a sanity check
         if (Connectors.TryGetValue(connectorId, out var connector)) {
             if (connector.Revision == revision && connector.Instance.State is ConnectorState.Activating or ConnectorState.Running)
                 return ActivateResult.RevisionAlreadyRunning();
@@ -44,15 +36,9 @@ public class ConnectorsActivator {
         }
 
         try {
-            //TODO SS: the factory must be refactored to accept a owner id to be used in lock acquisition
-            connector = Connectors[connectorId] = (ConnectorFactory.CreateConnector(connectorId, settings), revision);
-
-            if (stoppingToken.IsCancellationRequested)
-                return ActivateResult.OperationCanceled();
+            connector = Connectors[connectorId] = (CreateConnector(connectorId, settings, ownerId), revision);
 
             await connector.Instance.Connect(stoppingToken);
-
-            Logger.LogConnectorActivated(ownerId, connector.Instance.ConnectorId);
 
             return ActivateResult.Activated();
         }
@@ -64,19 +50,49 @@ public class ConnectorsActivator {
         }
     }
 
-    public async Task<DeactivateResult> Deactivate(ConnectorId connectorId, CancellationToken cancellationToken = default) {
+    public async Task<IActivationResult> Activate2(
+        ConnectorId connectorId,
+        IDictionary<string, string?> settings,
+        int revision, ClusterNodeId ownerId,
+        CancellationToken stoppingToken = default
+    ) {
+        // at this moment, this should not happen and its more of a sanity check
+        if (Connectors.TryGetValue(connectorId, out var connector)) {
+            if (connector.Revision == revision && connector.Instance.State is ConnectorState.Activating or ConnectorState.Running)
+                return ActivationResults.RevisionAlreadyRunning();
+
+            try {
+                await connector.Instance.DisposeAsync();
+            }
+            catch {
+                // ignore
+            }
+        }
+
+        try {
+            connector = Connectors[connectorId] = (CreateConnector(connectorId, settings, ownerId), revision);
+
+            await connector.Instance.Connect(stoppingToken);
+
+            return ActivationResults.Activated();
+        }
+        catch (ValidationException ex) {
+            return ActivationResults.InvalidConfiguration(ex);
+        }
+        catch (Exception ex) {
+            return ActivationResults.UnknownError(ex);
+        }
+    }
+
+    public async Task<DeactivateResult> Deactivate(ConnectorId connectorId) {
         if (!Connectors.TryRemove(connectorId, out var app))
             return DeactivateResult.ConnectorNotFound();
 
         try {
-            // should disconnect receive a token that would work as a timeout?
-            // it never fails but internally it captures errors
-            await app.Instance.DisposeAsync(); //Disconnect();
+            await app.Instance.DisposeAsync();
+            // await app.Instance.Stopped;
 
             return DeactivateResult.Deactivated();
-        }
-        catch (OperationCanceledException) {
-            return DeactivateResult.OperationCanceled();
         }
         catch (Exception ex) {
             return DeactivateResult.UnknownError(ex);
@@ -90,8 +106,7 @@ public enum ActivateResultType {
     RevisionAlreadyRunning = 2,
     InstanceTypeNotFound   = 3,
     InvalidConfiguration   = 4,
-    UnableToAcquireLock    = 5,
-    OperationCanceled      = 6
+    UnableToAcquireLock    = 5
 }
 
 public record ActivateResult(ActivateResultType Type, Exception? Error = null) {
@@ -108,8 +123,6 @@ public record ActivateResult(ActivateResultType Type, Exception? Error = null) {
 
     public static ActivateResult UnableToAcquireLock() => new(ActivateResultType.UnableToAcquireLock);
 
-    public static ActivateResult OperationCanceled() => new(ActivateResultType.OperationCanceled);
-
     public static ActivateResult UnknownError(Exception error) => new(ActivateResultType.Unknown, error);
 }
 
@@ -117,8 +130,7 @@ public enum DeactivateResultType {
     Unknown              = 0,
     Deactivated          = 1,
     ConnectorNotFound    = 2,
-    UnableToReleaseLock  = 3,
-    OperationCanceled    = 4
+    UnableToReleaseLock  = 3
 }
 
 public record DeactivateResult(DeactivateResultType Type, Exception? Error = null) {
@@ -131,33 +143,208 @@ public record DeactivateResult(DeactivateResultType Type, Exception? Error = nul
 
     public static DeactivateResult UnableToReleaseLock() => new(DeactivateResultType.UnableToReleaseLock);
 
-    public static DeactivateResult OperationCanceled() => new(DeactivateResultType.OperationCanceled);
-
     public static DeactivateResult UnknownError(Exception error) => new(DeactivateResultType.Unknown, error);
 }
 
-static partial class ConnectorsActivatorLogMessages {
-    [LoggerMessage(
-        Message = "[Node Id: {NodeId}] connector {ConnectorId} activated",
-        Level = LogLevel.Debug
-    )]
-    internal static partial void LogConnectorActivated(
-        this ILogger logger, string nodeId, string connectorId
-    );
+// [PublicAPI]
+// public interface IActivationResult {
+//     public bool Success => this is Activated;
+//     public bool Failure => !Success;
+//
+//     public Exception? Error { get; init; }
+//
+//     public readonly record struct Activated : IActivationResult {
+//         public Exception? Error { get; init; }
+//     }
+//
+//     public readonly record struct RevisionAlreadyRunning : IActivationResult {
+//         public Exception? Error { get; init; }
+//     }
+//
+//     public readonly record struct InstanceTypeNotFound : IActivationResult {
+//         public Exception? Error { get; init; }
+//     }
+//
+//     public readonly record struct InvalidConfiguration : IActivationResult {
+//         public Exception? Error { get; init; }
+//     }
+//
+//     public readonly record struct UnableToAcquireLock : IActivationResult {
+//         public Exception? Error { get; init; }
+//     }
+//
+//     public readonly record struct UnknownError : IActivationResult {
+//         public Exception? Error { get; init; }
+//     }
+//
+//     // public static readonly Activated              ActivatedResult              = new Activated();
+//     // public static readonly RevisionAlreadyRunning RevisionAlreadyRunningResult = new RevisionAlreadyRunning();
+//     // public static readonly InstanceTypeNotFound   InstanceTypeNotFoundResult   = new InstanceTypeNotFound();
+//     // public static readonly InvalidConfiguration   InvalidConfigurationResult   = new InvalidConfiguration();
+//     // public static readonly UnableToAcquireLock    UnableToAcquireLockResult    = new UnableToAcquireLock();
+//     // public static readonly UnknownError           UnknownErrorResult           = new UnknownError();
+// }
 
-    [LoggerMessage(
-        Message = "[Node Id: {NodeId}] connector {ConnectorId} deactivated",
-        Level = LogLevel.Debug
-    )]
-    internal static partial void LogConnectorDeactivated(
-        this ILogger logger, Exception? error, string nodeId, string connectorId
-    );
+// [PublicAPI]
+// public interface IActivationResult {
+//     public bool       Success { get; init; }
+//     public Exception? Error   { get; init; }
+//
+//     public readonly record struct Activated() : IActivationResult {
+//         public bool       Success { get; init; } = true;
+//         public Exception? Error   { get; init; } = null;
+//     }
+//
+//     public readonly record struct RevisionAlreadyRunning() : IActivationResult {
+//         public bool       Success { get; init; } = false;
+//         public Exception? Error   { get; init; } = null;
+//     }
+//
+//     public readonly record struct InstanceTypeNotFound() : IActivationResult {
+//         public bool       Success { get; init; } = false;
+//         public Exception? Error   { get; init; } = null;
+//     }
+//
+//     public readonly record struct InvalidConfiguration() : IActivationResult {
+//         public bool       Success { get; init; } = false;
+//         public Exception? Error   { get; init; } = null;
+//     }
+//
+//     public readonly record struct UnableToAcquireLock() : IActivationResult {
+//         public bool       Success { get; init; } = false;
+//         public Exception? Error   { get; init; } = null;
+//     }
+//
+//     public readonly record struct UnknownError() : IActivationResult {
+//         public bool       Success { get; init; } = false;
+//         public Exception? Error   { get; init; } = null;
+//     }
+//
+//     // public static readonly Activated              ActivatedResult              = new Activated();
+//     // public static readonly RevisionAlreadyRunning RevisionAlreadyRunningResult = new RevisionAlreadyRunning();
+//     // public static readonly InstanceTypeNotFound   InstanceTypeNotFoundResult   = new InstanceTypeNotFound();
+//     // public static readonly InvalidConfiguration   InvalidConfigurationResult   = new InvalidConfiguration();
+//     // public static readonly UnableToAcquireLock    UnableToAcquireLockResult    = new UnableToAcquireLock();
+//     // public static readonly UnknownError           UnknownErrorResult           = new UnknownError();
+// }
+//
+// public static class ActivationResults {
+//     public static readonly IActivationResult.Activated              Activated              = new();
+//     public static readonly IActivationResult.RevisionAlreadyRunning RevisionAlreadyRunning = new();
+//     public static readonly IActivationResult.InstanceTypeNotFound   InstanceTypeNotFound   = new();
+//     public static readonly IActivationResult.InvalidConfiguration   InvalidConfiguration   = new();
+//     public static readonly IActivationResult.UnableToAcquireLock    UnableToAcquireLock    = new();
+//     public static readonly IActivationResult.UnknownError           UnknownError           = new();
+// }
 
-    [LoggerMessage(
-        Message = "[Node Id: {NodeId}] connector {ConnectorId} faulted",
-        Level = LogLevel.Error
-    )]
-    internal static partial void LogConnectorFaulted(
-        this ILogger logger, Exception? error, string nodeId, string connectorId
-    );
+
+
+/////////////////
+/// ////////////
+/// ////////////
+///
+/// <summary>
+///  working
+/// </summary>
+//
+// [PublicAPI]
+// public interface IActivationResult {
+//     public bool       Success { get; }
+//     public Exception? Error   { get; }
+// }
+//
+// [PublicAPI]
+// public abstract record ActivationResult(bool Success = false, Exception? Error = null) : IActivationResult {
+//     public record Activated() : ActivationResult(true);
+//
+//     public record RevisionAlreadyRunning : ActivationResult;
+//
+//     public record InstanceTypeNotFound : ActivationResult;
+//
+//     public record InvalidConfiguration : ActivationResult;
+//
+//     public record UnableToAcquireLock : ActivationResult;
+//
+//     public record UnknownError : ActivationResult;
+// }
+//
+// public static class ActivationResults {
+//     static readonly ActivationResult.Activated              StaticActivated              = new();
+//     static readonly ActivationResult.RevisionAlreadyRunning StaticRevisionAlreadyRunning = new();
+//     static readonly ActivationResult.InstanceTypeNotFound   StaticInstanceTypeNotFound   = new();
+//
+//     public static ActivationResult.Activated              Activated()              => StaticActivated;
+//     public static ActivationResult.RevisionAlreadyRunning RevisionAlreadyRunning() => StaticRevisionAlreadyRunning;
+//     public static ActivationResult.InstanceTypeNotFound   InstanceTypeNotFound()   => StaticInstanceTypeNotFound;
+//
+//     public static ActivationResult.InvalidConfiguration InvalidConfiguration(ValidationException error) => new() {
+//         Success = false,
+//         Error   = error
+//     };
+//
+//     public static ActivationResult.UnableToAcquireLock UnableToAcquireLock(Exception? error = null) => new() {
+//         Success = false,
+//         Error   = error
+//     };
+//
+//     public static ActivationResult.UnknownError UnknownError(Exception? error = null) => new() {
+//         Success = false,
+//         Error   = error
+//     };
+// }
+
+
+
+
+[PublicAPI]
+public interface IActivationResult {
+    public bool       Success { get; }
+    public Exception? Error   { get; }
+
+    public readonly record struct Activated : IActivationResult {
+        public Exception? Error   => null;
+        public bool       Success => true;
+    }
+
+    public readonly record struct RevisionAlreadyRunning : IActivationResult{
+        internal RevisionAlreadyRunning(Exception error) {
+            Error = error;
+            Success = false;
+        }
+
+        public Exception? Error   { get; }
+        public bool       Success { get; }
+    }
+
+    public readonly record struct InvalidConfiguration : IActivationResult{
+        internal InvalidConfiguration(ValidationException error) {
+            Error   = error;
+            Success = false;
+        }
+
+        public Exception? Error   { get; }
+        public bool       Success { get; }
+    }
+
+    public readonly record struct UnknownError : IActivationResult{
+        internal UnknownError(Exception error) {
+            Error = error;
+            Success = false;
+        }
+
+        public Exception? Error   { get; }
+        public bool       Success { get; }
+    }
+}
+
+public static class ActivationResults {
+    static readonly IActivationResult.Activated              StaticActivated              = new();
+    static readonly IActivationResult.RevisionAlreadyRunning StaticRevisionAlreadyRunning = new();
+
+    public static IActivationResult.Activated              Activated()              => StaticActivated;
+    public static IActivationResult.RevisionAlreadyRunning RevisionAlreadyRunning() => StaticRevisionAlreadyRunning;
+
+    public static IActivationResult.InvalidConfiguration InvalidConfiguration(ValidationException error) => new(error);
+
+    public static IActivationResult.UnknownError UnknownError(Exception error) => new(error);
 }

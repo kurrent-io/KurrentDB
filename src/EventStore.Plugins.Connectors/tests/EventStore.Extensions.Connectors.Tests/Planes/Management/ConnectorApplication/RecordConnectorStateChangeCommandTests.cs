@@ -35,7 +35,8 @@ public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, Co
             .Then(
                 new ConnectorRunning {
                     ConnectorId = connectorId,
-                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp(),
+                    RecordedAt = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 }
             );
     }
@@ -65,7 +66,8 @@ public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, Co
             .Then(
                 new ConnectorStopped {
                     ConnectorId = connectorId,
-                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp(),
+                    RecordedAt  = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 }
             );
     }
@@ -92,9 +94,9 @@ public class RecordConnectorStateChangeCommandTests(ITestOutputHelper output, Co
                 new RecordConnectorStateChange {
                     ConnectorId = connectorId,
                     ToState     = ConnectorState.Running,
-                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+                    Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp(),
                 }
             )
-            .Then(new ConnectorDomainExceptions.ConnectorDeleted(connectorId));
+            .Then(new ConnectorDomainExceptions.ConnectorDeletedException(connectorId));
     }
 }

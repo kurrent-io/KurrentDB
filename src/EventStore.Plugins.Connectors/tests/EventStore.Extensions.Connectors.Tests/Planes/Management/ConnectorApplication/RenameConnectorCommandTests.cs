@@ -65,7 +65,7 @@ public class RenameConnectorCommandTests(ITestOutputHelper output, CommandServic
                     Name        = newConnectorName
                 }
             )
-            .Then(new ConnectorDomainExceptions.ConnectorDeleted(connectorId));
+            .Then(new ConnectorDomainExceptions.ConnectorDeletedException(connectorId));
     }
 
     [Fact]

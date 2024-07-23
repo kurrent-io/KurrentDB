@@ -9,11 +9,14 @@ namespace EventStore.Extensions.Connectors.Tests.Eventuous;
 
 [Trait("Category", "Integration")]
 public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests<ConnectorsAssemblyFixture>(output, fixture) {
+    SystemEventStore NewSystemEventStore() => new SystemEventStore(Fixture.NewReader().Create(), Fixture.NewProducer().Create(), Fixture.SchemaRegistry);
+
     [Fact]
     public async Task stream_does_not_exists() {
         // Arrange
-        var stream     = Fixture.NewStreamName();
-        var eventstore = new SystemEventStore(Fixture.NewReader().Create(), Fixture.NewProducer().Create());
+        var stream = Fixture.NewStreamName();
+
+        var eventstore = NewSystemEventStore();
 
         // Act
         var exists = await eventstore.StreamExists(stream);
@@ -25,20 +28,18 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     [Fact]
     public async Task stream_exists() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
+        var eventStore = NewSystemEventStore();
 
-        var eventstore = new SystemEventStore(reader, producer);
-        var stream     = Fixture.NewStreamName();
+        var stream = Fixture.NewStreamName();
 
         // Act
-        await eventstore.AppendEvents(
+        await eventStore.AppendEvents(
             stream,
             ExpectedStreamVersion.NoStream,
             Fixture.CreateStreamEvents(5).ToArray()
         );
 
-        var exists = await eventstore.StreamExists(stream);
+        var exists = await eventStore.StreamExists(stream);
 
         // Assert
         exists.ShouldBe(true);
@@ -47,10 +48,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     [Fact]
     public async Task appends_single() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
-        var eventStore = new SystemEventStore(reader, producer);
+        var eventStore = NewSystemEventStore();
 
         using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
@@ -83,10 +81,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     [Fact]
     public async Task appends_many() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
-        var eventStore = new SystemEventStore(reader, producer);
+        var eventStore = NewSystemEventStore();
 
         using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
@@ -109,10 +104,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     [Fact]
     public async Task append_duplicate_events_with_same_event_ids() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
-        var eventstore = new SystemEventStore(reader, producer);
+        var eventstore = NewSystemEventStore();
 
         var stream = Fixture.NewStreamName();
 
@@ -131,10 +123,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     [Fact]
     public async Task append_using_expected_stream_version_throws_wrong_stream_revision_error_when_() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
-        var eventstore = new SystemEventStore(reader, producer);
+        var eventstore = NewSystemEventStore();
         var stream     = Fixture.NewStreamName();
 
         // Assert
@@ -156,14 +145,12 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     [Fact]
     public async Task append_with_no_stream_expected_version_throws_wrong_stream_revision_error_() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
+        var eventStore = NewSystemEventStore();
 
-        var eventstore = new SystemEventStore(reader, producer);
-        var stream     = Fixture.NewStreamName();
+        var stream = Fixture.NewStreamName();
 
         // Assert
-        var result = await eventstore.AppendEvents(
+        var result = await eventStore.AppendEvents(
             stream,
             ExpectedStreamVersion.Any,
             Fixture.CreateStreamEvents(4).ToArray()
@@ -171,7 +158,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
 
         result.NextExpectedVersion.ShouldBe(3);
 
-        await eventstore.AppendEvents(
+        await eventStore.AppendEvents(
                 stream,
                 ExpectedStreamVersion.NoStream,
                 Fixture.CreateStreamEvents().ToArray()
@@ -182,64 +169,56 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     [Fact]
     public async Task multiple_idempotent_writes_with_unique_event_ids() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
+        var eventStore = NewSystemEventStore();
 
-        var eventstore = new SystemEventStore(reader, producer);
-        var stream     = Fixture.NewStreamName();
+        var stream = Fixture.NewStreamName();
 
         var events = Fixture.CreateStreamEvents(4).ToArray();
 
         // Assert
-        var appendResult = await eventstore.AppendEvents(stream, ExpectedStreamVersion.Any, events);
+        var appendResult = await eventStore.AppendEvents(stream, ExpectedStreamVersion.Any, events);
         appendResult.NextExpectedVersion.ShouldBe(3);
 
-        appendResult = await eventstore.AppendEvents(stream, ExpectedStreamVersion.Any, events);
+        appendResult = await eventStore.AppendEvents(stream, ExpectedStreamVersion.Any, events);
         appendResult.NextExpectedVersion.ShouldBe(3);
     }
 
     [Fact]
     public async Task multiple_idempotent_writes_with_same_event_ids() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
+        var eventStore = NewSystemEventStore();
 
-        var eventstore = new SystemEventStore(reader, producer);
-        var stream     = Fixture.NewStreamName();
+        var stream = Fixture.NewStreamName();
 
         var events = Enumerable.Repeat(Fixture.CreateStreamEvent(), 6).ToArray();
 
         // Assert
-        var result = await eventstore.AppendEvents(stream, ExpectedStreamVersion.Any, events);
+        var result = await eventStore.AppendEvents(stream, ExpectedStreamVersion.Any, events);
         result.NextExpectedVersion.ShouldBe(5);
 
-        result = await eventstore.AppendEvents(stream, ExpectedStreamVersion.Any, events);
+        result = await eventStore.AppendEvents(stream, ExpectedStreamVersion.Any, events);
         result.NextExpectedVersion.ShouldBe(0);
     }
 
     [Fact]
     public async Task append_with_custom_and_default_headers_are_correctly_parsed() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
         using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
-        var eventstore = new SystemEventStore(reader, producer);
-        var stream     = Fixture.NewStreamName();
+        var eventStore = NewSystemEventStore();
+
+        var stream = Fixture.NewStreamName();
 
         var eventMetadata = Fixture.CreateStreamEvent() with {
-            Metadata = new(
-                new Dictionary<string, object?> {
-                    { "Key1", "Value1" },
-                    { "Key2", 12345 },
-                    { "Key3", true }
-                }
-            )
+            Metadata = new(new Dictionary<string, object?> {
+                { "Key1", "Value1" },
+                { "Key2", 12345 },
+                { "Key3", true }
+            })
         };
 
         // Act
-        var result = await eventstore.AppendEvents(
+        var result = await eventStore.AppendEvents(
             stream,
             ExpectedStreamVersion.Any,
             new[] { eventMetadata },
@@ -248,7 +227,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
 
         result.GlobalPosition.ShouldBeGreaterThan<ulong>(0);
 
-        var readResults = await eventstore
+        var readResults = await eventStore
             .ReadEvents(stream, StreamReadPosition.Start, 1, cancellator.Token);
 
         // Assert
@@ -272,84 +251,69 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     [Fact]
     public async Task read_some_events_forward_from_non_existent_stream() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
-        var eventstore = new SystemEventStore(reader, producer);
+        var eventStore = NewSystemEventStore();
 
         using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
         var stream = Fixture.NewStreamName();
 
         // Assert
-        var result = await eventstore
-            .ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token);
-
-        result.ShouldBeEmpty();
+        await eventStore
+            .ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token)
+            .ShouldThrowAsync<StreamNotFoundError>();
     }
 
-    [Fact]
-    public async Task read_zero_events_forward_from_non_existent_stream() {
-        // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
-        var eventstore = new SystemEventStore(reader, producer);
-
-        using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-
-        var stream = Fixture.NewStreamName();
-
-        // Assert
-        await eventstore
-            .ReadEvents(stream, StreamReadPosition.Start, 0, cancellator.Token)
-            .ShouldThrowAsync<ReadFromStreamException>();
-    }
+    // makes no sense except to validate the argument
+    // [Fact]
+    // public async Task read_zero_events_forward_from_non_existent_stream() {
+    //     // Arrange
+    //     var eventStore = NewSystemEventStore();
+    //
+    //     using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+    //
+    //     var stream = Fixture.NewStreamName();
+    //
+    //     // Assert
+    //     await eventStore
+    //         .ReadEvents(stream, StreamReadPosition.Start, 0, cancellator.Token)
+    //         .ShouldThrowAsync<StreamNotFoundError>();
+    // }
 
     [Fact]
     public async Task read_some_events_backwards_from_nonexistent_stream() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
+        var eventStore = NewSystemEventStore();
 
-        var eventstore = new SystemEventStore(reader, producer);
-
-        using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(30));
 
         var stream = Fixture.NewStreamName();
 
         // Assert
-        var result = await eventstore
-            .ReadEventsBackwards(stream, 10, cancellator.Token);
-
-        result.ShouldBeEmpty();
+        await eventStore
+            .ReadEventsBackwards(stream, 10, cancellator.Token)
+            .ShouldThrowAsync<StreamNotFoundError>();
     }
 
-    [Fact]
-    public async Task read_zero_events_backwards_from_nonexistent_stream() {
-        // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
-        var eventstore = new SystemEventStore(reader, producer);
-
-        using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-
-        var stream = Fixture.NewStreamName();
-
-        // Assert
-        await eventstore
-            .ReadEventsBackwards(stream, 0, cancellator.Token)
-            .ShouldThrowAsync<ReadFromStreamException>();
-    }
+    // makes no sense except to validate the argument
+    // [Fact]
+    // public async Task read_zero_events_backwards_from_nonexistent_stream() {
+    //     // Arrange
+    //     var eventStore = NewSystemEventStore();
+    //
+    //     using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+    //
+    //     var stream = Fixture.NewStreamName();
+    //
+    //     // Assert
+    //     await eventStore
+    //         .ReadEventsBackwards(stream, 1, cancellator.Token)
+    //         .ShouldThrowAsync<StreamNotFoundError>();
+    // }
 
     [Fact]
     public async Task read_events_backwards() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
-        var eventstore = new SystemEventStore(reader, producer);
+        var eventStore = NewSystemEventStore();
 
         using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
@@ -358,12 +322,12 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
         // Act
         var events = Fixture.CreateStreamEvents(2).ToArray();
 
-        var appendResult = await eventstore.AppendEvents(stream, ExpectedStreamVersion.Any, events, cancellator.Token);
+        var appendResult = await eventStore.AppendEvents(stream, ExpectedStreamVersion.Any, events, cancellator.Token);
 
         // Assert
         appendResult.GlobalPosition.ShouldBeGreaterThan<ulong>(0);
 
-        var readResults = await eventstore.ReadEventsBackwards(stream, 2, cancellator.Token);
+        var readResults = await eventStore.ReadEventsBackwards(stream, 2, cancellator.Token);
 
         readResults.Length.ShouldBe(2);
         events.First().Id.ShouldBe(readResults.Last().Id);
@@ -373,20 +337,17 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
     [Fact]
     public async Task read_events_exceeding_stream_size() {
         // Arrange
-        var reader   = Fixture.NewReader().Create();
-        var producer = Fixture.NewProducer().Create();
-
-        var eventstore = new SystemEventStore(reader, producer);
+        var eventStore = NewSystemEventStore();
 
         using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
         var stream       = Fixture.NewStreamName();
         var streamEvents = Fixture.CreateStreamEvents(2).ToArray();
 
-        await eventstore.AppendEvents(stream, ExpectedStreamVersion.Any, streamEvents, cancellator.Token);
+        await eventStore.AppendEvents(stream, ExpectedStreamVersion.Any, streamEvents, cancellator.Token);
 
         // Act
-        var readResults = await eventstore.ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token);
+        var readResults = await eventStore.ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token);
 
         // Assert
         readResults.Length.ShouldBe(2);

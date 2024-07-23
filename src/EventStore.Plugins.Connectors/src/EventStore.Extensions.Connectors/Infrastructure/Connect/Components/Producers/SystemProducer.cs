@@ -26,10 +26,10 @@ public class SystemProducer : IProducer {
 
         Flushing = new(true);
 
-        if (options.EnableLogging)
+        if (options.Logging.Enabled)
             options.Interceptors.TryAddUniqueFirst(new ProducerLogger(nameof(SystemProducer)));
 
-        Interceptors = new(Options.Interceptors, Options.LoggerFactory.CreateLogger(nameof(SystemProducer)));
+        Interceptors = new(Options.Interceptors, Options.Logging.LoggerFactory.CreateLogger(nameof(SystemProducer)));
 
         Intercept = evt => Interceptors.Intercept(evt, CancellationToken.None);
     }

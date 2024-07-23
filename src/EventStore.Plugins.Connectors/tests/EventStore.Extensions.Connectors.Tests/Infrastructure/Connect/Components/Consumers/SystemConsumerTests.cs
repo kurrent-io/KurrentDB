@@ -26,9 +26,8 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 		await using var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
 			.Stream(streamId)
-			.InitialPosition(SubscriptionInitialPosition.Earliest)
-			.AutoCommit(x => x with { AutoCommitEnabled = false })
-			.EnableLogging()
+			.StartPosition(RecordPosition.Earliest)
+			.DisableAutoCommit()
 			.Create();
 
 		// Act
@@ -65,9 +64,8 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
             await using var consumer = Fixture.NewConsumer()
                 .ConsumerId($"{streamId}-csr")
                 .Stream(streamId)
-                .InitialPosition(SubscriptionInitialPosition.Latest)
+                .StartPosition(RecordPosition.Latest)
                 .DisableAutoCommit()
-                .EnableLogging()
                 .Create();
 
             // Act
@@ -98,7 +96,6 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 			.Stream(streamId)
 			.StartPosition(startPosition)
 			.DisableAutoCommit()
-			.EnableLogging()
 			.Create();
 
 		// Act
@@ -134,7 +131,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 			.ConsumerId($"{streamId}-csr")
 			.SubscriptionName($"{streamId}-csr")
 			.Stream(streamId)
-			.InitialPosition(SubscriptionInitialPosition.Earliest)
+			.StartPosition(RecordPosition.Earliest)
 			.DisableAutoCommit()
 			.Create();
 
@@ -172,8 +169,8 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 			.ConsumerId($"{streamId}-csr")
 			.SubscriptionName($"{streamId}-csr")
 			.Stream(streamId)
-			.DisableAutoCommit()
-			.EnableLogging()
+            .StartPosition(RecordPosition.Earliest)
+            .DisableAutoCommit()
 			.Create();
 
 		// Act
@@ -207,9 +204,8 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 		var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
 			.Stream(streamId)
-			.InitialPosition(SubscriptionInitialPosition.Earliest)
+            .StartPosition(RecordPosition.Earliest)
 			.AutoCommit(x => x with { RecordsThreshold = 1 })
-			.EnableLogging()
 			.Create();
 
 		// Act

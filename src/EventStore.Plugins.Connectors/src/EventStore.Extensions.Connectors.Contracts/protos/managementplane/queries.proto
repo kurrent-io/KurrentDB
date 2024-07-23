@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package eventstore.connectors;
+package eventstore.connectors.v1;
 
 import "google/protobuf/wrappers.proto";
 import "managementplane/resources.proto";

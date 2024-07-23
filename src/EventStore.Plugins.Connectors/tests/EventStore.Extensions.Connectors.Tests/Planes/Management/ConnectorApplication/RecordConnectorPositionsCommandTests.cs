@@ -68,7 +68,7 @@ public class RecordConnectorPositionCommandTests(ITestOutputHelper output, Comma
                     Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
                 }
             )
-            .Then(new ConnectorDomainExceptions.ConnectorDeleted(connectorId));
+            .Then(new ConnectorDomainExceptions.ConnectorDeletedException(connectorId));
     }
 
     [Fact]

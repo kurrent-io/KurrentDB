@@ -65,7 +65,7 @@ public class DeleteConnectorCommandTests(ITestOutputHelper output, CommandServic
                     ConnectorId = connectorId
                 }
             )
-            .Then(new ConnectorDomainExceptions.ConnectorDeleted(connectorId));
+            .Then(new ConnectorDomainExceptions.ConnectorDeletedException(connectorId));
     }
 
     [Fact]

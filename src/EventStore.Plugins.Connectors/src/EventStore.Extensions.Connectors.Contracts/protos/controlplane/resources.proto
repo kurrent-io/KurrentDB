@@ -1,22 +1,22 @@
 syntax = "proto3";
 
-package eventstore.connectors;
+package eventstore.connectors.v1;
 
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
 
 option csharp_namespace = "EventStore.Connectors.Control.Contracts";
 
-message Connector {
-  string                                   connector_id = 1;
-  int32                                    revision     = 2;
-  map<string, google.protobuf.StringValue> settings     = 3;
-}
-
-message RegisteredConnectors {
+message ActivatedConnectorsSnapshot {
   repeated Connector        connectors   = 1;
   uint64                    log_position = 2;
-  google.protobuf.Timestamp updated_at   = 3;
+  google.protobuf.Timestamp taken_at     = 3;
+
+  message Connector {
+    string                                   connector_id = 1;
+    int32                                    revision     = 2;
+    map<string, google.protobuf.StringValue> settings     = 3;
+  }
 }
 
 // enum ClusterNodeState {

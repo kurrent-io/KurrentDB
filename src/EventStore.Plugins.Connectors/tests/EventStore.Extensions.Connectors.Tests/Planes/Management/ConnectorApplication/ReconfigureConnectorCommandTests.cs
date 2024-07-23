@@ -69,7 +69,7 @@ public class ReconfigureConnectorCommandTests(ITestOutputHelper output, CommandS
                     Settings    = { settings }
                 }
             )
-            .Then(new ConnectorDomainExceptions.ConnectorDeleted(connectorId));
+            .Then(new ConnectorDomainExceptions.ConnectorDeletedException(connectorId));
     }
 
     [Fact]
@@ -99,9 +99,9 @@ public class ReconfigureConnectorCommandTests(ITestOutputHelper output, CommandS
                 }
             )
             .Then(
-                new ConnectorDomainExceptions.InvalidConnectorSettings(
+                new ConnectorDomainExceptions.InvalidConnectorSettingsException(
                     connectorId,
-                    new() { { "SomeProperty", ["Validation failure!"] } }
+                    new Dictionary<string, string[]> { { "SomeProperty", ["Validation failure!"] } }
                 )
             );
     }

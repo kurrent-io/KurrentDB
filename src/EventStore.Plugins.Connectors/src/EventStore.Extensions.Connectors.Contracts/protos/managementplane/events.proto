@@ -1,11 +1,10 @@
 syntax = "proto3";
 
-package eventstore.connectors;
+package eventstore.connectors.v1;
 
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
 import "protocol.proto";
-import "managementplane/resources.proto";
 
 option csharp_namespace = "EventStore.Connectors.Management.Contracts.Events";
 
@@ -73,7 +72,6 @@ message ConnectorFailed {
   google.protobuf.Timestamp timestamp     = 5;
   google.protobuf.Timestamp recorded_at   = 7;
 }
-
 
 message ConnectorPositionCommitted {
   string                    connector_id = 1;

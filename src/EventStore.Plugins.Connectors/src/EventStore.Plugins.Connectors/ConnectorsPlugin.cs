@@ -1,27 +1,66 @@
+using EventStore.Connect;
+using EventStore.Connect.Connectors;
 using EventStore.Connectors;
 using EventStore.Connectors.Control;
 using EventStore.Connectors.Management;
-using EventStore.Streaming.Schema;
-using EventStore.Streaming.Schema.Serializers;
+using EventStore.Connectors.System;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace EventStore.Plugins.Connectors;
 
 [UsedImplicitly]
-public class ConnectorsPlugin : TinyAppPlugin {
-    protected override WebApplication BuildApp(TinyAppBuildContext ctx) {
-        ctx.AppBuilder.Services.AddConnectorsManagementPlane(SchemaRegistry.Global);
-        ctx.AppBuilder.Services.AddConnectorsControlPlane(SchemaRegistry.Global);
+public class ConnectorsPlugin : SubsystemsPlugin {
+    public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
+        services.Configure<HostOptions>(options => {
+            options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.StopHost;
+        });
 
-        ctx.AppBuilder.Services.AddSingleton(SchemaRegistry.Global);
-        ctx.AppBuilder.Services.AddSingleton<ISchemaRegistry>(SchemaRegistry.Global);
-        ctx.AppBuilder.Services.AddSingleton<ISchemaSerializer>(SchemaRegistry.Global);
+        services
+            .AddNodeSystemInfoProvider()
+            .AddConnectSystemComponents()
+            .AddConnectorsManagementPlane()
+            .AddConnectorsControlPlane();
+    }
 
-        var app = ctx.AppBuilder.Build();
+    public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
+        // var factory = new SystemConnectorsFactory(new SystemConnectorsFactoryOptions(), new SystemConnectorsValidation(), app.ApplicationServices);
+        //
+        // var connector = factory.CreateConnector(Guid.NewGuid(), new Dictionary<string, string?> {
+        //     ["InstanceTypeName"] = "EventStore.Connectors.Kafka.KafkaSink",
+        //     ["AutoLock:Enabled"] = "false"
+        // });
 
         app.UseConnectorsManagementPlane();
+    }
 
-        return app;
+    public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
+        var enabled = configuration.GetValue(
+            $"EventStore:Plugins:{Name}:Enabled",
+            configuration.GetValue($"{Name}:Enabled",
+                configuration.GetValue("Enabled", true)
+            )
+        );
+
+        return (enabled, "Please check the documentation for instructions on how to enable the plugin.");
     }
 }
+
+// [UsedImplicitly]
+// public class ConnectorsPlugin : TinyAppPlugin {
+//     protected override WebApplication BuildApp(TinyAppBuildContext buildContext) {
+//         buildContext.AppBuilder.Services
+//             .AddNodeSystemInfoProvider()
+//             .AddConnectSystemComponents()
+//             .AddConnectorsManagementPlane()
+//             .AddConnectorsControlPlane();
+//
+//         var app = buildContext.AppBuilder.Build();
+//
+//         app.UseConnectorsManagementPlane();
+//
+//         return app;
+//     }
+// }

@@ -24,7 +24,6 @@ public class SystemProducerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		await using var producer = Fixture.NewProducer()
 			.ProducerId($"pdr-{streamId}-{numberOfRequests:000}-{batchSize:000}")
-			.EnableLogging()
 			.Create();
 
 		// Act
