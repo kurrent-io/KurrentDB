@@ -3,9 +3,10 @@ using EventStore.Connect.Leases;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.Control.Coordination;
 using EventStore.Connectors.System;
+using EventStore.Streaming;
 using EventStore.Streaming.Schema;
 using Microsoft.Extensions.DependencyInjection;
-
+using Microsoft.Extensions.Hosting;
 using static EventStore.Connectors.ConnectorsFeatureConventions;
 
 using ConnectContracts = EventStore.Streaming.Contracts;
@@ -20,25 +21,20 @@ public static class ControlPlaneWireUp {
             .AddConnectorsActivator()
             .AddConnectorsControlRegistry()
             .AddSingleton<INodeLifetimeService, NodeLifetimeService>()
-            .AddHostedService<ConnectorsControlService>();
-
-    // public static ISchemaRegistry RegisterConnectorsControlMessages(this ISchemaRegistry registry) {
-    //     RegisterControlSchema<ControlContracts.ActivatedConnectorsSnapshot>(registry, SchemaDefinitionType.Json).GetAwaiter().GetResult();
-    //     RegisterControlSchema<ConnectContracts.Processors.ProcessorStateChanged>(registry, SchemaDefinitionType.Json).GetAwaiter().GetResult();
-    //     RegisterControlSchema<ConnectContracts.Consumers.Checkpoint>(registry, SchemaDefinitionType.Json).GetAwaiter().GetResult();
-    //     RegisterControlSchema<Lease>(registry, SchemaDefinitionType.Json).GetAwaiter().GetResult(); //TODO SS: transform Lease into a message contract in Connect
-    //
-    //     return registry;
-    // }
+            .AddSingleton<IHostedService, ConnectorsControlService>();
 
     static IServiceCollection AddMessageSchemaRegistration(this IServiceCollection services) =>
         services.AddSchemaRegistryStartupTask(
             "Connectors Control Schema Registration",
-            static async (registry, ct) => {
-                await RegisterControlSchema<ControlContracts.ActivatedConnectorsSnapshot>(registry, SchemaDefinitionType.Json, ct);
-                await RegisterControlSchema<ConnectContracts.Processors.ProcessorStateChanged>(registry, SchemaDefinitionType.Json, ct);
-                await RegisterControlSchema<ConnectContracts.Consumers.Checkpoint>(registry, SchemaDefinitionType.Json, ct);
-                await RegisterControlSchema<Lease>(registry, SchemaDefinitionType.Json, ct); //TODO SS: transform Lease into a message contract in Connect
+            static async (registry, token) => {
+                Task[] tasks = [
+                    RegisterControlMessages<ControlContracts.ActivatedConnectorsSnapshot>(registry, token),
+                    RegisterControlMessages<ConnectContracts.Processors.ProcessorStateChanged>(registry, token),
+                    RegisterControlMessages<ConnectContracts.Consumers.Checkpoint>(registry, token),
+                    RegisterControlMessages<Lease>(registry, token), //TODO SS: transform Lease into a message contract in Connect
+                ];
+
+                await tasks.WhenAll();
             }
         );
 

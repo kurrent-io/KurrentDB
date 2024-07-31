@@ -51,17 +51,13 @@ public partial class ConnectorsFeatureConventions {
         public static readonly ConsumeFilter LifecycleFilter   = FromRegex(ConsumeFilterScope.Stream, GetLifecycleStreamFilterRegEx());
     }
 
-    public static async Task<RegisteredSchema> RegisterControlSchema<T>(
-        ISchemaRegistry registry, SchemaDefinitionType schemaType, CancellationToken token = default
-    ) {
-        var schemaInfo = new SchemaInfo(Messages.GetControlSystemMessageSubject(typeof(T).Name), schemaType);
+    public static async Task<RegisteredSchema> RegisterControlMessages<T>(ISchemaRegistry registry, CancellationToken token = default) {
+        var schemaInfo = new SchemaInfo(Messages.GetControlSystemMessageSubject(typeof(T).Name), SchemaDefinitionType.Json);
         return await registry.RegisterSchema<T>(schemaInfo, cancellationToken: token);
     }
 
-    public static async Task<RegisteredSchema> RegisterManagementSchema<T>(
-        ISchemaRegistry registry, SchemaDefinitionType schemaType, CancellationToken token = default
-    ) {
-        var schemaInfo = new SchemaInfo(Messages.GetManagementMessageSubject(typeof(T).Name), schemaType);
+    public static async Task<RegisteredSchema> RegisterManagementMessages<T>(ISchemaRegistry registry, CancellationToken token = default) {
+        var schemaInfo = new SchemaInfo(Messages.GetManagementMessageSubject(typeof(T).Name), SchemaDefinitionType.Json);
         return await registry.RegisterSchema<T>(schemaInfo, cancellationToken: token);
     }
 }

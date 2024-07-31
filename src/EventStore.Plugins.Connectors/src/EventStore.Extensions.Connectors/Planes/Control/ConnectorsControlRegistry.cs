@@ -36,9 +36,9 @@ class ConnectorsControlRegistry {
     }
 
     ConnectorsControlRegistryOptions Options  { get; }
-    SystemReader              Reader   { get; }
-    SystemProducer            Producer { get; }
-    TimeProvider              Time     { get; }
+    SystemReader                     Reader   { get; }
+    SystemProducer                   Producer { get; }
+    TimeProvider                     Time     { get; }
 
     /// <summary>
     /// Asynchronously retrieves an array of active connectors registered in the system.

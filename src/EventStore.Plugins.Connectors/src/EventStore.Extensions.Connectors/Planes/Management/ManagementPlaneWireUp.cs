@@ -1,12 +1,12 @@
 using EventStore.Connect.Connectors;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.Eventuous;
+using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Reactors;
 using EventStore.Streaming;
-using EventStore.Streaming.Schema;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using static EventStore.Connectors.ConnectorsFeatureConventions.Messages;
+using static EventStore.Connectors.ConnectorsFeatureConventions;
 
 namespace EventStore.Connectors.Management;
 
@@ -39,54 +39,21 @@ public static class ManagementPlaneWireUp {
     }
 
     static IServiceCollection AddMessageSchemaRegistration(this IServiceCollection services) =>
-        services.AddSchemaRegistryStartupTask(
-            "Connectors Management Schema Registration",
-            static async (registry, ct) => {
-                Type[] messageTypes = [
-                    typeof(Contracts.Events.ConnectorCreated),
-                    typeof(Contracts.Events.ConnectorActivating),
-                    typeof(Contracts.Events.ConnectorRunning),
-                    typeof(Contracts.Events.ConnectorDeactivating),
-                    typeof(Contracts.Events.ConnectorStopped),
-                    typeof(Contracts.Events.ConnectorFailed),
-                    typeof(Contracts.Events.ConnectorRenamed),
-                    typeof(Contracts.Events.ConnectorReconfigured),
-                    typeof(Contracts.Events.ConnectorReset),
-                    typeof(Contracts.Events.ConnectorDeleted),
-                    typeof(Contracts.Events.ConnectorPositionCommitted)
-                ];
+        services.AddSchemaRegistryStartupTask("Connectors Management Schema Registration", static async (registry, token) => {
+            Task[] tasks = [
+                RegisterManagementMessages<ConnectorCreated>(registry, token),
+                RegisterManagementMessages<ConnectorActivating>(registry, token),
+                RegisterManagementMessages<ConnectorRunning>(registry, token),
+                RegisterManagementMessages<ConnectorDeactivating>(registry, token),
+                RegisterManagementMessages<ConnectorStopped>(registry, token),
+                RegisterManagementMessages<ConnectorFailed>(registry, token),
+                RegisterManagementMessages<ConnectorRenamed>(registry, token),
+                RegisterManagementMessages<ConnectorReconfigured>(registry, token),
+                RegisterManagementMessages<ConnectorReset>(registry, token),
+                RegisterManagementMessages<ConnectorDeleted>(registry, token),
+                RegisterManagementMessages<ConnectorPositionCommitted>(registry, token)
+            ];
 
-                await messageTypes
-                    .Select(async messageType => {
-                        SchemaInfo schemaInfo = new(GetManagementMessageSubject(messageType.Name), SchemaDefinitionType.Json);
-                        await registry.RegisterSchema(schemaInfo, "", messageType, ct).AsTask();
-                    })
-                    .WhenAll();
-            }
-        );
-
-    // public static ISchemaRegistry RegisterConnectorsManagementMessages(this ISchemaRegistry registry) {
-    //     Type[] messageTypes = [
-    //         typeof(Contracts.Events.ConnectorCreated),
-    //         typeof(Contracts.Events.ConnectorActivating),
-    //         typeof(Contracts.Events.ConnectorRunning),
-    //         typeof(Contracts.Events.ConnectorDeactivating),
-    //         typeof(Contracts.Events.ConnectorStopped),
-    //         typeof(Contracts.Events.ConnectorFailed),
-    //         typeof(Contracts.Events.ConnectorRenamed),
-    //         typeof(Contracts.Events.ConnectorReconfigured),
-    //         typeof(Contracts.Events.ConnectorReset),
-    //         typeof(Contracts.Events.ConnectorDeleted),
-    //         typeof(Contracts.Events.ConnectorPositionCommitted)
-    //     ];
-    //
-    //     messageTypes
-    //         .Select(async messageType => {
-    //             SchemaInfo schemaInfo = new(GetManagementMessageSubject(messageType.Name), SchemaDefinitionType.Json);
-    //             await registry.RegisterSchema(schemaInfo, "", messageType, CancellationToken.None).AsTask();
-    //         })
-    //         .WhenAll().GetAwaiter().GetResult();
-    //
-    //     return registry;
-    // }
+            await tasks.WhenAll();
+        });
 }
