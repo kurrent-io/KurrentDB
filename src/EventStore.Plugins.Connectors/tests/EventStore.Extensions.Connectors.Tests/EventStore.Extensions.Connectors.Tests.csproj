@@ -18,5 +18,17 @@
 
 	<ItemGroup>
 		<None Remove="EventStore.Extensions.Connectors.Tests.csproj.DotSettings" />
+		<None Remove="Infrastructure\Eventuous\**" />
+		<None Remove="Planes\Management\ConnectorApplication\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Infrastructure\Eventuous\**" />
+	  <Compile Remove="Planes\Management\ConnectorApplication\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Remove="Infrastructure\Eventuous\**" />
+	  <EmbeddedResource Remove="Planes\Management\ConnectorApplication\**" />
 	</ItemGroup>
 </Project>

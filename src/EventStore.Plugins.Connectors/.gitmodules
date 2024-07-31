@@ -1,6 +1,6 @@
 [submodule "submodules/EventStore"]
 	path = submodules/EventStore
 	url = https://github.com/EventStore/EventStore
-[submodule "EventStore.Streaming"]
+[submodule "submodules/EventStore.Streaming"]
 	path = submodules/EventStore.Streaming
-	url = https://github.com/EventStore/EventStore-Streaming.git
+	url = https://github.com/EventStore/EventStore-Streaming

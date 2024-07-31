@@ -1,51 +1,19 @@
 using EventStore.Connect.Producers;
 using EventStore.Connect.Readers;
-using EventStore.Core.Bus;
+using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Readers;
 using EventStore.Streaming.Schema;
 using Eventuous;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EventStore.Connectors.Eventuous;
 
 [UsedImplicitly]
-public class SystemEventStore : IEventStore, IAsyncDisposable {
-    public SystemEventStore(SystemReader reader, SystemProducer producer, SchemaRegistry schemaRegistry, ILoggerFactory? loggerFactory = null) {
-        Reader         = reader;
-        Producer       = producer;
-        SchemaRegistry = schemaRegistry;
-        Logger         = (loggerFactory ?? NullLoggerFactory.Instance).CreateLogger<SystemEventStore>();
-    }
-
-    public SystemEventStore(IPublisher publisher, SchemaRegistry schemaRegistry, ILoggerFactory? loggerFactory = null) {
-        SchemaRegistry =   schemaRegistry;
-        loggerFactory  ??= NullLoggerFactory.Instance;
-
-        Reader = SystemReader.Builder
-            .ReaderId("rdx-eventuous")
-            .Publisher(publisher)
-            .SchemaRegistry(schemaRegistry)
-            .LoggerFactory(loggerFactory)
-            .Create();
-
-        Producer = SystemProducer.Builder
-            .ProducerId("pdx-eventuous")
-            .Publisher(publisher)
-            .SchemaRegistry(schemaRegistry)
-            .LoggerFactory(loggerFactory)
-            .Create();
-
-        Logger = loggerFactory.CreateLogger<SystemEventStore>();
-    }
-
-    SchemaRegistry SchemaRegistry { get; }
-    ILogger        Logger         { get; }
-    SystemReader   Reader         { get; }
-    SystemProducer Producer       { get; }
+public class SystemEventStore(SystemReader reader, SystemProducer producer) : IEventStore, IAsyncDisposable {
+    SystemReader   Reader   { get; } = reader;
+    SystemProducer Producer { get; } = producer;
 
     /// <inheritdoc/>
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken = default) {
@@ -64,7 +32,7 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
     public async Task<AppendEventsResult> AppendEvents(
         StreamName stream,
         ExpectedStreamVersion expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
+        IReadOnlyCollection<NewStreamEvent> events,
         CancellationToken cancellationToken = default
     ) {
         List<Message> messages = [];
@@ -72,23 +40,14 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
         foreach (var evt in events) {
             ArgumentNullException.ThrowIfNull(evt.Payload, nameof(evt.Payload)); // must do it better
 
-            var headers = new Headers();
-            foreach (var kvp in evt.Metadata.ToHeaders())
-                headers.Add(kvp.Key, kvp.Value);
-
-            // // TODO SS: the producer should handle this no? actually its the serializer. why is the schema info not being set?
-            // var schema = await SchemaRegistry
-            //     .GetOrRegister(evt.Payload.GetType(), SchemaDefinitionType.Json, cancellationToken);
-            //
-            // var schemaInfo = new SchemaInfo(schema.Subject, SchemaDefinitionType.Json);
+            var headers = new Headers(evt.Metadata.ToHeaders());
 
             var message = Message.Builder
                 .RecordId(evt.Id)
                 .Value(evt.Payload)
                 .Headers(headers)
-                // it should come from the event headers
+                // TODO SS: schema definition type should come from the eventuous event headers to support any schema type (not important for now)
                 .WithSchemaType(SchemaDefinitionType.Json)
-                // .WithSchema(SchemaInfo.FromHeaders(evt.Metadata.ToHeaders()))
                 .Create();
 
             messages.Add(message);
@@ -123,14 +82,14 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
             ? LogPosition.Earliest
             : LogPosition.From((ulong?)start.Value);
 
-        StreamEvent[] result = [];
+        StreamEvent[] result;
 
         var filter = ConsumeFilter.Stream(StreamId.From(stream));
 
         try {
             result = await Reader
                 .ReadForwards(from, filter, count, cancellationToken)
-                .Where(x => !"$".StartsWith(x.SchemaInfo.Subject))
+                .Where(x => !"$".StartsWith(x.SchemaInfo.Subject)) // what?
                 .Select(record => new StreamEvent(
                     record.Id,
                     record.Value,
@@ -139,16 +98,31 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
                     record.Position.StreamRevision
                 ))
                 .ToArrayAsync(cancellationToken);
-        } catch (Exception ex) when (ex is not StreamingError) {
-            throw new StreamingCriticalError($"Unable to read {count} starting at {start} events from {stream}", ex);
+        }
+        catch (Exception ex) {
+            // TODO SS: must validate what exceptions are actually thrown when reading events
+            StreamingError error = ex switch {
+                ReadResponseException.Timeout        => new RequestTimeoutError(stream, ex.Message),
+                ReadResponseException.StreamNotFound => new StreamNotFoundError(stream),
+                ReadResponseException.StreamDeleted  => new StreamDeletedError(stream),
+                ReadResponseException.AccessDenied   => new StreamAccessDeniedError(stream),
+
+                ReadResponseException.NotHandled.ServerNotReady => new ServerNotReadyError(),
+                ReadResponseException.NotHandled.ServerBusy     => new ServerTooBusyError(),
+                ReadResponseException.NotHandled.LeaderInfo li  => new ServerNotLeaderError(li.Host, li.Port),
+                ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
+                _                                               => new StreamingCriticalError($"Unable to read {count} starting at {start} events from {stream}", ex)
+            };
+
+            throw error;
         }
 
         return result.Length == 0 ? throw new StreamNotFoundError(stream) : result;
     }
 
     /// <inheritdoc/>
-    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken = default) {
-        StreamEvent[] result = [];
+    public async Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
+        StreamEvent[] result;
 
         try {
             result = await Reader
@@ -162,8 +136,23 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
                     record.Position.StreamRevision
                 ))
                 .ToArrayAsync(cancellationToken);
-        } catch (Exception ex) when (ex is not StreamingError) {
-            throw new StreamingCriticalError($"Unable to read {count} events backwards from {stream}", ex);
+        }
+        catch (Exception ex) {
+            // TODO SS: must validate what exceptions are actually thrown when reading events
+            StreamingError error = ex switch {
+                ReadResponseException.Timeout        => new RequestTimeoutError(stream, ex.Message),
+                ReadResponseException.StreamNotFound => new StreamNotFoundError(stream),
+                ReadResponseException.StreamDeleted  => new StreamDeletedError(stream),
+                ReadResponseException.AccessDenied   => new StreamAccessDeniedError(stream),
+
+                ReadResponseException.NotHandled.ServerNotReady => new ServerNotReadyError(),
+                ReadResponseException.NotHandled.ServerBusy     => new ServerTooBusyError(),
+                ReadResponseException.NotHandled.LeaderInfo li  => new ServerNotLeaderError(li.Host, li.Port),
+                ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
+                _                                               => new StreamingCriticalError($"Unable to read {count} events backwards from {stream}", ex)
+            };
+
+            throw error;
         }
 
         return result.Length == 0 ? throw new StreamNotFoundError(stream) : result;

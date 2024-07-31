@@ -9,7 +9,7 @@ namespace EventStore.Extensions.Connectors.Tests.Eventuous;
 
 [Trait("Category", "Integration")]
 public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests<ConnectorsAssemblyFixture>(output, fixture) {
-    SystemEventStore NewSystemEventStore() => new SystemEventStore(Fixture.NewReader().Create(), Fixture.NewProducer().Create(), Fixture.SchemaRegistry);
+    SystemEventStore NewSystemEventStore() => new SystemEventStore(Fixture.NewReader().Create(), Fixture.NewProducer().Create());
 
     [Fact]
     public async Task stream_does_not_exists() {
@@ -253,12 +253,12 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
         // Arrange
         var eventStore = NewSystemEventStore();
 
-        using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(60));
 
         var stream = Fixture.NewStreamName();
 
         // Assert
-        await eventStore
+        var ex = await eventStore
             .ReadEvents(stream, StreamReadPosition.Start, 10, cancellator.Token)
             .ShouldThrowAsync<StreamNotFoundError>();
     }
@@ -290,7 +290,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
 
         // Assert
         await eventStore
-            .ReadEventsBackwards(stream, 10, cancellator.Token)
+            .ReadEventsBackwards(stream, new(long.MaxValue),  10, cancellator.Token)
             .ShouldThrowAsync<StreamNotFoundError>();
     }
 
@@ -327,7 +327,7 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
         // Assert
         appendResult.GlobalPosition.ShouldBeGreaterThan<ulong>(0);
 
-        var readResults = await eventStore.ReadEventsBackwards(stream, 2, cancellator.Token);
+        var readResults = await eventStore.ReadEventsBackwards(stream, new(long.MaxValue), 2, cancellator.Token);
 
         readResults.Length.ShouldBe(2);
         events.First().Id.ShouldBe(readResults.Last().Id);

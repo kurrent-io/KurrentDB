@@ -18,7 +18,7 @@ public class SystemInMemoryEventStore : IEventStore {
     public Task<AppendEventsResult> AppendEvents(
         StreamName stream,
         ExpectedStreamVersion expectedVersion,
-        IReadOnlyCollection<StreamEvent> events,
+        IReadOnlyCollection<NewStreamEvent> events,
         CancellationToken cancellationToken
     ) {
         var existing = _storage.GetOrAdd(stream, s => new InMemoryStream(s));
@@ -35,7 +35,7 @@ public class SystemInMemoryEventStore : IEventStore {
     }
 
     /// <inheritdoc />
-    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, int count, CancellationToken cancellationToken) {
+    public Task<StreamEvent[]> ReadEventsBackwards(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken) {
         var result = FindStream(stream).GetEventsBackwards(count).ToArray();
         return result.Length == 0 ? throw new StreamNotFoundError(stream) : Task.FromResult(result);
     }
@@ -78,7 +78,7 @@ class InMemoryStream(StreamName name) {
             throw new ExpectedStreamRevisionError(name, StreamRevision.From(expectedVersion.Value), StreamRevision.From(Version));
     }
 
-    public void AppendEvents(ExpectedStreamVersion expectedVersion, IReadOnlyCollection<StreamEvent> events) {
+    public void AppendEvents(ExpectedStreamVersion expectedVersion, IReadOnlyCollection<NewStreamEvent> events) {
         CheckVersion(expectedVersion);
 
         foreach (var streamEvent in events)

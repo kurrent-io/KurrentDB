@@ -29,50 +29,32 @@ public class ConnectorsStreamSupervisor : ProcessingModule {
         var checkpointsMetadata = options.Checkpoints.AsStreamMetadata();
         var lifetimeMetadata    = options.Lifetime.AsStreamMetadata();
 
-        Process(async ctx => {
-            if (ctx.Message is ConnectorCreated evt) {
-                await TryConfigureStream(GetLeasesStream(evt.ConnectorId), leasesMetadata);
-                await TryConfigureStream(GetCheckpointsStream(evt.ConnectorId), checkpointsMetadata);
-                await TryConfigureStream(GetLifecycleStream(evt.ConnectorId), lifetimeMetadata);
-            }
+        Process<ConnectorCreated>(async (evt, ctx) => {
+            await TryConfigureStream(GetLeasesStream(evt.ConnectorId), leasesMetadata);
+            await TryConfigureStream(GetCheckpointsStream(evt.ConnectorId), checkpointsMetadata);
+            await TryConfigureStream(GetLifecycleStream(evt.ConnectorId), lifetimeMetadata);
+
+            return;
 
             Task TryConfigureStream(string stream, StreamMetadata metadata) => client
                 .SetStreamMetadata(stream, metadata, cancellationToken: ctx.CancellationToken)
                 .OnError(ex => ctx.Logger.LogError(ex, "Failed to configure stream {Stream}", stream))
-                .Then(state => state.Logger.LogDebug("Stream {Stream} configured: {Metadata}", state.Stream, new { state.Metadata.MaxCount }),
+                .Then(state => state.Logger.LogDebug("Stream {Stream} configured {Metadata}", state.Stream, state.Metadata),
                     (ctx.Logger, Stream: stream, Metadata: metadata));
         });
 
-        // Process<ConnectorCreated>(async (evt, ctx) => {
-        //     await TryConfigureStream(GetLeasesStream(evt.ConnectorId), leasesMetadata);
-        //     await TryConfigureStream(GetCheckpointsStream(evt.ConnectorId), checkpointsMetadata);
-        //     await TryConfigureStream(GetLifecycleStream(evt.ConnectorId), lifetimeMetadata);
-        //
-        //     return;
-        //
-        //     Task TryConfigureStream(string stream, StreamMetadata metadata) => client
-        //         .SetStreamMetadata(stream, metadata, cancellationToken: ctx.CancellationToken)
-        //         .OnError(ex => ctx.Logger.LogError(ex, "Failed to configure stream {Stream}", stream))
-        //         .Then(state => state.Logger.LogDebug("Stream {Stream} configured {Metadata}", state.Stream, state.Metadata),
-        //             (ctx.Logger, Stream: stream, Metadata: metadata));
-        // });
+        Process<ConnectorDeleted>(async (evt, ctx) => {
+            await TryDeleteStream(GetManagementStream(evt.ConnectorId));
+            await TryDeleteStream(GetLeasesStream(evt.ConnectorId));
+            await TryDeleteStream(GetCheckpointsStream(evt.ConnectorId));
+            await TryDeleteStream(GetLifecycleStream(evt.ConnectorId));
 
-        // Process<ConnectorDeleted>(async (evt, ctx) => {
-        //     // it is possible that we cannot do it here
-        //     // since we are consuming events from this same stream.
-        //     // must test this scenario and basically create a cleanup stream to fix it.
-        //
-        //     await TryDeleteStream(GetManagementStream(evt.ConnectorId));
-        //     await TryDeleteStream(GetLeasesStream(evt.ConnectorId));
-        //     await TryDeleteStream(GetCheckpointsStream(evt.ConnectorId));
-        //     await TryDeleteStream(GetLifecycleStream(evt.ConnectorId));
-        //
-        //     return;
-        //
-        //     Task TryDeleteStream(string stream) => client
-        //         .SoftDeleteStream(stream, ctx.CancellationToken)
-        //         .OnError(ex => ctx.Logger.LogError(ex, "Failed to delete stream {Stream}", stream))
-        //         .Then(state => state.Logger.LogInformation("Stream {Stream} deleted", state.Stream), (ctx.Logger, Stream: stream));
-        // });
+            return;
+
+            Task TryDeleteStream(string stream) => client
+                .SoftDeleteStream(stream, ctx.CancellationToken)
+                .OnError(ex => ctx.Logger.LogError(ex, "Failed to delete stream {Stream}", stream))
+                .Then(state => state.Logger.LogInformation("Stream {Stream} deleted", state.Stream), (ctx.Logger, Stream: stream));
+        });
     }
 }

@@ -14,5 +14,5 @@ public class TestManagementServer(ITestOutputHelper output) : TestServerContext<
             .AddSingleton<TimeProvider>(new FakeTimeProvider())
             .AddSingleton<IAuthorizationProvider>(new FakeAuthorizationProvider())
             .RemoveAll<IEventStore>() // So that we can use InMemoryEventStore.
-            .AddAggregateStore<InMemoryEventStore>();
+            .AddEventStore<InMemoryEventStore>();
 }

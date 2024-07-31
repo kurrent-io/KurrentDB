@@ -28,6 +28,14 @@ Content-Type: application/json
   "connectorId": "demo-logger-sink"
 }
 
+### Delete Logger Sink Connector
+POST localhost:2113/connectors/delete
+Content-Type: application/json
+
+{
+  "connectorId": "demo-logger-sink"
+}
+
 ### Create HTTP Sink Connector
 POST localhost:2113/connectors/create
 Content-Type: application/json

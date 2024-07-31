@@ -3,7 +3,6 @@ using EventStore.Streaming;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Schema;
 using Eventuous;
-using ContentType = System.Net.Mime.MediaTypeNames.Application;
 
 namespace EventStore.Extensions.Connectors.Tests;
 
@@ -64,17 +63,9 @@ public partial class ConnectorsAssemblyFixture {
         return results;
     }
 
-    public StreamEvent CreateStreamEvent(int position = default) {
-        return new(
-            Guid.NewGuid(),
-            new TestEvent(),
-            new Metadata(),
-            ContentType.Json,
-            position // position is not used
-        );
-    }
+    public NewStreamEvent CreateStreamEvent(int position = default) => new(Guid.NewGuid(), new TestEvent(), new Metadata());
 
-    public IEnumerable<StreamEvent> CreateStreamEvents(int count = 1) {
+    public IEnumerable<NewStreamEvent> CreateStreamEvents(int count = 1) {
         for (var i = 0; i < count; i++)
             yield return CreateStreamEvent(count);
     }

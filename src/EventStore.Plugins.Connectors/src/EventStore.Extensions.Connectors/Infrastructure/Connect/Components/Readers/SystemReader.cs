@@ -10,10 +10,7 @@ using EventStore.Core.Services.Transport.Common;
 using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Consumers.LifecycleEvents;
-using EventStore.Streaming.Interceptors;
 using EventStore.Streaming.Readers;
-using EventStore.Streaming.Readers.Configuration;
 using EventStore.Streaming.Schema.Serializers;
 using Polly;
 
@@ -94,6 +91,28 @@ public class SystemReader : IReader {
                 cancellator.Token
             );
         }
+
+        // but how since we are using IAsyncEnumerable?
+        // try {
+        //
+        //
+        // }
+        // catch (Exception ex) {
+        //     StreamingError error = ex switch {
+        //         ReadResponseException.Timeout when filter.IsStreamIdFilter        => new RequestTimeoutError(filter.Expression, ex.Message),
+        //         ReadResponseException.StreamNotFound when filter.IsStreamIdFilter => new StreamNotFoundError(filter.Expression),
+        //         ReadResponseException.StreamDeleted when filter.IsStreamIdFilter  => new StreamDeletedError(filter.Expression),
+        //         ReadResponseException.AccessDenied when filter.IsStreamIdFilter   => new StreamAccessDeniedError(filter.Expression),
+        //
+        //         ReadResponseException.NotHandled.ServerNotReady => new ServerNotReadyError(),
+        //         ReadResponseException.NotHandled.ServerBusy     => new ServerTooBusyError(),
+        //         ReadResponseException.NotHandled.LeaderInfo li  => new ServerNotLeaderError(li.Host, li.Port),
+        //         ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
+        //         _                                               => new StreamingCriticalError(ex.Message, ex)
+        //     };
+        //
+        //     throw error;
+        // }
 
         await foreach (var re in events) {
             if (cancellator.IsCancellationRequested)

@@ -29,42 +29,45 @@ public class ConnectorsService(ConnectorsApplication application, ILogger<Connec
             throw RpcExceptions.Create(StatusCode.PermissionDenied);
 
         //logger.LogInformation("Executing {CommandType} {Command}", command.GetType().Name, command);
-        var commandResult = await application.Handle(command, context.CancellationToken);
+        var result = await application.Handle(command, context.CancellationToken);
 
-        if (commandResult is not ErrorResult<ConnectorEntity> errorResult) {
-            // SHOULD NOT THROW WITH STUPID UNREGISTERED EVENT TYPE IN EVENTUOUS. IT ALREADY HAS THE OBJECT FFS!
-            // foreach (var change in commandResult.Changes.EmptyIfNull())
-            //     logger.LogInformation("{@Event}", change.Event);
+        return result.Match(
+            success => {
+                logger.LogDebug(
+                    "{TraceIdentifier} Executed {CommandType} {Command}",
+                    context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
+                );
 
-            logger.LogInformation(
-                "{TraceIdentifier} Executed {CommandType} {Command}",
-                context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
-            );
+                return new Empty();
+            },
+            error => {
+                // TODO SS: BadRequest should be agnostic, but dont know how to handle this yet, perhaps check for some specific ex type later on...
+                // TODO SS: improve this exception mess later (we dont control the command service from eventuous)
 
-            return new Empty();
-        }
+                var rpcEx = error.Exception switch {
+                    InvalidConnectorSettingsException ex    => RpcExceptions.BadRequest(ex.Errors),
+                    DomainExceptions.EntityAlreadyExists ex => RpcExceptions.Create(StatusCode.AlreadyExists, ex.Message),
+                    DomainExceptions.EntityDeleted ex       => RpcExceptions.Create(StatusCode.NotFound, ex.Message),
+                    StreamAccessDeniedError ex              => RpcExceptions.Create(StatusCode.PermissionDenied, ex.Message),
+                    StreamNotFoundError ex                  => RpcExceptions.Create(StatusCode.NotFound, ex.Message),
+                    StreamDeletedError ex                   => RpcExceptions.Create(StatusCode.FailedPrecondition, ex.Message),
+                    ExpectedStreamRevisionError ex          => RpcExceptions.Create(StatusCode.FailedPrecondition, ex.Message),
+                    DomainException ex                      => RpcExceptions.Create(StatusCode.FailedPrecondition, ex.Message),
 
-        logger.LogError(
-            errorResult.Exception,
-            "{TraceIdentifier} Executed {CommandType} {Command}",
-            context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
+                    // Eventuous framework error and I think we can remove it but need moar tests...
+                    StreamNotFound ex => RpcExceptions.Create(StatusCode.NotFound, ex.Message),
+
+                    { } ex => RpcExceptions.InternalServerError(ex)
+                };
+
+                logger.LogError(
+                    rpcEx, "{TraceIdentifier} Executed {CommandType} {Command}",
+                    context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
+                );
+
+                throw rpcEx;
+            }
         );
-
-        // TODO SS: BadRequest should be agnostic, but dont know how to handle this yet, perhaps check for some specific ex type later on...
-
-        throw errorResult.Exception switch {
-            InvalidConnectorSettingsException ex => RpcExceptions.BadRequest(ex.Errors),
-            StreamAccessDeniedError ex           => RpcExceptions.Create(StatusCode.PermissionDenied, ex),
-            StreamNotFoundError ex               => RpcExceptions.Create(StatusCode.NotFound, ex),
-            StreamDeletedError ex                => RpcExceptions.Create(StatusCode.FailedPrecondition, ex),
-            ExpectedStreamRevisionError ex       => RpcExceptions.Create(StatusCode.FailedPrecondition, ex),
-            DomainException ex                   => RpcExceptions.Create(StatusCode.FailedPrecondition, ex),
-
-            // Eventuous framework error and I think I can remove it.
-            StreamNotFound ex => RpcExceptions.Create(StatusCode.NotFound, ex),
-
-            { } ex => RpcExceptions.InternalServerError(ex)
-        };
     }
 }
 

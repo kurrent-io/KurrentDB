@@ -1,4 +1,6 @@
 using EventStore.Connect.Connectors;
+using EventStore.Connect.Producers.Configuration;
+using EventStore.Connect.Readers.Configuration;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.Eventuous;
 using EventStore.Connectors.Management.Contracts.Events;
@@ -24,7 +26,17 @@ public static class ManagementPlaneWireUp {
         });
 
         services
-            .AddAggregateStore<SystemEventStore>()
+            .AddEventStore<SystemEventStore>(ctx => {
+                var reader   = ctx.GetRequiredService<Func<SystemReaderBuilder>>()()
+                    .ReaderId("rdx-eventuous-eventstore")
+                    .Create();
+
+                var producer = ctx.GetRequiredService<Func<SystemProducerBuilder>>()()
+                    .ProducerId("pdx-eventuous-eventstore")
+                    .Create();
+
+                return new SystemEventStore(reader, producer);
+            })
             .AddCommandService<ConnectorsApplication, ConnectorEntity>();
 
         return services

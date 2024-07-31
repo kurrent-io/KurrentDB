@@ -110,9 +110,18 @@ public record ConnectorEntity : State<ConnectorEntity> {
     /// </summary>
     public bool IsDeleted { get; init; }
 
+    public ConnectorEntity EnsureIsNew() {
+        if (Id != Guid.Empty.ToString())
+            throw new DomainExceptions.EntityAlreadyExists("Connector", Id);
+
+        return this;
+    }
+
     public ConnectorEntity EnsureNotDeleted() {
+        // this should just cover the edge case where the entity was
+        // deleted logically but the stream was not deleted yet
         if (IsDeleted)
-            throw new ConnectorDomainExceptions.ConnectorDeletedException(Id);
+            throw new DomainExceptions.EntityDeleted("Connector", Id, StateTimestamp.ToDateTimeOffset());
 
         return this;
     }
