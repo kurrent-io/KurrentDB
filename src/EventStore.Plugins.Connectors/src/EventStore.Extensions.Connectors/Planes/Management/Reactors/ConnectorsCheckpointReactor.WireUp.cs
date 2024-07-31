@@ -1,4 +1,5 @@
 using EventStore.Connect.Processors;
+using EventStore.Connectors.System;
 using EventStore.Core.Bus;
 using EventStore.Streaming;
 using EventStore.Streaming.Configuration;
@@ -15,32 +16,31 @@ namespace EventStore.Connectors.Management.Reactors;
 
 static class ConnectorsCheckpointReactorWireUp {
     public static IServiceCollection AddConnectorsCheckpointReactor(this IServiceCollection services) =>
-        services.AddSingleton<IHostedService>(
-            ctx => {
-                var app            = ctx.GetRequiredService<ConnectorApplication>();
-                var publisher      = ctx.GetRequiredService<IPublisher>();
-                var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
-                var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
+        services.AddSingleton<IHostedService, ConnectorsCheckpointReactorService>(ctx => {
+            var app            = ctx.GetRequiredService<ConnectorsApplication>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
+            var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
 
-                var processor = SystemProcessor.Builder
-                    .ProcessorId("connectors-checkpoint-rx")
-                    .Publisher(publisher)
-                    .SchemaRegistry(schemaRegistry)
-                    .Logging(new LoggingOptions {
-                        Enabled       = true,
-                        LoggerFactory = loggerFactory,
-                        LogName       = "ConnectorsCheckpointReactor"
-                    })
-                    .DisableAutoLock()
-                    .DisableAutoCommit()
-                    .StartPosition(RecordPosition.Latest)
-                    .Filter(ConnectorsSystemConventions.Filters.CheckpointsFilter)
-                    .WithHandler(new ConnectorsCheckpointReactor(app))
-                    .Create();
+            var processor = SystemProcessor.Builder
+                .ProcessorId("connectors-checkpoint-rx")
+                .Publisher(publisher)
+                .SchemaRegistry(schemaRegistry)
+                .Logging(new LoggingOptions {
+                    Enabled       = true,
+                    LoggerFactory = loggerFactory,
+                    LogName       = "ConnectorsCheckpointReactor"
+                })
+                .DisableAutoLock()
+                .DisableAutoCommit()
+                .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
+                .StartPosition(RecordPosition.Latest)
+                .Filter(ConnectorsFeatureConventions.Filters.CheckpointsFilter)
+                .WithHandler(new ConnectorsCheckpointReactor(app))
+                .Create();
 
-                return new ConnectorsCheckpointReactorService(processor, ctx);
-            }
-        );
+            return new ConnectorsCheckpointReactorService(processor, ctx);
+        });
 }
 
 class ConnectorsCheckpointReactorService(IProcessor processor, IServiceProvider serviceProvider)

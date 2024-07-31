@@ -1,9 +1,11 @@
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using Eventuous;
+using Google.Protobuf.WellKnownTypes;
 
 namespace EventStore.Connectors.Management;
 
+[PublicAPI]
 public record ConnectorEntity : State<ConnectorEntity> {
     public ConnectorEntity() {
         On<ConnectorCreated>((state, evt) => state with {
@@ -14,7 +16,8 @@ public record ConnectorEntity : State<ConnectorEntity> {
                 Settings  = { evt.Settings },
                 CreatedAt = evt.Timestamp
             },
-            State = ConnectorState.Stopped
+            State = ConnectorState.Stopped,
+            StateTimestamp = evt.Timestamp
         });
 
         On<ConnectorReconfigured>((state, evt) => state with {
@@ -34,33 +37,38 @@ public record ConnectorEntity : State<ConnectorEntity> {
         });
 
         On<ConnectorActivating>((state, evt) => state with {
-            State = ConnectorState.Activating,
             CurrentRevision = new ConnectorRevision {
                 Number    = state.CurrentRevision.Number,
                 Settings  = { evt.Settings },
                 CreatedAt = evt.Timestamp
-            }
+            },
+            State = ConnectorState.Activating,
+            StateTimestamp = evt.Timestamp,
         });
 
-        On<ConnectorDeactivating>((state, _) => state with {
-            State = ConnectorState.Deactivating
+        On<ConnectorDeactivating>((state, evt) => state with {
+            State = ConnectorState.Deactivating,
+            StateTimestamp = evt.Timestamp
         });
 
-        On<ConnectorRunning>((state, _) => state with {
-            State = ConnectorState.Running
+        On<ConnectorRunning>((state, evt) => state with {
+            State = ConnectorState.Running,
+            StateTimestamp = evt.Timestamp
         });
 
-        On<ConnectorStopped>((state, _) => state with {
-            State = ConnectorState.Stopped
+        On<ConnectorStopped>((state, evt) => state with {
+            State = ConnectorState.Stopped,
+            StateTimestamp = evt.Timestamp
         });
 
-        On<ConnectorFailed>((state, _) => state with {
-            State = ConnectorState.Stopped
-            // TODO JC: What do we want to do with the error details?
+        On<ConnectorFailed>((state, evt) => state with {
+            State = ConnectorState.Stopped,
+            StateTimestamp = evt.Timestamp
         });
 
         On<ConnectorReset>((state, evt) => state with {
-            LogPosition = evt.LogPosition
+            LogPosition = evt.LogPosition,
+            Resetting = true
         });
 
         On<ConnectorPositionCommitted>((state, evt) => state with {
@@ -88,13 +96,17 @@ public record ConnectorEntity : State<ConnectorEntity> {
     /// </summary>
     public ConnectorState State { get; init; } = ConnectorState.Unknown;
 
-    /// <summary>
-    /// The current log position of the connector.
-    /// </summary>
-    public ulong? LogPosition { get; init; } = null;
+    public Timestamp StateTimestamp { get; init; }
 
     /// <summary>
-    /// Indicator if the connector is deleted.
+    /// The last known log position of the connector.
+    /// </summary>
+    public ulong? LogPosition { get; init; }
+
+    public bool Resetting { get; init; }
+
+    /// <summary>
+    /// Indicates if the connector is deleted.
     /// </summary>
     public bool IsDeleted { get; init; }
 
@@ -119,7 +131,7 @@ public record ConnectorEntity : State<ConnectorEntity> {
         return this;
     }
 
-    public ConnectorEntity EnsureCommittedLogPositionIsValid(ulong newLogPosition) {
+    public ConnectorEntity EnsureNewLogPositionIsValid(ulong newLogPosition) {
         if (newLogPosition < LogPosition)
             throw new DomainException($"Connector {Id} new log position {newLogPosition} precedes the actual {LogPosition}");
 

@@ -5,7 +5,7 @@ using EventStore.Streaming;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace EventStore.Connectors.Control;
+namespace EventStore.Connectors.System;
 
 public interface INodeLifetimeService {
     Task<CancellationToken> WaitForLeadershipAsync(TimeSpan timeout, CancellationToken cancellationToken = default);

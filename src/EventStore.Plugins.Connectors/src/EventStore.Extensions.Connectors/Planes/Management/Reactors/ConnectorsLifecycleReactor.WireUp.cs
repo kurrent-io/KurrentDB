@@ -1,4 +1,5 @@
 using EventStore.Connect.Processors;
+using EventStore.Connectors.System;
 using EventStore.Core.Bus;
 using EventStore.Streaming;
 using EventStore.Streaming.Configuration;
@@ -14,32 +15,31 @@ namespace EventStore.Connectors.Management.Reactors;
 
 static class ConnectorsLifecycleReactorWireUp {
     public static IServiceCollection AddConnectorsLifecycleReactor(this IServiceCollection services) {
-        return services.AddSingleton<IHostedService>(
-            ctx => {
-                var app            = ctx.GetRequiredService<ConnectorApplication>();
-                var publisher      = ctx.GetRequiredService<IPublisher>();
-                var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
-                var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
+        return services.AddSingleton<IHostedService, ConnectorsLifecycleReactorService>(ctx => {
+            var app            = ctx.GetRequiredService<ConnectorsApplication>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
+            var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
 
-                var processor = SystemProcessor.Builder
-                    .ProcessorId("connectors-lifecycle-rx")
-                    .Publisher(publisher)
-                    .SchemaRegistry(schemaRegistry)
-                    .Logging(new LoggingOptions {
-                        Enabled       = true,
-                        LoggerFactory = loggerFactory,
-                        LogName       = "ConnectorsLifecycleReactor"
-                    })
-                    .DisableAutoLock()
-                    .DisableAutoCommit()
-                    .StartPosition(RecordPosition.Latest)
-                    .Filter(ConnectorsSystemConventions.Filters.LifecycleFilter)
-                    .WithHandler(new ConnectorsLifecycleReactor(app))
-                    .Create();
+            var processor = SystemProcessor.Builder
+                .ProcessorId("connectors-lifecycle-rx")
+                .Publisher(publisher)
+                .SchemaRegistry(schemaRegistry)
+                .Logging(new LoggingOptions {
+                    Enabled       = true,
+                    LoggerFactory = loggerFactory,
+                    LogName       = "ConnectorsLifecycleReactor"
+                })
+                .DisableAutoLock()
+                .DisableAutoCommit()
+                .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
+                .StartPosition(RecordPosition.Latest)
+                .Filter(ConnectorsFeatureConventions.Filters.LifecycleFilter)
+                .WithHandler(new ConnectorsLifecycleReactor(app))
+                .Create();
 
-                return new ConnectorsLifecycleReactorService(processor, ctx);
-            }
-        );
+            return new ConnectorsLifecycleReactorService(processor, ctx);
+        });
     }
 }
 

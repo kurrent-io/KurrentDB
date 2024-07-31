@@ -10,11 +10,11 @@ using static Eventuous.FuncServiceDelegates;
 namespace EventStore.Connectors.Management;
 
 [PublicAPI]
-public class ConnectorApplication : CommandService<ConnectorEntity> {
+public class ConnectorsApplication : CommandService<ConnectorEntity> {
     static GetStreamNameFromCommand<dynamic> FromCommand() => cmd =>
-        new(ConnectorsSystemConventions.Streams.GetManagementStream(cmd.ConnectorId));
+        new(ConnectorsFeatureConventions.Streams.GetManagementStream(cmd.ConnectorId));
 
-    public ConnectorApplication(ValidateConnectorSettings validateSettings, IEventStore store, TimeProvider time) : base(store) {
+    public ConnectorsApplication(ValidateConnectorSettings validateSettings, IEventStore store, TimeProvider time) : base(store) {
         On<CreateConnector>()
             .InState(ExpectedState.New)
             .GetStream(FromCommand())
@@ -77,11 +77,16 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
             .Act((connector, _, _) => {
                 connector.EnsureNotDeleted();
 
+                // if (connector.State
+                //     is ConnectorState.Running
+                //     or ConnectorState.Activating
+                //     or ConnectorState.Deactivating)
+                //     return [];
+
                 if (connector.State
                     is ConnectorState.Running
-                    or ConnectorState.Activating
-                    or ConnectorState.Deactivating)
-                    return [];
+                    or ConnectorState.Activating)
+                    throw new DomainException($"Connector {connector.Id} already running...");
 
                 connector.EnsureStopped();
 
@@ -102,7 +107,7 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
 
                 if (connector.State
                     is ConnectorState.Stopped
-                    or ConnectorState.Deactivating) // or ConnectorState.Activating)
+                    or ConnectorState.Deactivating)
                     return [];
 
                 connector.EnsureRunning();
@@ -208,7 +213,7 @@ public class ConnectorApplication : CommandService<ConnectorEntity> {
             .GetStream(FromCommand())
             .Act((connector, _, cmd) => {
                 connector.EnsureNotDeleted();
-                connector.EnsureCommittedLogPositionIsValid(cmd.LogPosition); // probably need to ignore error but log. play with severity a bit
+                connector.EnsureNewLogPositionIsValid(cmd.LogPosition);
 
                 return [
                     new ConnectorPositionCommitted {

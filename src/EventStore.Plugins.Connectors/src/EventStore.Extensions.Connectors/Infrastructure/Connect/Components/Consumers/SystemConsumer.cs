@@ -68,8 +68,6 @@ public class SystemConsumer : IConsumer {
 		ResiliencePipeline = options.ResiliencePipelineBuilder
 			.With(x => x.InstanceName = "SystemConsumerResiliencePipeline")
 			.Build();
-
-        // ResiliencePipeline = ResiliencePipeline.Empty;
 	}
 
 	internal SystemConsumerOptions Options { get; }
@@ -100,7 +98,7 @@ public class SystemConsumer : IConsumer {
 		await CheckpointStore.Initialize(Cancellator.Token);
 
 		var startPosition = await CheckpointStore
-            .ResolveStartPosition(Options.StartPosition, Cancellator.Token)
+            .ResolveStartPosition(Options.StartPosition, Options.ResetPosition, Cancellator.Token)
             .Then(x => x.ToPosition());
 
         var filter = Options.Filter.ToEventFilter();

@@ -7,22 +7,20 @@ using EventStore.Streaming.Contracts.Processors;
 using EventStore.Streaming.Processors;
 using Microsoft.Extensions.Logging;
 
+using ProcessorContracts = EventStore.Streaming.Contracts.Processors;
+using SharedContracts = EventStore.Streaming.Contracts;
+
 namespace EventStore.Connectors.Management.Reactors;
 
-class ConnectorsLifecycleReactor(ConnectorApplication application) : RecordHandler<ProcessorStateChanged> {
+class ConnectorsLifecycleReactor(ConnectorsApplication application) : RecordHandler<ProcessorStateChanged> {
     public override async Task Process(ProcessorStateChanged message, RecordContext context) {
         try {
             var cmd = new RecordConnectorStateChange {
-                ConnectorId = message.Processor.ProcessorId,
-                FromState   = (ConnectorState)message.FromState.GetHashCode(),
-                ToState     = (ConnectorState)message.ToState.GetHashCode(),
-                ErrorDetails = message.Error is not null
-                    ? new Error {
-                        Code    = message.Error.Code,
-                        Message = message.Error.ErrorMessage
-                    }
-                    : null,
-                Timestamp = message.Metadata.Timestamp
+                ConnectorId  = message.Processor.ProcessorId,
+                FromState    = message.FromState.MapProcessorState(),
+                ToState      = message.ToState.MapProcessorState(),
+                ErrorDetails = message.Error.MapErrorDetails(),
+                Timestamp    = message.Metadata.Timestamp
             };
 
             await application.Handle(cmd, context.CancellationToken);
@@ -31,4 +29,23 @@ class ConnectorsLifecycleReactor(ConnectorApplication application) : RecordHandl
             context.Logger.LogError(ex, "Failed to record connector state change.");
         }
     }
+}
+
+[PublicAPI]
+public static class ProcessorContractsMappers {
+    public static ConnectorState MapProcessorState(this ProcessorContracts.ProcessorState source) =>
+        source switch {
+            ProcessorContracts.ProcessorState.Unspecified  => ConnectorState.Unknown,
+            ProcessorContracts.ProcessorState.Activating   => ConnectorState.Activating,
+            ProcessorContracts.ProcessorState.Running      => ConnectorState.Running,
+            ProcessorContracts.ProcessorState.Deactivating => ConnectorState.Deactivating,
+            ProcessorContracts.ProcessorState.Stopped      => ConnectorState.Stopped,
+            _                                              => throw new ArgumentOutOfRangeException(nameof(source), source, null)
+        };
+
+    public static Error? MapErrorDetails(this SharedContracts.ErrorDetails? source) =>
+        source is null ? null : new Error {
+            Code    = source.Code,
+            Message = source.ErrorMessage
+        };
 }

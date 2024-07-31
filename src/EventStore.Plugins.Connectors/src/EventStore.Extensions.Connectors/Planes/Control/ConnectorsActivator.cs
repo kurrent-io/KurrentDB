@@ -1,12 +1,11 @@
 using EventStore.Connect.Connectors;
 using FluentValidation;
-
 using ActivatedConnectors = System.Collections.Concurrent.ConcurrentDictionary<
     EventStore.Connect.Connectors.ConnectorId,
     (EventStore.Connect.Connectors.IConnector Instance, int Revision)
 >;
 
-namespace EventStore.Connectors.Control.Activation;
+namespace EventStore.Connectors.Control;
 
 public delegate IConnector CreateConnector(ConnectorId connectorId, IDictionary<string, string?> settings, string ownerId);
 
@@ -29,6 +28,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
 
             try {
                 await connector.Instance.DisposeAsync();
+                await connector.Instance.Stopped;
             }
             catch {
                 // ignore
@@ -39,6 +39,10 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             connector = Connectors[connectorId] = (CreateConnector(connectorId, settings, ownerId), revision);
 
             await connector.Instance.Connect(stoppingToken);
+
+            // For debugging purposes
+            // _ = connector.Instance.Stopped
+            //     .OnError(ex => Console.Error.Write($"Connector Failure Detected! {(ex is AggregateException ae ? ae.Flatten() : ex)}"));
 
             return ActivateResult.Activated();
         }
@@ -50,47 +54,13 @@ public class ConnectorsActivator(CreateConnector createConnector) {
         }
     }
 
-    public async Task<IActivationResult> Activate2(
-        ConnectorId connectorId,
-        IDictionary<string, string?> settings,
-        int revision, ClusterNodeId ownerId,
-        CancellationToken stoppingToken = default
-    ) {
-        // at this moment, this should not happen and its more of a sanity check
-        if (Connectors.TryGetValue(connectorId, out var connector)) {
-            if (connector.Revision == revision && connector.Instance.State is ConnectorState.Activating or ConnectorState.Running)
-                return ActivationResults.RevisionAlreadyRunning();
-
-            try {
-                await connector.Instance.DisposeAsync();
-            }
-            catch {
-                // ignore
-            }
-        }
-
-        try {
-            connector = Connectors[connectorId] = (CreateConnector(connectorId, settings, ownerId), revision);
-
-            await connector.Instance.Connect(stoppingToken);
-
-            return ActivationResults.Activated();
-        }
-        catch (ValidationException ex) {
-            return ActivationResults.InvalidConfiguration(ex);
-        }
-        catch (Exception ex) {
-            return ActivationResults.UnknownError(ex);
-        }
-    }
-
     public async Task<DeactivateResult> Deactivate(ConnectorId connectorId) {
-        if (!Connectors.TryRemove(connectorId, out var app))
+        if (!Connectors.TryRemove(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 
         try {
-            await app.Instance.DisposeAsync();
-            // await app.Instance.Stopped;
+            await connector.Instance.DisposeAsync();
+            await connector.Instance.Stopped;
 
             return DeactivateResult.Deactivated();
         }

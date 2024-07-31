@@ -7,9 +7,9 @@ namespace EventStore.Extensions.Connectors.Tests.Eventuous;
 
 [UsedImplicitly]
 public class CommandServiceFixture : FastFixture {
-    public ConnectorsManagement.ConnectorApplication ConnectorApplication(IEventStore eventStore) =>
+    public ConnectorsManagement.ConnectorsApplication ConnectorApplication(IEventStore eventStore) =>
         ConnectorApplication(eventStore, validationResult: new ValidationResult());
 
-    public ConnectorsManagement.ConnectorApplication ConnectorApplication(IEventStore eventStore, ValidationResult validationResult) =>
-        new ConnectorsManagement.ConnectorApplication(_ => validationResult, eventStore, TimeProvider);
+    public ConnectorsManagement.ConnectorsApplication ConnectorApplication(IEventStore eventStore, ValidationResult validationResult) =>
+        new ConnectorsManagement.ConnectorsApplication(_ => validationResult, eventStore, TimeProvider);
 }

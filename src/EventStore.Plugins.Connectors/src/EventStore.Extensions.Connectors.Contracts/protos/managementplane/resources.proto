@@ -55,14 +55,11 @@ enum ConnectorState {
   // The connector is currently running.
   CONNECTOR_STATE_RUNNING = 2;
 
-  // The connector is currently suspended.
-  CONNECTOR_STATE_SUSPENDED = 3;
-
   // The connector is in the process of being deactivated.
-  CONNECTOR_STATE_DEACTIVATING = 4;
+  CONNECTOR_STATE_DEACTIVATING = 3;
 
   // The connector is currently stopped.
-  CONNECTOR_STATE_STOPPED = 5;
+  CONNECTOR_STATE_STOPPED = 4;
 }
 
 // Revision of the connector. Only changes when the configuration settings are updated.

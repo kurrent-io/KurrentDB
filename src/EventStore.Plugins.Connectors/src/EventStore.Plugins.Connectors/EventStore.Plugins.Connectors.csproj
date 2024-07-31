@@ -1,64 +1,45 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>true</ImplicitUsings>
-		<LangVersion>preview</LangVersion>
-		<IsPackable>true</IsPackable>
-		<InvariantGlobalization>true</InvariantGlobalization>
-		<NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655</NoWarn>
-		<Description>EventStore Connectors Hosting</Description>
-		<PackageId>EventStore.Plugins.Connectors</PackageId>
-		<PackageIcon>ouro.png</PackageIcon>
-		<PackageProjectUrl>https://github.com/EventStore/EventStore.Plugins.Connectors</PackageProjectUrl>
-		<PackageTags>eventstore connectors sink experimental</PackageTags>
-
-		<!--		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>-->
-		<!--		<IncludeSymbols>true</IncludeSymbols>-->
-		<!--		<SymbolPackageFormat>snupkg</SymbolPackageFormat>-->
-		<!--		<EmbedAllSources>true</EmbedAllSources>-->
-		<!--		<EmbedUntrackedSources>true</EmbedUntrackedSources>-->
-		<!--		<DebugType>full</DebugType>-->
-		<!--		<UpdateVersionProperties>true</UpdateVersionProperties>-->
-		<!--		<MinVerTagPrefix>v</MinVerTagPrefix>-->
-		<!--		<MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>-->
-	</PropertyGroup>
-
-	<PropertyGroup>
 		<OutputType>library</OutputType>
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-		<!-- <AssemblyVersion>1.0.0.1</AssemblyVersion> -->
-	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
-		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+		<AssemblyVersion>1.0.0.1</AssemblyVersion>
+
+		<Description>EventStore Connectors Plugin</Description>
+
+		<IsPackable>true</IsPackable>
+		<PackageId>EventStore.Plugins.Connectors</PackageId>
+		<PackageIcon>ouro.png</PackageIcon>
+		<PackageProjectUrl>https://github.com/EventStore/EventStore.Plugins.Connectors</PackageProjectUrl>
+		<PackageTags>eventstore connect connectors sink experimental</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
-
-		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
-			<Private>false</Private>
-			<ExcludeAssets>all</ExcludeAssets>
-		</ProjectReference>
-
-		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj">
-			<Private>false</Private>
-			<ExcludeAssets>all</ExcludeAssets>
-		</ProjectReference>
-
-		<PackageReference Include="EventStore.Plugins" Version="24.6.1">
+		<PackageReference Include="EventStore.Plugins" Version="24.10.0-alpha1">
 			<Private>false</Private>
 			<IncludeAssets>compile</IncludeAssets>
 		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DotNext.Threading" Version="5.9.0" />
-		<PackageReference Include="Eventuous.Application" Version="0.15.0-rc.1" />
-		<PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-rc.1" />
-		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0-rc.1" />
+		<ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
+
+<!--		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">-->
+<!--			<Private>false</Private>-->
+<!--			<ExcludeAssets>all</ExcludeAssets>-->
+<!--		</ProjectReference>-->
+
+<!--		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj">-->
+<!--			<Private>false</Private>-->
+<!--			<ExcludeAssets>all</ExcludeAssets>-->
+<!--		</ProjectReference>-->
+
 	</ItemGroup>
+
+	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<InternalsVisibleTo Include="EventStore.Plugins.Connectors.Tests" />

@@ -9,7 +9,7 @@ using static EventStore.Streaming.Consumers.ConsumeFilter;
 namespace EventStore.Connectors;
 
 [PublicAPI]
-public partial class ConnectorsSystemConventions {
+public partial class ConnectorsFeatureConventions {
     [PublicAPI]
     [SuppressMessage("Usage", "CA2211:Non-constant fields should not be visible")]
     public static class Streams {
@@ -25,7 +25,7 @@ public partial class ConnectorsSystemConventions {
         public static StreamId GetCheckpointsStream(string connectorId) => CheckpointsStreamTemplate.GetStream(connectorId); // $connectors/3f9728/checkpoints
         public static StreamId GetLifecycleStream(string connectorId)   => LifecycleStreamTemplate.GetStream(connectorId);   // $connectors/3f9728/lifecycle
 
-        public static StreamId ConnectorsRegistryStream = "$connectors/ctrl/registry/snapshots";
+        public static StreamId ConnectorsRegistryStream = "$connectors-ctrl-registry-snapshots";
     }
 
     [PublicAPI]
@@ -34,17 +34,13 @@ public partial class ConnectorsSystemConventions {
 
         public static string GetManagementMessageSubject(string name)    => GetSystemMessageSubject("mngt", name); // $conn-mngt-connector-created
         public static string GetControlSystemMessageSubject(string name) => GetSystemMessageSubject("ctrl", name); // $conn-ctrl-message-name
-
-        // public static string GetLeasesSystemMessageSubject(string name)      => GetSystemMessageSubject("ctrl", name); // $conn-ctrl-lease-acquired
-        // public static string GetCheckpointsSystemMessageSubject(string name) => GetSystemMessageSubject("ctrl", name); // $conn-ctrl-checkpoint-created
-        // public static string GetLifecycleSystemMessageSubject(string name)   => GetSystemMessageSubject("ctrl", name); // $conn-ctrl-processor-state-changed
- }
+    }
 
     [PublicAPI]
     public partial class Filters {
-        public const string ManagementStreamFilterPattern  = @"^\$connectors\/[^\/]+$";
-        public const string CheckpointsStreamFilterPattern = @"^\$connectors\/[^\/]+\/checkpoints";
-        public const string LifecycleStreamFilterPattern   = @"^\$connectors\/[^\/]+\/lifecycle";
+        public const string ManagementStreamFilterPattern  = @"^\$connectors\/([^\/]+)$";
+        public const string CheckpointsStreamFilterPattern = @"^\$connectors\/[^\/]+\/checkpoints$";
+        public const string LifecycleStreamFilterPattern   = @"^\$connectors\/[^\/]+\/lifecycle$";
 
         [GeneratedRegex(ManagementStreamFilterPattern)]  private static partial Regex GetManagementStreamFilterRegEx();
         [GeneratedRegex(CheckpointsStreamFilterPattern)] private static partial Regex GetCheckpointsStreamFilterRegEx();
@@ -56,28 +52,28 @@ public partial class ConnectorsSystemConventions {
     }
 
     public static async Task<RegisteredSchema> RegisterControlSchema<T>(
-        ISchemaRegistry registry, SchemaDefinitionType schemaType, CancellationToken cancellationToken = default
+        ISchemaRegistry registry, SchemaDefinitionType schemaType, CancellationToken token = default
     ) {
         var schemaInfo = new SchemaInfo(Messages.GetControlSystemMessageSubject(typeof(T).Name), schemaType);
-        return await registry.RegisterSchema(schemaInfo, typeof(T), cancellationToken);
+        return await registry.RegisterSchema<T>(schemaInfo, cancellationToken: token);
     }
 
     public static async Task<RegisteredSchema> RegisterManagementSchema<T>(
-        ISchemaRegistry registry, SchemaDefinitionType schemaType, CancellationToken cancellationToken = default
+        ISchemaRegistry registry, SchemaDefinitionType schemaType, CancellationToken token = default
     ) {
         var schemaInfo = new SchemaInfo(Messages.GetManagementMessageSubject(typeof(T).Name), schemaType);
-        return await registry.RegisterSchema(schemaInfo, typeof(T), cancellationToken);
+        return await registry.RegisterSchema<T>(schemaInfo, cancellationToken: token);
     }
 }
 
 public sealed record ManagementStreamTemplate()
-    : StreamTemplate($"{ConnectorsSystemConventions.Streams.StreamPrefix}/{{0}}");
+    : StreamTemplate($"{ConnectorsFeatureConventions.Streams.StreamPrefix}/{{0}}");
 
 public sealed record LeasesStreamTemplate()
-    : StreamTemplate($"{ConnectorsSystemConventions.Streams.StreamPrefix}/{{0}}/leases");
+    : StreamTemplate($"{ConnectorsFeatureConventions.Streams.StreamPrefix}/{{0}}/leases");
 
 public sealed record CheckpointsStreamTemplate()
-    : StreamTemplate($"{ConnectorsSystemConventions.Streams.StreamPrefix}/{{0}}/checkpoints");
+    : StreamTemplate($"{ConnectorsFeatureConventions.Streams.StreamPrefix}/{{0}}/checkpoints");
 
 public sealed record LifecycleStreamTemplate()
-    : StreamTemplate($"{ConnectorsSystemConventions.Streams.StreamPrefix}/{{0}}/lifecycle");
+    : StreamTemplate($"{ConnectorsFeatureConventions.Streams.StreamPrefix}/{{0}}/lifecycle");

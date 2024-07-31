@@ -10,9 +10,12 @@ namespace EventStore.Connect.Processors.Configuration;
 
 [PublicAPI]
 public record SystemProcessorOptions : ProcessorOptions {
-    public IPublisher        Publisher     { get; init; }
-    public ConsumeFilter     Filter        { get; init; } = ConsumeFilter.ExcludeSystemEvents();
-    public RecordPosition    StartPosition { get; init; } = RecordPosition.Unset;
-    public AutoCommitOptions AutoCommit    { get; init; } = new();
-    public bool              SkipDecoding  { get; init; }
+    public IPublisher    Publisher { get; init; }
+    public ConsumeFilter Filter    { get; init; } = ConsumeFilter.ExcludeSystemEvents();
+
+    public RecordPosition StartPosition { get; init; } = RecordPosition.Unset;
+    public bool           ResetPosition { get; set; }
+
+    public AutoCommitOptions AutoCommit   { get; init; } = new();
+    public bool              SkipDecoding { get; init; }
 }

@@ -1,5 +1,3 @@
-namespace EventStore.IO.Management.Server.Connectors.Data;
+namespace EventStore.Connectors.Management.Data;
 
-public class ConnectorQueries {
-	
-}
+public class ConnectorQueries { }

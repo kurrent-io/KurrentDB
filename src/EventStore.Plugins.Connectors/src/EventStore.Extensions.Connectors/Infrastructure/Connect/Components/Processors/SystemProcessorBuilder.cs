@@ -15,6 +15,7 @@ using EventStore.Streaming.Processors.Configuration;
 using EventStore.Streaming.Processors.Locks;
 using Microsoft.Extensions.Logging;
 using NodaTime.Extensions;
+using Polly;
 
 namespace EventStore.Connect.Processors.Configuration;
 
@@ -30,10 +31,11 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
     public SystemProcessorBuilder Stream(StreamId stream) =>
         Filter(ConsumeFilter.Stream(stream));
 
-    public SystemProcessorBuilder StartPosition(RecordPosition recordPosition) =>
+    public SystemProcessorBuilder StartPosition(RecordPosition recordPosition, bool reset = false) =>
         new() {
             Options = Options with {
                 StartPosition = recordPosition,
+                ResetPosition = reset
             }
         };
 
@@ -82,30 +84,26 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
 
 		var options = Options with { };
 
-        var reader = SystemReader.Builder
-            .Publisher(options.Publisher)
-            .ReaderId($"rdx-leases-{options.ProcessorId}")
-            .SchemaRegistry(options.SchemaRegistry)
-            .Logging(new LoggingOptions {
-                Enabled       = options.Logging.Enabled,
-                LogName       = "LeaseManagerSystemReader",
-                LoggerFactory = options.Logging.LoggerFactory
-            })
-            .Create();
-
-        var producer = SystemProducer.Builder
-            .Publisher(options.Publisher)
-            .ProducerId($"pdx-leases-{options.ProcessorId}")
-            .SchemaRegistry(options.SchemaRegistry)
-            .Logging(new LoggingOptions {
-                Enabled       = options.Logging.Enabled,
-                LogName       = "LeaseManagerSystemProducer",
-                LoggerFactory = options.Logging.LoggerFactory
-            })
-            .Create();
+        var loggingOptions = new LoggingOptions {
+            Enabled = options.Logging.Enabled,
+            LoggerFactory = options.Logging.LoggerFactory
+        };
 
         var leaseManager = new LeaseManager(
-            reader, producer,
+            SystemReader.Builder
+                .Publisher(options.Publisher)
+                .ReaderId($"rdx-leases-{options.ProcessorId}")
+                .SchemaRegistry(options.SchemaRegistry)
+                .Logging(loggingOptions with { LogName = "LeaseManagerSystemReader" })
+                .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
+                .Create(),
+            SystemProducer.Builder
+                .Publisher(options.Publisher)
+                .ProducerId($"pdx-leases-{options.ProcessorId}")
+                .SchemaRegistry(options.SchemaRegistry)
+                .Logging(loggingOptions with { LogName = "LeaseManagerSystemProducer" })
+                .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
+                .Create(),
             streamTemplate: options.AutoLock.StreamTemplate,
             logger: options.Logging.LoggerFactory.CreateLogger<LeaseManager>()
         );
@@ -126,24 +124,21 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
                 .ConsumerId(options.ProcessorId)
                 .SubscriptionName(options.SubscriptionName)
                 .Filter(options.Filter)
-                .StartPosition(options.StartPosition)
+                .StartPosition(options.StartPosition, options.ResetPosition)
                 .AutoCommit(options.AutoCommit)
                 .SkipDecoding(options.SkipDecoding)
                 .SchemaRegistry(options.SchemaRegistry)
-                .Logging(new LoggingOptions {
-                    Enabled       = options.Logging.Enabled,
-                    LoggerFactory = options.Logging.LoggerFactory
-                })
+                .Logging(loggingOptions)
+                .Transformer(options.Transformer)
+                .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
                 .Create(),
 
             GetProducer = () => SystemProducer.Builder
                 .Publisher(options.Publisher)
                 .ProducerId(options.ProcessorId)
                 .SchemaRegistry(options.SchemaRegistry)
-                .Logging(new LoggingOptions {
-                    Enabled       = options.Logging.Enabled,
-                    LoggerFactory = options.Logging.LoggerFactory
-                })
+                .Logging(loggingOptions)
+                .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
                 .Create(),
 
             GetLocker = () => new ServiceLocker(serviceLockerOptions, leaseManager)

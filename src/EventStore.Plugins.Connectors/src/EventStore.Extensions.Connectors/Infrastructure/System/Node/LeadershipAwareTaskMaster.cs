@@ -1,8 +1,7 @@
-using EventStore.Connectors.System;
 using EventStore.Streaming;
 using Microsoft.Extensions.Logging;
 
-namespace EventStore.Connectors.Control;
+namespace EventStore.Connectors.System;
 
 class LeadershipAwareTaskMaster : LeadershipAwareService {
     public LeadershipAwareTaskMaster(GetNodeSystemInfo getNodeSystemInfo, INodeLifetimeService nodeLifetime, ILoggerFactory loggerFactory) : base(

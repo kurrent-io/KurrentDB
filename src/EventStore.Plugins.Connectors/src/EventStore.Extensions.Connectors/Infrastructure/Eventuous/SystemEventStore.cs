@@ -12,12 +12,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EventStore.Connectors.Eventuous;
 
-static class SchemaRegistryExtensions {
-    public static async Task<RegisteredSchema> GetOrRegister(
-        this SchemaRegistry schemaRegistry, Type messageType, SchemaDefinitionType schemaType, CancellationToken cancellationToken = default
-    ) => await schemaRegistry.RegisterSchema(SchemaInfo.FromMessageType(messageType, schemaType), messageType, cancellationToken);
-}
-
 [UsedImplicitly]
 public class SystemEventStore : IEventStore, IAsyncDisposable {
     public SystemEventStore(SystemReader reader, SystemProducer producer, SchemaRegistry schemaRegistry, ILoggerFactory? loggerFactory = null) {
@@ -92,8 +86,9 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
                 .RecordId(evt.Id)
                 .Value(evt.Payload)
                 .Headers(headers)
+                // it should come from the event headers
                 .WithSchemaType(SchemaDefinitionType.Json)
-                // .WithSchema(schemaInfo)
+                // .WithSchema(SchemaInfo.FromHeaders(evt.Metadata.ToHeaders()))
                 .Create();
 
             messages.Add(message);
@@ -130,9 +125,11 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
 
         StreamEvent[] result = [];
 
+        var filter = ConsumeFilter.Stream(StreamId.From(stream));
+
         try {
             result = await Reader
-                .ReadForwards(from, ConsumeFilter.Streams(stream), count, cancellationToken)
+                .ReadForwards(from, filter, count, cancellationToken)
                 .Where(x => !"$".StartsWith(x.SchemaInfo.Subject))
                 .Select(record => new StreamEvent(
                     record.Id,
@@ -177,12 +174,14 @@ public class SystemEventStore : IEventStore, IAsyncDisposable {
         StreamName stream,
         StreamTruncatePosition truncatePosition,
         ExpectedStreamVersion expectedVersion,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken
     ) => throw new NotImplementedException();
 
     /// <inheritdoc/>
     public Task DeleteStream(
-        StreamName stream, ExpectedStreamVersion expectedVersion, CancellationToken cancellationToken = default
+        StreamName stream,
+        ExpectedStreamVersion expectedVersion,
+        CancellationToken cancellationToken
     ) => throw new NotImplementedException();
 
     public async ValueTask DisposeAsync() {

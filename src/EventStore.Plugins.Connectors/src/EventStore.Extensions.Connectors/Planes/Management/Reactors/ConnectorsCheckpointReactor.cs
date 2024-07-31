@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EventStore.Connectors.Management.Reactors;
 
-class ConnectorsCheckpointReactor(ConnectorApplication application) : RecordHandler<Checkpoint> {
+class ConnectorsCheckpointReactor(ConnectorsApplication application) : RecordHandler<Checkpoint> {
     public override async Task Process(Checkpoint message, RecordContext context) {
         try {
             var cmd = new RecordConnectorPosition {

@@ -8,6 +8,8 @@
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=submodules_002FEventStore_002Fsrc/@EntryIndexedValue"></s:String>
 	<s:Boolean x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=submodules_002FEventStore_002Fsrc/@EntryIndexRemoved">True</s:Boolean>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/GeneratedFilesAndFolders/=1FFE9B22_002D1994_002D47B1_002D814E_002D7DCB8E838D10/@EntryIndexedValue">1FFE9B22-1994-47B1-814E-7DCB8E838D10</s:String>
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/GeneratedFilesAndFolders/=B4DAA225_002D6158_002D4BB6_002D9426_002D242032A94EA7/@EntryIndexedValue"></s:String>
+	<s:Boolean x:Key="/Default/CodeInspection/ExcludedFiles/GeneratedFilesAndFolders/=B4DAA225_002D6158_002D4BB6_002D9426_002D242032A94EA7/@EntryIndexRemoved">True</s:Boolean>
 
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/GeneratedFilesAndFolders/=submodules_002FEventStore_002Fsrc/@EntryIndexedValue">submodules/EventStore/src</s:String>
 	<s:String x:Key="/Default/CodeInspection/Highlighting/InspectionSeverities/=ArrangeDefaultValueWhenTypeNotEvident/@EntryIndexedValue">SUGGESTION</s:String>

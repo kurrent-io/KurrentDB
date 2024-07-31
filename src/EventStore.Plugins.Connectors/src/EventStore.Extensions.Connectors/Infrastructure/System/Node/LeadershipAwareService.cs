@@ -1,10 +1,9 @@
 using DotNext.Threading;
-using EventStore.Connectors.System;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Timeout = System.Threading.Timeout;
 
-namespace EventStore.Connectors.Control;
+namespace EventStore.Connectors.System;
 
 public abstract class LeadershipAwareService : BackgroundService {
     protected LeadershipAwareService(INodeLifetimeService nodeLifetime, GetNodeSystemInfo getNodeSystemInfo, ILoggerFactory loggerFactory) {

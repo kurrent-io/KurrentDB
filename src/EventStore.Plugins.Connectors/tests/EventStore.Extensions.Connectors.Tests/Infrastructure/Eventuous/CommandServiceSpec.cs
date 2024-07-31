@@ -64,7 +64,7 @@ public class CommandServiceSpec<TState, TCommand> where TState : State<TState>, 
 
     async Task Assert() {
         // TODO SS: super hacky way to get the stream name. must fix soon. perhaps we should not be using the eventstore here...
-        var streamName = ConnectorsSystemConventions.Streams.ManagementStreamTemplate.GetStream(((dynamic)WhenCommand).ConnectorId);
+        var streamName = ConnectorsFeatureConventions.Streams.ManagementStreamTemplate.GetStream(((dynamic)WhenCommand).ConnectorId);
 
         // Given the following events.
         if (GivenEvents.Count != 0)

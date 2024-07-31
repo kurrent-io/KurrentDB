@@ -3,6 +3,8 @@
 using EventStore.Connect.Connectors;
 using EventStore.Connect.Consumers;
 using EventStore.Connect.Consumers.Configuration;
+using EventStore.Connect.Processors;
+using EventStore.Connect.Processors.Configuration;
 using EventStore.Connect.Producers;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
@@ -19,6 +21,8 @@ namespace EventStore.Connect;
 public static class ConnectExtensions {
     public static IServiceCollection AddConnectSystemComponents(this IServiceCollection services) {
         services.AddConnectSchemaRegistry(SchemaRegistry.Global);
+
+        services.AddSingleton<IStateStore, InMemoryStateStore>();
 
         services.AddSingleton<Func<SystemReaderBuilder>>(ctx => {
             var publisher      = ctx.GetRequiredService<IPublisher>();
@@ -53,7 +57,18 @@ public static class ConnectExtensions {
                 .LoggerFactory(loggerFactory);
         });
 
-        services.AddSingleton<IStateStore, InMemoryStateStore>();
+        services.AddSingleton<Func<SystemProcessorBuilder>>(ctx => {
+            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
+            var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
+            var stateStore     = ctx.GetRequiredService<IStateStore>();
+
+            return () => SystemProcessor.Builder
+                .Publisher(publisher)
+                .SchemaRegistry(schemaRegistry)
+                .StateStore(stateStore)
+                .LoggerFactory(loggerFactory);
+        });
 
         services.AddSingleton<IConnectorValidator, SystemConnectorsValidation>();
         services.AddSingleton<IConnectorFactory, SystemConnectorsFactory>();
@@ -64,10 +79,9 @@ public static class ConnectExtensions {
     public static IServiceCollection AddConnectSchemaRegistry(this IServiceCollection services, SchemaRegistry? schemaRegistry = null) {
         schemaRegistry ??= SchemaRegistry.Global;
 
-        services.AddSingleton(schemaRegistry);
-        services.AddSingleton<ISchemaRegistry>(schemaRegistry);
-        services.AddSingleton<ISchemaSerializer>(schemaRegistry);
-
-        return services;
+        return services
+            .AddSingleton(schemaRegistry)
+            .AddSingleton<ISchemaRegistry>(schemaRegistry)
+            .AddSingleton<ISchemaSerializer>(schemaRegistry);
     }
 }

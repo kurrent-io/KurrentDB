@@ -14,104 +14,104 @@ option csharp_namespace = "EventStore.Connectors.Management.Contracts.Commands";
 service ConnectorsService {
   rpc Create(CreateConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "connectors/create",
+      post: "/connectors/create",
       body: "*"
     };
   }
 
   rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "connectors/reconfigure",
+      post: "/connectors/reconfigure",
       body: "*"
     };
   }
 
   rpc Delete(DeleteConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "connectors/delete",
+      post: "/connectors/delete",
       body: "*"
     };
   }
 
   rpc Start(StartConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "connectors/start",
+      post: "/connectors/start",
       body: "*"
     };
   }
 
   rpc Stop(StopConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "connectors/stop",
+      post: "/connectors/stop",
       body: "*"
     };
   }
 
   rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "connectors/reset",
+      post: "/connectors/reset",
       body: "*"
     };
   }
 
   rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "connectors/rename",
+      post: "/connectors/rename",
       body: "*"
     };
   }
 }
 
-//service ConnectorRestCommandService {
-//  rpc Create(CreateConnector) returns (google.protobuf.Empty) {
-//    option (google.api.http) = {
-//      post: "connectors/{connector_id}",
-//      body: "*"
-//    };
-//  }
-//
-//  rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty) {
-//    option (google.api.http) = {
-//      put: "connectors/{connector_id}",
-//      body: "*"
-//    };
-//  }
-//
-//  rpc Delete(DeleteConnector) returns (google.protobuf.Empty) {
-//    option (google.api.http) = {
-//      delete: "connectors/{connector_id}",
-//      body: "*"
-//    };
-//  }
-//
-//  rpc Start(StartConnector) returns (google.protobuf.Empty) {
-//    option (google.api.http) = {
-//      put: "connectors/{connector_id}",
-//      body: "*"
-//    };
-//  }
-//
-//  rpc Stop(StopConnector) returns (google.protobuf.Empty) {
-//    option (google.api.http) = {
-//      put: "connectors/{connector_id}",
-//      body: "*"
-//    };
-//  }
-//
-//  rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
-//    option (google.api.http) = {
-//      put: "connectors/{connector_id}",
-//      body: "*"
-//    };
-//  }
-//
-//  rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
-//    option (google.api.http) = {
-//      put: "connectors/{connector_id}",
-//      body: "*"
-//    };
-//  }
-//}
+service ConnectorRestCommandService {
+  rpc Create(CreateConnector) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/connectors/{connector_id}",
+      body: "*"
+    };
+  }
+
+  rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/connectors/{connector_id}",
+      body: "*"
+    };
+  }
+
+  rpc Delete(DeleteConnector) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/connectors/{connector_id}",
+      body: "*"
+    };
+  }
+
+  rpc Start(StartConnector) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/connectors/{connector_id}",
+      body: "*"
+    };
+  }
+
+  rpc Stop(StopConnector) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/connectors/{connector_id}",
+      body: "*"
+    };
+  }
+
+  rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/connectors/{connector_id}",
+      body: "*"
+    };
+  }
+
+  rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      put: "/connectors/{connector_id}",
+      body: "*"
+    };
+  }
+}
 
 message CreateConnector {
   string                                   connector_id = 1;

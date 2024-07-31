@@ -6,9 +6,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Google.Api.CommonProtos" Version="2.15.0" />
-        <PackageReference Include="Google.Protobuf" Version="3.27.2" />
-        <PackageReference Include="Grpc.AspNetCore" Version="2.63.0" PrivateAssets="All"/>
+        <PackageReference Include="Google.Api.CommonProtos" Version="2.15.0" PrivateAssets="All" />
+		<PackageReference Include="Google.Protobuf" Version="3.27.2" PrivateAssets="All" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.64.0" PrivateAssets="All"/>
     </ItemGroup>
 
     <ItemGroup>

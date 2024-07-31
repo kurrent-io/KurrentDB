@@ -1,20 +1,20 @@
 using System.Text.Json;
 using EventStore.Connectors.Management.Contracts.Commands;
-using EventStore.Plugins.Authorization;
 using EventStore.Streaming;
 using Eventuous;
 using FluentValidation.Results;
 using Google.Protobuf.WellKnownTypes;
+using Google.Rpc;
 using Grpc.Core;
 using Humanizer;
-
+using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.Management.ConnectorDomainExceptions;
 using static EventStore.Connectors.Management.Contracts.Commands.ConnectorsService;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Connectors.Management;
 
-public class ConnectorsService(ConnectorApplication application, IAuthorizationProvider authorizationProvider) : ConnectorsServiceBase {
+public class ConnectorsService(ConnectorsApplication application, ILogger<ConnectorsService> logger) : ConnectorsServiceBase {
     public override Task<Empty> Create(CreateConnector request, ServerCallContext context)           => Execute(request, context);
     public override Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) => Execute(request, context);
     public override Task<Empty> Delete(DeleteConnector request, ServerCallContext context)           => Execute(request, context);
@@ -24,37 +24,46 @@ public class ConnectorsService(ConnectorApplication application, IAuthorizationP
     public override Task<Empty> Rename(RenameConnector request, ServerCallContext context)           => Execute(request, context);
 
     async Task<Empty> Execute<TCommand>(TCommand command, ServerCallContext context) where TCommand : class {
-        // TODO SS: should we check for auth first?
-        // TODO SS: when can operations be cancelled? what is the best way to handle this? Is it automatic?
-
-        var authorized = await authorizationProvider.CheckAccessAsync(
-            context.GetHttpContext().User,
-            new Operation("connectors", "write"), // TODO SS: what claim must we check? where are they written too? are they hardcoded? license entitlements?
-            context.CancellationToken
-        );
-
-        if (!authorized)
+        var authenticated = context.GetHttpContext().User.Identity?.IsAuthenticated ?? false;
+        if (!authenticated)
             throw RpcExceptions.Create(StatusCode.PermissionDenied);
 
+        //logger.LogInformation("Executing {CommandType} {Command}", command.GetType().Name, command);
         var commandResult = await application.Handle(command, context.CancellationToken);
 
-        if (commandResult is not ErrorResult<ConnectorEntity> errorResult)
-            return new Empty();
+        if (commandResult is not ErrorResult<ConnectorEntity> errorResult) {
+            // SHOULD NOT THROW WITH STUPID UNREGISTERED EVENT TYPE IN EVENTUOUS. IT ALREADY HAS THE OBJECT FFS!
+            // foreach (var change in commandResult.Changes.EmptyIfNull())
+            //     logger.LogInformation("{@Event}", change.Event);
 
-        // TODO SS: InvalidArgument/BadRequest should be agnostic, but dont know how to handle this yet, perhaps check for some specific ex type later on...
+            logger.LogInformation(
+                "{TraceIdentifier} Executed {CommandType} {Command}",
+                context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
+            );
+
+            return new Empty();
+        }
+
+        logger.LogError(
+            errorResult.Exception,
+            "{TraceIdentifier} Executed {CommandType} {Command}",
+            context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
+        );
+
+        // TODO SS: BadRequest should be agnostic, but dont know how to handle this yet, perhaps check for some specific ex type later on...
 
         throw errorResult.Exception switch {
-            // TODO JC: Just stringify and put the validation errors in the message.
-            // Because of https://github.com/dotnet/aspnetcore/pull/51394.
-            InvalidConnectorSettingsException ex => RpcExceptions.Create(StatusCode.InvalidArgument, $"{ex.Message}: {JsonSerializer.Serialize(ex.Errors)}"),
+            InvalidConnectorSettingsException ex => RpcExceptions.BadRequest(ex.Errors),
+            StreamAccessDeniedError ex           => RpcExceptions.Create(StatusCode.PermissionDenied, ex),
             StreamNotFoundError ex               => RpcExceptions.Create(StatusCode.NotFound, ex),
             StreamDeletedError ex                => RpcExceptions.Create(StatusCode.FailedPrecondition, ex),
-            StreamAccessDeniedError ex           => RpcExceptions.Create(StatusCode.PermissionDenied, ex),
             ExpectedStreamRevisionError ex       => RpcExceptions.Create(StatusCode.FailedPrecondition, ex),
             DomainException ex                   => RpcExceptions.Create(StatusCode.FailedPrecondition, ex),
-            StreamNotFound ex                    => RpcExceptions.Create(StatusCode.NotFound, ex), // eventuous error and I think I can remove it.
 
-            { } err => RpcExceptions.Create(StatusCode.Internal, err)
+            // Eventuous framework error and I think I can remove it.
+            StreamNotFound ex => RpcExceptions.Create(StatusCode.NotFound, ex),
+
+            { } ex => RpcExceptions.InternalServerError(ex)
         };
     }
 }
@@ -66,34 +75,53 @@ static class RpcExceptions {
             Message = !string.IsNullOrWhiteSpace(message) ? $"{message}" : $"{code.Humanize()}"
         });
 
-    public static RpcException Create(StatusCode code, Exception ex) => Create(code, ex.Message);
+    public static RpcException Create(StatusCode code, Exception ex) =>
+        Create(code, ex.ToString());
 
-    public static RpcException BadRequest(string message, List<ValidationFailure> failures) {
-        // TODO JC: Just stringify and put the validation errors in the message.
-        // Because of https://github.com/dotnet/aspnetcore/pull/51394.
-
-        return RpcStatusExtensions.ToRpcException(new() {
-            Code    = (int)StatusCode.InvalidArgument,
-            Message = $"{message}: {JsonSerializer.Serialize(failures)}",
+    public static RpcException InternalServerError(Exception exception) =>
+        RpcStatusExtensions.ToRpcException(new() {
+            Code    = (int)StatusCode.Internal,
+            Message = "Internal Server Error",
+            Details = { Any.Pack(exception.ToRpcDebugInfo()) }
         });
 
-        // Details = {
-        //     // TODO JC: Reimplement when above is fixed (.NET 9)
-        //     // Any.Pack(
-        //     //     new BadRequest {
-        //     //         FieldViolations = {
-        //     //             invalidConnectorSettings.Errors.SelectMany(
-        //     //                     kvp => kvp.Value.Select(
-        //     //                         error => new BadRequest.Types.FieldViolation {
-        //     //                             Field       = kvp.Key,
-        //     //                             Description = error
-        //     //                         }
-        //     //                     )
-        //     //                 )
-        //     //                 .ToList()
-        //     //         }
-        //     //     }
-        //     // )
-        // }
-    }
+    public static RpcException PreconditionFailure(List<ValidationFailure> failures) =>
+        RpcStatusExtensions.ToRpcException(new() {
+            Code    = (int)StatusCode.FailedPrecondition,
+            Message = "Precondition Failure",
+            Details = { Any.Pack(new PreconditionFailure {
+                Violations = { failures.Select(failure => new PreconditionFailure.Types.Violation {
+                    Subject     = failure.PropertyName,
+                    Description = failure.ErrorMessage
+                })}
+            })}
+        });
+
+    public static RpcException BadRequest(List<ValidationFailure> failures) =>
+        // TODO JC: Just stringify and put the validation errors in the message.
+        // Because of https://github.com/dotnet/aspnetcore/pull/51394.
+        RpcStatusExtensions.ToRpcException(new() {
+            Code    = (int)StatusCode.InvalidArgument,
+            Message = $"Bad Request - {JsonSerializer.Serialize(failures)}",
+            Details = { Any.Pack(new BadRequest {
+                FieldViolations = { failures.Select(failure => new BadRequest.Types.FieldViolation {
+                    Field       = failure.PropertyName,
+                    Description = failure.ErrorMessage
+                })}
+            })}
+        });
+
+    public static RpcException BadRequest(IDictionary<string, string[]> failures) =>
+        // TODO JC: Just stringify and put the validation errors in the message.
+        // Because of https://github.com/dotnet/aspnetcore/pull/51394.
+        RpcStatusExtensions.ToRpcException(new() {
+            Code    = (int)StatusCode.InvalidArgument,
+            Message = $"Bad Request - {JsonSerializer.Serialize(failures)}",
+            Details = { Any.Pack(new BadRequest {
+                FieldViolations = { failures.Select(failure => new BadRequest.Types.FieldViolation {
+                    Field       = failure.Key,
+                    Description = failure.Value.Aggregate((a, b) => $"{a}, {b}")
+                })}
+            })}
+        });
 }
