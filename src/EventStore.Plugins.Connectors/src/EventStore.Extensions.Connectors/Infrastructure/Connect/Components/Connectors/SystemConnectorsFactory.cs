@@ -139,6 +139,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
                             .Create()
                     )
                     .Logging(loggingOptions)
+                    .SchemaRegistry(schemaRegistry)
                     .Create()
             );
         }
