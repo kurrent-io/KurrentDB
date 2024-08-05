@@ -20,7 +20,6 @@ public class ConnectorsService(ConnectorsApplication application, ILogger<Connec
     public override Task<Empty> Delete(DeleteConnector request, ServerCallContext context)           => Execute(request, context);
     public override Task<Empty> Start(StartConnector request, ServerCallContext context)             => Execute(request, context);
     public override Task<Empty> Stop(StopConnector request, ServerCallContext context)               => Execute(request, context);
-    public override Task<Empty> Reset(ResetConnector request, ServerCallContext context)             => Execute(request, context);
     public override Task<Empty> Rename(RenameConnector request, ServerCallContext context)           => Execute(request, context);
 
     async Task<Empty> Execute<TCommand>(TCommand command, ServerCallContext context) where TCommand : class {
@@ -28,7 +27,6 @@ public class ConnectorsService(ConnectorsApplication application, ILogger<Connec
         if (!authenticated)
             throw RpcExceptions.Create(StatusCode.PermissionDenied);
 
-        //logger.LogInformation("Executing {CommandType} {Command}", command.GetType().Name, command);
         var result = await application.Handle(command, context.CancellationToken);
 
         return result.Match(
@@ -41,6 +39,11 @@ public class ConnectorsService(ConnectorsApplication application, ILogger<Connec
                 return new Empty();
             },
             error => {
+                logger.LogError(
+                    error.Exception, "{TraceIdentifier} Executed {CommandType} {Command}",
+                    context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
+                );
+
                 // TODO SS: BadRequest should be agnostic, but dont know how to handle this yet, perhaps check for some specific ex type later on...
                 // TODO SS: improve this exception mess later (we dont control the command service from eventuous)
 
@@ -55,15 +58,10 @@ public class ConnectorsService(ConnectorsApplication application, ILogger<Connec
                     DomainException ex                      => RpcExceptions.Create(StatusCode.FailedPrecondition, ex.Message),
 
                     // Eventuous framework error and I think we can remove it but need moar tests...
-                    StreamNotFound ex => RpcExceptions.Create(StatusCode.NotFound, ex.Message),
+                    // StreamNotFound ex => RpcExceptions.Create(StatusCode.NotFound, ex.Message),
 
                     { } ex => RpcExceptions.InternalServerError(ex)
                 };
-
-                logger.LogError(
-                    rpcEx, "{TraceIdentifier} Executed {CommandType} {Command}",
-                    context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
-                );
 
                 throw rpcEx;
             }

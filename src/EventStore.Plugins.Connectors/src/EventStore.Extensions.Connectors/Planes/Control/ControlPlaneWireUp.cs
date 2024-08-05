@@ -1,10 +1,8 @@
 using EventStore.Connect.Connectors;
 using EventStore.Connect.Leases;
 using EventStore.Connect.Schema;
-using EventStore.Connectors.Control.Coordination;
 using EventStore.Connectors.System;
 using EventStore.Streaming;
-using EventStore.Streaming.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using static EventStore.Connectors.ConnectorsFeatureConventions;
@@ -40,10 +38,21 @@ public static class ControlPlaneWireUp {
 
     static IServiceCollection AddConnectorsActivator(this IServiceCollection services) =>
         services
-            .AddSingleton(new SystemConnectorsFactoryOptions {
-                LifecycleStreamTemplate   = Streams.LifecycleStreamTemplate,
-                CheckpointsStreamTemplate = Streams.CheckpointsStreamTemplate,
-                LeasesStreamTemplate      = Streams.LeasesStreamTemplate
+            .AddSingleton<IConnectorFactory>(ctx => {
+                var validator = ctx.GetRequiredService<IConnectorValidator>();
+
+                var options = new SystemConnectorsFactoryOptions {
+                    CheckpointsStreamTemplate = Streams.CheckpointsStreamTemplate,
+                    LifecycleStreamTemplate   = Streams.LifecycleStreamTemplate,
+                    AutoLock = new() {
+                        LeaseDuration      = TimeSpan.FromSeconds(5),
+                        AcquisitionTimeout = TimeSpan.FromSeconds(60),
+                        AcquisitionDelay   = TimeSpan.FromSeconds(5),
+                        StreamTemplate     = Streams.LeasesStreamTemplate
+                    }
+                };
+
+                return new SystemConnectorsFactory(options, validator, ctx);
             })
             .AddSingleton<ConnectorsActivator>();
 
@@ -58,5 +67,4 @@ public static class ControlPlaneWireUp {
                 var registry = ctx.GetRequiredService<ConnectorsControlRegistry>();
                 return registry.GetConnectors;
             });
-
 }

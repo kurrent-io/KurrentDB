@@ -47,13 +47,6 @@ service ConnectorsService {
     };
   }
 
-  rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      post: "/connectors/reset",
-      body: "*"
-    };
-  }
-
   rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
       post: "/connectors/rename",
@@ -62,56 +55,56 @@ service ConnectorsService {
   }
 }
 
-service ConnectorRestCommandService {
-  rpc Create(CreateConnector) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      post: "/connectors/{connector_id}",
-      body: "*"
-    };
-  }
-
-  rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      put: "/connectors/{connector_id}",
-      body: "*"
-    };
-  }
-
-  rpc Delete(DeleteConnector) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      delete: "/connectors/{connector_id}",
-      body: "*"
-    };
-  }
-
-  rpc Start(StartConnector) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      put: "/connectors/{connector_id}",
-      body: "*"
-    };
-  }
-
-  rpc Stop(StopConnector) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      put: "/connectors/{connector_id}",
-      body: "*"
-    };
-  }
-
-  rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      put: "/connectors/{connector_id}",
-      body: "*"
-    };
-  }
-
-  rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      put: "/connectors/{connector_id}",
-      body: "*"
-    };
-  }
-}
+//service ConnectorRestCommandService {
+//  rpc Create(CreateConnector) returns (google.protobuf.Empty) {
+//    option (google.api.http) = {
+//      post: "/connectors/{connector_id}",
+//      body: "*"
+//    };
+//  }
+//
+//  rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty) {
+//    option (google.api.http) = {
+//      put: "/connectors/{connector_id}",
+//      body: "*"
+//    };
+//  }
+//
+//  rpc Delete(DeleteConnector) returns (google.protobuf.Empty) {
+//    option (google.api.http) = {
+//      delete: "/connectors/{connector_id}",
+//      body: "*"
+//    };
+//  }
+//
+//  rpc Start(StartConnector) returns (google.protobuf.Empty) {
+//    option (google.api.http) = {
+//      put: "/connectors/{connector_id}",
+//      body: "*"
+//    };
+//  }
+//
+//  rpc Stop(StopConnector) returns (google.protobuf.Empty) {
+//    option (google.api.http) = {
+//      put: "/connectors/{connector_id}",
+//      body: "*"
+//    };
+//  }
+//
+//  rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
+//    option (google.api.http) = {
+//      put: "/connectors/{connector_id}",
+//      body: "*"
+//    };
+//  }
+//
+//  rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
+//    option (google.api.http) = {
+//      put: "/connectors/{connector_id}",
+//      body: "*"
+//    };
+//  }
+//}
 
 message CreateConnector {
   string                                   connector_id = 1;
@@ -129,16 +122,12 @@ message DeleteConnector {
 }
 
 message StartConnector {
-  string connector_id = 1;
+  string        connector_id   = 1;
+  StartPosition start_position = 3;
 }
 
 message StopConnector {
   string connector_id = 1;
-}
-
-message ResetConnector {
-  string                      connector_id = 1;
-  google.protobuf.UInt64Value log_position = 3;
 }
 
 message RenameConnector {
@@ -152,10 +141,4 @@ message RecordConnectorStateChange {
   ConnectorState            to_state      = 5;
   Error                     error_details = 7;
   google.protobuf.Timestamp timestamp     = 9;
-}
-
-message RecordConnectorPosition {
-  string                    connector_id = 1;
-  uint64                    log_position = 3;
-  google.protobuf.Timestamp timestamp    = 5;
 }

@@ -61,9 +61,7 @@ public static class ManagementPlaneWireUp {
                 RegisterManagementMessages<ConnectorFailed>(registry, token),
                 RegisterManagementMessages<ConnectorRenamed>(registry, token),
                 RegisterManagementMessages<ConnectorReconfigured>(registry, token),
-                RegisterManagementMessages<ConnectorReset>(registry, token),
-                RegisterManagementMessages<ConnectorDeleted>(registry, token),
-                RegisterManagementMessages<ConnectorPositionCommitted>(registry, token)
+                RegisterManagementMessages<ConnectorDeleted>(registry, token)
             ];
 
             await tasks.WhenAll();

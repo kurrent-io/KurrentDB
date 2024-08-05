@@ -15,7 +15,6 @@ using EventStore.Streaming.Processors.Configuration;
 using EventStore.Streaming.Processors.Locks;
 using Microsoft.Extensions.Logging;
 using NodaTime.Extensions;
-using Polly;
 
 namespace EventStore.Connect.Processors.Configuration;
 
@@ -31,11 +30,17 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
     public SystemProcessorBuilder Stream(StreamId stream) =>
         Filter(ConsumeFilter.Stream(stream));
 
-    public SystemProcessorBuilder StartPosition(RecordPosition recordPosition, bool reset = false) =>
+    public SystemProcessorBuilder StartPosition(RecordPosition? startPosition) =>
         new() {
             Options = Options with {
-                StartPosition = recordPosition,
-                ResetPosition = reset
+                StartPosition = startPosition
+            }
+        };
+
+    public SystemProcessorBuilder InitialPosition(SubscriptionInitialPosition initialPosition) =>
+        new() {
+            Options = Options with {
+                InitialPosition = initialPosition
             }
         };
 
@@ -92,17 +97,17 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
         var leaseManager = new LeaseManager(
             SystemReader.Builder
                 .Publisher(options.Publisher)
-                .ReaderId($"rdx-leases-{options.ProcessorId}")
+                .ReaderId($"leases-{options.ProcessorId}")
                 .SchemaRegistry(options.SchemaRegistry)
-                .Logging(loggingOptions with { LogName = "LeaseManagerSystemReader" })
-                .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
+                .Logging(loggingOptions with { Enabled = false, LogName = "LeaseManagerSystemReader" })
+                // .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
                 .Create(),
             SystemProducer.Builder
                 .Publisher(options.Publisher)
-                .ProducerId($"pdx-leases-{options.ProcessorId}")
+                .ProducerId($"leases-{options.ProcessorId}")
                 .SchemaRegistry(options.SchemaRegistry)
-                .Logging(loggingOptions with { LogName = "LeaseManagerSystemProducer" })
-                .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
+                .Logging(loggingOptions with { Enabled = false, LogName = "LeaseManagerSystemProducer" })
+                // .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
                 .Create(),
             streamTemplate: options.AutoLock.StreamTemplate,
             logger: options.Logging.LoggerFactory.CreateLogger<LeaseManager>()
@@ -124,13 +129,14 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
                 .ConsumerId(options.ProcessorId)
                 .SubscriptionName(options.SubscriptionName)
                 .Filter(options.Filter)
-                .StartPosition(options.StartPosition, options.ResetPosition)
+                .StartPosition(options.StartPosition)
+                .InitialPosition(options.InitialPosition)
                 .AutoCommit(options.AutoCommit)
                 .SkipDecoding(options.SkipDecoding)
                 .SchemaRegistry(options.SchemaRegistry)
                 .Logging(loggingOptions)
                 .Transformer(options.Transformer)
-                .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
+                // .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
                 .Create(),
 
             GetProducer = () => SystemProducer.Builder
@@ -138,7 +144,7 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
                 .ProducerId(options.ProcessorId)
                 .SchemaRegistry(options.SchemaRegistry)
                 .Logging(loggingOptions)
-                .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
+                // .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
                 .Create(),
 
             GetLocker = () => new ServiceLocker(serviceLockerOptions, leaseManager)

@@ -14,40 +14,35 @@ namespace EventStore.Core;
 
 [PublicAPI]
 public static class PublisherSubscribeExtensions {
-	static async IAsyncEnumerable<ResolvedEvent> SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, [EnumeratorCancellation] CancellationToken cancellationToken) {
-		//var startPosition = StartFrom(position);
+    static readonly IExpiryStrategy DefaultExpiryStrategy = new DefaultExpiryStrategy();
 
+    const uint DefaultCheckpointIntervalMultiplier = 1000;
+
+	static async IAsyncEnumerable<ResolvedEvent> SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, [EnumeratorCancellation] CancellationToken cancellationToken) {
 		await using var sub = new Enumerator.AllSubscriptionFiltered(
 			bus: publisher,
-			expiryStrategy: new DefaultExpiryStrategy(), //TODO SS: what is this expiry strategy thing?
+			expiryStrategy: DefaultExpiryStrategy,
 			checkpoint: position,
 			resolveLinks: false,
 			eventFilter: filter,
 			user: SystemAccounts.System,
 			requiresLeader: false,
 			maxSearchWindow: null,
-			checkpointIntervalMultiplier: 1000,
+			checkpointIntervalMultiplier: DefaultCheckpointIntervalMultiplier,
 			cancellationToken: cancellationToken
 		);
 
 		while (!cancellationToken.IsCancellationRequested) {
-			if (!await sub.MoveNextAsync()) // not sure we need to retry forever or if the enumerator will do that for us
+			if (!await sub.MoveNextAsync()) // not sure if we need to retry forever or if the enumerator will do that for us
 				break;
 
 			if (sub.Current is ReadResponse.EventReceived eventReceived)
 				yield return eventReceived.Event;
 
+            // TODO SS: notify the consumer that we are caught up
             // if (sub.Current is ReadResponse.SubscriptionCaughtUp caughtUp)
             //     yield return caughtUp;
 		}
-
-		// yield break;
-
-		// static Position StartFrom(Position? position) =>
-		// 	position switch {
-		// 		null           => Position.Start,
-		// 		_              => position.Value
-		// 	};
 	}
 
 	static async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(this IPublisher publisher, string stream, long? revision, [EnumeratorCancellation] CancellationToken cancellationToken) {
@@ -85,60 +80,44 @@ public static class PublisherSubscribeExtensions {
 			};
 	}
 
-	// public static async Task Execute<TState>(this ResiliencePipeline resiliencePipeline, string operationKey, Func<ResilienceContext, TState, ValueTask> action, TState state, CancellationToken cancellationToken) {
-	// 	var resilienceContext = ResilienceContextPool.Shared
-	// 		.Get(operationKey, cancellationToken);
-	//
-	// 	try {
-	// 		await resiliencePipeline.ExecuteAsync(action, resilienceContext, state);
-	// 	}
-	// 	finally {
-	// 		ResilienceContextPool.Shared
-	// 			.Return(resilienceContext);
-	// 	}
-	// }
-
 	public static Task SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, Channel<ResolvedEvent> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
-		_ = Task.Run(
-			async () => {
-				var resilienceContext = ResilienceContextPool.Shared
-					.Get(nameof(SubscribeToAll), cancellationToken);
+		_ = Task.Run(async () => {
+			var resilienceContext = ResilienceContextPool.Shared
+				.Get(nameof(SubscribeToAll), cancellationToken);
 
-				try {
-					await resiliencePipeline.ExecuteAsync(
-						static async (ctx, state) => {
-							await foreach (var re in state.Publisher.SubscribeToAll(state.Checkpoint, state.Filter, ctx.CancellationToken)) {
-								state.Checkpoint = new Position(
-									(ulong)re.OriginalPosition!.Value.CommitPosition,
-									(ulong)re.OriginalPosition!.Value.PreparePosition
-								);
+			try {
+				await resiliencePipeline.ExecuteAsync(
+					static async (ctx, state) => {
+						await foreach (var re in state.Publisher.SubscribeToAll(state.Checkpoint, state.Filter, ctx.CancellationToken)) {
+							state.Checkpoint = new Position(
+								(ulong)re.OriginalPosition!.Value.CommitPosition,
+								(ulong)re.OriginalPosition!.Value.PreparePosition
+							);
 
-								await state.Channel.Writer.WriteAsync(re, ctx.CancellationToken);
-							}
-						},
-						resilienceContext, (
-							Publisher : publisher,
-							Checkpoint: position,
-							Filter    : filter,
-							Channel   : channel
-						)
-					);
+							await state.Channel.Writer.WriteAsync(re, ctx.CancellationToken);
+						}
+					},
+					resilienceContext, (
+						Publisher : publisher,
+						Checkpoint: position,
+						Filter    : filter,
+						Channel   : channel
+					)
+				);
 
-					channel.Writer.TryComplete();
-				}
-				catch (OperationCanceledException) {
-					channel.Writer.TryComplete();
-				}
-				catch (Exception ex) {
-					channel.Writer.TryComplete(ex);
-				}
-				finally {
-					ResilienceContextPool.Shared
-						.Return(resilienceContext);
-				}
-			},
-			cancellationToken
-		);
+				channel.Writer.TryComplete();
+			}
+			catch (OperationCanceledException) {
+				channel.Writer.TryComplete();
+			}
+			catch (Exception ex) {
+				channel.Writer.TryComplete(ex);
+			}
+			finally {
+				ResilienceContextPool.Shared
+					.Return(resilienceContext);
+			}
+		}, cancellationToken);
 
 		return Task.CompletedTask;
 	}

@@ -9,9 +9,9 @@
 		<PackageReference Include="DotNext" Version="5.8.0" />
 		<PackageReference Include="DotNext.Threading" Version="5.10.0" />
 
-		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.75" />
-		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.43" />
-		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.43" />
+		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.78" />
+		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.45" />
+		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.45" />
 
 		<PackageReference Include="Eventuous.Application" Version="0.15.0-rc.2" />
 		<PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-rc.1" />
@@ -26,6 +26,7 @@
 <!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />-->
 <!--		<ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.Http\EventStore.Connectors.Http.csproj" />-->
 <!--		<ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.Kafka\EventStore.Connectors.Kafka.csproj" />-->
+<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />-->
 		
 		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
 			<Private>false</Private>

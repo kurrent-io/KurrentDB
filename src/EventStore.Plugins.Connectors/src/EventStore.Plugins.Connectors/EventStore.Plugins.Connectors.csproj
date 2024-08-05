@@ -13,6 +13,25 @@
 		<PackageIcon>ouro.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/EventStore/EventStore.Plugins.Connectors</PackageProjectUrl>
 		<PackageTags>eventstore connect connectors sink experimental</PackageTags>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Version>1.0.0-beta1</Version>
+		
+		<Authors>Sérgio Silveira</Authors>
+		<Company>Event Store Ltd</Company>
+		<Copyright>Copyright © 2012-$([System.DateTime]::Now.Year) $(Company) $(Authors)</Copyright>
+
+		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<EmbedAllSources>true</EmbedAllSources>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<DebugType>full</DebugType>
+		<IncludeBuildOutput>true</IncludeBuildOutput>
+
+<!--		<UpdateVersionProperties>true</UpdateVersionProperties>-->
+<!--		<MinVerTagPrefix>v</MinVerTagPrefix>-->
+<!--		<MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>-->
+		
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -24,17 +43,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
-
-<!--		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">-->
-<!--			<Private>false</Private>-->
-<!--			<ExcludeAssets>all</ExcludeAssets>-->
-<!--		</ProjectReference>-->
-
-<!--		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj">-->
-<!--			<Private>false</Private>-->
-<!--			<ExcludeAssets>all</ExcludeAssets>-->
-<!--		</ProjectReference>-->
-
 	</ItemGroup>
 
 	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
@@ -49,22 +57,28 @@
 		<None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
 	</ItemGroup>
 
+<!--	<ItemGroup Condition="'$(IsPackable)' == 'true'">-->
+<!--		<None Pack="true" Include="$(OutDir)\runtimes\**\*.*" PackagePath="\runtimes\%(RecursiveDir)\%(FileName)%(Extension)" />-->
+<!--	</ItemGroup>-->
+
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<PropertyGroup>
 			<EventStorePluginOutputPath>..\..\submodules\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)</EventStorePluginOutputPath>
 		</PropertyGroup>
 		<ItemGroup>
-			<PluginSourceFiles Include="$(OutDir)\*.*" />
+			<PluginSourceFiles Include="$(OutDir)\**\*.*" />
 		</ItemGroup>
 		<RemoveDir Directories="$(EventStorePluginOutputPath)" />
 		<MakeDir Directories="$(EventStorePluginOutputPath)" />
-		<Copy SourceFiles="@(PluginSourceFiles)" DestinationFolder="$(EventStorePluginOutputPath)" />
+		<Copy SourceFiles="@(PluginSourceFiles)" DestinationFolder="$(EventStorePluginOutputPath)\%(RecursiveDir)" />
 	</Target>
-
-	<Target Name="PublishPlugin" AfterTargets="Publish">
-		<ItemGroup>
-			<PluginOutputFiles Include="$(PublishDir)\*.*" />
-		</ItemGroup>
-		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)/package" />
-	</Target>
+	
+<!--	<Target Name="PublishPlugin" AfterTargets="Publish">-->
+<!--		<ItemGroup>-->
+<!--			<PluginOutputFiles Include="$(PublishDir)\*.*" />-->
+<!--			<PluginRuntimeFiles Include="$(OutDir)\runtimes\**\*.*" />-->
+<!--		</ItemGroup>-->
+<!--		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)\package" />-->
+<!--		<Copy SourceFiles="@(PluginRuntimeFiles)" DestinationFolder="$(PublishDir)\package\runtimes\%(RecursiveDir)\%(FileName)%(Extension)" />-->
+<!--	</Target>-->
 </Project>

@@ -1,5 +1,7 @@
 using EventStore.Connect.Producers;
 using EventStore.Connect.Readers;
+using EventStore.Core.Data;
+using EventStore.Core.Services;
 using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
@@ -18,12 +20,25 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
     /// <inheritdoc/>
     public async Task<bool> StreamExists(StreamName stream, CancellationToken cancellationToken = default) {
         try {
-            var exists = await Reader
-                .ReadBackwards(LogPosition.Latest, ConsumeFilter.Streams(stream), 1, cancellationToken)
-                .AnyAsync(cancellationToken);
+            var isDeleted = await Reader
+                .ReadLastStreamRecord(SystemStreams.MetastreamOf(stream), cancellationToken)
+                .Then(record => {
+                    if (record == EventStoreRecord.None)
+                        return false;
 
-            return exists;
-        } catch (Exception ex) when (ex is not StreamingError) {
+                    var metadata  = StreamMetadata.FromJsonBytes(record.Data);
+                    var isDeleted = metadata.TruncateBefore == long.MaxValue;
+                    return isDeleted;
+                });
+
+            if (isDeleted)
+                return false;
+
+            return await Reader
+                .ReadLastStreamRecord(stream.ToString(), cancellationToken)
+                .Then(record => record != EventStoreRecord.None);
+        }
+        catch (Exception ex) when (ex is not StreamingError) {
             throw new StreamingCriticalError($"Unable to check if stream {stream} exists", ex);
         }
     }
@@ -75,9 +90,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
     }
 
     /// <inheritdoc/>
-    public async Task<StreamEvent[]> ReadEvents(
-        StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default
-    ) {
+    public async Task<StreamEvent[]> ReadEvents(StreamName stream, StreamReadPosition start, int count, CancellationToken cancellationToken = default) {
         var from = start.Value == 0
             ? LogPosition.Earliest
             : LogPosition.From((ulong?)start.Value);
@@ -100,6 +113,8 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
                 .ToArrayAsync(cancellationToken);
         }
         catch (Exception ex) {
+            if (ex is ReadResponseException.StreamNotFound) throw new StreamNotFound(stream); //eventuous ffs
+
             // TODO SS: must validate what exceptions are actually thrown when reading events
             StreamingError error = ex switch {
                 ReadResponseException.Timeout        => new RequestTimeoutError(stream, ex.Message),
@@ -117,7 +132,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
             throw error;
         }
 
-        return result.Length == 0 ? throw new StreamNotFoundError(stream) : result;
+        return result;
     }
 
     /// <inheritdoc/>
@@ -155,7 +170,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
             throw error;
         }
 
-        return result.Length == 0 ? throw new StreamNotFoundError(stream) : result;
+        return result;
     }
 
     /// <inheritdoc/>

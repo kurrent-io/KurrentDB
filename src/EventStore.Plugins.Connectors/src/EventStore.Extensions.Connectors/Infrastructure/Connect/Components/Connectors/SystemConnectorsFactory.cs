@@ -4,6 +4,8 @@ using EventStore.Connect.Processors;
 using EventStore.Connectors;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
+using EventStore.Connectors.System;
+using EventStore.Connectors.Testing;
 using EventStore.Streaming.Connectors.Sinks;
 using EventStore.Core.Bus;
 using EventStore.Streaming;
@@ -24,36 +26,29 @@ using AutoLockOptions = EventStore.Streaming.Processors.Configuration.AutoLockOp
 namespace EventStore.Connect.Connectors;
 
 public record SystemConnectorsFactoryOptions {
-    public StreamTemplate LifecycleStreamTemplate   { get; init; } = ConnectorsFeatureConventions.Streams.LifecycleStreamTemplate;
-    public StreamTemplate LeasesStreamTemplate      { get; init; } = ConnectorsFeatureConventions.Streams.LeasesStreamTemplate;
-    public StreamTemplate CheckpointsStreamTemplate { get; init; } = ConnectorsFeatureConventions.Streams.CheckpointsStreamTemplate;
+    public StreamTemplate             CheckpointsStreamTemplate { get; init; } = ConnectorsFeatureConventions.Streams.CheckpointsStreamTemplate;
+    public StreamTemplate             LifecycleStreamTemplate   { get; init; } = ConnectorsFeatureConventions.Streams.LifecycleStreamTemplate;
+    public AutoLockOptions            AutoLock                  { get; init; } = new();
 }
 
 public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, IConnectorValidator validation, IServiceProvider services) : IConnectorFactory {
-    public SystemConnectorsFactory(IServiceProvider services)
-        : this(
-            services.GetRequiredService<SystemConnectorsFactoryOptions>(),
-            services.GetRequiredService<SystemConnectorsValidation>(),
-            services
-        ) { }
-
     SystemConnectorsFactoryOptions Options    { get; } = options;
     IConnectorValidator            Validation { get; } = validation;
     IServiceProvider               Services   { get; } = services;
 
-    public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration, string? ownerId = null) {
-        var options = configuration.GetRequiredOptions<SinkOptions>();
+    public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration) {
+        var sinkOptions = configuration.GetRequiredOptions<SinkOptions>();
 
         Validation.EnsureValid(configuration);
 
         var sinkProxy = new SinkProxy(
             connectorId,
-            CreateSink(options.InstanceTypeName),
+            CreateSink(sinkOptions.InstanceTypeName),
             configuration,
             Services
         );
 
-        var processor = ConfigureProcessor(connectorId, options, sinkProxy, ownerId);
+        var processor = ConfigureProcessor(connectorId, sinkOptions, sinkProxy);
 
         return new SinkConnector(processor);
 
@@ -72,18 +67,41 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
         }
     }
 
-    IProcessor ConfigureProcessor(ConnectorId connectorId, SinkOptions sinkOptions, SinkProxy sinkProxy, string? ownerId = null) {
-        var publisher      = Services.GetRequiredService<IPublisher>();
-        var loggerFactory  = Services.GetRequiredService<ILoggerFactory>();
-        var schemaRegistry = Services.GetRequiredService<SchemaRegistry>();
-        var stateStore     = Services.GetRequiredService<IStateStore>();
+    IProcessor ConfigureProcessor(ConnectorId connectorId, SinkOptions sinkOptions, SinkProxy sinkProxy) {
+        var publisher         = Services.GetRequiredService<IPublisher>();
+        var loggerFactory     = Services.GetRequiredService<ILoggerFactory>();
+        var schemaRegistry    = Services.GetRequiredService<SchemaRegistry>();
+        var stateStore        = Services.GetRequiredService<IStateStore>();
+
+        // TODO SS: seriously, this is a bad idea, but creating a connector to be hosted in ESDB or PaaS is different from having full control of the Connect framework
+
+        // It was either this, or having a separate configuration for the node or
+        // even creating a factory provider that would create a new factory when the node becomes a leader,
+        // and then it escalates because it would be the activator that would need to be recreated to "hide"
+        // all this mess. Maybe these options would be passed on Create method and not on the factory...
+        // I don't know, I'm just trying to make it work.
+        // I'm not happy with this, but it's the best I could come up with in the time I had.
+
+        var nodeSysInfoProvider = Services.GetRequiredService<INodeSystemInfoProvider>();
+        var nodeId = nodeSysInfoProvider
+            .GetNodeSystemInfo().GetAwaiter().GetResult()
+            .InstanceId.ToString();
 
         var filter = sinkOptions.Subscription.Filter.Scope == SinkConsumeFilterScope.Unspecified
             ? ConsumeFilter.None
             : string.IsNullOrWhiteSpace(sinkOptions.Subscription.Filter.Expression)
                 ? ConsumeFilter.ExcludeSystemEvents()
-                : ConsumeFilter.From((ConsumeFilterScope)sinkOptions.Subscription.Filter.Scope,
-                    sinkOptions.Subscription.Filter.Expression);
+                : ConsumeFilter.From(
+                    (ConsumeFilterScope)sinkOptions.Subscription.Filter.Scope,
+                    sinkOptions.Subscription.Filter.Expression
+                );
+
+        var publishStateChangesOptions = new PublishStateChangesOptions {
+            Enabled        = true,
+            StreamTemplate = Options.LifecycleStreamTemplate
+        };
+
+        var autoLockOptions = Options.AutoLock with { OwnerId = nodeId };
 
         var autoCommitOptions = new AutoCommitOptions {
             Enabled          = sinkOptions.AutoCommit.Enabled,
@@ -92,40 +110,31 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
             StreamTemplate   = Options.CheckpointsStreamTemplate
         };
 
-        var autoLockOptions = new AutoLockOptions {
-            Enabled            = sinkOptions.AutoLock.Enabled,
-            OwnerId            = ownerId ?? sinkOptions.AutoLock.OwnerId, //TODO SS: one or the other has to give...
-            LeaseDuration      = sinkOptions.AutoLock.LeaseDuration,
-            AcquisitionTimeout = sinkOptions.AutoLock.AcquisitionTimeout,
-            AcquisitionDelay   = sinkOptions.AutoLock.AcquisitionDelay,
-            StreamTemplate     = Options.LeasesStreamTemplate
-        };
-
         var loggingOptions = new EventStore.Streaming.Configuration.LoggingOptions {
             Enabled       = sinkOptions.Logging.Enabled,
-            LogName       = "EventStore.Connect.Data.SinkConnector",
+            LogName       = sinkOptions.InstanceTypeName, // "EventStore.Connect.Data.SinkConnector",
             LoggerFactory = loggerFactory
-        };
-
-        var publishStateChangesOptions = new PublishStateChangesOptions {
-            Enabled        = true,
-            StreamTemplate = Options.LifecycleStreamTemplate
         };
 
         var builder = SystemProcessor.Builder
             .ProcessorId(connectorId)
-            .SubscriptionName(sinkOptions.Subscription.SubscriptionName)
             .Publisher(publisher)
             .StateStore(stateStore)
             .SchemaRegistry(schemaRegistry)
+            .InitialPosition(sinkOptions.Subscription.InitialPosition)
+            .PublishStateChanges(publishStateChangesOptions)
+            .AutoLock(autoLockOptions)
             .Filter(filter)
             .Logging(loggingOptions)
-            .StartPosition(sinkOptions.Subscription.StartPosition, sinkOptions.Subscription.ResetPosition)
-            .PublishStateChanges(publishStateChangesOptions)
             .AutoCommit(autoCommitOptions)
-            .AutoLock(autoLockOptions)
             .SkipDecoding()
             .WithHandler(sinkProxy);
+
+        if (sinkOptions.Subscription.StartPosition is not null
+         && sinkOptions.Subscription.StartPosition != RecordPosition.Unset
+         && sinkOptions.Subscription.StartPosition != LogPosition.Unset) {
+            builder = builder.StartPosition(sinkOptions.Subscription.StartPosition);
+        }
 
         if (sinkOptions.Transformer.Enabled) {
             builder = builder.Transformer(

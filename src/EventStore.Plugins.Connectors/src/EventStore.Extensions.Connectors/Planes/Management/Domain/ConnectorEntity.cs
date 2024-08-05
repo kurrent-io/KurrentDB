@@ -65,15 +65,6 @@ public record ConnectorEntity : State<ConnectorEntity> {
             State = ConnectorState.Stopped,
             StateTimestamp = evt.Timestamp
         });
-
-        On<ConnectorReset>((state, evt) => state with {
-            LogPosition = evt.LogPosition,
-            Resetting = true
-        });
-
-        On<ConnectorPositionCommitted>((state, evt) => state with {
-            LogPosition = evt.LogPosition
-        });
     }
 
     /// <summary>
@@ -97,13 +88,6 @@ public record ConnectorEntity : State<ConnectorEntity> {
     public ConnectorState State { get; init; } = ConnectorState.Unknown;
 
     public Timestamp StateTimestamp { get; init; }
-
-    /// <summary>
-    /// The last known log position of the connector.
-    /// </summary>
-    public ulong? LogPosition { get; init; }
-
-    public bool Resetting { get; init; }
 
     /// <summary>
     /// Indicates if the connector is deleted.
@@ -136,13 +120,6 @@ public record ConnectorEntity : State<ConnectorEntity> {
     public ConnectorEntity EnsureRunning() {
         if (State is not (ConnectorState.Running or ConnectorState.Activating))
             throw new DomainException($"Connector {Id} must be running. Current state: {State}");
-
-        return this;
-    }
-
-    public ConnectorEntity EnsureNewLogPositionIsValid(ulong newLogPosition) {
-        if (newLogPosition < LogPosition)
-            throw new DomainException($"Connector {Id} new log position {newLogPosition} precedes the actual {LogPosition}");
 
         return this;
     }

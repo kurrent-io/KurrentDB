@@ -13,8 +13,8 @@ public record SystemProcessorOptions : ProcessorOptions {
     public IPublisher    Publisher { get; init; }
     public ConsumeFilter Filter    { get; init; } = ConsumeFilter.ExcludeSystemEvents();
 
-    public RecordPosition StartPosition { get; init; } = RecordPosition.Unset;
-    public bool           ResetPosition { get; set; }
+    public RecordPosition?             StartPosition   { get; init; } = RecordPosition.Unset;
+    public SubscriptionInitialPosition InitialPosition { get; init; } = SubscriptionInitialPosition.Latest;
 
     public AutoCommitOptions AutoCommit   { get; init; } = new();
     public bool              SkipDecoding { get; init; }

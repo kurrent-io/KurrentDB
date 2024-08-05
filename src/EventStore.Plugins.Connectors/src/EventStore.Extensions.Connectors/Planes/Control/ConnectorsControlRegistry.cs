@@ -51,9 +51,16 @@ class ConnectorsControlRegistry {
 
         var records = Reader.ReadForwards(checkpoint.LogPosition, Options.Filter, cancellationToken: cancellationToken);
 
+        const string startPositionKey = "Subscription:StartPosition";
+
         await foreach (var record in records) {
             switch (record.Value) {
                 case ConnectorActivating activating:
+                    // hijack settings and inject the start position
+                    if (activating.StartPosition is not null) {
+                        activating.Settings[startPositionKey] = activating.StartPosition.Value.ToString();
+                    }
+
                     state.Add(
                         activating.ConnectorId,
                         new RegisteredConnector(
@@ -62,6 +69,14 @@ class ConnectorsControlRegistry {
                             activating.Settings
                         )
                     );
+                    break;
+
+                case ConnectorRunning running:
+                    // remove the start position from the settings in case one was set
+                    var connector = state[running.ConnectorId];
+                    state[running.ConnectorId] = connector with {
+                        Settings = connector.Settings.With(x => x.Remove(startPositionKey))
+                    };
                     break;
 
                 case ConnectorDeactivating deactivating:

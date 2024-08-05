@@ -77,3 +77,7 @@ message ConnectorStatus {
   ConnectorState    state          = 5;
   repeated uint64   positions      = 6;
 }
+
+message StartPosition {
+  google.protobuf.UInt64Value value = 1;
+}

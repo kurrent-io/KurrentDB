@@ -71,7 +71,9 @@ public class SystemConsumer : IConsumer {
 		ResiliencePipeline = options.ResiliencePipelineBuilder
 			.With(x => x.InstanceName = "SystemConsumerResiliencePipeline")
 			.Build();
-	}
+
+        StartPosition = RecordPosition.Unset;
+    }
 
 	internal SystemConsumerOptions Options { get; }
 
@@ -86,12 +88,16 @@ public class SystemConsumer : IConsumer {
 	Func<ConsumerLifecycleEvent, Task> Intercept            { get; }
 	ITransformer?                      Transformer          { get; }
 
-	public string        ConsumerId       => Options.ConsumerId;
-    public string        ClientId         => Options.ClientId;
-    public string        SubscriptionName => Options.SubscriptionName;
-    public ConsumeFilter Filter           => Options.Filter;
+	public string                        ConsumerId       => Options.ConsumerId;
+    public string                        ClientId         => Options.ClientId;
+    public string                        SubscriptionName => Options.SubscriptionName;
+    public ConsumeFilter                 Filter           => Options.Filter;
+    public IReadOnlyList<RecordPosition> TrackedPositions => []; //CheckpointController.Positions;
 
-	CancellationTokenSource Cancellator { get; set; } = null!;
+    public RecordPosition StartPosition        { get; private set; }
+    public RecordPosition LastCommitedPosition { get; private set; }
+
+	CancellationTokenSource Cancellator { get; set; } = new();
 
     public async IAsyncEnumerable<EventStoreRecord> Records([EnumeratorCancellation] CancellationToken stoppingToken) {
 		// create a new cancellator to be used in case
@@ -101,13 +107,16 @@ public class SystemConsumer : IConsumer {
 		// ensure the positions stream exists and is correctly configured
 		await CheckpointStore.Initialize(Cancellator.Token);
 
-		var startPosition = await CheckpointStore
-            .ResolveStartPosition(Options.StartPosition, Options.ResetPosition, Cancellator.Token)
-            .Then(x => x.ToPosition());
+		StartPosition = await CheckpointStore
+            .ResolveStartPosition(Options.StartPosition, Options.InitialPosition, Cancellator.Token);
 
-        var filter = Options.Filter.ToEventFilter();
-
-		await Client.SubscribeToAll(startPosition, filter, InboundChannel, ResiliencePipeline, Cancellator.Token);
+		await Client.SubscribeToAll(
+            StartPosition.ToPosition(),
+            Options.Filter.ToEventFilter(),
+            InboundChannel,
+            ResiliencePipeline,
+            Cancellator.Token
+        );
 
 		// we must be able to stop the consumer and still
 		// commit the remaining positions if any, hence
@@ -133,9 +142,6 @@ public class SystemConsumer : IConsumer {
 			await Intercept(new RecordReceived(this, record));
 			yield return record;
 		}
-
-		// // if we got here it's because the cancellation was requested
-		// await Intercept(new ConsumerUnsubscribed(this));
 	}
 
     public async Task Track(EventStoreRecord record) {
@@ -151,8 +157,10 @@ public class SystemConsumer : IConsumer {
         cancellationToken.ThrowIfCancellationRequested();
 
         try {
-            if (!positions.IsNullOrEmpty())
+            if (!positions.IsNullOrEmpty()) {
                 await CheckpointStore.CommitPositions(positions, cancellationToken);
+                LastCommitedPosition = positions[^1];
+            }
 
             await Intercept(new PositionsCommitted(this, positions));
         }

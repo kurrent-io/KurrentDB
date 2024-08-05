@@ -3,9 +3,9 @@
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Core;
 using EventStore.Core.Bus;
+using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Streaming;
-using EventStore.Streaming.Producers.Configuration;
 using EventStore.Streaming.Interceptors;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Producers.Interceptors;
@@ -71,60 +71,32 @@ public class SystemProducer : IProducer {
         var events = await validRequest
             .ToEvents(
                 headers => headers
-                    .Add(HeaderKeys.ProducerId, ProducerId)
-                    .Add(HeaderKeys.ProducerRequestId, validRequest.RequestId),
+                    .Set(HeaderKeys.ProducerId, ProducerId)
+                    .Set(HeaderKeys.ProducerRequestId, validRequest.RequestId),
                 Serialize
             );
 
         await Intercept(new ProduceRequestReady(this, request));
 
-        ProduceResult result;
-
         var expectedRevision = request.ExpectedStreamRevision != StreamRevision.Unset
             ? request.ExpectedStreamRevision.Value
             : request.ExpectedStreamState switch {
-                StreamState.Missing => Core.Data.ExpectedVersion.NoStream,
-                StreamState.Exists  => Core.Data.ExpectedVersion.StreamExists,
-                StreamState.Any     => Core.Data.ExpectedVersion.Any
+                StreamState.Missing => ExpectedVersion.NoStream,
+                StreamState.Exists  => ExpectedVersion.StreamExists,
+                StreamState.Any     => ExpectedVersion.Any
             };
 
-        try {
-            var (position, streamRevision) = await Client.WriteEvents(
-                validRequest.Stream,
-                events,
-                expectedRevision
-            );
+        var result = await WriteEvents(Client, validRequest, events, expectedRevision);
 
-            var recordPosition = RecordPosition.ForStream(
-                StreamId.From(validRequest.Stream),
-                StreamRevision.From(streamRevision.ToInt64()),
-                LogPosition.From(position.CommitPosition, position.PreparePosition)
-            );
-
-            result = ProduceResult.Succeeded(validRequest, recordPosition);
-
-            //await Intercept(new ProduceRequestSucceeded(this, validRequest, recordPosition));
-        } catch (Exception ex) {
-            StreamingError error = ex switch {
-                ReadResponseException.Timeout        => new RequestTimeoutError(validRequest.Stream, ex.Message),
-                ReadResponseException.StreamNotFound => new StreamNotFoundError(validRequest.Stream),
-                ReadResponseException.StreamDeleted  => new StreamDeletedError(validRequest.Stream),
-                ReadResponseException.AccessDenied   => new StreamAccessDeniedError(validRequest.Stream),
-                ReadResponseException.WrongExpectedRevision wex => new ExpectedStreamRevisionError(
-                    validRequest.Stream,
-                    StreamRevision.From(wex.ExpectedStreamRevision.ToInt64()),
-                    StreamRevision.From(wex.ActualStreamRevision.ToInt64())
-                ),
-                ReadResponseException.NotHandled.ServerNotReady => new ServerNotReadyError(),
-                ReadResponseException.NotHandled.ServerBusy     => new ServerTooBusyError(),
-                ReadResponseException.NotHandled.LeaderInfo li  => new ServerNotLeaderError(li.Host, li.Port),
-                ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
-                _                                               => new StreamingCriticalError(ex.Message, ex)
-            };
-
-            result = ProduceResult.Failed(validRequest, error);
-
-            //await Intercept(new ProduceRequestFailed(this, validRequest, error));
+        // if it is the wrong version but the stream is empty,
+        // it means the stream was deleted or truncated,
+        // and therefore we can retry immediately
+        if (request.ExpectedStreamState == StreamState.Missing && result.Error is ExpectedStreamRevisionError revisionError) {
+            result = await Client
+                .ReadStreamLastEvent(validRequest.Stream)
+                .Then(async re => re is null || re == ResolvedEvent.EmptyEvent
+                    ? await WriteEvents(Client, validRequest, events, revisionError.ActualStreamRevision)
+                    : result);
         }
 
         await Intercept(new ProduceRequestProcessed(this, result));
@@ -133,6 +105,46 @@ public class SystemProducer : IProducer {
             await callback.Execute(result);
         } catch (Exception uex) {
             await Intercept(new ProduceRequestCallbackError(this, result, uex));
+        }
+
+        return;
+
+        static async Task<ProduceResult> WriteEvents(IPublisher client, ProduceRequest request, Event[] events, long expectedRevision) {
+            try {
+                var (position, streamRevision) = await client.WriteEvents(
+                    request.Stream,
+                    events,
+                    expectedRevision
+                );
+
+                var recordPosition = RecordPosition.ForStream(
+                    StreamId.From(request.Stream),
+                    StreamRevision.From(streamRevision.ToInt64()),
+                    LogPosition.From(position.CommitPosition, position.PreparePosition)
+                );
+
+                return ProduceResult.Succeeded(request, recordPosition);
+            }
+            catch (Exception ex) {
+                StreamingError error = ex switch {
+                    ReadResponseException.Timeout        => new RequestTimeoutError(request.Stream, ex.Message),
+                    ReadResponseException.StreamNotFound => new StreamNotFoundError(request.Stream),
+                    ReadResponseException.StreamDeleted  => new StreamDeletedError(request.Stream),
+                    ReadResponseException.AccessDenied   => new StreamAccessDeniedError(request.Stream),
+                    ReadResponseException.WrongExpectedRevision wex => new ExpectedStreamRevisionError(
+                        request.Stream,
+                        StreamRevision.From(wex.ExpectedStreamRevision.ToInt64()),
+                        StreamRevision.From(wex.ActualStreamRevision.ToInt64())
+                    ),
+                    ReadResponseException.NotHandled.ServerNotReady => new ServerNotReadyError(),
+                    ReadResponseException.NotHandled.ServerBusy     => new ServerTooBusyError(),
+                    ReadResponseException.NotHandled.LeaderInfo li  => new ServerNotLeaderError(li.Host, li.Port),
+                    ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
+                    _                                               => new StreamingCriticalError(ex.Message, ex)
+                };
+
+                return ProduceResult.Failed(request, error);
+            }
         }
     }
 

@@ -58,16 +58,8 @@ public class ConnectorsApplication : EntityApplication<ConnectorEntity> {
             ];
         });
 
-        OnExisting<StartConnector>((connector, _) => {
+        OnExisting<StartConnector>((connector, cmd) => {
             connector.EnsureNotDeleted();
-
-            // TODO SS: should we allow forcing a start? Maybe its a restart in that case?
-
-            // if (connector.State
-            //     is ConnectorState.Running
-            //     or ConnectorState.Activating
-            //     or ConnectorState.Deactivating)
-            //     return [];
 
             if (connector.State
                 is ConnectorState.Running
@@ -78,9 +70,10 @@ public class ConnectorsApplication : EntityApplication<ConnectorEntity> {
 
             return [
                 new ConnectorActivating {
-                    ConnectorId = connector.Id,
-                    Settings    = { connector.CurrentRevision.Settings },
-                    Timestamp   = time.GetUtcNow().ToTimestamp()
+                    ConnectorId   = connector.Id,
+                    Settings      = { connector.CurrentRevision.Settings },
+                    StartPosition = cmd.StartPosition,
+                    Timestamp     = time.GetUtcNow().ToTimestamp()
                 }
             ];
         });
@@ -98,19 +91,6 @@ public class ConnectorsApplication : EntityApplication<ConnectorEntity> {
             return [
                 new ConnectorDeactivating {
                     ConnectorId = connector.Id,
-                    Timestamp   = time.GetUtcNow().ToTimestamp()
-                }
-            ];
-        });
-
-        OnExisting<ResetConnector>((connector, cmd) => {
-            connector.EnsureNotDeleted();
-            connector.EnsureStopped();
-
-            return [
-                new ConnectorReset {
-                    ConnectorId = connector.Id,
-                    LogPosition = cmd.LogPosition,
                     Timestamp   = time.GetUtcNow().ToTimestamp()
                 }
             ];
@@ -177,19 +157,5 @@ public class ConnectorsApplication : EntityApplication<ConnectorEntity> {
                 _ => []
             };
         });
-
-        // OnExisting<RecordConnectorPosition>((connector, cmd) => {
-        //     connector.EnsureNotDeleted();
-        //     connector.EnsureNewLogPositionIsValid(cmd.LogPosition);
-        //
-        //     return [
-        //         new ConnectorPositionCommitted {
-        //             ConnectorId = connector.Id,
-        //             LogPosition = cmd.LogPosition,
-        //             Timestamp   = cmd.Timestamp,
-        //             RecordedAt  = time.GetUtcNow().ToTimestamp()
-        //         }
-        //     ];
-        // });
     }
 }

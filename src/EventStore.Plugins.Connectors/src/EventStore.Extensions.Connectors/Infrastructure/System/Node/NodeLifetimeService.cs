@@ -37,14 +37,16 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
 
                 break;
 
-            default:
-                if (message.State is VNodeState.ShuttingDown) {
-                    using var oldEvent = Interlocked.Exchange(ref _leadershipEvent, null);
-                    oldEvent?.Cancel(null);
-                    Logger.LogNodeLeadershipRevoked(message.State);
-                }
-
-                break;
+            // ESDB does not support graceful shutdown, so at this point,
+            // if we cancel the token, the connectors will just throw a lot of errors...
+            // default:
+            //     if (message.State is VNodeState.ShuttingDown) {
+            //         using var oldEvent = Interlocked.Exchange(ref _leadershipEvent, null);
+            //         oldEvent?.Cancel(null);
+            //         Logger.LogNodeLeadershipRevoked(message.State);
+            //     }
+            //
+            //     break;
         }
     }
 

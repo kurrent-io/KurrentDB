@@ -5,6 +5,7 @@ package eventstore.connectors.v1;
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
 import "protocol.proto";
+import "managementplane/resources.proto";
 
 option csharp_namespace = "EventStore.Connectors.Management.Contracts.Events";
 
@@ -33,27 +34,21 @@ message ConnectorRenamed {
   google.protobuf.Timestamp timestamp    = 5;
 }
 
-message ConnectorReset {
-  string                      connector_id = 1;
-  google.protobuf.UInt64Value log_position = 3;
-  google.protobuf.Timestamp   timestamp    = 5;
-}
-
-// Occurs when connector is started.
+// Occurs when a request to start the connector is accepted.
 message ConnectorActivating {
-  string                                   connector_id = 1;
-  int32                                    revision     = 3;
-  map<string, google.protobuf.StringValue> settings     = 5;
-  google.protobuf.Timestamp                timestamp    = 7;
+  string                                   connector_id   = 1;
+  int32                                    revision       = 3;
+  map<string, google.protobuf.StringValue> settings       = 5;
+  StartPosition                            start_position = 7;
+  google.protobuf.Timestamp                timestamp      = 9;
 }
 
-// Occurs when connector is stopped.
+// Occurs when a request to stop the connector is accepted.
 message ConnectorDeactivating {
   string                    connector_id = 1;
   google.protobuf.Timestamp timestamp    = 3;
 }
 
-// Occurs when connector state changes to CONNECTOR_STATE_RUNNING.
 message ConnectorRunning {
   string                    connector_id = 1;
   google.protobuf.Timestamp timestamp    = 3;
@@ -71,11 +66,4 @@ message ConnectorFailed {
   Error                     error_details = 3;
   google.protobuf.Timestamp timestamp     = 5;
   google.protobuf.Timestamp recorded_at   = 7;
-}
-
-message ConnectorPositionCommitted {
-  string                    connector_id = 1;
-  uint64                    log_position = 3;
-  google.protobuf.Timestamp timestamp    = 5;
-  google.protobuf.Timestamp recorded_at  = 7;
 }

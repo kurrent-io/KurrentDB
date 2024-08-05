@@ -7,7 +7,7 @@ using ActivatedConnectors = System.Collections.Concurrent.ConcurrentDictionary<
 
 namespace EventStore.Connectors.Control;
 
-public delegate IConnector CreateConnector(ConnectorId connectorId, IDictionary<string, string?> settings, string ownerId);
+public delegate IConnector CreateConnector(ConnectorId connectorId, IDictionary<string, string?> settings);
 
 public class ConnectorsActivator(CreateConnector createConnector) {
     public ConnectorsActivator(IConnectorFactory connectorFactory) : this(connectorFactory.CreateConnector) { }
@@ -18,7 +18,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
     public async Task<ActivateResult> Activate(
         ConnectorId connectorId,
         IDictionary<string, string?> settings,
-        int revision, ClusterNodeId ownerId,
+        int revision,
         CancellationToken stoppingToken = default
     ) {
         // at this moment, this should not happen and its more of a sanity check
@@ -36,7 +36,7 @@ public class ConnectorsActivator(CreateConnector createConnector) {
         }
 
         try {
-            connector = Connectors[connectorId] = (CreateConnector(connectorId, settings, ownerId), revision);
+            connector = Connectors[connectorId] = (CreateConnector(connectorId, settings), revision);
 
             await connector.Instance.Connect(stoppingToken);
 
