@@ -15,7 +15,7 @@
 		<PackageTags>eventstore connect connectors sink experimental</PackageTags>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Version>1.0.0-beta1</Version>
-		
+
 		<Authors>Sérgio Silveira</Authors>
 		<Company>Event Store Ltd</Company>
 		<Copyright>Copyright © 2012-$([System.DateTime]::Now.Year) $(Company) $(Authors)</Copyright>
@@ -31,7 +31,7 @@
 <!--		<UpdateVersionProperties>true</UpdateVersionProperties>-->
 <!--		<MinVerTagPrefix>v</MinVerTagPrefix>-->
 <!--		<MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>-->
-		
+
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -45,10 +45,6 @@
 		<ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
 	</ItemGroup>
 
-	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
-		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-	</PropertyGroup>
-
 	<ItemGroup>
 		<InternalsVisibleTo Include="EventStore.Plugins.Connectors.Tests" />
 	</ItemGroup>
@@ -57,9 +53,9 @@
 		<None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
 	</ItemGroup>
 
-<!--	<ItemGroup Condition="'$(IsPackable)' == 'true'">-->
-<!--		<None Pack="true" Include="$(OutDir)\runtimes\**\*.*" PackagePath="\runtimes\%(RecursiveDir)\%(FileName)%(Extension)" />-->
-<!--	</ItemGroup>-->
+	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+	</PropertyGroup>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<PropertyGroup>
@@ -72,13 +68,11 @@
 		<MakeDir Directories="$(EventStorePluginOutputPath)" />
 		<Copy SourceFiles="@(PluginSourceFiles)" DestinationFolder="$(EventStorePluginOutputPath)\%(RecursiveDir)" />
 	</Target>
-	
-<!--	<Target Name="PublishPlugin" AfterTargets="Publish">-->
-<!--		<ItemGroup>-->
-<!--			<PluginOutputFiles Include="$(PublishDir)\*.*" />-->
-<!--			<PluginRuntimeFiles Include="$(OutDir)\runtimes\**\*.*" />-->
-<!--		</ItemGroup>-->
-<!--		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)\package" />-->
-<!--		<Copy SourceFiles="@(PluginRuntimeFiles)" DestinationFolder="$(PublishDir)\package\runtimes\%(RecursiveDir)\%(FileName)%(Extension)" />-->
-<!--	</Target>-->
+
+	<Target Name="PublishPlugin" AfterTargets="Publish">
+		<ItemGroup>
+			<PluginOutputFiles Include="$(PublishDir)\**\*.*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)\package\%(RecursiveDir)" />
+	</Target>
 </Project>
