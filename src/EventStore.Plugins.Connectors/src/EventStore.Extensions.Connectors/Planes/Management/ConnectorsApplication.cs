@@ -1,3 +1,4 @@
+using EventStore.Common.Utils;
 using EventStore.Connectors.Eventuous;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
@@ -10,8 +11,12 @@ namespace EventStore.Connectors.Management;
 
 [PublicAPI]
 public class ConnectorsApplication : EntityApplication<ConnectorEntity> {
-    public ConnectorsApplication(ValidateConnectorSettings validateSettings, TimeProvider time, IEventStore store) : base(cmd => cmd.ConnectorId, ConnectorsFeatureConventions.Streams.ManagementStreamTemplate, store) {
-        OnNew<CreateConnector>(cmd => {
+    public ConnectorsApplication(ValidateConnectorSettings validateSettings, TimeProvider time, IEventStore store) :
+        base(cmd => cmd.ConnectorId, ConnectorsFeatureConventions.Streams.ManagementStreamTemplate, store) {
+        OnAny<CreateConnector>((connector, cmd) => {
+            if (connector.IsNew)
+                throw new DomainExceptions.EntityAlreadyExists("Connector", cmd.ConnectorId);
+
             var settings = ConnectorSettings
                 .From(cmd.Settings, validateSettings)
                 .EnsureValid(cmd.ConnectorId)

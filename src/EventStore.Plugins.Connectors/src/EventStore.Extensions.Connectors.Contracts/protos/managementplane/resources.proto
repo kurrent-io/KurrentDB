@@ -81,3 +81,18 @@ message ConnectorStatus {
 message StartPosition {
   google.protobuf.UInt64Value value = 1;
 }
+
+message ConnectorsSnapshot {
+  repeated Connector connectors = 1;
+
+  message Connector {
+    string                                   connector_id       = 1;
+    string                                   name               = 2;
+    string                                   instance_type      = 3;
+    ConnectorState                           state              = 4;
+    google.protobuf.Timestamp                state_timestamp    = 5;
+    map<string, google.protobuf.StringValue> settings           = 6;
+    google.protobuf.Timestamp                settings_timestamp = 7;
+    google.protobuf.UInt64Value              position           = 8;
+  }
+}

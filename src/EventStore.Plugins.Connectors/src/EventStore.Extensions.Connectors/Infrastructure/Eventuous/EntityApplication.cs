@@ -33,6 +33,11 @@ public abstract class EntityApplication<TEntity>(Func<dynamic, string> getEntity
                 ? throw new DomainExceptions.EntityNotFound(EntityName, entityId)
                 : executeCommand(entity, cmd));
         });
+
+    protected void OnAny<T>(Func<TEntity, T, IEnumerable<object>> executeCommand) where T : class => On<T>()
+        .InState(ExpectedState.Any)
+        .GetStream(cmd => new(streamTemplate.GetStream(getEntityId(cmd))))
+        .ActAsync(async (entity, _, cmd, _) => executeCommand(entity, cmd));
 }
 
 // public abstract class SmartCommandService<TState>

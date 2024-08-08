@@ -81,7 +81,7 @@ public static class PublisherManagementExtensions {
 		this IPublisher publisher, string stream, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
 		publisher.DeleteStream(stream, expectedRevision, true, cancellationToken);
 
-	public static async Task<(StreamMetadata Metadata, StreamRevision Revision)> SetStreamMetadata(this IPublisher publisher, string stream, StreamMetadata metadata, long expectedRevision = -2, CancellationToken cancellationToken = default) {
+	public static async Task<(StreamMetadata Metadata, long Revision)> SetStreamMetadata(this IPublisher publisher, string stream, StreamMetadata metadata, long expectedRevision = -2, CancellationToken cancellationToken = default) {
 		var events = new[] {
 			new Event(
 				eventId: Guid.NewGuid(),
@@ -94,19 +94,19 @@ public static class PublisherManagementExtensions {
 
 		var (position, streamRevision) = await publisher.WriteEvents(SystemStreams.MetastreamOf(stream), events, expectedRevision, cancellationToken);
 
-		return (metadata, streamRevision);
+		return (metadata, streamRevision.ToInt64());
 	}
 
-	public static async Task<(StreamMetadata Metadata, StreamRevision Revision)> GetStreamMetadata(this IPublisher publisher, string stream, CancellationToken cancellationToken = default) {
+	public static async Task<(StreamMetadata Metadata, long Revision)> GetStreamMetadata(this IPublisher publisher, string stream, CancellationToken cancellationToken = default) {
 		try {
 			var lastEvent = await publisher.ReadStreamLastEvent(SystemStreams.MetastreamOf(stream), cancellationToken);
 
 			return lastEvent is not null
-				? (StreamMetadata.FromJsonBytes(lastEvent.Value.Event.Data), StreamRevision.FromInt64(lastEvent.Value.Event.EventNumber))
-				: (StreamMetadata.Empty, StreamRevision.Start);
+				? (StreamMetadata.FromJsonBytes(lastEvent.Value.Event.Data), lastEvent.Value.Event.EventNumber)
+				: (StreamMetadata.Empty, -2);
 		}
 		catch (ReadResponseException.StreamNotFound) {
-			return (StreamMetadata.Empty, StreamRevision.Start);
+			return (StreamMetadata.Empty, -2);
 		}
 	}
 
@@ -136,7 +136,7 @@ public static class PublisherManagementExtensions {
 
 		await publisher.SetStreamMetadata(
 			stream, newMetadata,
-			revision.ToInt64(),
+			revision,
 			cancellationToken
 		);
 	}

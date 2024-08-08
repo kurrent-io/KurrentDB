@@ -39,22 +39,30 @@ public class ConnectorsStreamSupervisor : ProcessingModule {
             Task TryConfigureStream(string stream, StreamMetadata metadata) => client
                 .SetStreamMetadata(stream, metadata, cancellationToken: ctx.CancellationToken)
                 .OnError(ex => ctx.Logger.LogError(ex, "Failed to configure stream {Stream}", stream))
-                .Then(state => state.Logger.LogDebug("Stream {Stream} configured {Metadata}", state.Stream, state.Metadata),
+                .Then(state =>
+                        state.Logger.LogDebug("Stream {Stream} configured {Metadata}", state.Stream, state.Metadata),
                     (ctx.Logger, Stream: stream, Metadata: metadata));
         });
 
         Process<ConnectorDeleted>(async (evt, ctx) => {
-            await TryDeleteStream(GetManagementStream(evt.ConnectorId));
             await TryDeleteStream(GetLeasesStream(evt.ConnectorId));
-            await TryDeleteStream(GetCheckpointsStream(evt.ConnectorId));
             await TryDeleteStream(GetLifecycleStream(evt.ConnectorId));
+            await TryDeleteStream(GetCheckpointsStream(evt.ConnectorId));
+            await TryTruncateStream(GetManagementStream(evt.ConnectorId), ctx.Record.Position.StreamRevision);
 
             return;
 
             Task TryDeleteStream(string stream) => client
                 .SoftDeleteStream(stream, ctx.CancellationToken)
                 .OnError(ex => ctx.Logger.LogError(ex, "Failed to delete stream {Stream}", stream))
-                .Then(state => state.Logger.LogInformation("Stream {Stream} deleted", state.Stream), (ctx.Logger, Stream: stream));
+                .Then(state => state.Logger.LogInformation("Stream {Stream} deleted", state.Stream),
+                    (ctx.Logger, Stream: stream));
+
+            Task TryTruncateStream(string stream, long beforeRevision) => client
+                .TruncateStream(stream, beforeRevision, ctx.CancellationToken)
+                .OnError(ex => ctx.Logger.LogError(ex, "Failed to truncate stream {Stream}", stream))
+                .Then(state => state.Logger.LogInformation("Stream {Stream} truncated", state.Stream),
+                    (ctx.Logger, Stream: stream));
         });
     }
 }

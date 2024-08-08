@@ -9,12 +9,12 @@ using Grpc.Core;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.Management.ConnectorDomainExceptions;
-using static EventStore.Connectors.Management.Contracts.Commands.ConnectorsService;
+using static EventStore.Connectors.Management.Contracts.Commands.ConnectorsCommandService;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Connectors.Management;
 
-public class ConnectorsService(ConnectorsApplication application, ILogger<ConnectorsService> logger) : ConnectorsServiceBase {
+public class ConnectorsCommandService(ConnectorsApplication application, ILogger<ConnectorsCommandService> logger) : ConnectorsCommandServiceBase {
     public override Task<Empty> Create(CreateConnector request, ServerCallContext context)           => Execute(request, context);
     public override Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) => Execute(request, context);
     public override Task<Empty> Delete(DeleteConnector request, ServerCallContext context)           => Execute(request, context);
@@ -30,7 +30,7 @@ public class ConnectorsService(ConnectorsApplication application, ILogger<Connec
         var result = await application.Handle(command, context.CancellationToken);
 
         return result.Match(
-            success => {
+            _ => {
                 logger.LogDebug(
                     "{TraceIdentifier} Executed {CommandType} {Command}",
                     context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
@@ -40,7 +40,7 @@ public class ConnectorsService(ConnectorsApplication application, ILogger<Connec
             },
             error => {
                 logger.LogError(
-                    error.Exception, "{TraceIdentifier} Executed {CommandType} {Command}",
+                    error.Exception, "{TraceIdentifier} Failed {CommandType} {Command}",
                     context.GetHttpContext().TraceIdentifier, command.GetType().Name, command
                 );
 
@@ -69,7 +69,7 @@ public class ConnectorsService(ConnectorsApplication application, ILogger<Connec
     }
 }
 
-static class RpcExceptions {
+public static class RpcExceptions {
     public static RpcException Create(StatusCode code, string? message = null) =>
         RpcStatusExtensions.ToRpcException(new() {
             Code    = (int)code,

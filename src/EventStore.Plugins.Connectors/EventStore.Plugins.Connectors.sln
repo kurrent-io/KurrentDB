@@ -48,6 +48,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{1D2C51BC
 	ProjectSection(SolutionItems) = preProject
 		tests\connectors-api.http = tests\connectors-api.http
 		tests\connectors-http-sink.http = tests\connectors-http-sink.http
+		tests\connectors-api-queries.http = tests\connectors-api-queries.http
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors", "src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj", "{157A55A0-AE97-40F9-9A38-8A756C4B4785}"
@@ -72,7 +73,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Connectors.Http"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Connectors.Kafka", "submodules\EventStore.Connectors\src\EventStore.Connectors.Kafka\EventStore.Connectors.Kafka.csproj", "{614EEED7-6D3C-40C4-9FA0-FA04F0A00E92}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpSinkSampleApi", "HttpSinkSampleApi\HttpSinkSampleApi.csproj", "{8E27AE08-7971-4E55-84E1-02A6565D4DF1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpSinkSampleApi", "tests\HttpSinkSampleApi\HttpSinkSampleApi.csproj", "{8E27AE08-7971-4E55-84E1-02A6565D4DF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

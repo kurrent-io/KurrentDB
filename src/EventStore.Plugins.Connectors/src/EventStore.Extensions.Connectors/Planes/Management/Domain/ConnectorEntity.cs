@@ -16,6 +16,7 @@ public record ConnectorEntity : State<ConnectorEntity> {
                 Settings  = { evt.Settings },
                 CreatedAt = evt.Timestamp
             },
+            IsDeleted = false, // Always force IsDeleted false on Created for specific scenarios
             State = ConnectorState.Stopped,
             StateTimestamp = evt.Timestamp
         });
@@ -93,6 +94,11 @@ public record ConnectorEntity : State<ConnectorEntity> {
     /// Indicates if the connector is deleted.
     /// </summary>
     public bool IsDeleted { get; init; }
+
+    /// <summary>
+    /// Indicates the entity is new if it was not previously deleted and has no identifier.
+    /// </summary>
+    public bool IsNew => !IsDeleted && Id != Guid.Empty.ToString();
 
     public ConnectorEntity EnsureIsNew() {
         if (Id != Guid.Empty.ToString())

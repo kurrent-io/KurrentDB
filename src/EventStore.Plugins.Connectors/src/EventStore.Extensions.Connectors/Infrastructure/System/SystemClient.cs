@@ -13,7 +13,7 @@ namespace EventStore.Core;
 
 using WriteEventsResult    = (Position Position, StreamRevision StreamRevision);
 using DeleteStreamResult   = (Position Position, StreamRevision Revision);
-using StreamMetadataResult = (StreamMetadata Metadata, StreamRevision Revision);
+using StreamMetadataResult = (StreamMetadata Metadata, long Revision);
 using StreamInfo           = (string Stream, StreamRevision Revision);
 
 // Snippet from EventStore/src/EventStore.Core.Services.Transport.Enumerators/ReadResponseException.cs to make the code compile:

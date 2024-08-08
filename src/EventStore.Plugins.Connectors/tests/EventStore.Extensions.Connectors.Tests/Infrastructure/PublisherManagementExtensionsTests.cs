@@ -2,6 +2,7 @@
 
 using EventStore.Core;
 using EventStore.Core.Data;
+using EventStore.Core.Services.Transport.Common;
 
 namespace EventStore.Extensions.Connectors.Tests;
 
@@ -11,7 +12,7 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Connec
 	public async Task can_get_stream_metadata_when_stream_not_found() {
 		// Arrange
 		var streamName = Fixture.NewStreamId("stream");
-		var expectedResult = (StreamMetadata.Empty, Core.Services.Transport.Common.StreamRevision.Start);
+		var expectedResult = (StreamMetadata.Empty, -2);
 
 		// Act
 		var result = await Fixture.Publisher.GetStreamMetadata(streamName);
@@ -26,7 +27,7 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Connec
 		var streamName = Fixture.NewStreamId("stream");
 		var metadata   = new StreamMetadata(maxCount: 10);
 
-		var expectedResult = (metadata, Core.Services.Transport.Common.StreamRevision.Start);
+		var expectedResult = (metadata, StreamRevision.Start.ToInt64());
 
 		await Fixture.Publisher.SetStreamMetadata(streamName, metadata);
 
@@ -43,7 +44,7 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Connec
 		var streamName = Fixture.NewStreamId("stream");
 		var metadata   = new StreamMetadata(maxCount: 10);
 
-		var expectedResult = (metadata, Core.Services.Transport.Common.StreamRevision.Start);
+		var expectedResult = (metadata, StreamRevision.Start.ToInt64());
 
 		// Act
 		await Fixture.Publisher.SetStreamMetadata(streamName, metadata);
