@@ -10,8 +10,8 @@
 		<PackageReference Include="DotNext.Threading" Version="5.10.0" />
 
 		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.81" />
-		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.47" />
-		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.47" />
+		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.49" />
+		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.49" />
 
 		<PackageReference Include="Eventuous.Application" Version="0.15.0-rc.2" />
 		<PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-rc.1" />
