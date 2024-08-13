@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package eventstore.connectors.v1;
 
+import "google/api/http.proto";
 import "google/api/annotations.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/timestamp.proto";
@@ -14,101 +15,59 @@ option csharp_namespace = "EventStore.Connectors.Management.Contracts.Commands";
 service ConnectorsCommandService {
   rpc Create(CreateConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/connectors/create",
+      post: "/connectors/{connector_id}",
       body: "*"
     };
   }
 
   rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/connectors/reconfigure",
-      body: "*"
+      put: "/connectors/{connector_id}/settings",
+      body: "settings"
     };
   }
 
   rpc Delete(DeleteConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/connectors/delete",
-      body: "*"
+      delete: "/connectors/{connector_id}"
     };
   }
 
   rpc Start(StartConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/connectors/start",
-      body: "*"
+      post: "/connectors/{connector_id}/start",
+      additional_bindings {
+        post: "/connectors/{connector_id}/start/{start_from.log_position}"
+      }
+    };
+  }
+
+  rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/connectors/{connector_id}/reset",
+      additional_bindings {
+        post: "/connectors/{connector_id}/reset/{start_from.log_position}"
+      }
     };
   }
 
   rpc Stop(StopConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/connectors/stop",
-      body: "*"
+      post: "/connectors/{connector_id}/stop"
     };
   }
 
   rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post: "/connectors/rename",
+      put: "/connectors/{connector_id}/rename",
       body: "*"
     };
   }
 }
 
-// service ConnectorRestCommandService {
-//   rpc Create(CreateConnector) returns (google.protobuf.Empty) {
-//     option (google.api.http) = {
-//       post: "/connectors/{connector_id}",
-//       body: "*"
-//     };
-//   }
-//
-//   rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty) {
-//     option (google.api.http) = {
-//       put: "/connectors/{connector_id}",
-//       body: "*"
-//     };
-//   }
-//
-//   rpc Delete(DeleteConnector) returns (google.protobuf.Empty) {
-//     option (google.api.http) = {
-//       delete: "/connectors/{connector_id}",
-//       body: "*"
-//     };
-//   }
-//
-//   rpc Start(StartConnector) returns (google.protobuf.Empty) {
-//     option (google.api.http) = {
-//       put: "/connectors/{connector_id}",
-//       body: "*"
-//     };
-//   }
-//
-//   rpc Stop(StopConnector) returns (google.protobuf.Empty) {
-//     option (google.api.http) = {
-//       put: "/connectors/{connector_id}",
-//       body: "*"
-//     };
-//   }
-//
-//   rpc Reset(ResetConnector) returns (google.protobuf.Empty) {
-//     option (google.api.http) = {
-//       put: "/connectors/{connector_id}",
-//       body: "*"
-//     };
-//   }
-//
-//   rpc Rename(RenameConnector) returns (google.protobuf.Empty) {
-//     option (google.api.http) = {
-//       put: "/connectors/{connector_id}",
-//       body: "*"
-//     };
-//   }
-// }
-
 message CreateConnector {
   string                                   connector_id = 1;
-  string                                   name         = 3;
+  google.protobuf.StringValue              name         = 3;
   map<string, google.protobuf.StringValue> settings     = 5;
 }
 
@@ -122,8 +81,13 @@ message DeleteConnector {
 }
 
 message StartConnector {
-  string        connector_id   = 1;
-  StartPosition start_position = 3;
+  string            connector_id = 1;
+  StartFromPosition start_from   = 3 [json_name = "start"];
+}
+
+message ResetConnector {
+  string            connector_id = 1;
+  StartFromPosition start_from   = 3 [json_name = "start"];
 }
 
 message StopConnector {

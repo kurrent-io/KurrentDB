@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EventStore.Connect.Schema;
 
-public abstract class SchemaRegistryStartupTask : IHostedService {
+abstract class SchemaRegistryStartupTask : IHostedService {
     protected SchemaRegistryStartupTask(ISchemaRegistry registry, ILogger<SchemaRegistryStartupTask> logger, string? taskName = null) {
         Registry = registry;
         TaskName = (taskName ?? GetType().Name).Replace("StartupTask", "").Replace("Task", "");

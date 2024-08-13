@@ -1,4 +1,3 @@
-using EventStore.Common.Utils;
 using EventStore.Connectors.Eventuous;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
@@ -10,10 +9,13 @@ using static EventStore.Connectors.Management.ConnectorDomainServices;
 namespace EventStore.Connectors.Management;
 
 [PublicAPI]
-public class ConnectorsApplication : EntityApplication<ConnectorEntity> {
-    public ConnectorsApplication(ValidateConnectorSettings validateSettings, TimeProvider time, IEventStore store) :
+public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
+    public ConnectorsCommandApplication(ValidateConnectorSettings validateSettings, TimeProvider time, IEventStore store) :
         base(cmd => cmd.ConnectorId, ConnectorsFeatureConventions.Streams.ManagementStreamTemplate, store) {
         OnAny<CreateConnector>((connector, cmd) => {
+            // TODO SS: these validators should be dynamically resolved and executed in the grpc command service...
+            CreateConnectorValidator.EnsureValid(cmd);
+
             if (connector.IsNew)
                 throw new DomainExceptions.EntityAlreadyExists("Connector", cmd.ConnectorId);
 
@@ -21,6 +23,10 @@ public class ConnectorsApplication : EntityApplication<ConnectorEntity> {
                 .From(cmd.Settings, validateSettings)
                 .EnsureValid(cmd.ConnectorId)
                 .ToDictionary();
+
+            // if name is not provided, use the connector id
+            if (string.IsNullOrWhiteSpace(cmd.Name?.Trim()))
+                cmd.Name = cmd.ConnectorId;
 
             return [
                 new ConnectorCreated {
@@ -46,7 +52,8 @@ public class ConnectorsApplication : EntityApplication<ConnectorEntity> {
 
         OnExisting<ReconfigureConnector>((connector, cmd) => {
             connector.EnsureNotDeleted();
-            connector.EnsureStopped();
+
+            // until the connector is restarted, it wont use the new settings
 
             var settings = ConnectorSettings
                 .From(cmd.Settings, validateSettings)
@@ -75,10 +82,30 @@ public class ConnectorsApplication : EntityApplication<ConnectorEntity> {
 
             return [
                 new ConnectorActivating {
-                    ConnectorId   = connector.Id,
-                    Settings      = { connector.CurrentRevision.Settings },
-                    StartPosition = cmd.StartPosition,
-                    Timestamp     = time.GetUtcNow().ToTimestamp()
+                    ConnectorId = connector.Id,
+                    Settings    = { connector.CurrentRevision.Settings },
+                    StartFrom   = cmd.StartFrom,
+                    Timestamp   = time.GetUtcNow().ToTimestamp()
+                }
+            ];
+        });
+
+        OnExisting<ResetConnector>((connector, cmd) => {
+            connector.EnsureNotDeleted();
+
+            if (connector.State
+                is ConnectorState.Running
+                or ConnectorState.Activating)
+                throw new DomainException($"Connector {connector.Id} already running...");
+
+            connector.EnsureStopped();
+
+            return [
+                new ConnectorActivating {
+                    ConnectorId = connector.Id,
+                    Settings    = { connector.CurrentRevision.Settings },
+                    StartFrom   = cmd.StartFrom ?? new StartFromPosition(), // reset to beginning, this is the big difference from StartConnector
+                    Timestamp   = time.GetUtcNow().ToTimestamp()
                 }
             ];
         });

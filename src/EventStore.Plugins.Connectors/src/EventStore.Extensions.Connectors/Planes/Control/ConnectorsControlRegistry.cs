@@ -57,8 +57,8 @@ class ConnectorsControlRegistry {
             switch (record.Value) {
                 case ConnectorActivating activating:
                     // hijack settings and inject the start position
-                    if (activating.StartPosition is not null) {
-                        activating.Settings[startPositionKey] = activating.StartPosition.Value.ToString();
+                    if (activating.StartFrom is not null) {
+                        activating.Settings[startPositionKey] = activating.StartFrom.LogPosition.ToString();
                     }
 
                     state.Add(

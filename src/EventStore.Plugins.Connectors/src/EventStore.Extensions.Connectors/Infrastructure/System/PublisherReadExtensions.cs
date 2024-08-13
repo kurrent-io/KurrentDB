@@ -63,7 +63,7 @@ public static class PublisherReadExtensions {
     public static IAsyncEnumerable<ResolvedEvent> ReadBackwards(this IPublisher publisher, Position startPosition, IEventFilter filter, long maxCount, CancellationToken cancellationToken = default) =>
         publisher.Read(startPosition, filter, maxCount, false, cancellationToken);
 
-	public static async IAsyncEnumerable<ResolvedEvent> Read(this IPublisher publisher, Position startPosition, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+    public static async IAsyncEnumerable<ResolvedEvent> Read(this IPublisher publisher, Position startPosition, long maxCount, bool forwards = true, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
 		await using var enumerator = GetEnumerator();
 
 		while (!cancellationToken.IsCancellationRequested) {
@@ -113,6 +113,9 @@ public static class PublisherReadExtensions {
 		while (!cancellationToken.IsCancellationRequested) {
 			if (!await enumerator.MoveNextAsync())
 				break;
+
+            // if (enumerator.Current is ReadResponse.LastStreamPositionReceived lastStreamPositionReceived)
+            //     break;
 
 			if (enumerator.Current is ReadResponse.EventReceived eventReceived)
 				yield return eventReceived.Event;

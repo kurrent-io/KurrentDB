@@ -23,15 +23,17 @@ public record SystemProducerBuilder : ProducerBuilder<SystemProducerBuilder, Sys
 		Ensure.NotNullOrWhiteSpace(Options.ProducerId);
 		Ensure.NotNull(Options.Publisher);
 
-		var options = Options with {
-			ResiliencePipelineBuilder = Options.ResiliencePipelineBuilder.ConfigureTelemetry(
-				Options.Logging.Enabled
-					? Options.Logging.LoggerFactory
-					: NullLoggerFactory.Instance,
-				"ProducerResiliencePipelineTelemetryLogger"
-			)
-		};
+        return new(Options with {});
 
-		return new(options);
+		// var options = Options with {
+		// 	ResiliencePipelineBuilder = Options.ResiliencePipelineBuilder.ConfigureTelemetry(
+		// 		Options.Logging.Enabled
+		// 			? Options.Logging.LoggerFactory
+		// 			: NullLoggerFactory.Instance,
+		// 		"ProducerResiliencePipelineTelemetryLogger"
+		// 	)
+		// };
+		//
+		// return new(Options);
 	}
 }

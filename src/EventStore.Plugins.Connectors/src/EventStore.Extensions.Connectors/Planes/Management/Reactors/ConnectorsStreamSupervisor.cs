@@ -40,8 +40,9 @@ public class ConnectorsStreamSupervisor : ProcessingModule {
                 .SetStreamMetadata(stream, metadata, cancellationToken: ctx.CancellationToken)
                 .OnError(ex => ctx.Logger.LogError(ex, "Failed to configure stream {Stream}", stream))
                 .Then(state =>
-                        state.Logger.LogDebug("Stream {Stream} configured {Metadata}", state.Stream, state.Metadata),
-                    (ctx.Logger, Stream: stream, Metadata: metadata));
+                    state.Logger.LogDebug("Stream {Stream} configured {Metadata}", state.Stream, state.Metadata),
+                    (ctx.Logger, Stream: stream, Metadata: metadata)
+                );
         });
 
         Process<ConnectorDeleted>(async (evt, ctx) => {

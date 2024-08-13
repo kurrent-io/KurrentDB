@@ -36,11 +36,11 @@ message ConnectorRenamed {
 
 // Occurs when a request to start the connector is accepted.
 message ConnectorActivating {
-  string                                   connector_id   = 1;
-  int32                                    revision       = 3;
-  map<string, google.protobuf.StringValue> settings       = 5;
-  StartPosition                            start_position = 7;
-  google.protobuf.Timestamp                timestamp      = 9;
+  string                                   connector_id = 1;
+  int32                                    revision     = 3;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  StartFromPosition                        start_from   = 7;
+  google.protobuf.Timestamp                timestamp    = 9;
 }
 
 // Occurs when a request to stop the connector is accepted.

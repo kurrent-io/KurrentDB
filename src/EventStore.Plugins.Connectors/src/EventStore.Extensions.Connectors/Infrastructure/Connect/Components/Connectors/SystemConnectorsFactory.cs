@@ -112,7 +112,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
 
         var loggingOptions = new EventStore.Streaming.Configuration.LoggingOptions {
             Enabled       = sinkOptions.Logging.Enabled,
-            LogName       = sinkOptions.InstanceTypeName, // "EventStore.Connect.Data.SinkConnector",
+            LogName       = sinkOptions.InstanceTypeName,
             LoggerFactory = loggerFactory
         };
 

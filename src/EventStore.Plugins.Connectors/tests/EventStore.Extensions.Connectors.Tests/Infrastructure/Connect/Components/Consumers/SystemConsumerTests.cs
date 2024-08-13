@@ -109,7 +109,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 				await cancellator.CancelAsync();
 		}
 
-		await consumer.Commit();
+		await consumer.CommitAll();
 
 		// Assert
 		consumedRecords.All(x => x.StreamId == streamId).Should().BeTrue();
@@ -143,7 +143,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 				await cancellator.CancelAsync();
 		}
 
-		await consumer.Commit();
+		await consumer.CommitAll();
 
 		var latestPositions = await consumer.GetLatestPositions(CancellationToken.None);
 
@@ -182,7 +182,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 				await cancellator.CancelAsync();
 		}
 
-		await consumer.Commit();
+		await consumer.CommitAll();
 
 		// Assert
 		consumedRecords.All(x => x.StreamId == streamId).Should().BeTrue();

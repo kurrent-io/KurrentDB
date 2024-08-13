@@ -12,7 +12,7 @@ using SharedContracts = EventStore.Streaming.Contracts;
 
 namespace EventStore.Connectors.Management.Reactors;
 
-class ConnectorsLifecycleReactor(ConnectorsApplication application) : RecordHandler<ProcessorStateChanged> {
+class ConnectorsLifecycleReactor(ConnectorsCommandApplication application) : RecordHandler<ProcessorStateChanged> {
     public override async Task Process(ProcessorStateChanged message, RecordContext context) {
         try {
             var cmd = new RecordConnectorStateChange {

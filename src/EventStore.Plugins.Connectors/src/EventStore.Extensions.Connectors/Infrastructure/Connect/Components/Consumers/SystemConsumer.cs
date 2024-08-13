@@ -17,6 +17,7 @@ using EventStore.Streaming.Consumers.LifecycleEvents;
 using EventStore.Streaming.Interceptors;
 using EventStore.Streaming.Schema.Serializers;
 using EventStore.Streaming.Transformers;
+using Microsoft.Extensions.Logging;
 using Polly;
 
 namespace EventStore.Connect.Consumers;
@@ -35,22 +36,6 @@ public class SystemConsumer : IConsumer {
             ? (_, _) => ValueTask.FromResult<object?>(null)
             : (data, headers) => Options.SchemaRegistry.As<ISchemaSerializer>().Deserialize(data, headers);
 
-        CheckpointStore = new CheckpointStore(
-            Options.ConsumerId,
-            SystemProducer.Builder.Publisher(Options.Publisher).ProducerId(Options.ConsumerId).Create(),
-            SystemReader.Builder.Publisher(Options.Publisher).ReaderId(Options.ConsumerId).Create(),
-            TimeProvider.System,
-            options.AutoCommit.StreamTemplate.GetStream(Options.ConsumerId)
-        );
-
-		CheckpointController = new(
-			new CheckpointControllerOptions {
-				AutoCommit      = options.AutoCommit,
-				CommitPositions = (positions, _) => Commit(positions, CancellationToken.None),
-				LoggerFactory   = options.Logging.LoggerFactory
-			}
-		);
-
 		InboundChannel = Channel.CreateBounded<ResolvedEvent>(
 			new BoundedChannelOptions(options.MessagePrefetchCount) {
 				FullMode     = BoundedChannelFullMode.Wait,
@@ -67,6 +52,36 @@ public class SystemConsumer : IConsumer {
         Interceptors = new(Options.Interceptors, Options.Logging.LoggerFactory.CreateLogger(nameof(SystemConsumer)));
 
 		Intercept = evt => Interceptors.Intercept(evt);
+
+        CheckpointStore = new CheckpointStore(
+            Options.ConsumerId,
+            SystemProducer.Builder.Publisher(Options.Publisher).ProducerId(Options.ConsumerId).Create(),
+            SystemReader.Builder.Publisher(Options.Publisher).ReaderId(Options.ConsumerId).Create(),
+            TimeProvider.System,
+            options.AutoCommit.StreamTemplate.GetStream(Options.ConsumerId)
+        );
+
+        CheckpointController = new CheckpointController(
+            async (positions, token) => {
+                // token.ThrowIfCancellationRequested();
+
+                try {
+                    if (positions.Count > 0) {
+                        await CheckpointStore.CommitPositions(positions, token);
+                        LastCommitedPosition = positions[^1];
+                    }
+
+                    await Intercept(new PositionsCommitted(this, positions));
+                    return positions;
+                }
+                catch (Exception ex) {
+                    await Intercept(new PositionsCommitError(this, positions, ex));
+                    throw;
+                }
+            },
+            Options.AutoCommit,
+            Options.Logging.LoggerFactory.CreateLogger($"CheckpointController({ConsumerId})")
+        );
 
 		ResiliencePipeline = options.ResiliencePipelineBuilder
 			.With(x => x.InstanceName = "SystemConsumerResiliencePipeline")
@@ -92,7 +107,8 @@ public class SystemConsumer : IConsumer {
     public string                        ClientId         => Options.ClientId;
     public string                        SubscriptionName => Options.SubscriptionName;
     public ConsumeFilter                 Filter           => Options.Filter;
-    public IReadOnlyList<RecordPosition> TrackedPositions => []; //CheckpointController.Positions;
+
+    // public IReadOnlyList<RecordPosition> TrackedPositions => []; //CheckpointController.Positions;
 
     public RecordPosition StartPosition        { get; private set; }
     public RecordPosition LastCommitedPosition { get; private set; }
@@ -100,11 +116,8 @@ public class SystemConsumer : IConsumer {
 	CancellationTokenSource Cancellator { get; set; } = new();
 
     public async IAsyncEnumerable<EventStoreRecord> Records([EnumeratorCancellation] CancellationToken stoppingToken) {
-		// create a new cancellator to be used in case
-		// we cancel the subscription on dispose.
 		Cancellator = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
 
-		// ensure the positions stream exists and is correctly configured
 		await CheckpointStore.Initialize(Cancellator.Token);
 
 		StartPosition = await CheckpointStore
@@ -118,10 +131,7 @@ public class SystemConsumer : IConsumer {
             Cancellator.Token
         );
 
-		// we must be able to stop the consumer and still
-		// commit the remaining positions if any, hence
-		// why we don't pass the cancellation token here
-		await CheckpointController.Activate(CancellationToken.None);
+		await CheckpointController.Activate();
 
 		await foreach (var resolvedEvent in InboundChannel.Reader.ReadAllAsync(CancellationToken.None)) {
 			if (Cancellator.IsCancellationRequested)
@@ -144,33 +154,22 @@ public class SystemConsumer : IConsumer {
 		}
 	}
 
-    public async Task Track(EventStoreRecord record) {
-        await CheckpointController.Track(record);
+    public async Task<IReadOnlyList<RecordPosition>> Track(EventStoreRecord record, CancellationToken cancellationToken = default) {
+        var trackedPositions = await CheckpointController.Track(record);
         await Intercept(new RecordTracked(this, record));
+        return trackedPositions;
     }
 
-    public async Task Commit(CancellationToken cancellationToken) {
-        _ = await CheckpointController.Commit(cancellationToken);
-    }
+    public Task<IReadOnlyList<RecordPosition>> Commit(EventStoreRecord record, CancellationToken cancellationToken = default) =>
+        CheckpointController.Commit(record);
 
-    async Task Commit(RecordPosition[] positions, CancellationToken cancellationToken) {
-        cancellationToken.ThrowIfCancellationRequested();
+    /// <summary>
+    /// Commits all tracked positions that are ready to be committed (complete sequences).
+    /// </summary>
+    public async Task<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = default) =>
+        await CheckpointController.CommitAll();
 
-        try {
-            if (!positions.IsNullOrEmpty()) {
-                await CheckpointStore.CommitPositions(positions, cancellationToken);
-                LastCommitedPosition = positions[^1];
-            }
-
-            await Intercept(new PositionsCommitted(this, positions));
-        }
-        catch (Exception ex) {
-            await Intercept(new PositionsCommitError(this, positions, ex));
-            throw;
-        }
-    }
-
-	public async Task<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = default) =>
+    public async Task<IReadOnlyList<RecordPosition>> GetLatestPositions(CancellationToken cancellationToken = default) =>
 		await CheckpointStore.LoadPositions(cancellationToken);
 
     public async ValueTask DisposeAsync() {

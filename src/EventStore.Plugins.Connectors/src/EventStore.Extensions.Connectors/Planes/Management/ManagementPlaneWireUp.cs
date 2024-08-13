@@ -1,13 +1,19 @@
 using EventStore.Connect.Connectors;
 using EventStore.Connect.Producers.Configuration;
+using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.Eventuous;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
+using EventStore.Connectors.Management.Contracts.Queries;
+using EventStore.Connectors.Management.Data;
 using EventStore.Connectors.Management.Projectors;
 using EventStore.Connectors.Management.Queries;
 using EventStore.Connectors.Management.Reactors;
+using EventStore.Connectors.System;
+using EventStore.Core.Bus;
+using EventStore.Core.Data;
 using EventStore.Streaming;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,14 +24,13 @@ namespace EventStore.Connectors.Management;
 
 public static class ManagementPlaneWireUp {
     public static IServiceCollection AddConnectorsManagementPlane(this IServiceCollection services) {
-        services
-            .AddMessageSchemaRegistration()
-            .AddQueryMessageSchemaRegistration();
+        services.AddMessageSchemaRegistration();
 
         services
             .AddGrpc(x => x.EnableDetailedErrors = true)
             .AddJsonTranscoding();
 
+        // Commands
         services.AddSingleton<ConnectorDomainServices.ValidateConnectorSettings>(ctx => {
             var validation = ctx.GetService<IConnectorValidator>() ?? new SystemConnectorsValidation();
             return validation.ValidateSettings;
@@ -43,14 +48,20 @@ public static class ManagementPlaneWireUp {
 
                 return new SystemEventStore(reader, producer);
             })
-            .AddCommandService<ConnectorsApplication, ConnectorEntity>();
+            .AddCommandService<ConnectorsCommandApplication, ConnectorEntity>();
+
+        // Queries
+        services.AddSingleton<ConnectorQueries>(ctx => new ConnectorQueries(
+            ctx.GetRequiredService<Func<SystemReaderBuilder>>(),
+            ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream)
+        );
 
         services
             .AddConnectorsLifecycleReactor()
             .AddConnectorsStreamSupervisor()
-            .AddConnectorsStateProjector();
+            .AddConnectorsStateProjection();
 
-        services.AddSingleton<ConnectorQueries>();
+        services.AddSystemStartupTask<ConfigureConnectorsManagementStreams>();
 
         return services;
     }
@@ -74,16 +85,9 @@ public static class ManagementPlaneWireUp {
                     RegisterManagementMessages<ConnectorFailed>(registry, token),
                     RegisterManagementMessages<ConnectorRenamed>(registry, token),
                     RegisterManagementMessages<ConnectorReconfigured>(registry, token),
-                    RegisterManagementMessages<ConnectorDeleted>(registry, token)
+                    RegisterManagementMessages<ConnectorDeleted>(registry, token),
+                    RegisterQueryMessages<ConnectorsSnapshot>(registry, token)
                 ];
-
-                await tasks.WhenAll();
-            });
-
-    static IServiceCollection AddQueryMessageSchemaRegistration(this IServiceCollection services) =>
-        services.AddSchemaRegistryStartupTask("Connectors Management Query Schema Registration",
-            static async (registry, token) => {
-                Task[] tasks = [RegisterQueryMessages<ConnectorsSnapshot>(registry, token)];
 
                 await tasks.WhenAll();
             });

@@ -43,16 +43,20 @@ public class ConnectorsControlService : LeadershipAwareService {
 
             await foreach (var record in consumer.Records(stoppingToken)) {
                 await (record.Value switch {
-                    ConnectorActivating evt   => ActivateConnector(evt.ConnectorId, EnrichWithStartPosition(evt.Settings, evt.StartPosition), evt.Revision),
+                    ConnectorActivating evt   => ActivateConnector(evt.ConnectorId, EnrichWithStartPosition(evt.Settings, evt.StartFrom), evt.Revision),
                     ConnectorDeactivating evt => DeactivateConnector(evt.ConnectorId),
                     _                         => Task.CompletedTask
                 });
             }
+
+            var omg   = "OMG";
+            var fodax = omg;
         }
         catch (OperationCanceledException) {
             // ignore
         }
         finally {
+            // this exists to effectively wait for all connectors to be deactivated...
             await connectors
                 .Select(connector => DeactivateConnector(connector.ConnectorId))
                 .WhenAll();
@@ -62,9 +66,9 @@ public class ConnectorsControlService : LeadershipAwareService {
 
         return;
 
-        static IDictionary<string, string?> EnrichWithStartPosition(IDictionary<string, string?> settings, StartPosition? startPosition) {
+        static IDictionary<string, string?> EnrichWithStartPosition(IDictionary<string, string?> settings, StartFromPosition? startPosition) {
             if (startPosition is not null)
-                settings["Subscription:StartPosition"] = startPosition.Value.ToString();
+                settings["Subscription:StartPosition"] = startPosition.LogPosition.ToString();
 
             return settings;
         }
@@ -97,7 +101,7 @@ static partial class ConnectorsControlServiceLogMessages {
     [LoggerMessage(LogLevel.Information, "[Node Id: {NodeId}] service running on leader node")]
     internal static partial void LogControlServiceRunning(this ILogger logger, Guid nodeId);
 
-    [LoggerMessage(LogLevel.Information, "[Node Id: {NodeId}] service stopped because node lost leadership")]
+    [LoggerMessage(LogLevel.Information, "[Node Id: {NodeId}] service stopped because node lost leadership or is shutting down")]
     internal static partial void LogControlServiceStopped(this ILogger logger, Guid nodeId);
 
     [LoggerMessage("[Node Id: {NodeId}] connector {ConnectorId} {ResultType}")]

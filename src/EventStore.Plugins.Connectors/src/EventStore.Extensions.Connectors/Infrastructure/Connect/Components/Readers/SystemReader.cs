@@ -13,6 +13,7 @@ using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Readers;
 using EventStore.Streaming.Schema.Serializers;
 using Polly;
+using StreamRevision = EventStore.Streaming.StreamRevision;
 
 namespace EventStore.Connect.Readers;
 
@@ -75,7 +76,7 @@ public class SystemReader : IReader {
             var startRevision = await Client.GetStreamRevision(startPosition, cancellator.Token);
 
             events = Client.ReadStream(
-                filter.Prefixes[0],
+                filter.Expression,
                 startRevision,
                 maxCount,
                 readForwards,
@@ -92,7 +93,7 @@ public class SystemReader : IReader {
             );
         }
 
-        // but how since we are using IAsyncEnumerable?
+        // but how since we are using IAsyncEnumerable, pipes?
         // try {
         //
         //
@@ -127,9 +128,24 @@ public class SystemReader : IReader {
         }
     }
 
+    public IAsyncEnumerable<EventStoreRecord> Read(StreamId streamId, StreamRevision revision, ReadDirection direction, int maxCount, CancellationToken cancellationToken = default) =>
+        throw new NotImplementedException();
+
     public async ValueTask<EventStoreRecord> ReadLastStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
         try {
             var result = await Client.ReadStreamLastEvent(stream, cancellationToken);
+
+            return result is not null
+                ? await result.Value.ToRecord(Deserialize, () => SequenceId.From(1))
+                : EventStoreRecord.None;
+        } catch (ReadResponseException.StreamNotFound) {
+            return EventStoreRecord.None;
+        }
+    }
+
+    public async ValueTask<EventStoreRecord> ReadFirstStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
+        try {
+            var result = await Client.ReadStreamFirstEvent(stream, cancellationToken);
 
             return result is not null
                 ? await result.Value.ToRecord(Deserialize, () => SequenceId.From(1))

@@ -1,124 +1,159 @@
-### Create Logger Sink Connector
-POST localhost:2113/connectors/create
+### Shutdown EventStore
+POST localhost:2113/admin/shutdown
+
+
+### Resign Node from EventStore Cluster
+POST localhost:2113/admin/node/resign
+
+
+### Create Logger Sink Connector (defaulting to the subscription initial position: Latest and excluding all system records)
+POST localhost:2113/connectors/demo-logger-sink
 Content-Type: application/json
 
 {
-  "connectorId": "demo-logger-sink",
-  "name": "Demo Logger Sink",
+  "settings": {
+    "InstanceTypeName": "EventStore.Connectors.Testing.LoggerSink"
+  }
+}
+
+
+### Create Logger Sink Connector subscribing to all system records from the beginning of time
+POST localhost:2113/connectors/demo-logger-sink
+Content-Type: application/json
+
+{
   "settings": {
     "InstanceTypeName": "EventStore.Connectors.Testing.LoggerSink",
-    "Subscription:Filter:Scope": "Stream",
-    "Subscription:Filter:Expression": "^\\$connectors\\/[^\\/]+\\/leases",
-    "Subscription:InitialPosition": "Earliest"
+    "_Subscription:Filter:Scope": "Stream",
+    "_Subscription:Filter:Expression": "^\\$connectors\\/[^\\/]+\\/leases",
+    "Subscription:Filter:Scope": "Record",
+    "Subscription:Filter:Expression": "^\\$.*",
+    "Subscription:InitialPosition": "Earliest",
+    "AutoCommit:RecordsThreshold": "100",
+    "AutoCommit:Interval": "5000"
   }
 }
 
-### Start Logger Sink Connector
-POST localhost:2113/connectors/start
-Content-Type: application/json
 
-{
-  "connectorId": "demo-logger-sink"
-}
+### Start Logger Sink Connector from an existing checkpoint position, defaulting to the subscription initial position if no checkpoint exists
+POST localhost:2113/connectors/demo-logger-sink/start
+
 
 ### Start Logger Sink Connector from a specific position
-POST localhost:2113/connectors/start
-Content-Type: application/json
+POST localhost:2113/connectors/demo-logger-sink/start/1
 
-{
-  "connectorId": "demo-logger-sink",
-  "startPosition": {
-    "value": "99"
-  }
-}
+
+### Reset Logger Sink Connector to the beginning
+POST localhost:2113/connectors/demo-logger-sink/reset
+
+
+### Reset Logger Sink Connector to a specific position (adjust the position when testing)
+POST localhost:2113/connectors/demo-logger-sink/reset/53469
+
 
 ### Stop Logger Sink Connector
-POST localhost:2113/connectors/stop
+POST localhost:2113/connectors/demo-logger-sink/stop
+
+
+### Reconfigure Logger Sink Connector
+PUT localhost:2113/connectors/demo-logger-sink/settings
 Content-Type: application/json
 
 {
-  "connectorId": "demo-logger-sink"
+  "InstanceTypeName": "EventStore.Connectors.Testing.LoggerSink",
+  "Subscription:Filter:Scope": "Record",
+  "Subscription:Filter:Expression": "^\\$.*",
+  "Subscription:InitialPosition": "Latest"
 }
+
 
 ### Delete Logger Sink Connector
-POST localhost:2113/connectors/delete
+DELETE localhost:2113/connectors/demo-logger-sink
+
+
+### List Connectors
+GET localhost:2113/connectors
 Content-Type: application/json
 
 {
-  "connectorId": "demo-logger-sink"
+  "includeSettings": false
 }
 
-### Create HTTP Sink Connector
-POST localhost:2113/connectors/create
+
+### Get Logger Sink Connector Settings
+GET localhost:2113/connectors/demo-logger-sink/settings
 Content-Type: application/json
 
-{
-  "connectorId": "demo-http-sink",
-  "name": "Demo Http Sink",
-  "settings": {
-    "InstanceTypeName": "EventStore.Connectors.Http.HttpSink",
-    "Url": "http://localhost:8080",
-    "Subscription:Filter:Scope": "Stream",
-    "Subscription:Filter:Expression": "^\\$connectors\\/[^\\/]+\\/leases",
-    "Subscription:InitialPosition": "Earliest",
-  }
-}
 
-### Start HTTP Sink Connector
-POST localhost:2113/connectors/start
-Content-Type: application/json
 
-{
-  "connectorId": "demo-http-sink"
-}
-
-### Start HTTP Sink Connector from a specific position
-POST localhost:2113/connectors/start
-Content-Type: application/json
-
-{
-  "connectorId": "demo-http-sink",
-  "startPosition": {
-    "value": "99"
-  }
-}
-
-### Stop HTTP Sink Connector
-POST localhost:2113/connectors/stop
-Content-Type: application/json
-
-{
-  "connectorId": "demo-http-sink"
-}
-
-### Delete HTTP Sink Connector
-POST localhost:2113/connectors/delete
-Content-Type: application/json
-
-{
-  "connectorId": "demo-http-sink"
-}
-
-<> 2024-07-29T185430.400.json
-<> 2024-07-29T185344.200.json
-
-### Rename HTTP Sink Connector
-POST localhost:2113/connectors/rename
-Content-Type: application/json
-
-{
-  "connectorId": "demo-http-sink",
-  "name": "Renamed Demo Http Sink"
-}
-
-### Create Logger Sink Connector
-POST localhost:2113/connectors/create
-Content-Type: application/json
-
-{
-  "connectorId": "logger-sink-connector-1",
-  "name": "logger-sink-connector-1",
-  "settings": {
-    "instanceTypeName": "EventStore.Connect.Connectors.LoggerSink"
-  }
-}
+#### Create HTTP Sink Connector
+#POST localhost:2113/connectors/create
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink",
+#  "name": "Demo Http Sink",
+#  "settings": {
+#    "InstanceTypeName": "EventStore.Connectors.Http.HttpSink",
+#    "Url": "http://localhost:8080",
+#    "Subscription:Filter:Scope": "Stream",
+#    "Subscription:Filter:Expression": "^\\$connectors\\/[^\\/]+\\/leases",
+#    "Subscription:InitialPosition": "Earliest",
+#  }
+#}
+#
+#### Start HTTP Sink Connector
+#POST localhost:2113/connectors/start
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink"
+#}
+#
+#### Start HTTP Sink Connector from a specific position
+#POST localhost:2113/connectors/start
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink",
+#  "startPosition": {
+#    "value": "99"
+#  }
+#}
+#
+#### Stop HTTP Sink Connector
+#POST localhost:2113/connectors/stop
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink"
+#}
+#
+#### Delete HTTP Sink Connector
+#POST localhost:2113/connectors/delete
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink"
+#}
+#
+#### Rename HTTP Sink Connector
+#POST localhost:2113/connectors/rename
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink",
+#  "name": "Renamed Demo Http Sink"
+#}
+#
+#### Create Logger Sink Connector
+#POST localhost:2113/connectors/create
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "logger-sink-connector-1",
+#  "name": "logger-sink-connector-1",
+#  "settings": {
+#    "instanceTypeName": "EventStore.Connect.Connectors.LoggerSink"
+#  }
+#}

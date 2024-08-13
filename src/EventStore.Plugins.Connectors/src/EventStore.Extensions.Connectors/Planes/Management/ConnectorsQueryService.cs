@@ -1,5 +1,7 @@
+using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts.Queries;
 using EventStore.Connectors.Management.Queries;
+using FluentValidation;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.Management.Contracts.Queries.ConnectorsQueryService;
@@ -7,37 +9,40 @@ using static EventStore.Connectors.Management.Contracts.Queries.ConnectorsQueryS
 // ReSharper disable once CheckNamespace
 namespace EventStore.Connectors.Management;
 
-public class ConnectorsQueryService(
-    ILogger<ConnectorsQueryService> logger,
-    ConnectorQueries connectorQueries
-) : ConnectorsQueryServiceBase {
-    public override async Task<ListConnectorsResult> ListConnectors(ListConnectorsQuery query, ServerCallContext ctx)
-        => await Execute(connectorQueries.ListConnectors, query, ctx);
+public class ConnectorsQueryService(ILogger<ConnectorsQueryService> logger, ConnectorQueries connectorQueries) : ConnectorsQueryServiceBase {
+    public override  Task<ListConnectorsResult> List(ListConnectors query, ServerCallContext context) =>
+         Execute(connectorQueries.List, query, context);
 
-    // public override async Task<ImaginaryQueryResult> ImaginaryQuery(ImaginaryQuery query, ServerCallContext ctx)
-    //     => await Execute(connectorQueries.ImaginaryQuery, query, ctx);
+    public override Task<GetConnectorSettingsResult> GetSettings(GetConnectorSettings query, ServerCallContext context) =>
+         Execute(connectorQueries.GetSettings, query, context);
 
-    async Task<TQueryResult> Execute<TQuery, TQueryResult>(
-        GetQueryResult<TQuery, TQueryResult> getQueryResult,
-        TQuery query,
-        ServerCallContext ctx
-    ) {
+    async Task<TQueryResult> Execute<TQuery, TQueryResult>(RunQuery<TQuery, TQueryResult> runQuery, TQuery query, ServerCallContext context) {
+        var http = context.GetHttpContext();
+
+        var authenticated = http.User.Identity?.IsAuthenticated ?? false;
+        if (!authenticated)
+            throw RpcExceptions.Create(StatusCode.PermissionDenied);
+
         try {
-            logger.LogDebug("{TraceIdentifier} Executed {QueryType} {Query}",
-                ctx.GetHttpContext().TraceIdentifier,
-                typeof(TQuery).Name,
-                query);
+            var result = await runQuery(query, context.CancellationToken);
 
-            return await getQueryResult(query, ctx.CancellationToken);
+            logger.LogDebug(
+                "{TraceIdentifier} {QueryType} executed {Query}",
+                http.TraceIdentifier, typeof(TQuery).Name, query
+            );
+
+            return result;
         } catch (Exception ex) {
             var rpcEx = ex switch {
-                InvalidConnectorQueryException icq => RpcExceptions.BadRequest(icq.Errors),
-                _                                  => RpcExceptions.InternalServerError(ex)
+                ValidationException vex => RpcExceptions
+                    .BadRequest(vex.Errors.GroupBy(x => x.PropertyName)
+                        .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray())),
+                _ => RpcExceptions.InternalServerError(ex)
             };
 
             logger.LogError(ex,
-                "{TraceIdentifier} Failed {QueryType} {Query}",
-                ctx.GetHttpContext().TraceIdentifier,
+                "{TraceIdentifier} {QueryType} failed {Query}",
+                http.TraceIdentifier,
                 typeof(TQuery).Name,
                 query);
 
@@ -45,8 +50,5 @@ public class ConnectorsQueryService(
         }
     }
 
-    delegate Task<TQueryResult> GetQueryResult<in TQuery, TQueryResult>(
-        TQuery query,
-        CancellationToken cancellationToken
-    );
+    delegate Task<TQueryResult> RunQuery<in TQuery, TQueryResult>(TQuery query, CancellationToken cancellationToken);
 }

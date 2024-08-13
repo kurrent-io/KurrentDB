@@ -8,9 +8,5 @@ namespace EventStore.Connect.Readers.Configuration;
 
 [PublicAPI]
 public record SystemReaderOptions : ReaderOptions<SystemReaderOptions> {
-	public SystemReaderOptions() {
-		ReaderId = Identifiers.GenerateShortId("rdr");
-	}
-
 	public IPublisher Publisher { get; init; }
 }

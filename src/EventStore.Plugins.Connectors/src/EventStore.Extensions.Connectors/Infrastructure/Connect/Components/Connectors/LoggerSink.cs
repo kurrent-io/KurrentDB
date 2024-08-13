@@ -9,7 +9,7 @@ public class LoggerSink : ISink {
     public void Open(SinkContext sinkContext) { }
 
     public Task Write(RecordContext recordContext) {
-        recordContext.Logger.LogWarning("{ConnectorId} RECORD WRITTEN: {Record}", recordContext.Processor.ProcessorId, recordContext.Record);
+        recordContext.Logger.LogWarning("RECORD WRITTEN: {Record}", recordContext.Record);
         return Task.CompletedTask;
     }
 

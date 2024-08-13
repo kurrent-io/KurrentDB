@@ -1,65 +1,69 @@
 using EventStore.Common.Utils;
-using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
-using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Queries;
-using EventStore.Connectors.Management.Projectors;
 using EventStore.Streaming;
 
 namespace EventStore.Connectors.Management.Queries;
 
-public class ConnectorQueries(
-    Func<SystemReaderBuilder> getReaderBuilder,
-    ConnectorsStateProjectorOptions projectorOptions
-) {
-    SystemReader Reader           { get; } = getReaderBuilder().ReaderId("connector-queries-rdx").Create();
-    StreamId     SnapshotStreamId { get; } = projectorOptions.SnapshotStreamId;
+public class ConnectorQueries {
+    public ConnectorQueries(Func<SystemReaderBuilder> getReaderBuilder, StreamId snapshotStreamId) {
+        var reader = getReaderBuilder().ReaderId("connector-queries-rdx").Create();
 
-    public async Task<ListConnectorsResult> ListConnectors(
-        ListConnectorsQuery query,
-        CancellationToken cancellationToken
-    ) {
+        LoadSnapshot = async token => {
+            var snapshotRecord = await reader.ReadLastStreamRecord(snapshotStreamId, token);
+            return snapshotRecord.Value as ConnectorsSnapshot ?? new();
+        };
+    }
+
+    Func<CancellationToken, Task<ConnectorsSnapshot>> LoadSnapshot { get; }
+
+    public async Task<ListConnectorsResult> List(ListConnectors query, CancellationToken cancellationToken) {
         query.Paging ??= new Paging { Page = 1, PageSize = 100 };
 
         // TODO JC: Better but still needs to be improved.
-        ConnectorQueryValidators.Validate(query);
+        ListConnectorsQueryValidator.EnsureValid(query);
 
-        var state = await LoadLatestSnapshot(cancellationToken);
+        var snapshot = await LoadSnapshot(cancellationToken);
 
-        var connectors = state.Connectors
-            .Where(ConnectorSatisfiesFilters)
-            .Skip(query.Paging.Page - (1 * query.Paging.PageSize))
+        var skip = query.Paging.Page - (1 * query.Paging.PageSize);
+
+        var items = snapshot.Connectors
+            .Where(Filter())
+            .Skip(skip)
             .Take(query.Paging.PageSize)
-            .Select(MapToQuery)
+            .Select(Map())
             .ToList();
 
         return new ListConnectorsResult {
-            Items      = { connectors },
-            TotalCount = connectors.Count,
-            Paging     = query.Paging
+            Items     = { items },
+            TotalSize = items.Count
         };
 
-        bool ConnectorSatisfiesFilters(ConnectorsSnapshot.Types.Connector connector) =>
-            (query.State.IsEmpty()        || query.State.Contains(connector.State))               &&
-            (query.InstanceType.IsEmpty() || query.InstanceType.Contains(connector.InstanceType)) &&
-            (query.ConnectorId.IsEmpty()  || query.ConnectorId.Contains(connector.ConnectorId));
+        Func<Connector, bool> Filter() => conn =>
+            (query.State.IsEmpty()        || query.State.Contains(conn.State))                   &&
+            (query.InstanceType.IsEmpty() || query.InstanceType.Contains(conn.InstanceTypeName)) &&
+            (query.ConnectorId.IsEmpty()  || query.ConnectorId.Contains(conn.ConnectorId))       &&
+            (query.ShowDeleted ? conn.DeleteTime is not null : conn.DeleteTime is null);
 
-        static ListConnectorsResult.Types.Connector MapToQuery(ConnectorsSnapshot.Types.Connector connector) {
-            return new ListConnectorsResult.Types.Connector {
-                ConnectorId       = connector.ConnectorId,
-                Name              = connector.Name,
-                State             = connector.State,
-                StateTimestamp    = connector.StateTimestamp,
-                Settings          = { connector.Settings },
-                SettingsTimestamp = connector.SettingsTimestamp,
-                Position          = connector.Position
-            };
-        }
+        Func<Connector, Connector> Map() =>
+            conn => query.IncludeSettings ? conn : conn.With(x => x.Settings.Clear());
     }
 
-    async Task<ConnectorsSnapshot> LoadLatestSnapshot(CancellationToken cancellationToken) {
-        var snapshotRecord = await Reader.ReadLastStreamRecord(SnapshotStreamId, cancellationToken);
+    public async Task<GetConnectorSettingsResult> GetSettings(GetConnectorSettings query, CancellationToken cancellationToken) {
+        GetConnectorSettingsQueryValidator.EnsureValid(query);
 
-        return snapshotRecord.Value as ConnectorsSnapshot ?? new();
+        var snapshot = await LoadSnapshot(cancellationToken);
+
+        var connector = snapshot.Connectors.FirstOrDefault(x => x.ConnectorId == query.ConnectorId);
+
+        if (connector is not null)
+            return new GetConnectorSettingsResult {
+                Settings           = { connector.Settings },
+                SettingsUpdateTime = connector.SettingsUpdateTime
+            };
+
+        return new ();
+        // TODO SS: how to throw here? dont want any grpc coupling should we return a result tuple like <query-result, error>?
+        //throw new RpcExceptions.NotFound($"Connector with id {query.ConnectorId} not found.");
     }
 }

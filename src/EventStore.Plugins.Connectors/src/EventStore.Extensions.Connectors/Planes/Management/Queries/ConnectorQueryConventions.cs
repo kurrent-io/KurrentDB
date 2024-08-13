@@ -10,29 +10,26 @@ namespace EventStore.Connectors.Management.Queries;
 [PublicAPI]
 public partial class ConnectorQueryConventions {
     [PublicAPI]
-    [SuppressMessage("Usage", "CA2211:Non-constant fields should not be visible")]
     public static class Streams {
-        public const  string   StreamPrefix                    = "$connectors";
-        public static StreamId ConnectorsQueryProjectionStream = $"{StreamPrefix}-projection";
+        public static readonly StreamId ConnectorsStateProjectionStream            = "$connectors-mngt/connectors-state-projection";
+        public static readonly StreamId ConnectorsStateProjectionCheckpointsStream = "$connectors-mngt/connectors-state-projection/checkpoints";
     }
 
     [PublicAPI]
     public partial class Filters {
-        public const string ConnectorsQueryStateFilterPattern = @"^\$connectors\/([^\/]+)(\/(lifecycle|checkpoints))?$";
+        public const string ConnectorsStateProjectionStreamFilterPattern = @"^\$connectors\/([^\/]+)(\/checkpoints)?$";
 
-        [GeneratedRegex(ConnectorsQueryStateFilterPattern)]
-        private static partial Regex GetConnectorsQueryStateStreamFilterRegEx();
+        [GeneratedRegex(ConnectorsStateProjectionStreamFilterPattern)]
+        private static partial Regex ConnectorsStateProjectionStreamFilterRegEx();
 
-        public static readonly ConsumeFilter ConnectorsQueryStateFilter =
-            FromRegex(ConsumeFilterScope.Stream, GetConnectorsQueryStateStreamFilterRegEx());
+        public static readonly ConsumeFilter ConnectorsStateProjectionStreamFilter = FromRegex(ConsumeFilterScope.Stream, ConnectorsStateProjectionStreamFilterRegEx());
     }
 
-    public static async Task<RegisteredSchema> RegisterQueryMessages<T>(
-        ISchemaRegistry registry, CancellationToken token = default
-    ) {
-        var schemaInfo =
-            new SchemaInfo(ConnectorsFeatureConventions.Messages.GetControlSystemMessageSubject(typeof(T).Name),
-                SchemaDefinitionType.Json);
+    public static async Task<RegisteredSchema> RegisterQueryMessages<T>(ISchemaRegistry registry, CancellationToken token = default) {
+        var schemaInfo = new SchemaInfo(
+            ConnectorsFeatureConventions.Messages.GetManagementMessageSubject(typeof(T).Name),
+            SchemaDefinitionType.Json
+        );
 
         return await registry.RegisterSchema<T>(schemaInfo, cancellationToken: token);
     }

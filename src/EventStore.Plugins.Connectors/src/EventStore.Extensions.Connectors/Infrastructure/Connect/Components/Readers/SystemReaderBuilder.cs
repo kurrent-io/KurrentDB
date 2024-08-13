@@ -23,15 +23,15 @@ public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemRea
         Ensure.NotNullOrWhiteSpace(Options.ReaderId);
         Ensure.NotNull(Options.Publisher);
 
-        var options = Options with {
-            ResiliencePipelineBuilder = Options.ResiliencePipelineBuilder.ConfigureTelemetry(
-                Options.Logging.Enabled
-                    ? Options.Logging.LoggerFactory
-                    : NullLoggerFactory.Instance,
-                "ReaderResiliencePipelineTelemetryLogger"
-            )
-        };
+        return new(Options with {});
 
-		return new(options);
+        // var options = Options with {
+        //     ResiliencePipelineBuilder = Options.ResiliencePipelineBuilder.ConfigureTelemetry(Options.Logging.Enabled
+        //             ? Options.Logging.LoggerFactory
+        //             : NullLoggerFactory.Instance,
+        //         "ReaderResiliencePipelineTelemetryLogger")
+        // };
+
+		// return new(options);
 	}
 }

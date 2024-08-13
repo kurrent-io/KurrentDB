@@ -20,22 +20,22 @@ enum NodeAffinity {
   NODE_AFFINITY_READONLY_REPLICA = 3;
 }
 
-message Connector {
-  // Unique identifier of the connector
-  string connector_id = 1;
-
-  // Name of the connector
-  string name = 2;
-
-  // The current revision number
-  int32 current_revision = 3;
-
-  // Current log position of the connector
-  uint64 log_position = 4;
-
-  // Whether the connector has been deleted
-  bool is_deleted = 5;
-}
+//message Connector {
+//  // Unique identifier of the connector
+//  string connector_id = 1;
+//
+//  // Name of the connector
+//  string name = 2;
+//
+//  // The current revision number
+//  int32 current_revision = 3;
+//
+//  // Current log position of the connector
+//  uint64 log_position = 4;
+//
+//  // Whether the connector has been deleted
+//  bool is_deleted = 5;
+//}
 
 enum ConnectorType {
   // Do not use this default value.
@@ -78,21 +78,6 @@ message ConnectorStatus {
   repeated uint64   positions      = 6;
 }
 
-message StartPosition {
-  google.protobuf.UInt64Value value = 1;
-}
-
-message ConnectorsSnapshot {
-  repeated Connector connectors = 1;
-
-  message Connector {
-    string                                   connector_id       = 1;
-    string                                   name               = 2;
-    string                                   instance_type      = 3;
-    ConnectorState                           state              = 4;
-    google.protobuf.Timestamp                state_timestamp    = 5;
-    map<string, google.protobuf.StringValue> settings           = 6;
-    google.protobuf.Timestamp                settings_timestamp = 7;
-    google.protobuf.UInt64Value              position           = 8;
-  }
+message StartFromPosition {
+  google.protobuf.UInt64Value log_position = 1 [json_name = "position"];
 }

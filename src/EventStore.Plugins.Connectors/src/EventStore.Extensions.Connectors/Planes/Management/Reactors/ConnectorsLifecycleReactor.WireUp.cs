@@ -16,7 +16,7 @@ namespace EventStore.Connectors.Management.Reactors;
 static class ConnectorsLifecycleReactorWireUp {
     public static IServiceCollection AddConnectorsLifecycleReactor(this IServiceCollection services) {
         return services.AddSingleton<IHostedService, ConnectorsLifecycleReactorService>(ctx => {
-            var app            = ctx.GetRequiredService<ConnectorsApplication>();
+            var app            = ctx.GetRequiredService<ConnectorsCommandApplication>();
             var publisher      = ctx.GetRequiredService<IPublisher>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
