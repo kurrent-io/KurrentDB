@@ -17,6 +17,7 @@
         <!-- <PackageReference Include="MinVer" Version="5.0.0" PrivateAssets="All" /> -->
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
         <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\NOTICE.html" Pack="true" PackagePath="\" />
         <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
     </ItemGroup>
 
