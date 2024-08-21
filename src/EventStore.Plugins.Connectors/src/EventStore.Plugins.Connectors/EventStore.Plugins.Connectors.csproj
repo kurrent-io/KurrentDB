@@ -50,6 +50,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="..\..\LICENSE.md">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="..\..\NOTICE.html">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
 		<None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
 	</ItemGroup>
 
