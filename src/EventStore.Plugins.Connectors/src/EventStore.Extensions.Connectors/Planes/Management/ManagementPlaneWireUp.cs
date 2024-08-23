@@ -68,7 +68,6 @@ public static class ManagementPlaneWireUp {
 
     public static void UseConnectorsManagementPlane(this IApplicationBuilder application) {
         application
-            .UseRouting()
             .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsCommandService>())
             .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsQueryService>());
     }
