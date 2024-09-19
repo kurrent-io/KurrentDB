@@ -1,10 +1,9 @@
-using System.Text.RegularExpressions;
+using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
-using EventStore.Connectors.Management.Queries;
 using EventStore.Streaming;
 using EventStore.Streaming.Contracts.Consumers;
 
@@ -14,7 +13,10 @@ namespace EventStore.Connectors.Management.Data;
 /// Projects the current state of all connectors in the system.
 /// </summary>
 public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSnapshot> {
-    public ConnectorsStateProjection(Func<SystemReaderBuilder> getReaderBuilder, string snapshotStreamId) : base(getReaderBuilder, snapshotStreamId) {
+    public ConnectorsStateProjection(
+        Func<SystemReaderBuilder> getReaderBuilder, Func<SystemProducerBuilder> getProducerBuilder,
+        string snapshotStreamId
+    ) : base(getReaderBuilder, getProducerBuilder, snapshotStreamId) {
         UpdateWhen<ConnectorCreated>((snapshot, evt) =>
             snapshot.Apply(new() {
                 ConnectorId        = evt.ConnectorId,

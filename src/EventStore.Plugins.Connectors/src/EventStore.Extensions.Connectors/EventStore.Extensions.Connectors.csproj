@@ -6,10 +6,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="DotNext" Version="5.8.0" />
-		<PackageReference Include="DotNext.Threading" Version="5.10.0" />
+		<PackageReference Include="DotNext" Version="5.13.0" />
+		<PackageReference Include="DotNext.Threading" Version="5.13.0" />
 
-		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.89" />
+		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.114" />
 		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.59" />
 		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.59" />
 

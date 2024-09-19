@@ -1,7 +1,9 @@
 using EventStore.Connect.Processors.Configuration;
+using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Management.Queries;
 using EventStore.Connectors.System;
+using EventStore.Core.Bus;
 using EventStore.Streaming;
 using EventStore.Streaming.Configuration;
 using EventStore.Streaming.Consumers.Configuration;
@@ -16,9 +18,10 @@ static class ConnectorsStateProjectorWireUp {
     public static IServiceCollection AddConnectorsStateProjection(this IServiceCollection services) {
         return services
            .AddSingleton<IHostedService, ConnectorsStateProjectionService>(ctx => {
-                var loggerFactory       = ctx.GetRequiredService<ILoggerFactory>();
-                var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
-                var getReaderBuilder    = ctx.GetRequiredService<Func<SystemReaderBuilder>>();
+               var loggerFactory       = ctx.GetRequiredService<ILoggerFactory>();
+               var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
+               var getReaderBuilder    = ctx.GetRequiredService<Func<SystemReaderBuilder>>();
+               var getProducerBuilder  = ctx.GetRequiredService<Func<SystemProducerBuilder>>();
 
                 var processor = getProcessorBuilder()
                     .ProcessorId("connectors-state-projection")
@@ -36,7 +39,9 @@ static class ConnectorsStateProjectorWireUp {
                     .Filter(ConnectorQueryConventions.Filters.ConnectorsStateProjectionStreamFilter)
                     // .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
                     .InitialPosition(SubscriptionInitialPosition.Earliest)
-                    .WithModule(new ConnectorsStateProjection(getReaderBuilder, "$connectors-mngt/connectors-state-projection"))
+                    .WithModule(new ConnectorsStateProjection(getReaderBuilder,
+                        getProducerBuilder,
+                        "$connectors-mngt/connectors-state-projection"))
                     .Create();
 
                 return new ConnectorsStateProjectionService(processor, ctx);

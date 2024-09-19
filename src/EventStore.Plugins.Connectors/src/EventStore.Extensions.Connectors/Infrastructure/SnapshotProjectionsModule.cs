@@ -1,5 +1,7 @@
 // ReSharper disable CheckNamespace
 
+using EventStore.Connect.Producers;
+using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Streaming;
@@ -15,14 +17,16 @@ public delegate TSnapshot UpdateSnapshot<TSnapshot, in T>(TSnapshot snapshot, T 
 
 public delegate TSnapshot UpdateSnapshotWithContext<TSnapshot, in T>(TSnapshot snapshot, T message, RecordContext context);
 
-public abstract class SnapshotProjectionsModule<TSnapshot> : ProcessingModule where TSnapshot : class, IMessage, new() {
-    public SnapshotProjectionsModule(Func<SystemReaderBuilder> getReaderBuilder, StreamId snapshotStreamId) {
-        Reader           = getReaderBuilder().ReaderId("conn-mngt-projections-rdx").Create();
-        SnapshotStreamId = snapshotStreamId;
-    }
-
-    SystemReader Reader           { get; }
-    StreamId     SnapshotStreamId { get; }
+public abstract class SnapshotProjectionsModule<TSnapshot>(
+    Func<SystemReaderBuilder> getReaderBuilder,
+    Func<SystemProducerBuilder> getProducerBuilder,
+    StreamId snapshotStreamId
+)
+    : ProcessingModule
+    where TSnapshot : class, IMessage, new() {
+    SystemReader   Reader           { get; } = getReaderBuilder().ReaderId("conn-mngt-projections-rdx").Create();
+    SystemProducer Producer         { get; } = getProducerBuilder().ProducerId("conn-mngt-projections-prx").Create();
+    StreamId       SnapshotStreamId { get; } = snapshotStreamId;
 
     static readonly TSnapshot EmptySnapshot = new TSnapshot();
 
@@ -46,7 +50,7 @@ public abstract class SnapshotProjectionsModule<TSnapshot> : ProcessingModule wh
                 if (snapshot == EmptySnapshot)
                     return;
 
-                UpdateSnapshot(snapshot, position.StreamRevision, ctx);
+                await UpdateSnapshot(snapshot, position.StreamRevision, ctx);
 
                 if (ctx.Logger.IsEnabled(LogLevel.Debug))
                     ctx.Logger.LogTrace(
@@ -81,7 +85,7 @@ public abstract class SnapshotProjectionsModule<TSnapshot> : ProcessingModule wh
                 if (snapshot == EmptySnapshot)
                     return;
 
-                UpdateSnapshot(snapshot, position.StreamRevision, ctx);
+                await UpdateSnapshot(snapshot, position.StreamRevision, ctx);
 
                 if (ctx.Logger.IsEnabled(LogLevel.Debug))
                     ctx.Logger.LogTrace(
@@ -110,7 +114,7 @@ public abstract class SnapshotProjectionsModule<TSnapshot> : ProcessingModule wh
         }
     }
 
-    void UpdateSnapshot(TSnapshot snapshot, StreamRevision expectedRevision, RecordContext ctx) {
+    async Task UpdateSnapshot(TSnapshot snapshot, StreamRevision expectedRevision, RecordContext ctx) {
         var produceRequest = ProduceRequest.Builder
             .Message(snapshot
                 .WithUpdateTime(TimeProvider.System.GetUtcNow())
@@ -121,7 +125,7 @@ public abstract class SnapshotProjectionsModule<TSnapshot> : ProcessingModule wh
             .Create();
 
         // TODO SS: consider using a dedicated producer or a new type of processor to have full control over the output
-        ctx.Output(produceRequest);
+        await Producer.Produce(produceRequest);
     }
 }
 
