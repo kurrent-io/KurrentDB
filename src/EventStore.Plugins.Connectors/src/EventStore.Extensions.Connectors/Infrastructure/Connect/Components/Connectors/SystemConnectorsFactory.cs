@@ -1,3 +1,4 @@
+// ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
 using EventStore.Connect.Processors;
@@ -17,10 +18,10 @@ using EventStore.Streaming.Processors;
 using EventStore.Streaming.Processors.Configuration;
 using EventStore.Streaming.Schema;
 using EventStore.Streaming.Transformers;
+using Humanizer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
 using AutoLockOptions = EventStore.Streaming.Processors.Configuration.AutoLockOptions;
 
 namespace EventStore.Connect.Connectors;
@@ -35,6 +36,20 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
     SystemConnectorsFactoryOptions Options    { get; } = options;
     IConnectorValidator            Validation { get; } = validation;
     IServiceProvider               Services   { get; } = services;
+
+    static readonly Dictionary<string, Func<ISink>> SinkInstanceTypes = new() {
+        { typeof(HttpSink).FullName!, () => new HttpSink() },
+        { nameof(HttpSink), () => new HttpSink() },
+        { nameof(HttpSink).Kebaberize(), () => new HttpSink() },
+
+        { nameof(KafkaSink), () => new KafkaSink() },
+        { typeof(KafkaSink).FullName!, () => new KafkaSink() },
+        { nameof(KafkaSink).Kebaberize(), () => new KafkaSink() },
+
+        { nameof(LoggerSink), () => new LoggerSink() },
+        { typeof(LoggerSink).FullName!, () => new LoggerSink() },
+        { nameof(LoggerSink).Kebaberize(), () => new LoggerSink() },
+    };
 
     public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration) {
         var sinkOptions = configuration.GetRequiredOptions<SinkOptions>();
@@ -53,25 +68,18 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
         return new SinkConnector(processor);
 
         static ISink CreateSink(string connectorTypeName) {
-            try {
-                return connectorTypeName switch {
-                    _ when connectorTypeName == typeof(HttpSink).FullName   => new HttpSink(),
-                    _ when connectorTypeName == typeof(KafkaSink).FullName  => new KafkaSink(),
-                    _ when connectorTypeName == typeof(LoggerSink).FullName => new LoggerSink(),
-                    _                                                       => throw new($"Failed to find sink {connectorTypeName}")
-                };
-            }
-            catch (Exception ex) {
-                throw new($"Failed to create sink {connectorTypeName}", ex);
-            }
+            if (SinkInstanceTypes.TryGetValue(connectorTypeName, out var instance))
+                return instance();
+
+            throw new ArgumentException($"Failed to find sink {connectorTypeName}", nameof(connectorTypeName));
         }
     }
 
     IProcessor ConfigureProcessor(ConnectorId connectorId, SinkOptions sinkOptions, SinkProxy sinkProxy) {
-        var publisher         = Services.GetRequiredService<IPublisher>();
-        var loggerFactory     = Services.GetRequiredService<ILoggerFactory>();
-        var schemaRegistry    = Services.GetRequiredService<SchemaRegistry>();
-        var stateStore        = Services.GetRequiredService<IStateStore>();
+        var publisher      = Services.GetRequiredService<IPublisher>();
+        var loggerFactory  = Services.GetRequiredService<ILoggerFactory>();
+        var schemaRegistry = Services.GetRequiredService<SchemaRegistry>();
+        var stateStore     = Services.GetRequiredService<IStateStore>();
 
         // TODO SS: seriously, this is a bad idea, but creating a connector to be hosted in ESDB or PaaS is different from having full control of the Connect framework
 
@@ -83,6 +91,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
         // I'm not happy with this, but it's the best I could come up with in the time I had.
 
         var nodeSysInfoProvider = Services.GetRequiredService<INodeSystemInfoProvider>();
+
         var nodeId = nodeSysInfoProvider
             .GetNodeSystemInfo().GetAwaiter().GetResult()
             .InstanceId.ToString();

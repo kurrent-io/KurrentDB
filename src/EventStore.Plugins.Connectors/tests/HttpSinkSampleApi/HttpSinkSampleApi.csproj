@@ -5,8 +5,8 @@
         <Nullable>enable</Nullable>
         <RootNamespace>HttpSinkSampleApi</RootNamespace>
     </PropertyGroup>
-    
+
     <ItemGroup>
-        <PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.82" />
+        <PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.114" />
     </ItemGroup>
 </Project>
