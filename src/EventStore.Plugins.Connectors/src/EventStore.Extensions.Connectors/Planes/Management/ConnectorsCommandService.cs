@@ -25,8 +25,9 @@ public class ConnectorsCommandService(ConnectorsCommandApplication application, 
         var http = context.GetHttpContext();
 
         var authenticated = http.User.Identity?.IsAuthenticated ?? false;
+
         if (!authenticated)
-            throw RpcExceptions.Create(StatusCode.PermissionDenied);
+            throw RpcExceptions.PermissionDenied();
 
         var result = await application.Handle(command, context.CancellationToken);
 
@@ -44,20 +45,21 @@ public class ConnectorsCommandService(ConnectorsCommandApplication application, 
                 // TODO SS: improve this exception mess later (we dont control the command service from eventuous)
 
                 var rpcEx = error.Exception switch {
-                    ValidationException ex                  => RpcExceptions.BadRequest(ex.Errors.GroupBy(x => x.PropertyName).ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray())),
-                    InvalidConnectorSettingsException ex    => RpcExceptions.BadRequest(ex.Errors),
-                    DomainExceptions.EntityAlreadyExists ex => RpcExceptions.Create(StatusCode.AlreadyExists, ex.Message),
-                    DomainExceptions.EntityDeleted ex       => RpcExceptions.Create(StatusCode.NotFound, ex.Message),
-                    StreamAccessDeniedError ex              => RpcExceptions.Create(StatusCode.PermissionDenied, ex.Message),
-                    StreamNotFoundError ex                  => RpcExceptions.Create(StatusCode.NotFound, ex.Message),
-                    StreamDeletedError ex                   => RpcExceptions.Create(StatusCode.FailedPrecondition, ex.Message),
-                    ExpectedStreamRevisionError ex          => RpcExceptions.Create(StatusCode.FailedPrecondition, ex.Message),
-                    DomainException ex                      => RpcExceptions.Create(StatusCode.FailedPrecondition, ex.Message),
+                    ValidationException ex                  => RpcExceptions.InvalidArgument(ex.Errors),
+                    InvalidConnectorSettingsException ex    => RpcExceptions.InvalidArgument(ex.Errors),
+                    DomainExceptions.EntityAlreadyExists ex => RpcExceptions.AlreadyExists(ex),
+                    DomainExceptions.EntityDeleted ex       => RpcExceptions.NotFound(ex),
+                    StreamAccessDeniedError ex              => RpcExceptions.PermissionDenied(ex),
+                    StreamNotFoundError ex                  => RpcExceptions.NotFound(ex),
+                    StreamDeletedError ex                   => RpcExceptions.FailedPrecondition(ex),
+                    ExpectedStreamRevisionError ex          => RpcExceptions.FailedPrecondition(ex),
+                    DomainException ex                      => RpcExceptions.FailedPrecondition(ex),
+                    InvalidOperationException ex            => RpcExceptions.InvalidArgument(ex),
 
                     // Eventuous framework error and I think we can remove it but need moar tests...
                     // StreamNotFound ex => RpcExceptions.Create(StatusCode.NotFound, ex.Message),
 
-                    { } ex => RpcExceptions.InternalServerError(ex)
+                    { } ex => RpcExceptions.Internal(ex)
                 };
 
                 if (rpcEx.StatusCode == StatusCode.Internal)

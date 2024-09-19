@@ -21,7 +21,7 @@ public class ConnectorsQueryService(ILogger<ConnectorsQueryService> logger, Conn
 
         var authenticated = http.User.Identity?.IsAuthenticated ?? false;
         if (!authenticated)
-            throw RpcExceptions.Create(StatusCode.PermissionDenied);
+            throw RpcExceptions.PermissionDenied();
 
         try {
             var result = await runQuery(query, context.CancellationToken);
@@ -34,10 +34,8 @@ public class ConnectorsQueryService(ILogger<ConnectorsQueryService> logger, Conn
             return result;
         } catch (Exception ex) {
             var rpcEx = ex switch {
-                ValidationException vex => RpcExceptions
-                    .BadRequest(vex.Errors.GroupBy(x => x.PropertyName)
-                        .ToDictionary(g => g.Key, g => g.Select(x => x.ErrorMessage).ToArray())),
-                _ => RpcExceptions.InternalServerError(ex)
+                ValidationException vex => RpcExceptions.InvalidArgument(vex.Errors),
+                _                       => RpcExceptions.Internal(ex)
             };
 
             logger.LogError(ex,
