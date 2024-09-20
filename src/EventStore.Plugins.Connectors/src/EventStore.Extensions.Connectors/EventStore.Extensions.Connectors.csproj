@@ -9,7 +9,7 @@
 		<PackageReference Include="DotNext" Version="5.13.0" />
 		<PackageReference Include="DotNext.Threading" Version="5.13.0" />
 
-		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.114" />
+		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.121" />
 		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.59" />
 		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.59" />
 
@@ -19,7 +19,9 @@
 
 		<PackageReference Include="Grpc.StatusProto" Version="2.65.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.7" />
-	</ItemGroup>
+
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0"/>
+  </ItemGroup>
 
 	<ItemGroup>
 		<!-- Sometimes easier to use submodules to speed up development -->

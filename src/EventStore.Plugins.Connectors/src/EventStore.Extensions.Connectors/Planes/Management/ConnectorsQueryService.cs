@@ -3,13 +3,18 @@ using EventStore.Connectors.Management.Contracts.Queries;
 using EventStore.Connectors.Management.Queries;
 using FluentValidation;
 using Grpc.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.Management.Contracts.Queries.ConnectorsQueryService;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Connectors.Management;
 
-public class ConnectorsQueryService(ILogger<ConnectorsQueryService> logger, ConnectorQueries connectorQueries) : ConnectorsQueryServiceBase {
+public class ConnectorsQueryService(
+    ILogger<ConnectorsQueryService> logger,
+    ConnectorQueries connectorQueries,
+    IServiceProvider serviceProvider
+) : ConnectorsQueryServiceBase {
     public override  Task<ListConnectorsResult> List(ListConnectors query, ServerCallContext context) =>
          Execute(connectorQueries.List, query, context);
 
@@ -22,6 +27,22 @@ public class ConnectorsQueryService(ILogger<ConnectorsQueryService> logger, Conn
         var authenticated = http.User.Identity?.IsAuthenticated ?? false;
         if (!authenticated)
             throw RpcExceptions.PermissionDenied();
+
+        var validator = serviceProvider.GetService<IValidator<TQuery>>();
+
+        if (validator is null)
+            throw new InvalidOperationException($"No validator found for {query?.GetType().Name}");
+
+        var validationResult = await validator.ValidateAsync(query);
+
+        if (!validationResult.IsValid) {
+            logger.LogError("{TraceIdentifier} {CommandType} failed: {ErrorMessage}",
+                http.TraceIdentifier,
+                query?.GetType().Name,
+                validationResult.ToString());
+
+            throw RpcExceptions.InvalidArgument(validationResult);
+        }
 
         try {
             var result = await runQuery(query, context.CancellationToken);

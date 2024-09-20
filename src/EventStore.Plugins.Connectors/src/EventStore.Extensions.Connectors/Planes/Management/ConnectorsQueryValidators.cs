@@ -1,13 +1,13 @@
+#pragma warning disable RCS1225
+
 using EventStore.Connectors.Management.Contracts.Queries;
 using FluentValidation;
 
 namespace EventStore.Connectors.Management.Queries;
 
-[PublicAPI]
-class ListConnectorsQueryValidator : AbstractValidator<ListConnectors> {
-    static readonly ListConnectorsQueryValidator Instance = new();
-
-    ListConnectorsQueryValidator() {
+[UsedImplicitly]
+public class ListConnectorsValidator : AbstractValidator<ListConnectors> {
+    public ListConnectorsValidator() {
         RuleFor(x => x.Paging.Page)
             .GreaterThanOrEqualTo(1)
             .WithMessage("Page must be greater than or equal to 1.")
@@ -20,18 +20,9 @@ class ListConnectorsQueryValidator : AbstractValidator<ListConnectors> {
             .WithMessage("Page size must be less than or equal to 100.")
             .When(x => x.Paging is not null);
     }
-
-    public static void EnsureValid(ListConnectors query) => Instance.ValidateAndThrow(query);
 }
 
-[PublicAPI]
-class GetConnectorSettingsQueryValidator : AbstractValidator<GetConnectorSettings> {
-    static readonly GetConnectorSettingsQueryValidator Instance = new();
+[UsedImplicitly]
+public class GetConnectorSettingsValidator() : RequestValidator<GetConnectorSettings>(x => x.ConnectorId);
 
-    GetConnectorSettingsQueryValidator() {
-        RuleFor(x => x.ConnectorId)
-            .NotEmpty();
-    }
-
-    public static void EnsureValid(GetConnectorSettings query) => Instance.ValidateAndThrow(query);
-}
+#pragma warning restore RCS1225

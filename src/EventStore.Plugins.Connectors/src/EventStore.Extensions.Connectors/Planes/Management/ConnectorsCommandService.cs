@@ -5,6 +5,7 @@ using Eventuous;
 using FluentValidation;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.Management.ConnectorDomainExceptions;
 using static EventStore.Connectors.Management.Contracts.Commands.ConnectorsCommandService;
@@ -12,7 +13,11 @@ using static EventStore.Connectors.Management.Contracts.Commands.ConnectorsComma
 // ReSharper disable once CheckNamespace
 namespace EventStore.Connectors.Management;
 
-public class ConnectorsCommandService(ConnectorsCommandApplication application, ILogger<ConnectorsCommandService> logger) : ConnectorsCommandServiceBase {
+public class ConnectorsCommandService(
+    ConnectorsCommandApplication application,
+    ILogger<ConnectorsCommandService> logger,
+    IServiceProvider serviceProvider
+) : ConnectorsCommandServiceBase {
     public override Task<Empty> Create(CreateConnector request, ServerCallContext context)           => Execute(request, context);
     public override Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) => Execute(request, context);
     public override Task<Empty> Delete(DeleteConnector request, ServerCallContext context)           => Execute(request, context);
@@ -28,6 +33,22 @@ public class ConnectorsCommandService(ConnectorsCommandApplication application, 
 
         if (!authenticated)
             throw RpcExceptions.PermissionDenied();
+
+        var validator = serviceProvider.GetService<IValidator<TCommand>>();
+
+        if (validator is null)
+            throw new InvalidOperationException($"No validator found for {command.GetType().Name}");
+
+        var validationResult = await validator.ValidateAsync(command);
+
+        if (!validationResult.IsValid) {
+            logger.LogError("{TraceIdentifier} {CommandType} failed: {ErrorMessage}",
+                http.TraceIdentifier,
+                command.GetType().Name,
+                validationResult.ToString());
+
+            throw RpcExceptions.InvalidArgument(validationResult);
+        }
 
         var result = await application.Handle(command, context.CancellationToken);
 

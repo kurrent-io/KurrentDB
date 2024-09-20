@@ -13,9 +13,6 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
     public ConnectorsCommandApplication(ValidateConnectorSettings validateSettings, TimeProvider time, IEventStore store) :
         base(cmd => cmd.ConnectorId, ConnectorsFeatureConventions.Streams.ManagementStreamTemplate, store) {
         OnAny<CreateConnector>((connector, cmd) => {
-            // TODO SS: these validators should be dynamically resolved and executed in the grpc command service...
-            CreateConnectorValidator.EnsureValid(cmd);
-
             if (connector.IsNew)
                 throw new DomainExceptions.EntityAlreadyExists("Connector", cmd.ConnectorId);
 
@@ -23,10 +20,6 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
                 .From(cmd.Settings, validateSettings)
                 .EnsureValid(cmd.ConnectorId)
                 .ToDictionary();
-
-            // if name is not provided, use the connector id
-            if (string.IsNullOrWhiteSpace(cmd.Name?.Trim()))
-                cmd.Name = cmd.ConnectorId;
 
             return [
                 new ConnectorCreated {

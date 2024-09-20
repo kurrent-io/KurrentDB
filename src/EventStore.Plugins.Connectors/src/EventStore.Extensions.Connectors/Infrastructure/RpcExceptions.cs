@@ -1,4 +1,5 @@
 // ReSharper disable CheckNamespace
+// ReSharper disable InconsistentNaming
 
 using System.Text.Json;
 using FluentValidation.Results;
@@ -7,7 +8,6 @@ using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
 using Grpc.Core;
-using Humanizer;
 
 namespace EventStore.Connectors.Infrastructure;
 
@@ -15,9 +15,7 @@ public static class RpcExceptions {
     static RpcException Create(
         StatusCode statusCode, string message, IMessage? detail = null
     ) {
-        message = $"{statusCode.ToString().Humanize()} - {message}";
-
-        if (detail != null) {
+        if (detail is not null) {
             throw RpcStatusExtensions.ToRpcException(new() {
                 Code    = (int)statusCode,
                 Message = message,

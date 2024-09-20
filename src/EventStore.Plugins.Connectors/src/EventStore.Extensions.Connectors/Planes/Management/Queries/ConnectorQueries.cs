@@ -20,9 +20,6 @@ public class ConnectorQueries {
     public async Task<ListConnectorsResult> List(ListConnectors query, CancellationToken cancellationToken) {
         query.Paging ??= new Paging { Page = 1, PageSize = 100 };
 
-        // TODO JC: Better but still needs to be improved.
-        ListConnectorsQueryValidator.EnsureValid(query);
-
         var snapshot = await LoadSnapshot(cancellationToken);
 
         var skip = query.Paging.Page - (1 * query.Paging.PageSize);
@@ -50,8 +47,6 @@ public class ConnectorQueries {
     }
 
     public async Task<GetConnectorSettingsResult> GetSettings(GetConnectorSettings query, CancellationToken cancellationToken) {
-        GetConnectorSettingsQueryValidator.EnsureValid(query);
-
         var snapshot = await LoadSnapshot(cancellationToken);
 
         var connector = snapshot.Connectors.FirstOrDefault(x => x.ConnectorId == query.ConnectorId);

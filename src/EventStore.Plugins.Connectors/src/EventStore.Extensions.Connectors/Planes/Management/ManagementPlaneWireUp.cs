@@ -1,10 +1,9 @@
+using System.Reflection;
 using EventStore.Connect.Connectors;
 using EventStore.Connect.Producers.Configuration;
-using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.Eventuous;
-using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
 using EventStore.Connectors.Management.Data;
@@ -12,9 +11,8 @@ using EventStore.Connectors.Management.Projectors;
 using EventStore.Connectors.Management.Queries;
 using EventStore.Connectors.Management.Reactors;
 using EventStore.Connectors.System;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Streaming;
+using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using static EventStore.Connectors.ConnectorsFeatureConventions;
@@ -29,6 +27,8 @@ public static class ManagementPlaneWireUp {
         services
             .AddGrpc(x => x.EnableDetailedErrors = true)
             .AddJsonTranscoding();
+
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
         // Commands
         services.AddSingleton<ConnectorDomainServices.ValidateConnectorSettings>(ctx => {
