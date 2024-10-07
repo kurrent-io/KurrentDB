@@ -24,7 +24,7 @@ public class ConnectorsPlugin : SubsystemsPlugin {
 
     public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
         var enabled = configuration.GetValue(
-            $"EventStore:Plugins:{Name}:Enabled",
+            $"EventStore:{Name}:Enabled",
             configuration.GetValue($"{Name}:Enabled",
                 configuration.GetValue("Enabled", true)
             )
