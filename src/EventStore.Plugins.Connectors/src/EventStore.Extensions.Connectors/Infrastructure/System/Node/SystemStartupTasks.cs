@@ -10,10 +10,16 @@ using Timeout = System.Threading.Timeout;
 namespace EventStore.Connectors.System;
 
 [UsedImplicitly]
-class SystemReadinessProbe : IHandle<SystemMessage.SystemReady> {
+class SystemReadinessProbe : IHandle<SystemMessage.BecomeLeader>, IHandle<SystemMessage.BecomeFollower>, IHandle<SystemMessage.BecomeReadOnlyReplica>  {
     public SystemReadinessProbe(ISubscriber subscriber, GetNodeSystemInfo getNodeSystemInfo) {
-        CompletionSource  = new();
-        Subscriber        = subscriber.With(x => x.Subscribe(this));
+        CompletionSource = new();
+
+        Subscriber = subscriber.With(x => {
+            x.Subscribe<SystemMessage.BecomeLeader>(this);
+            x.Subscribe<SystemMessage.BecomeFollower>(this);
+            x.Subscribe<SystemMessage.BecomeReadOnlyReplica>(this);
+        });
+
         GetNodeSystemInfo = getNodeSystemInfo;
     }
 
@@ -21,11 +27,15 @@ class SystemReadinessProbe : IHandle<SystemMessage.SystemReady> {
     GetNodeSystemInfo    GetNodeSystemInfo { get; }
     TaskCompletionSource CompletionSource  { get; }
 
-    public void Handle(SystemMessage.SystemReady message) => CompletionSource.SetResult();
+    public void Handle(SystemMessage.BecomeLeader message) => CompletionSource.TrySetResult();
+    public void Handle(SystemMessage.BecomeFollower message) => CompletionSource.TrySetResult();
+    public void Handle(SystemMessage.BecomeReadOnlyReplica message) => CompletionSource.TrySetResult();
 
     public async Task<NodeSystemInfo> WaitUntilReady(CancellationToken cancellationToken = default) {
         await CompletionSource.Task.WaitAsync(Timeout.InfiniteTimeSpan, cancellationToken);
-        Subscriber.Unsubscribe(this);
+        Subscriber.Unsubscribe<SystemMessage.BecomeLeader>(this);
+        Subscriber.Unsubscribe<SystemMessage.BecomeFollower>(this);
+        Subscriber.Unsubscribe<SystemMessage.BecomeReadOnlyReplica>(this);
         return await GetNodeSystemInfo();
     }
 }

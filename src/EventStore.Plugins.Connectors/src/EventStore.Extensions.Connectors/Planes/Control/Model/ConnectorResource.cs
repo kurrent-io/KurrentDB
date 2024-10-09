@@ -4,8 +4,8 @@ namespace EventStore.Connectors.Control;
 /// Represents a connector in the cluster.
 /// The connector resource is identified by its <see cref="ConnectorId"/>.
 /// </summary>
-public record ConnectorResource(Connect.Connectors.ConnectorId ConnectorId, ClusterNodeState Affinity) : IComparable<ConnectorResource>, IComparable {
-	public static readonly ConnectorResource Unmapped = new(Connect.Connectors.ConnectorId.None, ClusterNodeState.Unmapped);
+public record ConnectorResource(EventStore.Connect.Connectors.ConnectorId ConnectorId, ClusterNodeState Affinity) : IComparable<ConnectorResource>, IComparable {
+	public static readonly ConnectorResource Unmapped = new(EventStore.Connect.Connectors.ConnectorId.None, ClusterNodeState.Unmapped);
 
 	public override string ToString() => ConnectorId.ToString();
 
@@ -58,5 +58,5 @@ public record ConnectorResource(Connect.Connectors.ConnectorId ConnectorId, Clus
 
 	#endregion . relational members .
 
-    public static implicit operator Connect.Connectors.ConnectorId(ConnectorResource _) => _.ConnectorId;
+    public static implicit operator EventStore.Connect.Connectors.ConnectorId(ConnectorResource _) => _.ConnectorId;
 }

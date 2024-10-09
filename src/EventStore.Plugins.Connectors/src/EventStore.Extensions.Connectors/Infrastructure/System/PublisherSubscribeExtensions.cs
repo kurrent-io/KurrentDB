@@ -33,7 +33,7 @@ public static class PublisherSubscribeExtensions {
 		);
 
 		while (!cancellationToken.IsCancellationRequested) {
-			if (!await sub.MoveNextAsync()) // not sure if we need to retry forever or if the enumerator will do that for us
+			if (!await sub.MoveNextAsync(cancellationToken)) // not sure if we need to retry forever or if the enumerator will do that for us
 				break;
 
 			if (sub.Current is ReadResponse.EventReceived eventReceived)

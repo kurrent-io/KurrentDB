@@ -99,10 +99,10 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
 }
 
 public static class ConnectorsSnapshotExtensions {
-    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, Connector connector) =>
+    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, Contracts.Queries.Connector connector) =>
         snapshot.With(ss => ss.Connectors.Add(connector));
 
-    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) =>
+    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, string connectorId, Action<Contracts.Queries.Connector> update) =>
         snapshot.With(ss => ss.Connectors.First(conn => conn.ConnectorId == connectorId).With(update));
 
     // // if not byref

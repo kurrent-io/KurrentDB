@@ -2,9 +2,11 @@
 // ReSharper disable CheckNamespace
 
 using EventStore.Connect.Processors;
+using EventStore.Connector.EventStoreDB;
 using EventStore.Connectors;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
+using EventStore.Connectors.RabbitMQ;
 using EventStore.Connectors.System;
 using EventStore.Connectors.Testing;
 using EventStore.Streaming.Connectors.Sinks;
@@ -49,6 +51,14 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
         { nameof(LoggerSink), () => new LoggerSink() },
         { typeof(LoggerSink).FullName!, () => new LoggerSink() },
         { nameof(LoggerSink).Kebaberize(), () => new LoggerSink() },
+
+        { nameof(RabbitMqSink), () => new RabbitMqSink() },
+        { typeof(RabbitMqSink).FullName!, () => new RabbitMqSink() },
+        { nameof(RabbitMqSink).Kebaberize(), () => new RabbitMqSink() },
+
+        { nameof(EventStoreDBSink), () => new EventStoreDBSink() },
+        { typeof(EventStoreDBSink).FullName!, () => new EventStoreDBSink() },
+        { nameof(EventStoreDBSink).Kebaberize(), () => new EventStoreDBSink() },
     };
 
     public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration) {
@@ -65,7 +75,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
 
         var processor = ConfigureProcessor(connectorId, sinkOptions, sinkProxy);
 
-        return new SinkConnector(processor);
+        return new SinkConnector(processor, sinkProxy);
 
         static ISink CreateSink(string connectorTypeName) {
             if (SinkInstanceTypes.TryGetValue(connectorTypeName, out var instance))
@@ -165,14 +175,16 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
         return builder.Create();
     }
 
-    sealed class SinkConnector(IProcessor processor) : IConnector {
+    sealed class SinkConnector(IProcessor processor, SinkProxy sinkProxy) : IConnector {
         public ConnectorId    ConnectorId { get; } = ConnectorId.From(processor.ProcessorId);
         public ConnectorState State       { get; } = (ConnectorState)processor.State;
 
         public Task Stopped => processor.Stopped;
 
-        public Task Connect(CancellationToken stoppingToken) =>
-            processor.Activate(stoppingToken);
+        public async Task Connect(CancellationToken stoppingToken) {
+            await sinkProxy.Initialize(stoppingToken);
+            await processor.Activate(stoppingToken);
+        }
 
         public ValueTask DisposeAsync() =>
             processor.DisposeAsync();

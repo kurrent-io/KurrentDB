@@ -1,7 +1,9 @@
 // ReSharper disable InconsistentNaming
 
+using EventStore.Connector.EventStoreDB;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
+using EventStore.Connectors.RabbitMQ;
 using EventStore.Connectors.Testing;
 using Humanizer;
 
@@ -19,7 +21,15 @@ public class SystemConnectorsValidation : ConnectorsValidationBase {
 
         { typeof(LoggerSink).FullName!, new LoggerSinkValidator() },
         { nameof(LoggerSink), new LoggerSinkValidator() },
-        { nameof(LoggerSink).Kebaberize(), new LoggerSinkValidator() }
+        { nameof(LoggerSink).Kebaberize(), new LoggerSinkValidator() },
+
+        { typeof(RabbitMqSink).FullName!, new RabbitMqSinkValidator() },
+        { nameof(RabbitMqSink), new RabbitMqSinkValidator() },
+        { nameof(RabbitMqSink).Kebaberize(), new RabbitMqSinkValidator() },
+
+        { typeof(EventStoreDBSink).FullName!, new EventStoreDBSinkValidator() },
+        { nameof(EventStoreDBSink), new EventStoreDBSinkValidator() },
+        { nameof(EventStoreDBSink).Kebaberize(), new EventStoreDBSinkValidator() },
     };
 
     protected override bool TryGetConnectorValidator(ConnectorInstanceTypeName connectorTypeName, out IConnectorValidator validator)

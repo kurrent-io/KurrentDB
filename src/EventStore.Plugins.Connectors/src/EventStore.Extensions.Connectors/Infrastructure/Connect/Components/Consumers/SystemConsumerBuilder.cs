@@ -9,7 +9,7 @@ using Polly.Telemetry;
 namespace EventStore.Connect.Consumers.Configuration;
 
 [PublicAPI]
-public record SystemConsumerBuilder : ConsumerBuilder<SystemConsumerBuilder, SystemConsumerOptions, SystemConsumer> {
+public record SystemConsumerBuilder : ConsumerBuilder<SystemConsumerBuilder, SystemConsumerOptions> {
     public SystemConsumerBuilder Publisher(IPublisher publisher) {
         Ensure.NotNull(publisher);
         return new() {

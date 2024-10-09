@@ -120,7 +120,9 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 		positions.Last().Should().BeEquivalentTo(consumedRecords.Last().Position);
 	}
 
-	async Task<RecordPosition> ProduceAndConsumeTestStream(string streamId, int numberOfMessages, CancellationToken cancellationToken) {
+	async Task<RecordPosition> ProduceAndConsumeTestStream(
+        string streamId, int numberOfMessages, CancellationToken cancellationToken, bool commit = true
+    ) {
 		using var cancellator = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
 		var requests        = await Fixture.ProduceTestEvents(streamId, numberOfRequests: 1, numberOfMessages);
@@ -143,7 +145,8 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 				await cancellator.CancelAsync();
 		}
 
-		await consumer.CommitAll();
+        if (commit)
+		    await consumer.CommitAll();
 
 		var latestPositions = await consumer.GetLatestPositions(CancellationToken.None);
 
@@ -159,7 +162,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		var streamId = Fixture.NewStreamId();
 
-		await ProduceAndConsumeTestStream(streamId, 10, cancellator.Token);
+		var latestRecordPosition = await ProduceAndConsumeTestStream(streamId, 10, cancellator.Token, commit: false);
 
 		var requests        = await Fixture.ProduceTestEvents(streamId, 1, 1);
 		var messages        = requests.SelectMany(x => x.Messages).ToList();
@@ -169,7 +172,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 			.ConsumerId($"{streamId}-csr")
 			.SubscriptionName($"{streamId}-csr")
 			.Stream(streamId)
-            .StartPosition(RecordPosition.Earliest)
+            .StartPosition(latestRecordPosition.LogPosition)
             .DisableAutoCommit()
 			.Create();
 

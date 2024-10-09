@@ -31,7 +31,7 @@ public static class ConsumeFilterExtensions {
     sealed class NoOpEventFilter : IEventFilter {
         public static readonly NoOpEventFilter Instance = new();
 
-        public bool IsEventAllowed(EventRecord eventRecord) => false;
+        public bool IsEventAllowed(EventRecord eventRecord) => true;
     }
 }
 

@@ -9,9 +9,11 @@
 		<PackageReference Include="DotNext" Version="5.13.0" />
 		<PackageReference Include="DotNext.Threading" Version="5.13.0" />
 
-		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.121" />
-		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.59" />
-		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.59" />
+		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.201" />
+		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.70" />
+		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.70" />
+    <PackageReference Include="EventStore.Connectors.RabbitMQ" Version="1.0.0-alpha.0.70" />
+    <PackageReference Include="EventStore.Connectors.EventStoreDB" Version="1.0.0-alpha.0.70" />
 
 		<PackageReference Include="Eventuous.Application" Version="0.15.0-rc.2" />
 		<PackageReference Include="Eventuous.AspNetCore.Web" Version="0.15.0-rc.1" />

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace EventStore.Connect.Producers.Configuration;
 
 [PublicAPI]
-public record SystemProducerBuilder : ProducerBuilder<SystemProducerBuilder, SystemProducerOptions, SystemProducer> {
+public record SystemProducerBuilder : ProducerBuilder<SystemProducerBuilder, SystemProducerOptions> {
 	public SystemProducerBuilder Publisher(IPublisher publisher) {
 		Ensure.NotNull(publisher);
 		return new() {

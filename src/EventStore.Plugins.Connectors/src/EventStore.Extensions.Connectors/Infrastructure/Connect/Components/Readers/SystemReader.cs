@@ -86,7 +86,7 @@ public class SystemReader : IReader {
         else {
             events = Client.Read(
                 startPosition,
-                filter.ToEventFilter(),
+                ConsumeFilterExtensions.ToEventFilter(filter),
                 maxCount,
                 readForwards,
                 cancellator.Token

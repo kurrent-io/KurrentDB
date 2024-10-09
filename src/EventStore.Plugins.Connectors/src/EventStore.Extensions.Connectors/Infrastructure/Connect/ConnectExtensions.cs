@@ -9,8 +9,11 @@ using EventStore.Connect.Producers;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
+using EventStore.Connectors.Connect.Components.Producers;
 using EventStore.Core.Bus;
 using EventStore.Streaming.Persistence.State;
+using EventStore.Streaming.Producers;
+using EventStore.Streaming.Producers.Configuration;
 using EventStore.Streaming.Schema;
 using EventStore.Streaming.Schema.Serializers;
 using Microsoft.Extensions.DependencyInjection;
@@ -57,6 +60,8 @@ public static class ConnectExtensions {
                 .LoggerFactory(loggerFactory);
         });
 
+        services.AddSingleton<IProducerProvider, SystemProducerProvider>();
+
         services.AddSingleton<Func<SystemProcessorBuilder>>(ctx => {
             var publisher      = ctx.GetRequiredService<IPublisher>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
@@ -72,6 +77,14 @@ public static class ConnectExtensions {
 
         services.AddSingleton<IConnectorValidator, SystemConnectorsValidation>();
         services.AddSingleton<IConnectorFactory, SystemConnectorsFactory>();
+        services.AddSingleton<Func<GrpcProducerBuilder>>(ctx => {
+            var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
+            var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
+
+            return () => GrpcProducer.Builder
+                .SchemaRegistry(schemaRegistry)
+                .LoggerFactory(loggerFactory);
+        });
 
         return services;
     }

@@ -1,16 +1,15 @@
 using EventStore.Connect.Connectors;
 using EventStore.Streaming.Connectors.Sinks;
-using EventStore.Streaming.Processors;
 using Microsoft.Extensions.Logging;
 
 namespace EventStore.Connectors.Testing;
 
 public class LoggerSink : ISink {
-    public void Open(SinkContext sinkContext) { }
+    public ValueTask Open(SinkOpenContext sinkContext) => ValueTask.CompletedTask;
 
-    public Task Write(RecordContext recordContext) {
+    public ValueTask Write(SinkWriteContext recordContext) {
         recordContext.Logger.LogWarning("RECORD WRITTEN: {Record}", recordContext.Record);
-        return Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     public ValueTask Close() => ValueTask.CompletedTask;

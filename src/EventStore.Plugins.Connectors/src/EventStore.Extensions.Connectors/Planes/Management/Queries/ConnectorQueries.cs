@@ -36,13 +36,13 @@ public class ConnectorQueries {
             TotalSize = items.Count
         };
 
-        Func<Connector, bool> Filter() => conn =>
+        Func<Contracts.Queries.Connector, bool> Filter() => conn =>
             (query.State.IsEmpty()        || query.State.Contains(conn.State))                   &&
             (query.InstanceType.IsEmpty() || query.InstanceType.Contains(conn.InstanceTypeName)) &&
             (query.ConnectorId.IsEmpty()  || query.ConnectorId.Contains(conn.ConnectorId))       &&
             (query.ShowDeleted ? conn.DeleteTime is not null : conn.DeleteTime is null);
 
-        Func<Connector, Connector> Map() =>
+        Func<Contracts.Queries.Connector, Contracts.Queries.Connector> Map() =>
             conn => query.IncludeSettings ? conn : conn.With(x => x.Settings.Clear());
     }
 
