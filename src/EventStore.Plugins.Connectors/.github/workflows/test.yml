@@ -31,8 +31,6 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            9.0.x
-          dotnet-quality: preview
 
       - name: 'Cache NuGet'
         uses: actions/cache@v4
