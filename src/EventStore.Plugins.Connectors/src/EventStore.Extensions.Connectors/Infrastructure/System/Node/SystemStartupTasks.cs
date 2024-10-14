@@ -1,44 +1,9 @@
-using EventStore.Core.Bus;
-using EventStore.Core.Messages;
-using EventStore.Streaming;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Timeout = System.Threading.Timeout;
 
 namespace EventStore.Connectors.System;
-
-[UsedImplicitly]
-class SystemReadinessProbe : IHandle<SystemMessage.BecomeLeader>, IHandle<SystemMessage.BecomeFollower>, IHandle<SystemMessage.BecomeReadOnlyReplica>  {
-    public SystemReadinessProbe(ISubscriber subscriber, GetNodeSystemInfo getNodeSystemInfo) {
-        CompletionSource = new();
-
-        Subscriber = subscriber.With(x => {
-            x.Subscribe<SystemMessage.BecomeLeader>(this);
-            x.Subscribe<SystemMessage.BecomeFollower>(this);
-            x.Subscribe<SystemMessage.BecomeReadOnlyReplica>(this);
-        });
-
-        GetNodeSystemInfo = getNodeSystemInfo;
-    }
-
-    ISubscriber          Subscriber        { get; }
-    GetNodeSystemInfo    GetNodeSystemInfo { get; }
-    TaskCompletionSource CompletionSource  { get; }
-
-    public void Handle(SystemMessage.BecomeLeader message) => CompletionSource.TrySetResult();
-    public void Handle(SystemMessage.BecomeFollower message) => CompletionSource.TrySetResult();
-    public void Handle(SystemMessage.BecomeReadOnlyReplica message) => CompletionSource.TrySetResult();
-
-    public async Task<NodeSystemInfo> WaitUntilReady(CancellationToken cancellationToken = default) {
-        await CompletionSource.Task.WaitAsync(Timeout.InfiniteTimeSpan, cancellationToken);
-        Subscriber.Unsubscribe<SystemMessage.BecomeLeader>(this);
-        Subscriber.Unsubscribe<SystemMessage.BecomeFollower>(this);
-        Subscriber.Unsubscribe<SystemMessage.BecomeReadOnlyReplica>(this);
-        return await GetNodeSystemInfo();
-    }
-}
 
 abstract class SystemStartupTaskService : BackgroundService {
     protected SystemStartupTaskService(IServiceProvider serviceProvider, string? taskName = null) {
@@ -78,8 +43,7 @@ public interface ISystemStartupTask {
 [PublicAPI]
 public static class SystemStartupTasksServiceCollectionExtensions {
     public static IServiceCollection AddSystemStartupTask(
-        this IServiceCollection services,
-        string taskName,
+        this IServiceCollection services, string taskName,
         Func<NodeSystemInfo, IServiceProvider, CancellationToken, Task> onStartup
     ) {
         if (string.IsNullOrWhiteSpace(taskName))

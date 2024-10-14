@@ -18,16 +18,19 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
         string snapshotStreamId
     ) : base(getReaderBuilder, getProducerBuilder, snapshotStreamId) {
         UpdateWhen<ConnectorCreated>((snapshot, evt) =>
-            snapshot.Apply(new() {
-                ConnectorId        = evt.ConnectorId,
-                InstanceTypeName   = evt.Settings["InstanceTypeName"],
-                Name               = evt.Name,
-                State              = ConnectorState.Stopped,
-                StateUpdateTime    = evt.Timestamp,
-                Settings           = { evt.Settings },
-                SettingsUpdateTime = evt.Timestamp,
-                CreateTime         = evt.Timestamp,
-                UpdateTime         = evt.Timestamp
+            snapshot.ApplyOrCreate(evt.ConnectorId, conn => {
+                conn.Settings.Clear();
+                conn.Settings.Add(evt.Settings);
+
+                conn.ConnectorId        = evt.ConnectorId;
+                conn.InstanceTypeName   = evt.Settings["InstanceTypeName"];
+                conn.Name               = evt.Name;
+                conn.State              = ConnectorState.Stopped;
+                conn.StateUpdateTime    = evt.Timestamp;
+                conn.SettingsUpdateTime = evt.Timestamp;
+                conn.CreateTime         = evt.Timestamp;
+                conn.UpdateTime         = evt.Timestamp;
+                conn.DeleteTime         = null;
             }));
 
         UpdateWhen<ConnectorReconfigured>((snapshot, evt) =>
@@ -99,11 +102,14 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
 }
 
 public static class ConnectorsSnapshotExtensions {
-    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, Contracts.Queries.Connector connector) =>
-        snapshot.With(ss => ss.Connectors.Add(connector));
+    // public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, Connector connector) =>
+    //     snapshot.With(ss => ss.Connectors.Add(connector));
 
-    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, string connectorId, Action<Contracts.Queries.Connector> update) =>
+    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) =>
         snapshot.With(ss => ss.Connectors.First(conn => conn.ConnectorId == connectorId).With(update));
+
+    public static ConnectorsSnapshot ApplyOrCreate(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) =>
+        snapshot.With(ss => ss.Connectors.FirstOrDefault(conn => conn.ConnectorId == connectorId, new Connector()).With(update));
 
     // // if not byref
     // public static ConnectorsSnapshot ApplyProper(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) {

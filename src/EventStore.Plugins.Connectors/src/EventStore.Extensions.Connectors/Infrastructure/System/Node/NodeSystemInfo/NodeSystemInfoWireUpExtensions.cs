@@ -8,6 +8,6 @@ public static class NodeSystemInfoWireUpExtensions {
             .AddSingleton<INodeSystemInfoProvider, NodeSystemInfoProvider>()
             .AddSingleton<GetNodeSystemInfo>(ctx => {
                 var provider = ctx.GetRequiredService<INodeSystemInfoProvider>();
-                return () => provider.GetNodeSystemInfo();
+                return token => provider.GetNodeSystemInfo(token);
             });
 }

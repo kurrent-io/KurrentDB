@@ -1,4 +1,5 @@
 name: Qodana
+
 on:
   workflow_dispatch:
   # pull_request:
@@ -7,6 +8,8 @@ on:
       - main
       - master
       - 'release/*'
+    tags:
+      - 'v*.*.*'
 
 jobs:
   qodana:
@@ -22,10 +25,11 @@ jobs:
           fetch-depth: 0  # a full history is required for pull request analysis
           submodules: recursive
           token: ${{ secrets.ORG_GH_BOT_READONLY}}
+
       - name: 'Qodana Scan'
-        uses: JetBrains/qodana-action@v2024.1
+        uses: JetBrains/qodana-action@v2024.2
         with:
-          pr-mode: false
+          upload-result: true
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
           QODANA_NUGET_URL: https://nuget.pkg.github.com/EventStore/index.json

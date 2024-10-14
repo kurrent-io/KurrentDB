@@ -35,7 +35,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" Version="24.10.3">
+		<PackageReference Include="EventStore.Plugins" Version="24.10.5">
 			<Private>false</Private>
 			<IncludeAssets>compile</IncludeAssets>
 		</PackageReference>

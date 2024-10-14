@@ -28,6 +28,8 @@ public class ConnectorsControlService : LeadershipAwareService {
     SystemConsumerBuilder ConsumerBuilder     { get; }
 
     protected override async Task Execute(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) {
+        Logger.LogControlServiceRunning(nodeInfo.InstanceId);
+
         GetConnectorsResult connectors = new();
 
         try {
@@ -36,8 +38,6 @@ public class ConnectorsControlService : LeadershipAwareService {
             await connectors
                 .Select(connector => ActivateConnector(connector.ConnectorId, connector.Settings, connector.Revision))
                 .WhenAll();
-
-            Logger.LogControlServiceRunning(nodeInfo.InstanceId);
 
             await using var consumer = ConsumerBuilder.StartPosition(connectors.Position).Create();
 
@@ -48,9 +48,6 @@ public class ConnectorsControlService : LeadershipAwareService {
                     _                         => Task.CompletedTask
                 });
             }
-
-            var omg   = "OMG";
-            var fodax = omg;
         }
         catch (OperationCanceledException) {
             // ignore

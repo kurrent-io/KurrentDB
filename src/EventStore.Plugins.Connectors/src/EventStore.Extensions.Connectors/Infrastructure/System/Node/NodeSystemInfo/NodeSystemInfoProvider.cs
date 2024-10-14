@@ -9,10 +9,10 @@ using static System.Text.Json.JsonSerializer;
 
 namespace EventStore.Connectors.System;
 
-public delegate Task<NodeSystemInfo> GetNodeSystemInfo();
+public delegate ValueTask<NodeSystemInfo> GetNodeSystemInfo(CancellationToken cancellationToken = default);
 
 public interface INodeSystemInfoProvider {
-    Task<NodeSystemInfo> GetNodeSystemInfo(CancellationToken cancellationToken = default);
+    ValueTask<NodeSystemInfo> GetNodeSystemInfo(CancellationToken cancellationToken = default);
 }
 
 public sealed class NodeSystemInfoProvider(IPublisher publisher, TimeProvider time) : INodeSystemInfoProvider {
@@ -20,8 +20,8 @@ public sealed class NodeSystemInfoProvider(IPublisher publisher, TimeProvider ti
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public  Task<NodeSystemInfo> GetNodeSystemInfo(CancellationToken cancellationToken = default) =>
-        publisher.ReadStreamLastEvent(SystemStreams.GossipStream, cancellationToken)
+    public async ValueTask<NodeSystemInfo> GetNodeSystemInfo(CancellationToken cancellationToken = default) =>
+        await publisher.ReadStreamLastEvent(SystemStreams.GossipStream, cancellationToken)
             .Then(re => Deserialize<GossipUpdatedInMemory>(re!.Value.Event.Data.Span, GossipStreamSerializerOptions)!)
             .Then(evt => new NodeSystemInfo(evt.Members.Single(x => x.InstanceId == evt.NodeId), time.GetUtcNow()));
 

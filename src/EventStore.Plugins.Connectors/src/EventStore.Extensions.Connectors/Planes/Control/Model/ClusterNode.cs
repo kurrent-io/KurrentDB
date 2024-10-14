@@ -1,5 +1,3 @@
-using System.Net;
-
 namespace EventStore.Connectors.Control;
 
 /// <summary>
@@ -9,7 +7,7 @@ namespace EventStore.Connectors.Control;
 public record ClusterNode : IComparable<ClusterNode>, IComparable {
 	public static readonly ClusterNode Unmapped = new(ClusterNodeId.None, ClusterNodeState.Unmapped);
 
-    static readonly DnsEndPoint NoEndpoint = new("0.0.0.0", 0);
+    // static readonly DnsEndPoint NoEndpoint = new("0.0.0.0", 0);
 
     public ClusterNode() { }
 
@@ -20,8 +18,8 @@ public record ClusterNode : IComparable<ClusterNode>, IComparable {
 
     public ClusterNodeId    NodeId              { get; init; }
     public ClusterNodeState State               { get; init; }
-    public DnsEndPoint      HttpEndpoint        { get; init; } = NoEndpoint;
-    public DnsEndPoint      InternalTcpEndpoint { get; init; } = NoEndpoint;
+    // public DnsEndPoint      HttpEndpoint        { get; init; } = NoEndpoint;
+    // public DnsEndPoint      InternalTcpEndpoint { get; init; } = NoEndpoint;
 
     public bool HasVanished => State == ClusterNodeState.Unmapped;
 

@@ -27,7 +27,7 @@ public abstract class LeadershipAwareService : BackgroundService {
             var cancellator = token.LinkTo(stoppingToken);
 
             try {
-                var nodeInfo = await GetNodeSystemInfo();
+                var nodeInfo = await GetNodeSystemInfo(stoppingToken);
 
                 // it only runs on a leader node, so if the cancellation
                 // token is cancelled, it means the node lost leadership

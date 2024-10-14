@@ -12,9 +12,7 @@ using Grpc.Core;
 namespace EventStore.Connectors.Infrastructure;
 
 public static class RpcExceptions {
-    static RpcException Create(
-        StatusCode statusCode, string message, IMessage? detail = null
-    ) {
+    static RpcException Create(StatusCode statusCode, string message, IMessage? detail = null) {
         if (detail is not null) {
             throw RpcStatusExtensions.ToRpcException(new() {
                 Code    = (int)statusCode,
@@ -102,9 +100,7 @@ public static class RpcExceptions {
         return Create(StatusCode.OutOfRange, message, details);
     }
 
-    public static RpcException Unauthenticated(
-        IDictionary<string, string> metadata
-    ) {
+    public static RpcException Unauthenticated(IDictionary<string, string> metadata) {
         var details = new ErrorInfo {
             Reason   = "UNAUTHENTICATED",
             Domain   = "authentication",
@@ -113,7 +109,7 @@ public static class RpcExceptions {
 
         var message = JsonSerializer.Serialize(metadata);
 
-        return Create(StatusCode.OutOfRange, message, details);
+        return Create(StatusCode.Unauthenticated, message, details);
     }
 
     public static RpcException PermissionDenied(Exception? exception = null) {
@@ -125,10 +121,7 @@ public static class RpcExceptions {
         return Create(StatusCode.PermissionDenied, exception?.Message ?? "Permission denied", errorInfo);
     }
 
-    public static RpcException PermissionDenied(
-        IDictionary<string, string[]> failures,
-        string domain = "authorization"
-    ) {
+    public static RpcException PermissionDenied(IDictionary<string, string[]> failures, string domain = "authorization") {
         var errorInfo = new ErrorInfo {
             Reason = "PERMISSION_DENIED",
             Domain = domain,
@@ -153,9 +146,7 @@ public static class RpcExceptions {
         return Create(StatusCode.NotFound, ex.Message, resourceInfo);
     }
 
-    public static RpcException NotFound(
-        string resourceType, string resourceName, string resourceOwner, string? message = null
-    ) {
+    public static RpcException NotFound(string resourceType, string resourceName, string resourceOwner, string? message = null) {
         var description = message ?? $"The resource '{resourceType}' named '{resourceName}' was not found.";
 
         var resourceInfo = new ResourceInfo {
@@ -250,7 +241,7 @@ public static class RpcExceptions {
         return Create(StatusCode.Internal, detail, debugInfo);
     }
 
-    public static RpcException NotImplemented(string methodName, string? detail = null) {
+    public static RpcException Unimplemented(string methodName, string? detail = null) {
         var errorInfo = new ErrorInfo {
             Reason   = "METHOD_NOT_IMPLEMENTED",
             Domain   = "server",

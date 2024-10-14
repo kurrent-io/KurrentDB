@@ -5,14 +5,12 @@ using Microsoft.Extensions.Logging;
 namespace EventStore.Connectors.Testing;
 
 public class LoggerSink : ISink {
-    public ValueTask Open(SinkOpenContext sinkContext) => ValueTask.CompletedTask;
+    public ValueTask Open(SinkOpenContext context) => ValueTask.CompletedTask;
 
-    public ValueTask Write(SinkWriteContext recordContext) {
-        recordContext.Logger.LogWarning("RECORD WRITTEN: {Record}", recordContext.Record);
+    public ValueTask Write(SinkWriteContext context) {
+        context.Logger.LogWarning("RECORD WRITTEN: {Record}", context.Record);
         return ValueTask.CompletedTask;
     }
-
-    public ValueTask Close() => ValueTask.CompletedTask;
 }
 
 public class LoggerSinkValidator : ConnectorValidator<SinkOptions>;

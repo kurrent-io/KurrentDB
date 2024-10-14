@@ -1,37 +1,35 @@
 name: Test
 
 on:
-    workflow_call:
+  workflow_call:
 
 jobs:
-    test:
-        timeout-minutes: 20
-        strategy:
-            fail-fast: false
-            matrix:
-                framework: [ net8.0 ]
-                os: [ ubuntu-latest ]
-        runs-on: ${{ matrix.os }}
-        name: test/${{ matrix.os }}/${{ matrix.framework }}
-        steps:
-            -
-              name: Checkout
-              uses: actions/checkout@v4
-              with:
-                submodules: recursive
-                token: ${{ secrets.ORG_GH_BOT_READONLY }}
-            -
-              name: Setup .NET
-              uses: actions/setup-dotnet@v4
-              with:
-                dotnet-version: |
-                  8.0.x
-                  9.0.x
-            -
-              name: Build and Test
-              run: |
-                  find ./tests -maxdepth 1 -type d -name "*.Tests"  -print0 \
-                    | xargs -I{} -0 -n1 bash -c \
-                    'dotnet test --configuration Release --blame --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" --results-directory=$(pwd)/test-results/$1 $1' - '{}'
-              env:
-                NuGetPackageSourceCredentials_EventStore: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}
+  test:
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        framework: [ net8.0 ]
+        os: [ ubuntu-latest ]
+    runs-on: ${{ matrix.os }}
+    name: test/${{ matrix.os }}/${{ matrix.framework }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.ORG_GH_BOT_READONLY }}
+
+      - name: 'Setup .NET SDK'
+        uses: actions/setup-dotnet@v4.0.1
+        with:
+          dotnet-version: 9.0.x
+          dotnet-quality: preview
+
+      - name: Build and Test
+        run: |
+          find ./tests -maxdepth 1 -type d -name "*.Tests"  -print0 \
+            | xargs -I{} -0 -n1 bash -c \
+            'dotnet test --configuration Release --blame --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" --results-directory=$(pwd)/test-results/$1 $1' - '{}'
+        env:
+          NuGetPackageSourceCredentials_EventStore: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}

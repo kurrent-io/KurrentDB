@@ -38,16 +38,16 @@
   &amp;lt;inspection_tool class="UnnecessaryReturnJS" enabled="false" level="WARNING" enabled_by_default="false" /&amp;gt;
 &amp;lt;/profile&amp;gt;&lt;/IDEA_SETTINGS&gt;&lt;RIDER_SETTINGS&gt;&amp;lt;profile&amp;gt;
   &amp;lt;Language id="CSS"&amp;gt;
-    &amp;lt;Rearrange&amp;gt;true&amp;lt;/Rearrange&amp;gt;
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
+    &amp;lt;Rearrange&amp;gt;true&amp;lt;/Rearrange&amp;gt;
   &amp;lt;/Language&amp;gt;
   &amp;lt;Language id="EditorConfig"&amp;gt;
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
   &amp;lt;Language id="HTML"&amp;gt;
+    &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
     &amp;lt;OptimizeImports&amp;gt;false&amp;lt;/OptimizeImports&amp;gt;
     &amp;lt;Rearrange&amp;gt;true&amp;lt;/Rearrange&amp;gt;
-    &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
   &amp;lt;Language id="HTTP Request"&amp;gt;
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
@@ -65,9 +65,9 @@
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
   &amp;lt;Language id="JavaScript"&amp;gt;
+    &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
     &amp;lt;OptimizeImports&amp;gt;false&amp;lt;/OptimizeImports&amp;gt;
     &amp;lt;Rearrange&amp;gt;true&amp;lt;/Rearrange&amp;gt;
-    &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
   &amp;lt;Language id="Markdown"&amp;gt;
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
@@ -78,6 +78,9 @@
   &amp;lt;Language id="RELAX-NG"&amp;gt;
     &amp;lt;Reformat&amp;gt;false&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
+  &amp;lt;Language id="Razor"&amp;gt;
+    &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
+  &amp;lt;/Language&amp;gt;
   &amp;lt;Language id="SQL"&amp;gt;
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
@@ -85,14 +88,14 @@
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
   &amp;lt;Language id="XML"&amp;gt;
+    &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
     &amp;lt;OptimizeImports&amp;gt;false&amp;lt;/OptimizeImports&amp;gt;
     &amp;lt;Rearrange&amp;gt;true&amp;lt;/Rearrange&amp;gt;
-    &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
   &amp;lt;Language id="yaml"&amp;gt;
     &amp;lt;Reformat&amp;gt;true&amp;lt;/Reformat&amp;gt;
   &amp;lt;/Language&amp;gt;
-&amp;lt;/profile&amp;gt;&lt;/RIDER_SETTINGS&gt;&lt;/Profile&gt;</s:String>
+&amp;lt;/profile&amp;gt;&lt;/RIDER_SETTINGS&gt;&lt;UpgradedBackendToFrontendHtml&gt;True&lt;/UpgradedBackendToFrontendHtml&gt;&lt;CSUpdateFileHeader&gt;True&lt;/CSUpdateFileHeader&gt;&lt;/Profile&gt;</s:String>
 	<s:String x:Key="/Default/CodeStyle/CodeCleanup/Profiles/=RagingKore/@EntryIndexedValue"></s:String>
 	<s:Boolean x:Key="/Default/CodeStyle/CodeCleanup/Profiles/=RagingKore/@EntryIndexRemoved">True</s:Boolean>
 	<s:String x:Key="/Default/CodeStyle/CodeCleanup/SilentCleanupProfile/@EntryValue">EventStore</s:String>
@@ -404,6 +407,9 @@
 &lt;/Patterns&gt;
 </s:String>
 	<s:Boolean x:Key="/Default/CodeStyle/CSharpUsing/QualifiedUsingAtNestedScope/@EntryValue">True</s:Boolean>
+	<s:String x:Key="/Default/CodeStyle/FileHeader/FileHeaderText/@EntryValue">Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
+Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+</s:String>
 	<s:Boolean x:Key="/Default/CodeStyle/Naming/CSharpNaming/ApplyAutoDetectedRules/@EntryValue">False</s:Boolean>
 	<s:String x:Key="/Default/CustomTools/CustomToolsData/@EntryValue"></s:String>
 	<s:Boolean x:Key="/Default/Environment/EntityFramework/EntityFrameworkAnalysisEnabled/@EntryValue">False</s:Boolean>
