@@ -17,13 +17,8 @@ env:
 jobs:
   test:
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        framework: [ net8.0 ]
-        os: [ ubuntu-latest ]
-    runs-on: ${{ matrix.os }}
-    name: test/${{ matrix.os }}/${{ matrix.framework }}
+    runs-on: ubuntu-latest
+    name: Build
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,11 +32,17 @@ jobs:
           dotnet-version: 9.0.x
           dotnet-quality: preview
 
+      - name: 'Cache NuGet'
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ github.repository_id }}
+
       - name: Build
         run: |
           dotnet build --configuration Release
 
-      - name: Build and Test
+      - name: Test
         run: |
           find ./tests -maxdepth 1 -type d -name "*.Tests"  -print0 \
             | xargs -I{} -0 -n1 bash -c \
