@@ -2,10 +2,11 @@
 // ReSharper disable CheckNamespace
 
 using EventStore.Connect.Processors;
-using EventStore.Connector.EventStoreDB;
+using EventStore.Connectors.EventStoreDB;
 using EventStore.Connectors;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
+using EventStore.Connectors.Mongo;
 using EventStore.Connectors.RabbitMQ;
 using EventStore.Connectors.System;
 using EventStore.Connectors.Testing;
@@ -24,6 +25,7 @@ using Humanizer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using AutoLockOptions = EventStore.Streaming.Processors.Configuration.AutoLockOptions;
 
 namespace EventStore.Connect.Connectors;
@@ -59,6 +61,10 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
         { nameof(EventStoreDBSink), () => new EventStoreDBSink() },
         { typeof(EventStoreDBSink).FullName!, () => new EventStoreDBSink() },
         { nameof(EventStoreDBSink).Kebaberize(), () => new EventStoreDBSink() },
+
+        { nameof(MongoDbSink), () => new MongoDbSink() },
+        { typeof(MongoDbSink).FullName!, () => new MongoDbSink() },
+        { nameof(MongoDbSink).Kebaberize(), () => new MongoDbSink() },
     };
 
     public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration) {
