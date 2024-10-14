@@ -1,8 +1,14 @@
 name: Test
 
 on:
-  workflow_call:
   workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'release/v.*.*.*'
+    tags:
+      - 'v*.*.*'
 
 env:
   NuGetPackageSourceCredentials_EventStore: Username=${{ vars.ORG_GH_BOT_USERNAME }};Password=${{ secrets.ORG_GH_BOT_AUTOMATION }}

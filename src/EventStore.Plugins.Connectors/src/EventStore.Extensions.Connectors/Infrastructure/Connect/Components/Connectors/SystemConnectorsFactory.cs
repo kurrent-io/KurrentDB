@@ -2,7 +2,7 @@
 // ReSharper disable CheckNamespace
 
 using EventStore.Connect.Processors;
-using EventStore.Connector.EventStoreDB;
+using EventStore.Connectors.EventStoreDB;
 using EventStore.Connectors;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;

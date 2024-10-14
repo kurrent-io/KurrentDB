@@ -1,6 +1,6 @@
 // ReSharper disable InconsistentNaming
 
-using EventStore.Connector.EventStoreDB;
+using EventStore.Connectors.EventStoreDB;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
 using EventStore.Connectors.RabbitMQ;
