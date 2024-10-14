@@ -40,7 +40,7 @@ jobs:
 
       - name: Build
         run: |
-          dotnet build --configuration Release
+          dotnet build plugin.slnf --configuration Release
 
       - name: Test
         run: |
