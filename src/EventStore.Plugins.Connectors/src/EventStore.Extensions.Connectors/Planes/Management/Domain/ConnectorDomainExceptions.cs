@@ -14,7 +14,7 @@ public static class DomainExceptions {
 
     public class EntityDeleted : EntityException {
         public EntityDeleted(string entityType, string uid, DateTimeOffset timestamp)
-            : base($"{entityType} {uid} deleted on {timestamp.Humanize()}") { }
+            : base($"{entityType} {uid} deleted {timestamp.Humanize()}") { }
     }
 
     public class EntityAlreadyExists : EntityException {

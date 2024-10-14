@@ -29,8 +29,10 @@ public record ConnectorEntity : State<ConnectorEntity> {
             }
         });
 
-        On<ConnectorDeleted>((state, _) => state with {
-            IsDeleted = true
+        On<ConnectorDeleted>((state, evt) => state with {
+            IsDeleted = true,
+            Id = evt.ConnectorId,
+            StateTimestamp = evt.Timestamp
         });
 
         On<ConnectorRenamed>((state, evt) => state with {
