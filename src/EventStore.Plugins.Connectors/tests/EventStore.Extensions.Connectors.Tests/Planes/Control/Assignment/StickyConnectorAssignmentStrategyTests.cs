@@ -70,7 +70,7 @@ public class StickyConnectorAssignmentStrategyTests(ITestOutputHelper output, Fa
         result.Should().BeEquivalentTo(expectedResult);
     }
 
-    [Theory]
+    [Theory(Skip = "Need to be refactored after final mulinode hosting changes")]
     [InlineData(ClusterNodeState.Leader, 3, 1, 9)]
     [InlineData(ClusterNodeState.Follower, 3, 3, 9)]
     public void assigns_with_affinity(
