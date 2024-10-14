@@ -4,6 +4,9 @@ on:
   workflow_call:
   workflow_dispatch:
 
+env:
+  NuGetPackageSourceCredentials_EventStore: Username=${{ vars.ORG_GH_BOT_USERNAME }};Password=${{ secrets.ORG_GH_BOT_AUTOMATION }}
+
 jobs:
   test:
     timeout-minutes: 20
@@ -32,5 +35,3 @@ jobs:
           find ./tests -maxdepth 1 -type d -name "*.Tests"  -print0 \
             | xargs -I{} -0 -n1 bash -c \
             'dotnet test --configuration Release --blame --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" --results-directory=$(pwd)/test-results/$1 $1' - '{}'
-        env:
-          NuGetPackageSourceCredentials_EventStore: Username=${{ github.actor }};Password=${{ secrets.GITHUB_TOKEN }}

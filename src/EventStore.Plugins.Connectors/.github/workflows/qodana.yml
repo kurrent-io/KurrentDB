@@ -2,14 +2,15 @@ name: Qodana
 
 on:
   workflow_dispatch:
-  # pull_request:
   push:
     branches:
       - main
-      - master
-      - 'release/*'
+      - 'release/v.*.*.*'
     tags:
       - 'v*.*.*'
+    paths:
+      - '.github/workflows/qodana.yml'
+      - 'qodana.yaml'
 
 jobs:
   qodana:
