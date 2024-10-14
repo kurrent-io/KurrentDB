@@ -11,6 +11,7 @@ on:
       - 'v*.*.*'
 
 env:
+  NuGetAudit: false
   NuGetPackageSourceCredentials_EventStore: Username=${{ vars.ORG_GH_BOT_USERNAME }};Password=${{ secrets.ORG_GH_BOT_AUTOMATION }}
 
 jobs:
