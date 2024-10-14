@@ -20,7 +20,7 @@ public static class ControlPlaneWireUp {
             .AddMessageSchemaRegistration()
             .AddConnectorsActivator()
             .AddConnectorsControlRegistry()
-            .AddSingleton<ISystemReadinessProbe, SystemReadinessProbe>()
+            // .AddSingleton<ISystemReadinessProbe, SystemReadinessProbe>()
             // .AddSingleton<GetClusterTopologySensor>(ctx => () => new ClusterTopologySensor(
             //     ctx.GetRequiredService<ISubscriber>(),
             //     ctx.GetRequiredService<IPublisher>(),
