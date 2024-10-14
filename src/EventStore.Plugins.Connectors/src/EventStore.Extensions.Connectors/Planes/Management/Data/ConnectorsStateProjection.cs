@@ -18,7 +18,7 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
         string snapshotStreamId
     ) : base(getReaderBuilder, getProducerBuilder, snapshotStreamId) {
         UpdateWhen<ConnectorCreated>((snapshot, evt) =>
-            snapshot.ApplyOrCreate(evt.ConnectorId, conn => {
+            snapshot.ApplyOrAdd(evt.ConnectorId, conn => {
                 conn.Settings.Clear();
                 conn.Settings.Add(evt.Settings);
 
@@ -102,14 +102,15 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
 }
 
 public static class ConnectorsSnapshotExtensions {
-    // public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, Connector connector) =>
-    //     snapshot.With(ss => ss.Connectors.Add(connector));
+    public static ConnectorsSnapshot ApplyOrAdd(this ConnectorsSnapshot snapshot, string connectorId, Action<Contracts.Queries.Connector> update) =>
+        snapshot.With(ss =>
+            ss.Connectors
+                .FirstOrDefault(conn => conn.ConnectorId == connectorId, new Contracts.Queries.Connector())
+                .With(connector => ss.Connectors.Add(connector), connector => !ss.Connectors.Contains(connector))
+                .With(update));
 
-    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) =>
+    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, string connectorId, Action<Contracts.Queries.Connector> update) =>
         snapshot.With(ss => ss.Connectors.First(conn => conn.ConnectorId == connectorId).With(update));
-
-    public static ConnectorsSnapshot ApplyOrCreate(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) =>
-        snapshot.With(ss => ss.Connectors.FirstOrDefault(conn => conn.ConnectorId == connectorId, new Connector()).With(update));
 
     // // if not byref
     // public static ConnectorsSnapshot ApplyProper(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) {
