@@ -36,8 +36,12 @@ jobs:
           dotnet-version: 9.0.x
           dotnet-quality: preview
 
+      - name: Build
+        run: |
+          dotnet build --configuration Release
+
       - name: Build and Test
         run: |
           find ./tests -maxdepth 1 -type d -name "*.Tests"  -print0 \
             | xargs -I{} -0 -n1 bash -c \
-            'dotnet test --configuration Release --blame --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" --results-directory=$(pwd)/test-results/$1 $1' - '{}'
+            'dotnet test --configuration Release --no-build --blame --logger:"GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true;report-warnings=false" --logger:"console;verbosity=normal" --results-directory=$(pwd)/test-results/$1 $1' - '{}'
