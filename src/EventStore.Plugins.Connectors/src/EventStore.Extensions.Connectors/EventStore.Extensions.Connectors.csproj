@@ -21,11 +21,9 @@
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
 
 		<PackageReference Include="Grpc.StatusProto" Version="2.65.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.10" />
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.7" />
 
 		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
-
-		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>
