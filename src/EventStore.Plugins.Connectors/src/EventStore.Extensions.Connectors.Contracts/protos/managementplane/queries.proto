@@ -35,9 +35,9 @@ message GetConnectorSettingsResult {
 }
 
 message ListConnectors {
-  repeated ConnectorState state                      = 1;
-  repeated google.protobuf.StringValue instance_type = 2;
-  repeated google.protobuf.StringValue connector_id  = 3;
+  repeated ConnectorState state                           = 1;
+  repeated google.protobuf.StringValue instance_type_name = 2;
+  repeated google.protobuf.StringValue connector_id       = 3;
 
   bool   include_settings = 4;
   bool   show_deleted     = 5;
