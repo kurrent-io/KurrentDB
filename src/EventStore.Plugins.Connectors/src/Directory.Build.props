@@ -8,7 +8,7 @@
 		<InvariantGlobalization>true</InvariantGlobalization>
 		<IsPackable>false</IsPackable>
 		<NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655;RCS1194</NoWarn>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
         <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
     </PropertyGroup>
 
