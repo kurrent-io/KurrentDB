@@ -47,6 +47,7 @@ public static class ManagementPlaneWireUp {
                 serializerOptions.DictionaryKeyPolicy         = JsonNamingPolicy.CamelCase;
                 serializerOptions.PropertyNameCaseInsensitive = true;
                 serializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+                serializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
             }
         });
 
