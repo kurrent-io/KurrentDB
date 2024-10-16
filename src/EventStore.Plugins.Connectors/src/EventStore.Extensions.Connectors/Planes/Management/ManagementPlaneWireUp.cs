@@ -1,4 +1,8 @@
+// ReSharper disable InconsistentNaming
+
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using EventStore.Connect.Connectors;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers.Configuration;
@@ -14,6 +18,7 @@ using EventStore.Connectors.System;
 using EventStore.Streaming;
 using FluentValidation;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Grpc.JsonTranscoding;
 using Microsoft.Extensions.DependencyInjection;
 using static EventStore.Connectors.ConnectorsFeatureConventions;
 using static EventStore.Connectors.Management.Queries.ConnectorQueryConventions;
@@ -27,6 +32,23 @@ public static class ManagementPlaneWireUp {
         services
             .AddGrpc(x => x.EnableDetailedErrors = true)
             .AddJsonTranscoding();
+
+        services.PostConfigure<GrpcJsonTranscodingOptions>(options => {
+            // https://github.com/dotnet/aspnetcore/issues/50401
+            // TODO: Refactor into an extension method
+            string[] props = ["UnarySerializerOptions", "ServerStreamingSerializerOptions"];
+
+            foreach (var name in props) {
+                var prop = options.GetType().GetProperty(name, BindingFlags.NonPublic | BindingFlags.Instance);
+
+                if (prop?.GetValue(options) is not JsonSerializerOptions serializerOptions) continue;
+
+                serializerOptions.PropertyNamingPolicy        = JsonNamingPolicy.CamelCase;
+                serializerOptions.DictionaryKeyPolicy         = JsonNamingPolicy.CamelCase;
+                serializerOptions.PropertyNameCaseInsensitive = true;
+                serializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            }
+        });
 
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 

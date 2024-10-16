@@ -5,7 +5,9 @@ using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
 using EventStore.Streaming;
+using EventStore.Streaming.Connectors.Sinks;
 using EventStore.Streaming.Contracts.Consumers;
+using static System.StringComparison;
 
 namespace EventStore.Connectors.Management.Data;
 
@@ -23,7 +25,7 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
                 conn.Settings.Add(evt.Settings);
 
                 conn.ConnectorId        = evt.ConnectorId;
-                conn.InstanceTypeName   = evt.Settings["InstanceTypeName"];
+                conn.InstanceTypeName   = evt.Settings.First(kvp => kvp.Key.Equals(nameof(SinkOptions.InstanceTypeName), OrdinalIgnoreCase)).Value;
                 conn.Name               = evt.Name;
                 conn.State              = ConnectorState.Stopped;
                 conn.StateUpdateTime    = evt.Timestamp;
