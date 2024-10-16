@@ -1,9 +1,7 @@
-#pragma warning disable RCS1225
-
 using EventStore.Connectors.Management.Contracts.Queries;
 using FluentValidation;
 
-namespace EventStore.Connectors.Management.Queries;
+namespace EventStore.Connectors.Management;
 
 [UsedImplicitly]
 public class ListConnectorsValidator : AbstractValidator<ListConnectors> {
@@ -24,5 +22,3 @@ public class ListConnectorsValidator : AbstractValidator<ListConnectors> {
 
 [UsedImplicitly]
 public class GetConnectorSettingsValidator() : RequestValidator<GetConnectorSettings>(x => x.ConnectorId);
-
-#pragma warning restore RCS1225

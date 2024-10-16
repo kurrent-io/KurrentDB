@@ -1,3 +1,5 @@
+// ReSharper disable once CheckNamespace
+
 using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Streaming;
@@ -10,13 +12,12 @@ using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.Management.ConnectorDomainExceptions;
 using static EventStore.Connectors.Management.Contracts.Commands.ConnectorsCommandService;
 
-// ReSharper disable once CheckNamespace
 namespace EventStore.Connectors.Management;
 
 public class ConnectorsCommandService(
     ConnectorsCommandApplication application,
-    ILogger<ConnectorsCommandService> logger,
-    IServiceProvider serviceProvider
+    RequestValidationService requestValidationService,
+    ILogger<ConnectorsCommandService> logger
 ) : ConnectorsCommandServiceBase {
     public override Task<Empty> Create(CreateConnector request, ServerCallContext context)           => Execute(request, context);
     public override Task<Empty> Reconfigure(ReconfigureConnector request, ServerCallContext context) => Execute(request, context);
@@ -30,25 +31,12 @@ public class ConnectorsCommandService(
         var http = context.GetHttpContext();
 
         var authenticated = http.User.Identity?.IsAuthenticated ?? false;
-
         if (!authenticated)
             throw RpcExceptions.PermissionDenied();
 
-        var validator = serviceProvider.GetService<IValidator<TCommand>>();
-
-        if (validator is null)
-            throw new InvalidOperationException($"No validator found for {command.GetType().Name}");
-
-        var validationResult = await validator.ValidateAsync(command);
-
-        if (!validationResult.IsValid) {
-            logger.LogError("{TraceIdentifier} {CommandType} failed: {ErrorMessage}",
-                http.TraceIdentifier,
-                command.GetType().Name,
-                validationResult.ToString());
-
+        var validationResult = requestValidationService.Validate(command);
+        if (!validationResult.IsValid)
             throw RpcExceptions.InvalidArgument(validationResult);
-        }
 
         var result = await application.Handle(command, context.CancellationToken);
 

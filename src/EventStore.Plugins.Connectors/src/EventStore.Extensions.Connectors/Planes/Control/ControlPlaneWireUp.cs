@@ -2,11 +2,9 @@ using EventStore.Connect.Connectors;
 using EventStore.Connect.Leases;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.System;
-using EventStore.Core.Bus;
 using EventStore.Streaming;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.ConnectorsFeatureConventions;
 
 using ConnectContracts = EventStore.Streaming.Contracts;
@@ -20,15 +18,6 @@ public static class ControlPlaneWireUp {
             .AddMessageSchemaRegistration()
             .AddConnectorsActivator()
             .AddConnectorsControlRegistry()
-            // .AddSingleton<ISystemReadinessProbe, SystemReadinessProbe>()
-            // .AddSingleton<GetClusterTopologySensor>(ctx => () => new ClusterTopologySensor(
-            //     ctx.GetRequiredService<ISubscriber>(),
-            //     ctx.GetRequiredService<IPublisher>(),
-            //     ctx.GetRequiredService<SystemReadinessProbe>(),
-            //     ctx.GetRequiredService<GetActiveConnectors>(),
-            //     ctx.GetRequiredService<ILogger<ClusterTopologySensor>>()
-            // ))
-            // .AddSingleton<IHostedService, ClusterTopologySensorService>()
             .AddSingleton<INodeLifetimeService, NodeLifetimeService>()
             .AddSingleton<IHostedService, ConnectorsControlService>();
 

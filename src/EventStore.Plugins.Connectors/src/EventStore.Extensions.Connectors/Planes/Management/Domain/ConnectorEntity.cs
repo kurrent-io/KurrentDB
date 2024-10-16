@@ -103,7 +103,7 @@ public record ConnectorEntity : State<ConnectorEntity> {
     public bool IsNew => !IsDeleted && Id != Guid.Empty.ToString();
 
     public ConnectorEntity EnsureIsNew() {
-        if (Id != Guid.Empty.ToString())
+        if (!IsDeleted && Id != Guid.Empty.ToString())
             throw new DomainExceptions.EntityAlreadyExists("Connector", Id);
 
         return this;

@@ -2,13 +2,9 @@
 // ReSharper disable CheckNamespace
 
 using EventStore.Connect.Processors;
-using EventStore.Connectors.EventStoreDB;
 using EventStore.Connectors;
-using EventStore.Connectors.Http;
-using EventStore.Connectors.Kafka;
-using EventStore.Connectors.RabbitMQ;
+using EventStore.Connectors.Connect.Components.Connectors;
 using EventStore.Connectors.System;
-using EventStore.Connectors.Testing;
 using EventStore.Streaming.Connectors.Sinks;
 using EventStore.Core.Bus;
 using EventStore.Streaming;
@@ -20,7 +16,6 @@ using EventStore.Streaming.Processors;
 using EventStore.Streaming.Processors.Configuration;
 using EventStore.Streaming.Schema;
 using EventStore.Streaming.Transformers;
-using Humanizer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -29,59 +24,39 @@ using AutoLockOptions = EventStore.Streaming.Processors.Configuration.AutoLockOp
 namespace EventStore.Connect.Connectors;
 
 public record SystemConnectorsFactoryOptions {
-    public StreamTemplate             CheckpointsStreamTemplate { get; init; } = ConnectorsFeatureConventions.Streams.CheckpointsStreamTemplate;
-    public StreamTemplate             LifecycleStreamTemplate   { get; init; } = ConnectorsFeatureConventions.Streams.LifecycleStreamTemplate;
-    public AutoLockOptions            AutoLock                  { get; init; } = new();
+    public StreamTemplate  CheckpointsStreamTemplate { get; init; } = ConnectorsFeatureConventions.Streams.CheckpointsStreamTemplate;
+    public StreamTemplate  LifecycleStreamTemplate   { get; init; } = ConnectorsFeatureConventions.Streams.LifecycleStreamTemplate;
+    public AutoLockOptions AutoLock                  { get; init; } = new();
 }
 
-public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, IConnectorValidator validation, IServiceProvider services) : IConnectorFactory {
+public class SystemConnectorsFactory(
+    SystemConnectorsFactoryOptions options,
+    IConnectorValidator validation,
+    IServiceProvider services
+) : IConnectorFactory {
     SystemConnectorsFactoryOptions Options    { get; } = options;
     IConnectorValidator            Validation { get; } = validation;
     IServiceProvider               Services   { get; } = services;
-
-    static readonly Dictionary<string, Func<ISink>> SinkInstanceTypes = new() {
-        { typeof(HttpSink).FullName!, () => new HttpSink() },
-        { nameof(HttpSink), () => new HttpSink() },
-        { nameof(HttpSink).Kebaberize(), () => new HttpSink() },
-
-        { nameof(KafkaSink), () => new KafkaSink() },
-        { typeof(KafkaSink).FullName!, () => new KafkaSink() },
-        { nameof(KafkaSink).Kebaberize(), () => new KafkaSink() },
-
-        { nameof(LoggerSink), () => new LoggerSink() },
-        { typeof(LoggerSink).FullName!, () => new LoggerSink() },
-        { nameof(LoggerSink).Kebaberize(), () => new LoggerSink() },
-
-        { nameof(RabbitMqSink), () => new RabbitMqSink() },
-        { typeof(RabbitMqSink).FullName!, () => new RabbitMqSink() },
-        { nameof(RabbitMqSink).Kebaberize(), () => new RabbitMqSink() },
-
-        { nameof(EventStoreDBSink), () => new EventStoreDBSink() },
-        { typeof(EventStoreDBSink).FullName!, () => new EventStoreDBSink() },
-        { nameof(EventStoreDBSink).Kebaberize(), () => new EventStoreDBSink() },
-    };
 
     public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration) {
         var sinkOptions = configuration.GetRequiredOptions<SinkOptions>();
 
         Validation.EnsureValid(configuration);
 
-        var sinkProxy = new SinkProxy(
-            connectorId,
+        var sinkProxy = new SinkProxy(connectorId,
             CreateSink(sinkOptions.InstanceTypeName),
             configuration,
-            Services
-        );
+            Services);
 
         var processor = ConfigureProcessor(connectorId, sinkOptions, sinkProxy);
 
         return new SinkConnector(processor, sinkProxy);
 
         static ISink CreateSink(string connectorTypeName) {
-            if (SinkInstanceTypes.TryGetValue(connectorTypeName, out var instance))
-                return instance();
+            if (!ConnectorCatalogue.TryGetConnector(connectorTypeName, out var connector))
+                throw new ArgumentException($"Failed to find sink {connectorTypeName}", nameof(connectorTypeName));
 
-            throw new ArgumentException($"Failed to find sink {connectorTypeName}", nameof(connectorTypeName));
+            return (Activator.CreateInstance(connector.ConnectorType) as ISink)!;
         }
     }
 
@@ -110,10 +85,8 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
             ? ConsumeFilter.None
             : string.IsNullOrWhiteSpace(sinkOptions.Subscription.Filter.Expression)
                 ? ConsumeFilter.ExcludeSystemEvents()
-                : ConsumeFilter.From(
-                    (ConsumeFilterScope)sinkOptions.Subscription.Filter.Scope,
-                    sinkOptions.Subscription.Filter.Expression
-                );
+                : ConsumeFilter.From((ConsumeFilterScope)sinkOptions.Subscription.Filter.Scope,
+                    sinkOptions.Subscription.Filter.Expression);
 
         var publishStateChangesOptions = new PublishStateChangesOptions {
             Enabled        = true,
@@ -156,20 +129,16 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ICo
         }
 
         if (sinkOptions.Transformer.Enabled) {
-            builder = builder.Transformer(
-                Transformer.Builder
-                    .Transform(
-                        JsFunction.Builder
-                            .Function(sinkOptions.Transformer.Function)
-                            .FunctionName(sinkOptions.Transformer.FunctionName)
-                            .ExecutionTimeoutMs(sinkOptions.Transformer.ExecutionTimeoutMs)
-                            .LoggerFactory(loggerFactory)
-                            .Create()
-                    )
-                    .Logging(loggingOptions)
-                    .SchemaRegistry(schemaRegistry)
-                    .Create()
-            );
+            builder = builder.Transformer(Transformer.Builder
+                .Transform(JsFunction.Builder
+                    .Function(sinkOptions.Transformer.Function)
+                    .FunctionName(sinkOptions.Transformer.FunctionName)
+                    .ExecutionTimeoutMs(sinkOptions.Transformer.ExecutionTimeoutMs)
+                    .LoggerFactory(loggerFactory)
+                    .Create())
+                .Logging(loggingOptions)
+                .SchemaRegistry(schemaRegistry)
+                .Create());
         }
 
         return builder.Create();

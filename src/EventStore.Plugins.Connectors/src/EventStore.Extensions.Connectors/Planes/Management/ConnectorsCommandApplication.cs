@@ -2,24 +2,29 @@ using EventStore.Connectors.Eventuous;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
 using EventStore.Connectors.Management.Contracts.Events;
+using EventStore.Streaming;
+using EventStore.Streaming.Connectors.Sinks;
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
+using Microsoft.Extensions.Configuration;
+using static EventStore.Connectors.Management.ConnectorDomainExceptions;
 using static EventStore.Connectors.Management.ConnectorDomainServices;
 
 namespace EventStore.Connectors.Management;
 
 [PublicAPI]
 public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
-    public ConnectorsCommandApplication(ValidateConnectorSettings validateSettings, TimeProvider time, IEventStore store) :
+    public ConnectorsCommandApplication(ValidateConnectorSettings validateSettings, ConnectorsLicenseService licenseService, TimeProvider time, IEventStore store) :
         base(cmd => cmd.ConnectorId, ConnectorsFeatureConventions.Streams.ManagementStreamTemplate, store) {
         OnAny<CreateConnector>((connector, cmd) => {
-            if (connector.IsNew)
-                throw new DomainExceptions.EntityAlreadyExists("Connector", cmd.ConnectorId);
+            connector.EnsureIsNew();
 
             var settings = ConnectorSettings
-                .From(cmd.Settings, validateSettings)
-                .EnsureValid(cmd.ConnectorId)
-                .ToDictionary();
+                .From(cmd.Settings)
+                .EnsureValid(cmd.ConnectorId, validateSettings)
+                .AsDictionary();
+
+            CheckAccess(settings, licenseService);
 
             return [
                 new ConnectorCreated {
@@ -44,14 +49,16 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
         });
 
         OnExisting<ReconfigureConnector>((connector, cmd) => {
+            CheckAccess(connector, licenseService);
+
             connector.EnsureNotDeleted();
 
             // until the connector is restarted, it wont use the new settings
 
             var settings = ConnectorSettings
-                .From(cmd.Settings, validateSettings)
-                .EnsureValid(cmd.ConnectorId)
-                .ToDictionary();
+                .From(cmd.Settings)
+                .EnsureValid(cmd.ConnectorId, validateSettings)
+                .AsDictionary();
 
             return [
                 new ConnectorReconfigured {
@@ -64,6 +71,8 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
         });
 
         OnExisting<StartConnector>((connector, cmd) => {
+            CheckAccess(connector, licenseService);
+
             connector.EnsureNotDeleted();
 
             if (connector.State
@@ -84,6 +93,8 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
         });
 
         OnExisting<ResetConnector>((connector, cmd) => {
+            CheckAccess(connector, licenseService);
+
             connector.EnsureNotDeleted();
 
             if (connector.State
@@ -122,6 +133,8 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
         });
 
         OnExisting<RenameConnector>((connector, cmd) => {
+            CheckAccess(connector, licenseService);
+
             connector.EnsureNotDeleted();
 
             if (connector.Name == cmd.Name)
@@ -182,5 +195,19 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
                 _ => []
             };
         });
+    }
+
+    static void CheckAccess(IDictionary<string, string?> settings, ConnectorsLicenseService licenseService) {
+        var options = new ConfigurationBuilder().AddInMemoryCollection(settings).Build().GetRequiredOptions<SinkOptions>();
+        if (!licenseService.CheckLicense(options.InstanceTypeName, out var info))
+            throw new ConnectorAccessDeniedException($"Usage of the {info.ConnectorType.Name} connector is not autorized");
+    }
+
+    static void CheckAccess(ConnectorEntity connector, ConnectorsLicenseService licenseService) {
+        var instanceType = connector.CurrentRevision.Settings
+            .First(kvp => kvp.Key.Equals(nameof(SinkOptions.InstanceTypeName), StringComparison.OrdinalIgnoreCase)).Value;
+
+        if (!licenseService.CheckLicense(instanceType, out var info))
+            throw new ConnectorAccessDeniedException($"Usage of the {info.ConnectorType.Name} connector is not autorized");
     }
 }

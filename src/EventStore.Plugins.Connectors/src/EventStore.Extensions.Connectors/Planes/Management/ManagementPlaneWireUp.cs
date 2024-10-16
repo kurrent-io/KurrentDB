@@ -15,11 +15,13 @@ using EventStore.Connectors.Management.Projectors;
 using EventStore.Connectors.Management.Queries;
 using EventStore.Connectors.Management.Reactors;
 using EventStore.Connectors.System;
+using EventStore.Plugins.Licensing;
 using EventStore.Streaming;
 using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Grpc.JsonTranscoding;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.ConnectorsFeatureConventions;
 using static EventStore.Connectors.Management.Queries.ConnectorQueryConventions;
 
@@ -27,6 +29,11 @@ namespace EventStore.Connectors.Management;
 
 public static class ManagementPlaneWireUp {
     public static IServiceCollection AddConnectorsManagementPlane(this IServiceCollection services) {
+        services.AddSingleton(ctx => new ConnectorsLicenseService(
+            ctx.GetRequiredService<ILicenseService>(),
+            ctx.GetRequiredService<ILogger<ConnectorsLicenseService>>()
+        ));
+
         services.AddMessageSchemaRegistration();
 
         services
@@ -51,11 +58,15 @@ public static class ManagementPlaneWireUp {
             }
         });
 
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        services
+            .AddValidatorsFromAssembly(Assembly.GetExecutingAssembly())
+            .AddSingleton<RequestValidationService>();
 
         // Commands
         services.AddSingleton<ConnectorDomainServices.ValidateConnectorSettings>(ctx => {
-            var validation = ctx.GetService<IConnectorValidator>() ?? new SystemConnectorsValidation();
+            var validation = ctx.GetService<IConnectorValidator>()
+                          ?? new SystemConnectorsValidation();
+
             return validation.ValidateSettings;
         });
 

@@ -1,22 +1,22 @@
-using FluentValidation.Results;
 using static EventStore.Connectors.Management.ConnectorDomainExceptions;
 using static EventStore.Connectors.Management.ConnectorDomainServices;
 
 namespace EventStore.Connectors.Management;
 
 [PublicAPI]
-public record ConnectorSettings(IDictionary<string, string?> Settings, ValidationResult ValidationResult) {
-    public bool IsValid => ValidationResult.IsValid;
+public record ConnectorSettings(Dictionary<string, string?> Value) {
+    public ConnectorSettings EnsureValid(string connectorId, ValidateConnectorSettings validate) {
+        var validationResult = validate(Value);
 
-    public ConnectorSettings EnsureValid(string connectorId) {
-        if (!IsValid)
-            throw new InvalidConnectorSettingsException(connectorId, ValidationResult.Errors);
+        if (!validationResult.IsValid)
+            throw new InvalidConnectorSettingsException(connectorId, validationResult.Errors);
 
         return this;
     }
 
-    public static ConnectorSettings From(IDictionary<string, string?> settings, ValidateConnectorSettings validate) =>
-        new(settings, validate(settings));
+    public IDictionary<string, string?> AsDictionary() => Value;
 
-    public IDictionary<string, string?> ToDictionary() => Settings;
+    public static ConnectorSettings From(IDictionary<string, string?> settings) => new(new Dictionary<string, string?>(settings));
+
+    public static implicit operator Dictionary<string, string?>(ConnectorSettings settings) => settings.Value;
 }
