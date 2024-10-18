@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build
     steps:
-      - name: Checkout
+      - name: 'Checkout'
         uses: actions/checkout@v4
         with:
           submodules: recursive
@@ -40,12 +40,18 @@ jobs:
           path: ~/.nuget/packages
           key: ${{ github.repository_id }}
 
-      - name: Build
+      - name: 'Build Plugin Only'
         run: |
-          dotnet build plugin-tests.slnf --configuration Release
+          dotnet build plugin.slnf --configuration Release
 
-      - name: Test
+      - name: 'Build & Test'
         run: |
-          find ./tests -maxdepth 1 -type d -name "*.Tests"  -print0 \
-            | xargs -I{} -0 -n1 bash -c \
-            'dotnet test --configuration Release --no-build --blame --logger:"GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true;report-warnings=false" --logger:"console;verbosity=normal" --results-directory=$(pwd)/test-results/$1 $1' - '{}'
+          dotnet test plugin-tests.slnf \
+          --configuration Release \
+          --blame \
+          --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true;report-warnings=false" -- RunConfiguration.CollectSourceInformation=true
+
+      - name: 'Pack'
+        shell: bash
+        run: |
+          dotnet pack plugin.slnf -c Release --no-build -o nuget

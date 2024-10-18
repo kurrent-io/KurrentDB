@@ -13,7 +13,7 @@
 		<PackageIcon>ouro.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/EventStore/EventStore.Plugins.Connectors</PackageProjectUrl>
 		<PackageTags>eventstore connect connectors sink experimental</PackageTags>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<Version>1.0.0-beta1</Version>
 
 		<Authors>Sérgio Silveira</Authors>
