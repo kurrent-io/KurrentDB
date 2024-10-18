@@ -8,6 +8,7 @@ using MassTransit;
 namespace EventStore.Extensions.Connectors.Tests.Control.Assignment;
 
 [Trait("Category", "Assignment")]
+[Trait("Category", "ControlPlane")]
 public class LeastLoadedWithAffinityConnectorAssignorTests(ITestOutputHelper output, FastFixture fixture) : FastTests(output, fixture) {
 	[Fact]
 	public void assigns_directly() {

@@ -6,40 +6,52 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<!-- The thin red line between having the plugin to work or not in ESDB forces us to play with private assets -->
+
+		<PackageReference Include="EventStore.Plugins" Version="24.10.5">
+			<Private>false</Private>
+			<IncludeAssets>compile</IncludeAssets>
+		</PackageReference>
+		
 		<PackageReference Include="EventStore.Streaming" Version="1.0.0-alpha.0.217" PrivateAssets="All" />
+
 		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.76" />
 		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.76" />
 		<PackageReference Include="EventStore.Connectors.RabbitMQ" Version="1.0.0-alpha.0.76" />
 		<PackageReference Include="EventStore.Connectors.Mongo" Version="1.0.0-alpha.0.76" />
 		<PackageReference Include="EventStore.Connectors.EventStoreDB" Version="1.0.0-alpha.0.76" />
 
-		<PackageReference Include="Eventuous.Application" Version="0.15.0" PrivateAssets="All" />
-		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" PrivateAssets="All" />
-		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" PrivateAssets="All" />
-		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" PrivateAssets="All" />
+		<PackageReference Include="Eventuous.Application" Version="0.15.0" />
+		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
+
+		<!-- <PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.0.76" PrivateAssets="All" />-->
+		<!-- <PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.0.76" PrivateAssets="All" />-->
+		<!-- <PackageReference Include="EventStore.Connectors.RabbitMQ" Version="1.0.0-alpha.0.76" PrivateAssets="All" />-->
+		<!-- <PackageReference Include="EventStore.Connectors.Mongo" Version="1.0.0-alpha.0.76" PrivateAssets="All" />-->
+		<!-- <PackageReference Include="EventStore.Connectors.EventStoreDB" Version="1.0.0-alpha.0.76" PrivateAssets="All" />-->
+
+		<!-- <PackageReference Include="Eventuous.Application" Version="0.15.0" PrivateAssets="All" />-->
+		<!-- <PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" PrivateAssets="All" />-->
+		<!-- <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" PrivateAssets="All" />-->
+		<!-- <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" PrivateAssets="All" />-->
 
 		<PackageReference Include="Grpc.StatusProto" Version="2.65.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.7" />
-
-		<PackageReference Include="EventStore.Plugins" Version="24.10.5">
-			<Private>false</Private>
-			<IncludeAssets>compile</IncludeAssets>
-		</PackageReference>
-
-<!--		<PackageReference Include="EventStore.Plugins" Version="24.10.5" PrivateAssets="All" />-->
-
-
+		
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Sometimes easier to use submodules to speed up development -->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming\EventStore.Streaming.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.Http\EventStore.Connectors.Http.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.Kafka\EventStore.Connectors.Kafka.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.Mongo\EventStore.Connectors.Mongo.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.RabbitMQ\EventStore.Connectors.RabbitMQ.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.EventStoreDB\EventStore.Connectors.EventStoreDB.csproj" />-->
+		<!-- Sometimes easier to use submodules to speed up development - it will only work 100% after we merge connectors with streaming -->
+		
+		<!-- <ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />-->
+		<!-- <ProjectReference Include="..\..\submodules\EventStore.Streaming\src\EventStore.Streaming\EventStore.Streaming.csproj" />-->
+		<!-- <ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.Http\EventStore.Connectors.Http.csproj" />-->
+		<!-- <ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.Kafka\EventStore.Connectors.Kafka.csproj" />-->
+		<!-- <ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.Mongo\EventStore.Connectors.Mongo.csproj" />-->
+		<!-- <ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.RabbitMQ\EventStore.Connectors.RabbitMQ.csproj" />-->
+		<!-- <ProjectReference Include="..\..\submodules\EventStore.Connectors\src\EventStore.Connectors.EventStoreDB\EventStore.Connectors.EventStoreDB.csproj" />-->
 
 		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj">
 			<Private>false</Private>
@@ -50,12 +62,6 @@
 			<Private>false</Private>
 			<ExcludeAssets>all</ExcludeAssets>
 		</ProjectReference>
-
-<!--		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Licensing\EventStore.Licensing.csproj">-->
-<!--			<Private>false</Private>-->
-<!--			<ExcludeAssets>all</ExcludeAssets>-->
-<!--&lt;!&ndash;			<IncludeAssets>compile</IncludeAssets>&ndash;&gt;-->
-<!--		</ProjectReference>-->
 
 		<ProjectReference Include="..\EventStore.Extensions.Connectors.Contracts\EventStore.Extensions.Connectors.Contracts.csproj" />
 	</ItemGroup>

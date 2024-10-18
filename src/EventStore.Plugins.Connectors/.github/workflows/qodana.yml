@@ -35,5 +35,5 @@ jobs:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
           QODANA_NUGET_URL: https://nuget.pkg.github.com/EventStore/index.json
           QODANA_NUGET_NAME: EventStore
-          QODANA_NUGET_USER: ${{ github.actor }}
-          QODANA_NUGET_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+          QODANA_NUGET_USER: ${{ vars.ORG_GH_BOT_USERNAME }}
+          QODANA_NUGET_PASSWORD: ${{ secrets.ORG_GH_BOT_AUTOMATION }}

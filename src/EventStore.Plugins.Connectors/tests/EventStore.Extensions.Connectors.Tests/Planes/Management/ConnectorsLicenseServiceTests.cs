@@ -11,6 +11,7 @@ using EventStore.Toolkit.Testing.Xunit;
 
 namespace EventStore.Connectors.Tests.Management;
 
+[Trait("Category", "Licensing")]
 public class ConnectorsLicenseServiceTests(ITestOutputHelper output, LicensingFixture fixture) : FastTests<LicensingFixture>(output, fixture) {
     [Theory]
     [ClassData(typeof(AllConnectorsTestCases))]

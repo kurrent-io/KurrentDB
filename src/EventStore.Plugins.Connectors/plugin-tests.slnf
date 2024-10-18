@@ -20,7 +20,12 @@
       "submodules\\EventStore\\src\\EventStore.SourceGenerators\\EventStore.SourceGenerators.csproj",
       "submodules\\EventStore\\src\\EventStore.SystemRuntime\\EventStore.SystemRuntime.csproj",
       "submodules\\EventStore\\src\\EventStore.Transport.Http\\EventStore.Transport.Http.csproj",
-      "submodules\\EventStore\\src\\EventStore.Transport.Tcp\\EventStore.Transport.Tcp.csproj"
+      "submodules\\EventStore\\src\\EventStore.Transport.Tcp\\EventStore.Transport.Tcp.csproj",
+      "tests\\EventStore.Extensions.Connectors.Management.TestServer\\EventStore.Extensions.Connectors.Management.TestServer.csproj",
+      "tests\\EventStore.Extensions.Connectors.Tests\\EventStore.Extensions.Connectors.Tests.csproj",
+      "tests\\EventStore.System.Testing\\EventStore.System.Testing.csproj",
+      "tests\\EventStore.Toolkit.Testing.Http\\EventStore.Toolkit.Testing.Http.csproj",
+      "tests\\EventStore.Toolkit.Testing\\EventStore.Toolkit.Testing.csproj"
     ]
   }
 }

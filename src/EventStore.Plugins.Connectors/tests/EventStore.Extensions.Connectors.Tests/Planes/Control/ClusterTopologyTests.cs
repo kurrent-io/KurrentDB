@@ -6,6 +6,7 @@ using MassTransit;
 
 namespace EventStore.Extensions.Connectors.Tests.Control;
 
+[Trait("Category", "ControlPlane")]
 public class ClusterTopologyTests(ITestOutputHelper output, FastFixture fixture) : FastTests(output, fixture) {
 	[Fact]
 	public void cluster_members_are_always_in_order() {
