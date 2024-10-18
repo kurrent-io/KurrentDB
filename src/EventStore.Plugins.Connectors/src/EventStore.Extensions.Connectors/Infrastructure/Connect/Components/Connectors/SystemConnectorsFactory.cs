@@ -14,6 +14,7 @@ using EventStore.Streaming.Persistence.State;
 using EventStore.Streaming.Processors;
 using EventStore.Streaming.Processors.Configuration;
 using EventStore.Streaming.Schema;
+using EventStore.Streaming.Transformers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,8 +42,13 @@ public class SystemConnectorsFactory(
 
         Validation.EnsureValid(configuration);
 
+        var sink = CreateSink(sinkOptions.InstanceTypeName);
+
+        if (sinkOptions.Transformer.Enabled)
+            sink = new RecordTransformerSink(sink, new JintRecordTransformer(sinkOptions.Transformer.DecodeFunction()));
+
         var sinkProxy = new SinkProxy(connectorId,
-            CreateSink(sinkOptions.InstanceTypeName),
+            sink,
             configuration,
             Services);
 
