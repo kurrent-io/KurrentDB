@@ -135,7 +135,6 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
                 .SkipDecoding(options.SkipDecoding)
                 .SchemaRegistry(options.SchemaRegistry)
                 .Logging(loggingOptions)
-                .Transformer(options.Transformer)
                 // .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
                 .Create(),
 

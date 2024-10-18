@@ -31,7 +31,7 @@ public class StickyWithAffinityConnectorAssignor : AffinityConnectorAssignorBase
         return assignments;
 
         static ClusterNodeId GetRoundRobinNode(ConnectorId connectorId, IReadOnlyList<ClusterNode> nodes) {
-            var index = (int)(HashGenerators.MurmurHash3(connectorId) % nodes.Count);
+            var index = (int)(HashGenerators.FromString.MurmurHash3(connectorId) % nodes.Count);
             return nodes[index].NodeId;
         }
     }

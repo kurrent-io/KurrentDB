@@ -36,47 +36,6 @@ public static class ConsumeFilterExtensions {
 }
 
 public static class ResolvedEventExtensions {
-    public static async ValueTask<EventStoreRecord> ToTransformedRecord(
-        this ResolvedEvent resolvedEvent,
-        ITransformer transformer,
-        Func<SequenceId> nextSequenceId
-    ) {
-        var headers = Headers.Decode(resolvedEvent.OriginalEvent.Metadata);
-
-        // To support legacy events that do not contain system headers for schema information.
-        if (!headers.ContainsKey(HeaderKeys.SchemaType)) {
-            SchemaInfo
-                .FromContentType(resolvedEvent.OriginalEvent.EventType,
-                    resolvedEvent.OriginalEvent.IsJson
-                        ? "application/json"
-                        : "application/octet-stream") //TODO SS: fix magic strings
-                .InjectIntoHeaders(headers);
-        }
-
-        var transformResult = await transformer.Transform(resolvedEvent.OriginalEvent.Data, headers);
-
-        if (transformResult is not TransformedRecord transformedRecord)
-            return EventStoreRecord.None;
-
-        // Ignore any system-reserved headers that may have been modified by the transform.
-        // We allow schema information headers to be modified, however.
-        foreach (var transformedHeader in transformedRecord.Headers.Where(transformedHeader =>
-                     transformedHeader.Key is HeaderKeys.SchemaType or HeaderKeys.SchemaSubject
-                  || !HeaderKeys.All.Contains(transformedHeader.Key))) {
-            headers[transformedHeader.Key] = transformedHeader.Value;
-        }
-
-        var schemaInfo = SchemaInfo.FromHeaders(headers);
-
-        return resolvedEvent.ToRecord(headers,
-            schemaInfo,
-            transformedRecord.Data,
-            transformedRecord.Value,
-            nextSequenceId) with {
-            IsTransformed = true
-        };
-    }
-
     public static async ValueTask<EventStoreRecord> ToRecord(
         this ResolvedEvent resolvedEvent,
         Deserialize deserialize,

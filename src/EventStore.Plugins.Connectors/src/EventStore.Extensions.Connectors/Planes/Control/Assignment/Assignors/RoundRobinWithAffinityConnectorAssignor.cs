@@ -16,7 +16,7 @@ public class RoundRobinWithAffinityConnectorAssignor : AffinityConnectorAssignor
         return assignments;
 
         static (ConnectorId ConnectorId, ClusterNodeId NodeId) AssignConnector(ConnectorId connectorId, IReadOnlyList<ClusterNode> clusterNodes) {
-            var nodeIndex = (int)(HashGenerators.MurmurHash3(connectorId) % clusterNodes.Count);
+            var nodeIndex = (int)(HashGenerators.FromString.MurmurHash3(connectorId) % clusterNodes.Count);
             var nodeId    = clusterNodes[nodeIndex].NodeId;
             return new(connectorId, nodeId);
         }

@@ -16,8 +16,7 @@ using EventStore.Streaming.Consumers.Interceptors;
 using EventStore.Streaming.Consumers.LifecycleEvents;
 using EventStore.Streaming.Interceptors;
 using EventStore.Streaming.Schema.Serializers;
-using EventStore.Streaming.Transformers;
-using Microsoft.Extensions.Logging;
+using EventStore.Streaming.JsonPath;
 using Polly;
 
 namespace EventStore.Connect.Consumers;
@@ -29,8 +28,6 @@ public class SystemConsumer : IConsumer {
 	public SystemConsumer(SystemConsumerOptions options) {
 		Options = options;
 		Client  = options.Publisher;
-
-		Transformer = options.Transformer;
 
         Deserialize = Options.SkipDecoding
             ? (_, _) => ValueTask.FromResult<object?>(null)
@@ -101,7 +98,6 @@ public class SystemConsumer : IConsumer {
     SequenceIdGenerator                Sequence             { get; }
 	InterceptorController              Interceptors         { get; }
 	Func<ConsumerLifecycleEvent, Task> Intercept            { get; }
-	ITransformer?                      Transformer          { get; }
 
 	public string                        ConsumerId       => Options.ConsumerId;
     public string                        ClientId         => Options.ClientId;
@@ -137,11 +133,7 @@ public class SystemConsumer : IConsumer {
 			if (Cancellator.IsCancellationRequested)
 				yield break; // get out regardless of the number of events still in the channel
 
-			var record = await (
-				Transformer is not null
-					? resolvedEvent.ToTransformedRecord(Transformer, Sequence.FetchNext)
-					: resolvedEvent.ToRecord(Deserialize, Sequence.FetchNext)
-			);
+			var record = await resolvedEvent.ToRecord(Deserialize, Sequence.FetchNext);
 
 			if (record == EventStoreRecord.None)
 				continue;

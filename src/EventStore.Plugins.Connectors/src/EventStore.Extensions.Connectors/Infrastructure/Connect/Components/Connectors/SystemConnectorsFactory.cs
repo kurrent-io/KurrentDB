@@ -10,12 +10,10 @@ using EventStore.Core.Bus;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Consumers.Configuration;
-using EventStore.Streaming.JavaScript;
 using EventStore.Streaming.Persistence.State;
 using EventStore.Streaming.Processors;
 using EventStore.Streaming.Processors.Configuration;
 using EventStore.Streaming.Schema;
-using EventStore.Streaming.Transformers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -126,19 +124,6 @@ public class SystemConnectorsFactory(
          && sinkOptions.Subscription.StartPosition != RecordPosition.Unset
          && sinkOptions.Subscription.StartPosition != LogPosition.Unset) {
             builder = builder.StartPosition(sinkOptions.Subscription.StartPosition);
-        }
-
-        if (sinkOptions.Transformer.Enabled) {
-            builder = builder.Transformer(Transformer.Builder
-                .Transform(JsFunction.Builder
-                    .Function(sinkOptions.Transformer.Function)
-                    .FunctionName(sinkOptions.Transformer.FunctionName)
-                    .ExecutionTimeoutMs(sinkOptions.Transformer.ExecutionTimeoutMs)
-                    .LoggerFactory(loggerFactory)
-                    .Create())
-                .Logging(loggingOptions)
-                .SchemaRegistry(schemaRegistry)
-                .Create());
         }
 
         return builder.Create();

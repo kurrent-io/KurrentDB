@@ -8,6 +8,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.154" />
+        <PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.0.217" />
     </ItemGroup>
 </Project>

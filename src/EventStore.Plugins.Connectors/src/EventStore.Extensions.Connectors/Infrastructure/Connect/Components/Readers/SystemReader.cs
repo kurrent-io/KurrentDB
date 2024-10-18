@@ -12,6 +12,7 @@ using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Readers;
 using EventStore.Streaming.Schema.Serializers;
+using EventStore.Streaming.JsonPath;
 using Polly;
 using StreamRevision = EventStore.Streaming.StreamRevision;
 

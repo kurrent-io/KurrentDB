@@ -77,6 +77,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpSinkSampleApi", "tests\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Licensing", "submodules\EventStore\src\EventStore.Licensing\EventStore.Licensing.csproj", "{B4A2A06C-CD00-4BF4-96EF-986F88265CF2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Connectors.Mongo", "submodules\EventStore.Connectors\src\EventStore.Connectors.Mongo\EventStore.Connectors.Mongo.csproj", "{B7664DEF-79BD-4B64-890F-2D60B8FE2836}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Connectors.RabbitMQ", "submodules\EventStore.Connectors\src\EventStore.Connectors.RabbitMQ\EventStore.Connectors.RabbitMQ.csproj", "{420F991A-402E-4297-801C-A3B3356D9DE9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Connectors.EventStoreDB", "submodules\EventStore.Connectors\src\EventStore.Connectors.EventStoreDB\EventStore.Connectors.EventStoreDB.csproj", "{62E68B5C-BA60-4713-8EBF-728AD9F9BFC7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -203,6 +209,18 @@ Global
 		{B4A2A06C-CD00-4BF4-96EF-986F88265CF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4A2A06C-CD00-4BF4-96EF-986F88265CF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B4A2A06C-CD00-4BF4-96EF-986F88265CF2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B7664DEF-79BD-4B64-890F-2D60B8FE2836}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7664DEF-79BD-4B64-890F-2D60B8FE2836}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7664DEF-79BD-4B64-890F-2D60B8FE2836}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7664DEF-79BD-4B64-890F-2D60B8FE2836}.Release|Any CPU.Build.0 = Release|Any CPU
+		{420F991A-402E-4297-801C-A3B3356D9DE9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{420F991A-402E-4297-801C-A3B3356D9DE9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{420F991A-402E-4297-801C-A3B3356D9DE9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{420F991A-402E-4297-801C-A3B3356D9DE9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62E68B5C-BA60-4713-8EBF-728AD9F9BFC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62E68B5C-BA60-4713-8EBF-728AD9F9BFC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62E68B5C-BA60-4713-8EBF-728AD9F9BFC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62E68B5C-BA60-4713-8EBF-728AD9F9BFC7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1FFE9B22-1994-47B1-814E-7DCB8E838D10} = {B4DAA225-6158-4BB6-9426-242032A94EA7}
@@ -235,5 +253,8 @@ Global
 		{614EEED7-6D3C-40C4-9FA0-FA04F0A00E92} = {05B9C46A-07F9-4B72-9F57-F0FBD2E86F22}
 		{8E27AE08-7971-4E55-84E1-02A6565D4DF1} = {1D2C51BC-8126-4F7D-8720-18E1C978FF32}
 		{B4A2A06C-CD00-4BF4-96EF-986F88265CF2} = {1FFE9B22-1994-47B1-814E-7DCB8E838D10}
+		{B7664DEF-79BD-4B64-890F-2D60B8FE2836} = {05B9C46A-07F9-4B72-9F57-F0FBD2E86F22}
+		{420F991A-402E-4297-801C-A3B3356D9DE9} = {05B9C46A-07F9-4B72-9F57-F0FBD2E86F22}
+		{62E68B5C-BA60-4713-8EBF-728AD9F9BFC7} = {05B9C46A-07F9-4B72-9F57-F0FBD2E86F22}
 	EndGlobalSection
 EndGlobal

@@ -101,7 +101,7 @@ public class StickyConnectorAssignmentStrategyTests(ITestOutputHelper output, Fa
             .Where(connector => connector.Affinity == affinity)
             .Select(
                 connector => (
-                    NodeIndex: (int)(HashGenerators.MurmurHash3(connector.ConnectorId) % numberOfNodesWithAffinity),
+                    NodeIndex: (int)(HashGenerators.FromString.MurmurHash3(connector.ConnectorId) % numberOfNodesWithAffinity),
                     Connector: connector)
             )
             .GroupBy(x => x.NodeIndex)
