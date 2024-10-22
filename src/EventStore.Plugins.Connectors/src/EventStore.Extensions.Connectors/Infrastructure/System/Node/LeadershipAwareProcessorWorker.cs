@@ -7,7 +7,7 @@ namespace EventStore.Connectors.System;
 public abstract class LeadershipAwareProcessorWorker<T> : LeadershipAwareService where T : IProcessor {
     protected LeadershipAwareProcessorWorker(T processor, IServiceProvider serviceProvider)
         : base(
-            serviceProvider.GetRequiredService<INodeLifetimeService>(),
+            serviceProvider.GetRequiredService<Func<string, INodeLifetimeService>>(),
             serviceProvider.GetRequiredService<GetNodeSystemInfo>(),
             serviceProvider.GetRequiredService<ILoggerFactory>()
         ) => Processor = processor;

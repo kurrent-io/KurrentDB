@@ -2,9 +2,11 @@ using EventStore.Connect.Connectors;
 using EventStore.Connect.Leases;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.System;
+using EventStore.Core.Bus;
 using EventStore.Streaming;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.ConnectorsFeatureConventions;
 
 using ConnectContracts = EventStore.Streaming.Contracts;
@@ -18,7 +20,14 @@ public static class ControlPlaneWireUp {
             .AddMessageSchemaRegistration()
             .AddConnectorsActivator()
             .AddConnectorsControlRegistry()
-            .AddSingleton<INodeLifetimeService, NodeLifetimeService>()
+            .AddSingleton<Func<string, INodeLifetimeService>>(svc => {
+                return identifier =>
+                    new NodeLifetimeService(
+                        identifier,
+                        svc.GetRequiredService<IPublisher>(),
+                        svc.GetService<ISubscriber>(),
+                        svc.GetService<ILogger<NodeLifetimeService>>());
+            })
             .AddSingleton<IHostedService, ConnectorsControlService>();
 
     static IServiceCollection AddMessageSchemaRegistration(this IServiceCollection services) =>

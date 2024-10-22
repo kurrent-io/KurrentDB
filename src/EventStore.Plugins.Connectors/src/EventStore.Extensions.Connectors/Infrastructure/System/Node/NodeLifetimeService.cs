@@ -9,18 +9,37 @@ namespace EventStore.Connectors.System;
 
 public interface INodeLifetimeService {
     Task<CancellationToken> WaitForLeadershipAsync(TimeSpan timeout, CancellationToken cancellationToken = default);
+    void                    ReportShutdownCompleted();
 }
 
 [UsedImplicitly]
 public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessage>, INodeLifetimeService, IDisposable {
-    volatile TokenCompletionSource? _leadershipEvent = new();
+    public delegate void OnShutdownInitiated();
 
-    public NodeLifetimeService(ISubscriber? subscriber = null, ILogger<NodeLifetimeService>? logger = null) {
+    public event OnShutdownInitiated ShutdownInitiated;
+    volatile TokenCompletionSource?  _leadershipEvent = new();
+
+    public NodeLifetimeService(
+        string identifier,
+        IPublisher publisher, ISubscriber? subscriber = null, ILogger<NodeLifetimeService>? logger = null
+    ) {
         subscriber?.Subscribe(this);
-        Logger = logger ?? NullLoggerFactory.Instance.CreateLogger<NodeLifetimeService>();
+        Logger     = logger ?? NullLoggerFactory.Instance.CreateLogger<NodeLifetimeService>();
+        Publisher  = publisher;
+        Identifier = identifier;
+
+        Publisher.Publish(new SystemMessage.RegisterForGracefulTermination(Identifier,
+            () => {
+                Logger.LogNodeShuttingDown();
+                using var oldEvent = Interlocked.Exchange(ref _leadershipEvent, null);
+                oldEvent?.Cancel(null);
+                ShutdownInitiated?.Invoke();
+            }));
     }
 
-    ILogger Logger { get; }
+    ILogger    Logger     { get; }
+    IPublisher Publisher  { get; }
+    string     Identifier { get; }
 
     public void Handle(SystemMessage.StateChangeMessage message) {
         switch (_leadershipEvent) {
@@ -30,38 +49,23 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
 
                 break;
 
-            case { Task.IsCompleted: true } when message.State is not VNodeState.Leader:
-                switch (message) {
-                    case SystemMessage.BecomeShuttingDown shuttingDown: {
-                        if (shuttingDown.ShutdownHttp)
-                            Logger.LogNodeShuttingDownByEndpointRequest();
-                        else
-                            Logger.LogNodeShuttingDownByExitProcessRequest();
-
-                        break;
-                    }
-
-                    default: Logger.LogNodeLeadershipRevoked(message.State); break;
-                }
+            case { Task.IsCompleted: true } when message.State is VNodeState.Follower:
+                Logger.LogNodeLeadershipRevoked(message.State);
 
                 using (var oldEvent = Interlocked.Exchange(ref _leadershipEvent, new()))
                     oldEvent.Cancel(null);
 
                 break;
-
-            default:
-                if (message.State is VNodeState.ShuttingDown) {
-                    Logger.LogNodeShuttingDown();
-                    using var oldEvent = Interlocked.Exchange(ref _leadershipEvent, null);
-                    oldEvent?.Cancel(null);
-                }
-
-                break;
         }
     }
 
-    public Task<CancellationToken> WaitForLeadershipAsync(TimeSpan timeout, CancellationToken cancellationToken = default) =>
-        _leadershipEvent?.Task.WaitAsync(timeout, cancellationToken) ?? Task.FromException<CancellationToken>(new ObjectDisposedException(GetType().Name));
+    public Task<CancellationToken> WaitForLeadershipAsync(
+        TimeSpan timeout, CancellationToken cancellationToken = default
+    ) => _leadershipEvent?.Task.WaitAsync(timeout, cancellationToken)
+      ?? Task.FromException<CancellationToken>(new ObjectDisposedException(GetType().Name));
+
+    public void ReportShutdownCompleted() =>
+        Publisher.Publish(new SystemMessage.ComponentTerminated(Identifier));
 
     void Dispose(bool disposing) {
         if (!disposing)

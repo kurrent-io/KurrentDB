@@ -19,11 +19,13 @@ public partial class ConnectorsFeatureConventions {
         public static StreamTemplate LeasesStreamTemplate      = new LeasesStreamTemplate();      // $connectors/{0}/leases
         public static StreamTemplate CheckpointsStreamTemplate = new CheckpointsStreamTemplate(); // $connectors/{0}/checkpoints
         public static StreamTemplate LifecycleStreamTemplate   = new LifecycleStreamTemplate();   // $connectors/{0}/lifecycle
+        public static StreamTemplate LifecycleCheckpointsStreamTemplate = new LifecycleCheckpointsStreamTemplate();  // $connectors/{0}/lifecycle
 
         public static StreamId GetManagementStream(string connectorId)  => ManagementStreamTemplate.GetStream(connectorId);  // $connectors/3f9728
         public static StreamId GetLeasesStream(string connectorId)      => LeasesStreamTemplate.GetStream(connectorId);      // $connectors/3f9728/leases
         public static StreamId GetCheckpointsStream(string connectorId) => CheckpointsStreamTemplate.GetStream(connectorId); // $connectors/3f9728/checkpoints
         public static StreamId GetLifecycleStream(string connectorId)   => LifecycleStreamTemplate.GetStream(connectorId);   // $connectors/3f9728/lifecycle
+        public static StreamId GetLifecycleCheckpointsStream(string connectorId) => LifecycleCheckpointsStreamTemplate.GetStream(connectorId);
 
         public static StreamId ConnectorsRegistryStream = "$connectors-ctrl-registry-snapshots";
     }
@@ -73,3 +75,6 @@ public sealed record CheckpointsStreamTemplate()
 
 public sealed record LifecycleStreamTemplate()
     : StreamTemplate($"{ConnectorsFeatureConventions.Streams.StreamPrefix}/{{0}}/lifecycle");
+
+public sealed record LifecycleCheckpointsStreamTemplate()
+    : StreamTemplate($"$con-mngt-lifecycle-rx/{{0}}/checkpoints");

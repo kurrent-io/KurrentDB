@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using EventStore.Connect.Consumers;
 using EventStore.Connect.Consumers.Configuration;
 using EventStore.Connect.Processors;
@@ -69,6 +70,9 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         .Publisher(Publisher)
         .LoggerFactory(LoggerFactory)
         .SchemaRegistry(SchemaRegistry);
+
+    public string NewIdentifier([CallerMemberName] string? name = null) =>
+        $"{name.Underscore()}-{GenerateShortId()}".ToLowerInvariant();
 }
 
 public abstract class ConnectorsIntegrationTests<TFixture> where TFixture : ConnectorsAssemblyFixture {

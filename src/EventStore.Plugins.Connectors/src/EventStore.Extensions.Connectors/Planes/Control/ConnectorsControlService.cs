@@ -11,8 +11,8 @@ namespace EventStore.Connectors.Control;
 public class ConnectorsControlService : LeadershipAwareService {
     public ConnectorsControlService(
         ConnectorsActivator activator, GetActiveConnectors getActiveConnectors, Func<SystemConsumerBuilder> getConsumerBuilder,
-        GetNodeSystemInfo getNodeSystemInfo, INodeLifetimeService nodeLifetime, ILoggerFactory loggerFactory
-    ) : base(nodeLifetime, getNodeSystemInfo, loggerFactory) {
+        GetNodeSystemInfo getNodeSystemInfo, Func<string, INodeLifetimeService> nodeLifetimeBuilder, ILoggerFactory loggerFactory
+    ) : base(nodeLifetimeBuilder, getNodeSystemInfo, loggerFactory) {
         Activator           = activator;
         GetActiveConnectors = getActiveConnectors;
 
