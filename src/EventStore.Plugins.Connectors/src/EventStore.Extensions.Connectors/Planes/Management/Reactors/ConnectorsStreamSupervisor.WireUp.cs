@@ -3,6 +3,7 @@ using EventStore.Connectors.System;
 using EventStore.Core.Bus;
 using EventStore.Streaming;
 using EventStore.Streaming.Configuration;
+using EventStore.Streaming.Consumers.Configuration;
 using EventStore.Streaming.Processors;
 using EventStore.Streaming.Processors.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,9 +33,14 @@ static class ConnectorsStreamSupervisorWireUp {
                     LogName       = "ConnectorsStreamSupervisor"
                 })
                 .DisableAutoLock()
+                .AutoCommit(new AutoCommitOptions {
+                    Enabled          = true,
+                    RecordsThreshold = 100,
+                    StreamTemplate   = ConnectorsFeatureConventions.Streams.SupervisorCheckpointsStreamTemplate
+                })
                 .DisableAutoCommit()
                 .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
-                .StartPosition(RecordPosition.Latest)
+                .InitialPosition(SubscriptionInitialPosition.Latest)
                 .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
                 .WithModule(new ConnectorsStreamSupervisor(publisher, options))
                 .Create();

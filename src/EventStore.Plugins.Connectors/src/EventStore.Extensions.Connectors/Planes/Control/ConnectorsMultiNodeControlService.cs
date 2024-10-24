@@ -65,7 +65,7 @@
 //         ConsumerBuilder = getConsumerBuilder()
 //             .ConsumerId("conn-ctrl-coordinator-csx")
 //             .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
-//             .StartPosition(RecordPosition.Latest)
+//             .InitialPosition(SubscriptionInitialPosition.Latest)
 //             .DisableAutoCommit();
 //     }
 //

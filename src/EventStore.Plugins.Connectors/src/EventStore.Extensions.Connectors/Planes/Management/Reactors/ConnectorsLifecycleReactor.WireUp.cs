@@ -4,7 +4,6 @@ using EventStore.Core.Bus;
 using EventStore.Streaming;
 using EventStore.Streaming.Configuration;
 using EventStore.Streaming.Consumers.Configuration;
-using EventStore.Streaming.Hosting;
 using EventStore.Streaming.Processors;
 using EventStore.Streaming.Processors.Configuration;
 using EventStore.Streaming.Schema;
@@ -34,11 +33,11 @@ static class ConnectorsLifecycleReactorWireUp {
                 .DisableAutoLock()
                 .AutoCommit(new AutoCommitOptions {
                     Enabled          = true,
-                    RecordsThreshold = 1,
+                    RecordsThreshold = 100,
                     StreamTemplate   = ConnectorsFeatureConventions.Streams.LifecycleCheckpointsStreamTemplate
                 })
                 .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
-                .StartPosition(RecordPosition.Latest)
+                .InitialPosition(SubscriptionInitialPosition.Earliest)
                 .Filter(ConnectorsFeatureConventions.Filters.LifecycleFilter)
                 .WithHandler(new ConnectorsLifecycleReactor(app))
                 .Create();

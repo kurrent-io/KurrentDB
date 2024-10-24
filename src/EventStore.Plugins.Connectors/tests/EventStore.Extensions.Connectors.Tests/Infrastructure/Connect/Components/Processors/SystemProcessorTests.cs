@@ -28,7 +28,7 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
             var processor = Fixture.NewProcessor()
                 .ProcessorId($"{streamId}-prx")
                 .Stream(streamId)
-                .StartPosition(RecordPosition.Earliest)
+                .InitialPosition(SubscriptionInitialPosition.Earliest)
                 .DisableAutoCommit()
                 .Process<TestEvent>(
                     async (_, ctx) => {
@@ -68,7 +68,7 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
             var processor = Fixture.NewProcessor()
                 .ProcessorId($"{streamId}-prx")
                 .Stream(streamId)
-                .StartPosition(RecordPosition.Earliest)
+                .InitialPosition(SubscriptionInitialPosition.Earliest)
                 .DisableAutoCommit()
                 .Process<TestEvent>((_, _) => throw new ApplicationException("BOOM!"))
                 .Create();
@@ -93,7 +93,7 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
             var processor = Fixture.NewProcessor()
                 .ProcessorId($"{streamId}-prx")
                 .Stream(streamId)
-                .StartPosition(RecordPosition.Earliest)
+                .InitialPosition(SubscriptionInitialPosition.Earliest)
                 .DisableAutoCommit()
                 .Process<TestEvent>((_, _) => Task.Delay(TimeSpan.MaxValue))
                 .Create();

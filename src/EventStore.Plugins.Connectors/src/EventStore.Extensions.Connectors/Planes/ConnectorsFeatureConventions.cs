@@ -15,11 +15,12 @@ public partial class ConnectorsFeatureConventions {
     public static class Streams {
         public const string StreamPrefix = "$connectors";
 
-        public static StreamTemplate ManagementStreamTemplate  = new ManagementStreamTemplate();  // $connectors/{0}
-        public static StreamTemplate LeasesStreamTemplate      = new LeasesStreamTemplate();      // $connectors/{0}/leases
-        public static StreamTemplate CheckpointsStreamTemplate = new CheckpointsStreamTemplate(); // $connectors/{0}/checkpoints
-        public static StreamTemplate LifecycleStreamTemplate   = new LifecycleStreamTemplate();   // $connectors/{0}/lifecycle
-        public static StreamTemplate LifecycleCheckpointsStreamTemplate = new LifecycleCheckpointsStreamTemplate();  // $connectors/{0}/lifecycle
+        public static StreamTemplate ManagementStreamTemplate            = new ManagementStreamTemplate();            // $connectors/{0}
+        public static StreamTemplate LeasesStreamTemplate                = new LeasesStreamTemplate();                // $connectors/{0}/leases
+        public static StreamTemplate CheckpointsStreamTemplate           = new CheckpointsStreamTemplate();           // $connectors/{0}/checkpoints
+        public static StreamTemplate LifecycleStreamTemplate             = new LifecycleStreamTemplate();             // $connectors/{0}/lifecycle
+        public static StreamTemplate LifecycleCheckpointsStreamTemplate  = new LifecycleCheckpointsStreamTemplate();  // $connectors/{0}/lifecycle
+        public static StreamTemplate SupervisorCheckpointsStreamTemplate = new SupervisorCheckpointsStreamTemplate(); // $connectors/{0}/lifecycle
 
         public static StreamId GetManagementStream(string connectorId)  => ManagementStreamTemplate.GetStream(connectorId);  // $connectors/3f9728
         public static StreamId GetLeasesStream(string connectorId)      => LeasesStreamTemplate.GetStream(connectorId);      // $connectors/3f9728/leases
@@ -78,3 +79,6 @@ public sealed record LifecycleStreamTemplate()
 
 public sealed record LifecycleCheckpointsStreamTemplate()
     : StreamTemplate($"$con-mngt-lifecycle-rx/{{0}}/checkpoints");
+
+public sealed record SupervisorCheckpointsStreamTemplate()
+    : StreamTemplate($"$con-mngt-supervisor-rx/{{0}}/checkpoints");
