@@ -39,20 +39,16 @@ public class ConnectorsLicenseServiceTests(ITestOutputHelper output, LicensingFi
         CheckConnectorLicense(info.ConnectorType, ["ALL"], expectedResult: true);
 
     void CheckConnectorLicense(Type connectorType, string[] entitlements, bool expectedResult) {
-        using var keys = Fixture.GenerateSecurityKeys();
-
-        var license = Fixture.NewLicense(keys, entitlements);
-        var sut     = new ConnectorsLicenseService(Fixture.NewLicenseObservable(license), keys.PublicKey, Fixture.LicensingLogger);
+        var license = Fixture.NewLicense(entitlements);
+        var sut     = new ConnectorsLicenseService(Fixture.NewLicenseObservable(license), Fixture.LicensingLogger);
 
         sut.CheckLicense(connectorType).Should().Be(expectedResult);
     }
 
     [Fact]
     public void license_without_entitlements_should_allow_free_connectors() {
-        using var keys = Fixture.GenerateSecurityKeys();
-
-        var license = Fixture.NewLicense(keys, []);
-        var sut     = new ConnectorsLicenseService(Fixture.NewLicenseObservable(license), keys.PublicKey, Fixture.LicensingLogger);
+        var license = Fixture.NewLicense([]);
+        var sut     = new ConnectorsLicenseService(Fixture.NewLicenseObservable(license), Fixture.LicensingLogger);
 
         sut.CheckLicense<HttpSink>().Should().BeTrue();
         sut.CheckLicense<LoggerSink>().Should().BeTrue();

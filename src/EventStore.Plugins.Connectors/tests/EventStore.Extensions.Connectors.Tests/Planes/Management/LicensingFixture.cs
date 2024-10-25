@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using EventStore.Connectors.Management;
 using EventStore.Plugins.Licensing;
 using EventStore.Toolkit.Testing.Fixtures;
@@ -14,19 +13,10 @@ public class LicensingFixture : FastFixture {
 
     public IObservable<License> NewEmptyLicenseObservable() => new SimpleObservable([]);
 
-    public SecurityKeys GenerateSecurityKeys() => new SecurityKeys(RSA.Create(2_048));
-
-    public License NewLicense(SecurityKeys keys, string[] entitlements) {
-        return License.Create(Convert.ToBase64String(keys.Rsa.ExportRSAPublicKey()),
-            Convert.ToBase64String(keys.Rsa.ExportRSAPrivateKey()),
+    public License NewLicense(string[] entitlements) {
+        return License.Create(
             entitlements.ToDictionary(x => x, _ => (object)true));
     }
-}
-
-public record SecurityKeys(RSA Rsa) : IDisposable {
-    public void Dispose() => Rsa.Dispose();
-
-    public string PublicKey => Convert.ToBase64String(Rsa.ExportRSAPublicKey());
 }
 
 class SimpleObservable(IEnumerable<License> licenses) : IObservable<License> {

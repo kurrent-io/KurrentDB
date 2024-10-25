@@ -8,7 +8,7 @@
 	<ItemGroup>
 		<!-- The thin red line between having the plugin to work or not in ESDB forces us to play with private assets -->
 
-		<PackageReference Include="EventStore.Plugins" Version="24.10.5">
+		<PackageReference Include="EventStore.Plugins" Version="24.10.6">
 			<Private>false</Private>
 			<IncludeAssets>compile</IncludeAssets>
 		</PackageReference>
