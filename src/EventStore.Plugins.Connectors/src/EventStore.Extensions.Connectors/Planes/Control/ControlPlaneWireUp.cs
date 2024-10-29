@@ -15,20 +15,21 @@ using ControlContracts = EventStore.Connectors.Control.Contracts;
 namespace EventStore.Connectors.Control;
 
 public static class ControlPlaneWireUp {
-    public static IServiceCollection AddConnectorsControlPlane(this IServiceCollection services) =>
+    public static IServiceCollection AddConnectorsControlPlane(this IServiceCollection services) {
         services
             .AddMessageSchemaRegistration()
             .AddConnectorsActivator()
             .AddConnectorsControlRegistry()
             .AddSingleton<GetNodeLifetimeService>(ctx =>
-                component => new NodeLifetimeService(
-                    component,
+                component => new NodeLifetimeService(component,
                     ctx.GetRequiredService<IPublisher>(),
                     ctx.GetRequiredService<ISubscriber>(),
-                    ctx.GetService<ILogger<NodeLifetimeService>>()
-                )
-            )
-            .AddSingleton<IHostedService, ConnectorsControlService>();
+                    ctx.GetService<ILogger<NodeLifetimeService>>()));
+
+        services.AddSingleton<IHostedService, ConnectorsControlService>();
+
+        return services;
+    }
 
     static IServiceCollection AddMessageSchemaRegistration(this IServiceCollection services) =>
         services.AddSchemaRegistryStartupTask(

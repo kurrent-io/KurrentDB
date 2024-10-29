@@ -102,8 +102,8 @@ public static class ManagementPlaneWireUp {
 
     public static void UseConnectorsManagementPlane(this IApplicationBuilder application) {
         application
-            .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsCommandService>());
-            // .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsQueryService>());
+            .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsCommandService>())
+            .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsQueryService>());
     }
 
     internal static IServiceCollection AddConnectorsManagementSchemaRegistration(this IServiceCollection services) =>

@@ -16,42 +16,44 @@ namespace EventStore.Connectors.Management.Reactors;
 static class ConnectorsStreamSupervisorWireUp {
     public static IServiceCollection AddConnectorsStreamSupervisor(this IServiceCollection services) {
         return services.AddSingleton<IHostedService, ConnectorsStreamSupervisorService>(ctx => {
-            var publisher           = ctx.GetRequiredService<IPublisher>();
-            var loggerFactory       = ctx.GetRequiredService<ILoggerFactory>();
-            var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
-
-            var options = new ConnectorsStreamSupervisorOptions {
-                Leases      = new(MaxCount: 1),
-                Checkpoints = new(MaxCount: 1),
-                Lifetime    = new(MaxCount: 3)
-            };
-
             const string logName = "ConnectorsStreamSupervisor";
 
-            var processor = getProcessorBuilder()
-                .ProcessorId("connectors-mngt-supervisor-rx")
-                .Logging(new LoggingOptions {
-                    Enabled       = true,
-                    LoggerFactory = loggerFactory,
-                    LogName       = "ConnectorsStreamSupervisor"
-                })
-                .DisableAutoLock()
-                .AutoCommit(new AutoCommitOptions {
-                    Enabled          = true,
-                    RecordsThreshold = 100,
-                    StreamTemplate   = ManagementStreamSupervisorCheckpointsStream.ToString()
-                })
-                .DisableAutoCommit()
-                .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
-                .InitialPosition(SubscriptionInitialPosition.Latest)
-                .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
-                .WithModule(new ConnectorsStreamSupervisor(publisher, options))
-                .Create();
+            return new ConnectorsStreamSupervisorService(() => {
+                var publisher           = ctx.GetRequiredService<IPublisher>();
+                var loggerFactory       = ctx.GetRequiredService<ILoggerFactory>();
+                var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
 
-            return new ConnectorsStreamSupervisorService(processor, ctx, logName);
+                var options = new ConnectorsStreamSupervisorOptions {
+                    Leases      = new(MaxCount: 1),
+                    Checkpoints = new(MaxCount: 1),
+                    Lifetime    = new(MaxCount: 3)
+                };
+
+                var processor = getProcessorBuilder()
+                    .ProcessorId("connectors-mngt-supervisor-rx")
+                    .Logging(new LoggingOptions {
+                        Enabled       = true,
+                        LoggerFactory = loggerFactory,
+                        LogName       = "ConnectorsStreamSupervisor"
+                    })
+                    .DisableAutoLock()
+                    .AutoCommit(new AutoCommitOptions {
+                        Enabled          = true,
+                        RecordsThreshold = 100,
+                        StreamTemplate   = ManagementStreamSupervisorCheckpointsStream.ToString()
+                    })
+                    .DisableAutoCommit()
+                    .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
+                    .InitialPosition(SubscriptionInitialPosition.Latest)
+                    .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
+                    .WithModule(new ConnectorsStreamSupervisor(publisher, options))
+                    .Create();
+
+                return processor;
+            }, ctx, logName);
         });
     }
 }
 
-class ConnectorsStreamSupervisorService(IProcessor processor, IServiceProvider serviceProvider, string name)
-    : LeadershipAwareProcessorWorker<IProcessor>(processor, serviceProvider, name);
+class ConnectorsStreamSupervisorService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string name)
+    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, name);

@@ -19,40 +19,41 @@ static class ConnectorsStateProjectorWireUp {
     public static IServiceCollection AddConnectorsStateProjection(this IServiceCollection services) {
         return services
            .AddSingleton<IHostedService, ConnectorsStateProjectionService>(ctx => {
-               var loggerFactory       = ctx.GetRequiredService<ILoggerFactory>();
-               var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
-               var getReaderBuilder    = ctx.GetRequiredService<Func<SystemReaderBuilder>>();
-               var getProducerBuilder  = ctx.GetRequiredService<Func<SystemProducerBuilder>>();
-
                const string logName = "ConnectorsStateProjection";
 
-               var processor = getProcessorBuilder()
-                   .ProcessorId("connectors-mngt-state-pjx")
-                   .Logging(new LoggingOptions {
-                       Enabled       = true,
-                       LoggerFactory = loggerFactory,
-                       LogName       = "ConnectorsStateProjection"
-                   })
-                   .DisableAutoLock()
-                   .AutoCommit(new AutoCommitOptions {
-                       Enabled          = true,
-                       RecordsThreshold = 1,
-                       StreamTemplate   = ConnectorsStateProjectionCheckpointsStream.ToString()
-                   })
-                   .Filter(ConnectorsStateProjectionStreamFilter)
-                   .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
-                   .InitialPosition(SubscriptionInitialPosition.Earliest)
-                   .WithModule(new ConnectorsStateProjection(
-                       getReaderBuilder,
-                       getProducerBuilder,
-                       ConnectorsStateProjectionStream
-                    ))
-                   .Create();
+               return new ConnectorsStateProjectionService(() => {
+                   var loggerFactory       = ctx.GetRequiredService<ILoggerFactory>();
+                   var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
+                   var getReaderBuilder    = ctx.GetRequiredService<Func<SystemReaderBuilder>>();
+                   var getProducerBuilder  = ctx.GetRequiredService<Func<SystemProducerBuilder>>();
 
-                return new ConnectorsStateProjectionService(processor, ctx, logName);
+                   var processor = getProcessorBuilder()
+                       .ProcessorId("connectors-mngt-state-pjx")
+                       .Logging(new LoggingOptions {
+                           Enabled       = true,
+                           LoggerFactory = loggerFactory,
+                           LogName       = "ConnectorsStateProjection"
+                       })
+                       .DisableAutoLock()
+                       .AutoCommit(new AutoCommitOptions {
+                           Enabled          = true,
+                           RecordsThreshold = 1,
+                           StreamTemplate   = ConnectorsStateProjectionCheckpointsStream.ToString()
+                       })
+                       .Filter(ConnectorsStateProjectionStreamFilter)
+                       .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
+                       .InitialPosition(SubscriptionInitialPosition.Earliest)
+                       .WithModule(new ConnectorsStateProjection(
+                           getReaderBuilder,
+                           getProducerBuilder,
+                           ConnectorsStateProjectionStream))
+                       .Create();
+
+                   return processor;
+                }, ctx, logName);
             });
     }
 }
 
-class ConnectorsStateProjectionService(IProcessor processor, IServiceProvider serviceProvider, string name)
-    : LeadershipAwareProcessorWorker<IProcessor>(processor, serviceProvider, name);
+class ConnectorsStateProjectionService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string name)
+    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, name);

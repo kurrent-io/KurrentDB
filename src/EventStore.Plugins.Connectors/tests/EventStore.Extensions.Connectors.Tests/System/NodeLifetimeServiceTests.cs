@@ -13,7 +13,9 @@ using MemberInfo = EventStore.Core.Cluster.MemberInfo;
 
 namespace EventStore.Connectors.Tests.System;
 
+[Trait("Category", "ControlPlane")]
 [Trait("Category", "System")]
+[Trait("Category", "Leadership")]
 public class NodeLifetimeServiceTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
 	static readonly MessageBus MessageBus = new();
 
