@@ -22,7 +22,7 @@ abstract class SystemStartupTaskService : BackgroundService {
         try {
             var nodeInfo = await ReadinessProbe.WaitUntilReady(stoppingToken);
             await OnStartup(nodeInfo, ServiceProvider, stoppingToken);
-            Logger.LogInformation("{TaskName} completed", TaskName);
+            Logger.LogDebug("{TaskName} completed", TaskName);
         }
         catch (OperationCanceledException) {
             // ignore

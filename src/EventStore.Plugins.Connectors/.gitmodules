@@ -4,6 +4,3 @@
 [submodule "submodules/EventStore.Streaming"]
 	path = submodules/EventStore.Streaming
 	url = https://github.com/EventStore/EventStore-Streaming
-[submodule "EventStore.Connectors"]
-	path = submodules/EventStore.Connectors
-	url = https://github.com/EventStore/EventStore.Connectors.git

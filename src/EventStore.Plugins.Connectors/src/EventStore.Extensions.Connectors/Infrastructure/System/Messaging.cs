@@ -19,7 +19,7 @@ public delegate void DropMessageSubscription();
 abstract class MessageHandler<T> : IAsyncHandle<T> where T : Message {
     public abstract ValueTask HandleAsync(T message, CancellationToken token);
 
-    internal class Proxy(HandleMessageAsync<T> handler) : MessageHandler<T> {
+    public class Proxy(HandleMessageAsync<T> handler) : MessageHandler<T> {
         public override ValueTask HandleAsync(T message, CancellationToken cancellationToken) => handler(message, cancellationToken);
     }
 }

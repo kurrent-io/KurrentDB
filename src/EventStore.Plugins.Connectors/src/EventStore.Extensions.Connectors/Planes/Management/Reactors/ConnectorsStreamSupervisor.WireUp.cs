@@ -9,6 +9,7 @@ using EventStore.Streaming.Processors.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using static EventStore.Connectors.ConnectorsFeatureConventions.Streams;
 
 namespace EventStore.Connectors.Management.Reactors;
 
@@ -22,11 +23,13 @@ static class ConnectorsStreamSupervisorWireUp {
             var options = new ConnectorsStreamSupervisorOptions {
                 Leases      = new(MaxCount: 1),
                 Checkpoints = new(MaxCount: 1),
-                Lifetime    = new(MaxCount: 5)
+                Lifetime    = new(MaxCount: 3)
             };
 
+            const string logName = "ConnectorsStreamSupervisor";
+
             var processor = getProcessorBuilder()
-                .ProcessorId("connectors-streams-supervisor-rx")
+                .ProcessorId("connectors-mngt-supervisor-rx")
                 .Logging(new LoggingOptions {
                     Enabled       = true,
                     LoggerFactory = loggerFactory,
@@ -36,7 +39,7 @@ static class ConnectorsStreamSupervisorWireUp {
                 .AutoCommit(new AutoCommitOptions {
                     Enabled          = true,
                     RecordsThreshold = 100,
-                    StreamTemplate   = ConnectorsFeatureConventions.Streams.SupervisorCheckpointsStreamTemplate
+                    StreamTemplate   = ManagementStreamSupervisorCheckpointsStream.ToString()
                 })
                 .DisableAutoCommit()
                 .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
@@ -45,10 +48,10 @@ static class ConnectorsStreamSupervisorWireUp {
                 .WithModule(new ConnectorsStreamSupervisor(publisher, options))
                 .Create();
 
-            return new ConnectorsStreamSupervisorService(processor, ctx);
+            return new ConnectorsStreamSupervisorService(processor, ctx, logName);
         });
     }
 }
 
-class ConnectorsStreamSupervisorService(IProcessor processor, IServiceProvider serviceProvider)
-    : LeadershipAwareProcessorWorker<IProcessor>(processor, serviceProvider);
+class ConnectorsStreamSupervisorService(IProcessor processor, IServiceProvider serviceProvider, string name)
+    : LeadershipAwareProcessorWorker<IProcessor>(processor, serviceProvider, name);

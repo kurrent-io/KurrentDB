@@ -1,4 +1,3 @@
-using Amazon.Runtime.Internal.Util;
 using EventStore.Connectors.Control;
 using EventStore.Core.Bus;
 using EventStore.Core.Cluster;

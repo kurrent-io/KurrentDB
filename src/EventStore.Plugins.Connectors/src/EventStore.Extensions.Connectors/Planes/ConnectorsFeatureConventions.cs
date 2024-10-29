@@ -13,22 +13,24 @@ public partial class ConnectorsFeatureConventions {
     [PublicAPI]
     [SuppressMessage("Usage", "CA2211:Non-constant fields should not be visible")]
     public static class Streams {
-        public const string StreamPrefix = "$connectors";
+        public const string StreamPrefix           = "$connectors";
+        public const string ManagementStreamPrefix = "$connectors-mngt";
+        public const string ControlStreamPrefix    = "$connectors-ctrl";
 
-        public static StreamTemplate ManagementStreamTemplate            = new ManagementStreamTemplate();            // $connectors/{0}
-        public static StreamTemplate LeasesStreamTemplate                = new LeasesStreamTemplate();                // $connectors/{0}/leases
-        public static StreamTemplate CheckpointsStreamTemplate           = new CheckpointsStreamTemplate();           // $connectors/{0}/checkpoints
-        public static StreamTemplate LifecycleStreamTemplate             = new LifecycleStreamTemplate();             // $connectors/{0}/lifecycle
-        public static StreamTemplate LifecycleCheckpointsStreamTemplate  = new LifecycleCheckpointsStreamTemplate();  // $connectors/{0}/lifecycle
-        public static StreamTemplate SupervisorCheckpointsStreamTemplate = new SupervisorCheckpointsStreamTemplate(); // $connectors/{0}/lifecycle
+        public static StreamTemplate ManagementStreamTemplate  = new ManagementStreamTemplate();  // $connectors/{0}
+        public static StreamTemplate LeasesStreamTemplate      = new LeasesStreamTemplate();      // $connectors/{0}/leases
+        public static StreamTemplate CheckpointsStreamTemplate = new CheckpointsStreamTemplate(); // $connectors/{0}/checkpoints
+        public static StreamTemplate LifecycleStreamTemplate   = new LifecycleStreamTemplate();   // $connectors/{0}/lifecycle
 
         public static StreamId GetManagementStream(string connectorId)  => ManagementStreamTemplate.GetStream(connectorId);  // $connectors/3f9728
         public static StreamId GetLeasesStream(string connectorId)      => LeasesStreamTemplate.GetStream(connectorId);      // $connectors/3f9728/leases
         public static StreamId GetCheckpointsStream(string connectorId) => CheckpointsStreamTemplate.GetStream(connectorId); // $connectors/3f9728/checkpoints
         public static StreamId GetLifecycleStream(string connectorId)   => LifecycleStreamTemplate.GetStream(connectorId);   // $connectors/3f9728/lifecycle
-        public static StreamId GetLifecycleCheckpointsStream(string connectorId) => LifecycleCheckpointsStreamTemplate.GetStream(connectorId);
 
-        public static StreamId ConnectorsRegistryStream = "$connectors-ctrl-registry-snapshots";
+        public static StreamId ControlConnectorsRegistryStream = $"${ControlStreamPrefix}/registry-snapshots";
+
+        public static StreamId ManagementLifecycleReactorCheckpointsStream = $"{ManagementStreamPrefix}/lifecycle-rx/checkpoints";
+        public static StreamId ManagementStreamSupervisorCheckpointsStream = $"{ManagementStreamPrefix}/supervisor-rx/checkpoints";
     }
 
     [PublicAPI]
@@ -76,9 +78,3 @@ public sealed record CheckpointsStreamTemplate()
 
 public sealed record LifecycleStreamTemplate()
     : StreamTemplate($"{ConnectorsFeatureConventions.Streams.StreamPrefix}/{{0}}/lifecycle");
-
-public sealed record LifecycleCheckpointsStreamTemplate()
-    : StreamTemplate($"$con-mngt-lifecycle-rx/{{0}}/checkpoints");
-
-public sealed record SupervisorCheckpointsStreamTemplate()
-    : StreamTemplate($"$con-mngt-supervisor-rx/{{0}}/checkpoints");

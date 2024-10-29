@@ -2,7 +2,7 @@ using System.Collections.Frozen;
 using EventStore.Connectors.EventStoreDB;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
-using EventStore.Connectors.Mongo;
+using EventStore.Connectors.MongoDB;
 using EventStore.Connectors.RabbitMQ;
 using EventStore.Connectors.Testing;
 using Humanizer;
@@ -26,7 +26,7 @@ public class ConnectorCatalogue {
             [typeof(KafkaSink)]        = For<KafkaSink, KafkaSinkValidator>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
             [typeof(RabbitMqSink)]     = For<RabbitMqSink, RabbitMqSinkValidator>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),
             [typeof(EventStoreDBSink)] = For<EventStoreDBSink, EventStoreDBSinkValidator>([$"{EntitlementPrefix}_ESDB_SINK", $"{EntitlementPrefix}_ESDB_SOURCE"], true),
-            [typeof(MongoDbSink)]      = For<MongoDbSink, MongoSinkValidator>([$"{EntitlementPrefix}_MONGODB_SINK"], true),
+            [typeof(MongoDbSink)]      = For<MongoDbSink, MongoDbSinkValidator>([$"{EntitlementPrefix}_MONGODB_SINK"], true),
         }.ToFrozenDictionary();
 
         ItemsByAlias = Items

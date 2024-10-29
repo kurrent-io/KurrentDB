@@ -21,7 +21,7 @@ abstract class SchemaRegistryStartupTask : IHostedService {
     async Task IHostedService.StartAsync(CancellationToken cancellationToken) {
         try {
             await OnStartup(Registry, cancellationToken);
-            Logger.LogInformation("{TaskName} completed", TaskName);
+            Logger.LogDebug("{TaskName} completed", TaskName);
         }
         catch (Exception ex) {
             // Logger.LogError(ex, "{TaskName} failed", TaskName);

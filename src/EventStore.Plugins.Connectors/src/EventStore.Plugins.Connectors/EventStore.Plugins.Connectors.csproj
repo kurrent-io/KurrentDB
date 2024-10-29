@@ -4,22 +4,15 @@
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 
-		<AssemblyVersion>1.0.0.1</AssemblyVersion>
-
-		<Description>EventStore Connectors Plugin</Description>
-
 		<IsPackable>true</IsPackable>
 		<PackageId>EventStore.Plugins.Connectors</PackageId>
 		<PackageIcon>ouro.png</PackageIcon>
 		<PackageProjectUrl>https://github.com/EventStore/EventStore.Plugins.Connectors</PackageProjectUrl>
 		<PackageTags>eventstore connect connectors sink experimental</PackageTags>
-		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-		<Version>1.0.0-beta1</Version>
-
-		<Authors>Sérgio Silveira</Authors>
+		<Description>EventStore Connectors Plugin</Description>
+		<Authors>Sérgio Silveira; DevEx Team</Authors>
 		<Company>Event Store Ltd</Company>
-		<Copyright>Copyright © 2012-$([System.DateTime]::Now.Year) $(Company) $(Authors)</Copyright>
-
+		<Copyright>Copyright © 2011-$([System.DateTime]::Now.Year) $(Company) $(Authors)</Copyright>
 		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 		<IncludeSymbols>true</IncludeSymbols>
 		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -28,10 +21,8 @@
 		<DebugType>full</DebugType>
 		<IncludeBuildOutput>true</IncludeBuildOutput>
 
-<!--		<UpdateVersionProperties>true</UpdateVersionProperties>-->
-<!--		<MinVerTagPrefix>v</MinVerTagPrefix>-->
-<!--		<MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>-->
-
+		<AssemblyVersion>1.0.0.1</AssemblyVersion>
+		<Version>1.0.0-beta1</Version>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -43,21 +34,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="..\..\LICENSE.md">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="..\..\NOTICE.html">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
-	<ItemGroup>
 		<None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
 	</ItemGroup>
-
-	<PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
-		<ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-	</PropertyGroup>
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<PropertyGroup>

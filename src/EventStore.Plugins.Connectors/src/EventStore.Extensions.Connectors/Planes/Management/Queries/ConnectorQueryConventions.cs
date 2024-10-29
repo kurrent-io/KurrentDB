@@ -11,8 +11,8 @@ namespace EventStore.Connectors.Management.Queries;
 public partial class ConnectorQueryConventions {
     [PublicAPI]
     public static class Streams {
-        public static readonly StreamId ConnectorsStateProjectionStream            = "$connectors-mngt/connectors-state-projection";
-        public static readonly StreamId ConnectorsStateProjectionCheckpointsStream = "$connectors-mngt/connectors-state-projection/checkpoints";
+        public static readonly StreamId ConnectorsStateProjectionStream            = "$connectors-mngt/state-projection";
+        public static readonly StreamId ConnectorsStateProjectionCheckpointsStream = "$connectors-mngt/state-projection/checkpoints";
     }
 
     [PublicAPI]

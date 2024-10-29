@@ -10,14 +10,18 @@ namespace EventStore.Connectors.Control;
 
 public class ConnectorsControlService : LeadershipAwareService {
     public ConnectorsControlService(
-        ConnectorsActivator activator, GetActiveConnectors getActiveConnectors, Func<SystemConsumerBuilder> getConsumerBuilder,
-        GetNodeSystemInfo getNodeSystemInfo, Func<string, INodeLifetimeService> nodeLifetimeBuilder, ILoggerFactory loggerFactory
-    ) : base(nodeLifetimeBuilder, getNodeSystemInfo, loggerFactory) {
+        ConnectorsActivator activator,
+        GetActiveConnectors getActiveConnectors,
+        Func<SystemConsumerBuilder> getConsumerBuilder,
+        GetNodeSystemInfo getNodeSystemInfo,
+        GetNodeLifetimeService getNodeLifetimeService,
+        ILoggerFactory loggerFactory
+    ) : base(getNodeLifetimeService, getNodeSystemInfo, loggerFactory, "ConnectorsController") {
         Activator           = activator;
         GetActiveConnectors = getActiveConnectors;
 
         ConsumerBuilder = getConsumerBuilder()
-            .ConsumerId("conn-ctrl-coordinator-csx")
+            .ConsumerId("connectors-ctrl-service-csx")
             .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
             .InitialPosition(SubscriptionInitialPosition.Latest)
             .DisableAutoCommit();
@@ -28,7 +32,7 @@ public class ConnectorsControlService : LeadershipAwareService {
     SystemConsumerBuilder ConsumerBuilder     { get; }
 
     protected override async Task Execute(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) {
-        Logger.LogControlServiceRunning(nodeInfo.InstanceId);
+        // Logger.LogControlServiceRunning(nodeInfo.InstanceId);
 
         GetConnectorsResult connectors = new();
 
@@ -58,7 +62,7 @@ public class ConnectorsControlService : LeadershipAwareService {
                 .Select(connector => DeactivateConnector(connector.ConnectorId))
                 .WhenAll();
 
-            Logger.LogControlServiceStopped(nodeInfo.InstanceId);
+            // Logger.LogControlServiceStopped(nodeInfo.InstanceId);
         }
 
         return;
@@ -95,10 +99,10 @@ public class ConnectorsControlService : LeadershipAwareService {
 }
 
 static partial class ConnectorsControlServiceLogMessages {
-    [LoggerMessage(LogLevel.Information, "[Node Id: {NodeId}] service running on leader node")]
+    [LoggerMessage(LogLevel.Debug, "[Node Id: {NodeId}] service running on leader node")]
     internal static partial void LogControlServiceRunning(this ILogger logger, Guid nodeId);
 
-    [LoggerMessage(LogLevel.Information, "[Node Id: {NodeId}] service stopped because node lost leadership or is shutting down")]
+    [LoggerMessage(LogLevel.Debug, "[Node Id: {NodeId}] service stopped because node lost leadership or is shutting down")]
     internal static partial void LogControlServiceStopped(this ILogger logger, Guid nodeId);
 
     [LoggerMessage("[Node Id: {NodeId}] connector {ConnectorId} {ResultType}")]

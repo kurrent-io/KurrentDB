@@ -3,7 +3,7 @@ using EventStore.Connectors.EventStoreDB;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
 using EventStore.Connectors.Management;
-using EventStore.Connectors.Mongo;
+using EventStore.Connectors.MongoDB;
 using EventStore.Connectors.RabbitMQ;
 using EventStore.Connectors.Testing;
 using EventStore.Toolkit.Testing.Fixtures;

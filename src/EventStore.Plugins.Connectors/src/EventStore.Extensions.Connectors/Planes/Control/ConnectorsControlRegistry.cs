@@ -30,8 +30,8 @@ class ConnectorsControlRegistry {
         TimeProvider time
     ) {
         Options  = options;
-        Reader   = getReaderBuilder().ReaderId("conn-ctrl-registry-rdx").Create();
-        Producer = getProducerBuilder().ProducerId("conn-ctrl-registry-pdx").Create();
+        Reader   = getReaderBuilder().ReaderId("connectors-ctrl-registry-rdx").Create();
+        Producer = getProducerBuilder().ProducerId("connectors-ctrl-registry-pdx").Create();
         Time     = time;
     }
 

@@ -10,6 +10,7 @@ using EventStore.Streaming.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using static EventStore.Connectors.ConnectorsFeatureConventions.Streams;
 
 namespace EventStore.Connectors.Management.Reactors;
 
@@ -21,20 +22,22 @@ static class ConnectorsLifecycleReactorWireUp {
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
 
+            const string logName = "ConnectorsLifecycleReactor";
+
             var processor = SystemProcessor.Builder
-                .ProcessorId("connectors-lifecycle-rx")
+                .ProcessorId("connectors-mngt-lifecycle-rx")
                 .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
                 .Logging(new LoggingOptions {
                     Enabled       = true,
                     LoggerFactory = loggerFactory,
-                    LogName       = "ConnectorsLifecycleReactor"
+                    LogName       = logName
                 })
                 .DisableAutoLock()
                 .AutoCommit(new AutoCommitOptions {
                     Enabled          = true,
                     RecordsThreshold = 100,
-                    StreamTemplate   = ConnectorsFeatureConventions.Streams.LifecycleCheckpointsStreamTemplate
+                    StreamTemplate   = ManagementLifecycleReactorCheckpointsStream.ToString()
                 })
                 .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
                 .InitialPosition(SubscriptionInitialPosition.Earliest)
@@ -42,10 +45,10 @@ static class ConnectorsLifecycleReactorWireUp {
                 .WithHandler(new ConnectorsLifecycleReactor(app))
                 .Create();
 
-            return new ConnectorsLifecycleReactorService(processor, ctx);
+            return new ConnectorsLifecycleReactorService(processor, ctx, logName);
         });
     }
 }
 
-class ConnectorsLifecycleReactorService(IProcessor processor, IServiceProvider serviceProvider)
-    : LeadershipAwareProcessorWorker<IProcessor>(processor, serviceProvider);
+class ConnectorsLifecycleReactorService(IProcessor processor, IServiceProvider serviceProvider, string name)
+    : LeadershipAwareProcessorWorker<IProcessor>(processor, serviceProvider, name);

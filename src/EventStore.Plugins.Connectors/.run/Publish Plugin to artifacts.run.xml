@@ -1,0 +1,6 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Publish Plugin to artifacts" type="DotNetFolderPublish" factoryName="Publish to folder">
+    <riderPublish configuration="Release" delete_existing_files="true" platform="Any CPU" runtime="Portable" target_folder="$PROJECT_DIR$/artifacts/publish" target_framework="net8.0" uuid_high="-3736295945396207178" uuid_low="-8260728278224181460" />
+    <method v="2" />
+  </configuration>
+</component>

@@ -20,14 +20,14 @@ public static class ControlPlaneWireUp {
             .AddMessageSchemaRegistration()
             .AddConnectorsActivator()
             .AddConnectorsControlRegistry()
-            .AddSingleton<Func<string, INodeLifetimeService>>(svc => {
-                return identifier =>
-                    new NodeLifetimeService(
-                        identifier,
-                        svc.GetRequiredService<IPublisher>(),
-                        svc.GetService<ISubscriber>(),
-                        svc.GetService<ILogger<NodeLifetimeService>>());
-            })
+            .AddSingleton<GetNodeLifetimeService>(ctx =>
+                component => new NodeLifetimeService(
+                    component,
+                    ctx.GetRequiredService<IPublisher>(),
+                    ctx.GetRequiredService<ISubscriber>(),
+                    ctx.GetService<ILogger<NodeLifetimeService>>()
+                )
+            )
             .AddSingleton<IHostedService, ConnectorsControlService>();
 
     static IServiceCollection AddMessageSchemaRegistration(this IServiceCollection services) =>
@@ -69,7 +69,7 @@ public static class ControlPlaneWireUp {
         services
             .AddSingleton(new ConnectorsControlRegistryOptions {
                 Filter           = Filters.ManagementFilter,
-                SnapshotStreamId = Streams.ConnectorsRegistryStream
+                SnapshotStreamId = Streams.ControlConnectorsRegistryStream
             })
             .AddSingleton<ConnectorsControlRegistry>()
             .AddSingleton<GetActiveConnectors>(static ctx => {

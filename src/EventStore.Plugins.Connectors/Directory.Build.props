@@ -7,10 +7,13 @@
         <IsPackable>false</IsPackable>
         <Deterministic>true</Deterministic>
 		<InvariantGlobalization>true</InvariantGlobalization>
-		<Authors>Sérgio Silveira and Contributors</Authors>
+        <Authors>Sérgio Silveira; DevEx Team</Authors>
 		<Company>Event Store Ltd</Company>
-		<Copyright>Copyright © 2012-$([System.DateTime]::Now.Year) $(Company) $(Authors)</Copyright>
+        <Copyright>Copyright © 2011-$([System.DateTime]::Now.Year) $(Company) $(Authors)</Copyright>
         <VersionSuffix>preview1</VersionSuffix>
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+        <NuGetAudit>true</NuGetAudit>
+        <NuGetAuditLevel>high</NuGetAuditLevel>
+        <NuGetAuditMode>direct</NuGetAuditMode>
     </PropertyGroup>
 </Project>

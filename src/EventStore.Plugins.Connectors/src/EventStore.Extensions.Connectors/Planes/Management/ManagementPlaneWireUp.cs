@@ -34,7 +34,7 @@ public static class ManagementPlaneWireUp {
             ctx.GetRequiredService<ILogger<ConnectorsLicenseService>>()
         ));
 
-        services.AddMessageSchemaRegistration();
+        services.AddConnectorsManagementSchemaRegistration();
 
         services
             .AddGrpc(x => x.EnableDetailedErrors = true)
@@ -73,11 +73,11 @@ public static class ManagementPlaneWireUp {
         services
             .AddEventStore<SystemEventStore>(ctx => {
                 var reader = ctx.GetRequiredService<Func<SystemReaderBuilder>>()()
-                    .ReaderId("rdx-eventuous-eventstore")
+                    .ReaderId("eventuous-esdb-rdx")
                     .Create();
 
                 var producer = ctx.GetRequiredService<Func<SystemProducerBuilder>>()()
-                    .ProducerId("pdx-eventuous-eventstore")
+                    .ProducerId("eventuous-esdb-pdx")
                     .Create();
 
                 return new SystemEventStore(reader, producer);
@@ -102,11 +102,11 @@ public static class ManagementPlaneWireUp {
 
     public static void UseConnectorsManagementPlane(this IApplicationBuilder application) {
         application
-            .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsCommandService>())
-            .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsQueryService>());
+            .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsCommandService>());
+            // .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsQueryService>());
     }
 
-    static IServiceCollection AddMessageSchemaRegistration(this IServiceCollection services) =>
+    internal static IServiceCollection AddConnectorsManagementSchemaRegistration(this IServiceCollection services) =>
         services.AddSchemaRegistryStartupTask("Connectors Management Schema Registration",
             static async (registry, token) => {
                 Task[] tasks = [

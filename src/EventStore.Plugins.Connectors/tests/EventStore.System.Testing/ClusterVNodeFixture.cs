@@ -20,11 +20,10 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
 
     protected ClusterVNodeFixture() {
         ClusterVNodeApp = new ClusterVNodeApp();
-
-        LoggerFactory = new SerilogLoggerFactory(Log.Logger);
-        Logger        = LoggerFactory.CreateLogger<ClusterVNodeFixture>();
-        Faker         = new Faker();
-        TestRuns      = [];
+        LoggerFactory   = new SerilogLoggerFactory(Log.Logger);
+        Logger          = LoggerFactory.CreateLogger<ClusterVNodeFixture>();
+        Faker           = new Faker();
+        TestRuns        = [];
     }
 
     ClusterVNodeApp ClusterVNodeApp { get; }
@@ -34,8 +33,9 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public ILoggerFactory LoggerFactory { get; }
     public Faker          Faker         { get; }
 
-    public Func<Task> OnSetup    { get; init; } = () => Task.CompletedTask;
-    public Func<Task> OnTearDown { get; init; } = () => Task.CompletedTask;
+    public Action<IServiceCollection> ConfigureServices { get; init; } = _ => { };
+    public Func<Task>                 OnSetup           { get; init; } = () => Task.CompletedTask;
+    public Func<Task>                 OnTearDown        { get; init; } = () => Task.CompletedTask;
 
     public ClusterVNodeOptions NodeOptions  { get; private set; } = null!;
     public IServiceProvider    NodeServices { get; private set; } = null!;
@@ -44,7 +44,7 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public ISubscriber Subscriber => NodeServices.GetRequiredService<ISubscriber>();
 
     public async Task InitializeAsync() {
-        var (options, services) = await ClusterVNodeApp.Start();
+        var (options, services) = await ClusterVNodeApp.Start(configureServices: ConfigureServices);
 
         NodeServices = services;
         NodeOptions  = options;

@@ -30,7 +30,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
 
     WebApplication? App { get; set; }
 
-    public async Task<(ClusterVNodeOptions Options, IServiceProvider Services)> Start(TimeSpan? readinessTimeout = null, Dictionary<string, string?>? overrides = null) {
+    public async Task<(ClusterVNodeOptions Options, IServiceProvider Services)> Start(TimeSpan? readinessTimeout = null, Dictionary<string, string?>? overrides = null, Action<IServiceCollection>? configureServices = null) {
         var settings = overrides is not null
             ? DefaultSettings.With(x => overrides.ForEach((key, value) => x[key] = value))
             : DefaultSettings;
@@ -45,7 +45,8 @@ public class ClusterVNodeApp : IAsyncDisposable {
                 x.Logging.AddSerilog(Log.Logger);
             })
             .With(x => esdb.Node.Startup.ConfigureServices(x.Services))
-            .With(x => x.Services.AddSingleton<IHostedService>(esdb));
+            .With(x => x.Services.AddSingleton<IHostedService>(esdb))
+            .With(x => configureServices?.Invoke(x.Services));
 
         App = builder.Build().With(x => esdb.Node.Startup.Configure(x));
 

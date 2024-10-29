@@ -4,16 +4,13 @@ using Microsoft.Extensions.Logging;
 
 namespace EventStore.Connectors.System;
 
-public abstract class LeadershipAwareProcessorWorker<T> : LeadershipAwareService where T : IProcessor {
-    protected LeadershipAwareProcessorWorker(T processor, IServiceProvider serviceProvider)
-        : base(
-            serviceProvider.GetRequiredService<Func<string, INodeLifetimeService>>(),
-            serviceProvider.GetRequiredService<GetNodeSystemInfo>(),
-            serviceProvider.GetRequiredService<ILoggerFactory>()
-        ) => Processor = processor;
-
-    IProcessor Processor { get; }
-
+public abstract class LeadershipAwareProcessorWorker<T>(T processor, IServiceProvider serviceProvider, string? name = null) :
+    LeadershipAwareService(
+        serviceProvider.GetRequiredService<GetNodeLifetimeService>(),
+        serviceProvider.GetRequiredService<GetNodeSystemInfo>(),
+        serviceProvider.GetRequiredService<ILoggerFactory>(),
+        name
+    ) where T : IProcessor {
     protected override Task Execute(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) =>
-        Processor.RunUntilDeactivated(stoppingToken);
+        processor.RunUntilDeactivated(stoppingToken);
 }
