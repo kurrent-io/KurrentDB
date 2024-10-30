@@ -19,12 +19,9 @@ public static class ConsumeFilterExtensions {
             return NoOpEventFilter.Instance;
 
         return filter switch {
-            { IsStreamIdFilter: true }                       => EventFilter.StreamName.Prefixes(true, filter.Prefixes[0]),
-            { IsStreamFilter  : true, IsPrefixFilter: true } => EventFilter.StreamName.Prefixes(true, filter.Prefixes),
-            { IsStreamFilter  : true, IsRegexFilter : true } => EventFilter.StreamName.Regex(true, filter.RegularExpression.ToString()),
-            { IsRecordFilter  : true, IsPrefixFilter: true } => EventFilter.EventType.Prefixes(true, filter.Prefixes),
-            { IsRecordFilter  : true, IsRegexFilter : true } => EventFilter.EventType.Regex(true, filter.RegularExpression.ToString()),
-            _                                                => throw new ArgumentOutOfRangeException(nameof(filter), "Invalid consume filter.")
+            { IsStreamFilter: true } => EventFilter.StreamName.Regex(true, filter.Expression),
+            { IsRecordFilter: true } => EventFilter.EventType.Regex(true, filter.Expression),
+            _                        => throw new ArgumentOutOfRangeException(nameof(filter), "Invalid consume filter.")
         };
     }
 

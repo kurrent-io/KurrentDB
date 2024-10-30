@@ -90,6 +90,7 @@ public class SystemConnectorsFactory(
             : string.IsNullOrWhiteSpace(sinkOptions.Subscription.Filter.Expression)
                 ? ConsumeFilter.ExcludeSystemEvents()
                 : ConsumeFilter.From((ConsumeFilterScope)sinkOptions.Subscription.Filter.Scope,
+                    (ConsumeFilterType)sinkOptions.Subscription.Filter.FilterType,
                     sinkOptions.Subscription.Filter.Expression);
 
         var publishStateChangesOptions = new PublishStateChangesOptions {
