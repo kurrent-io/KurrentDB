@@ -26,6 +26,7 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
 
         subscriber.Subscribe(this);
 
+        // consider only registering when leadership is assigned...
         Publisher.Publish(new SystemMessage.RegisterForGracefulTermination(
             ComponentName, () => {
                 Logger.LogNodeLeadershipRevoked(ComponentName, VNodeState.ShuttingDown);
@@ -49,6 +50,10 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
             case { Task.IsCompleted: true } when message.State is not VNodeState.Leader:
                 Logger.LogNodeLeadershipRevoked(ComponentName, message.State);
                 using (var oldEvent = Exchange(ref _leadershipEvent, new())) oldEvent.Cancel(null);
+                break;
+
+            case { Task.IsCompleted: true }:
+                Logger.LogNodeStageChangeIgnored(ComponentName, message.State);
                 break;
         }
     }
@@ -93,4 +98,7 @@ static partial class NodeLifetimeServiceLogMessages {
 
     [LoggerMessage(LogLevel.Debug, "{ComponentName} node leadership revoked: {NodeState}")]
     internal static partial void LogNodeLeadershipRevoked(this ILogger logger, string componentName, VNodeState nodeState);
+
+    [LoggerMessage(LogLevel.Debug, "{ComponentName} node state ignored: {NodeState}")]
+    internal static partial void LogNodeStageChangeIgnored(this ILogger logger, string componentName, VNodeState nodeState);
 }

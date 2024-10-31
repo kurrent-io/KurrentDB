@@ -72,11 +72,11 @@ public static class PublisherSubscribeExtensions {
 
 		yield break;
 
-		static StreamRevision StartFrom(long? revision) =>
+		static StreamRevision? StartFrom(long? revision) =>
 			revision switch {
-				null          => StreamRevision.Start,
+				0             => null,
 				long.MaxValue => StreamRevision.End,
-				_             => StreamRevision.FromInt64(revision.Value)
+				_             => StreamRevision.FromInt64(revision!.Value)
 			};
 	}
 

@@ -35,7 +35,11 @@ public static class ConnectExtensions {
             return () => SystemReader.Builder
                 .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
-                .LoggerFactory(loggerFactory);
+                .Logging(new() {
+                    Enabled       = true,
+                    LoggerFactory = loggerFactory,
+                    LogName       = "EventStore.Connect.SystemReader"
+                });
         });
 
         services.AddSingleton<Func<SystemConsumerBuilder>>(ctx => {
@@ -46,7 +50,11 @@ public static class ConnectExtensions {
             return () => SystemConsumer.Builder
                 .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
-                .LoggerFactory(loggerFactory);
+                .Logging(new() {
+                    Enabled       = true,
+                    LoggerFactory = loggerFactory,
+                    LogName       = "EventStore.Connect.SystemConsumer"
+                });
         });
 
         services.AddSingleton<Func<SystemProducerBuilder>>(ctx => {
@@ -57,7 +65,11 @@ public static class ConnectExtensions {
             return () => SystemProducer.Builder
                 .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
-                .LoggerFactory(loggerFactory);
+                .Logging(new() {
+                    Enabled       = true,
+                    LoggerFactory = loggerFactory,
+                    LogName       = "EventStore.Connect.SystemProducer"
+                });
         });
 
         services.AddSingleton<IProducerProvider, SystemProducerProvider>();
@@ -72,7 +84,11 @@ public static class ConnectExtensions {
                 .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
                 .StateStore(stateStore)
-                .LoggerFactory(loggerFactory);
+                .Logging(new() {
+                    Enabled       = true,
+                    LoggerFactory = loggerFactory,
+                    LogName       = "EventStore.Connect.SystemProcessor"
+                });
         });
 
         services.AddSingleton<IConnectorValidator, SystemConnectorsValidation>();
@@ -83,7 +99,11 @@ public static class ConnectExtensions {
 
             return () => GrpcProducer.Builder
                 .SchemaRegistry(schemaRegistry)
-                .LoggerFactory(loggerFactory);
+                .Logging(new() {
+                    Enabled       = true,
+                    LoggerFactory = loggerFactory,
+                    LogName       = "EventStore.Streaming.GrpcProducer"
+                });
         });
 
         return services;

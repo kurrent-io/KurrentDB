@@ -97,7 +97,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
 
         StreamEvent[] result;
 
-        var filter = ConsumeFilter.Stream(StreamId.From(stream));
+        var filter = ConsumeFilter.FromStreamId(StreamId.From(stream));
 
         try {
             result = await Reader
@@ -141,7 +141,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
 
         try {
             result = await Reader
-                .ReadBackwards(ConsumeFilter.Streams(stream), count, cancellationToken)
+                .ReadBackwards(ConsumeFilter.FromStreamId(stream.ToString()), count, cancellationToken)
                 .Where(x => !"$".StartsWith(x.SchemaInfo.Subject))
                 .Select(record => new StreamEvent(
                     record.Id,

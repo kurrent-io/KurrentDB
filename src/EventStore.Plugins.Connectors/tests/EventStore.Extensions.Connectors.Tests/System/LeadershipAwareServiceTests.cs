@@ -231,8 +231,8 @@ public class LeadershipAwareServiceTests(ITestOutputHelper output, ConnectorsAss
 	);
 }
 
-class TestLeadershipAwareService(string name, GetNodeLifetimeService getNodeLifetimeService, GetNodeSystemInfo getNodeSystemInfo, ILoggerFactory loggerFactory)
-	: LeadershipAwareService(getNodeLifetimeService, getNodeSystemInfo, loggerFactory, name) {
+class TestLeadershipAwareService(string serviceName, GetNodeLifetimeService getNodeLifetimeService, GetNodeSystemInfo getNodeSystemInfo, ILoggerFactory loggerFactory)
+	: LeadershipAwareService(getNodeLifetimeService, getNodeSystemInfo, loggerFactory, serviceName) {
 	TaskCompletionSource<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)> CompletionSource { get; } = new();
 
 	public TimeSpan ExecuteDuration { get; set; } = TimeSpan.FromMinutes(10);

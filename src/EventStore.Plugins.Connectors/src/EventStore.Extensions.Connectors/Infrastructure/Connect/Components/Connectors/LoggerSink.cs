@@ -8,9 +8,10 @@ public class LoggerSink : ISink {
     public ValueTask Open(SinkOpenContext context) => ValueTask.CompletedTask;
 
     public ValueTask Write(SinkWriteContext context) {
-        context.Logger.LogWarning("RECORD WRITTEN: {Record}", context.Record);
+        context.Logger.LogTrace("{ConnectorId} RECORD WRITTEN: {Record}", context.ConnectorId, context.Record);
         return ValueTask.CompletedTask;
     }
 }
 
+[UsedImplicitly]
 public class LoggerSinkValidator : ConnectorValidator<SinkOptions>;

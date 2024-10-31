@@ -169,14 +169,14 @@ public static class PublisherManagementExtensions {
     /// Returns the revision of the stream at the given position.
     /// If the stream does not exist at the given position, it returns StreamRevision.Start.
     /// </summary>
-    public static async Task<StreamRevision> GetStreamRevision(this IPublisher publisher, Position position, CancellationToken cancellationToken = default) {
-        if (position == Position.Start)
+    public static async Task<StreamRevision> GetStreamRevision(this IPublisher publisher, Position? position, CancellationToken cancellationToken = default) {
+	    if (position is null || position == Position.Start)
             return StreamRevision.Start;
 
         if (position == Position.End)
             return StreamRevision.End;
 
-        var info     = await publisher.GetStreamInfoByPosition(position, cancellationToken);
+        var info     = await publisher.GetStreamInfoByPosition(position.GetValueOrDefault(), cancellationToken);
         var revision = info?.Revision ?? StreamRevision.Start;
 
         return revision;

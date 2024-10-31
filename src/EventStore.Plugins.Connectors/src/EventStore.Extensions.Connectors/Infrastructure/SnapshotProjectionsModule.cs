@@ -21,9 +21,7 @@ public abstract class SnapshotProjectionsModule<TSnapshot>(
     Func<SystemReaderBuilder> getReaderBuilder,
     Func<SystemProducerBuilder> getProducerBuilder,
     StreamId snapshotStreamId
-)
-    : ProcessingModule
-    where TSnapshot : class, IMessage, new() {
+) : ProcessingModule where TSnapshot : class, IMessage, new() {
     SystemReader   Reader           { get; } = getReaderBuilder().ReaderId("conn-mngt-projections-rdx").Create();
     SystemProducer Producer         { get; } = getProducerBuilder().ProducerId("conn-mngt-projections-prx").Create();
     StreamId       SnapshotStreamId { get; } = snapshotStreamId;
@@ -102,7 +100,7 @@ public abstract class SnapshotProjectionsModule<TSnapshot>(
 
     async Task<(TSnapshot Snapshot, RecordPosition Position)> LoadSnapshot(RecordContext ctx) {
         try {
-            var snapshotRecord = await Reader.ReadLastStreamRecord(SnapshotStreamId, ctx.CancellationToken);
+            var snapshotRecord = await Reader.ReadLastStreamRecord(SnapshotStreamId); // dont cancel here...
 
             return snapshotRecord.Value is not TSnapshot snapshot
                 ? (new TSnapshot(), snapshotRecord.Position)
@@ -124,7 +122,6 @@ public abstract class SnapshotProjectionsModule<TSnapshot>(
             .ExpectedStreamRevision(expectedRevision)
             .Create();
 
-        // TODO SS: consider using a dedicated producer or a new type of processor to have full control over the output
         await Producer.Produce(produceRequest);
     }
 }

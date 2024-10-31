@@ -26,7 +26,7 @@ class ConnectorsLifecycleReactor(ConnectorsCommandApplication application) : Rec
             await application.Handle(cmd, context.CancellationToken);
         }
         catch (Exception ex) {
-            context.Logger.LogError(ex, "Failed to record connector state change.");
+            context.Logger.LogError(ex, "{ProcessorId} Failed to record connector state change.", context.Processor.ProcessorId);
         }
     }
 }

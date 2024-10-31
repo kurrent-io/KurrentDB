@@ -73,11 +73,11 @@ public static class ManagementPlaneWireUp {
         services
             .AddEventStore<SystemEventStore>(ctx => {
                 var reader = ctx.GetRequiredService<Func<SystemReaderBuilder>>()()
-                    .ReaderId("eventuous-esdb-rdx")
+                    .ReaderId("EventuousReader")
                     .Create();
 
                 var producer = ctx.GetRequiredService<Func<SystemProducerBuilder>>()()
-                    .ProducerId("eventuous-esdb-pdx")
+                    .ProducerId("EventuousProducer")
                     .Create();
 
                 return new SystemEventStore(reader, producer);

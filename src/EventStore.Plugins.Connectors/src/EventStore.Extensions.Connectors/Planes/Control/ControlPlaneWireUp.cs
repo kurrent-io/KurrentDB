@@ -21,7 +21,8 @@ public static class ControlPlaneWireUp {
             .AddConnectorsActivator()
             .AddConnectorsControlRegistry()
             .AddSingleton<GetNodeLifetimeService>(ctx =>
-                component => new NodeLifetimeService(component,
+                component => new NodeLifetimeService(
+                    component,
                     ctx.GetRequiredService<IPublisher>(),
                     ctx.GetRequiredService<ISubscriber>(),
                     ctx.GetService<ILogger<NodeLifetimeService>>()));

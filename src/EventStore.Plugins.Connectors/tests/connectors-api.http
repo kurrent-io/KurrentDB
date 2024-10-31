@@ -1,21 +1,14 @@
-### Shutdown EventStore
-POST localhost:2113/admin/shutdown
-
-
-### Resign Node from EventStore Cluster
-POST localhost:2113/admin/node/resign
-
-
 ### Create Logger Sink Connector (defaulting to the subscription initial position: Latest and excluding all system records)
-POST localhost:2113/connectors/demo-logger-sink
+POST localhost:2113/connectors/demo-logger-sink-6
 Content-Type: application/json
 
 {
   "settings": {
-    "InstanceTypeName": "EventStore.Connectors.Testing.LoggerSink"
+    "InstanceTypeName": "EventStore.Connectors.Testing.LoggerSink",
+    "AutoCommit:RecordsThreshold": "10",
+    "AutoCommit:Interval": "1000"
   }
 }
-
 
 ### Create Logger Sink Connector subscribing to all system records from the beginning of time
 POST localhost:2113/connectors/demo-logger-sink
@@ -29,14 +22,27 @@ Content-Type: application/json
     "Subscription:Filter:Scope": "Record",
     "Subscription:Filter:Expression": "^\\$.*",
     "Subscription:InitialPosition": "Earliest",
-    "AutoCommit:RecordsThreshold": "100",
-    "AutoCommit:Interval": "5000"
+    "AutoCommit:RecordsThreshold": "1",
+    "AutoCommit:Interval": "1000"
   }
 }
 
 
 ### Start Logger Sink Connector from an existing checkpoint position, defaulting to the subscription initial position if no checkpoint exists
-POST localhost:2113/connectors/demo-logger-sink/start
+POST localhost:2113/connectors/demo-logger-sink-6/start
+
+
+### Stop Logger Sink Connector
+POST localhost:2113/connectors/demo-logger-sink-9/stop
+
+
+### Shutdown EventStore
+POST localhost:2113/admin/shutdown
+
+
+### Resign Node from EventStore Cluster
+POST localhost:2113/admin/node/resign
+
 
 
 ### Start Logger Sink Connector from a specific position
@@ -49,10 +55,6 @@ POST localhost:2113/connectors/demo-logger-sink/reset
 
 ### Reset Logger Sink Connector to a specific position (adjust the position when testing)
 POST localhost:2113/connectors/demo-logger-sink/reset/53469
-
-
-### Stop Logger Sink Connector
-POST localhost:2113/connectors/demo-logger-sink/stop
 
 
 ### Reconfigure Logger Sink Connector

@@ -1,6 +1,7 @@
 // ReSharper disable CheckNamespace
 
 using EventStore.Core.Data;
+using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Streaming;
 using EventStore.Streaming.Producers;
@@ -33,4 +34,24 @@ public static class ProduceRequestExtensions {
             );
         }
     }
+}
+
+public static class StreamingErrorConverters {
+    public static StreamingError ToProducerStreamingError(this Exception ex, string targetStream) =>
+        ex switch {
+            ReadResponseException.Timeout        => new RequestTimeoutError(targetStream, ex.Message),
+            ReadResponseException.StreamNotFound => new StreamNotFoundError(targetStream),
+            ReadResponseException.StreamDeleted  => new StreamDeletedError(targetStream),
+            ReadResponseException.AccessDenied   => new StreamAccessDeniedError(targetStream),
+            ReadResponseException.WrongExpectedRevision wex => new ExpectedStreamRevisionError(
+                targetStream,
+                StreamRevision.From(wex.ExpectedStreamRevision.ToInt64()),
+                StreamRevision.From(wex.ActualStreamRevision.ToInt64())
+            ),
+            ReadResponseException.NotHandled.ServerNotReady => new ServerNotReadyError(),
+            ReadResponseException.NotHandled.ServerBusy     => new ServerTooBusyError(),
+            ReadResponseException.NotHandled.LeaderInfo li  => new ServerNotLeaderError(li.Host, li.Port),
+            ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
+            _                                               => new StreamingCriticalError(ex.Message, ex)
+        };
 }

@@ -28,7 +28,7 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
         };
 
     public SystemProcessorBuilder Stream(StreamId stream) =>
-        Filter(ConsumeFilter.Stream(stream));
+        Filter(ConsumeFilter.FromStreamId(stream));
 
     public SystemProcessorBuilder StartPosition(RecordPosition? startPosition) =>
         new() {

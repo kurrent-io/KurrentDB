@@ -5,21 +5,23 @@ using Microsoft.Extensions.Logging;
 namespace EventStore.Connectors.System;
 
 public abstract class LeadershipAwareService : BackgroundService {
-    protected LeadershipAwareService(GetNodeLifetimeService getNodeLifetimeService, GetNodeSystemInfo getNodeSystemInfo, ILoggerFactory loggerFactory, string? name = null) {
-        NodeLifetime      = getNodeLifetimeService(name ?? GetType().Name);
+    protected LeadershipAwareService(GetNodeLifetimeService getNodeLifetimeService, GetNodeSystemInfo getNodeSystemInfo, ILoggerFactory loggerFactory, string serviceName) {
+        NodeLifetime      = getNodeLifetimeService(serviceName);
         GetNodeSystemInfo = getNodeSystemInfo;
-        Logger            = loggerFactory.CreateLogger(name ?? GetType().Name);
+        ServiceName       = serviceName;
+        Logger            = loggerFactory.CreateLogger<LeadershipAwareService>();
     }
 
     INodeLifetimeService NodeLifetime      { get; }
     GetNodeSystemInfo    GetNodeSystemInfo { get; }
+    string               ServiceName       { get; }
 
     protected ILogger Logger { get; }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
         if (stoppingToken.IsCancellationRequested) return;
 
-        Logger.LogServiceStarted();
+        Logger.LogServiceStarted(ServiceName);
 
         while (!stoppingToken.IsCancellationRequested) {
             var lifetimeToken = await NodeLifetime.WaitForLeadershipAsync(stoppingToken);
@@ -45,7 +47,7 @@ public abstract class LeadershipAwareService : BackgroundService {
             }
         }
 
-        Logger.LogServiceStopped();
+        Logger.LogServiceStopped(ServiceName);
         NodeLifetime.ReportComponentTerminated();
     }
 
@@ -53,9 +55,9 @@ public abstract class LeadershipAwareService : BackgroundService {
 }
 
 static partial class LeadershipAwareServiceLogMessages {
-    [LoggerMessage(LogLevel.Debug, "Service host started")]
-    internal static partial void LogServiceStarted(this ILogger logger);
+    [LoggerMessage(LogLevel.Trace, "{ServiceName} host started")]
+    internal static partial void LogServiceStarted(this ILogger logger, string serviceName);
 
-    [LoggerMessage(LogLevel.Debug, "Service host stopped")]
-    internal static partial void LogServiceStopped(this ILogger logger);
+    [LoggerMessage(LogLevel.Trace, "{ServiceName} host stopped")]
+    internal static partial void LogServiceStopped(this ILogger logger, string serviceName);
 }

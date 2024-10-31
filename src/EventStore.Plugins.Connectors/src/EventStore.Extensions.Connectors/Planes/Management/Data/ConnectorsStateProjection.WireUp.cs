@@ -17,10 +17,10 @@ namespace EventStore.Connectors.Management.Data;
 
 static class ConnectorsStateProjectorWireUp {
     public static IServiceCollection AddConnectorsStateProjection(this IServiceCollection services) {
+        const string serviceName = "ConnectorsStateProjection";
+
         return services
            .AddSingleton<IHostedService, ConnectorsStateProjectionService>(ctx => {
-               const string logName = "ConnectorsStateProjection";
-
                return new ConnectorsStateProjectionService(() => {
                    var loggerFactory       = ctx.GetRequiredService<ILoggerFactory>();
                    var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
@@ -28,16 +28,17 @@ static class ConnectorsStateProjectorWireUp {
                    var getProducerBuilder  = ctx.GetRequiredService<Func<SystemProducerBuilder>>();
 
                    var processor = getProcessorBuilder()
-                       .ProcessorId("connectors-mngt-state-pjx")
+                       .ProcessorId(serviceName)
+                       // .ProcessorId("connectors-mngt-state-pjx")
                        .Logging(new LoggingOptions {
                            Enabled       = true,
                            LoggerFactory = loggerFactory,
-                           LogName       = "ConnectorsStateProjection"
+                           LogName       = "EventStore.Connect.Processors.SystemProcessor"
                        })
                        .DisableAutoLock()
                        .AutoCommit(new AutoCommitOptions {
                            Enabled          = true,
-                           RecordsThreshold = 1,
+                           RecordsThreshold = 100,
                            StreamTemplate   = ConnectorsStateProjectionCheckpointsStream.ToString()
                        })
                        .Filter(ConnectorsStateProjectionStreamFilter)
@@ -50,10 +51,10 @@ static class ConnectorsStateProjectorWireUp {
                        .Create();
 
                    return processor;
-                }, ctx, logName);
+                }, ctx, serviceName);
             });
     }
 }
 
-class ConnectorsStateProjectionService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string name)
-    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, name);
+class ConnectorsStateProjectionService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string serviceName)
+    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, serviceName);

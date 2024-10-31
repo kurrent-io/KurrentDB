@@ -16,7 +16,7 @@ namespace EventStore.Connectors.Management.Reactors;
 static class ConnectorsStreamSupervisorWireUp {
     public static IServiceCollection AddConnectorsStreamSupervisor(this IServiceCollection services) {
         return services.AddSingleton<IHostedService, ConnectorsStreamSupervisorService>(ctx => {
-            const string logName = "ConnectorsStreamSupervisor";
+            const string serviceName = "ConnectorsStreamSupervisor";
 
             return new ConnectorsStreamSupervisorService(() => {
                 var publisher           = ctx.GetRequiredService<IPublisher>();
@@ -24,17 +24,18 @@ static class ConnectorsStreamSupervisorWireUp {
                 var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
 
                 var options = new ConnectorsStreamSupervisorOptions {
-                    Leases      = new(MaxCount: 1),
-                    Checkpoints = new(MaxCount: 1),
-                    Lifetime    = new(MaxCount: 3)
+                    Leases      = new(MaxCount: 10),
+                    Checkpoints = new(MaxCount: 10),
+                    Lifetime    = new(MaxCount: 10)
                 };
 
                 var processor = getProcessorBuilder()
-                    .ProcessorId("connectors-mngt-supervisor-rx")
+                    .ProcessorId(serviceName) // "connectors-mngt-supervisor-rx"
                     .Logging(new LoggingOptions {
                         Enabled       = true,
                         LoggerFactory = loggerFactory,
-                        LogName       = "ConnectorsStreamSupervisor"
+                        LogName       = "EventStore.Connect.Processors.SystemProcessor"
+                        // LogName       = "EventStore.Connectors.Management.ConnectorsStreamSupervisor"
                     })
                     .DisableAutoLock()
                     .AutoCommit(new AutoCommitOptions {
@@ -42,18 +43,17 @@ static class ConnectorsStreamSupervisorWireUp {
                         RecordsThreshold = 100,
                         StreamTemplate   = ManagementStreamSupervisorCheckpointsStream.ToString()
                     })
-                    .DisableAutoCommit()
                     .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
-                    .InitialPosition(SubscriptionInitialPosition.Latest)
+                    .InitialPosition(SubscriptionInitialPosition.Earliest)
                     .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
                     .WithModule(new ConnectorsStreamSupervisor(publisher, options))
                     .Create();
 
                 return processor;
-            }, ctx, logName);
+            }, ctx, serviceName);
         });
     }
 }
 
-class ConnectorsStreamSupervisorService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string name)
-    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, name);
+class ConnectorsStreamSupervisorService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string serviceName)
+    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, serviceName);

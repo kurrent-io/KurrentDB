@@ -17,6 +17,7 @@ using EventStore.Streaming.Consumers.LifecycleEvents;
 using EventStore.Streaming.Interceptors;
 using EventStore.Streaming.Schema.Serializers;
 using EventStore.Streaming.JsonPath;
+using Microsoft.Extensions.Logging;
 using Polly;
 
 namespace EventStore.Connect.Consumers;
@@ -26,7 +27,12 @@ public class SystemConsumer : IConsumer {
 	public static SystemConsumerBuilder Builder => new();
 
 	public SystemConsumer(SystemConsumerOptions options) {
-		Options = options;
+		Options = string.IsNullOrWhiteSpace(options.Logging.LogName)
+			? options with { Logging = options.Logging with { LogName = GetType().FullName! } }
+			: options;
+
+		var logger = Options.Logging.LoggerFactory.CreateLogger(GetType().FullName!);
+
 		Client  = options.Publisher;
 
         Deserialize = Options.SkipDecoding
@@ -44,9 +50,9 @@ public class SystemConsumer : IConsumer {
 		Sequence = new SequenceIdGenerator();
 
 		if (options.Logging.Enabled)
-			options.Interceptors.TryAddUniqueFirst(new ConsumerLogger(nameof(SystemConsumer)));
+			options.Interceptors.TryAddUniqueFirst(new ConsumerLogger());
 
-        Interceptors = new(Options.Interceptors, Options.Logging.LoggerFactory.CreateLogger(nameof(SystemConsumer)));
+        Interceptors = new(Options.Interceptors, logger);
 
 		Intercept = evt => Interceptors.Intercept(evt);
 
@@ -60,8 +66,6 @@ public class SystemConsumer : IConsumer {
 
         CheckpointController = new CheckpointController(
             async (positions, token) => {
-                // token.ThrowIfCancellationRequested();
-
                 try {
                     if (positions.Count > 0) {
                         await CheckpointStore.CommitPositions(positions, token);
@@ -77,11 +81,12 @@ public class SystemConsumer : IConsumer {
                 }
             },
             Options.AutoCommit,
-            Options.Logging.LoggerFactory.CreateLogger($"CheckpointController({ConsumerId})")
+            Options.Logging.LoggerFactory.CreateLogger<CheckpointController>(),
+            ConsumerId
         );
 
 		ResiliencePipeline = options.ResiliencePipelineBuilder
-			.With(x => x.InstanceName = "SystemConsumerResiliencePipeline")
+			.With(x => x.InstanceName = "SystemConsumerPipeline")
 			.Build();
 
         StartPosition = RecordPosition.Unset;

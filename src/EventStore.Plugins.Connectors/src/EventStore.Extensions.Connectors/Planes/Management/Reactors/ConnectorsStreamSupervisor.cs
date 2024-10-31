@@ -38,9 +38,9 @@ public class ConnectorsStreamSupervisor : ProcessingModule {
 
             Task TryConfigureStream(string stream, StreamMetadata metadata) => client
                 .SetStreamMetadata(stream, metadata, cancellationToken: ctx.CancellationToken)
-                .OnError(ex => ctx.Logger.LogError(ex, "Failed to configure stream {Stream}", stream))
+                .OnError(ex => ctx.Logger.LogError(ex, "{ProcessorId} Failed to configure stream {Stream}", ctx.Processor.ProcessorId, stream))
                 .Then(state =>
-                    state.Logger.LogDebug("Stream {Stream} configured {Metadata}", state.Stream, state.Metadata),
+                    state.Logger.LogDebug("{ProcessorId} Stream {Stream} configured {Metadata}", ctx.Processor.ProcessorId, state.Stream, state.Metadata),
                     (ctx.Logger, Stream: stream, Metadata: metadata)
                 );
         });
@@ -55,14 +55,14 @@ public class ConnectorsStreamSupervisor : ProcessingModule {
 
             Task TryDeleteStream(string stream) => client
                 .SoftDeleteStream(stream, ctx.CancellationToken)
-                .OnError(ex => ctx.Logger.LogError(ex, "Failed to delete stream {Stream}", stream))
-                .Then(state => state.Logger.LogInformation("Stream {Stream} deleted", state.Stream),
+                .OnError(ex => ctx.Logger.LogError(ex, "{ProcessorId} Failed to delete stream {Stream}", ctx.Processor.ProcessorId, stream))
+                .Then(state => state.Logger.LogInformation("{ProcessorId} Stream {Stream} deleted", ctx.Processor.ProcessorId, state.Stream),
                     (ctx.Logger, Stream: stream));
 
             Task TryTruncateStream(string stream, long beforeRevision) => client
                 .TruncateStream(stream, beforeRevision, ctx.CancellationToken)
-                .OnError(ex => ctx.Logger.LogError(ex, "Failed to truncate stream {Stream}", stream))
-                .Then(state => state.Logger.LogInformation("Stream {Stream} truncated", state.Stream),
+                .OnError(ex => ctx.Logger.LogError(ex, "{ProcessorId} Failed to truncate stream {Stream}", ctx.Processor.ProcessorId, stream))
+                .Then(state => state.Logger.LogInformation("{ProcessorId} Stream {Stream} truncated", ctx.Processor.ProcessorId, state.Stream),
                     (ctx.Logger, Stream: stream));
         });
     }

@@ -5,6 +5,7 @@ using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.System;
 using EventStore.Streaming;
 using Microsoft.Extensions.Logging;
+using LoggingOptions = EventStore.Streaming.Configuration.LoggingOptions;
 
 namespace EventStore.Connectors.Control;
 
@@ -21,10 +22,15 @@ public class ConnectorsControlService : LeadershipAwareService {
         GetActiveConnectors = getActiveConnectors;
 
         ConsumerBuilder = getConsumerBuilder()
-            .ConsumerId("connectors-ctrl-service-csx")
+            .ConsumerId("ConnectorsController")
             .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
             .InitialPosition(SubscriptionInitialPosition.Latest)
-            .DisableAutoCommit();
+            .DisableAutoCommit()
+            .Logging(new LoggingOptions {
+                Enabled       = true,
+                LoggerFactory = loggerFactory,
+                LogName       = "EventStore.Connect.SystemConsumer"
+            });
     }
 
     ConnectorsActivator   Activator           { get; }

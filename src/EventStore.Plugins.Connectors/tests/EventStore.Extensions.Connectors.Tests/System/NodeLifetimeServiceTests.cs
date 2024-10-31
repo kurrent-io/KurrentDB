@@ -13,8 +13,6 @@ using MemberInfo = EventStore.Core.Cluster.MemberInfo;
 
 namespace EventStore.Connectors.Tests.System;
 
-[Trait("Category", "ControlPlane")]
-[Trait("Category", "System")]
 [Trait("Category", "Leadership")]
 public class NodeLifetimeServiceTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
 	static readonly MessageBus MessageBus = new();
@@ -43,16 +41,8 @@ public class NodeLifetimeServiceTests(ITestOutputHelper output, ConnectorsAssemb
 		}
 	);
 
-	public class LeadershipRevokedTestCases : TestCaseGenerator<LeadershipRevokedTestCases> {
-		protected override IEnumerable<object[]> Data() =>
-			Enum.GetValues(typeof(VNodeState))
-				.Cast<VNodeState>()
-				.Where(state => state != VNodeState.Leader)
-				.Select(state => (object[]) [new NodeStateChanged(state)]);
-	}
-
-	[Theory, LeadershipRevokedTestCases]
-	public Task cancels_token_when_leadership_revoked(SystemMessage.StateChangeMessage stateChanged) => Fixture.TestWithTimeout(
+	[Fact]
+	public Task cancels_token_when_leadership_revoked_because_it_became_a_follower() => Fixture.TestWithTimeout(
 		async cancellator => {
 			using var sut = new NodeLifetimeService(
 				Fixture.NewIdentifier("node-lifetime"),
@@ -65,11 +55,37 @@ public class NodeLifetimeServiceTests(ITestOutputHelper output, ConnectorsAssemb
 
 			MessageBus.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 
+			var stateChanged = new NodeStateChanged(VNodeState.Follower);
+
 			// Act
 			MessageBus.Publish(stateChanged);
 
 			await action.Should().NotThrowAsync()
 				.Then(x => x.Which.IsCancellationRequested.Should().BeTrue());
+		}
+	);
+
+	[Theory, NodeStateChangesTestCases]
+	public Task cancels_token_when_state_changes(VNodeState state) => Fixture.TestWithTimeout(
+		TimeSpan.FromSeconds(30), async cancellator => {
+			using var sut = new NodeLifetimeService(
+				Fixture.NewIdentifier("node-lifetime"),
+				MessageBus, MessageBus,
+				Fixture.LoggerFactory.CreateLogger<NodeLifetimeService>()
+			);
+
+			var waitForLeadershipTask = sut.WaitForLeadershipAsync(cancellator.Token);
+
+			MessageBus.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
+
+			var token = await waitForLeadershipTask;
+
+			// Act
+			MessageBus.Publish(new NodeStateChanged(state));
+			await Task.Delay(TimeSpan.FromMilliseconds(250));
+
+			// Assert
+			token.IsCancellationRequested.Should().BeTrue();
 		}
 	);
 
@@ -163,6 +179,14 @@ public class NodeLifetimeServiceTests(ITestOutputHelper output, ConnectorsAssemb
 		await action.Should().NotThrowAsync()
 			.Then(x => x.Which.IsCancellationRequested.Should().BeTrue());
 	}
+}
+
+public class NodeStateChangesTestCases : TestCaseGenerator<NodeStateChangesTestCases> {
+	protected override IEnumerable<object[]> Data() =>
+		Enum.GetValues(typeof(VNodeState))
+			.Cast<VNodeState>()
+			.Where(state => state is not (VNodeState.Leader or VNodeState.Follower or VNodeState.MaxValue))
+			.Select(state => (object[]) [state]);
 }
 
 class NodeStateChanged(VNodeState state = VNodeState.Unknown) : SystemMessage.StateChangeMessage(Guid.NewGuid(), state);

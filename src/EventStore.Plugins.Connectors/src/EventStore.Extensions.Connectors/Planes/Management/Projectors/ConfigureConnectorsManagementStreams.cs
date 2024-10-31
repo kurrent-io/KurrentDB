@@ -15,12 +15,12 @@ public class ConfigureConnectorsManagementStreams : ISystemStartupTask {
         var publisher = serviceProvider.GetRequiredService<IPublisher>();
         var logger    = serviceProvider.GetRequiredService<ILogger<SystemStartupTaskService>>();
 
-        await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream);
-        await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionCheckpointsStream);
+        await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream, maxCount: 10);
+        await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionCheckpointsStream, maxCount: 10);
 
         return;
 
-        Task TryConfigureStream(string stream, int maxCount = 1) {
+        Task TryConfigureStream(string stream, int maxCount) {
             return publisher
                 .GetStreamMetadata(stream, cancellationToken)
                 .Then(result => {
@@ -29,16 +29,18 @@ public class ConfigureConnectorsManagementStreams : ISystemStartupTask {
                     if (metadata.MaxCount == maxCount)
                         return Task.FromResult(result);
 
-                    var newMetadata = new StreamMetadata(maxCount: maxCount,
+                    var newMetadata = new StreamMetadata(
+                        maxCount: maxCount,
                         maxAge: metadata.MaxAge,
                         truncateBefore: metadata.TruncateBefore,
                         tempStream: metadata.TempStream,
                         cacheControl: metadata.CacheControl,
-                        acl: metadata.Acl);
+                        acl: metadata.Acl
+                    );
 
                     return publisher.SetStreamMetadata(stream, newMetadata, revision, cancellationToken);
                 })
-                .OnError(ex => logger.LogError(ex, "Failed to configure projection stream {Stream}", stream))
+                .OnError(ex => logger.LogError(ex, "{TaskName} Failed to configure projection stream {Stream}", nameof(ConfigureConnectorsManagementStreams), stream))
                 .Then(state =>
                     state.Logger.LogDebug(
                         "{TaskName} projection stream {Stream} configured",

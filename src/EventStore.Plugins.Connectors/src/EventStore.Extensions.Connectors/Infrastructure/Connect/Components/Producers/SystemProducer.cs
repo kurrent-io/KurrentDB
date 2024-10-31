@@ -4,13 +4,13 @@ using EventStore.Connect.Producers.Configuration;
 using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
-using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Streaming;
 using EventStore.Streaming.Interceptors;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Producers.Interceptors;
 using EventStore.Streaming.Producers.LifecycleEvents;
 using EventStore.Streaming.Schema.Serializers;
+using Polly;
 
 namespace EventStore.Connect.Producers;
 
@@ -19,7 +19,12 @@ public class SystemProducer : IProducer {
     public static SystemProducerBuilder Builder => new();
 
     public SystemProducer(SystemProducerOptions options) {
-        Options = options;
+        Options = string.IsNullOrWhiteSpace(options.Logging.LogName)
+            ? options with { Logging = options.Logging with { LogName = GetType().FullName! } }
+            : options;
+
+        var logger = Options.Logging.LoggerFactory.CreateLogger(GetType().FullName!);
+
         Client  = options.Publisher;
 
         Serialize = (value, headers) => Options.SchemaRegistry.As<ISchemaSerializer>().Serialize(value, headers);
@@ -27,19 +32,24 @@ public class SystemProducer : IProducer {
         Flushing = new(true);
 
         if (options.Logging.Enabled)
-            options.Interceptors.TryAddUniqueFirst(new ProducerLogger(nameof(SystemProducer)));
+            options.Interceptors.TryAddUniqueFirst(new ProducerLogger());
 
-        Interceptors = new(Options.Interceptors, Options.Logging.LoggerFactory.CreateLogger(nameof(SystemProducer)));
+        Interceptors = new(Options.Interceptors, logger);
 
         Intercept = evt => Interceptors.Intercept(evt, CancellationToken.None);
+
+        ResiliencePipeline = Options.ResiliencePipelineBuilder
+            .With(x => x.InstanceName = "SystemProducerPipeline")
+            .Build();
     }
 
-    SystemProducerOptions              Options      { get; }
-    IPublisher                         Client       { get; }
-    Serialize                          Serialize    { get; }
-    ManualResetEventSlim               Flushing     { get; }
-    InterceptorController              Interceptors { get; }
-    Func<ProducerLifecycleEvent, Task> Intercept    { get; }
+    SystemProducerOptions              Options            { get; }
+    IPublisher                         Client             { get; }
+    Serialize                          Serialize          { get; }
+    ManualResetEventSlim               Flushing           { get; }
+    InterceptorController              Interceptors       { get; }
+    Func<ProducerLifecycleEvent, Task> Intercept          { get; }
+    ResiliencePipeline                 ResiliencePipeline { get; }
 
     public string  ProducerId       => Options.ProducerId;
     public string  ClientId         => Options.ClientId;
@@ -58,7 +68,7 @@ public class SystemProducer : IProducer {
     public Task Produce(ProduceRequest request, ProduceResultCallback callback) =>
         ProduceInternal(request, callback);
 
-    public async Task ProduceInternal(ProduceRequest request, IProduceResultCallback callback) {
+    async Task ProduceInternal(ProduceRequest request, IProduceResultCallback callback) {
         Ensure.NotDefault(request, ProduceRequest.Empty);
         Ensure.NotNull(callback);
 
@@ -86,18 +96,12 @@ public class SystemProducer : IProducer {
                 StreamState.Any     => ExpectedVersion.Any
             };
 
-        var result = await WriteEvents(Client, validRequest, events, expectedRevision);
+        var result = await WriteEvents(Client, validRequest, events, expectedRevision, ResiliencePipeline);
 
-        // if it is the wrong version but the stream is empty,
-        // it means the stream was deleted or truncated,
-        // and therefore we can retry immediately
-        if (request.ExpectedStreamState == StreamState.Missing && result.Error is ExpectedStreamRevisionError revisionError) {
-            result = await Client
-                .ReadStreamLastEvent(validRequest.Stream)
-                .Then(async re => re is null || re == ResolvedEvent.EmptyEvent
-                    ? await WriteEvents(Client, validRequest, events, revisionError.ActualStreamRevision)
-                    : result);
-        }
+        // if (result.Error is not null) {
+        //     throw result.Error;
+        //     // await Intercept(new ProduceRequestFailed(this, request, result.Error!));
+        // }
 
         await Intercept(new ProduceRequestProcessed(this, result));
 
@@ -109,41 +113,49 @@ public class SystemProducer : IProducer {
 
         return;
 
-        static async Task<ProduceResult> WriteEvents(IPublisher client, ProduceRequest request, Event[] events, long expectedRevision) {
+        static async Task<ProduceResult> WriteEvents(IPublisher client, ProduceRequest request, Event[] events, long expectedRevision, ResiliencePipeline resiliencePipeline) {
+            var state = (Client: client, Request: request, Events: events, ExpectedRevision: expectedRevision);
+
             try {
-                var (position, streamRevision) = await client.WriteEvents(
-                    request.Stream,
-                    events,
-                    expectedRevision
-                );
+                return await resiliencePipeline.ExecuteAsync(
+                    static async (state, token) => {
+                        var result = await WriteEvents(state.Client, state.Request, state.Events, state.ExpectedRevision, token);
 
-                var recordPosition = RecordPosition.ForStream(
-                    StreamId.From(request.Stream),
-                    StreamRevision.From(streamRevision.ToInt64()),
-                    LogPosition.From(position.CommitPosition, position.PreparePosition)
-                );
+                        // If it is the wrong version but the stream is empty,
+                        // it means the stream was deleted or truncated.
+                        // Therefore, we can retry immediately
+                        if (state.Request.ExpectedStreamState == StreamState.Missing && result.Error is ExpectedStreamRevisionError revisionError) {
+                            result = await state.Client
+                                .ReadStreamLastEvent(state.Request.Stream, CancellationToken.None)
+                                .Then(async re => re is null || re == ResolvedEvent.EmptyEvent
+                                    ? await WriteEvents(state.Client, state.Request, state.Events, revisionError.ActualStreamRevision, token)
+                                    : result);
+                        }
 
-                return ProduceResult.Succeeded(request, recordPosition);
+                        return result.Error is null ? result : throw result.Error;
+                    }, state
+                );
             }
-            catch (Exception ex) {
-                StreamingError error = ex switch {
-                    ReadResponseException.Timeout        => new RequestTimeoutError(request.Stream, ex.Message),
-                    ReadResponseException.StreamNotFound => new StreamNotFoundError(request.Stream),
-                    ReadResponseException.StreamDeleted  => new StreamDeletedError(request.Stream),
-                    ReadResponseException.AccessDenied   => new StreamAccessDeniedError(request.Stream),
-                    ReadResponseException.WrongExpectedRevision wex => new ExpectedStreamRevisionError(
-                        request.Stream,
-                        StreamRevision.From(wex.ExpectedStreamRevision.ToInt64()),
-                        StreamRevision.From(wex.ActualStreamRevision.ToInt64())
-                    ),
-                    ReadResponseException.NotHandled.ServerNotReady => new ServerNotReadyError(),
-                    ReadResponseException.NotHandled.ServerBusy     => new ServerTooBusyError(),
-                    ReadResponseException.NotHandled.LeaderInfo li  => new ServerNotLeaderError(li.Host, li.Port),
-                    ReadResponseException.NotHandled.NoLeaderInfo   => new ServerNotLeaderError(),
-                    _                                               => new StreamingCriticalError(ex.Message, ex)
-                };
+            // we have to recreate the error result... must rethink this
+            catch (StreamingError err) {
+                return ProduceResult.Failed(request, err);
+            }
 
-                return ProduceResult.Failed(request, error);
+            static async Task<ProduceResult> WriteEvents(IPublisher client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
+                try {
+                    var (position, streamRevision) = await client.WriteEvents(request.Stream, events, expectedRevision, cancellationToken);
+
+                    var recordPosition = RecordPosition.ForStream(
+                        StreamId.From(request.Stream),
+                        StreamRevision.From(streamRevision.ToInt64()),
+                        LogPosition.From(position.CommitPosition, position.PreparePosition)
+                    );
+
+                    return ProduceResult.Succeeded(request, recordPosition);
+                }
+                catch (Exception ex) {
+                    return ProduceResult.Failed(request, ex.ToProducerStreamingError(request.Stream));
+                }
             }
         }
     }

@@ -16,9 +16,9 @@ namespace EventStore.Connectors.Management.Reactors;
 
 static class ConnectorsLifecycleReactorWireUp {
     public static IServiceCollection AddConnectorsLifecycleReactor(this IServiceCollection services) {
-        return services.AddSingleton<IHostedService, ConnectorsLifecycleReactorService>(ctx => {
-            const string logName = "ConnectorsLifecycleReactor";
+        const string serviceName = "ConnectorsLifecycleReactor";
 
+        return services.AddSingleton<IHostedService, ConnectorsLifecycleReactorService>(ctx => {
             return new ConnectorsLifecycleReactorService(() => {
                 var app            = ctx.GetRequiredService<ConnectorsCommandApplication>();
                 var publisher      = ctx.GetRequiredService<IPublisher>();
@@ -26,13 +26,14 @@ static class ConnectorsLifecycleReactorWireUp {
                 var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
 
                 var processor = SystemProcessor.Builder
-                    .ProcessorId("connectors-mngt-lifecycle-rx")
+                    // .ProcessorId("connectors-mngt-lifecycle-rx")
+                    .ProcessorId(serviceName)
                     .Publisher(publisher)
                     .SchemaRegistry(schemaRegistry)
                     .Logging(new LoggingOptions {
                         Enabled       = true,
                         LoggerFactory = loggerFactory,
-                        LogName       = logName
+                        LogName       = "EventStore.Connect.Processors.SystemProcessor"
                     })
                     .DisableAutoLock()
                     .AutoCommit(new AutoCommitOptions {
@@ -47,10 +48,10 @@ static class ConnectorsLifecycleReactorWireUp {
                     .Create();
 
                 return processor;
-            }, ctx, logName);
+            }, ctx, serviceName);
         });
     }
 }
 
-class ConnectorsLifecycleReactorService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string name)
-    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, name);
+class ConnectorsLifecycleReactorService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string serviceName)
+    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, serviceName);

@@ -61,14 +61,21 @@ class ConnectorsControlRegistry {
                         activating.Settings[startPositionKey] = activating.StartFrom.LogPosition.ToString();
                     }
 
-                    state.Add(
-                        activating.ConnectorId,
+                    state[activating.ConnectorId] =
                         new RegisteredConnector(
                             activating.ConnectorId,
                             activating.Revision,
                             activating.Settings
-                        )
-                    );
+                        );
+
+                    // state.Add(
+                    //     activating.ConnectorId,
+                    //     new RegisteredConnector(
+                    //         activating.ConnectorId,
+                    //         activating.Revision,
+                    //         activating.Settings
+                    //     )
+                    // );
                     break;
 
                 case ConnectorRunning running:
