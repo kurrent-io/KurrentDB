@@ -121,16 +121,24 @@ public class SystemConsumer : IConsumer {
 
 		await CheckpointStore.Initialize(Cancellator.Token);
 
-		StartPosition = await CheckpointStore
+        StartPosition = await CheckpointStore
             .ResolveStartPosition(Options.StartPosition, Options.InitialPosition, Cancellator.Token);
 
-		await Client.SubscribeToAll(
-            StartPosition.ToPosition(),
-            Options.Filter.ToEventFilter(),
-            InboundChannel,
-            ResiliencePipeline,
-            Cancellator.Token
-        );
+        if (Options.Filter.IsStreamIdFilter) {
+            var startRevision = await Client.GetStreamRevision(StartPosition.ToPosition(), stoppingToken);
+
+            await Client.SubscribeToStream(startRevision,
+                Options.Filter.Expression,
+                InboundChannel,
+                ResiliencePipeline,
+                Cancellator.Token);
+        } else {
+            await Client.SubscribeToAll(StartPosition.ToPosition(),
+                Options.Filter.ToEventFilter(),
+                InboundChannel,
+                ResiliencePipeline,
+                Cancellator.Token);
+        }
 
 		await CheckpointController.Activate();
 

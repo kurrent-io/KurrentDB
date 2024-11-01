@@ -1,4 +1,3 @@
-using EventStore.Connect.Connectors;
 using EventStore.Streaming.Connectors.Sinks;
 using Microsoft.Extensions.Logging;
 
@@ -14,4 +13,4 @@ public class LoggerSink : ISink {
 }
 
 [UsedImplicitly]
-public class LoggerSinkValidator : ConnectorValidator<SinkOptions>;
+public class LoggerSinkValidator : SinkConnectorValidator<SinkOptions>;

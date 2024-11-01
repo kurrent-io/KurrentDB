@@ -45,7 +45,7 @@ public static class PublisherSubscribeExtensions {
 		}
 	}
 
-	static async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(this IPublisher publisher, string stream, long? revision, [EnumeratorCancellation] CancellationToken cancellationToken) {
+	static async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(this IPublisher publisher, string stream, StreamRevision? revision, [EnumeratorCancellation] CancellationToken cancellationToken) {
 		var startRevision = StartFrom(revision);
 
 		await using var sub = new Enumerator.StreamSubscription<string>(
@@ -72,12 +72,7 @@ public static class PublisherSubscribeExtensions {
 
 		yield break;
 
-		static StreamRevision? StartFrom(long? revision) =>
-			revision switch {
-				0             => null,
-				long.MaxValue => StreamRevision.End,
-				_             => StreamRevision.FromInt64(revision!.Value)
-			};
+        static StreamRevision? StartFrom(StreamRevision? revision) => revision == 0 ? null : revision;
 	}
 
 	public static Task SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, Channel<ResolvedEvent> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
@@ -102,6 +97,44 @@ public static class PublisherSubscribeExtensions {
 						Checkpoint: position,
 						Filter    : filter,
 						Channel   : channel
+					)
+				);
+
+				channel.Writer.TryComplete();
+			}
+			catch (OperationCanceledException) {
+				channel.Writer.TryComplete();
+			}
+			catch (Exception ex) {
+				channel.Writer.TryComplete(ex);
+			}
+			finally {
+				ResilienceContextPool.Shared
+					.Return(resilienceContext);
+			}
+		}, cancellationToken);
+
+		return Task.CompletedTask;
+	}
+
+	public static Task SubscribeToStream(this IPublisher publisher, StreamRevision? revision, string stream, Channel<ResolvedEvent> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
+		_ = Task.Run(async () => {
+			var resilienceContext = ResilienceContextPool.Shared
+				.Get(nameof(SubscribeToStream), cancellationToken);
+
+			try {
+				await resiliencePipeline.ExecuteAsync(
+					static async (ctx, state) => {
+                        await foreach (var re in state.Publisher.SubscribeToStream(state.Stream, state.Checkpoint, ctx.CancellationToken)) {
+                            state.Checkpoint = StreamRevision.FromInt64(re.OriginalEventNumber);
+                            await state.Channel.Writer.WriteAsync(re, ctx.CancellationToken);
+                        }
+					},
+					resilienceContext, (
+                        Publisher : publisher,
+                        Checkpoint: revision,
+                        Channel   : channel,
+                        Stream    : stream
 					)
 				);
 

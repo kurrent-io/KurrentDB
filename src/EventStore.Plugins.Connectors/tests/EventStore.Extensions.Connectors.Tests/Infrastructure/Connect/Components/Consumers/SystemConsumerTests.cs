@@ -1,19 +1,19 @@
 // ReSharper disable MethodSupportsCancellation
 
+using System.Text.RegularExpressions;
 using EventStore.Connect.Consumers;
 using EventStore.Core;
 using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
+using EventStore.Toolkit.Testing.Xunit;
 
 namespace EventStore.Extensions.Connectors.Tests.Connect.Consumers;
 
 [Trait("Category", "Integration")]
 public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
-	[Fact]
-	public async Task consumes_stream_from_earliest() {
+	[Theory, ConsumeFilterCases]
+	public async Task consumes_stream_from_earliest(string streamId, ConsumeFilter filter) {
 		// Arrange
-		var streamId = Fixture.NewStreamId();
-
 		var requests = await Fixture.ProduceTestEvents(streamId, 1, 10);
 		var messages = requests.SelectMany(x => x.Messages).ToList();
 
@@ -25,7 +25,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		await using var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
-			.Stream(streamId)
+			.Filter(filter)
 			.InitialPosition(SubscriptionInitialPosition.Earliest)
 			.DisableAutoCommit()
 			.Create();
@@ -53,17 +53,15 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 			.BeEquivalentTo(actualRecords, options => options.WithStrictOrderingFor(x => x.Position), "because we consumed all the records in the stream");
 	}
 
-    [Fact]
-    public Task consumes_stream_from_latest() => Fixture.TestWithTimeout(
+	[Theory, ConsumeFilterCases]
+    public Task consumes_stream_from_latest(string streamId, ConsumeFilter filter) => Fixture.TestWithTimeout(
         async cancellator => {
             // Arrange
-            var streamId = Fixture.NewStreamId();
-
             await Fixture.ProduceTestEvents(streamId);
 
             await using var consumer = Fixture.NewConsumer()
                 .ConsumerId($"{streamId}-csr")
-                .Stream(streamId)
+                .Filter(filter)
                 .InitialPosition(SubscriptionInitialPosition.Latest)
                 .DisableAutoCommit()
                 .Create();
@@ -78,14 +76,13 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
         }
     );
 
-	[Fact]
-	public async Task consumes_stream_from_start_position() {
+	[Theory, ConsumeFilterCases]
+	public async Task consumes_stream_from_start_position(string streamId, ConsumeFilter filter) {
 		// Arrange
-		var streamId      = Fixture.NewStreamId();
-		var noise         = await Fixture.ProduceTestEvents(streamId);
-		var startPosition = noise.Single().Position;
-		var requests      = await Fixture.ProduceTestEvents(streamId);
-		var messages      = requests.SelectMany(x => x.Messages).ToList();
+        var noise         = await Fixture.ProduceTestEvents(streamId);
+        var startPosition = noise.Single().Position;
+        var requests      = await Fixture.ProduceTestEvents(streamId);
+        var messages      = requests.SelectMany(x => x.Messages).ToList();
 
 		using var cancellator = new CancellationTokenSource(TimeSpan.FromMinutes(1));
 
@@ -93,7 +90,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		await using var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
-			.Stream(streamId)
+			.Filter(filter)
 			.StartPosition(startPosition)
 			.DisableAutoCommit()
 			.Create();
@@ -121,18 +118,18 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 	}
 
 	async Task<RecordPosition> ProduceAndConsumeTestStream(
-        string streamId, int numberOfMessages, CancellationToken cancellationToken, bool commit = true
+        string streamId, ConsumeFilter filter, int numberOfMessages, CancellationToken cancellationToken, bool commit = true
     ) {
 		using var cancellator = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-		var requests        = await Fixture.ProduceTestEvents(streamId, numberOfRequests: 1, numberOfMessages);
-		var messageCount    = requests.SelectMany(x => x.Messages).Count();
-		var consumedRecords = new List<EventStoreRecord>();
+        var requests        = await Fixture.ProduceTestEvents(streamId, numberOfRequests: 1, numberOfMessages);
+        var messageCount    = requests.SelectMany(x => x.Messages).Count();
+        var consumedRecords = new List<EventStoreRecord>();
 
 		await using var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
 			.SubscriptionName($"{streamId}-csr")
-			.Stream(streamId)
+			.Filter(filter)
 			.InitialPosition(SubscriptionInitialPosition.Earliest)
 			.DisableAutoCommit()
 			.Create();
@@ -155,14 +152,12 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 		// return consumedRecords.Last().Position;
 	}
 
-	[Fact]
-	public async Task consumes_stream_from_last_committed_position() {
+	[Theory, ConsumeFilterCases]
+	public async Task consumes_stream_from_last_committed_position(string streamId, ConsumeFilter filter) {
 		// Arrange
 		using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(720));
 
-		var streamId = Fixture.NewStreamId();
-
-		var latestRecordPosition = await ProduceAndConsumeTestStream(streamId, 10, cancellator.Token, commit: false);
+		var latestRecordPosition = await ProduceAndConsumeTestStream(streamId, filter, 10, cancellator.Token, commit: false);
 
 		var requests        = await Fixture.ProduceTestEvents(streamId, 1, 1);
 		var messages        = requests.SelectMany(x => x.Messages).ToList();
@@ -171,7 +166,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 		await using var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
 			.SubscriptionName($"{streamId}-csr")
-			.Stream(streamId)
+			.Filter(filter)
             .StartPosition(latestRecordPosition.LogPosition)
             .DisableAutoCommit()
 			.Create();
@@ -192,11 +187,9 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 		consumedRecords.Should().HaveCount(messages.Count);
 	}
 
-	[Fact]
-	public async Task consumes_stream_and_commits_positions_on_dispose() {
+	[Theory, ConsumeFilterCases]
+	public async Task consumes_stream_and_commits_positions_on_dispose(string streamId, ConsumeFilter filter) {
 		// Arrange
-		var streamId = Fixture.NewStreamId();
-
 		var requests = await Fixture.ProduceTestEvents(streamId, 1, 10);
 		var messages = requests.SelectMany(x => x.Messages).ToList();
 
@@ -206,7 +199,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
-			.Stream(streamId)
+			.Filter(filter)
             .InitialPosition(SubscriptionInitialPosition.Earliest)
 			.AutoCommit(x => x with { RecordsThreshold = 1 })
 			.Create();
@@ -231,4 +224,14 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 		latestPositions.LastOrDefault().Should()
 			.BeEquivalentTo(consumedRecords.LastOrDefault().Position);
 	}
+
+    class ConsumeFilterCases : TestCaseGenerator<ConsumeFilterCases> {
+        protected override IEnumerable<object[]> Data() {
+            var streamId = Guid.NewGuid().ToString();
+            yield return [streamId, ConsumeFilter.FromStreamId(streamId)];
+
+            streamId = Guid.NewGuid().ToString();
+            yield return [streamId, ConsumeFilter.FromRegex(ConsumeFilterScope.Stream, new Regex(streamId))];
+        }
+    }
 }
