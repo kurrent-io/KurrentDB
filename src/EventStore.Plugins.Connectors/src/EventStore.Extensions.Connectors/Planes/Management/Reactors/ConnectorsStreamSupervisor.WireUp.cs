@@ -30,7 +30,7 @@ static class ConnectorsStreamSupervisorWireUp {
                 };
 
                 var processor = getProcessorBuilder()
-                    .ProcessorId(serviceName) // "connectors-mngt-supervisor-rx"
+                    .ProcessorId(serviceName)
                     .Logging(new LoggingOptions {
                         Enabled       = true,
                         LoggerFactory = loggerFactory,

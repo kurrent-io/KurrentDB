@@ -98,11 +98,6 @@ public class SystemProducer : IProducer {
 
         var result = await WriteEvents(Client, validRequest, events, expectedRevision, ResiliencePipeline);
 
-        // if (result.Error is not null) {
-        //     throw result.Error;
-        //     // await Intercept(new ProduceRequestFailed(this, request, result.Error!));
-        // }
-
         await Intercept(new ProduceRequestProcessed(this, result));
 
         try {

@@ -26,7 +26,6 @@ static class ConnectorsLifecycleReactorWireUp {
                 var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
 
                 var processor = SystemProcessor.Builder
-                    // .ProcessorId("connectors-mngt-lifecycle-rx")
                     .ProcessorId(serviceName)
                     .Publisher(publisher)
                     .SchemaRegistry(schemaRegistry)

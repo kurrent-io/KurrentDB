@@ -1,6 +1,7 @@
 using EventStore.Connect;
 using EventStore.Connectors.Control;
 using EventStore.Connectors.Management;
+using EventStore.Connectors.Management.Reactors;
 using EventStore.Connectors.System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -32,4 +33,13 @@ public class ConnectorsPlugin : SubsystemsPlugin {
 
         return (enabled, "Please check the documentation for instructions on how to enable the plugin.");
     }
+}
+
+
+public record ConnectorsPluginOptions {
+    public ConnectorsStreamSupervisorOptions ConnectorsStreamSupervisor { get; set; }
+
+
+    // await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream, maxCount: 10);
+    // await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionCheckpointsStream, maxCount: 10);
 }

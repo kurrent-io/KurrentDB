@@ -21,6 +21,8 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
     ) : base(getReaderBuilder, getProducerBuilder, snapshotStreamId) {
         UpdateWhen<ConnectorCreated>((snapshot, evt) =>
             snapshot.ApplyOrAdd(evt.ConnectorId, conn => {
+                if (snapshot.UpdateTime >= evt.Timestamp) return;
+
                 conn.Settings.Clear();
                 conn.Settings.Add(evt.Settings);
 

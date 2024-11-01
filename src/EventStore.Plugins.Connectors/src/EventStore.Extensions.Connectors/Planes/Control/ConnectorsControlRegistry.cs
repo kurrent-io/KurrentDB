@@ -30,8 +30,8 @@ class ConnectorsControlRegistry {
         TimeProvider time
     ) {
         Options  = options;
-        Reader   = getReaderBuilder().ReaderId("connectors-ctrl-registry-rdx").Create();
-        Producer = getProducerBuilder().ProducerId("connectors-ctrl-registry-pdx").Create();
+        Reader   = getReaderBuilder().ReaderId("ConnectorsControlRegistryReader").Create();
+        Producer = getProducerBuilder().ProducerId("ConnectorsControlRegistryProducer").Create();
         Time     = time;
     }
 
@@ -57,25 +57,14 @@ class ConnectorsControlRegistry {
             switch (record.Value) {
                 case ConnectorActivating activating:
                     // hijack settings and inject the start position
-                    if (activating.StartFrom is not null) {
+                    if (activating.StartFrom is not null)
                         activating.Settings[startPositionKey] = activating.StartFrom.LogPosition.ToString();
-                    }
 
-                    state[activating.ConnectorId] =
-                        new RegisteredConnector(
-                            activating.ConnectorId,
-                            activating.Revision,
-                            activating.Settings
-                        );
-
-                    // state.Add(
-                    //     activating.ConnectorId,
-                    //     new RegisteredConnector(
-                    //         activating.ConnectorId,
-                    //         activating.Revision,
-                    //         activating.Settings
-                    //     )
-                    // );
+                    state[activating.ConnectorId] = new RegisteredConnector(
+                        activating.ConnectorId,
+                        activating.Revision,
+                        activating.Settings
+                    );
                     break;
 
                 case ConnectorRunning running:

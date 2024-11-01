@@ -11,9 +11,9 @@ namespace EventStore.Connectors.Management.Reactors;
 
 [PublicAPI]
 public record ConnectorsStreamSupervisorOptions {
-    public SystemStreamOptions Leases      { get; init; } = new(MaxCount: 1);
-    public SystemStreamOptions Checkpoints { get; init; } = new(MaxCount: 3);
-    public SystemStreamOptions Lifetime    { get; init; } = new(MaxCount: 5);
+    public SystemStreamOptions Leases      { get; init; }
+    public SystemStreamOptions Checkpoints { get; init; }
+    public SystemStreamOptions Lifetime    { get; init; }
 }
 
 public record SystemStreamOptions(int? MaxCount = null, TimeSpan? MaxAge = null) {
