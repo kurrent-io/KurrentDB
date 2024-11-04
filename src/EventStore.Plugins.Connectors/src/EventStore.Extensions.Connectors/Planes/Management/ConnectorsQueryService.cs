@@ -41,8 +41,9 @@ public class ConnectorsQueryService(
             return result;
         } catch (Exception ex) {
             var rpcEx = ex switch {
-                ValidationException vex => RpcExceptions.InvalidArgument(vex.Errors),
-                _                       => RpcExceptions.Internal(ex)
+                ValidationException vex              => RpcExceptions.InvalidArgument(vex.Errors),
+                DomainExceptions.EntityNotFound vfex => RpcExceptions.NotFound(vfex),
+                _                                    => RpcExceptions.Internal(ex)
             };
 
             logger.LogError(ex,

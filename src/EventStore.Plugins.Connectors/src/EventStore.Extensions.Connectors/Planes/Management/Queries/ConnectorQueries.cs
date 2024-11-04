@@ -57,8 +57,6 @@ public class ConnectorQueries {
                 SettingsUpdateTime = connector.SettingsUpdateTime
             };
 
-        return new ();
-        // TODO SS: how to throw here? dont want any grpc coupling should we return a result tuple like <query-result, error>?
-        //throw new RpcExceptions.NotFound($"Connector with id {query.ConnectorId} not found.");
+        throw new DomainExceptions.EntityNotFound("Connector", query.ConnectorId);
     }
 }
