@@ -1,5 +1,3 @@
-using EventStore.Connect.Producers.Configuration;
-using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
@@ -16,9 +14,9 @@ namespace EventStore.Connectors.Management.Data;
 /// </summary>
 public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSnapshot> {
     public ConnectorsStateProjection(
-        Func<SystemReaderBuilder> getReaderBuilder, Func<SystemProducerBuilder> getProducerBuilder,
+        ISnapshotProjectionsStore store,
         string snapshotStreamId
-    ) : base(getReaderBuilder, getProducerBuilder, snapshotStreamId) {
+    ) : base(store, snapshotStreamId) {
         UpdateWhen<ConnectorCreated>((snapshot, evt) =>
             snapshot.ApplyOrAdd(evt.ConnectorId, conn => {
                 conn.Settings.Clear();
@@ -104,14 +102,13 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
 }
 
 public static class ConnectorsSnapshotExtensions {
-    public static ConnectorsSnapshot ApplyOrAdd(this ConnectorsSnapshot snapshot, string connectorId, Action<Contracts.Queries.Connector> update) =>
-        snapshot.With(ss =>
-            ss.Connectors
-                .FirstOrDefault(conn => conn.ConnectorId == connectorId, new Contracts.Queries.Connector())
-                .With(connector => ss.Connectors.Add(connector), connector => !ss.Connectors.Contains(connector))
-                .With(update));
+    public static ConnectorsSnapshot ApplyOrAdd(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) =>
+        snapshot.With(ss => ss.Connectors
+            .FirstOrDefault(conn => conn.ConnectorId == connectorId, new Connector())
+            .With(connector => ss.Connectors.Add(connector), connector => !ss.Connectors.Contains(connector))
+            .With(update));
 
-    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, string connectorId, Action<Contracts.Queries.Connector> update) =>
+    public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) =>
         snapshot.With(ss => ss.Connectors.First(conn => conn.ConnectorId == connectorId).With(update));
 
     // // if not byref

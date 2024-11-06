@@ -170,7 +170,7 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             var now = time.GetUtcNow().ToTimestamp();
 
             // To make it idempotent, we ignore all messages that are older than the current state
-            if (cmd.Timestamp < connector.StateTimestamp)
+            if (cmd.Timestamp <= connector.StateTimestamp)
                 return [];
 
             return cmd switch {

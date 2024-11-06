@@ -1,6 +1,7 @@
 using EventStore.Connect.Processors.Configuration;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers.Configuration;
+using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.System;
 using EventStore.Streaming;
 using EventStore.Streaming.Configuration;
@@ -24,8 +25,7 @@ static class ConnectorsStateProjectorWireUp {
                return new ConnectorsStateProjectionService(() => {
                    var loggerFactory       = ctx.GetRequiredService<ILoggerFactory>();
                    var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
-                   var getReaderBuilder    = ctx.GetRequiredService<Func<SystemReaderBuilder>>();
-                   var getProducerBuilder  = ctx.GetRequiredService<Func<SystemProducerBuilder>>();
+                   var projectionsStore    = ctx.GetRequiredService<ISnapshotProjectionsStore>();
 
                    var processor = getProcessorBuilder()
                        .ProcessorId(serviceName)
@@ -44,10 +44,7 @@ static class ConnectorsStateProjectorWireUp {
                        .Filter(ConnectorsStateProjectionStreamFilter)
                        .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
                        .InitialPosition(SubscriptionInitialPosition.Earliest)
-                       .WithModule(new ConnectorsStateProjection(
-                           getReaderBuilder,
-                           getProducerBuilder,
-                           ConnectorsStateProjectionStream))
+                       .WithModule(new ConnectorsStateProjection(projectionsStore, ConnectorsStateProjectionStream))
                        .Create();
 
                    return processor;

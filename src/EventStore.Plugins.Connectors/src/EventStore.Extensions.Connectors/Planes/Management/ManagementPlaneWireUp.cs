@@ -8,6 +8,7 @@ using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.Eventuous;
+using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
 using EventStore.Connectors.Management.Data;
@@ -33,6 +34,8 @@ public static class ManagementPlaneWireUp {
             ctx.GetRequiredService<ILicenseService>(),
             ctx.GetRequiredService<ILogger<ConnectorsLicenseService>>()
         ));
+
+        services.AddSingleton<ISnapshotProjectionsStore, SystemSnapshotProjectionsStore>();
 
         services.AddConnectorsManagementSchemaRegistration();
 
