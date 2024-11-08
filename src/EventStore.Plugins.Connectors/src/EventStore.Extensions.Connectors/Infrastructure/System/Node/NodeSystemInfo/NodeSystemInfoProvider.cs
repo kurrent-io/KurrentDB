@@ -28,3 +28,17 @@ public sealed class NodeSystemInfoProvider(IPublisher publisher, TimeProvider ti
     [UsedImplicitly]
     record GossipUpdatedInMemory(Guid NodeId, ClientClusterInfo.ClientMemberInfo[] Members);
 }
+
+public static class NodeSystemInfoProviderExtensions {
+    public static async ValueTask<NodeSystemInfo> GetNodeSystemInfo(this IPublisher publisher, TimeProvider time, CancellationToken cancellationToken = default) =>
+        await publisher.ReadStreamLastEvent(SystemStreams.GossipStream, cancellationToken)
+            .Then(re => Deserialize<GossipUpdatedInMemory>(re!.Value.Event.Data.Span, GossipStreamSerializerOptions)!)
+            .Then(evt => new NodeSystemInfo(evt.Members.Single(x => x.InstanceId == evt.NodeId), time.GetUtcNow()));
+
+    static readonly JsonSerializerOptions GossipStreamSerializerOptions = new() {
+        Converters = { new JsonStringEnumConverter() }
+    };
+
+    [UsedImplicitly]
+    record GossipUpdatedInMemory(Guid NodeId, ClientClusterInfo.ClientMemberInfo[] Members);
+}

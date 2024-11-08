@@ -1,4 +1,3 @@
-using EventStore.Connectors.Management.Contracts;
 using Eventuous;
 using FluentValidation.Results;
 using Humanizer;

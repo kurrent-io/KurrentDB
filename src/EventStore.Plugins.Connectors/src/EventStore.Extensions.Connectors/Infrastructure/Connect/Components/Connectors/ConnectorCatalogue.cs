@@ -23,6 +23,7 @@ public class ConnectorCatalogue {
         Items = new Dictionary<Type, ConnectorCatalogueItem> {
             [typeof(HttpSink)]         = For<HttpSink, HttpSinkValidator>([$"{EntitlementPrefix}_HTTP_SINK"], false),
             [typeof(LoggerSink)]       = For<LoggerSink, LoggerSinkValidator>([$"{EntitlementPrefix}_LOGGER_SINK"], false),
+            [typeof(SerilogSink)]      = For<SerilogSink, SerilogSinkValidator>([$"{EntitlementPrefix}_SERILOG_SINK"], false),
             [typeof(KafkaSink)]        = For<KafkaSink, KafkaSinkValidator>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
             [typeof(RabbitMqSink)]     = For<RabbitMqSink, RabbitMqSinkValidator>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),
             [typeof(EventStoreDBSink)] = For<EventStoreDBSink, EventStoreDBSinkValidator>([$"{EntitlementPrefix}_ESDB_SINK", $"{EntitlementPrefix}_ESDB_SOURCE"], true),

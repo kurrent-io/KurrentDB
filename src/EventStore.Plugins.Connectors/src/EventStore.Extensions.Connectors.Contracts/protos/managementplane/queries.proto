@@ -79,10 +79,4 @@ message Connector {
 
 message ConnectorsSnapshot {
   repeated Connector connectors = 1;
-  SnapshotMetadata    metadata  = 2;
-}
-
-message SnapshotMetadata {
-  google.protobuf.Timestamp update_time = 1;
-  int64                     revision    = 2;
 }

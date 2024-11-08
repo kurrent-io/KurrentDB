@@ -3,8 +3,6 @@
 using EventStore.Core.Bus;
 using EventStore.Streaming;
 using EventStore.Streaming.Producers.Configuration;
-using EventStore.Streaming.Resilience;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace EventStore.Connect.Producers.Configuration;
 

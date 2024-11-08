@@ -7,32 +7,50 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj" ExcludeAssets="all" Private="false" />
 		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj" ExcludeAssets="all" Private="false" />
+		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.SystemRuntime\EventStore.SystemRuntime.csproj" ExcludeAssets="all" Private="false"/>
 		<ProjectReference Include="..\EventStore.Extensions.Connectors.Contracts\EventStore.Extensions.Connectors.Contracts.csproj" />
 
 		<!-- Easier & faster way to debug -->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Framework\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.EventStoreDB\EventStore.Connectors.EventStoreDB.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.Http\EventStore.Connectors.Http.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.Kafka\EventStore.Connectors.Kafka.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.MongoDB\EventStore.Connectors.MongoDB.csproj" />-->
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.RabbitMQ\EventStore.Connectors.RabbitMQ.csproj" />-->
+		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Framework\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />
+		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.EventStoreDB\EventStore.Connectors.EventStoreDB.csproj" />
+		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.Http\EventStore.Connectors.Http.csproj" />
+		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.Kafka\EventStore.Connectors.Kafka.csproj" />
+		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.MongoDB\EventStore.Connectors.MongoDB.csproj" />
+		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.RabbitMQ\EventStore.Connectors.RabbitMQ.csproj" />
 
 	</ItemGroup>
 
 	<!-- Required packages -->
 	<ItemGroup>
-		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.260" />
-		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.260" />
-		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.260" />
-		<PackageReference Include="EventStore.Connectors.RabbitMQ" Version="1.0.0-alpha.260" />
-		<PackageReference Include="EventStore.Connectors.MongoDB" Version="1.0.0-alpha.260" />
-		<PackageReference Include="EventStore.Connectors.EventStoreDB" Version="1.0.0-alpha.260" />
+<!--		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.262" />-->
+<!--		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.262" />-->
+<!--		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.262" />-->
+<!--		<PackageReference Include="EventStore.Connectors.RabbitMQ" Version="1.0.0-alpha.262" />-->
+<!--		<PackageReference Include="EventStore.Connectors.MongoDB" Version="1.0.0-alpha.262" />-->
+<!--		<PackageReference Include="EventStore.Connectors.EventStoreDB" Version="1.0.0-alpha.262" />-->
 		<PackageReference Include="Eventuous.Application" Version="0.15.0" />
 		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
 		<PackageReference Include="Grpc.StatusProto" Version="2.65.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.7" />
+
+		<PackageReference Include="Serilog" Version="4.0.1" />
+		<PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
+		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+		<PackageReference Include="Serilog.Expressions" Version="5.0.0" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.2" />
+		<PackageReference Include="Serilog.Sinks.Async" Version="2.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+
+		<PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+		<PackageReference Include="Serilog.Settings.Reloader" Version="2.10.0" />
+		<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+		<PackageReference Include="Serilog.Sinks.Seq" Version="8.0.0" />
+		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+		
 	</ItemGroup>
 
 	<!-- Exclude all packages/assets provided by ESDB that break on runtime or may cause issues -->

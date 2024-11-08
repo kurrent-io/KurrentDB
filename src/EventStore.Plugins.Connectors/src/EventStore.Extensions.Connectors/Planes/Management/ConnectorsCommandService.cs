@@ -7,7 +7,6 @@ using Eventuous;
 using FluentValidation;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.Management.ConnectorDomainExceptions;
 using static EventStore.Connectors.Management.Contracts.Commands.ConnectorsCommandService;

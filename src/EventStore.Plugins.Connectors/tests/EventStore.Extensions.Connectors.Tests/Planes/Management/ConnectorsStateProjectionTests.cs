@@ -1,4 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
+#pragma warning disable EXTEXP0004
+
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
@@ -7,7 +8,6 @@ using EventStore.Extensions.Connectors.Tests;
 using EventStore.Streaming.Processors;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
-using Shouldly;
 
 namespace EventStore.Connectors.Tests.Management;
 
@@ -30,9 +30,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         };
 
         var expectedSnapshot = new ConnectorsSnapshot {
-            Metadata = new SnapshotMetadata {
-                UpdateTime = createTimestamp,
-            },
             Connectors = {
                 new Connector {
                     ConnectorId        = cmd.ConnectorId,
@@ -60,7 +57,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         // Assert
         var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
 
-        store.Snapshot.Metadata.UpdateTime.Should().Be(createTimestamp);
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
     });
 
@@ -94,9 +90,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         };
 
         var expectedSnapshot = new ConnectorsSnapshot {
-            Metadata = new SnapshotMetadata {
-                UpdateTime = reconfigureTimestamp
-            },
             Connectors = {
                 new Connector {
                     ConnectorId        = reconfigureCommand.ConnectorId,
@@ -125,7 +118,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
 
         // Assert
         var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
-        store.Snapshot.Metadata.UpdateTime.ShouldBe(reconfigureTimestamp);
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
     });
 
@@ -156,9 +148,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         };
 
         var expectedSnapshot = new ConnectorsSnapshot {
-            Metadata = new SnapshotMetadata {
-                UpdateTime = renameTimestamp,
-            },
             Connectors = {
                 new Connector {
                     ConnectorId        = renameCommand.ConnectorId,
@@ -187,7 +176,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
 
         // Assert
         var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
-        store.Snapshot.Metadata.UpdateTime.ShouldBe(renameTimestamp);
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
     });
 
@@ -217,9 +205,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         };
 
         var expectedSnapshot = new ConnectorsSnapshot {
-            Metadata = new SnapshotMetadata {
-                UpdateTime = activateTimestamp
-            },
             Connectors = {
                 new Connector {
                     ConnectorId        = activateCommand.ConnectorId,
@@ -248,7 +233,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
 
         // Assert
         var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
-        store.Snapshot.Metadata.UpdateTime.ShouldBe(activateTimestamp);
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
     });
 
@@ -278,9 +262,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         };
 
         var expectedSnapshot = new ConnectorsSnapshot {
-            Metadata = new SnapshotMetadata {
-                UpdateTime = deactivateTimestamp,
-            },
             Connectors = {
                 new Connector {
                     ConnectorId        = deactivateCommand.ConnectorId,
@@ -309,7 +290,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
 
         // Assert
         var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
-        store.Snapshot.Metadata.UpdateTime.ShouldBe(deactivateTimestamp);
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
     });
 
@@ -339,9 +319,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         };
 
         var expectedSnapshot = new ConnectorsSnapshot {
-            Metadata = new SnapshotMetadata {
-                UpdateTime = runningTimestamp,
-            },
             Connectors = {
                 new Connector {
                     ConnectorId        = runningCommand.ConnectorId,
@@ -370,7 +347,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
 
         // Assert
         var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
-        store.Snapshot.Metadata.UpdateTime.ShouldBe(runningTimestamp);
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
     });
 
@@ -400,9 +376,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         };
 
         var expectedSnapshot = new ConnectorsSnapshot {
-            Metadata = new SnapshotMetadata {
-                UpdateTime = stopTimestamp,
-            },
             Connectors = {
                 new Connector {
                     ConnectorId        = stopCommand.ConnectorId,
@@ -431,7 +404,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
 
         // Assert
         var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
-        store.Snapshot.Metadata.UpdateTime.ShouldBe(stopTimestamp);
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
     });
 
@@ -459,9 +431,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         };
 
         var expectedSnapshot = new ConnectorsSnapshot {
-            Metadata = new SnapshotMetadata {
-                UpdateTime = failTimestamp,
-            },
             Connectors = {
                 new Connector {
                     ConnectorId        = failCommand.ConnectorId,
@@ -490,7 +459,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
 
         // Assert
         var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
-        store.Snapshot.Metadata.UpdateTime.ShouldBe(failTimestamp);
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
     });
 
@@ -520,9 +488,6 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
         };
 
         var expectedSnapshot = new ConnectorsSnapshot {
-            Metadata = new SnapshotMetadata {
-                UpdateTime = deleteTimestamp,
-            },
             Connectors = {
                 new Connector {
                     ConnectorId        = deleteCommand.ConnectorId,
@@ -551,52 +516,12 @@ public class ConnectorsStateProjectionTests(ITestOutputHelper output, Connectors
 
         // Assert
         var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
-        store.Snapshot.Metadata.UpdateTime.ShouldBe(deleteTimestamp);
         store.Snapshot.Connectors.Should().BeEquivalentTo(expectedSnapshot.Connectors);
-    });
-
-    [Fact]
-    [Experimental("EXTEXP0004")]
-    public Task projection_updates_are_idempotent() => Fixture.TestWithTimeout(async cancellator => {
-        // Arrange
-        var connectorId = Fixture.NewConnectorId();
-        var streamId    = Fixture.NewIdentifier();
-        var projection  = new ConnectorsStateProjection(Fixture.SnapshotProjectionsStore, streamId);
-
-        var createTimestamp = Fixture.TimeProvider.GetUtcNow().ToTimestamp();
-
-        var createdCommand = new ConnectorCreated {
-            ConnectorId = connectorId,
-            Name        = "Logger Sink",
-            Settings = {
-                { "instanceTypeName", "logger-sink" }
-            },
-            Timestamp = createTimestamp
-        };
-
-        var activateTimestamp = Fixture.TimeProvider.GetUtcNow().AddDays(-1).ToTimestamp();
-
-        var activateCommand = new ConnectorActivating {
-            ConnectorId = connectorId,
-            Timestamp   = activateTimestamp
-        };
-
-        // Act
-        await projection.ProcessRecord(await RecordContextFor(createdCommand, cancellator.Token));
-        Fixture.TimeProvider.AdjustTime(Fixture.TimeProvider.GetLocalNow() - TimeSpan.FromDays(1));
-        await projection.ProcessRecord(await RecordContextFor(activateCommand, cancellator.Token));
-
-        // Assert
-        var store = await Fixture.SnapshotProjectionsStore.LoadSnapshot<ConnectorsSnapshot>(streamId);
-        store.Snapshot.Metadata.UpdateTime.ShouldBe(createTimestamp);
-        store.Snapshot.Connectors.First().State.Should().Be(ConnectorState.Stopped);
     });
 
     async Task<RecordContext> RecordContextFor<T>(T cmd, CancellationToken cancellationToken) where T : IMessage {
         string connectorId = ((dynamic)cmd).ConnectorId;
-
         var record = await Fixture.CreateRecord(cmd);
-
         return Fixture.CreateRecordContext(connectorId, cancellationToken) with { Record = record };
     }
 }

@@ -41,7 +41,7 @@ static class ConnectorsStreamSupervisorWireUp {
                     .AutoCommit(new AutoCommitOptions {
                         Enabled          = true,
                         RecordsThreshold = 100,
-                        StreamTemplate   = ManagementStreamSupervisorCheckpointsStream.ToString()
+                        StreamTemplate   = ManagementStreamSupervisorCheckpointsStream
                     })
                     .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
                     .InitialPosition(SubscriptionInitialPosition.Earliest)
@@ -56,4 +56,4 @@ static class ConnectorsStreamSupervisorWireUp {
 }
 
 class ConnectorsStreamSupervisorService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string serviceName)
-    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, serviceName);
+    : LeaderNodeProcessorWorker<IProcessor>(getProcessor, serviceProvider, serviceName);

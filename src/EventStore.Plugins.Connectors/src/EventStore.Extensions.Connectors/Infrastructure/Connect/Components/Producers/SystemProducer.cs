@@ -72,6 +72,9 @@ public class SystemProducer : IProducer {
         Ensure.NotDefault(request, ProduceRequest.Empty);
         Ensure.NotNull(callback);
 
+        if (request.Messages.Count == 0)
+            throw new Exception("No events received");
+
         var validRequest = request.EnsureStreamIsSet(Options.DefaultStream);
 
         await Intercept(new ProduceRequestReceived(this, validRequest));

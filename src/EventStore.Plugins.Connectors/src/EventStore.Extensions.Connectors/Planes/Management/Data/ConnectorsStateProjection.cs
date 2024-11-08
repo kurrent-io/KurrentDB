@@ -4,7 +4,6 @@ using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
 using EventStore.Streaming;
 using EventStore.Streaming.Connectors.Sinks;
-using EventStore.Streaming.Contracts.Consumers;
 using static System.StringComparison;
 
 namespace EventStore.Connectors.Management.Data;
@@ -13,10 +12,7 @@ namespace EventStore.Connectors.Management.Data;
 /// Projects the current state of all connectors in the system.
 /// </summary>
 public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSnapshot> {
-    public ConnectorsStateProjection(
-        ISnapshotProjectionsStore store,
-        string snapshotStreamId
-    ) : base(store, snapshotStreamId) {
+    public ConnectorsStateProjection(ISnapshotProjectionsStore store, string snapshotStreamId) : base(store, snapshotStreamId) {
         UpdateWhen<ConnectorCreated>((snapshot, evt) =>
             snapshot.ApplyOrAdd(evt.ConnectorId, conn => {
                 conn.Settings.Clear();
@@ -88,16 +84,6 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
                 conn.DeleteTime = evt.Timestamp;
                 conn.UpdateTime = evt.Timestamp;
             }));
-
-        UpdateWhen<Checkpoint>((snapshot, checkpoint) => {
-            // right now, because we have a single instance per connector
-            // the connectorId is the same as the consumerId
-            return snapshot.Apply(checkpoint.ConsumerId, conn => {
-                conn.Position           = checkpoint.LogPosition;
-                conn.PositionUpdateTime = checkpoint.Timestamp;
-                conn.UpdateTime         = checkpoint.Timestamp;
-            });
-        });
     }
 }
 
@@ -110,16 +96,4 @@ public static class ConnectorsSnapshotExtensions {
 
     public static ConnectorsSnapshot Apply(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) =>
         snapshot.With(ss => ss.Connectors.First(conn => conn.ConnectorId == connectorId).With(update));
-
-    // // if not byref
-    // public static ConnectorsSnapshot ApplyProper(this ConnectorsSnapshot snapshot, string connectorId, Action<Connector> update) {
-    //     var connector = snapshot.Connectors
-    //         .First(conn => conn.ConnectorId == connectorId);
-    //
-    //     snapshot.Connectors.Remove(connector);
-    //     update(connector);
-    //     snapshot.Connectors.Add(connector);
-    //
-    //     return snapshot;
-    // }
 }

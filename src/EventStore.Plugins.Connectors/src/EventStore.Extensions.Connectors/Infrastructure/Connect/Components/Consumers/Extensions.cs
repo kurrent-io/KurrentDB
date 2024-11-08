@@ -8,7 +8,6 @@ using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Schema;
 using EventStore.Streaming.Schema.Serializers;
-using EventStore.Streaming.Transformers;
 using StreamRevision = EventStore.Streaming.StreamRevision;
 
 namespace EventStore.Connect.Consumers;

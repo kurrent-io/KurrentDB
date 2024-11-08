@@ -12,7 +12,6 @@ public delegate INodeLifetimeService GetNodeLifetimeService(string componentName
 
 public interface INodeLifetimeService {
     Task<CancellationToken> WaitForLeadershipAsync(CancellationToken cancellationToken);
-    void                    ReportComponentTerminated();
 }
 
 [UsedImplicitly]
@@ -22,38 +21,29 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
     public NodeLifetimeService(string componentName, IPublisher publisher, ISubscriber subscriber, ILogger<NodeLifetimeService>? logger = null) {
         ComponentName = componentName;
         Publisher     = publisher;
+        Subscriber    = subscriber;
         Logger        = logger ?? NullLoggerFactory.Instance.CreateLogger<NodeLifetimeService>();
 
-        subscriber.Subscribe(this);
-
-        // consider only registering when leadership is assigned...
-        Publisher.Publish(new SystemMessage.RegisterForGracefulTermination(
-            ComponentName, () => {
-                Logger.LogNodeLeadershipRevoked(ComponentName, VNodeState.ShuttingDown);
-                using (var oldEvent = Exchange(ref _leadershipEvent, null)) oldEvent?.Cancel();
-                subscriber.Unsubscribe(this);
-            })
-        );
+        Subscriber.Subscribe(this);
     }
 
-    ILogger    Logger        { get; }
-    IPublisher Publisher     { get; }
-    string     ComponentName { get; }
+    ILogger     Logger        { get; }
+    IPublisher  Publisher     { get; }
+    ISubscriber Subscriber    { get; }
+    string      ComponentName { get; }
+
+    VNodeState CurrentState { get; set; } = VNodeState.Unknown;
 
     public void Handle(SystemMessage.StateChangeMessage message) {
         switch (_leadershipEvent) {
             case { Task.IsCompleted: false } when message.State is VNodeState.Leader:
-                Logger.LogNodeLeadershipAssigned(ComponentName);
+                Logger.LogNodeStateChanged(ComponentName, CurrentState, CurrentState = message.State);
                 _leadershipEvent.Complete();
                 break;
 
             case { Task.IsCompleted: true } when message.State is not VNodeState.Leader:
-                Logger.LogNodeLeadershipRevoked(ComponentName, message.State);
+                Logger.LogNodeStateChanged(ComponentName, CurrentState, CurrentState = message.State);
                 using (var oldEvent = Exchange(ref _leadershipEvent, new())) oldEvent.Cancel();
-                break;
-
-            case { Task.IsCompleted: true }:
-                Logger.LogNodeStageChangeIgnored(ComponentName, message.State);
                 break;
         }
     }
@@ -73,9 +63,6 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
         }
     }
 
-    public void ReportComponentTerminated() =>
-        Publisher.Publish(new SystemMessage.ComponentTerminated(ComponentName));
-
     void Dispose(bool disposing) {
         if (!disposing)
             return;
@@ -93,12 +80,9 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
 }
 
 static partial class NodeLifetimeServiceLogMessages {
-    [LoggerMessage(LogLevel.Debug, "{ComponentName} node leadership assigned")]
-    internal static partial void LogNodeLeadershipAssigned(this ILogger logger, string componentName);
-
-    [LoggerMessage(LogLevel.Debug, "{ComponentName} node leadership revoked: {NodeState}")]
-    internal static partial void LogNodeLeadershipRevoked(this ILogger logger, string componentName, VNodeState nodeState);
+    [LoggerMessage(LogLevel.Debug, "{ComponentName} node state changed from {PreviousNodeState} to {NodeState}")]
+    internal static partial void LogNodeStateChanged(this ILogger logger, string componentName, VNodeState previousNodeState, VNodeState nodeState);
 
     [LoggerMessage(LogLevel.Debug, "{ComponentName} node state ignored: {NodeState}")]
-    internal static partial void LogNodeStageChangeIgnored(this ILogger logger, string componentName, VNodeState nodeState);
+    internal static partial void LogNodeStateChangeIgnored(this ILogger logger, string componentName, VNodeState nodeState);
 }

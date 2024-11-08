@@ -10,6 +10,25 @@ Content-Type: application/json
   }
 }
 
+### Create Serilog Sink Connector (defaulting to the subscription initial position: Latest and excluding all system records)
+POST localhost:2113/connectors/serilog-sink-3
+Content-Type: application/json
+
+{
+  "settings": {
+    "instanceTypeName": "EventStore.Connectors.Testing.SerilogSink",
+    "autoCommit:RecordsThreshold": "1",
+    "autoCommit:Interval": "10000000",
+    "configuration" : "ewogICJTZXJpbG9nIjogewogICAgIlVzaW5nIjogWwogICAgICAiU2VyaWxvZy5TaW5rcy5TZXEiCiAgICBdLAogICAgIkZpbHRlciI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIkJ5SW5jbHVkaW5nT25seSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAiZXhwcmVzc2lvbiI6ICJTb3VyY2VDb250ZXh0IGxpa2UgJ1Nlcmlsb2dTaW5rJyIKICAgICAgICB9CiAgICAgIH0KICAgIF0sCiAgICAiV3JpdGVUbyI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIlNlcSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAic2VydmVyVXJsIjogImh0dHA6Ly9sb2NhbGhvc3Q6NTM0MSIsCiAgICAgICAgICAicGF5bG9hZEZvcm1hdHRlciI6ICJTZXJpbG9nLkZvcm1hdHRpbmcuQ29tcGFjdC5Db21wYWN0SnNvbkZvcm1hdHRlciwgU2VyaWxvZy5Gb3JtYXR0aW5nLkNvbXBhY3QiCiAgICAgICAgfQogICAgICB9CiAgICBdCiAgfQp9"
+  }
+}
+
+### Start Serilog Sink Connector from an existing checkpoint position, defaulting to the subscription initial position if no checkpoint exists
+POST localhost:2113/connectors/serilog-sink-2/start
+
+### Stop Serilog Sink Connector
+POST localhost:2113/connectors/serilog-sink-3/stop
+
 ### Create Logger Sink Connector subscribing to all system records from the beginning of time
 POST localhost:2113/connectors/demo-logger-sink
 Content-Type: application/json
@@ -33,17 +52,16 @@ POST localhost:2113/connectors/demo-logger-sink-6/start
 
 
 ### Stop Logger Sink Connector
-POST localhost:2113/connectors/demo-logger-sink-9/stop
-
+POST localhost:2113/connectors/demo-logger-sink-6/stop
 
 ### Shutdown EventStore
 POST localhost:2113/admin/shutdown
 
+### Reload EventStore Config
+POST localhost:2113/admin/reloadconfig
 
 ### Resign Node from EventStore Cluster
 POST localhost:2113/admin/node/resign
-
-
 
 ### Start Logger Sink Connector from a specific position
 POST localhost:2113/connectors/demo-logger-sink/start/1
@@ -78,7 +96,7 @@ GET localhost:2113/connectors
 Content-Type: application/json
 
 {
-  "includeSettings": false
+  "includeSettings": true
 }
 
 

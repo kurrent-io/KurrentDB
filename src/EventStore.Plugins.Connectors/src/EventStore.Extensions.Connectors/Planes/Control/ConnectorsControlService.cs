@@ -3,21 +3,21 @@ using EventStore.Connect.Consumers.Configuration;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.System;
+using EventStore.Core.Bus;
 using EventStore.Streaming;
 using Microsoft.Extensions.Logging;
-using LoggingOptions = EventStore.Streaming.Configuration.LoggingOptions;
 
 namespace EventStore.Connectors.Control;
 
-public class ConnectorsControlService : LeadershipAwareService {
+public class ConnectorsControlService : LeaderNodeBackgroundService {
     public ConnectorsControlService(
+        IPublisher publisher,
+        ISubscriber subscriber,
         ConnectorsActivator activator,
         GetActiveConnectors getActiveConnectors,
         Func<SystemConsumerBuilder> getConsumerBuilder,
-        GetNodeSystemInfo getNodeSystemInfo,
-        GetNodeLifetimeService getNodeLifetimeService,
         ILoggerFactory loggerFactory
-    ) : base(getNodeLifetimeService, getNodeSystemInfo, loggerFactory, "ConnectorsController") {
+    ) : base(publisher, subscriber, loggerFactory, "ConnectorsController") {
         Activator           = activator;
         GetActiveConnectors = getActiveConnectors;
 
@@ -25,12 +25,7 @@ public class ConnectorsControlService : LeadershipAwareService {
             .ConsumerId("ConnectorsController")
             .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
             .InitialPosition(SubscriptionInitialPosition.Latest)
-            .DisableAutoCommit()
-            .Logging(new LoggingOptions {
-                Enabled       = true,
-                LoggerFactory = loggerFactory,
-                LogName       = "EventStore.Connect.SystemConsumer"
-            });
+            .DisableAutoCommit();
     }
 
     ConnectorsActivator   Activator           { get; }
@@ -38,8 +33,6 @@ public class ConnectorsControlService : LeadershipAwareService {
     SystemConsumerBuilder ConsumerBuilder     { get; }
 
     protected override async Task Execute(NodeSystemInfo nodeInfo, CancellationToken stoppingToken) {
-        // Logger.LogControlServiceRunning(nodeInfo.InstanceId);
-
         GetConnectorsResult connectors = new();
 
         try {
@@ -53,7 +46,7 @@ public class ConnectorsControlService : LeadershipAwareService {
 
             await foreach (var record in consumer.Records(stoppingToken)) {
                 await (record.Value switch {
-                    ConnectorActivating evt   => ActivateConnector(evt.ConnectorId, EnrichWithStartPosition(evt.Settings, evt.StartFrom), evt.Revision),
+                    ConnectorActivating   evt => ActivateConnector(evt.ConnectorId, EnrichWithStartPosition(evt.Settings, evt.StartFrom), evt.Revision),
                     ConnectorDeactivating evt => DeactivateConnector(evt.ConnectorId),
                     _                         => Task.CompletedTask
                 });
@@ -67,8 +60,6 @@ public class ConnectorsControlService : LeadershipAwareService {
             await connectors
                 .Select(connector => DeactivateConnector(connector.ConnectorId))
                 .WhenAll();
-
-            // Logger.LogControlServiceStopped(nodeInfo.InstanceId);
         }
 
         return;
@@ -105,12 +96,6 @@ public class ConnectorsControlService : LeadershipAwareService {
 }
 
 static partial class ConnectorsControlServiceLogMessages {
-    [LoggerMessage(LogLevel.Debug, "[Node Id: {NodeId}] service running on leader node")]
-    internal static partial void LogControlServiceRunning(this ILogger logger, Guid nodeId);
-
-    [LoggerMessage(LogLevel.Debug, "[Node Id: {NodeId}] service stopped because node lost leadership or is shutting down")]
-    internal static partial void LogControlServiceStopped(this ILogger logger, Guid nodeId);
-
     [LoggerMessage("[Node Id: {NodeId}] connector {ConnectorId} {ResultType}")]
     internal static partial void LogConnectorActivationResult(
         this ILogger logger, LogLevel logLevel, Exception? error, Guid nodeId, string connectorId, ActivateResultType resultType

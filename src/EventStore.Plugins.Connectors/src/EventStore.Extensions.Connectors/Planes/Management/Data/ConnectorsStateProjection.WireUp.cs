@@ -1,6 +1,4 @@
 using EventStore.Connect.Processors.Configuration;
-using EventStore.Connect.Producers.Configuration;
-using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.System;
 using EventStore.Streaming;
@@ -11,7 +9,7 @@ using EventStore.Streaming.Processors.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using static EventStore.Connectors.Management.Queries.ConnectorQueryConventions.Filters;
+
 using static EventStore.Connectors.Management.Queries.ConnectorQueryConventions.Streams;
 
 namespace EventStore.Connectors.Management.Data;
@@ -29,7 +27,6 @@ static class ConnectorsStateProjectorWireUp {
 
                    var processor = getProcessorBuilder()
                        .ProcessorId(serviceName)
-                       // .ProcessorId("connectors-mngt-state-pjx")
                        .Logging(new LoggingOptions {
                            Enabled       = true,
                            LoggerFactory = loggerFactory,
@@ -39,9 +36,9 @@ static class ConnectorsStateProjectorWireUp {
                        .AutoCommit(new AutoCommitOptions {
                            Enabled          = true,
                            RecordsThreshold = 100,
-                           StreamTemplate   = ConnectorsStateProjectionCheckpointsStream.ToString()
+                           StreamTemplate   = ConnectorsStateProjectionCheckpointsStream
                        })
-                       .Filter(ConnectorsStateProjectionStreamFilter)
+                       .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
                        .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
                        .InitialPosition(SubscriptionInitialPosition.Earliest)
                        .WithModule(new ConnectorsStateProjection(projectionsStore, ConnectorsStateProjectionStream))
@@ -54,4 +51,4 @@ static class ConnectorsStateProjectorWireUp {
 }
 
 class ConnectorsStateProjectionService(Func<IProcessor> getProcessor, IServiceProvider serviceProvider, string serviceName)
-    : LeadershipAwareProcessorWorker<IProcessor>(getProcessor, serviceProvider, serviceName);
+    : LeaderNodeProcessorWorker<IProcessor>(getProcessor, serviceProvider, serviceName);

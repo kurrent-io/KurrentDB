@@ -1,13 +1,14 @@
+using EventStore.Core.Bus;
 using EventStore.Streaming.Processors;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace EventStore.Connectors.System;
 
-public abstract class LeadershipAwareProcessorWorker<T>(Func<T> getProcessor, IServiceProvider serviceProvider, string serviceName) :
-    LeadershipAwareService(
-        serviceProvider.GetRequiredService<GetNodeLifetimeService>(),
-        serviceProvider.GetRequiredService<GetNodeSystemInfo>(),
+public abstract class LeaderNodeProcessorWorker<T>(Func<T> getProcessor, IServiceProvider serviceProvider, string serviceName) :
+    LeaderNodeBackgroundService(
+        serviceProvider.GetRequiredService<IPublisher>(),
+        serviceProvider.GetRequiredService<ISubscriber>(),
         serviceProvider.GetRequiredService<ILoggerFactory>(),
         serviceName
     ) where T : IProcessor {
