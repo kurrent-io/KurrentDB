@@ -49,6 +49,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{1D2C51BC
 		tests\connectors-api.http = tests\connectors-api.http
 		tests\connectors-http-sink.http = tests\connectors-http-sink.http
 		tests\connectors-api-queries.http = tests\connectors-api-queries.http
+		tests\connectors-api.serilog-sink.http = tests\connectors-api.serilog-sink.http
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors", "src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj", "{157A55A0-AE97-40F9-9A38-8A756C4B4785}"

@@ -9,6 +9,7 @@ public abstract class LeaderNodeProcessorWorker<T>(Func<T> getProcessor, IServic
     LeaderNodeBackgroundService(
         serviceProvider.GetRequiredService<IPublisher>(),
         serviceProvider.GetRequiredService<ISubscriber>(),
+        serviceProvider.GetRequiredService<GetNodeSystemInfo>(),
         serviceProvider.GetRequiredService<ILoggerFactory>(),
         serviceName
     ) where T : IProcessor {

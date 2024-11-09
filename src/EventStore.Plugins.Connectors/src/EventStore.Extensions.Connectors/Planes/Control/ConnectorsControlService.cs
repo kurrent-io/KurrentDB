@@ -15,9 +15,10 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
         ISubscriber subscriber,
         ConnectorsActivator activator,
         GetActiveConnectors getActiveConnectors,
+        GetNodeSystemInfo getNodeSystemInfo,
         Func<SystemConsumerBuilder> getConsumerBuilder,
         ILoggerFactory loggerFactory
-    ) : base(publisher, subscriber, loggerFactory, "ConnectorsController") {
+    ) : base(publisher, subscriber, getNodeSystemInfo, loggerFactory, "ConnectorsController") {
         Activator           = activator;
         GetActiveConnectors = getActiveConnectors;
 

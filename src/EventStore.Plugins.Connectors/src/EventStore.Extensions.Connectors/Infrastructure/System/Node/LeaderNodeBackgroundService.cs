@@ -8,20 +8,27 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
     protected LeaderNodeBackgroundService(
         IPublisher publisher,
         ISubscriber subscriber,
+        GetNodeSystemInfo getNodeSystemInfo,
         ILoggerFactory loggerFactory,
         string? serviceName = null
     ) : base(publisher, loggerFactory.CreateLogger<NodeBackgroundService>(), serviceName) {
-        GetNodeLifetimeService = component => new NodeLifetimeService(
-            component, publisher, subscriber,
+        // GetNodeLifetimeService = component => new NodeLifetimeService(
+        //     component, publisher, subscriber,
+        //     loggerFactory.CreateLogger<NodeLifetimeService>()
+        // );
+
+        NodeLifetimeService = new NodeLifetimeService(
+            ServiceName, publisher, subscriber,
             loggerFactory.CreateLogger<NodeLifetimeService>()
         );
 
-        GetNodeSystemInfo = token => publisher.GetNodeSystemInfo(TimeProvider.System, token);
+        GetNodeSystemInfo = getNodeSystemInfo;
 
         Logger = loggerFactory.CreateLogger<LeaderNodeBackgroundService>();
     }
 
-    GetNodeLifetimeService GetNodeLifetimeService { get; }
+    // GetNodeLifetimeService GetNodeLifetimeService { get; }
+    INodeLifetimeService   NodeLifetimeService    { get; }
     GetNodeSystemInfo      GetNodeSystemInfo      { get; }
 
     protected ILogger Logger { get; }
@@ -31,10 +38,10 @@ public abstract class LeaderNodeBackgroundService : NodeBackgroundService {
 
         if (stoppingToken.IsCancellationRequested) return;
 
-        var nodeLifetime = GetNodeLifetimeService(ServiceName);
+        // INodeLifetimeService nodeLifetime = GetNodeLifetimeService(ServiceName);
 
         while (!stoppingToken.IsCancellationRequested) {
-            var lifetimeToken = await nodeLifetime.WaitForLeadershipAsync(stoppingToken);
+            var lifetimeToken = await NodeLifetimeService.WaitForLeadershipAsync(stoppingToken);
 
             if (lifetimeToken.IsCancellationRequested)
                 break;

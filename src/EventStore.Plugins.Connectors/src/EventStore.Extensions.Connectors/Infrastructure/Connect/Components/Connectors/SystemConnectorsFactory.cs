@@ -79,11 +79,9 @@ public class SystemConnectorsFactory(
         // I don't know, I'm just trying to make it work.
         // I'm not happy with this, but it's the best I could come up with in the time I had.
 
-        var nodeSysInfoProvider = Services.GetRequiredService<INodeSystemInfoProvider>();
+        var getNodeSystemInfo = Services.GetRequiredService<GetNodeSystemInfo>();
 
-        var nodeId = nodeSysInfoProvider
-            .GetNodeSystemInfo().GetAwaiter().GetResult()
-            .InstanceId.ToString();
+        var nodeId = getNodeSystemInfo().AsTask().GetAwaiter().GetResult().InstanceId.ToString();
 
         var filter = sinkOptions.Subscription.Filter.Scope == SinkConsumeFilterScope.Unspecified
             ? ConsumeFilter.None
