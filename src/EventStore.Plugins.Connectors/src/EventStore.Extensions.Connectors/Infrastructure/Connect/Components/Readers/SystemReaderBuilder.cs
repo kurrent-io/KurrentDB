@@ -7,7 +7,7 @@ using EventStore.Streaming.Readers.Configuration;
 namespace EventStore.Connect.Readers.Configuration;
 
 [PublicAPI]
-public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemReaderOptions,SystemReader> {
+public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemReaderOptions, SystemReader> {
     public SystemReaderBuilder Publisher(IPublisher publisher) {
         Ensure.NotNull(publisher);
         return new() {
