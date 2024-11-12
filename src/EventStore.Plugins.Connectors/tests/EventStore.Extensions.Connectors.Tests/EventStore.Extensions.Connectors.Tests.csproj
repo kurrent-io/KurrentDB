@@ -6,14 +6,14 @@
 
 	<ItemGroup>
 		<!-- Some packages that are configured with PrivateAssets in the plugin need to be referenced here -->
-<!--		 <PackageReference Include="EventStore.Streaming" Version="1.0.0-alpha.262" />-->
+		 <PackageReference Include="EventStore.Streaming" Version="1.0.0-alpha.265" />
 
 		<PackageReference Include="Eventuous.Testing" Version="0.15.0" />
 		<PackageReference Include="NewId" Version="4.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Framework\src\EventStore.Streaming\EventStore.Streaming.csproj" />
+<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Framework\src\EventStore.Streaming\EventStore.Streaming.csproj" />-->
 
 		<ProjectReference Include="..\..\src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
 		<ProjectReference Include="..\EventStore.Extensions.Connectors.Management.TestServer\EventStore.Extensions.Connectors.Management.TestServer.csproj" />
