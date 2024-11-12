@@ -83,13 +83,15 @@ public class SystemConnectorsFactory(
 
         var nodeId = getNodeSystemInfo().AsTask().GetAwaiter().GetResult().InstanceId.ToString();
 
-        var filter = sinkOptions.Subscription.Filter.Scope == SinkConsumeFilterScope.Unspecified
-            ? ConsumeFilter.None
-            : string.IsNullOrWhiteSpace(sinkOptions.Subscription.Filter.Expression)
+        var filter = string.IsNullOrWhiteSpace(sinkOptions.Subscription.Filter.Expression)
+            ? sinkOptions.Subscription.Filter.Scope is SinkConsumeFilterScope.Unspecified
                 ? ConsumeFilter.ExcludeSystemEvents()
-                : ConsumeFilter.From((ConsumeFilterScope)sinkOptions.Subscription.Filter.Scope,
-                    (ConsumeFilterType)sinkOptions.Subscription.Filter.FilterType,
-                    sinkOptions.Subscription.Filter.Expression);
+                : ConsumeFilter.None
+            : ConsumeFilter.From(
+                (ConsumeFilterScope)sinkOptions.Subscription.Filter.Scope,
+                (ConsumeFilterType)sinkOptions.Subscription.Filter.FilterType,
+                sinkOptions.Subscription.Filter.Expression
+            );
 
         var publishStateChangesOptions = new PublishStateChangesOptions {
             Enabled        = true,
