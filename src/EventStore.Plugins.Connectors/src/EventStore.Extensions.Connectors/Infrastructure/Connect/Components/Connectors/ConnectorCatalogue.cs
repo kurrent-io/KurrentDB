@@ -4,7 +4,7 @@ using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
 using EventStore.Connectors.MongoDB;
 using EventStore.Connectors.RabbitMQ;
-using EventStore.Connectors.Testing;
+using EventStore.Connectors.Serilog;
 using Humanizer;
 
 using static EventStore.Connectors.Connect.Components.Connectors.ConnectorCatalogueItem;
@@ -22,7 +22,6 @@ public class ConnectorCatalogue {
     ConnectorCatalogue() {
         Items = new Dictionary<Type, ConnectorCatalogueItem> {
             [typeof(HttpSink)]         = For<HttpSink, HttpSinkValidator>([$"{EntitlementPrefix}_HTTP_SINK"], false),
-            [typeof(LoggerSink)]       = For<LoggerSink, LoggerSinkValidator>([$"{EntitlementPrefix}_LOGGER_SINK"], false),
             [typeof(SerilogSink)]      = For<SerilogSink, SerilogSinkValidator>([$"{EntitlementPrefix}_SERILOG_SINK"], false),
             [typeof(KafkaSink)]        = For<KafkaSink, KafkaSinkValidator>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
             [typeof(RabbitMqSink)]     = For<RabbitMqSink, RabbitMqSinkValidator>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),

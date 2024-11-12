@@ -5,7 +5,7 @@ using EventStore.Connectors.Kafka;
 using EventStore.Connectors.Management;
 using EventStore.Connectors.MongoDB;
 using EventStore.Connectors.RabbitMQ;
-using EventStore.Connectors.Testing;
+using EventStore.Connectors.Serilog;
 using EventStore.Toolkit.Testing.Fixtures;
 using EventStore.Toolkit.Testing.Xunit;
 
@@ -51,7 +51,7 @@ public class ConnectorsLicenseServiceTests(ITestOutputHelper output, LicensingFi
         var sut     = new ConnectorsLicenseService(Fixture.NewLicenseObservable(license), Fixture.LicensingLogger);
 
         sut.CheckLicense<HttpSink>().Should().BeTrue();
-        sut.CheckLicense<LoggerSink>().Should().BeTrue();
+        sut.CheckLicense<SerilogSink>().Should().BeTrue();
         sut.CheckLicense<KafkaSink>().Should().BeFalse();
         sut.CheckLicense<RabbitMqSink>().Should().BeFalse();
         sut.CheckLicense<MongoDbSink>().Should().BeFalse();

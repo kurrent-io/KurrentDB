@@ -1,3 +1,5 @@
+// ReSharper disable CheckNamespace
+
 using System.Runtime;
 using EventStore.Common.Utils;
 using EventStore.Streaming;
@@ -7,7 +9,7 @@ using Serilog;
 using Serilog.Core;
 using Serilog.Sinks.SystemConsole.Themes;
 
-namespace EventStore.Connectors.Testing;
+namespace EventStore.Connectors.Serilog;
 
 public class SerilogSink : ISink {
     SwitchableLogger Logger { get; set; } = null!;
@@ -94,14 +96,13 @@ public record SerilogSinkOptions : SinkOptions {
     // {
     //     "Serilog": {
     //         "Using": [ "Serilog.Sinks.Seq" ],
-    //         "WriteTo": [
-    //         {
+    //         "WriteTo": [ {
     //             "Name": "Seq",
     //             "Args": {
     //                 "serverUrl": "http://localhost:5341",
     //                 "payloadFormatter": "Serilog.Formatting.Compact.CompactJsonFormatter, Serilog.Formatting.Compact"
     //             }
-    //         }
+    //         } ]
     //     }
     // }
 }
