@@ -22,12 +22,12 @@
 
 	<!-- Required packages -->
 	<ItemGroup>
-		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.265" />
-		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.265" />
-		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.265" />
-		<PackageReference Include="EventStore.Connectors.RabbitMQ" Version="1.0.0-alpha.265" />
-		<PackageReference Include="EventStore.Connectors.MongoDB" Version="1.0.0-alpha.265" />
-		<PackageReference Include="EventStore.Connectors.EventStoreDB" Version="1.0.0-alpha.265" />
+		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.267" />
+		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.267" />
+		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.267" />
+		<PackageReference Include="EventStore.Connectors.RabbitMQ" Version="1.0.0-alpha.267" />
+		<PackageReference Include="EventStore.Connectors.MongoDB" Version="1.0.0-alpha.267" />
+		<PackageReference Include="EventStore.Connectors.EventStoreDB" Version="1.0.0-alpha.267" />
 		<PackageReference Include="Eventuous.Application" Version="0.15.0" />
 		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
