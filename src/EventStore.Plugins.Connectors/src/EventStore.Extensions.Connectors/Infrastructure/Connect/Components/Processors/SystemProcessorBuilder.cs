@@ -13,6 +13,7 @@ using EventStore.Streaming.Consumers.Configuration;
 using EventStore.Streaming.Processors;
 using EventStore.Streaming.Processors.Configuration;
 using EventStore.Streaming.Processors.Locks;
+using EventStore.Toolkit;
 using Microsoft.Extensions.Logging;
 using NodaTime.Extensions;
 

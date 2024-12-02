@@ -3,7 +3,7 @@ using EventStore.Connect.Leases;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.System;
 using EventStore.Core.Bus;
-using EventStore.Streaming;
+using EventStore.Toolkit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

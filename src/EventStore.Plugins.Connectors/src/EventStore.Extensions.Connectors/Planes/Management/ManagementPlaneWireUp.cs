@@ -17,7 +17,7 @@ using EventStore.Connectors.Management.Queries;
 using EventStore.Connectors.Management.Reactors;
 using EventStore.Connectors.System;
 using EventStore.Plugins.Licensing;
-using EventStore.Streaming;
+using EventStore.Toolkit;
 using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Grpc.JsonTranscoding;

@@ -1,4 +1,5 @@
 using EventStore.Connectors.Connect.Components.Connectors;
+using EventStore.Connectors.Elasticsearch;
 using EventStore.Connectors.EventStoreDB;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
@@ -55,7 +56,8 @@ public class ConnectorsLicenseServiceTests(ITestOutputHelper output, LicensingFi
         sut.CheckLicense<KafkaSink>().Should().BeFalse();
         sut.CheckLicense<RabbitMqSink>().Should().BeFalse();
         sut.CheckLicense<MongoDbSink>().Should().BeFalse();
-        sut.CheckLicense<EventStoreDBSink>().Should().BeFalse();
+        sut.CheckLicense<EventStoreDbSink>().Should().BeFalse();
+        sut.CheckLicense<ElasticsearchSink>().Should().BeFalse();
     }
 
     [Theory]

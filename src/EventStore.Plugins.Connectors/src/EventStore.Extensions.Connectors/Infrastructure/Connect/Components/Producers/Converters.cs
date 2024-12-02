@@ -7,6 +7,7 @@ using EventStore.Streaming;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Schema;
 using EventStore.Streaming.Schema.Serializers;
+using EventStore.Toolkit;
 
 namespace EventStore.Connect.Producers;
 

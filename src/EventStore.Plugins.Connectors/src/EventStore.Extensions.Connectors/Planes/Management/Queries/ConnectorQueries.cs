@@ -4,6 +4,7 @@ using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Management.Contracts.Queries;
 using EventStore.Streaming;
 using EventStore.Streaming.Contracts.Consumers;
+using EventStore.Toolkit;
 
 namespace EventStore.Connectors.Management.Queries;
 

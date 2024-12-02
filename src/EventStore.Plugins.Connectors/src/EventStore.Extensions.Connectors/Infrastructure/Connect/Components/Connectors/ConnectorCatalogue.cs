@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using EventStore.Connectors.Elasticsearch;
 using EventStore.Connectors.EventStoreDB;
 using EventStore.Connectors.Http;
 using EventStore.Connectors.Kafka;
@@ -21,12 +22,13 @@ public class ConnectorCatalogue {
 
     ConnectorCatalogue() {
         Items = new Dictionary<Type, ConnectorCatalogueItem> {
-            [typeof(HttpSink)]         = For<HttpSink, HttpSinkValidator>([$"{EntitlementPrefix}_HTTP_SINK"], false),
-            [typeof(SerilogSink)]      = For<SerilogSink, SerilogSinkValidator>([$"{EntitlementPrefix}_SERILOG_SINK"], false),
-            [typeof(KafkaSink)]        = For<KafkaSink, KafkaSinkValidator>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
-            [typeof(RabbitMqSink)]     = For<RabbitMqSink, RabbitMqSinkValidator>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),
-            [typeof(EventStoreDBSink)] = For<EventStoreDBSink, EventStoreDBSinkValidator>([$"{EntitlementPrefix}_ESDB_SINK", $"{EntitlementPrefix}_ESDB_SOURCE"], true),
-            [typeof(MongoDbSink)]      = For<MongoDbSink, MongoDbSinkValidator>([$"{EntitlementPrefix}_MONGODB_SINK"], true),
+            [typeof(HttpSink)]     = For<HttpSink, HttpSinkValidator>([$"{EntitlementPrefix}_HTTP_SINK"], false),
+            [typeof(SerilogSink)]  = For<SerilogSink, SerilogSinkValidator>([$"{EntitlementPrefix}_SERILOG_SINK"], false),
+            [typeof(KafkaSink)]    = For<KafkaSink, KafkaSinkValidator>([$"{EntitlementPrefix}_KAFKA_SINK"], true),
+            [typeof(RabbitMqSink)] = For<RabbitMqSink, RabbitMqSinkValidator>([$"{EntitlementPrefix}_RABBITMQ_SINK"], true),
+            [typeof(EventStoreDbSink)] = For<EventStoreDbSink, EventStoreDbSinkValidator>([$"{EntitlementPrefix}_ESDB_SINK", $"{EntitlementPrefix}_ESDB_SOURCE"], true),
+            [typeof(ElasticsearchSink)] = For<ElasticsearchSink, ElasticsearchSinkValidator>([$"{EntitlementPrefix}_ELASTICSEARCH_SINK", $"{EntitlementPrefix}_ELASTICSEARCH_SOURCE"], true),
+            [typeof(MongoDbSink)] = For<MongoDbSink, MongoDbSinkValidator>([$"{EntitlementPrefix}_MONGODB_SINK"], true),
         }.ToFrozenDictionary();
 
         ItemsByAlias = Items

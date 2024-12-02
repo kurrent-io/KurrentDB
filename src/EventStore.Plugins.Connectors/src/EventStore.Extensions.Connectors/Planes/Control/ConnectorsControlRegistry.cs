@@ -12,6 +12,7 @@ using EventStore.Streaming;
 using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Readers;
+using EventStore.Toolkit;
 using Google.Protobuf.WellKnownTypes;
 using ConnectorSettings = System.Collections.Generic.IDictionary<string, string?>;
 

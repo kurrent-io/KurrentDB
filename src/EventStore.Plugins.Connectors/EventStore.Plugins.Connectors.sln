@@ -82,6 +82,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Connectors.Mongo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Connectors.RabbitMQ", "submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.RabbitMQ\EventStore.Connectors.RabbitMQ.csproj", "{5A5C804B-7FF7-4CD3-9CB2-0602AE3700A8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Toolkit", "Toolkit", "{8F26CC73-FED3-4909-90E4-3C58C9969568}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Toolkit", "submodules\EventStore.Streaming\src\Toolkit\src\EventStore.Toolkit\EventStore.Toolkit.csproj", "{96D07673-9E19-4AF3-B3BE-76537EC07714}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Connectors.Elasticsearch", "submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.Elasticsearch\EventStore.Connectors.Elasticsearch.csproj", "{B94006C9-C0A7-4186-B30C-6651C9EE3192}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -216,6 +222,14 @@ Global
 		{5A5C804B-7FF7-4CD3-9CB2-0602AE3700A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A5C804B-7FF7-4CD3-9CB2-0602AE3700A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A5C804B-7FF7-4CD3-9CB2-0602AE3700A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96D07673-9E19-4AF3-B3BE-76537EC07714}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96D07673-9E19-4AF3-B3BE-76537EC07714}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96D07673-9E19-4AF3-B3BE-76537EC07714}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96D07673-9E19-4AF3-B3BE-76537EC07714}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B94006C9-C0A7-4186-B30C-6651C9EE3192}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B94006C9-C0A7-4186-B30C-6651C9EE3192}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B94006C9-C0A7-4186-B30C-6651C9EE3192}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B94006C9-C0A7-4186-B30C-6651C9EE3192}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1FFE9B22-1994-47B1-814E-7DCB8E838D10} = {B4DAA225-6158-4BB6-9426-242032A94EA7}
@@ -250,5 +264,8 @@ Global
 		{83E29DE4-F267-4891-BA34-889BD48E7867} = {2F4C11FC-48AF-4F0A-BFD1-870CD14ED680}
 		{B38A2C03-E3D9-48A3-9155-5461C7BA0BC7} = {2F4C11FC-48AF-4F0A-BFD1-870CD14ED680}
 		{5A5C804B-7FF7-4CD3-9CB2-0602AE3700A8} = {2F4C11FC-48AF-4F0A-BFD1-870CD14ED680}
+		{8F26CC73-FED3-4909-90E4-3C58C9969568} = {B1CF08AB-C8C5-4272-8989-BA477346920C}
+		{96D07673-9E19-4AF3-B3BE-76537EC07714} = {8F26CC73-FED3-4909-90E4-3C58C9969568}
+		{B94006C9-C0A7-4186-B30C-6651C9EE3192} = {2F4C11FC-48AF-4F0A-BFD1-870CD14ED680}
 	EndGlobalSection
 EndGlobal

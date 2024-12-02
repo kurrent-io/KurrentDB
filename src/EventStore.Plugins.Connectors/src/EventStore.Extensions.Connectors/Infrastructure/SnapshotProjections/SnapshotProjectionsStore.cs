@@ -6,9 +6,8 @@ using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Streaming;
-using EventStore.Streaming.Processors;
 using EventStore.Streaming.Producers;
-using Microsoft.Extensions.Logging;
+using EventStore.Toolkit;
 
 namespace EventStore.Connectors.Infrastructure;
 

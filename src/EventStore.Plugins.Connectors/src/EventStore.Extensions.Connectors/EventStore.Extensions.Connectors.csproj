@@ -12,22 +12,26 @@
 
 		<!-- Easier & faster way to debug -->
 <!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Framework\src\EventStore.Streaming.Core\EventStore.Streaming.Core.csproj" />-->
+<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Toolkit\src\EventStore.Toolkit\EventStore.Toolkit.csproj" />-->
 <!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.EventStoreDB\EventStore.Connectors.EventStoreDB.csproj" />-->
 <!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.Http\EventStore.Connectors.Http.csproj" />-->
 <!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.Kafka\EventStore.Connectors.Kafka.csproj" />-->
 <!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.MongoDB\EventStore.Connectors.MongoDB.csproj" />-->
 <!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.RabbitMQ\EventStore.Connectors.RabbitMQ.csproj" />-->
+<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Connectors\src\EventStore.Connectors.Elasticsearch\EventStore.Connectors.Elasticsearch.csproj" />-->
 
 	</ItemGroup>
 
 	<!-- Required packages -->
 	<ItemGroup>
-		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.268" />
-		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.268" />
-		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.268" />
-		<PackageReference Include="EventStore.Connectors.RabbitMQ" Version="1.0.0-alpha.268" />
-		<PackageReference Include="EventStore.Connectors.MongoDB" Version="1.0.0-alpha.268" />
-		<PackageReference Include="EventStore.Connectors.EventStoreDB" Version="1.0.0-alpha.268" />
+		<PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.283" />
+		<PackageReference Include="EventStore.Connectors.Http" Version="1.0.0-alpha.283" />
+		<PackageReference Include="EventStore.Connectors.Kafka" Version="1.0.0-alpha.283" />
+		<PackageReference Include="EventStore.Connectors.RabbitMQ" Version="1.0.0-alpha.283" />
+		<PackageReference Include="EventStore.Connectors.MongoDB" Version="1.0.0-alpha.283" />
+		<PackageReference Include="EventStore.Connectors.EventStoreDB" Version="1.0.0-alpha.283" />
+		<PackageReference Include="EventStore.Connectors.Elasticsearch" Version="1.0.0-alpha.283" />
+		<PackageReference Include="EventStore.Toolkit" Version="1.0.0-alpha.283" />
 		<PackageReference Include="Eventuous.Application" Version="0.15.0" />
 		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
@@ -57,16 +61,23 @@
 	<ItemGroup>
 		<!-- Contains Plugin and License components -->
 		<PackageReference Include="EventStore.Plugins" Version="24.10.6" ExcludeAssets="runtime" />
-
-		<!-- Break at runtime if not excluded from output - might be a version issue -->
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" PrivateAssets="all"/>
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" PrivateAssets="all"/>
 <!--		<PackageReference Include="Microsoft.Extensions.Options" PrivateAssets="all"/>-->
 <!--		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" PrivateAssets="all"/>-->
 <!--		<PackageReference Include="Microsoft.Extensions.Configuration.Json" PrivateAssets="all"/>-->
 	</ItemGroup>
 
-	<ItemGroup>
+  <!-- Break at runtime if not excluded from output - might be a version issue -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <ItemGroup>
 		<InternalsVisibleTo Include="EventStore.Plugins.Connectors" />
 		<InternalsVisibleTo Include="EventStore.Extensions.Connectors.Tests" />
 	</ItemGroup>

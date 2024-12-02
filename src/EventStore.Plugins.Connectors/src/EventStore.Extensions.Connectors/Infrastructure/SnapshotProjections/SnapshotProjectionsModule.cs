@@ -3,6 +3,7 @@
 
 using EventStore.Streaming;
 using EventStore.Streaming.Processors;
+using EventStore.Toolkit;
 using Microsoft.Extensions.Logging;
 
 namespace EventStore.Connectors.Infrastructure;

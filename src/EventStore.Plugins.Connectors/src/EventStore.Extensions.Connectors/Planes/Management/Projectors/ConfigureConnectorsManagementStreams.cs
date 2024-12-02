@@ -4,6 +4,7 @@ using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Streaming;
+using EventStore.Toolkit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

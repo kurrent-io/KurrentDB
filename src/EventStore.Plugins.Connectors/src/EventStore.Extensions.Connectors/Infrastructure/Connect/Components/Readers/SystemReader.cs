@@ -1,6 +1,7 @@
 // ReSharper disable CheckNamespace
 
 using System.Runtime.CompilerServices;
+using DotNext;
 using EventStore.Connect.Consumers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Core;
@@ -13,6 +14,7 @@ using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Readers;
 using EventStore.Streaming.Schema.Serializers;
 using EventStore.Streaming.JsonPath;
+using EventStore.Toolkit;
 using Polly;
 using StreamRevision = EventStore.Streaming.StreamRevision;
 

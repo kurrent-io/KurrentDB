@@ -1,5 +1,6 @@
 using EventStore.Connectors.Management;
 using EventStore.Streaming;
+using EventStore.Toolkit;
 using Eventuous;
 
 namespace EventStore.Connectors.Eventuous;

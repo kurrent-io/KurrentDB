@@ -8,6 +8,7 @@ using EventStore.Streaming.Consumers;
 using EventStore.Streaming.Producers;
 using EventStore.Streaming.Readers;
 using EventStore.Streaming.Schema;
+using EventStore.Toolkit;
 using Eventuous;
 
 namespace EventStore.Connectors.Eventuous;

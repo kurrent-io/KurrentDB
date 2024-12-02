@@ -17,6 +17,7 @@ using EventStore.Streaming.Consumers.LifecycleEvents;
 using EventStore.Streaming.Interceptors;
 using EventStore.Streaming.Schema.Serializers;
 using EventStore.Streaming.JsonPath;
+using EventStore.Toolkit;
 using Microsoft.Extensions.Logging;
 using Polly;
 
