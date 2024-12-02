@@ -1,8 +1,8 @@
 // ReSharper disable CheckNamespace
 
 using EventStore.Core.Bus;
-using EventStore.Streaming;
 using EventStore.Streaming.Consumers.Configuration;
+using EventStore.Toolkit;
 using Microsoft.Extensions.Logging;
 using Polly.Telemetry;
 

@@ -1,6 +1,7 @@
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Streaming;
+using EventStore.Toolkit;
 
 namespace EventStore.Connectors.System;
 

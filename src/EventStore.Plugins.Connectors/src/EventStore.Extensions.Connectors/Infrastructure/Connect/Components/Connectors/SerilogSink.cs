@@ -4,6 +4,7 @@ using System.Runtime;
 using EventStore.Common.Utils;
 using EventStore.Streaming;
 using EventStore.Streaming.Connectors.Sinks;
+using EventStore.Toolkit;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Core;

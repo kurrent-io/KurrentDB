@@ -6,7 +6,7 @@ using EventStore.Connectors.System;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Extensions.Connectors.Tests;
-using EventStore.Streaming;
+using EventStore.Toolkit;
 using EventStore.Toolkit.Testing.Xunit;
 using Microsoft.Extensions.Logging;
 using MemberInfo = EventStore.Core.Cluster.MemberInfo;

@@ -5,6 +5,7 @@ using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.System;
 using EventStore.Core.Bus;
 using EventStore.Streaming;
+using EventStore.Toolkit;
 using Microsoft.Extensions.Logging;
 
 namespace EventStore.Connectors.Control;

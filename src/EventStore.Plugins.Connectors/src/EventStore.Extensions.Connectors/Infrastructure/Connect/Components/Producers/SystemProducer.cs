@@ -1,5 +1,6 @@
 // ReSharper disable CheckNamespace
 
+using DotNext;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Core;
 using EventStore.Core.Bus;
@@ -10,6 +11,7 @@ using EventStore.Streaming.Producers;
 using EventStore.Streaming.Producers.Interceptors;
 using EventStore.Streaming.Producers.LifecycleEvents;
 using EventStore.Streaming.Schema.Serializers;
+using EventStore.Toolkit;
 using Polly;
 
 namespace EventStore.Connect.Producers;

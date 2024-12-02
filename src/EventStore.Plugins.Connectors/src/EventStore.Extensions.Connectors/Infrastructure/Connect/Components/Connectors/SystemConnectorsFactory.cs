@@ -15,6 +15,7 @@ using EventStore.Streaming.Processors;
 using EventStore.Streaming.Processors.Configuration;
 using EventStore.Streaming.Schema;
 using EventStore.Streaming.Transformers;
+using EventStore.Toolkit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
