@@ -4,7 +4,7 @@
 		<OutputType>Exe</OutputType>
 		<ApplicationIcon>app2.ico</ApplicationIcon>
 		<GenerateSupportedRuntime>false</GenerateSupportedRuntime>
-		<ServerGarbageCollection>false</ServerGarbageCollection>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Extensions.MudBlazor.StaticInput" />
