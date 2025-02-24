@@ -5,14 +5,17 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Services.Archive.Storage.Exceptions;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 
 namespace EventStore.Core.Services.Archive.Storage;
 
-// Reader for when there is no archive
-public class NoArchiveReader : IArchiveStorageReader {
-	private NoArchiveReader() { }
+// For when there is no archive
+// - Reads behave as if there is no archive
+// - Writes are invalid
+public class NoArchive : IArchiveStorage {
+	private NoArchive() { }
 
-	public static NoArchiveReader Instance { get; } = new();
+	public static NoArchive Instance { get; } = new();
 
 	public ValueTask<long> GetCheckpoint(CancellationToken ct) =>
 		ValueTask.FromResult<long>(0);
@@ -22,4 +25,10 @@ public class NoArchiveReader : IArchiveStorageReader {
 
 	public ValueTask<ArchivedChunkMetadata> GetMetadataAsync(int logicalChunkNumber, CancellationToken token) =>
 		ValueTask.FromException<ArchivedChunkMetadata>(new ChunkDeletedException());
+
+	public ValueTask SetCheckpoint(long checkpoint, CancellationToken ct) =>
+		throw new InvalidOperationException();
+
+	public ValueTask StoreChunk(IChunkBlob chunk, CancellationToken ct) =>
+		throw new InvalidOperationException();
 }

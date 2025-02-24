@@ -13,6 +13,8 @@ using EventStore.Core.Index;
 using EventStore.Core.Index.Hashes;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.Metrics;
+using EventStore.Core.Services.Archive;
+using EventStore.Core.Services.Archive.Naming;
 using EventStore.Core.Services.Archive.Storage;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Settings;
@@ -24,6 +26,7 @@ using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
+using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.TransactionLog.Scavenging;
 using EventStore.Core.TransactionLog.Scavenging.DbAccess;
@@ -31,6 +34,7 @@ using EventStore.Core.TransactionLog.Scavenging.Interfaces;
 using EventStore.Core.TransactionLog.Scavenging.Stages;
 using EventStore.Core.Transforms;
 using EventStore.Core.Util;
+using Newtonsoft.Json.Serialization;
 using Xunit;
 using static EventStore.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
 using Type = System.Type;
@@ -58,7 +62,8 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 	private bool _mergeChunks;
 	private bool _syncOnly;
 	private string _dbPath;
-	private IArchiveStorageReader _archiveReader = NoArchiveReader.Instance;
+	private bool _isArchiver;
+	private IArchiveStorage _archive = NoArchive.Instance;
 	private int _retainDays = TimeSpan.MaxValue.Days;
 	private long _retainBytes = long.MaxValue;
 	private TStreamId _accumulatingCancellationTrigger;
@@ -90,12 +95,36 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 		return this;
 	}
 
-	public Scenario<TLogFormat, TStreamId> WithArchive(
+	// Used to test archiver node
+	//qqqq we will need some retention options to make sure that chunks can be both scavenged and removed.
+	public Scenario<TLogFormat, TStreamId> WithArchiverNode() {
+		if (string.IsNullOrWhiteSpace(_dbPath))
+			throw new InvalidOperationException("Call WithDbPath first");
+
+		_isArchiver = true;
+
+		_archive = ArchiveStorageFactory.Create(
+			new() {
+				StorageType = StorageType.FileSystem,
+				FileSystem = new() {
+					Path = _dbPath,
+				},
+			},
+			new ArchiveNamingStrategy(new VersionedPatternFileNamingStrategy(
+				path: _dbPath,
+				prefix: "archived-chunk-")));
+
+		return this;
+	}
+
+	// Used to test non-archiver nodes that need to access the archive to determine what to retain locally
+	public Scenario<TLogFormat, TStreamId> WithArchiveReader(
 		long chunksInArchive,
 		long? retainBytes = null,
 		int? retainDays = null) {
 
-		_archiveReader = new ArchiveReaderEmptyChunks(chunkSize: ChunkSize, chunksInArchive);
+		_isArchiver = false;
+		_archive = new ArchiveReaderEmptyChunks(chunkSize: ChunkSize, chunksInArchive);
 		_retainBytes = retainBytes ?? 0;
 		_retainDays = retainDays ?? 0;
 		return this;
@@ -257,7 +286,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			chunkSize: dbConfig.ChunkSize,
 			locatorCodec: locatorCodec,
 			localFileSystem: new ChunkLocalFileSystem(dbConfig.Path),
-			archive: _archiveReader);
+			archive: _archive.AsReadOnly());
 
 		var dbResult = await _getDb(dbConfig, logFormat, fileSystem);
 		var keptRecords = getExpectedKeptRecords != null
@@ -455,7 +484,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 				chunkRemover: new TracingChunkRemover<TStreamId, ILogRecord>(
 					new ChunkRemover<TStreamId, ILogRecord>(
 						logger: logger,
-						archiveCheckpoint: new AdvancingCheckpoint(_archiveReader.GetCheckpoint),
+						archiveCheckpoint: new AdvancingCheckpoint(_archive.GetCheckpoint),
 						chunkManager: new ChunkManagerForChunkRemover(dbResult.Db.Manager),
 						locatorCodec: locatorCodec,
 						retainPeriod: TimeSpan.FromDays(_retainDays),
@@ -469,6 +498,8 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 						dbTransformManager),
 					dbResult.RemoteChunks,
 					Tracer),
+				archive: _archive,
+				isArchiver: _isArchiver,
 				chunkSize: dbConfig.ChunkSize,
 				unsafeIgnoreHardDeletes: _unsafeIgnoreHardDeletes,
 				cancellationCheckPeriod: cancellationCheckPeriod,

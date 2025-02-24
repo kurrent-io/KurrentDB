@@ -18,7 +18,7 @@ public class ChunkRetentionTests : SqliteDbPerTest<MaxAgeTests> {
 		var t = 0;
 		await new Scenario<LogFormat.V2, string>()
 			.WithDbPath(Fixture.Directory)
-			.WithArchive(chunksInArchive: 1, retainBytes: 20)
+			.WithArchiveReader(chunksInArchive: 1, retainBytes: 20)
 			.WithDb(x => x
 				.Chunk(
 					Rec.Write(t++, "ab-1"),

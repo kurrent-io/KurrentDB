@@ -302,6 +302,9 @@ public sealed class TFChunkManager : IChunkRegistry<TFChunk.TFChunk>, IThreadPoo
 
 		Ensure.NotNull(chunk, "chunk");
 
+		if (FileSystem.IsRemote(chunk.ChunkLocator))
+			throw new ArgumentException(string.Format("Passed TFChunk is not local: {0}.", chunk.ChunkLocator));
+
 		if (!chunk.IsReadOnly)
 			throw new ArgumentException(string.Format("Passed TFChunk is not completed: {0}.", chunk.ChunkLocator));
 

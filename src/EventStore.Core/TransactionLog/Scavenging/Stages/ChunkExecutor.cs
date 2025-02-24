@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Exceptions;
 using EventStore.Core.LogAbstraction;
+using EventStore.Core.Services.Archive.Storage;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.Scavenging.Interfaces;
@@ -21,6 +22,8 @@ public class ChunkExecutor<TStreamId, TRecord, TChunk> : IChunkExecutor<TStreamI
 	private readonly IMetastreamLookup<TStreamId> _metastreamLookup;
 	private readonly IChunkRemover<TStreamId, TRecord> _chunkRemover;
 	private readonly IChunkManagerForChunkExecutor<TStreamId, TRecord, TChunk> _chunkManager;
+	private readonly IArchiveStorage _archive;
+	private readonly bool _isArchiver;
 	private readonly long _chunkSize;
 	private readonly bool _unsafeIgnoreHardDeletes;
 	private readonly int _cancellationCheckPeriod;
@@ -32,6 +35,8 @@ public class ChunkExecutor<TStreamId, TRecord, TChunk> : IChunkExecutor<TStreamI
 		IMetastreamLookup<TStreamId> metastreamLookup,
 		IChunkRemover<TStreamId, TRecord> chunkRemover,
 		IChunkManagerForChunkExecutor<TStreamId, TRecord, TChunk> chunkManager,
+		IArchiveStorage archive,
+		bool isArchiver,
 		long chunkSize,
 		bool unsafeIgnoreHardDeletes,
 		int cancellationCheckPeriod,
@@ -42,6 +47,8 @@ public class ChunkExecutor<TStreamId, TRecord, TChunk> : IChunkExecutor<TStreamI
 		_metastreamLookup = metastreamLookup;
 		_chunkRemover = chunkRemover;
 		_chunkManager = chunkManager;
+		_archive = archive;
+		_isArchiver = isArchiver;
 		_chunkSize = chunkSize;
 		_unsafeIgnoreHardDeletes = unsafeIgnoreHardDeletes;
 		_cancellationCheckPeriod = cancellationCheckPeriod;
@@ -112,15 +119,87 @@ public class ChunkExecutor<TStreamId, TRecord, TChunk> : IChunkExecutor<TStreamI
 						physicalChunk.ChunkStartNumber,
 						physicalChunk.ChunkEndNumber);
 
-					if (physicalChunk.IsRemote) {
-						// Later the archiver node will scavenge remote chunks
-						// The other nodes will never scavenge them (because the archiver will)
-						_logger.Debug(
-							"SCAVENGING: Skipped physical chunk: {oldChunkName} " +
-							"with weight {physicalWeight:N0} because it is remote.",
-							physicalChunk.Name,
-							physicalWeight);
+					var remote = physicalChunk.IsRemote;
+					var archiver = _isArchiver;
 
+					//qqq notice that remove/retain is the same whether we are the archiver or not
+					// we might be able to factor it out?
+					if (remote) {
+						if (archiver) {
+							if (enoughweight) {
+								// scavenge it
+								// upload it
+								// delete the temp chunk
+								// reset the weight
+							} else {
+								// skip
+							}
+						} else {
+							// reset the weight
+						}
+					} else {
+						// local
+						if (archiver) {
+							// ???
+							// this one is complicated because after we have scavenged it it might also be
+							// time for us to upload it and remove it.
+							// (two chunks to remove)
+							// and it involves an upload that can race.
+							//
+							if (enoughweight) {
+								//??? 
+								// scavenge it
+								// switch it in (deleting the temp chunk)
+								// reset the weight? even if we crash now i think when we resume we will consider removing it then
+								//
+								if (startremoving) {
+									// (switching in the remote happens in the chunkremover)
+								} else {
+									// done
+								}
+							} else {
+								if (startremoving) { //qqq
+									// (switching in the remote happens in the chunkremover)
+									// reset weights
+								} else {
+									// skip
+								}
+							}
+						} else {
+							// local non-archiver.
+							if (startremoving) {
+								// (switching in the remote happens in the chunkremover)
+								// reset weights
+							} else {
+								if (enoughweight) {
+									// scavenge it
+									// switch it in (deleting the temp chunk)
+									// reset the weight
+								} else {
+									// skip
+								}
+							}
+						}
+					}
+
+					if (physicalChunk.IsRemote && !_isArchiver) {
+						// Chunk is remote and we are not the archiver node, do not scavenge it
+						// (the archiver node will)
+						if (physicalWeight > 0) {
+							_logger.Debug(
+								"SCAVENGING: Skipped physical chunk: {oldChunkName} " +
+								"with weight {physicalWeight:N0} because it is remote.",
+								physicalChunk.Name,
+								physicalWeight);
+
+							concurrentState.ResetChunkWeights(
+								physicalChunk.ChunkStartNumber,
+								physicalChunk.ChunkEndNumber);
+						}
+					//qqqq on the archiver node we might want to scavenge the chunk
+					// and we might want to remove it.
+					// Remote => scavenge it
+					// Local => scavenge it and maybe remove it.   at the moment the removal is preventing the scavenge so a test should fail
 					} else if (await _chunkRemover.StartRemovingIfNotRetained(
 						scavengePoint,
 						concurrentState,
@@ -283,9 +362,25 @@ public class ChunkExecutor<TStreamId, TRecord, TChunk> : IChunkExecutor<TStreamI
 				oldChunkName, discardedCount + keptCount,
 				keptCount, discardedCount);
 
+			// write the posmap & footer
 			var completedChunk = await outputChunk.Complete(cancellationToken);
 			var newFileSize = completedChunk.FileSize;
-			var newFileName = await _chunkManager.SwitchInTempChunk(completedChunk, cancellationToken);
+			string newFileName;
+
+			// depending on the location of the source chunk
+			if (sourceChunk.IsRemote) {
+				// remote source chunk: we upload our temp chunk to the archive
+				using (completedChunk) {
+					await _archive.StoreChunk(completedChunk, cancellationToken);
+					completedChunk.MarkForDeletion();
+					newFileName = sourceChunk.Name + "  newFileName fill this in";
+				}
+			} else {
+				// local source chunk: we switch in our temp chunk
+				// this disposes completedChunk (when it isn't inMem..)
+				newFileName = await _chunkManager.SwitchInTempChunk(completedChunk, cancellationToken);
+			}
+
 
 			var elapsed = sw.Elapsed;
 			_logger.Debug(

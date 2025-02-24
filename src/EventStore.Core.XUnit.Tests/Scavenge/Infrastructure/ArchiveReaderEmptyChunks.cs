@@ -6,8 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
 using DotNext.Buffers;
+using EventStore.Core.Services.Archive.Naming;
 using EventStore.Core.Services.Archive.Storage;
 using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Plugins.Transforms;
 using static EventStore.Core.TransactionLog.Chunks.TFChunk.TFChunk;
 
@@ -17,7 +19,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 // We can imagine that all the records have been scavenged away.
 // This is used by the scavenge tests, which are not concerned with the contents of the chunks in the
 // archive because the scavenge is not responsible for populating the archive.
-class ArchiveReaderEmptyChunks(long chunkSize, long chunksInArchive) : IArchiveStorageReader {
+class ArchiveReaderEmptyChunks(long chunkSize, long chunksInArchive) : IArchiveStorage {
 	const int FileSize = TFConsts.ChunkHeaderSize + TFConsts.ChunkFooterSize;
 
 	public ValueTask<long> GetCheckpoint(CancellationToken ct) => new(chunkSize * chunksInArchive);
@@ -63,5 +65,13 @@ class ArchiveReaderEmptyChunks(long chunkSize, long chunksInArchive) : IArchiveS
 
 		wholeChunkFile.Span[(int)offset..].CopyTo(buffer.Span, out var writtenCount);
 		return writtenCount;
+	}
+
+	public ValueTask SetCheckpoint(long checkpoint, CancellationToken ct) {
+		throw new NotImplementedException();
+	}
+
+	public ValueTask StoreChunk(IChunkBlob chunk, CancellationToken ct) {
+		throw new NotImplementedException();
 	}
 }

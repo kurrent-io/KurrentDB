@@ -334,10 +334,10 @@ public class ClusterVNode<TStreamId> :
 		IChunkFileSystem fileSystem = new ChunkLocalFileSystem(namingStrategy);
 
 		// ARCHIVE
-		IArchiveStorageReader archiveReader = NoArchiveReader.Instance;
+		IArchiveStorage archive = NoArchive.Instance;
 		var locatorCodec = new PrefixingLocatorCodec();
 		if (archiveOptions.Enabled) {
-			archiveReader = new ResilientArchiveStorage(
+			archive = new ResilientArchiveStorage(
 				ResiliencePipelines.RetrySlow,
 				ArchiveStorageFactory.Create(
 					options: archiveOptions,
@@ -347,7 +347,7 @@ public class ClusterVNode<TStreamId> :
 				chunkSize: dbConfig.ChunkSize,
 				locatorCodec: locatorCodec,
 				localFileSystem: fileSystem,
-				archive: archiveReader);
+				archive: archive.AsReadOnly());
 		}
 
 		Db = new TFChunkDb(
@@ -1331,7 +1331,7 @@ public class ClusterVNode<TStreamId> :
 			if (archiveOptions.Enabled) {
 				chunkRemover = new ChunkRemover<TStreamId, ILogRecord>(
 					logger: logger,
-					archiveCheckpoint: new AdvancingCheckpoint(archiveReader.GetCheckpoint),
+					archiveCheckpoint: new AdvancingCheckpoint(archive.GetCheckpoint),
 					chunkManager: new ChunkManagerForChunkRemover(Db.Manager),
 					locatorCodec: locatorCodec,
 					retainPeriod: TimeSpan.FromDays(archiveOptions.RetainAtLeast.Days),
@@ -1343,6 +1343,8 @@ public class ClusterVNode<TStreamId> :
 				logFormat.Metastreams,
 				chunkRemover,
 				new ChunkManagerForExecutor<TStreamId>(logger, Db.Manager, Db.Config, Db.TransformManager),
+				archive: archive,
+				isArchiver: options.Cluster.Archiver,
 				chunkSize: Db.Config.ChunkSize,
 				unsafeIgnoreHardDeletes: options.Database.UnsafeIgnoreHardDelete,
 				cancellationCheckPeriod: cancellationCheckPeriod,

@@ -13,4 +13,6 @@ public interface IArchiveStorage : IArchiveStorageReader {
 
 	/// <summary>Stores a chunk in the archive</summary>
 	public ValueTask StoreChunk(IChunkBlob chunk, CancellationToken ct);
+
+	IArchiveStorageReader AsReadOnly() => this;
 }

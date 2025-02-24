@@ -11,7 +11,7 @@ using Xunit;
 namespace EventStore.Core.XUnit.Tests.Services.Archive.Storage;
 
 public class NoArchiveReaderTests {
-	private readonly NoArchiveReader _sut = NoArchiveReader.Instance;
+	private readonly NoArchive _sut = NoArchive.Instance;
 
 	[Fact]
 	public async Task checkpoint_is_zero() {
