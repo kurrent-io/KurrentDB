@@ -16,7 +16,7 @@ public class ConnectorsMasterDataProtector : IConnectorsMasterDataProtector {
     public static readonly ConnectorsMasterDataProtector Instance = new();
 
     public async ValueTask<IDictionary<string, string?>> Protect(
-        string connectorId, IDictionary<string, string?> settings, IDataProtector dataProtector, CancellationToken ct = default
+        string connectorId, IDictionary<string, string?> settings, IDataProtector? dataProtector, CancellationToken ct = default
     ) {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
 
@@ -30,7 +30,7 @@ public class ConnectorsMasterDataProtector : IConnectorsMasterDataProtector {
         return await protector.Protect(connectorId, settings, dataProtector, ct);
     }
 
-    public async ValueTask<IConfiguration> Unprotect(IConfiguration configuration, IDataProtector dataProtector, CancellationToken ct = default) {
+    public async ValueTask<IConfiguration> Unprotect(IConfiguration configuration, IDataProtector? dataProtector, CancellationToken ct = default) {
         var connectorTypeName = configuration
             .GetRequiredOptions<ConnectorOptions>()
             .InstanceTypeName;
