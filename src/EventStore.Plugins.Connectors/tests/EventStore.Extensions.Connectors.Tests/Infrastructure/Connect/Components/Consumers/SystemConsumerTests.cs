@@ -3,8 +3,8 @@
 using System.Text.RegularExpressions;
 using EventStore.Connect.Consumers;
 using EventStore.Core;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
 using EventStore.Toolkit.Testing.Xunit;
 
 namespace EventStore.Extensions.Connectors.Tests.Connect.Consumers;
@@ -21,7 +21,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		var pendingCount = messages.Count;
 
-		var consumedRecords = new List<EventStoreRecord>();
+		var consumedRecords = new List<SurgeRecord>();
 
 		await using var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
@@ -86,7 +86,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		using var cancellator = new CancellationTokenSource(TimeSpan.FromMinutes(1));
 
-		var consumedRecords = new List<EventStoreRecord>();
+		var consumedRecords = new List<SurgeRecord>();
 
 		await using var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
@@ -124,7 +124,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
         var requests        = await Fixture.ProduceTestEvents(streamId, numberOfRequests: 1, numberOfMessages);
         var messageCount    = requests.SelectMany(x => x.Messages).Count();
-        var consumedRecords = new List<EventStoreRecord>();
+        var consumedRecords = new List<SurgeRecord>();
 
 		await using var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
@@ -161,7 +161,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		var requests        = await Fixture.ProduceTestEvents(streamId, 1, 1);
 		var messages        = requests.SelectMany(x => x.Messages).ToList();
-		var consumedRecords = new List<EventStoreRecord>();
+		var consumedRecords = new List<SurgeRecord>();
 
 		await using var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")
@@ -195,7 +195,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(360));
 
-		var consumedRecords = new List<EventStoreRecord>();
+		var consumedRecords = new List<SurgeRecord>();
 
 		var consumer = Fixture.NewConsumer()
 			.ConsumerId($"{streamId}-csr")

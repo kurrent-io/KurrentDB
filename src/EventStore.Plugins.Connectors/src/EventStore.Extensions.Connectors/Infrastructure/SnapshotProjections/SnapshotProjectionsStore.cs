@@ -5,9 +5,9 @@ using EventStore.Connect.Producers;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
-using EventStore.Streaming;
-using EventStore.Streaming.Producers;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Surge.Producers;
+using Kurrent.Toolkit;
 
 namespace EventStore.Connectors.Infrastructure;
 

@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="EventStore.ClusterNode (MemDb=true)" type="DotNetProject" factoryName=".NET Project">
-    <option name="EXE_PATH" value="$PROJECT_DIR$/submodules/EventStore/src/EventStore.ClusterNode/bin/Debug/net8.0/EventStore.ClusterNode" />
-    <option name="PROGRAM_PARAMETERS" value="--EventStore:Insecure=true --EventStore:MemDb=true --EventStore:EnableAtomPubOverHttp=true --EventStore:DisableLogFile=true --EventStore:LogLevel=Debug" />
+    <option name="EXE_PATH" value="$PROJECT_DIR$/submodules/EventStore/src/EventStore.ClusterNode/bin/Debug/net8.0/EventStore.ClusterNode.exe" />
+    <option name="PROGRAM_PARAMETERS" value="--EventStore:Insecure=true --EventStore:MemDb=true --EventStore:EnableAtomPubOverHttp=true --EventStore:DisableLogFile=true --EventStore:LogLevel=Debug --EventStore:DataProtection:Token=secret-token" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/submodules/EventStore/src/EventStore.ClusterNode/bin/Debug/net8.0" />
     <option name="PASS_PARENT_ENVS" value="1" />
     <envs>

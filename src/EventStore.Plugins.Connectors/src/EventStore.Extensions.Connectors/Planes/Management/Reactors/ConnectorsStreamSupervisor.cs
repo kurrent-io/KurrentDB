@@ -2,8 +2,8 @@ using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
-using EventStore.Streaming.Processors;
-using EventStore.Toolkit;
+using Kurrent.Surge.Processors;
+using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.ConnectorsFeatureConventions.Streams;
 

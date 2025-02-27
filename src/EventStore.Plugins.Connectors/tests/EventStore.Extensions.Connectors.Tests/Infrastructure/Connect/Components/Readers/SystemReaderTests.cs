@@ -3,13 +3,13 @@
 
 using System.Text.RegularExpressions;
 using EventStore.Core;
-using EventStore.Core.Data;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Readers;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Readers;
 using EventStore.Toolkit.Testing.Xunit;
 using Shouldly;
 using EventStoreCore = EventStore.Core.Services.Transport.Common;
+using StreamMetadata = EventStore.Core.Data.StreamMetadata;
 
 namespace EventStore.Extensions.Connectors.Tests.Connect.Readers;
 
@@ -22,7 +22,7 @@ public class SystemReaderTests(ITestOutputHelper output, ConnectorsAssemblyFixtu
             // Arrange
             var streamId = Fixture.NewStreamId();
 
-            var records = new List<EventStoreRecord>();
+            var records = new List<SurgeRecord>();
 
             await using var reader = Fixture.NewReader()
                 .ReaderId($"{streamId}-rdr")
@@ -50,7 +50,7 @@ public class SystemReaderTests(ITestOutputHelper output, ConnectorsAssemblyFixtu
 
             await Fixture.ProduceTestEvents(streamId, expectedCount);
 
-            var records = new List<EventStoreRecord>();
+            var records = new List<SurgeRecord>();
 
             await using var reader = Fixture.NewReader()
                 .ReaderId($"{streamId}-rdr")
@@ -80,7 +80,7 @@ public class SystemReaderTests(ITestOutputHelper output, ConnectorsAssemblyFixtu
 
             var expectedStreamRevision = StreamRevision.From(messages.Count - 1);
 
-            var records = new List<EventStoreRecord>();
+            var records = new List<SurgeRecord>();
 
             await using var reader = Fixture.NewReader()
                 .ReaderId($"{streamId}-rdr")
@@ -156,7 +156,7 @@ public class SystemReaderTests(ITestOutputHelper output, ConnectorsAssemblyFixtu
             var result = await reader.ReadLastStreamRecord(streamId, ct.Token);
 
             // Assert
-            result.ShouldBe(EventStoreRecord.None);
+            result.ShouldBe(SurgeRecord.None);
         });
 
     [Fact]
@@ -179,7 +179,7 @@ public class SystemReaderTests(ITestOutputHelper output, ConnectorsAssemblyFixtu
             var result = await reader.ReadLastStreamRecord(streamId, ct.Token);
 
             // Assert
-            result.ShouldBe(EventStoreRecord.None);
+            result.ShouldBe(SurgeRecord.None);
         });
 
     [Fact]
@@ -203,7 +203,7 @@ public class SystemReaderTests(ITestOutputHelper output, ConnectorsAssemblyFixtu
             var result = await reader.ReadLastStreamRecord(streamId, ct.Token);
 
             // Assert
-            result.ShouldBe(EventStoreRecord.None);
+            result.ShouldBe(SurgeRecord.None);
         });
 
     class ConsumeFilterCases : TestCaseGenerator<ConsumeFilterCases> {

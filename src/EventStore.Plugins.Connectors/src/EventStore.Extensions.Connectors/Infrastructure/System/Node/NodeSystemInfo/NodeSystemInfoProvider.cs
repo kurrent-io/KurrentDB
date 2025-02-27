@@ -4,7 +4,7 @@ using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
 using EventStore.Core.Services;
-using EventStore.Toolkit;
+using Kurrent.Toolkit;
 using static System.Text.Json.JsonSerializer;
 
 namespace EventStore.Connectors.System;

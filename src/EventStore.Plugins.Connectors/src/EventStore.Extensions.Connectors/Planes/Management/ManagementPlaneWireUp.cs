@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using EventStore.Connect.Connectors;
+using Kurrent.Surge.Connectors;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connect.Schema;
@@ -17,7 +18,7 @@ using EventStore.Connectors.Management.Queries;
 using EventStore.Connectors.Management.Reactors;
 using EventStore.Connectors.System;
 using EventStore.Plugins.Licensing;
-using EventStore.Toolkit;
+using Kurrent.Toolkit;
 using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Grpc.JsonTranscoding;
@@ -68,7 +69,7 @@ public static class ManagementPlaneWireUp {
         // Commands
         services.AddSingleton<ConnectorDomainServices.ValidateConnectorSettings>(ctx => {
             var validation = ctx.GetService<IConnectorValidator>()
-                          ?? new SystemConnectorsValidation();
+                          ?? SystemConnectorsValidation.Instance;
 
             return validation.ValidateSettings;
         });

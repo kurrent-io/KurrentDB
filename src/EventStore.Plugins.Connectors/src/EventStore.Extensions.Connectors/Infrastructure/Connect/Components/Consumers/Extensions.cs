@@ -4,11 +4,11 @@ using EventStore.Core.Data;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Common;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Schema;
-using EventStore.Streaming.Schema.Serializers;
-using StreamRevision = EventStore.Streaming.StreamRevision;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Schema;
+using Kurrent.Surge.Schema.Serializers;
+using StreamRevision = Kurrent.Surge.StreamRevision;
 
 namespace EventStore.Connect.Consumers;
 
@@ -32,7 +32,7 @@ public static class ConsumeFilterExtensions {
 }
 
 public static class ResolvedEventExtensions {
-    public static async ValueTask<EventStoreRecord> ToRecord(
+    public static async ValueTask<SurgeRecord> ToRecord(
         this ResolvedEvent resolvedEvent,
         Deserialize deserialize,
         Func<SequenceId> nextSequenceId
@@ -63,7 +63,7 @@ public static class ResolvedEventExtensions {
             nextSequenceId);
     }
 
-    // public static async ValueTask<EventStoreRecord> MySSToRecord(this ResolvedEvent resolvedEvent, Deserialize deserialize, Func<SequenceId> nextSequenceId) {
+    // public static async ValueTask<SurgeRecord> MySSToRecord(this ResolvedEvent resolvedEvent, Deserialize deserialize, Func<SequenceId> nextSequenceId) {
     //     // for now headers will always be encoded as json.
     //     // makes it easier and more consistent to work with.
     //     // we can even check the keys in the admin ui for
@@ -96,7 +96,7 @@ public static class ResolvedEventExtensions {
     //     var isRedacted = resolvedEvent.OriginalEvent.Flags
     //         .HasAllOf(PrepareFlags.IsRedacted);
     //
-    //     var record = new EventStoreRecord {
+    //     var record = new SurgeRecord {
     //         Id         = RecordId.From(resolvedEvent.OriginalEvent.EventId),
     //         Position   = position,
     //         Timestamp  = resolvedEvent.OriginalEvent.TimeStamp,
@@ -112,10 +112,10 @@ public static class ResolvedEventExtensions {
     //     return record;
     // }
 
-    public static ValueTask<EventStoreRecord> ToRecord(this ResolvedEvent resolvedEvent, Deserialize deserialize, int nextSequenceId) =>
+    public static ValueTask<SurgeRecord> ToRecord(this ResolvedEvent resolvedEvent, Deserialize deserialize, int nextSequenceId) =>
         resolvedEvent.ToRecord(deserialize, () => SequenceId.From((ulong)nextSequenceId));
 
-    static EventStoreRecord ToRecord(
+    static SurgeRecord ToRecord(
         this ResolvedEvent resolvedEvent,
         Headers headers,
         SchemaInfo schemaInfo,
@@ -132,7 +132,7 @@ public static class ResolvedEventExtensions {
         var isRedacted = resolvedEvent.OriginalEvent.Flags
             .HasAllOf(PrepareFlags.IsRedacted);
 
-        var record = new EventStoreRecord {
+        var record = new SurgeRecord {
             Id         = RecordId.From(resolvedEvent.OriginalEvent.EventId),
             Position   = position,
             Timestamp  = resolvedEvent.OriginalEvent.TimeStamp,

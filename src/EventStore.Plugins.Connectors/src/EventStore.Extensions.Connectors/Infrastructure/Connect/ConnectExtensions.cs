@@ -10,14 +10,20 @@ using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Connect.Components.Producers;
+using EventStore.Connectors.Infrastructure.Connect.Components.Connectors;
 using EventStore.Core.Bus;
-using EventStore.Streaming.Persistence.State;
-using EventStore.Streaming.Producers;
-using EventStore.Streaming.Producers.Configuration;
-using EventStore.Streaming.Schema;
-using EventStore.Streaming.Schema.Serializers;
+using Kurrent.Surge;
+using Kurrent.Surge.Connectors;
+using Kurrent.Surge.Persistence.State;
+using Kurrent.Surge.Producers;
+using Kurrent.Surge.Producers.Configuration;
+using Kurrent.Surge.Readers;
+using Kurrent.Surge.Schema;
+using Kurrent.Surge.Schema.Serializers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using LoggingOptions = Kurrent.Surge.Configuration.LoggingOptions;
+using Manager = EventStore.Connectors.Infrastructure.Manager;
 
 namespace EventStore.Connect;
 
@@ -42,8 +48,7 @@ public static class ConnectExtensions {
                 });
         });
 
-        services.AddSingleton<Func<SystemConsumerBuilder>>(ctx => {
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+        services.AddSingleton<Func<SystemConsumerBuilder>>(ctx => { var publisher      = ctx.GetRequiredService<IPublisher>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
 
@@ -84,7 +89,7 @@ public static class ConnectExtensions {
                 .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
                 .StateStore(stateStore)
-                .Logging(new() {
+                .Logging(new LoggingOptions {
                     Enabled       = true,
                     LoggerFactory = loggerFactory,
                     LogName       = "EventStore.Connect.SystemProcessor"
@@ -92,7 +97,8 @@ public static class ConnectExtensions {
         });
 
         services.AddSingleton<IConnectorValidator, SystemConnectorsValidation>();
-        services.AddSingleton<IConnectorFactory, SystemConnectorsFactory>();
+        services.AddSingleton<ISystemConnectorFactory, SystemConnectorsFactory>();
+
         services.AddSingleton<Func<GrpcProducerBuilder>>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
@@ -104,6 +110,23 @@ public static class ConnectExtensions {
                     LoggerFactory = loggerFactory,
                     LogName       = "EventStore.Streaming.GrpcProducer"
                 });
+        });
+
+        services.AddSingleton<IReader>(ctx => {
+            var factory = ctx.GetRequiredService<Func<SystemReaderBuilder>>();
+
+            return factory().ReaderId("Surge.DataProtection.Reader").Create();
+        });
+
+        services.AddSingleton<IProducer>(ctx => {
+            var factory = ctx.GetRequiredService<Func<SystemProducerBuilder>>();
+
+            return factory().ProducerId("Surge.DataProtection.Producer").Create();
+        });
+
+        services.AddSingleton<IManager>(ctx => {
+            var manager = new Manager(ctx.GetRequiredService<IPublisher>());
+            return manager;
         });
 
         return services;

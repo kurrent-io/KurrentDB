@@ -22,7 +22,7 @@ public class ConnectorAssignorProvider {
                 strategy == ConnectorAssignmentStrategy.Unspecified
                     ? ConnectorAssignmentStrategy.StickyWithAffinity
                     : strategy, out var assignmentStrategy
-        )) 
+        ))
             throw new NotImplementedException($"{strategy} assignor not registered");
 
         return assignmentStrategy;

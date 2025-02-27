@@ -2,18 +2,20 @@
 
 using System.Runtime;
 using EventStore.Common.Utils;
-using EventStore.Streaming;
-using EventStore.Streaming.Connectors.Sinks;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Surge.Connectors.Sinks;
+using Kurrent.Toolkit;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Core;
 using Serilog.Sinks.SystemConsole.Themes;
 
-namespace EventStore.Connectors.Serilog;
+namespace Kurrent.Connectors.Serilog;
 
 public class SerilogSink : ISink {
     SwitchableLogger Logger { get; set; } = null!;
+
+    public string MetricsLabel => "serilog";
 
     public async ValueTask Open(SinkOpenContext context) {
         var options = context.Configuration.GetRequiredOptions<SerilogSinkOptions>();
@@ -34,7 +36,7 @@ public class SerilogSink : ISink {
                 VersionInfo.Timestamp
             }, true)
             .Enrich.WithProperty("ConnectorId", context.ConnectorId)
-            .Destructure.ByTransforming<EventStoreRecord>(x => new {
+            .Destructure.ByTransforming<SurgeRecord>(x => new {
                 RecordId    = x.Id.ToString(),
                 StreamId    = x.StreamId.ToString(),
                 LogPosition = x.Position.LogPosition.CommitPosition.ToString(),

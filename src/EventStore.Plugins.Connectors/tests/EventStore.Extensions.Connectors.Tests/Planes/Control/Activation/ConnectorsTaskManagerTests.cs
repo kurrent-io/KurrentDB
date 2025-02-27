@@ -1,9 +1,9 @@
 // // ReSharper disable AccessToDisposedClosure
 //
-// using EventStore.Streaming.Connectors;
-// using EventStore.Connectors.Control.Activation;
-// using EventStore.Connectors.Control.Coordination;
-// using EventStore.Toolkit.Testing.Fixtures;
+// using Kurrent.Surge.Connectors;
+// using Kurrent.Connectors.Control.Activation;
+// using Kurrent.Connectors.Control.Coordination;
+// using Kurrent.Toolkit.Testing.Fixtures;
 // using Microsoft.Extensions.Configuration;
 // using static EventStore.Connectors.Control.Activation.ConnectorsTaskManager;
 //

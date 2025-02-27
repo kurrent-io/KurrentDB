@@ -9,15 +9,15 @@ using EventStore.Connect.Readers;
 using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Consumers.Checkpoints;
-using EventStore.Streaming.Consumers.Interceptors;
-using EventStore.Streaming.Consumers.LifecycleEvents;
-using EventStore.Streaming.Interceptors;
-using EventStore.Streaming.Schema.Serializers;
-using EventStore.Streaming.JsonPath;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Consumers.Checkpoints;
+using Kurrent.Surge.Consumers.Interceptors;
+using Kurrent.Surge.Consumers.LifecycleEvents;
+using Kurrent.Surge.Interceptors;
+using Kurrent.Surge.Schema.Serializers;
+using Kurrent.Surge.JsonPath;
+using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
 using Polly;
 
@@ -117,7 +117,7 @@ public class SystemConsumer : IConsumer {
 
 	CancellationTokenSource Cancellator { get; set; } = new();
 
-    public async IAsyncEnumerable<EventStoreRecord> Records([EnumeratorCancellation] CancellationToken stoppingToken) {
+    public async IAsyncEnumerable<SurgeRecord> Records([EnumeratorCancellation] CancellationToken stoppingToken) {
 		Cancellator = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
 
 		await CheckpointStore.Initialize(Cancellator.Token);
@@ -149,7 +149,7 @@ public class SystemConsumer : IConsumer {
 
 			var record = await resolvedEvent.ToRecord(Deserialize, Sequence.FetchNext);
 
-			if (record == EventStoreRecord.None)
+			if (record == SurgeRecord.None)
 				continue;
 
             if (Options.Filter.IsJsonPathFilter && !Options.Filter.JsonPath.IsMatch(record))
@@ -160,13 +160,13 @@ public class SystemConsumer : IConsumer {
 		}
 	}
 
-    public async Task<IReadOnlyList<RecordPosition>> Track(EventStoreRecord record, CancellationToken cancellationToken = default) {
+    public async Task<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = default) {
         var trackedPositions = await CheckpointController.Track(record);
         await Intercept(new RecordTracked(this, record));
         return trackedPositions;
     }
 
-    public Task<IReadOnlyList<RecordPosition>> Commit(EventStoreRecord record, CancellationToken cancellationToken = default) =>
+    public Task<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) =>
         CheckpointController.Commit(record);
 
     /// <summary>

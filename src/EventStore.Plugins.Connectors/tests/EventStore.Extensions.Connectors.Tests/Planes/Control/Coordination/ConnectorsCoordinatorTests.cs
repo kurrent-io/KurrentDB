@@ -1,10 +1,10 @@
-// using EventStore.Connectors.ControlPlane.Assignment;
-// using EventStore.Connectors.ControlPlane.Coordination;
+// using Kurrent.Connectors.ControlPlane.Assignment;
+// using Kurrent.Connectors.ControlPlane.Coordination;
 // using EventStore.Core.Bus;
 // using EventStore.Core.Services;
-// using EventStore.Streaming.Consumers;
-// using EventStore.Streaming.Processors;
-// using EventStore.Streaming.Readers;
+// using Kurrent.Surge.Consumers;
+// using Kurrent.Surge.Processors;
+// using Kurrent.Surge.Readers;
 // using Microsoft.AspNetCore.Mvc.Testing;
 // using Microsoft.Extensions.DependencyInjection;
 // using Microsoft.Extensions.Logging;

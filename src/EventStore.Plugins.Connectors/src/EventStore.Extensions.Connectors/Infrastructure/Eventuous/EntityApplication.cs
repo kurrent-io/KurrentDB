@@ -1,6 +1,6 @@
 using EventStore.Connectors.Management;
-using EventStore.Streaming;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Toolkit;
 using Eventuous;
 
 namespace EventStore.Connectors.Eventuous;

@@ -1,6 +1,6 @@
 using EventStore.Connect.Producers.Configuration;
-using EventStore.Streaming.Producers;
-using EventStore.Streaming.Producers.Configuration;
+using Kurrent.Surge.Producers;
+using Kurrent.Surge.Producers.Configuration;
 
 namespace EventStore.Connectors.Connect.Components.Producers;
 

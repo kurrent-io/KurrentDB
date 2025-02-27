@@ -1,6 +1,6 @@
 // ReSharper disable CheckNamespace
 
-using EventStore.Streaming.Schema;
+using Kurrent.Surge.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

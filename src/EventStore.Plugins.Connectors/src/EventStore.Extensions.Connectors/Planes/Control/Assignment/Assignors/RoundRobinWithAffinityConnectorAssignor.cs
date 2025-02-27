@@ -1,5 +1,5 @@
-using EventStore.Connect.Connectors;
-using EventStore.Streaming;
+using Kurrent.Surge.Connectors;
+using Kurrent.Surge;
 
 namespace EventStore.Connectors.Control.Assignment.Assignors;
 

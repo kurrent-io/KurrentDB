@@ -1,9 +1,9 @@
 // ReSharper disable CheckNamespace
 // ReSharper disable InconsistentNaming
 
-using EventStore.Streaming;
-using EventStore.Streaming.Processors;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Surge.Processors;
+using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
 
 namespace EventStore.Connectors.Infrastructure;
@@ -20,9 +20,9 @@ public abstract class SnapshotProjectionsModule<TSnapshot>(ISnapshotProjectionsS
 
     protected readonly TSnapshot EmptySnapshot = new TSnapshot();
 
-    Func<EventStoreRecord, DateTimeOffset> GetMessageTimestamp { get; set; } = record => record.Timestamp.ToUniversalTime();
+    Func<SurgeRecord, DateTimeOffset> GetMessageTimestamp { get; set; } = record => record.Timestamp.ToUniversalTime();
 
-    protected void SetMessageTimestampProvider(Func<EventStoreRecord, DateTimeOffset> getTimestamp) =>
+    protected void SetMessageTimestampProvider(Func<SurgeRecord, DateTimeOffset> getTimestamp) =>
         GetMessageTimestamp = getTimestamp;
 
     protected void UpdateWhen<T>(UpdateSnapshotWithContext<TSnapshot, T> update, Func<T, DateTimeOffset>? getTimestamp = null) where T : class, new() {

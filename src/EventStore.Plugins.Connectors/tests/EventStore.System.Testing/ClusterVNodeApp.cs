@@ -5,7 +5,6 @@ using EventStore.ClusterNode;
 using EventStore.Core;
 using EventStore.Core.Certificates;
 using EventStore.Core.Configuration;
-using EventStore.System.Testing.Fixtures;
 using EventStore.Toolkit.Testing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;

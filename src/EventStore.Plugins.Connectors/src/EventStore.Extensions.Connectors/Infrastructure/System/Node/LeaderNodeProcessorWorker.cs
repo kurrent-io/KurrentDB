@@ -1,5 +1,5 @@
 using EventStore.Core.Bus;
-using EventStore.Streaming.Processors;
+using Kurrent.Surge.Processors;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

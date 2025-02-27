@@ -14,6 +14,9 @@ public record ConnectorSettings(Dictionary<string, string?> Value) {
         return this;
     }
 
+    public ConnectorSettings Protect(string connectorId, ProtectConnectorSettings protect) =>
+        From(protect(connectorId, Value).AsTask().GetAwaiter().GetResult());
+
     public IDictionary<string, string?> AsDictionary() => Value;
 
     public static ConnectorSettings From(IDictionary<string, string?> settings) => new(new Dictionary<string, string?>(settings));

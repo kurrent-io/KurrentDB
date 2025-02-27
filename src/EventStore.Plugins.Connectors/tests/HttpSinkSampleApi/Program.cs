@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using EventStore.Streaming.Connectors.Sinks;
+using Kurrent.Surge.Connectors.Sinks;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 

@@ -1,18 +1,18 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Collections;
-using EventStore.Connect.Connectors;
+using Kurrent.Surge.Connectors;
 using EventStore.Connect.Producers;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Control.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Producers;
-using EventStore.Streaming.Readers;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Producers;
+using Kurrent.Surge.Readers;
+using Kurrent.Toolkit;
 using Google.Protobuf.WellKnownTypes;
 using ConnectorSettings = System.Collections.Generic.IDictionary<string, string?>;
 

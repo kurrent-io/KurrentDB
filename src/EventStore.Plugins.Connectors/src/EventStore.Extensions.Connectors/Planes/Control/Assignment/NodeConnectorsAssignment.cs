@@ -1,5 +1,5 @@
 using System.Collections;
-using EventStore.Connect.Connectors;
+using Kurrent.Surge.Connectors;
 
 namespace EventStore.Connectors.Control.Assignment;
 

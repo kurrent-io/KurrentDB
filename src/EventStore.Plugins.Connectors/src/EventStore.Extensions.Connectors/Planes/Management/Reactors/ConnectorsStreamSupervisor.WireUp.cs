@@ -1,11 +1,11 @@
 using EventStore.Connect.Processors.Configuration;
 using EventStore.Connectors.System;
 using EventStore.Core.Bus;
-using EventStore.Streaming;
-using EventStore.Streaming.Configuration;
-using EventStore.Streaming.Consumers.Configuration;
-using EventStore.Streaming.Processors;
-using EventStore.Streaming.Processors.Configuration;
+using Kurrent.Surge;
+using Kurrent.Surge.Configuration;
+using Kurrent.Surge.Consumers.Configuration;
+using Kurrent.Surge.Processors;
+using Kurrent.Surge.Processors.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

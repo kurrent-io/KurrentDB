@@ -3,11 +3,11 @@
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Core.Services.Transport.Grpc;
-using EventStore.Streaming;
-using EventStore.Streaming.Producers;
-using EventStore.Streaming.Schema;
-using EventStore.Streaming.Schema.Serializers;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Surge.Producers;
+using Kurrent.Surge.Schema;
+using Kurrent.Surge.Schema.Serializers;
+using Kurrent.Toolkit;
 
 namespace EventStore.Connect.Producers;
 

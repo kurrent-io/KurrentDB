@@ -2,7 +2,7 @@
 
 using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts.Commands;
-using EventStore.Streaming;
+using Kurrent.Surge;
 using Eventuous;
 using FluentValidation;
 using Google.Protobuf.WellKnownTypes;

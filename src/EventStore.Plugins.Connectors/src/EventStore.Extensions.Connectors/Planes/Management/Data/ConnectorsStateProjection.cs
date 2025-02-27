@@ -2,8 +2,8 @@ using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
-using EventStore.Streaming.Connectors.Sinks;
-using EventStore.Toolkit;
+using Kurrent.Surge.Connectors.Sinks;
+using Kurrent.Toolkit;
 using static System.StringComparison;
 
 namespace EventStore.Connectors.Management.Data;

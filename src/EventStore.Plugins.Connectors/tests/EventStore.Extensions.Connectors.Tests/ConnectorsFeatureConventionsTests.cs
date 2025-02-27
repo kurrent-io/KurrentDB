@@ -1,6 +1,6 @@
-using EventStore.Streaming.Consumers;
 using EventStore.Toolkit.Testing.Fixtures;
 using EventStore.Toolkit.Testing.Xunit;
+using Kurrent.Surge.Consumers;
 using Shouldly;
 using static EventStore.Connectors.ConnectorsFeatureConventions;
 

@@ -9,14 +9,14 @@ using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Common;
 using EventStore.Core.Services.Transport.Enumerators;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Readers;
-using EventStore.Streaming.Schema.Serializers;
-using EventStore.Streaming.JsonPath;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Readers;
+using Kurrent.Surge.Schema.Serializers;
+using Kurrent.Surge.JsonPath;
+using Kurrent.Toolkit;
 using Polly;
-using StreamRevision = EventStore.Streaming.StreamRevision;
+using StreamRevision = Kurrent.Surge.StreamRevision;
 
 namespace EventStore.Connect.Readers;
 
@@ -55,7 +55,7 @@ public class SystemReader : IReader {
 
     public string ReaderId => Options.ReaderId;
 
-    public async IAsyncEnumerable<EventStoreRecord> Read(
+    public async IAsyncEnumerable<SurgeRecord> Read(
         LogPosition position, ReadDirection direction,
         ConsumeFilter filter, int maxCount,
         [EnumeratorCancellation] CancellationToken cancellationToken = default
@@ -131,34 +131,34 @@ public class SystemReader : IReader {
         }
     }
 
-    public IAsyncEnumerable<EventStoreRecord> Read(StreamId streamId, StreamRevision revision, ReadDirection direction, int maxCount, CancellationToken cancellationToken = default) =>
+    public IAsyncEnumerable<SurgeRecord> Read(StreamId streamId, StreamRevision revision, ReadDirection direction, int maxCount, CancellationToken cancellationToken = default) =>
         throw new NotImplementedException();
 
-    public async ValueTask<EventStoreRecord> ReadLastStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
+    public async ValueTask<SurgeRecord> ReadLastStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
         try {
             var result = await Client.ReadStreamLastEvent(stream, cancellationToken);
 
             return result is not null
                 ? await result.Value.ToRecord(Deserialize, () => SequenceId.From(1))
-                : EventStoreRecord.None;
+                : SurgeRecord.None;
         } catch (ReadResponseException.StreamNotFound) {
-            return EventStoreRecord.None;
+            return SurgeRecord.None;
         }
     }
 
-    public async ValueTask<EventStoreRecord> ReadFirstStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
+    public async ValueTask<SurgeRecord> ReadFirstStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
         try {
             var result = await Client.ReadStreamFirstEvent(stream, cancellationToken);
 
             return result is not null
                 ? await result.Value.ToRecord(Deserialize, () => SequenceId.From(1))
-                : EventStoreRecord.None;
+                : SurgeRecord.None;
         } catch (ReadResponseException.StreamNotFound) {
-            return EventStoreRecord.None;
+            return SurgeRecord.None;
         }
     }
 
-    public async ValueTask<EventStoreRecord> ReadRecord(LogPosition position, CancellationToken cancellationToken = default) {
+    public async ValueTask<SurgeRecord> ReadRecord(LogPosition position, CancellationToken cancellationToken = default) {
         try {
             var esdbPosition = position == LogPosition.Earliest
                 ? Position.Start
@@ -171,9 +171,9 @@ public class SystemReader : IReader {
 
             return !result.Equals(ResolvedEvent.EmptyEvent)
                 ? await result.ToRecord(Deserialize, () => SequenceId.From(1))
-                : EventStoreRecord.None;
+                : SurgeRecord.None;
         } catch (ReadResponseException.StreamNotFound) {
-            return EventStoreRecord.None;
+            return SurgeRecord.None;
         }
     }
 

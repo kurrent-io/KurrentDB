@@ -1,14 +1,14 @@
 using EventStore.Connectors.Connect.Components.Connectors;
-using EventStore.Connectors.Elasticsearch;
-using EventStore.Connectors.EventStoreDB;
-using EventStore.Connectors.Http;
-using EventStore.Connectors.Kafka;
 using EventStore.Connectors.Management;
-using EventStore.Connectors.MongoDB;
-using EventStore.Connectors.RabbitMQ;
-using EventStore.Connectors.Serilog;
+using Kurrent.Connectors.Elasticsearch;
+using Kurrent.Connectors.Http;
+using Kurrent.Connectors.Kafka;
+using Kurrent.Connectors.MongoDB;
+using Kurrent.Connectors.RabbitMQ;
 using EventStore.Toolkit.Testing.Fixtures;
 using EventStore.Toolkit.Testing.Xunit;
+using Kurrent.Connectors.KurrentDB;
+using Kurrent.Connectors.Serilog;
 
 namespace EventStore.Connectors.Tests.Management;
 
@@ -56,7 +56,7 @@ public class ConnectorsLicenseServiceTests(ITestOutputHelper output, LicensingFi
         sut.CheckLicense<KafkaSink>().Should().BeFalse();
         sut.CheckLicense<RabbitMqSink>().Should().BeFalse();
         sut.CheckLicense<MongoDbSink>().Should().BeFalse();
-        sut.CheckLicense<EventStoreDbSink>().Should().BeFalse();
+        sut.CheckLicense<KurrentDbSink>().Should().BeFalse();
         sut.CheckLicense<ElasticsearchSink>().Should().BeFalse();
     }
 

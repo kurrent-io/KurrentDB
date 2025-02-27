@@ -2,9 +2,9 @@ using EventStore.Common.Utils;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Management.Contracts.Queries;
-using EventStore.Streaming;
-using EventStore.Streaming.Contracts.Consumers;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Surge.Protocol.Consumers;
+using Kurrent.Toolkit;
 
 namespace EventStore.Connectors.Management.Queries;
 

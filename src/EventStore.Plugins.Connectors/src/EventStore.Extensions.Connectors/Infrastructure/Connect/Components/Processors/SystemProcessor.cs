@@ -1,7 +1,7 @@
 // ReSharper disable CheckNamespace
 
 using EventStore.Connect.Processors.Configuration;
-using EventStore.Streaming.Processors;
+using Kurrent.Surge.Processors;
 
 namespace EventStore.Connect.Processors;
 

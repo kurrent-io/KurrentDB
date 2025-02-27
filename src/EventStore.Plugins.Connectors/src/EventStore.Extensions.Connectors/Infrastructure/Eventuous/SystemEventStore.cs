@@ -1,15 +1,15 @@
 using EventStore.Connect.Producers;
 using EventStore.Connect.Readers;
-using EventStore.Core.Data;
 using EventStore.Core.Services;
 using EventStore.Core.Services.Transport.Enumerators;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Producers;
-using EventStore.Streaming.Readers;
-using EventStore.Streaming.Schema;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Producers;
+using Kurrent.Surge.Readers;
+using Kurrent.Surge.Schema;
+using Kurrent.Toolkit;
 using Eventuous;
+using StreamMetadata = EventStore.Core.Data.StreamMetadata;
 
 namespace EventStore.Connectors.Eventuous;
 
@@ -24,7 +24,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
             var isDeleted = await Reader
                 .ReadLastStreamRecord(SystemStreams.MetastreamOf(stream), cancellationToken)
                 .Then(record => {
-                    if (record == EventStoreRecord.None)
+                    if (record == SurgeRecord.None)
                         return false;
 
                     var metadata  = StreamMetadata.FromJsonBytes(record.Data);
@@ -37,7 +37,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
 
             return await Reader
                 .ReadLastStreamRecord(stream.ToString(), cancellationToken)
-                .Then(record => record != EventStoreRecord.None);
+                .Then(record => record != SurgeRecord.None);
         }
         catch (Exception ex) when (ex is not StreamingError) {
             throw new StreamingCriticalError($"Unable to check if stream {stream} exists", ex);

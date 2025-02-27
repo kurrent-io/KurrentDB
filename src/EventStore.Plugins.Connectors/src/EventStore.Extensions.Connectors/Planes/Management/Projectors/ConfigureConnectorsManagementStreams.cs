@@ -3,10 +3,11 @@ using EventStore.Connectors.System;
 using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
-using EventStore.Streaming;
-using EventStore.Toolkit;
+using Kurrent.Surge;
+using Kurrent.Toolkit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using StreamMetadata = EventStore.Core.Data.StreamMetadata;
 
 namespace EventStore.Connectors.Management.Projectors;
 

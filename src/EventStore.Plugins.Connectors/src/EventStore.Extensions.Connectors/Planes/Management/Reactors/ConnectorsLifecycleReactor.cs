@@ -3,12 +3,12 @@
 using EventStore.Connectors.Contracts;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Commands;
-using EventStore.Streaming.Contracts.Processors;
-using EventStore.Streaming.Processors;
+using Kurrent.Surge.Protocol.Processors;
+using Kurrent.Surge.Processors;
 using Microsoft.Extensions.Logging;
 
-using ProcessorContracts = EventStore.Streaming.Contracts.Processors;
-using SharedContracts = EventStore.Streaming.Contracts;
+using ProcessorContracts = Kurrent.Surge.Protocol.Processors;
+using SharedContracts = Kurrent.Surge.Protocol;
 
 namespace EventStore.Connectors.Management.Reactors;
 

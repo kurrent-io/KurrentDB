@@ -1,5 +1,5 @@
-using EventStore.Streaming;
-using EventStore.Streaming.Schema;
+using Kurrent.Surge;
+using Kurrent.Surge.Schema;
 
 namespace EventStore.Connectors.Management.Queries;
 

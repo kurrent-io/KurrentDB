@@ -1,5 +1,5 @@
-using EventStore.Connect.Connectors;
-using EventStore.Streaming;
+using Kurrent.Surge.Connectors;
+using Kurrent.Surge;
 using DistributionTable = System.Collections.Generic.Dictionary<EventStore.Connectors.Control.ClusterNodeId, int>;
 
 namespace EventStore.Connectors.Control.Assignment.Assignors;

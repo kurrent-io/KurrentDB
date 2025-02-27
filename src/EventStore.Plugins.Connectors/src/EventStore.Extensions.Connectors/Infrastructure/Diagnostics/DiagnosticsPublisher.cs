@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using EventStore.Toolkit;
+using Kurrent.Toolkit;
 using static EventStore.Connectors.Diagnostics.DiagnosticsCollectionMode;
 
 namespace EventStore.Connectors.Diagnostics;

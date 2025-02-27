@@ -8,6 +8,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="EventStore.Streaming.Core" Version="1.0.0-alpha.283" />
+        <PackageReference Include="Kurrent.Surge.Core" Version="1.0.0-alpha.351" />
     </ItemGroup>
 </Project>

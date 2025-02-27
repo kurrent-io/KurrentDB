@@ -1,15 +1,19 @@
 using EventStore.Connect.Connectors;
-using EventStore.Connect.Leases;
 using EventStore.Connect.Schema;
+using EventStore.Connectors.Connect.Components.Connectors;
+using EventStore.Connectors.Infrastructure.Connect.Components.Connectors;
 using EventStore.Connectors.System;
 using EventStore.Core.Bus;
-using EventStore.Toolkit;
+using Kurrent.Surge.Connectors;
+using Kurrent.Surge.DataProtection;
+using Kurrent.Surge.Leases;
+using Kurrent.Toolkit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.ConnectorsFeatureConventions;
 
-using ConnectContracts = EventStore.Streaming.Contracts;
+using SurgeContracts = Kurrent.Surge.Protocol;
 using ControlContracts = EventStore.Connectors.Control.Contracts;
 
 namespace EventStore.Connectors.Control;
@@ -38,8 +42,8 @@ public static class ControlPlaneWireUp {
             static async (registry, token) => {
                 Task[] tasks = [
                     RegisterControlMessages<ControlContracts.ActivatedConnectorsSnapshot>(registry, token),
-                    RegisterControlMessages<ConnectContracts.Processors.ProcessorStateChanged>(registry, token),
-                    RegisterControlMessages<ConnectContracts.Consumers.Checkpoint>(registry, token),
+                    RegisterControlMessages<SurgeContracts.Processors.ProcessorStateChanged>(registry, token),
+                    RegisterControlMessages<SurgeContracts.Consumers.Checkpoint>(registry, token),
                     RegisterControlMessages<Lease>(registry, token), //TODO SS: transform Lease into a message contract in Connect
                 ];
 
@@ -49,8 +53,10 @@ public static class ControlPlaneWireUp {
 
     static IServiceCollection AddConnectorsActivator(this IServiceCollection services) =>
         services
-            .AddSingleton<IConnectorFactory>(ctx => {
-                var validator = ctx.GetRequiredService<IConnectorValidator>();
+            .AddSingleton<ISystemConnectorFactory>(ctx => {
+                var validator              = ctx.GetRequiredService<IConnectorValidator>();
+                var connectorDataProtector = ctx.GetService<IConnectorDataProtector>() ?? ConnectorsMasterDataProtector.Instance;
+                var dataProtector          = ctx.GetService<IDataProtector>();
 
                 var options = new SystemConnectorsFactoryOptions {
                     CheckpointsStreamTemplate = Streams.CheckpointsStreamTemplate,
@@ -60,10 +66,14 @@ public static class ControlPlaneWireUp {
                         AcquisitionTimeout = TimeSpan.FromSeconds(60),
                         AcquisitionDelay   = TimeSpan.FromSeconds(5),
                         StreamTemplate     = Streams.LeasesStreamTemplate
+                    },
+                    ProcessConfiguration = configuration => {
+                        validator.EnsureValid(configuration);
+                        return connectorDataProtector.Unprotect(configuration, dataProtector).AsTask().GetAwaiter().GetResult();
                     }
                 };
 
-                return new SystemConnectorsFactory(options, validator, ctx);
+                return new SystemConnectorsFactory(options, ctx);
             })
             .AddSingleton<ConnectorsActivator>();
 

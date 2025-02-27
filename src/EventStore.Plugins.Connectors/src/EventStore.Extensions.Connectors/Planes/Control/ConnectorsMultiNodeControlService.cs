@@ -1,14 +1,14 @@
 // // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 //
-// using EventStore.Connect.Connectors;
+// using Kurrent.Surge.Connectors;
 // using EventStore.Connect.Consumers.Configuration;
-// using EventStore.Connectors.Control;
-// using EventStore.Connectors.Control.Assignment;
-// using EventStore.Connectors.Management.Contracts;
+// using Kurrent.Connectors.Control;
+// using Kurrent.Connectors.Control.Assignment;
+// using Kurrent.Connectors.Management.Contracts;
 // using EventStore.Core.Bus;
 // using EventStore.Core.Messaging;
-// using EventStore.Streaming;
+// using Kurrent.Surge;
 // using Microsoft.Extensions.Logging;
 // using static EventStore.Connectors.System.ConnectorsSystemMessages;
 //

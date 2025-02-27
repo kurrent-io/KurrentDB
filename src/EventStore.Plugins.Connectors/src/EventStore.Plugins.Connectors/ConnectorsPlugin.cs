@@ -1,5 +1,6 @@
 using EventStore.Connect;
 using EventStore.Connectors.Control;
+using EventStore.Connectors.Infrastructure.Security;
 using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Reactors;
 using EventStore.Connectors.System;
@@ -16,7 +17,8 @@ public class ConnectorsPlugin : SubsystemsPlugin {
             .AddNodeSystemInfoProvider()
             .AddConnectSystemComponents()
             .AddConnectorsControlPlane()
-            .AddConnectorsManagementPlane();
+            .AddConnectorsManagementPlane()
+            .AddConnectorsDataProtection();
     }
 
     public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {

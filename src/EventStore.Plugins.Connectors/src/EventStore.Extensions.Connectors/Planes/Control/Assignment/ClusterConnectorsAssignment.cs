@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using EventStore.Connect.Connectors;
+using Kurrent.Surge.Connectors;
 
 namespace EventStore.Connectors.Control.Assignment;
 

@@ -1,8 +1,10 @@
 using EventStore.Connect.Connectors;
+using EventStore.Connectors.Infrastructure.Connect.Components.Connectors;
+using Kurrent.Surge.Connectors;
 using FluentValidation;
 using ActivatedConnectors = System.Collections.Concurrent.ConcurrentDictionary<
-    EventStore.Connect.Connectors.ConnectorId,
-    (EventStore.Connect.Connectors.IConnector Instance, int Revision)
+    Kurrent.Surge.Connectors.ConnectorId,
+    (Kurrent.Surge.Connectors.IConnector Instance, int Revision)
 >;
 
 namespace EventStore.Connectors.Control;
@@ -10,7 +12,7 @@ namespace EventStore.Connectors.Control;
 public delegate IConnector CreateConnector(ConnectorId connectorId, IDictionary<string, string?> settings);
 
 public class ConnectorsActivator(CreateConnector createConnector) {
-    public ConnectorsActivator(IConnectorFactory connectorFactory) : this(connectorFactory.CreateConnector) { }
+    public ConnectorsActivator(ISystemConnectorFactory connectorFactory) : this(connectorFactory.CreateConnector) { }
 
     CreateConnector     CreateConnector { get; } = createConnector;
     ActivatedConnectors Connectors      { get; } = [];

@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using EventStore.Connect;
 using EventStore.Connect.Consumers;
 using EventStore.Connect.Consumers.Configuration;
 using EventStore.Connect.Processors;
@@ -8,20 +9,24 @@ using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Infrastructure;
+using EventStore.Connectors.Infrastructure.Security;
 using EventStore.Connectors.Management;
+using EventStore.Core.Bus;
 using EventStore.Extensions.Connectors.Tests;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Persistence.State;
-using EventStore.Streaming.Processors;
-using EventStore.Streaming.Producers;
-using EventStore.Streaming.Readers;
-using EventStore.Streaming.Schema;
-using EventStore.Streaming.Schema.Serializers;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Persistence.State;
+using Kurrent.Surge.Processors;
+using Kurrent.Surge.Producers;
+using Kurrent.Surge.Readers;
+using Kurrent.Surge.Schema;
+using Kurrent.Surge.Schema.Serializers;
 using EventStore.System.Testing.Fixtures;
 using EventStore.Toolkit.Testing.Xunit.Extensions.AssemblyFixture;
+using Kurrent.Surge.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using FakeTimeProvider = Microsoft.Extensions.Time.Testing.FakeTimeProvider;
+using Manager = EventStore.Connectors.Infrastructure.Manager;
 using WithExtension = EventStore.Toolkit.Testing.WithExtension;
 
 [assembly: TestFramework(XunitTestFrameworkWithAssemblyFixture.TypeName, XunitTestFrameworkWithAssemblyFixture.AssemblyName)]
@@ -38,8 +43,9 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         TimeProvider     = new FakeTimeProvider();
 
         ConfigureServices = services => {
+            services.AddConnectSchemaRegistry();
+
             services
-                .AddSingleton(SchemaRegistry)
                 .AddSingleton(StateStore)
                 .AddSingleton<TimeProvider>(TimeProvider)
                 .AddSingleton(LoggerFactory);
@@ -53,6 +59,26 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
 
             // Projection store
             services.AddSingleton<ISnapshotProjectionsStore, SystemSnapshotProjectionsStore>();
+
+            // Data protection
+            services.AddSingleton<IReader>(ctx => {
+                var factory = ctx.GetRequiredService<Func<SystemReaderBuilder>>();
+
+                return factory().ReaderId("Surge.DataProtection.Reader").Create();
+            });
+
+            services.AddSingleton<IProducer>(ctx => {
+                var factory = ctx.GetRequiredService<Func<SystemProducerBuilder>>();
+
+                return factory().ProducerId("Surge.DataProtection.Producer").Create();
+            });
+
+            services.AddSingleton<IManager>(ctx => {
+                var manager = new Manager(ctx.GetRequiredService<IPublisher>());
+                return manager;
+            });
+
+            services.AddConnectorsDataProtection();
 
             // // Management
             // services.AddSingleton(ctx => new ConnectorsLicenseService(
@@ -108,6 +134,8 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
     public IServiceProvider  ConnectorServices { get; private set; } = null!;
 
     public ISnapshotProjectionsStore SnapshotProjectionsStore => NodeServices.GetRequiredService<ISnapshotProjectionsStore>();
+    public IManager                  Manager                  => NodeServices.GetRequiredService<IManager>();
+    public IDataProtector            DataProtector            => NodeServices.GetRequiredService<IDataProtector>();
 
     public IProducer Producer { get; private set; } = null!;
     public IReader   Reader   { get; private set; } = null!;
@@ -152,7 +180,7 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
                 StartPosition        = RecordPosition.Earliest,
                 LastCommitedPosition = RecordPosition.Unset
             },
-            EventStoreRecord.None,
+            SurgeRecord.None,
             FakeConsumer.Instance,
             StateStore,
             CreateLogger("TestLogger"),
@@ -162,7 +190,7 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         return context;
     }
 
-    public async ValueTask<EventStoreRecord> CreateRecord<T>(T message, SchemaDefinitionType schemaType = SchemaDefinitionType.Json, string? streamId = null) {
+    public async ValueTask<SurgeRecord> CreateRecord<T>(T message, SchemaDefinitionType schemaType = SchemaDefinitionType.Json, string? streamId = null) {
         var schemaInfo = SchemaRegistry.CreateSchemaInfo<T>(schemaType);
 
         var data = await ((ISchemaSerializer)SchemaRegistry).Serialize(message, schemaInfo);
@@ -172,7 +200,7 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         var headers = new Headers();
         schemaInfo.InjectIntoHeaders(headers);
 
-        return new EventStoreRecord {
+        return new SurgeRecord {
             Id = Guid.NewGuid(),
             Position = streamId is null
                 ? RecordPosition.ForLog(sequenceId)
@@ -209,12 +237,12 @@ class FakeConsumer : IConsumer {
 
     public ValueTask DisposeAsync() => throw new NotImplementedException();
 
-    public IAsyncEnumerable<EventStoreRecord> Records(CancellationToken stoppingToken = new CancellationToken()) => throw new NotImplementedException();
+    public IAsyncEnumerable<SurgeRecord> Records(CancellationToken stoppingToken = new CancellationToken()) => throw new NotImplementedException();
 
-    public Task<IReadOnlyList<RecordPosition>> Track(EventStoreRecord record, CancellationToken cancellationToken = new CancellationToken()) =>
+    public Task<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = new CancellationToken()) =>
         Task.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
 
-    public Task<IReadOnlyList<RecordPosition>> Commit(EventStoreRecord record, CancellationToken cancellationToken = new CancellationToken()) =>
+    public Task<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = new CancellationToken()) =>
         Task.FromResult<IReadOnlyList<RecordPosition>>(new List<RecordPosition>());
 
     public Task<IReadOnlyList<RecordPosition>> CommitAll(CancellationToken cancellationToken = new CancellationToken()) =>

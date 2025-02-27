@@ -1,13 +1,13 @@
 // ReSharper disable CheckNamespace
 
 using EventStore.Core.Bus;
-using EventStore.Streaming.Readers.Configuration;
-using EventStore.Toolkit;
+using Kurrent.Surge.Readers.Configuration;
+using Kurrent.Toolkit;
 
 namespace EventStore.Connect.Readers.Configuration;
 
 [PublicAPI]
-public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemReaderOptions, SystemReader> {
+public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemReaderOptions> {
     public SystemReaderBuilder Publisher(IPublisher publisher) {
         Ensure.NotNull(publisher);
         return new() {

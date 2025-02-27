@@ -3,9 +3,9 @@
 
 using EventStore.Connect.Consumers;
 using EventStore.Core;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Processors;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Processors;
 
 namespace EventStore.Extensions.Connectors.Tests.Connect.Processors;
 
@@ -23,7 +23,7 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
             var requests = await Fixture.ProduceTestEvents(streamId, 1, numberOfMessages);
             var messages = requests.SelectMany(r => r.Messages).ToList();
 
-            var processedRecords = new List<EventStoreRecord>();
+            var processedRecords = new List<SurgeRecord>();
 
             var processor = Fixture.NewProcessor()
                 .ProcessorId($"{streamId}-prx")

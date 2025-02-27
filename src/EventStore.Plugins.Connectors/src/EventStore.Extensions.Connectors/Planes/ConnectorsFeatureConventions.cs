@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
-using EventStore.Streaming;
-using EventStore.Streaming.Consumers;
-using EventStore.Streaming.Schema;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Schema;
 using Humanizer;
-using static EventStore.Streaming.Consumers.ConsumeFilter;
+using static Kurrent.Surge.Consumers.ConsumeFilter;
 
 namespace EventStore.Connectors;
 

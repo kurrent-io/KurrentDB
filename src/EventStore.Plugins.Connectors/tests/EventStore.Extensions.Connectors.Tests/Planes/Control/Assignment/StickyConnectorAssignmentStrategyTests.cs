@@ -1,7 +1,7 @@
 using EventStore.Connectors.Control;
 using EventStore.Connectors.Control.Assignment;
 using EventStore.Connectors.Control.Assignment.Assignors;
-using EventStore.Streaming;
+using Kurrent.Surge;
 using EventStore.Toolkit.Testing.Fixtures;
 using MassTransit;
 
