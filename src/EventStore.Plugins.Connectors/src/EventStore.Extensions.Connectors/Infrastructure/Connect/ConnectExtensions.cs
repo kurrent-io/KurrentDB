@@ -97,7 +97,6 @@ public static class ConnectExtensions {
         });
 
         services.AddSingleton<IConnectorValidator, SystemConnectorsValidation>();
-        services.AddSingleton<ISystemConnectorFactory, SystemConnectorsFactory>();
 
         services.AddSingleton<Func<GrpcProducerBuilder>>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
