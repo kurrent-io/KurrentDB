@@ -60,7 +60,7 @@
 	<!-- Exclude all packages/assets provided by ESDB that break on runtime or may cause issues -->
 	<ItemGroup>
 		<!-- Contains Plugin and License components -->
-		<PackageReference Include="EventStore.Plugins" Version="24.10.6" ExcludeAssets="runtime" />
+		<PackageReference Include="EventStore.Plugins" Version="24.10.7" ExcludeAssets="runtime" />
 <!--		<PackageReference Include="Microsoft.Extensions.Options" PrivateAssets="all"/>-->
 <!--		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" PrivateAssets="all"/>-->
 <!--		<PackageReference Include="Microsoft.Extensions.Configuration.Json" PrivateAssets="all"/>-->
