@@ -7,7 +7,7 @@
       "src\\EventStore.Plugins.Connectors\\EventStore.Plugins.Connectors.csproj",
       "submodules\\EventStore\\src\\EventStore.BufferManagement\\EventStore.BufferManagement.csproj",
       "submodules\\EventStore\\src\\EventStore.ClusterNode.Web\\EventStore.ClusterNode.Web.csproj",
-      "submodules\\EventStore\\src\\EventStore.ClusterNode\\EventStore.ClusterNode.csproj",
+      "submodules\\EventStore\\src\\KurrentDB\\KurrentDB.csproj",
       "submodules\\EventStore\\src\\EventStore.Common\\EventStore.Common.csproj",
       "submodules\\EventStore\\src\\EventStore.Core\\EventStore.Core.csproj",
       "submodules\\EventStore\\src\\EventStore.Licensing\\EventStore.Licensing.csproj",

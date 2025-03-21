@@ -94,13 +94,17 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Connectors.MongoDB"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Connectors.RabbitMQ", "submodules\Surge\src\Connectors\src\Kurrent.Connectors.RabbitMQ\Kurrent.Connectors.RabbitMQ.csproj", "{ACC63476-94AD-4734-9669-A53532978FA8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.ClusterNode", "submodules\EventStore\src\EventStore.ClusterNode\EventStore.ClusterNode.csproj", "{041FF4C6-744A-4458-8A40-6B6521587585}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB", "submodules\EventStore\src\KurrentDB\KurrentDB.csproj", "{041FF4C6-744A-4458-8A40-6B6521587585}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DataProtection", "DataProtection", "{E6B172A1-D9C9-498A-9C76-E1D894F7B962}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Surge.DataProtection", "submodules\Surge\src\DataProtection\src\Kurrent.Surge.DataProtection\Kurrent.Surge.DataProtection.csproj", "{1C4D38D7-A5E5-44E1-8FEF-DE458B47C260}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Surge.DataProtection.Cryptography.Argon2", "submodules\Surge\src\DataProtection\src\Kurrent.Surge.DataProtection.Cryptography.Argon2\Kurrent.Surge.DataProtection.Cryptography.Argon2.csproj", "{18197AB0-E37C-46E4-9765-D262E3DE4627}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.OtlpExporterPlugin", "submodules\EventStore\src\EventStore.OtlpExporterPlugin\EventStore.OtlpExporterPlugin.csproj", "{7734E392-7548-4A51-8979-1C8AC82D243B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.UI", "submodules\EventStore\src\KurrentDB.UI\KurrentDB.UI.csproj", "{6D6BD448-24D4-4342-9403-C43CDA3F858C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -264,6 +268,14 @@ Global
 		{18197AB0-E37C-46E4-9765-D262E3DE4627}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18197AB0-E37C-46E4-9765-D262E3DE4627}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{18197AB0-E37C-46E4-9765-D262E3DE4627}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7734E392-7548-4A51-8979-1C8AC82D243B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7734E392-7548-4A51-8979-1C8AC82D243B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7734E392-7548-4A51-8979-1C8AC82D243B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7734E392-7548-4A51-8979-1C8AC82D243B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D6BD448-24D4-4342-9403-C43CDA3F858C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D6BD448-24D4-4342-9403-C43CDA3F858C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D6BD448-24D4-4342-9403-C43CDA3F858C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D6BD448-24D4-4342-9403-C43CDA3F858C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{1FFE9B22-1994-47B1-814E-7DCB8E838D10} = {B4DAA225-6158-4BB6-9426-242032A94EA7}
@@ -308,5 +320,7 @@ Global
 		{E6B172A1-D9C9-498A-9C76-E1D894F7B962} = {44152439-9ADA-4494-B615-495438F091CE}
 		{1C4D38D7-A5E5-44E1-8FEF-DE458B47C260} = {E6B172A1-D9C9-498A-9C76-E1D894F7B962}
 		{18197AB0-E37C-46E4-9765-D262E3DE4627} = {E6B172A1-D9C9-498A-9C76-E1D894F7B962}
+		{7734E392-7548-4A51-8979-1C8AC82D243B} = {1FFE9B22-1994-47B1-814E-7DCB8E838D10}
+		{6D6BD448-24D4-4342-9403-C43CDA3F858C} = {1FFE9B22-1994-47B1-814E-7DCB8E838D10}
 	EndGlobalSection
 EndGlobal

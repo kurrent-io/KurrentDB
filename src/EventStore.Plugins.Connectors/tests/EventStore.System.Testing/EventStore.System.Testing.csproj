@@ -5,6 +5,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\EventStore.Toolkit.Testing\EventStore.Toolkit.Testing.csproj" />
-		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.ClusterNode\EventStore.ClusterNode.csproj" />
+		<ProjectReference Include="..\..\submodules\EventStore\src\KurrentDB\KurrentDB.csproj" />
 	</ItemGroup>
 </Project>

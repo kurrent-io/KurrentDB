@@ -6,6 +6,7 @@ using Kurrent.Surge.Configuration;
 using Kurrent.Surge.Consumers.Configuration;
 using Kurrent.Surge.Processors;
 using Kurrent.Surge.Processors.Configuration;
+using Kurrent.Surge.Processors.Interceptors;
 using Kurrent.Surge.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -43,7 +44,7 @@ static class ConnectorsLifecycleReactorWireUp {
                     .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
                     .InitialPosition(SubscriptionInitialPosition.Earliest)
                     .Filter(ConnectorsFeatureConventions.Filters.LifecycleFilter)
-                    .WithHandler(new ConnectorsLifecycleReactor(app))
+                    .WithModule(new ConnectorsLifecycleReactor(app))
                     .Create();
 
                 return processor;

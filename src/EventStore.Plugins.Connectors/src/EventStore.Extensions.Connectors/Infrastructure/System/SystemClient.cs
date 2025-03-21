@@ -5,6 +5,7 @@ using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Common;
+using EventStore.Core.Services.Transport.Enumerators;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Polly;
@@ -71,7 +72,7 @@ public interface IWriteOperations {
 }
 
 public interface ISubscriptionsOperations {
-    Task SubscribeToAll(Position? position, IEventFilter filter, Channel<ResolvedEvent> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
+    Task SubscribeToAll(Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
 }
 
 [PublicAPI]
@@ -146,8 +147,8 @@ public class SystemClient : ISystemClient {
 	#region . Subscriptions .
 
     public record SubscriptionsOperations(IPublisher Publisher, ILogger Logger) : ISubscriptionsOperations {
-		public Task SubscribeToAll(Position? position, IEventFilter filter, Channel<ResolvedEvent> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) =>
-			Publisher.SubscribeToAll(position, filter, channel, resiliencePipeline, cancellationToken);
+		public Task SubscribeToAll(Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) =>
+			Publisher.SubscribeToAll(position, filter, maxSearchWindow, channel, resiliencePipeline, cancellationToken);
 	}
 
 	#endregion . Subscriptions .

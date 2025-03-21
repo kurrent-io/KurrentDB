@@ -39,7 +39,7 @@
 
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<PropertyGroup>
-			<EventStorePluginOutputPath>..\..\submodules\EventStore\src\EventStore.ClusterNode\$(OutDir)\plugins\$(ProjectName)</EventStorePluginOutputPath>
+			<EventStorePluginOutputPath>..\..\submodules\EventStore\src\KurrentDB\$(OutDir)\plugins\$(ProjectName)</EventStorePluginOutputPath>
 		</PropertyGroup>
 		<ItemGroup>
 			<PluginSourceFiles Include="$(OutDir)\**\*.*" />

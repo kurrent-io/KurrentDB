@@ -12,22 +12,24 @@ using SharedContracts = Kurrent.Surge.Protocol;
 
 namespace EventStore.Connectors.Management.Reactors;
 
-class ConnectorsLifecycleReactor(ConnectorsCommandApplication application) : RecordHandler<ProcessorStateChanged> {
-    public override async Task Process(ProcessorStateChanged message, RecordContext context) {
-        try {
-            var cmd = new RecordConnectorStateChange {
-                ConnectorId  = message.Processor.ProcessorId,
-                FromState    = message.FromState.MapProcessorState(),
-                ToState      = message.ToState.MapProcessorState(),
-                ErrorDetails = message.Error.MapErrorDetails(),
-                Timestamp    = message.Metadata.Timestamp
-            };
+sealed class ConnectorsLifecycleReactor : ProcessingModule {
+    public ConnectorsLifecycleReactor(ConnectorsCommandApplication application) {
+        Process<ProcessorStateChanged>(async (message, context) => {
+            try {
+                var cmd = new RecordConnectorStateChange {
+                    ConnectorId  = message.Processor.ProcessorId,
+                    FromState    = message.FromState.MapProcessorState(),
+                    ToState      = message.ToState.MapProcessorState(),
+                    ErrorDetails = message.Error.MapErrorDetails(),
+                    Timestamp    = message.Metadata.Timestamp
+                };
 
-            await application.Handle(cmd, context.CancellationToken);
-        }
-        catch (Exception ex) {
-            context.Logger.LogError(ex, "{ProcessorId} Failed to record connector state change.", context.Processor.ProcessorId);
-        }
+                await application.Handle(cmd, context.CancellationToken);
+            }
+            catch (Exception ex) {
+                context.Logger.LogError(ex, "{ProcessorId} Failed to record connector state change", context.Processor.ProcessorId);
+            }
+        });
     }
 }
 

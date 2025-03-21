@@ -8,7 +8,7 @@ using EventStore.Connect.Producers;
 using EventStore.Connect.Readers;
 using EventStore.Core;
 using EventStore.Core.Bus;
-using EventStore.Core.Data;
+using EventStore.Core.Services.Transport.Enumerators;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Checkpoints;
@@ -17,6 +17,7 @@ using Kurrent.Surge.Consumers.LifecycleEvents;
 using Kurrent.Surge.Interceptors;
 using Kurrent.Surge.Schema.Serializers;
 using Kurrent.Surge.JsonPath;
+using Kurrent.Surge.Schema;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
 using Polly;
@@ -40,7 +41,7 @@ public class SystemConsumer : IConsumer {
             ? (_, _) => ValueTask.FromResult<object?>(null)
             : (data, headers) => Options.SchemaRegistry.As<ISchemaSerializer>().Deserialize(data, headers);
 
-		InboundChannel = Channel.CreateBounded<ResolvedEvent>(
+		InboundChannel = Channel.CreateBounded<ReadResponse>(
 			new BoundedChannelOptions(options.MessagePrefetchCount) {
 				FullMode     = BoundedChannelFullMode.Wait,
 				SingleReader = true,
@@ -100,10 +101,11 @@ public class SystemConsumer : IConsumer {
     Deserialize                        Deserialize          { get; }
     CheckpointController               CheckpointController { get; }
     ICheckpointStore                   CheckpointStore      { get; }
-    Channel<ResolvedEvent>             InboundChannel       { get; }
+    Channel<ReadResponse>              InboundChannel       { get; }
     SequenceIdGenerator                Sequence             { get; }
 	InterceptorController              Interceptors         { get; }
 	Func<ConsumerLifecycleEvent, Task> Intercept            { get; }
+    ILogger                            Logger               { get; }
 
 	public string                        ConsumerId       => Options.ConsumerId;
     public string                        ClientId         => Options.ClientId;
@@ -128,14 +130,18 @@ public class SystemConsumer : IConsumer {
         if (Options.Filter.IsStreamIdFilter) {
             var startRevision = await Client.GetStreamRevision(StartPosition.ToPosition(), stoppingToken);
 
-            await Client.SubscribeToStream(startRevision,
+            await Client.SubscribeToStream(
+	            startRevision,
                 Options.Filter.Expression,
                 InboundChannel,
                 ResiliencePipeline,
-                Cancellator.Token);
+                Cancellator.Token
+	        );
         } else {
-            await Client.SubscribeToAll(StartPosition.ToPosition(),
+            await Client.SubscribeToAll(
+	            StartPosition.ToPosition(),
                 Options.Filter.ToEventFilter(),
+	            (uint)Options.AutoCommit.RecordsThreshold,
                 InboundChannel,
                 ResiliencePipeline,
                 Cancellator.Token);
@@ -143,31 +149,86 @@ public class SystemConsumer : IConsumer {
 
 		await CheckpointController.Activate();
 
-		await foreach (var resolvedEvent in InboundChannel.Reader.ReadAllAsync(CancellationToken.None)) {
+		var lastReadRecord = SurgeRecord.None;
+
+		await foreach (var response in InboundChannel.Reader.ReadAllAsync(CancellationToken.None)) {
 			if (Cancellator.IsCancellationRequested)
 				yield break; // get out regardless of the number of events still in the channel
 
-			var record = await resolvedEvent.ToRecord(Deserialize, Sequence.FetchNext);
+			if (response is ReadResponse.EventReceived eventReceived) {
+				var resolvedEvent = eventReceived.Event;
 
-			if (record == SurgeRecord.None)
-				continue;
+				lastReadRecord = await resolvedEvent.ToRecord(Deserialize, Sequence.FetchNext);
 
-            if (Options.Filter.IsJsonPathFilter && !Options.Filter.JsonPath.IsMatch(record))
-                continue;
+                // TODO WC: To be reviewed. We should be able to delete this because it should never happen
+				if (lastReadRecord == SurgeRecord.None)
+					continue;
 
-			await Intercept(new RecordReceived(this, record));
-			yield return record;
+				if (Options.Filter.IsJsonPathFilter && !Options.Filter.JsonPath.IsMatch(lastReadRecord))
+					continue;
+
+				await Intercept(new RecordReceived(this, lastReadRecord));
+
+				yield return lastReadRecord;
+			}
+			else if (response is ReadResponse.CheckpointReceived checkpointReceived) {
+				lastReadRecord = new SurgeRecord {
+					Id         = RecordId.From(Guid.NewGuid()),
+					Position   = LogPosition.From(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition != 0 ? checkpointReceived.PreparePosition : checkpointReceived.CommitPosition),
+					SequenceId = Sequence.FetchNext(),
+					Timestamp  = TimeProvider.System.GetUtcNow().DateTime,
+					ValueType  = typeof(ReadResponse.CheckpointReceived),
+					Value      = checkpointReceived,
+					SchemaInfo = new SchemaInfo("$CheckpointReceived", SchemaDefinitionType.Json)
+				};
+
+				await Intercept(new RecordReceived(this, lastReadRecord));
+
+				await CheckpointController.Track(lastReadRecord);
+				await Intercept(new RecordTracked(this, lastReadRecord));
+
+				yield return lastReadRecord;
+			}
+			else if (response is ReadResponse.SubscriptionCaughtUp caughtUp) {
+				var record = new SurgeRecord {
+					Id         = RecordId.From(Guid.NewGuid()),
+					Position   = lastReadRecord.Position,
+					SequenceId = lastReadRecord.SequenceId,
+					Timestamp  = TimeProvider.System.GetUtcNow().DateTime,
+					ValueType  = typeof(ReadResponse.SubscriptionCaughtUp),
+					Value      = caughtUp,
+					SchemaInfo = new SchemaInfo("$SubscriptionCaughtUp", SchemaDefinitionType.Json)
+				};
+
+				await Intercept(new RecordReceived(this, record));
+
+				// it is not required to track this record because the CheckpointReceived event
+				// is the one that actually gets tracked.
+				if (Options.AutoCommit.Enabled)
+					await CommitAll(Cancellator.Token);
+
+				yield return record;
+			}
 		}
-	}
+    }
 
     public async Task<IReadOnlyList<RecordPosition>> Track(SurgeRecord record, CancellationToken cancellationToken = default) {
-        var trackedPositions = await CheckpointController.Track(record);
+	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+		    return CheckpointController.TrackedPositions;
+
+	    var trackedPositions = await CheckpointController.Track(record);
         await Intercept(new RecordTracked(this, record));
         return trackedPositions;
     }
 
-    public Task<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) =>
-        CheckpointController.Commit(record);
+    public async Task<IReadOnlyList<RecordPosition>> Commit(SurgeRecord record, CancellationToken cancellationToken = default) {
+	    if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+		    return CheckpointController.TrackedPositions;
+
+	    var trackedPositions = await CheckpointController.Commit(record);
+	    await Intercept(new RecordTracked(this, record));
+	    return trackedPositions;
+    }
 
     /// <summary>
     /// Commits all tracked positions that are ready to be committed (complete sequences).
@@ -180,7 +241,8 @@ public class SystemConsumer : IConsumer {
 
     public async ValueTask DisposeAsync() {
         try {
-            if (!Cancellator.IsCancellationRequested)
+			// stops the subscription if it was not already stopped
+	        if (!Cancellator.IsCancellationRequested)
                 await Cancellator.CancelAsync();
 
             // stops the periodic commit if it was not already stopped

@@ -16,9 +16,9 @@ namespace EventStore.Core;
 public static class PublisherSubscribeExtensions {
     static readonly IExpiryStrategy DefaultExpiryStrategy = new DefaultExpiryStrategy();
 
-    const uint DefaultCheckpointIntervalMultiplier = 1000;
+    const uint DefaultCheckpointIntervalMultiplier = 1;
 
-	static async IAsyncEnumerable<ResolvedEvent> SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, [EnumeratorCancellation] CancellationToken cancellationToken) {
+	static async IAsyncEnumerable<ReadResponse> SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, uint maxSearchWindow, [EnumeratorCancellation] CancellationToken cancellationToken) {
 		await using var sub = new Enumerator.AllSubscriptionFiltered(
 			bus: publisher,
 			expiryStrategy: DefaultExpiryStrategy,
@@ -27,7 +27,7 @@ public static class PublisherSubscribeExtensions {
 			eventFilter: filter,
 			user: SystemAccounts.System,
 			requiresLeader: false,
-			maxSearchWindow: null,
+			maxSearchWindow: maxSearchWindow,
 			checkpointIntervalMultiplier: DefaultCheckpointIntervalMultiplier,
 			cancellationToken: cancellationToken
 		);
@@ -36,16 +36,11 @@ public static class PublisherSubscribeExtensions {
 			if (!await sub.MoveNextAsync(cancellationToken)) // not sure if we need to retry forever or if the enumerator will do that for us
 				break;
 
-			if (sub.Current is ReadResponse.EventReceived eventReceived)
-				yield return eventReceived.Event;
-
-            // TODO SS: notify the consumer that we are caught up
-            // if (sub.Current is ReadResponse.SubscriptionCaughtUp caughtUp)
-            //     yield return caughtUp;
+			yield return sub.Current;
 		}
 	}
 
-	static async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(this IPublisher publisher, string stream, StreamRevision? revision, [EnumeratorCancellation] CancellationToken cancellationToken) {
+	static async IAsyncEnumerable<ReadResponse> SubscribeToStream(this IPublisher publisher, string stream, StreamRevision? revision, [EnumeratorCancellation] CancellationToken cancellationToken) {
 		var startRevision = StartFrom(revision);
 
 		await using var sub = new Enumerator.StreamSubscription<string>(
@@ -63,11 +58,7 @@ public static class PublisherSubscribeExtensions {
 			if (!await sub.MoveNextAsync()) // not sure if we need to retry forever or if the enumerator will do that for us
 				break;
 
-			if (sub.Current is ReadResponse.EventReceived eventReceived)
-				yield return eventReceived.Event;
-
-            // if (sub.Current is ReadResponse.SubscriptionCaughtUp caughtUp)
-            //     yield return caughtUp;
+			yield return sub.Current;
 		}
 
 		yield break;
@@ -75,7 +66,7 @@ public static class PublisherSubscribeExtensions {
         static StreamRevision? StartFrom(StreamRevision? revision) => revision == 0 ? null : revision;
 	}
 
-	public static Task SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, Channel<ResolvedEvent> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
+	public static Task SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
 		_ = Task.Run(async () => {
 			var resilienceContext = ResilienceContextPool.Shared
 				.Get(nameof(SubscribeToAll), cancellationToken);
@@ -83,20 +74,25 @@ public static class PublisherSubscribeExtensions {
 			try {
 				await resiliencePipeline.ExecuteAsync(
 					static async (ctx, state) => {
-						await foreach (var re in state.Publisher.SubscribeToAll(state.Checkpoint, state.Filter, ctx.CancellationToken)) {
-							state.Checkpoint = new Position(
-								(ulong)re.OriginalPosition!.Value.CommitPosition,
-								(ulong)re.OriginalPosition!.Value.PreparePosition
-							);
+						await foreach (var response in state.Publisher.SubscribeToAll(state.Checkpoint, state.Filter, state.MaxSearchWindow, ctx.CancellationToken)) {
+							// keeping track of the last position before an error occurs
+							// so we can let the policy know where to start from
+							if (response is ReadResponse.EventReceived eventReceived) {
+								state.Checkpoint = new Position(
+									(ulong)eventReceived.Event.OriginalPosition!.Value.CommitPosition,
+									(ulong)eventReceived.Event.OriginalPosition!.Value.PreparePosition
+								);
+							}
 
-							await state.Channel.Writer.WriteAsync(re, ctx.CancellationToken);
+							await state.Channel.Writer.WriteAsync(response, ctx.CancellationToken);
 						}
 					},
 					resilienceContext, (
-						Publisher : publisher,
-						Checkpoint: position,
-						Filter    : filter,
-						Channel   : channel
+						Publisher      : publisher,
+						Checkpoint     : position,
+						Filter         : filter,
+						MaxSearchWindow: maxSearchWindow,
+						Channel        : channel
 					)
 				);
 
@@ -117,7 +113,7 @@ public static class PublisherSubscribeExtensions {
 		return Task.CompletedTask;
 	}
 
-	public static Task SubscribeToStream(this IPublisher publisher, StreamRevision? revision, string stream, Channel<ResolvedEvent> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
+	public static Task SubscribeToStream(this IPublisher publisher, StreamRevision? revision, string stream, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
 		_ = Task.Run(async () => {
 			var resilienceContext = ResilienceContextPool.Shared
 				.Get(nameof(SubscribeToStream), cancellationToken);
@@ -125,9 +121,14 @@ public static class PublisherSubscribeExtensions {
 			try {
 				await resiliencePipeline.ExecuteAsync(
 					static async (ctx, state) => {
-                        await foreach (var re in state.Publisher.SubscribeToStream(state.Stream, state.Checkpoint, ctx.CancellationToken)) {
-                            state.Checkpoint = StreamRevision.FromInt64(re.OriginalEventNumber);
-                            await state.Channel.Writer.WriteAsync(re, ctx.CancellationToken);
+                        await foreach (var response in state.Publisher.SubscribeToStream(state.Stream, state.Checkpoint, ctx.CancellationToken)) {
+	                        // keeping track of the last position before an error occurs
+	                        // so we can let the policy know where to start from
+	                        if (response is ReadResponse.EventReceived eventReceived) {
+		                        state.Checkpoint = StreamRevision.FromInt64(eventReceived.Event.OriginalEventNumber);
+	                        }
+
+	                        await state.Channel.Writer.WriteAsync(response, ctx.CancellationToken);
                         }
 					},
 					resilienceContext, (

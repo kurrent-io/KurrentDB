@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Net;
 using DotNext.Collections.Generic;
-using EventStore.ClusterNode;
+using KurrentDB;
 using EventStore.Core;
 using EventStore.Core.Certificates;
 using EventStore.Core.Configuration;

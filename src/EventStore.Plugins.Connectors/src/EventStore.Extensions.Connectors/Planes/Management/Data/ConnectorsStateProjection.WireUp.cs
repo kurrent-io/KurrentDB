@@ -18,12 +18,19 @@ static class ConnectorsStateProjectorWireUp {
     public static IServiceCollection AddConnectorsStateProjection(this IServiceCollection services) {
         const string serviceName = "ConnectorsStateProjection";
 
+        services.AddSingleton(ctx => {
+            var projectionsStore = ctx.GetRequiredService<ISnapshotProjectionsStore>();
+            return new ConnectorsStateProjection(projectionsStore, ConnectorsStateProjectionStream);
+        });
+
+        services.AddSingleton<IConnectorsStateProjection>(ctx => ctx.GetRequiredService<ConnectorsStateProjection>());
+
         return services
            .AddSingleton<IHostedService, ConnectorsStateProjectionService>(ctx => {
                return new ConnectorsStateProjectionService(() => {
-                   var loggerFactory       = ctx.GetRequiredService<ILoggerFactory>();
-                   var getProcessorBuilder = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
-                   var projectionsStore    = ctx.GetRequiredService<ISnapshotProjectionsStore>();
+                   var loggerFactory         = ctx.GetRequiredService<ILoggerFactory>();
+                   var getProcessorBuilder   = ctx.GetRequiredService<Func<SystemProcessorBuilder>>();
+                   var stateProjectionModule = ctx.GetRequiredService<ConnectorsStateProjection>();
 
                    var processor = getProcessorBuilder()
                        .ProcessorId(serviceName)
@@ -41,7 +48,7 @@ static class ConnectorsStateProjectorWireUp {
                        .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
                        .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
                        .InitialPosition(SubscriptionInitialPosition.Earliest)
-                       .WithModule(new ConnectorsStateProjection(projectionsStore, ConnectorsStateProjectionStream))
+                       .WithModule(stateProjectionModule)
                        .Create();
 
                    return processor;

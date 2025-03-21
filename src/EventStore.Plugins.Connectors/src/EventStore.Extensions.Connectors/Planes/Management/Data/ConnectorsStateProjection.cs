@@ -2,16 +2,24 @@ using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
+using EventStore.Core.Services.Transport.Enumerators;
+using Kurrent.Surge;
 using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Toolkit;
 using static System.StringComparison;
 
 namespace EventStore.Connectors.Management.Data;
 
+public interface IConnectorsStateProjection {
+    Task<(LogPosition Position, DateTimeOffset Timestamp)> WaitUntilCaughtUp { get; }
+
+    bool IsCaughtUp => WaitUntilCaughtUp.IsCompleted;
+}
+
 /// <summary>
 /// Projects the current state of all connectors in the system.
 /// </summary>
-public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSnapshot> {
+public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSnapshot>, IConnectorsStateProjection {
     public ConnectorsStateProjection(ISnapshotProjectionsStore store, string snapshotStreamId) : base(store, snapshotStreamId) {
         UpdateWhen<ConnectorCreated>((snapshot, evt) =>
             snapshot.ApplyOrAdd(evt.ConnectorId, conn => {
@@ -84,7 +92,16 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
                 conn.DeleteTime = evt.Timestamp;
                 conn.UpdateTime = evt.Timestamp;
             }));
+
+        Process<ReadResponse.SubscriptionCaughtUp>((_, ctx) => {
+            if (!HasCaughtUpTaskCompletionSource.Task.IsCompleted)
+                HasCaughtUpTaskCompletionSource.SetResult((ctx.Record.Position, ctx.Record.Timestamp));
+        });
     }
+
+    TaskCompletionSource<(LogPosition Position, DateTimeOffset Timestamp)> HasCaughtUpTaskCompletionSource { get; } = new();
+
+    public Task<(LogPosition Position, DateTimeOffset Timestamp)> WaitUntilCaughtUp => HasCaughtUpTaskCompletionSource.Task;
 }
 
 public static class ConnectorsSnapshotExtensions {

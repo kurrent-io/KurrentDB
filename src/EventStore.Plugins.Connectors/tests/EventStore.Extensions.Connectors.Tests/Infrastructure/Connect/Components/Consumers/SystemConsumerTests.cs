@@ -3,9 +3,12 @@
 using System.Text.RegularExpressions;
 using EventStore.Connect.Consumers;
 using EventStore.Core;
+using EventStore.Core.Services.Transport.Enumerators;
+using EventStore.Toolkit.Testing;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using EventStore.Toolkit.Testing.Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace EventStore.Extensions.Connectors.Tests.Connect.Consumers;
 
@@ -32,6 +35,9 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		// Act
 		await foreach (var record in consumer.Records(cancellator.Token)) {
+            if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+                continue;
+
 			pendingCount--;
 			consumedRecords.Add(record);
 
@@ -66,10 +72,14 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
                 .DisableAutoCommit()
                 .Create();
 
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            using var linked  = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token, cancellator.Token);
+
             // Act
             var consumed = await consumer
                 .Records(cancellator.Token)
-                .ToListAsync(cancellator.Token);
+                .Where(x => x.Value is not (ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp))
+                .ToListAsync(linked.Token);
 
             // Assert
             consumed.Should().BeEmpty("because there are no records in the stream");
@@ -97,6 +107,9 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		// Act
 		await foreach (var record in consumer.Records(cancellator.Token)) {
+            if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+                continue;
+
 			messages.Should().Contain(x => x.RecordId == record.Id);
 
 			consumedRecords.Add(record);
@@ -135,6 +148,9 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 			.Create();
 
 		await foreach (var record in consumer.Records(cancellator.Token)) {
+            if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+                continue;
+
 			consumedRecords.Add(record);
 			await consumer.Track(record);
 
@@ -173,6 +189,9 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		// Act
 		await foreach (var record in consumer.Records(cancellator.Token)) {
+            if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+                continue;
+
 			consumedRecords.Add(record);
 			await consumer.Track(record);
 
@@ -206,6 +225,9 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		// Act
 		await foreach (var record in consumer.Records(cancellator.Token)) {
+            if (record.Value is ReadResponse.CheckpointReceived or ReadResponse.SubscriptionCaughtUp)
+                continue;
+
 			consumedRecords.Add(record);
 			await consumer.Track(record);
 
@@ -227,11 +249,55 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
     class ConsumeFilterCases : TestCaseGenerator<ConsumeFilterCases> {
         protected override IEnumerable<object[]> Data() {
-            var streamId = Guid.NewGuid().ToString();
+	        var streamId = Identifiers.GenerateShortId("stream");
             yield return [streamId, ConsumeFilter.FromStreamId(streamId)];
 
             streamId = Guid.NewGuid().ToString();
             yield return [streamId, ConsumeFilter.FromRegex(ConsumeFilterScope.Stream, new Regex(streamId))];
         }
+    }
+
+    [Fact]
+    public async Task consumes_all_stream_and_handles_caught_up() {
+	    // Arrange
+	    // var streamId = Identifiers.GenerateShortId("stream");
+
+	    var filter = ConsumeFilter.FromRegex(ConsumeFilterScope.Stream, new Regex(Identifiers.GenerateShortId()));
+
+	    var requests = await Fixture.ProduceTestEvents(Identifiers.GenerateShortId("stream"), 1, 1000);
+
+	    using var cancellator = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+
+	    var consumedRecords = new List<SurgeRecord>();
+
+	    await using var consumer = Fixture.NewConsumer()
+		    // .ConsumerId($"{streamId}-csr")
+		    .Filter(filter)
+		    .InitialPosition(SubscriptionInitialPosition.Earliest)
+		    .DisableAutoCommit()
+		    .AutoCommit(options => options with { RecordsThreshold = 100 })
+		    .Create();
+
+	    // Act
+	    await foreach (var record in consumer.Records(cancellator.Token)) {
+		    if (record.Value is ReadResponse.CheckpointReceived) {
+			    consumedRecords.Add(record);
+			    Fixture.Logger.LogInformation("Checkpoint received at position: {Position}", record.Position);
+
+			    // if (consumedRecords.Count != 10)
+				   //  continue;
+			    //
+			    // await cancellator.CancelAsync();
+			    // Fixture.Logger.LogInformation("Cancelling subscription after 10 CheckpointReceived events");
+		    }
+		    else if (record.Value is ReadResponse.SubscriptionCaughtUp) {
+			    await cancellator.CancelAsync();
+			    Fixture.Logger.LogInformation("Subscription caught up at position: {Position}", record.Position);
+		    }
+	    }
+
+	    // Assert
+	    consumedRecords.Should()
+		    .HaveCountGreaterOrEqualTo(1, "because we should have received at least 10 CheckpointReceived events");
     }
 }
