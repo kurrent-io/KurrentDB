@@ -276,3 +276,34 @@ For more details on customizing these settings, refer to the [Resilience Configu
 ::: note
 Some connectors have their own resilience mechanisms and configurations. Refer to the specific connector's page for details.
 :::
+
+## Data Protection
+
+KurrentDB Connectors implement automatic data protection for sensitive
+configuration fields. This security feature ensures that confidential
+information, such as passwords and access tokens, is encrypted during
+transmission.
+
+When you configure a connector, certain sensitive fields are automatically encrypted:
+
+- The system automatically identifies sensitive keys in the configuration using predefined patterns determined internally
+- These values are encrypted using a token provided by you
+- The encrypted values are stored securely in KurrentDB instead of plaintext
+- This protection happens automatically without user configuration
+
+To configure data protection, you need to set the `token` property in the KurrentDB configuration file. This token is used to encrypt and decrypt sensitive data.
+
+Refer to the [individual documentation](./sinks/) for each connector to see which fields are _protected_.
+
+```yaml
+Connectors:
+  Enabled: false
+  DataProtection:
+    Token: secret-token
+```
+
+::: warning
+As from KurrentDB v25, data protection is enforced by default and cannot be
+disabled. The connectors plugin will not start if the encryption token is not
+set.
+:::
