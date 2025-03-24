@@ -9,7 +9,7 @@ using StreamMetadata = EventStore.Core.Data.StreamMetadata;
 namespace EventStore.Extensions.Connectors.Tests;
 
 [Trait("Category", "Integration")]
-public class ManagerTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
+public class SystemManagerTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
     [Fact]
     public async Task returns_false_when_stream_does_not_exist() => await Fixture.TestWithTimeout(async ct => {
         // Arrange

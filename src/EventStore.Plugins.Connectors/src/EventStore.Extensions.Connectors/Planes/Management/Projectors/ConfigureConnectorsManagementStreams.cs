@@ -17,8 +17,6 @@ public class ConfigureConnectorsManagementStreams : ISystemStartupTask {
 
         await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream, maxCount: 10);
         await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionCheckpointsStream, maxCount: 10);
-        await TryConfigureStream(ConnectorsFeatureConventions.Streams.ManagementStreamSupervisorCheckpointsStream, maxCount: 10);
-        await TryConfigureStream(ConnectorsFeatureConventions.Streams.ManagementLifecycleReactorCheckpointsStream, maxCount: 10);
 
         return;
 

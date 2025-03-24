@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace EventStore.Connectors.Management;
 
 public class ConnectorsLicenseService {
-    static readonly object Locker = new();
+    readonly object Locker = new();
 
     public const string AllWildcardEntitlement = "ALL";
 

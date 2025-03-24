@@ -25,6 +25,7 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
 
         ConsumerBuilder = getConsumerBuilder()
             .ConsumerId("ConnectorsController")
+            .Publisher(publisher)
             .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
             .InitialPosition(SubscriptionInitialPosition.Latest)
             .DisableAutoCommit();
@@ -47,11 +48,17 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
             await using var consumer = ConsumerBuilder.StartPosition(connectors.Position).Create();
 
             await foreach (var record in consumer.Records(stoppingToken)) {
-                await (record.Value switch {
-                    ConnectorActivating   evt => ActivateConnector(evt.ConnectorId, EnrichWithStartPosition(evt.Settings, evt.StartFrom), evt.Revision),
-                    ConnectorDeactivating evt => DeactivateConnector(evt.ConnectorId),
-                    _                         => Task.CompletedTask
-                });
+                switch (record.Value) {
+                    case ConnectorActivating evt:
+                        var connector = new RegisteredConnector(evt.ConnectorId, evt.Revision, EnrichWithStartPosition(evt.Settings, evt.StartFrom));
+                        connectors.Connectors.Add(connector);
+                        await ActivateConnector(connector.ConnectorId, connector.Settings, connector.Revision);
+                        break;
+                    case ConnectorDeactivating evt:
+                        connectors.Connectors.RemoveAll(x => x.ConnectorId == evt.ConnectorId);
+                        await DeactivateConnector(evt.ConnectorId);
+                        break;
+                }
             }
         }
         catch (OperationCanceledException) {

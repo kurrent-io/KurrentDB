@@ -54,6 +54,8 @@ public class SystemConsumer : IConsumer {
 		if (options.Logging.Enabled)
 			options.Interceptors.TryAddUniqueFirst(new ConsumerLogger());
 
+        Options.Interceptors.TryAddUniqueFirst(new ConsumerMetrics());
+
         Interceptors = new(Options.Interceptors, logger);
 
 		Intercept = evt => Interceptors.Intercept(evt);
@@ -122,10 +124,12 @@ public class SystemConsumer : IConsumer {
     public async IAsyncEnumerable<SurgeRecord> Records([EnumeratorCancellation] CancellationToken stoppingToken) {
 		Cancellator = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
 
+		var cancellatorToken = Cancellator.Token;
+
 		await CheckpointStore.Initialize(Cancellator.Token);
 
         StartPosition = await CheckpointStore
-            .ResolveStartPosition(Options.StartPosition, Options.InitialPosition, Cancellator.Token);
+            .ResolveStartPosition(Options.StartPosition, Options.InitialPosition, cancellatorToken);
 
         if (Options.Filter.IsStreamIdFilter) {
             var startRevision = await Client.GetStreamRevision(StartPosition.ToPosition(), stoppingToken);
@@ -135,7 +139,7 @@ public class SystemConsumer : IConsumer {
                 Options.Filter.Expression,
                 InboundChannel,
                 ResiliencePipeline,
-                Cancellator.Token
+                cancellatorToken
 	        );
         } else {
             await Client.SubscribeToAll(
@@ -144,7 +148,8 @@ public class SystemConsumer : IConsumer {
 	            (uint)Options.AutoCommit.RecordsThreshold,
                 InboundChannel,
                 ResiliencePipeline,
-                Cancellator.Token);
+	            cancellatorToken
+	        );
         }
 
 		await CheckpointController.Activate();
@@ -152,7 +157,7 @@ public class SystemConsumer : IConsumer {
 		var lastReadRecord = SurgeRecord.None;
 
 		await foreach (var response in InboundChannel.Reader.ReadAllAsync(CancellationToken.None)) {
-			if (Cancellator.IsCancellationRequested)
+			if (cancellatorToken.IsCancellationRequested)
 				yield break; // get out regardless of the number of events still in the channel
 
 			if (response is ReadResponse.EventReceived eventReceived) {
@@ -179,7 +184,7 @@ public class SystemConsumer : IConsumer {
 					Timestamp  = TimeProvider.System.GetUtcNow().DateTime,
 					ValueType  = typeof(ReadResponse.CheckpointReceived),
 					Value      = checkpointReceived,
-					SchemaInfo = new SchemaInfo("$CheckpointReceived", SchemaDefinitionType.Json)
+					SchemaInfo = new SchemaInfo("$checkpoint-received", SchemaDefinitionType.Json)
 				};
 
 				await Intercept(new RecordReceived(this, lastReadRecord));
@@ -197,7 +202,7 @@ public class SystemConsumer : IConsumer {
 					Timestamp  = TimeProvider.System.GetUtcNow().DateTime,
 					ValueType  = typeof(ReadResponse.SubscriptionCaughtUp),
 					Value      = caughtUp,
-					SchemaInfo = new SchemaInfo("$SubscriptionCaughtUp", SchemaDefinitionType.Json)
+					SchemaInfo = new SchemaInfo("$subscription-caughtUp", SchemaDefinitionType.Json)
 				};
 
 				await Intercept(new RecordReceived(this, record));
@@ -205,7 +210,7 @@ public class SystemConsumer : IConsumer {
 				// it is not required to track this record because the CheckpointReceived event
 				// is the one that actually gets tracked.
 				if (Options.AutoCommit.Enabled)
-					await CommitAll(Cancellator.Token);
+					await CheckpointController.CommitAll();
 
 				yield return record;
 			}

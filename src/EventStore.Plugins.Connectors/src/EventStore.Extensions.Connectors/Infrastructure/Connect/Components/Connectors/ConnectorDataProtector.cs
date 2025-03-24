@@ -9,45 +9,47 @@ namespace EventStore.Connectors.Connect.Components.Connectors;
 
 public interface IConnectorDataProtector {
     ValueTask<IDictionary<string, string?>> Protect(
-        string connectorId, IDictionary<string, string?> settings, IDataProtector? dataProtector, CancellationToken ct = default
+        string connectorId, IDictionary<string, string?> settings, CancellationToken ct
     );
 
     ValueTask<IConfiguration> Unprotect(
-        IConfiguration configuration, IDataProtector? dataProtector, CancellationToken ct = default
+        IConfiguration configuration, CancellationToken ct
     );
+
+    IDictionary<string, string?> Protect(string connectorId, IDictionary<string, string?> settings) =>
+        Protect(connectorId, settings, CancellationToken.None).AsTask().GetAwaiter().GetResult();
+
+    IConfiguration Unprotect(IConfiguration configuration) =>
+        Unprotect(configuration, CancellationToken.None).AsTask().GetAwaiter().GetResult();
 }
 
-public abstract class ConnectorDataProtector<T> : IConnectorDataProtector where T : class, IConnectorOptions {
+public abstract class ConnectorDataProtector<T>(IDataProtector dataProtector) : IConnectorDataProtector where T : class, IConnectorOptions {
+    IDataProtector DataProtector { get; } = dataProtector;
+
     public virtual string[] Keys => [];
 
     public async ValueTask<IDictionary<string, string?>> Protect(
-        string connectorId, IDictionary<string, string?> settings, IDataProtector? dataProtector, CancellationToken ct = default
+        string connectorId, IDictionary<string, string?> settings, CancellationToken ct
     ) {
-        if (dataProtector is null)
-            return settings;
-
         foreach (var key in Keys) {
             if (!settings.TryGetValue(key, out var plainText) || string.IsNullOrEmpty(plainText))
                 continue;
 
-            settings[key] = await dataProtector.Protect(plainText, keyIdentifier: $"{connectorId}:{key}", ct);
+            settings[key] = await DataProtector.Protect(plainText, keyIdentifier: $"{connectorId}:{key}", ct);
         }
 
         return settings;
     }
 
     public async ValueTask<IConfiguration> Unprotect(
-        IConfiguration configuration, IDataProtector? dataProtector, CancellationToken ct = default
+        IConfiguration configuration, CancellationToken ct
     ) {
-        if (dataProtector is null)
-            return configuration;
-
         foreach (var key in Keys) {
             var value = configuration[key];
 
             if (string.IsNullOrEmpty(value)) continue;
 
-            var plaintext = await dataProtector.Unprotect(value, ct);
+            var plaintext = await DataProtector.Unprotect(value, ct);
 
             configuration[key] = plaintext;
         }

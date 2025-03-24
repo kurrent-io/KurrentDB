@@ -2,6 +2,7 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using EventStore.Connect.Connectors;
+using EventStore.Connectors.Connect.Components.Connectors;
 using EventStore.Connectors.Management;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
@@ -20,7 +21,7 @@ public class DataProtectionTests(ITestOutputHelper output, ConnectorsAssemblyFix
     [Fact]
     public Task data_protector_should_protect_and_unprotect_successfully() => Fixture.TestWithTimeout(async cts => {
         // Arrange
-        var connectorDataProtector = ConnectorsMasterDataProtector.Instance;
+        IConnectorDataProtector connectorDataProtector = new ConnectorsMasterDataProtector(Fixture.DataProtector);
 
         const string key              = "Authentication:Password";
         const string value            = "plaintext";
@@ -35,16 +36,10 @@ public class DataProtectionTests(ITestOutputHelper output, ConnectorsAssemblyFix
         // Act
         configuration[key] = await Fixture.DataProtector.Protect(configuration[key]!, cts.Token);
 
-        var options = new SystemConnectorsFactoryOptions {
-            ProcessConfiguration = config => connectorDataProtector.Unprotect(config, Fixture.DataProtector, cts.Token).AsTask().GetAwaiter().GetResult()
-        };
-
-        var updated = options.ProcessConfiguration?.Invoke(configuration);
-
-        configuration = updated ?? configuration;
+        var unprotectedConfig = await connectorDataProtector.Unprotect(configuration, cts.Token);
 
         // Assert
-        configuration[key].Should().BeEquivalentTo(value);
+        unprotectedConfig[key].Should().BeEquivalentTo(value);
     });
 
     [Fact]
@@ -55,7 +50,8 @@ public class DataProtectionTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
         var createTimestamp        = Fixture.TimeProvider.GetUtcNow().ToTimestamp();
         var projection             = new ConnectorsStateProjection(Fixture.SnapshotProjectionsStore, streamId);
-        var connectorDataProtector = ConnectorsMasterDataProtector.Instance;
+
+        IConnectorDataProtector connectorDataProtector = new ConnectorsMasterDataProtector(Fixture.DataProtector);
 
         const string key   = "Authentication:Password";
         const string value = "secret";
@@ -66,8 +62,8 @@ public class DataProtectionTests(ITestOutputHelper output, ConnectorsAssemblyFix
         };
 
         var settings = ConnectorSettings
-            .From(cmdSettings!)
-            .Protect(connectorId, ProtectSettings)
+            .From(cmdSettings!, connectorId)
+            .Protect(connectorDataProtector.Protect)
             .AsDictionary();
 
         var cmd = new ConnectorCreated {
@@ -89,17 +85,9 @@ public class DataProtectionTests(ITestOutputHelper output, ConnectorsAssemblyFix
             .AddInMemoryCollection(store.Snapshot.Connectors.First().Settings)
             .Build();
 
-        var unprotected = connectorDataProtector.Unprotect(configuration, Fixture.DataProtector, cts.Token).AsTask().GetAwaiter().GetResult();
+        var unprotected = await connectorDataProtector.Unprotect(configuration, cts.Token);
 
         unprotected[key].Should().BeEquivalentTo(value);
-
-        return;
-
-        ValueTask<IDictionary<string, string?>> ProtectSettings(string innerConnectorId, IDictionary<string, string?> innerSettings) =>
-            connectorDataProtector.Protect(connectorId: innerConnectorId,
-                settings: new Dictionary<string, string?>(innerSettings, StringComparer.OrdinalIgnoreCase),
-                dataProtector: Fixture.DataProtector,
-                ct: cts.Token);
     });
 
     async Task<RecordContext> RecordContextFor<T>(T cmd, CancellationToken cancellationToken) where T : IMessage {

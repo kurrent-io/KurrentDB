@@ -6,32 +6,32 @@ using EventStore.Connectors;
 using EventStore.Connectors.Connect.Components.Connectors;
 using EventStore.Connectors.Infrastructure.Connect.Components.Connectors;
 using EventStore.Connectors.System;
-using Kurrent.Surge.Connectors.Sinks;
 using EventStore.Core.Bus;
+using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.Connectors.Diagnostics.Metrics;
 using Kurrent.Surge.Connectors.Sinks.Diagnostics.Metrics;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Configuration;
+using Kurrent.Surge.Interceptors;
 using Kurrent.Surge.Persistence.State;
 using Kurrent.Surge.Processors;
-using Kurrent.Surge.Processors.Configuration;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Transformers;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 using AutoLockOptions = Kurrent.Surge.Processors.Configuration.AutoLockOptions;
 
 namespace EventStore.Connect.Connectors;
 
 public record SystemConnectorsFactoryOptions {
-    public StreamTemplate                        CheckpointsStreamTemplate { get; init; } = ConnectorsFeatureConventions.Streams.CheckpointsStreamTemplate;
-    public StreamTemplate                        LifecycleStreamTemplate   { get; init; } = ConnectorsFeatureConventions.Streams.LifecycleStreamTemplate;
-    public AutoLockOptions                       AutoLock                  { get; init; } = new();
-    public Func<IConfiguration, IConfiguration>? ProcessConfiguration      { get; init; }
+    public StreamTemplate                CheckpointsStreamTemplate { get; init; } = ConnectorsFeatureConventions.Streams.CheckpointsStreamTemplate;
+    public AutoLockOptions               AutoLock                  { get; init; } = new();
+    public LinkedList<InterceptorModule> Interceptors              { get; init; } = [];
 }
 
 public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, IServiceProvider services) : ISystemConnectorFactory {
@@ -41,11 +41,14 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
     static DisposeCallback? OnDisposeCallback;
 
     public IConnector CreateConnector(ConnectorId connectorId, IConfiguration configuration) {
-        var sinkOptions = configuration.GetRequiredOptions<SinkOptions>();
+        var validator     = Services.GetRequiredService<IConnectorValidator>();
+        var dataProtector = Services.GetRequiredService<IConnectorDataProtector>();
 
-        var updated = Options.ProcessConfiguration?.Invoke(configuration);
+        var config = dataProtector.Unprotect(configuration);
 
-        configuration = updated ?? configuration;
+        validator.EnsureValid(config);
+
+        var sinkOptions = config.GetRequiredOptions<SinkOptions>();
 
         var sink = CreateSink(sinkOptions.InstanceTypeName);
 
@@ -61,9 +64,9 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
 
         OnDisposeCallback = () => ConnectorMetrics.TrackSinkConnectorClosed(sink.GetType(), connectorId);
 
-        var sinkProxy = new SinkProxy(connectorId, sink, configuration, Services);
+        var sinkProxy = new SinkProxy(connectorId, sink, config, Services);
 
-        var processor = ConfigureProcessor(connectorId, sinkOptions, sinkProxy);
+        var processor = ConfigureProcessor(connectorId, Options.Interceptors, sinkOptions, sinkProxy);
 
         return new SinkConnector(processor, sinkProxy);
 
@@ -75,13 +78,13 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
         }
     }
 
-    IProcessor ConfigureProcessor(ConnectorId connectorId, SinkOptions sinkOptions, SinkProxy sinkProxy) {
+    IProcessor ConfigureProcessor(ConnectorId connectorId, LinkedList<InterceptorModule> interceptors, SinkOptions sinkOptions, SinkProxy sinkProxy) {
         var publisher      = Services.GetRequiredService<IPublisher>();
         var loggerFactory  = Services.GetRequiredService<ILoggerFactory>();
         var schemaRegistry = Services.GetRequiredService<SchemaRegistry>();
         var stateStore     = Services.GetRequiredService<IStateStore>();
 
-        // TODO SS: seriously, this is a bad idea, but creating a connector to be hosted in ESDB or PaaS is different from having full control of the Connect framework
+        // TODO SS: seriously, this is a bad idea, but creating a connector to be hosted in ESDB or PaaS is different from having full control of the Surge framework
 
         // It was either this, or having a separate configuration for the node or
         // even creating a factory provider that would create a new factory when the node becomes a leader,
@@ -104,11 +107,6 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
                 sinkOptions.Subscription.Filter.Expression
             );
 
-        var publishStateChangesOptions = new PublishStateChangesOptions {
-            Enabled        = true,
-            StreamTemplate = Options.LifecycleStreamTemplate
-        };
-
         var autoLockOptions = Options.AutoLock with { OwnerId = nodeId };
 
         var autoCommitOptions = new AutoCommitOptions {
@@ -130,7 +128,8 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
             .StateStore(stateStore)
             .SchemaRegistry(schemaRegistry)
             .InitialPosition(sinkOptions.Subscription.InitialPosition)
-            .PublishStateChanges(publishStateChangesOptions)
+            .DisablePublishStateChanges()
+            .Interceptors(interceptors)
             .AutoLock(autoLockOptions)
             .Filter(filter)
             .Logging(loggingOptions)

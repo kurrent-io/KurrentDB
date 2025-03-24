@@ -9,7 +9,6 @@ using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Infrastructure;
-using EventStore.Connectors.Infrastructure.Security;
 using EventStore.Connectors.Management;
 using EventStore.Core.Bus;
 using EventStore.Extensions.Connectors.Tests;
@@ -22,11 +21,12 @@ using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
 using EventStore.System.Testing.Fixtures;
+using EventStore.Toolkit.Testing;
 using EventStore.Toolkit.Testing.Xunit.Extensions.AssemblyFixture;
 using Kurrent.Surge.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
+
 using FakeTimeProvider = Microsoft.Extensions.Time.Testing.FakeTimeProvider;
-using Manager = EventStore.Connectors.Infrastructure.Manager;
 using WithExtension = EventStore.Toolkit.Testing.WithExtension;
 
 [assembly: TestFramework(XunitTestFrameworkWithAssemblyFixture.TypeName, XunitTestFrameworkWithAssemblyFixture.AssemblyName)]
@@ -43,7 +43,7 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         TimeProvider     = new FakeTimeProvider();
 
         ConfigureServices = services => {
-            services.AddConnectSchemaRegistry();
+            services.AddSurgeSchemaRegistry(SchemaRegistry);
 
             services
                 .AddSingleton(StateStore)
@@ -74,11 +74,11 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
             });
 
             services.AddSingleton<IManager>(ctx => {
-                var manager = new Manager(ctx.GetRequiredService<IPublisher>());
+                var manager = new SystemManager(ctx.GetRequiredService<IPublisher>());
                 return manager;
             });
 
-            services.AddConnectorsDataProtection();
+            services.AddSurgeDataProtection(Application.Configuration);
 
             // // Management
             // services.AddSingleton(ctx => new ConnectorsLicenseService(

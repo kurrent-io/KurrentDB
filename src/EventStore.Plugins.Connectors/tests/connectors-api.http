@@ -16,7 +16,7 @@ Content-Type: application/json
 
 {
   "settings": {
-    "instanceTypeName": "EventStore.Connectors.Testing.SerilogSink",
+    "instanceTypeName": "serilog-sink",
     "autoCommit:RecordsThreshold": "1",
     "autoCommit:Interval": "10000000",
     "configuration" : "ewogICJTZXJpbG9nIjogewogICAgIlVzaW5nIjogWwogICAgICAiU2VyaWxvZy5TaW5rcy5TZXEiCiAgICBdLAogICAgIkZpbHRlciI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIkJ5SW5jbHVkaW5nT25seSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAiZXhwcmVzc2lvbiI6ICJTb3VyY2VDb250ZXh0IGxpa2UgJ1Nlcmlsb2dTaW5rJyIKICAgICAgICB9CiAgICAgIH0KICAgIF0sCiAgICAiV3JpdGVUbyI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIlNlcSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAic2VydmVyVXJsIjogImh0dHA6Ly9sb2NhbGhvc3Q6NTM0MSIsCiAgICAgICAgICAicGF5bG9hZEZvcm1hdHRlciI6ICJTZXJpbG9nLkZvcm1hdHRpbmcuQ29tcGFjdC5Db21wYWN0SnNvbkZvcm1hdHRlciwgU2VyaWxvZy5Gb3JtYXR0aW5nLkNvbXBhY3QiCiAgICAgICAgfQogICAgICB9CiAgICBdCiAgfQp9"
@@ -24,7 +24,7 @@ Content-Type: application/json
 }
 
 ### Start Serilog Sink Connector from an existing checkpoint position, defaulting to the subscription initial position if no checkpoint exists
-POST localhost:2113/connectors/serilog-sink-2/start
+POST localhost:2113/connectors/serilog-sink-3/start
 
 ### Stop Serilog Sink Connector
 POST localhost:2113/connectors/serilog-sink-3/stop

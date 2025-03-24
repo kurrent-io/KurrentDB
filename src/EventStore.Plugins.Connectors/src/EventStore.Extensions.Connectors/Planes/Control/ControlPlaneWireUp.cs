@@ -1,11 +1,10 @@
 using EventStore.Connect.Connectors;
 using EventStore.Connect.Schema;
-using EventStore.Connectors.Connect.Components.Connectors;
 using EventStore.Connectors.Infrastructure.Connect.Components.Connectors;
+using EventStore.Connectors.Management;
 using EventStore.Connectors.System;
 using EventStore.Core.Bus;
-using Kurrent.Surge.Connectors;
-using Kurrent.Surge.DataProtection;
+using Humanizer;
 using Kurrent.Surge.Leases;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,7 +43,7 @@ public static class ControlPlaneWireUp {
                     RegisterControlMessages<ControlContracts.ActivatedConnectorsSnapshot>(registry, token),
                     RegisterControlMessages<SurgeContracts.Processors.ProcessorStateChanged>(registry, token),
                     RegisterControlMessages<SurgeContracts.Consumers.Checkpoint>(registry, token),
-                    RegisterControlMessages<Lease>(registry, token), //TODO SS: transform Lease into a message contract in Connect
+                    RegisterControlMessages<Lease>(registry, token)
                 ];
 
                 await tasks.WhenAll();
@@ -54,23 +53,17 @@ public static class ControlPlaneWireUp {
     static IServiceCollection AddConnectorsActivator(this IServiceCollection services) =>
         services
             .AddSingleton<ISystemConnectorFactory>(ctx => {
-                var validator              = ctx.GetRequiredService<IConnectorValidator>();
-                var connectorDataProtector = ctx.GetService<IConnectorDataProtector>() ?? ConnectorsMasterDataProtector.Instance;
-                var dataProtector          = ctx.GetService<IDataProtector>();
+                var commandApplication = ctx.GetRequiredService<ConnectorsCommandApplication>();
 
                 var options = new SystemConnectorsFactoryOptions {
                     CheckpointsStreamTemplate = Streams.CheckpointsStreamTemplate,
-                    LifecycleStreamTemplate   = Streams.LifecycleStreamTemplate,
                     AutoLock = new() {
-                        LeaseDuration      = TimeSpan.FromSeconds(5),
-                        AcquisitionTimeout = TimeSpan.FromSeconds(60),
-                        AcquisitionDelay   = TimeSpan.FromSeconds(5),
+                        LeaseDuration      = 5.Seconds(),
+                        AcquisitionTimeout = 60.Seconds(),
+                        AcquisitionDelay   = 5.Seconds(),
                         StreamTemplate     = Streams.LeasesStreamTemplate
                     },
-                    ProcessConfiguration = configuration => {
-                        validator.EnsureValid(configuration);
-                        return connectorDataProtector.Unprotect(configuration, dataProtector).AsTask().GetAwaiter().GetResult();
-                    }
+                    Interceptors = new([new ConnectorsLifecycleInterceptor(commandApplication)])
                 };
 
                 return new SystemConnectorsFactory(options, ctx);

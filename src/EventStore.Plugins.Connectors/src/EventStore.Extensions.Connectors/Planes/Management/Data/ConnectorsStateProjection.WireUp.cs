@@ -1,6 +1,7 @@
 using EventStore.Connect.Processors.Configuration;
 using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.System;
+using Humanizer;
 using Kurrent.Surge;
 using Kurrent.Surge.Configuration;
 using Kurrent.Surge.Consumers.Configuration;
@@ -37,17 +38,18 @@ static class ConnectorsStateProjectorWireUp {
                        .Logging(new LoggingOptions {
                            Enabled       = true,
                            LoggerFactory = loggerFactory,
-                           LogName       = "EventStore.Connect.Processors.SystemProcessor"
+                           LogName       = "Kurrent.Surge.Processors.SystemProcessor"
                        })
                        .DisableAutoLock()
                        .AutoCommit(new AutoCommitOptions {
                            Enabled          = true,
-                           RecordsThreshold = 100,
+                           RecordsThreshold = 1000,
+                           Interval         = 5.Seconds(),
                            StreamTemplate   = ConnectorsStateProjectionCheckpointsStream
                        })
                        .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
-                       .PublishStateChanges(new PublishStateChangesOptions { Enabled = false })
-                       .InitialPosition(SubscriptionInitialPosition.Earliest)
+                       .DisablePublishStateChanges()
+                       .InitialPosition(SubscriptionInitialPosition.Latest)
                        .WithModule(stateProjectionModule)
                        .Create();
 

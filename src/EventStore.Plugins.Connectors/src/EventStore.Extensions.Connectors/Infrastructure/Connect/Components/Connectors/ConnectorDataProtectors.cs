@@ -8,21 +8,22 @@ using Kurrent.Connectors.KurrentDB;
 using Kurrent.Connectors.MongoDB;
 using Kurrent.Connectors.RabbitMQ;
 using Kurrent.Connectors.Serilog;
+using Kurrent.Surge.DataProtection;
 
 namespace EventStore.Connectors.Connect.Components.Connectors;
 
 [PublicAPI]
-public class SerilogSinkConnectorDataProtector : ConnectorDataProtector<SerilogSinkOptions>;
+public class SerilogSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<SerilogSinkOptions>(dataProtector);
 
 [PublicAPI]
-public class KafkaSinkConnectorDataProtector : ConnectorDataProtector<KafkaSinkOptions> {
+public class KafkaSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<KafkaSinkOptions>(dataProtector) {
     public override string[] Keys => [
         "Authentication:Password"
     ];
 }
 
 [PublicAPI]
-public class ElasticsearchSinkConnectorDataProtector : ConnectorDataProtector<ElasticsearchSinkOptions> {
+public class ElasticsearchSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<ElasticsearchSinkOptions>(dataProtector) {
     public override string[] Keys => [
         "Authentication:Password",
         "Authentication:ClientCertificate:Password",
@@ -35,14 +36,14 @@ public class ElasticsearchSinkConnectorDataProtector : ConnectorDataProtector<El
 }
 
 [PublicAPI]
-public class RabbitMqSinkConnectorDataProtector : ConnectorDataProtector<RabbitMqSinkOptions> {
+public class RabbitMqSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<RabbitMqSinkOptions>(dataProtector) {
     public override string[] Keys => [
         "Authentication:Password"
     ];
 }
 
 [PublicAPI]
-public class MongoDbSinkConnectorDataProtector : ConnectorDataProtector<MongoDbSinkOptions> {
+public class MongoDbSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<MongoDbSinkOptions>(dataProtector) {
     public override string[] Keys => [
         "Certificate:Password",
         "Certificate:RawData",
@@ -51,7 +52,7 @@ public class MongoDbSinkConnectorDataProtector : ConnectorDataProtector<MongoDbS
 }
 
 [PublicAPI]
-public class HttpSinkConnectorDataProtector : ConnectorDataProtector<HttpSinkOptions> {
+public class HttpSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<HttpSinkOptions>(dataProtector) {
     public override string[] Keys => [
         "Authentication:Basic:Password",
         "Authentication:Bearer:Token"
@@ -59,7 +60,7 @@ public class HttpSinkConnectorDataProtector : ConnectorDataProtector<HttpSinkOpt
 }
 
 [PublicAPI]
-public class KurrentDbSinkConnectorDataProtector : ConnectorDataProtector<KurrentDbSinkOptions> {
+public class KurrentDbSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<KurrentDbSinkOptions>(dataProtector) {
     public override string[] Keys => [
         "ConnectionString"
     ];

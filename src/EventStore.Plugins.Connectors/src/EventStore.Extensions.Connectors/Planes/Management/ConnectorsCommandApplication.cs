@@ -12,12 +12,14 @@ using static EventStore.Connectors.Management.ConnectorDomainServices;
 
 namespace EventStore.Connectors.Management;
 
+
 [PublicAPI]
 public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
     public ConnectorsCommandApplication(
         ValidateConnectorSettings validateSettings,
         ProtectConnectorSettings protectSettings,
         ConnectorsLicenseService licenseService,
+        TryConfigureStream tryConfigureStream,
         TimeProvider time,
         IEventStore store
     ) :
@@ -26,12 +28,14 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             connector.EnsureIsNew();
 
             var settings = ConnectorSettings
-                .From(cmd.Settings)
-                .EnsureValid(cmd.ConnectorId, validateSettings)
-                .Protect(cmd.ConnectorId, protectSettings)
+                .From(cmd.Settings, cmd.ConnectorId)
+                .EnsureValid(validateSettings)
+                .Protect(protectSettings)
                 .AsDictionary();
 
             CheckAccess(settings, licenseService);
+
+            tryConfigureStream(cmd.ConnectorId);
 
             return [
                 new ConnectorCreated {
@@ -63,9 +67,9 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             // until the connector is restarted, it wont use the new settings
 
             var settings = ConnectorSettings
-                .From(cmd.Settings)
-                .EnsureValid(cmd.ConnectorId, validateSettings)
-                .Protect(cmd.ConnectorId, protectSettings)
+                .From(cmd.Settings, cmd.ConnectorId)
+                .EnsureValid(validateSettings)
+                .Protect(protectSettings)
                 .AsDictionary();
 
             return [
@@ -104,12 +108,6 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             CheckAccess(connector, licenseService);
 
             connector.EnsureNotDeleted();
-
-            if (connector.State
-                is ConnectorState.Running
-                or ConnectorState.Activating)
-                throw new DomainException($"Connector {connector.Id} already running...");
-
             connector.EnsureStopped();
 
             return [
@@ -212,7 +210,7 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
     static void CheckAccess(IDictionary<string, string?> settings, ConnectorsLicenseService licenseService) {
         var options = new ConfigurationBuilder().AddInMemoryCollection(settings).Build().GetRequiredOptions<SinkOptions>();
         if (!licenseService.CheckLicense(options.InstanceTypeName, out var info))
-            throw new ConnectorAccessDeniedException($"Usage of the {info.ConnectorType.Name} connector is not autorized");
+            throw new ConnectorAccessDeniedException($"Usage of the {info.ConnectorType.Name} connector is not authorized");
     }
 
     static void CheckAccess(ConnectorEntity connector, ConnectorsLicenseService licenseService) {
@@ -220,6 +218,6 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
             .First(kvp => kvp.Key.Equals(nameof(SinkOptions.InstanceTypeName), StringComparison.OrdinalIgnoreCase)).Value;
 
         if (!licenseService.CheckLicense(instanceType, out var info))
-            throw new ConnectorAccessDeniedException($"Usage of the {info.ConnectorType.Name} connector is not autorized");
+            throw new ConnectorAccessDeniedException($"Usage of the {info.ConnectorType.Name} connector is not authorized");
     }
 }

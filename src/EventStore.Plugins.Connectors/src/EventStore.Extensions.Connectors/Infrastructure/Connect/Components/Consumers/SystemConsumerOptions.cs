@@ -10,7 +10,7 @@ namespace EventStore.Connect.Consumers.Configuration;
 public record SystemConsumerOptions : ConsumerOptions {
     public SystemConsumerOptions() {
         Logging = new LoggingOptions {
-            LogName = "EventStore.Connect.SystemConsumer"
+            LogName = "Kurrent.Surge.SystemConsumer"
         };
 
         Filter = ConsumeFilter.ExcludeSystemEvents();

@@ -7,7 +7,7 @@ namespace EventStore.Connectors.Diagnostics;
 /// Generic listener that also collects the last N events and can be used to subscribe to a single source.
 /// </summary>
 class GenericDiagnosticsListener : IDisposable, IEnumerable<KeyValuePair<string, object?>> {
-    static readonly object Locker = new();
+    readonly object _locker = new();
 
     public GenericDiagnosticsListener(string source, int capacity = 10, Action<KeyValuePair<string, object?>>? onEvent = null) {
         if (string.IsNullOrWhiteSpace(source))
@@ -39,7 +39,7 @@ class GenericDiagnosticsListener : IDisposable, IEnumerable<KeyValuePair<string,
         void OnNewListener(DiagnosticListener listener) {
             if (listener.Name != source) return;
 
-            lock (Locker) {
+            lock (_locker) {
                 NetworkSubscription?.Dispose();
                 NetworkSubscription = listener.Subscribe(observer);
             }

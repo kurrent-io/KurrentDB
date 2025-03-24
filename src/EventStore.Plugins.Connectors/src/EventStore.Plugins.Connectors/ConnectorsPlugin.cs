@@ -1,12 +1,11 @@
 using EventStore.Connect;
 using EventStore.Connectors.Control;
-using EventStore.Connectors.Infrastructure.Security;
 using EventStore.Connectors.Management;
-using EventStore.Connectors.Management.Reactors;
 using EventStore.Connectors.System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using static System.String;
 
 namespace EventStore.Plugins.Connectors;
 
@@ -15,10 +14,10 @@ public class ConnectorsPlugin : SubsystemsPlugin {
     public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
         services
             .AddNodeSystemInfoProvider()
-            .AddConnectSystemComponents()
+            .AddSurgeSystemComponents()
+            .AddSurgeDataProtection(configuration)
             .AddConnectorsControlPlane()
-            .AddConnectorsManagementPlane()
-            .AddConnectorsDataProtection();
+            .AddConnectorsManagementPlane();
     }
 
     public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
@@ -33,15 +32,22 @@ public class ConnectorsPlugin : SubsystemsPlugin {
             )
         );
 
-        return (enabled, "Please check the documentation for instructions on how to enable the plugin.");
+        var instructions = "Please check the documentation for instructions on how to enable the plugin.";
+
+        if (!enabled)
+            return (enabled, instructions);
+
+        var dataProtectionToken = configuration.GetValue(
+            "KurrentDB:Connectors:DataProtection:Token",
+            configuration.GetValue("KurrentDB:DataProtection:Token",
+                configuration.GetValue("EventStore:Connectors:DataProtection:Token",
+                    configuration.GetValue("EventStore:DataProtection:Token", ""))));
+
+        if (IsNullOrWhiteSpace(dataProtectionToken)) {
+            enabled      = false;
+            instructions = $"Data protection token not found! {instructions}";
+        }
+
+        return (enabled, instructions);
     }
-}
-
-
-public record ConnectorsPluginOptions {
-    public ConnectorsStreamSupervisorOptions ConnectorsStreamSupervisor { get; set; }
-
-
-    // await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream, maxCount: 10);
-    // await TryConfigureStream(ConnectorQueryConventions.Streams.ConnectorsStateProjectionCheckpointsStream, maxCount: 10);
 }

@@ -10,7 +10,7 @@ namespace EventStore.Connect.Producers.Configuration;
 public record SystemProducerOptions : ProducerOptions {
     public SystemProducerOptions() {
         Logging = new LoggingOptions {
-            LogName = "EventStore.Connect.SystemProducer"
+            LogName = "Kurrent.Surge.SystemProducer"
         };
 
         ResiliencePipelineBuilder = DefaultRetryPolicies.ExponentialBackoffPipelineBuilder();

@@ -8,6 +8,7 @@ using Kurrent.Surge.Connectors;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connect.Schema;
+using EventStore.Connectors.Connect.Components.Connectors;
 using EventStore.Connectors.Eventuous;
 using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts.Events;
@@ -15,8 +16,8 @@ using EventStore.Connectors.Management.Contracts.Queries;
 using EventStore.Connectors.Management.Data;
 using EventStore.Connectors.Management.Projectors;
 using EventStore.Connectors.Management.Queries;
-using EventStore.Connectors.Management.Reactors;
 using EventStore.Connectors.System;
+using EventStore.Core.Bus;
 using EventStore.Plugins.Licensing;
 using Kurrent.Toolkit;
 using FluentValidation;
@@ -31,6 +32,8 @@ namespace EventStore.Connectors.Management;
 
 public static class ManagementPlaneWireUp {
     public static IServiceCollection AddConnectorsManagementPlane(this IServiceCollection services) {
+        services.AddSingleton<IConnectorDataProtector, ConnectorsMasterDataProtector>();
+
         services.AddSingleton(ctx => new ConnectorsLicenseService(
             ctx.GetRequiredService<ILicenseService>(),
             ctx.GetRequiredService<ILogger<ConnectorsLicenseService>>()
@@ -74,6 +77,29 @@ public static class ManagementPlaneWireUp {
             return validation.ValidateSettings;
         });
 
+        services.AddSingleton<ConnectorDomainServices.ProtectConnectorSettings>(ctx => {
+            var dataProtector = ctx.GetRequiredService<IConnectorDataProtector>();
+            return dataProtector.Protect;
+        });
+
+        services.AddSingleton<ConnectorsStreamSupervisor>(ctx => {
+            var options = new ConnectorsStreamSupervisorOptions {
+                Leases      = new(MaxCount: 10),
+                Checkpoints = new(MaxCount: 10)
+            };
+
+            return new ConnectorsStreamSupervisor(
+                options,
+                ctx.GetRequiredService<IPublisher>(),
+                ctx.GetRequiredService<ILogger<ConnectorsStreamSupervisor>>()
+            );
+        });
+
+        services.AddSingleton<ConnectorDomainServices.TryConfigureStream>(ctx => {
+            var supervisor = ctx.GetRequiredService<ConnectorsStreamSupervisor>();
+            return supervisor.ConfigureConnectorStreams;
+        });
+
         services
             .AddEventStore<SystemEventStore>(ctx => {
                 var reader = ctx.GetRequiredService<Func<SystemReaderBuilder>>()()
@@ -95,8 +121,7 @@ public static class ManagementPlaneWireUp {
         );
 
         services
-            .AddConnectorsLifecycleReactor()
-            .AddConnectorsStreamSupervisor()
+            // .AddConnectorsStreamSupervisor()
             .AddConnectorsStateProjection();
 
         services.AddSystemStartupTask<ConfigureConnectorsManagementStreams>();
@@ -110,7 +135,7 @@ public static class ManagementPlaneWireUp {
             .UseEndpoints(endpoints => endpoints.MapGrpcService<ConnectorsQueryService>());
     }
 
-    internal static IServiceCollection AddConnectorsManagementSchemaRegistration(this IServiceCollection services) =>
+    static IServiceCollection AddConnectorsManagementSchemaRegistration(this IServiceCollection services) =>
         services.AddSchemaRegistryStartupTask("Connectors Management Schema Registration",
             static async (registry, token) => {
                 Task[] tasks = [

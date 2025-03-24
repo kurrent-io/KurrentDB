@@ -18,12 +18,10 @@ public interface ISnapshotProjectionsStore {
 
 public class SystemSnapshotProjectionsStore(
     Func<SystemReaderBuilder> getReaderBuilder,
-    Func<SystemProducerBuilder> getProducerBuilder,
-    TimeProvider? time = null
+    Func<SystemProducerBuilder> getProducerBuilder
 ) : ISnapshotProjectionsStore {
     SystemReader   Reader   { get; } = getReaderBuilder().ReaderId("SystemSnapshotProjectionsStoreReader").Create();
     SystemProducer Producer { get; } = getProducerBuilder().ProducerId("SystemSnapshotProjectionsStoreProducer").Create();
-    TimeProvider   Time     { get; } = time ?? TimeProvider.System;
 
     const string SnapshotTimestampHeaderKey = "esdb.snapshot.timestamp";
 

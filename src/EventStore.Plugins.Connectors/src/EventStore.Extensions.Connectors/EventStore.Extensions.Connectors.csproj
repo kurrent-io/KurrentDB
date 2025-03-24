@@ -90,4 +90,12 @@
 	<ItemGroup>
 		<None Remove="EventStore.Extensions.Connectors.csproj.DotSettings" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Infrastructure\Security\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Infrastructure\Security\DataProtection.cs" />
+	</ItemGroup>
 </Project>

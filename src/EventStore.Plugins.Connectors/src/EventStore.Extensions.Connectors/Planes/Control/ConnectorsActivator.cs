@@ -60,10 +60,12 @@ public class ConnectorsActivator(CreateConnector createConnector) {
         if (!Connectors.TryRemove(connectorId, out var connector))
             return DeactivateResult.ConnectorNotFound();
 
+        if (connector.Instance.State is ConnectorState.Deactivating or ConnectorState.Stopped)
+            return DeactivateResult.Deactivated();
+
         try {
             await connector.Instance.DisposeAsync();
             await connector.Instance.Stopped;
-
             return DeactivateResult.Deactivated();
         }
         catch (Exception ex) {

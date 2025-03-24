@@ -36,6 +36,8 @@ public class SystemProducer : IProducer {
         if (options.Logging.Enabled)
             options.Interceptors.TryAddUniqueFirst(new ProducerLogger());
 
+        Options.Interceptors.TryAddUniqueFirst(new ProducerMetrics());
+
         Interceptors = new(Options.Interceptors, logger);
 
         Intercept = evt => Interceptors.Intercept(evt, CancellationToken.None);

@@ -12,8 +12,8 @@ using StreamRevision = Kurrent.Surge.StreamRevision;
 
 namespace EventStore.Connectors.Infrastructure;
 
-public class Manager : IManager {
-    public Manager(IPublisher publisher) => Client = publisher;
+public class SystemManager : IManager {
+    public SystemManager(IPublisher publisher) => Client = publisher;
 
     IPublisher Client { get; }
 

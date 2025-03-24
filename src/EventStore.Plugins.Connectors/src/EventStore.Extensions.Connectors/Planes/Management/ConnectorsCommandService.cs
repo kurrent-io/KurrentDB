@@ -17,7 +17,6 @@ namespace EventStore.Connectors.Management;
 public class ConnectorsCommandService(
     ConnectorsCommandApplication application,
     RequestValidationService requestValidationService,
-    IConnectorsStateProjection connectorsStateProjection,
     ILogger<ConnectorsCommandService> logger
 ) : ConnectorsCommandServiceBase {
     public override Task<Empty> Create(CreateConnector request, ServerCallContext context)           => Execute(request, context);
@@ -29,9 +28,6 @@ public class ConnectorsCommandService(
     public override Task<Empty> Rename(RenameConnector request, ServerCallContext context)           => Execute(request, context);
 
     async Task<Empty> Execute<TCommand>(TCommand command, ServerCallContext context) where TCommand : class {
-        if (!connectorsStateProjection.IsCaughtUp)
-            throw RpcExceptions.Unavailable();
-
         var http = context.GetHttpContext();
 
         var authenticated = http.User.Identity?.IsAuthenticated ?? false;

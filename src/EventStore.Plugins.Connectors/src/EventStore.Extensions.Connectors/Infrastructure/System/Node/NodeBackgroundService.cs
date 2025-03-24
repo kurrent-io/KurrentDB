@@ -15,8 +15,8 @@ public abstract class NodeBackgroundService : IHostedService, IDisposable {
         ServiceName = serviceName ?? GetType().Name;
     }
 
-    IPublisher       Publisher   { get; }
-    ILogger          Logger      { get; }
+    IPublisher Publisher { get; }
+    ILogger    Logger    { get; }
 
     public string ServiceName { get; }
 

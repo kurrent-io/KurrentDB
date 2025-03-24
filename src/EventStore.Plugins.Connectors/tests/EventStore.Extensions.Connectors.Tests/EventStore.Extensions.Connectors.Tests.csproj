@@ -13,8 +13,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-<!--		<ProjectReference Include="..\..\submodules\EventStore.Streaming\src\Framework\src\EventStore.Streaming\EventStore.Streaming.csproj" />-->
-
 		<ProjectReference Include="..\..\src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
 		<ProjectReference Include="..\EventStore.Extensions.Connectors.Management.TestServer\EventStore.Extensions.Connectors.Management.TestServer.csproj" />
 		<ProjectReference Include="..\EventStore.System.Testing\EventStore.System.Testing.csproj" />

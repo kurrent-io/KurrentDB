@@ -10,9 +10,9 @@ namespace EventStore.Connect.Processors.Configuration;
 public record SystemProcessorOptions : ProcessorOptions {
     public SystemProcessorOptions() {
         Logging = new LoggingOptions {
-            LogName = "EventStore.Connect.SystemProcessor"
+            LogName = "Kurrent.Surge.SystemProcessor"
         };
     }
 
-    public IPublisher    Publisher { get; init; }
+    public IPublisher Publisher { get; init; }
 }

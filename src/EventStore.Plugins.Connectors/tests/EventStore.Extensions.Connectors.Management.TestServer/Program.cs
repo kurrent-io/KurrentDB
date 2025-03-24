@@ -1,5 +1,4 @@
 using EventStore.Connect;
-using EventStore.Connectors.Infrastructure.Security;
 using EventStore.Connectors.Management;
 using EventStore.Connectors.System;
 
@@ -8,9 +7,9 @@ Host.CreateDefaultBuilder(args)
         .ConfigureServices(services => {
             services
                 .AddNodeSystemInfoProvider()
-                .AddConnectSystemComponents()
-                .AddConnectorsManagementPlane()
-                .AddConnectorsDataProtection();
+                .AddSurgeSystemComponents()
+                .AddSurgeDataProtection(null)
+                .AddConnectorsManagementPlane();
         })
         .Configure(app => app.UseConnectorsManagementPlane()))
     .Build()

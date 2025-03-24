@@ -1,19 +1,20 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Collections;
-using Kurrent.Surge.Connectors;
 using EventStore.Connect.Producers;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Control.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
+using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge;
+using Kurrent.Surge.Connectors;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Readers;
 using Kurrent.Toolkit;
-using Google.Protobuf.WellKnownTypes;
+
 using ConnectorSettings = System.Collections.Generic.IDictionary<string, string?>;
 
 namespace EventStore.Connectors.Control;
@@ -47,6 +48,13 @@ class ConnectorsControlRegistry {
     /// <param name="cancellationToken">A CancellationToken to observe while waiting for the task to complete.</param>
     public async Task<GetConnectorsResult> GetConnectors(CancellationToken cancellationToken) {
         var (state, checkpoint, snapshotPosition) = await LoadSnapshot(cancellationToken);
+
+        if (checkpoint == RecordPosition.Unset) {
+            return new GetConnectorsResult {
+                Connectors = [],
+                Position   = RecordPosition.Latest
+            };
+        }
 
         var lastReadPosition = checkpoint;
 
