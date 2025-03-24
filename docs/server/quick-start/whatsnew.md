@@ -9,6 +9,7 @@ order: 2
 These are the new features in KurrentDB 25.0:
 
 * [Archiving](#archiving)
+* [Connectors](#connectors)
 * [KurrentDB rebranding](#kurrentdb-rebranding)
 * [New embedded Web UI](#new-embedded-web-ui)
 * [New versioning scheme and release schedule](#new-versioning-scheme-and-release-schedule)
@@ -22,6 +23,28 @@ KurrentDB 25.0 introduces the initial release of Archiving: a new major feature 
 With the new Archiving feature, data is uploaded to cheaper storage such as Amazon S3 and then can be removed from the volumes attached to the cluster nodes. The volumes can be correspondingly smaller and cheaper. The nodes are all able to read the archive, and when a read request from a client requires data that is stored in the archive, the node retrieves that data from the archive transparently to the client.
 
 Refer to [the documentation](../features/archiving.md) for more information about archiving and instructions on how to set it up.
+
+### Connectors
+
+#### Elasticsearch sink
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The Elasticsearch sink pulls messages from a KurrentDB stream and stores them in
+an Elasticsearch index. The records will be serialized into JSON documents,
+compatible with Elasticsearch's document structure.
+
+#### Data Protection
+
+We've introduced a comprehensive data protection system to enhance the security of your sensitive connector configurations.
+
+All connectors now use envelope encryption to automatically protect sensitive data such as passwords and tokens using industry-standard encryption techniques. This ensures your credentials remain secure during transmission.
+
+Setup is straightforward with token-based protection requiring minimal configuration. You can provide tokens directly in your configuration or via separate files for enhanced security in production environments.
+
+We've integrated a native Surge key vault that stores encryption keys directly within KurrentDB system streams but we will support more key vaults in the future.
+
+See the [Data Protection documentation](../features/connectors/features.md#data-protection) for complete setup instructions.
 
 ### KurrentDB rebranding
 
@@ -106,6 +129,16 @@ You can use the HTTP sink without a license, but a license is required for all o
 
 Refer to the [documentation](../features/connectors/README.md) for instructions on setting up and configuring connectors and sinks.
 
+#### Elasticsearch sink
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+The Elasticsearch sink pulls messages from a KurrentDB stream and stores them in
+an Elasticsearch index. The records will be serialized into JSON documents,
+compatible with Elasticsearch's document structure.
+
+Refer to the [documentation](../features/connectors/sinks/elasticsearch.md) for instructions on setting up a Elasticsearch sink.
+
 #### Kafka sink
 
 <Badge type="info" vertical="middle" text="License Required"/>
@@ -156,6 +189,18 @@ Refer to the [documentation](../features/connectors/sinks/http.md) for instructi
 The Serilog sink logs detailed messages about the connector and record details.
 
 Refer to the [documentation](../features/connectors/sinks/serilog.md) for instructions on setting up a Serilog sink.
+
+#### Data Protection
+
+We've introduced a comprehensive data protection system to enhance the security of your sensitive connector configurations.
+
+All connectors now use envelope encryption to automatically protect sensitive data such as passwords and tokens using industry-standard encryption techniques. This ensures your credentials remain secure during transmission.
+
+Setup is straightforward with token-based protection requiring minimal configuration. You can provide tokens directly in your configuration or via separate files for enhanced security in production environments.
+
+We've integrated a native Surge key vault that stores encryption keys directly within KurrentDB system streams but we will support more key vaults in the future.
+
+See the [Data Protection documentation](../features/connectors/features.md#data-protection) for complete setup instructions.
 
 ### Auto-scavenge
 

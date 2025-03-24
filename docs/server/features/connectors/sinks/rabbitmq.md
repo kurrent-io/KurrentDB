@@ -1,6 +1,6 @@
 ---
 title: "RabbitMQ Sink"
-order: 3
+order: 4
 ---
 
 <Badge type="info" vertical="middle" text="License Required"/>
@@ -91,7 +91,7 @@ The RabbitMQ sink can be configured with the following options:
 | `virtualHost`                     | **Type**: string<br><br>**Description:** Represents the VirtualHost (vhost) used in RabbitMQ. <br><br>**Default**: `/`                                                                                                                                                                              |
 | `waitForBrokerAck`                | **Type**: boolean<br><br>**Description:** Whether the channel waits for broker acknowledgment before considering the send operation complete.<br><br>**Default**: `false`                                                                                                                           |
 | `authentication:username`         | **Type**: string<br><br>**Description:** Username for authentication.<br><br>**Default**: "guest"                                                                                                                                                                                                   |
-| `authentication:password`         | **Type**: string<br><br>**Description:** Password for authentication.<br><br>**Default**: "guest"                                                                                                                                                                                                   |
+| `authentication:password`         | _protected_<br><br>**Type**: string<br><br>**Description:** Password for authentication.<br><br>**Default**: "guest"                                                                                                                                                                                                   |
 | `autoDelete`                      | **Type**: string<br><br>**Description:** Whether the exchange is automatically deleted when no longer in use.<br><br>**Default**: `false`                                                                                                                                                           |
 | `durable`                         | **Type**: string<br><br>**Description:** Whether the exchange is durable. Default true.                                                                                                                                                                                                             |
 | `resilience:connectionTimeoutMs`  | **Type**: int<br><br>**Description:** Connection TCP establishment timeout in milliseconds. 0 for infinite.<br><br>**Default**: `60000`                                                                                                                                                             |

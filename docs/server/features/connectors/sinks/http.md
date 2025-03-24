@@ -1,6 +1,6 @@
 ---
 title: "HTTP Sink"
-order: 4
+order: 5
 ---
 
 ## Overview
@@ -95,13 +95,13 @@ The HTTP sink connector supports both [Basic](https://datatracker.ietf.org/doc/h
 | Name                            | Details                                                                                                  |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `authentication:basic:username` | **Type**: string<br><br>**Description:** The username for basic authentication.<br><br>**Default**: `""` |
-| `authentication:basic:password` | **Type**: string<br><br>**Description:** The password for basic authentication.<br><br>**Default**: `""` |
+| `authentication:basic:password` | _protected_<br><br>**Type**: string<br><br>**Description:** The password for basic authentication.<br><br>**Default**: `""` |
 
 #### Bearer Authentication
 
 | Name                          | Details                                                                                                |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `authentication:bearer:token` | **Type**: string<br><br>**Description:** The token for bearer authentication.<br><br>**Default**: `""` |
+| `authentication:bearer:token` | _protected_<br><br>**Type**: string<br><br>**Description:** The token for bearer authentication.<br><br>**Default**: `""` |
 
 ## Template parameters
 

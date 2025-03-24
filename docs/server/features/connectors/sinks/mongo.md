@@ -1,6 +1,6 @@
 ---
 title: "MongoDB Sink"
-order: 2
+order: 3
 ---
 
 <Badge type="info" vertical="middle" text="License Required"/>
@@ -83,11 +83,11 @@ The MongoDB sink can be configured with the following options:
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `database`                | _required_<br><br>**Type**: string<br><br>**Description:** The name of the database where the records will be stored.                                                                                                                                                                            |
 | `collection`              | _required_<br><br>**Type**: string<br><br>**Description:** The collection name that resides in the database to push records to.                                                                                                                                                                  |
-| `connectionString`        | _required_<br><br>**Type**: string<br><br>**Description:** The MongoDB URI to which the connector connects. <br><br>See [connection string URI format](https://www.mongodb.com/docs/manual/reference/connection-string/)<br><br>**Default**: `mongodb://mongoadmin:secret@localhost:27017/admin` |
+| `connectionString`        | _protected_<br><br>_required_<br><br>**Type**: string<br><br>**Description:** The MongoDB URI to which the connector connects. <br><br>See [connection string URI format](https://www.mongodb.com/docs/manual/reference/connection-string/)<br><br>**Default**: `mongodb://mongoadmin:secret@localhost:27017/admin` |
 | `documentId:source`       | **Type**: string<br><br>**Description:** The attribute used to generate the document id.<br><br>**Default**: `recordId`<br><br>**Accepted Values:**<br>- `recordId`, `stream`, `headers`, `streamSuffix`, `PartitionKey`.                                                                        |
 | `documentId:expression`   | **Type**: string<br><br>**Description:** The expression used to format the document id based on the selected source. This allows for custom id generation logic.<br><br>**Default**: `250`                                                                                                       |
-| `certificate:rawData`     | **Type**: string<br><br>**Description:** Base64 encoded x509 certificate.<br><br>**Default**: ""                                                                                                                                                                                                 |
-| `certificate:password`    | **Type**: string<br><br>**Description:** The password used to access the x509 certificate for secure connections.<br><br>**Default**: ""                                                                                                                                                         |
+| `certificate:rawData`     | _protected_<br><br>**Type**: string<br><br>**Description:** Base64 encoded x509 certificate.<br><br>**Default**: ""                                                                                                                                                                                                 |
+| `certificate:password`    | _protected_<br><br>**Type**: string<br><br>**Description:** The password used to access the x509 certificate for secure connections.<br><br>**Default**: ""                                                                                                                                                         |
 | `batching:batchSize`      | **Type**: string<br><br>**Description:** Threshold batch size at which the sink will push the batch of records to the MongoDB collection.<br><br>**Default**: `1000`                                                                                                                             |
 | `batching:batchTimeoutMs` | **Type**: string<br><br>**Description:** Threshold time in milliseconds at which the sink will push the current batch of records to the MongoDB collection, regardless of the batch size.<br><br>**Default**: `250`                                                                              |
 

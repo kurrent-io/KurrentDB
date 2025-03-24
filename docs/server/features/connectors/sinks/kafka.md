@@ -1,6 +1,6 @@
 ---
 title: "Kafka Sink"
-order: 1
+order: 2
 ---
 
 <Badge type="info" vertical="middle" text="License Required"/>
@@ -92,7 +92,7 @@ The kafka sink can be configured with the following options:
 | `defaultHeaders`                  | **Type**: dict<string,string><br><br>**Description:** Headers included in all produced messages.<br><br>**Default**: None                                                                                                                                     |
 | `authentication:securityProtocol` | **Type**: [SecurityProtocol](https://docs.confluent.io/platform/current/clients/confluent-kafka-dotnet/_site/api/Confluent.Kafka.SecurityProtocol.html)<br><br>**Description:** Protocol used for Kafka broker communication.<br><br>**Default**: `Plaintext` |
 | `authentication:username`         | **Type**: string<br><br>**Description:** Username for authentication.                                                                                                                                                                                         |
-| `authentication:password`         | **Type**: string<br><br>**Description:** Password for authentication.                                                                                                                                                                                         |
+| `authentication:password`         | _protected_<br><br>**Type**: string<br><br>**Description:** Password for authentication.                                                                                                                                                                                         |
 
 ### Partitioning
 
