@@ -65,9 +65,14 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
             // ignore
         }
         finally {
+            // // this exists to effectively wait for all connectors to be deactivated...
+            // await connectors
+            //     .Select(connector => DeactivateConnector(connector.ConnectorId))
+            //     .WhenAll();
+
             // this exists to effectively wait for all connectors to be deactivated...
             await connectors
-                .Select(connector => DeactivateConnector(connector.ConnectorId))
+                .Select(connector => Activator.WaitForDeactivation(connector.ConnectorId))
                 .WhenAll();
         }
 

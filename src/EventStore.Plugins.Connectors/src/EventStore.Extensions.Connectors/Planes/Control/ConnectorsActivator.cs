@@ -69,6 +69,19 @@ public class ConnectorsActivator(CreateConnector createConnector) {
             return DeactivateResult.UnknownError(ex);
         }
     }
+
+    public async Task<DeactivateResult> WaitForDeactivation(ConnectorId connectorId) {
+        if (!Connectors.TryRemove(connectorId, out var connector))
+            return DeactivateResult.ConnectorNotFound();
+
+        try {
+            await connector.Instance.Stopped;
+            return DeactivateResult.Deactivated();
+        }
+        catch (Exception ex) {
+            return DeactivateResult.UnknownError(ex);
+        }
+    }
 }
 
 public enum ActivateResultType {
