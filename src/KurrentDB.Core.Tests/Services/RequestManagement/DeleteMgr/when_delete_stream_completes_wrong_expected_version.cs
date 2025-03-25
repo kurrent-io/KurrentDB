@@ -31,11 +31,11 @@ public class when_delete_stream_completes_wrong_expected_version : RequestManage
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.CommitIndexed(InternalCorrId, commitPosition, 2, 3, 3);
+		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, commitPosition, 2, 3, 3);
 	}
 
 	protected override Message When() {
-		return new StorageMessage.WrongExpectedVersion(InternalCorrId, 3);
+		return StorageMessage.WrongExpectedVersion.ForSingleStream(InternalCorrId, 3);
 	}
 
 	[Test]

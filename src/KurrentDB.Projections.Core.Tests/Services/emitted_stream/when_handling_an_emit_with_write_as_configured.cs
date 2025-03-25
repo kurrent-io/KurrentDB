@@ -4,8 +4,8 @@
 using System;
 using System.Linq;
 using System.Security.Claims;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TestAdapters;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;

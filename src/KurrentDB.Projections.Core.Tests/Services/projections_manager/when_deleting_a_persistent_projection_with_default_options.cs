@@ -11,6 +11,8 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
 
+using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
+
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -43,6 +45,6 @@ public class when_deleting_a_persistent_projection_with_default_options<TLogForm
 	[Test, Category("v8")]
 	public void a_projection_deleted_event_is_written() {
 		var deletedStreamEvents = _consumer.HandledMessages.OfType<ClientMessage.DeleteStream>().ToList();
-		Assert.AreEqual(true, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Any(x => x.Events[0].EventType == ProjectionEventTypes.ProjectionDeleted && Helper.UTF8NoBom.GetString(x.Events[0].Data) == _projectionName));
+		Assert.AreEqual(true, _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(x => x.Events[0].EventType == ProjectionEventTypes.ProjectionDeleted && Helper.UTF8NoBom.GetString(x.Events[0].Data) == _projectionName));
 	}
 }

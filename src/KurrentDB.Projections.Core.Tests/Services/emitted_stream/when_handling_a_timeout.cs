@@ -3,9 +3,9 @@
 
 using System;
 using System.Linq;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TestAdapters;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -14,6 +14,7 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
+using OperationResult = KurrentDB.Core.Messages.OperationResult;
 
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream;
 
@@ -64,8 +65,7 @@ public class when_handling_a_timeout<TLogFormat, TStreamId> : TestFixtureWithExi
 	[Test]
 	public void should_retry_the_write_with_the_same_events() {
 		var current = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Last();
-		while (_consumer.HandledMessages.Last().GetType() ==
-			   typeof(TimerMessage.Schedule)) {
+		while (_consumer.HandledMessages.Last() is TimerMessage.Schedule) {
 			var message =
 				_consumer.HandledMessages.Last() as TimerMessage.Schedule;
 			message.Envelope.ReplyWith(message.ReplyMessage);

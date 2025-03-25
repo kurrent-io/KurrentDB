@@ -70,7 +70,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		var envelopeWrapper = new CallbackEnvelope(OnMessage);
 		cts.CancelAfter(_writeTimeout);
 
-		return new(Guid.NewGuid(), package.CorrelationId, envelopeWrapper, dto.RequireLeader,
+		return ClientMessage.WriteEvents.ForSingleStream(Guid.NewGuid(), package.CorrelationId, envelopeWrapper, dto.RequireLeader,
 			dto.EventStreamId, dto.ExpectedVersion, events, user, package.Tokens, cts.Token);
 
 		void OnMessage(Message m) {
@@ -82,7 +82,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 	private static TcpPackage WrapWriteEvents(ClientMessage.WriteEvents msg) {
 		var events = new NewEvent[msg.Events.Length];
 		for (int i = 0; i < events.Length; ++i) {
-			var e = msg.Events[i];
+			var e = msg.Events.Span[i];
 			events[i] = new NewEvent(e.EventId.ToByteArray(),
 				e.EventType,
 				e.IsJson ? 1 : 0,
@@ -91,7 +91,10 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 				e.Properties);
 		}
 
-		var dto = new WriteEvents(msg.EventStreamId, msg.ExpectedVersion, events,
+		if (msg.EventStreamIds.Length > 1)
+			throw new NotSupportedException("Forwarding of multi-stream writes is not supported");
+
+		var dto = new WriteEvents(msg.EventStreamIds.Span[0], msg.ExpectedVersions.Span[0], events,
 			msg.RequireLeader);
 		return CreateWriteRequestPackage(TcpCommand.WriteEvents, msg, dto);
 	}
@@ -129,19 +132,37 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		var dto = package.Data.Deserialize<WriteEventsCompleted>();
 		if (dto == null)
 			return null;
-		return dto.Result == EventStore.Client.Messages.OperationResult.Success
-			? new(package.CorrelationId, dto.FirstEventNumber, dto.LastEventNumber, dto.PreparePosition, dto.CommitPosition)
-			: new(package.CorrelationId, (OperationResult)dto.Result, dto.Message, dto.CurrentVersion);
+
+		if (dto.Result == EventStore.Client.Messages.OperationResult.Success)
+			return new ClientMessage.WriteEventsCompleted(
+				package.CorrelationId,
+				new[] { dto.FirstEventNumber },
+				new[] { dto.LastEventNumber },
+				dto.PreparePosition,
+				dto.CommitPosition);
+
+		return new ClientMessage.WriteEventsCompleted(
+			package.CorrelationId,
+			(OperationResult)dto.Result,
+			dto.Message,
+			new[] { 0 },
+			new[] { dto.CurrentVersion });
 	}
 
 	private static TcpPackage WrapWriteEventsCompleted(ClientMessage.WriteEventsCompleted msg) {
 		var dto = new WriteEventsCompleted((EventStore.Client.Messages.OperationResult)msg.Result,
 			msg.Message,
-			msg.FirstEventNumber,
-			msg.LastEventNumber,
+			msg.FirstEventNumbers.Span.Length > 0 ?
+				msg.FirstEventNumbers.Span[0] :
+				EventNumber.Invalid, /* for backwards compatibility */
+			msg.LastEventNumbers.Span.Length > 0 ?
+				msg.LastEventNumbers.Span[0] :
+				EventNumber.Invalid, /* for backwards compatibility */
 			msg.PreparePosition,
 			msg.CommitPosition,
-			msg.CurrentVersion);
+			msg.FailureCurrentVersions.Span.Length > 0 ?
+				msg.FailureCurrentVersions.Span[0] :
+				msg.Result == OperationResult.Success ? 0L : -1L /* for backwards compatibility */);
 		return new(TcpCommand.WriteEventsCompleted, msg.CorrelationId, dto.Serialize());
 	}
 

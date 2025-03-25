@@ -167,7 +167,8 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 		var data = rawStats.ToJsonBytes();
 		var evnt = new Event(Guid.NewGuid(), SystemEventTypes.StatsCollection, true, data, null, null);
 		var corrId = Guid.NewGuid();
-		var msg = new ClientMessage.WriteEvents(corrId, corrId, NoopEnvelope, false, _nodeStatsStream, ExpectedVersion.Any, [evnt], SystemAccounts.System);
+		var msg = ClientMessage.WriteEvents.ForSingleStream(corrId, corrId, NoopEnvelope, false, _nodeStatsStream,
+			ExpectedVersion.Any, new[] { evnt }, SystemAccounts.System);
 		_mainQueue.Publish(msg);
 	}
 
@@ -210,8 +211,7 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 		var metadata = Helper.UTF8NoBom.GetBytes(StreamMetadata);
 		_streamMetadataWriteCorrId = Guid.NewGuid();
 		_mainQueue.Publish(
-			new ClientMessage.WriteEvents(
-				_streamMetadataWriteCorrId, _streamMetadataWriteCorrId, _monitoringQueue,
+			ClientMessage.WriteEvents.ForSingleStream(_streamMetadataWriteCorrId, _streamMetadataWriteCorrId, _monitoringQueue,
 				false, SystemStreams.MetastreamOf(_nodeStatsStream), ExpectedVersion.NoStream,
 				[new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata, null, null)],
 				SystemAccounts.System));
@@ -223,7 +223,7 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 		switch (message.Result) {
 			case OperationResult.Success:
 			case OperationResult.WrongExpectedVersion: // already created
-			{
+				{
 				Log.Debug("Created stats stream '{stream}', code = {result}", _nodeStatsStream, message.Result);
 				_statsStreamCreated = true;
 				break;
@@ -241,7 +241,7 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 			}
 			case OperationResult.StreamDeleted:
 			case OperationResult.InvalidTransaction: // should not happen at all
-			{
+				{
 				Log.Error(
 					"Monitoring service got unexpected response code when trying to create stats stream ({e}).",
 					message.Result);

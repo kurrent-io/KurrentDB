@@ -13,6 +13,7 @@ using KurrentDB.Core.Tests.Authentication;
 using KurrentDB.Core.Tests.Helpers;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
+using ClientMessage = KurrentDB.Core.Tests.TestAdapters.ClientMessage;
 
 namespace KurrentDB.Core.Tests.Services.UserManagementService;
 
@@ -702,7 +703,7 @@ public static class user_management_service {
 		public void configures_password_changed_notification_system_stream_only_once() {
 			var writePasswordChanged = HandledPasswordChangedNotificationMetaStreamWrites();
 			Assert.AreEqual(1, writePasswordChanged.Length);
-			var passwordChangedEvent = writePasswordChanged[0].Events.Single();
+			var passwordChangedEvent = writePasswordChanged[0].Events[0];
 			HelperExtensions.AssertJson(new { ___maxAge = 3600 }, passwordChangedEvent.Data.ParseJson<JObject>());
 		}
 	}
@@ -804,7 +805,7 @@ public static class user_management_service {
 		public void configures_password_changed_notification_system_stream() {
 			var writePasswordChanged = HandledPasswordChangedNotificationMetaStreamWrites();
 			Assert.AreEqual(1, writePasswordChanged.Length);
-			var passwordChangedEvent = writePasswordChanged[0].Events.Single();
+			var passwordChangedEvent = writePasswordChanged[0].Events[0];
 			HelperExtensions.AssertJson(new { ___maxAge = 3600 }, passwordChangedEvent.Data.ParseJson<JObject>());
 		}
 	}

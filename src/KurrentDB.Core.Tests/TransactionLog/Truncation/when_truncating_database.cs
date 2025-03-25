@@ -125,7 +125,7 @@ public class when_truncating_database<TLogFormat, TStreamId> : SpecificationWith
 	private static void WriteEvents(int cnt, MiniNode<TLogFormat, TStreamId> miniNode, CountdownEvent countdown, int dataSize = 4000) {
 		for (int i = 0; i < cnt; ++i) {
 			miniNode.Node.MainQueue.Publish(
-				new ClientMessage.WriteEvents(Guid.NewGuid(), Guid.NewGuid(),
+				ClientMessage.WriteEvents.ForSingleStream(Guid.NewGuid(), Guid.NewGuid(),
 					new CallbackEnvelope(m => {
 						Assert.IsInstanceOf<ClientMessage.WriteEventsCompleted>(m);
 						var msg = (ClientMessage.WriteEventsCompleted)m;

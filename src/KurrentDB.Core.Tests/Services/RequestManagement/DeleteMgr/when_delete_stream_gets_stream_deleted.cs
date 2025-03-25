@@ -32,7 +32,7 @@ public class when_delete_stream_gets_stream_deleted : RequestManagerSpecificatio
 	}
 
 	protected override Message When() {
-		return new StorageMessage.StreamDeleted(InternalCorrId);
+		return new StorageMessage.StreamDeleted(InternalCorrId, 0, 0);
 	}
 
 	[Test]

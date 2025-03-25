@@ -62,7 +62,7 @@ public class InternalClient : IClient {
 
 		//qq consider all the args
 		var correlationId = Guid.NewGuid(); //qq
-		_publisher.Publish(new ClientMessage.WriteEvents(
+		_publisher.Publish(ClientMessage.WriteEvents.ForSingleStream(
 			correlationId,
 			correlationId,
 			envelope,
@@ -101,7 +101,7 @@ public class InternalClient : IClient {
 			//qqqqqqqq
 			switch (completed.Result) {
 				case OperationResult.Success:
-					appendResponseSource.TrySetResult(completed.LastEventNumber);
+					appendResponseSource.TrySetResult(completed.LastEventNumbers.Span[0]);
 					return;
 				case OperationResult.PrepareTimeout:
 				case OperationResult.CommitTimeout:

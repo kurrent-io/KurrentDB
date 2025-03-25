@@ -29,7 +29,7 @@ public class when_delete_stream_gets_timeout_after_commit : RequestManagerSpecif
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.CommitIndexed(InternalCorrId, _commitPosition, 500, 1, 1);
+		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, _commitPosition, 500, 1, 1);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(_commitPosition);
 	}
 

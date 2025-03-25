@@ -37,7 +37,7 @@ public class RequestResponseQueueForwarder : IHandle<ClientMessage.ReadEvent>,
 		_externalRequestQueue.Publish(
 			new ClientMessage.WriteEvents(
 				msg.InternalCorrId, msg.CorrelationId, new PublishToWrapEnvelop(_inputQueue, msg.Envelope), true,
-				msg.EventStreamId, msg.ExpectedVersion, msg.Events, msg.User));
+				msg.EventStreamIds, msg.ExpectedVersions, msg.Events, msg.EventStreamIndexes, msg.User));
 	}
 
 	public void Handle(ClientMessage.DeleteStream msg) {

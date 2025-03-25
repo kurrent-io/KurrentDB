@@ -3,8 +3,8 @@
 
 using System;
 using System.Linq;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TestAdapters;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
@@ -153,6 +153,6 @@ public class when_handling_emits_with_previously_written_events<TLogFormat, TStr
 			});
 		Assert.AreEqual(0, _readyHandler.HandledFailedMessages.Count);
 		Assert.AreEqual(0, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Count());
-		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ClientMessage.ReadEvent>().Count());
+		Assert.AreEqual(1, _consumer.HandledMessages.OfType<KurrentDB.Core.Messages.ClientMessage.ReadEvent>().Count());
 	}
 }

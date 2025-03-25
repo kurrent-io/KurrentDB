@@ -86,8 +86,7 @@ internal partial class Streams<TStreamId> {
 
 			var envelope = new CallbackEnvelope(HandleWriteEventsCompleted);
 
-			_publisher.Publish(new ClientMessage.WriteEvents(
-				correlationId,
+			_publisher.Publish(ClientMessage.WriteEvents.ForSingleStream(correlationId,
 				correlationId,
 				envelope,
 				requiresLeader,
@@ -116,10 +115,10 @@ internal partial class Streams<TStreamId> {
 				switch (completed.Result) {
 					case OperationResult.Success:
 						response.Success = new AppendResp.Types.Success();
-						if (completed.LastEventNumber == -1) {
+						if (completed.LastEventNumbers.Span[0] == -1) {
 							response.Success.NoStream = new Empty();
 						} else {
-							response.Success.CurrentRevision = StreamRevision.FromInt64(completed.LastEventNumber);
+							response.Success.CurrentRevision = StreamRevision.FromInt64(completed.LastEventNumbers.Span[0]);
 						}
 
 						if (completed.CommitPosition == -1) {
@@ -163,14 +162,14 @@ internal partial class Streams<TStreamId> {
 								break;
 						}
 
-						if (completed.CurrentVersion == -1) {
+						if (completed.FailureCurrentVersions.Span[0] == -1) {
 							response.WrongExpectedVersion.CurrentNoStream = new Empty();
 							response.WrongExpectedVersion.NoStream2060 = new Empty();
 						} else {
 							response.WrongExpectedVersion.CurrentRevision =
-								StreamRevision.FromInt64(completed.CurrentVersion);
+								StreamRevision.FromInt64(completed.FailureCurrentVersions.Span[0]);
 							response.WrongExpectedVersion.CurrentRevision2060 =
-								StreamRevision.FromInt64(completed.CurrentVersion);
+								StreamRevision.FromInt64(completed.FailureCurrentVersions.Span[0]);
 						}
 
 						appendResponseSource.TrySetResult(response);

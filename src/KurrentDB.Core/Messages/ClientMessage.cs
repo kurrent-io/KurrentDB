@@ -172,40 +172,121 @@ public static partial class ClientMessage {
 
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class WriteEvents : WriteRequestMessage {
-		public readonly string EventStreamId;
-		public readonly long ExpectedVersion;
-		public readonly Event[] Events;
+		public readonly ReadOnlyMemory<string> EventStreamIds;
+		public readonly ReadOnlyMemory<long> ExpectedVersions;
+		public readonly ReadOnlyMemory<Event> Events;
+		public readonly ReadOnlyMemory<int>? EventStreamIndexes;
 
-		public WriteEvents(Guid internalCorrId, Guid correlationId, IEnvelope envelope, bool requireLeader,
-			string eventStreamId, long expectedVersion, Event[] events, ClaimsPrincipal user,
-			IReadOnlyDictionary<string, string> tokens = null, CancellationToken cancellationToken = default)
+		public WriteEvents(
+			Guid internalCorrId,
+			Guid correlationId,
+			IEnvelope envelope,
+			bool requireLeader,
+			ReadOnlyMemory<string> eventStreamIds,
+			ReadOnlyMemory<long> expectedVersions,
+			ReadOnlyMemory<Event> events,
+			ReadOnlyMemory<int>? eventStreamIndexes,
+			ClaimsPrincipal user,
+			IReadOnlyDictionary<string, string> tokens = null,
+			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, requireLeader, user, tokens, cancellationToken) {
 
-			if (SystemStreams.IsInvalidStream(eventStreamId))
-				throw new ArgumentOutOfRangeException(nameof(eventStreamId));
+			ArgumentOutOfRangeException.ThrowIfNegativeOrZero(eventStreamIds.Length, nameof(eventStreamIds));
+			ArgumentOutOfRangeException.ThrowIfNotEqual(expectedVersions.Length, eventStreamIds.Length, nameof(expectedVersions));
 
-			if (expectedVersion < KurrentDB.Core.Data.ExpectedVersion.StreamExists ||
-				expectedVersion == KurrentDB.Core.Data.ExpectedVersion.Invalid)
-				throw new ArgumentOutOfRangeException(nameof(expectedVersion));
+			if (eventStreamIndexes.HasValue)
+				ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Value.Length, events.Length, nameof(eventStreamIndexes));
 
-			Ensure.NotNull(events, "events");
+			foreach (var eventStreamId in eventStreamIds.Span) {
+				if (SystemStreams.IsInvalidStream(eventStreamId))
+					throw new ArgumentOutOfRangeException(nameof(eventStreamIds), $"Invalid stream ID: {eventStreamId}");
+			}
 
-			EventStreamId = eventStreamId;
-			ExpectedVersion = expectedVersion;
+			foreach (var expectedVersion in expectedVersions.Span) {
+				if (expectedVersion is < ExpectedVersion.StreamExists or ExpectedVersion.Invalid)
+					throw new ArgumentOutOfRangeException(nameof(expectedVersions), $"Invalid expected version: {expectedVersion}");
+			}
+
+			var nextEventStreamIndex = 0;
+			if (eventStreamIndexes.HasValue) {
+				foreach (var eventStreamIndex in eventStreamIndexes.Value.Span) {
+					if (eventStreamIndex < 0 || eventStreamIndex >= eventStreamIds.Length)
+						throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes),
+							$"Stream index is out of range: {eventStreamIndex}. Number of streams: {eventStreamIds.Length}");
+
+					if (eventStreamIndex == nextEventStreamIndex) {
+						nextEventStreamIndex++;
+					} else if (eventStreamIndex > nextEventStreamIndex) {
+						throw new ArgumentOutOfRangeException(nameof(eventStreamIds),
+							"Indexes must be assigned to streams in the order in which they first appear in the list of events being written");
+					}
+				}
+			} else {
+				nextEventStreamIndex = 1;
+			}
+
+			if (events.Length > 0 && nextEventStreamIndex != eventStreamIds.Length)
+				throw new ArgumentOutOfRangeException(nameof(eventStreamIds),
+					"Not all streams have events being written to them");
+
+			if (events.Length == 0 && eventStreamIds.Length > 1)
+				throw new ArgumentException("Empty writes to multiple streams is not supported");
+
+			EventStreamIds = eventStreamIds;
+			ExpectedVersions = expectedVersions;
 			Events = events;
+			EventStreamIndexes = eventStreamIndexes;
 		}
 
-		public WriteEvents(Guid internalCorrId, Guid correlationId, IEnvelope envelope, bool requireLeader,
-			string eventStreamId, long expectedVersion, Event @event, ClaimsPrincipal user,
-			IReadOnlyDictionary<string, string> tokens = null)
-			: this(internalCorrId, correlationId, envelope, requireLeader, eventStreamId, expectedVersion,
-				@event == null ? null : new[] { @event }, user, tokens) {
+		public static WriteEvents ForSingleStream(
+			Guid internalCorrId,
+			Guid correlationId,
+			IEnvelope envelope,
+			bool requireLeader,
+			string eventStreamId,
+			long expectedVersion,
+			Event[] events,
+			ClaimsPrincipal user,
+			IReadOnlyDictionary<string, string> tokens = null,
+			CancellationToken cancellationToken = default) {
+			return new WriteEvents(
+				internalCorrId,
+				correlationId,
+				envelope,
+				requireLeader,
+				eventStreamIds: new[] { eventStreamId },
+				expectedVersions: new[] { expectedVersion },
+				events,
+				eventStreamIndexes: null,
+				user,
+				tokens,
+				cancellationToken);
+		}
+
+		public static WriteEvents ForSingleEvent(
+			Guid internalCorrId, Guid correlationId, IEnvelope envelope, bool requireLeader, string eventStreamId, long expectedVersion, Event @event, ClaimsPrincipal user, IReadOnlyDictionary<string, string> tokens = null) {
+			return new WriteEvents(
+				internalCorrId,
+				correlationId,
+				envelope,
+				requireLeader,
+				eventStreamIds: new[] { eventStreamId },
+				expectedVersions: new[] { expectedVersion },
+				events: new[] { @event },
+				eventStreamIndexes: new[] { 0 },
+				user,
+				tokens);
 		}
 
 		public override string ToString() {
-			return String.Format(
-				"WRITE: InternalCorrId: {0}, CorrelationId: {1}, EventStreamId: {2}, ExpectedVersion: {3}, Events: {4}",
-				InternalCorrId, CorrelationId, EventStreamId, ExpectedVersion, Events.Length);
+			return
+				$"WRITE:" +
+				$"InternalCorrId: {InternalCorrId}," +
+				$"CorrelationId: {CorrelationId}," +
+				$"EventStreamIds: {string.Join(", ", EventStreamIds.ToArray())}," + // TODO: use .Span instead of .ToArray() when we move to .NET 10
+				$"ExpectedVersions: {string.Join(", ", ExpectedVersions.ToArray())}," +
+				$"Events: {Events.Length}" +
+				$"EventStreamIndexes: {string.Join(", ", EventStreamIndexes.HasValue ? EventStreamIndexes.Value.ToArray() : [])}";
 		}
 	}
 
@@ -214,65 +295,100 @@ public static partial class ClientMessage {
 		public readonly Guid CorrelationId;
 		public readonly OperationResult Result;
 		public readonly string Message;
-		public readonly long FirstEventNumber;
-		public readonly long LastEventNumber;
+		public readonly ReadOnlyMemory<long> FirstEventNumbers;
+		public readonly ReadOnlyMemory<long> LastEventNumbers;
 		public readonly long PreparePosition;
 		public readonly long CommitPosition;
-		public readonly long CurrentVersion;
+		public readonly ReadOnlyMemory<int> FailureStreamIndexes;
+		public readonly ReadOnlyMemory<long> FailureCurrentVersions;
 
-		public WriteEventsCompleted(Guid correlationId, long firstEventNumber, long lastEventNumber,
+		public WriteEventsCompleted(
+			Guid correlationId,
+			ReadOnlyMemory<long> firstEventNumbers,
+			ReadOnlyMemory<long> lastEventNumbers,
 			long preparePosition, long commitPosition) {
-			if (firstEventNumber < -1)
-				throw new ArgumentOutOfRangeException(nameof(firstEventNumber),
+			ArgumentOutOfRangeException.ThrowIfNotEqual(firstEventNumbers.Length, lastEventNumbers.Length, nameof(firstEventNumbers));
+
+			for (var i = 0; i < firstEventNumbers.Length; i++) {
+				var firstEventNumber = firstEventNumbers.Span[i];
+				var lastEventNumber = lastEventNumbers.Span[i];
+
+				if (firstEventNumber < -1)
+					throw new ArgumentOutOfRangeException(nameof(firstEventNumbers),
 					$"FirstEventNumber: {firstEventNumber}");
-			if (lastEventNumber - firstEventNumber + 1 < 0)
-				throw new ArgumentOutOfRangeException(nameof(lastEventNumber),
+
+				if (lastEventNumber - firstEventNumber + 1 < 0)
+					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),
 					$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
+			}
 
 			CorrelationId = correlationId;
 			Result = OperationResult.Success;
 			Message = null;
-			FirstEventNumber = firstEventNumber;
-			LastEventNumber = lastEventNumber;
+			FirstEventNumbers = firstEventNumbers;
+			LastEventNumbers = lastEventNumbers;
 			PreparePosition = preparePosition;
 			CommitPosition = commitPosition;
 		}
 
 		public WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
-			long currentVersion = -1) {
+			ReadOnlyMemory<int> failureStreamIndexes = default, ReadOnlyMemory<long> failureCurrentVersions = default) {
+			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
+
 			if (result == OperationResult.Success)
 				throw new ArgumentException("Invalid constructor used for successful write.", nameof(result));
 
 			CorrelationId = correlationId;
 			Result = result;
 			Message = message;
-			FirstEventNumber = EventNumber.Invalid;
-			LastEventNumber = EventNumber.Invalid;
+			FirstEventNumbers = ReadOnlyMemory<long>.Empty;
+			LastEventNumbers = ReadOnlyMemory<long>.Empty;
 			PreparePosition = EventNumber.Invalid;
-			CurrentVersion = currentVersion;
+			FailureStreamIndexes = failureStreamIndexes;
+			FailureCurrentVersions = failureCurrentVersions;
 		}
 
 		private WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
-			long firstEventNumber, long lastEventNumber, long preparePosition, long commitPosition,
-			long currentVersion) {
+			ReadOnlyMemory<long> firstEventNumbers, ReadOnlyMemory<long> lastEventNumbers, long preparePosition,
+			long commitPosition, ReadOnlyMemory<int> failureStreamIndexes, ReadOnlyMemory<long> failureCurrentVersions) {
+			ArgumentOutOfRangeException.ThrowIfNotEqual(firstEventNumbers.Length, lastEventNumbers.Length, nameof(firstEventNumbers));
+			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
+
 			CorrelationId = correlationId;
 			Result = result;
 			Message = message;
-			FirstEventNumber = firstEventNumber;
-			LastEventNumber = lastEventNumber;
+			FirstEventNumbers = firstEventNumbers;
+			LastEventNumbers = lastEventNumbers;
 			PreparePosition = preparePosition;
 			CommitPosition = commitPosition;
-			CurrentVersion = currentVersion;
+			FailureStreamIndexes = failureStreamIndexes;
+			FailureCurrentVersions = failureCurrentVersions;
+		}
+
+		public static WriteEventsCompleted ForSingleStream(Guid correlationId, long firstEventNumber, long lastEventNumber, long preparePosition, long commitPosition) {
+			return new WriteEventsCompleted(
+				correlationId,
+				firstEventNumbers: new[] { firstEventNumber },
+				lastEventNumbers: new[] { lastEventNumber },
+				preparePosition,
+				commitPosition);
 		}
 
 		public WriteEventsCompleted WithCorrelationId(Guid newCorrId) {
-			return new WriteEventsCompleted(newCorrId, Result, Message, FirstEventNumber, LastEventNumber,
-				PreparePosition, CommitPosition, CurrentVersion);
+			return new WriteEventsCompleted(newCorrId, Result, Message, FirstEventNumbers, LastEventNumbers,
+				PreparePosition, CommitPosition, FailureStreamIndexes, FailureCurrentVersions);
 		}
 
 		public override string ToString() {
 			return
-				$"WRITE COMPLETED: CorrelationId: {CorrelationId}, Result: {Result}, Message: {Message}, FirstEventNumber: {FirstEventNumber}, LastEventNumber: {LastEventNumber}, CurrentVersion: {CurrentVersion}";
+				"WRITE COMPLETED: " +
+				$"CorrelationId: {CorrelationId}, " +
+				$"Result: {Result}, " +
+				$"Message: {Message}, " +
+				$"FirstEventNumbers: {string.Join(", ", FirstEventNumbers.ToArray())}," +
+				$"LastEventNumbers: {string.Join(", ", LastEventNumbers.ToArray())}," +
+				$"FailureStreamIndexes: {string.Join(", ", FailureStreamIndexes.ToArray())}" +
+				$"FailureCurrentVersions: {string.Join(", ", FailureCurrentVersions.ToArray())}";
 		}
 	}
 

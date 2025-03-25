@@ -35,7 +35,7 @@ public class when_delete_stream_gets_already_committed_before_commit : RequestMa
 	}
 
 	protected override Message When() {
-		return new StorageMessage.AlreadyCommitted(InternalCorrId, _streamId, 0, 1, _commitPosition);
+		return StorageMessage.AlreadyCommitted.ForSingleStream(InternalCorrId, _streamId, 0, 1, _commitPosition);
 	}
 
 	[Test]

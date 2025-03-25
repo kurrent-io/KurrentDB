@@ -12,6 +12,8 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
 
+using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
+
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_checkpoint;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -65,7 +67,7 @@ public class
 	[Test]
 	public void should_publish_write_events() {
 		var writeEvents =
-			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>()
+			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>()
 				.ExceptOfEventType(SystemEventTypes.StreamMetadata);
 		Assert.AreEqual(4, writeEvents.Count());
 	}
@@ -73,11 +75,11 @@ public class
 	[Test]
 	public void should_publish_write_events_to_correct_streams() {
 		Assert.IsTrue(
-			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Any(v => v.EventStreamId == "stream1"));
+			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(v => v.EventStreamId == "stream1"));
 		Assert.IsTrue(
-			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Any(v => v.EventStreamId == "stream2"));
+			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(v => v.EventStreamId == "stream2"));
 		Assert.IsTrue(
-			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Any(v => v.EventStreamId == "stream3"));
+			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Any(v => v.EventStreamId == "stream3"));
 	}
 
 	[Test]
@@ -87,7 +89,7 @@ public class
 		// are present in a stream
 		Assert.AreEqual(
 			2,
-			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Single(v => v.EventStreamId == "stream2")
+			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Single(v => v.EventStreamId == "stream2")
 				.Events.Length);
 	}
 
@@ -101,10 +103,10 @@ public class
 						CheckpointTag.FromPosition(0, 170, 160), null))
 			});
 		var writeRequests =
-			_consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Where(v => v.EventStreamId == "stream1");
+			_consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Where(v => v.EventStreamId == "stream1");
 		var writeEvents = writeRequests.Single();
 		writeEvents.Envelope.ReplyWith(
-			new ClientMessage.WriteEventsCompleted(writeEvents.CorrelationId, 0, 0, -1, -1));
+			ClientMessage.WriteEventsCompleted.ForSingleStream(writeEvents.CorrelationId, 0, 0, -1, -1));
 		Assert.AreEqual(2, writeRequests.Count());
 	}
 }

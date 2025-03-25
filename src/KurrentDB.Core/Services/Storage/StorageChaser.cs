@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
@@ -55,7 +55,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	private long _flushDelay;
 	private long _lastFlush;
 
-	private readonly List<IPrepareLogRecord<TStreamId>> _transaction = new();
+	private readonly ImplicitTransaction<TStreamId> _transaction = new();
 	private bool _commitsAfterEof;
 
 	private readonly TaskCompletionSource<object> _tcs = new();
@@ -199,34 +199,25 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	}
 
 	private void ProcessPrepareRecord(IPrepareLogRecord<TStreamId> record, long postPosition) {
-		if (_transaction.Count > 0 && _transaction[0].TransactionPosition != record.TransactionPosition)
+		if (_transaction.Position != record.TransactionPosition)
 			CommitPendingTransaction(_transaction, postPosition);
 
 		if (record.Flags.HasAnyOf(PrepareFlags.IsCommitted)) {
-			if (record.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete))
-				_transaction.Add(record);
+			_transaction.Process(record);
 
-			if (!record.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
-				return;
+			if (record.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
+				var firstEventNumbers = _transaction.FirstEventNumbers;
+				var lastEventNumbers = _transaction.LastEventNumbers;
+				var eventStreamIndexes = _transaction.EventStreamIndexes;
+				CommitPendingTransaction(_transaction, postPosition);
+
+				_leaderBus.Publish(new StorageMessage.CommitAck(record.CorrelationId,
+					record.LogPosition,
+					record.TransactionPosition,
+					firstEventNumbers,
+					lastEventNumbers,
+					eventStreamIndexes));
 			}
-
-			CommitPendingTransaction(_transaction, postPosition);
-
-			long firstEventNumber;
-			long lastEventNumber;
-			if (record.Flags.HasAnyOf(PrepareFlags.Data)) {
-				firstEventNumber = record.ExpectedVersion + 1 - record.TransactionOffset;
-				lastEventNumber = record.ExpectedVersion + 1;
-			} else {
-				firstEventNumber = record.ExpectedVersion + 1;
-				lastEventNumber = record.ExpectedVersion;
-			}
-
-			_leaderBus.Publish(new StorageMessage.CommitAck(record.CorrelationId,
-				record.LogPosition,
-				record.TransactionPosition,
-				firstEventNumber,
-				lastEventNumber));
 		} else if (record.Flags.HasAnyOf(PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.Data)) {
 			_leaderBus.Publish(new StorageMessage.PrepareAck(record.CorrelationId, record.LogPosition, record.Flags));
 		}
@@ -241,7 +232,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 		if (lastEventNumber is EventNumber.Invalid)
 			lastEventNumber = record.FirstEventNumber - 1;
 		_leaderBus.Publish(new StorageMessage.CommitAck(record.CorrelationId, record.LogPosition,
-			record.TransactionPosition, firstEventNumber, lastEventNumber));
+			record.TransactionPosition, new[] { firstEventNumber }, new[] { lastEventNumber }, new[] { 0 }));
 	}
 
 	private ValueTask ProcessSystemRecord(ISystemLogRecord record, CancellationToken token) {
@@ -259,11 +250,11 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 		return ValueTask.CompletedTask;
 	}
 
-	private void CommitPendingTransaction(List<IPrepareLogRecord<TStreamId>> transaction, long postPosition) {
-		if (transaction.Count > 0) {
-			_indexCommitterService.AddPendingPrepare(transaction.ToArray(), postPosition);
-			_transaction.Clear();
+	private void CommitPendingTransaction(ImplicitTransaction<TStreamId> transaction, long postPosition) {
+		if (transaction.Prepares.Count > 0) {
+			_indexCommitterService.AddPendingPrepare(transaction.Prepares.ToArray(), postPosition);
 		}
+		_transaction.Clear();
 	}
 
 	public void Handle(SystemMessage.BecomeShuttingDown message) {

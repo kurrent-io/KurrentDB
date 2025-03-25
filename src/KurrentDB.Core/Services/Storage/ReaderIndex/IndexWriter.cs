@@ -26,9 +26,9 @@ public interface IIndexWriter<TStreamId> {
 
 	void Reset();
 	ValueTask<CommitCheckResult<TStreamId>> CheckCommitStartingAt(long transactionPosition, long commitPosition, CancellationToken token);
-	ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, IEnumerable<Guid> eventIds, bool streamMightExist, CancellationToken token);
+	ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, ReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token);
 	ValueTask PreCommit(CommitLogRecord commit, CancellationToken token);
-	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares);
+	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, ReadOnlyMemory<int>? eventStreamIndexes);
 	void UpdateTransactionInfo(long transactionId, long logPosition, TransactionInfo<TStreamId> transactionInfo);
 	ValueTask<TransactionInfo<TStreamId>> GetTransactionInfo(long writerCheckpoint, long transactionId, CancellationToken token);
 	void PurgeNotProcessedCommitsTill(long checkpoint);
@@ -129,7 +129,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		var eventIds = await GetTransactionPrepares(transactionPosition, commitPosition, token)
 			.Where(static prepare => prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete))
 			.Select(static prepare => prepare.EventId)
-			.ToListAsync(token);
+			.ToArrayAsync(token);
 		return await CheckCommit(streamId, expectedVersion, eventIds, streamMightExist: true, token);
 	}
 
@@ -151,7 +151,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		return new(commitDecision, streamId, ExpectedVersion.NoStream, -1, -1, false);
 	}
 
-	public async ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, IEnumerable<Guid> eventIds, bool streamMightExist, CancellationToken token) {
+	public async ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, ReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token) {
 		if (!streamMightExist) {
 			// fast path for completely new streams
 			return CheckCommitForNewStream(streamId, expectedVersion);
@@ -181,7 +181,8 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			var first = true;
 			long startEventNumber = -1;
 			long endEventNumber = -1;
-			foreach (var eventId in eventIds) {
+			for (var i = 0; i < eventIds.Length; i++) {
+				var eventId = eventIds.Span[i];
 				if (!_committedEvents.TryGetRecord(eventId, out var prepInfo) || !StreamIdComparer.Equals(prepInfo.StreamId, streamId))
 					return new(first ? CommitDecision.Ok : CommitDecision.CorruptedIdempotency,
 						streamId, curVersion, -1, -1, first && await IsSoftDeleted(streamId, token));
@@ -208,7 +209,8 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 
 		if (expectedVersion < curVersion) {
 			var eventNumber = expectedVersion;
-			foreach (var eventId in eventIds) {
+			for (var i = 0; i < eventIds.Length; i++) {
+				var eventId = eventIds.Span[i];
 				eventNumber += 1;
 
 				if (_committedEvents.TryGetRecord(eventId, out var prepInfo)
@@ -288,29 +290,45 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		}
 	}
 
-	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares) {
-		if (commitedPrepares.Length == 0)
+	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> committedPrepares, ReadOnlyMemory<int>? eventStreamIndexes) {
+		if (eventStreamIndexes.HasValue)
+			ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Value.Length, committedPrepares.Length, nameof(eventStreamIndexes));
+
+		if (committedPrepares.Length == 0)
 			return;
 
-		var lastPrepare = commitedPrepares[^1];
-		var streamId = lastPrepare.EventStreamId;
-		long eventNumber = EventNumber.Invalid;
-		foreach (var prepare in commitedPrepares) {
+		foreach (var prepare in committedPrepares) {
 			if (prepare.Flags.HasNoneOf(PrepareFlags.StreamDelete | PrepareFlags.Data))
 				continue;
 
-			if (!StreamIdComparer.Equals(prepare.EventStreamId, streamId))
-				throw new Exception($"Expected stream: {streamId}, actual: {prepare.EventStreamId}.");
-
-			eventNumber = prepare.ExpectedVersion + 1; /* for committed prepare expected version is always explicit */
+			var streamId = prepare.EventStreamId;
+			long eventNumber = prepare.ExpectedVersion + 1;
 			_committedEvents.PutRecord(prepare.EventId, new EventInfo(streamId, eventNumber), throwOnDuplicate: false);
 		}
 
-		_notProcessedCommits.Enqueue(new CommitInfo(streamId, lastPrepare.LogPosition));
-		_streamVersions.Put(streamId, eventNumber, 1);
-		if (_systemStreams.IsMetaStream(streamId)) {
-			var rawMeta = lastPrepare.Data;
-			_streamRawMetas.Put(_systemStreams.OriginalStreamOf(streamId), new StreamMeta(rawMeta, null), +1);
+		var numStreams = eventStreamIndexes?.Length ?? 1;
+
+		Span<bool> streamProcessed = numStreams < 1024 / sizeof(bool) ?
+			stackalloc bool[numStreams] :
+			new bool[numStreams];
+
+		for (var i = committedPrepares.Length - 1; i >= 0; i--) {
+			var streamIndex = eventStreamIndexes.HasValue ? eventStreamIndexes.Value.Span[i] : 0;
+			if (streamProcessed[streamIndex])
+				continue;
+
+			streamProcessed[streamIndex] = true;
+
+			var lastPrepareForStream = committedPrepares[i];
+			var streamId = lastPrepareForStream.EventStreamId;
+			var eventNumber = lastPrepareForStream.ExpectedVersion + 1;
+
+			_notProcessedCommits.Enqueue(new CommitInfo(streamId, lastPrepareForStream.LogPosition));
+			_streamVersions.Put(streamId, eventNumber, +1);
+			if (_systemStreams.IsMetaStream(streamId)) {
+				var rawMeta = lastPrepareForStream.Data;
+				_streamRawMetas.Put(_systemStreams.OriginalStreamOf(streamId), new StreamMeta(rawMeta, null), +1);
+			}
 		}
 	}
 

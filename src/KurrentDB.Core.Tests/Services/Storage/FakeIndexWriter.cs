@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Data;
@@ -32,14 +31,15 @@ public class FakeIndexWriter<TStreamId> : IIndexWriter<TStreamId> {
 		return ValueTask.FromResult(new CommitCheckResult<TStreamId>(CommitDecision.Ok, GetFakeStreamId(), -1, -1, -1, false));
 	}
 
-	public ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, IEnumerable<Guid> eventIds, bool streamMightExist, CancellationToken token) {
+	public ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, ReadOnlyMemory<Guid> eventIds, bool streamMightExist,
+		CancellationToken token) {
 		return ValueTask.FromResult(new CommitCheckResult<TStreamId>(CommitDecision.Ok, streamId, expectedVersion, -1, -1, false));
 	}
 
 	public ValueTask PreCommit(CommitLogRecord commit, CancellationToken token)
 		=> token.IsCancellationRequested ? ValueTask.FromCanceled(token) : ValueTask.CompletedTask;
 
-	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> committedPrepares) { }
+	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, ReadOnlyMemory<int>? eventStreamIndexes) { }
 
 	public void UpdateTransactionInfo(long transactionId, long logPosition, TransactionInfo<TStreamId> transactionInfo) { }
 

@@ -104,7 +104,7 @@ class when_replaying_one_all_parked_message(string contentType) : with_subscript
 	}
 
 	private void Handle(StorageMessage.WritePrepares msg) {
-		if (msg.EventStreamId == _subscriptionParkedStream) {
+		if (msg.EventStreamIds.Span[0] == _subscriptionParkedStream) {
 			_writeCorrelationId = msg.CorrelationId;
 		}
 	}
@@ -198,7 +198,7 @@ class when_replaying_multiple_all_parked_messages(string contentType) : with_sub
 	}
 
 	private void Handle(StorageMessage.WritePrepares msg) {
-		if (msg.EventStreamId == _subscriptionParkedStream) {
+		if (msg.EventStreamIds.Span[0] == _subscriptionParkedStream) {
 			_writeCorrelationId.TryAdd(msg.CorrelationId, true);
 		}
 	}
@@ -297,7 +297,7 @@ class when_replaying_multiple_some_parked_messages(string contentType) : with_su
 	}
 
 	private void Handle(StorageMessage.WritePrepares msg) {
-		if (msg.EventStreamId == _subscriptionParkedStream) {
+		if (msg.EventStreamIds.Span[0] == _subscriptionParkedStream) {
 			_writeCorrelationId.TryAdd(msg.CorrelationId, true);
 		}
 	}

@@ -820,7 +820,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsNonLeader(ClientMessage.WriteEvents message, CancellationToken token) {
-		if (message.RequireLeader) {
+		if (message.RequireLeader || message.EventStreamIds.Length > 1 /* forwarding of multi-stream writes is unsupported */) {
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 			return ValueTask.CompletedTask;
 		}
@@ -898,10 +898,11 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask HandleAsReadOnlyReplica(ClientMessage.WriteEvents message, CancellationToken token) {
-		if (message.RequireLeader) {
+		if (message.RequireLeader || message.EventStreamIds.Length > 1 /* forwarding of multi-stream writes is unsupported */) {
 			DenyRequestBecauseNotLeader(message.CorrelationId, message.Envelope);
 			return ValueTask.CompletedTask;
 		}
+
 		if (message.User != SystemAccounts.System) {
 			DenyRequestBecauseReadOnly(message.CorrelationId, message.Envelope);
 			return ValueTask.CompletedTask;

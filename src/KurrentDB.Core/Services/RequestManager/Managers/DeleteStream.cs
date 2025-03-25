@@ -13,6 +13,7 @@ public class DeleteStream : RequestManagerBase {
 	private readonly bool _hardDelete;
 	private readonly CancellationToken _cancellationToken;
 	private readonly string _streamId;
+	private readonly long _expectedVersion;
 
 	public DeleteStream(
 				IPublisher publisher,
@@ -31,13 +32,13 @@ public class DeleteStream : RequestManagerBase {
 				 clientResponseEnvelope,
 				 internalCorrId,
 				 clientCorrId,
-				 expectedVersion,
 				 commitSource,
 				 prepareCount: 0,
 				 waitForCommit: true) {
 		_hardDelete = hardDelete;
 		_cancellationToken = cancellationToken;
 		_streamId = streamId;
+		_expectedVersion = expectedVersion;
 	}
 
 	protected override Message WriteRequestMsg =>
@@ -45,7 +46,7 @@ public class DeleteStream : RequestManagerBase {
 				InternalCorrId,
 				WriteReplyEnvelope,
 				_streamId,
-				ExpectedVersion,
+				_expectedVersion,
 				_hardDelete,
 				_cancellationToken);
 
@@ -54,10 +55,12 @@ public class DeleteStream : RequestManagerBase {
 			 ClientCorrId,
 			 OperationResult.Success,
 			 null,
-			 LastEventNumber,
+			 LastEventNumbers.Span[0],
 			 CommitPosition,  //not technically correct, but matches current behavior correctly
 			 CommitPosition);
 
 	protected override Message ClientFailMsg =>
-		new ClientMessage.DeleteStreamCompleted(ClientCorrId, Result, FailureMessage, FailureCurrentVersion);
+		new ClientMessage.DeleteStreamCompleted(ClientCorrId, Result, FailureMessage,
+			FailureCurrentVersions.Span.Length > 0 ?
+				FailureCurrentVersions.Span[0] : -1 /* for backwards compatibility */);
 }

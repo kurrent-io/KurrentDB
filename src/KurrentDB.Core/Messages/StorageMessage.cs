@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
@@ -17,8 +16,6 @@ public static partial class StorageMessage {
 	public interface IPreconditionedWriteMessage {
 		Guid CorrelationId { get; }
 		IEnvelope Envelope { get; }
-		string EventStreamId { get; }
-		long ExpectedVersion { get; }
 	}
 
 	public interface IFlushableMessage {
@@ -31,29 +28,44 @@ public static partial class StorageMessage {
 	public partial class WritePrepares : Message, IPreconditionedWriteMessage, IFlushableMessage, ILeaderWriteMessage {
 		public Guid CorrelationId { get; private set; }
 		public IEnvelope Envelope { get; private set; }
+		public ReadOnlyMemory<string> EventStreamIds { get; private set; }
+		public ReadOnlyMemory<long> ExpectedVersions { get; private set; }
+		public ReadOnlyMemory<Event> Events { get; private set; }
+		public ReadOnlyMemory<int>? EventStreamIndexes { get; private set; }
 
-		public string EventStreamId { get; private set; }
-		public long ExpectedVersion { get; private set; }
-		public readonly Event[] Events;
-
-		public WritePrepares(Guid correlationId, IEnvelope envelope, string eventStreamId, long expectedVersion,
-			Event[] events, CancellationToken cancellationToken) : base(cancellationToken) {
+		public WritePrepares(
+			Guid correlationId,
+			IEnvelope envelope,
+			ReadOnlyMemory<string> eventStreamIds,
+			ReadOnlyMemory<long> expectedVersions,
+			ReadOnlyMemory<Event> events,
+			ReadOnlyMemory<int>? eventStreamIndexes,
+			CancellationToken cancellationToken) : base(cancellationToken) {
 			CorrelationId = correlationId;
 			Envelope = envelope;
-			EventStreamId = eventStreamId;
-			ExpectedVersion = expectedVersion;
+			EventStreamIds = eventStreamIds;
+			ExpectedVersions = expectedVersions;
 			Events = events;
+			EventStreamIndexes = eventStreamIndexes;
 		}
 
-		public override string ToString() =>
-			$"{GetType().Name} " +
-			$"CorrelationId: {CorrelationId}, " +
-			$"EventStreamId: {EventStreamId}, " +
-			$"ExpectedVersion: {ExpectedVersion}, " +
-			$"Envelope: {{ {Envelope} }}, " +
-			$"NumEvents: {Events?.Length}, " +
-			$"DataBytes: {Events?.Sum(static e => e.Data.Length)}, " +
-			$"MetadataBytes: {Events?.Sum(static e => e.Metadata.Length)}";
+		public override string ToString() {
+			var sumDataBytes = 0L;
+			var sumMetadataBytes = 0L;
+			foreach (var @event in Events.Span) {
+				sumDataBytes += @event.Data.Length;
+				sumMetadataBytes += @event.Metadata.Length;
+			}
+
+			return $"{GetType().Name} " +
+				$"CorrelationId: {CorrelationId}, " +
+				$"EventStreamIds: {string.Join(", ", EventStreamIds.ToArray())}, " + // TODO: use .Span instead of .ToArray() when we move to .NET 10
+				$"ExpectedVersions: {string.Join(", ", ExpectedVersions.ToArray())}, " +
+				$"Envelope: {{ {Envelope} }}, " +
+				$"NumEvents: {Events.Length}, " +
+				$"DataBytes: {sumDataBytes}, " +
+				$"MetadataBytes: {sumMetadataBytes}";
+		}
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
@@ -171,26 +183,55 @@ public static partial class StorageMessage {
 		public readonly Guid CorrelationId;
 		public readonly long LogPosition;
 		public readonly long TransactionPosition;
-		public readonly long FirstEventNumber;
-		public readonly long LastEventNumber;
+		public readonly ReadOnlyMemory<long> FirstEventNumbers;
+		public readonly ReadOnlyMemory<long> LastEventNumbers;
+		public readonly ReadOnlyMemory<int>? EventStreamIndexes;
+		public int NumStreams => FirstEventNumbers.Length;
 
-		public CommitAck(Guid correlationId, long logPosition, long transactionPosition, long firstEventNumber,
-			long lastEventNumber) {
+		public CommitAck(Guid correlationId, long logPosition, long transactionPosition,
+			ReadOnlyMemory<long> firstEventNumbers, ReadOnlyMemory<long> lastEventNumbers,
+			ReadOnlyMemory<int>? eventStreamIndexes) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Nonnegative(logPosition, "logPosition");
 			Ensure.Nonnegative(transactionPosition, "transactionPosition");
-			if (firstEventNumber < -1)
-				throw new ArgumentOutOfRangeException("firstEventNumber",
-					string.Format("FirstEventNumber: {0}", firstEventNumber));
-			if (lastEventNumber - firstEventNumber + 1 < 0)
-				throw new ArgumentOutOfRangeException("lastEventNumber",
-					string.Format("LastEventNumber {0}, FirstEventNumber {1}.", lastEventNumber, firstEventNumber));
+			Ensure.Equal(firstEventNumbers.Length, lastEventNumbers.Length, nameof(lastEventNumbers));
+
+			var numStreams = firstEventNumbers.Length;
+
+			for (var i = 0; i < numStreams; i++) {
+				var firstEventNumber = firstEventNumbers.Span[i];
+				var lastEventNumber = lastEventNumbers.Span[i];
+				if (firstEventNumber < -1)
+					throw new ArgumentOutOfRangeException(nameof(firstEventNumbers),
+						$"FirstEventNumber: {firstEventNumber}");
+				if (lastEventNumber - firstEventNumber + 1 < 0)
+					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),
+						$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
+			}
+
+			if (eventStreamIndexes.HasValue)
+				foreach (var eventStreamIndex in eventStreamIndexes.Value.Span) {
+					if (eventStreamIndex < 0 || eventStreamIndex >= numStreams)
+						throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes));
+				}
 
 			CorrelationId = correlationId;
 			LogPosition = logPosition;
 			TransactionPosition = transactionPosition;
-			FirstEventNumber = firstEventNumber;
-			LastEventNumber = lastEventNumber;
+			FirstEventNumbers = firstEventNumbers;
+			LastEventNumbers = lastEventNumbers;
+			EventStreamIndexes = eventStreamIndexes;
+		}
+
+		// used in tests only
+		public static CommitAck ForSingleStream(Guid correlationId, long logPosition, long transactionPosition, long firstEventNumber, long lastEventNumber) {
+			return new CommitAck(
+				correlationId,
+				logPosition,
+				transactionPosition,
+				firstEventNumbers: new[] { firstEventNumber },
+				lastEventNumbers: new[] { lastEventNumber },
+				eventStreamIndexes: null);
 		}
 	}
 
@@ -199,25 +240,44 @@ public static partial class StorageMessage {
 		public readonly Guid CorrelationId;
 		public readonly long LogPosition;
 		public readonly long TransactionPosition;
-		public readonly long FirstEventNumber;
-		public readonly long LastEventNumber;
+		public readonly ReadOnlyMemory<long> FirstEventNumbers;
+		public readonly ReadOnlyMemory<long> LastEventNumbers;
 
 		public CommitIndexed(Guid correlationId, long logPosition, long transactionPosition,
-			long firstEventNumber, long lastEventNumber) {
+			ReadOnlyMemory<long> firstEventNumbers, ReadOnlyMemory<long> lastEventNumbers) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Nonnegative(logPosition, "logPosition");
 			Ensure.Nonnegative(transactionPosition, "transactionPosition");
-			if (firstEventNumber < -1)
-				throw new ArgumentOutOfRangeException("firstEventNumber",
-					string.Format("FirstEventNumber: {0}", firstEventNumber));
-			if (lastEventNumber - firstEventNumber + 1 < 0)
-				throw new ArgumentOutOfRangeException("lastEventNumber",
-					string.Format("LastEventNumber {0}, FirstEventNumber {1}.", lastEventNumber, firstEventNumber));
+			Ensure.Equal(firstEventNumbers.Length, lastEventNumbers.Length, nameof(lastEventNumbers));
+
+			for (var i = 0; i < firstEventNumbers.Length; i++) {
+				var firstEventNumber = firstEventNumbers.Span[i];
+				var lastEventNumber = lastEventNumbers.Span[i];
+
+				if (firstEventNumber < -1)
+					throw new ArgumentOutOfRangeException(nameof(firstEventNumbers),
+						$"FirstEventNumber: {firstEventNumber}");
+
+				if (lastEventNumber - firstEventNumber + 1 < 0)
+					throw new ArgumentOutOfRangeException(nameof(lastEventNumbers),
+						$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
+			}
+
 			CorrelationId = correlationId;
 			LogPosition = logPosition;
 			TransactionPosition = transactionPosition;
-			FirstEventNumber = firstEventNumber;
-			LastEventNumber = lastEventNumber;
+			FirstEventNumbers = firstEventNumbers;
+			LastEventNumbers = lastEventNumbers;
+		}
+
+		// used in tests only
+		public static CommitIndexed ForSingleStream(Guid correlationId, long logPosition, long transactionPosition, long firstEventNumber, long lastEventNumber) {
+			return new CommitIndexed(
+				correlationId,
+				logPosition,
+				transactionPosition,
+				firstEventNumbers: new[] { firstEventNumber },
+				lastEventNumbers: new[] { lastEventNumber });
 		}
 	}
 
@@ -255,28 +315,37 @@ public static partial class StorageMessage {
 	public partial class AlreadyCommitted : Message {
 		public readonly Guid CorrelationId;
 
-		public readonly string EventStreamId;
-		public readonly long FirstEventNumber;
-		public readonly long LastEventNumber;
+		public readonly ReadOnlyMemory<long> FirstEventNumbers;
+		public readonly ReadOnlyMemory<long> LastEventNumbers;
 		public readonly long LogPosition;
 
-		public AlreadyCommitted(Guid correlationId, string eventStreamId, long firstEventNumber,
-			long lastEventNumber, long logPosition) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-			Ensure.Nonnegative(firstEventNumber, "FirstEventNumber");
+		public AlreadyCommitted(Guid correlationId,
+			ReadOnlyMemory<long> firstEventNumbers,
+			ReadOnlyMemory<long> lastEventNumbers,
+			long logPosition) {
+			Ensure.NotEmptyGuid(correlationId, nameof(correlationId));
+			Ensure.Equal(lastEventNumbers.Length, firstEventNumbers.Length, nameof(lastEventNumbers));
 
 			CorrelationId = correlationId;
-			EventStreamId = eventStreamId;
-			FirstEventNumber = firstEventNumber;
-			LastEventNumber = lastEventNumber;
+			FirstEventNumbers = firstEventNumbers;
+			LastEventNumbers = lastEventNumbers;
 			LogPosition = logPosition;
 		}
 
+		// used in tests only
+		public static AlreadyCommitted ForSingleStream(Guid correlationId, string eventStreamId, long firstEventNumber, long lastEventNumber, long logPosition) {
+			return new AlreadyCommitted(
+				correlationId,
+				firstEventNumbers: new[] { firstEventNumber },
+				lastEventNumbers: new[] { lastEventNumber },
+				logPosition);
+		}
+
 		public override string ToString() {
-			return string.Format(
-				"EventStreamId: {0}, CorrelationId: {1}, FirstEventNumber: {2}, LastEventNumber: {3}",
-				EventStreamId, CorrelationId, FirstEventNumber, LastEventNumber);
+			return
+				$"CorrelationId: {CorrelationId}," +
+				$"FirstEventNumbers: {string.Join(", ", FirstEventNumbers.ToArray())}," +
+				$"LastEventNumbers: {string.Join(", ", LastEventNumbers.ToArray())}";
 		}
 	}
 
@@ -292,22 +361,36 @@ public static partial class StorageMessage {
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class WrongExpectedVersion : Message {
 		public readonly Guid CorrelationId;
-		public readonly long CurrentVersion;
+		public readonly ReadOnlyMemory<int> FailureStreamIndexes;
+		public readonly ReadOnlyMemory<long> FailureCurrentVersions;
 
-		public WrongExpectedVersion(Guid correlationId, long currentVersion) {
+		public WrongExpectedVersion(Guid correlationId, ReadOnlyMemory<int> failureStreamIndexes, ReadOnlyMemory<long> failureCurrentVersions) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
+			Ensure.Equal(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
 			CorrelationId = correlationId;
-			CurrentVersion = currentVersion;
+			FailureStreamIndexes = failureStreamIndexes;
+			FailureCurrentVersions = failureCurrentVersions;
+		}
+
+		public static WrongExpectedVersion ForSingleStream(Guid correlationId, long currentVersion) {
+			return new WrongExpectedVersion(
+				correlationId,
+				failureStreamIndexes: new[] { 0 },
+				failureCurrentVersions: new[] { currentVersion });
 		}
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class StreamDeleted : Message {
 		public readonly Guid CorrelationId;
+		public readonly int StreamIndex;
+		public readonly long CurrentVersion;
 
-		public StreamDeleted(Guid correlationId) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
+		public StreamDeleted(Guid correlationId, int streamIndex, long currentVersion) {
+			Ensure.NotEmptyGuid(correlationId, nameof(correlationId));
 			CorrelationId = correlationId;
+			StreamIndex = streamIndex;
+			CurrentVersion = currentVersion;
 		}
 	}
 
@@ -315,13 +398,13 @@ public static partial class StorageMessage {
 	public partial class RequestCompleted : Message {
 		public readonly Guid CorrelationId;
 		public readonly bool Success;
-		public readonly long CurrentVersion;
+		public readonly ReadOnlyMemory<long> CurrentVersions;
 
-		public RequestCompleted(Guid correlationId, bool success, long currentVersion = -1) {
+		public RequestCompleted(Guid correlationId, bool success, ReadOnlyMemory<long> currentVersions = default) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			CorrelationId = correlationId;
 			Success = success;
-			CurrentVersion = currentVersion;
+			CurrentVersions = currentVersions;
 		}
 	}
 

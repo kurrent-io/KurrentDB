@@ -32,7 +32,7 @@ public class when_transaction_commit_gets_stream_deleted : RequestManagerSpecifi
 	}
 
 	protected override Message When() {
-		return new StorageMessage.StreamDeleted(InternalCorrId);
+		return new StorageMessage.StreamDeleted(InternalCorrId, 0, 0);
 	}
 
 	[Test]

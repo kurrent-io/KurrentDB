@@ -17,6 +17,8 @@ using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
+using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
+
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.managed_projection;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string), OperationResult.CommitTimeout)]
@@ -106,7 +108,7 @@ public class when_persisted_state_write_fails<TLogFormat, TStreamId> : TestFixtu
 			new CoreProjectionStatusMessage.Prepared(
 				_coreProjectionId, projectionSourceDefinition));
 
-		_originalPersistedStateEventId = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>()
+		_originalPersistedStateEventId = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>()
 			.Where(x => x.EventStreamId == _projectionDefinitionStreamId).First().Events[0].EventId;
 
 		CompleteWriteWithResult(_failureCondition);
@@ -118,7 +120,7 @@ public class when_persisted_state_write_fails<TLogFormat, TStreamId> : TestFixtu
 
 	[Test]
 	public void should_retry_writing_the_persisted_state_with_the_same_event_id() {
-		var eventId = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>()
+		var eventId = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>()
 			.Where(x => x.EventStreamId == _projectionDefinitionStreamId).First().Events[0].EventId;
 		Assert.AreEqual(eventId, _originalPersistedStateEventId);
 	}

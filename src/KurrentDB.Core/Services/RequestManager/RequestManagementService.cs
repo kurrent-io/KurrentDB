@@ -65,9 +65,10 @@ public class RequestManagementService :
 							message.Envelope,
 							message.InternalCorrId,
 							message.CorrelationId,
-							message.EventStreamId,
-							message.ExpectedVersion,
+							message.EventStreamIds,
+							message.ExpectedVersions,
 							message.Events,
+							message.EventStreamIndexes,
 							_commitSource,
 							message.CancellationToken);
 		_currentRequests.Add(message.InternalCorrId, manager);

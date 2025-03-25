@@ -70,7 +70,7 @@ public class StreamPolicyWriter : IPolicyWriter {
 			new TaskCompletionSource<RetryAction>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var envelope = new CallbackEnvelope(HandleWriteEventsCallback);
 
-		_bus.Publish(new ClientMessage.WriteEvents(
+		_bus.Publish(ClientMessage.WriteEvents.ForSingleStream(
 			correlationId,
 			correlationId,
 			envelope,

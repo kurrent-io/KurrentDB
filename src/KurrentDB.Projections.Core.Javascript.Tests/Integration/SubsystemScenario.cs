@@ -66,16 +66,16 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 		await _mainQueue.Stop();
 	}
 
-	protected async Task<(long commitPosition, long nextRevision)> WriteEvents(string stream, long expectedRevision, params Event[] events) {
+	protected async Task WriteEvents(string stream, long expectedRevision, params Event[] events) {
 		var responseEnvelope = new TellMeWhenItsDone(TestTimeout);
-		_mainQueue.Publish(new ClientMessage.WriteEvents(Guid.NewGuid(), Guid.NewGuid(),
+		_mainQueue.Publish(ClientMessage.WriteEvents.ForSingleStream(Guid.NewGuid(), Guid.NewGuid(),
 			responseEnvelope, false, stream, expectedRevision,
 			events, null, null));
 		var msg = await responseEnvelope.Task.WaitAsync(TestTimeout);
 		var resp = Assert.IsType<ClientMessage.WriteEventsCompleted>(msg);
 		Assert.Equal(OperationResult.Success, resp.Result);
-		return (resp.CommitPosition, resp.CurrentVersion);
 	}
+
 	protected async Task<IReadOnlyList<ResolvedEvent>> ReadStream(string stream, int from) {
 		var tmwid = new TellMeWhenItsDone(TestTimeout);
 		_mainQueue.Publish(new ClientMessage.ReadStreamEventsForward(Guid.NewGuid(),
@@ -256,24 +256,26 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 
 		public void Handle(ClientMessage.WriteEvents message) {
 			ClientMessage.WriteEventsCompleted response;
-			if (_streams.TryGetValue(message.EventStreamId, out var events)) {
-				if (message.ExpectedVersion == ExpectedVersion.Any ||
-					message.ExpectedVersion == events.Count - 1) {
+			if (_streams.TryGetValue(message.EventStreamIds.Span[0], out var events)) {
+				if (message.ExpectedVersions.Span[0] == ExpectedVersion.Any ||
+					message.ExpectedVersions.Span[0] == events.Count - 1) {
 					response = WriteEvents(message, events);
 				} else {
 					response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
 						OperationResult.WrongExpectedVersion, "Wrong expected version",
-						_streams.Count - 1);
+						new[] { 0 },
+						new long[] { _streams.Count - 1 });
 				}
 			} else {
-				if (message.ExpectedVersion is ExpectedVersion.Any or ExpectedVersion.NoStream) {
+				if (message.ExpectedVersions.Span[0] is ExpectedVersion.Any or ExpectedVersion.NoStream) {
 					events = new List<ResolvedEvent>();
-					_streams.Add(message.EventStreamId, events);
+					_streams.Add(message.EventStreamIds.Span[0], events);
 					response = WriteEvents(message, events);
 				} else {
 					response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
 						OperationResult.WrongExpectedVersion, "Wrong expected version",
-						ExpectedVersion.NoStream);
+						new[] { 0 },
+						new[] { ExpectedVersion.NoStream });
 				}
 			}
 
@@ -286,7 +288,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 			for (int i = 0; i < message.Events.Length; i++) {
 				var position = _all.Count + i;
 				var revision = events.Count + i;
-				var current = message.Events[i];
+				var current = message.Events.Span[i];
 
 				var flags = PrepareFlags.IsCommitted | PrepareFlags.Data;
 				if (current.IsJson)
@@ -297,7 +299,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 					flags |= PrepareFlags.TransactionEnd;
 
 				var record = new EventRecord(revision, position, message.CorrelationId,
-					current.EventId, _all.Count, i, message.EventStreamId, -1, DateTime.Now,
+					current.EventId, _all.Count, i, message.EventStreamIds.Span[0], -1, DateTime.Now,
 					flags, current.EventType, current.Data, current.Metadata, []);
 				if (current.EventType == SystemEventTypes.LinkTo) {
 					var data = Encoding.UTF8.GetString(current.Data);
@@ -321,7 +323,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 				}
 			}
 
-			var response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
+			var response = ClientMessage.WriteEventsCompleted.ForSingleStream(message.CorrelationId,
 				events.Count, Math.Max(0, events.Count + stored.Count - 1),
 				_all.Count + stored.Count, _all.Count + stored.Count);
 			events.AddRange(stored);

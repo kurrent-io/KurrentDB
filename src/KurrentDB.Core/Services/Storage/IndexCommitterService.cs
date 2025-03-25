@@ -136,24 +136,24 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 	}
 
 	private async ValueTask ProcessCommitReplicated(StorageMessage.CommitAck message, CancellationToken token) {
-		long lastEventNumber = message.LastEventNumber;
+		ReadOnlyMemory<long> lastEventNumbers = message.LastEventNumbers;
 		if (_pendingTransactions.TryRemove(message.TransactionPosition, out var transaction)) {
 			var isTfEof = IsTfEof(transaction.PostPosition);
 			if (transaction.Prepares.Count > 0) {
-				await _indexCommitter.Commit(transaction.Prepares, isTfEof, true, token);
+				await _indexCommitter.Commit(transaction.Prepares, message.NumStreams, message.EventStreamIndexes, isTfEof, true, token);
 			}
 
 			if (transaction.Commit is not null) {
-				lastEventNumber = await _indexCommitter.Commit(transaction.Commit, isTfEof, true, token);
+				var lastEventNumber = await _indexCommitter.Commit(transaction.Commit, isTfEof, true, token);
+				if (lastEventNumber != EventNumber.Invalid)
+					lastEventNumbers = new[] { lastEventNumber };
 			}
 		}
-
-		lastEventNumber = lastEventNumber == EventNumber.Invalid ? message.LastEventNumber : lastEventNumber;
 
 		_publisher.Publish(new ReplicationTrackingMessage.IndexedTo(message.LogPosition));
 
 		_publisher.Publish(new StorageMessage.CommitIndexed(message.CorrelationId, message.LogPosition,
-			message.TransactionPosition, message.FirstEventNumber, lastEventNumber));
+			message.TransactionPosition, message.FirstEventNumbers, lastEventNumbers));
 	}
 
 	private bool IsTfEof(long postPosition) => postPosition == _writerCheckpoint.Read();
@@ -163,18 +163,9 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 
 	public void AddPendingPrepare(IPrepareLogRecord<TStreamId>[] prepares, long postPosition) {
 		var transactionPosition = prepares[0].TransactionPosition;
-		if (_pendingTransactions.TryGetValue(transactionPosition, out var transaction)) {
-			var newTransaction = new PendingTransaction(transactionPosition, postPosition, transaction.Prepares, transaction.Commit);
-			newTransaction.AddPendingPrepares(prepares);
-			if (!_pendingTransactions.TryUpdate(transactionPosition, newTransaction, transaction)) {
-				throw new InvalidOperationException("Failed to update pending prepare");
-			}
-		} else {
-			var pendingTransaction = new PendingTransaction(transactionPosition, postPosition, prepares);
-			if (!_pendingTransactions.TryAdd(transactionPosition, pendingTransaction)) {
-				throw new InvalidOperationException("Failed to add pending prepare");
-			}
-		}
+		var pendingTransaction = new PendingTransaction(transactionPosition, postPosition, prepares);
+		if (!_pendingTransactions.TryAdd(transactionPosition, pendingTransaction))
+			throw new InvalidOperationException($"A pending transaction already exists at position: {transactionPosition}");
 	}
 
 	public void AddPendingCommit(CommitLogRecord commit, long postPosition) {

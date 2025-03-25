@@ -14,6 +14,8 @@ using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_checkpoint;
 
+using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
+
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_requesting_checkpoint_after_all_writes_completed<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
@@ -50,9 +52,9 @@ public class when_requesting_checkpoint_after_all_writes_completed<TLogFormat, T
 						"stream1", Guid.NewGuid(), "type", true, "data", null,
 						CheckpointTag.FromPosition(0, 140, 130), null))
 			});
-		var writes = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().ToArray();
-		writes[0].Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(writes[0].CorrelationId, 0, 0, -1, -1));
-		writes[1].Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(writes[1].CorrelationId, 0, 0, -1, -1));
+		var writes = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().ToArray();
+		writes[0].Envelope.ReplyWith(ClientMessage.WriteEventsCompleted.ForSingleStream(writes[0].CorrelationId, 0, 0, -1, -1));
+		writes[1].Envelope.ReplyWith(ClientMessage.WriteEventsCompleted.ForSingleStream(writes[1].CorrelationId, 0, 0, -1, -1));
 		_checkpoint.Prepare(CheckpointTag.FromPosition(0, 200, 150));
 		//TODO: test whether checkpoint does not allow positions before last emitted event caused by position
 	}
