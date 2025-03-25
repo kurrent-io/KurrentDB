@@ -11,6 +11,8 @@ using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
+using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
+
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string), OperationResult.CommitTimeout)]
@@ -44,7 +46,7 @@ public class
 	[Test, Category("v8")]
 	public void retries_writing_with_the_same_event_id() {
 		int retryCount = 0;
-		var projectionsInitializedWrite = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Where(x =>
+		var projectionsInitializedWrite = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Where(x =>
 			x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream &&
 			x.Events[0].EventType == ProjectionEventTypes.ProjectionsInitialized).Last();
 		var eventId = projectionsInitializedWrite.Events[0].EventId;
@@ -54,7 +56,7 @@ public class
 				projectionsInitializedWrite.CorrelationId, _failureCondition,
 				Enum.GetName(typeof(OperationResult), _failureCondition)));
 			_queue.Process();
-			projectionsInitializedWrite = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Where(x =>
+			projectionsInitializedWrite = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().Where(x =>
 				x.EventStreamId == ProjectionNamesBuilder.ProjectionsRegistrationStream &&
 				x.Events[0].EventType == ProjectionEventTypes.ProjectionsInitialized).LastOrDefault();
 			if (projectionsInitializedWrite != null) {

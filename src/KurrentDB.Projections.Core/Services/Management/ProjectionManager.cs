@@ -692,8 +692,7 @@ public class ProjectionManager
 	private void DeleteProjection(
 		ProjectionManagementMessage.Internal.Deleted message, Action<long> completed, int retryCount = ProjectionCreationRetryCount) {
 		var corrId = Guid.NewGuid();
-		var writeDelete = new ClientMessage.WriteEvents(
-				corrId,
+		var writeDelete = ClientMessage.WriteEvents.ForSingleEvent(corrId,
 				corrId,
 				_writeDispatcher.Envelope,
 				true,
@@ -864,8 +863,7 @@ public class ProjectionManager
 	private void WriteProjectionsInitialized(Action action, Guid registrationEventId) {
 		var corrId = Guid.NewGuid();
 		_writeDispatcher.Publish(
-			new ClientMessage.WriteEvents(
-				corrId,
+			ClientMessage.WriteEvents.ForSingleEvent(corrId,
 				corrId,
 				_writeDispatcher.Envelope,
 				true,
@@ -990,8 +988,7 @@ public class ProjectionManager
 		if (!events.Any())
 			return;
 
-		var writeEvents = new ClientMessage.WriteEvents(
-			corrId,
+		var writeEvents = ClientMessage.WriteEvents.ForSingleStream(corrId,
 			corrId,
 			_writeDispatcher.Envelope,
 			true,
@@ -1018,7 +1015,7 @@ public class ProjectionManager
 			foreach (var name in newProjections.Keys)
 				_projectionsRegistrationState.Add(name);
 
-			_projectionsRegistrationExpectedVersion = completed.LastEventNumber;
+			_projectionsRegistrationExpectedVersion = completed.LastEventNumbers.Span[0];
 			StartNewlyRegisteredProjections(newProjections, OnProjectionsRegistrationCaughtUp, envelope);
 			return;
 		}
@@ -1131,7 +1128,7 @@ public class ProjectionManager
 
 		_isWritePending = false;
 		if (writeCompleted.Result == OperationResult.Success) {
-			onCompleted?.Invoke(writeCompleted.LastEventNumber);
+			onCompleted?.Invoke(writeCompleted.LastEventNumbers.Span[0]);
 			return;
 		}
 

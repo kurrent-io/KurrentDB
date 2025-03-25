@@ -56,32 +56,45 @@ public class HashListMemTable : IMemTable {
 
 		var collection = entries.Select(x => new IndexEntry(GetHash(x.Stream), x.Version, x.Position)).ToList();
 
+		// sort the entries by stream hash so that we need to acquire only one lock at a time
+		collection.Sort((x, y) => {
+			int cmp;
+			if ((cmp = x.Stream.CompareTo(y.Stream)) != 0)
+				return cmp;
+
+			return x.Position.CompareTo(y.Position);
+		});
+
 		// only one thread at a time can write
 		Interlocked.Add(ref _count, collection.Count);
 
-		var stream = collection[0].Stream; // NOTE: all entries should have the same stream
 		EntryList list = null;
+		ulong? stream = null;
+
 		try {
-
-			if (!_hash.TryGetValue(stream, out list)) {
-				list = new(MemTableComparer);
-				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
-					throw new UnableToAcquireLockInReasonableTimeException();
-				_hash.AddOrUpdate(stream, list,
-					(x, y) => {
-						throw new Exception("This should never happen as MemTable updates are single-threaded.");
-					});
-			} else {
-				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
-					throw new UnableToAcquireLockInReasonableTimeException();
-			}
-
-			for (int i = 0, n = collection.Count; i < n; ++i) {
+			for (int i = 0; i < collection.Count; i++) {
 				var entry = collection[i];
-				if (entry.Stream != stream)
-					throw new Exception("Not all index entries in a bulk have the same stream hash.");
 				Ensure.Nonnegative(entry.Version, "entry.Version");
 				Ensure.Nonnegative(entry.Position, "entry.Position");
+
+				if (entry.Stream != stream) {
+					list?.Lock.Release();
+
+					stream = collection[i].Stream;
+
+					if (!_hash.TryGetValue(stream.Value, out list)) {
+						list = new(MemTableComparer);
+						_hash.AddOrUpdate(stream.Value, list,
+					(x, y) => {
+						throw new Exception(
+							"This should never happen as MemTable updates are single-threaded.");
+					});
+					}
+
+					if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
+						throw new UnableToAcquireLockInReasonableTimeException();
+				}
+
 				list.Add(new Entry(entry.Version, entry.Position), 0);
 			}
 		} finally {

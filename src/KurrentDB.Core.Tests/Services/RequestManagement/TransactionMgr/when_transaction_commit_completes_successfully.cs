@@ -32,12 +32,12 @@ public class when_transaction_commit_completes_successfully : RequestManagerSpec
 
 	protected override IEnumerable<Message> WithInitialMessages() {
 		yield return new StorageMessage.PrepareAck(InternalCorrId, _transactionPosition, PrepareFlags.TransactionEnd);
-		yield return new StorageMessage.CommitAck(InternalCorrId, _commitPosition, _transactionPosition, 1, 3);
+		yield return StorageMessage.CommitAck.ForSingleStream(InternalCorrId, _commitPosition, _transactionPosition, 1, 3);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(_commitPosition);
 	}
 
 	protected override Message When() {
-		return new StorageMessage.CommitIndexed(InternalCorrId, _commitPosition, _transactionPosition, 0, 0);
+		return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, _commitPosition, _transactionPosition, 0, 0);
 	}
 
 	[Test]

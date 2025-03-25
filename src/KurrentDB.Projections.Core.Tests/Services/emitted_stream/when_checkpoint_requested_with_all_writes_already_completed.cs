@@ -15,6 +15,8 @@ using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
 
+using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
+
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -44,8 +46,8 @@ public class when_checkpoint_requested_with_all_writes_already_completed<TLogFor
 				new EmittedDataEvent(
 					"test", Guid.NewGuid(), "type", true, "data", null, CheckpointTag.FromPosition(0, 10, 5), null)
 			});
-		var msg = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().First();
-		_bus.Publish(new ClientMessage.WriteEventsCompleted(msg.CorrelationId, 0, 0, -1, -1));
+		var msg = _consumer.HandledMessages.OfType<ClientMessageWriteEvents>().First();
+		_bus.Publish(ClientMessage.WriteEventsCompleted.ForSingleStream(msg.CorrelationId, 0, 0, -1, -1));
 		_stream.Checkpoint();
 	}
 

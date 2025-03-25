@@ -15,12 +15,14 @@ using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using NUnit.Framework;
 
+using ClientMessageWriteEvents = KurrentDB.Core.Tests.TestAdapters.ClientMessage.WriteEvents;
+
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
 public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	protected CoreProjection _coreProjection;
 	protected TestHandler<ReaderSubscriptionManagement.Subscribe> _subscribeProjectionHandler;
-	protected TestHandler<ClientMessage.WriteEvents> _writeEventHandler;
+	protected TestHandlerAndConverter<ClientMessage.WriteEvents, ClientMessageWriteEvents> _writeEventHandler;
 	protected Guid _firstWriteCorrelationId;
 	protected FakeProjectionStateHandler _stateHandler;
 	protected int _checkpointHandledThreshold = 5;
@@ -41,7 +43,9 @@ public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : Tes
 	[SetUp]
 	public void setup() {
 		_subscribeProjectionHandler = new TestHandler<ReaderSubscriptionManagement.Subscribe>();
-		_writeEventHandler = new TestHandler<ClientMessage.WriteEvents>();
+		_writeEventHandler = new TestHandlerAndConverter<ClientMessage.WriteEvents, ClientMessageWriteEvents>(
+			msg => new ClientMessageWriteEvents(msg));
+
 		_bus.Subscribe(_subscribeProjectionHandler);
 		_bus.Subscribe(_writeEventHandler);
 

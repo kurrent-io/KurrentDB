@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -265,39 +265,63 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 		Bus.Publish(new SystemMessage.WaitForChaserToCatchUp(message.CorrelationId, totalTime));
 	}
 
+	private struct WritePreparesStreamInfo {
+		public long LatestVersion { get; set; }
+		public bool IsSoftDeletedMeta { get; init; }
+	}
+
 	async ValueTask IAsyncHandle<StorageMessage.WritePrepares>.HandleAsync(StorageMessage.WritePrepares msg, CancellationToken token) {
 		Interlocked.Decrement(ref FlushMessagesInQueue);
 
-		try {
-			if (msg.CancellationToken.IsCancellationRequested)
-				return;
+		if (msg.CancellationToken.IsCancellationRequested)
+			return;
 
+		var streamInfos = ArrayPool<WritePreparesStreamInfo>.Shared.Rent(msg.StreamIds.Length);
+		var commitChecks = ArrayPool<CommitCheckResult<TStreamId>>.Shared.Rent(msg.StreamIds.Length);
+		var eventTypes = ArrayPool<TStreamId>.Shared.Rent(msg.Events.Length);
+		var eventIds = ArrayPool<Guid>.Shared.Rent(msg.Events.Length);
+
+		try {
 			var logPosition = Writer.Position;
 			var prepares = new List<IPrepareLogRecord<TStreamId>>();
 
-			var preExisting = _streamNameIndex.GetOrReserve(
-				recordFactory: _recordFactory,
-				streamName: msg.EventStreamId,
-				logPosition: logPosition,
-				streamId: out var streamId,
-				streamRecord: out var streamRecord);
+			for (var i = 0; i < msg.StreamIds.Length; i++) {
+				var streamName = msg.StreamIds.Span[i];
+				var preExisting = _streamNameIndex.GetOrReserve(
+					recordFactory: _recordFactory,
+						streamName: streamName,
+					logPosition: logPosition,
+					streamId: out var streamId,
+					streamRecord: out var streamRecord);
 
-			if (streamRecord is not null) {
-				prepares.Add(streamRecord);
-				logPosition += streamRecord.GetSizeWithLengthPrefixAndSuffix();
+				if (streamRecord is not null) {
+					prepares.Add(streamRecord);
+					logPosition += streamRecord.GetSizeWithLengthPrefixAndSuffix();
+				}
+
+				var numEventIds = 0;
+				for (var j = 0; j < msg.Events.Length; j++) {
+					if (msg.EventStreamIndexes.Span[j] == i) {
+						eventIds[numEventIds++] = msg.Events.Span[j].EventId;
+					}
+				}
+
+				commitChecks[i] = await _indexWriter.CheckCommit(streamId, msg.ExpectedVersions.Span[i],
+					eventIds.AsMemory()[..numEventIds], streamMightExist: preExisting, token);
+
+				streamInfos[i] = new WritePreparesStreamInfo {
+					IsSoftDeletedMeta = _systemStreams.IsMetaStream(streamId)
+										&& await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(streamId), token),
+					LatestVersion = commitChecks[i].CurrentVersion
+				};
 			}
 
-			var commitCheck = await _indexWriter.CheckCommit(streamId, msg.ExpectedVersion,
-				msg.Events.Select(static x => x.EventId), streamMightExist: preExisting, token);
-			if (commitCheck.Decision is not CommitDecision.Ok) {
-				await ActOnCommitCheckFailure(msg.Envelope, msg.CorrelationId, commitCheck, token);
+			if (!VerifyCommitChecks(msg.Envelope, msg.CorrelationId, msg.StreamIds, commitChecks.AsMemory(0, msg.StreamIds.Length), token))
 				return;
-			}
 
 			if (msg.Events.Length > 0) {
-				var eventTypes = new TStreamId[msg.Events.Length]; // todo: pool
 				for (int i = 0; i < msg.Events.Length; ++i) {
-					var evnt = msg.Events[i];
+					var evnt = msg.Events.Span[i];
 					GetOrReserveEventType(evnt.EventType, logPosition, out eventTypes[i], out var eventTypeRecord);
 					if (eventTypeRecord != null) {
 						prepares.Add(eventTypeRecord);
@@ -307,7 +331,9 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 				var transactionPosition = logPosition;
 				for (int i = 0; i < msg.Events.Length; ++i) {
-					var evnt = msg.Events[i];
+					var evnt = msg.Events.Span[i];
+					var streamIndex = msg.EventStreamIndexes.Span[i];
+
 					var flags = PrepareFlags.Data | PrepareFlags.IsCommitted;
 					if (i == 0)
 						flags |= PrepareFlags.TransactionBegin;
@@ -317,53 +343,51 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 						flags |= PrepareFlags.IsJson;
 
 					// when IsCommitted ExpectedVersion is always explicit
-					var expectedVersion = commitCheck.CurrentVersion + i;
+					var expectedVersion = streamInfos[streamIndex].LatestVersion++;
 					var prepare = LogRecord.Prepare(
 						_recordFactory, logPosition, msg.CorrelationId, evnt.EventId,
-						transactionPosition, i, streamId,
+						transactionPosition, i, commitChecks[streamIndex].EventStreamId,
 						expectedVersion, flags, eventTypes[i], evnt.Data, evnt.Metadata);
 					prepares.Add(prepare);
 
 					logPosition += prepare.GetSizeWithLengthPrefixAndSuffix();
 				}
 			} else {
+				// this is guaranteed in the constructor of StorageMessage.WritePrepares:
+				Debug.Assert(msg.StreamIds.Length == 1);
+
 				prepares.Add(
 					LogRecord.Prepare(_recordFactory, logPosition, msg.CorrelationId, Guid.NewGuid(), logPosition, -1,
-						streamId, commitCheck.CurrentVersion,
+						commitChecks[0].EventStreamId, commitChecks[0].CurrentVersion,
 						PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.IsCommitted,
 						_emptyEventTypeId, Empty.ByteArray, Empty.ByteArray)
 				);
 			}
 
 			if (!await TryWritePreparesWithRetry(prepares, token)) {
-				await ActOnCommitCheckFailure(
-					envelope: msg.Envelope,
-					correlationId: msg.CorrelationId,
-					result: new(
-						decision: CommitDecision.InvalidTransaction,
-						eventStreamId: streamId,
-						currentVersion: commitCheck.CurrentVersion,
-						startEventNumber: -1,
-						endEventNumber: -1,
-						isSoftDeleted: false),
-					token);
+				msg.Envelope.ReplyWith(new StorageMessage.InvalidTransaction(msg.CorrelationId));
 				return;
 			}
 
-			bool softUndeleteMetastream = _systemStreams.IsMetaStream(streamId)
-										  && await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(streamId), token);
-
 			// note: the stream & event type records are indexed separately and must not be pre-committed to the main index
-			_indexWriter.PreCommit(CollectionsMarshal.AsSpan(prepares)[^msg.Events.Length..]);
+			_indexWriter.PreCommit(CollectionsMarshal.AsSpan(prepares)[^msg.Events.Length..], msg.EventStreamIndexes.Span);
 
-			if (commitCheck.IsSoftDeleted)
-				await SoftUndeleteStream(streamId, commitCheck.CurrentVersion + 1, token);
-			if (softUndeleteMetastream)
-				await SoftUndeleteMetastream(streamId, token);
+			// TODO: soft undelete in a transaction
+			for (var i = 0; i < msg.StreamIds.Length; i++) {
+				if (commitChecks[i].IsSoftDeleted)
+					await SoftUndeleteStream(commitChecks[i].EventStreamId, commitChecks[i].CurrentVersion + 1, token);
+				if (streamInfos[i].IsSoftDeletedMeta)
+					await SoftUndeleteMetastream(commitChecks[i].EventStreamId, token);
+			}
+
 		} catch (Exception exc) {
 			Log.Error(exc, "Exception in writer.");
 			throw;
 		} finally {
+			ArrayPool<WritePreparesStreamInfo>.Shared.Return(streamInfos);
+			ArrayPool<CommitCheckResult<TStreamId>>.Shared.Return(commitChecks);
+			ArrayPool<TStreamId>.Shared.Return(eventTypes);
+			ArrayPool<Guid>.Shared.Return(eventIds);
 			await Flush(token: token);
 		}
 	}
@@ -415,7 +439,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			token
 		);
 
-		_indexWriter.PreCommit([res.Prepare]);
+		_indexWriter.PreCommit([res.Prepare], [0]);
 	}
 
 	public bool SoftUndeleteRawMeta(ReadOnlyMemory<byte> rawMeta, long recreateFromEventNumber, out byte[] modifiedMeta) {
@@ -457,11 +481,11 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 				logPosition = res.NewPos;
 			}
 
-			var commitCheck = await _indexWriter.CheckCommit(streamId, message.ExpectedVersion, [eventId], streamMightExist: preExisting, token);
-			if (commitCheck.Decision != CommitDecision.Ok) {
-				await ActOnCommitCheckFailure(message.Envelope, message.CorrelationId, commitCheck, token);
+			var commitCheck = await _indexWriter.CheckCommit(streamId, message.ExpectedVersion,
+				new[] { eventId }, streamMightExist: preExisting, token);
+
+			if (!VerifyCommitChecks(message.Envelope, message.CorrelationId, new[] { message.EventStreamId }, new[] { commitCheck }, token))
 				return;
-			}
 
 			if (message.HardDelete) {
 				// HARD DELETE
@@ -471,7 +495,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 					eventId, streamId, streamDeletedEventType,
 					expectedVersion, PrepareFlags.IsCommitted);
 				var res = await WritePrepareWithRetry(record, token);
-				_indexWriter.PreCommit([res.Prepare]);
+				_indexWriter.PreCommit([res.Prepare], [0]);
 			} else {
 				// SOFT DELETE
 				var metastreamId = _systemStreams.MetaStreamOf(streamId);
@@ -479,7 +503,10 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 				if (await _indexWriter.GetStreamLastEventNumber(streamId, token) < 0 && expectedVersion < 0) {
 					var result = new CommitCheckResult<TStreamId>(CommitDecision.WrongExpectedVersion, streamId, -1, -1, -1, false);
-					await ActOnCommitCheckFailure(message.Envelope, message.CorrelationId, result, token);
+
+					if (VerifyCommitChecks(message.Envelope, message.CorrelationId, new[] { message.EventStreamId }, new[] { result }, token))
+						throw new Exception("Expected commit check to fail");
+
 					return;
 				}
 
@@ -494,7 +521,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 						metastreamId, expectedVersion, flags, streamMetadataEventTypeId, data, null),
 					token
 				);
-				_indexWriter.PreCommit([res.Prepare]);
+				_indexWriter.PreCommit([res.Prepare], [0]);
 			}
 		} catch (Exception exc) {
 			Log.Error(exc, "Exception in writer.");
@@ -613,10 +640,9 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 		try {
 			var commitPos = Writer.Position;
 			var commitCheck = await _indexWriter.CheckCommitStartingAt(message.TransactionPosition, commitPos, token);
-			if (commitCheck.Decision is not CommitDecision.Ok) {
-				await ActOnCommitCheckFailure(message.Envelope, message.CorrelationId, commitCheck, token);
+
+			if (!VerifyCommitChecks(message.Envelope, message.CorrelationId, new[] { string.Empty }, new[] { commitCheck }, token))
 				return;
-			}
 
 			var commit = await WriteCommitWithRetry(
 				LogRecord.Commit(commitPos,
@@ -643,40 +669,103 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 		}
 	}
 
-	private async ValueTask ActOnCommitCheckFailure(IEnvelope envelope, Guid correlationId, CommitCheckResult<TStreamId> result, CancellationToken token) {
-		switch (result.Decision) {
-			case CommitDecision.WrongExpectedVersion:
-				envelope.ReplyWith(new StorageMessage.WrongExpectedVersion(correlationId, result.CurrentVersion));
-				break;
-			case CommitDecision.Deleted:
-				envelope.ReplyWith(new StorageMessage.StreamDeleted(correlationId));
-				break;
-			case CommitDecision.Idempotent:
-				var eventStreamName = await _indexWriter.GetStreamName(result.EventStreamId, token);
-				envelope.ReplyWith(new StorageMessage.AlreadyCommitted(correlationId,
-					eventStreamName,
-					result.StartEventNumber,
-					result.EndEventNumber,
-					result.IdempotentLogPosition));
-				break;
-			case CommitDecision.CorruptedIdempotency:
-				// in case of corrupted idempotency (part of transaction is ok, other is different)
-				// then we can say that the transaction is not idempotent, so WrongExpectedVersion is ok answer
-				envelope.ReplyWith(new StorageMessage.WrongExpectedVersion(correlationId, result.CurrentVersion));
-				break;
-			case CommitDecision.InvalidTransaction:
-				envelope.ReplyWith(new StorageMessage.InvalidTransaction(correlationId));
-				break;
-			case CommitDecision.IdempotentNotReady:
-				//TODO(clc): when we have the pre-index we should be able to get the logPosition from the pre-index and allow the transaction to wait for the cluster commit
-				//just drop the write and wait for the client to retry
-				Log.Debug(
-					"Dropping idempotent write to stream {@stream}, startEventNumber: {@startEventNumber}, endEventNumber: {@endEventNumber} since the original write has not yet been replicated.",
-					result.EventStreamId, result.StartEventNumber, result.EndEventNumber);
-				break;
-			default:
-				throw new ArgumentOutOfRangeException();
+	private static bool VerifyCommitChecks(
+		IEnvelope envelope,
+		Guid correlationId,
+		ReadOnlyMemory<string> streamIds,
+		ReadOnlyMemory<CommitCheckResult<TStreamId>> results,
+		CancellationToken token) {
+		ArgumentOutOfRangeException.ThrowIfNotEqual(streamIds.Length, results.Length, nameof(results));
+
+		var ok = 0;
+		var idempotent = 0;
+		var wrongExpectedVersion = 0;
+
+		for (var i = 0; i < results.Span.Length; i++) {
+			switch (results.Span[i].Decision) {
+				case CommitDecision.Ok:
+					ok++;
+					break;
+				case CommitDecision.WrongExpectedVersion:
+					wrongExpectedVersion++;
+					break;
+				case CommitDecision.Idempotent:
+					idempotent++;
+					break;
+				case CommitDecision.Deleted:
+					envelope.ReplyWith(new StorageMessage.StreamDeleted(correlationId));
+					return false;
+				case CommitDecision.CorruptedIdempotency:
+					// in case of corrupted idempotency (part of transaction is ok, other is different)
+					// then we can say that the transaction is not idempotent, so WrongExpectedVersion is ok answer
+					envelope.ReplyWith(new StorageMessage.WrongExpectedVersion(
+						correlationId,
+						streamIds.Length == 1 ?
+							new[] { 0 } : // for backwards compatibility
+							ReadOnlyMemory<int>.Empty,
+						streamIds.Length == 1 ?
+							new[] { results.Span[0].CurrentVersion } : // for backwards compatibility
+							ReadOnlyMemory<long>.Empty));
+					return false;
+				case CommitDecision.IdempotentNotReady:
+					//TODO(clc): when we have the pre-index we should be able to get the logPosition from the pre-index and allow the transaction to wait for the cluster commit
+					//just drop the write and wait for the client to retry
+					foreach (var res in results.Span) {
+						Log.Debug(
+						"Dropping idempotent write to stream {@stream}, startEventNumber: {@startEventNumber}, endEventNumber: {@endEventNumber} since the original write has not yet been replicated.",
+						res.EventStreamId, res.StartEventNumber, res.EndEventNumber);
+					}
+					return false;
+				case CommitDecision.InvalidTransaction:
+					envelope.ReplyWith(new StorageMessage.InvalidTransaction(correlationId));
+					return false;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
 		}
+
+		if (ok == streamIds.Length)
+			return true;
+
+		if (idempotent == streamIds.Length) {
+			var firstEventNumbers = new long[streamIds.Length];
+			var lastEventNumbers = new long[streamIds.Length];
+			var idempotentLogPosition = long.MinValue;
+
+			for (var i = 0; i < results.Length; i++) {
+				firstEventNumbers[i] = results.Span[i].StartEventNumber;
+				lastEventNumbers[i] = results.Span[i].EndEventNumber;
+				idempotentLogPosition = Math.Max(results.Span[i].IdempotentLogPosition, idempotentLogPosition);
+			}
+
+			envelope.ReplyWith(new StorageMessage.AlreadyCommitted(correlationId,
+				streamIds,
+				firstEventNumbers,
+				lastEventNumbers,
+				idempotentLogPosition));
+			return false;
+		}
+
+		if (ok + wrongExpectedVersion == streamIds.Length) {
+			var failureStreamIndexes = new int[wrongExpectedVersion];
+			var failureCurrentVersions = new long[wrongExpectedVersion];
+			var idx = 0;
+			for (var i = 0; i < results.Length; i++) {
+				if (results.Span[i].Decision is CommitDecision.WrongExpectedVersion) {
+					failureStreamIndexes[idx] = i;
+					failureCurrentVersions[idx] = results.Span[i].CurrentVersion;
+					idx++;
+				}
+			}
+
+			envelope.ReplyWith(new StorageMessage.WrongExpectedVersion(correlationId, failureStreamIndexes, failureCurrentVersions));
+			return false;
+		}
+
+		// mixture of CommitDecision.Ok, CommitDecision.Idempotent and CommitDecision.WrongExpectedVersion:
+		// treat in the same way as CorruptedIdempotency
+		envelope.ReplyWith(new StorageMessage.WrongExpectedVersion(correlationId, ReadOnlyMemory<int>.Empty, ReadOnlyMemory<long>.Empty));
+		return false;
 	}
 
 	private async ValueTask<bool> TryWritePreparesWithRetry(IList<IPrepareLogRecord<TStreamId>> prepares, CancellationToken token) {

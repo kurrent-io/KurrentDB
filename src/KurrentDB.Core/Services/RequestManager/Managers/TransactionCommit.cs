@@ -27,7 +27,6 @@ public class TransactionCommit : RequestManagerBase,
 				 clientResponseEnvelope,
 				 internalCorrId,
 				 clientCorrId,
-				 expectedVersion: -1,
 				 commitSource,
 				 transactionId: transactionId,
 				 prepareCount: 1,
@@ -56,8 +55,8 @@ public class TransactionCommit : RequestManagerBase,
 		 new ClientMessage.TransactionCommitCompleted(
 				ClientCorrId,
 				TransactionId,
-				FirstEventNumber,
-				LastEventNumber,
+				FirstEventNumbers.Span[0],
+				LastEventNumbers.Span[0],
 				CommitPosition,   //not technically correct, but matches current behavior correctly
 				CommitPosition);
 
@@ -78,9 +77,9 @@ public class TransactionCommit : RequestManagerBase,
 			return;
 		base.Committed();
 	}
-	protected override void ReturnCommitAt(long logPosition, long firstEvent, long lastEvent) {
+	protected override void ReturnCommitAt(long logPosition, ReadOnlyMemory<long> firstEvents, ReadOnlyMemory<long> lastEvents) {
 		_transactionWritten = true;
-		base.ReturnCommitAt(logPosition, firstEvent, lastEvent);
+		base.ReturnCommitAt(logPosition, firstEvents, lastEvents);
 	}
 
 

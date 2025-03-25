@@ -11,7 +11,7 @@
 		<Copyright>Copyright 2012-2024 Event Store Ltd</Copyright>
 		<PackageReleaseNotes>https://eventstore.com/blog/</PackageReleaseNotes>
 		<TargetFramework>net8.0</TargetFramework>
-		<LangVersion>12.0</LangVersion>
+		<LangVersion>13.0</LangVersion>
 		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
 		<VersionPrefix>25.1.0</VersionPrefix>

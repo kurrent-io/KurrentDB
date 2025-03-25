@@ -3,9 +3,9 @@
 
 using System;
 using System.Linq;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TestAdapters;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -15,7 +15,7 @@ using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
 
-namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream;
+using OperationResult = KurrentDB.Core.Messages.OperationResult;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]

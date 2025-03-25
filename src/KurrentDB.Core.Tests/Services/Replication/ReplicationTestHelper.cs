@@ -22,7 +22,7 @@ public static class ReplicationTestHelper {
 		string streamId) {
 		var resetEvent = new ManualResetEventSlim();
 		ClientMessage.WriteEventsCompleted writeResult = null;
-		node.Node.MainQueue.Publish(new ClientMessage.WriteEvents(Guid.NewGuid(), Guid.NewGuid(),
+		node.Node.MainQueue.Publish(ClientMessage.WriteEvents.ForSingleStream(Guid.NewGuid(), Guid.NewGuid(),
 			new CallbackEnvelope(msg => {
 				writeResult = (ClientMessage.WriteEventsCompleted)msg;
 				resetEvent.Set();
