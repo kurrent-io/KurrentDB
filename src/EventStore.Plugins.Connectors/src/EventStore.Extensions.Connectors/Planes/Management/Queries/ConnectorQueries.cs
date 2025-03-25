@@ -23,7 +23,7 @@ public class ConnectorQueries {
         };
     }
 
-    SystemReader            Reader { get; }
+    SystemReader            Reader        { get; }
     IConnectorDataProtector DataProtector { get; }
 
     Func<CancellationToken, Task<ConnectorsSnapshot>> LoadSnapshot { get; }

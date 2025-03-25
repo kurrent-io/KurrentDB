@@ -33,7 +33,7 @@ namespace EventStore.Connectors.Management;
 
 public static class ManagementPlaneWireUp {
     public static IServiceCollection AddConnectorsManagementPlane(this IServiceCollection services) {
-        services.AddSingleton<ConnectorsMasterDataProtector>();
+        services.AddSingleton<IConnectorDataProtector, ConnectorsMasterDataProtector>();
 
         services.AddSingleton(ctx => new ConnectorsLicenseService(
             ctx.GetRequiredService<ILicenseService>(),
@@ -79,7 +79,7 @@ public static class ManagementPlaneWireUp {
         });
 
         services.AddSingleton<ConnectorDomainServices.ProtectConnectorSettings>(ctx => {
-            var dataProtector = ctx.GetRequiredService<ConnectorsMasterDataProtector>();
+            var dataProtector = ctx.GetRequiredService<IConnectorDataProtector>();
             return dataProtector.Protect;
         });
 
