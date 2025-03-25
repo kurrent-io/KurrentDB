@@ -109,7 +109,7 @@ class ConnectorsControlRegistry {
                 var snapshotRecord = await Reader.ReadLastStreamRecord(Options.SnapshotStreamId, ct);
 
                 if (snapshotRecord.Value is not ActivatedConnectorsSnapshot snapshot)
-                    return ([], RecordPosition.Earliest, snapshotRecord.Position);
+                    return ([], RecordPosition.Unset, snapshotRecord.Position);
 
                 var snapshotState = snapshot.Connectors.ToDictionary(
                     conn => ConnectorId.From(conn.ConnectorId),
