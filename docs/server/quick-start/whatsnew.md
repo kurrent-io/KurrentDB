@@ -157,6 +157,18 @@ The Serilog sink logs detailed messages about the connector and record details.
 
 Refer to the [documentation](../features/connectors/sinks/serilog.md) for instructions on setting up a Serilog sink.
 
+#### Data Protection
+
+We've introduced a comprehensive data protection system to enhance the security of your sensitive connector configurations.
+
+All connectors now use envelope encryption to automatically protect sensitive data such as passwords and tokens using industry-standard encryption techniques. This ensures your credentials remain secure at rest and during transmission.
+
+Setup is straightforward with token-based protection requiring minimal configuration. You can provide tokens directly in your configuration or via separate files for enhanced security in production environments.
+
+We've integrated a native Surge key vault that stores encryption keys directly within KurrentDB system streams, eliminating the need for external key management solutions.
+
+See the [Data Protection documentation](../features/connectors/features.md#data-protection) for complete setup instructions.
+
 ### Auto-scavenge
 
 <Badge type="info" vertical="middle" text="License Required"/>
