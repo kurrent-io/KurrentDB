@@ -124,6 +124,7 @@ public static class ManagementPlaneWireUp {
         // Queries
         services.AddSingleton<ConnectorQueries>(ctx => new ConnectorQueries(
             ctx.GetRequiredService<Func<SystemReaderBuilder>>(),
+            ctx.GetRequiredService<ConnectorsMasterDataProtector>(),
             ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream)
         );
 
