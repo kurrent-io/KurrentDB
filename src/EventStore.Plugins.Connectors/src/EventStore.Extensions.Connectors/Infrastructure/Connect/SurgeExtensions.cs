@@ -215,9 +215,12 @@ public static class SurgeExtensions {
             }
         );
 
-        var options = builder.Configuration
-            .GetSection("KeyVaults:Surge")
-            .GetOptionsOrDefault<SurgeKeyVaultOptions>();
+        var settings = builder.Configuration.GetSection("KeyVaults:Surge");
+        var options  = settings.GetOptionsOrDefault<SurgeKeyVaultOptions>();
+
+        // force the ProtobufEncoding to false when not set
+        // this will be ported to Surge later
+        options.ProtobufEncoding = settings.GetValue("ProtobufEncoding", false);
 
         builder.Services
             .OverrideSingleton(options)

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Configuration;
 namespace EventStore.Connectors.Management.Queries;
 
 public class ConnectorQueries {
-    public ConnectorQueries(Func<SystemReaderBuilder> getReaderBuilder, ConnectorsMasterDataProtector dataProtector, StreamId snapshotStreamId) {
+    public ConnectorQueries(Func<SystemReaderBuilder> getReaderBuilder, IConnectorDataProtector dataProtector, StreamId snapshotStreamId) {
         Reader        = getReaderBuilder().ReaderId("ConnectorQueriesReader").Create();
         DataProtector = dataProtector;
 
