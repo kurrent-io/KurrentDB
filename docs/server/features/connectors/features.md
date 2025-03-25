@@ -313,9 +313,9 @@ If you provide both `Token` and `TokenFile`, the system will use the token file 
 
 ### Key Vault Configuration
 
-KurrentDB Connectors currently supports the Surge key vault for storing encryption keys:
+KurrentDB Connectors currently only supports the Surge key vault for storing encryption keys:
 
-The Surge key vault is KurrentDB's native key storage mechanism that stores encryption keys directly within KurrentDB itself. Rather than requiring a separate external key management system, Surge stores the encrypted keys in internal system streams.
+The Surge key vault is KurrentDB's native key storage mechanism that stores encryption keys directly within KurrentDB itself. Rather than requiring a separate external key management system, Surge stores the encrypted keys in internal system streams. More key vault options will be available in the future.
 
 ```yaml
 Connectors:
