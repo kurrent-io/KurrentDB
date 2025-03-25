@@ -89,12 +89,21 @@ public class ConnectorQueries {
 
         var connector = snapshot.Connectors.FirstOrDefault(x => x.ConnectorId == query.ConnectorId);
 
-        if (connector is not null)
-            return new GetConnectorSettingsResult {
-                Settings           = { connector.Settings },
-                SettingsUpdateTime = connector.SettingsUpdateTime
-            };
+        if (connector is null)
+            throw new DomainExceptions.EntityNotFound("Connector", query.ConnectorId);
 
-        throw new DomainExceptions.EntityNotFound("Connector", query.ConnectorId);
+        var unprotectedConfig   = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
+        var unprotectedSettings = new Dictionary<string, string>();
+
+        foreach (var setting in unprotectedConfig.AsEnumerable()) {
+            if (setting.Value is not null)
+                unprotectedSettings.Add(setting.Key, setting.Value);
+        }
+
+        return new GetConnectorSettingsResult {
+            Settings           = { unprotectedSettings },
+            SettingsUpdateTime = connector.SettingsUpdateTime
+        };
+
     }
-}
+ }
