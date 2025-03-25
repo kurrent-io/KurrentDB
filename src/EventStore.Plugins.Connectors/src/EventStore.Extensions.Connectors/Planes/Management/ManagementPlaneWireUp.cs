@@ -21,6 +21,7 @@ using EventStore.Core.Bus;
 using EventStore.Plugins.Licensing;
 using Kurrent.Toolkit;
 using FluentValidation;
+using Kurrent.Surge.DataProtection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Grpc.JsonTranscoding;
 using Microsoft.Extensions.DependencyInjection;
@@ -91,6 +92,7 @@ public static class ManagementPlaneWireUp {
             return new ConnectorsStreamSupervisor(
                 options,
                 ctx.GetRequiredService<IPublisher>(),
+                ctx.GetRequiredService<IDataProtector>(),
                 ctx.GetRequiredService<ILogger<ConnectorsStreamSupervisor>>()
             );
         });

@@ -1,6 +1,7 @@
 using EventStore.Core;
 using EventStore.Core.Bus;
 using Kurrent.Surge;
+using Kurrent.Surge.DataProtection;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.ConnectorsFeatureConventions.Streams;
@@ -23,8 +24,9 @@ public record SystemStreamOptions(int? MaxCount = null, TimeSpan? MaxAge = null)
 /// Responsible for configuring and deleting the system streams for a connector.
 /// </summary>
 [PublicAPI]
-public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions options, IPublisher client, ILogger<ConnectorsStreamSupervisor> logger) {
+public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions options, IPublisher client, IDataProtector protector, ILogger<ConnectorsStreamSupervisor> logger) {
     IPublisher                          Client              { get; } = client;
+    IDataProtector                      Protector           { get; } = protector;
     ILogger<ConnectorsStreamSupervisor> Logger              { get; } = logger;
     StreamMetadata                      LeasesMetadata      { get; } = options.Leases.AsStreamMetadata();
     StreamMetadata                      CheckpointsMetadata { get; } = options.Checkpoints.AsStreamMetadata();
@@ -50,6 +52,10 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
         await Task.WhenAll(
             TryDeleteStream(GetLeasesStream(connectorId)),
             TryDeleteStream(GetCheckpointsStream(connectorId))
+
+            // we found a last minute bug here before releasing v25.0.0
+            // we will address this later with a cleanup task on migration
+            // Protector.Forget(connectorId, ct).AsTask()
         );
 
         return true;
@@ -62,15 +68,4 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
 
     public bool DeleteConnectorStreams(string connectorId) =>
         DeleteConnectorStreams(connectorId, RecordPosition.Unset, CancellationToken.None).AsTask().GetAwaiter().GetResult();
-
-    public async ValueTask<bool> DestroyConnectorStream(string connectorId, RecordPosition expectedPosition, CancellationToken ct) {
-        await TryTruncateStream(GetManagementStream(connectorId), expectedPosition.StreamRevision);
-
-        return true;
-
-        Task TryTruncateStream(string stream, long beforeRevision) => Client
-            .TruncateStream(stream, beforeRevision, ct)
-            .OnError(ex => Logger.LogError(ex, "{ProcessorId} Failed to destroy stream {Stream}", connectorId, stream))
-            .Then(state => state.Logger.LogInformation("{ProcessorId} Stream {Stream} destroyed", connectorId, state.Stream), (Logger, Stream: stream));
-    }
 }
