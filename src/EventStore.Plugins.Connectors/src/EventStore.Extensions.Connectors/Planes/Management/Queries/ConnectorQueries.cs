@@ -75,10 +75,11 @@ public class ConnectorQueries {
             return conn.With(x => {
                 x.Settings.Clear();
 
-                foreach (var setting in unprotected.AsEnumerable()) {
-                    if (setting.Value is not null)
-                        x.Settings.Add(setting.Key, setting.Value);
-                }
+                var settings = unprotected.AsEnumerable()
+                    .Where(setting => setting.Value != null)
+                    .ToDictionary(setting => setting.Key, setting => setting.Value!);
+
+                x.Settings.Add(settings);
 
                 return x;
             });
@@ -92,18 +93,15 @@ public class ConnectorQueries {
         if (connector is null)
             throw new DomainExceptions.EntityNotFound("Connector", query.ConnectorId);
 
-        var unprotectedConfig   = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
-        var unprotectedSettings = new Dictionary<string, string>();
+        var unprotected   = await DataProtector.Unprotect(connector.Settings.ToConfiguration(), cancellationToken);
 
-        foreach (var setting in unprotectedConfig.AsEnumerable()) {
-            if (setting.Value is not null)
-                unprotectedSettings.Add(setting.Key, setting.Value);
-        }
+        var settings = unprotected.AsEnumerable()
+            .Where(setting => setting.Value != null)
+            .ToDictionary(setting => setting.Key, setting => setting.Value!);
 
         return new GetConnectorSettingsResult {
-            Settings           = { unprotectedSettings },
+            Settings           = { settings },
             SettingsUpdateTime = connector.SettingsUpdateTime
         };
-
     }
  }
