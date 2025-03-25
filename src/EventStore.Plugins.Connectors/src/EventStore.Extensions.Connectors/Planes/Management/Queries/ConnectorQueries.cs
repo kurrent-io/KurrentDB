@@ -1,5 +1,4 @@
 using EventStore.Common.Utils;
-using EventStore.Connect.Connectors;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Connect.Components.Connectors;
@@ -13,7 +12,7 @@ using Microsoft.Extensions.Configuration;
 namespace EventStore.Connectors.Management.Queries;
 
 public class ConnectorQueries {
-    public ConnectorQueries(Func<SystemReaderBuilder> getReaderBuilder, ConnectorsMasterDataProtector dataProtector, StreamId snapshotStreamId) {
+    public ConnectorQueries(Func<SystemReaderBuilder> getReaderBuilder, IConnectorDataProtector dataProtector, StreamId snapshotStreamId) {
         Reader        = getReaderBuilder().ReaderId("ConnectorQueriesReader").Create();
         DataProtector = dataProtector;
 
