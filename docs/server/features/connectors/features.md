@@ -279,31 +279,52 @@ Some connectors have their own resilience mechanisms and configurations. Refer t
 
 ## Data Protection
 
-KurrentDB Connectors implement automatic data protection for sensitive
-configuration fields. This security feature ensures that confidential
-information, such as passwords and access tokens, is encrypted during
-transmission.
+KurrentDB Connectors protect sensitive configuration fields using envelope encryption to secure confidential information such as passwords and access tokens.
 
-When you configure a connector, certain sensitive fields are automatically encrypted:
+When you configure a connector, the system encrypts sensitive data using Data Encryption Keys (DEKs), which are then wrapped (encrypted) using a master key based on your provided token. The encrypted data is stored securely in KurrentDB rather than in plaintext.
 
-- The system automatically identifies sensitive keys in the configuration using predefined patterns determined internally
-- These values are encrypted using a token provided by you
-- The encrypted values are stored securely in KurrentDB instead of plaintext
-- This protection happens automatically without user configuration
+Refer to each connector's [individual documentation](./sinks/) to see which fields are considered sensitive and protected.
 
-To configure data protection, you need to set the `token` property in the KurrentDB configuration file. This token is used to encrypt and decrypt sensitive data.
+### Configuring Data Protection
 
-Refer to the [individual documentation](./sinks/) for each connector to see which fields are _protected_.
+To enable data protection, configure the token settings in your configuration file. You have three options for providing a token:
+
+Update your configuration file as follows:
 
 ```yaml
 Connectors:
-  Enabled: false
+  Enabled: true
   DataProtection:
-    Token: secret-token
+    Token: "<your-secret-token>"       # Direct token string
+    # OR
+    TokenFile: "/path/to/token/file"   # Path to a file containing the token
+    # Optional setting
+    Destroy: true  # Default: true - Controls secure cleanup after operations
 ```
 
-::: warning
-As from KurrentDB v25, data protection is enforced by default and cannot be
-disabled. The connectors plugin will not start if the encryption token is not
-set.
+::: note
+If you provide both `Token` and `TokenFile`, the system will use the token file and ignore the `Token` setting.
 :::
+
+### Token Configuration Options
+
+1. **Token**: Directly specify your secret token as a string in the configuration
+2. **TokenFile**: Provide a path to a file containing your token
+
+### Key Vault Configuration
+
+KurrentDB Connectors currently supports the Surge key vault for storing encryption keys:
+
+The Surge key vault is KurrentDB's native key storage mechanism that stores encryption keys directly within KurrentDB itself. Rather than requiring a separate external key management system, Surge stores the encrypted keys in internal system streams.
+
+```yaml
+Connectors:
+  Enabled: true
+  DataProtection:
+    # Token configuration as shown above
+    
+    # Key Vault configuration
+    KeyVaults:
+      Surge:
+        KeyMaxHistory: 10 # Maximum number of key historical snapshots (-1 for unlimited)
+```
