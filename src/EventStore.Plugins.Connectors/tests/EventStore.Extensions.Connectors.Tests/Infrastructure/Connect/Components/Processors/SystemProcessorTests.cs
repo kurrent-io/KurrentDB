@@ -1,7 +1,6 @@
 // ReSharper disable AccessToDisposedClosure
 // ReSharper disable MethodSupportsCancellation
 
-using System.Text.RegularExpressions;
 using EventStore.Connect.Consumers;
 using EventStore.Core;
 using EventStore.Core.Services.Transport.Enumerators;

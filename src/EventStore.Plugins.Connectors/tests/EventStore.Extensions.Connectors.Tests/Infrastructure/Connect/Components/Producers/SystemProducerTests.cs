@@ -1,7 +1,6 @@
 using EventStore.Connect.Consumers;
 using EventStore.Core;
 using Kurrent.Surge;
-using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Producers;
 
 namespace EventStore.Extensions.Connectors.Tests.Connect.Producers;

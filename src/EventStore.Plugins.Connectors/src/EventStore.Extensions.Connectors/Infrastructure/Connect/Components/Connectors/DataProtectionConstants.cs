@@ -6,5 +6,5 @@
 namespace Kurrent.Surge.DataProtection;
 
 public static class DataProtectionConstants {
-    public static string NoOpToken = "$DATA_PROTECTION_NO_OP_TOKEN_NOT_AVAILABLE$";
+    public const string NoOpToken = "$DATA_PROTECTION_NO_OP_TOKEN$";
 }

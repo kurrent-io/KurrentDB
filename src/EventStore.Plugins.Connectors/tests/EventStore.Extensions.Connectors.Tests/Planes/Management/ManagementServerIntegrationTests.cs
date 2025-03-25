@@ -1,10 +1,3 @@
-using System.Net;
-using System.Net.Http.Json;
-using EventStore.Connectors.Management.Contracts.Commands;
-using EventStore.Toolkit.Testing.Fixtures;
-using Grpc.Core;
-using Shouldly;
-
 namespace EventStore.Extensions.Connectors.Tests.Management;
 
 // TODO SS: fix wire-up of Test Server

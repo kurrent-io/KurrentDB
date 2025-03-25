@@ -21,7 +21,8 @@ public class DataProtectionTests(ITestOutputHelper output, ConnectorsAssemblyFix
     [Fact]
     public Task data_protector_should_protect_and_unprotect_successfully() => Fixture.TestWithTimeout(async cts => {
         // Arrange
-        IConnectorDataProtector connectorDataProtector = new ConnectorsMasterDataProtector(Fixture.DataProtector,
+        IConnectorDataProtector connectorDataProtector = new ConnectorsMasterDataProtector(
+            Fixture.DataProtector,
             new DataProtectionOptions {
                 Token = "VALID_TOKEN",
             });
@@ -54,10 +55,12 @@ public class DataProtectionTests(ITestOutputHelper output, ConnectorsAssemblyFix
         var createTimestamp        = Fixture.TimeProvider.GetUtcNow().ToTimestamp();
         var projection             = new ConnectorsStateProjection(Fixture.SnapshotProjectionsStore, streamId);
 
-        IConnectorDataProtector connectorDataProtector = new ConnectorsMasterDataProtector(Fixture.DataProtector,
+        IConnectorDataProtector connectorDataProtector = new ConnectorsMasterDataProtector(
+            Fixture.DataProtector,
             new DataProtectionOptions {
                 Token = "VALID_TOKEN",
             });
+
         const string key   = "Authentication:Password";
         const string value = "secret";
 

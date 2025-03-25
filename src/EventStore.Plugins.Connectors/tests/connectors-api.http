@@ -1,12 +1,16 @@
-### Create Logger Sink Connector (defaulting to the subscription initial position: Latest and excluding all system records)
-POST localhost:2113/connectors/demo-logger-sink-6
+### Create Http Sink Connector
+POST localhost:2113/connectors/demo-http-sink
 Content-Type: application/json
 
 {
   "settings": {
-    "InstanceTypeName": "EventStore.Connectors.Testing.LoggerSink",
-    "AutoCommit:RecordsThreshold": "10",
-    "AutoCommit:Interval": "1000"
+    "instanceTypeName": "http-sink",
+    "url": "https://eo9nc65bri2jdc3.m.pipedream.net",
+    "subscription:filter:scope": "stream",
+    "subscription:filter:filterType": "streamId",
+    "subscription:filter:expression": "example-stream",
+    "authentication:basic:username": "tim",
+    "authentication:basic:password": "secret"
   }
 }
 

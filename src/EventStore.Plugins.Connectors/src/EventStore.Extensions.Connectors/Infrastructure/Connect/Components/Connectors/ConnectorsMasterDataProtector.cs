@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using EventStore.Connectors.Connect.Components.Connectors;
+using EventStore.Connectors.Infrastructure;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.DataProtection;
 using Kurrent.Toolkit;
@@ -20,18 +21,13 @@ public class ConnectorsMasterDataProtector(IDataProtector dataProtector, DataPro
 
     public HashSet<string> SensitiveKeys { get; } = [];
 
-    public async ValueTask<IDictionary<string, string?>> Protect(
-        string connectorId, IDictionary<string, string?> settings, CancellationToken ct = default
-    ) {
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
+    public async ValueTask<IDictionary<string, string?>> Protect(string connectorId, IDictionary<string, string?> settings, CancellationToken ct = default) {
+        Ensure.NotNullOrWhiteSpace(connectorId);
 
-        var protector = Protectors.GetOrAdd(
-            GetConnectorTypeName(configuration),
-            static (alias, protector) => ConnectorCatalogue.TryGetConnector(alias, out var info)
-                ? (IConnectorDataProtector)CreateInstance(info.ConnectorProtectorType, protector)!
-                : throw new DataProtectionException($"Failed to find data protector for connector {alias}"),
-            DataProtector
-        );
+        if (settings.Count == 0)
+            return settings;
+
+        var protector = GetProtector(settings.ToConfiguration());
 
         // Find any sensitive keys present in the settings
         var presentSensitiveKeys = protector.SensitiveKeys.Intersect(settings.Keys, StringComparer.OrdinalIgnoreCase).Select(x => $"[{x}]").ToArray();
@@ -40,8 +36,9 @@ public class ConnectorsMasterDataProtector(IDataProtector dataProtector, DataPro
         if (hasSensitiveKeys && Options.Token == DataProtectionConstants.NoOpToken)
             throw new DataProtectionException(
                 $"Data protection token not found!{Environment.NewLine}"
-              + $"Sensitive data keys found: {string.Join(", ", presentSensitiveKeys)}{Environment.NewLine}"
-              + $"Please check the documentation for instructions on how to configure the token.");
+              + $"Please check the documentation for instructions on how to configure the token.{Environment.NewLine}"
+              + $"Sensitive data keys: {string.Join(", ", presentSensitiveKeys)}"
+            );
 
         return await protector.Protect(connectorId, settings, ct);
     }
@@ -52,13 +49,10 @@ public class ConnectorsMasterDataProtector(IDataProtector dataProtector, DataPro
         if (Options.Token == DataProtectionConstants.NoOpToken)
             return configuration;
 
-        var protector = Protectors.GetOrAdd(
-            GetConnectorTypeName(configuration),
-            static (alias, protector) => ConnectorCatalogue.TryGetConnector(alias, out var info)
-                ? (IConnectorDataProtector)CreateInstance(info.ConnectorProtectorType, protector)!
-                : throw new DataProtectionException($"Failed to find data protector for connector {alias}"),
-            DataProtector
-        );
+        if (!configuration.AsEnumerable().Any())
+            return configuration;
+
+        var protector = GetProtector(configuration);
 
         // even if a token is set, the config might not be protected,
         // so if we get a FormatException, we return the config as is
@@ -71,6 +65,15 @@ public class ConnectorsMasterDataProtector(IDataProtector dataProtector, DataPro
             return configuration;
         }
     }
+
+    IConnectorDataProtector GetProtector(IConfiguration configuration) =>
+        Protectors.GetOrAdd(
+            GetConnectorTypeName(configuration),
+            static (alias, protector) => ConnectorCatalogue.TryGetConnector(alias, out var info)
+                ? (IConnectorDataProtector)CreateInstance(info.ConnectorProtectorType, protector)!
+                : throw new DataProtectionException($"Failed to find data protector for connector {alias}"),
+            DataProtector
+        );
 
     static string GetConnectorTypeName(IConfiguration configuration) {
         var connectorTypeName = configuration

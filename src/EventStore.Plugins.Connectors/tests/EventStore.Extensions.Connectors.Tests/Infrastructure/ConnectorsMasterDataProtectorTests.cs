@@ -3,14 +3,35 @@
 
 using EventStore.Connect.Connectors;
 using EventStore.Connectors.Connect.Components.Connectors;
+using EventStore.Connectors.Infrastructure;
 using Kurrent.Surge.DataProtection;
-using Microsoft.Extensions.Configuration;
 
 namespace EventStore.Extensions.Connectors.Tests;
 
 public class ConnectorsMasterDataProtectorTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
     [Fact]
-    public void protect_fails_without_token_on_sensitive_data() {
+    public void protects_sensitive_data_when_using_valid_token() {
+        // Arrange
+        IConnectorDataProtector sut = new ConnectorsMasterDataProtector(
+            Fixture.DataProtector,
+            new DataProtectionOptions { Token = "SOME-VALID-TOKEN" }
+        );
+
+        var settings = new Dictionary<string, string?> {
+            ["instanceTypeName"]              = "http-sink",
+            ["authentication:basic:username"] = "tim",
+            ["authentication:basic:password"] = "secret"
+        };
+
+        // Act
+        var protectedSettings = sut.Protect("connectorId", settings.ToDictionary());
+
+        // Assert
+        protectedSettings.Should().NotBeEquivalentTo(settings);
+    }
+
+    [Fact]
+    public void fails_to_protect_sensitive_data_when_using_noop_token() {
         // Arrange
         IConnectorDataProtector sut = new ConnectorsMasterDataProtector(
             Fixture.DataProtector,
@@ -18,8 +39,9 @@ public class ConnectorsMasterDataProtectorTests(ITestOutputHelper output, Connec
         );
 
         var settings = new Dictionary<string, string?> {
-            ["instanceTypeName"]        = "kafka-sink",
-            ["authentication:password"] = "plaintext"
+            ["instanceTypeName"]              = "http-sink",
+            ["authentication:basic:username"] = "tim",
+            ["authentication:basic:password"] = "secret"
         };
 
         // Act
@@ -32,7 +54,7 @@ public class ConnectorsMasterDataProtectorTests(ITestOutputHelper output, Connec
     }
 
     [Fact]
-    public void unprotect_unprotects() {
+    public void unprotects_sensitive_data_when_using_valid_token() {
         // Arrange
         IConnectorDataProtector sut = new ConnectorsMasterDataProtector(
             Fixture.DataProtector,
@@ -40,80 +62,45 @@ public class ConnectorsMasterDataProtectorTests(ITestOutputHelper output, Connec
         );
 
         var settings = new Dictionary<string, string?> {
-            ["instanceTypeName"]        = "kafka-sink",
-            ["authenTication:Password"] = "plaintext"
+            ["instanceTypeName"]              = "http-sink",
+            ["authentication:basic:username"] = "tim",
+            ["authentication:basic:password"] = "secret"
         };
 
-        var expectedConfiguration = new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
-
-        var protectedSettings = sut.Protect("connectorId", settings);
-
-        var targetConfiguration = new ConfigurationBuilder()
-            .AddInMemoryCollection(protectedSettings)
-            .Build();
+        var protectedConfiguration = sut.Protect("connectorId", settings.ToDictionary()).ToConfiguration();
 
         // Act
-        sut.Unprotect(targetConfiguration);
+        var unprotectedSettings = sut.Unprotect(protectedConfiguration).ToSettings();
 
         // Assert
-        targetConfiguration.AsEnumerable().Should().BeEquivalentTo(expectedConfiguration.AsEnumerable());
+        unprotectedSettings.Should().BeEquivalentTo(unprotectedSettings);
     }
 
     [Fact]
-    public void unprotect_returns_original_data_without_token() {
+    public void unprotect_returns_original_data_when_using_noop_token() {
         // Arrange
-        IConnectorDataProtector sut = new ConnectorsMasterDataProtector(
+        IConnectorDataProtector validProtector = new ConnectorsMasterDataProtector(
+            Fixture.DataProtector,
+            new DataProtectionOptions { Token = "SOME-VALID-TOKEN" }
+        );
+
+        IConnectorDataProtector noOpProtector = new ConnectorsMasterDataProtector(
             Fixture.DataProtector,
             new DataProtectionOptions { Token = DataProtectionConstants.NoOpToken }
         );
 
         var settings = new Dictionary<string, string?> {
-            ["instanceTypeName"]        = "kafka-sink",
-            ["authentication:password"] = "plaintext"
+            ["instanceTypeName"]              = "http-sink",
+            ["authentication:basic:username"] = "tim",
+            ["authentication:basic:password"] = "secret"
         };
 
-        var expectedConfiguration = new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
-
-        var targetConfiguration = new ConfigurationBuilder()
-            .AddInMemoryCollection(expectedConfiguration.AsEnumerable())
-            .Build();
+        var protectedSettings = validProtector.Protect("connectorId", settings.ToDictionary());
 
         // Act
-        sut.Unprotect(targetConfiguration);
+        var unprotectedSettings = noOpProtector.Unprotect(protectedSettings.ToConfiguration()).ToSettings();
 
         // Assert
-        targetConfiguration.Should().BeEquivalentTo(expectedConfiguration);
-    }
-
-    [Fact]
-    public void unprotect_returns_original_data_when_data_was_not_protected_and_is_not_base64_encoded() {
-        // Arrange
-        IConnectorDataProtector sut = new ConnectorsMasterDataProtector(
-            Fixture.DataProtector,
-            new DataProtectionOptions { Token = "SOME-VALID-TOKEN" }
-        );
-
-        var settings = new Dictionary<string, string?> {
-            ["instanceTypeName"]        = "kafka-sink",
-            ["authentication:password"] = "plaintext"
-        };
-
-        var expectedConfiguration = new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
-
-        var targetConfiguration = new ConfigurationBuilder()
-            .AddInMemoryCollection(expectedConfiguration.AsEnumerable())
-            .Build();
-
-        // Act
-        sut.Unprotect(targetConfiguration);
-
-        // Assert
-        targetConfiguration.Should().BeEquivalentTo(expectedConfiguration);
+        unprotectedSettings.Should().BeEquivalentTo(protectedSettings);
     }
 }

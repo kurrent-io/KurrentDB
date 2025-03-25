@@ -150,15 +150,17 @@ public static class SurgeExtensions {
             "DataProtection"
         ];
 
-        var dataProtectionConfiguration = configuration
+        var config = configuration
             .GetFirstExistingSection("DataProtection", sections);
 
+        var options = config.GetOptionsOrDefault<DataProtectionOptions>();
+
+        if (options.Token is null && options.TokenFile is null)
+            config["Token"] = options.Token = DataProtectionConstants.NoOpToken;
+
         services
-            .Configure<DataProtectionOptions>(dataProtectionConfiguration)
-            .AddSingleton<DataProtectionOptions>(ctx => {
-                var options = ctx.GetRequiredService<IOptions<DataProtectionOptions>>().Value;
-                return options;
-            });
+            .Configure<DataProtectionOptions>(config)
+            .AddSingleton<DataProtectionOptions>(ctx => ctx.GetRequiredService<IOptions<DataProtectionOptions>>().Value);
 
         services.AddSingleton<DataProtectorOptions>(ctx => new() {
             Destroy = ctx.GetRequiredService<DataProtectionOptions>().Destroy
@@ -167,7 +169,7 @@ public static class SurgeExtensions {
         services.AddSingleton<IDataProtector, DataProtector>();
         services.AddSingleton<IDataEncryptor, AesGcmDataEncryptor>();
 
-        return new DataProtectionBuilder(services, dataProtectionConfiguration);
+        return new DataProtectionBuilder(services, config);
     }
 
     static DataProtectionBuilder ProtectKeysWithToken(this DataProtectionBuilder builder) {
