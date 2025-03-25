@@ -19,7 +19,8 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
         ValidateConnectorSettings validateSettings,
         ProtectConnectorSettings protectSettings,
         ConnectorsLicenseService licenseService,
-        TryConfigureStream tryConfigureStream,
+        ConfigureConnectorStreams configureConnectorStreams,
+        DeleteConnectorStreams deleteConnectorStreams,
         TimeProvider time,
         IEventStore store
     ) :
@@ -35,7 +36,7 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
 
             CheckAccess(settings, licenseService);
 
-            tryConfigureStream(cmd.ConnectorId);
+            configureConnectorStreams(cmd.ConnectorId);
 
             return [
                 new ConnectorCreated {
@@ -50,6 +51,8 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
         OnExisting<DeleteConnector>((connector, cmd) => {
             connector.EnsureNotDeleted();
             connector.EnsureStopped();
+
+            deleteConnectorStreams(cmd.ConnectorId);
 
             return [
                 new ConnectorDeleted {

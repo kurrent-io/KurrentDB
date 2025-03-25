@@ -95,9 +95,14 @@ public static class ManagementPlaneWireUp {
             );
         });
 
-        services.AddSingleton<ConnectorDomainServices.TryConfigureStream>(ctx => {
+        services.AddSingleton<ConnectorDomainServices.ConfigureConnectorStreams>(ctx => {
             var supervisor = ctx.GetRequiredService<ConnectorsStreamSupervisor>();
             return supervisor.ConfigureConnectorStreams;
+        });
+
+        services.AddSingleton<ConnectorDomainServices.DeleteConnectorStreams>(ctx => {
+            var supervisor = ctx.GetRequiredService<ConnectorsStreamSupervisor>();
+            return supervisor.DeleteConnectorStreams;
         });
 
         services

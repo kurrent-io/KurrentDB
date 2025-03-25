@@ -46,10 +46,10 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
     public bool ConfigureConnectorStreams(string connectorId) =>
         ConfigureConnectorStreams(connectorId, CancellationToken.None).AsTask().GetAwaiter().GetResult();
 
-    public async ValueTask<bool> DeleteConnectorStream(string connectorId, RecordPosition expectedPosition, CancellationToken ct) {
-        await Task.WhenAll(TryDeleteStream(GetLeasesStream(connectorId)),
-            TryDeleteStream(GetCheckpointsStream(connectorId)),
-            TryTruncateStream(GetManagementStream(connectorId), expectedPosition.StreamRevision)
+    public async ValueTask<bool> DeleteConnectorStreams(string connectorId, RecordPosition expectedPosition, CancellationToken ct) {
+        await Task.WhenAll(
+            TryDeleteStream(GetLeasesStream(connectorId)),
+            TryDeleteStream(GetCheckpointsStream(connectorId))
         );
 
         return true;
@@ -58,10 +58,19 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
             .SoftDeleteStream(stream, ct)
             .OnError(ex => Logger.LogError(ex, "{ProcessorId} Failed to delete stream {Stream}", connectorId, stream))
             .Then(state => state.Logger.LogInformation("{ProcessorId} Stream {Stream} deleted", connectorId, state.Stream), (Logger, Stream: stream));
+    }
+
+    public bool DeleteConnectorStreams(string connectorId) =>
+        DeleteConnectorStreams(connectorId, RecordPosition.Unset, CancellationToken.None).AsTask().GetAwaiter().GetResult();
+
+    public async ValueTask<bool> DestroyConnectorStream(string connectorId, RecordPosition expectedPosition, CancellationToken ct) {
+        await TryTruncateStream(GetManagementStream(connectorId), expectedPosition.StreamRevision);
+
+        return true;
 
         Task TryTruncateStream(string stream, long beforeRevision) => Client
             .TruncateStream(stream, beforeRevision, ct)
-            .OnError(ex => Logger.LogError(ex, "{ProcessorId} Failed to truncate stream {Stream}", connectorId, stream))
-            .Then(state => state.Logger.LogInformation("{ProcessorId} Stream {Stream} truncated", connectorId, state.Stream), (Logger, Stream: stream));
+            .OnError(ex => Logger.LogError(ex, "{ProcessorId} Failed to destroy stream {Stream}", connectorId, stream))
+            .Then(state => state.Logger.LogInformation("{ProcessorId} Stream {Stream} destroyed", connectorId, state.Stream), (Logger, Stream: stream));
     }
 }
