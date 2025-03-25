@@ -5,7 +5,6 @@ using EventStore.Connectors.System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using static System.String;
 
 namespace EventStore.Plugins.Connectors;
 
@@ -32,22 +31,6 @@ public class ConnectorsPlugin : SubsystemsPlugin {
             )
         );
 
-        var instructions = "Please check the documentation for instructions on how to enable the plugin.";
-
-        if (!enabled)
-            return (enabled, instructions);
-
-        var dataProtectionToken = configuration.GetValue(
-            "KurrentDB:Connectors:DataProtection:Token",
-            configuration.GetValue("KurrentDB:DataProtection:Token",
-                configuration.GetValue("EventStore:Connectors:DataProtection:Token",
-                    configuration.GetValue("EventStore:DataProtection:Token", ""))));
-
-        if (IsNullOrWhiteSpace(dataProtectionToken)) {
-            enabled      = false;
-            instructions = $"Data protection token not found! {instructions}";
-        }
-
-        return (enabled, instructions);
+        return (enabled, "Please check the documentation for instructions on how to enable the plugin.");
     }
 }

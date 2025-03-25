@@ -105,12 +105,12 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
 }
 
 static partial class ConnectorsControlServiceLogMessages {
-    [LoggerMessage("[Node Id: {NodeId}] connector {ConnectorId} {ResultType}")]
+    [LoggerMessage("ConnectorsControlService [Node Id: {NodeId}] connector {ConnectorId} {ResultType}")]
     internal static partial void LogConnectorActivationResult(
         this ILogger logger, LogLevel logLevel, Exception? error, Guid nodeId, string connectorId, ActivateResultType resultType
     );
 
-    [LoggerMessage("[Node Id: {NodeId}] connector {ConnectorId} {ResultType}")]
+    [LoggerMessage("ConnectorsControlService [Node Id: {NodeId}] connector {ConnectorId} {ResultType}")]
     internal static partial void LogConnectorDeactivationResult(
         this ILogger logger, LogLevel logLevel, Exception? error, Guid nodeId, string connectorId, DeactivateResultType resultType
     );

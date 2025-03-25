@@ -16,6 +16,7 @@ using EventStore.Core.Bus;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.DataProtection;
+using Kurrent.Surge.DataProtection.Cryptography;
 using Kurrent.Surge.DataProtection.Vaults;
 using Kurrent.Surge.Persistence.State;
 using Kurrent.Surge.Producers;
@@ -27,6 +28,8 @@ using Kurrent.Toolkit;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
 using EncryptionKey = Kurrent.Surge.DataProtection.Protocol.EncryptionKey;
 using LoggingOptions = Kurrent.Surge.Configuration.LoggingOptions;
 
@@ -128,22 +131,8 @@ public static class SurgeExtensions {
             .AddSingleton<ISchemaSerializer>(schemaRegistry);
 
     public static IServiceCollection AddSurgeDataProtection(this IServiceCollection services, IConfiguration configuration) {
-        string[] sections = [
-            "KurrentDB:Connectors:DataProtection",
-            "KurrentDB:DataProtection",
-
-            "Kurrent:Connectors:DataProtection",
-            "Kurrent:DataProtection",
-
-            "EventStore:Connectors:DataProtection",
-            "EventStore:DataProtection",
-
-            "Connectors:DataProtection",
-            "DataProtection"
-        ];
-
         var config = configuration
-            .GetFirstExistingSection("DataProtection", sections);
+            .GetFirstExistingSection("KurrentDB", "KurrentDB", "Kurrent", "EventStore");
 
         services
             .AddDataProtection(config)
@@ -153,23 +142,36 @@ public static class SurgeExtensions {
         return services;
     }
 
-    static DataProtectionBuilder ProtectKeysWithToken(this DataProtectionBuilder builder) {
-        // string[] sections = [
-        //     "KurrentDB:Connectors:DataProtection",
-        //     "KurrentDB:DataProtection",
-        //
-        //     "Kurrent:Connectors:DataProtection",
-        //     "Kurrent:DataProtection",
-        //
-        //     "EventStore:Connectors:DataProtection",
-        //     "EventStore:DataProtection",
-        //
-        //     "Connectors:DataProtection",
-        //     "DataProtection"
-        // ];
+    static DataProtectionBuilder AddDataProtection(this IServiceCollection services, IConfiguration configuration) {
+        string[] sections = [
+            "Kurrent:Connectors:DataProtection",
+            "Kurrent:DataProtection",
+            "Connectors:DataProtection",
+            "DataProtection"
+        ];
 
+        var dataProtectionConfiguration = configuration
+            .GetFirstExistingSection("DataProtection", sections);
+
+        services
+            .Configure<DataProtectionOptions>(dataProtectionConfiguration)
+            .AddSingleton<DataProtectionOptions>(ctx => {
+                var options = ctx.GetRequiredService<IOptions<DataProtectionOptions>>().Value;
+                return options;
+            });
+
+        services.AddSingleton<DataProtectorOptions>(ctx => new() {
+            Destroy = ctx.GetRequiredService<DataProtectionOptions>().Destroy
+        });
+
+        services.AddSingleton<IDataProtector, DataProtector>();
+        services.AddSingleton<IDataEncryptor, AesGcmDataEncryptor>();
+
+        return new DataProtectionBuilder(services, dataProtectionConfiguration);
+    }
+
+    static DataProtectionBuilder ProtectKeysWithToken(this DataProtectionBuilder builder) {
         var options = builder.Configuration
-            // .GetFirstExistingSection("DataProtection", sections)
             .GetOptionsOrDefault<DataProtectionOptions>();
 
         if (options.HasTokenFile) {
@@ -181,9 +183,10 @@ public static class SurgeExtensions {
             }
         }
 
-        return options.HasToken
-            ? builder.ProtectKeysWithToken(options.Token!)
-            : throw new InvalidOperationException("Data protection token not found!");
+        // it is necessary to have a token, but we will check the data protection options
+        // later to understand when it is necessary to throw an exception when trying to
+        // protect sensitive data.
+        return builder.ProtectKeysWithToken(options.Token ?? DataProtectionConstants.NoOpToken);
     }
 
     static DataProtectionBuilder PersistKeysToSurge(this DataProtectionBuilder builder) {
@@ -210,22 +213,8 @@ public static class SurgeExtensions {
             }
         );
 
-        // string[] sections = [
-        //     "KurrentDB:Connectors:DataProtection:KeyVaults:Surge",
-        //     "KurrentDB:DataProtection:KeyVaults:Surge",
-        //
-        //     "Kurrent:Connectors:DataProtection:KeyVaults:Surge",
-        //     "Kurrent:DataProtection:KeyVaults:Surge",
-        //
-        //     "EventStore:Connectors:DataProtection:KeyVaults:Surge",
-        //     "EventStore:DataProtection:KeyVaults:Surge",
-        //
-        //     "Connectors:DataProtection:KeyVaults:Surge",
-        //     "DataProtection:KeyVaults:Surge"
-        // ];
-
         var options = builder.Configuration
-            .GetFirstExistingSection("Surge", "KeyVaults:Surge")
+            .GetSection("KeyVaults:Surge")
             .GetOptionsOrDefault<SurgeKeyVaultOptions>();
 
         builder.Services

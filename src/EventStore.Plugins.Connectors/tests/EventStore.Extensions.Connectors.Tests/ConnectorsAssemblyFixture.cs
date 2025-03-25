@@ -10,7 +10,6 @@ using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management;
-using EventStore.Core.Bus;
 using EventStore.Extensions.Connectors.Tests;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
@@ -61,23 +60,6 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
             services.AddSingleton<ISnapshotProjectionsStore, SystemSnapshotProjectionsStore>();
 
             // Data protection
-            services.AddSingleton<IReader>(ctx => {
-                var factory = ctx.GetRequiredService<Func<SystemReaderBuilder>>();
-
-                return factory().ReaderId("Surge.DataProtection.Reader").Create();
-            });
-
-            services.AddSingleton<IProducer>(ctx => {
-                var factory = ctx.GetRequiredService<Func<SystemProducerBuilder>>();
-
-                return factory().ProducerId("Surge.DataProtection.Producer").Create();
-            });
-
-            services.AddSingleton<IManager>(ctx => {
-                var manager = new SystemManager(ctx.GetRequiredService<IPublisher>());
-                return manager;
-            });
-
             services.AddSurgeDataProtection(Application.Configuration);
 
             // // Management

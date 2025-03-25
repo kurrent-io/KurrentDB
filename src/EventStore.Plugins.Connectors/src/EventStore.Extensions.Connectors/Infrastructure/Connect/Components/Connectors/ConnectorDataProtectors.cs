@@ -13,18 +13,20 @@ using Kurrent.Surge.DataProtection;
 namespace EventStore.Connectors.Connect.Components.Connectors;
 
 [PublicAPI]
-public class SerilogSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<SerilogSinkOptions>(dataProtector);
+public class SerilogSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<SerilogSinkOptions>(dataProtector) {
+    protected override string[] ConfigureSensitiveKeys() => [];
+}
 
 [PublicAPI]
 public class KafkaSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<KafkaSinkOptions>(dataProtector) {
-    public override string[] Keys => [
+    protected override string[] ConfigureSensitiveKeys() => [
         "Authentication:Password"
     ];
 }
 
 [PublicAPI]
 public class ElasticsearchSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<ElasticsearchSinkOptions>(dataProtector) {
-    public override string[] Keys => [
+    protected override string[] ConfigureSensitiveKeys() =>  [
         "Authentication:Password",
         "Authentication:ClientCertificate:Password",
         "Authentication:RootCertificate:Password",
@@ -37,14 +39,14 @@ public class ElasticsearchSinkConnectorDataProtector(IDataProtector dataProtecto
 
 [PublicAPI]
 public class RabbitMqSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<RabbitMqSinkOptions>(dataProtector) {
-    public override string[] Keys => [
+    protected override string[] ConfigureSensitiveKeys() => [
         "Authentication:Password"
     ];
 }
 
 [PublicAPI]
 public class MongoDbSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<MongoDbSinkOptions>(dataProtector) {
-    public override string[] Keys => [
+    protected override string[] ConfigureSensitiveKeys() => [
         "Certificate:Password",
         "Certificate:RawData",
         "ConnectionString"
@@ -53,7 +55,7 @@ public class MongoDbSinkConnectorDataProtector(IDataProtector dataProtector) : C
 
 [PublicAPI]
 public class HttpSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<HttpSinkOptions>(dataProtector) {
-    public override string[] Keys => [
+    protected override string[] ConfigureSensitiveKeys() => [
         "Authentication:Basic:Password",
         "Authentication:Bearer:Token"
     ];
@@ -61,7 +63,7 @@ public class HttpSinkConnectorDataProtector(IDataProtector dataProtector) : Conn
 
 [PublicAPI]
 public class KurrentDbSinkConnectorDataProtector(IDataProtector dataProtector) : ConnectorDataProtector<KurrentDbSinkOptions>(dataProtector) {
-    public override string[] Keys => [
+    protected override string[] ConfigureSensitiveKeys() => [
         "ConnectionString"
     ];
 }

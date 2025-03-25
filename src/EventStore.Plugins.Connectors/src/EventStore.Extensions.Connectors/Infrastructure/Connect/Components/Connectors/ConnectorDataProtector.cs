@@ -8,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 namespace EventStore.Connectors.Connect.Components.Connectors;
 
 public interface IConnectorDataProtector {
+    public HashSet<string> SensitiveKeys { get; }
+
     ValueTask<IDictionary<string, string?>> Protect(
         string connectorId, IDictionary<string, string?> settings, CancellationToken ct
     );
@@ -23,35 +25,41 @@ public interface IConnectorDataProtector {
         Unprotect(configuration, CancellationToken.None).AsTask().GetAwaiter().GetResult();
 }
 
-public abstract class ConnectorDataProtector<T>(IDataProtector dataProtector) : IConnectorDataProtector where T : class, IConnectorOptions {
-    IDataProtector DataProtector { get; } = dataProtector;
+public abstract class ConnectorDataProtector<T> : IConnectorDataProtector where T : class, IConnectorOptions {
+    protected ConnectorDataProtector(IDataProtector dataProtector) {
+        DataProtector = dataProtector;
+        SensitiveKeys = new HashSet<string>(ConfigureSensitiveKeys(), StringComparer.OrdinalIgnoreCase);
+    }
 
-    public virtual string[] Keys => [];
+    IDataProtector DataProtector { get; }
 
-    public async ValueTask<IDictionary<string, string?>> Protect(
-        string connectorId, IDictionary<string, string?> settings, CancellationToken ct
-    ) {
-        foreach (var key in Keys) {
-            if (!settings.TryGetValue(key, out var plainText) || string.IsNullOrEmpty(plainText))
-                continue;
+    public HashSet<string> SensitiveKeys { get; }
 
-            settings[key] = await DataProtector.Protect(plainText, keyIdentifier: $"{connectorId}:{key}", ct);
+    protected abstract string[] ConfigureSensitiveKeys();
+
+    public async ValueTask<IDictionary<string, string?>> Protect(string connectorId, IDictionary<string, string?> settings, CancellationToken ct) {
+        if(SensitiveKeys.Count == 0 || settings.Count == 0)
+            return settings;
+
+        foreach (var (key, value) in settings) {
+            // Use the case-insensitive SensitiveKeys.Contains
+            if (SensitiveKeys.Contains(key) && !string.IsNullOrEmpty(value)) {
+                settings[key] = await DataProtector.Protect(value, keyIdentifier: $"{connectorId}:{key}", ct);
+            }
         }
 
         return settings;
     }
 
-    public async ValueTask<IConfiguration> Unprotect(
-        IConfiguration configuration, CancellationToken ct
-    ) {
-        foreach (var key in Keys) {
-            var value = configuration[key];
+    public async ValueTask<IConfiguration> Unprotect(IConfiguration configuration, CancellationToken ct) {
+        if(SensitiveKeys.Count == 0)
+            return configuration;
 
-            if (string.IsNullOrEmpty(value)) continue;
-
-            var plaintext = await DataProtector.Unprotect(value, ct);
-
-            configuration[key] = plaintext;
+        foreach (var (key, value) in configuration.AsEnumerable()) {
+            if (SensitiveKeys.Contains(key) && !string.IsNullOrEmpty(value)) {
+                var plaintext = await DataProtector.Unprotect(value, ct);
+                configuration[key] = plaintext;
+            }
         }
 
         return configuration;
