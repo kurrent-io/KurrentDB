@@ -298,24 +298,21 @@ Connectors:
     Token: "<your-secret-token>"       # Direct token string
     # OR
     TokenFile: "/path/to/token/file"   # Path to a file containing the token
-    # Optional setting
-    Destroy: true  # Default: true - Controls secure cleanup after operations
 ```
 
 ::: note
 If you provide both `Token` and `TokenFile`, the system will use the token file and ignore the `Token` setting.
 :::
 
-### Token Configuration Options
-
-1. **Token**: Directly specify your secret token as a string in the configuration
-2. **TokenFile**: Provide a path to a file containing your token
-
 ### Key Vault Configuration
 
-KurrentDB Connectors currently only supports the Surge key vault for storing encryption keys:
+KurrentDB Connectors currently only supports the Surge key vault for storing
+encryption keys:
 
-The Surge key vault is KurrentDB's native key storage mechanism that stores encryption keys directly within KurrentDB itself. Rather than requiring a separate external key management system, Surge stores the encrypted keys in internal system streams. More key vault options will be available in the future.
+The Surge key vault is KurrentDB's native key storage mechanism that stores
+encryption keys directly within KurrentDB itself. Rather than requiring a
+separate external key management system, Surge stores the encrypted keys in
+internal system streams. More key vault options will be available in the future.
 
 ```yaml
 Connectors:
@@ -326,5 +323,5 @@ Connectors:
     # Key Vault configuration
     KeyVaults:
       Surge:
-        KeyMaxHistory: 10 # Maximum number of key historical snapshots (-1 for unlimited)
+        KeyMaxHistory: 10 # Default: -1 - Maximum number of key historical snapshots (-1 for unlimited)
 ```
