@@ -8,7 +8,7 @@ order: 1
 The EventStoreDB Admin UI is available at _SERVER_IP:2113_ and helps you interact with and manage a cluster in a visual way. This guide explains the tabs of the interface and what they do.
 
 ::: tip
-The embedded EventStoreDB web interface is reaching its end of life. We are working on a replacement, and you can try using the Early Preview of [Event Store Navigator](https://learn.eventstore.com/event-store-navigator-preview) app instead. It doesn't have full feature parity with the embedded web UI, but it already has usability improvements compared to it.
+The embedded EventStoreDB web interface is reaching its end of life. We are working on a replacement, and you can try using the Early Preview of [Kurrent Navigator](https://navigator.kurrent.io/) app instead. It doesn't have full feature parity with the embedded web UI, but it already has usability improvements compared to it.
 :::
 
 ## Dashboard
