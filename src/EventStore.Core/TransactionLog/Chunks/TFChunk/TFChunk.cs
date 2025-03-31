@@ -1643,6 +1643,7 @@ public partial class TFChunk : IChunkBlob {
 		public override string ToString() => $"ItemIndex: {ItemIndex}, LogPos: {LogPos}";
 	}
 
+	// all public members are thread-safe
 	[StructLayout(LayoutKind.Auto)]
 	private struct ReaderWorkItemPool() {
 		private volatile ReaderWorkItem[] _array;
@@ -1670,7 +1671,7 @@ public partial class TFChunk : IChunkBlob {
 		}
 
 		// releases all available slots in the pool
-		internal int Drain(ref int referenceCount) {
+		public int Drain(ref int referenceCount) {
 			int localReferenceCount = Interlocked.CompareExchange(ref referenceCount, 0, 0);
 
 			if (_array is { } array && localReferenceCount > 0) {
@@ -1689,7 +1690,7 @@ public partial class TFChunk : IChunkBlob {
 			return localReferenceCount;
 		}
 
-		internal bool TryTake(out Slot slot) {
+		public bool TryTake(out Slot slot) {
 			if (_array is { } array && _indices.TryTake(out int index)) {
 				slot = new(array, index);
 				return true;
@@ -1699,7 +1700,7 @@ public partial class TFChunk : IChunkBlob {
 			return false;
 		}
 
-		internal bool Return(ReaderWorkItem item) {
+		public bool Return(ReaderWorkItem item) {
 			int index = item.PositionInPool;
 			if (index < 0)
 				return false;
