@@ -43,7 +43,7 @@ internal class IdpFixture : IDisposable {
 
 		_identityServer = new Builder()
 			.UseContainer()
-			.UseImage("ghcr.io/eventstore/idsrv4/idsrv4")
+			.UseImage("ghcr.io/kurrent-io/idsrv4/idsrv4")
 			.WithName("es-oauth-tests-idsrv4")
 			.Mount(IdentityServerConfigurationFile, "/etc/idsrv4/idsrv4.conf", MountType.ReadOnly)
 			.Mount(IdentityServerUserConfigurationFile, "/etc/idsrv4/users.conf", MountType.ReadOnly)

@@ -196,10 +196,10 @@ You need to configure the following:
 ```
 </details>
 
-3. Pull and run the `eventstore/idsrv4` docker container:
+3. Pull and run the `kurrent-io/idsrv4` docker container:
 
 ```
-docker pull ghcr.io/eventstore/idsrv4/idsrv4
+docker pull ghcr.io/kurrent-io/idsrv4/idsrv4
 
 docker run \
     --rm -it \
@@ -207,7 +207,7 @@ docker run \
     -p 5001:5001 \                                            # HTTPS port
     --volume $PWD/users.conf.json:/etc/idsrv4/users.conf \    # mount users file; required
     --volume $PWD/idsrv4.conf.json:/etc/idsrv4/idsrv4.conf \  # mount configuration file
-    ghcr.io/eventstore/idsrv4/idsrv4
+    ghcr.io/kurrent-io/idsrv4/idsrv4
 ```
 
 You should see the identity server start up and start listening on the ports `5000` and `5001`:
