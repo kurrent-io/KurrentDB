@@ -69,6 +69,7 @@ public partial class TFChunk : IChunkBlob {
 		get { return _cacheStatus is CacheStatus.Uncached; }
 	}
 
+	[MemberNotNullWhen(true, nameof(_chunkHeader))]
 	public bool Initialized {
 		[InitializationNotRequired]
 		get => _lazyInitArgs is null;
@@ -78,14 +79,18 @@ public partial class TFChunk : IChunkBlob {
 
 	// the logical size of (untransformed) data (could be > PhysicalDataSize if scavenged chunk)
 	public long LogicalDataSize {
-		[InitializationNotRequired]
-		get { return Interlocked.Read(ref _logicalDataSize); }
+		get {
+			ThrowIfNotInitialized();
+			return Interlocked.Read(ref _logicalDataSize);
+		}
 	}
 
 	// the physical size of (untransformed) data
 	public int PhysicalDataSize {
-		[InitializationNotRequired]
-		get { return _physicalDataSize; }
+		get {
+			ThrowIfNotInitialized();
+			return _physicalDataSize;
+		}
 	}
 
 	// This can be used to locate the chunk regardless of whether it is local or remote.
@@ -104,8 +109,10 @@ public partial class TFChunk : IChunkBlob {
 	}
 
 	public int FileSize {
-		[InitializationNotRequired]
-		get { return _fileSize; }
+		get {
+			ThrowIfNotInitialized();
+			return _fileSize;
+		}
 	}
 
 	public ChunkHeader ChunkHeader {
@@ -1017,14 +1024,14 @@ public partial class TFChunk : IChunkBlob {
 		}
 
 		_physicalDataSize = (int)GetDataPosition(workItem); // should fit 32 bits
-		_logicalDataSize = ChunkHeader.GetLocalLogPosition(record.LogPosition + length + 2 * sizeof(int));
+		_logicalDataSize = _chunkHeader.GetLocalLogPosition(record.LogPosition + length + 2 * sizeof(int));
 
 		// for non-scavenged chunk _physicalDataSize should be the same as _logicalDataSize
 		// for scavenged chunk _logicalDataSize should be at least the same as _physicalDataSize
-		if ((!ChunkHeader.IsScavenged && _logicalDataSize != _physicalDataSize)
-		    || (ChunkHeader.IsScavenged && _logicalDataSize < _physicalDataSize)) {
+		if ((!_chunkHeader.IsScavenged && _logicalDataSize != _physicalDataSize)
+		    || (_chunkHeader.IsScavenged && _logicalDataSize < _physicalDataSize)) {
 			throw new Exception(
-				$"Data sizes violation. Chunk: {ChunkLocator}, IsScavenged: {ChunkHeader.IsScavenged}, LogicalDataSize: {_logicalDataSize}, PhysicalDataSize: {_physicalDataSize}.");
+				$"Data sizes violation. Chunk: {ChunkLocator}, IsScavenged: {_chunkHeader.IsScavenged}, LogicalDataSize: {_logicalDataSize}, PhysicalDataSize: {_physicalDataSize}.");
 		}
 
 		return RecordWriteResult.Successful(oldPosition, _physicalDataSize);
@@ -1063,7 +1070,7 @@ public partial class TFChunk : IChunkBlob {
 		if (!Initialized)
 			return ValueTask.FromException(CreateNotInitializedException());
 
-		return ChunkHeader.IsScavenged
+		return _chunkHeader.IsScavenged
 			? ValueTask.FromException(
 				new InvalidOperationException("CompleteScavenged should be used for scavenged chunks."))
 			: CompleteNonRaw(null, token);
@@ -1073,7 +1080,7 @@ public partial class TFChunk : IChunkBlob {
 		if (!Initialized)
 			return ValueTask.FromException(CreateNotInitializedException());
 
-		return ChunkHeader.IsScavenged
+		return _chunkHeader.IsScavenged
 			? CompleteNonRaw(mapping, token)
 			: ValueTask.FromException(
 				new InvalidOperationException("CompleteScavenged should not be used for non-scavenged chunks."));
