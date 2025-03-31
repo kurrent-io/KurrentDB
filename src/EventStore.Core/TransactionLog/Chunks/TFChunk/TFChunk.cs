@@ -1627,7 +1627,7 @@ public partial class TFChunk : IChunkBlob {
 		switch (_chunkHeader) {
 			case { IsSingleLogicalChunk: true }:
 				throw new InvalidOperationException($"Chunk: {ChunkLocator} is not merged");
-			case { IsScavenged: true }:
+			case { IsScavenged: false }:
 				throw new InvalidOperationException($"Chunk: {ChunkLocator} is not scavenged");
 		}
 
