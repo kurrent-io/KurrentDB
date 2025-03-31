@@ -8,26 +8,26 @@ using EventStore.Core.TransactionLog.Chunks.TFChunk;
 
 namespace EventStore.Core.TransactionLog.Scavenging.Interfaces;
 
-public interface IChunkManagerForChunkExecutor<TStreamId, TRecord> {
-	IChunkFileSystem FileSystem { get; }
-
-	ValueTask<IChunkWriterForExecutor<TStreamId, TRecord>> CreateChunkWriter(
+public interface IChunkManagerForChunkExecutor<TStreamId, TRecord, TChunk> where TChunk : IChunkBlob {
+	ValueTask<IChunkWriterForExecutor<TStreamId, TRecord, TChunk>> CreateChunkWriter(
 		IChunkReaderForExecutor<TStreamId, TRecord> sourceChunk,
 		CancellationToken token);
 
 	IChunkReaderForExecutor<TStreamId, TRecord> GetChunkReaderFor(long position);
+
+	ValueTask<string> SwitchInTempChunk(TChunk chunk, CancellationToken token);
 }
 
 public interface IChunkManagerForChunkRemover {
 	ValueTask<bool> SwitchInChunks(IReadOnlyList<string> locators, CancellationToken token);
 }
 
-public interface IChunkWriterForExecutor<TStreamId, TRecord> {
+public interface IChunkWriterForExecutor<TStreamId, TRecord, TChunk> where TChunk : IChunkBlob {
 	string LocalFileName { get; }
 
 	ValueTask WriteRecord(RecordForExecutor<TStreamId, TRecord> record, CancellationToken token);
 
-	ValueTask<(string NewFileName, long NewFileSize)> Complete(CancellationToken token);
+	ValueTask<TChunk> Complete(CancellationToken token);
 
 	void Abort(bool deleteImmediately);
 }

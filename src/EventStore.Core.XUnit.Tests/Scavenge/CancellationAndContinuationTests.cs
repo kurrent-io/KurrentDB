@@ -145,6 +145,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Commit"),
 				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Opening Chunk 0-0"),
+				Tracer.Line("    Aborted chunk writing. DeleteImmediately: False"),
 				Tracer.Line("Exception executing chunks"))
 			.AssertState(state => {
 				Assert.Equal(ScavengeResult.Stopped, logger.Result);
@@ -606,6 +607,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Commit"),
 				Tracer.Line("    Retaining Chunk 1-1"),
 				Tracer.Line("    Opening Chunk 1-1"),
+				Tracer.Line("    Aborted chunk writing. DeleteImmediately: False"),
 				Tracer.Line("Exception executing chunks"))
 			.AssertState(state => {
 				Assert.Equal(ScavengeResult.Stopped, logger.Result);

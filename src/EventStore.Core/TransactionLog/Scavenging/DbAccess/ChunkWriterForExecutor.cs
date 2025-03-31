@@ -14,26 +14,23 @@ using Serilog;
 
 namespace EventStore.Core.TransactionLog.Scavenging.DbAccess;
 
-public class ChunkWriterForExecutor<TStreamId> : IChunkWriterForExecutor<TStreamId, ILogRecord> {
+public class ChunkWriterForExecutor<TStreamId> : IChunkWriterForExecutor<TStreamId, ILogRecord, TFChunk> {
 	private readonly ILogger _logger;
-	private readonly ChunkManagerForExecutor<TStreamId> _manager;
 	private readonly TFChunk _outputChunk;
 	private readonly ScavengedChunkWriter _scavengedChunkWriter;
 
 	private ChunkWriterForExecutor(
 		ILogger logger,
-		ChunkManagerForExecutor<TStreamId> manager,
 		TFChunk outputChunk) {
 
 		_logger = logger;
-		_manager = manager;
 		_outputChunk = outputChunk;
 		_scavengedChunkWriter = new ScavengedChunkWriter(outputChunk);
 	}
 
 	public static async ValueTask<ChunkWriterForExecutor<TStreamId>> CreateAsync(
 		ILogger logger,
-		ChunkManagerForExecutor<TStreamId> manager,
+		IChunkFileSystem fileSystem,
 		TFChunkDbConfig dbConfig,
 		IChunkReaderForExecutor<TStreamId, ILogRecord> sourceChunk,
 		DbTransformManager transformManager,
@@ -41,7 +38,7 @@ public class ChunkWriterForExecutor<TStreamId> : IChunkWriterForExecutor<TStream
 
 		// from TFChunkScavenger.ScavengeChunk
 		var chunk = await TFChunk.CreateNew(
-			manager.FileSystem,
+			fileSystem,
 			filename: Path.Combine(dbConfig.Path, Guid.NewGuid() + ".scavenge.tmp"),
 			chunkDataSize: dbConfig.ChunkSize,
 			chunkStartNumber: sourceChunk.ChunkStartNumber,
@@ -55,7 +52,7 @@ public class ChunkWriterForExecutor<TStreamId> : IChunkWriterForExecutor<TStream
 			getTransformFactory: transformManager,
 			token);
 
-		return new(logger, manager, chunk);
+		return new(logger, chunk);
 	}
 
 	public string LocalFileName => _outputChunk.LocalFileName;
@@ -63,11 +60,9 @@ public class ChunkWriterForExecutor<TStreamId> : IChunkWriterForExecutor<TStream
 	public ValueTask WriteRecord(RecordForExecutor<TStreamId, ILogRecord> record, CancellationToken token) =>
 		_scavengedChunkWriter.WriteRecord(record.Record, token);
 
-	public async ValueTask<(string NewFileName, long NewFileSize)> Complete(CancellationToken token) {
+	public async ValueTask<TFChunk> Complete(CancellationToken token) {
 		await _scavengedChunkWriter.Complete(token);
-
-		var newFileName = await _manager.SwitchInTempChunk(chunk: _outputChunk, token);
-		return (newFileName, _outputChunk.FileSize);
+		return _outputChunk;
 	}
 
 	// tbh not sure why this distinction is important

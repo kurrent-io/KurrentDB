@@ -14,6 +14,8 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk;
 public interface IChunkBlob : IDisposable {
 	string ChunkLocator { get; }
 
+	int FileSize { get; }
+
 	ValueTask<IChunkRawReader> AcquireRawReader(CancellationToken token);
 
 	IAsyncEnumerable<IChunkBlob> UnmergeAsync(CancellationToken token);

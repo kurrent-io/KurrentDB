@@ -13,7 +13,7 @@ using Serilog;
 
 namespace EventStore.Core.TransactionLog.Scavenging.DbAccess;
 
-public class ChunkManagerForExecutor<TStreamId> : IChunkManagerForChunkExecutor<TStreamId, ILogRecord> {
+public class ChunkManagerForExecutor<TStreamId> : IChunkManagerForChunkExecutor<TStreamId, ILogRecord, TFChunk> {
 	private readonly ILogger _logger;
 	private readonly TFChunkManager _manager;
 	private readonly TFChunkDbConfig _dbConfig;
@@ -26,12 +26,10 @@ public class ChunkManagerForExecutor<TStreamId> : IChunkManagerForChunkExecutor<
 		_transformManager = transformManager;
 	}
 
-	public IChunkFileSystem FileSystem => _manager.FileSystem;
-
-	public async ValueTask<IChunkWriterForExecutor<TStreamId, ILogRecord>> CreateChunkWriter(
+	public async ValueTask<IChunkWriterForExecutor<TStreamId, ILogRecord, TFChunk>> CreateChunkWriter(
 		IChunkReaderForExecutor<TStreamId, ILogRecord> sourceChunk,
 		CancellationToken token)
-		=> await ChunkWriterForExecutor<TStreamId>.CreateAsync(_logger, this, _dbConfig, sourceChunk,
+		=> await ChunkWriterForExecutor<TStreamId>.CreateAsync(_logger, _manager.FileSystem, _dbConfig, sourceChunk,
 			_transformManager, token);
 
 	public IChunkReaderForExecutor<TStreamId, ILogRecord> GetChunkReaderFor(long position) {

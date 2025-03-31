@@ -463,7 +463,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 				buffer: new(checkpointPeriod),
 				throttle: throttle);
 
-			IChunkExecutor<TStreamId> chunkExecutor = new ChunkExecutor<TStreamId, ILogRecord>(
+			IChunkExecutor<TStreamId> chunkExecutor = new ChunkExecutor<TStreamId, ILogRecord, TFChunk>(
 				logger: logger,
 				metastreamLookup: chunkExecutorMetastreamLookup,
 				chunkRemover: new TracingChunkRemover<TStreamId, ILogRecord>(
@@ -475,7 +475,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 						retainPeriod: TimeSpan.FromDays(_retainDays),
 						retainBytes: _retainBytes),
 					Tracer),
-				chunkManager: new TracingChunkManagerForChunkExecutor<TStreamId, ILogRecord>(
+				chunkManager: new TracingChunkManagerForChunkExecutor<TStreamId, ILogRecord, TFChunk>(
 					new ChunkManagerForExecutor<TStreamId>(
 						logger,
 						dbResult.Db.Manager,

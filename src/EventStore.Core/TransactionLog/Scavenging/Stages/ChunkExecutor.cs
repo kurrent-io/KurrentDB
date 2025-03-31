@@ -10,16 +10,17 @@ using System.Threading.Tasks;
 using EventStore.Core.Exceptions;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.Scavenging.Interfaces;
 using Serilog;
 
 namespace EventStore.Core.TransactionLog.Scavenging.Stages;
 
-public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
+public class ChunkExecutor<TStreamId, TRecord, TChunk> : IChunkExecutor<TStreamId> where TChunk : IChunkBlob {
 	private readonly ILogger _logger;
 	private readonly IMetastreamLookup<TStreamId> _metastreamLookup;
 	private readonly IChunkRemover<TStreamId, TRecord> _chunkRemover;
-	private readonly IChunkManagerForChunkExecutor<TStreamId, TRecord> _chunkManager;
+	private readonly IChunkManagerForChunkExecutor<TStreamId, TRecord, TChunk> _chunkManager;
 	private readonly long _chunkSize;
 	private readonly bool _unsafeIgnoreHardDeletes;
 	private readonly int _cancellationCheckPeriod;
@@ -31,7 +32,7 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 		ILogger logger,
 		IMetastreamLookup<TStreamId> metastreamLookup,
 		IChunkRemover<TStreamId, TRecord> chunkRemover,
-		IChunkManagerForChunkExecutor<TStreamId, TRecord> chunkManager,
+		IChunkManagerForChunkExecutor<TStreamId, TRecord, TChunk> chunkManager,
 		long chunkSize,
 		bool unsafeIgnoreHardDeletes,
 		int cancellationCheckPeriod,
@@ -248,7 +249,7 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 			physicalWeight,
 			chunkStartNumber, chunkEndNumber, chunkStartPos, chunkEndPos);
 
-		IChunkWriterForExecutor<TStreamId, TRecord> outputChunk;
+		IChunkWriterForExecutor<TStreamId, TRecord, TChunk> outputChunk;
 		try {
 			outputChunk = await _chunkManager.CreateChunkWriter(sourceChunk, cancellationToken);
 			_logger.Debug(
@@ -296,7 +297,9 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 				oldChunkName, discardedCount + keptCount,
 				keptCount, discardedCount);
 
-			var (newFileName, newFileSize) = await outputChunk.Complete(cancellationToken);
+			var completedChunk = await outputChunk.Complete(cancellationToken);
+			var newFileSize = completedChunk.FileSize;
+			var newFileName = await _chunkManager.SwitchInTempChunk(completedChunk, cancellationToken);
 
 			var elapsed = sw.Elapsed;
 			_logger.Debug(

@@ -75,6 +75,8 @@ public abstract class ArchiveStorageTestsBase<T> : DirectoryPerTest<T> {
 				? ValueTask.FromCanceled<IChunkRawReader>(token)
 				: ValueTask.FromResult<IChunkRawReader>(new StreamReader(this));
 
+		public int FileSize => throw new NotImplementedException();
+
 		public IAsyncEnumerable<IChunkBlob> UnmergeAsync(CancellationToken token) {
 			throw new NotImplementedException();
 		}
