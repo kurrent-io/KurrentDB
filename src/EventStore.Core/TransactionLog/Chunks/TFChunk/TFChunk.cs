@@ -54,40 +54,54 @@ public partial class TFChunk : IChunkBlob {
 	private static readonly ILogger Log = Serilog.Log.ForContext<TFChunk>();
 
 	public bool IsReadOnly {
+		[InitializationNotRequired]
 		get { return Interlocked.CompareExchange(ref _isReadOnly, 0, 0) == 1; }
 		private set { Interlocked.Exchange(ref _isReadOnly, value ? 1 : 0); }
 	}
 
 	public bool IsCached {
+		[InitializationNotRequired]
 		get { return _cacheStatus is CacheStatus.Cached; }
 	}
 
 	public bool IsUncached {
+		[InitializationNotRequired]
 		get { return _cacheStatus is CacheStatus.Uncached; }
 	}
 
-	public bool Initialized => _lazyInitArgs is null;
+	public bool Initialized {
+		[InitializationNotRequired]
+		get => _lazyInitArgs is null;
+	}
 
-	public bool IsRemote { get; }
+	public bool IsRemote { [InitializationNotRequired] get; }
 
 	// the logical size of (untransformed) data (could be > PhysicalDataSize if scavenged chunk)
 	public long LogicalDataSize {
+		[InitializationNotRequired]
 		get { return Interlocked.Read(ref _logicalDataSize); }
 	}
 
 	// the physical size of (untransformed) data
 	public int PhysicalDataSize {
+		[InitializationNotRequired]
 		get { return _physicalDataSize; }
 	}
 
 	// This can be used to locate the chunk regardless of whether it is local or remote.
 	// The FileSystem abstraction can understand it, and so can the user.
-	public string ChunkLocator => _filename;
+	public string ChunkLocator {
+		[InitializationNotRequired]
+		get => _filename;
+	}
 
 	// This can only be used when we know that the chunk is local.
 	// Generally ideally only the FileSystem abstraction should know whether the chunk is local or remote,
 	// so we want to minimise calls this this as we go, calling the FileSystem instead.
-	public string LocalFileName => _filename;
+	public string LocalFileName {
+		[InitializationNotRequired]
+		get => _filename;
+	}
 
 	public int FileSize {
 		[InitializationNotRequired]
@@ -208,7 +222,11 @@ public partial class TFChunk : IChunkBlob {
 	private volatile bool _deleteFile;
 	private readonly bool _unbuffered;
 	private readonly bool _writeThrough;
-	private volatile ITuple _lazyInitArgs; // null if initialized
+
+	// Volatile flag signalling that initialization is complete. the flag is 'true' when set to null.
+	// Members marked with InitializationNotRequiredAttribute are considered as 'safe' to be called
+	// without EnsureInitialized.
+	private volatile ITuple _lazyInitArgs;
 
 	// https://learn.microsoft.com/en-US/troubleshoot/windows-server/application-management/operating-system-performance-degrades
 	private readonly bool _reduceFileCachePressure;
