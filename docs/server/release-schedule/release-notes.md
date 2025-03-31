@@ -1,10 +1,14 @@
 ---
-order: 5
+order: 1
 ---
 
 # Release Notes
 
-## [24.10.4](https://github.com/EventStore/EventStore/releases/tag/v24.10.4) - 6 Mar 2025
+This page contains the release notes for EventStoreDB 24.10
+
+## [24.10.4](https://github.com/EventStore/EventStore/releases/tag/v24.10.4)
+
+6 March 2025
 
 ### Reduce allocations when projections validate json (PR [#4881](https://github.com/EventStore/EventStore/pull/4881))
 
@@ -34,7 +38,9 @@ A projection will now fault if the total size of the projection’s state and re
 
 **Note:** In certain cases, a projection’s state and result will be set to the same value and be written to the projection state event twice. This can result in the `MaxProjectionStateSize` being exceeded even when the projection state is half the size of the configured maximum.
 
-## [24.10.3](https://github.com/EventStore/EventStore/releases/tag/v24.10.3) - 27 Feb 2025
+## [24.10.3](https://github.com/EventStore/EventStore/releases/tag/v24.10.3)
+
+27 February 2025
 
 ### Fix getting projection statistics over gRPC for faulted projections (PR #4863)
 
@@ -44,7 +50,9 @@ Prior to this fix, projection statistics could not be retrieved via gRPC if one 
 
 Prior to this fix, if a gRPC write was pending at the time of a leader election, the gRPC call could be terminated successfully instead of in a failed state. On the dotnet client this results in the Append Task call hanging indefinitely, other clients may be affected as well.
 
-## [24.10.2](https://github.com/EventStore/EventStore/releases/tag/v24.10.2) - 13 Feb 2025
+## [24.10.2](https://github.com/EventStore/EventStore/releases/tag/v24.10.2)
+
+13 February 2025
 
 ### Handle replayed messages when retrying events in a persistent subscription (PR #4777)
 
@@ -97,7 +105,9 @@ A count and offset can now be specified when getting all persistent subscription
 
 The response of `/subscriptions` (without the query string) is unchanged.
 
-## [24.10.1](https://github.com/EventStore/EventStore/releases/tag/v24.10.1) - 18 Dec 2024
+## [24.10.1](https://github.com/EventStore/EventStore/releases/tag/v24.10.1)
+
+18 December 2024
 
 ### Up to 100 license entitlements are fetched (PR #4670)
 
@@ -115,4 +125,6 @@ Slow bus messages were still logged, but the logging of slow queue messages had 
 
 ## 24.10.0
 
-Link to the [What's new](./whatsnew.md)
+20 November 2024
+
+Find out [What's new](./whatsnew.md) in this release.
