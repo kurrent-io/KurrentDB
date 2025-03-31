@@ -149,10 +149,15 @@ public sealed class ArchiverService :
 }
 
 file static class ChunkRegistry {
-	public static async ValueTask<IChunkBlob> TryGetInitializedChunkFor(this IChunkRegistry<IChunkBlob> registry,
+	public static ValueTask<IChunkBlob> TryGetInitializedChunkFor(this IChunkRegistry<IChunkBlob> registry,
 		long logPosition, CancellationToken token) {
-		var chunk = registry.UnsafeTryGetChunkFor(logPosition);
-		await chunk.EnsureInitialized(token);
-		return chunk;
+		return registry.UnsafeTryGetChunkFor(logPosition) is { } chunk
+			? EnsureInitialized(chunk, token)
+			: ValueTask.FromResult<IChunkBlob>(result: null);
+
+		static async ValueTask<IChunkBlob> EnsureInitialized(IChunkBlob chunk, CancellationToken token) {
+			await chunk.EnsureInitialized(token);
+			return chunk;
+		}
 	}
 }
