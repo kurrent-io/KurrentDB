@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package eventstore.connectors.v1;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "protocol.proto";
+import "managementplane/resources.proto";
+
+option csharp_namespace = "EventStore.Connectors.Management.Contracts.Events";
+
+message ConnectorCreated {
+  string                                   connector_id = 1;
+  string                                   name         = 3;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  google.protobuf.Timestamp                timestamp    = 7;
+}
+
+message ConnectorReconfigured {
+  string                                   connector_id = 1;
+  int32                                    revision     = 3;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  google.protobuf.Timestamp                timestamp    = 7;
+}
+
+message ConnectorDeleted {
+  string                    connector_id = 1;
+  google.protobuf.Timestamp timestamp    = 3;
+}
+
+message ConnectorRenamed {
+  string                    connector_id = 1;
+  string                    name         = 3;
+  google.protobuf.Timestamp timestamp    = 5;
+}
+
+// Occurs when a request to start the connector is accepted.
+message ConnectorActivating {
+  string                                   connector_id = 1;
+  int32                                    revision     = 3;
+  map<string, google.protobuf.StringValue> settings     = 5;
+  StartFromPosition                        start_from   = 7;
+  google.protobuf.Timestamp                timestamp    = 9;
+}
+
+// Occurs when a request to stop the connector is accepted.
+message ConnectorDeactivating {
+  string                    connector_id = 1;
+  google.protobuf.Timestamp timestamp    = 3;
+}
+
+message ConnectorRunning {
+  string                    connector_id = 1;
+  google.protobuf.Timestamp timestamp    = 3;
+  google.protobuf.Timestamp recorded_at  = 5;
+}
+
+message ConnectorStopped {
+  string                    connector_id = 1;
+  google.protobuf.Timestamp timestamp    = 3;
+  google.protobuf.Timestamp recorded_at  = 5;
+}
+
+message ConnectorFailed {
+  string                    connector_id  = 1;
+  Error                     error_details = 3;
+  google.protobuf.Timestamp timestamp     = 5;
+  google.protobuf.Timestamp recorded_at   = 7;
+}

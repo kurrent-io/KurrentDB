@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package eventstore.connectors.v1;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "EventStore.Connectors.Management.Contracts";
+
+enum NodeAffinity {
+  NODE_AFFINITY_ANY = 0;
+
+  // The connector prefers to read/write from/to the leader node.
+  NODE_AFFINITY_LEADER = 1;
+
+  // The connector prefers to read/write from/to a follower node.
+  NODE_AFFINITY_FOLLOWER = 2;
+
+  // The connector prefers to read/write from/to a read-only replica node.
+  NODE_AFFINITY_READONLY_REPLICA = 3;
+}
+
+//message Connector {
+//  // Unique identifier of the connector
+//  string connector_id = 1;
+//
+//  // Name of the connector
+//  string name = 2;
+//
+//  // The current revision number
+//  int32 current_revision = 3;
+//
+//  // Current log position of the connector
+//  uint64 log_position = 4;
+//
+//  // Whether the connector has been deleted
+//  bool is_deleted = 5;
+//}
+
+enum ConnectorType {
+  // Do not use this default value.
+  CONNECTOR_TYPE_UNSPECIFIED = 0;
+  CONNECTOR_TYPE_SINK        = 1;
+  CONNECTOR_TYPE_SOURCE      = 2;
+}
+
+// Enum representing the various states a connector can be in.
+enum ConnectorState {
+  // The state of the connector is unknown.
+  CONNECTOR_STATE_UNKNOWN = 0;
+
+  // The connector is in the process of being activated.
+  CONNECTOR_STATE_ACTIVATING = 1;
+
+  // The connector is currently running.
+  CONNECTOR_STATE_RUNNING = 2;
+
+  // The connector is in the process of being deactivated.
+  CONNECTOR_STATE_DEACTIVATING = 3;
+
+  // The connector is currently stopped.
+  CONNECTOR_STATE_STOPPED = 4;
+}
+
+// Revision of the connector. Only changes when the configuration settings are updated.
+message ConnectorRevision {
+  int32                                    number     = 1;
+  map<string, google.protobuf.StringValue> settings   = 2;
+  google.protobuf.Timestamp                created_at = 3;
+}
+
+message ConnectorStatus {
+  string            connector_id   = 1;
+  ConnectorType     connector_type = 2;
+  string            instance_type  = 3;
+  ConnectorRevision revision       = 4;
+  ConnectorState    state          = 5;
+  repeated uint64   positions      = 6;
+}
+
+message StartFromPosition {
+  google.protobuf.UInt64Value log_position = 1 [json_name = "position"];
+}

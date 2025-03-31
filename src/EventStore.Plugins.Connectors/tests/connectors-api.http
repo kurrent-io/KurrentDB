@@ -1,0 +1,184 @@
+### Create Http Sink Connector
+POST localhost:2113/connectors/demo-http-sink
+Content-Type: application/json
+
+{
+  "settings": {
+    "instanceTypeName": "http-sink",
+    "url": "https://eo9nc65bri2jdc3.m.pipedream.net",
+    "subscription:filter:scope": "stream",
+    "subscription:filter:filterType": "streamId",
+    "subscription:filter:expression": "example-stream",
+    "authentication:basic:username": "tim",
+    "authentication:basic:password": "secret"
+  }
+}
+
+### Create Serilog Sink Connector (defaulting to the subscription initial position: Latest and excluding all system records)
+POST localhost:2113/connectors/serilog-sink-3
+Content-Type: application/json
+
+{
+  "settings": {
+    "instanceTypeName": "serilog-sink",
+    "autoCommit:RecordsThreshold": "1",
+    "autoCommit:Interval": "10000000",
+    "configuration" : "ewogICJTZXJpbG9nIjogewogICAgIlVzaW5nIjogWwogICAgICAiU2VyaWxvZy5TaW5rcy5TZXEiCiAgICBdLAogICAgIkZpbHRlciI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIkJ5SW5jbHVkaW5nT25seSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAiZXhwcmVzc2lvbiI6ICJTb3VyY2VDb250ZXh0IGxpa2UgJ1Nlcmlsb2dTaW5rJyIKICAgICAgICB9CiAgICAgIH0KICAgIF0sCiAgICAiV3JpdGVUbyI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIlNlcSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAic2VydmVyVXJsIjogImh0dHA6Ly9sb2NhbGhvc3Q6NTM0MSIsCiAgICAgICAgICAicGF5bG9hZEZvcm1hdHRlciI6ICJTZXJpbG9nLkZvcm1hdHRpbmcuQ29tcGFjdC5Db21wYWN0SnNvbkZvcm1hdHRlciwgU2VyaWxvZy5Gb3JtYXR0aW5nLkNvbXBhY3QiCiAgICAgICAgfQogICAgICB9CiAgICBdCiAgfQp9"
+  }
+}
+
+### Start Serilog Sink Connector from an existing checkpoint position, defaulting to the subscription initial position if no checkpoint exists
+POST localhost:2113/connectors/serilog-sink-3/start
+
+### Stop Serilog Sink Connector
+POST localhost:2113/connectors/serilog-sink-3/stop
+
+### Create Logger Sink Connector subscribing to all system records from the beginning of time
+POST localhost:2113/connectors/demo-logger-sink
+Content-Type: application/json
+
+{
+  "settings": {
+    "InstanceTypeName": "EventStore.Connectors.Testing.LoggerSink",
+    "_Subscription:Filter:Scope": "Stream",
+    "_Subscription:Filter:Expression": "^\\$connectors\\/[^\\/]+\\/leases",
+    "Subscription:Filter:Scope": "Record",
+    "Subscription:Filter:Expression": "^\\$.*",
+    "Subscription:InitialPosition": "Earliest",
+    "AutoCommit:RecordsThreshold": "1",
+    "AutoCommit:Interval": "1000"
+  }
+}
+
+
+### Start Logger Sink Connector from an existing checkpoint position, defaulting to the subscription initial position if no checkpoint exists
+POST localhost:2113/connectors/demo-logger-sink-6/start
+
+
+### Stop Logger Sink Connector
+POST localhost:2113/connectors/demo-logger-sink-6/stop
+
+### Shutdown EventStore
+POST localhost:2113/admin/shutdown
+
+### Reload EventStore Config
+POST localhost:2113/admin/reloadconfig
+
+### Resign Node from EventStore Cluster
+POST localhost:2113/admin/node/resign
+
+### Start Logger Sink Connector from a specific position
+POST localhost:2113/connectors/demo-logger-sink/start/1
+
+
+### Reset Logger Sink Connector to the beginning
+POST localhost:2113/connectors/demo-logger-sink/reset
+
+
+### Reset Logger Sink Connector to a specific position (adjust the position when testing)
+POST localhost:2113/connectors/demo-logger-sink/reset/53469
+
+
+### Reconfigure Logger Sink Connector
+PUT localhost:2113/connectors/demo-logger-sink/settings
+Content-Type: application/json
+
+{
+  "InstanceTypeName": "EventStore.Connectors.Testing.LoggerSink",
+  "Subscription:Filter:Scope": "Record",
+  "Subscription:Filter:Expression": "^\\$.*",
+  "Subscription:InitialPosition": "Latest"
+}
+
+
+### Delete Logger Sink Connector
+DELETE localhost:2113/connectors/serilog-sink-3
+
+
+### List Connectors
+GET localhost:2113/connectors
+Content-Type: application/json
+
+{
+  "includeSettings": true,
+  "showDeleted": true
+}
+
+
+### Get Logger Sink Connector Settings
+GET localhost:2113/connectors/demo-logger-sink/settings
+Content-Type: application/json
+
+
+
+#### Create HTTP Sink Connector
+#POST localhost:2113/connectors/create
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink",
+#  "name": "Demo Http Sink",
+#  "settings": {
+#    "InstanceTypeName": "EventStore.Connectors.Http.HttpSink",
+#    "Url": "http://localhost:8080",
+#    "Subscription:Filter:Scope": "Stream",
+#    "Subscription:Filter:Expression": "^\\$connectors\\/[^\\/]+\\/leases",
+#    "Subscription:InitialPosition": "Earliest",
+#  }
+#}
+#
+#### Start HTTP Sink Connector
+#POST localhost:2113/connectors/start
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink"
+#}
+#
+#### Start HTTP Sink Connector from a specific position
+#POST localhost:2113/connectors/start
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink",
+#  "startPosition": {
+#    "value": "99"
+#  }
+#}
+#
+#### Stop HTTP Sink Connector
+#POST localhost:2113/connectors/stop
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink"
+#}
+#
+#### Delete HTTP Sink Connector
+#POST localhost:2113/connectors/delete
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink"
+#}
+#
+#### Rename HTTP Sink Connector
+#POST localhost:2113/connectors/rename
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "demo-http-sink",
+#  "name": "Renamed Demo Http Sink"
+#}
+#
+#### Create Logger Sink Connector
+#POST localhost:2113/connectors/create
+#Content-Type: application/json
+#
+#{
+#  "connectorId": "logger-sink-connector-1",
+#  "name": "logger-sink-connector-1",
+#  "settings": {
+#    "instanceTypeName": "EventStore.Connect.Connectors.LoggerSink"
+#  }
+#}

@@ -1,0 +1,134 @@
+version: "1.0"
+
+linter: jetbrains/qodana-dotnet:2024.1
+
+dotnet:
+  solution: EventStore.Plugins.Connectors.sln
+
+#
+# License Audit
+#
+
+# Dependencies to exclude from the License Audit
+dependencyIgnores:
+  - name: "EventStore.Plugins" # Our own software
+  - name: "EventStore.Client.Grpc"
+  - name: "EventStore.Client.Grpc.Operations"
+  - name: "EventStore.Client.Grpc.Streams"
+  - name: "EventStore.Streaming.Core"
+  - name: "EventStore.Connectors.Http"
+  - name: "EventStore.Connectors.Kafka"
+
+# Manually specify the licenses of the following packages
+dependencyOverrides:
+  # not automatically detectable, but the MIT license is in the nuget package
+  - name: "NETStandard.Library"
+    version: "2.0.3"
+    licenses:
+      - key: "MIT"
+        url: "https://nuget.info/packages/NETStandard.Library/2.0.3"
+
+  # the referenced license file is not trivial but appears to imply that this library is MIT
+  - name: "Mono.Posix.NETStandard"
+    version: "1.0.0"
+    licenses:
+      - key: "MIT"
+        url: "https://github.com/mono/mono/blob/main/LICENSE"
+
+  # not automatically detectable in this older package
+  - name: "OpenTelemetry"
+    version: "1.4.0-rc.1"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"
+
+  # not automatically detectable in this older package
+  - name: "OpenTelemetry.Api"
+    version: "1.4.0-rc.1"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"
+
+  # not automatically detectable in this older package
+  - name: "OpenTelemetry.Extensions.DependencyInjection"
+    version: "1.4.0-rc.1"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"
+
+  # not automatically detectable in this older package
+  - name: "OpenTelemetry.Extensions.Hosting"
+    version: "1.4.0-rc.1"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"
+
+  # not automatically detectable in this older package
+  - name: "OpenTelemetry.Exporter.Prometheus.AspNetCore"
+    version: "1.4.0-rc.1"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"
+
+  # not automatically detectable, but nuget shows this as Apache-2.0
+  - name: "Eventuous.Application"
+    version: "0.15.0-rc.2"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://www.nuget.org/packages/Eventuous.Application/0.15.0-rc.2"
+
+  # not automatically detectable, but nuget shows this as Apache-2.0
+  - name: "Eventuous.AspNetCore.Web"
+    version: "0.15.0-rc.1"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://www.nuget.org/packages/Eventuous.AspNetCore.Web/0.15.0-rc.1"
+
+  # not automatically detectable, but nuget shows this as Apache-2.0
+  - name: "Eventuous.Diagnostics"
+    version: "0.15.0-rc.2"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://www.nuget.org/packages/Eventuous.Diagnostics/0.15.0-rc.2"
+
+  # not automatically detectable, but nuget shows this as Apache-2.0
+  - name: "Eventuous.Diagnostics.Logging"
+    version: "0.15.0-rc.2"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://www.nuget.org/packages/Eventuous.Diagnostics.Logging/0.15.0-rc.2"
+
+  # not automatically detectable, but nuget shows this as Apache-2.0
+  - name: "Eventuous.Domain"
+    version: "0.15.0-rc.2"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://www.nuget.org/packages/Eventuous.Domain/0.15.0-rc.2"
+
+  # not automatically detectable, but nuget shows this as Apache-2.0
+  - name: "Eventuous.Serialization"
+    version: "0.15.0-rc.2"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://www.nuget.org/packages/Eventuous.Serialization/0.15.0-rc.2"
+
+  # not automatically detectable, but nuget shows this as Apache-2.0
+  - name: "Eventuous.Shared"
+    version: "0.15.0-rc.2"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://www.nuget.org/packages/Eventuous.Shared/0.15.0-rc.2"
+
+  # not automatically detectable, but nuget shows this as Apache-2.0
+  - name: "Eventuous.Persistence"
+    version: "0.15.0-rc.2"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://www.nuget.org/packages/Eventuous.Persistence/0.15.0-rc.2"
+
+  # not automatically detectable, but nuget shows this as Apache-2.0
+  - name: "Eventuous.Extensions.DependencyInjection"
+    version: "0.15.0-rc.2"
+    licenses:
+      - key: "Apache-2.0"
+        url: "https://www.nuget.org/packages/Eventuous.Extensions.DependencyInjection/0.15.0-rc.2"

@@ -1,0 +1,85 @@
+### Create Serilog Sink Connector subscribing to all system records from the beginning of time
+POST localhost:2113/connectors/demo-logger-sink
+Content-Type: application/json
+
+{
+  "settings": {
+    "InstanceTypeName": "SerilogSink",
+    "_Subscription:Filter:Scope": "Stream",
+    "_Subscription:Filter:Expression": "^\\$connectors\\/[^\\/]+\\/leases",
+    "Subscription:Filter:Scope": "Record",
+    "Subscription:Filter:Expression": "^\\$.*",
+    "Subscription:InitialPosition": "Earliest",
+    "AutoCommit:RecordsThreshold": "1",
+    "AutoCommit:Interval": "1000",
+    "configuration" : "ewogICJTZXJpbG9nIjogewogICAgIlVzaW5nIjogWwogICAgICAiU2VyaWxvZy5TaW5rcy5TZXEiCiAgICBdLAogICAgIkZpbHRlciI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIkJ5SW5jbHVkaW5nT25seSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAiZXhwcmVzc2lvbiI6ICJTb3VyY2VDb250ZXh0IGxpa2UgJ1Nlcmlsb2dTaW5rJyIKICAgICAgICB9CiAgICAgIH0KICAgIF0sCiAgICAiV3JpdGVUbyI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIlNlcSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAic2VydmVyVXJsIjogImh0dHA6Ly9sb2NhbGhvc3Q6NTM0MSIsCiAgICAgICAgICAicGF5bG9hZEZvcm1hdHRlciI6ICJTZXJpbG9nLkZvcm1hdHRpbmcuQ29tcGFjdC5Db21wYWN0SnNvbkZvcm1hdHRlciwgU2VyaWxvZy5Gb3JtYXR0aW5nLkNvbXBhY3QiCiAgICAgICAgfQogICAgICB9CiAgICBdCiAgfQp9"
+  }
+}
+
+### Create Serilog Sink Connector (defaulting to the subscription initial position: Latest and excluding all system records)
+POST localhost:2113/connectors/serilog-sink-2
+Content-Type: application/json
+
+{
+  "settings": {
+    "instanceTypeName": "serilog-sink",
+    "subscription:Filter:Scope": "Record",
+    "subscription:Filter:Expression": "^\\$.*",
+    "subscription:InitialPosition": "Earliest",
+    "autoCommit:RecordsThreshold": "1",
+    "autoCommit:Interval": "10000000",
+    "configuration" : "ewogICJTZXJpbG9nIjogewogICAgIlVzaW5nIjogWwogICAgICAiU2VyaWxvZy5TaW5rcy5TZXEiCiAgICBdLAogICAgIkZpbHRlciI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIkJ5SW5jbHVkaW5nT25seSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAiZXhwcmVzc2lvbiI6ICJTb3VyY2VDb250ZXh0IGxpa2UgJ1Nlcmlsb2dTaW5rJyIKICAgICAgICB9CiAgICAgIH0KICAgIF0sCiAgICAiV3JpdGVUbyI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIlNlcSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAic2VydmVyVXJsIjogImh0dHA6Ly9sb2NhbGhvc3Q6NTM0MSIsCiAgICAgICAgICAicGF5bG9hZEZvcm1hdHRlciI6ICJTZXJpbG9nLkZvcm1hdHRpbmcuQ29tcGFjdC5Db21wYWN0SnNvbkZvcm1hdHRlciwgU2VyaWxvZy5Gb3JtYXR0aW5nLkNvbXBhY3QiCiAgICAgICAgfQogICAgICB9CiAgICBdCiAgfQp9"
+  }
+}
+
+### Start Serilog Sink Connector from an existing checkpoint position, defaulting to the subscription initial position if no checkpoint exists
+POST localhost:2113/connectors/serilog-sink-2/start
+
+### Stop Serilog Sink Connector
+POST localhost:2113/connectors/serilog-sink-3/stop
+
+
+### Shutdown EventStore
+POST localhost:2113/admin/shutdown
+
+### Reload EventStore Config
+POST localhost:2113/admin/reloadconfig
+
+### Resign Node from EventStore Cluster
+POST localhost:2113/admin/node/resign
+
+### Start Serilog Sink Connector from a specific position
+POST localhost:2113/connectors/serilog-sink-3/start/1
+
+### Reset Serilog Sink Connector to the beginning
+POST localhost:2113/connectors/serilog-sink-3/reset
+
+### Reset Serilog Sink Connector to a specific position (adjust the position when testing)
+POST localhost:2113/connectors/serilog-sink-3/reset/53469
+
+### Reconfigure Logger Sink Connector
+PUT localhost:2113/connectors/serilog-sink-3/settings
+Content-Type: application/json
+
+{
+  "instanceTypeName": "EventStore.Connectors.Testing.LoggerSink",
+  "subscription:filter:scope": "Record",
+  "subscription:filter:expression": "^\\$.*",
+  "subscription:initialPosition": "Latest",
+  "configuration" : "ewogICJTZXJpbG9nIjogewogICAgIlVzaW5nIjogWwogICAgICAiU2VyaWxvZy5TaW5rcy5TZXEiCiAgICBdLAogICAgIkZpbHRlciI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIkJ5SW5jbHVkaW5nT25seSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAiZXhwcmVzc2lvbiI6ICJTb3VyY2VDb250ZXh0IGxpa2UgJ1Nlcmlsb2dTaW5rJyIKICAgICAgICB9CiAgICAgIH0KICAgIF0sCiAgICAiV3JpdGVUbyI6IFsKICAgICAgewogICAgICAgICJOYW1lIjogIlNlcSIsCiAgICAgICAgIkFyZ3MiOiB7CiAgICAgICAgICAic2VydmVyVXJsIjogImh0dHA6Ly9sb2NhbGhvc3Q6NTM0MSIsCiAgICAgICAgICAicGF5bG9hZEZvcm1hdHRlciI6ICJTZXJpbG9nLkZvcm1hdHRpbmcuQ29tcGFjdC5Db21wYWN0SnNvbkZvcm1hdHRlciwgU2VyaWxvZy5Gb3JtYXR0aW5nLkNvbXBhY3QiCiAgICAgICAgfQogICAgICB9CiAgICBdCiAgfQp9"
+}
+
+### Delete Logger Sink Connector
+DELETE localhost:2113/connectors/serilog-sink-3
+
+### List Connectors
+GET localhost:2113/connectors
+Content-Type: application/json
+
+{
+  "includeSettings": true
+}
+
+### Get Logger Sink Connector Settings
+GET localhost:2113/connectors/serilog-sink-3/settings
+Content-Type: application/json

@@ -1,0 +1,101 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<RootNamespace>EventStore.Connectors</RootNamespace>
+		<OutputType>library</OutputType>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Common\EventStore.Common.csproj" ExcludeAssets="all" Private="false" />
+		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.Core\EventStore.Core.csproj" ExcludeAssets="all" Private="false" />
+		<ProjectReference Include="..\..\submodules\EventStore\src\EventStore.SystemRuntime\EventStore.SystemRuntime.csproj" ExcludeAssets="all" Private="false"/>
+		<ProjectReference Include="..\EventStore.Extensions.Connectors.Contracts\EventStore.Extensions.Connectors.Contracts.csproj" />
+
+		<!-- Easier & faster way to debug -->
+<!--    <ProjectReference Include="..\..\submodules\Surge\src\Framework\src\Kurrent.Surge.Core\Kurrent.Surge.Core.csproj"/>-->
+<!--    <ProjectReference Include="..\..\submodules\Surge\src\DataProtection\src\Kurrent.Surge.DataProtection\Kurrent.Surge.DataProtection.csproj"/>-->
+<!--    <ProjectReference Include="..\..\submodules\Surge\src\Toolkit\src\Kurrent.Toolkit\Kurrent.Toolkit.csproj"/>-->
+<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.KurrentDB\Kurrent.Connectors.KurrentDB.csproj"/>-->
+<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.Http\Kurrent.Connectors.Http.csproj"/>-->
+<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.Kafka\Kurrent.Connectors.Kafka.csproj"/>-->
+<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.MongoDB\Kurrent.Connectors.MongoDB.csproj"/>-->
+<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.RabbitMQ\Kurrent.Connectors.RabbitMQ.csproj"/>-->
+<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.Elasticsearch\Kurrent.Connectors.Elasticsearch.csproj"/>-->
+  </ItemGroup>
+
+	<!-- Required packages -->
+	<ItemGroup>
+		<PackageReference Include="Kurrent.Surge.Core" Version="1.0.0-alpha.359" />
+		<PackageReference Include="Kurrent.Surge.DataProtection" Version="1.0.0-alpha.365" />
+		<PackageReference Include="Kurrent.Toolkit" Version="1.0.0-alpha.359" />
+		<PackageReference Include="Kurrent.Connectors.Elasticsearch" Version="1.0.0-alpha.362" />
+		<PackageReference Include="Kurrent.Connectors.Http" Version="1.0.0-alpha.364" />
+		<PackageReference Include="Kurrent.Connectors.Kafka" Version="1.0.0-alpha.363" />
+		<PackageReference Include="Kurrent.Connectors.KurrentDB" Version="1.0.0-alpha.364" />
+		<PackageReference Include="Kurrent.Connectors.MongoDB" Version="1.0.0-alpha.362" />
+		<PackageReference Include="Kurrent.Connectors.RabbitMQ" Version="1.0.0-alpha.364" />
+		<PackageReference Include="Eventuous.Application" Version="0.15.0" />
+		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
+		<PackageReference Include="Grpc.StatusProto" Version="2.65.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.7" />
+
+		<PackageReference Include="Serilog" Version="4.0.1" />
+		<PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
+		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+		<PackageReference Include="Serilog.Expressions" Version="5.0.0" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.2" />
+		<PackageReference Include="Serilog.Sinks.Async" Version="2.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+
+		<PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
+		<PackageReference Include="Serilog.Settings.Reloader" Version="2.10.0" />
+		<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+		<PackageReference Include="Serilog.Sinks.Seq" Version="8.0.0" />
+		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+	</ItemGroup>
+
+	<!-- Exclude all packages/assets provided by ESDB that break on runtime or may cause issues -->
+	<ItemGroup>
+		<!-- Contains Plugin and License components -->
+		<PackageReference Include="EventStore.Plugins" Version="25.2.5" ExcludeAssets="runtime" />
+		<PackageReference Include="Microsoft.Extensions.Options" PrivateAssets="all"/>
+<!--		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" PrivateAssets="all"/>-->
+<!--		<PackageReference Include="Microsoft.Extensions.Configuration.Json" PrivateAssets="all"/>-->
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.Logging" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.Abstractions" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" PrivateAssets="all"/>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" PrivateAssets="all"/>
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <ItemGroup>
+		<InternalsVisibleTo Include="EventStore.Plugins.Connectors" />
+		<InternalsVisibleTo Include="EventStore.Extensions.Connectors.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="EventStore.Extensions.Connectors.csproj.DotSettings" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Infrastructure\Security\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Infrastructure\Security\DataProtection.cs" />
+	</ItemGroup>
+</Project>

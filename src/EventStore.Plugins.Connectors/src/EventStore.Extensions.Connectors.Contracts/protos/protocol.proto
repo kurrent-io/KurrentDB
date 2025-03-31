@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package eventstore.connectors.v1;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "EventStore.Connectors.Contracts";
+
+message Error {
+  // Standardized string to programmatically identify the error.
+  string code = 1;
+
+  // Detailed error description and debugging information.
+  string message = 2;
+}
+
+message ValidationFailure {
+  string          property_name = 1;
+  repeated string errors        = 2;
+}
+
+message ValidationProblem {
+  repeated ValidationFailure failures = 1;
+}

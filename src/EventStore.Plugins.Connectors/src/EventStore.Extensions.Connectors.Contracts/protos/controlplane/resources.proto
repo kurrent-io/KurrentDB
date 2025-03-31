@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package eventstore.connectors.v1;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "EventStore.Connectors.Control.Contracts";
+
+message ActivatedConnectorsSnapshot {
+  repeated Connector        connectors   = 1;
+  uint64                    log_position = 2;
+  google.protobuf.Timestamp taken_at     = 3;
+
+  message Connector {
+    string                                   connector_id = 1;
+    int32                                    revision     = 2;
+    map<string, google.protobuf.StringValue> settings     = 3;
+  }
+}

@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package eventstore.connectors.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+import "managementplane/resources.proto";
+import "google/protobuf/timestamp.proto";
+import "protocol.proto";
+
+option csharp_namespace = "EventStore.Connectors.Management.Contracts.Queries";
+
+service ConnectorsQueryService {
+  rpc List(ListConnectors) returns (ListConnectorsResult) {
+    option (google.api.http) = {
+      get: "/connectors",
+      body: "*"
+    };
+  }
+
+  rpc GetSettings(GetConnectorSettings) returns (GetConnectorSettingsResult) {
+    option (google.api.http) = {
+      get: "/connectors/{connector_id}/settings"
+    };
+  }
+}
+
+message GetConnectorSettings {
+  string connector_id = 1;
+}
+
+message GetConnectorSettingsResult {
+  map<string, google.protobuf.StringValue> settings             = 1;
+  google.protobuf.Timestamp                settings_update_time = 2;
+}
+
+message ListConnectors {
+  repeated ConnectorState state                           = 1;
+  repeated google.protobuf.StringValue instance_type_name = 2;
+  repeated google.protobuf.StringValue connector_id       = 3;
+
+  bool   include_settings = 4;
+  bool   show_deleted     = 5;
+  Paging paging           = 6;
+}
+
+message ListConnectorsResult {
+  repeated Connector items      = 1;
+  int32              total_size = 2;
+}
+
+message Paging {
+  int32 page      = 1;
+  int32 page_size = 2;
+}
+
+// Snapshots
+
+message Connector {
+  string connector_id       = 1;
+  string instance_type_name = 2;
+  string name               = 3;
+
+  ConnectorState            state             = 4;
+  google.protobuf.Timestamp state_update_time = 5;
+
+  map<string, google.protobuf.StringValue> settings             = 6;
+  google.protobuf.Timestamp                settings_update_time = 7;
+
+  google.protobuf.UInt64Value position             = 8;
+  google.protobuf.Timestamp   position_update_time = 9;
+
+  google.protobuf.Timestamp create_time = 10;
+  google.protobuf.Timestamp update_time = 11;
+  google.protobuf.Timestamp delete_time = 12;
+
+  Error error_details = 13;
+}
+
+message ConnectorsSnapshot {
+  repeated Connector connectors = 1;
+}

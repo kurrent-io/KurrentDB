@@ -1,0 +1,26 @@
+name: Pull Request check
+
+on:
+  pull_request:
+    paths-ignore:
+      - "test/**"
+      - ".idea/**"
+      - "**.md"
+      - ".github/**"
+      - ".gitignore"
+      - ".gitattributes"
+      - ".editorconfig"
+    types: [opened, edited]
+
+jobs:
+  checkPullRequest:
+    name: Pull Request check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check pull request
+        uses: EventStore/Automations/pr-check@master
+        with:
+          github_token: ${{ secrets.github_token }} # Required while the repository is private

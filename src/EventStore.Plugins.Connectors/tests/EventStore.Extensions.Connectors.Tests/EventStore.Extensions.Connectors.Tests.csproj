@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<IsTestProject>true</IsTestProject>
+		<RootNamespace>EventStore.Connectors.Tests</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Some packages that are configured with PrivateAssets in the plugin need to be referenced here -->
+		 <PackageReference Include="Kurrent.Surge" Version="1.0.0-alpha.359" />
+
+		<PackageReference Include="Eventuous.Testing" Version="0.15.0" />
+		<PackageReference Include="NewId" Version="4.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
+		<ProjectReference Include="..\EventStore.Extensions.Connectors.Management.TestServer\EventStore.Extensions.Connectors.Management.TestServer.csproj" />
+		<ProjectReference Include="..\EventStore.System.Testing\EventStore.System.Testing.csproj" />
+		<ProjectReference Include="..\EventStore.Toolkit.Testing.Http\EventStore.Toolkit.Testing.Http.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="EventStore.Extensions.Connectors.Tests.csproj.DotSettings" />
+		<None Remove="Infrastructure\Eventuous\**" />
+		<None Remove="Planes\Management\ConnectorApplication\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Infrastructure\Eventuous\**" />
+	  <Compile Remove="Planes\Management\ConnectorApplication\**" />
+	  <Compile Remove="System\SnapshotProjectionsModuleTests.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Remove="Infrastructure\Eventuous\**" />
+	  <EmbeddedResource Remove="Planes\Management\ConnectorApplication\**" />
+	</ItemGroup>
+</Project>

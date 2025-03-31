@@ -1,0 +1,37 @@
+### List Connectors
+POST localhost:2113/connectors/list
+Content-Type: application/json
+
+{
+    "state": [],
+    "instanceType": [],
+    "connectorId": [],
+    "paging": {
+        "page": 1,
+        "pageSize": 100
+    }
+}
+
+### List Connectors Without Paging (Defaults to (1, 100))
+POST localhost:2113/connectors/list
+Content-Type: application/json
+
+{
+    "state": [],
+    "instanceType": [],
+    "connectorId": []
+}
+
+### List Connectors With Filters
+POST localhost:2113/connectors/list
+Content-Type: application/json
+
+{
+    "state": ["CONNECTOR_STATE_STOPPED", "CONNECTOR_STATE_RUNNING"],
+    "instanceType": ["EventStore.Connectors.Testing.LoggerSink"],
+    "connectorId": ["demo-logger-sink"],
+    "paging": {
+        "page": 1,
+        "pageSize": 100
+    }
+}

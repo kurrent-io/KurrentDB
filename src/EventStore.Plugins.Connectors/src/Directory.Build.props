@@ -1,0 +1,52 @@
+<Project>
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+    <PropertyGroup>
+		<LangVersion>preview</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<IsPackable>false</IsPackable>
+		<NoWarn>$(NoWarn);CS1591;CS1998;CS8618;CS8524;CS8655;RCS1194</NoWarn>
+        <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(IsPackable)' == 'true'">
+        <!-- <PackageReference Include="MinVer" Version="5.0.0" PrivateAssets="All" /> -->
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\..\NOTICE.html" Pack="true" PackagePath="\" CopyToOutputDirectory="PreserveNewest" />
+        <None Include="..\..\ouro.png" Pack="true" PackagePath="\" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DebugType>none</DebugType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
+        <PackageReference Include="Roslynator.Analyzers" Version="4.12.9">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.12.9">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="JetBrains.Annotations" />
+    </ItemGroup>
+
+    <Target Name="CustomVersion" AfterTargets="MinVer">
+        <PropertyGroup>
+            <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</FileVersion>
+            <AssemblyVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch)</AssemblyVersion>
+        </PropertyGroup>
+    </Target>
+</Project>

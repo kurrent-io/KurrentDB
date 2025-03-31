@@ -1,0 +1,57 @@
+name: Test
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'release/v.*.*.*'
+    tags:
+      - 'v*.*.*'
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NuGetAudit: false
+  NuGetPackageSourceCredentials_EventStore: Username=${{ vars.ORG_GH_BOT_USERNAME }};Password=${{ secrets.ORG_GH_BOT_AUTOMATION }}
+
+jobs:
+  test:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    name: Build
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.ORG_GH_BOT_READONLY }}
+
+      - name: 'Setup .NET SDK'
+        uses: actions/setup-dotnet@v4.0.1
+        with:
+          dotnet-version: |
+            8.0.x
+
+      - name: 'Cache NuGet'
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ github.repository_id }}
+
+      - name: 'Build Plugin Only'
+        run: |
+          dotnet build plugin.slnf --configuration Release
+
+      - name: 'Build & Test'
+        run: |
+          dotnet test plugin-tests.slnf \
+          --configuration Release \
+          --blame \
+          --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true;report-warnings=false" -- RunConfiguration.CollectSourceInformation=true
+
+      - name: 'Pack'
+        shell: bash
+        run: |
+          dotnet pack plugin.slnf -c Release --no-build -o nuget

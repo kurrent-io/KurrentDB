@@ -1,0 +1,58 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>library</OutputType>
+		<EnableDynamicLoading>true</EnableDynamicLoading>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+
+		<IsPackable>true</IsPackable>
+		<PackageId>EventStore.Plugins.Connectors</PackageId>
+		<PackageIcon>ouro.png</PackageIcon>
+		<PackageProjectUrl>https://github.com/EventStore/EventStore.Plugins.Connectors</PackageProjectUrl>
+		<PackageTags>eventstore connect connectors sink experimental</PackageTags>
+		<Description>EventStore Connectors Plugin</Description>
+		<Authors>Sérgio Silveira; DevEx Team</Authors>
+		<Company>Event Store Ltd</Company>
+		<Copyright>Copyright © 2011-$([System.DateTime]::Now.Year) $(Company) $(Authors)</Copyright>
+		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<EmbedAllSources>true</EmbedAllSources>
+		<EmbedUntrackedSources>true</EmbedUntrackedSources>
+		<DebugType>full</DebugType>
+		<IncludeBuildOutput>true</IncludeBuildOutput>
+
+		<AssemblyVersion>1.0.0.1</AssemblyVersion>
+		<Version>1.0.0-beta1</Version>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="EventStore.Plugins.Connectors.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
+	</ItemGroup>
+
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+		<PropertyGroup>
+			<EventStorePluginOutputPath>..\..\submodules\EventStore\src\KurrentDB\$(OutDir)\plugins\$(ProjectName)</EventStorePluginOutputPath>
+		</PropertyGroup>
+		<ItemGroup>
+			<PluginSourceFiles Include="$(OutDir)\**\*.*" />
+		</ItemGroup>
+		<RemoveDir Directories="$(EventStorePluginOutputPath)" />
+		<MakeDir Directories="$(EventStorePluginOutputPath)" />
+		<Copy SourceFiles="@(PluginSourceFiles)" DestinationFolder="$(EventStorePluginOutputPath)\%(RecursiveDir)" />
+	</Target>
+
+	<Target Name="PublishPlugin" AfterTargets="Publish">
+		<ItemGroup>
+			<PluginOutputFiles Include="$(PublishDir)\**\*.*" />
+		</ItemGroup>
+		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)\package\%(RecursiveDir)" />
+	</Target>
+</Project>
