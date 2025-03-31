@@ -269,7 +269,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 						return;
 					}
 
-					chunkNum = chunk.ChunkHeader.ChunkStartNumber - 1;
+					chunkNum = chunk.ChunkInfo.ChunkStartNumber - 1;
 				}
 			}, token, preferLocal: false);
 		}
