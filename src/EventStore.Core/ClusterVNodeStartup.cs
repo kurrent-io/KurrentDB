@@ -32,13 +32,13 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
-using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
-using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
-using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
-using ServerFeatures = EventStore.Core.Services.Transport.Grpc.ServerFeatures;
 using Serilog;
 using AuthenticationMiddleware = EventStore.Core.Services.Transport.Http.AuthenticationMiddleware;
+using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
+using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
 using HttpMethod = EventStore.Transport.Http.HttpMethod;
+using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
+using ServerFeatures = EventStore.Core.Services.Transport.Grpc.ServerFeatures;
 
 #nullable enable
 namespace EventStore.Core;
