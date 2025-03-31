@@ -53,7 +53,7 @@ Once a persistent subscription has handled enough events, it will write a checkp
 
 If a persistent subscription has a filter, the persistent subscription will checkpoint when enough events are handled or skipped by the filter.
 
-Checkpoints are events written to system streams with event type `$SubscriptionCheckpoint`. Checkpoint stream name is composed using the subscribed stream name and consumer group name:
+Checkpoints are events written to system streams with event type `SubscriptionCheckpoint`. Checkpoint stream name is composed using the subscribed stream name and consumer group name:
 
 `$persistentsubscription-STREAMNAME::GROUPNAME-checkpoint`
 
