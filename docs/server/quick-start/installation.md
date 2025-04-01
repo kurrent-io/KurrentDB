@@ -319,6 +319,10 @@ As you might've noticed, the connection string has a setting to disable the cert
 
 However, **we do not recommend using this setting in production**. Instead, you can either add the CA certificate to the trusted root CA store or instruct your application to use such a certificate. See the [security section](../security/protocol-security.md#certificate-installation-on-a-client-environment) for detailed instructions.
 
+## Kubernetes
+
+KurrentDB can be deployed and managed using the [Operator](/server/kubernetes-operator/).
+
 ## Building from source
 
 You can also build [EventStoreDB from source](https://github.com/EventStore/EventStore?tab=readme-ov-file#building-eventstoredb). Before doing that, you need to install the .NET 8 SDK. EventStoreDB packages have the .NET Runtime embedded, so you don't need to install anything except the EventStoreDB package.
