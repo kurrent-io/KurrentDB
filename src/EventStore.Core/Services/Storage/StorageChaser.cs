@@ -33,11 +33,11 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 
 	private static readonly int TicksPerMs = (int)(Stopwatch.Frequency / 1000);
 	private static readonly int MinFlushDelay = 2 * TicksPerMs;
-	private static readonly ManualResetEventSlim FlushSignal = new ManualResetEventSlim(false, 1);
 	private static readonly TimeSpan FlushWaitTimeout = TimeSpan.FromMilliseconds(10);
 
 	public string Name => _queueStats.Name;
 
+	private readonly ManualResetEventSlim _flushSignal = new(false, 1);
 	private readonly IPublisher _leaderBus;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly ITransactionFileChaser _chaser;
@@ -141,13 +141,13 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	}
 
 	private void OnWriterFlushed(long obj) {
-		FlushSignal.Set();
+		_flushSignal.Set();
 	}
 
 	private async ValueTask ChaserIteration(CancellationToken token) {
 		_queueStats.EnterBusy();
 
-		FlushSignal.Reset(); // Reset the flush signal just before a read to reduce pointless reads from [flush flush read] patterns.
+		_flushSignal.Reset(); // Reset the flush signal just before a read to reduce pointless reads from [flush flush read] patterns.
 
 		var result = await _chaser.TryReadNext(token);
 
@@ -172,7 +172,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 		if (!result.Success) {
 			_queueStats.EnterIdle();
 			// todo: histogram metric?
-			FlushSignal.Wait(FlushWaitTimeout);
+			_flushSignal.Wait(FlushWaitTimeout);
 		}
 	}
 
