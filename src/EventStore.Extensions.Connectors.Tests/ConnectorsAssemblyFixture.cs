@@ -10,6 +10,7 @@ using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management;
+using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Extensions.Connectors.Tests;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
@@ -36,31 +37,12 @@ namespace EventStore.Extensions.Connectors.Tests;
 [PublicAPI]
 public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
     public ConnectorsAssemblyFixture() {
-        SchemaRegistry   = SchemaRegistry.Global;
-        SchemaSerializer = SchemaRegistry;
-        StateStore       = new InMemoryStateStore();
-        TimeProvider     = new FakeTimeProvider();
+        TimeProvider = new FakeTimeProvider();
 
         ConfigureServices = services => {
-            services.AddSurgeSchemaRegistry(SchemaRegistry);
-
             services
-                .AddSingleton(StateStore)
                 .AddSingleton<TimeProvider>(TimeProvider)
                 .AddSingleton(LoggerFactory);
-
-            // System components
-            services
-                .AddSingleton<Func<SystemReaderBuilder>>(_ => () => NewReader().ReaderId("test-rdx"))
-                .AddSingleton<Func<SystemConsumerBuilder>>(_ => () => NewConsumer().ConsumerId("test-csx"))
-                .AddSingleton<Func<SystemProducerBuilder>>(_ => () => NewProducer().ProducerId("test-pdx"))
-                .AddSingleton<Func<SystemProcessorBuilder>>(_ => () => NewProcessor().ProcessorId("test-pcx").StateStore(StateStore));
-
-            // Projection store
-            services.AddSingleton<ISnapshotProjectionsStore, SystemSnapshotProjectionsStore>();
-
-            // Data protection
-            services.AddSurgeDataProtection(Application.Configuration);
 
             // // Management
             // services.AddSingleton(ctx => new ConnectorsLicenseService(
@@ -109,8 +91,8 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         };
     }
 
-    public SchemaRegistry    SchemaRegistry    { get; }
-    public ISchemaSerializer SchemaSerializer  { get; }
+    public SchemaRegistry SchemaRegistry => NodeServices.GetRequiredService<SchemaRegistry>();
+    public ISchemaSerializer SchemaSerializer => SchemaRegistry;
     public IStateStore       StateStore        { get; private set; } = null!;
     public FakeTimeProvider  TimeProvider      { get; private set; } = null!;
     public IServiceProvider  ConnectorServices { get; private set; } = null!;
@@ -174,6 +156,38 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
 
     public async ValueTask<SurgeRecord> CreateRecord<T>(T message, SchemaDefinitionType schemaType = SchemaDefinitionType.Json, string? streamId = null) {
         var schemaInfo = SchemaRegistry.CreateSchemaInfo<T>(schemaType);
+
+        // Tweaks so we don't have conflict with the connector plugin that already registered those messages.
+        switch (message)
+        {
+	        case ConnectorCreated:
+		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-created" };
+		        break;
+	        case ConnectorActivating:
+		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-activating" };
+		        break;
+	        case ConnectorDeactivating:
+		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-deactivating" };
+		        break;
+	        case ConnectorDeleted:
+		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-deleted" };
+		        break;
+	        case ConnectorFailed:
+		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-failed" };
+		        break;
+	        case ConnectorReconfigured:
+		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-reconfigured" };
+		        break;
+	        case ConnectorRenamed:
+		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-renamed" };
+		        break;
+	        case ConnectorRunning:
+		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-running" };
+		        break;
+	        case ConnectorStopped:
+		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-stopped" };
+		        break;
+        }
 
         var data = await ((ISchemaSerializer)SchemaRegistry).Serialize(message, schemaInfo);
 

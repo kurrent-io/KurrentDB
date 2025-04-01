@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
+		<ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
 	</ItemGroup>
 
 </Project>

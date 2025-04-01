@@ -13,7 +13,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\src\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
+		<ProjectReference Include="..\EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj" />
 		<ProjectReference Include="..\EventStore.Extensions.Connectors.Management.TestServer\EventStore.Extensions.Connectors.Management.TestServer.csproj" />
 		<ProjectReference Include="..\EventStore.System.Testing\EventStore.System.Testing.csproj" />
 		<ProjectReference Include="..\EventStore.Toolkit.Testing.Http\EventStore.Toolkit.Testing.Http.csproj" />

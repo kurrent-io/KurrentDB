@@ -8,7 +8,7 @@ Host.CreateDefaultBuilder(args)
             services
                 .AddNodeSystemInfoProvider()
                 .AddSurgeSystemComponents()
-                .AddSurgeDataProtection(null)
+                .AddSurgeDataProtection(null!)
                 .AddConnectorsManagementPlane();
         })
         .Configure(app => app.UseConnectorsManagementPlane()))

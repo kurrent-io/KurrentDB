@@ -28,6 +28,7 @@
 		<ProjectReference Include="..\EventStore.Diagnostics.LogsEndpointPlugin\EventStore.Diagnostics.LogsEndpointPlugin.csproj" />
 		<ProjectReference Include="..\EventStore.OtlpExporterPlugin\EventStore.OtlpExporterPlugin.csproj" />
 		<ProjectReference Include="..\EventStore.PluginHosting\EventStore.PluginHosting.csproj" />
+		<ProjectReference Include="..\EventStore.Plugins.Connectors\EventStore.Plugins.Connectors.csproj" />
 		<ProjectReference Include="..\EventStore.POC.ConnectedSubsystemsPlugin\EventStore.POC.ConnectedSubsystemsPlugin.csproj" />
 		<ProjectReference Include="..\EventStore.Projections.Core\EventStore.Projections.Core.csproj" />
 		<ProjectReference Include="..\EventStore.Security.EncryptionAtRest\EventStore.Security.EncryptionAtRest.csproj" />

@@ -41,6 +41,7 @@ using Serilog;
 using EventStore.Core.LogAbstraction;
 using EventStore.Diagnostics.LogsEndpointPlugin;
 using EventStore.OtlpExporterPlugin;
+using EventStore.Plugins.Connectors;
 using EventStore.POC.ConnectedSubsystemsPlugin;
 using EventStore.Security.EncryptionAtRest;
 using EventStore.TcpPlugin;
@@ -280,6 +281,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			plugins.Add(new ConnectedSubsystemsPlugin());
 			plugins.Add(new AutoScavengePlugin());
 			plugins.Add(new TcpApiPlugin());
+			plugins.Add(new ConnectorsPlugin());
 
 			foreach (var plugin in plugins) {
 				Log.Information("Loaded SubsystemsPlugin plugin: {plugin} {version}.",

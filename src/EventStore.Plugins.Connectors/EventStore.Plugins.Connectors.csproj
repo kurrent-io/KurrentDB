@@ -37,22 +37,19 @@
 		<None Remove="EventStore.Plugins.Connectors.csproj.DotSettings" />
 	</ItemGroup>
 
-	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<PropertyGroup>
-			<EventStorePluginOutputPath>..\..\submodules\EventStore\src\KurrentDB\$(OutDir)\plugins\$(ProjectName)</EventStorePluginOutputPath>
-		</PropertyGroup>
-		<ItemGroup>
-			<PluginSourceFiles Include="$(OutDir)\**\*.*" />
-		</ItemGroup>
-		<RemoveDir Directories="$(EventStorePluginOutputPath)" />
-		<MakeDir Directories="$(EventStorePluginOutputPath)" />
-		<Copy SourceFiles="@(PluginSourceFiles)" DestinationFolder="$(EventStorePluginOutputPath)\%(RecursiveDir)" />
-	</Target>
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.12.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.12.9">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
-	<Target Name="PublishPlugin" AfterTargets="Publish">
-		<ItemGroup>
-			<PluginOutputFiles Include="$(PublishDir)\**\*.*" />
-		</ItemGroup>
-		<Copy SourceFiles="@(PluginOutputFiles)" DestinationFolder="$(PublishDir)\package\%(RecursiveDir)" />
-	</Target>
+  <ItemGroup>
+    <Using Include="JetBrains.Annotations" />
+  </ItemGroup>
 </Project>
