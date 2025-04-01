@@ -250,6 +250,10 @@ As you might've noticed, both connection strings have a setting to disable the c
 
 However, **we do not recommend using this setting in production**. Instead, you can either add the CA certificate to the trusted root CA store or instruct your application to use such a certificate. See the [security section](../configuration/security.md#certificate-installation-on-a-client-environment) for detailed instructions.
 
+## Kubernetes
+
+KurrentDB can be deployed and managed using the [Operator](/server/kubernetes-operator/).
+
 ## Compatibility notes
 
 Depending on how your EventStoreDB instance is configured, some features might not work. Below are some features that are unavailable due to the specified options.
