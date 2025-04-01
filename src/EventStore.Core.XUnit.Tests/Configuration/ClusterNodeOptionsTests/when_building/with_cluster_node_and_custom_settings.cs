@@ -45,10 +45,10 @@ public class with_dns_discovery_disabled_and_no_gossip_seeds<TLogFormat, TStream
 	[OneTimeSetUp]
 	public void TestFixtureSetUp() {
 		_options = new ClusterVNodeOptions {
-				Cluster = new() {
-					DiscoverViaDns = false
-				}
+			Cluster = new() {
+				DiscoverViaDns = false
 			}
+		}
 			.ReduceMemoryUsageForTests()
 			.RunInMemory();
 		try {

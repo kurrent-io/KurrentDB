@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
@@ -201,8 +200,8 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 			return null;
 
 		if (result.LogRecord.RecordType is not LogRecordType.Prepare
-		    and not LogRecordType.Stream
-		    and not LogRecordType.EventType)
+			and not LogRecordType.Stream
+			and not LogRecordType.EventType)
 			throw new Exception($"Incorrect type of log record {result.LogRecord.RecordType}, expected Prepare record.");
 		return (IPrepareLogRecord<TStreamId>)result.LogRecord;
 	}
@@ -323,7 +322,7 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 
 			for (int i = 0; i < indexEntries.Count; i++) {
 				if (await ReadPrepareInternal(reader, indexEntries[i].Position, token) is not { } prepare ||
-				    !StreamIdComparer.Equals(prepare.EventStreamId, streamId)) {
+					!StreamIdComparer.Equals(prepare.EventStreamId, streamId)) {
 					continue;
 				}
 
@@ -350,7 +349,7 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 			//check high value will be valid, otherwise early return.
 			// this resolves hash collisions itself
 			if (await ReadPrepareInternal(reader, streamId, eventNumber: lastEventNumber, token) is not { } lastEvent ||
-			    lastEvent.TimeStamp < ageThreshold || lastEventNumber < fromEventNumber) {
+				lastEvent.TimeStamp < ageThreshold || lastEventNumber < fromEventNumber) {
 				//No events in the stream are < max age, so return an empty set
 				return new(fromEventNumber, maxCount, IndexReadStreamResult.EmptyRecords, metadata, lastEventNumber + 1, lastEventNumber, isEndOfStream: true);
 			}
@@ -403,7 +402,7 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 				// were all scavenged or for other streams, in which case we won't add anything to results here
 				for (int i = 0; i < indexEntries.Count; i++) {
 					if (await ReadPrepareInternal(reader, indexEntries[i].Position, token) is not { } prepare ||
-					    !StreamIdComparer.Equals(prepare.EventStreamId, streamId))
+						!StreamIdComparer.Equals(prepare.EventStreamId, streamId))
 						continue;
 
 					if (prepare?.TimeStamp >= ageThreshold) {
@@ -636,9 +635,9 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 			.ToArrayAsync(token);
 
 		isEndOfStream = isEndOfStream
-		                || startEventNumber == 0
-		                || (startEventNumber <= lastEventNumber
-		                    && (records.Length is 0 || records[^1].EventNumber != startEventNumber));
+						|| startEventNumber == 0
+						|| (startEventNumber <= lastEventNumber
+							&& (records.Length is 0 || records[^1].EventNumber != startEventNumber));
 		long nextEventNumber = isEndOfStream ? -1 : Math.Min(startEventNumber - 1, lastEventNumber);
 		return new(endEventNumber, maxCount, records, metadata, nextEventNumber, lastEventNumber, isEndOfStream);
 	}
@@ -867,8 +866,8 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 	private async ValueTask<long> GetStreamLastEventNumberCached(TFReaderLease reader, TStreamId streamId, CancellationToken token) {
 		// if this is metastream -- check if original stream was deleted, if yes -- metastream is deleted as well
 		if (_systemStreams.IsMetaStream(streamId)
-		    && await GetStreamLastEventNumberCached(reader, _systemStreams.OriginalStreamOf(streamId), token) ==
-		    EventNumber.DeletedStream)
+			&& await GetStreamLastEventNumberCached(reader, _systemStreams.OriginalStreamOf(streamId), token) ==
+			EventNumber.DeletedStream)
 			return EventNumber.DeletedStream;
 
 		var cache = _backend.TryGetStreamLastEventNumber(streamId);
@@ -907,9 +906,9 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 		}
 
 		foreach (var indexEntry in _tableIndex.GetRange(streamId, startVersion, long.MaxValue,
-			         limit: _hashCollisionReadLimit + 1)) {
+					 limit: _hashCollisionReadLimit + 1)) {
 			if (await ReadPrepareInternal(reader, indexEntry.Position, token) is { } r &&
-			    StreamIdComparer.Equals(r.EventStreamId, streamId)) {
+				StreamIdComparer.Equals(r.EventStreamId, streamId)) {
 				if (latestVersion is long.MinValue) {
 					latestVersion = indexEntry.Version;
 					continue;

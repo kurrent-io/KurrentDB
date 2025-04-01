@@ -320,7 +320,7 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 
 	private Event[] CreateEvents(string streamId, string[] eventDatas) {
 		var events = new Event[eventDatas.Length];
-		for(var i = 0; i < events.Length; i++)
+		for (var i = 0; i < events.Length; i++)
 			events[i] = new Event(Guid.NewGuid(), "type", false, eventDatas[i], null);
 
 		return events;
@@ -332,7 +332,7 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 			streamId: streamId,
 			events: events,
 			publisher: _leaderInfo.Publisher,
-			writerChk: (InterceptorCheckpoint) _leaderInfo.Db.Config.WriterCheckpoint,
+			writerChk: (InterceptorCheckpoint)_leaderInfo.Db.Config.WriterCheckpoint,
 			chunkSize: _leaderInfo.Db.Config.ChunkSize);
 	}
 
@@ -342,11 +342,11 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 			streamId: streamId,
 			events: events,
 			publisher: _replicaInfo.Publisher,
-			writerChk: (InterceptorCheckpoint) _replicaInfo.Db.Config.WriterCheckpoint,
+			writerChk: (InterceptorCheckpoint)_replicaInfo.Db.Config.WriterCheckpoint,
 			chunkSize: _replicaInfo.Db.Config.ChunkSize);
 	}
 
-	private Task<long> WriteEvents (
+	private Task<long> WriteEvents(
 		string streamId,
 		Event[] events,
 		IPublisher publisher,
@@ -465,8 +465,8 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 			expectedReplicaCheckpoints: expectedCheckpoints);
 
 	protected void VerifyCheckpoints(int expectedLeaderCheckpoints, int expectedReplicaCheckpoints) {
-		var leaderCheckpoints = ((InterceptorCheckpoint) _leaderInfo.Db.Config.WriterCheckpoint).Values.ToArray();
-		var replicaCheckpoints = ((InterceptorCheckpoint) _replicaInfo.Db.Config.WriterCheckpoint).Values.ToArray();
+		var leaderCheckpoints = ((InterceptorCheckpoint)_leaderInfo.Db.Config.WriterCheckpoint).Values.ToArray();
+		var replicaCheckpoints = ((InterceptorCheckpoint)_replicaInfo.Db.Config.WriterCheckpoint).Values.ToArray();
 
 		Assert.AreEqual(expectedLeaderCheckpoints, leaderCheckpoints.Length);
 		Assert.AreEqual(expectedReplicaCheckpoints, replicaCheckpoints.Length);
@@ -515,7 +515,8 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 		var fi = new FileInfo(fileName);
 		var data = new byte[fi.Length].AsMemory();
 
-		int pos = 0; int read;
+		int pos = 0;
+		int read;
 		while ((read = fs.Read(data.Span[pos..])) > 0)
 			pos += read;
 

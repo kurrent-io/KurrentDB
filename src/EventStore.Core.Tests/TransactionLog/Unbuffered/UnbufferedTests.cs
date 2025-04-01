@@ -27,7 +27,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		var stream = UnbufferedFileStream.Create(filename, FileMode.CreateNew, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096);
-		
+
 		var initialFileSize = 4096 * 1024;
 		stream.SetLength(initialFileSize); //initial size of 4MB
 
@@ -36,7 +36,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		Assert.AreEqual(initialFileSize, stream.Position); //verify position
 		stream.SetLength(initialFileSize + 4096); //expand file by 4KB
 		Assert.AreEqual(initialFileSize, stream.Position); //position should not change
-		
+
 		stream.Close();
 
 		Assert.AreEqual(initialFileSize + 4096, new FileInfo(filename).Length); //file size should increase by 4KB
@@ -48,7 +48,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		var stream = UnbufferedFileStream.Create(filename, FileMode.CreateNew, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096);
-		
+
 		var initialFileSize = 4096 * 1024;
 		stream.SetLength(initialFileSize); //initial size of 4MB
 
@@ -57,7 +57,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		Assert.AreEqual(initialFileSize, stream.Position); //verify position
 		stream.SetLength(initialFileSize + 4095); //expand file by 4KB - 1
 		Assert.AreEqual(initialFileSize, stream.Position); //position should not change
-		
+
 		stream.Close();
 
 		Assert.AreEqual(initialFileSize + 4096, new FileInfo(filename).Length); //file size should increase by 4KB
@@ -69,7 +69,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		var stream = UnbufferedFileStream.Create(filename, FileMode.CreateNew, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096);
-		
+
 		var initialFileSize = 4096 * 1024;
 		stream.SetLength(initialFileSize); //initial size of 4MB
 
@@ -78,7 +78,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		Assert.AreEqual(initialFileSize, stream.Position); //verify position
 		stream.SetLength(initialFileSize + 4097); //expand file by 4KB + 1
 		Assert.AreEqual(initialFileSize, stream.Position); //position should not change
-		
+
 		stream.Close();
 
 		Assert.AreEqual(initialFileSize + 4096 * 2, new FileInfo(filename).Length); //file size should increase by 4KB x 2
@@ -90,7 +90,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		var stream = UnbufferedFileStream.Create(filename, FileMode.CreateNew, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096);
-		
+
 		var initialFileSize = 4096 * 1024;
 		stream.SetLength(initialFileSize); //initial size of 4MB
 
@@ -99,7 +99,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		Assert.AreEqual(initialFileSize, stream.Position); //verify position
 		stream.SetLength(initialFileSize + 1); //expand file by 1 byte
 		Assert.AreEqual(initialFileSize, stream.Position); //position should not change
-		
+
 		stream.Close();
 
 		Assert.AreEqual(initialFileSize + 4096, new FileInfo(filename).Length); //file size should increase by 4KB
@@ -111,7 +111,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		var stream = UnbufferedFileStream.Create(filename, FileMode.CreateNew, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096);
-		
+
 		var initialFileSize = 4096 * 1024;
 		stream.SetLength(initialFileSize); //initial size of 4MB
 
@@ -120,7 +120,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		Assert.AreEqual(initialFileSize, stream.Position); //verify position
 		stream.SetLength(initialFileSize - 4096); //truncate file by 4KB
 		Assert.AreEqual(initialFileSize - 4096, stream.Position); //position should decrease by 4KB
-		
+
 		stream.Close();
 
 		Assert.AreEqual(initialFileSize - 4096, new FileInfo(filename).Length); //file size should decrease by 4KB
@@ -132,7 +132,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		var stream = UnbufferedFileStream.Create(filename, FileMode.CreateNew, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096);
-		
+
 		var initialFileSize = 4096 * 1024;
 		stream.SetLength(initialFileSize); //initial size of 4MB
 
@@ -141,7 +141,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		Assert.AreEqual(initialFileSize - 4096, stream.Position); //verify position
 		stream.SetLength(initialFileSize - 4096); //truncate file by 4KB
 		Assert.AreEqual(initialFileSize - 4096, stream.Position); //position should not change
-		
+
 		stream.Close();
 
 		Assert.AreEqual(initialFileSize - 4096, new FileInfo(filename).Length); //file size should decrease by 4KB
@@ -153,7 +153,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		var stream = UnbufferedFileStream.Create(filename, FileMode.CreateNew, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096);
-		
+
 		var initialFileSize = 4096 * 1024;
 		stream.SetLength(initialFileSize); //initial size of 4MB
 
@@ -162,7 +162,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		Assert.AreEqual(initialFileSize, stream.Position); //verify position
 		stream.SetLength(initialFileSize - 4095); //truncate file by 4KB - 1
 		Assert.AreEqual(initialFileSize, stream.Position); //position should not change
-		
+
 		stream.Close();
 
 		Assert.AreEqual(initialFileSize, new FileInfo(filename).Length); //file size should not change
@@ -174,7 +174,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		var stream = UnbufferedFileStream.Create(filename, FileMode.CreateNew, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096);
-		
+
 		var initialFileSize = 4096 * 1024;
 		stream.SetLength(initialFileSize); //initial size of 4MB
 
@@ -183,7 +183,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		Assert.AreEqual(initialFileSize, stream.Position); //verify position
 		stream.SetLength(initialFileSize - 4097); //truncate file by 4KB + 1
 		Assert.AreEqual(initialFileSize - 4096, stream.Position); //position should decrease by 4KB 
-		
+
 		stream.Close();
 
 		Assert.AreEqual(initialFileSize - 4096, new FileInfo(filename).Length); //file size should decrease by 4KB
@@ -195,7 +195,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		var stream = UnbufferedFileStream.Create(filename, FileMode.CreateNew, FileAccess.ReadWrite,
 			FileShare.ReadWrite, 4096, 4096, false, 4096);
-		
+
 		var initialFileSize = 4096 * 1024;
 		stream.SetLength(initialFileSize); //initial size of 4MB
 
@@ -204,7 +204,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 		Assert.AreEqual(initialFileSize, stream.Position); //verify position
 		stream.SetLength(initialFileSize - 1); //truncate file by 1 byte
 		Assert.AreEqual(initialFileSize, stream.Position); //position should not change
-		
+
 		stream.Close();
 
 		Assert.AreEqual(initialFileSize, new FileInfo(filename).Length); //file size should not change

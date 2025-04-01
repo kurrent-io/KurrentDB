@@ -89,7 +89,7 @@ public class ClientSource : ISource {
 				requiredEvents.Add(deserialized);
 		}
 
-		for (var i = requiredEvents.Count - 1; i >=0 ; i--)
+		for (var i = requiredEvents.Count - 1; i >= 0; i--)
 			yield return requiredEvents[i];
 	}
 }

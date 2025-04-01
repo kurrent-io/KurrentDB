@@ -47,7 +47,8 @@ public class StreamPolicySelectorFactory : Plugin, IPolicySelectorFactory, ISubs
 	}
 
 	public Task<bool> Enable() {
-		if (_enabled) return Task.FromResult(_enabled);
+		if (_enabled)
+			return Task.FromResult(_enabled);
 
 		if (!_licensed) {
 			Logger.Error("Stream Policies plugin is not licensed, cannot enable Stream policies");

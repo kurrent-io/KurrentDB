@@ -18,8 +18,8 @@ public class ShareARootTests {
 		CertificateUtils.ShareARoot(
 			leaf1,
 			leaf2,
-			intermediates is null ? null : new (intermediates),
-			roots is null ? null : new (roots),
+			intermediates is null ? null : new(intermediates),
+			roots is null ? null : new(roots),
 			out _,
 			out _);
 

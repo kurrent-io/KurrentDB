@@ -14,8 +14,10 @@ public class MultiStreamPositionTagger : PositionTagger {
 	private readonly HashSet<string> _streams;
 
 	public MultiStreamPositionTagger(int phase, string[] streams) : base(phase) {
-		if (streams == null) throw new ArgumentNullException("streams");
-		if (streams.Length == 0) throw new ArgumentException("streams");
+		if (streams == null)
+			throw new ArgumentNullException("streams");
+		if (streams.Length == 0)
+			throw new ArgumentException("streams");
 		_streams = new HashSet<string>(streams);
 	}
 
@@ -26,8 +28,8 @@ public class MultiStreamPositionTagger : PositionTagger {
 		if (previous.Mode_ != CheckpointTag.Mode.MultiStream)
 			throw new ArgumentException("Mode.MultiStream expected", "previous");
 		return _streams.Contains(committedEvent.Data.PositionStreamId)
-		       && committedEvent.Data.PositionSequenceNumber >
-		       previous.Streams[committedEvent.Data.PositionStreamId];
+			   && committedEvent.Data.PositionSequenceNumber >
+			   previous.Streams[committedEvent.Data.PositionStreamId];
 	}
 
 	public override CheckpointTag MakeCheckpointTag(
@@ -61,7 +63,7 @@ public class MultiStreamPositionTagger : PositionTagger {
 	public override bool IsCompatible(CheckpointTag checkpointTag) {
 		//TODO: should Stream be supported here as well if in the set?
 		return checkpointTag.Mode_ == CheckpointTag.Mode.MultiStream
-		       && checkpointTag.Streams.All(v => _streams.Contains(v.Key));
+			   && checkpointTag.Streams.All(v => _streams.Contains(v.Key));
 	}
 
 	public override CheckpointTag AdjustTag(CheckpointTag tag) {

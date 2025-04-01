@@ -13,7 +13,7 @@ namespace EventStore.Core.Tests.ClientAPI.UserManagement;
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class deleting_a_user<TLogFormat, TStreamId> : TestWithNode<TLogFormat, TStreamId>  {
+public class deleting_a_user<TLogFormat, TStreamId> : TestWithNode<TLogFormat, TStreamId> {
 	[Test]
 	public async Task deleting_non_existing_user_throws() {
 		var ex = await AssertEx.ThrowsAsync<UserCommandFailedException>(() =>

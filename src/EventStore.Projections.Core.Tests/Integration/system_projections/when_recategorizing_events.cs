@@ -22,7 +22,8 @@ public class when_recategorizing_events<TLogFormat, TStreamId> : specification_w
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		foreach (var e in base.When()) yield return e;
+		foreach (var e in base.When())
+			yield return e;
 	}
 
 	protected override bool GivenInitializeSystemProjections() {

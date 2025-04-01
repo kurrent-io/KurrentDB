@@ -11,7 +11,7 @@ using Xunit.Abstractions;
 
 namespace EventStore.Auth.Ldaps.Tests;
 
-public class LdapsFixture : IDisposable{
+public class LdapsFixture : IDisposable {
 
 	private const int InsecurePort = 10389;
 	private const int SecurePort = 10636;

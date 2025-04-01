@@ -30,7 +30,7 @@ public class LegacyStreamPermissionAssertion : IAssertion {
 		}
 
 		if ((streamId == string.Empty || streamId == "$all") &&
-		    (operation == Operations.Streams.Delete || operation == Operations.Streams.Write)) {
+			(operation == Operations.Streams.Delete || operation == Operations.Streams.Write)) {
 			context.Add(new AssertionMatch(policy,
 				new AssertionInformation("streamId", $"{operation.Action} denied on $all", Grant.Deny)));
 			return new ValueTask<bool>(true);

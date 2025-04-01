@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.Index.Hashes;
-using System;
 
 namespace EventStore.Core.Tests.Index;
 

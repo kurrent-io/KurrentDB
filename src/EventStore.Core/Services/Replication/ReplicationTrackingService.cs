@@ -92,7 +92,8 @@ public class ReplicationTrackingService :
 	}
 
 	public void Handle(ReplicationTrackingMessage.LeaderReplicatedTo message) {
-		if (_stop) return;
+		if (_stop)
+			return;
 		if (_state != VNodeState.Leader && _state != VNodeState.PreLeader && message.LogPosition > _replicationCheckpoint.Read()) {
 			_replicationCheckpoint.Write(message.LogPosition);
 			_replicationCheckpoint.Flush();
@@ -136,7 +137,7 @@ public class ReplicationTrackingService :
 		if (_state != VNodeState.Leader && _state != VNodeState.PreLeader) { return; }
 
 		if (_replicaLogPositions.TryGetValue(message.SubscriptionId, out var position) &&
-		    message.ReplicationLogPosition <= position) { return; }
+			message.ReplicationLogPosition <= position) { return; }
 
 		_replicaLogPositions.AddOrUpdate(message.SubscriptionId, message.ReplicationLogPosition, (k, v) => message.ReplicationLogPosition);
 		UpdateReplicationPosition();
@@ -158,7 +159,8 @@ public class ReplicationTrackingService :
 	}
 
 	public void Handle(SystemMessage.VNodeConnectionLost msg) {
-		if ((_state != VNodeState.Leader && _state != VNodeState.PreLeader) || !msg.SubscriptionId.HasValue) return;
+		if ((_state != VNodeState.Leader && _state != VNodeState.PreLeader) || !msg.SubscriptionId.HasValue)
+			return;
 		_replicaLogPositions.TryRemove(msg.SubscriptionId.Value, out _);
 	}
 

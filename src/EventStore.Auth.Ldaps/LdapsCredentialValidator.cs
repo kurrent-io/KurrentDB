@@ -35,12 +35,12 @@ internal class LdapsCredentialValidator : ILdapsCredentialValidator, IDisposable
 			BatchSize = 0, TimeLimit = _settings.LdapOperationTimeout, ServerTimeLimit = _settings.LdapOperationTimeout,
 			ReferralFollowing = true
 		};
-		var ldapConstraints = new LdapConstraints {TimeLimit = _settings.LdapOperationTimeout};
+		var ldapConstraints = new LdapConstraints { TimeLimit = _settings.LdapOperationTimeout };
 		_connection = new LdapConnection {
 			SecureSocketLayer = _settings.UseSSL,
 			Constraints = ldapConstraints
 		};
-		
+
 #pragma warning disable CS0618 // Type or member is obsolete
 		_connection.UserDefinedServerCertValidationDelegate += ConnectionOnUserDefinedServerCertValidationDelegate;
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -79,7 +79,7 @@ internal class LdapsCredentialValidator : ILdapsCredentialValidator, IDisposable
 
 		try {
 			var search = _connection.Search(_settings.BaseDn, LdapConnection.ScopeSub, query,
-				new[] {_settings.GroupMembershipAttribute}, false, _ldapSearchConstraints);
+				new[] { _settings.GroupMembershipAttribute }, false, _ldapSearchConstraints);
 
 			var entries = new List<LdapEntry>();
 			while (search.HasMore())
@@ -128,7 +128,7 @@ internal class LdapsCredentialValidator : ILdapsCredentialValidator, IDisposable
 				_connection.Bind(_settings.BindUser, _settings.BindPassword);
 			} catch (LdapException ex) {
 				if (ex.ResultCode == LdapException.LdapTimeout ||
-				    ex.ResultCode == LdapException.TimeLimitExceeded) {
+					ex.ResultCode == LdapException.TimeLimitExceeded) {
 					Log.Error(ex, "[LDAP-S: {server}] - Bind operation timed out.", LdapServer);
 					Disconnect();
 					return false;

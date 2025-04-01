@@ -13,14 +13,14 @@ using EventStore.Core.Data;
 using EventStore.Core.Exceptions;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.InMemory;
 using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.Checkpoint;
-using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 using EventStore.Core.Services.TimerService;
-using EventStore.Core.Messaging;
+using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using ILogger = Serilog.ILogger;
+using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 // ReSharper disable StaticMemberInGenericType
 
@@ -210,7 +210,7 @@ public class StorageReaderWorker<TStreamId> :
 				break;
 			case ReadAllResult.NotModified:
 				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream &&
-				    res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
+					res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
 					_publisher.Publish(new SubscriptionMessage.PollStream(
 						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
 						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
@@ -362,9 +362,9 @@ public class StorageReaderWorker<TStreamId> :
 			if (record is null)
 				return NoData(msg, ReadEventResult.AccessDenied);
 			if (result.Result is ReadEventResult.NoStream or ReadEventResult.NotFound &&
-			    _systemStreams.IsMetaStream(streamId) &&
-			    result.OriginalStreamExists.HasValue &&
-			    result.OriginalStreamExists.Value) {
+				_systemStreams.IsMetaStream(streamId) &&
+				result.OriginalStreamExists.HasValue &&
+				result.OriginalStreamExists.Value) {
 				return NoData(msg, ReadEventResult.Success);
 			}
 
@@ -386,7 +386,7 @@ public class StorageReaderWorker<TStreamId> :
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(msg.EventStreamId);
 			if (msg.ValidationStreamVersion.HasValue &&
-			    await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
+				await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
 				return NoData(msg, ReadStreamResult.NotModified, lastIndexPosition,
 					msg.ValidationStreamVersion.Value);
 
@@ -416,7 +416,7 @@ public class StorageReaderWorker<TStreamId> :
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(msg.EventStreamId);
 			if (msg.ValidationStreamVersion.HasValue &&
-			    await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
+				await _readIndex.GetStreamLastEventNumber(streamId, token) == msg.ValidationStreamVersion)
 				return NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
 					msg.ValidationStreamVersion.Value);
 
@@ -754,7 +754,8 @@ public class StorageReaderWorker<TStreamId> :
 		}
 
 		_expiredBatchCount++;
-		if (_expiredBatchCount < 50) return true;
+		if (_expiredBatchCount < 50)
+			return true;
 
 		if (expire - _lastExpireTime.Value > TimeSpan.FromSeconds(1)) {
 			_expiredBatchCount = 1;

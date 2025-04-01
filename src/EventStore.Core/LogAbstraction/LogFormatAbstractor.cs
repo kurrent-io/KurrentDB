@@ -108,7 +108,7 @@ public class LogV3FormatAbstractorFactory : ILogFormatAbstractorFactory<LogV3Str
 	public LogFormatAbstractor<LogV3StreamId> Create(LogFormatAbstractorOptions options) {
 		var metastreams = new LogV3Metastreams();
 		var recordFactory = new LogV3RecordFactory();
-		
+
 		var streamNameIndexPersistence = GenStreamNameIndexPersistence(options);
 		var streamExistenceFilter = GenStreamExistenceFilter(options);
 		var streamNameIndex = GenStreamNameIndex(streamExistenceFilter, streamNameIndexPersistence, metastreams);
@@ -119,7 +119,7 @@ public class LogV3FormatAbstractorFactory : ILogFormatAbstractorFactory<LogV3Str
 
 		var eventTypeIndexPersistence = GenEventTypeIndexPersistence(options);
 		var eventTypeIndex = GenEventTypeIndex(eventTypeIndexPersistence);
-		
+
 		var abstractor = new LogFormatAbstractor<LogV3StreamId>(
 			lowHasher: new IdentityLowHasher(),
 			highHasher: new IdentityHighHasher(),
@@ -234,7 +234,7 @@ public class LogV3FormatAbstractorFactory : ILogFormatAbstractorFactory<LogV3Str
 }
 
 public class LogFormatAbstractor<TStreamId> : IDisposable {
-	private readonly Func<ITransactionFileReader,ITransactionFileWriter,IPartitionManager> _partitionManagerFactory;
+	private readonly Func<ITransactionFileReader, ITransactionFileWriter, IPartitionManager> _partitionManagerFactory;
 
 	public LogFormatAbstractor(
 		IHasher<TStreamId> lowHasher,
@@ -255,8 +255,8 @@ public class LogFormatAbstractor<TStreamId> : IDisposable {
 		IExistenceFilterReader<TStreamId> streamExistenceFilterReader,
 		IRecordFactory<TStreamId> recordFactory,
 		bool supportsExplicitTransactions,
-		Func<ITransactionFileReader,ITransactionFileWriter,IPartitionManager> partitionManagerFactory) {
-		
+		Func<ITransactionFileReader, ITransactionFileWriter, IPartitionManager> partitionManagerFactory) {
+
 		_partitionManagerFactory = partitionManagerFactory;
 
 		LowHasher = lowHasher;
@@ -308,7 +308,7 @@ public class LogFormatAbstractor<TStreamId> : IDisposable {
 	public ISystemStreamLookup<TStreamId> SystemStreams => StreamNamesProvider.SystemStreams;
 	public INameExistenceFilterInitializer StreamExistenceFilterInitializer => StreamNamesProvider.StreamExistenceFilterInitializer;
 	public bool SupportsExplicitTransactions { get; }
-	
+
 	public IPartitionManager CreatePartitionManager(ITransactionFileReader reader, ITransactionFileWriter writer) {
 		return _partitionManagerFactory(reader, writer);
 	}

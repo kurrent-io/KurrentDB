@@ -4,7 +4,6 @@
 using System;
 using System.Runtime.CompilerServices;
 using EventStore.Common.Utils;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using Grpc.Core;

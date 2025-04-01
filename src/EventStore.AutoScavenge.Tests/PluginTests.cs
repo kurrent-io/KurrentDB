@@ -13,7 +13,7 @@ using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.AutoScavenge.Tests;
 
-public class PluginTests : IClassFixture<DummyWebApplicationFactory>{
+public class PluginTests : IClassFixture<DummyWebApplicationFactory> {
 	private static readonly JsonSerializerOptions JsonSerializerOptions = new() {
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 		Converters = {

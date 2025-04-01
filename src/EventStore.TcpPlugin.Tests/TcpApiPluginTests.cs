@@ -92,7 +92,7 @@ public class TcpApiPluginTests {
 		var authenticationProviderFactory =
 			new AuthenticationProviderFactory(_ => new PassthroughAuthenticationProviderFactory());
 
-		var authenticationProvider =  new DelegatedAuthenticationProvider(
+		var authenticationProvider = new DelegatedAuthenticationProvider(
 			authenticationProviderFactory.GetFactory(components).Build(false));
 
 		var authorizationProvider = authorizationProviderFactory.GetFactory(

@@ -116,8 +116,8 @@ public class RedactionService<TStreamId> :
 		var currentAcquisitionId = _switchChunksLock.CurrentAcquisitionId;
 		if (currentAcquisitionId != message.AcquisitionId) {
 			Log.Error("REDACTION: Skipping switching of chunk: {targetChunk} with chunk: {newChunk} " +
-			          "as the lock is not currently held by the requester. " +
-			          "(Requester\'s lock ID: {requestLockId:B}. Current lock ID: {currentLockId:B})",
+					  "as the lock is not currently held by the requester. " +
+					  "(Requester\'s lock ID: {requestLockId:B}. Current lock ID: {currentLockId:B})",
 				message.TargetChunkFile, message.NewChunkFile, message.AcquisitionId, currentAcquisitionId);
 			message.Envelope.ReplyWith(new RedactionMessage.SwitchChunkCompleted(SwitchChunkResult.UnexpectedError));
 			return;
@@ -219,7 +219,7 @@ public class RedactionService<TStreamId> :
 		}
 
 		if (newChunkHeader.ChunkStartNumber != targetChunk.ChunkHeader.ChunkStartNumber ||
-		    newChunkHeader.ChunkEndNumber != targetChunk.ChunkHeader.ChunkEndNumber) {
+			newChunkHeader.ChunkEndNumber != targetChunk.ChunkHeader.ChunkEndNumber) {
 			return new(SwitchChunkResult.ChunkRangeDoesNotMatch);
 		}
 

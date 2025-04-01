@@ -149,5 +149,5 @@ public class StreamPolicyWriterTests {
 	}
 
 	private ClientMessage.WriteEventsCompleted CreateWriteEventsSuccessfullyCompleted(ClientMessage.WriteEvents msg) =>
-		new (msg.CorrelationId, 0, 0, 1000L, 1000L);
+		new(msg.CorrelationId, 0, 0, 1000L, 1000L);
 }

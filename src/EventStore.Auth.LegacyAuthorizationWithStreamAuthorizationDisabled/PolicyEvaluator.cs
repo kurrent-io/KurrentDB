@@ -27,7 +27,8 @@ internal class PolicyEvaluator : IPolicyEvaluator {
 
 		if (_policy.TryGetAssertions(operation, out var assertions))
 			while (!assertions.IsEmpty && evaluation.Grant != Grant.Deny) {
-				if (ct.IsCancellationRequested) break;
+				if (ct.IsCancellationRequested)
+					break;
 				var assertion = assertions.Span[0];
 				assertions = assertions.Slice(1);
 				var evaluate = assertion.Evaluate(cp, operation, _policyInfo, evaluation);
@@ -35,7 +36,8 @@ internal class PolicyEvaluator : IPolicyEvaluator {
 					return EvaluateAsync(evaluate, cp, operation, assertions, evaluation, ct);
 			}
 
-		if (evaluation.Grant == Grant.Unknown) evaluation.Add(new AssertionMatch(_policyInfo, DeniedByDefault));
+		if (evaluation.Grant == Grant.Unknown)
+			evaluation.Add(new AssertionMatch(_policyInfo, DeniedByDefault));
 
 		return new ValueTask<EvaluationResult>(evaluation.ToResult());
 	}
@@ -48,10 +50,13 @@ internal class PolicyEvaluator : IPolicyEvaluator {
 		EvaluationContext evaluationContext,
 		CancellationToken ct) {
 		do {
-			if (ct.IsCancellationRequested) break;
+			if (ct.IsCancellationRequested)
+				break;
 			await pending.ConfigureAwait(false);
-			if (ct.IsCancellationRequested) break;
-			if (assertions.IsEmpty) break;
+			if (ct.IsCancellationRequested)
+				break;
+			if (assertions.IsEmpty)
+				break;
 			pending = assertions.Span[0].Evaluate(cp, operation, _policyInfo, evaluationContext);
 			assertions = assertions.Slice(1);
 		} while (evaluationContext.Grant != Grant.Deny);

@@ -2,12 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using Google.Protobuf.WellKnownTypes;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
 using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
 using NUnit.Framework;
 
@@ -117,7 +117,7 @@ public class AppendBatchToStreamTests {
 				},
 				IsFinal = true,
 				ProposedMessages = { CreateEvents(1) },
-				CorrelationId = new() {String = _correlationId.ToString()}
+				CorrelationId = new() { String = _correlationId.ToString() }
 			});
 		}
 
@@ -128,7 +128,7 @@ public class AppendBatchToStreamTests {
 
 		[Test]
 		public void is_correlated() {
-			Assert.AreEqual(new UUID() {String = _correlationId.ToString()}, _response.CorrelationId);
+			Assert.AreEqual(new UUID() { String = _correlationId.ToString() }, _response.CorrelationId);
 		}
 	}
 
@@ -223,11 +223,11 @@ public class AppendBatchToStreamTests {
 			_response = await AppendToStreamBatch(new BatchAppendReq {
 				Options = new() {
 					Any = new(),
-					StreamIdentifier = new() {StreamName = ByteString.CopyFromUtf8("stream")},
+					StreamIdentifier = new() { StreamName = ByteString.CopyFromUtf8("stream") },
 					Deadline = Duration.FromTimeSpan(TimeSpan.Zero)
 				},
 				IsFinal = true,
-				ProposedMessages = {CreateEvents(1)},
+				ProposedMessages = { CreateEvents(1) },
 				CorrelationId = _correlationId.ToDto()
 			});
 		}

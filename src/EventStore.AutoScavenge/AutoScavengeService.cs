@@ -134,7 +134,7 @@ internal class AutoScavengeService : IDisposable {
 		GossipMessage? lastGossip = null;
 		var singleNode = false;
 
-		await foreach(var @event in _client.SubscribeToStream("$mem-gossip", cancellationToken)) {
+		await foreach (var @event in _client.SubscribeToStream("$mem-gossip", cancellationToken)) {
 			try {
 				var msg = JsonSerializer.Deserialize<GossipMessage>(@event.Data.Span)!;
 				_gossipHandler.ReceiveGossipMessage(msg);

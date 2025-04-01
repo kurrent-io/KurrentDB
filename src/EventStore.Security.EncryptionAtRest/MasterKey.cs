@@ -13,7 +13,7 @@ public readonly record struct MasterKey {
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(id);
 		ArgumentOutOfRangeException.ThrowIfGreaterThan(id, ushort.MaxValue);
 
-		Id = (ushort) id;
+		Id = (ushort)id;
 		Key = key;
 	}
 }

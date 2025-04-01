@@ -13,7 +13,7 @@ using Google.Protobuf;
 using Grpc.Core;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.Core.Data.ExpectedVersion;
-using Metadata=EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
+using Metadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests;
 
 [TestFixture]

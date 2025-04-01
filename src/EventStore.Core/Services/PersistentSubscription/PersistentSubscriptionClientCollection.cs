@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
 
 namespace EventStore.Core.Services.PersistentSubscription;
@@ -53,7 +52,8 @@ internal class PersistentSubscriptionClientCollection {
 	public IEnumerable<OutstandingMessage> RemoveClientByCorrelationId(Guid correlationId,
 		bool sendDropNotification) {
 		PersistentSubscriptionClient client;
-		if (!_hash.TryGetValue(correlationId, out client)) return new OutstandingMessage[0];
+		if (!_hash.TryGetValue(correlationId, out client))
+			return new OutstandingMessage[0];
 		_hash.Remove(client.CorrelationId);
 		_consumerStrategy.ClientRemoved(client);
 		if (sendDropNotification) {

@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 
 namespace EventStore.Common.Utils;

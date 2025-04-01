@@ -3,13 +3,13 @@
 
 using System;
 using System.Threading.Tasks;
+using EventStore.Client.PersistentSubscriptions;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToAllCompleted;
+using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.DeleteReq.Types.Options.StreamOptionOneofCase;
 

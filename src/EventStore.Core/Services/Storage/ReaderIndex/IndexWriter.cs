@@ -111,7 +111,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			try {
 				if (await GetPrepare(reader, transactionPosition, token) is not { } prepare) {
 					Log.Error("Could not read first prepare of to-be-committed transaction. "
-					          + "Transaction pos: {transactionPosition}, commit pos: {commitPosition}.",
+							  + "Transaction pos: {transactionPosition}, commit pos: {commitPosition}.",
 						transactionPosition, commitPosition);
 					var message = "Could not read first prepare of to-be-committed transaction. " + $"Transaction pos: {transactionPosition}, commit pos: {commitPosition}.";
 					throw new InvalidOperationException(message);
@@ -212,8 +212,8 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				eventNumber += 1;
 
 				if (_committedEvents.TryGetRecord(eventId, out var prepInfo)
-				    && StreamIdComparer.Equals(prepInfo.StreamId, streamId)
-				    && prepInfo.EventNumber == eventNumber)
+					&& StreamIdComparer.Equals(prepInfo.StreamId, streamId)
+					&& prepInfo.EventNumber == eventNumber)
 					continue;
 
 				if (await _indexReader.ReadPrepare(streamId, eventNumber, token) is { } res && res.EventId == eventId)
@@ -361,8 +361,10 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			_streamVersions.Put(
 				commitInfo.StreamId,
 				x => {
-					if (!Debugger.IsAttached) Debugger.Launch();
-					else Debugger.Break();
+					if (!Debugger.IsAttached)
+						Debugger.Launch();
+					else
+						Debugger.Break();
 					throw new Exception($"CommitInfo for stream '{x}' is not present!");
 				},
 				(streamId, oldVersion) => oldVersion,
@@ -371,8 +373,10 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				_streamRawMetas.Put(
 					_systemStreams.OriginalStreamOf(commitInfo.StreamId),
 					x => {
-						if (!Debugger.IsAttached) Debugger.Launch();
-						else Debugger.Break();
+						if (!Debugger.IsAttached)
+							Debugger.Launch();
+						else
+							Debugger.Break();
 						throw new Exception($"Original stream CommitInfo for meta-stream '{_systemStreams.MetaStreamOf(x)}' is not present!");
 					},
 					(_, oldVersion) => oldVersion,

@@ -19,7 +19,6 @@ using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Transport.Tcp;
 using ILogger = Serilog.ILogger;
-using Timeout = System.Threading.Timeout;
 
 namespace EventStore.Core.Services.Monitoring;
 

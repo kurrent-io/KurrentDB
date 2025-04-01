@@ -35,7 +35,7 @@ public class LogsEndpointPlugin : ISubsystemsPlugin, ISubsystem {
 	private const string EndpointPath = "/admin/logs";
 	private KurrentDBOptions _options;
 
-	public LogsEndpointPlugin () {
+	public LogsEndpointPlugin() {
 		_logger.Information("LogsEndpointPlugin is loaded");
 	}
 

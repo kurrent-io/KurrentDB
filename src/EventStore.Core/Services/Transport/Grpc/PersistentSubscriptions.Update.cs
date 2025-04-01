@@ -3,17 +3,17 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Common;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
-using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.Options.StreamOptionOneofCase;
-using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.StreamOptions.RevisionOptionOneofCase;
 using AllOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.AllOptions.AllOptionOneofCase;
+using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.StreamOptions.RevisionOptionOneofCase;
+using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.Options.StreamOptionOneofCase;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 

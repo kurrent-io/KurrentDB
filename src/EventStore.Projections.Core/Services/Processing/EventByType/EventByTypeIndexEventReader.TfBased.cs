@@ -15,8 +15,7 @@ using EventStore.Projections.Core.Messages;
 
 namespace EventStore.Projections.Core.Services.Processing.EventByType;
 
-public partial class EventByTypeIndexEventReader
-{
+public partial class EventByTypeIndexEventReader {
 	private class TfBased : State,
 		IHandle<ClientMessage.ReadAllEventsForwardCompleted>,
 		IHandle<ProjectionManagementMessage.Internal.ReadTimeout> {
@@ -114,9 +113,12 @@ public partial class EventByTypeIndexEventReader
 		}
 
 		public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-			if (_disposed) return;
-			if (_reader.Paused) return;
-			if (message.CorrelationId != _pendingRequestCorrelationId) return;
+			if (_disposed)
+				return;
+			if (_reader.Paused)
+				return;
+			if (message.CorrelationId != _pendingRequestCorrelationId)
+				return;
 
 			_tfEventsRequested = false;
 			_reader.PauseOrContinueProcessing();

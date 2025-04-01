@@ -1,15 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
+using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Http.Controllers;
 using EventStore.Transport.Http;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
-using EventStore.Common.Utils;
-using EventStore.Core.Cluster;
 
 namespace EventStore.Core.Services.Transport.Http;
 

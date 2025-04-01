@@ -13,10 +13,10 @@ using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
-using EventStore.Transport.Tcp;
-using EventStore.Transport.Tcp.Framing;
 using EventStore.Core.Settings;
 using EventStore.Plugins.Authentication;
+using EventStore.Transport.Tcp;
+using EventStore.Transport.Tcp.Framing;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Tcp;
@@ -171,14 +171,16 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 	}
 
 	private void OnConnectionFailed(ITcpConnection connection, SocketError socketError) {
-		if (Interlocked.CompareExchange(ref _isClosed, 1, 0) != 0) return;
+		if (Interlocked.CompareExchange(ref _isClosed, 1, 0) != 0)
+			return;
 		Log.Information("Connection '{connectionName}' ({connectionId:B}) to [{remoteEndPoint}] failed: {e}.",
 			ConnectionName, ConnectionId, connection.RemoteEndPoint, socketError);
 		_connectionClosed?.Invoke(this, socketError);
 	}
 
 	private void OnConnectionClosed(ITcpConnection connection, SocketError socketError) {
-		if (Interlocked.CompareExchange(ref _isClosed, 1, 0) != 0) return;
+		if (Interlocked.CompareExchange(ref _isClosed, 1, 0) != 0)
+			return;
 		Log.Information(
 			"Connection '{connectionName}{clientConnectionName}' [{remoteEndPoint}, {connectionId:B}] closed: {e}.",
 			ConnectionName, ClientConnectionName.IsEmptyString() ? string.Empty : ":" + ClientConnectionName,
@@ -375,7 +377,7 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 
 			int queueSendBytes;
 			if (_connectionPendingSendBytesThreshold > ESConsts.UnrestrictedPendingSendBytes &&
-			    (queueSendBytes = _connection.PendingSendBytes) > _connectionPendingSendBytesThreshold) {
+				(queueSendBytes = _connection.PendingSendBytes) > _connectionPendingSendBytesThreshold) {
 				SendBadRequestAndClose(Guid.Empty, $"Connection pending send bytes is too large: {queueSendBytes}.");
 				return;
 			}
@@ -387,7 +389,8 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 	}
 
 	public void Handle(TcpMessage.Heartbeat message) {
-		if (IsClosed) return;
+		if (IsClosed)
+			return;
 
 		var receiveProgressIndicator = ReceiveProgressIndicator;
 		var sendProgressIndicator = SendProgressIndicator;
@@ -417,7 +420,8 @@ public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMe
 
 	public void Handle(TcpMessage.HeartbeatTimeout message) {
 		_awaitingHeartbeatTimeoutCheck = false;
-		if (IsClosed) return;
+		if (IsClosed)
+			return;
 
 		var receiveProgressIndicator = ReceiveProgressIndicator;
 		var sendProgressIndicator = SendProgressIndicator;

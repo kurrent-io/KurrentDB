@@ -36,9 +36,9 @@ public class XmlCodec : ICodec {
 
 	public bool SuitableForResponse(MediaType component) {
 		return component.Type == "*"
-		       || (string.Equals(component.Type, "text", StringComparison.OrdinalIgnoreCase)
-		           && (component.Subtype == "*"
-		               || string.Equals(component.Subtype, "xml", StringComparison.OrdinalIgnoreCase)));
+			   || (string.Equals(component.Type, "text", StringComparison.OrdinalIgnoreCase)
+				   && (component.Subtype == "*"
+					   || string.Equals(component.Subtype, "xml", StringComparison.OrdinalIgnoreCase)));
 	}
 
 	public T From<T>(string text) {

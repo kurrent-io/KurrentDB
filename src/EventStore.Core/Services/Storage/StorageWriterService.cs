@@ -351,7 +351,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			}
 
 			bool softUndeleteMetastream = _systemStreams.IsMetaStream(streamId)
-			                              && await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(streamId), token);
+										  && await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(streamId), token);
 
 			// note: the stream & event type records are indexed separately and must not be pre-committed to the main index
 			_indexWriter.PreCommit(CollectionsMarshal.AsSpan(prepares)[^msg.Events.Length..]);
@@ -627,7 +627,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			);
 
 			bool softUndeleteMetastream = _systemStreams.IsMetaStream(commitCheck.EventStreamId)
-			                              && await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(commitCheck.EventStreamId), token);
+										  && await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(commitCheck.EventStreamId), token);
 
 			await _indexWriter.PreCommit(commit, token);
 
@@ -726,7 +726,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 		foreach (var prepare in prepares) {
 			long newWriterPos = await Writer.WriteToTransaction(prepare, CancellationToken.None)
-			                    ?? throw new InvalidOperationException("The transaction does not fit in the current chunk.");
+								?? throw new InvalidOperationException("The transaction does not fit in the current chunk.");
 			if (newWriterPos - writerPos != prepare.GetSizeWithLengthPrefixAndSuffix())
 				throw new Exception($"Expected writer position to be at: {writerPos + prepare.GetSizeWithLengthPrefixAndSuffix()} but it was at {newWriterPos}");
 
@@ -758,7 +758,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 		}
 
 		if (StreamIdComparer.Equals(prepare.EventType, _scavengePointEventTypeId) &&
-		    StreamIdComparer.Equals(prepare.EventStreamId, _scavengePointsStreamId)) {
+			StreamIdComparer.Equals(prepare.EventStreamId, _scavengePointsStreamId)) {
 			await Writer.CompleteChunk(token);
 			await Writer.AddNewChunk(token: token);
 		}
@@ -767,7 +767,8 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 	}
 
 	private async ValueTask<CommitLogRecord> WriteCommitWithRetry(CommitLogRecord commit, CancellationToken token) {
-		if (await Writer.Write(commit, token) is not (false, var newPos)) return commit;
+		if (await Writer.Write(commit, token) is not (false, var newPos))
+			return commit;
 
 		var transactionPos = commit.TransactionPosition == commit.LogPosition ? newPos : commit.TransactionPosition;
 		var record = new CommitLogRecord(newPos, commit.CorrelationId, transactionPos, commit.TimeStamp, commit.FirstEventNumber);

@@ -23,7 +23,7 @@ public class StreamPolicySelectorTests {
 
 	private const string _customUser = "ouro";
 	private const string _customRole = "user-role";
-	private readonly CancellationTokenSource _cts = new ();
+	private readonly CancellationTokenSource _cts = new();
 
 	private readonly string[] _projectionStreamPrefixes = ["$et-", "$ce-,", "$bc-", "$category-", "$streams"];
 
@@ -110,7 +110,7 @@ public class StreamPolicySelectorTests {
 				{ "customOne", new Schema.AccessPolicy{ Readers = [role], Writers = [], Deleters = [], MetadataWriters = [], MetadataReaders = [] }},
 				{ "customTwo", new Schema.AccessPolicy{ Readers = [role], Writers = [role], Deleters = [], MetadataWriters = [], MetadataReaders = [] }},
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules{ SystemStreams = "systemDefault", UserStreams = "userDefault"},
+			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "systemDefault", UserStreams = "userDefault" },
 			StreamRules = new Schema.StreamRule[] {
 				new StreamRule{ Policy = "customOne", StartsWith = "account-"},
 				new StreamRule {Policy = "customTwo", StartsWith = "account"}
@@ -222,8 +222,7 @@ public class StreamPolicySelectorTests {
 				{ "NewPolicy", PolicyTestHelpers.CreateAccessPolicyDtoForAction(allowedAction, SystemUsers.Operations) },
 				{ "DefaultPolicy", AdminOnly }
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules
-				{ SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
+			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
 			StreamRules = [new Schema.StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
@@ -260,8 +259,7 @@ public class StreamPolicySelectorTests {
 				{ "NewPolicy", PolicyTestHelpers.CreateAccessPolicyDtoForAction(allowedAction, SystemUsers.Operations) },
 				{ "DefaultPolicy", AdminOnly }
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules
-				{ SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
+			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
 			StreamRules = [new Schema.StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
@@ -297,8 +295,8 @@ public class StreamPolicySelectorTests {
 				{ "NewPolicy", PolicyTestHelpers.CreateAccessPolicyDtoForAction(allowedAction, SystemUsers.Operations)},
 				{ "DefaultPolicy", AdminOnly }
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules{ SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy"},
-			StreamRules = [new Schema.StreamRule{ Policy = "NewPolicy", StartsWith = stream}]
+			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
+			StreamRules = [new Schema.StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
 		var subscribeSource = new TaskCompletionSource<ClientMessage.SubscribeToStream>();
@@ -346,8 +344,8 @@ public class StreamPolicySelectorTests {
 				{ "NewPolicy", PolicyTestHelpers.CreateAccessPolicyDtoForAction(allowedAction, SystemUsers.Operations)},
 				{ "DefaultPolicy", AdminOnly }
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules{ SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy"},
-			StreamRules = [new Schema.StreamRule{ Policy = "NewPolicy", StartsWith = stream}]
+			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
+			StreamRules = [new Schema.StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
 		var subscribeSource = new TaskCompletionSource<ClientMessage.SubscribeToStream>();

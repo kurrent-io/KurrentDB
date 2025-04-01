@@ -2,16 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Buffers.Binary;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Buffers;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Plugins.Transforms;
 using NUnit.Framework;
@@ -91,8 +88,8 @@ public class when_chasing_a_chunked_transaction_log<TLogFormat, TStreamId> : Spe
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
-			metadata: new byte[] {7, 17});
+			data: new byte[] { 1, 2, 3, 4, 5 },
+			metadata: new byte[] { 7, 17 });
 
 		using (var fs = new FileStream(GetFilePathFor("chunk-000000.000000"), FileMode.CreateNew,
 			FileAccess.Write)) {
@@ -147,7 +144,7 @@ public class when_chasing_a_chunked_transaction_log<TLogFormat, TStreamId> : Spe
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
 			data: new byte[9000],
-			metadata: new byte[] {7, 17});
+			metadata: new byte[] { 7, 17 });
 		var writer = new TFChunkWriter(db);
 		await writer.Open(CancellationToken.None);
 
@@ -190,8 +187,8 @@ public class when_chasing_a_chunked_transaction_log<TLogFormat, TStreamId> : Spe
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
-			metadata: new byte[] {7, 17});
+			data: new byte[] { 1, 2, 3, 4, 5 },
+			metadata: new byte[] { 7, 17 });
 		var writer = new TFChunkWriter(db);
 		await writer.Open(CancellationToken.None);
 

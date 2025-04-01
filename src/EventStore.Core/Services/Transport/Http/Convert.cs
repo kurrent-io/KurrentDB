@@ -2,22 +2,19 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Globalization;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http.Controllers;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Transport.Http;
 using EventStore.Transport.Http.Atom;
+using EventStore.Transport.Http.Codecs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Linq;
-using System.Collections.Generic;
-using System.Diagnostics;
-using EventStore.Transport.Http.Codecs;
-using System.Xml.Serialization;
 
 namespace EventStore.Core.Services.Transport.Http;
 
@@ -253,7 +250,8 @@ public static class Convert {
 		descriptionDocument.SetSelf($"/streams/{escapedStreamId}", contentType);
 		descriptionDocument.SetStream($"/streams/{escapedStreamId}", Codec.EventStoreXmlCodec.ContentType, Codec.KurrentJsonCodec.ContentType, Codec.LegacyEventStoreJsonCodec.ContentType);
 
-		if (subscriptions == null) return descriptionDocument;
+		if (subscriptions == null)
+			return descriptionDocument;
 
 		foreach (var group in subscriptions) {
 			descriptionDocument.AddStreamSubscription(
@@ -365,7 +363,8 @@ public static class Convert {
 	private static Tuple<string, long> GetLinkData(string link) {
 		Debug.Assert(link != null, "link data cannot be null");
 		var loc = link.IndexOf('@');
-		if (loc == -1) throw new($"Unable to parse link {link}");
+		if (loc == -1)
+			throw new($"Unable to parse link {link}");
 		var position = long.Parse(link[..loc]);
 		var stream = link.Substring(loc + 1, link.Length - loc - 1);
 		return new(stream, position);

@@ -3,15 +3,13 @@
 
 using System;
 using System.Linq;
-using System.Text;
 using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
-using NUnit.Framework;
-using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using NUnit.Framework;
+using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection;
 

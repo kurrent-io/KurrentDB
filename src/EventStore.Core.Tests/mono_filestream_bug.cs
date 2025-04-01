@@ -37,7 +37,7 @@ public class mono_filestream_bug {
 			file.Read(new byte[pos], 0, pos); // THIS READ IS CRITICAL, WITHOUT IT EVERYTHING WORKS
 			Assert.AreEqual(pos,
 				file.Position); // !!! here it says position is correct, but writes at different position !!!
-			// file.Position = pos; // !!! this fixes test !!!
+								// file.Position = pos; // !!! this fixes test !!!
 			file.Write(bytes, 0, bytes.Length);
 
 			//Assert.AreEqual(pos + bytes.Length, file.Length); -- fails

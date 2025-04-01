@@ -11,7 +11,6 @@ using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Services.Transport.Http.NodeHttpClientFactory;
 using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
-using EventStore.Plugins.Subsystems;
 using EventStore.POC.IO.Core;
 using EventStore.POC.IO.Core.Serialization;
 using Microsoft.AspNetCore.Builder;
@@ -100,7 +99,7 @@ public class AutoScavengePlugin() : SubsystemsPlugin(name: "auto-scavenge", requ
 				scavenger: new HttpNodeScavenger(wrapper, client),
 				dispatcher,
 				cts: _cts);
-			});
+		});
 	}
 
 	protected override void OnLicenseException(Exception ex, Action<Exception> shutdown) {

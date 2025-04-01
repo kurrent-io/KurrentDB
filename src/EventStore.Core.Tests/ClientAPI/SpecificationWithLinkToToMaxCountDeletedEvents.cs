@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common;
-using EventStore.ClientAPI.SystemData;
 
 namespace EventStore.Core.Tests.ClientAPI;
 

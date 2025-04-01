@@ -2,7 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Linq;
 using System.Xml.Linq;
+using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog.LogRecords;
@@ -10,10 +12,8 @@ using EventStore.Transport.Http;
 using EventStore.Transport.Http.Codecs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Formatting = Newtonsoft.Json.Formatting;
-using System.Linq;
-using EventStore.Common.Utils;
 using Serilog;
+using Formatting = Newtonsoft.Json.Formatting;
 
 namespace EventStore.Core.Services.Transport.Http;
 
@@ -154,7 +154,8 @@ public static class AutoEventConverter {
 			case string s:
 				try {
 					var jsonObject = JsonConvert.DeserializeObject(s);
-					if (jsonObject is not (JObject or JArray)) throw new JsonException();
+					if (jsonObject is not (JObject or JArray))
+						throw new JsonException();
 					isJson = true;
 					return Helper.UTF8NoBom.GetBytes(Codec.Json.To(jsonObject));
 				} catch (JsonException) {

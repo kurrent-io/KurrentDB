@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
 using EventStore.Core.TransactionLog.Scavenging;

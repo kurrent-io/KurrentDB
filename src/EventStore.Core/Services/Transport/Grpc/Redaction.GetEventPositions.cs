@@ -2,13 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using Kurrent.Client.Redaction;
 using EventStore.Core.Data.Redaction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Common;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using Kurrent.Client.Redaction;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 

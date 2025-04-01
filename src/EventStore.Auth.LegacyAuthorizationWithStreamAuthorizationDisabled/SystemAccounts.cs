@@ -16,5 +16,5 @@ public static class SystemAccounts {
 	public static readonly ClaimsPrincipal System = new ClaimsPrincipal(new ClaimsIdentity(Claims, "system"));
 
 	public static readonly ClaimsPrincipal Anonymous =
-		new ClaimsPrincipal(new ClaimsIdentity(new[] {new Claim(ClaimTypes.Anonymous, ""),}));
+		new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Anonymous, ""), }));
 }

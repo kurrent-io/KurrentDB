@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using EventStore.Core.Data;
-using EventStore.Core.Messages;
 using static EventStore.Client.Messages.Filter.Types;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;

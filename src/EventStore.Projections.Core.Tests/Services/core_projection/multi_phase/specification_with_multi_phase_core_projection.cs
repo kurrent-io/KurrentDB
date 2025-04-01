@@ -83,7 +83,7 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 			ITimeProvider timeProvider,
 			IODispatcher ioDispatcher,
 			CoreProjectionCheckpointWriter coreProjectionCheckpointWriter) {
-			return new IProjectionProcessingPhase[] {_phase1, _phase2};
+			return new IProjectionProcessingPhase[] { _phase1, _phase2 };
 		}
 	}
 

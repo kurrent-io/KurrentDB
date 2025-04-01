@@ -72,6 +72,6 @@ public readonly struct IndexReadStreamResult {
 
 	public override string ToString() {
 		return $"FromEventNumber: {FromEventNumber}, Maxcount: {MaxCount}, Result: {Result}, Record count: {Records.Length}, Metadata: {Metadata}, " +
-		       $"NextEventNumber: {NextEventNumber}, LastEventNumber: {LastEventNumber}, IsEndOfStream: {IsEndOfStream}";
+			   $"NextEventNumber: {NextEventNumber}, LastEventNumber: {LastEventNumber}, IsEndOfStream: {IsEndOfStream}";
 	}
 }

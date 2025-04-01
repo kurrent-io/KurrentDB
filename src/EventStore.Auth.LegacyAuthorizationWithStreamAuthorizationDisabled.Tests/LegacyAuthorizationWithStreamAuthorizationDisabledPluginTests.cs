@@ -26,8 +26,8 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledPluginTests {
 	}
 
 	public static IEnumerable<object[]> TestCases() {
-		yield return new object[] {new[] {new Claim(ClaimTypes.Role, SystemRoles.Admins)}};
-		yield return new object[] {Array.Empty<Claim>()};
+		yield return new object[] { new[] { new Claim(ClaimTypes.Role, SystemRoles.Admins) } };
+		yield return new object[] { Array.Empty<Claim>() };
 	}
 
 	[Theory, MemberData(nameof(TestCases))]
@@ -48,7 +48,7 @@ public class LegacyAuthorizationWithStreamAuthorizationDisabledPluginTests {
 			File.Delete(configurationPath);
 		}
 	}
-	
+
 	[Theory, MemberData(nameof(TestCases))]
 	public async Task write_all_stream(Claim[] claims) {
 		var configurationPath = Path.GetTempFileName();

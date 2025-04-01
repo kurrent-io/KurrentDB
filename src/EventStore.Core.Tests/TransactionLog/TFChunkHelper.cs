@@ -14,22 +14,22 @@ public static class TFChunkHelper {
 	public static TFChunkDbConfig CreateDbConfig(
 		string pathName,
 		long writerCheckpointPosition) {
-		return CreateDbConfigEx(pathName, writerCheckpointPosition,0,-1,-1,-1,10000,-1);
+		return CreateDbConfigEx(pathName, writerCheckpointPosition, 0, -1, -1, -1, 10000, -1);
 	}
 	public static TFChunkDbConfig CreateSizedDbConfig(
 		string pathName,
 		long writerCheckpointPosition,
 		int chunkSize) {
-		return CreateDbConfigEx(pathName, writerCheckpointPosition,0,-1,-1,-1,chunkSize,-1);
+		return CreateDbConfigEx(pathName, writerCheckpointPosition, 0, -1, -1, -1, chunkSize, -1);
 	}
 	public static TFChunkDbConfig CreateDbConfigEx(
 		string pathName,
 		long writerCheckpointPosition,
 		long chaserCheckpointPosition,// Default 0
-		long epochCheckpointPosition ,// Default -1
-		long proposalCheckpointPosition ,// Default -1
-		long truncateCheckpoint ,// Default -1
-		int chunkSize ,// Default 10000
+		long epochCheckpointPosition,// Default -1
+		long proposalCheckpointPosition,// Default -1
+		long truncateCheckpoint,// Default -1
+		int chunkSize,// Default 10000
 		long maxTruncation // Default -1
 		) {
 		return new TFChunkDbConfig(pathName,
@@ -52,7 +52,8 @@ public static class TFChunkHelper {
 		ICheckpoint chaserCheckpoint,
 		int chunkSize = 10000,
 		ICheckpoint replicationCheckpoint = null) {
-		if (replicationCheckpoint == null) replicationCheckpoint = new InMemoryCheckpoint(-1);
+		if (replicationCheckpoint == null)
+			replicationCheckpoint = new InMemoryCheckpoint(-1);
 		return new TFChunkDbConfig(
 			pathName,
 			chunkSize,

@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
 using EventStore.Core.Metrics;
-using EventStore.Core.Tests;
 using Xunit;
 
 using static EventStore.Common.Configuration.MetricsConfiguration;
@@ -35,7 +34,7 @@ public sealed class CacheHitsMissesTrackerTests : IDisposable {
 			{ Cache.StreamInfo, "stream-info" },
 			{ Cache.Chunk, "chunk" },
 		});
-		var sut =  new CacheHitsMissesTracker(metric);
+		var sut = new CacheHitsMissesTracker(metric);
 		return (sut, listener);
 	}
 

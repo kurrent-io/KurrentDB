@@ -56,7 +56,8 @@ namespace EventStore.Core.Services.Transport.Grpc {
 		protected static bool GetRequiresLeader(Metadata requestHeaders) {
 			var requiresLeaderHeaderValue =
 				requestHeaders.FirstOrDefault(x => x.Key == Constants.Headers.RequiresLeader)?.Value;
-			if (string.IsNullOrEmpty(requiresLeaderHeaderValue)) return false;
+			if (string.IsNullOrEmpty(requiresLeaderHeaderValue))
+				return false;
 			bool.TryParse(requiresLeaderHeaderValue, out var requiresLeader);
 			return requiresLeader;
 		}

@@ -231,8 +231,10 @@ public class ReplicaService :
 	}
 
 	public void Handle(ReplicationMessage.AckLogPosition message) {
-		if (!_state.IsReplica()) throw new Exception("!_state.IsReplica()");
-		if (_connection == null) throw new Exception("_connection == null");
+		if (!_state.IsReplica())
+			throw new Exception("!_state.IsReplica()");
+		if (_connection == null)
+			throw new Exception("_connection == null");
 		SendTcpMessage(_connection, message);
 	}
 

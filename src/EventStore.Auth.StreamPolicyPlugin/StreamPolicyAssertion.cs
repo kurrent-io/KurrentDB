@@ -36,7 +36,7 @@ public class StreamPolicyAssertion(Func<string, AccessPolicy> getAccessPolicyFor
 		if (streamId == string.Empty)
 			streamId = SystemStreams.AllStream;
 		if (streamId == SystemStreams.AllStream &&
-		    (operation == Operations.Streams.Delete || operation == Operations.Streams.Write)) {
+			(operation == Operations.Streams.Delete || operation == Operations.Streams.Write)) {
 			context.Add(new AssertionMatch(policy,
 				new AssertionInformation("streamId", $"{operation.Action} denied on $all", Grant.Deny)));
 			return true;
@@ -111,13 +111,13 @@ public class StreamPolicyAssertion(Func<string, AccessPolicy> getAccessPolicyFor
 	private async ValueTask<bool> IsSystemOrAdmin(ClaimsPrincipal cp, Operation operation,
 		PolicyInformation policy, EvaluationContext context) {
 		return await WellKnownAssertions.System.Evaluate(cp, operation, policy, context)
-		       || await WellKnownAssertions.Admin.Evaluate(cp, operation, policy, context);
+			   || await WellKnownAssertions.Admin.Evaluate(cp, operation, policy, context);
 	}
 
 	private bool IsOpsUser(ClaimsPrincipal cp) {
 		var roles = cp.FindAll(x => x.Type == ClaimTypes.Role).ToArray();
 		return roles.Length > 0
-		       && roles.All(x => x.Value == SystemRoles.Operations);
+			   && roles.All(x => x.Value == SystemRoles.Operations);
 	}
 
 	private string? FindStreamId(ReadOnlySpan<Parameter> parameters) {

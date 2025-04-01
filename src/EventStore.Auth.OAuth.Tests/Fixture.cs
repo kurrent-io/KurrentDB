@@ -192,14 +192,13 @@ OAuth:
 		certReq.CertificateExtensions.Add(sanBuilder.Build());
 		var certificate = certReq.CreateSelfSigned(DateTimeOffset.UtcNow.AddMonths(-1), DateTimeOffset.UtcNow.AddMonths(1));
 
-		await using (var streamWriter = new StreamWriter(Path.Join(outputDirectory, "test.crt"), false))
-		{
+		await using (var streamWriter = new StreamWriter(Path.Join(outputDirectory, "test.crt"), false)) {
 			var certBytes = certificate.Export(X509ContentType.Cert);
 			var certString = Convert.ToBase64String(certBytes);
 
 			await streamWriter.WriteLineAsync("-----BEGIN CERTIFICATE-----");
 			for (var i = 0; i < certString.Length; i += 64) {
-				await streamWriter.WriteLineAsync(certString.Substring(i, Math.Min(i+64, certString.Length) - i));
+				await streamWriter.WriteLineAsync(certString.Substring(i, Math.Min(i + 64, certString.Length) - i));
 			}
 			await streamWriter.WriteLineAsync("-----END CERTIFICATE-----");
 		}
@@ -210,7 +209,7 @@ OAuth:
 
 			await streamWriter.WriteLineAsync("-----BEGIN RSA PRIVATE KEY-----");
 			for (var i = 0; i < keyString.Length; i += 64) {
-				await streamWriter.WriteLineAsync(keyString.Substring(i, Math.Min(i+64, keyString.Length) - i));
+				await streamWriter.WriteLineAsync(keyString.Substring(i, Math.Min(i + 64, keyString.Length) - i));
 			}
 			await streamWriter.WriteLineAsync("-----END RSA PRIVATE KEY-----");
 		}

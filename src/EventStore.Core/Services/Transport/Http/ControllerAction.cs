@@ -38,15 +38,20 @@ public class ControllerAction {
 	}
 
 	public bool Equals(ControllerAction other) {
-		if (ReferenceEquals(null, other)) return false;
-		if (ReferenceEquals(this, other)) return true;
+		if (ReferenceEquals(null, other))
+			return false;
+		if (ReferenceEquals(this, other))
+			return true;
 		return Equals(other.UriTemplate, UriTemplate) && Equals(other.HttpMethod, HttpMethod);
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != typeof(ControllerAction)) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != typeof(ControllerAction))
+			return false;
 		return Equals((ControllerAction)obj);
 	}
 

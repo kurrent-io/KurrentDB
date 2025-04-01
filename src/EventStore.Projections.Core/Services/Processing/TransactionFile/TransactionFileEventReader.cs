@@ -38,7 +38,8 @@ public class TransactionFileEventReader : EventReader,
 		bool deliverEndOfTFPosition = true,
 		bool resolveLinkTos = true)
 		: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-		if (publisher == null) throw new ArgumentNullException("publisher");
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
 		_from = @from;
 		_deliverEndOfTfPosition = deliverEndOfTFPosition;
 		_resolveLinkTos = resolveLinkTos;
@@ -93,9 +94,12 @@ public class TransactionFileEventReader : EventReader,
 	}
 
 	public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-		if (_disposed) return;
-		if (Paused) return;
-		if (message.CorrelationId != _pendingRequestCorrelationId) return;
+		if (_disposed)
+			return;
+		if (Paused)
+			return;
+		if (message.CorrelationId != _pendingRequestCorrelationId)
+			return;
 
 		_eventsRequested = false;
 		PauseOrContinueProcessing();
@@ -107,7 +111,8 @@ public class TransactionFileEventReader : EventReader,
 	}
 
 	protected override void RequestEvents() {
-		if (_disposed) throw new InvalidOperationException("Disposed");
+		if (_disposed)
+			throw new InvalidOperationException("Disposed");
 		if (_eventsRequested)
 			throw new InvalidOperationException("Read operation is already in progress");
 		if (PauseRequested || Paused)

@@ -49,7 +49,7 @@ public class when_truncating_against_max_truncation_config : SpecificationWithDi
 
 		Assert.DoesNotThrowAsync(async () => {
 			var truncator = new TFChunkDbTruncator(_config, new ChunkLocalFileSystem(_config.Path), static _ => new IdentityChunkTransformFactory());
-			await truncator.TruncateDb(4800 ,CancellationToken.None);
+			await truncator.TruncateDb(4800, CancellationToken.None);
 		});
 	}
 }

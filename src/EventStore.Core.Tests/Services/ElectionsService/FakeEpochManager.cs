@@ -63,8 +63,8 @@ internal class FakeEpochManager : IEpochManager {
 		ValueTask<bool> task;
 		try {
 			task = new(_epochs.FirstOrDefault(e => e.EpochNumber == epochNumber) is { } epoch
-			           && epoch.EpochNumber == epochNumber
-			           && epoch.EpochId == epochId);
+					   && epoch.EpochNumber == epochNumber
+					   && epoch.EpochId == epochId);
 		} catch (Exception e) {
 			task = ValueTask.FromException<bool>(e);
 		}

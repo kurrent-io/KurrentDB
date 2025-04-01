@@ -19,7 +19,7 @@ public class DelegatedAuthenticationProvider(IAuthenticationProvider inner) : Au
 	LicensePublicKey = inner.LicensePublicKey,
 	DiagnosticsName = inner.DiagnosticsName,
 	DiagnosticsTags = inner.DiagnosticsTags
-})  {
+}) {
 	public IAuthenticationProvider Inner { get; } = inner;
 
 	public override Task Initialize() => Inner.Initialize();
@@ -32,10 +32,10 @@ public class DelegatedAuthenticationProvider(IAuthenticationProvider inner) : Au
 
 	public override void ConfigureEndpoints(IEndpointRouteBuilder endpointRouteBuilder) =>
 		Inner.ConfigureEndpoints(endpointRouteBuilder);
-	
+
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
 		Inner.ConfigureServices(services, configuration);
-	
+
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) =>
 		Inner.ConfigureApplication(app, configuration);
 

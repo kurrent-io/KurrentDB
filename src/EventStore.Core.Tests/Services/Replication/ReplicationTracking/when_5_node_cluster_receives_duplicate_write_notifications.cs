@@ -10,7 +10,7 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking;
 [TestFixture]
 public class when_5_node_cluster_receives_duplicate_write_notifications : with_clustered_replication_tracking_service {
 	private long _logPosition = 4000;
-	
+
 	protected override int ClusterSize => 5;
 
 	public override void When() {
@@ -30,7 +30,7 @@ public class when_5_node_cluster_receives_duplicate_write_notifications : with_c
 	}
 	[Test]
 	public void replication_checkpoint_should_not_advance() {
-		Assert.AreEqual(0, ReplicationCheckpoint.Read());		
-		Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());		
-	}	
+		Assert.AreEqual(0, ReplicationCheckpoint.Read());
+		Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());
+	}
 }

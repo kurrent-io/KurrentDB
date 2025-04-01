@@ -179,7 +179,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		LeaderInputBus.Subscribe<CoreProjectionStatusMessage.Stopped>(this);
 		LeaderInputBus.Subscribe<CoreProjectionStatusMessage.Started>(this);
 
-		 builder.UseEndpoints(endpoints => endpoints.MapGrpcService<ProjectionManagement>());
+		builder.UseEndpoints(endpoints => endpoints.MapGrpcService<ProjectionManagement>());
 	}
 
 	private void ConfigureProjectionMetrics(MetricsConfiguration conf) {
@@ -210,7 +210,8 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	}
 
 	public void Handle(SystemMessage.SystemCoreReady message) {
-		if (_subsystemState != SubsystemState.NotReady) return;
+		if (_subsystemState != SubsystemState.NotReady)
+			return;
 		_subsystemState = SubsystemState.Ready;
 		if (_nodeState == VNodeState.Leader) {
 			StartComponents();
@@ -223,7 +224,8 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
 		_nodeState = message.State;
-		if (_subsystemState == SubsystemState.NotReady) return;
+		if (_subsystemState == SubsystemState.NotReady)
+			return;
 
 		if (_nodeState == VNodeState.Leader) {
 			StartComponents();
@@ -362,8 +364,10 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	}
 
 	private void FinishStopping() {
-		if (_runningDispatchers > 0) return;
-		if (_runningComponentCount > 0) return;
+		if (_runningDispatchers > 0)
+			return;
+		if (_runningComponentCount > 0)
+			return;
 
 		Logger.Information(
 			"PROJECTIONS SUBSYSTEM: All components stopped and dispatchers drained for Instance: {correlationId}",

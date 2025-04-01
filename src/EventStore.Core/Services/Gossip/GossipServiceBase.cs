@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using EventStore.Common.Utils;
@@ -189,7 +188,8 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 	}
 
 	public void Handle(GossipMessage.ClientGossip message) {
-		if (_cluster == null) return;
+		if (_cluster == null)
+			return;
 
 		var advertisedAddress = string.IsNullOrEmpty(MemberInfo.AdvertiseHostToClientAs)
 			? MemberInfo.HttpEndPoint.GetHost()
@@ -322,7 +322,7 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 			{
 				if ((utcNow - member.TimeStamp).Duration() > allowedTimeDifference) {
 					Log.Error("Time difference between us and [{peerEndPoint}] is too great! "
-					          + "UTC now: {dateTime:yyyy-MM-dd HH:mm:ss.fff}, peer's time stamp: {peerTimestamp:yyyy-MM-dd HH:mm:ss.fff}.",
+							  + "UTC now: {dateTime:yyyy-MM-dd HH:mm:ss.fff}, peer's time stamp: {peerTimestamp:yyyy-MM-dd HH:mm:ss.fff}.",
 						peerEndPoint, utcNow, member.TimeStamp);
 				}
 
@@ -332,7 +332,7 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 				if (!members.TryGetValue(member.HttpEndPoint, out var existingMem) || IsMoreUpToDate(member, existingMem)) {
 					// we do not trust leader's alive status and state to come from outside
 					if (currentLeaderInstanceId != null && existingMem != null &&
-					    member.InstanceId == currentLeaderInstanceId)
+						member.InstanceId == currentLeaderInstanceId)
 						members[member.HttpEndPoint] = member.Updated(utcNow: utcNow, isAlive: existingMem.IsAlive, state: existingMem.State);
 					else
 						members[member.HttpEndPoint] = member;
@@ -368,7 +368,7 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 	private static bool KeepNodeInGossip(MemberInfo m, DateTime utcNow, TimeSpan deadMemberRemovalTimeout, VNodeState currentRole) {
 		// remove dead timed-out members, if there are any, and if we are not in an unknown/initializing/leaderless state
 		return m.IsAlive || utcNow - m.TimeStamp < deadMemberRemovalTimeout
-		                 || currentRole <= VNodeState.Unknown || currentRole == VNodeState.ReadOnlyLeaderless;
+						 || currentRole <= VNodeState.Unknown || currentRole == VNodeState.ReadOnlyLeaderless;
 	}
 
 	private static void LogClusterChange(ClusterInfo oldCluster, ClusterInfo newCluster, string source) {

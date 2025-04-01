@@ -214,9 +214,8 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 
 				var jwtSecurityToken = _securityTokenHandler.ReadJwtToken(jwt);
 				if (_signingKeys.All(x => x.KeyId != jwtSecurityToken.Header.Kid)) {
-					lock(_signingKeysRefreshLock){
-						if(DateTime.UtcNow - _signingKeysLastRefresh >= _signingKeysMinRefreshInterval)
-						{
+					lock (_signingKeysRefreshLock) {
+						if (DateTime.UtcNow - _signingKeysLastRefresh >= _signingKeysMinRefreshInterval) {
 							try {
 								//signing keys may have been rotated, refresh the keys before validation
 								_logger.Verbose("An authentication request with an unknown key ID has been received. Refreshing issuer signing keys.");
@@ -321,7 +320,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 		public override void ConfigureEndpoints(IEndpointRouteBuilder endpointRouteBuilder) {
 			endpointRouteBuilder.Map(CallBackUrl, async context => {
 				if (!_ready) {
-					context.Response.StatusCode = (int) HttpStatusCode.ServiceUnavailable;
+					context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
 					return;
 				}
 
@@ -478,7 +477,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 
 			endpointRouteBuilder.Map(CodeChallengeUrl, async context => {
 				if (!_ready) {
-					context.Response.StatusCode = (int) HttpStatusCode.ServiceUnavailable;
+					context.Response.StatusCode = (int)HttpStatusCode.ServiceUnavailable;
 					return;
 				}
 
@@ -489,8 +488,7 @@ public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
 				var codeVerifierAsciiBytes = Encoding.ASCII.GetBytes(codeVerifier);
 
 				var codeChallenge = string.Empty;
-				using (SHA256 sha256Hash = SHA256.Create())
-				{
+				using (SHA256 sha256Hash = SHA256.Create()) {
 					var sha256HashBytes = sha256Hash.ComputeHash(codeVerifierAsciiBytes);
 					codeChallenge = Rfc7636Base64Encode(sha256HashBytes);
 				}

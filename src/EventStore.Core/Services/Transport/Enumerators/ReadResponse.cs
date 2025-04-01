@@ -11,9 +11,9 @@ public abstract class ReadResponse {
 		public ResolvedEvent Event = @event;
 	}
 
-	public class SubscriptionCaughtUp: ReadResponse;
+	public class SubscriptionCaughtUp : ReadResponse;
 
-	public class SubscriptionFellBehind: ReadResponse;
+	public class SubscriptionFellBehind : ReadResponse;
 
 	public class CheckpointReceived(ulong commitPosition, ulong preparePosition) : ReadResponse {
 		public readonly ulong CommitPosition = commitPosition;

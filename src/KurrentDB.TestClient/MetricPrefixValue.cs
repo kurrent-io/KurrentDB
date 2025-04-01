@@ -12,7 +12,7 @@ namespace KurrentDB.TestClient;
 /// instead of: WRFLGRPC 10 5000000 500000 100 1 perftest
 /// </summary>
 internal static class MetricPrefixValue {
-	private static readonly Dictionary<char, long> _metricPrefixes = new () {
+	private static readonly Dictionary<char, long> _metricPrefixes = new() {
 		{'k', 1_000},
 		{'m', 1_000_000},
 		{'g', 1_000_000_000},

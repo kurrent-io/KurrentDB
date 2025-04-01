@@ -62,7 +62,7 @@ public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTrack
 				meter.CreateObservableGauge($"{metricName}-bytes", dims.GenObserve());
 			else
 				meter.CreateObservableGauge(metricName, dims.GenObserve(), "bytes");
-		
+
 		return;
 
 		Func<string, Measurement<long>> GenMeasure(Func<DriveData, long> func) => tag => {

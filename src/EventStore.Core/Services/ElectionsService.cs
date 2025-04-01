@@ -204,7 +204,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 			message.LeaderHttpEndPoint,
 			message.LeaderId);
 		if (_leaderIsResigningOkReceived.Add(message.ServerId) &&
-		    _leaderIsResigningOkReceived.Count == _clusterSize / 2 + 1) {
+			_leaderIsResigningOkReceived.Count == _clusterSize / 2 + 1) {
 			Log.Information(
 				"ELECTIONS: MAJORITY OF ACCEPTANCE OF RESIGNATION OF LEADER [{leaderHttpEndPoint},{leaderId:B}]. NOW INITIATING LEADER RESIGNATION.",
 				message.LeaderHttpEndPoint, message.LeaderId);
@@ -472,8 +472,8 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 
 			//we have received a PrepareOk message from the previous leader, so we definitely know it's alive.
 			if (received.TryGetValue(previousLeaderId, out var leaderMsg) &&
-			    leaderMsg.EpochNumber == best.EpochNumber &&
-			    leaderMsg.EpochId == best.EpochId) {
+				leaderMsg.EpochNumber == best.EpochNumber &&
+				leaderMsg.EpochId == best.EpochId) {
 				Log.Debug("ELECTIONS: (V={lastAttemptedView}) Previous Leader (L={previousLeaderId:B}) from last epoch record is still alive.", lastAttemptedView, previousLeaderId);
 				previousLeaderCandidate = new LeaderCandidate(leaderMsg.ServerId, leaderMsg.ServerHttpEndPoint,
 					leaderMsg.EpochNumber, leaderMsg.EpochPosition, leaderMsg.EpochId, leaderMsg.EpochLeaderInstanceId,
@@ -542,8 +542,8 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 
 		if (leader != null && leader.InstanceId != resigningLeader) {
 			if (candidate.InstanceId == leader.InstanceId
-			    || candidate.EpochNumber > leader.EpochNumber
-			    || (candidate.EpochNumber == leader.EpochNumber && candidate.EpochId != leader.EpochId))
+				|| candidate.EpochNumber > leader.EpochNumber
+				|| (candidate.EpochNumber == leader.EpochNumber && candidate.EpochId != leader.EpochId))
 				return true;
 
 			Log.Information(
@@ -612,8 +612,8 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 
 		var ownInfo = GetOwnInfo();
 		if (!IsLegitimateLeader(message.View, message.ServerHttpEndPoint, message.ServerId,
-			    candidate, _servers, _lastElectedLeader, _memberInfo.InstanceId, ownInfo,
-			    _resigningLeaderInstanceId))
+				candidate, _servers, _lastElectedLeader, _memberInfo.InstanceId, ownInfo,
+				_resigningLeaderInstanceId))
 			return;
 
 		Log.Information(

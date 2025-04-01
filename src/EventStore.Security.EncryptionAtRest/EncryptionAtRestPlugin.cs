@@ -30,16 +30,16 @@ public class EncryptionAtRestPlugin() : SubsystemsPlugin(requiredEntitlements: [
 		var options = config.GetSection(ConfigRoot).Get<EncryptionAtRestOptions>() ?? new();
 
 		if (!TryConfigureMasterKeySource(
-			    options: options.MasterKey,
-			    out var masterKeySource))
+				options: options.MasterKey,
+				out var masterKeySource))
 			return;
 
 		var masterKeys = LoadMasterKeys(masterKeySource);
 
 		if (!TryConfigureEncryptionAlgorithms(
-			    options: options.Encryption,
-			    masterKeys: masterKeys,
-			    out var encryptionTransforms))
+				options: options.Encryption,
+				masterKeys: masterKeys,
+				out var encryptionTransforms))
 			return;
 
 		services.Decorate<IReadOnlyList<IDbTransform>>((dbTransforms, _) =>

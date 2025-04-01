@@ -329,8 +329,8 @@ public class ScavengeState<TStreamId> : IScavengeState<TStreamId> {
 
 // in the chunk executor each worker gets its own state so that it has its own dbconnection and
 // prepared commands.
-public readonly struct ScavengeStateForChunkWorker<TStreamId> : 
-	IScavengeStateForChunkExecutorWorker<TStreamId>{
+public readonly struct ScavengeStateForChunkWorker<TStreamId> :
+	IScavengeStateForChunkExecutorWorker<TStreamId> {
 
 	private readonly MetastreamCollisionMap<TStreamId> _metastreamDatas;
 	private readonly OriginalStreamCollisionMap<TStreamId> _originalStreamDatas;

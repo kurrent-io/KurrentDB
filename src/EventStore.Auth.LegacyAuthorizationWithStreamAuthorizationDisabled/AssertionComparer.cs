@@ -17,10 +17,12 @@ internal sealed class AssertionComparer : IComparer<IAssertion> {
 
 	public int Compare(IAssertion x, IAssertion y) {
 		var grant = x.Grant.CompareTo(y.Grant);
-		if (grant != 0) return grant * -1;
+		if (grant != 0)
+			return grant * -1;
 
 		var type = Comparer<Type>.Default.Compare(x.GetType(), y.GetType());
-		if (type != 0) return type;
+		if (type != 0)
+			return type;
 
 		var closed = (Func<IAssertion, IAssertion, int>)OpenTypeComparer.MakeGenericMethod(x.GetType())
 			.CreateDelegate(typeof(Func<IAssertion, IAssertion, int>));

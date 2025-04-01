@@ -111,7 +111,7 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 		Guid partitionTypeId,
 		Guid partitionId,
 		string name) {
-		
+
 		return new PartitionTypeLogRecord(
 			timeStamp: timeStamp,
 			logPosition: logPosition,
@@ -130,7 +130,7 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 		Raw.PartitionFlags flags,
 		ushort referenceNumber,
 		string name) {
-		
+
 		return new PartitionLogRecord(
 			timeStamp: timeStamp,
 			logPosition: logPosition,

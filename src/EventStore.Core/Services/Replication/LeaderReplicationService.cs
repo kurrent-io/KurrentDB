@@ -7,10 +7,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Runtime.CompilerServices;
 using DotNext.Threading;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
@@ -220,7 +218,8 @@ public class LeaderReplicationService : IMonitoredQueue,
 		var connections = TcpConnectionMonitor.Default.GetTcpConnectionStats();
 		var replicaStats = new List<ReplicationMessage.ReplicationStats>();
 		foreach (var conn in connections) {
-			if (conn is not ITcpConnection tcpConn) continue;
+			if (conn is not ITcpConnection tcpConn)
+				continue;
 			var subscription = _subscriptions.FirstOrDefault(x => x.Value.ConnectionId == tcpConn.ConnectionId);
 			if (subscription.Value != null) {
 				var stats = new ReplicationMessage.ReplicationStats(subscription.Key, tcpConn.ConnectionId,
@@ -352,7 +351,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 		bool verbose,
 		CancellationToken token) {
 		const int maxRetryCount = 10;
-		for (var trial = 0;;) {
+		for (var trial = 0; ;) {
 			try {
 				var chunk = await _db.Manager.GetInitializedChunkFor(logPosition, token);
 				var rawSend = chunk.ChunkHeader.IsScavenged;
@@ -394,7 +393,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 						sub.SendMessage(new ReplicationMessage.ReplicaSubscribed(_instanceId, sub.SubscriptionId, sub.LogPosition));
 
 					if (logPosition == chunk.ChunkHeader.ChunkStartPosition &&
-					    sub.Version >= ReplicationSubscriptionVersions.V2) {
+						sub.Version >= ReplicationSubscriptionVersions.V2) {
 						sub.SendMessage(new ReplicationMessage.CreateChunk(_instanceId,
 							sub.SubscriptionId,
 							chunk.ChunkHeader,
@@ -497,10 +496,11 @@ public class LeaderReplicationService : IMonitoredQueue,
 			}
 
 			if (subscription.SendQueueSize >= MaxQueueSize || subscription.LogPosition - Interlocked.Read(ref subscription.AckedLogPosition) >=
-			    ReplicaSendWindow)
+				ReplicaSendWindow)
 				continue;
 
-			if (subscription.BulkReader == null) throw new Exception("BulkReader is null for subscription.");
+			if (subscription.BulkReader == null)
+				throw new Exception("BulkReader is null for subscription.");
 
 			try {
 				var leaderCheckpoint = _db.Config.WriterCheckpoint.Read();
@@ -509,7 +509,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 					dataFound = true;
 
 				if (subscription.State == ReplicaState.CatchingUp &&
-				    leaderCheckpoint - subscription.LogPosition <= CloneThreshold) {
+					leaderCheckpoint - subscription.LogPosition <= CloneThreshold) {
 					subscription.State = ReplicaState.Clone;
 					subscription.SendMessage(new ReplicationMessage.CloneAssignment(_instanceId, subscription.SubscriptionId));
 				}

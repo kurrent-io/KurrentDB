@@ -2,14 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using EventStore.Common.Utils;
+using EventStore.Core.Authentication.InternalAuthentication;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.UserManagement;
 using Newtonsoft.Json;
-using EventStore.Common.Utils;
-using EventStore.Core.Authentication.InternalAuthentication;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http.Authentication;
@@ -50,7 +50,8 @@ public class PasswordChangeNotificationReader :
 	}
 
 	private void ReadNotificationsFrom(long fromEventNumber) {
-		if (_stopped) return;
+		if (_stopped)
+			return;
 		_ioDispatcher.ReadForward(
 			UserManagementService.UserPasswordNotificationsStreamId,
 			fromEventNumber,
@@ -58,7 +59,8 @@ public class PasswordChangeNotificationReader :
 			false,
 			SystemAccounts.System,
 			completed => {
-				if (_stopped) return;
+				if (_stopped)
+					return;
 				switch (completed.Result) {
 					case ReadStreamResult.AccessDenied:
 					case ReadStreamResult.Error:

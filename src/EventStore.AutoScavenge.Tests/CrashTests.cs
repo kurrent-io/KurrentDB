@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EventStore.AutoScavenge.Tests;
 
-public class CrashTests: IClassFixture<DummyWebApplicationFactory> {
+public class CrashTests : IClassFixture<DummyWebApplicationFactory> {
 	private readonly HttpClient _client;
 
 	public CrashTests(DummyWebApplicationFactory factory) {

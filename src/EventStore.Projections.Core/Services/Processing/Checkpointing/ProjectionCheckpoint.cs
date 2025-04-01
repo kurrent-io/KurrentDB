@@ -52,11 +52,16 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 		int maxWriteBatchLength,
 		int maximumAllowedWritesInFlight,
 		ILogger logger = null) {
-		if (publisher == null) throw new ArgumentNullException("publisher");
-		if (ioDispatcher == null) throw new ArgumentNullException("ioDispatcher");
-		if (readyHandler == null) throw new ArgumentNullException("readyHandler");
-		if (positionTagger == null) throw new ArgumentNullException("positionTagger");
-		if (from.CommitPosition < from.PreparePosition) throw new ArgumentException("from");
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
+		if (ioDispatcher == null)
+			throw new ArgumentNullException("ioDispatcher");
+		if (readyHandler == null)
+			throw new ArgumentNullException("readyHandler");
+		if (positionTagger == null)
+			throw new ArgumentNullException("positionTagger");
+		if (from.CommitPosition < from.PreparePosition)
+			throw new ArgumentException("from");
 		//NOTE: fromCommit can be equal fromPrepare on 0 position.  Is it possible anytime later? Ignoring for now.
 		_maximumAllowedWritesInFlight = maximumAllowedWritesInFlight;
 		_publisher = publisher;

@@ -160,17 +160,17 @@ public record ReactEvent(Type Type, Action<IEvent> Fun);
 public record ReactCommand(Type Type, Action<ICommand> Fun);
 
 public static class Matches {
-	 public static Match MatchEvent<T>(Action<T, Snapshot> fun) =>
-		 new(typeof(T), (e, s) => fun((T)e, s));
+	public static Match MatchEvent<T>(Action<T, Snapshot> fun) =>
+		new(typeof(T), (e, s) => fun((T)e, s));
 
-	 public static Match MatchEvent<T>() =>
-		 new(typeof(T), (_, _) => {});
+	public static Match MatchEvent<T>() =>
+		new(typeof(T), (_, _) => { });
 }
 
 public static class Reacts {
-	 public static ReactEvent OnEvent<T>(Action<T> fun) =>
-		 new(typeof(T), e => fun((T)e));
+	public static ReactEvent OnEvent<T>(Action<T> fun) =>
+		new(typeof(T), e => fun((T)e));
 
-	 public static ReactCommand After<T>(Action<T> fun) =>
-		 new(typeof(T), e => fun((T)e));
+	public static ReactCommand After<T>(Action<T> fun) =>
+		new(typeof(T), e => fun((T)e));
 }

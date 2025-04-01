@@ -49,9 +49,12 @@ public class ReaderSubscriptionBase {
 		bool stopOnEof,
 		int? stopAfterNEvents,
 		bool enableContentTypeValidation) {
-		if (publisher == null) throw new ArgumentNullException("publisher");
-		if (readerStrategy == null) throw new ArgumentNullException("readerStrategy");
-		if (timeProvider == null) throw new ArgumentNullException("timeProvider");
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
+		if (readerStrategy == null)
+			throw new ArgumentNullException("readerStrategy");
+		if (timeProvider == null)
+			throw new ArgumentNullException("timeProvider");
 		if (checkpointProcessedEventsThreshold > 0 && stopAfterNEvents > 0)
 			throw new ArgumentException("checkpointProcessedEventsThreshold > 0 && stopAfterNEvents > 0");
 
@@ -131,19 +134,19 @@ public class ReaderSubscriptionBase {
 			_publisher.Publish(convertedMessage);
 			_eventsSinceLastCheckpointSuggestedOrStart++;
 			if (_checkpointProcessedEventsThreshold > 0
-			    && timeDifference > _checkpointAfter
-			    && _eventsSinceLastCheckpointSuggestedOrStart >= _checkpointProcessedEventsThreshold
-			    && _lastCheckpointTag != _positionTracker.LastTag)
+				&& timeDifference > _checkpointAfter
+				&& _eventsSinceLastCheckpointSuggestedOrStart >= _checkpointProcessedEventsThreshold
+				&& _lastCheckpointTag != _positionTracker.LastTag)
 				SuggestCheckpoint(message);
 			if (_stopAfterNEvents > 0 && _eventsSinceLastCheckpointSuggestedOrStart >= _stopAfterNEvents)
 				NEventsReached();
 		} else {
 			if (_checkpointUnhandledBytesThreshold > 0
-			    && timeDifference > _checkpointAfter
-			    && (_lastPassedOrCheckpointedEventPosition != null
-			        && message.Data.Position.PreparePosition - _lastPassedOrCheckpointedEventPosition.Value
-			        > _checkpointUnhandledBytesThreshold)
-			    && _lastCheckpointTag != _positionTracker.LastTag)
+				&& timeDifference > _checkpointAfter
+				&& (_lastPassedOrCheckpointedEventPosition != null
+					&& message.Data.Position.PreparePosition - _lastPassedOrCheckpointedEventPosition.Value
+					> _checkpointUnhandledBytesThreshold)
+				&& _lastCheckpointTag != _positionTracker.LastTag)
 				SuggestCheckpoint(message);
 			else if (progressChanged)
 				_progress = roundedProgress;
@@ -202,7 +205,7 @@ public class ReaderSubscriptionBase {
 		Guid eventReaderId) {
 		if (_eofReached)
 			throw new InvalidOperationException("Onetime projection has already reached the eof position");
-//            _logger.Trace("Creating an event distribution point at '{lastTag}'", _positionTracker.LastTag);
+		//            _logger.Trace("Creating an event distribution point at '{lastTag}'", _positionTracker.LastTag);
 		return _readerStrategy.CreatePausedEventReader(
 			eventReaderId, publisher, ioDispatcher, _positionTracker.LastTag, _stopOnEof, _stopAfterNEvents);
 	}

@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Core.Messaging;
 using EventStore.Client.Projections;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Plugins.Authorization;
 using EventStore.Projections.Core.Messages;

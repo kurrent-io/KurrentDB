@@ -28,7 +28,7 @@ public class Locations {
 
 	static Locations() {
 		ApplicationDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ??
-		                       Path.GetFullPath(".");
+							   Path.GetFullPath(".");
 
 		PluginsDirectory = Path.Combine(ApplicationDirectory, "plugins");
 		FallbackDefaultDataDirectory = Path.Combine(ApplicationDirectory, "data");
@@ -93,7 +93,7 @@ public class Locations {
 	public static string GetPrecededLocation(params string[] locations) {
 		var precedenceList = locations.Distinct().ToList();
 		return precedenceList.FirstOrDefault(Directory.Exists) ??
-		       precedenceList.Last();
+			   precedenceList.Last();
 	}
 
 	/// <summary>

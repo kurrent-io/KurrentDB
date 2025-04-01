@@ -8,7 +8,6 @@ using System.Threading;
 using EventStore.Common.Utils;
 using KurrentDB.TestClient.Commands;
 using KurrentDB.TestClient.Commands.DvuBasic;
-using Connection = EventStore.Transport.Tcp.TcpTypedConnection<byte[]>;
 using ILogger = Serilog.ILogger;
 #pragma warning disable 1591
 
@@ -122,12 +121,12 @@ public class Client {
 					Console.Write(">>> ");
 				}
 			}
-		}) {IsBackground = true, Name = "Client Main Loop Thread"}.Start();
+		}) { IsBackground = true, Name = "Client Main Loop Thread" }.Start();
 		return 0;
 	}
 
 	private static string[] ParseCommandLine(string line) {
-		return line.Split(new[] {' ', '\t'}, StringSplitOptions.RemoveEmptyEntries);
+		return line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
 	}
 
 	private int Execute(string[] args, CancellationToken cancellationToken) {

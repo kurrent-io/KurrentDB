@@ -3,7 +3,6 @@
 
 using System.Security.Claims;
 using EventStore.Plugins.Authentication;
-using Microsoft.AspNetCore.Routing;
 
 namespace EventStore.Auth.UserCertificates.Tests;
 

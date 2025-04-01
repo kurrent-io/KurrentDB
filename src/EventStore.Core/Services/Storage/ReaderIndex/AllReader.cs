@@ -112,7 +112,7 @@ public class AllReader<TStreamId> : IAllReader {
 					}
 
 					if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete)
-					    && new TFPos(prepare.LogPosition, prepare.LogPosition) >= pos) {
+						&& new TFPos(prepare.LogPosition, prepare.LogPosition) >= pos) {
 						var streamName = await _streamNames.LookupName(prepare.EventStreamId, token);
 						var eventType = await _eventTypes.LookupName(prepare.EventType, token);
 						var eventRecord = new EventRecord(eventNumber: prepare.ExpectedVersion + 1,
@@ -155,7 +155,7 @@ public class AllReader<TStreamId> : IAllReader {
 
 						// prepare with useful data or delete tombstone
 						if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete)
-						    && new TFPos(commit.LogPosition, prepare.LogPosition) >= pos) {
+							&& new TFPos(commit.LogPosition, prepare.LogPosition) >= pos) {
 							var streamName = await _streamNames.LookupName(prepare.EventStreamId, token);
 							var eventType = await _eventTypes.LookupName(prepare.EventType, token);
 							var eventRecord =
@@ -241,7 +241,7 @@ public class AllReader<TStreamId> : IAllReader {
 					}
 
 					if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete)
-					    && new TFPos(result.RecordPostPosition, result.RecordPostPosition) <= pos) {
+						&& new TFPos(result.RecordPostPosition, result.RecordPostPosition) <= pos) {
 						var streamName = await _streamNames.LookupName(prepare.EventStreamId, token);
 						var eventType = await _eventTypes.LookupName(prepare.EventType, token);
 						var eventRecord = new EventRecord(eventNumber: prepare.ExpectedVersion + 1,
@@ -291,7 +291,7 @@ public class AllReader<TStreamId> : IAllReader {
 
 						// prepare with useful data or delete tombstone
 						if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete)
-						    && new TFPos(commitPostPos, result.RecordPostPosition) <= pos) {
+							&& new TFPos(commitPostPos, result.RecordPostPosition) <= pos) {
 							var streamName = await _streamNames.LookupName(prepare.EventStreamId, token);
 							var eventType = await _eventTypes.LookupName(prepare.EventType, token);
 							var eventRecord =
@@ -325,7 +325,7 @@ public class AllReader<TStreamId> : IAllReader {
 
 	private static bool IsCommitAlike(ILogRecord rec) {
 		return rec.RecordType == LogRecordType.Commit
-		       || (rec.RecordType is LogRecordType.Prepare or LogRecordType.EventType or LogRecordType.Stream &&
-		           ((IPrepareLogRecord)rec).Flags.HasAnyOf(PrepareFlags.IsCommitted));
+			   || (rec.RecordType is LogRecordType.Prepare or LogRecordType.EventType or LogRecordType.Stream &&
+				   ((IPrepareLogRecord)rec).Flags.HasAnyOf(PrepareFlags.IsCommitted));
 	}
 }

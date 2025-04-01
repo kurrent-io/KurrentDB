@@ -11,7 +11,6 @@ using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.MultiStream;
 using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
@@ -36,8 +35,8 @@ public class when_handling_read_completed_and_no_stream<TLogFormat, TStreamId> :
 
 	[SetUp]
 	public new void When() {
-		_ab12Tag = new Dictionary<string, long> {{"a", 1}, {"b", 0}};
-		_abStreams = new[] {"a", "b"};
+		_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 0 } };
+		_abStreams = new[] { "a", "b" };
 
 		_distibutionPointCorrelationId = Guid.NewGuid();
 		_edp = new MultiStreamEventReader(

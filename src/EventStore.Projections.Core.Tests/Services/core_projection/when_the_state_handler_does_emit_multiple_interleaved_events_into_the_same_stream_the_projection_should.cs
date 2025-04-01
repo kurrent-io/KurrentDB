@@ -5,9 +5,9 @@ using System;
 using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
+using EventStore.Projections.Core.Services;
 using NUnit.Framework;
 using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
-using EventStore.Projections.Core.Services;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection;
 

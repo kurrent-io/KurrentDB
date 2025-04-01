@@ -61,7 +61,7 @@ public class
 			flags: PrepareFlags.SingleWrite,
 			eventType: eventTypeId,
 			data: bytes,
-			metadata: new byte[] {0x07, 0x17});
+			metadata: new byte[] { 0x07, 0x17 });
 
 		Assert.IsTrue(await writer.Write(record, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();
@@ -69,8 +69,7 @@ public class
 
 		Assert.AreEqual(record.GetSizeWithLengthPrefixAndSuffix() + 137, _checkpoint.Read());
 		await using var filestream = File.Open(filename,
-			new FileStreamOptions
-				{ Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
+			new FileStreamOptions { Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
 		filestream.Seek(ChunkHeader.Size + 137 + sizeof(int), SeekOrigin.Begin);
 
 		var recordLength = filestream.Length - filestream.Position;

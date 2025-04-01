@@ -61,7 +61,7 @@ public sealed class AesGcmReadBlock : IDisposable {
 	}
 
 	private void CalcNonce(int blockNumber, int dataSize) {
-		var uniquePosition = (long) blockNumber * BlockInfo.DataSize + dataSize;
+		var uniquePosition = (long)blockNumber * BlockInfo.DataSize + dataSize;
 		BinaryPrimitives.WriteInt64LittleEndian(_nonce.Span, uniquePosition);
 	}
 

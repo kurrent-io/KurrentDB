@@ -2,11 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.AllStream;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;

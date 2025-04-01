@@ -7,15 +7,13 @@ using EventStore.Core.Cluster;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.Service;
 
 [TestFixture]
-public class when_writing_and_deposed_as_leader : RequestManagerServiceSpecification{
-	
+public class when_writing_and_deposed_as_leader : RequestManagerServiceSpecification {
+
 	protected override void Given() {
 		Dispatcher.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 		Dispatcher.Publish(new ClientMessage.WriteEvents(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new[] { DummyEvent() }, null));

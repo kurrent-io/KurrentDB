@@ -50,7 +50,7 @@ public sealed class AesGcmWriteBlock : IDisposable {
 
 	public async ValueTask Write(int blockNumber, ReadOnlyMemory<byte> plaintext, bool updateChecksum, CancellationToken ct) {
 		var dataSize = plaintext.Length;
-		BinaryPrimitives.WriteUInt16LittleEndian(_header.Span, (ushort) dataSize);
+		BinaryPrimitives.WriteUInt16LittleEndian(_header.Span, (ushort)dataSize);
 		CalcNonce(blockNumber, dataSize);
 		Encrypt(plaintext.Span, dataSize);
 		await _writeBlock(_block, updateChecksum, ct);
@@ -66,7 +66,7 @@ public sealed class AesGcmWriteBlock : IDisposable {
 	}
 
 	private void CalcNonce(int blockNumber, int dataSize) {
-		var uniquePosition = (long) blockNumber * BlockInfo.DataSize + dataSize;
+		var uniquePosition = (long)blockNumber * BlockInfo.DataSize + dataSize;
 		BinaryPrimitives.WriteInt64LittleEndian(_nonce.Span, uniquePosition);
 	}
 

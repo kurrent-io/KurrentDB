@@ -26,12 +26,14 @@ public class LRUCache<TKey, TValue> {
 		_onPut, _onRemove; //_onPut is not called if a key-value pair already exists in the cache
 
 	public LRUCache(int maxCount) {
-		if (maxCount < 0) throw new ArgumentException("Should be non negative", nameof(maxCount));
+		if (maxCount < 0)
+			throw new ArgumentException("Should be non negative", nameof(maxCount));
 		_maxCount = maxCount;
 	}
 
 	public LRUCache(int maxCount, Func<object, bool> onPut, Func<object, bool> onRemove) {
-		if (maxCount < 0) throw new ArgumentException("Should be non negative", nameof(maxCount));
+		if (maxCount < 0)
+			throw new ArgumentException("Should be non negative", nameof(maxCount));
 		_maxCount = maxCount;
 		_onPut = onPut;
 		_onRemove = onRemove;
@@ -65,7 +67,8 @@ public class LRUCache<TKey, TValue> {
 				_items.Add(key, node);
 				_orderList.AddLast(node);
 
-				if (_onPut != null) _onPut(node.Value.Value);
+				if (_onPut != null)
+					_onPut(node.Value.Value);
 			} else {
 				node.Value.Value = value;
 
@@ -85,7 +88,8 @@ public class LRUCache<TKey, TValue> {
 			if (_items.TryGetValue(key, out node)) {
 				_orderList.Remove(node);
 				_items.Remove(key);
-				if (_onRemove != null) _onRemove(node.Value.Value);
+				if (_onRemove != null)
+					_onRemove(node.Value.Value);
 
 				ReturnNode(node);
 			}
@@ -98,7 +102,8 @@ public class LRUCache<TKey, TValue> {
 				var node = _orderList.First;
 				_orderList.RemoveFirst();
 				_items.Remove(node.Value.Key);
-				if (_onRemove != null) _onRemove(node.Value.Value);
+				if (_onRemove != null)
+					_onRemove(node.Value.Value);
 
 				ReturnNode(node);
 			}
@@ -118,7 +123,8 @@ public class LRUCache<TKey, TValue> {
 
 				_items.Add(key, node);
 				_orderList.AddLast(node);
-				if (_onPut != null) _onPut(node.Value.Value);
+				if (_onPut != null)
+					_onPut(node.Value.Value);
 			} else {
 				node.Value.Value = updateFactory(key, node.Value.Value, userData);
 
@@ -137,7 +143,8 @@ public class LRUCache<TKey, TValue> {
 			var node = _orderList.First;
 			_orderList.Remove(node);
 			_items.Remove(node.Value.Key);
-			if (_onRemove != null) _onRemove(node.Value.Value);
+			if (_onRemove != null)
+				_onRemove(node.Value.Value);
 
 			ReturnNode(node);
 		}

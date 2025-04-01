@@ -190,7 +190,7 @@ public sealed class AesGcmChunkWriteStream : ChunkDataWriteStream {
 
 		// create a temporary stream to decrypt the last block from the file stream without closing it
 		var fileStream = new NonClosingStreamWrapper(ChunkFileStream);
-		await using var stream = (AesGcmChunkReadStream) _readTransform.TransformData(new ChunkDataReadStream(fileStream));
+		await using var stream = (AesGcmChunkReadStream)_readTransform.TransformData(new ChunkDataReadStream(fileStream));
 
 		// note: truncation is done at block boundaries, so the block that's decrypted below may contain more data than
 		// what we need. but this doesn't matter as we have already set _lastBlockPos to the correct position in the

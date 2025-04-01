@@ -12,7 +12,7 @@ public class BearerHttpAuthenticationProvider(IAuthenticationProvider internalAu
 
 	public bool Authenticate(HttpContext context, out HttpAuthenticationRequest request) {
 		if (!context.Request.Headers.TryGetValue("authorization", out var values) || values.Count != 1 ||
-		    !AuthenticationHeaderValue.TryParse(values[0], out var authenticationHeader) || authenticationHeader.Scheme != "Bearer") {
+			!AuthenticationHeaderValue.TryParse(values[0], out var authenticationHeader) || authenticationHeader.Scheme != "Bearer") {
 			request = null!;
 			return false;
 		}

@@ -44,7 +44,7 @@ public class LdapsPluginTests {
 			sut.Authenticate(request);
 
 			if (await Task.WhenAny(task, Task.Delay(_timeout)) == task &&
-			    string.IsNullOrEmpty(task.Result.FailureReason))
+				string.IsNullOrEmpty(task.Result.FailureReason))
 				return fixture;
 
 			await Task.Delay(500);
@@ -139,7 +139,7 @@ public class LdapsPluginTests {
 		}
 	}
 
-	[Fact(Skip="This currently results in an error and the request never returns")]
+	[Fact(Skip = "This currently results in an error and the request never returns")]
 	public async Task authenticate_user_with_no_roles_returns_no_roles() {
 		var sut = new LdapsAuthenticationPlugin()
 			.GetAuthenticationProviderFactory(_configFile)

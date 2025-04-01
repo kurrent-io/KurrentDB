@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.MultiStream;
 using NUnit.Framework;
@@ -16,7 +15,7 @@ public class when_updating_multistream_postion_tracker_to_zero {
 
 	[SetUp]
 	public void When() {
-		_tagger = new MultiStreamPositionTagger(0, new[] {"stream1", "stream2"});
+		_tagger = new MultiStreamPositionTagger(0, new[] { "stream1", "stream2" });
 		_positionTracker = new PositionTracker(_tagger);
 		// when 
 

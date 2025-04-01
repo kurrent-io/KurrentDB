@@ -78,7 +78,7 @@ public readonly struct Uuid : IEquatable<Uuid> {
 
 		Span<byte> data = stackalloc byte[16];
 		if (!BitConverter.TryWriteBytes(data, _msb) ||
-		    !BitConverter.TryWriteBytes(data[8..], _lsb)) {
+			!BitConverter.TryWriteBytes(data[8..], _lsb)) {
 			throw new InvalidOperationException();
 		}
 

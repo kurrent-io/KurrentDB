@@ -261,7 +261,8 @@ public class SubscriptionsService<TStreamId> :
 		foreach (var (key, pollTopic) in _pollTopics) {
 			for (int i = pollTopic.Count - 1; i >= 0; --i) {
 				var poller = pollTopic[i];
-				if (poller.ExpireAt > now) continue;
+				if (poller.ExpireAt > now)
+					continue;
 
 				_bus.Publish(CloneReadRequestWithNoPollFlag(poller.OriginalRequest));
 				pollTopic.RemoveAt(i);
@@ -339,7 +340,7 @@ public class SubscriptionsService<TStreamId> :
 			subscr.CheckpointIntervalCurrent++;
 
 			if (subscr.CheckpointInterval != null &&
-			    subscr.CheckpointIntervalCurrent >= subscr.CheckpointInterval) {
+				subscr.CheckpointIntervalCurrent >= subscr.CheckpointInterval) {
 				subscr.Envelope.ReplyWith(new ClientMessage.CheckpointReached(subscr.CorrelationId, pair.OriginalPosition));
 				subscr.CheckpointIntervalCurrent = 0;
 			}
@@ -444,7 +445,8 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	private void ReissueReadsFor(string streamId, long commitPosition, long eventNumber) {
-		if (!_pollTopics.TryGetValue(streamId, out var pollTopic)) return;
+		if (!_pollTopics.TryGetValue(streamId, out var pollTopic))
+			return;
 
 		List<PollSubscription> survivors = null;
 		foreach (var poller in pollTopic) {

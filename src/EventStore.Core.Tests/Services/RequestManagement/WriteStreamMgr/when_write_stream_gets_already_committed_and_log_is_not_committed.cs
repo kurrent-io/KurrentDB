@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.WriteStreamMgr;
 
@@ -17,14 +17,14 @@ public class when_write_stream_gets_already_committed_and_log_is_not_committed :
 	private long _commitLogPosition = 1000;
 	protected override WriteEvents OnManager(FakePublisher publisher) {
 		return new WriteEvents(
-			publisher, 
-			CommitTimeout, 
+			publisher,
+			CommitTimeout,
 			Envelope,
 			InternalCorrId,
 			ClientCorrId,
 			"test123",
 			ExpectedVersion.Any,
-			new[] {DummyEvent()},
+			new[] { DummyEvent() },
 			CommitSource);
 	}
 

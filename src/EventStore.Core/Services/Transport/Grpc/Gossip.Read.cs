@@ -4,8 +4,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Client.Gossip;
 using EventStore.Client;
+using EventStore.Client.Gossip;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Metrics;

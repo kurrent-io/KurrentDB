@@ -117,7 +117,7 @@ public class ClusterVNodeOptionsTests {
 
 	[Fact]
 	public void validation_should_return_error_when_default_password_options_pass_through_command_line() {
-		var configuration =  new ConfigurationBuilder()
+		var configuration = new ConfigurationBuilder()
 			.AddKurrentDefaultValues()
 			.AddLegacyEventStoreCommandLine(
 				$"--{EventStorePrefix}:DefaultAdminPassword=Admin#")

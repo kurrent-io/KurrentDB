@@ -2,10 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Client;
+using EventStore.Client.Users;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.Users;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using static EventStore.Plugins.Authorization.Operations.Users;
@@ -46,15 +45,15 @@ internal partial class Users {
 					FullName = detail.FullName,
 					LoginName = detail.LoginName,
 					LastUpdated = detail.DateLastUpdated.HasValue
-						? new DetailsResp.Types.UserDetails.Types.DateTime
-							{ TicksSinceEpoch = detail.DateLastUpdated.Value.UtcDateTime.ToTicksSinceEpoch() }
+						? new DetailsResp.Types.UserDetails.Types.DateTime { TicksSinceEpoch = detail.DateLastUpdated.Value.UtcDateTime.ToTicksSinceEpoch() }
 						: null
 				}
 			});
 		}
 
 		void OnMessage(Message message) {
-			if (HandleErrors(options?.LoginName, message, detailsSource)) return;
+			if (HandleErrors(options?.LoginName, message, detailsSource))
+				return;
 
 			switch (message) {
 				case UserManagementMessage.UserDetailsResult userDetails:

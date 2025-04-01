@@ -7,6 +7,8 @@ using System.Security.Claims;
 using System.Text;
 using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
+using EventStore.Plugins.Licensing;
+using EventStore.Plugins.TestHelpers;
 using FluentAssertions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -14,8 +16,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
-using EventStore.Plugins.Licensing;
-using EventStore.Plugins.TestHelpers;
 
 namespace EventStore.Diagnostics.LogsEndpointPlugin.Tests;
 
@@ -193,13 +193,12 @@ public class LogsEndpointPluginFixture : IAsyncLifetime {
 				var password = credentials[1];
 
 				if (username == Username && password == Password) {
-					context.User = new ClaimsPrincipal(new ClaimsIdentity(new [] {
+					context.User = new ClaimsPrincipal(new ClaimsIdentity(new[] {
 						new Claim(ClaimTypes.Name,"test-user"),
 						new Claim(ClaimTypes.Role,"$ops"),
 					}, "fake"));
 				}
-			}
-			catch {
+			} catch {
 				// noop
 			}
 

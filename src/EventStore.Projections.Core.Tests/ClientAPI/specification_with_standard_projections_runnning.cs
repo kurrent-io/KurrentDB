@@ -94,9 +94,9 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 
 	[TearDown]
 	public async Task PostTestAsserts() {
- 			var all = await _manager.ListAllAsync(_admin);
- 			if (all.Any(p => p.Name == "Faulted"))
- 				Assert.Fail("Projections faulted while running the test" + "\r\n" + all);
+		var all = await _manager.ListAllAsync(_admin);
+		if (all.Any(p => p.Name == "Faulted"))
+			Assert.Fail("Projections faulted while running the test" + "\r\n" + all);
 	}
 
 	protected async Task EnableStandardProjections() {
@@ -182,7 +182,7 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 					DumpFailed("Stream does not contain enough events", streamId, events, result.Events);
 				else {
 					for (var index = 0; index < events.Length; index++) {
-						var parts = events[index].Split(new char[] {':'}, 2);
+						var parts = events[index].Split(new char[] { ':' }, 2);
 						var eventType = parts[0];
 						var eventData = parts[1];
 

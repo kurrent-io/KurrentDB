@@ -11,7 +11,7 @@ public class FakeAutoScavengeClient : IAutoScavengeClient {
 	public ICommand? Command { get; private set; }
 
 	public Task<Response<AutoScavengeStatusResponse>> GetStatus(CancellationToken token) {
-		Command = new Commands.GetStatus(_ => {});
+		Command = new Commands.GetStatus(_ => { });
 		return Task.FromResult(Response.Successful(new AutoScavengeStatusResponse(AutoScavengeStatusResponse.Status.NotConfigured, null, null)));
 	}
 
