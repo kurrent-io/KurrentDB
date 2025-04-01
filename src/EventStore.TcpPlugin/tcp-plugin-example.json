@@ -1,0 +1,11 @@
+{
+  "EventStore": {
+    "TcpPlugin": {
+      "EnableExternalTcp": true,
+      "NodeTcpPort": 1113,
+      "NodeTcpPortAdvertiseAs": 1113,
+      "NodeHeartbeatInterval": 2000,
+      "NodeHeartbeatTimeout": 1000
+    }
+  }
+}

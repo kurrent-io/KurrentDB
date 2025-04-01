@@ -1,78 +1,71 @@
 @use "vuepress-theme-hope/presets/shinning-feature-panel";
 
-.vp-site-name {
-  display: none;
+@font-face {
+    font-family: "Solina";
+    src: url("/fonts/Solina-Light.woff2") format("woff2"), url("/fonts/Solina-Light.woff") format("woff");
+    font-weight: 400;
+    font-style: normal;
 }
 
-body, html {
-  font-size: 15px;
+@font-face {
+    font-family: "Solina";
+    src: url("/fonts/Solina-Regular.woff2") format("woff2"), url("/fonts/Solina-Regular.woff") format("woff");
+    font-weight: 450;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Solina";
+    src: url("/fonts/Solina-Medium.woff2") format("woff2"), url("/fonts/Solina-Medium.woff") format("woff");
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Solina";
+    src: url("/fonts/Solina-Bold.woff2") format("woff2"), url("/fonts/Solina-Bold.woff") format("woff");
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* VuePress changes to match our style*/
+
+.vp-site-name {
+    display: none;
+}
+
+body,
+html {
+    font-size: 16px;
 }
 
 body:has(#kapa-widget-container) .vp-back-to-top-button {
-  bottom: 7.5rem!important;
+    bottom: 7.5rem !important;
 }
 
 .vp-feature-title .icon {
-  font-size: 1.5em;
-  vertical-align: middle;
+    font-size: 1.5em;
+    vertical-align: middle;
 }
-
-//.vp-hero-image {
-//  width: 100%;
-  //height: 288px;
-  //max-width: 288px;
-//}
 
 .vp-nav-links {
-  font-size: 1rem;
+    font-size: 1rem;
 }
 
-@font-face {
-  font-family: "Solina";
-  src: url("/fonts/Solina-Light.woff2") format("woff2"),
-  url("/fonts/Solina-Light.woff") format("woff");
-  font-weight: 300;
-  font-style: normal;
+.theme-hope-content:not(.custom) > p,
+.theme-hope-content:not(.custom) > ol p,
+.theme-hope-content:not(.custom) > ul p {
+    text-align: left;
 }
 
-@font-face {
-  font-family: "Solina";
-  src: url("/fonts/Solina-Regular.woff2") format("woff2"),
-  url("/fonts/Solina-Regular.woff") format("woff");
-  font-weight: 400;
-  font-style: normal;
-}
+html[data-theme="dark"] #kapa-widget-portal {
+    code {
+        background: rgba(127, 127, 127, 0.12);
+    }
 
-@font-face {
-  font-family: "Solina";
-  src: url("/fonts/Solina-Medium.woff2") format("woff2"),
-  url("/fonts/Solina-Medium.woff") format("woff");
-  font-weight: 500;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "Solina";
-  src: url("/fonts/Solina-Bold.woff2") format("woff2"),
-  url("/fonts/Solina-Bold.woff") format("woff");
-  font-weight: 700;
-  font-style: normal;
-}
-
-.theme-hope-content:not(.custom)>p,
-.theme-hope-content:not(.custom)>ol p,
-.theme-hope-content:not(.custom)>ul p {
-  text-align: left;
-}
-
-html[data-theme='dark'] #kapa-widget-portal {
-  code {
-    background: rgba(127, 127, 127, 0.12);
-  }
-
-  blockquote {
-    border-color: #eee;
-  }
+    blockquote {
+        border-color: #eee;
+    }
 }
 
 /* Fix for center-alignment issue on `.not-found` pages */
@@ -80,6 +73,67 @@ html[data-theme='dark'] #kapa-widget-portal {
 .vp-page.not-found .vp-breadcrumb,
 .vp-page.not-found .vp-page-title,
 .vp-page.not-found .vp-toc-placeholder {
-  text-align: initial;
-  width: var(--content-width, 740px);
+    text-align: initial;
+    width: var(--content-width, 740px);
+}
+
+.vp-hero-info {
+    text-align: center;
+}
+
+.DocSearch-Button-Keys {
+    display: none;
+}
+
+.DocSearch-Button-Placeholder {
+    padding-right: 30px;
+}
+
+#main-description {
+    max-width: 50rem;
+}
+
+.vp-highlight-header {
+    text-align: center;
+}
+
+.vp-highlight-info-wrapper:only-child {
+    flex: 1;
+}
+
+/*Remove deprecation notice*/
+div[style*="z-index: 2147483647"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    position: absolute !important;
+    pointer-events: none !important;
+}
+
+.vp-hero-title {
+    margin: 0.5rem 0;
+    background: linear-gradient( 120deg, var(--vp-c-accent-hover), var(--vp-c-accent) 30%, var(--end-gradient) 120% );
+    -webkit-background-clip: text;
+    background-clip: text;
+    font-weight: bold;
+    font-size: 3.6rem;
+    font-family: var(--vp-font);
+    line-height: 1.5;
+    -webkit-text-fill-color: transparent;
+}
+
+.vp-highlight-item {
+    list-style: none;
+}
+
+@media screen and (max-width: 480px) {
+    .vp-action,
+    .custom-class-kapa,
+    .kapa-container {
+        display: none;
+    }
+}
+
+.vp-highlight-title {
+    font-size: 1.4rem;
 }

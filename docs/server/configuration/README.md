@@ -73,7 +73,7 @@ All configuration options are nested under the `KurrentDB` key.
 {
   "KurrentDB": {
     "Db": "/volumes/data",
-    "Log": "/esdb/logs",
+    "Log": "/kurrentdb/logs",
     "ReaderThreadsCount": 4,
 
     "UserCertificates": {

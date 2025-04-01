@@ -31,7 +31,7 @@ public class EventStoreAuthenticationHandler : AuthenticationHandler<Authenticat
 
 		var ticket = new AuthenticationTicket(
 			principal: Context.User,
-			authenticationScheme: "es auth");
+			authenticationScheme: "kurrent auth");
 
 		return Task.FromResult(AuthenticateResult.Success(ticket));
 	}

@@ -1,0 +1,107 @@
+### Configure cluster to use stream policies
+POST https://localhost:2113/streams/$authorization-policy-settings
+Authorization: Basic admin changeit
+Content-Type: application/json
+ES-EventId: 11887e82-9fb4-4112-b937-aea895b32a4a
+ES-EventType: $authorization-policy-changed
+
+{
+    "streamAccessPolicyType": "streampolicy"
+}
+
+### Configure cluster to use acls
+POST https://localhost:2113/streams/$authorization-policy-settings
+Authorization: Basic admin changeit
+Content-Type: application/json
+ES-EventId: d07a6637-d9d0-43b7-8f48-6a9a8800af12
+ES-EventType: $authorization-policy-changed
+
+{
+    "streamAccessPolicyType": "acl"
+}
+
+### GET latest stream policy
+GET https://localhost:2113/streams/$policies/head/backward/1?embed=body
+Accept: application/json
+Authorization: Basic admin changeit
+
+### POST a new stream policy
+POST https://localhost:2113/streams/$policies
+Authorization: Basic admin changeit
+Content-Type: application/json
+ES-EventId: ae819cd9-2909-4023-af1f-9190ff042c2b
+ES-EventType: $policy-updated
+
+{
+    "streamPolicies": {
+        "customPolicy": {
+            "$r": ["$all","ouro"],
+            "$w": ["ouro"],
+            "$d": ["ouro"],
+            "$mr": ["$all","ouro"],
+            "$mw": ["ouro"]
+        },
+        "opsPolicy": {
+            "$r": ["$ops"],
+            "$w": ["$ops"],
+            "$d": ["$admins"],
+            "$mr": ["$ops"],
+            "$mw": ["$admins"]
+        },
+        "publicDefault": {
+            "$r": ["$all"],
+            "$w": ["$all"],
+            "$d": ["$all"],
+            "$mr": ["$all"],
+            "$mw": ["$all"]
+        },
+        "adminsDefault": {
+            "$r": ["$admins"],
+            "$w": ["$admins"],
+            "$d": ["$admins"],
+            "$mr": ["$admins"],
+            "$mw": ["$admins"]
+        },
+        "projectionsDefault": {
+            "$r": ["$all"],
+            "$w": ["$admins"],
+            "$d": ["$admins"],
+            "$mr": ["$all"],
+            "$mw": ["$admins"]
+        }
+    },
+    "streamRules": [
+        {
+            "startsWith": "customer-",
+            "policy": "customPolicy"
+        },
+        {
+            "startsWith": "$scavenges",
+            "policy": "opsPolicy"
+        },
+        {
+            "startsWith": "$et-",
+            "policy": "projectionsDefault"
+        },
+        {
+            "startsWith": "$ce-",
+            "policy": "projectionsDefault"
+        },
+        {
+            "startsWith": "$bc-",
+            "policy": "projectionsDefault"
+        },
+        {
+            "startsWith": "$category-",
+            "policy": "projectionsDefault"
+        },
+        {
+            "startsWith": "$streams",
+            "policy": "projectionsDefault"
+        }
+    ],
+    "defaultStreamRules": {
+        "userStreams": "publicDefault",
+        "systemStreams": "adminsDefault"
+    }
+}

@@ -1,0 +1,17 @@
+{
+  "KurrentDB": {
+    "EncryptionAtRest": {
+      "Enabled": true,
+      "MasterKey": {
+        "File": {
+          "KeyPath": "./keys"
+        }
+      },
+      "Encryption": {
+        "AesGcm": {
+          "Enabled": true
+        }
+      }
+    }
+  }
+}

@@ -3,7 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Client.Redaction;
+using Kurrent.Client.Redaction;
 using EventStore.Core.Data.Redaction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;

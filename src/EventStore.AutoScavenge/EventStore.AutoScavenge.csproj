@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<EnableDynamicLoading>true</EnableDynamicLoading>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\EventStore.POC.ConnectedSubsystemsPlugin\EventStore.POC.ConnectedSubsystemsPlugin.csproj" />
+		<ProjectReference Include="..\EventStore.POC.IO.Core\EventStore.POC.IO.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="NCrontab" Version="3.3.3" />
+	</ItemGroup>
+</Project>

@@ -137,4 +137,4 @@ https://api.example.com/TestEvent
 
 ### Tutorial
 
-[Learn how to configure and use a connector using the HTTP Sink in EventStoreDB through a tutorial.](https://developers.eventstore.com/tutorials/HTTP_Connector.md) 
+[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](https://docs.kurrent.io/tutorials/HTTP_Connector.html)

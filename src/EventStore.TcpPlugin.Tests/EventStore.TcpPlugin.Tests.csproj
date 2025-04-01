@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="EventStore.Client" Version="22.0.0" />
+		<PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+		<PackageReference Include="xunit" Version="2.6.1" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.5.3">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="coverlet.collector" Version="6.0.0">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\EventStore.Core.Tests\EventStore.Core.Tests.csproj" />
+	  <ProjectReference Include="..\EventStore.TcpPlugin\EventStore.TcpPlugin.csproj" />
+	</ItemGroup>
+</Project>

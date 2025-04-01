@@ -19,6 +19,8 @@
 		<PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
 		<PackageReference Include="librdkafka.redist" Version="2.5.0" />
 		<PackageReference Include="Microsoft.FASTER.Core" Version="1.9.16" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.13" />
+		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.6.0" />
 		<PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.11.2-beta.1" />
 		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
 		<PackageReference Include="Polly.Core" Version="8.5.2" />
@@ -43,7 +45,6 @@
 		<ProjectReference Include="..\EventStore.Licensing\EventStore.Licensing.csproj" />
 		<ProjectReference Include="..\EventStore.LogV3\EventStore.LogV3.csproj" />
 		<ProjectReference Include="..\EventStore.Native\EventStore.Native.csproj" />
-		<ProjectReference Include="..\EventStore.OtlpExporterPlugin\EventStore.OtlpExporterPlugin.csproj" />
 		<ProjectReference Include="..\EventStore.Transport.Http\EventStore.Transport.Http.csproj" />
 		<ProjectReference Include="..\EventStore.Transport.Tcp\EventStore.Transport.Tcp.csproj" />
 		<ProjectReference Include="..\EventStore.NETCore.Compatibility\EventStore.NETCore.Compatibility.csproj" />
@@ -92,5 +93,28 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="Services\Transport\Tcp\protos\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Update="Services\Transport\Grpc\Cluster.*.cs">
+	    <DependentUpon>Cluster.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Gossip.*.cs">
+	    <DependentUpon>Gossip.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Operations.*.cs">
+	    <DependentUpon>Operations.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\PersistentSubscriptions.*.cs">
+	    <DependentUpon>PersistentSubscriptions.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Redaction.*.cs">
+	    <DependentUpon>Redaction.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Streams.*.cs">
+	    <DependentUpon>Streams.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Users.*.cs">
+	    <DependentUpon>Users.cs</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 </Project>

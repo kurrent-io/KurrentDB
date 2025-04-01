@@ -11,9 +11,13 @@ As part of this rebrand, EventStoreDB has been renamed to KurrentDB, with the fi
 
 Read more about the rebrand in the [rebrand FAQ](https://www.kurrent.io/blog/kurrent-re-brand-faq).
 
-The KurrentDB packages are still hosted on [Cloudsmith](https://cloudsmith.io/~eventstore/repos/kurrent/packages/). Packages are available for [Debian](https://cloudsmith.io/~eventstore/repos/kurrent/setup/#formats-deb), [RedHat](https://cloudsmith.io/~eventstore/repos/kurrent/setup/#formats-rpm), [Docker](https://cloudsmith.io/~eventstore/repos/kurrent/setup/#formats-docker), and [NuGet](https://cloudsmith.io/~eventstore/repos/kurrent/setup/#formats-nuget).
+Packages for KurrentDB are still hosted on [Cloudsmith](https://cloudsmith.io/~eventstore), in the following repositories:
 
-If you have a previous version of EventStoreDB installed, please uninstall those versions before installing KurrentDB.
+* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview) containing non-production preview packages.
+
+Packages are available for [Ubuntu/Debian](./installation.md#ubuntu-debian-packages), [RedHat](./installation.md#redhat-packages), [Docker](./installation.md#docker), and [NuGet](./installation.md#nuget).
 
 ## Should you upgrade?
 
@@ -46,16 +50,18 @@ Upgrading the cluster this way keeps the cluster online and able to service requ
 If you modified the Linux service file to increase the open files limit, those changes will be overridden during the upgrade. You will need to reapply them after the upgrade.
 :::
 
-## File and location changes when upgrading from EventStoreDB
+## Breaking changes
+
+### File and location changes when upgrading from EventStoreDB
 
 You will need to take the following changes into account when upgrading from EventStoreDB:
 
-### On Windows
+#### On Windows
 
 1. The executable `EventStore.ClusterNode.exe` has been renamed to `KurrentDB.exe`.
 1. The test client executable `EventStore.TestClient.exe` has been renamed to `KurrentDB.TestClient.exe`.
 
-### On Linux
+#### On Linux
 
 1. The `eventstore` service has been renamed to `kurrentdb`.
 1. The `eventstored` executable has been renamed to `kurrentd`.
@@ -82,11 +88,14 @@ If you install KurrentDB through a package manager, it will create a default con
 If you are running KurrentDB as a service, you will need to grant the `kurrent` user access to any data, logs, or configuration directories that the `eventstore` user had access to.
 :::
 
-## Breaking changes
+### Log Levels supported in logconfig.json
 
-### From EventStoreDB version 24.10 and earlier
+The log levels specified in `logconfig.json` must now be Microsoft levels rather than Serilog levels.
 
-#### Metrics name changes
+If you have customized your `logconfig.json` you will need to change `Fatal` to `Critical` and `Verbose` to `Trace`.
+[#4837](https://github.com/kurrent-io/EventStore/pull/4837)
+
+### Metrics name changes
 
 ::: info
 The old EventStore metric names can still be used by changing the two meter names in `metricsconfig.json` to have `EventStore` prefixes:
@@ -142,7 +151,7 @@ The following metric names have changed generally
 | `eventstore_gc_total_allocated` | `kurrentdb_gc_allocated_bytes_total`    |
 | `eventstore_proc_up_time`       | `kurrentdb_proc_up_time_seconds_total`  |
 
-#### Removed configuration options
+### Removed configuration options
 
 A number of configuration options have been removed in 25.0. KurrentDB will not start by default if any of these options are present in the database configuration.
 
@@ -169,7 +178,33 @@ The following deprecated options were removed as they had no effect:
 - `DisableInternalTcpTls`
 - `OptimizeIndexMerge`
 
-### From EventStoreDB version 24.6 and earlier
+### New OAuth redirect uri
+
+The new embedded web UI requires a new redirect uri in order to work with the OAuth plugin.
+
+If you use the OAuth plugin and the web UI, you will need to allow the `/signin-oidc` redirect uri in your identity server configuration in addition to the `/oauth/callback` uri.
+
+For example, if you had the following redirect uris configured in your identity server:
+
+```json
+"RedirectUris": [
+  "https://localhost:2113/oauth/callback",
+  "https://127.0.0.1:2113/oauth/callback"
+]
+```
+
+Then you would need to update it to this:
+
+```json
+"RedirectUris": [
+  "https://localhost:2113/signin-oidc",
+  "https://127.0.0.1:2113/signin-oidc",
+  "https://localhost:2113/oauth/callback",
+  "https://127.0.0.1:2113/oauth/callback"
+]
+```
+
+### From v24.6 and earlier
 
 #### Histograms endpoint has been removed
 
@@ -262,7 +297,7 @@ UserCertificates:
   Enabled: true
 ```
 
-### From EventStoreDB version 23.10 and earlier
+### From v23.10 and earlier
 
 #### External TCP API removed
 
@@ -287,7 +322,7 @@ A number of configuration options have been removed as part of this. KurrentDB w
 - `NodeTcpPort`
 - `NodeTcpPortAdvertiseAs`
 
-### From EventStoreDB version 22.10 and earlier
+### From v22.10 and earlier
 
 The updates to anonymous access described in the [release notes](https://www.eventstore.com/blog/23.10.0-release-notes) have introduced some breaking changes. We have also removed, renamed, and deprecated some options in KurrentDB.
 

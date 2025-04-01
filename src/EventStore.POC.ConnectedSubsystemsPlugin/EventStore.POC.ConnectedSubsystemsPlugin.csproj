@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
+		<ProjectReference Include="..\EventStore.PluginHosting\EventStore.PluginHosting.csproj" />
+		<ProjectReference Include="..\EventStore.POC.IO.Core\EventStore.POC.IO.Core.csproj" />
+	</ItemGroup>
+</Project>

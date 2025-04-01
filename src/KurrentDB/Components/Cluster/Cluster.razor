@@ -1,7 +1,11 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
 @page "/ui/cluster"
-@rendermode InteractiveServer
-@attribute [Authorize]
 @inherits KurrentDB.Components.Licensed.WithLicense
+@attribute [Authorize]
+@attribute [ExcludeFromInteractiveRouting]
+@rendermode InteractiveServer
 @using EventStore.Common.Utils
 @using EventStore.Core.Bus
 @using EventStore.Core.Metrics

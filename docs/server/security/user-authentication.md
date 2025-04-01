@@ -506,9 +506,9 @@ You need to configure the following:
 			"AllowedScopes": [
 				"streams",
 				"openid",
-				"profile",
+				"profile"
 			],
-			"RedirectUris": ["https://localhost:2113/oauth/callback","https://127.0.0.1:2113/oauth/callback"],
+			"RedirectUris": ["https://localhost:2113/signin-oidc","https://127.0.0.1:2113/signin-oidc","https://localhost:2113/oauth/callback","https://127.0.0.1:2113/oauth/callback"],
 			"AlwaysIncludeUserClaimsInIdToken": true,
 			"RequireConsent": false,
 			"AlwaysSendClientClaims": true,
@@ -525,10 +525,10 @@ You need to configure the following:
 In this example we set the `RedirectUris` to both `https://localhost:2113` and `https://127.0.0.1:2113` so that you can log into the UI from either address.
 :::
 
-3. Pull and run the `eventstore/idsrv4` docker container:
+3. Pull and run the `kurrent-io/idsrv4` docker container:
 
 ```bash
-docker pull ghcr.io/eventstore/idsrv4/idsrv4
+docker pull ghcr.io/kurrent-io/idsrv4/idsrv4
 
 docker run \
     --rm -it \
@@ -536,7 +536,7 @@ docker run \
     -p 5001:5001 \                                            # HTTPS port
     --volume $PWD/users.conf.json:/etc/idsrv4/users.conf \    # mount users file; required
     --volume $PWD/idsrv4.conf.json:/etc/idsrv4/idsrv4.conf \  # mount configuration file
-    ghcr.io/eventstore/idsrv4/idsrv4
+    ghcr.io/kurrent-io/idsrv4/idsrv4
 ```
 
 You should see the identity server start up and start listening on the ports `5000` and `5001`:

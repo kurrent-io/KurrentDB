@@ -1,4 +1,9 @@
-﻿<!DOCTYPE html>
+﻿@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using Microsoft.AspNetCore.Http
+@using KurrentDB.UI
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -10,14 +15,22 @@
 	<link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet"/>
 	<link href="_content/MudBlazor.Markdown/MudBlazor.Markdown.min.css" rel="stylesheet"/>
 	<link rel="icon" type="image/png" href="favicon.png"/>
-	<HeadOutlet @rendermode="InteractiveServer"/>
+	<HeadOutlet @rendermode="PageRenderMode" />
 </head>
 
 <body>
-<Routes @rendermode="InteractiveServer"/>
+<Routes @rendermode="PageRenderMode" />
 <script src="_framework/blazor.web.js"></script>
 <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 <script src="_content/MudBlazor.Markdown/MudBlazor.Markdown.min.js"></script>
+<script src="_content/Extensions.MudBlazor.StaticInput/NavigationObserver.js"></script>
 </body>
 
 </html>
+
+@code {
+	[CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+	private IComponentRenderMode PageRenderMode =>
+		HttpContext.AcceptsInteractiveRouting() ? InteractiveAuto : null;
+}

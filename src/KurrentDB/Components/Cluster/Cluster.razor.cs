@@ -42,7 +42,7 @@ public partial class Cluster : WithLicense, IDisposable {
 
 	void Callback(object state) {
 		Task.Run(RefreshStatus);
-		InternalExporter.Collect!(100);
+		InternalExporter.Collect?.Invoke(100);
 		_cpu = MonitoringService.CalculateCpu() * 100;
 		var ram = MonitoringService.CalculateRam();
 		_ram = ram.Used / ram.Total * 100;
