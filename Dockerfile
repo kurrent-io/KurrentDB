@@ -8,6 +8,12 @@ WORKDIR /build
 COPY ./LICENSE.md .
 COPY ./LICENSE_CONTRIBUTIONS.md .
 COPY ./NOTICE.html .
+COPY ./nuget.config .
+
+ARG NUGET_CREDS_EVENTSTORE="*** required ***"
+ARG NUGET_CREDS_KURRENTDB="*** required ***"
+ENV NuGetPackageSourceCredentials_EventStore=${NUGET_CREDS_EVENTSTORE}
+ENV NuGetPackageSourceCredentials_KurrentDB=${NUGET_CREDS_KURRENTDB}
 COPY ./docker ./scripts
 
 WORKDIR /build/ci
