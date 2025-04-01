@@ -3,11 +3,11 @@
 
 using System;
 using System.Threading.Tasks;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage;
 using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToAllCompleted;
 using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
@@ -33,7 +33,7 @@ internal partial class PersistentSubscriptions {
 		switch (request.Options.StreamOptionCase) {
 			case StreamOptionOneofCase.StreamIdentifier: {
 				streamId = request.Options.StreamIdentifier;
-				_publisher.Publish(new DeletePersistentSubscriptionToStream(
+				_publisher.Publish(new ClientMessage.DeletePersistentSubscriptionToStream(
 					correlationId,
 					correlationId,
 					new CallbackEnvelope(HandleDeletePersistentSubscriptionCompleted),
@@ -44,7 +44,7 @@ internal partial class PersistentSubscriptions {
 			}
 			case StreamOptionOneofCase.All:
 				streamId = SystemStreams.AllStream;
-				_publisher.Publish(new DeletePersistentSubscriptionToAll(
+				_publisher.Publish(new ClientMessage.DeletePersistentSubscriptionToAll(
 					correlationId,
 					correlationId,
 					new CallbackEnvelope(HandleDeletePersistentSubscriptionCompleted),
@@ -58,13 +58,13 @@ internal partial class PersistentSubscriptions {
 		return await createPersistentSubscriptionSource.Task;
 
 		void HandleDeletePersistentSubscriptionCompleted(Message message) {
-			if (message is NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
+			if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 				createPersistentSubscriptionSource.TrySetException(ex);
 				return;
 			}
 
 			if (streamId != SystemStreams.AllStream) {
-				if (message is DeletePersistentSubscriptionToStreamCompleted completed) {
+				if (message is ClientMessage.DeletePersistentSubscriptionToStreamCompleted completed) {
 					switch (completed.Result) {
 						case DeletePersistentSubscriptionToStreamResult.Success:
 							createPersistentSubscriptionSource.TrySetResult(new DeleteResp());
@@ -87,9 +87,9 @@ internal partial class PersistentSubscriptions {
 					}
 				}
 
-				createPersistentSubscriptionSource.TrySetException(UnknownMessage<DeletePersistentSubscriptionToStreamCompleted>(message));
+				createPersistentSubscriptionSource.TrySetException(UnknownMessage<ClientMessage.DeletePersistentSubscriptionToStreamCompleted>(message));
 			} else {
-				if (message is DeletePersistentSubscriptionToAllCompleted completedAll) {
+				if (message is ClientMessage.DeletePersistentSubscriptionToAllCompleted completedAll) {
 					switch (completedAll.Result) {
 						case DeletePersistentSubscriptionToAllResult.Success:
 							createPersistentSubscriptionSource.TrySetResult(new DeleteResp());
@@ -113,7 +113,7 @@ internal partial class PersistentSubscriptions {
 					}
 				}
 
-				createPersistentSubscriptionSource.TrySetException(UnknownMessage<DeletePersistentSubscriptionToAllCompleted>(message));
+				createPersistentSubscriptionSource.TrySetException(UnknownMessage<ClientMessage.DeletePersistentSubscriptionToAllCompleted>(message));
 			}
 		}
 	}

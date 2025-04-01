@@ -16,15 +16,28 @@ using Empty = EventStore.Client.Empty;
 // ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc.Cluster;
 
-partial class Gossip(
-	IPublisher bus,
-	IAuthorizationProvider authorizationProvider,
-	string clusterDns,
-	IDurationTracker updateTracker,
-	IDurationTracker readTracker) {
-	private readonly IAuthorizationProvider _authorizationProvider = Ensure.NotNull(authorizationProvider);
+partial class Gossip {
+	private readonly IAuthorizationProvider _authorizationProvider;
 	private static readonly Operation ReadOperation = new(Plugins.Authorization.Operations.Node.Gossip.Read);
 	private static readonly Operation UpdateOperation = new(Plugins.Authorization.Operations.Node.Gossip.Update);
+	private readonly IPublisher _bus;
+	private readonly string _clusterDns;
+	private readonly IDurationTracker _updateTracker;
+	private readonly IDurationTracker _readTracker;
+
+	public Gossip(
+		IPublisher bus,
+		IAuthorizationProvider authorizationProvider,
+		string clusterDns,
+		IDurationTracker updateTracker,
+		IDurationTracker readTracker) {
+
+		_bus = bus;
+		_authorizationProvider = Ensure.NotNull(authorizationProvider);
+		_clusterDns = clusterDns;
+		_updateTracker = updateTracker;
+		_readTracker = readTracker;
+	}
 
 	public override async Task<ClusterInfo> Update(GossipRequest request, ServerCallContext context) {
 		var user = context.GetHttpContext().User;
@@ -32,11 +45,11 @@ partial class Gossip(
 			throw RpcExceptions.AccessDenied();
 		}
 
-		var clusterInfo = EventStore.Core.Cluster.ClusterInfo.FromGrpcClusterInfo(request.Info, clusterDns);
+		var clusterInfo = EventStore.Core.Cluster.ClusterInfo.FromGrpcClusterInfo(request.Info, _clusterDns);
 		var tcs = new TaskCompletionSource<ClusterInfo>();
-		var duration = updateTracker.Start();
-		bus.Publish(new GossipMessage.GossipReceived(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration)),
-			clusterInfo, new DnsEndPoint(request.Server.Address, (int)request.Server.Port).WithClusterDns(clusterDns)));
+		var duration = _updateTracker.Start();
+		_bus.Publish(new GossipMessage.GossipReceived(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration)),
+			clusterInfo, new DnsEndPoint(request.Server.Address, (int)request.Server.Port).WithClusterDns(_clusterDns)));
 		return await tcs.Task;
 	}
 
@@ -47,8 +60,8 @@ partial class Gossip(
 		}
 
 		var tcs = new TaskCompletionSource<ClusterInfo>();
-		var duration = readTracker.Start();
-		bus.Publish(new GossipMessage.ReadGossip(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration))));
+		var duration = _readTracker.Start();
+		_bus.Publish(new GossipMessage.ReadGossip(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration))));
 		return await tcs.Task;
 	}
 

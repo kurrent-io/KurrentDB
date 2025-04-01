@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Common;
 using Serilog;
-using static EventStore.Core.Messages.ClientMessage;
 
 namespace EventStore.Core.Services.Transport.Enumerators;
 
@@ -81,7 +81,7 @@ partial class Enumerator {
 
 			var (commitPosition, preparePosition) = startPosition.ToInt64();
 
-			_bus.Publish(new FilteredReadAllEventsForward(
+			_bus.Publish(new ClientMessage.FilteredReadAllEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				commitPosition, preparePosition, (int)Math.Min(ReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user,
@@ -91,13 +91,13 @@ partial class Enumerator {
 			);
 
 			async Task OnMessage(Message message, CancellationToken ct) {
-				if (message is NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
+				if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 					_channel.Writer.TryComplete(ex);
 					return;
 				}
 
-				if (message is not FilteredReadAllEventsForwardCompleted completed) {
-					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<FilteredReadAllEventsForwardCompleted>(message));
+				if (message is not ClientMessage.FilteredReadAllEventsForwardCompleted completed) {
+					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<ClientMessage.FilteredReadAllEventsForwardCompleted>(message));
 					return;
 				}
 

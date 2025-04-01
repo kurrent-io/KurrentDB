@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Common;
-using static EventStore.Core.Messages.ClientMessage;
 
 namespace EventStore.Core.Services.Transport.Enumerators;
 
@@ -71,21 +71,20 @@ partial class Enumerator {
 
 			var (commitPosition, preparePosition) = startPosition.ToInt64();
 
-			_bus.Publish(new ReadAllEventsBackward(
+			_bus.Publish(new ClientMessage.ReadAllEventsBackward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				commitPosition, preparePosition, (int)Math.Min(ReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, default, _user, _deadline,
-				cancellationToken: _cancellationToken)
-			);
+				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {
-				if (message is NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
+				if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 					_channel.Writer.TryComplete(ex);
 					return;
 				}
 
-				if (message is not ReadAllEventsBackwardCompleted completed) {
-					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<ReadAllEventsBackwardCompleted>(message));
+				if (message is not ClientMessage.ReadAllEventsBackwardCompleted completed) {
+					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<ClientMessage.ReadAllEventsBackwardCompleted>(message));
 					return;
 				}
 

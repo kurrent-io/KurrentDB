@@ -18,7 +18,6 @@ using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Plugins.Transforms;
 using Serilog;
-using static EventStore.Core.Messages.RedactionMessage;
 
 namespace EventStore.Core.Services;
 
@@ -26,27 +25,40 @@ public abstract class RedactionService {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<RedactionService>();
 }
 
-public class RedactionService<TStreamId>(IQueuedHandler queuedHandler, TFChunkDb db, IReadIndex<TStreamId> readIndex, SemaphoreSlimLock switchChunksLock)
-	: RedactionService,
-		IAsyncHandle<GetEventPosition>,
-		IHandle<AcquireChunksLock>,
-		IAsyncHandle<SwitchChunk>,
-		IHandle<ReleaseChunksLock>,
-		IHandle<SystemMessage.BecomeShuttingDown> {
-	private readonly IQueuedHandler _queuedHandler = Ensure.NotNull(queuedHandler);
-	private readonly TFChunkDb _db = Ensure.NotNull(db);
-	private readonly IReadIndex<TStreamId> _readIndex = Ensure.NotNull(readIndex);
-	private readonly SemaphoreSlimLock _switchChunksLock = Ensure.NotNull(switchChunksLock);
+public class RedactionService<TStreamId> :
+	RedactionService,
+	IAsyncHandle<RedactionMessage.GetEventPosition>,
+	IHandle<RedactionMessage.AcquireChunksLock>,
+	IAsyncHandle<RedactionMessage.SwitchChunk>,
+	IHandle<RedactionMessage.ReleaseChunksLock>,
+	IHandle<SystemMessage.BecomeShuttingDown> {
+
+	private readonly IQueuedHandler _queuedHandler;
+	private readonly TFChunkDb _db;
+	private readonly IReadIndex<TStreamId> _readIndex;
+	private readonly SemaphoreSlimLock _switchChunksLock;
 
 	private const string NewChunkFileExtension = ".tmp";
 
-	async ValueTask IAsyncHandle<GetEventPosition>.HandleAsync(GetEventPosition message, CancellationToken token) {
+	public RedactionService(
+		IQueuedHandler queuedHandler,
+		TFChunkDb db,
+		IReadIndex<TStreamId> readIndex,
+		SemaphoreSlimLock switchChunksLock) {
+
+		_queuedHandler = Ensure.NotNull(queuedHandler);
+		_db = Ensure.NotNull(db);
+		_readIndex = Ensure.NotNull(readIndex);
+		_switchChunksLock = Ensure.NotNull(switchChunksLock);
+	}
+
+	async ValueTask IAsyncHandle<RedactionMessage.GetEventPosition>.HandleAsync(RedactionMessage.GetEventPosition message, CancellationToken token) {
 		try {
 			await GetEventPosition(message.EventStreamId, message.EventNumber, message.Envelope, token);
 		} catch (Exception ex) {
 			Log.Error(ex, "REDACTION: An error has occurred when getting position for stream: {stream}, event number: {eventNumber}.",
 				message.EventStreamId, message.EventNumber);
-			message.Envelope.ReplyWith(new GetEventPositionCompleted(GetEventPositionResult.UnexpectedError, []));
+			message.Envelope.ReplyWith(new RedactionMessage.GetEventPositionCompleted(GetEventPositionResult.UnexpectedError, []));
 		}
 	}
 
@@ -68,42 +80,46 @@ public class RedactionService<TStreamId>(IQueuedHandler queuedHandler, TFChunkDb
 				// since the log record was read from the chunk to check for hash collisions.
 				< 0 => throw new Exception($"Failed to fetch actual raw position for event at log position: {logPos}"),
 				> uint.MaxValue => throw new Exception($"Actual raw position for event at log position: {logPos} is larger than uint.MaxValue: {chunkEventOffset}"),
-				_ => new EventPosition(logPosition: logPos, chunkFile: Path.GetFileName(chunk.LocalFileName), chunkVersion: chunk.ChunkHeader.MinCompatibleVersion,
-					chunkComplete: chunk.ChunkFooter is { IsCompleted: true }, chunkEventOffset: (uint)chunkEventOffset)
+				_ => new EventPosition(
+					logPosition: logPos,
+					chunkFile: Path.GetFileName(chunk.LocalFileName),
+					chunkVersion: chunk.ChunkHeader.MinCompatibleVersion,
+					chunkComplete: chunk.ChunkFooter is { IsCompleted: true },
+					chunkEventOffset: (uint)chunkEventOffset)
 			};
 		}
 
-		envelope.ReplyWith(new GetEventPositionCompleted(GetEventPositionResult.Success, eventPositions));
+		envelope.ReplyWith(new RedactionMessage.GetEventPositionCompleted(GetEventPositionResult.Success, eventPositions));
 	}
 
-	public void Handle(AcquireChunksLock message) {
+	public void Handle(RedactionMessage.AcquireChunksLock message) {
 		if (_switchChunksLock.TryAcquire(out var acquisitionId)) {
 			Log.Information("REDACTION: Acquired the chunks lock");
-			message.Envelope.ReplyWith(new AcquireChunksLockCompleted(AcquireChunksLockResult.Success, acquisitionId));
+			message.Envelope.ReplyWith(new RedactionMessage.AcquireChunksLockCompleted(AcquireChunksLockResult.Success, acquisitionId));
 		} else {
 			Log.Information("REDACTION: Failed to acquire the chunks lock");
-			message.Envelope.ReplyWith(new AcquireChunksLockCompleted(AcquireChunksLockResult.Failed, Guid.Empty));
+			message.Envelope.ReplyWith(new RedactionMessage.AcquireChunksLockCompleted(AcquireChunksLockResult.Failed, Guid.Empty));
 		}
 	}
 
-	public void Handle(ReleaseChunksLock message) {
+	public void Handle(RedactionMessage.ReleaseChunksLock message) {
 		if (_switchChunksLock.TryRelease(message.AcquisitionId)) {
 			Log.Information("REDACTION: Released the chunks lock");
-			message.Envelope.ReplyWith(new ReleaseChunksLockCompleted(ReleaseChunksLockResult.Success));
+			message.Envelope.ReplyWith(new RedactionMessage.ReleaseChunksLockCompleted(ReleaseChunksLockResult.Success));
 		} else {
 			Log.Information("REDACTION: Failed to release the chunks lock");
-			message.Envelope.ReplyWith(new ReleaseChunksLockCompleted(ReleaseChunksLockResult.Failed));
+			message.Envelope.ReplyWith(new RedactionMessage.ReleaseChunksLockCompleted(ReleaseChunksLockResult.Failed));
 		}
 	}
 
-	async ValueTask IAsyncHandle<SwitchChunk>.HandleAsync(SwitchChunk message, CancellationToken token) {
+	async ValueTask IAsyncHandle<RedactionMessage.SwitchChunk>.HandleAsync(RedactionMessage.SwitchChunk message, CancellationToken token) {
 		var currentAcquisitionId = _switchChunksLock.CurrentAcquisitionId;
 		if (currentAcquisitionId != message.AcquisitionId) {
 			Log.Error("REDACTION: Skipping switching of chunk: {targetChunk} with chunk: {newChunk} " +
 			          "as the lock is not currently held by the requester. " +
 			          "(Requester\'s lock ID: {requestLockId:B}. Current lock ID: {currentLockId:B})",
 				message.TargetChunkFile, message.NewChunkFile, message.AcquisitionId, currentAcquisitionId);
-			message.Envelope.ReplyWith(new SwitchChunkCompleted(SwitchChunkResult.UnexpectedError));
+			message.Envelope.ReplyWith(new RedactionMessage.SwitchChunkCompleted(SwitchChunkResult.UnexpectedError));
 			return;
 		}
 
@@ -113,7 +129,7 @@ public class RedactionService<TStreamId>(IQueuedHandler queuedHandler, TFChunkDb
 		} catch (Exception ex) {
 			Log.Error(ex, "REDACTION: An error has occurred when trying to switch chunk: {targetChunk} with chunk: {newChunk}.",
 				message.TargetChunkFile, message.NewChunkFile);
-			message.Envelope.ReplyWith(new SwitchChunkCompleted(SwitchChunkResult.UnexpectedError));
+			message.Envelope.ReplyWith(new RedactionMessage.SwitchChunkCompleted(SwitchChunkResult.UnexpectedError));
 		}
 	}
 
@@ -122,10 +138,10 @@ public class RedactionService<TStreamId>(IQueuedHandler queuedHandler, TFChunkDb
 		switch (await IsValidSwitchChunkRequest(targetChunkFile, newChunkFile, token)) {
 			case { ValueOrDefault: { } newChunk }:
 				await _db.Manager.SwitchInTempChunk(chunk: newChunk, verifyHash: false, removeChunksWithGreaterNumbers: false, token);
-				reply = new SwitchChunkCompleted(SwitchChunkResult.Success);
+				reply = new RedactionMessage.SwitchChunkCompleted(SwitchChunkResult.Success);
 				break;
 			case var result:
-				reply = new SwitchChunkCompleted(result.Error);
+				reply = new RedactionMessage.SwitchChunkCompleted(result.Error);
 				break;
 		}
 

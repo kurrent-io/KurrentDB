@@ -32,15 +32,20 @@ public interface IIndexBackend<TStreamId> : IIndexBackend {
 	StreamMetadata SetStreamMetadata(TStreamId streamId, StreamMetadata metadata);
 }
 
-public class IndexBackend<TStreamId>(
-	ObjectPool<ITransactionFileReader> readers,
-	ILRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached> streamLastEventNumberCache,
-	ILRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached> streamMetadataCache)
-	: IIndexBackend<TStreamId> {
-	private readonly ObjectPool<ITransactionFileReader> _readers = Ensure.NotNull(readers);
-	private readonly ILRUCache<TStreamId, EventNumberCached> _streamLastEventNumberCache = Ensure.NotNull(streamLastEventNumberCache);
-	private readonly ILRUCache<TStreamId, MetadataCached> _streamMetadataCache = Ensure.NotNull(streamMetadataCache);
+public class IndexBackend<TStreamId> : IIndexBackend<TStreamId> {
+	private readonly ObjectPool<ITransactionFileReader> _readers;
+	private readonly ILRUCache<TStreamId, EventNumberCached> _streamLastEventNumberCache;
+	private readonly ILRUCache<TStreamId, MetadataCached> _streamMetadataCache;
 	private SystemSettings _systemSettings;
+
+	public IndexBackend(
+		ObjectPool<ITransactionFileReader> readers,
+		ILRUCache<TStreamId, EventNumberCached> streamLastEventNumberCache,
+		ILRUCache<TStreamId, MetadataCached> streamMetadataCache) {
+		_readers = Ensure.NotNull(readers);
+		_streamLastEventNumberCache = Ensure.NotNull(streamLastEventNumberCache);
+		_streamMetadataCache = Ensure.NotNull(streamMetadataCache);
+	}
 
 	public TFReaderLease BorrowReader() => new(_readers);
 

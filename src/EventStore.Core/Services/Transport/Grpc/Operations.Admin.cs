@@ -9,8 +9,6 @@ using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.SubscriptionMessage;
-using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -25,7 +23,7 @@ internal partial class Operations {
 	public override async Task<Empty> Shutdown(Empty request, ServerCallContext context) {
 		var user = context.GetHttpContext().User;
 		if (!await _authorizationProvider.CheckAccessAsync(user, ShutdownOperation, context.CancellationToken)) {
-			throw AccessDenied();
+			throw RpcExceptions.AccessDenied();
 		}
 
 		_publisher.Publish(new ClientMessage.RequestShutdown(exitProcess: true, shutdownHttp: true));
@@ -37,7 +35,7 @@ internal partial class Operations {
 
 		var user = context.GetHttpContext().User;
 		if (!await _authorizationProvider.CheckAccessAsync(user, MergeIndexesOperation, context.CancellationToken)) {
-			throw AccessDenied();
+			throw RpcExceptions.AccessDenied();
 		}
 
 		var correlationId = Guid.NewGuid();
@@ -48,7 +46,7 @@ internal partial class Operations {
 
 		void OnMessage(Message message) {
 			if (message is not ClientMessage.MergeIndexesResponse completed) {
-				mergeResultSource.TrySetException(UnknownMessage<ClientMessage.MergeIndexesResponse>(message));
+				mergeResultSource.TrySetException(RpcExceptions.UnknownMessage<ClientMessage.MergeIndexesResponse>(message));
 			} else {
 				mergeResultSource.SetResult(completed.CorrelationId.ToString());
 			}
@@ -58,7 +56,7 @@ internal partial class Operations {
 	public override async Task<Empty> ResignNode(Empty request, ServerCallContext context) {
 		var user = context.GetHttpContext().User;
 		if (!await _authorizationProvider.CheckAccessAsync(user, ResignOperation, context.CancellationToken)) {
-			throw AccessDenied();
+			throw RpcExceptions.AccessDenied();
 		}
 
 		_publisher.Publish(new ClientMessage.ResignNode());
@@ -68,7 +66,7 @@ internal partial class Operations {
 	public override async Task<Empty> SetNodePriority(SetNodePriorityReq request, ServerCallContext context) {
 		var user = context.GetHttpContext().User;
 		if (!await _authorizationProvider.CheckAccessAsync(user, SetNodePriorityOperation, context.CancellationToken)) {
-			throw AccessDenied();
+			throw RpcExceptions.AccessDenied();
 		}
 
 		_publisher.Publish(new ClientMessage.SetNodePriority(request.Priority));
@@ -81,22 +79,22 @@ internal partial class Operations {
 
 		var user = context.GetHttpContext().User;
 		if (!await _authorizationProvider.CheckAccessAsync(user, RestartPersistentSubscriptionsOperation, context.CancellationToken)) {
-			throw AccessDenied();
+			throw RpcExceptions.AccessDenied();
 		}
 
-		_publisher.Publish(new PersistentSubscriptionsRestart(envelope));
+		_publisher.Publish(new SubscriptionMessage.PersistentSubscriptionsRestart(envelope));
 
 		await restart.Task;
 		return new Empty();
 
 		void OnMessage(Message message) {
 			switch (message) {
-				case PersistentSubscriptionsRestarting:
-				case InvalidPersistentSubscriptionsRestart:
+				case SubscriptionMessage.PersistentSubscriptionsRestarting:
+				case SubscriptionMessage.InvalidPersistentSubscriptionsRestart:
 					restart.TrySetResult(true);
 					break;
 				default:
-					restart.TrySetException(UnknownMessage<PersistentSubscriptionsRestarting>(message));
+					restart.TrySetException(RpcExceptions.UnknownMessage<SubscriptionMessage.PersistentSubscriptionsRestarting>(message));
 					break;
 			}
 		}

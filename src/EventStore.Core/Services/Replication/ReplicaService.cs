@@ -26,40 +26,63 @@ using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Replication;
 
-public class ReplicaService(
-	IPublisher publisher,
-	TFChunkDb db,
-	IEpochManager epochManager,
-	IPublisher networkSendQueue,
-	IAuthenticationProvider authProvider,
-	AuthorizationGateway authorizationGateway,
-	EndPoint internalTcp,
-	bool isReadOnlyReplica,
-	bool useSsl,
-	CertificateDelegates.ServerCertificateValidator sslServerCertValidator,
-	Func<X509Certificate> sslClientCertificateSelector,
-	TimeSpan heartbeatTimeout,
-	TimeSpan heartbeatInterval,
-	TimeSpan writeTimeout)
-	: IHandle<SystemMessage.StateChangeMessage>,
-		IHandle<ReplicationMessage.ReconnectToLeader>,
-		IAsyncHandle<ReplicationMessage.SubscribeToLeader>,
-		IHandle<ReplicationMessage.AckLogPosition>,
-		IHandle<ClientMessage.TcpForwardMessage> {
+public class ReplicaService :
+	IHandle<SystemMessage.StateChangeMessage>,
+	IHandle<ReplicationMessage.ReconnectToLeader>,
+	IAsyncHandle<ReplicationMessage.SubscribeToLeader>,
+	IHandle<ReplicationMessage.AckLogPosition>,
+	IHandle<ClientMessage.TcpForwardMessage> {
+
 	private static readonly ILogger Log = Serilog.Log.ForContext<ReplicaService>();
 
 	private readonly TcpClientConnector _connector = new();
-	private readonly IPublisher _publisher = Ensure.NotNull(publisher);
-	private readonly TFChunkDb _db = Ensure.NotNull(db);
-	private readonly IEpochManager _epochManager = Ensure.NotNull(epochManager);
-	private readonly IPublisher _networkSendQueue = Ensure.NotNull(networkSendQueue);
-	private readonly IAuthenticationProvider _authProvider = Ensure.NotNull(authProvider);
-	private readonly AuthorizationGateway _authorizationGateway = Ensure.NotNull(authorizationGateway);
-	private readonly EndPoint _internalTcp = Ensure.NotNull(internalTcp);
-	private readonly InternalTcpDispatcher _tcpDispatcher = new(writeTimeout);
-
+	private readonly IPublisher _publisher;
+	private readonly TFChunkDb _db;
+	private readonly IEpochManager _epochManager;
+	private readonly IPublisher _networkSendQueue;
+	private readonly IAuthenticationProvider _authProvider;
+	private readonly AuthorizationGateway _authorizationGateway;
+	private readonly EndPoint _internalTcp;
+	private readonly InternalTcpDispatcher _tcpDispatcher;
+	private readonly bool _isReadOnlyReplica;
+	private readonly bool _useSsl;
+	private readonly CertificateDelegates.ServerCertificateValidator _sslServerCertValidator;
+	private readonly Func<X509Certificate> _sslClientCertificateSelector;
+	private readonly TimeSpan _heartbeatTimeout;
+	private readonly TimeSpan _heartbeatInterval;
 	private VNodeState _state = VNodeState.Initializing;
 	private TcpConnectionManager _connection;
+
+	public ReplicaService(
+		IPublisher publisher,
+		TFChunkDb db,
+		IEpochManager epochManager,
+		IPublisher networkSendQueue,
+		IAuthenticationProvider authProvider,
+		AuthorizationGateway authorizationGateway,
+		EndPoint internalTcp,
+		bool isReadOnlyReplica,
+		bool useSsl,
+		CertificateDelegates.ServerCertificateValidator sslServerCertValidator,
+		Func<X509Certificate> sslClientCertificateSelector,
+		TimeSpan heartbeatTimeout,
+		TimeSpan heartbeatInterval,
+		TimeSpan writeTimeout) {
+		_isReadOnlyReplica = isReadOnlyReplica;
+		_useSsl = useSsl;
+		_sslServerCertValidator = sslServerCertValidator;
+		_sslClientCertificateSelector = sslClientCertificateSelector;
+		_heartbeatTimeout = heartbeatTimeout;
+		_heartbeatInterval = heartbeatInterval;
+		_publisher = Ensure.NotNull(publisher);
+		_db = Ensure.NotNull(db);
+		_epochManager = Ensure.NotNull(epochManager);
+		_networkSendQueue = Ensure.NotNull(networkSendQueue);
+		_authProvider = Ensure.NotNull(authProvider);
+		_authorizationGateway = Ensure.NotNull(authorizationGateway);
+		_internalTcp = Ensure.NotNull(internalTcp);
+		_tcpDispatcher = new(writeTimeout);
+	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
 		_state = message.State;
@@ -121,7 +144,7 @@ public class ReplicaService(
 	private void ConnectToLeader(Guid leaderConnectionCorrelationId, MemberInfo leader) {
 		Debug.Assert(_state is VNodeState.PreReplica or VNodeState.PreReadOnlyReplica);
 
-		var leaderEndPoint = GetLeaderEndPoint(leader, useSsl);
+		var leaderEndPoint = GetLeaderEndPoint(leader, _useSsl);
 		if (leaderEndPoint == null) {
 			Log.Error("No valid endpoint found to connect to the Leader. Aborting connection operation to Leader.");
 			return;
@@ -130,7 +153,7 @@ public class ReplicaService(
 		_connection?.Stop($"Reconnecting from old leader [{_connection.RemoteEndPoint}] to new leader: [{leaderEndPoint}].");
 
 		try {
-			_connection = new TcpConnectionManager(useSsl ? "leader-secure" : "leader-normal",
+			_connection = new TcpConnectionManager(_useSsl ? "leader-secure" : "leader-normal",
 				Guid.NewGuid(),
 				_tcpDispatcher,
 				_publisher,
@@ -138,17 +161,17 @@ public class ReplicaService(
 				leaderEndPoint.GetOtherNames(),
 				leaderEndPoint,
 				_connector,
-				useSsl,
-				sslServerCertValidator,
+				_useSsl,
+				_sslServerCertValidator,
 				() => {
-					var cert = sslClientCertificateSelector();
+					var cert = _sslClientCertificateSelector();
 					return new X509CertificateCollection { cert };
 				},
 				_networkSendQueue,
 				_authProvider,
 				_authorizationGateway,
-				heartbeatInterval,
-				heartbeatTimeout,
+				_heartbeatInterval,
+				_heartbeatTimeout,
 				OnConnectionEstablished,
 				OnConnectionClosed);
 			_connection.StartReceiving();
@@ -204,7 +227,7 @@ public class ReplicaService(
 			new ReplicationMessage.SubscribeReplica(
 				version: ReplicationSubscriptionVersions.V_CURRENT,
 				logPosition, chunkId, epochs, _internalTcp,
-				message.LeaderId, message.SubscriptionId, isPromotable: !isReadOnlyReplica));
+				message.LeaderId, message.SubscriptionId, isPromotable: !_isReadOnlyReplica));
 	}
 
 	public void Handle(ReplicationMessage.AckLogPosition message) {

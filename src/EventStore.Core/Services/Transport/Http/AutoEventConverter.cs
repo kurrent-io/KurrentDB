@@ -4,6 +4,7 @@
 using System;
 using System.Xml.Linq;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Transport.Http;
 using EventStore.Transport.Http.Codecs;
@@ -13,7 +14,6 @@ using Formatting = Newtonsoft.Json.Formatting;
 using System.Linq;
 using EventStore.Common.Utils;
 using Serilog;
-using static EventStore.Core.Messages.HttpClientMessageDto;
 
 namespace EventStore.Core.Services.Transport.Http;
 
@@ -51,8 +51,8 @@ public static class AutoEventConverter {
 		}
 	}
 
-	public static ReadEventCompletedText CreateDataDto(ResolvedEvent evnt) {
-		var dto = new ReadEventCompletedText(evnt);
+	public static HttpClientMessageDto.ReadEventCompletedText CreateDataDto(ResolvedEvent evnt) {
+		var dto = new HttpClientMessageDto.ReadEventCompletedText(evnt);
 		if (evnt.Event.Flags.HasFlag(PrepareFlags.IsJson)) {
 			var deserializedData = Codec.Json.From<object>((string)dto.data);
 			var deserializedMetadata = Codec.Json.From<object>((string)dto.metadata);
@@ -107,11 +107,11 @@ public static class AutoEventConverter {
 		return ret;
 	}
 
-	private static ClientEventDynamic[] LoadFromJson(string json) {
-		return Codec.Json.From<ClientEventDynamic[]>(json);
+	private static HttpClientMessageDto.ClientEventDynamic[] LoadFromJson(string json) {
+		return Codec.Json.From<HttpClientMessageDto.ClientEventDynamic[]>(json);
 	}
 
-	private static ClientEventDynamic[] LoadFromXml(string xml) {
+	private static HttpClientMessageDto.ClientEventDynamic[] LoadFromXml(string xml) {
 		try {
 			XDocument doc = XDocument.Parse(xml);
 			XNamespace jsonNsValue = "http://james.newtonking.com/projects/json";
@@ -126,7 +126,7 @@ public static class AutoEventConverter {
 			}
 
 			var json = JsonConvert.SerializeXNode(doc.Root, Formatting.None, true);
-			var root = JsonConvert.DeserializeObject<WriteEventsDynamic>(json);
+			var root = JsonConvert.DeserializeObject<HttpClientMessageDto.WriteEventsDynamic>(json);
 			return root.events;
 		} catch (Exception e) {
 			Log.Information(e, "Failed to load xml. Invalid format");
@@ -134,7 +134,7 @@ public static class AutoEventConverter {
 		}
 	}
 
-	private static Event[] Parse(ClientEventDynamic[] dynamicEvents) {
+	private static Event[] Parse(HttpClientMessageDto.ClientEventDynamic[] dynamicEvents) {
 		var events = new Event[dynamicEvents.Length];
 		for (int i = 0, n = dynamicEvents.Length; i < n; ++i) {
 			var textEvent = dynamicEvents[i];

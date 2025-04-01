@@ -16,13 +16,20 @@ using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Monitoring;
 
-public class SystemStatsHelper(ILogger log, IReadOnlyCheckpoint writerCheckpoint, string dbPath, long collectIntervalMs)
-	: IDisposable {
-	private readonly ILogger _log = Ensure.NotNull(log);
-	private readonly IReadOnlyCheckpoint _writerCheckpoint = Ensure.NotNull(writerCheckpoint);
-	private readonly EventCountersHelper _eventCountersHelper = new(collectIntervalMs);
+public class SystemStatsHelper : IDisposable {
+	private readonly ILogger _log;
+	private readonly IReadOnlyCheckpoint _writerCheckpoint;
+	private readonly string _dbPath;
+	private readonly EventCountersHelper _eventCountersHelper;
 	private readonly long _totalMem = RuntimeStats.GetTotalMemory();
 	private bool _giveUp;
+
+	public SystemStatsHelper(ILogger log, IReadOnlyCheckpoint writerCheckpoint, string dbPath, long collectIntervalMs) {
+		_dbPath = dbPath;
+		_log = Ensure.NotNull(log);
+		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
+		_eventCountersHelper = new(collectIntervalMs);
+	}
 
 	public void Start() => _eventCountersHelper.Start();
 
@@ -53,7 +60,7 @@ public class SystemStatsHelper(ILogger log, IReadOnlyCheckpoint writerCheckpoint
 		stats["es-checksum"] = _writerCheckpoint.Read();
 		stats["es-checksumNonFlushed"] = _writerCheckpoint.ReadNonFlushed();
 
-		var drive = DriveStats.GetDriveInfo(dbPath);
+		var drive = DriveStats.GetDriveInfo(_dbPath);
 
 		stats[DriveStat(drive.DiskName, "availableBytes")] = drive.AvailableBytes;
 		stats[DriveStat(drive.DiskName, "totalBytes")] = drive.TotalBytes;

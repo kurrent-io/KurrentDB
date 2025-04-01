@@ -24,34 +24,28 @@ public enum TcpSecurityType {
 	Secure
 }
 
-public class TcpService(
-	IPublisher publisher,
-	IPEndPoint serverEndPoint,
-	IPublisher networkSendQueue,
-	TcpServiceType serviceType,
-	TcpSecurityType securityType,
-	Func<Guid, IPEndPoint, ITcpDispatcher> dispatcherFactory,
-	TimeSpan heartbeatInterval,
-	TimeSpan heartbeatTimeout,
-	IAuthenticationProvider authProvider,
-	AuthorizationGateway authorizationGateway,
-	Func<X509Certificate2> certificateSelector,
-	Func<X509Certificate2Collection> intermediatesSelector,
-	CertificateDelegates.ClientCertificateValidator sslClientCertValidator,
-	int connectionPendingSendBytesThreshold,
-	int connectionQueueSizeThreshold)
-	: IHandle<SystemMessage.SystemInit>,
-		IHandle<SystemMessage.SystemStart>,
-		IHandle<SystemMessage.BecomeShuttingDown> {
+public class TcpService : IHandle<SystemMessage.SystemInit>,
+	IHandle<SystemMessage.SystemStart>,
+	IHandle<SystemMessage.BecomeShuttingDown> {
+
 	private static readonly ILogger Log = Serilog.Log.ForContext<TcpService>();
 
-	private readonly IPublisher _publisher = Ensure.NotNull(publisher);
-	private readonly IPEndPoint _serverEndPoint = Ensure.NotNull(serverEndPoint);
-	private readonly TcpServerListener _serverListener = new(serverEndPoint);
-	private readonly IPublisher _networkSendQueue = Ensure.NotNull(networkSendQueue);
-	private readonly Func<Guid, IPEndPoint, ITcpDispatcher> _dispatcherFactory = Ensure.NotNull(dispatcherFactory);
-	private readonly IAuthenticationProvider _authProvider = Ensure.NotNull(authProvider);
-	private readonly AuthorizationGateway _authorizationGateway = Ensure.NotNull(authorizationGateway);
+	private readonly IPublisher _publisher;
+	private readonly IPEndPoint _serverEndPoint;
+	private readonly TcpServerListener _serverListener;
+	private readonly IPublisher _networkSendQueue;
+	private readonly Func<Guid, IPEndPoint, ITcpDispatcher> _dispatcherFactory;
+	private readonly IAuthenticationProvider _authProvider;
+	private readonly AuthorizationGateway _authorizationGateway;
+	private readonly TcpServiceType _serviceType;
+	private readonly TcpSecurityType _securityType;
+	private readonly TimeSpan _heartbeatInterval;
+	private readonly TimeSpan _heartbeatTimeout;
+	private readonly Func<X509Certificate2> _certificateSelector;
+	private readonly Func<X509Certificate2Collection> _intermediatesSelector;
+	private readonly CertificateDelegates.ClientCertificateValidator _sslClientCertValidator;
+	private readonly int _connectionPendingSendBytesThreshold;
+	private readonly int _connectionQueueSizeThreshold;
 
 	public TcpService(IPublisher publisher,
 		IPEndPoint serverEndPoint,
@@ -69,13 +63,47 @@ public class TcpService(
 		int connectionPendingSendBytesThreshold,
 		int connectionQueueSizeThreshold)
 		: this(publisher, serverEndPoint, networkSendQueue, serviceType, securityType, (_, _) => dispatcher,
-			heartbeatInterval, heartbeatTimeout, authProvider, authorizationGateway, certificateSelector, intermediatesSelector, sslClientCertValidator, connectionPendingSendBytesThreshold,
-			connectionQueueSizeThreshold) {
+			heartbeatInterval, heartbeatTimeout, authProvider, authorizationGateway, certificateSelector, intermediatesSelector, sslClientCertValidator, connectionPendingSendBytesThreshold, connectionQueueSizeThreshold) {
+	}
+
+	public TcpService(
+		IPublisher publisher,
+		IPEndPoint serverEndPoint,
+		IPublisher networkSendQueue,
+		TcpServiceType serviceType,
+		TcpSecurityType securityType,
+		Func<Guid, IPEndPoint, ITcpDispatcher> dispatcherFactory,
+		TimeSpan heartbeatInterval,
+		TimeSpan heartbeatTimeout,
+		IAuthenticationProvider authProvider,
+		AuthorizationGateway authorizationGateway,
+		Func<X509Certificate2> certificateSelector,
+		Func<X509Certificate2Collection> intermediatesSelector,
+		CertificateDelegates.ClientCertificateValidator sslClientCertValidator,
+		int connectionPendingSendBytesThreshold,
+		int connectionQueueSizeThreshold) {
+
+		_publisher = Ensure.NotNull(publisher);
+		_serverEndPoint = Ensure.NotNull(serverEndPoint);
+		_serverListener = new(serverEndPoint);
+		_networkSendQueue = Ensure.NotNull(networkSendQueue);
+		_serviceType = serviceType;
+		_securityType = securityType;
+		_dispatcherFactory = Ensure.NotNull(dispatcherFactory);
+		_heartbeatInterval = heartbeatInterval;
+		_heartbeatTimeout = heartbeatTimeout;
+		_connectionPendingSendBytesThreshold = connectionPendingSendBytesThreshold;
+		_connectionQueueSizeThreshold = connectionQueueSizeThreshold;
+		_authProvider = Ensure.NotNull(authProvider);
+		_authorizationGateway = Ensure.NotNull(authorizationGateway);
+		_certificateSelector = certificateSelector;
+		_intermediatesSelector = intermediatesSelector;
+		_sslClientCertValidator = sslClientCertValidator;
 	}
 
 	public void Handle(SystemMessage.SystemInit message) {
 		try {
-			_serverListener.StartListening(OnConnectionAccepted, securityType.ToString());
+			_serverListener.StartListening(OnConnectionAccepted, _securityType.ToString());
 		} catch (Exception e) {
 			Application.Exit(ExitCode.Error, e.Message);
 		}
@@ -89,28 +117,28 @@ public class TcpService(
 	}
 
 	private void OnConnectionAccepted(IPEndPoint endPoint, Socket socket) {
-		var conn = securityType == TcpSecurityType.Secure
-			? TcpConnectionSsl.CreateServerFromSocket(Guid.NewGuid(), endPoint, socket, certificateSelector, intermediatesSelector, sslClientCertValidator, verbose: true)
+		var conn = _securityType == TcpSecurityType.Secure
+			? TcpConnectionSsl.CreateServerFromSocket(Guid.NewGuid(), endPoint, socket, _certificateSelector, _intermediatesSelector, _sslClientCertValidator, verbose: true)
 			: TcpConnection.CreateAcceptedTcpConnection(Guid.NewGuid(), endPoint, socket, verbose: true);
 		Log.Information(
 			"{serviceType} TCP connection accepted: [{securityType}, {remoteEndPoint}, L{localEndPoint}, {connectionId:B}].",
-			serviceType, securityType, conn.RemoteEndPoint, conn.LocalEndPoint, conn.ConnectionId);
+			_serviceType, _securityType, conn.RemoteEndPoint, conn.LocalEndPoint, conn.ConnectionId);
 
 		var dispatcher = _dispatcherFactory(conn.ConnectionId, _serverEndPoint);
 		var manager = new TcpConnectionManager(
-			$"{serviceType.ToString().ToLower()}-{securityType.ToString().ToLower()}",
-			serviceType,
+			$"{_serviceType.ToString().ToLower()}-{_securityType.ToString().ToLower()}",
+			_serviceType,
 			dispatcher,
 			_publisher,
 			conn,
 			_networkSendQueue,
 			_authProvider,
 			_authorizationGateway,
-			heartbeatInterval,
-			heartbeatTimeout,
+			_heartbeatInterval,
+			_heartbeatTimeout,
 			(m, e) => _publisher.Publish(new TcpMessage.ConnectionClosed(m, e)),
-			connectionPendingSendBytesThreshold,
-			connectionQueueSizeThreshold); // TODO AN: race condition
+			_connectionPendingSendBytesThreshold,
+			_connectionQueueSizeThreshold); // TODO AN: race condition
 		_publisher.Publish(new TcpMessage.ConnectionEstablished(manager));
 		manager.StartReceiving();
 	}

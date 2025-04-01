@@ -8,20 +8,26 @@ using EventStore.Common.Utils;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;
 
-public class BoundedCache<TKey, TValue>(int maxCachedEntries, long maxDataSize, Func<TValue, long> valueSize) {
+public class BoundedCache<TKey, TValue> {
 	public int Count {
 		get { return _cache.Count; }
 	}
 
-	private readonly int _maxCachedEntries = Ensure.Positive(maxCachedEntries);
-	private readonly long _maxDataSize = Ensure.Positive(maxDataSize);
-	private readonly Func<TValue, long> _valueSize = Ensure.NotNull(valueSize);
-	private readonly Dictionary<TKey, TValue> _cache = new();
+	private readonly int _maxCachedEntries;
+	private readonly long _maxDataSize;
+	private readonly Func<TValue, long> _valueSize;
+	private readonly Dictionary<TKey, TValue> _cache = [];
 	private readonly Queue<TKey> _queue = new();
 
 	private long _currentSize;
 	private long _missCount;
 	private long _hitCount;
+
+	public BoundedCache(int maxCachedEntries, long maxDataSize, Func<TValue, long> valueSize) {
+		_maxCachedEntries = Ensure.Positive(maxCachedEntries);
+		_maxDataSize = Ensure.Positive(maxDataSize);
+		_valueSize = Ensure.NotNull(valueSize);
+	}
 
 	public bool TryGetRecord(TKey key, out TValue value) {
 		var found = _cache.TryGetValue(key, out value);

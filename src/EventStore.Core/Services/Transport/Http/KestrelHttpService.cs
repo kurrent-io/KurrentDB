@@ -10,32 +10,46 @@ using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http.Messages;
 using EventStore.Core.Settings;
 using EventStore.Transport.Http.EntityManagement;
-using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http;
 
-public class KestrelHttpService(
-	ServiceAccessibility accessibility,
-	IPublisher inputBus,
-	IUriRouter uriRouter,
-	bool logHttpRequests,
-	string advertiseAsHost,
-	int advertiseAsPort,
-	params EndPoint[] endPoints)
-	: IHttpService, IHandle<SystemMessage.SystemInit>, IHandle<SystemMessage.BecomeShuttingDown> {
-	public ServiceAccessibility Accessibility => accessibility;
+public class KestrelHttpService :
+	IHttpService,
+	IHandle<SystemMessage.SystemInit>,
+	IHandle<SystemMessage.BecomeShuttingDown> {
+
+	public ServiceAccessibility Accessibility => _accessibility;
 	public bool IsListening => _isListening;
-	public IEnumerable<EndPoint> EndPoints { get; } = Ensure.NotNull(endPoints);
+	public IEnumerable<EndPoint> EndPoints { get; }
 
 	public IEnumerable<ControllerAction> Actions => UriRouter.Actions;
 
-	private readonly IPublisher _inputBus = Ensure.NotNull(inputBus);
-	public IUriRouter UriRouter { get; } = Ensure.NotNull(uriRouter);
-	public bool LogHttpRequests { get; } = logHttpRequests;
-	public string AdvertiseAsHost { get; } = advertiseAsHost;
-	public int AdvertiseAsPort { get; } = advertiseAsPort;
+	private readonly ServiceAccessibility _accessibility;
+	private readonly IPublisher _inputBus;
+
+	public IUriRouter UriRouter { get; }
+	public bool LogHttpRequests { get; }
+	public string AdvertiseAsHost { get; }
+	public int AdvertiseAsPort { get; }
 
 	private bool _isListening;
+
+	public KestrelHttpService(
+		ServiceAccessibility accessibility,
+		IPublisher inputBus,
+		IUriRouter uriRouter,
+		bool logHttpRequests,
+		string advertiseAsHost,
+		int advertiseAsPort,
+		params EndPoint[] endPoints) {
+		_accessibility = accessibility;
+		EndPoints = Ensure.NotNull(endPoints);
+		_inputBus = Ensure.NotNull(inputBus);
+		UriRouter = Ensure.NotNull(uriRouter);
+		LogHttpRequests = logHttpRequests;
+		AdvertiseAsHost = advertiseAsHost;
+		AdvertiseAsPort = advertiseAsPort;
+	}
 
 	public void Handle(SystemMessage.SystemInit message) {
 		_isListening = true;

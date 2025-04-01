@@ -7,8 +7,12 @@ using EventStore.Common.Utils;
 
 namespace EventStore.Core.Services.Gossip;
 
-public class KnownEndpointGossipSeedSource(EndPoint[] ipEndPoints) : IGossipSeedSource {
-	private readonly EndPoint[] _ipEndPoints = Ensure.NotNull(ipEndPoints);
+public class KnownEndpointGossipSeedSource : IGossipSeedSource {
+	private readonly EndPoint[] _ipEndPoints;
+
+	public KnownEndpointGossipSeedSource(EndPoint[] ipEndPoints) {
+		_ipEndPoints = Ensure.NotNull(ipEndPoints);
+	}
 
 	public IAsyncResult BeginGetHostEndpoints(AsyncCallback requestCallback, object state) {
 		requestCallback(null!);

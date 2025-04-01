@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Common;
 using Serilog;
-using static EventStore.Core.Messages.ClientMessage;
 
 namespace EventStore.Core.Services.Transport.Enumerators;
 
@@ -266,12 +266,12 @@ partial class Enumerator {
 
 			async Task OnMessage(Message message, CancellationToken ct) {
 				try {
-					if (message is NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
+					if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 						throw ex;
 					}
 
-					if (message is not FilteredReadAllEventsForwardCompleted completed)
-						throw ReadResponseException.UnknownMessage.Create<FilteredReadAllEventsForwardCompleted>(message);
+					if (message is not ClientMessage.FilteredReadAllEventsForwardCompleted completed)
+						throw ReadResponseException.UnknownMessage.Create<ClientMessage.FilteredReadAllEventsForwardCompleted>(message);
 
 					switch (completed.Result) {
 						case FilteredReadAllResult.Success:
@@ -358,7 +358,7 @@ partial class Enumerator {
 			var nextLiveSequenceNumber = 0UL;
 			var confirmationPositionTcs = new TaskCompletionSource<TFPos>();
 
-			_bus.Publish(new FilteredSubscribeToStream(Guid.NewGuid(), _subscriptionId,
+			_bus.Publish(new ClientMessage.FilteredSubscribeToStream(Guid.NewGuid(), _subscriptionId,
 				new CallbackEnvelope(OnSubscriptionMessage), _subscriptionId,
 				string.Empty, _resolveLinks, _user,
 				_eventFilter, (int)_checkpointInterval, checkpointIntervalCurrent: 0)
@@ -368,12 +368,12 @@ partial class Enumerator {
 
 			void OnSubscriptionMessage(Message message) {
 				try {
-					if (message is NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
+					if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 						throw ex;
 					}
 
 					switch (message) {
-						case SubscriptionConfirmation confirmed:
+						case ClientMessage.SubscriptionConfirmation confirmed:
 							long caughtUp = confirmed.LastIndexedPosition;
 
 							Log.Debug(
@@ -382,7 +382,7 @@ partial class Enumerator {
 
 							confirmationPositionTcs.TrySetResult(new TFPos(caughtUp, caughtUp));
 							return;
-						case SubscriptionDropped dropped:
+						case ClientMessage.SubscriptionDropped dropped:
 							Log.Debug(
 								"Subscription {subscriptionId} to $all:{eventFilter} dropped by subscription service: {droppedReason}",
 								_subscriptionId, _eventFilter, dropped.Reason);
@@ -396,7 +396,7 @@ partial class Enumerator {
 								default:
 									throw ReadResponseException.UnknownError.Create(dropped.Reason);
 							}
-						case StreamEventAppeared appeared: {
+						case ClientMessage.StreamEventAppeared appeared: {
 							Log.Verbose(
 								"Subscription {subscriptionId} to $all:{eventFilter} received live event {position}.",
 								_subscriptionId, _eventFilter, appeared.Event.OriginalPosition!.Value);
@@ -408,7 +408,7 @@ partial class Enumerator {
 
 							return;
 						}
-						case CheckpointReached checkpointReached: {
+						case ClientMessage.CheckpointReached checkpointReached: {
 							Log.Verbose(
 								"Subscription {subscriptionId} to $all:{eventFilter} received live checkpoint {position}.",
 								_subscriptionId, _eventFilter, checkpointReached.Position);
@@ -421,7 +421,7 @@ partial class Enumerator {
 							return;
 						}
 						default:
-							throw ReadResponseException.UnknownMessage.Create<SubscriptionConfirmation>(message);
+							throw ReadResponseException.UnknownMessage.Create<ClientMessage.SubscriptionConfirmation>(message);
 					}
 				} catch (Exception exception) {
 					_liveEvents.Writer.TryComplete(exception);
@@ -443,16 +443,15 @@ partial class Enumerator {
 			if (startPos is { CommitPosition: < 0, PreparePosition: < 0 })
 				startPos = new TFPos(0, 0);
 
-			_bus.Publish(new FilteredReadAllEventsForward(
+			_bus.Publish(new ClientMessage.FilteredReadAllEventsForward(
 				correlationId, correlationId, envelope,
 				startPos.CommitPosition, startPos.PreparePosition, ReadBatchSize, _resolveLinks, _requiresLeader,
 				(int)_maxSearchWindow, null, _eventFilter, _user,
 				replyOnExpired: true,
 				expires: _expiryStrategy.GetExpiry(),
-				cancellationToken: ct)
-			);
+				cancellationToken: ct));
 		}
 
-		private void Unsubscribe() => _bus.Publish(new UnsubscribeFromStream(Guid.NewGuid(), _subscriptionId, new NoopEnvelope(), _user));
+		private void Unsubscribe() => _bus.Publish(new ClientMessage.UnsubscribeFromStream(Guid.NewGuid(), _subscriptionId, new NoopEnvelope(), _user));
 	}
 }

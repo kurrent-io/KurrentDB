@@ -32,16 +32,23 @@ public class HttpResponseFormatterArgs(Uri responseUrl, Uri requestedUrl, ICodec
 	}
 }
 
-public class SendToHttpEnvelope(
-	IPublisher networkSendQueue,
-	HttpEntityManager entity,
-	Func<HttpResponseFormatterArgs, Message, object> formatter,
-	Func<HttpResponseConfiguratorArgs, Message, ResponseConfiguration> configurator)
-	: IEnvelope {
-	private readonly IPublisher _networkSendQueue = Ensure.NotNull(networkSendQueue);
-	private readonly HttpEntityManager _entity = Ensure.NotNull(entity);
-	private readonly Func<HttpResponseFormatterArgs, Message, object> _formatter = Ensure.NotNull(formatter);
-	private readonly Func<HttpResponseConfiguratorArgs, Message, ResponseConfiguration> _configurator = Ensure.NotNull(configurator);
+public class SendToHttpEnvelope : IEnvelope {
+	private readonly IPublisher _networkSendQueue;
+	private readonly HttpEntityManager _entity;
+	private readonly Func<HttpResponseFormatterArgs, Message, object> _formatter;
+	private readonly Func<HttpResponseConfiguratorArgs, Message, ResponseConfiguration> _configurator;
+
+	public SendToHttpEnvelope(
+		IPublisher networkSendQueue,
+		HttpEntityManager entity,
+		Func<HttpResponseFormatterArgs, Message, object> formatter,
+		Func<HttpResponseConfiguratorArgs, Message, ResponseConfiguration> configurator) {
+
+		_networkSendQueue = Ensure.NotNull(networkSendQueue);
+		_entity = Ensure.NotNull(entity);
+		_formatter = Ensure.NotNull(formatter);
+		_configurator = Ensure.NotNull(configurator);
+	}
 
 	public void ReplyWith<T>(T message) where T : Message {
 		var responseConfiguration = _configurator(_entity, Ensure.NotNull(message));

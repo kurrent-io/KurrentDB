@@ -7,8 +7,12 @@ using EventStore.Plugins.Authorization;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
-internal partial class PersistentSubscriptions(IPublisher publisher, IAuthorizationProvider authorizationProvider)
-	: EventStore.Client.PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsBase {
-	private readonly IPublisher _publisher = Ensure.NotNull(publisher);
-	private readonly IAuthorizationProvider _authorizationProvider = Ensure.NotNull(authorizationProvider);
+internal partial class PersistentSubscriptions : EventStore.Client.PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsBase {
+	private readonly IPublisher _publisher;
+	private readonly IAuthorizationProvider _authorizationProvider;
+
+	public PersistentSubscriptions(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
+		_publisher = Ensure.NotNull(publisher);
+		_authorizationProvider = Ensure.NotNull(authorizationProvider);
+	}
 }

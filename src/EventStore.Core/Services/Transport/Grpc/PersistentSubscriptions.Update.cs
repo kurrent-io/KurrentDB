@@ -3,13 +3,13 @@
 
 using System;
 using System.Threading.Tasks;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Common;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage;
 using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.Options.StreamOptionOneofCase;
 using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.StreamOptions.RevisionOptionOneofCase;
@@ -53,7 +53,7 @@ internal partial class PersistentSubscriptions {
 #pragma warning restore 612
 				}
 
-				_publisher.Publish(new UpdatePersistentSubscriptionToStream(
+				_publisher.Publish(new ClientMessage.UpdatePersistentSubscriptionToStream(
 					correlationId,
 					correlationId,
 					new CallbackEnvelope(HandleUpdatePersistentSubscriptionCompleted),
@@ -97,7 +97,7 @@ internal partial class PersistentSubscriptions {
 
 				streamId = SystemStreams.AllStream;
 
-				_publisher.Publish(new UpdatePersistentSubscriptionToAll(
+				_publisher.Publish(new ClientMessage.UpdatePersistentSubscriptionToAll(
 					correlationId,
 					correlationId,
 					new CallbackEnvelope(HandleUpdatePersistentSubscriptionCompleted),
@@ -134,25 +134,25 @@ internal partial class PersistentSubscriptions {
 		return await updatePersistentSubscriptionSource.Task;
 
 		void HandleUpdatePersistentSubscriptionCompleted(Message message) {
-			if (message is NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
+			if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 				updatePersistentSubscriptionSource.TrySetException(ex);
 				return;
 			}
 
 			if (streamId != SystemStreams.AllStream) {
-				if (message is UpdatePersistentSubscriptionToStreamCompleted completed) {
+				if (message is ClientMessage.UpdatePersistentSubscriptionToStreamCompleted completed) {
 					switch (completed.Result) {
-						case UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Success:
+						case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Success:
 							updatePersistentSubscriptionSource.TrySetResult(new UpdateResp());
 							return;
-						case UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail:
+						case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail:
 							updatePersistentSubscriptionSource.TrySetException(
 								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.Reason));
 							return;
-						case UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.AccessDenied:
+						case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.AccessDenied:
 							updatePersistentSubscriptionSource.TrySetException(AccessDenied());
 							return;
-						case UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.DoesNotExist:
+						case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.DoesNotExist:
 							updatePersistentSubscriptionSource.TrySetException(
 								PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName));
 							return;
@@ -163,21 +163,21 @@ internal partial class PersistentSubscriptions {
 					}
 				}
 
-				updatePersistentSubscriptionSource.TrySetException(UnknownMessage<UpdatePersistentSubscriptionToStreamCompleted>(message));
+				updatePersistentSubscriptionSource.TrySetException(UnknownMessage<ClientMessage.UpdatePersistentSubscriptionToStreamCompleted>(message));
 			} else {
-				if (message is UpdatePersistentSubscriptionToAllCompleted completedAll) {
+				if (message is ClientMessage.UpdatePersistentSubscriptionToAllCompleted completedAll) {
 					switch (completedAll.Result) {
-						case UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Success:
+						case ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Success:
 							updatePersistentSubscriptionSource.TrySetResult(new UpdateResp());
 							return;
-						case UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Fail:
+						case ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Fail:
 							updatePersistentSubscriptionSource.TrySetException(
 								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completedAll.Reason));
 							return;
-						case UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.AccessDenied:
+						case ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.AccessDenied:
 							updatePersistentSubscriptionSource.TrySetException(AccessDenied());
 							return;
-						case UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.DoesNotExist:
+						case ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.DoesNotExist:
 							updatePersistentSubscriptionSource.TrySetException(
 								PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName));
 							return;
@@ -187,7 +187,7 @@ internal partial class PersistentSubscriptions {
 					}
 				}
 
-				updatePersistentSubscriptionSource.TrySetException(UnknownMessage<UpdatePersistentSubscriptionToAllCompleted>(message));
+				updatePersistentSubscriptionSource.TrySetException(UnknownMessage<ClientMessage.UpdatePersistentSubscriptionToAllCompleted>(message));
 			}
 		}
 	}

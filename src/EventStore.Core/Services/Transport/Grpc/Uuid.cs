@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using static EventStore.Client.UUID;
 using HashCode = EventStore.Core.Services.Transport.Common.HashCode;
 
 namespace EventStore.Core.Services.Transport.Grpc;
@@ -22,8 +21,8 @@ public readonly struct Uuid : IEquatable<Uuid> {
 		return dto == null
 			? throw new ArgumentNullException(nameof(dto))
 			: dto.ValueCase switch {
-				ValueOneofCase.String => new(dto.String),
-				ValueOneofCase.Structured => new(dto.Structured.MostSignificantBits, dto.Structured.LeastSignificantBits),
+				Client.UUID.ValueOneofCase.String => new(dto.String),
+				Client.UUID.ValueOneofCase.Structured => new(dto.Structured.MostSignificantBits, dto.Structured.LeastSignificantBits),
 				_ => throw new ArgumentException($"Invalid argument: {dto.ValueCase}", nameof(dto))
 			};
 	}

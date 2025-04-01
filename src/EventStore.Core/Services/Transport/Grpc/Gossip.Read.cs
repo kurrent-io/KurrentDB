@@ -26,9 +26,8 @@ partial class Gossip {
 		}
 
 		var tcs = new TaskCompletionSource<ClusterInfo>();
-		var duration = tracker.Start();
-		bus.Publish(new GossipMessage.ClientGossip(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration))));
-		;
+		var duration = _tracker.Start();
+		_bus.Publish(new GossipMessage.ClientGossip(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration))));
 		return await tcs.Task;
 	}
 

@@ -13,13 +13,13 @@ using EventStore.Client.PersistentSubscriptions;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Common;
 using EventStore.Plugins.Authorization;
 using Google.Protobuf;
 using Grpc.Core;
 using Serilog;
-using static EventStore.Core.Messages.ClientMessage;
 using static EventStore.Core.Messages.ClientMessage.PersistentSubscriptionNackEvents;
 using static EventStore.Plugins.Authorization.Operations.Subscriptions;
 using Empty = EventStore.Client.Empty;
@@ -97,11 +97,11 @@ internal partial class PersistentSubscriptions {
 
 		ValueTask HandleAckNack(ReadReq request) {
 			_publisher.Publish(request.ContentCase switch {
-				ReadReq.ContentOneofCase.Ack => new PersistentSubscriptionAckEvents(
+				ReadReq.ContentOneofCase.Ack => new ClientMessage.PersistentSubscriptionAckEvents(
 					correlationId, correlationId, new NoopEnvelope(), subscriptionId,
 					request.Ack.Ids.Select(id => Uuid.FromDto(id).ToGuid()).ToArray(), user),
 				ReadReq.ContentOneofCase.Nack =>
-					new PersistentSubscriptionNackEvents(
+					new ClientMessage.PersistentSubscriptionNackEvents(
 						correlationId, correlationId, new NoopEnvelope(), subscriptionId,
 						request.Nack.Reason, request.Nack.Action switch {
 							ReadReq.Types.Nack.Types.Action.Unknown => NakAction.Unknown,
@@ -202,14 +202,14 @@ internal partial class PersistentSubscriptions {
 
 			switch (streamName) {
 				case SystemStreams.AllStream:
-					publisher.Publish(new ConnectToPersistentSubscriptionToAll(correlationId,
+					publisher.Publish(new ClientMessage.ConnectToPersistentSubscriptionToAll(correlationId,
 						correlationId,
 						new ContinuationEnvelope(OnMessage, semaphore, _cancellationToken), correlationId,
 						connectionName,
 						groupName, bufferSize, string.Empty, user));
 					break;
 				default:
-					publisher.Publish(new ConnectToPersistentSubscriptionToStream(correlationId,
+					publisher.Publish(new ClientMessage.ConnectToPersistentSubscriptionToStream(correlationId,
 						correlationId,
 						new ContinuationEnvelope(OnMessage, semaphore, _cancellationToken), correlationId,
 						connectionName,
@@ -218,13 +218,13 @@ internal partial class PersistentSubscriptions {
 			}
 
 			async Task OnMessage(Message message, CancellationToken ct) {
-				if (message is NotHandled notHandled && RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+				if (message is ClientMessage.NotHandled notHandled && RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 					_subscriptionIdSource.TrySetException(ex);
 					return;
 				}
 
 				switch (message) {
-					case SubscriptionDropped dropped:
+					case ClientMessage.SubscriptionDropped dropped:
 						switch (dropped.Reason) {
 							case SubscriptionDropReason.AccessDenied:
 								Fail(RpcExceptions.AccessDenied());
@@ -243,15 +243,15 @@ internal partial class PersistentSubscriptions {
 								Fail(RpcExceptions.UnknownError(dropped.Reason));
 								return;
 						}
-					case PersistentSubscriptionConfirmation confirmation:
+					case ClientMessage.PersistentSubscriptionConfirmation confirmation:
 						_subscriptionIdSource.TrySetResult(confirmation.SubscriptionId);
 						return;
-					case PersistentSubscriptionStreamEventAppeared appeared:
+					case ClientMessage.PersistentSubscriptionStreamEventAppeared appeared:
 						await _channel.Writer.WriteAsync((appeared.Event, appeared.RetryCount), ct);
 						return;
 					default:
 						Fail(RpcExceptions
-							.UnknownMessage<PersistentSubscriptionConfirmation>(message));
+							.UnknownMessage<ClientMessage.PersistentSubscriptionConfirmation>(message));
 						return;
 				}
 			}
@@ -263,7 +263,7 @@ internal partial class PersistentSubscriptions {
 		}
 
 		public ValueTask DisposeAsync() {
-			_publisher.Publish(new UnsubscribeFromStream(Guid.NewGuid(), _correlationId, new NoopEnvelope(), _user));
+			_publisher.Publish(new ClientMessage.UnsubscribeFromStream(Guid.NewGuid(), _correlationId, new NoopEnvelope(), _user));
 			_channel.Writer.TryComplete();
 			return new ValueTask(Task.CompletedTask);
 		}

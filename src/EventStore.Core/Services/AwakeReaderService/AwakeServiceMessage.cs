@@ -9,7 +9,13 @@ namespace EventStore.Core.Services.AwakeReaderService;
 
 public partial class AwakeServiceMessage {
 	[DerivedMessage(CoreMessage.Awake)]
-	public sealed partial class SubscribeAwake(IEnvelope envelope, Guid correlationId, string streamId, TFPos from, Message replyWithMessage) : Message {
+	public sealed partial class SubscribeAwake(
+		IEnvelope envelope,
+		Guid correlationId,
+		string streamId,
+		TFPos from,
+		Message replyWithMessage) : Message {
+
 		public readonly IEnvelope Envelope = envelope;
 		public readonly Guid CorrelationId = correlationId;
 		public readonly string StreamId = streamId;

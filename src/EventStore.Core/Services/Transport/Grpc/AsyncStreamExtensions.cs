@@ -33,7 +33,9 @@ public static class AsyncStreamExtensions {
 	/// <summary>
 	/// Reads the entire stream and executes an async action for each element.
 	/// </summary>
-	public static async ValueTask ForEachAsync<T>(this IAsyncStreamReader<T> streamReader, Func<T, ValueTask> asyncAction, CancellationToken token)
+	public static async ValueTask ForEachAsync<T>(this IAsyncStreamReader<T> streamReader,
+		Func<T, ValueTask> asyncAction,
+		CancellationToken token)
 		where T : class {
 		while (await streamReader.MoveNext(token)) {
 			await asyncAction(streamReader.Current);

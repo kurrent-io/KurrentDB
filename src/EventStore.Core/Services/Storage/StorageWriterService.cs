@@ -236,7 +236,9 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 	async ValueTask IAsyncHandle<SystemMessage.WaitForChaserToCatchUp>.HandleAsync(SystemMessage.WaitForChaserToCatchUp message, CancellationToken token) {
 		// if we are in states, that doesn't need to wait for chaser, ignore
-		if (_vnodeState is not VNodeState.PreLeader and not VNodeState.PreReplica and not VNodeState.PreReadOnlyReplica)
+		if (_vnodeState is not VNodeState.PreLeader
+					   and not VNodeState.PreReplica
+					   and not VNodeState.PreReadOnlyReplica)
 			throw new Exception($"{message.GetType().Name} appeared in {_vnodeState} state.");
 
 		if (Writer.HasOpenTransaction())

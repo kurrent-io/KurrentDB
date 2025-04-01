@@ -9,10 +9,9 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Common;
-using static EventStore.Core.Messages.ClientMessage;
-using static EventStore.Core.Services.Transport.Enumerators.ReadResponse;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Services.Transport.Enumerators;
@@ -76,22 +75,21 @@ partial class Enumerator {
 		private void ReadPage(StreamRevision startRevision, ulong readCount = 0) {
 			Guid correlationId = Guid.NewGuid();
 
-			_bus.Publish(new ReadStreamEventsForward(
+			_bus.Publish(new ClientMessage.ReadStreamEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
 				_streamName, startRevision.ToInt64(), (int)Math.Min(ReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, null, _user, replyOnExpired: false, expires: _deadline,
-				cancellationToken: _cancellationToken)
-			);
+				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {
-				if (message is NotHandled notHandled &&
+				if (message is ClientMessage.NotHandled notHandled &&
 				    TryHandleNotHandled(notHandled, out var ex)) {
 					_channel.Writer.TryComplete(ex);
 					return;
 				}
 
-				if (message is not ReadStreamEventsForwardCompleted completed) {
-					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<ReadStreamEventsForwardCompleted>(message));
+				if (message is not ClientMessage.ReadStreamEventsForwardCompleted completed) {
+					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<ClientMessage.ReadStreamEventsForwardCompleted>(message));
 					return;
 				}
 
@@ -101,7 +99,7 @@ partial class Enumerator {
 							if (completed.Events is []) {
 								var firstStreamPosition = StreamRevision.FromInt64(completed.NextEventNumber);
 								if (startRevision != firstStreamPosition) {
-									await _channel.Writer.WriteAsync(new FirstStreamPositionReceived(firstStreamPosition), ct);
+									await _channel.Writer.WriteAsync(new ReadResponse.FirstStreamPositionReceived(firstStreamPosition), ct);
 								}
 							}
 						}
@@ -110,7 +108,7 @@ partial class Enumerator {
 							if (readCount >= _maxCount) {
 								break;
 							}
-							await _channel.Writer.WriteAsync(new EventReceived(@event), ct);
+							await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
 							readCount++;
 						}
 
@@ -120,14 +118,14 @@ partial class Enumerator {
 						}
 
 						if (_compatibility >= 1) {
-							await _channel.Writer.WriteAsync(new LastStreamPositionReceived(StreamRevision.FromInt64(completed.LastEventNumber)), ct);
+							await _channel.Writer.WriteAsync(new ReadResponse.LastStreamPositionReceived(StreamRevision.FromInt64(completed.LastEventNumber)), ct);
 						}
 
 						_channel.Writer.TryComplete();
 						return;
 
 					case ReadStreamResult.NoStream:
-						await _channel.Writer.WriteAsync(new StreamNotFound(_streamName), ct);
+						await _channel.Writer.WriteAsync(new ReadResponse.StreamNotFound(_streamName), ct);
 						_channel.Writer.TryComplete();
 						return;
 					case ReadStreamResult.StreamDeleted:

@@ -4,10 +4,10 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage;
 using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
 
 namespace EventStore.Core.Services.Transport.Grpc;
@@ -37,7 +37,7 @@ internal partial class PersistentSubscriptions {
 			_ => throw new InvalidOperationException()
 		};
 
-		_publisher.Publish(new ReplayParkedMessages(
+		_publisher.Publish(new ClientMessage.ReplayParkedMessages(
 			correlationId,
 			correlationId,
 			new CallbackEnvelope(HandleReplayParkedMessagesCompleted),
@@ -49,22 +49,22 @@ internal partial class PersistentSubscriptions {
 
 		void HandleReplayParkedMessagesCompleted(Message message) {
 			switch (message) {
-				case NotHandled notHandled when TryHandleNotHandled(notHandled, out var ex):
+				case ClientMessage.NotHandled notHandled when TryHandleNotHandled(notHandled, out var ex):
 					replayParkedMessagesSource.TrySetException(ex);
 					return;
-				case ReplayMessagesReceived completed:
+				case ClientMessage.ReplayMessagesReceived completed:
 					switch (completed.Result) {
-						case ReplayMessagesReceived.ReplayMessagesReceivedResult.Success:
+						case ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success:
 							replayParkedMessagesSource.TrySetResult(new ReplayParkedResp());
 							return;
-						case ReplayMessagesReceived.ReplayMessagesReceivedResult.DoesNotExist:
+						case ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.DoesNotExist:
 							replayParkedMessagesSource.TrySetException(
 								PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName));
 							return;
-						case ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied:
+						case ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.AccessDenied:
 							replayParkedMessagesSource.TrySetException(AccessDenied());
 							return;
-						case ReplayMessagesReceived.ReplayMessagesReceivedResult.Fail:
+						case ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Fail:
 							replayParkedMessagesSource.TrySetException(
 								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.Reason));
 							return;
@@ -74,7 +74,7 @@ internal partial class PersistentSubscriptions {
 							return;
 					}
 				default:
-					replayParkedMessagesSource.TrySetException(UnknownMessage<ReplayMessagesReceived>(message));
+					replayParkedMessagesSource.TrySetException(UnknownMessage<ClientMessage.ReplayMessagesReceived>(message));
 					break;
 			}
 		}

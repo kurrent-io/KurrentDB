@@ -42,12 +42,23 @@ public interface IAllReader {
 		IEventFilter eventFilter, CancellationToken token);
 }
 
-public class AllReader<TStreamId>(IIndexBackend backend, IIndexCommitter indexCommitter, INameLookup<TStreamId> streamNames, INameLookup<TStreamId> eventTypes)
-	: IAllReader {
-	private readonly IIndexBackend _backend = Ensure.NotNull(backend);
-	private readonly IIndexCommitter _indexCommitter = Ensure.NotNull(indexCommitter);
-	private readonly INameLookup<TStreamId> _streamNames = Ensure.NotNull(streamNames);
-	private readonly INameLookup<TStreamId> _eventTypes = Ensure.NotNull(eventTypes);
+public class AllReader<TStreamId> : IAllReader {
+	private readonly IIndexBackend _backend;
+	private readonly IIndexCommitter _indexCommitter;
+	private readonly INameLookup<TStreamId> _streamNames;
+	private readonly INameLookup<TStreamId> _eventTypes;
+
+	public AllReader(
+		IIndexBackend backend,
+		IIndexCommitter indexCommitter,
+		INameLookup<TStreamId> streamNames,
+		INameLookup<TStreamId> eventTypes) {
+
+		_backend = Ensure.NotNull(backend);
+		_indexCommitter = Ensure.NotNull(indexCommitter);
+		_streamNames = Ensure.NotNull(streamNames);
+		_eventTypes = Ensure.NotNull(eventTypes);
+	}
 
 	public ValueTask<IndexReadAllResult> ReadAllEventsForward(TFPos pos, int maxCount, CancellationToken token) {
 		return ReadAllEventsForwardInternal(pos, maxCount, int.MaxValue, EventFilter.DefaultAllFilter, token);

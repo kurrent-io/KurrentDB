@@ -10,9 +10,14 @@ using static EventStore.Core.Messages.UserManagementMessage;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
-internal partial class Users(IPublisher publisher, IAuthorizationProvider authorizationProvider) : EventStore.Client.Users.Users.UsersBase {
-	private readonly IPublisher _publisher = Ensure.NotNull(publisher);
-	private readonly IAuthorizationProvider _authorizationProvider = Ensure.NotNull(authorizationProvider);
+internal partial class Users : EventStore.Client.Users.Users.UsersBase {
+	private readonly IPublisher _publisher;
+	private readonly IAuthorizationProvider _authorizationProvider;
+
+	public Users(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
+		_publisher = Ensure.NotNull(publisher);
+		_authorizationProvider = Ensure.NotNull(authorizationProvider);
+	}
 
 	private static bool HandleErrors<T>(string loginName, Message message, TaskCompletionSource<T> source) {
 		if (message is not ResponseMessage response) {

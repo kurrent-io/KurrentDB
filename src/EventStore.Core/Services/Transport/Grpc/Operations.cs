@@ -7,8 +7,12 @@ using EventStore.Plugins.Authorization;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
-internal partial class Operations(IPublisher publisher, IAuthorizationProvider authorizationProvider)
-	: EventStore.Client.Operations.Operations.OperationsBase {
-	private readonly IPublisher _publisher = Ensure.NotNull(publisher);
-	private readonly IAuthorizationProvider _authorizationProvider = Ensure.NotNull(authorizationProvider);
+internal partial class Operations : EventStore.Client.Operations.Operations.OperationsBase {
+	private readonly IPublisher _publisher;
+	private readonly IAuthorizationProvider _authorizationProvider;
+
+	public Operations(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
+		_publisher = Ensure.NotNull(publisher);
+		_authorizationProvider = Ensure.NotNull(authorizationProvider);
+	}
 }

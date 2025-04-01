@@ -20,7 +20,6 @@ using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Messaging;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using static EventStore.Core.Messages.ClientMessage;
 using ILogger = Serilog.ILogger;
 
 // ReSharper disable StaticMemberInGenericType
@@ -31,37 +30,50 @@ public abstract class StorageReaderWorker {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderWorker>();
 }
 
-public class StorageReaderWorker<TStreamId>(
-	IPublisher publisher,
-	IReadIndex<TStreamId> readIndex,
-	ISystemStreamLookup<TStreamId> systemStreams,
-	IReadOnlyCheckpoint writerCheckpoint,
-	IInMemoryStreamReader inMemReader,
-	int queueId)
-	:
-		StorageReaderWorker,
-		IAsyncHandle<ReadEvent>,
-		IAsyncHandle<ReadStreamEventsBackward>,
-		IAsyncHandle<ReadStreamEventsForward>,
-		IAsyncHandle<ReadAllEventsForward>,
-		IAsyncHandle<ReadAllEventsBackward>,
-		IAsyncHandle<FilteredReadAllEventsForward>,
-		IAsyncHandle<FilteredReadAllEventsBackward>,
-		IAsyncHandle<StorageMessage.EffectiveStreamAclRequest>,
-		IAsyncHandle<StorageMessage.StreamIdFromTransactionIdRequest>,
-		IHandle<StorageMessage.BatchLogExpiredMessages> {
+public class StorageReaderWorker<TStreamId> :
+	StorageReaderWorker,
+	IAsyncHandle<ClientMessage.ReadEvent>,
+	IAsyncHandle<ClientMessage.ReadStreamEventsBackward>,
+	IAsyncHandle<ClientMessage.ReadStreamEventsForward>,
+	IAsyncHandle<ClientMessage.ReadAllEventsForward>,
+	IAsyncHandle<ClientMessage.ReadAllEventsBackward>,
+	IAsyncHandle<ClientMessage.FilteredReadAllEventsForward>,
+	IAsyncHandle<ClientMessage.FilteredReadAllEventsBackward>,
+	IAsyncHandle<StorageMessage.EffectiveStreamAclRequest>,
+	IAsyncHandle<StorageMessage.StreamIdFromTransactionIdRequest>,
+	IHandle<StorageMessage.BatchLogExpiredMessages> {
+
 	private static readonly ResolvedEvent[] EmptyRecords = [];
 	private static readonly char[] LinkToSeparator = ['@'];
 
-	private readonly IReadIndex<TStreamId> _readIndex = Ensure.NotNull(readIndex);
-	private readonly ISystemStreamLookup<TStreamId> _systemStreams = Ensure.NotNull(systemStreams);
-	private readonly IReadOnlyCheckpoint _writerCheckpoint = Ensure.NotNull(writerCheckpoint);
+	private readonly IReadIndex<TStreamId> _readIndex;
+	private readonly ISystemStreamLookup<TStreamId> _systemStreams;
+	private readonly IReadOnlyCheckpoint _writerCheckpoint;
+	private readonly IPublisher _publisher;
+	private readonly IInMemoryStreamReader _inMemReader;
+	private readonly int _queueId;
 	private const int MaxPageSize = 4096;
 	private DateTime? _lastExpireTime;
 	private long _expiredBatchCount;
 	private bool _batchLoggingEnabled;
 
-	async ValueTask IAsyncHandle<ReadEvent>.HandleAsync(ReadEvent msg, CancellationToken token) {
+	public StorageReaderWorker(
+		IPublisher publisher,
+		IReadIndex<TStreamId> readIndex,
+		ISystemStreamLookup<TStreamId> systemStreams,
+		IReadOnlyCheckpoint writerCheckpoint,
+		IInMemoryStreamReader inMemReader,
+		int queueId) {
+
+		_publisher = publisher;
+		_readIndex = Ensure.NotNull(readIndex);
+		_systemStreams = Ensure.NotNull(systemStreams);
+		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
+		_inMemReader = inMemReader;
+		_queueId = queueId;
+	}
+
+	async ValueTask IAsyncHandle<ClientMessage.ReadEvent>.HandleAsync(ClientMessage.ReadEvent msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -84,13 +96,13 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	async ValueTask IAsyncHandle<ReadStreamEventsForward>.HandleAsync(ReadStreamEventsForward msg, CancellationToken token) {
+	async ValueTask IAsyncHandle<ClientMessage.ReadStreamEventsForward>.HandleAsync(ClientMessage.ReadStreamEventsForward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
-				msg.Envelope.ReplyWith(new ReadStreamEventsForwardCompleted(
+				msg.Envelope.ReplyWith(new ClientMessage.ReadStreamEventsForwardCompleted(
 					msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
 					ReadStreamResult.Expired,
 					ResolvedEvent.EmptyArray, default, default, default, default, default, default, default));
@@ -103,11 +115,11 @@ public class StorageReaderWorker<TStreamId>(
 			return;
 		}
 
-		ReadStreamEventsForwardCompleted res;
+		ClientMessage.ReadStreamEventsForwardCompleted res;
 		var cts = token.LinkTo(msg.CancellationToken);
 		try {
 			res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
-				? inMemReader.ReadForwards(msg)
+				? _inMemReader.ReadForwards(msg)
 				: await ReadStreamEventsForward(msg, token);
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
@@ -120,7 +132,7 @@ public class StorageReaderWorker<TStreamId>(
 			case ReadStreamResult.NoStream:
 			case ReadStreamResult.NotModified:
 				if (msg.LongPollTimeout.HasValue && res.FromEventNumber > res.LastEventNumber) {
-					publisher.Publish(new SubscriptionMessage.PollStream(
+					_publisher.Publish(new SubscriptionMessage.PollStream(
 						msg.EventStreamId, res.TfLastCommitPosition, res.LastEventNumber,
 						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 				} else {
@@ -139,7 +151,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	async ValueTask IAsyncHandle<ReadStreamEventsBackward>.HandleAsync(ReadStreamEventsBackward msg, CancellationToken token) {
+	async ValueTask IAsyncHandle<ClientMessage.ReadStreamEventsBackward>.HandleAsync(ClientMessage.ReadStreamEventsBackward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -154,7 +166,7 @@ public class StorageReaderWorker<TStreamId>(
 		var cts = token.LinkTo(msg.CancellationToken);
 		try {
 			var res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
-				? inMemReader.ReadBackwards(msg)
+				? _inMemReader.ReadBackwards(msg)
 				: await ReadStreamEventsBackward(msg, token);
 
 			msg.Envelope.ReplyWith(res);
@@ -165,13 +177,13 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	async ValueTask IAsyncHandle<ReadAllEventsForward>.HandleAsync(ReadAllEventsForward msg, CancellationToken token) {
+	async ValueTask IAsyncHandle<ClientMessage.ReadAllEventsForward>.HandleAsync(ClientMessage.ReadAllEventsForward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
-				msg.Envelope.ReplyWith(new ReadAllEventsForwardCompleted(
+				msg.Envelope.ReplyWith(new ClientMessage.ReadAllEventsForwardCompleted(
 					msg.CorrelationId, ReadAllResult.Expired,
 					default, ResolvedEvent.EmptyArray, default, default, default,
 					currentPos: new TFPos(msg.CommitPosition, msg.PreparePosition),
@@ -189,7 +201,7 @@ public class StorageReaderWorker<TStreamId>(
 		switch (res.Result) {
 			case ReadAllResult.Success:
 				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					publisher.Publish(new SubscriptionMessage.PollStream(
+					_publisher.Publish(new SubscriptionMessage.PollStream(
 						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
 						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 				} else
@@ -199,7 +211,7 @@ public class StorageReaderWorker<TStreamId>(
 			case ReadAllResult.NotModified:
 				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream &&
 				    res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
-					publisher.Publish(new SubscriptionMessage.PollStream(
+					_publisher.Publish(new SubscriptionMessage.PollStream(
 						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
 						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 				} else
@@ -216,7 +228,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	async ValueTask IAsyncHandle<ReadAllEventsBackward>.HandleAsync(ReadAllEventsBackward msg, CancellationToken token) {
+	async ValueTask IAsyncHandle<ClientMessage.ReadAllEventsBackward>.HandleAsync(ClientMessage.ReadAllEventsBackward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -231,13 +243,13 @@ public class StorageReaderWorker<TStreamId>(
 		msg.Envelope.ReplyWith(await ReadAllEventsBackward(msg, token));
 	}
 
-	async ValueTask IAsyncHandle<FilteredReadAllEventsForward>.HandleAsync(FilteredReadAllEventsForward msg, CancellationToken token) {
+	async ValueTask IAsyncHandle<ClientMessage.FilteredReadAllEventsForward>.HandleAsync(ClientMessage.FilteredReadAllEventsForward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
 		if (msg.Expires < DateTime.UtcNow) {
 			if (msg.ReplyOnExpired) {
-				msg.Envelope.ReplyWith(new FilteredReadAllEventsForwardCompleted(
+				msg.Envelope.ReplyWith(new ClientMessage.FilteredReadAllEventsForwardCompleted(
 					msg.CorrelationId, FilteredReadAllResult.Expired,
 					default, ResolvedEvent.EmptyArray, default, default, default,
 					currentPos: new TFPos(msg.CommitPosition, msg.PreparePosition),
@@ -254,7 +266,7 @@ public class StorageReaderWorker<TStreamId>(
 		switch (res.Result) {
 			case FilteredReadAllResult.Success:
 				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					publisher.Publish(new SubscriptionMessage.PollStream(
+					_publisher.Publish(new SubscriptionMessage.PollStream(
 						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
 						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 				} else
@@ -263,7 +275,7 @@ public class StorageReaderWorker<TStreamId>(
 				break;
 			case FilteredReadAllResult.NotModified:
 				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
-					publisher.Publish(new SubscriptionMessage.PollStream(
+					_publisher.Publish(new SubscriptionMessage.PollStream(
 						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
 						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 				} else
@@ -280,7 +292,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	async ValueTask IAsyncHandle<FilteredReadAllEventsBackward>.HandleAsync(FilteredReadAllEventsBackward msg, CancellationToken token) {
+	async ValueTask IAsyncHandle<ClientMessage.FilteredReadAllEventsBackward>.HandleAsync(ClientMessage.FilteredReadAllEventsBackward msg, CancellationToken token) {
 		if (msg.CancellationToken.IsCancellationRequested)
 			return;
 
@@ -295,7 +307,7 @@ public class StorageReaderWorker<TStreamId>(
 		switch (res.Result) {
 			case FilteredReadAllResult.Success:
 				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.Events.Count is 0) {
-					publisher.Publish(new SubscriptionMessage.PollStream(
+					_publisher.Publish(new SubscriptionMessage.PollStream(
 						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
 						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 				} else
@@ -304,7 +316,7 @@ public class StorageReaderWorker<TStreamId>(
 				break;
 			case FilteredReadAllResult.NotModified:
 				if (msg.LongPollTimeout.HasValue && res.IsEndOfStream && res.CurrentPos.CommitPosition > res.TfLastCommitPosition) {
-					publisher.Publish(new SubscriptionMessage.PollStream(
+					_publisher.Publish(new SubscriptionMessage.PollStream(
 						SubscriptionsService.AllStreamsSubscriptionId, res.TfLastCommitPosition, null,
 						DateTime.UtcNow + msg.LongPollTimeout.Value, msg));
 				} else
@@ -339,7 +351,7 @@ public class StorageReaderWorker<TStreamId>(
 		msg.Envelope.ReplyWith(reply);
 	}
 
-	private async ValueTask<ReadEventCompleted> ReadEvent(ReadEvent msg, CancellationToken token) {
+	private async ValueTask<ClientMessage.ReadEventCompleted> ReadEvent(ClientMessage.ReadEvent msg, CancellationToken token) {
 		try {
 			var streamName = msg.EventStreamId;
 			var streamId = _readIndex.GetStreamId(streamName);
@@ -356,7 +368,7 @@ public class StorageReaderWorker<TStreamId>(
 				return NoData(msg, ReadEventResult.Success);
 			}
 
-			return new ReadEventCompleted(msg.CorrelationId, msg.EventStreamId, result.Result,
+			return new ClientMessage.ReadEventCompleted(msg.CorrelationId, msg.EventStreamId, result.Result,
 				record.Value, result.Metadata, false, null);
 		} catch (Exception exc) when (exc is not OperationCanceledException oce || oce.CancellationToken != token) {
 			Log.Error(exc, "Error during processing ReadEvent request.");
@@ -364,7 +376,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	private async ValueTask<ReadStreamEventsForwardCompleted> ReadStreamEventsForward(ReadStreamEventsForward msg, CancellationToken token) {
+	private async ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadStreamEventsForward(ClientMessage.ReadStreamEventsForward msg, CancellationToken token) {
 		var lastIndexPosition = _readIndex.LastIndexedPosition;
 		try {
 			if (msg.MaxCount > MaxPageSize) {
@@ -384,7 +396,7 @@ public class StorageReaderWorker<TStreamId>(
 			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolvedPairs)
 				return NoData(msg, ReadStreamResult.AccessDenied, lastIndexPosition);
 
-			return new ReadStreamEventsForwardCompleted(
+			return new ClientMessage.ReadStreamEventsForwardCompleted(
 				msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
 				(ReadStreamResult)result.Result, resolvedPairs, result.Metadata, false, string.Empty,
 				result.NextEventNumber, result.LastEventNumber, result.IsEndOfStream, lastIndexPosition);
@@ -394,7 +406,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	private async ValueTask<ReadStreamEventsBackwardCompleted> ReadStreamEventsBackward(ReadStreamEventsBackward msg, CancellationToken token) {
+	private async ValueTask<ClientMessage.ReadStreamEventsBackwardCompleted> ReadStreamEventsBackward(ClientMessage.ReadStreamEventsBackward msg, CancellationToken token) {
 		var lastIndexedPosition = _readIndex.LastIndexedPosition;
 		try {
 			if (msg.MaxCount > MaxPageSize) {
@@ -415,7 +427,7 @@ public class StorageReaderWorker<TStreamId>(
 			if (await ResolveLinkToEvents(result.Records, msg.ResolveLinkTos, msg.User, token) is not { } resolvedPairs)
 				return NoData(msg, ReadStreamResult.AccessDenied, lastIndexedPosition);
 
-			return new ReadStreamEventsBackwardCompleted(
+			return new ClientMessage.ReadStreamEventsBackwardCompleted(
 				msg.CorrelationId, msg.EventStreamId, result.FromEventNumber, result.MaxCount,
 				(ReadStreamResult)result.Result, resolvedPairs, result.Metadata, false, string.Empty,
 				result.NextEventNumber, result.LastEventNumber, result.IsEndOfStream, lastIndexedPosition);
@@ -425,7 +437,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	private async ValueTask<ReadAllEventsForwardCompleted> ReadAllEventsForward(ReadAllEventsForward msg, CancellationToken token) {
+	private async ValueTask<ClientMessage.ReadAllEventsForwardCompleted> ReadAllEventsForward(ClientMessage.ReadAllEventsForward msg, CancellationToken token) {
 		var pos = new TFPos(msg.CommitPosition, msg.PreparePosition);
 		var lastIndexedPosition = _readIndex.LastIndexedPosition;
 		try {
@@ -448,7 +460,7 @@ public class StorageReaderWorker<TStreamId>(
 				return NoData(msg, ReadAllResult.AccessDenied, pos, lastIndexedPosition);
 
 			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, token);
-			return new ReadAllEventsForwardCompleted(
+			return new ClientMessage.ReadAllEventsForwardCompleted(
 				msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata, false, msg.MaxCount,
 				res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
 		} catch (Exception exc) when (exc is InvalidReadException or UnableToReadPastEndOfStreamException) {
@@ -460,7 +472,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	private async ValueTask<ReadAllEventsBackwardCompleted> ReadAllEventsBackward(ReadAllEventsBackward msg, CancellationToken token) {
+	private async ValueTask<ClientMessage.ReadAllEventsBackwardCompleted> ReadAllEventsBackward(ClientMessage.ReadAllEventsBackward msg, CancellationToken token) {
 		var pos = new TFPos(msg.CommitPosition, msg.PreparePosition);
 		var lastIndexedPosition = _readIndex.LastIndexedPosition;
 		try {
@@ -483,7 +495,7 @@ public class StorageReaderWorker<TStreamId>(
 				return NoData(msg, ReadAllResult.AccessDenied, pos, lastIndexedPosition);
 
 			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, token);
-			return new ReadAllEventsBackwardCompleted(
+			return new ClientMessage.ReadAllEventsBackwardCompleted(
 				msg.CorrelationId, ReadAllResult.Success, null, resolved, metadata, false, msg.MaxCount,
 				res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition);
 		} catch (Exception exc) when (exc is InvalidReadException or UnableToReadPastEndOfStreamException) {
@@ -495,7 +507,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	private async ValueTask<FilteredReadAllEventsForwardCompleted> FilteredReadAllEventsForward(FilteredReadAllEventsForward msg, CancellationToken token) {
+	private async ValueTask<ClientMessage.FilteredReadAllEventsForwardCompleted> FilteredReadAllEventsForward(ClientMessage.FilteredReadAllEventsForward msg, CancellationToken token) {
 		var pos = new TFPos(msg.CommitPosition, msg.PreparePosition);
 		var lastIndexedPosition = _readIndex.LastIndexedPosition;
 		try {
@@ -522,7 +534,7 @@ public class StorageReaderWorker<TStreamId>(
 					lastIndexedPosition);
 
 			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, token);
-			return new FilteredReadAllEventsForwardCompleted(
+			return new ClientMessage.FilteredReadAllEventsForwardCompleted(
 				msg.CorrelationId, FilteredReadAllResult.Success, null, resolved, metadata, false,
 				msg.MaxCount,
 				res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition, res.IsEndOfStream,
@@ -537,7 +549,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	private async ValueTask<FilteredReadAllEventsBackwardCompleted> FilteredReadAllEventsBackward(FilteredReadAllEventsBackward msg, CancellationToken token) {
+	private async ValueTask<ClientMessage.FilteredReadAllEventsBackwardCompleted> FilteredReadAllEventsBackward(ClientMessage.FilteredReadAllEventsBackward msg, CancellationToken token) {
 		var pos = new TFPos(msg.CommitPosition, msg.PreparePosition);
 		var lastIndexedPosition = _readIndex.LastIndexedPosition;
 		try {
@@ -564,7 +576,7 @@ public class StorageReaderWorker<TStreamId>(
 					lastIndexedPosition);
 
 			var metadata = await _readIndex.GetStreamMetadata(_systemStreams.AllStream, token);
-			return new FilteredReadAllEventsBackwardCompleted(
+			return new ClientMessage.FilteredReadAllEventsBackwardCompleted(
 				msg.CorrelationId, FilteredReadAllResult.Success, null, resolved, metadata, false,
 				msg.MaxCount,
 				res.CurrentPos, res.NextPos, res.PrevPos, lastIndexedPosition, res.IsEndOfStream);
@@ -578,55 +590,55 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	private static ReadEventCompleted NoData(ReadEvent msg, ReadEventResult result, string error = null) {
+	private static ClientMessage.ReadEventCompleted NoData(ClientMessage.ReadEvent msg, ReadEventResult result, string error = null) {
 		return new(msg.CorrelationId, msg.EventStreamId, result, ResolvedEvent.EmptyEvent, null, false, error);
 	}
 
-	private static ReadStreamEventsForwardCompleted NoData(ReadStreamEventsForward msg,
+	private static ClientMessage.ReadStreamEventsForwardCompleted NoData(ClientMessage.ReadStreamEventsForward msg,
 		ReadStreamResult result, long lastIndexedPosition, long lastEventNumber = -1, string error = null) {
 		return new(
 			msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, result,
 			EmptyRecords, null, false, error ?? string.Empty, -1, lastEventNumber, true, lastIndexedPosition);
 	}
 
-	private static ReadStreamEventsBackwardCompleted NoData(ReadStreamEventsBackward msg, ReadStreamResult result, long lastIndexedPosition,
+	private static ClientMessage.ReadStreamEventsBackwardCompleted NoData(ClientMessage.ReadStreamEventsBackward msg, ReadStreamResult result, long lastIndexedPosition,
 		long lastEventNumber = -1, string error = null) {
 		return new(
 			msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, result,
 			EmptyRecords, null, false, error ?? string.Empty, -1, lastEventNumber, true, lastIndexedPosition);
 	}
 
-	private static ReadAllEventsForwardCompleted NoData(ReadAllEventsForward msg,
+	private static ClientMessage.ReadAllEventsForwardCompleted NoData(ClientMessage.ReadAllEventsForward msg,
 		ReadAllResult result, TFPos pos, long lastIndexedPosition, string error = null) {
 		return new(
 			msg.CorrelationId, result, error, ResolvedEvent.EmptyArray, null, false,
 			msg.MaxCount, pos, TFPos.Invalid, TFPos.Invalid, lastIndexedPosition);
 	}
 
-	private static FilteredReadAllEventsForwardCompleted NoDataForFilteredCommand(
-		FilteredReadAllEventsForward msg, FilteredReadAllResult result, TFPos pos,
+	private static ClientMessage.FilteredReadAllEventsForwardCompleted NoDataForFilteredCommand(
+		ClientMessage.FilteredReadAllEventsForward msg, FilteredReadAllResult result, TFPos pos,
 		long lastIndexedPosition, string error = null) {
 		return new(
 			msg.CorrelationId, result, error, ResolvedEvent.EmptyArray, null, false,
 			msg.MaxCount, pos, TFPos.Invalid, TFPos.Invalid, lastIndexedPosition, false, 0L);
 	}
 
-	private static FilteredReadAllEventsBackwardCompleted NoDataForFilteredCommand(
-		FilteredReadAllEventsBackward msg, FilteredReadAllResult result, TFPos pos,
+	private static ClientMessage.FilteredReadAllEventsBackwardCompleted NoDataForFilteredCommand(
+		ClientMessage.FilteredReadAllEventsBackward msg, FilteredReadAllResult result, TFPos pos,
 		long lastIndexedPosition, string error = null) {
 		return new(
 			msg.CorrelationId, result, error, ResolvedEvent.EmptyArray, null, false,
 			msg.MaxCount, pos, TFPos.Invalid, TFPos.Invalid, lastIndexedPosition, false);
 	}
 
-	private static ReadAllEventsBackwardCompleted NoData(ReadAllEventsBackward msg,
+	private static ClientMessage.ReadAllEventsBackwardCompleted NoData(ClientMessage.ReadAllEventsBackward msg,
 		ReadAllResult result, TFPos pos, long lastIndexedPosition, string error = null) {
 		return new(
 			msg.CorrelationId, result, error, ResolvedEvent.EmptyArray, null, false,
 			msg.MaxCount, pos, TFPos.Invalid, TFPos.Invalid, lastIndexedPosition);
 	}
 
-	private static void CheckEventsOrder(ReadStreamEventsForward msg, IndexReadStreamResult result) {
+	private static void CheckEventsOrder(ClientMessage.ReadStreamEventsForward msg, IndexReadStreamResult result) {
 		for (var index = 1; index < result.Records.Length; index++) {
 			if (result.Records[index].EventNumber != result.Records[index - 1].EventNumber + 1) {
 				throw new Exception(
@@ -636,7 +648,7 @@ public class StorageReaderWorker<TStreamId>(
 		}
 	}
 
-	private static void CheckEventsOrder(ReadStreamEventsBackward msg, IndexReadStreamResult result) {
+	private static void CheckEventsOrder(ClientMessage.ReadStreamEventsBackward msg, IndexReadStreamResult result) {
 		for (var index = 1; index < result.Records.Length; index++) {
 			if (result.Records[index].EventNumber != result.Records[index - 1].EventNumber - 1) {
 				throw new Exception(
@@ -715,16 +727,16 @@ public class StorageReaderWorker<TStreamId>(
 			return;
 		if (_expiredBatchCount == 0) {
 			_batchLoggingEnabled = false;
-			Log.Warning("StorageReaderWorker #{0}: Batch logging disabled, read load is back to normal", queueId);
+			Log.Warning("StorageReaderWorker #{0}: Batch logging disabled, read load is back to normal", _queueId);
 			return;
 		}
 
-		Log.Warning("StorageReaderWorker #{0}: {1} read operations have expired", queueId, _expiredBatchCount);
+		Log.Warning("StorageReaderWorker #{0}: {1} read operations have expired", _queueId, _expiredBatchCount);
 		_expiredBatchCount = 0;
-		publisher.Publish(
+		_publisher.Publish(
 			TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2),
-				publisher,
-				new StorageMessage.BatchLogExpiredMessages(Guid.NewGuid(), queueId))
+				_publisher,
+				new StorageMessage.BatchLogExpiredMessages(Guid.NewGuid(), _queueId))
 		);
 	}
 
@@ -753,11 +765,11 @@ public class StorageReaderWorker<TStreamId>(
 
 		//heuristic to match approximately >= 50 expired messages / second
 		_batchLoggingEnabled = true;
-		Log.Warning("StorageReaderWorker #{0}: Batch logging enabled, high rate of expired read messages detected", queueId);
-		publisher.Publish(
+		Log.Warning("StorageReaderWorker #{0}: Batch logging enabled, high rate of expired read messages detected", _queueId);
+		_publisher.Publish(
 			TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2),
-				publisher,
-				new StorageMessage.BatchLogExpiredMessages(Guid.NewGuid(), queueId))
+				_publisher,
+				new StorageMessage.BatchLogExpiredMessages(Guid.NewGuid(), _queueId))
 		);
 		_expiredBatchCount = 1;
 		_lastExpireTime = expire;

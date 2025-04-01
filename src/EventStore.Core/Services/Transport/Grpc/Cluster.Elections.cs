@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 using EventStore.Cluster;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
+using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ElectionMessage;
 using ClusterInfo = EventStore.Core.Cluster.ClusterInfo;
 using Empty = EventStore.Client.Empty;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc.Cluster;
 
-partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProvider, string clusterDns) {
+partial class Elections {
 	private static readonly Empty EmptyResult = new();
-	private readonly IAuthorizationProvider _authorizationProvider = Ensure.NotNull(authorizationProvider);
+	private readonly IAuthorizationProvider _authorizationProvider;
 	private static readonly Operation ViewChangeOperation = new(Plugins.Authorization.Operations.Node.Elections.ViewChange);
 	private static readonly Operation ViewChangeProofOperation = new(Plugins.Authorization.Operations.Node.Elections.ViewChangeProof);
 	private static readonly Operation PrepareOperation = new(Plugins.Authorization.Operations.Node.Elections.Prepare);
@@ -26,7 +26,14 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 	private static readonly Operation AcceptOperation = new(Plugins.Authorization.Operations.Node.Elections.Accept);
 	private static readonly Operation MasterIsResigningOperation = new(Plugins.Authorization.Operations.Node.Elections.LeaderIsResigning);
 	private static readonly Operation MasterIsResigningOkOperation = new(Plugins.Authorization.Operations.Node.Elections.LeaderIsResigningOk);
+	private readonly IPublisher _bus;
+	private readonly string _clusterDns;
 
+	public Elections(IPublisher bus, IAuthorizationProvider authorizationProvider, string clusterDns) {
+		_bus = bus;
+		_authorizationProvider = Ensure.NotNull(authorizationProvider);
+		_clusterDns = clusterDns;
+	}
 
 	public override async Task<Empty> ViewChange(ViewChangeRequest request, ServerCallContext context) {
 		var user = context.GetHttpContext().User;
@@ -34,11 +41,10 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			throw RpcExceptions.AccessDenied();
 		}
 
-		bus.Publish(new ViewChange(
+		_bus.Publish(new ElectionMessage.ViewChange(
 			Uuid.FromDto(request.ServerId).ToGuid(),
-			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(clusterDns),
-			request.AttemptedView)
-		);
+			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(_clusterDns),
+			request.AttemptedView));
 		return EmptyResult;
 	}
 
@@ -48,11 +54,10 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			throw RpcExceptions.AccessDenied();
 		}
 
-		bus.Publish(new ViewChangeProof(
+		_bus.Publish(new ElectionMessage.ViewChangeProof(
 			Uuid.FromDto(request.ServerId).ToGuid(),
-			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(clusterDns),
-			request.InstalledView)
-		);
+			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(_clusterDns),
+			request.InstalledView));
 		return EmptyResult;
 	}
 
@@ -62,11 +67,10 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			throw RpcExceptions.AccessDenied();
 		}
 
-		bus.Publish(new Prepare(
+		_bus.Publish(new ElectionMessage.Prepare(
 			Uuid.FromDto(request.ServerId).ToGuid(),
-			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(clusterDns),
-			request.View)
-		);
+			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(_clusterDns),
+			request.View));
 		return EmptyResult;
 	}
 
@@ -76,10 +80,10 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			throw RpcExceptions.AccessDenied();
 		}
 
-		bus.Publish(new PrepareOk(
+		_bus.Publish(new ElectionMessage.PrepareOk(
 			request.View,
 			Uuid.FromDto(request.ServerId).ToGuid(),
-			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(clusterDns),
+			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(_clusterDns),
 			request.EpochNumber,
 			request.EpochPosition,
 			Uuid.FromDto(request.EpochId).ToGuid(),
@@ -88,8 +92,7 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			request.WriterCheckpoint,
 			request.ChaserCheckpoint,
 			request.NodePriority,
-			ClusterInfo.FromGrpcClusterInfo(request.ClusterInfo, clusterDns))
-		);
+			ClusterInfo.FromGrpcClusterInfo(request.ClusterInfo, _clusterDns)));
 		return EmptyResult;
 	}
 
@@ -99,11 +102,11 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			throw RpcExceptions.AccessDenied();
 		}
 
-		bus.Publish(new Proposal(
+		_bus.Publish(new ElectionMessage.Proposal(
 			Uuid.FromDto(request.ServerId).ToGuid(),
-			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(clusterDns),
+			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(_clusterDns),
 			Uuid.FromDto(request.LeaderId).ToGuid(),
-			new DnsEndPoint(request.LeaderHttp.Address, (int)request.LeaderHttp.Port).WithClusterDns(clusterDns),
+			new DnsEndPoint(request.LeaderHttp.Address, (int)request.LeaderHttp.Port).WithClusterDns(_clusterDns),
 			request.View,
 			request.EpochNumber,
 			request.EpochPosition,
@@ -112,8 +115,7 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			request.LastCommitPosition,
 			request.WriterCheckpoint,
 			request.ChaserCheckpoint,
-			request.NodePriority)
-		);
+			request.NodePriority));
 		return EmptyResult;
 	}
 
@@ -123,13 +125,12 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			throw RpcExceptions.AccessDenied();
 		}
 
-		bus.Publish(new Accept(
+		_bus.Publish(new ElectionMessage.Accept(
 			Uuid.FromDto(request.ServerId).ToGuid(),
-			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(clusterDns),
+			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(_clusterDns),
 			Uuid.FromDto(request.LeaderId).ToGuid(),
-			new DnsEndPoint(request.LeaderHttp.Address, (int)request.LeaderHttp.Port).WithClusterDns(clusterDns),
-			request.View)
-		);
+			new DnsEndPoint(request.LeaderHttp.Address, (int)request.LeaderHttp.Port).WithClusterDns(_clusterDns),
+			request.View));
 		return EmptyResult;
 	}
 
@@ -139,10 +140,9 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			throw RpcExceptions.AccessDenied();
 		}
 
-		bus.Publish(new LeaderIsResigning(
+		_bus.Publish(new ElectionMessage.LeaderIsResigning(
 			Uuid.FromDto(request.LeaderId).ToGuid(),
-			new DnsEndPoint(request.LeaderHttp.Address, (int)request.LeaderHttp.Port).WithClusterDns(clusterDns))
-		);
+			new DnsEndPoint(request.LeaderHttp.Address, (int)request.LeaderHttp.Port).WithClusterDns(_clusterDns)));
 		return EmptyResult;
 	}
 
@@ -152,12 +152,11 @@ partial class Elections(IPublisher bus, IAuthorizationProvider authorizationProv
 			throw RpcExceptions.AccessDenied();
 		}
 
-		bus.Publish(new LeaderIsResigningOk(
+		_bus.Publish(new ElectionMessage.LeaderIsResigningOk(
 			Uuid.FromDto(request.LeaderId).ToGuid(),
-			new DnsEndPoint(request.LeaderHttp.Address, (int)request.LeaderHttp.Port).WithClusterDns(clusterDns),
+			new DnsEndPoint(request.LeaderHttp.Address, (int)request.LeaderHttp.Port).WithClusterDns(_clusterDns),
 			Uuid.FromDto(request.ServerId).ToGuid(),
-			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(clusterDns))
-		);
+			new DnsEndPoint(request.ServerHttp.Address, (int)request.ServerHttp.Port).WithClusterDns(_clusterDns)));
 		return EmptyResult;
 	}
 }

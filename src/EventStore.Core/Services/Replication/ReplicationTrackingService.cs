@@ -16,24 +16,21 @@ using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Replication;
 
-public class ReplicationTrackingService(
-	IPublisher publisher,
-	int clusterNodeCount,
-	ICheckpoint replicationCheckpoint,
-	IReadOnlyCheckpoint writerCheckpoint)
-	: IHandle<SystemMessage.StateChangeMessage>,
-		IHandle<SystemMessage.BecomeShuttingDown>,
-		IHandle<SystemMessage.SystemInit>,
-		IHandle<ReplicationTrackingMessage.ReplicaWriteAck>,
-		IHandle<ReplicationTrackingMessage.WriterCheckpointFlushed>,
-		IHandle<ReplicationTrackingMessage.LeaderReplicatedTo>,
-		IHandle<SystemMessage.VNodeConnectionLost>,
-		IHandle<ReplicationMessage.ReplicaSubscribed> {
+public class ReplicationTrackingService :
+	IHandle<SystemMessage.StateChangeMessage>,
+	IHandle<SystemMessage.BecomeShuttingDown>,
+	IHandle<SystemMessage.SystemInit>,
+	IHandle<ReplicationTrackingMessage.ReplicaWriteAck>,
+	IHandle<ReplicationTrackingMessage.WriterCheckpointFlushed>,
+	IHandle<ReplicationTrackingMessage.LeaderReplicatedTo>,
+	IHandle<SystemMessage.VNodeConnectionLost>,
+	IHandle<ReplicationMessage.ReplicaSubscribed> {
+
 	private readonly ILogger _log = Serilog.Log.ForContext<ReplicationTrackingService>();
-	private readonly IPublisher _publisher = Ensure.NotNull(publisher);
-	private readonly ICheckpoint _replicationCheckpoint = Ensure.NotNull(replicationCheckpoint);
-	private readonly IReadOnlyCheckpoint _writerCheckpoint = Ensure.NotNull(writerCheckpoint);
-	private readonly int _quorumSize = Ensure.Positive(clusterNodeCount) / 2 + 1;
+	private readonly IPublisher _publisher;
+	private readonly ICheckpoint _replicationCheckpoint;
+	private readonly IReadOnlyCheckpoint _writerCheckpoint;
+	private readonly int _quorumSize;
 	private Thread _thread;
 	private bool _stop;
 	private VNodeState _state;
@@ -41,6 +38,17 @@ public class ReplicationTrackingService(
 	private readonly ConcurrentDictionary<Guid, long> _replicaLogPositions = new();
 	private readonly ManualResetEventSlim _replicationChange = new(false, 1);
 	private readonly TaskCompletionSource<object> _tcs = new();
+
+	public ReplicationTrackingService(
+		IPublisher publisher,
+		int clusterNodeCount,
+		ICheckpoint replicationCheckpoint,
+		IReadOnlyCheckpoint writerCheckpoint) {
+		_publisher = Ensure.NotNull(publisher);
+		_replicationCheckpoint = Ensure.NotNull(replicationCheckpoint);
+		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
+		_quorumSize = Ensure.Positive(clusterNodeCount) / 2 + 1;
+	}
 
 	public Task Task => _tcs.Task;
 

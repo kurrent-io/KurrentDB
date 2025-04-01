@@ -10,7 +10,6 @@ using EventStore.Transport.Http;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 using EventStore.Common.Utils;
 using EventStore.Core.Cluster;
-using static EventStore.Core.Messages.ClientMessage;
 
 namespace EventStore.Core.Services.Transport.Http;
 
@@ -20,7 +19,7 @@ public static class Format {
 	}
 
 	public static object EventEntry(HttpResponseFormatterArgs entity, Message message, EmbedLevel embed) {
-		if (message is not ReadEventCompleted { Result: ReadEventResult.Success } msg || msg.Record.Event == null)
+		if (message is not ClientMessage.ReadEventCompleted { Result: ReadEventResult.Success } msg || msg.Record.Event == null)
 			return entity.ResponseCodec.To(Empty.Result);
 
 		return entity.ResponseCodec.ContentType switch {
@@ -31,37 +30,37 @@ public static class Format {
 	}
 
 	public static string GetStreamEventsBackward(HttpResponseFormatterArgs entity, Message message, EmbedLevel embed, bool headOfStream) {
-		return message is not ReadStreamEventsBackwardCompleted { Result: ReadStreamResult.Success } msg
+		return message is not ClientMessage.ReadStreamEventsBackwardCompleted { Result: ReadStreamResult.Success } msg
 			? string.Empty
 			: entity.ResponseCodec.To(Convert.ToStreamEventBackwardFeed(msg, entity.ResponseUrl, embed, headOfStream, entity.ResponseCodec.ContentType));
 	}
 
 	public static string GetStreamEventsForward(HttpResponseFormatterArgs entity, Message message, EmbedLevel embed) {
-		return message is not ReadStreamEventsForwardCompleted { Result: ReadStreamResult.Success } msg
+		return message is not ClientMessage.ReadStreamEventsForwardCompleted { Result: ReadStreamResult.Success } msg
 			? string.Empty
 			: entity.ResponseCodec.To(Convert.ToStreamEventForwardFeed(msg, entity.ResponseUrl, embed));
 	}
 
 	public static string ReadAllEventsBackwardCompleted(HttpResponseFormatterArgs entity, Message message, EmbedLevel embed) {
-		return message is not ReadAllEventsBackwardCompleted { Result: ReadAllResult.Success } msg
+		return message is not ClientMessage.ReadAllEventsBackwardCompleted { Result: ReadAllResult.Success } msg
 			? string.Empty
 			: entity.ResponseCodec.To(Convert.ToAllEventsBackwardFeed(msg, entity.ResponseUrl, embed));
 	}
 
 	public static string ReadAllEventsBackwardFilteredCompleted(HttpResponseFormatterArgs entity, Message message, EmbedLevel embed) {
-		return message is not FilteredReadAllEventsBackwardCompleted { Result: FilteredReadAllResult.Success } msg
+		return message is not ClientMessage.FilteredReadAllEventsBackwardCompleted { Result: FilteredReadAllResult.Success } msg
 			? string.Empty
 			: entity.ResponseCodec.To(Convert.ToFilteredAllEventsBackwardFeed(msg, entity.ResponseUrl, embed));
 	}
 
 	public static string ReadAllEventsForwardCompleted(HttpResponseFormatterArgs entity, Message message, EmbedLevel embed) {
-		return message is not ReadAllEventsForwardCompleted { Result: ReadAllResult.Success } msg
+		return message is not ClientMessage.ReadAllEventsForwardCompleted { Result: ReadAllResult.Success } msg
 			? string.Empty
 			: entity.ResponseCodec.To(Convert.ToAllEventsForwardFeed(msg, entity.ResponseUrl, embed));
 	}
 
 	public static string ReadAllEventsForwardFilteredCompleted(HttpResponseFormatterArgs entity, Message message, EmbedLevel embed) {
-		return message is not FilteredReadAllEventsForwardCompleted { Result: FilteredReadAllResult.Success } msg
+		return message is not ClientMessage.FilteredReadAllEventsForwardCompleted { Result: FilteredReadAllResult.Success } msg
 			? string.Empty
 			: entity.ResponseCodec.To(Convert.ToAllEventsForwardFilteredFeed(msg, entity.ResponseUrl, embed));
 	}
@@ -100,7 +99,7 @@ public static class Format {
 
 	public static string ReadNextNPersistentMessagesCompleted(HttpResponseFormatterArgs entity, Message message,
 		string streamId, string groupName, int count, EmbedLevel embed) {
-		var msg = message as ReadNextNPersistentMessagesCompleted;
+		var msg = message as ClientMessage.ReadNextNPersistentMessagesCompleted;
 		if (msg is not { Result: ClientMessage.ReadNextNPersistentMessagesCompleted.ReadNextNPersistentMessagesResult.Success }) {
 			return msg != null ? entity.ResponseCodec.To(msg.Reason) : string.Empty;
 		}

@@ -16,9 +16,19 @@ using HttpStatusCode = EventStore.Transport.Http.HttpStatusCode;
 
 namespace EventStore.Core.Services.Transport.Http;
 
-public class KestrelToInternalBridgeMiddleware(IUriRouter uriRouter, bool logHttpRequests, string advertiseAsAddress, int advertiseAsPort)
-	: IMiddleware {
+public class KestrelToInternalBridgeMiddleware : IMiddleware {
 	private static readonly ILogger Log = Serilog.Log.ForContext<KestrelToInternalBridgeMiddleware>();
+	private readonly IUriRouter _uriRouter;
+	private readonly bool _logHttpRequests;
+	private readonly string _advertiseAsAddress;
+	private readonly int _advertiseAsPort;
+
+	public KestrelToInternalBridgeMiddleware(IUriRouter uriRouter, bool logHttpRequests, string advertiseAsAddress, int advertiseAsPort) {
+		_uriRouter = uriRouter;
+		_logHttpRequests = logHttpRequests;
+		_advertiseAsAddress = advertiseAsAddress;
+		_advertiseAsPort = advertiseAsPort;
+	}
 
 	private static bool TryMatch(HttpContext context, IUriRouter uriRouter, bool logHttpRequests, string advertiseAsAddress, int advertiseAsPort) {
 		var tcs = new TaskCompletionSource<bool>();
@@ -163,6 +173,6 @@ public class KestrelToInternalBridgeMiddleware(IUriRouter uriRouter, bool logHtt
 	}
 
 	public Task InvokeAsync(HttpContext context, RequestDelegate next) {
-		return TryMatch(context, uriRouter, logHttpRequests, advertiseAsAddress, advertiseAsPort) ? next(context) : Task.CompletedTask;
+		return TryMatch(context, _uriRouter, _logHttpRequests, _advertiseAsAddress, _advertiseAsPort) ? next(context) : Task.CompletedTask;
 	}
 }

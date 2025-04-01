@@ -8,11 +8,16 @@ using EventStore.Core.DataStructures;
 
 namespace EventStore.Core.Services.TimerService;
 
-public class TimerBasedScheduler(ITimer timer, ITimeProvider timeProvider) : IScheduler {
+public class TimerBasedScheduler : IScheduler {
 	private readonly PairingHeap<ScheduledTask> _tasks = new((x, y) => x.DueTime < y.DueTime);
-	private readonly ITimeProvider _timeProvider = Ensure.NotNull(timeProvider);
-	private readonly ITimer _timer = Ensure.NotNull(timer);
+	private readonly ITimeProvider _timeProvider;
+	private readonly ITimer _timer;
 	private readonly object _queueLock = new();
+
+	public TimerBasedScheduler(ITimer timer, ITimeProvider timeProvider) {
+		_timeProvider = Ensure.NotNull(timeProvider);
+		_timer = Ensure.NotNull(timer);
+	}
 
 	public void Stop() {
 		Dispose();

@@ -14,13 +14,23 @@ using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http.Authentication;
 
-public class PasswordChangeNotificationReader(IPublisher publisher, IODispatcher ioDispatcher) : IHandle<SystemMessage.SystemStart>, IHandle<SystemMessage.BecomeShutdown> {
+public class PasswordChangeNotificationReader :
+	IHandle<SystemMessage.SystemStart>,
+	IHandle<SystemMessage.BecomeShutdown> {
+
 	private readonly ILogger _log = Serilog.Log.ForContext<UserManagementService>();
+	private readonly IPublisher _publisher;
+	private readonly IODispatcher _ioDispatcher;
 	private bool _stopped;
+
+	public PasswordChangeNotificationReader(IPublisher publisher, IODispatcher ioDispatcher) {
+		_publisher = publisher;
+		_ioDispatcher = ioDispatcher;
+	}
 
 	private void Start() {
 		_stopped = false;
-		ioDispatcher.ReadBackward(
+		_ioDispatcher.ReadBackward(
 			UserManagementService.UserPasswordNotificationsStreamId, -1, 1, false, SystemAccounts.System,
 			completed => {
 				switch (completed.Result) {
@@ -41,7 +51,7 @@ public class PasswordChangeNotificationReader(IPublisher publisher, IODispatcher
 
 	private void ReadNotificationsFrom(long fromEventNumber) {
 		if (_stopped) return;
-		ioDispatcher.ReadForward(
+		_ioDispatcher.ReadForward(
 			UserManagementService.UserPasswordNotificationsStreamId,
 			fromEventNumber,
 			100,
@@ -54,11 +64,11 @@ public class PasswordChangeNotificationReader(IPublisher publisher, IODispatcher
 					case ReadStreamResult.Error:
 					case ReadStreamResult.NotModified:
 						_log.Error("Failed to read: {stream} completed.Result={e}", UserManagementService.UserPasswordNotificationsStreamId, completed.Result.ToString());
-						ioDispatcher.Delay(TimeSpan.FromSeconds(10), _ => ReadNotificationsFrom(fromEventNumber));
+						_ioDispatcher.Delay(TimeSpan.FromSeconds(10), _ => ReadNotificationsFrom(fromEventNumber));
 						break;
 					case ReadStreamResult.NoStream:
 					case ReadStreamResult.StreamDeleted:
-						ioDispatcher.Delay(TimeSpan.FromSeconds(1), _ => ReadNotificationsFrom(0));
+						_ioDispatcher.Delay(TimeSpan.FromSeconds(1), _ => ReadNotificationsFrom(0));
 						break;
 					case ReadStreamResult.Success:
 						foreach (var @event in completed.Events) {
@@ -66,7 +76,7 @@ public class PasswordChangeNotificationReader(IPublisher publisher, IODispatcher
 						}
 
 						if (completed.IsEndOfStream) {
-							ioDispatcher.Delay(TimeSpan.FromSeconds(1), _ => ReadNotificationsFrom(completed.NextEventNumber));
+							_ioDispatcher.Delay(TimeSpan.FromSeconds(1), _ => ReadNotificationsFrom(completed.NextEventNumber));
 						} else {
 							ReadNotificationsFrom(completed.NextEventNumber);
 						}
@@ -78,7 +88,7 @@ public class PasswordChangeNotificationReader(IPublisher publisher, IODispatcher
 			},
 			() => {
 				_log.Warning("Timeout reading stream: {stream}. Trying again in 10 seconds.", UserManagementService.UserPasswordNotificationsStreamId);
-				ioDispatcher.Delay(TimeSpan.FromSeconds(10), _ => ReadNotificationsFrom(fromEventNumber));
+				_ioDispatcher.Delay(TimeSpan.FromSeconds(10), _ => ReadNotificationsFrom(fromEventNumber));
 			},
 			Guid.NewGuid());
 	}
@@ -94,7 +104,7 @@ public class PasswordChangeNotificationReader(IPublisher publisher, IODispatcher
 		var data = @event.Event.Data;
 		try {
 			var notification = data.ParseJson<Notification>();
-			publisher.Publish(new InternalAuthenticationProviderMessages.ResetPasswordCache(notification.LoginName));
+			_publisher.Publish(new InternalAuthenticationProviderMessages.ResetPasswordCache(notification.LoginName));
 		} catch (JsonException ex) {
 			_log.Error("Failed to de-serialize event #{eventNumber}. Error: '{e}'", @event.OriginalEventNumber, ex.Message);
 		}

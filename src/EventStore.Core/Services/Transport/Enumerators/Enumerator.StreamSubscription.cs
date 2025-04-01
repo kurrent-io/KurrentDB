@@ -11,11 +11,11 @@ using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Common;
 using Serilog;
-using static EventStore.Core.Messages.ClientMessage;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Services.Transport.Enumerators;
@@ -230,12 +230,12 @@ static partial class Enumerator {
 
 			async Task OnMessage(Message message, CancellationToken token) {
 				try {
-					if (message is NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
+					if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 						throw ex;
 					}
 
-					if (message is not ReadStreamEventsForwardCompleted completed) {
-						throw ReadResponseException.UnknownMessage.Create<ReadStreamEventsForwardCompleted>(message);
+					if (message is not ClientMessage.ReadStreamEventsForwardCompleted completed) {
+						throw ReadResponseException.UnknownMessage.Create<ClientMessage.ReadStreamEventsForwardCompleted>(message);
 					}
 
 					switch (completed.Result) {
@@ -288,18 +288,18 @@ static partial class Enumerator {
 			var nextLiveSequenceNumber = 0UL;
 			var confirmationEventNumberTcs = new TaskCompletionSource<long>();
 
-			_bus.Publish(new SubscribeToStream(Guid.NewGuid(), _subscriptionId, new CallbackEnvelope(OnSubscriptionMessage), _subscriptionId, _streamName, _resolveLinks, _user));
+			_bus.Publish(new ClientMessage.SubscribeToStream(Guid.NewGuid(), _subscriptionId, new CallbackEnvelope(OnSubscriptionMessage), _subscriptionId, _streamName, _resolveLinks, _user));
 
 			return confirmationEventNumberTcs.Task;
 
 			void OnSubscriptionMessage(Message message) {
 				try {
-					if (message is NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
+					if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 						throw ex;
 					}
 
 					switch (message) {
-						case SubscriptionConfirmation confirmed:
+						case ClientMessage.SubscriptionConfirmation confirmed:
 							long caughtUp = confirmed.LastEventNumber ??
 							                throw ReadResponseException.UnknownError.Create($"Live subscription {_subscriptionId} to {_streamName} failed to retrieve the last event number.");
 
@@ -309,7 +309,7 @@ static partial class Enumerator {
 
 							confirmationEventNumberTcs.TrySetResult(caughtUp);
 							return;
-						case SubscriptionDropped dropped:
+						case ClientMessage.SubscriptionDropped dropped:
 							Log.Debug(
 								"Subscription {subscriptionId} to {streamName} dropped by subscription service: {droppedReason}",
 								_subscriptionId, _streamName, dropped.Reason);
@@ -324,7 +324,7 @@ static partial class Enumerator {
 								default:
 									throw ReadResponseException.UnknownError.Create(dropped.Reason);
 							}
-						case StreamEventAppeared appeared: {
+						case ClientMessage.StreamEventAppeared appeared: {
 							Log.Verbose(
 								"Subscription {subscriptionId} to {streamName} received live event {streamRevision}.",
 								_subscriptionId, _streamName, appeared.Event.OriginalEventNumber);
@@ -337,7 +337,7 @@ static partial class Enumerator {
 							return;
 						}
 						default:
-							throw ReadResponseException.UnknownMessage.Create<SubscriptionConfirmation>(message);
+							throw ReadResponseException.UnknownMessage.Create<ClientMessage.SubscriptionConfirmation>(message);
 					}
 				} catch (Exception exception) {
 					_liveEvents.Writer.TryComplete(exception);
@@ -354,16 +354,15 @@ static partial class Enumerator {
 			var correlationId = Guid.NewGuid();
 			Log.Verbose("Subscription {subscriptionId} to {streamName} reading next page starting from {streamRevision}.", _subscriptionId, _streamName, startEventNumber);
 
-			_bus.Publish(new ReadStreamEventsForward(
+			_bus.Publish(new ClientMessage.ReadStreamEventsForward(
 				correlationId, correlationId, envelope,
 				_streamName, startEventNumber, ReadBatchSize, _resolveLinks, _requiresLeader, null,
 				_user,
 				replyOnExpired: true,
 				expires: _expiryStrategy.GetExpiry(),
-				cancellationToken: ct)
-			);
+				cancellationToken: ct));
 		}
 
-		private void Unsubscribe() => _bus.Publish(new UnsubscribeFromStream(Guid.NewGuid(), _subscriptionId, new NoopEnvelope(), _user));
+		private void Unsubscribe() => _bus.Publish(new ClientMessage.UnsubscribeFromStream(Guid.NewGuid(), _subscriptionId, new NoopEnvelope(), _user));
 	}
 }

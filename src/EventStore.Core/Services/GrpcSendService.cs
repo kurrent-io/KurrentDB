@@ -9,9 +9,16 @@ using Serilog;
 
 namespace EventStore.Core.Services;
 
-public class GrpcSendService(EventStoreClusterClientCache eventStoreClientCache) : IHandle<GrpcMessage.SendOverGrpc> {
-	private readonly EventStoreClusterClientCache _eventStoreClientCache = eventStoreClientCache ?? throw new ArgumentNullException(nameof(eventStoreClientCache));
+public class GrpcSendService :
+	IHandle<GrpcMessage.SendOverGrpc> {
+
+	private readonly EventStoreClusterClientCache _eventStoreClientCache;
 	private static readonly ILogger Log = Serilog.Log.ForContext<GrpcSendService>();
+
+	public GrpcSendService(EventStoreClusterClientCache eventStoreClientCache) {
+		_eventStoreClientCache =
+			eventStoreClientCache ?? throw new ArgumentNullException(nameof(eventStoreClientCache));
+	}
 
 	public void Handle(GrpcMessage.SendOverGrpc message) {
 		if (message.LiveUntil < DateTime.Now) {

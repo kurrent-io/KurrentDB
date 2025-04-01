@@ -13,7 +13,6 @@ using EventStore.Core.Metrics;
 using EventStore.Core.Services.Storage.InMemory;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.Checkpoint;
-using static EventStore.Core.Messages.SystemMessage;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage;
@@ -22,10 +21,11 @@ public abstract class StorageReaderService {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<StorageReaderService>();
 }
 
-public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<SystemInit>,
-	IAsyncHandle<BecomeShuttingDown>,
-	IHandle<BecomeShutdown>,
+public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<SystemMessage.SystemInit>,
+	IAsyncHandle<SystemMessage.BecomeShuttingDown>,
+	IHandle<SystemMessage.BecomeShutdown>,
 	IHandle<MonitoringMessage.InternalStatsRequest> {
+
 	private readonly IPublisher _bus;
 	private readonly IReadIndex _readIndex;
 	private readonly MultiQueuedHandler _workersMultiHandler;
@@ -87,21 +87,21 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		subscriber.Subscribe<StorageMessage.StreamIdFromTransactionIdRequest>(_workersMultiHandler);
 	}
 
-	void IHandle<SystemInit>.Handle(SystemInit message) {
-		_bus.Publish(new ServiceInitialized(nameof(StorageReaderService)));
+	void IHandle<SystemMessage.SystemInit>.Handle(SystemMessage.SystemInit message) {
+		_bus.Publish(new SystemMessage.ServiceInitialized(nameof(StorageReaderService)));
 	}
 
-	async ValueTask IAsyncHandle<BecomeShuttingDown>.HandleAsync(BecomeShuttingDown message, CancellationToken token) {
+	async ValueTask IAsyncHandle<SystemMessage.BecomeShuttingDown>.HandleAsync(SystemMessage.BecomeShuttingDown message, CancellationToken token) {
 		try {
 			await _workersMultiHandler.Stop();
 		} catch (Exception exc) {
 			Log.Error(exc, "Error while stopping readers multi handler.");
 		}
 
-		_bus.Publish(new ServiceShutdown(nameof(StorageReaderService)));
+		_bus.Publish(new SystemMessage.ServiceShutdown(nameof(StorageReaderService)));
 	}
 
-	void IHandle<BecomeShutdown>.Handle(BecomeShutdown message) {
+	void IHandle<SystemMessage.BecomeShutdown>.Handle(SystemMessage.BecomeShutdown message) {
 		// by now (in case of successful shutdown process), all readers and writers should not be using ReadIndex
 		_readIndex.Close();
 	}

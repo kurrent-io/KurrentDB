@@ -2,9 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;
@@ -24,5 +22,6 @@ public readonly struct IndexReadAllResult(
 	public readonly long ConsideredEventsCount = consideredEventsCount;
 
 	public override string ToString() =>
-		$"CurrentPos: {CurrentPos}, NextPos: {NextPos}, PrevPos: {PrevPos}, IsEndOfStream: {IsEndOfStream}, Records: {string.Join("\n", Records.Select(x => x.ToString()))}";
+		$"CurrentPos: {CurrentPos}, NextPos: {NextPos}, PrevPos: {PrevPos}, " +
+		$"IsEndOfStream: {IsEndOfStream}, Records: {string.Join("\n", Records.Select(x => x.ToString()))}";
 }

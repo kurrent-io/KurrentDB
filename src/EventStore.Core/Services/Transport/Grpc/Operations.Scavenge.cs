@@ -3,11 +3,11 @@
 
 using System;
 using System.Threading.Tasks;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Client.Operations;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -24,7 +24,7 @@ partial class Operations {
 		}
 
 		_publisher.Publish(
-			new ScavengeDatabase(
+			new ClientMessage.ScavengeDatabase(
 				new CallbackEnvelope(OnMessage),
 				Guid.NewGuid(),
 				user,
@@ -54,7 +54,7 @@ partial class Operations {
 			throw RpcExceptions.AccessDenied();
 		}
 
-		_publisher.Publish(new StopDatabaseScavenge(new CallbackEnvelope(OnMessage), Guid.NewGuid(), user, request.Options.ScavengeId));
+		_publisher.Publish(new ClientMessage.StopDatabaseScavenge(new CallbackEnvelope(OnMessage), Guid.NewGuid(), user, request.Options.ScavengeId));
 
 		var (scavengeId, scavengeResult) = await scavengeResultSource.Task;
 
@@ -70,19 +70,19 @@ partial class Operations {
 		Message message,
 		TaskCompletionSource<(string, ScavengeResp.Types.ScavengeResult)> scavengeResultSource) {
 		switch (message) {
-			case ScavengeDatabaseUnauthorizedResponse:
+			case ClientMessage.ScavengeDatabaseUnauthorizedResponse:
 				scavengeResultSource.TrySetException(RpcExceptions.AccessDenied());
 				return;
-			case ScavengeDatabaseNotFoundResponse notFoundResponse:
+			case ClientMessage.ScavengeDatabaseNotFoundResponse notFoundResponse:
 				scavengeResultSource.TrySetException(RpcExceptions.ScavengeNotFound(notFoundResponse.ScavengeId));
 				return;
-			case ScavengeDatabaseStartedResponse startedResponse:
+			case ClientMessage.ScavengeDatabaseStartedResponse startedResponse:
 				scavengeResultSource.TrySetResult((startedResponse.ScavengeId, ScavengeResp.Types.ScavengeResult.Started));
 				return;
-			case ScavengeDatabaseStoppedResponse stoppedResponse:
+			case ClientMessage.ScavengeDatabaseStoppedResponse stoppedResponse:
 				scavengeResultSource.TrySetResult((stoppedResponse.ScavengeId, ScavengeResp.Types.ScavengeResult.Stopped));
 				return;
-			case ScavengeDatabaseInProgressResponse inProgressResponse:
+			case ClientMessage.ScavengeDatabaseInProgressResponse inProgressResponse:
 				scavengeResultSource.TrySetResult((inProgressResponse.ScavengeId, ScavengeResp.Types.ScavengeResult.InProgress));
 				return;
 			default:

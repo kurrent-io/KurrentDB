@@ -21,7 +21,7 @@ internal partial class Redaction {
 		ServerCallContext context) {
 
 		var user = context.GetHttpContext().User;
-		if (!await authorizationProvider.CheckAccessAsync(user, SwitchChunkOperation, context.CancellationToken))
+		if (!await _authorizationProvider.CheckAccessAsync(user, SwitchChunkOperation, context.CancellationToken))
 			throw RpcExceptions.AccessDenied();
 
 		var acquisitionId = Guid.Empty;
@@ -35,7 +35,7 @@ internal partial class Redaction {
 
 	private async Task<Guid> AcquireChunksLock(ServerCallContext context) {
 		var tcsEnvelope = new TcsEnvelope<RedactionMessage.AcquireChunksLockCompleted>();
-		bus.Publish(new RedactionMessage.AcquireChunksLock(tcsEnvelope));
+		_bus.Publish(new RedactionMessage.AcquireChunksLock(tcsEnvelope));
 
 		var completionMsg = await tcsEnvelope.Task;
 		if (completionMsg.Result != AcquireChunksLockResult.Success)
@@ -55,7 +55,7 @@ internal partial class Redaction {
 
 		await foreach(var request in requestStream.ReadAllAsync()) {
 			var tcsEnvelope = new TcsEnvelope<RedactionMessage.SwitchChunkCompleted>();
-			bus.Publish(new RedactionMessage.SwitchChunk(tcsEnvelope, acquisitionId, request.TargetChunkFile, request.NewChunkFile));
+			_bus.Publish(new RedactionMessage.SwitchChunk(tcsEnvelope, acquisitionId, request.TargetChunkFile, request.NewChunkFile));
 
 			var completionMsg = await tcsEnvelope.Task;
 			var result = completionMsg.Result;
@@ -71,7 +71,7 @@ internal partial class Redaction {
 			return;
 
 		var tcsEnvelope = new TcsEnvelope<RedactionMessage.ReleaseChunksLockCompleted>();
-		bus.Publish(new RedactionMessage.ReleaseChunksLock(tcsEnvelope, acquisitionId));
+		_bus.Publish(new RedactionMessage.ReleaseChunksLock(tcsEnvelope, acquisitionId));
 
 		var completionMsg = await tcsEnvelope.Task;
 		var result = completionMsg.Result;
