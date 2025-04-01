@@ -73,9 +73,9 @@ public class TcpApiPluginTests {
 		var httpPipe = new HttpMessagePipe();
 		var httpSendService = new HttpSendService(httpPipe, true, delegate { return (true, ""); });
 		var httpService = new KestrelHttpService(ServiceAccessibility.Public, _components.MainQueue, new TrieUriRouter(),
-			(MultiQueuedHandler)_components.NetworkSendService, false, "localhost",
+			false,
+			"localhost",
 			_port,
-			true,
 			new HttpEndPoint(IPAddress.Loopback, httpPort, false));
 
 		var components = new AuthenticationProviderFactoryComponents {
