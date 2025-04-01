@@ -34,8 +34,8 @@ public class ChunkManagerForExecutor<TStreamId> : IChunkManagerForChunkExecutor<
 		=> await ChunkWriterForExecutor<TStreamId>.CreateAsync(_logger, this, _dbConfig, sourceChunk,
 			_transformManager, token);
 
-	public IChunkReaderForExecutor<TStreamId, ILogRecord> GetChunkReaderFor(long position) {
-		var tfChunk = _manager.GetChunkFor(position);
+	public async ValueTask<IChunkReaderForExecutor<TStreamId, ILogRecord>> GetChunkReaderFor(long position, CancellationToken token) {
+		var tfChunk = await _manager.GetInitializedChunkFor(position, token);
 		return new ChunkReaderForExecutor<TStreamId>(tfChunk);
 	}
 

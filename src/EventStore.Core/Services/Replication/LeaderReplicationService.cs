@@ -354,10 +354,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 		const int maxRetryCount = 10;
 		for (var trial = 0;;) {
 			try {
-				var chunk = _db.Manager.GetChunkFor(logPosition);
-				Debug.Assert(chunk != null, string.Format(
-					"Chunk for LogPosition {0} (0x{0:X}) is null in LeaderReplicationService! Replica: [{1},C:{2},S:{3}]",
-					logPosition, sub.ReplicaEndPoint, sub.ConnectionId, sub.SubscriptionId));
+				var chunk = await _db.Manager.GetInitializedChunkFor(logPosition, token);
 				var rawSend = chunk.ChunkHeader.IsScavenged;
 				var bulkReader = await (rawSend ? chunk.AcquireRawReader(token) : chunk.AcquireDataReader(token));
 				if (rawSend) {

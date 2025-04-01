@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.TransactionLog.Chunks;
 using NUnit.Framework;
@@ -54,7 +55,7 @@ public class raw_chunk_replication<TLogFormat, TStreamId> : LogReplicationWithEx
 		await Replicated();
 
 		VerifyCheckpoints(NumCheckpoints);
-		VerifyDB(NumLogicalChunks);
+		await VerifyDB(NumLogicalChunks, CancellationToken.None);
 	}
 
 	[Test]
@@ -74,7 +75,7 @@ public class raw_chunk_replication<TLogFormat, TStreamId> : LogReplicationWithEx
 		await Replicated();
 
 		VerifyCheckpoints(NumCheckpoints);
-		VerifyDB(NumLogicalChunks);
+		await VerifyDB(NumLogicalChunks, CancellationToken.None);
 	}
 
 	[Test]
@@ -94,7 +95,7 @@ public class raw_chunk_replication<TLogFormat, TStreamId> : LogReplicationWithEx
 		await Replicated();
 
 		VerifyCheckpoints(NumCheckpoints);
-		VerifyDB(NumLogicalChunks);
+		await VerifyDB(NumLogicalChunks, CancellationToken.None);
 	}
 
 	[Test]
@@ -110,7 +111,7 @@ public class raw_chunk_replication<TLogFormat, TStreamId> : LogReplicationWithEx
 		await Replicated();
 
 		VerifyCheckpoints(NumCheckpoints);
-		VerifyDB(NumLogicalChunks);
+		await VerifyDB(NumLogicalChunks, CancellationToken.None);
 	}
 
 	[Test]
@@ -130,7 +131,7 @@ public class raw_chunk_replication<TLogFormat, TStreamId> : LogReplicationWithEx
 		await Replicated();
 
 		VerifyCheckpoints(NumCheckpoints);
-		VerifyDB(NumLogicalChunks);
+		await VerifyDB(NumLogicalChunks, CancellationToken.None);
 	}
 
 	[Test]
@@ -142,6 +143,6 @@ public class raw_chunk_replication<TLogFormat, TStreamId> : LogReplicationWithEx
 		await Replicated();
 
 		VerifyCheckpoints(NumCheckpoints);
-		VerifyDB(NumLogicalChunks);
+		await VerifyDB(NumLogicalChunks, CancellationToken.None);
 	}
 }

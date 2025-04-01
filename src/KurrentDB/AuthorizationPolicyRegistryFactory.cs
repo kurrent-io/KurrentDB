@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EventStore.Auth.StreamPolicyPlugin;
 using EventStore.Common.Exceptions;
 using EventStore.Core;
 using EventStore.Core.Authorization.AuthorizationPolicies;
@@ -32,7 +33,9 @@ public class AuthorizationPolicyRegistryFactory: SubsystemsPlugin {
 		}
 
 		// Load up all policy selectors in the plugins directory
-		var factories = pluginLoader.Load<IPolicySelectorFactory>();
+		var factories = pluginLoader.Load<IPolicySelectorFactory>().ToList();
+		factories.Add(new StreamPolicySelectorFactory());
+
 		_pluginSelectorFactories = factories?
 			.Select(x => {
 				_logger.Information("Loaded Authorization Policy plugin: {plugin}.", x.CommandLineName);

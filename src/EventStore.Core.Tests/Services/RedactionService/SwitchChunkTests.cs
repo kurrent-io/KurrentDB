@@ -32,7 +32,7 @@ public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionService
 		await WriteSingleEvent(StreamId, 8, new string('8', 50), retryOnFail: true, token: token);
 
 		var writerPos = Writer.Position;
-		var chunk = Path.GetFileName(Db.Manager.GetChunkFor(writerPos).LocalFileName);
+		var chunk = Path.GetFileName((await Db.Manager.GetInitializedChunkFor(writerPos, token)).LocalFileName);
 		var chunkNum = Db.Manager.FileSystem.LocalNamingStrategy.GetIndexFor(chunk);
 		Assert.AreEqual(2, chunkNum);
 

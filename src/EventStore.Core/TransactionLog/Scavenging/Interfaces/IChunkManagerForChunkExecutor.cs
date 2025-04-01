@@ -15,7 +15,7 @@ public interface IChunkManagerForChunkExecutor<TStreamId, TRecord> {
 		IChunkReaderForExecutor<TStreamId, TRecord> sourceChunk,
 		CancellationToken token);
 
-	IChunkReaderForExecutor<TStreamId, TRecord> GetChunkReaderFor(long position);
+	ValueTask<IChunkReaderForExecutor<TStreamId, TRecord>> GetChunkReaderFor(long position, CancellationToken token);
 }
 
 public interface IChunkManagerForChunkRemover {

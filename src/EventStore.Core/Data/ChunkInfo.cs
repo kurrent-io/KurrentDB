@@ -4,7 +4,7 @@
 namespace EventStore.Core.Data;
 
 public readonly record struct ChunkInfo {
+	public required int ChunkStartNumber { get; init; }
 	public required int ChunkEndNumber { get; init; }
-	public required long ChunkEndPosition { get; init; }
 	public required bool IsRemote { get; init; }
 }

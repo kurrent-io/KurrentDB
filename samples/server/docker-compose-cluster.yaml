@@ -25,7 +25,7 @@ services:
       - volumes-provisioner
 
   node1.kurrentdb: &template
-    image: docker.eventstore.com/eventstore-staging-ee/kurrentdb:latest
+    image: docker.kurrent.io/kurrent-latest/kurrentdb:latest
     container_name: node1.kurrentdb
     env_file:
       - vars.env

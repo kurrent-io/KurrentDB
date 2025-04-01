@@ -50,7 +50,7 @@ public class TFChunkReader : ITransactionFileReader {
 			if (pos >= writerChk)
 				return SeqReadResult.Failure;
 
-			var chunk = _db.Manager.GetChunkFor(pos);
+			var chunk = await _db.Manager.GetInitializedChunkFor(pos, token);
 			RecordReadResult result;
 			try {
 				result = await chunk.TryReadClosestForward(chunk.ChunkHeader.GetLocalLogPosition(pos), token);
@@ -96,12 +96,12 @@ public class TFChunkReader : ITransactionFileReader {
 
 			bool readLast = false;
 
-			if (!_db.Manager.TryGetChunkFor(pos, out var chunk) ||
+			if (await _db.Manager.TryGetInitializedChunkFor(pos, token) is not { } chunk ||
 			    pos == chunk.ChunkHeader.ChunkStartPosition) {
 				// we are exactly at the boundary of physical chunks
 				// so we switch to previous chunk and request TryReadLast
 				readLast = true;
-				chunk = _db.Manager.GetChunkFor(pos - 1);
+				chunk = await _db.Manager.GetInitializedChunkFor(pos - 1, token);
 			}
 
 			RecordReadResult result;
@@ -147,7 +147,7 @@ public class TFChunkReader : ITransactionFileReader {
 			return RecordReadResult.Failure;
 		}
 
-		var chunk = _db.Manager.GetChunkFor(position);
+		var chunk = await _db.Manager.GetInitializedChunkFor(position, token);
 		try {
 			CountRead(chunk.IsCached);
 			return await chunk.TryReadAt(chunk.ChunkHeader.GetLocalLogPosition(position), couldBeScavenged, token);
@@ -167,7 +167,7 @@ public class TFChunkReader : ITransactionFileReader {
 		if (position >= writerChk)
 			return false;
 
-		var chunk = _db.Manager.GetChunkFor(position);
+		var chunk = await _db.Manager.GetInitializedChunkFor(position, token);
 		try {
 			CountRead(chunk.IsCached);
 			return await chunk.ExistsAt(chunk.ChunkHeader.GetLocalLogPosition(position), token);

@@ -220,7 +220,7 @@ public class ReplicaService :
 		var chunkId = Guid.Empty;
 
 		// the chunk may not exist if it's a new database or if we're at a chunk boundary
-		if (_db.Manager.TryGetChunkFor(logPosition, out var chunk))
+		if (await _db.Manager.TryGetInitializedChunkFor(logPosition, token) is { } chunk)
 			chunkId = chunk.ChunkHeader.ChunkId;
 
 		SendTcpMessage(_connection,

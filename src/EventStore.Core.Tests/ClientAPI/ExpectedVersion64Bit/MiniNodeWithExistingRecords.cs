@@ -77,7 +77,7 @@ public abstract class MiniNodeWithExistingRecords<TLogFormat, TStreamId> : Speci
 
 		// create DB
 		Writer = new TFChunkWriter(Db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 
 		var pm = _logFormatFactory.CreatePartitionManager(
 			reader: new TFChunkReader(Db, WriterCheckpoint),

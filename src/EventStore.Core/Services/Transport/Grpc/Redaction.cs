@@ -6,7 +6,7 @@ using EventStore.Plugins.Authorization;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
-internal partial class Redaction : EventStore.Client.Redaction.Redaction.RedactionBase {
+internal partial class Redaction : Kurrent.Client.Redaction.Redaction.RedactionBase {
 	private readonly IPublisher _bus;
 	private readonly IAuthorizationProvider _authorizationProvider;
 

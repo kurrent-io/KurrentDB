@@ -47,7 +47,7 @@ public class ParallelLoopTests {
 		var completedItems = new List<int>();
 
 		await ParallelLoop.RunWithTrailingCheckpointAsync(
-			source: source,
+			source: source.ToAsyncEnumerable(),
 			degreeOfParallelism: degreeOfParallelism,
 			getCheckpointInclusive: x => x,
 			getCheckpointExclusive: x => {
@@ -141,7 +141,7 @@ public class ParallelLoopTests {
 	public async Task exception_during_processing_is_propagated_async() {
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => {
 			await ParallelLoop.RunWithTrailingCheckpointAsync(
-				source: new int[] { 10 },
+				source: new[] { 10 }.ToAsyncEnumerable(),
 				degreeOfParallelism: 2,
 				getCheckpointInclusive: x => x,
 				getCheckpointExclusive: x => x,
@@ -157,7 +157,7 @@ public class ParallelLoopTests {
 	public async Task exception_during_emit_is_propagated_async() {
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => {
 			await ParallelLoop.RunWithTrailingCheckpointAsync(
-				source: new int[] { 10 },
+				source: new[] { 10 }.ToAsyncEnumerable(),
 				degreeOfParallelism: 2,
 				getCheckpointInclusive: x => x,
 				getCheckpointExclusive: x => x,

@@ -102,7 +102,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		await Db.Open();
 		// create db
 		Writer = new TFChunkWriter(Db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 		await WriteTestScenario(CancellationToken.None);
 		await Writer.DisposeAsync();
 		Writer = null;
@@ -156,8 +156,10 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		// scavenge must run after readIndex is built
 		if (_scavenge) {
 			if (_completeLastChunkOnScavenge)
-				await Db.Manager.GetChunk(Db.Manager.ChunksCount - 1).Complete(CancellationToken.None);
-			_scavenger = new TFChunkScavenger<TStreamId>(Serilog.Log.Logger, Db, new FakeTFScavengerLog(), TableIndex, ReadIndex, _logFormat.Metastreams);
+				await (await Db.Manager.GetInitializedChunk(Db.Manager.ChunksCount - 1, CancellationToken.None))
+					.Complete(CancellationToken.None);
+			_scavenger = new TFChunkScavenger<TStreamId>(Serilog.Log.Logger, Db, new FakeTFScavengerLog(), TableIndex,
+				ReadIndex, _logFormat.Metastreams);
 			await _scavenger.Scavenge(alwaysKeepScavenged: true, mergeChunks: _mergeChunks,
 				scavengeIndex: _scavengeIndex);
 		}

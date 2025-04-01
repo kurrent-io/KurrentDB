@@ -45,7 +45,7 @@ public abstract class with_storage_chaser_service<TLogFormat, TStreamId> : Speci
 		Chaser = new TFChunkChaser(Db, _writerChk, _chaserChk);
 		Chaser.Open();
 		Writer = new TFChunkWriter(Db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 
 		IndexCommitter = new FakeIndexCommitterService<TStreamId>();
 		EpochManager = new FakeEpochManager();

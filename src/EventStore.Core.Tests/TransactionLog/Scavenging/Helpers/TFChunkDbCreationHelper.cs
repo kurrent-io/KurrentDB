@@ -128,7 +128,9 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 		// convert the Recs into LogRecords and write them to the database.
 		// for each chunk i
 		for (int i = 0; i < _chunkRecs.Count; ++i) {
-			var chunk = i == 0 ? _db.Manager.GetChunk(0) : await _db.Manager.AddNewChunk(token);
+			var chunk = await (i is 0
+				? _db.Manager.GetInitializedChunk(0, token)
+				: _db.Manager.AddNewChunk(token));
 			logPos = i * (long)_db.Config.ChunkSize;
 
 			var completedChunk = false;

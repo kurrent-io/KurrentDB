@@ -160,7 +160,9 @@ class FakeWriter: ITransactionFileWriter {
 	public bool IsFlushed { get; private set; }
 	public List<ILogRecord> WrittenRecords { get; }
 
-	public void Open() {}
+	public ValueTask Open(CancellationToken token)
+		=> token.IsCancellationRequested ? ValueTask.FromCanceled(token) : ValueTask.CompletedTask;
+
 	public bool CanWrite(int numBytes) => true;
 
 	public ValueTask<(bool, long)> Write(ILogRecord record, CancellationToken token) {

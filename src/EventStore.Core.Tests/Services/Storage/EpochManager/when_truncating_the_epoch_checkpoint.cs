@@ -52,7 +52,7 @@ public abstract class
 		_db = new TFChunkDb(TFChunkHelper.CreateDbConfig(PathName, 0));
 		await _db.Open();
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 		_epochManager = new EpochManager<TStreamId>(_mainBus,
 			CachedEpochCount,
 			_db.Config.EpochCheckpoint,

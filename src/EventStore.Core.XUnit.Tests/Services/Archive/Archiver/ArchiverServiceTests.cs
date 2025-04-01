@@ -78,7 +78,7 @@ public sealed class ArchiverServiceTests : DirectoryPerTest<ArchiverServiceTests
 
 			// triggers chunk switch
 			storage.StoreChunkEvent.Reset();
-			var chunk = result.Db.Manager.GetChunk(0);
+			var chunk = await result.Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 			archiver.Handle(new SystemMessage.ChunkSwitched(chunk.ChunkInfo));
 			Assert.True(await storage.StoreChunkEvent.WaitAsync(timeout));
 		}
@@ -105,10 +105,10 @@ public sealed class ArchiverServiceTests : DirectoryPerTest<ArchiverServiceTests
 			archiver.Handle(new SystemMessage.SystemStart()); // start archiving background task
 
 			// archive chunk #0
-			archiver.Handle(new ReplicationTrackingMessage.ReplicatedTo(result.Db.Manager.GetChunk(0).ChunkHeader.ChunkEndPosition));
+			archiver.Handle(new ReplicationTrackingMessage.ReplicatedTo((await result.Db.Manager.GetInitializedChunk(0, CancellationToken.None)).ChunkHeader.ChunkEndPosition));
 
 			// switch chunk #1
-			archiver.Handle(new SystemMessage.ChunkSwitched(result.Db.Manager.GetChunk(1).ChunkInfo));
+			archiver.Handle(new SystemMessage.ChunkSwitched((await result.Db.Manager.GetInitializedChunk(1, CancellationToken.None)).ChunkInfo));
 
 			// ensure that just one chunk is archived
 			var timeout = TimeSpan.FromSeconds(20);
@@ -146,7 +146,7 @@ public sealed class ArchiverServiceTests : DirectoryPerTest<ArchiverServiceTests
 
 			// triggers chunk switch
 			storage.StoreChunkEvent.Reset();
-			var chunk = result.Db.Manager.GetChunk(0);
+			var chunk = await result.Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 			archiver.Handle(new SystemMessage.ChunkSwitched(chunk.ChunkInfo with { IsRemote = true }));
 
 			await storage.StoreChunkEvent.WaitAsync(timeout: TimeSpan.FromSeconds(1));

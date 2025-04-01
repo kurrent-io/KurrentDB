@@ -39,7 +39,7 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 		_db = new TFChunkDb(TFChunkHelper.CreateSizedDbConfig(PathName, 0, chunkSize: 16 * 1024));
 		await _db.Open();
 
-		var chunk = _db.Manager.GetChunkFor(0);
+		var chunk = await _db.Manager.GetInitializedChunkFor(0, CancellationToken.None);
 		var streamName = "es-to-scavenge";
 		var pos = 0L;
 		_logFormat.StreamNameIndex.GetOrReserve(_logFormat.RecordFactory, streamName, 0, out var streamId, out var streamRecord);
@@ -91,7 +91,7 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 			_logFormat.Metastreams);
 		await scavenger.Scavenge(alwaysKeepScavenged: true, mergeChunks: false);
 
-		_scavengedChunk = _db.Manager.GetChunk(0);
+		_scavengedChunk = await _db.Manager.GetInitializedChunk(0, CancellationToken.None);
 	}
 
 	public override async Task TestFixtureTearDown() {

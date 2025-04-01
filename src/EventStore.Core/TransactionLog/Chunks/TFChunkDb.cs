@@ -124,6 +124,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 							tracker: _tracker,
 							reduceFileCachePressure: Config.ReduceFileCachePressure,
 							getTransformFactory: TransformManager,
+							footer: footer,
 							token: token);
 					else {
 						chunk = await TFChunk.TFChunk.FromOngoingFile(
@@ -150,6 +151,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 						reduceFileCachePressure: Config.ReduceFileCachePressure,
 						tracker: _tracker,
 						getTransformFactory: TransformManager,
+						startNumber: chunkInfo.ChunkStartNumber,
 						token: token);
 				}
 
@@ -192,6 +194,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 					reduceFileCachePressure: Config.ReduceFileCachePressure,
 					tracker: _tracker,
 					getTransformFactory: TransformManager,
+					header: chunkHeader,
 					token: token);
 
 				lastChunkNum = lastChunk.ChunkHeader.ChunkEndNumber + 1;
@@ -244,11 +247,11 @@ public sealed class TFChunkDb : IAsyncDisposable {
 		}
 
 		if (verifyHash && lastChunkNum > 0) {
-			var preLastChunk = Manager.GetChunk(lastChunkNum - 1);
+			var preLastChunk = await Manager.GetInitializedChunk(lastChunkNum - 1, token);
 			var lastBgChunkNum = preLastChunk.ChunkHeader.ChunkStartNumber;
 			ThreadPool.UnsafeQueueUserWorkItem(async token => {
 				for (int chunkNum = lastBgChunkNum; chunkNum >= 0;) {
-					var chunk = Manager.GetChunk(chunkNum);
+					var chunk = Manager.UnsafeGetChunk(chunkNum);
 					try {
 						await chunk.VerifyFileHash(token);
 					} catch (FileBeingDeletedException exc) {
@@ -266,7 +269,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 						return;
 					}
 
-					chunkNum = chunk.ChunkHeader.ChunkStartNumber - 1;
+					chunkNum = chunk.ChunkInfo.ChunkStartNumber - 1;
 				}
 			}, token, preferLocal: false);
 		}

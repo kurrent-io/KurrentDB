@@ -131,7 +131,7 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 		await _db.Open();
 		// create db
 		Writer = new TFChunkWriter(_db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 		await SetupDB(CancellationToken.None);
 		await Writer.DisposeAsync();
 		Writer = null;
@@ -185,7 +185,7 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 		_tableIndex.Close(false);
 
 		Writer = new TFChunkWriter(_db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 		await Given(CancellationToken.None);
 		await Writer.DisposeAsync();
 		Writer = null;

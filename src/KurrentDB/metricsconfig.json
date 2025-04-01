@@ -4,7 +4,10 @@
 
 	"Meters": [
 		"KurrentDB.Core",
-		"KurrentDB.Projections.Core"
+		"KurrentDB.Projections.Core",
+		"Kurrent",
+		"Kurrent.Connectors",
+		"Kurrent.Connectors.Sinks"
 	],
 
 	"Statuses": {

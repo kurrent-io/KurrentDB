@@ -83,7 +83,7 @@ Telemetry
 ---------
 KurrentDB collects usage data in order to improve your experience. The data is anonymous and collected by Kurrent, Inc.
 You can opt out of sending telemetry by setting the KURRENTDB_TELEMETRY_OPTOUT environment variable to true.
-For more information visit https://eventstore.com/telemetry
+For more information visit https://kurrent.io/telemetry
 ```
 
 If telemetry collection is disabled (see below), the disclosure is still shown with a different text:
@@ -93,7 +93,7 @@ Telemetry
 ---------
 KurrentDB collects usage data in order to improve your experience. The data is anonymous and collected by Kurrent, Inc.
 You have opted out of sending telemetry by setting the KURRENTDB_TELEMETRY_OPTOUT environment variable to true.
-For more information visit https://eventstore.com/telemetry
+For more information visit https://kurrent.io/telemetry
 ```
 
 ## Reporting frequency

@@ -37,8 +37,8 @@ public class TracingChunkManagerForChunkExecutor<TStreamId, TRecord> :
 			_tracer);
 	}
 
-	public IChunkReaderForExecutor<TStreamId, TRecord> GetChunkReaderFor(long position) {
-		var reader = _wrapped.GetChunkReaderFor(position);
+	public async ValueTask<IChunkReaderForExecutor<TStreamId, TRecord>> GetChunkReaderFor(long position, CancellationToken token) {
+		var reader = await _wrapped.GetChunkReaderFor(position, token);
 		var isRemote = _remoteChunks.Contains(reader.ChunkStartNumber);
 		return new TrackingChunkReaderForExecutor<TStreamId, TRecord>(reader, isRemote, _tracer);
 	}

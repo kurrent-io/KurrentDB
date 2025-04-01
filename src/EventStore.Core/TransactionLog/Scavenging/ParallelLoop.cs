@@ -29,7 +29,7 @@ public static class ParallelLoop {
 	//   - getCheckpointExclusive returns the checkpoint that can be emitted when all items up to
 	//     but excluding this one have been completed.
 	public static async ValueTask RunWithTrailingCheckpointAsync<T>(
-		IEnumerable<T> source,
+		IAsyncEnumerable<T> source,
 		int degreeOfParallelism,
 		Func<T, int> getCheckpointInclusive,
 		Func<T, int?> getCheckpointExclusive,
@@ -88,7 +88,7 @@ public static class ParallelLoop {
 
 		// process the source
 		var slotsInUse = 0;
-		foreach (var item in source) {
+		await foreach (var item in source.WithCancellation(token)) {
 			endCheckpoint = getCheckpointInclusive(item);
 			if (slotsInUse < tasksInProgress.Length) {
 				PrepareProcessingItem(slotsInUse, item);

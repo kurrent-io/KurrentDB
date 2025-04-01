@@ -71,7 +71,7 @@ public class RedactionService<TStreamId> :
 		for (int i = 0; i < result.EventInfos.Length; i++) {
 			var eventInfo = result.EventInfos[i];
 			var logPos = eventInfo.LogPosition;
-			var chunk = _db.Manager.GetChunkFor(logPos);
+			var chunk = await _db.Manager.GetInitializedChunkFor(logPos, token);
 			var localPosition = chunk.ChunkHeader.GetLocalLogPosition(logPos);
 			var chunkEventOffset = await chunk.GetActualRawPosition(localPosition, token);
 
@@ -184,7 +184,7 @@ public class RedactionService<TStreamId> :
 
 		TFChunk targetChunk;
 		try {
-			targetChunk = _db.Manager.GetChunk(targetChunkNumber);
+			targetChunk = await _db.Manager.GetInitializedChunk(targetChunkNumber, token);
 		} catch (ArgumentOutOfRangeException) {
 			return new(SwitchChunkResult.TargetChunkExcessive);
 		}
@@ -237,6 +237,8 @@ public class RedactionService<TStreamId> :
 				reduceFileCachePressure: true,
 				tracker: new TFChunkTracker.NoOp(),
 				getTransformFactory: _db.TransformManager,
+				header: newChunkHeader,
+				footer: newChunkFooter,
 				token: token);
 		} catch (HashValidationException) {
 			return new(SwitchChunkResult.NewChunkHashInvalid);

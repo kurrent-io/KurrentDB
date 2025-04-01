@@ -30,7 +30,7 @@ public class when_writing_commit_record_to_file : SpecificationWithDirectoryPerT
 			1024));
 		await _db.Open();
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 		_record = new CommitLogRecord(logPosition: 0,
 			correlationId: _eventId,
 			transactionPosition: 4321,

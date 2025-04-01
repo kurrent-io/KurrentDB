@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.TransactionLog.Chunks;
 using NUnit.Framework;
@@ -39,6 +40,6 @@ public class data_chunk_replication_with_existing_db<TLogFormat, TStreamId> : Lo
 		await Replicated();
 
 		VerifyCheckpoints(NumCheckpoints);
-		VerifyDB(NumLogicalChunks);
+		await VerifyDB(NumLogicalChunks, CancellationToken.None);
 	}
 }

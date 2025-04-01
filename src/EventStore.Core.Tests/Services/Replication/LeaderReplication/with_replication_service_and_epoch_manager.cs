@@ -65,7 +65,7 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 		await Db.Open();
 
 		Writer = new TFChunkWriter(Db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 
 		EpochManager = new EpochManager<TStreamId>(
 			Publisher,

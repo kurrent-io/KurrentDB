@@ -1,6 +1,6 @@
 syntax = "proto3";
-package event_store.client.redaction;
-option java_package = "com.eventstore.dbclient.proto.redaction";
+package kurrent.client.redaction;
+option java_package = "com.kurrent.dbclient.proto.redaction";
 
 import "shared.proto";
 

@@ -8,7 +8,8 @@ namespace EventStore.Core.TransactionLog.Chunks;
 public interface IChunkRegistry<out TChunk>
 	where TChunk : class, IChunkBlob {
 
-	TChunk TryGetChunkFor(long logPosition);
+	// unsafe means that the returned chunk might not be initialized
+	TChunk UnsafeTryGetChunkFor(long logPosition);
 
-	TChunk GetChunk(int chunkNum);
+	TChunk UnsafeGetChunk(int chunkNum);
 }

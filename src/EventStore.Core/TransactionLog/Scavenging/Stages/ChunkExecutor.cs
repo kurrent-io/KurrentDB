@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Exceptions;
@@ -83,7 +84,7 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 		var startFromChunk = checkpoint?.DoneLogicalChunkNumber + 1 ?? 0;
 		var scavengePoint = checkpoint.ScavengePoint;
 
-		var physicalChunks = GetAllPhysicalChunks(startFromChunk, scavengePoint);
+		var physicalChunks = GetAllPhysicalChunks(startFromChunk, scavengePoint, cancellationToken);
 
 		var borrowedStates = new IScavengeStateForChunkExecutorWorker<TStreamId>[_threads];
 		var stopwatches = new Stopwatch[_threads];
@@ -202,15 +203,16 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 		}
 	}
 
-	private IEnumerable<IChunkReaderForExecutor<TStreamId, TRecord>> GetAllPhysicalChunks(
+	private async IAsyncEnumerable<IChunkReaderForExecutor<TStreamId, TRecord>> GetAllPhysicalChunks(
 		int startFromChunk,
-		ScavengePoint scavengePoint) {
+		ScavengePoint scavengePoint,
+		[EnumeratorCancellation]CancellationToken token) {
 
 		var scavengePos = _chunkSize * startFromChunk;
 		var upTo = scavengePoint.Position;
 		while (scavengePos < upTo) {
 			// in bounds because we stop before the scavenge point
-			var physicalChunk = _chunkManager.GetChunkReaderFor(scavengePos);
+			var physicalChunk = await _chunkManager.GetChunkReaderFor(scavengePos, token);
 
 			if (!physicalChunk.IsReadOnly)
 				throw new Exception(

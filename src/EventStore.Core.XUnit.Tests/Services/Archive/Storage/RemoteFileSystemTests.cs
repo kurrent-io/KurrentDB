@@ -53,6 +53,7 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 		var actualRecords = new List<ILogRecord>(recordsCount);
 		using var remoteChunk = await TFChunk.FromCompletedFile(
 			fs, remoteChunkName, verifyHash: false,
+			reduceFileCachePressure: false,
 			unbufferedRead: false, tracker: new TFChunkTracker.NoOp(),
 			getTransformFactory: DbTransformManager.Default);
 
@@ -99,6 +100,7 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 		var fs = new FileSystemWithArchive(chunkSize: 4096, codec, new ChunkLocalFileSystem(DbPath), archive);
 		using var remoteChunk = await TFChunk.FromCompletedFile(
 			fs, remoteChunkName, verifyHash: false,
+			reduceFileCachePressure: false,
 			unbufferedRead: false, tracker: new TFChunkTracker.NoOp(),
 			getTransformFactory: DbTransformManager.Default);
 

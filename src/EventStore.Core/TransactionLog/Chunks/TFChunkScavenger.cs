@@ -91,10 +91,10 @@ public class TFChunkScavenger<TStreamId> : TFChunkScavenger {
 
 	public string ScavengeId => _scavengerLog.ScavengeId;
 
-	private static IEnumerable<TFChunk.TFChunk> GetAllChunks(TFChunkDb db, int startFromChunk) {
+	private static async IAsyncEnumerable<TFChunk.TFChunk> GetAllChunks(TFChunkDb db, int startFromChunk, [EnumeratorCancellation] CancellationToken token) {
 		long scavengePos = db.Config.ChunkSize * (long)startFromChunk;
 		while (scavengePos < db.Config.ChaserCheckpoint.Read()) {
-			var chunk = db.Manager.GetChunkFor(scavengePos);
+			var chunk = await db.Manager.GetInitializedChunkFor(scavengePos, token);
 			if (!chunk.IsReadOnly) {
 				yield break;
 			}
@@ -154,7 +154,7 @@ public class TFChunkScavenger<TStreamId> : TFChunkScavenger {
 			_db.Manager.ChunksCount, alwaysKeepScavenged, mergeChunks);
 
 		// Initial scavenge pass
-		var chunksToScavenge = GetAllChunks(_db, startFromChunk);
+		var chunksToScavenge = GetAllChunks(_db, startFromChunk, ct);
 
 		using (var scavengeCacheObjectPool = CreateThreadLocalScavengeCachePool(_threads)) {
 			await Parallel.ForEachAsync(chunksToScavenge,
@@ -372,7 +372,7 @@ public class TFChunkScavenger<TStreamId> : TFChunkScavenger {
 
 			var chunksToMerge = new List<TFChunk.TFChunk>();
 			long totalDataSize = 0;
-			foreach (var chunk in GetAllChunks(db, 0)) {
+			await foreach (var chunk in GetAllChunks(db, 0, ct)) {
 				ct.ThrowIfCancellationRequested();
 
 				if (totalDataSize + chunk.PhysicalDataSize > maxChunkDataSize) {

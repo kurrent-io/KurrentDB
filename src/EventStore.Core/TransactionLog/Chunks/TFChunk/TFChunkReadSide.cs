@@ -33,7 +33,7 @@ public partial class TFChunk {
 
 	private class TFChunkReadSideUnscavenged : TFChunkReadSide, IChunkReadSide {
 		public TFChunkReadSideUnscavenged(TFChunk chunk, ITransactionFileTracker tracker) : base(chunk, tracker) {
-			if (chunk.ChunkHeader.IsScavenged)
+			if (chunk._chunkHeader.IsScavenged)
 				throw new ArgumentException("Scavenged TFChunk passed into unscavenged chunk read side.");
 		}
 
@@ -133,8 +133,8 @@ public partial class TFChunk {
 
 		public TFChunkReadSideScavenged(TFChunk chunk, ITransactionFileTracker tracker)
 			: base(chunk, tracker) {
-			if (!chunk.ChunkHeader.IsScavenged)
-				throw new ArgumentException(string.Format("Chunk provided is not scavenged: {0}", chunk));
+			if (!chunk._chunkHeader.IsScavenged)
+				throw new ArgumentException($"Chunk provided is not scavenged: {chunk}");
 		}
 
 		private async ValueTask<Midpoint[]> GetOrCreateMidPoints(ReaderWorkItem workItem, CancellationToken token) {

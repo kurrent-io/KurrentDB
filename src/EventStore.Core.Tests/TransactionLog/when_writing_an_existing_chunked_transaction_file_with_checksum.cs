@@ -41,7 +41,7 @@ public class when_writing_an_existing_chunked_transaction_file_with_checksum<TLo
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 
 		var tf = new TFChunkWriter(db);
-		tf.Open();
+		await tf.Open(CancellationToken.None);
 		var record = LogRecord.Prepare(
 			factory: recordFactory,
 			logPosition: _checkpoint.Read(),

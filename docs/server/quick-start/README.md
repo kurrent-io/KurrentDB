@@ -13,10 +13,10 @@ Welcome to the KurrentDB documentation.
 
 KurrentDB is a database that's engineered for modern software applications and event-driven architectures. Its event-native design simplifies data modeling and preserves data integrity while the integrated streaming engine solves distributed messaging challenges and ensures data consistency.
 
-KurrentDB is licensed under [Event Store License v2 (ESLv2)](https://github.com/EventStore/EventStore/blob/4cab8ca81a63f0a8f708d5564ea459fe5a7131de/LICENSE.md), meaning that anyone can access and use it, but enterprise features are only enabled with a valid [license key](./installation.md#license-keys).
+KurrentDB is licensed under [Kurrent License v1 (KLv1)](https://github.com/EventStore/EventStore/blob/master/LICENSE.md), meaning that anyone can access and use it, but enterprise features are only enabled with a valid [license key](./installation.md#license-keys).
 
 ::: note
-Although the source code for KurrentDB is available to view, the [ESLv2 license](https://github.com/EventStore/EventStore/blob/4cab8ca81a63f0a8f708d5564ea459fe5a7131de/LICENSE.md) is not an OSI-approved Open Source License.
+Although the source code for KurrentDB is available to view, the [KLv1 license](https://github.com/EventStore/EventStore/blob/master/LICENSE.md) is not an OSI-approved Open Source License.
 :::
 
 ## What's new
@@ -35,7 +35,7 @@ Users of KurrentDB can use the [community forum](https://www.kurrent.io/communit
 
 ### Enterprise customers
 
-Customers with a paid subscription can open tickets using the [support portal](https://eventstore.freshdesk.com). For additional information on supported versions, users can access KurrentDB's [release and support schedule](https://www.kurrent.io/eventstoredb-long-term-support-and-release-schedule).
+Customers with a paid subscription can open tickets using the [support portal](https://eventstore.freshdesk.com). For additional information on supported versions, users can access KurrentDB's [release and support schedule](../release-schedule/).
 
 ### Issues
 

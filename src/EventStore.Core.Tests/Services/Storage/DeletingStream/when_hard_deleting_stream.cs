@@ -25,7 +25,7 @@ public class when_hard_deleting_stream<TLogFormat, TStreamId> : ReadIndexTestSce
 
 	[Test]
 	public async Task should_change_expected_version_to_deleted_event_number_when_reading() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
 		while (result.Success) {

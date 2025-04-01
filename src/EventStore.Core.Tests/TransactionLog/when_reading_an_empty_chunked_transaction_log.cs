@@ -37,7 +37,7 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 		await db.Open();
 
 		var writer = new TFChunkWriter(db);
-		writer.Open();
+		await writer.Open(CancellationToken.None);
 
 		var reader = new TFChunkReader(db, writerchk, 0);
 

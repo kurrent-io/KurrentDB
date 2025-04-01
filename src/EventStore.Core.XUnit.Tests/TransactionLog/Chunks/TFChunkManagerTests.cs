@@ -66,9 +66,10 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 		return newChunk;
 	}
 
-	IEnumerable<string> ActualChunks => Enumerable
+	IAsyncEnumerable<string> ActualChunks => Enumerable
 		.Range(0, _sut.ChunksCount)
-		.Select(chunkNum => _sut.GetChunk(chunkNum).ChunkLocator);
+		.ToAsyncEnumerable()
+		.SelectAwaitWithCancellation(async (chunkNum, ct) => (await _sut.GetInitializedChunk(chunkNum, ct)).ChunkLocator);
 
 	[Theory]
 	[InlineData(1, 4, "too big")]
@@ -95,7 +96,7 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 		};
 
 		Assert.False(switched);
-		Assert.Equal(expectedChunks.Select(chunk => chunk.ChunkLocator), ActualChunks);
+		Assert.Equal(expectedChunks.ToAsyncEnumerable().Select(chunk => chunk.ChunkLocator), ActualChunks);
 		Assert.Empty(_onSwitched);
 		_ = explanation;
 	}
@@ -278,5 +279,26 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 		Assert.True(switched);
 		Assert.Equal(expectedChunks, ActualChunks);
 		Assert.Equal(5, _onSwitched.Count);
+	}
+
+	[Fact]
+	public async Task ensure_lazy_chunk_initialized() {
+		const int chunkNumber = 0;
+		var expectedChunk = await FromCompletedFile(
+			_sut.FileSystem,
+			_locatorCodec.EncodeRemote(chunkNumber),
+			verifyHash: false,
+			unbufferedRead: false,
+			new TFChunkTracker.NoOp(),
+			DbTransformManager.Default,
+			reduceFileCachePressure: false,
+			chunkNumber);
+
+		await _sut.AddChunk(expectedChunk, CancellationToken.None);
+		Assert.False(expectedChunk.Initialized);
+
+		var actualChunk = await _sut.GetInitializedChunk(chunkNumber, CancellationToken.None);
+		Assert.Same(expectedChunk, actualChunk);
+		Assert.True(actualChunk.Initialized);
 	}
 }

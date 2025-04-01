@@ -33,7 +33,7 @@ public class when_sequentially_reading_db_with_one_chunk_ending_with_prepare<TLo
 			TFChunkHelper.CreateSizedDbConfig(PathName, 0, chunkSize: 4096));
 		await _db.Open();
 
-		var chunk = _db.Manager.GetChunk(0);
+		var chunk = await _db.Manager.GetInitializedChunk(0, CancellationToken.None);
 
 		_records = new ILogRecord[RecordsCount];
 		_results = new RecordWriteResult[RecordsCount];

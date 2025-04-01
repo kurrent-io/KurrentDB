@@ -45,7 +45,6 @@
 		<ProjectReference Include="..\EventStore.Licensing\EventStore.Licensing.csproj" />
 		<ProjectReference Include="..\EventStore.LogV3\EventStore.LogV3.csproj" />
 		<ProjectReference Include="..\EventStore.Native\EventStore.Native.csproj" />
-		<ProjectReference Include="..\EventStore.OtlpExporterPlugin\EventStore.OtlpExporterPlugin.csproj" />
 		<ProjectReference Include="..\EventStore.Transport.Http\EventStore.Transport.Http.csproj" />
 		<ProjectReference Include="..\EventStore.Transport.Tcp\EventStore.Transport.Tcp.csproj" />
 		<ProjectReference Include="..\EventStore.NETCore.Compatibility\EventStore.NETCore.Compatibility.csproj" />
@@ -94,5 +93,28 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="Services\Transport\Tcp\protos\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Update="Services\Transport\Grpc\Cluster.*.cs">
+	    <DependentUpon>Cluster.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Gossip.*.cs">
+	    <DependentUpon>Gossip.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Operations.*.cs">
+	    <DependentUpon>Operations.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\PersistentSubscriptions.*.cs">
+	    <DependentUpon>PersistentSubscriptions.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Redaction.*.cs">
+	    <DependentUpon>Redaction.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Streams.*.cs">
+	    <DependentUpon>Streams.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Users.*.cs">
+	    <DependentUpon>Users.cs</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 </Project>

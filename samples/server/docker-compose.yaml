@@ -1,6 +1,6 @@
 services:
   kurrentdb.db:
-    image: docker.eventstore.com/eventstore-staging-ee/kurrentdb:latest
+    image: docker.kurrent.io/kurrent-latest/kurrentdb:latest
     environment:
       - KURRENTDB_CLUSTER_SIZE=1
       - KURRENTDB_RUN_PROJECTIONS=All

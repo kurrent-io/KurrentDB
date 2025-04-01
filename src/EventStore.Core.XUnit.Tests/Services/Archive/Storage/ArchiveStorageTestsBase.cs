@@ -70,6 +70,9 @@ public abstract class ArchiveStorageTestsBase<T> : DirectoryPerTest<T> {
 
 		public string ChunkLocator => Name;
 
+		ValueTask IChunkBlob.EnsureInitialized(CancellationToken token)
+			=> token.IsCancellationRequested ? ValueTask.FromCanceled(token) : ValueTask.CompletedTask;
+
 		public ValueTask<IChunkRawReader> AcquireRawReader(CancellationToken token)
 			=> token.IsCancellationRequested
 				? ValueTask.FromCanceled<IChunkRawReader>(token)

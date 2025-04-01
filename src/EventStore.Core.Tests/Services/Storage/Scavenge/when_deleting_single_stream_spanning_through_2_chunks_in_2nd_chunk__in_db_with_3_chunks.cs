@@ -101,7 +101,7 @@ public class
 	public async Task last_physical_record_from_scavenged_stream_should_remain() {
 		// cannot use readIndex here as it doesn't return deleteTombstone
 
-		var chunk = Db.Manager.GetChunk(1);
+		var chunk = await Db.Manager.GetInitializedChunk(1, CancellationToken.None);
 		var chunkPos = (int)(_event7.LogPosition % Db.Config.ChunkSize);
 		var res = await chunk.TryReadAt(chunkPos, couldBeScavenged: false, CancellationToken.None);
 

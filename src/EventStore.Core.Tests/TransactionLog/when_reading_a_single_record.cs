@@ -29,7 +29,7 @@ public class when_reading_a_single_record<TLogFormat, TStreamId> : Specification
 		_db = new TFChunkDb(TFChunkHelper.CreateSizedDbConfig(PathName, 0, chunkSize: 4096));
 		await _db.Open();
 
-		var chunk = _db.Manager.GetChunk(0);
+		var chunk = await _db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		_records = new ILogRecord[RecordsCount];
 		_results = new RecordWriteResult[RecordsCount];
 

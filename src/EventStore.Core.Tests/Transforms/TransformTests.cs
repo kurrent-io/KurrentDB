@@ -66,7 +66,7 @@ public class TransformTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPe
 		var completedChunks = new List<TFChunk>();
 		for (var i = 0 ; ; i++) {
 			try {
-				var chunk = node.Db.Manager.GetChunk(i);
+				var chunk = await node.Db.Manager.GetInitializedChunk(i, CancellationToken.None);
 				if (chunk.IsReadOnly)
 					completedChunks.Add(chunk);
 			} catch (ArgumentOutOfRangeException) {

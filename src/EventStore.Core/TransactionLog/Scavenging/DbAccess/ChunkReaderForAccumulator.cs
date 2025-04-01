@@ -52,7 +52,7 @@ public class ChunkReaderForAccumulator<TStreamId> : IChunkReaderForAccumulator<T
 		[EnumeratorCancellation] CancellationToken token) {
 
 		// the physical chunk might contain several logical chunks, we are only interested in one of them
-		var chunk = _manager.GetChunk(logicalChunkNumber);
+		var chunk = await _manager.GetInitializedChunk(logicalChunkNumber, token);
 		long chunkStartPos = (long)_chunkSize * logicalChunkNumber;
 		long chunkEndPos = (long)_chunkSize * (logicalChunkNumber + 1);
 		long nextPos = chunkStartPos;

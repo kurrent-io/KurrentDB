@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+      <TargetFramework>net8.0</TargetFramework>
+      <IsPackable>false</IsPackable>
+      <IsPublishable>false</IsPublishable>
+			<IsTestProject>true</IsTestProject>
+      <Configurations>Release;Debug</Configurations>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
+      <DebugSymbols>true</DebugSymbols>
+    </PropertyGroup>
+
+    <ItemGroup>
+			<PackageReference Include="EventStore.Plugins" Version="25.2.5" />
+      <PackageReference Include="Ductus.FluentDocker.XUnit" Version="2.10.59" />
+      <PackageReference Include="EventStore.Client.Grpc.Streams" Version="23.1.0" />
+			<PackageReference Include="GitHubActionsTestLogger" Version="2.3.3">
+			  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			  <PrivateAssets>all</PrivateAssets>
+			</PackageReference>
+			<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.11" />
+			<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+			<PackageReference Include="xunit" Version="2.6.6" />
+      <PackageReference Include="xunit.runner.visualstudio" Version="2.5.8">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\EventStore.Auth.Ldaps\EventStore.Auth.Ldaps.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="conf\ldaps.conf">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+</Project>

@@ -80,7 +80,7 @@ public class when_having_an_epoch_manager_and_empty_tf_log<TLogFormat, TStreamId
 		await _db.Open();
 		_reader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 
 		_epochManager = GetManager();
 		await _epochManager.Init(CancellationToken.None);

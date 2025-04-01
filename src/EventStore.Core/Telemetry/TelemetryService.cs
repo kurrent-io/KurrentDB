@@ -269,7 +269,7 @@ public sealed class TelemetryService :
 
 	private async ValueTask ReadFirstEpoch(CancellationToken token) {
 		try {
-			var chunk = _manager.GetChunkFor(0);
+			var chunk = await _manager.GetInitializedChunkFor(0, token);
 			var result = await chunk.TryReadAt(0, false, token);
 
 			if (!result.Success)

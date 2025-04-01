@@ -62,7 +62,7 @@ public class when_scavenging_tfchunk_with_transactions<TLogFormat, TStreamId> : 
 
 	[Test]
 	public async Task the_log_records_are_in_first_chunk() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
@@ -76,7 +76,7 @@ public class when_scavenging_tfchunk_with_transactions<TLogFormat, TStreamId> : 
 
 	[Test]
 	public async Task the_log_records_are_unchanged_in_second_chunk() {
-		var chunk = Db.Manager.GetChunk(1);
+		var chunk = await Db.Manager.GetInitializedChunk(1, CancellationToken.None);
 
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);

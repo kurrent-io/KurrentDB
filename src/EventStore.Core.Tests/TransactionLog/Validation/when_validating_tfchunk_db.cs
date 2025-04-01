@@ -364,7 +364,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 			DbUtil.CreateSingleChunk(config, 1, GetFilePathFor("chunk-000001.000001"));
 
 			Assert.DoesNotThrowAsync(async () => await db.Open(verifyHash: false));
-			Assert.IsNotNull(db.Manager.GetChunk(2));
+			Assert.IsNotNull(await db.Manager.GetInitializedChunk(2, CancellationToken.None));
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000000")));
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000001.000001")));
@@ -382,7 +382,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 			DbUtil.CreateOngoingChunk(config, 2, GetFilePathFor("chunk-000002.000000"));
 
 			Assert.DoesNotThrowAsync(async () => await db.Open(verifyHash: false));
-			Assert.IsNotNull(db.Manager.GetChunk(2));
+			Assert.IsNotNull(await db.Manager.GetInitializedChunk(2, CancellationToken.None));
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000000")));
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000001.000001")));
@@ -400,7 +400,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 				actualDataSize: config.ChunkSize - 10);
 
 			Assert.DoesNotThrowAsync(async () => await db.Open(verifyHash: false));
-			Assert.IsNotNull(db.Manager.GetChunk(2));
+			Assert.IsNotNull(await db.Manager.GetInitializedChunk(2, CancellationToken.None));
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000000")));
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000001.000001")));
@@ -431,7 +431,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 
 			Assert.DoesNotThrowAsync(async () => await db.Open(verifyHash: false));
 
-			Assert.IsNotNull(db.Manager.GetChunk(3));
+			Assert.IsNotNull(await db.Manager.GetInitializedChunk(3, CancellationToken.None));
 			Assert.AreEqual(300, db.Config.WriterCheckpoint.Read());
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000001")));
@@ -449,7 +449,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 
 			Assert.DoesNotThrowAsync(async () => await db.Open(verifyHash: false));
 
-			Assert.IsNotNull(db.Manager.GetChunk(4));
+			Assert.IsNotNull(await db.Manager.GetInitializedChunk(4, CancellationToken.None));
 			Assert.AreEqual(400, db.Config.WriterCheckpoint.Read());
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000000")));
@@ -469,7 +469,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 
 			Assert.DoesNotThrowAsync(async () => await db.Open(verifyHash: false));
 
-			Assert.IsNotNull(db.Manager.GetChunk(4));
+			Assert.IsNotNull(await db.Manager.GetInitializedChunk(4, CancellationToken.None));
 			Assert.AreEqual(400, db.Config.WriterCheckpoint.Read());
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000000")));
@@ -488,7 +488,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 
 			Assert.ThrowsAsync<CorruptDatabaseException>(async () => await db.Open(verifyHash: false));
 
-			Assert.Throws<ArgumentOutOfRangeException>(() => db.Manager.GetChunk(4));
+			Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await db.Manager.GetInitializedChunk(4, CancellationToken.None));
 			Assert.AreEqual(150, db.Config.WriterCheckpoint.Read());
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000000")));

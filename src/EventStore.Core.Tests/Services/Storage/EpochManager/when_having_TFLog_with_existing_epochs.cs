@@ -89,7 +89,7 @@ public class when_having_TFLog_with_existing_epochs<TLogFormat, TStreamId> : Spe
 		await _db.Open();
 		_reader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 
 		_epochManager = GetManager();
 		await _epochManager.Init(CancellationToken.None);

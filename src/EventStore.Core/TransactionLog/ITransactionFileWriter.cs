@@ -9,7 +9,7 @@ using EventStore.Core.TransactionLog.LogRecords;
 namespace EventStore.Core.TransactionLog;
 
 public interface ITransactionFileWriter : IAsyncDisposable {
-	void Open();
+	ValueTask Open(CancellationToken token);
 	bool CanWrite(int numBytes);
 	ValueTask<(bool, long)> Write(ILogRecord record, CancellationToken token);
 	void OpenTransaction();

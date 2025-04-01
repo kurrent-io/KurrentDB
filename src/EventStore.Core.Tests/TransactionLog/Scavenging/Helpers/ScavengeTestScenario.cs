@@ -123,7 +123,7 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 		Assert.AreEqual(_keptRecords.Length, _dbResult.Db.Manager.ChunksCount, "Wrong chunks count.");
 
 		for (int i = 0; i < _keptRecords.Length; ++i) {
-			var chunk = _dbResult.Db.Manager.GetChunk(i);
+			var chunk = await _dbResult.Db.Manager.GetInitializedChunk(i, token);
 
 			var chunkRecords = new List<ILogRecord>();
 			RecordReadResult result = await chunk.TryReadFirst(token);

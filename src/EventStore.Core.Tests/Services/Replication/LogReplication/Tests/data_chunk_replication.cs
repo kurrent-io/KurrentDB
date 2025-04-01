@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Services.Replication;
 using NUnit.Framework;
@@ -37,7 +38,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ConnectReplica();
 		await Replicated();
 		VerifyCheckpoints(1);
-		VerifyDB(1);
+		await VerifyDB(1, CancellationToken.None);
 	}
 
 	[Test]
@@ -47,7 +48,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ConnectReplica();
 		await Replicated();
 		VerifyCheckpoints(1);
-		VerifyDB(1);
+		await VerifyDB(1, CancellationToken.None);
 	}
 
 	[Test]
@@ -58,7 +59,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ConnectReplica();
 		await Replicated();
 		VerifyCheckpoints(2);
-		VerifyDB(1);
+		await VerifyDB(1, CancellationToken.None);
 	}
 
 	[Test]
@@ -69,7 +70,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ConnectReplica();
 		await Replicated();
 		VerifyCheckpoints(2);
-		VerifyDB(1);
+		await VerifyDB(1, CancellationToken.None);
 	}
 
 	[Test]
@@ -85,7 +86,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ReconnectReplica(pauseReplication: false);
 		await Replicated();
 		VerifyCheckpoints(1);
-		VerifyDB(1);
+		await VerifyDB(1, CancellationToken.None);
 	}
 
 	[Test]
@@ -101,7 +102,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ReconnectReplica(pauseReplication: false);
 		await Replicated();
 		VerifyCheckpoints(1);
-		VerifyDB(1);
+		await VerifyDB(1, CancellationToken.None);
 	}
 
 	[Test]
@@ -122,7 +123,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ReconnectReplica(pauseReplication: false);
 		await Replicated();
 		VerifyCheckpoints(6);
-		VerifyDB(1);
+		await VerifyDB(1, CancellationToken.None);
 	}
 
 	[Test]
@@ -156,7 +157,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ReconnectReplica(pauseReplication: false);
 		await Replicated();
 		VerifyCheckpoints(7);
-		VerifyDB(1);
+		await VerifyDB(1, CancellationToken.None);
 	}
 
 	[Test]
@@ -176,7 +177,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ReconnectReplica(pauseReplication: false);
 		await Replicated();
 		VerifyCheckpoints(2);
-		VerifyDB(1);
+		await VerifyDB(1, CancellationToken.None);
 	}
 
 	[Test]
@@ -195,7 +196,7 @@ public class data_chunk_replication<TLogFormat, TStreamId> : LogReplicationFixtu
 		await ConnectReplica();
 		await Replicated();
 		VerifyCheckpoints(numChunksToFill + numTransactions);
-		VerifyDB(4 + 1);
+		await VerifyDB(4 + 1, CancellationToken.None);
 	}
 
 	[Test]

@@ -26,7 +26,7 @@ public class EventPositionTests<TLogFormat, TStreamId> : RedactionServiceTestFix
 		if (!_positions.ContainsKey(eventNumber))
 			_positions[eventNumber] = new();
 
-		var chunk = Db.Manager.GetChunkFor(eventRecord.LogPosition);
+		var chunk = await Db.Manager.GetInitializedChunkFor(eventRecord.LogPosition, token);
 		var eventOffset = await chunk.GetActualRawPosition(eventRecord.LogPosition, token);
 		var eventPosition = new EventPosition(
 			eventRecord.LogPosition, Path.GetFileName(chunk.LocalFileName), chunk.ChunkHeader.MinCompatibleVersion, chunk.IsReadOnly, (uint)eventOffset);

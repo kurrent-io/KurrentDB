@@ -158,8 +158,8 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 		SubscribeToMessage<StorageMessage.WriteCommit>();
 	}
 
-	public void Start() {
-		Writer.Open();
+	public async ValueTask Start(CancellationToken token) {
+		await Writer.Open(token);
 		_writerQueue.Start();
 	}
 

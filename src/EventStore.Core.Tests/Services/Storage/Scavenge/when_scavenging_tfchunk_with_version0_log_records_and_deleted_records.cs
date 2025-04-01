@@ -66,7 +66,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_and_deleted_recor
 
 	[Test]
 	public async Task should_have_updated_deleted_stream_event_number() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
 		while (result.Success) {
@@ -84,7 +84,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_and_deleted_recor
 
 	[Test]
 	public async Task the_log_records_are_still_version_0() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
 		while (result.Success) {

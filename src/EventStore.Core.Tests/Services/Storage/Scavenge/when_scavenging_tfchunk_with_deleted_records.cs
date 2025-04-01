@@ -59,7 +59,7 @@ public class when_scavenging_tfchunk_with_deleted_records<TLogFormat, TStreamId>
 
 	[Test]
 	public async Task should_have_updated_deleted_stream_event_number() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
 		while (result.Success) {

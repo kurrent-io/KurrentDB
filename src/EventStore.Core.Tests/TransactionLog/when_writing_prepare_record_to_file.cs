@@ -30,7 +30,7 @@ public class when_writing_prepare_record_to_file<TLogFormat, TStreamId> : Specif
 			1024));
 		await _db.Open();
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;

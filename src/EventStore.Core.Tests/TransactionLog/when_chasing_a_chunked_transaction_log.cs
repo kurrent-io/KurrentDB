@@ -149,7 +149,7 @@ public class when_chasing_a_chunked_transaction_log<TLogFormat, TStreamId> : Spe
 			data: new byte[9000],
 			metadata: new byte[] {7, 17});
 		var writer = new TFChunkWriter(db);
-		writer.Open();
+		await writer.Open(CancellationToken.None);
 
 		Assert.IsTrue(await writer.Write(recordToWrite, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();
@@ -193,7 +193,7 @@ public class when_chasing_a_chunked_transaction_log<TLogFormat, TStreamId> : Spe
 			data: new byte[] {1, 2, 3, 4, 5},
 			metadata: new byte[] {7, 17});
 		var writer = new TFChunkWriter(db);
-		writer.Open();
+		await writer.Open(CancellationToken.None);
 
 		Assert.IsTrue(await writer.Write(recordToWrite, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();

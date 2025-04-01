@@ -308,17 +308,11 @@ static void TryListenOnUnixSocket(ClusterVNodeHostedService hostedService, Kestr
 	}
 
 	try {
-		var unixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "eventstore.sock"));
+		var legacyUnixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "eventstore.sock"));
+		var unixSocket = Path.GetFullPath(Path.Combine(hostedService.Node.Db.Config.Path, "kurrent.sock"));
 
-		if (File.Exists(unixSocket)) {
-			try {
-				File.Delete(unixSocket);
-				Log.Information("Cleaned up stale UNIX domain socket: {unixSocket}", unixSocket);
-			} catch (Exception ex) {
-				Log.Error(ex, "Failed to clean up stale UNIX domain socket: {unixSocket}. Please delete the file manually.", unixSocket);
-				throw;
-			}
-		}
+		CleanupStaleSocket(legacyUnixSocket);
+		CleanupStaleSocket(unixSocket);
 
 		server.ListenUnixSocket(unixSocket, listenOptions => {
 			listenOptions.Use(next => new UnixSocketConnectionMiddleware(next).OnConnectAsync);
@@ -328,6 +322,20 @@ static void TryListenOnUnixSocket(ClusterVNodeHostedService hostedService, Kestr
 	} catch (Exception ex) {
 		Log.Error(ex, "Failed to listen on UNIX domain socket.");
 		throw;
+	}
+
+	return;
+
+	void CleanupStaleSocket(string socketPath) {
+		if (File.Exists(socketPath)) {
+			try {
+				File.Delete(socketPath);
+				Log.Information("Cleaned up stale UNIX domain socket: {unixSocket}", socketPath);
+			} catch (Exception ex) {
+				Log.Error(ex, "Failed to clean up stale UNIX domain socket: {unixSocket}. Please delete the file manually.", socketPath);
+				throw;
+			}
+		}
 	}
 }
 

@@ -24,3 +24,4 @@ jobs:
     with:
       os: ubuntu-22.04
       arch: x64
+    secrets: inherit

@@ -88,7 +88,7 @@ public sealed class when_starting_having_TFLog_with_existing_epochs<TLogFormat, 
 		await _db.Open();
 		_reader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 		_epochs = new List<EpochRecord>();
 		var lastPos = 0L;
 		for (int i = 0; i < 30; i++) {

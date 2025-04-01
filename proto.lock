@@ -4726,12 +4726,12 @@
           }
         ],
         "package": {
-          "name": "event_store.client.redaction"
+          "name": "kurrent.client.redaction"
         },
         "options": [
           {
             "name": "java_package",
-            "value": "com.eventstore.dbclient.proto.redaction"
+            "value": "com.kurrent.dbclient.proto.redaction"
           }
         ]
       }

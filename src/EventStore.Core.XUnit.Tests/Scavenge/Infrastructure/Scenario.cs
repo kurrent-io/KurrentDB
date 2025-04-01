@@ -651,7 +651,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			$"Expected {expected.Length}. Actual {actual.Db.Manager.ChunksCount}");
 
 		for (int i = 0; i < expected.Length; ++i) {
-			var chunk = actual.Db.Manager.GetChunk(i);
+			var chunk = await actual.Db.Manager.GetInitializedChunk(i, token);
 
 			var chunkRecords = new List<ILogRecord>();
 			var result = await chunk.TryReadFirst(token);
@@ -778,7 +778,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 
 	private async ValueTask EmptyRequestedChunks(TFChunkDb db, CancellationToken token) {
 		foreach (var chunkNum in _chunkNumsToEmpty) {
-			var chunk = db.Manager.GetChunk(chunkNum);
+			var chunk = await db.Manager.GetInitializedChunk(chunkNum, token);
 			var header = chunk.ChunkHeader;
 
 			var newChunkHeader = new ChunkHeader(

@@ -20,6 +20,8 @@ public interface IChunkBlob : IDisposable {
 
 	void MarkForDeletion();
 
+	ValueTask EnsureInitialized(CancellationToken token);
+
 	ChunkHeader ChunkHeader { get; }
 
 	ChunkFooter ChunkFooter { get; }
