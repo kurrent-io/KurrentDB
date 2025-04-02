@@ -287,16 +287,24 @@ Refer to each connector's [individual documentation](./sinks/) to see which fiel
 
 ### Configuring Data Protection
 
-To enable data protection, configure the token settings in your configuration file. You have 2 options for providing a token:
+To enable data protection, configure the data protection settings in your
+configuration file. You can provide an encryption token using either a token
+file or by specifying the token directly in the configuration.
 
-Update your configuration file as follows:
+#### Using a Token File
+```yaml
+Connectors:
+  Enabled: true
+  DataProtection:
+    TokenFile: "/path/to/token/file"
+```
 
+#### Using a Token Directly
 ```yaml
 Connectors:
   Enabled: true
   DataProtection:
     Token: "<your-secret-token>"
-    TokenFile: "/path/to/token/file"
 ```
 
 ::: note
