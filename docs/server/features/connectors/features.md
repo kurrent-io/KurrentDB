@@ -287,7 +287,7 @@ Refer to each connector's [individual documentation](./sinks/) to see which fiel
 
 ### Configuring Data Protection
 
-To enable data protection, configure the token settings in your configuration file. You have three options for providing a token:
+To enable data protection, configure the token settings in your configuration file. You have 2 options for providing a token:
 
 Update your configuration file as follows:
 
@@ -314,14 +314,15 @@ encryption keys directly within KurrentDB itself. Rather than requiring a
 separate external key management system, Surge stores the encrypted keys in
 internal system streams. More key vault options will be available in the future.
 
-```yaml
+```yaml {6-8}
 Connectors:
   Enabled: true
   DataProtection:
-    # Token configuration as shown above
+    Token: "<your-secret-token>"
     
-    # Key Vault configuration
     KeyVaults:
       Surge:
-        KeyMaxHistory: 10 # Default: -1 - Maximum number of key historical snapshots (-1 for unlimited)
+        KeyMaxHistory: 10
 ```
+
+ <!-- # Default: -1 - Maximum number of key historical snapshots (-1 for unlimited) -->
