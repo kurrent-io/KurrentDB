@@ -295,9 +295,8 @@ Update your configuration file as follows:
 Connectors:
   Enabled: true
   DataProtection:
-    Token: "<your-secret-token>"       # Direct token string
-    # OR
-    TokenFile: "/path/to/token/file"   # Path to a file containing the token
+    Token: "<your-secret-token>"
+    TokenFile: "/path/to/token/file"
 ```
 
 ::: note
@@ -325,4 +324,6 @@ Connectors:
         KeyMaxHistory: 10
 ```
 
- <!-- # Default: -1 - Maximum number of key historical snapshots (-1 for unlimited) -->
+::: tip
+The default value for `KeyMaxHistory` is `-1`, which means unlimited key history. You can set it to a specific number to limit the number of historical keys stored.
+:::
