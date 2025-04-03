@@ -222,7 +222,7 @@ You can control which clones the cluster promotes with the `NodePriority` settin
 |:---------------------|:--------------------------|
 | Command line         | `--node-priority`         |
 | YAML                 | `NodePriority`            |
-| Environment variable | `EVENTSTORE_NODE_PRORITY` |
+| Environment variable | `EVENTSTORE_NODE_PRIORITY` |
 
 **Default**: `0`.
 
