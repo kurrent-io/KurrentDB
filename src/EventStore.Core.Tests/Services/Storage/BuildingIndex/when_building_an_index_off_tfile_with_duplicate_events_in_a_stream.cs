@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
@@ -131,7 +131,7 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 		await _db.Open();
 		// create db
 		Writer = new TFChunkWriter(_db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 		await SetupDB(CancellationToken.None);
 		await Writer.DisposeAsync();
 		Writer = null;
@@ -185,7 +185,7 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 		_tableIndex.Close(false);
 
 		Writer = new TFChunkWriter(_db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 		await Given(CancellationToken.None);
 		await Writer.DisposeAsync();
 		Writer = null;

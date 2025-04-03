@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -19,6 +19,8 @@ using ILogger = Serilog.ILogger;
 using EventStore.LogCommon;
 using static System.Threading.Timeout;
 
+// ReSharper disable StaticMemberInGenericType
+
 namespace EventStore.Core.Services.Storage;
 
 public abstract class StorageChaser {
@@ -30,10 +32,9 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	IHandle<SystemMessage.SystemStart>,
 	IHandle<SystemMessage.BecomeShuttingDown>,
 	IThreadPoolWorkItem {
-
 	private static readonly int TicksPerMs = (int)(Stopwatch.Frequency / 1000);
 	private static readonly int MinFlushDelay = 2 * TicksPerMs;
-	private static readonly ManualResetEventSlim FlushSignal = new ManualResetEventSlim(false, 1);
+	private static readonly ManualResetEventSlim FlushSignal = new(false, 1);
 	private static readonly TimeSpan FlushWaitTimeout = TimeSpan.FromMilliseconds(10);
 
 	public string Name => _queueStats.Name;
@@ -44,7 +45,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	private readonly IIndexCommitterService<TStreamId> _indexCommitterService;
 	private readonly IEpochManager _epochManager;
 	private readonly CancellationToken _stopToken; // cached to avoid ObjectDisposedException
-	private readonly CancellationTokenSource _stop;
+	private readonly CancellationTokenSource _stop = new();
 
 	private volatile bool _systemStarted;
 
@@ -59,9 +60,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 
 	private readonly TaskCompletionSource<object> _tcs = new();
 
-	public Task Task {
-		get { return _tcs.Task; }
-	}
+	public Task Task => _tcs.Task;
 
 	public StorageChaser(IPublisher leaderBus,
 		IReadOnlyCheckpoint writerCheckpoint,
@@ -69,23 +68,13 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 		IIndexCommitterService<TStreamId> indexCommitterService,
 		IEpochManager epochManager,
 		QueueStatsManager queueStatsManager) {
-		Ensure.NotNull(leaderBus, "leaderBus");
-		Ensure.NotNull(writerCheckpoint, "writerCheckpoint");
-		Ensure.NotNull(chaser, "chaser");
-		Ensure.NotNull(indexCommitterService, "indexCommitterService");
-		Ensure.NotNull(epochManager, "epochManager");
-
-		_leaderBus = leaderBus;
-		_writerCheckpoint = writerCheckpoint;
-		_chaser = chaser;
-		_indexCommitterService = indexCommitterService;
-		_epochManager = epochManager;
+		_leaderBus = Ensure.NotNull(leaderBus);
+		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
+		_chaser = Ensure.NotNull(chaser);
+		_indexCommitterService = Ensure.NotNull(indexCommitterService);
+		_epochManager = Ensure.NotNull(epochManager);
 		_queueStats = queueStatsManager.CreateQueueStatsCollector("Storage Chaser");
-
-		_flushDelay = 0;
 		_lastFlush = _watch.ElapsedTicks;
-
-		_stop = new();
 		_stopToken = _stop.Token;
 	}
 
@@ -111,7 +100,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 			// with no concurrency issues with writer, as writer before jumping
 			// into leader mode and accepting writes will wait till chaser caught up.
 			await _indexCommitterService.Init(_chaser.Checkpoint.Read(), _stopToken);
-			_leaderBus.Publish(new SystemMessage.ServiceInitialized("StorageChaser"));
+			_leaderBus.Publish(new SystemMessage.ServiceInitialized(nameof(StorageChaser)));
 
 			while (!_stopToken.IsCancellationRequested) {
 				if (_systemStarted)
@@ -137,10 +126,10 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 
 		_writerCheckpoint.Flushed -= OnWriterFlushed;
 		_chaser.Close();
-		_leaderBus.Publish(new SystemMessage.ServiceShutdown(Name));
+		_leaderBus.Publish(new SystemMessage.ServiceShutdown(nameof(StorageChaser)));
 	}
 
-	private void OnWriterFlushed(long obj) {
+	private static void OnWriterFlushed(long obj) {
 		FlushSignal.Set();
 	}
 
@@ -217,28 +206,29 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 			if (record.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete))
 				_transaction.Add(record);
 
-			if (record.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
-				CommitPendingTransaction(_transaction, postPosition);
-
-				long firstEventNumber;
-				long lastEventNumber;
-				if (record.Flags.HasAnyOf(PrepareFlags.Data)) {
-					firstEventNumber = record.ExpectedVersion + 1 - record.TransactionOffset;
-					lastEventNumber = record.ExpectedVersion + 1;
-				} else {
-					firstEventNumber = record.ExpectedVersion + 1;
-					lastEventNumber = record.ExpectedVersion;
-				}
-
-				_leaderBus.Publish(new StorageMessage.CommitAck(record.CorrelationId,
-					record.LogPosition,
-					record.TransactionPosition,
-					firstEventNumber,
-					lastEventNumber));
+			if (!record.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
+				return;
 			}
+
+			CommitPendingTransaction(_transaction, postPosition);
+
+			long firstEventNumber;
+			long lastEventNumber;
+			if (record.Flags.HasAnyOf(PrepareFlags.Data)) {
+				firstEventNumber = record.ExpectedVersion + 1 - record.TransactionOffset;
+				lastEventNumber = record.ExpectedVersion + 1;
+			} else {
+				firstEventNumber = record.ExpectedVersion + 1;
+				lastEventNumber = record.ExpectedVersion;
+			}
+
+			_leaderBus.Publish(new StorageMessage.CommitAck(record.CorrelationId,
+				record.LogPosition,
+				record.TransactionPosition,
+				firstEventNumber,
+				lastEventNumber));
 		} else if (record.Flags.HasAnyOf(PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.Data)) {
-			_leaderBus.Publish(
-				new StorageMessage.PrepareAck(record.CorrelationId, record.LogPosition, record.Flags));
+			_leaderBus.Publish(new StorageMessage.PrepareAck(record.CorrelationId, record.LogPosition, record.Flags));
 		}
 	}
 
@@ -287,9 +277,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 		return _queueStats.GetStatistics(0);
 	}
 
-	private class ChaserCheckpointFlush {
-	}
+	private class ChaserCheckpointFlush;
 
-	private class FaultedChaserState {
-	}
+	private class FaultedChaserState;
 }

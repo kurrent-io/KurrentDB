@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Cluster;
@@ -197,11 +197,13 @@ public static partial class SystemMessage {
 	[DerivedMessage(CoreMessage.System)]
 	public partial class ServiceShutdown : Message {
 		public readonly string ServiceName;
+		public string Details { get; }
 
-		public ServiceShutdown(string serviceName) {
-			if (String.IsNullOrEmpty(serviceName))
-				throw new ArgumentNullException("serviceName");
+		public ServiceShutdown(string serviceName, string details = "") {
+			ArgumentNullException.ThrowIfNull(serviceName, nameof(serviceName));
+			ArgumentNullException.ThrowIfNull(details, nameof(details));
 			ServiceName = serviceName;
+			Details = details;
 		}
 	}
 
@@ -317,31 +319,10 @@ public static partial class SystemMessage {
 	}
 
 	[DerivedMessage(CoreMessage.System)]
-	public partial class ChunkLoaded : Message {
-		public readonly ChunkInfo ChunkInfo;
-
-		public ChunkLoaded(ChunkInfo chunkInfo) {
-			Ensure.NotNull(chunkInfo, nameof(chunkInfo));
-			ChunkInfo = chunkInfo;
-		}
-	}
-
-	[DerivedMessage(CoreMessage.System)]
-	public partial class ChunkCompleted : Message {
-		public readonly ChunkInfo ChunkInfo;
-
-		public ChunkCompleted(ChunkInfo chunkInfo) {
-			Ensure.NotNull(chunkInfo, nameof(chunkInfo));
-			ChunkInfo = chunkInfo;
-		}
-	}
-
-	[DerivedMessage(CoreMessage.System)]
 	public partial class ChunkSwitched : Message {
 		public readonly ChunkInfo ChunkInfo;
 
 		public ChunkSwitched(ChunkInfo chunkInfo) {
-			Ensure.NotNull(chunkInfo, nameof(chunkInfo));
 			ChunkInfo = chunkInfo;
 		}
 	}

@@ -5,22 +5,22 @@ order: 3
 
 # Highly-available cluster
 
-EventStoreDB allows you to run more than one node in a cluster for high availability.
+KurrentDB allows you to run more than one node in a cluster for high availability.
 
 ::: info Cluster member authentication
-EventStoreDB starts in secure mode by default, which requires configuration [settings for certificates](../security/protocol-security.md#certificates-configuration).
+KurrentDB starts in secure mode by default, which requires configuration [settings for certificates](../security/protocol-security.md#certificates-configuration).
 Cluster members authenticate each other using the certificate Common Name. All the cluster nodes must have the same common name in their certificates.
 :::
 
 ## Cluster nodes
 
-EventStoreDB clusters follow a "shared nothing" philosophy, meaning that clustering requires no shared disks. Instead, each node has a copy of the data to ensure it is not lost in case of a drive failure or a node crashing. 
+KurrentDB clusters follow a "shared nothing" philosophy, meaning that clustering requires no shared disks. Instead, each node has a copy of the data to ensure it is not lost in case of a drive failure or a node crashing.
 
 ::: tip
 Lean more about [node roles](#node-roles).
 :::
 
-EventStoreDB uses a quorum-based replication model, in which a majority of nodes in the cluster must acknowledge that they have received a copy of the write before the write is acknowledged to the client. This means that to be able to tolerate the failure of _n_ nodes, the cluster must be of size _(2n + 1)_. A three node cluster can continue to accept writes if one node is unavailable. A five node cluster can continue to accept writes if two nodes are unavailable, and so forth.
+KurrentDB uses a quorum-based replication model, in which a majority of nodes in the cluster must acknowledge that they have received a copy of the write before the write is acknowledged to the client. This means that to be able to tolerate the failure of _n_ nodes, the cluster must be of size _(2n + 1)_. A three node cluster can continue to accept writes if one node is unavailable. A five node cluster can continue to accept writes if two nodes are unavailable, and so forth.
 
 ## Cluster size
 
@@ -36,7 +36,7 @@ Use the `ClusterSize` option to tell each cluster node about how many nodes the 
 |:---------------------|:--------------------------|
 | Command line         | `--cluster-size`          |
 | YAML                 | `ClusterSize`             |
-| Environment variable | `EVENTSTORE_CLUSTER_SIZE` |
+| Environment variable | `KURRENTDB_CLUSTER_SIZE`  |
 
 **Default**: `1` (single node, no high-availability).
 
@@ -62,7 +62,7 @@ The multi-address DNS name cluster discovery only works for clusters that use ce
 
 ### Cluster with DNS
 
-When you tell EventStoreDB to use DNS for its gossip, the server will resolve the DNS name to a list of IP addresses and connect to each of those addresses to find other nodes. This method is very flexible because you can change the list of nodes on your DNS server without changing the cluster configuration. The DNS method is also useful in automated deployment scenarios when you control both the cluster deployment and the DNS server from your infrastructure-as-code scripts.
+When you tell KurrentDB to use DNS for its gossip, the server will resolve the DNS name to a list of IP addresses and connect to each of those addresses to find other nodes. This method is very flexible because you can change the list of nodes on your DNS server without changing the cluster configuration. The DNS method is also useful in automated deployment scenarios when you control both the cluster deployment and the DNS server from your infrastructure-as-code scripts.
 
 To use DNS discovery, you need to set the `ClusterDns` option to the DNS name that allows making an HTTP call to it. When the server starts, it will attempt to make a gRPC call using the `https://<cluster-dns>:<gossip-port>` URL (`http` if the cluster is insecure).
 
@@ -76,7 +76,7 @@ You also need to have the `DiscoverViaDns` option to be set to `true` but it is 
 |:---------------------|:-------------------------|
 | Command line         | `--cluster-dns`          |
 | YAML                 | `ClusterDns`             |
-| Environment variable | `EVENTSTORE_CLUSTER_DNS` |
+| Environment variable | `KURRENTDB_CLUSTER_DNS`  |
 
 **Default**: `fake.dns`, which doesn't resolve to anything. You have to set it to a proper DNS name when used in combination to the DNS discovery (next setting).
 
@@ -84,7 +84,7 @@ You also need to have the `DiscoverViaDns` option to be set to `true` but it is 
 |:---------------------|:------------------------------|
 | Command line         | `--discover-via-dns`          |
 | YAML                 | `DiscoverViaDns`              |
-| Environment variable | `EVENTSTORE_DISCOVER_VIA_DNS` |
+| Environment variable | `KURRENTDB_DISCOVER_VIA_DNS`  |
 
 **Default**: `true`, the DNS discovery is enabled by default.
 
@@ -102,11 +102,11 @@ The setting accepts a comma-separated list of IP addresses or host names with th
 |:---------------------|:-------------------------|
 | Command line         | `--gossip-seed`          |
 | YAML                 | `GossipSeed`             |
-| Environment variable | `EVENTSTORE_GOSSIP_SEED` |
+| Environment variable | `KURRENTDB_GOSSIP_SEED`  |
 
 ## Gossip protocol
 
-EventStoreDB uses a quorum-based replication model. When working normally, a cluster has one node known as a leader, and the remaining nodes are followers. The leader node is responsible for coordinating writes while it is the leader. Cluster nodes use a consensus algorithm to determine which node should be the leader and which should be followers. EventStoreDB bases the decision as to which node should be the leader on a number of factors.
+KurrentDB uses a quorum-based replication model. When working normally, a cluster has one node known as a leader, and the remaining nodes are followers. The leader node is responsible for coordinating writes while it is the leader. Cluster nodes use a consensus algorithm to determine which node should be the leader and which should be followers. KurrentDB bases the decision as to which node should be the leader on a number of factors.
 
 For a cluster node to have this information available to them, the nodes gossip with other nodes in the cluster. Gossip runs over the HTTP interface of the cluster nodes.
 
@@ -124,7 +124,7 @@ Normally, the cluster gossip port is the same as the node port, so you don't nee
 |:---------------------|:---------------------------------|
 | Command line         | `--cluster-gossip-port`          |
 | YAML                 | `ClusterGossipPort`              |
-| Environment variable | `EVENTSTORE_CLUSTER_GOSSIP_PORT` |
+| Environment variable | `KURRENTDB_CLUSTER_GOSSIP_PORT`  |
 
 **Default**: Node port
 
@@ -138,13 +138,13 @@ The default value is two seconds (2000 ms).
 |:---------------------|:--------------------------------|
 | Command line         | `--gossip-interval-ms`          |
 | YAML                 | `GossipIntervalMs`              |
-| Environment variable | `EVENTSTORE_GOSSIP_INTERVAL_MS` |
+| Environment variable | `KURRENTDB_GOSSIP_INTERVAL_MS`  |
 
 **Default**: `2000` (in milliseconds), which is two seconds.
 
 ### Time difference toleration
 
-EventStoreDB expects the time on cluster nodes to be in sync within a given tolerance.
+KurrentDB expects the time on cluster nodes to be in sync within a given tolerance.
 
 If different nodes have their clock out of sync for a number of milliseconds that exceeds the value of this setting, the gossip is rejected and the node will not be accepted as a cluster member.
 
@@ -152,7 +152,7 @@ If different nodes have their clock out of sync for a number of milliseconds tha
 |:---------------------|:------------------------------------------|
 | Command line         | `--gossip-allowed-difference-ms`          |
 | YAML                 | `GossipAllowedDifferenceMs`               |
-| Environment variable | `EVENTSTORE_GOSSIP_ALLOWED_DIFFERENCE_MS` |
+| Environment variable | `KURRENTDB_GOSSIP_ALLOWED_DIFFERENCE_MS`  |
 
 **Default**: `60000` (in milliseconds), which is one minute.
 
@@ -166,7 +166,7 @@ If your cluster network is congested, you might increase the gossip timeout usin
 |:---------------------|:-------------------------------|
 | Command line         | `--gossip-timeout-ms`          |
 | YAML                 | `GossipTimeoutMs`              |
-| Environment variable | `EVENTSTORE_GOSSIP_TIMEOUT_MS` |
+| Environment variable | `KURRENTDB_GOSSIP_TIMEOUT_MS`  |
 
 **Default**: `2500` (in milliseconds).
 
@@ -180,13 +180,13 @@ In some cases the leader election messages may be delayed, which can result in e
 |:---------------------|:----------------------------------------|
 | Command line         | `--leader-election-timeout-ms`          |
 | YAML                 | `LeaderElectionTimeoutMs`               |
-| Environment variable | `EVENTSTORE_LEADER_ELECTION_TIMEOUT_MS` |
+| Environment variable | `KURRENTDB_LEADER_ELECTION_TIMEOUT_MS`  |
 
 **Default**: `1000` (in milliseconds).
 
 ## Node roles
 
-Every node in a stable EventStoreDB deployment settles into one of three roles: Leader, Follower, and ReadOnlyReplica. The cluster is composed of the Leader and Followers.
+Every node in a stable KurrentDB deployment settles into one of three roles: Leader, Follower, and ReadOnlyReplica. The cluster is composed of the Leader and Followers.
 
 ### Leader
 
@@ -208,7 +208,7 @@ You need to explicitly configure the node as a read-only replica using this sett
 |:---------------------|:-------------------------------|
 | Command line         | `--read-only-replica`          |
 | YAML                 | `ReadOnlyReplica`              |
-| Environment variable | `EVENTSTORE_READ_ONLY_REPLICA` |
+| Environment variable | `KURRENTDB_READ_ONLY_REPLICA`  |
 
 **Default**: `false`, set to `true` for a read-only replica node.
 
@@ -222,11 +222,10 @@ You can control which clones the cluster promotes with the `NodePriority` settin
 |:---------------------|:--------------------------|
 | Command line         | `--node-priority`         |
 | YAML                 | `NodePriority`            |
-| Environment variable | `EVENTSTORE_NODE_PRIORITY` |
+| Environment variable | `KURRENTDB_NODE_PRIORITY`  |
 
 **Default**: `0`.
 
 ::: tip
 Changing `NodePriority` does not guarantee that the cluster will not promote the node. It is only one of the criteria that the Election Service considers.
 :::
-

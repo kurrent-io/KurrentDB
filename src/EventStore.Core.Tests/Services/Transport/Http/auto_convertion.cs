@@ -1,10 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Http;
@@ -12,6 +11,7 @@ using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Transport.Http.Codecs;
 using NUnit.Framework;
 using Newtonsoft.Json;
+using ContentType = EventStore.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
 
@@ -134,6 +134,16 @@ internal abstract class do_not_use_indentation_for_json {
 	public void TearDown() {
 		JsonCodec.Formatting = Formatting.Indented;
 	}
+
+	internal CustomCodec GetCustomCodecForContentType(string contentType) =>
+		contentType switch {
+			ContentType.EventsJson => Codec.EventsJson,
+			ContentType.LegacyEventsJson => Codec.LegacyEventsJson,
+			ContentType.EventJson => Codec.EventJson,
+			ContentType.LegacyEventJson => Codec.EventJson,
+			_ => throw new ArgumentException()
+		};
+
 }
 
 [TestFixture]
@@ -176,11 +186,12 @@ internal class when_writing_events_and_content_type_is_xml {
 	}
 }
 
-[TestFixture]
-internal class when_writing_events_and_content_type_is_events_json : do_not_use_indentation_for_json {
+[TestFixture(ContentType.EventsJson)]
+[TestFixture(ContentType.LegacyEventsJson)]
+internal class when_writing_events_and_content_type_is_events_json(string contentType) : do_not_use_indentation_for_json {
 	[Test]
 	public void should_store_data_as_json_if_valid_and_metadata_as_string_if_not() {
-		var codec = Codec.EventsJson;
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite(new[] {
 			Tuple.Create(FakeRequest.JsonData, "\"metadata\""),
 			Tuple.Create(FakeRequest.JsonData2, "\"metadata2\"")
@@ -200,7 +211,7 @@ internal class when_writing_events_and_content_type_is_events_json : do_not_use_
 
 	[Test]
 	public void should_store_metadata_as_json_if_its_valid_and_data_as_string_if_its_not() {
-		var codec = Codec.EventsJson;
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite(new[] {
 			Tuple.Create("\"data\"", FakeRequest.JsonMetadata),
 			Tuple.Create("\"data2\"", FakeRequest.JsonMetadata2)
@@ -220,7 +231,7 @@ internal class when_writing_events_and_content_type_is_events_json : do_not_use_
 
 	[Test]
 	public void should_store_both_data_and_metadata_as_json_if_both_are_valid_json_objects() {
-		var codec = Codec.EventsJson;
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite(new[] {
 			Tuple.Create(FakeRequest.JsonData, FakeRequest.JsonMetadata),
 			Tuple.Create(FakeRequest.JsonData2, FakeRequest.JsonMetadata2)
@@ -240,7 +251,7 @@ internal class when_writing_events_and_content_type_is_events_json : do_not_use_
 
 	[Test]
 	public void should_store_both_data_and_metadata_as_string_if_both_are_not_valid_json_objects() {
-		var codec = Codec.EventsJson;
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite(new[] {
 			Tuple.Create("\"data\"", "\"metadata\""),
 			Tuple.Create("\"data2\"", "\"metadata2\"")
@@ -260,7 +271,7 @@ internal class when_writing_events_and_content_type_is_events_json : do_not_use_
 
 	[Test]
 	public void should_do_its_best_at_preserving_data_format_with_multiple_events() {
-		var codec = Codec.EventsJson;
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite(new[] {
 			Tuple.Create(FakeRequest.JsonData, FakeRequest.JsonMetadata),
 			Tuple.Create("\"data2\"", "\"metadata2\"")
@@ -354,37 +365,44 @@ internal class when_writing_events_and_content_type_is_events_xml : do_not_use_i
 	}
 }
 
-[TestFixture]
-internal class when_reading_events_and_accept_type_is_json : do_not_use_indentation_for_json {
+[TestFixture(ContentType.EventJson)]
+[TestFixture(ContentType.LegacyEventJson)]
+internal class when_reading_events_and_accept_type_is_json(string contentType) : do_not_use_indentation_for_json {
 	[Test]
 	public void should_return_json_data_if_data_was_originally_written_as_xobject_and_metadata_as_string() {
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetXmlWrite(FakeRequest.XmlData, "metadata");
 
 		var events = AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsXml, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetJsonEventReadResult(resolvedEvent, dataJson: true, metadataJson: false);
-		var converted = AutoEventConverter.SmartFormat(resolvedEvent, Codec.EventJson);
+		var converted = AutoEventConverter.SmartFormat(resolvedEvent, codec);
 
 		Assert.That(converted, Is.EqualTo(expected));
 	}
 
 	[Test]
-	public void should_return_json_data_if_data_was_originally_written_as_jobject_and_metadata_as_string() {
+	[TestCase(ContentType.EventsJson)]
+	[TestCase(ContentType.LegacyEventsJson)]
+	public void should_return_json_data_if_data_was_originally_written_as_jobject_and_metadata_as_string(string writtenContentType) {
+		var writtenCodec = GetCustomCodecForContentType(writtenContentType);
+		var requestCodec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite(FakeRequest.JsonData, "\"metadata\"");
 
 		var events =
-			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsJson, Guid.Empty);
+			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), writtenCodec, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetJsonEventReadResult(resolvedEvent, dataJson: true, metadataJson: false);
-		var converted = AutoEventConverter.SmartFormat(resolvedEvent, Codec.EventJson);
+		var converted = AutoEventConverter.SmartFormat(resolvedEvent, requestCodec);
 
 		Assert.That(converted, Is.EqualTo(expected));
 	}
 
 	[Test]
 	public void should_return_json_metadata_if_metadata_was_originally_written_as_xobject_and_data_as_string() {
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetXmlWrite("data", FakeRequest.XmlMetadata);
 
 		var events = AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsXml, Guid.Empty);
@@ -393,75 +411,89 @@ internal class when_reading_events_and_accept_type_is_json : do_not_use_indentat
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 
 		var expected = FakeRequest.GetJsonEventReadResult(resolvedEvent, dataJson: false, metadataJson: true);
-		var converted = AutoEventConverter.SmartFormat(resolvedEvent, Codec.EventJson);
+		var converted = AutoEventConverter.SmartFormat(resolvedEvent, codec);
 
 		Assert.That(converted, Is.EqualTo(expected));
 	}
 
 	[Test]
-	public void should_return_json_metadata_if_metadata_was_originally_written_as_jobject_and_data_as_string() {
+	[TestCase(ContentType.EventsJson)]
+	[TestCase(ContentType.LegacyEventsJson)]
+	public void should_return_json_metadata_if_metadata_was_originally_written_as_jobject_and_data_as_string(string writtenContentType) {
+		var writtenCodec = GetCustomCodecForContentType(writtenContentType);
+		var requestCodec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite("\"data\"", FakeRequest.JsonMetadata);
 
 		var events =
-			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsJson, Guid.Empty);
+			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), writtenCodec, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetJsonEventReadResult(resolvedEvent, dataJson: false, metadataJson: true);
-		var converted = AutoEventConverter.SmartFormat(resolvedEvent, Codec.EventJson);
+		var converted = AutoEventConverter.SmartFormat(resolvedEvent, requestCodec);
 
 		Assert.That(converted, Is.EqualTo(expected));
 	}
 
 	[Test]
 	public void should_return_json_data_and_json_metadata_if_both_were_written_as_xobjects() {
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetXmlWrite(FakeRequest.XmlData, FakeRequest.XmlMetadata);
 
 		var events = AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsXml, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetJsonEventReadResult(resolvedEvent, dataJson: true, metadataJson: true);
-		var converted = AutoEventConverter.SmartFormat(resolvedEvent, Codec.EventJson);
+		var converted = AutoEventConverter.SmartFormat(resolvedEvent, codec);
 
 		Assert.That(converted, Is.EqualTo(expected));
 	}
 
 	[Test]
-	public void should_return_json_data_and_json_metadata_if_both_were_written_as_jobjects() {
+	[TestCase(ContentType.EventsJson)]
+	[TestCase(ContentType.LegacyEventsJson)]
+	public void should_return_json_data_and_json_metadata_if_both_were_written_as_jobjects(string writtenContentType) {
+		var writtenCodec = GetCustomCodecForContentType(writtenContentType);
+		var requestCodec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite(FakeRequest.JsonData, FakeRequest.JsonMetadata);
 
 		var events =
-			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsJson, Guid.Empty);
+			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), writtenCodec, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetJsonEventReadResult(resolvedEvent, dataJson: true, metadataJson: true);
-		var converted = AutoEventConverter.SmartFormat(resolvedEvent, Codec.EventJson);
+		var converted = AutoEventConverter.SmartFormat(resolvedEvent, requestCodec);
 
 		Assert.That(converted, Is.EqualTo(expected));
 	}
 
 	[Test]
-	public void should_return_string_data_and_string_metadata_if_both_were_written_as_string_using_json_write() {
+	[TestCase(ContentType.EventsJson)]
+	[TestCase(ContentType.LegacyEventsJson)]
+	public void should_return_string_data_and_string_metadata_if_both_were_written_as_string_using_json_write(string writtenContentType) {
+		var writtenCodec = GetCustomCodecForContentType(writtenContentType);
+		var requestCodec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite("\"data\"", "\"metadata\"");
 
 		var events =
-			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsJson, Guid.Empty);
+			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), writtenCodec, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetJsonEventReadResult(resolvedEvent, dataJson: false, metadataJson: false);
-		var converted = AutoEventConverter.SmartFormat(resolvedEvent, Codec.EventJson);
+		var converted = AutoEventConverter.SmartFormat(resolvedEvent, requestCodec);
 
 		Assert.That(converted, Is.EqualTo(expected));
 	}
 
 	[Test]
 	public void should_return_string_data_and_string_metadata_if_both_were_written_as_string_using_xml_write() {
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetXmlWrite("data", "metadata");
 
 		var events = AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsXml, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetJsonEventReadResult(resolvedEvent, dataJson: false, metadataJson: false);
-		var converted = AutoEventConverter.SmartFormat(resolvedEvent, Codec.EventJson);
+		var converted = AutoEventConverter.SmartFormat(resolvedEvent, codec);
 
 		Assert.That(converted, Is.EqualTo(expected));
 	}
@@ -489,11 +521,14 @@ internal class when_reading_events_and_accept_type_is_xml : do_not_use_indentati
 	}
 
 	[Test]
-	public void should_return_xml_data_if_data_was_originally_written_as_jobject_and_metadata_as_string() {
+	[TestCase(ContentType.EventsJson)]
+	[TestCase(ContentType.LegacyEventsJson)]
+	public void should_return_xml_data_if_data_was_originally_written_as_jobject_and_metadata_as_string(string contentType) {
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite(FakeRequest.JsonData, "\"metadata\"");
 
 		var events =
-			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsJson, Guid.Empty);
+			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), codec, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetXmlEventReadResult(resolvedEvent, dataJson: true, metadataJson: false);
@@ -516,11 +551,14 @@ internal class when_reading_events_and_accept_type_is_xml : do_not_use_indentati
 	}
 
 	[Test]
-	public void should_return_xml_metadata_if_metadata_was_originally_written_as_jobject_and_data_as_string() {
+	[TestCase(ContentType.EventsJson)]
+	[TestCase(ContentType.LegacyEventsJson)]
+	public void should_return_xml_metadata_if_metadata_was_originally_written_as_jobject_and_data_as_string(string contentType) {
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite("\"data\"", FakeRequest.JsonMetadata);
 
 		var events =
-			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsJson, Guid.Empty);
+			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), codec, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetXmlEventReadResult(resolvedEvent, dataJson: false, metadataJson: true);
@@ -543,11 +581,14 @@ internal class when_reading_events_and_accept_type_is_xml : do_not_use_indentati
 	}
 
 	[Test]
-	public void should_return_xml_data_and_xml_metadata_if_both_were_written_as_jobjects() {
+	[TestCase(ContentType.EventsJson)]
+	[TestCase(ContentType.LegacyEventsJson)]
+	public void should_return_xml_data_and_xml_metadata_if_both_were_written_as_jobjects(string contentType) {
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite(FakeRequest.JsonData, FakeRequest.JsonMetadata);
 
 		var events =
-			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsJson, Guid.Empty);
+			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), codec, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetXmlEventReadResult(resolvedEvent, dataJson: true, metadataJson: true);
@@ -557,12 +598,14 @@ internal class when_reading_events_and_accept_type_is_xml : do_not_use_indentati
 	}
 
 	[Test]
-	public void
-		should_return_string_data_and_string_metadata_if_both_were_written_as_string_using_json_events_write() {
+	[TestCase(ContentType.EventsJson)]
+	[TestCase(ContentType.LegacyEventsJson)]
+	public void should_return_string_data_and_string_metadata_if_both_were_written_as_string_using_json_events_write(string contentType) {
+		var codec = GetCustomCodecForContentType(contentType);
 		var request = FakeRequest.GetJsonWrite("\"data\"", "\"metadata\"");
 
 		var events =
-			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsJson, Guid.Empty);
+			AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), codec, Guid.Empty);
 		var evnt = events.Single();
 		var resolvedEvent = GenerateResolvedEvent(evnt.Data, evnt.Metadata);
 		var expected = FakeRequest.GetXmlEventReadResult(resolvedEvent, dataJson: false, metadataJson: false);
@@ -572,8 +615,7 @@ internal class when_reading_events_and_accept_type_is_xml : do_not_use_indentati
 	}
 
 	[Test]
-	public void
-		should_return_string_data_and_string_metadata_if_both_were_written_as_string_using_xml_events_write() {
+	public void should_return_string_data_and_string_metadata_if_both_were_written_as_string_using_xml_events_write() {
 		var request = FakeRequest.GetXmlWrite("data", "metadata");
 
 		var events = AutoEventConverter.SmartParse(Helper.UTF8NoBom.GetBytes(request), Codec.EventsXml, Guid.Empty);

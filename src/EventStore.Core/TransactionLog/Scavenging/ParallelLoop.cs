@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -29,7 +29,7 @@ public static class ParallelLoop {
 	//   - getCheckpointExclusive returns the checkpoint that can be emitted when all items up to
 	//     but excluding this one have been completed.
 	public static async ValueTask RunWithTrailingCheckpointAsync<T>(
-		IEnumerable<T> source,
+		IAsyncEnumerable<T> source,
 		int degreeOfParallelism,
 		Func<T, int> getCheckpointInclusive,
 		Func<T, int?> getCheckpointExclusive,
@@ -88,7 +88,7 @@ public static class ParallelLoop {
 
 		// process the source
 		var slotsInUse = 0;
-		foreach (var item in source) {
+		await foreach (var item in source.WithCancellation(token)) {
 			endCheckpoint = getCheckpointInclusive(item);
 			if (slotsInUse < tasksInProgress.Length) {
 				PrepareProcessingItem(slotsInUse, item);

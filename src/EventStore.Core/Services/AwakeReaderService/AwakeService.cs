@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -8,25 +8,23 @@ using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Storage.ReaderIndex;
 
+// ReSharper disable ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator
+
 namespace EventStore.Core.Services.AwakeReaderService;
 
 public class AwakeService : IHandle<AwakeServiceMessage.SubscribeAwake>,
 	IHandle<AwakeServiceMessage.UnsubscribeAwake>,
 	IHandle<StorageMessage.EventCommitted>,
 	IHandle<StorageMessage.TfEofAtNonCommitRecord> {
-	private readonly Dictionary<string, HashSet<AwakeServiceMessage.SubscribeAwake>> _subscribers =
-		new Dictionary<string, HashSet<AwakeServiceMessage.SubscribeAwake>>();
-
-	private readonly Dictionary<Guid, AwakeServiceMessage.SubscribeAwake> _map =
-		new Dictionary<Guid, AwakeServiceMessage.SubscribeAwake>();
+	private readonly Dictionary<string, HashSet<AwakeServiceMessage.SubscribeAwake>> _subscribers = new();
+	private readonly Dictionary<Guid, AwakeServiceMessage.SubscribeAwake> _map = new();
 
 	private TFPos _lastPosition;
 
-	private readonly List<AwakeServiceMessage.SubscribeAwake> _batchedReplies =
-		new List<AwakeServiceMessage.SubscribeAwake>();
+	private readonly List<AwakeServiceMessage.SubscribeAwake> _batchedReplies = [];
 
 	private int _processedEvents;
-	private int _processedEventsAwakeThreshold = 1000;
+	const int ProcessedEventsAwakeThreshold = 1000;
 
 	private void BeginReplyBatch() {
 		if (_batchedReplies.Count > 0)
@@ -43,7 +41,7 @@ public class AwakeService : IHandle<AwakeServiceMessage.SubscribeAwake>,
 	}
 
 	private void CheckProcessedEventThreshold() {
-		if (_processedEvents > _processedEventsAwakeThreshold) {
+		if (_processedEvents > ProcessedEventsAwakeThreshold) {
 			EndReplyBatch();
 			BeginReplyBatch();
 		}
@@ -58,10 +56,9 @@ public class AwakeService : IHandle<AwakeServiceMessage.SubscribeAwake>,
 		}
 
 		_map.Add(message.CorrelationId, message);
-		HashSet<AwakeServiceMessage.SubscribeAwake> list;
 		string streamId = message.StreamId ?? "$all";
-		if (!_subscribers.TryGetValue(streamId, out list)) {
-			list = new HashSet<AwakeServiceMessage.SubscribeAwake>();
+		if (!_subscribers.TryGetValue(streamId, out var list)) {
+			list = [];
 			_subscribers.Add(streamId, list);
 		}
 
@@ -89,36 +86,32 @@ public class AwakeService : IHandle<AwakeServiceMessage.SubscribeAwake>,
 	}
 
 	private void NotifyEventInStream(string streamId, StorageMessage.EventCommitted message) {
-		HashSet<AwakeServiceMessage.SubscribeAwake> list;
 		List<AwakeServiceMessage.SubscribeAwake> toRemove = null;
-		if (_subscribers.TryGetValue(streamId, out list)) {
-			foreach (var subscriber in list) {
-				if (subscriber.From < new TFPos(message.CommitPosition, message.Event.LogPosition)) {
-					_batchedReplies.Add(subscriber);
-					_map.Remove(subscriber.CorrelationId);
-					if (toRemove == null)
-						toRemove = new List<AwakeServiceMessage.SubscribeAwake>();
-					toRemove.Add(subscriber);
-				}
-			}
+		if (!_subscribers.TryGetValue(streamId, out var list)) return;
 
-			if (toRemove != null) {
-				foreach (var item in toRemove)
-					list.Remove(item);
-				if (list.Count == 0) {
-					_subscribers.Remove(streamId);
-				}
-			}
+		foreach (var subscriber in list) {
+			if (subscriber.From >= new TFPos(message.CommitPosition, message.Event.LogPosition)) continue;
+
+			_batchedReplies.Add(subscriber);
+			_map.Remove(subscriber.CorrelationId);
+			toRemove ??= [];
+			toRemove.Add(subscriber);
+		}
+
+		if (toRemove == null) return;
+
+		foreach (var item in toRemove)
+			list.Remove(item);
+		if (list.Count == 0) {
+			_subscribers.Remove(streamId);
 		}
 	}
 
 	public void Handle(AwakeServiceMessage.UnsubscribeAwake message) {
-		AwakeServiceMessage.SubscribeAwake subscriber;
-		if (_map.TryGetValue(message.CorrelationId, out subscriber)) {
-			_map.Remove(message.CorrelationId);
-			var list = _subscribers[subscriber.StreamId ?? "$all"];
-			list.Remove(subscriber);
-		}
+		if (!_map.Remove(message.CorrelationId, out var subscriber)) return;
+
+		var list = _subscribers[subscriber.StreamId ?? "$all"];
+		list.Remove(subscriber);
 	}
 
 	public void Handle(StorageMessage.TfEofAtNonCommitRecord message) {

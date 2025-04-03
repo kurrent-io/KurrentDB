@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -18,7 +18,7 @@ public static class DbUtil {
 		var dataSize = actualDataSize ?? config.ChunkSize;
 		var buf = new byte[ChunkHeader.Size + dataSize + ChunkFooter.Size];
 		Buffer.BlockCopy(chunkBytes, 0, buf, 0, chunkBytes.Length);
-		var chunkFooter = new ChunkFooter(true, true, dataSize, dataSize, 0, new byte[ChunkFooter.ChecksumSize]);
+		var chunkFooter = new ChunkFooter(true, true, dataSize, dataSize, 0);
 		chunkBytes = chunkFooter.AsByteArray();
 		Buffer.BlockCopy(chunkBytes, 0, buf, buf.Length - ChunkFooter.Size, chunkBytes.Length);
 
@@ -42,8 +42,7 @@ public static class DbUtil {
 		var logicalDataSize = logicalSize ?? (chunkEndNum - chunkStartNum + 1) * config.ChunkSize;
 		var buf = new byte[ChunkHeader.Size + physicalDataSize + ChunkFooter.Size];
 		Buffer.BlockCopy(chunkBytes, 0, buf, 0, chunkBytes.Length);
-		var chunkFooter = new ChunkFooter(true, true, physicalDataSize, logicalDataSize, 0,
-			new byte[ChunkFooter.ChecksumSize]);
+		var chunkFooter = new ChunkFooter(true, true, physicalDataSize, logicalDataSize, 0);
 		chunkBytes = chunkFooter.AsByteArray();
 		Buffer.BlockCopy(chunkBytes, 0, buf, buf.Length - ChunkFooter.Size, chunkBytes.Length);
 		File.WriteAllBytes(filename, buf);

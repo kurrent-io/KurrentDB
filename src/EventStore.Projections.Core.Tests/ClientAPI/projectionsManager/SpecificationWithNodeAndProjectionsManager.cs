@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -74,7 +74,7 @@ public abstract class SpecificationWithNodeAndProjectionsManager<TLogFormat, TSt
 	public abstract Task When();
 
 	protected MiniNode<TLogFormat, TStreamId> CreateNode() {
-		_projectionsSubsystem = new ProjectionsSubsystem(new ProjectionSubsystemOptions(1, ProjectionType.All, false, TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault), Opts.FaultOutOfOrderProjectionsDefault, 500, 250));
+		_projectionsSubsystem = new ProjectionsSubsystem(new ProjectionSubsystemOptions(1, ProjectionType.All, false, TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault), Opts.FaultOutOfOrderProjectionsDefault, 500, 250, Opts.MaxProjectionStateSizeDefault));
 		_systemProjectionsCreated = SystemProjections.Created(_projectionsSubsystem.LeaderInputBus);
 		return new MiniNode<TLogFormat, TStreamId>(
 			PathName, inMemDb: true,

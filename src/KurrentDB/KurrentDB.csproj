@@ -1,0 +1,76 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<OutputType>Exe</OutputType>
+		<ApplicationIcon>app2.ico</ApplicationIcon>
+		<GenerateSupportedRuntime>false</GenerateSupportedRuntime>
+		<ServerGarbageCollection>false</ServerGarbageCollection>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Extensions.MudBlazor.StaticInput" Version="3.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.13" />
+		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.6.0" />
+		<PackageReference Include="MudBlazor.Markdown" Version="8.0.0" />
+		<PackageReference Include="MudBlazor" Version="8.3.0" />
+		<PackageReference Include="SharpDotYaml.Extensions.Configuration" Version="0.3.1" />
+		<PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\EventStore.Auth.Ldaps\EventStore.Auth.Ldaps.csproj" />
+		<ProjectReference Include="..\EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />
+		<ProjectReference Include="..\EventStore.Auth.OAuth\EventStore.Auth.OAuth.csproj" />
+		<ProjectReference Include="..\EventStore.Auth.StreamPolicyPlugin\EventStore.Auth.StreamPolicyPlugin.csproj" />
+		<ProjectReference Include="..\EventStore.Auth.UserCertificates\EventStore.Auth.UserCertificates.csproj" />
+		<ProjectReference Include="..\EventStore.ClusterNode.Web\EventStore.ClusterNode.Web.csproj" />
+		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
+		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
+		<ProjectReference Include="..\EventStore.Diagnostics.LogsEndpointPlugin\EventStore.Diagnostics.LogsEndpointPlugin.csproj" />
+		<ProjectReference Include="..\EventStore.OtlpExporterPlugin\EventStore.OtlpExporterPlugin.csproj" />
+		<ProjectReference Include="..\EventStore.PluginHosting\EventStore.PluginHosting.csproj" />
+		<ProjectReference Include="..\EventStore.POC.ConnectedSubsystemsPlugin\EventStore.POC.ConnectedSubsystemsPlugin.csproj" />
+		<ProjectReference Include="..\EventStore.Projections.Core\EventStore.Projections.Core.csproj" />
+		<ProjectReference Include="..\EventStore.Security.EncryptionAtRest\EventStore.Security.EncryptionAtRest.csproj" />
+		<ProjectReference Include="..\EventStore.AutoScavenge\EventStore.AutoScavenge.csproj" />
+		<ProjectReference Include="..\EventStore.TcpPlugin\EventStore.TcpPlugin.csproj" />
+		<ProjectReference Include="..\KurrentDB.UI\KurrentDB.UI.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Include="..\EventStore.Common\Utils\version.properties">
+			<Link>version.properties</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="..\..\LICENSE.md">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="..\..\LICENSE_CONTRIBUTIONS.md">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="..\..\NOTICE.html">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="metricsconfig.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="kestrelsettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+		<None Update="logconfig.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="app2.ico" />
+		<None Remove="certs\**\*" />
+		<Content Include="certs\**\*" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+	<ItemGroup>
+	  <_ContentIncludedByDefault Remove="Components\Layout\CheckAuthorization.razor" />
+	</ItemGroup>
+	<!-- TODO(jen20): Investigate which of these are correct -->
+	<PropertyGroup>
+		<IsMac>false</IsMac>
+		<IsMac Condition="('$(OS)' == 'Unix') And (Exists ('/Library/Frameworks'))">true</IsMac>
+	</PropertyGroup>
+
+</Project>

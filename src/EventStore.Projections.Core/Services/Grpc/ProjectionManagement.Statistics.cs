@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading.Tasks;
@@ -39,20 +39,20 @@ internal partial class ProjectionManagement {
 
 		foreach (var stats in Array.ConvertAll(await statsSource.Task, s => new StatisticsResp.Types.Details {
 			BufferedEvents = s.BufferedEvents,
-			CheckpointStatus = s.CheckpointStatus,
+			CheckpointStatus = s.CheckpointStatus ?? string.Empty,
 			CoreProcessingTime = s.CoreProcessingTime,
-			EffectiveName = s.EffectiveName,
+			EffectiveName = s.EffectiveName ?? string.Empty,
 			Epoch = s.Epoch,
 			EventsProcessedAfterRestart = s.EventsProcessedAfterRestart,
-			LastCheckpoint = s.LastCheckpoint,
+			LastCheckpoint = s.LastCheckpoint ?? string.Empty,
 			Mode = s.Mode.ToString(),
 			Name = s.Name,
 			ReadsInProgress = s.ReadsInProgress,
 			PartitionsCached = s.PartitionsCached,
-			Position = s.Position,
+			Position = s.Position ?? string.Empty,
 			Progress = s.Progress,
-			StateReason = s.StateReason,
-			Status = s.Status,
+			StateReason = s.StateReason ?? string.Empty,
+			Status = s.Status ?? string.Empty,
 			Version = s.Version,
 			WritePendingEventsAfterCheckpoint = s.WritePendingEventsAfterCheckpoint,
 			WritePendingEventsBeforeCheckpoint = s.WritePendingEventsBeforeCheckpoint,

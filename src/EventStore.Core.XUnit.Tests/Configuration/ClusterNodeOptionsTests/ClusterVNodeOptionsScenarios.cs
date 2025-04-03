@@ -1,7 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Authentication;
 using EventStore.Core.Authentication.InternalAuthentication;
@@ -11,12 +12,14 @@ using EventStore.Core.Certificates;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.Transport.Tcp;
+using EventStore.Core.Transforms.Identity;
+using EventStore.Plugins.Transforms;
 using NUnit.Framework;
 
 namespace EventStore.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests;
 
 [TestFixture]
-public abstract class SingleNodeScenario<TLogFormat, TStreamId> {
+public abstract class SingleNodeScenario<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	protected ClusterVNode _node;
 	protected ClusterVNodeOptions _options;
 	private ILogFormatAbstractorFactory<TStreamId> _logFormatFactory;
@@ -27,7 +30,8 @@ public abstract class SingleNodeScenario<TLogFormat, TStreamId> {
 	}
 
 	[OneTimeSetUp]
-	public virtual void TestFixtureSetUp() {
+	public override async Task TestFixtureSetUp() {
+		await base.TestFixtureSetUp();
 		_logFormatFactory = LogFormatHelper<TLogFormat, TStreamId>.LogFormatFactory;
 
 		var options = _disableMemoryOptimization
@@ -47,11 +51,18 @@ public abstract class SingleNodeScenario<TLogFormat, TStreamId> {
 					options.Application.AllowAnonymousStreamAccess,
 					options.Application.OverrideAnonymousEndpointAccessForGossip).Create(c.MainQueue)]))),
 			certificateProvider: new OptionsCertificateProvider());
-		_node.Start();
+
+		_node.Db.TransformManager.LoadTransforms([new IdentityDbTransform()]);
+		_node.Db.TransformManager.SetActiveTransform(TransformType.Identity);
+
+		await _node.StartAsync(waitUntilReady: true, CancellationToken.None);
 	}
 
 	[OneTimeTearDown]
-	public virtual Task TestFixtureTearDown() => _node?.StopAsync() ?? Task.CompletedTask;
+	public override async Task TestFixtureTearDown() {
+		await (_node?.StopAsync() ?? Task.CompletedTask);
+		await base.TestFixtureTearDown();
+	}
 
 	protected abstract ClusterVNodeOptions WithOptions(ClusterVNodeOptions options);
 
@@ -66,7 +77,7 @@ public abstract class ClusterMemberScenario<TLogFormat, TStreamId> {
 	protected ILogFormatAbstractorFactory<TStreamId> _logFormatFactory;
 
 	[OneTimeSetUp]
-	public virtual void TestFixtureSetUp() {
+	public virtual async Task TestFixtureSetUp() {
 		_logFormatFactory = LogFormatHelper<TLogFormat, TStreamId>.LogFormatFactory;
 		_quorumSize = _clusterSize / 2 + 1;
 
@@ -85,7 +96,14 @@ public abstract class ClusterMemberScenario<TLogFormat, TStreamId> {
 					_options.Application.AllowAnonymousStreamAccess,
 					_options.Application.OverrideAnonymousEndpointAccessForGossip).Create(c.MainQueue)]))),
 			certificateProvider: new OptionsCertificateProvider());
-		_node.Start();
+
+		_node.Db.TransformManager.LoadTransforms([new IdentityDbTransform()]);
+		_node.Db.TransformManager.SetActiveTransform(TransformType.Identity);
+
+		// we do not wait until ready because in some cases we will never become ready.
+		// becoming ready involves writing the admin user, which we will never in the test
+		// cases that a node that is configured to be part of a cluster.
+		await _node.StartAsync(waitUntilReady: false, CancellationToken.None);
 	}
 
 	[OneTimeTearDown]

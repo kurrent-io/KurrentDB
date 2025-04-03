@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
@@ -31,7 +31,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 		_db = new TFChunkDb(TFChunkHelper.CreateSizedDbConfig(PathName, 0, chunkSize: 4096));
 		await _db.Open();
 
-		var chunk = _db.Manager.GetChunk(0);
+		var chunk = await _db.Manager.GetInitializedChunk(0, CancellationToken.None);
 
 		_records = new ILogRecord[RecordsCount];
 		_results = new RecordWriteResult[RecordsCount];

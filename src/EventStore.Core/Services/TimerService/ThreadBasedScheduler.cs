@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
@@ -16,15 +16,11 @@ namespace EventStore.Core.Services.TimerService;
 
 public sealed class ThreadBasedScheduler : IMonitoredQueue, IScheduler {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ThreadBasedScheduler>();
-	public string Name {
-		get { return _queueStats.Name; }
-	}
+	public string Name => _queueStats.Name;
 
-	private readonly ConcurrentQueueWrapper<ScheduledTask> _pending = new ConcurrentQueueWrapper<ScheduledTask>();
-	private readonly ManualResetEventSlim _pendingEvent = new ManualResetEventSlim(false);
-
-	private readonly PairingHeap<ScheduledTask> _tasks =
-		new PairingHeap<ScheduledTask>((x, y) => x.DueTime < y.DueTime);
+	private readonly ConcurrentQueueWrapper<ScheduledTask> _pending = new();
+	private readonly ManualResetEventSlim _pendingEvent = new(false);
+	private readonly PairingHeap<ScheduledTask> _tasks = new((x, y) => x.DueTime < y.DueTime);
 
 	private readonly IClock _timeProvider;
 
@@ -32,13 +28,11 @@ public sealed class ThreadBasedScheduler : IMonitoredQueue, IScheduler {
 
 	private readonly QueueStatsCollector _queueStats;
 	private readonly QueueTracker _tracker;
-	private readonly TaskCompletionSource<object> _tcs = new TaskCompletionSource<object>();
+	private readonly TaskCompletionSource<object> _tcs = new();
 
 	private long _nextWakeupTimeTicks = long.MinValue;
 
-	public Task Task {
-		get { return _tcs.Task; }
-	}
+	public Task Task => _tcs.Task;
 
 	public ThreadBasedScheduler(
 		QueueStatsManager queueStatsManager,
@@ -152,16 +146,10 @@ public sealed class ThreadBasedScheduler : IMonitoredQueue, IScheduler {
 		return _queueStats.GetStatistics(_tasks.Count);
 	}
 
-	private struct ScheduledTask {
-		public readonly Instant DueTime;
-		public readonly Action<IScheduler, object> Action;
-		public readonly object State;
-
-		public ScheduledTask(Instant dueTime, Action<IScheduler, object> action, object state) {
-			DueTime = dueTime;
-			Action = action;
-			State = state;
-		}
+	private struct ScheduledTask(Instant dueTime, Action<IScheduler, object> action, object state) {
+		public readonly Instant DueTime = dueTime;
+		public readonly Action<IScheduler, object> Action = action;
+		public readonly object State = state;
 	}
 
 	private class SchedulePendingTasks;

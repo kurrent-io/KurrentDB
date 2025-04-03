@@ -1,10 +1,14 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
-using System.Numerics;
+using System.Buffers;
+using System.Diagnostics;
 using System.Text;
+using DotNext.Buffers;
+using DotNext.Buffers.Binary;
+using DotNext.IO;
+using DotNext.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.LogCommon;
@@ -44,7 +48,7 @@ public static class PrepareFlagsExtensions {
 	}
 }
 
-public class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, IPrepareLogRecord<string> {
+public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, IPrepareLogRecord<string> {
 	public const byte PrepareRecordVersion = 1;
 
 	public PrepareFlags Flags { get; }
@@ -58,7 +62,7 @@ public class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, IPrepar
 	public DateTime TimeStamp { get; }
 	public string EventType { get; }
 	private int? _eventTypeSize;
-	public ReadOnlyMemory<byte> Data { get; }
+	public ReadOnlyMemory<byte> Data => Flags.HasFlag(PrepareFlags.IsRedacted) ? NoData : _dataOnDisk;
 	private readonly ReadOnlyMemory<byte> _dataOnDisk;
 	public ReadOnlyMemory<byte> Metadata { get; }
 
@@ -84,46 +88,33 @@ public class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, IPrepar
 	}
 
 	// including length and suffix
-	public int SizeOnDisk {
-		get {
-			if (_sizeOnDisk.HasValue)
-				return _sizeOnDisk.Value;
+	private int ComputeSizeOnDisk() {
+		int eventStreamIdSize = _eventStreamIdSize ??= Encoding.UTF8.GetByteCount(EventStreamId);
+		int eventTypeSize = _eventTypeSize ??= Encoding.UTF8.GetByteCount(EventType);
 
-			_eventStreamIdSize ??= Encoding.UTF8.GetByteCount(EventStreamId);
-			_eventTypeSize ??= Encoding.UTF8.GetByteCount(EventType);
+		return
+			2 * sizeof(int) /* Length prefix & suffix */
+			+ BaseSize
+			+ sizeof(ushort) /* Flags */
+			+ sizeof(long) /* TransactionPosition */
+			+ sizeof(int) /* TransactionOffset */
+			+ (Version is LogRecordVersion.LogRecordV0 ? sizeof(int) : sizeof(long)) /* ExpectedVersion */
+			+ StringSizeWithLengthPrefix(eventStreamIdSize) /* EventStreamId */
+			+ 16 /* EventId */
+			+ 16 /* CorrelationId */
+			+ sizeof(long) /* TimeStamp */
+			+ StringSizeWithLengthPrefix(eventTypeSize) /* EventType */
+			+ sizeof(int) /* Data length */
+			+ _dataOnDisk.Length /* Data */
+			+ sizeof(int) /* Metadata length */
+			+ Metadata.Length; /* Metadata */
 
-			_sizeOnDisk =
-				2 * sizeof(int) /* Length prefix & suffix */
-				+ sizeof(byte) /* Record Type */
-				+ sizeof(byte) /* Version */
-				+ sizeof(long) /* Log Position */
-				+ sizeof(ushort) /* Flags */
-				+ sizeof(long) /* TransactionPosition */
-				+ sizeof(int) /* TransactionOffset */
-				+ (Version == LogRecordVersion.LogRecordV0 ? sizeof(int) : sizeof(long)) /* ExpectedVersion */
-				+ StringSizeWithLengthPrefix(_eventStreamIdSize.Value) /* EventStreamId */
-				+ 16 /* EventId */
-				+ 16 /* CorrelationId */
-				+ sizeof(long) /* TimeStamp */
-				+ StringSizeWithLengthPrefix(_eventTypeSize.Value) /* EventType */
-				+ sizeof(int) /* Data length */
-				+ _dataOnDisk.Length /* Data */
-				+ sizeof(int) /* Metadata length */
-				+ Metadata.Length; /* Metadata */
+		// when written to disk, a string is prefixed with its length which is written as ULEB128
+		static int StringSizeWithLengthPrefix(int stringSize) {
+			Debug.Assert(stringSize >= 0);
 
-			return _sizeOnDisk.Value;
+			return stringSize is 0 ? 1 : stringSize + int.Log2(stringSize) / 7 + 1;
 		}
-	}
-
-	private static int StringSizeWithLengthPrefix(int stringSize) {
-		// when written to disk by the BinaryWriter, a string is prefixed with its length which is written as a 7-bit encoded integer
-		Ensure.Nonnegative(stringSize, nameof(stringSize));
-
-		if (stringSize == 0)
-			return 1;
-
-		var msb = 31 - BitOperations.LeadingZeroCount((uint)stringSize);
-		return stringSize + msb / 7 + 1;
 	}
 
 	public PrepareLogRecord(long logPosition,
@@ -164,39 +155,45 @@ public class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, IPrepar
 		EventType = eventType ?? string.Empty;
 		_eventTypeSize = eventTypeSize;
 		_dataOnDisk = data;
-		Data = Flags.HasFlag(PrepareFlags.IsRedacted) ? NoData : _dataOnDisk;
 		Metadata = metadata;
 		if (InMemorySize > TFConsts.MaxLogRecordSize) throw new Exception("Record too large.");
 	}
 
-	internal PrepareLogRecord(BinaryReader reader, byte version, long logPosition) : base(LogRecordType.Prepare,
-		version, logPosition) {
-		if (version != LogRecordVersion.LogRecordV0 && version != LogRecordVersion.LogRecordV1)
-			throw new ArgumentException(string.Format(
-				"PrepareRecord version {0} is incorrect. Supported version: {1}.", version, PrepareRecordVersion));
+	internal PrepareLogRecord(ref SequenceReader reader, byte version, long logPosition)
+		: base(LogRecordType.Prepare, version, logPosition) {
+		if (version is not LogRecordVersion.LogRecordV0 and not LogRecordVersion.LogRecordV1)
+			throw new ArgumentException(
+				$"PrepareRecord version {version} is incorrect. Supported version: {PrepareRecordVersion}.");
 
-		Flags = (PrepareFlags)reader.ReadUInt16();
-		TransactionPosition = reader.ReadInt64();
-		TransactionOffset = reader.ReadInt32();
-		ExpectedVersion = version == LogRecordVersion.LogRecordV0 ? reader.ReadInt32() : reader.ReadInt64();
+		var context = new DecodingContext(Encoding.UTF8, reuseDecoder: true);
+		Flags = (PrepareFlags)reader.ReadLittleEndian<ushort>();
+		TransactionPosition = reader.ReadLittleEndian<long>();
+		TransactionOffset = reader.ReadLittleEndian<int>();
+		ExpectedVersion = version is LogRecordVersion.LogRecordV0
+			? AdjustVersion(reader.ReadLittleEndian<int>())
+			: reader.ReadLittleEndian<long>();
+		EventStreamId = ReadString(ref reader, in context);
+		EventId = reader.Read<Blittable<Guid>>().Value;
+		CorrelationId = reader.Read<Blittable<Guid>>().Value;
+		TimeStamp = new(reader.ReadLittleEndian<long>());
+		EventType = ReadString(ref reader, in context);
+		_dataOnDisk = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
+			? reader.Read(dataCount).ToArray()
+			: NoData;
+		Metadata = reader.ReadLittleEndian<int>() is var metadataCount && metadataCount > 0
+			? reader.Read(metadataCount).ToArray()
+			: NoData;
 
-		if (version == LogRecordVersion.LogRecordV0) {
-			ExpectedVersion = ExpectedVersion == int.MaxValue - 1 ? long.MaxValue - 1 : ExpectedVersion;
+		if (InMemorySize > TFConsts.MaxLogRecordSize)
+			throw new Exception("Record too large.");
+
+		static long AdjustVersion(int version)
+			=> version is int.MaxValue - 1 ? long.MaxValue - 1L : version;
+
+		static string ReadString(ref SequenceReader reader, in DecodingContext context) {
+			using var buffer = reader.Decode(in context, LengthFormat.Compressed);
+			return buffer.ToString();
 		}
-
-		EventStreamId = reader.ReadString();
-		EventId = new Guid(reader.ReadBytes(16));
-		CorrelationId = new Guid(reader.ReadBytes(16));
-		TimeStamp = new DateTime(reader.ReadInt64());
-		EventType = reader.ReadString();
-
-		var dataCount = reader.ReadInt32();
-		_dataOnDisk = dataCount == 0 ? NoData : reader.ReadBytes(dataCount);
-		Data = Flags.HasFlag(PrepareFlags.IsRedacted) ? NoData : _dataOnDisk;
-
-		var metadataCount = reader.ReadInt32();
-		Metadata = metadataCount == 0 ? NoData : reader.ReadBytes(metadataCount);
-		if (InMemorySize > TFConsts.MaxLogRecordSize) throw new Exception("Record too large.");
 	}
 
 	public IPrepareLogRecord<string> CopyForRetry(long logPosition, long transactionPosition) {
@@ -217,30 +214,48 @@ public class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, IPrepar
 			metadata: Metadata);
 	}
 
-	public override void WriteTo(BinaryWriter writer) {
-		base.WriteTo(writer);
+	public override void WriteTo(ref BufferWriterSlim<byte> writer) {
+		base.WriteTo(ref writer);
 
-		writer.Write((ushort)Flags);
-		writer.Write(TransactionPosition);
-		writer.Write(TransactionOffset);
-		if (Version == LogRecordVersion.LogRecordV0) {
+		writer.WriteLittleEndian((ushort)Flags);
+		writer.WriteLittleEndian(TransactionPosition);
+		writer.WriteLittleEndian(TransactionOffset);
+		if (Version is LogRecordVersion.LogRecordV0) {
 			int expectedVersion = ExpectedVersion == long.MaxValue - 1 ? int.MaxValue - 1 : (int)ExpectedVersion;
-			writer.Write(expectedVersion);
+			writer.WriteLittleEndian(expectedVersion);
 		} else {
-			writer.Write(ExpectedVersion);
+			writer.WriteLittleEndian(ExpectedVersion);
 		}
 
-		writer.Write(EventStreamId);
+		_eventStreamIdSize ??= Encoding.UTF8.GetByteCount(EventStreamId);
 
-		writer.Write(EventId.ToByteArray());
-		writer.Write(CorrelationId.ToByteArray());
-		writer.Write(TimeStamp.Ticks);
-		writer.Write(EventType);
-		writer.Write(_dataOnDisk.Length);
-		writer.Write(_dataOnDisk.Span);
-		writer.Write(Metadata.Length);
-		writer.Write(Metadata.Span);
+		// 7-bit encoded int from BinaryWriter is actually ULEB128, so we need to cast int to uint
+		// first to preserve binary compatibility
+		writer.WriteLeb128((uint)_eventStreamIdSize.GetValueOrDefault());
+		var buffer = writer.GetSpan(_eventStreamIdSize.GetValueOrDefault());
+		writer.Advance(Encoding.UTF8.GetBytes(EventStreamId, buffer));
+
+		buffer = writer.GetSpan(16);
+		EventId.TryWriteBytes(buffer);
+		writer.Advance(16);
+
+		buffer = writer.GetSpan(16);
+		CorrelationId.TryWriteBytes(buffer);
+		writer.Advance(16);
+
+		writer.WriteLittleEndian(TimeStamp.Ticks);
+
+		_eventTypeSize ??= Encoding.UTF8.GetByteCount(EventType);
+		writer.WriteLeb128((uint)_eventTypeSize.GetValueOrDefault());
+		buffer = writer.GetSpan(_eventTypeSize.GetValueOrDefault());
+		writer.Advance(Encoding.UTF8.GetBytes(EventType, buffer));
+
+		writer.Write(_dataOnDisk.Span, LengthFormat.LittleEndian);
+		writer.Write(Metadata.Span, LengthFormat.LittleEndian);
 	}
+
+	public override int GetSizeWithLengthPrefixAndSuffix()
+		=> _sizeOnDisk ??= ComputeSizeOnDisk();
 
 	public bool Equals(PrepareLogRecord other) {
 		if (ReferenceEquals(null, other)) return false;

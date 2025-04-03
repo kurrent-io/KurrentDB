@@ -1,8 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 
+using System;
 using System.IO;
 using System.Linq;
 using EventStore.Common.Utils;
@@ -12,7 +13,8 @@ using Microsoft.Extensions.FileProviders;
 namespace EventStore.Core.Configuration;
 
 public static class ConfigurationBuilderExtensions {
-	public static IConfigurationBuilder AddEsdbConfigFile(this IConfigurationBuilder builder, string configFilePath,
+
+	public static IConfigurationBuilder AddKurrentConfigFile(this IConfigurationBuilder builder, string configFilePath,
 		bool optional = false, bool reloadOnChange = false) {
 		if (!Locations.TryLocateConfigFile(configFilePath, out var directory, out var fileName)) {
 			if (optional)
@@ -36,8 +38,15 @@ public static class ConfigurationBuilderExtensions {
 		return builder;
 	}
 
-	public static IConfigurationBuilder AddEsdbConfigFiles(this IConfigurationBuilder builder, string subdirectory,
+	public static IConfigurationBuilder AddKurrentConfigFiles(this IConfigurationBuilder builder, string subdirectory,
 		string pattern) {
+		AddConfigFiles(subdirectory, pattern, (file) =>
+			builder.AddKurrentConfigFile(file, optional: true, reloadOnChange: true));
+		return builder;
+	}
+
+	public static void AddConfigFiles(string subdirectory,
+		string pattern, Action<string> addConfigFile) {
 		// when searching for a file we check the directories in forward order until we find it
 		// so when adding all the files we apply them in reverse order to keep the same precedence
 		foreach (var directory in Locations.GetPotentialConfigurationDirectories().Reverse()) {
@@ -46,13 +55,11 @@ public static class ConfigurationBuilderExtensions {
 				continue;
 
 			foreach (var configFile in Directory.EnumerateFiles(configDirectory, pattern).Order()) {
-				builder.AddEsdbConfigFile(configFile, optional: true, reloadOnChange: true);
+				addConfigFile(configFile);
 			}
 		}
-
-		return builder;
 	}
 
-	public static IConfigurationBuilder AddEsdbConfigFiles(this IConfigurationBuilder builder, string pattern) =>
-		builder.AddEsdbConfigFiles("config", pattern);
+	public static IConfigurationBuilder AddKurrentConfigFiles(this IConfigurationBuilder builder, string pattern) =>
+		builder.AddKurrentConfigFiles("config", pattern);
 }

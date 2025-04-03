@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 
@@ -13,8 +13,8 @@ using static EventStore.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Metrics;
 
-public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTracker, bool> config) {
-    public void CreateLoadAverageMetric(string metricName, Dictionary<SystemTracker, string> dimNames) {
+public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTracker, bool> config, bool legacyNames) {
+	public void CreateLoadAverageMetric(string metricName, Dictionary<SystemTracker, string> dimNames) {
 		if (RuntimeInformation.IsWindows)
 			return;
 
@@ -30,8 +30,8 @@ public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTrack
 	}
 
 	public void CreateCpuMetric(string name) {
-        if (!config.TryGetValue(SystemTracker.Cpu, out var enabled) || !enabled)
-            return;
+		if (!config.TryGetValue(SystemTracker.Cpu, out var enabled) || !enabled)
+			return;
 
 		meter.CreateObservableUpDownCounter(name, RuntimeStats.GetCpuUsage);
 	}
@@ -39,34 +39,40 @@ public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTrack
 	public void CreateMemoryMetric(string metricName, Dictionary<SystemTracker, string> dimNames) {
 		var dims = new Dimensions<SystemTracker, long>(config, dimNames, tag => new("kind", tag));
 
-        dims.Register(SystemTracker.FreeMem, RuntimeStats.GetFreeMemory);
-        dims.Register(SystemTracker.TotalMem, RuntimeStats.GetTotalMemory);
+		dims.Register(SystemTracker.FreeMem, RuntimeStats.GetFreeMemory);
+		dims.Register(SystemTracker.TotalMem, RuntimeStats.GetTotalMemory);
 
 		if (dims.AnyRegistered())
-			meter.CreateObservableGauge($"{metricName}-bytes", dims.GenObserve());
+			if (legacyNames)
+				meter.CreateObservableGauge($"{metricName}-bytes", dims.GenObserve());
+			else
+				meter.CreateObservableGauge(metricName, dims.GenObserve(), "bytes");
 	}
 
 	public void CreateDiskMetric(string metricName, string dbPath, Dictionary<SystemTracker, string> dimNames) {
 		var dims = new Dimensions<SystemTracker, long>(config, dimNames, tag => new());
 
-        var getDriveInfo = Functions.Debounce(() => DriveStats.GetDriveInfo(dbPath), timeout);
+		var getDriveInfo = Functions.Debounce(() => DriveStats.GetDriveInfo(dbPath), timeout);
 
-        dims.Register(SystemTracker.DriveUsedBytes, GenMeasure(info => info.UsedBytes));
+		dims.Register(SystemTracker.DriveUsedBytes, GenMeasure(info => info.UsedBytes));
 		dims.Register(SystemTracker.DriveTotalBytes, GenMeasure(info => info.TotalBytes));
 
 		if (dims.AnyRegistered())
-			meter.CreateObservableGauge($"{metricName}-bytes", dims.GenObserve());
-        
-        return;
+			if (legacyNames)
+				meter.CreateObservableGauge($"{metricName}-bytes", dims.GenObserve());
+			else
+				meter.CreateObservableGauge(metricName, dims.GenObserve(), "bytes");
+		
+		return;
 
-        Func<string, Measurement<long>> GenMeasure(Func<DriveData, long> func) => tag => {
-            var info = getDriveInfo();
+		Func<string, Measurement<long>> GenMeasure(Func<DriveData, long> func) => tag => {
+			var info = getDriveInfo();
 
-            return new(
-                func(info),
-                new("kind", tag),
-                new("disk", info.DiskName)
-            );
-        };
-    }
+			return new(
+				func(info),
+				new("kind", tag),
+				new("disk", info.DiskName)
+			);
+		};
+	}
 }

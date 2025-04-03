@@ -1,8 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Services.Transport.Common;
+using RecordPosition = EventStore.Core.Services.Transport.Common.Position;
 
 // ReSharper disable CheckNamespace
 namespace EventStore.Client.Streams;
@@ -29,19 +30,17 @@ partial class ReadReq {
 				}
 
 				partial class AllOptions {
-					internal Core.Services.Transport.Common.Position ToPosition() => AllOptionCase switch {
-						AllOptionOneofCase.End => Core.Services.Transport.Common.Position.End,
-						AllOptionOneofCase.Start => Core.Services.Transport.Common.Position.Start,
-						AllOptionOneofCase.Position => new Core.Services.Transport.Common.Position(Position.CommitPosition,
-							Position.PreparePosition),
+					internal RecordPosition ToPosition() => AllOptionCase switch {
+						AllOptionOneofCase.End => RecordPosition.End,
+						AllOptionOneofCase.Start => RecordPosition.Start,
+						AllOptionOneofCase.Position => new(Position.CommitPosition, Position.PreparePosition),
 						_ => throw new InvalidOperationException()
 					};
 
-					internal Core.Services.Transport.Common.Position? ToSubscriptionPosition() => AllOptionCase switch {
-						AllOptionOneofCase.End => Core.Services.Transport.Common.Position.End,
+					internal RecordPosition? ToSubscriptionPosition() => AllOptionCase switch {
+						AllOptionOneofCase.End => RecordPosition.End,
 						AllOptionOneofCase.Start => null,
-						AllOptionOneofCase.Position => new Core.Services.Transport.Common.Position(Position.CommitPosition,
-							Position.PreparePosition),
+						AllOptionOneofCase.Position => new RecordPosition(Position.CommitPosition, Position.PreparePosition),
 						_ => throw new InvalidOperationException()
 					};
 				}

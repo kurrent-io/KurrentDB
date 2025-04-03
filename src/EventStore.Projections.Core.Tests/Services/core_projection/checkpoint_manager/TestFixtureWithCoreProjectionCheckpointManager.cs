@@ -1,7 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using EventStore.Core.Util;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
@@ -35,6 +36,7 @@ public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat,
 	protected CoreProjectionCheckpointReader _checkpointReader;
 	protected string _projectionName;
 	protected ProjectionVersion _projectionVersion;
+	protected int _maxProjectionStateSize = Opts.MaxProjectionStateSizeDefault;
 
 	[SetUp]
 	public void setup() {
@@ -63,7 +65,7 @@ public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat,
 			_bus, _projectionCorrelationId, _projectionVersion, null, _ioDispatcher, _config, _projectionName,
 			new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled, _producesResults,
 			_definesFold,
-			_checkpointWriter);
+			_checkpointWriter, _maxProjectionStateSize);
 	}
 
 	protected new virtual void Given() {

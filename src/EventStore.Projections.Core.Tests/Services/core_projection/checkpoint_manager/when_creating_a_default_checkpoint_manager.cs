@@ -1,8 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Tests;
+using EventStore.Core.Util;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.SingleStream;
@@ -28,7 +29,7 @@ public class when_creating_a_default_checkpoint_manager<TLogFormat, TStreamId> :
 		_manager = new DefaultCheckpointManager(
 			_bus, _projectionCorrelationId, new ProjectionVersion(1, 0, 0), null, _ioDispatcher, _config,
 			"projection", new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled,
-			_producesResults, _definesFold, _coreProjectionCheckpointWriter);
+			_producesResults, _definesFold, _coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 	}
 
 	[Test]
@@ -37,7 +38,7 @@ public class when_creating_a_default_checkpoint_manager<TLogFormat, TStreamId> :
 			_manager = new DefaultCheckpointManager(
 				null, _projectionCorrelationId, new ProjectionVersion(1, 0, 0), null, _ioDispatcher, _config,
 				"projection", new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled,
-				_producesResults, _definesFold, _coreProjectionCheckpointWriter);
+				_producesResults, _definesFold, _coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 		});
 	}
 
@@ -47,7 +48,7 @@ public class when_creating_a_default_checkpoint_manager<TLogFormat, TStreamId> :
 			_manager = new DefaultCheckpointManager(
 				_bus, _projectionCorrelationId, new ProjectionVersion(1, 0, 0), null, null, _config, "projection",
 				new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled, _producesResults,
-				_definesFold, _coreProjectionCheckpointWriter);
+				_definesFold, _coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 		});
 	}
 
@@ -58,7 +59,7 @@ public class when_creating_a_default_checkpoint_manager<TLogFormat, TStreamId> :
 				_bus, _projectionCorrelationId, new ProjectionVersion(1, 0, 0), null, _ioDispatcher, null,
 				"projection",
 				new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled, _producesResults,
-				_definesFold, _coreProjectionCheckpointWriter);
+				_definesFold, _coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 		});
 	}
 
@@ -68,7 +69,7 @@ public class when_creating_a_default_checkpoint_manager<TLogFormat, TStreamId> :
 			_manager = new DefaultCheckpointManager(
 				_bus, _projectionCorrelationId, new ProjectionVersion(1, 0, 0), null, _ioDispatcher, _config, null,
 				new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled, _producesResults,
-				_definesFold, _coreProjectionCheckpointWriter);
+				_definesFold, _coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 		});
 	}
 
@@ -78,7 +79,7 @@ public class when_creating_a_default_checkpoint_manager<TLogFormat, TStreamId> :
 			_manager = new DefaultCheckpointManager(
 				_bus, _projectionCorrelationId, new ProjectionVersion(1, 0, 0), null, _ioDispatcher, _config,
 				"projection", null, _namingBuilder, _checkpointsEnabled, _producesResults,
-				_definesFold, _coreProjectionCheckpointWriter);
+				_definesFold, _coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 		});
 	}
 
@@ -88,7 +89,7 @@ public class when_creating_a_default_checkpoint_manager<TLogFormat, TStreamId> :
 			_manager = new DefaultCheckpointManager(
 				_bus, _projectionCorrelationId, new ProjectionVersion(1, 0, 0), null, _ioDispatcher, _config, "",
 				new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled, _producesResults,
-				_definesFold, _coreProjectionCheckpointWriter);
+				_definesFold, _coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 		});
 	}
 
@@ -98,7 +99,7 @@ public class when_creating_a_default_checkpoint_manager<TLogFormat, TStreamId> :
 			_manager = new DefaultCheckpointManager(
 				_bus, _projectionCorrelationId, new ProjectionVersion(1, 0, 0), null, _ioDispatcher, _config, "",
 				new StreamPositionTagger(0, "stream"), _namingBuilder, _checkpointsEnabled, _producesResults,
-				_definesFold, _coreProjectionCheckpointWriter);
+				_definesFold, _coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 		});
 	}
 }

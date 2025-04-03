@@ -5,74 +5,69 @@ order: 1
 
 # Database logs
 
-EventStoreDB logs its internal operations to the console (stdout) and to log files. The default location of
+KurrentDB logs its internal operations to the console (stdout) and to log files. The default location of
 the log files and the way to change it is described [below](#logs-location).
 
-There are a few options to change the way how EventStoreDB produces logs and how detailed the logs should be.
+There are a few options to change the way how KurrentDB produces logs and how detailed the logs should be.
 
 ::: warning
-The EventStoreDB logs may contain sensitive information such as stream names, usernames, and projection definitions.
+KurrentDB logs may contain sensitive information such as stream names, usernames, and projection definitions.
 :::
 
 ## Log format
 
-EventStoreDB uses the structured logging in JSON format that is more machine-friendly and can be ingested by
+KurrentDB uses the structured logging in JSON format that is more machine-friendly and can be ingested by
 vendor-specific tools like Logstash or Datadog agent.
 
 Here is how the structured log looks like:
 
 ```json
 {
-  "PID": "6940",
-  "ThreadID": "23",
-  "Date": "2020-06-16T16:14:02.052976Z",
-  "Level": "Debug",
-  "Logger": "ProjectionManager",
-  "Message": "PROJECTIONS: Starting Projections Manager. (Node State : {state})",
-  "EventProperties": {
-    "state": "Master"
-  }
-}
-{
-  "PID": "6940",
-  "ThreadID": "15",
-  "Date": "2020-06-16T16:14:02.052976Z",
-  "Level": "Info",
-  "Logger": "ClusterVNodeController",
-  "Message": "========== [{internalHttp}] Sub System '{subSystemName}' initialized.",
-  "EventProperties": {
-    "internalHttp": "127.0.0.1:2112",
-    "subSystemName": "Projections"
-  }
-}
-{
-  "PID": "6940",
-  "ThreadID": "23",
-  "Date": "2020-06-16T16:14:02.052976Z",
-  "Level": "Debug",
-  "Logger": "MultiStreamMessageWriter",
-  "Message": "PROJECTIONS: Resetting Worker Writer",
-  "EventProperties": {}
-}
-{
-  "PID": "6940",
-  "ThreadID": "23",
-  "Date": "2020-06-16T16:14:02.055000Z",
-  "Level": "Debug",
-  "Logger": "ProjectionCoreCoordinator",
-  "Message": "PROJECTIONS: SubComponent Started: {subComponent}",
-  "EventProperties": {
-    "subComponent": "EventReaderCoreService"
-  }
+	"@t": "2025-02-03T18:11:53.8612833+01:00",
+	"@mt": "PROJECTIONS SUBSYSTEM: All components started for Instance: {instanceCorrelationId}",
+	"@l": "Information",
+	"@i": 669867955,
+	"instanceCorrelationId": "9bfbea73-b3de-45d8-8586-caefaa0bf05f",
+	"SourceContext": "EventStore.Projections.Core.ProjectionsSubsystem",
+	"ProcessId": 19812,
+	"ThreadId": 9
+} {
+	"@t": "2025-02-03T18:11:53.8614272+01:00",
+	"@mt": "========== [{httpEndPoint}] Sub System '{subSystemName}' initialized.",
+	"@l": "Information",
+	"@i": 1147237149,
+	"httpEndPoint": "127.0.0.1:2113",
+	"subSystemName": "Projections",
+	"SourceContext": "EventStore.Core.Services.VNode.ClusterVNodeController",
+	"ProcessId": 19812,
+	"ThreadId": 16
+} {
+	"@t": "2025-02-03T18:11:53.8630025+01:00",
+	"@mt": "Allowed Connectors: {AllowedConnectors}",
+	"@l": "Information",
+	"@i": 542710717,
+	"AllowedConnectors": ["SerilogSink", "HttpSink"],
+	"SourceContext": "EventStore.Connectors.Management.ConnectorsLicenseService",
+	"ProcessId": 19812,
+	"ThreadId": 22
+} {
+	"@t": "2025-02-03T18:11:53.8633385+01:00",
+	"@mt": "PROJECTIONS: No projections were found in {stream}, starting from empty stream",
+	"@l": "Debug",
+	"@i": 2065058799,
+	"stream": "$projections-$all",
+	"SourceContext": "EventStore.Projections.Core.Services.Management.ProjectionManager",
+	"ProcessId": 19812,
+	"ThreadId": 9
 }
 ```
 
-This format is aligned with [Serilog Compact JSON format](https://github.com/serilog/serilog-formatting-compact).
+This format is aligned with the [CLEF format](https://clef-json.org/).
 
 ## Logs location
 
-Log files are located in `/var/log/eventstore` for Linux and macOS, and in the `logs` subdirectory of the
-EventStoreDB installation directory on Windows. You can change the log files location using the `Log`
+Log files are located in `/var/log/kurrentdb` for Linux and macOS, and in the `logs` subdirectory of the
+KurrentDB installation directory on Windows. You can change the log files location using the `Log`
 configuration option.
 
 ::: tip
@@ -84,13 +79,13 @@ verbose log level.
 |:---------------------|:-----------------|
 | Command line         | `--log`          |
 | YAML                 | `Log`            |
-| Environment variable | `EVENTSTORE_LOG` |
+| Environment variable | `KURRENTDB_LOG`  |
 
-For example, adding this line to the `eventstore.conf` file will force writing logs to
-the `/tmp/eventstore/logs` directory:
+For example, adding this line to the `kurrentdb.conf` file will force writing logs to
+the `/tmp/kurrentdb/logs` directory:
 
 ```text:no-line-numbers
-Log: /tmp/eventstore/logs
+Log: /tmp/kurrentdb/logs
 ```
 
 ## Log level
@@ -101,13 +96,15 @@ You can change the level using the `LogLevel` setting:
 |:---------------------|:-----------------------|
 | Command line         | `--log-level`          |
 | YAML                 | `LogLevel`             |
-| Environment variable | `EVENTSTORE_LOG_LEVEL` |
+| Environment variable | `KURRENTDB_LOG_LEVEL`  |
 
 Acceptable values are: `Default`, `Verbose`, `Debug`, `Information`, `Warning`, `Error`, and `Fatal`.
 
+Additionally: `Trace` is equivalent to `Verbose`, `Critical` is equivalent to `Fatal`, and `None` is equivalent to `Fatal`.
+
 ## Logging options
 
-You can tune the EventStoreDB logging further by using the logging options described below.
+You can tune the KurrentDB logging further by using the logging options described below.
 
 ### Log configuration file
 
@@ -117,14 +114,14 @@ Specifies the location of the file which configures the logging levels of variou
 |:---------------------|:------------------------|
 | Command line         | `--log-config`          |
 | YAML                 | `LogConfig`             |
-| Environment variable | `EVENTSTORE_LOG_CONFIG` |
+| Environment variable | `KURRENTDB_LOG_CONFIG`  |
 
-By default, the application directory (and `/etc/eventstore` on Linux and Mac) are checked. You may specify a
+By default, the application directory (and `/etc/kurrentdb` on Linux and Mac) are checked. You may specify a
 full path.
 
 ### HTTP requests logging
 
-EventStoreDB can also log all the incoming HTTP requests, like many HTTP servers do. Requests are logged
+KurrentDB can also log all the incoming HTTP requests, like many HTTP servers do. Requests are logged
 before being processed, so unsuccessful requests are logged too.
 
 Use one of the following ways to enable the HTTP requests logging:
@@ -133,7 +130,7 @@ Use one of the following ways to enable the HTTP requests logging:
 |:---------------------|:-------------------------------|
 | Command line         | `--log-http-requests`          |
 | YAML                 | `LogHttpRequests`              |
-| Environment variable | `EVENTSTORE_LOG_HTTP_REQUESTS` |
+| Environment variable | `KURRENTDB_LOG_HTTP_REQUESTS`  |
 
 **Default**: `false`, logging HTTP requests is disabled by default.
 
@@ -146,7 +143,7 @@ setting `LogFailedAuthenticationAttempts` setting to true.
 |:---------------------|:------------------------------------------------|
 | Command line         | `--log-failed-authentication-attempts`          |
 | YAML                 | `LogFailedAuthenticationAttempts`               |
-| Environment variable | `EVENTSTORE_LOG_FAILED_AUTHENTICATION_ATTEMPTS` |
+| Environment variable | `KURRENTDB_LOG_FAILED_AUTHENTICATION_ATTEMPTS`  |
 
 **Default**: `false`
 
@@ -158,7 +155,7 @@ The format of the console logger. Use `Json` for structured log output.
 |:---------------------|:--------------------------------|
 | Command line         | `--log-console-format`          |
 | YAML                 | `LogConsoleFormat`              |
-| Environment variable | `EVENTSTORE_LOG_CONSOLE_FORMAT` |
+| Environment variable | `KURRENTDB_LOG_CONSOLE_FORMAT`  |
 
 Acceptable values are: `Plain`, `Json`
 
@@ -172,7 +169,7 @@ The maximum size of each log file, in bytes.
 |:---------------------|:---------------------------|
 | Command line         | `--log-file-size`          |
 | YAML                 | `LogFileSize`              |
-| Environment variable | `EVENTSTORE_LOG_FILE_SIZE` |
+| Environment variable | `KURRENTDB_LOG_FILE_SIZE`  |
 
 **Default**: `1GB`
 
@@ -184,7 +181,7 @@ How often to rotate logs.
 |:---------------------|:-------------------------------|
 | Command line         | `--log-file-interval`          |
 | YAML                 | `LogFileInterval`              |
-| Environment variable | `EVENTSTORE_LOG_FILE_INTERVAL` |
+| Environment variable | `KURRENTDB_LOG_FILE_INTERVAL`  |
 
 Acceptable values are: `Minute`, `Hour`, `Day`, `Week`, `Month`, `Year`
 
@@ -198,7 +195,7 @@ Defines how many log files need to be kept on disk. By default, logs for the las
 |:---------------------|:---------------------------------|
 | Command line         | `--log-file-retention-count`     |
 | YAML                 | `LogFileRetentionCount`          |
-| Environment variable | `EVENTSTORE_LOG_RETENTION_COUNT` |
+| Environment variable | `KURRENTDB_LOG_RETENTION_COUNT`  |
 
 **Default**: `31`
 
@@ -210,7 +207,7 @@ You can completely disable logging to a file by changing the `DisableLogFile` op
 |:---------------------|:------------------------------|
 | Command line         | `--disable-log-file`          |
 | YAML                 | `DisableLogFile`              |
-| Environment variable | `EVENTSTORE_DISABLE_LOG_FILE` |
+| Environment variable | `KURRENTDB_DISABLE_LOG_FILE`  |
 
 **Default**: `false`
 
@@ -218,12 +215,12 @@ You can completely disable logging to a file by changing the `DisableLogFile` op
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The _Logs Download_ feature provides HTTP access to EventStoreDB logs so that they can be viewed without requiring file system access.
+The _Logs Download_ feature provides HTTP access to KurrentDB logs so that they can be viewed without requiring file system access.
 
 You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
 
 ::: tip
-You can use this API to download log files from your managed EventStoreDB clusters in Event Store Cloud.
+You can use this API to download log files from your managed KurrentDB clusters in Kurrent Cloud.
 :::
 
 On startup the server will log a message similar to:

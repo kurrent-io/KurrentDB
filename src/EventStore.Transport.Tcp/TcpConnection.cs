@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -366,19 +366,19 @@ public class TcpConnection : TcpConnectionBase, ITcpConnection {
 
 		if (_verbose) {
 			Log.Information(
-				"ES {connectionType} closed [{dateTime:HH:mm:ss.fff}: N{remoteEndPoint}, L{localEndPoint}, {connectionId:B}]:Received bytes: {totalBytesReceived}, Sent bytes: {totalBytesSent}",
+				"DB {connectionType} closed [{dateTime:HH:mm:ss.fff}: N{remoteEndPoint}, L{localEndPoint}, {connectionId:B}]:Received bytes: {totalBytesReceived}, Sent bytes: {totalBytesSent}",
 				GetType().Name, DateTime.UtcNow, RemoteEndPoint, LocalEndPoint, _connectionId,
 				TotalBytesReceived, TotalBytesSent);
 			Log.Information(
-				"ES {connectionType} closed [{dateTime:HH:mm:ss.fff}: N{remoteEndPoint}, L{localEndPoint}, {connectionId:B}]:Send calls: {sendCalls}, callbacks: {sendCallbacks}",
+				"DB {connectionType} closed [{dateTime:HH:mm:ss.fff}: N{remoteEndPoint}, L{localEndPoint}, {connectionId:B}]:Send calls: {sendCalls}, callbacks: {sendCallbacks}",
 				GetType().Name, DateTime.UtcNow, RemoteEndPoint, LocalEndPoint, _connectionId,
 				SendCalls, SendCallbacks);
 			Log.Information(
-				"ES {connectionType} closed [{dateTime:HH:mm:ss.fff}: N{remoteEndPoint}, L{localEndPoint}, {connectionId:B}]:Receive calls: {receiveCalls}, callbacks: {receiveCallbacks}",
+				"DB {connectionType} closed [{dateTime:HH:mm:ss.fff}: N{remoteEndPoint}, L{localEndPoint}, {connectionId:B}]:Receive calls: {receiveCalls}, callbacks: {receiveCallbacks}",
 				GetType().Name, DateTime.UtcNow, RemoteEndPoint, LocalEndPoint, _connectionId,
 				ReceiveCalls, ReceiveCallbacks);
 			Log.Information(
-				"ES {connectionType} closed [{dateTime:HH:mm:ss.fff}: N{remoteEndPoint}, L{localEndPoint}, {connectionId:B}]:Close reason: [{socketError}] {reason}",
+				"DB {connectionType} closed [{dateTime:HH:mm:ss.fff}: N{remoteEndPoint}, L{localEndPoint}, {connectionId:B}]:Close reason: [{socketError}] {reason}",
 				GetType().Name, DateTime.UtcNow, RemoteEndPoint, LocalEndPoint, _connectionId,
 				socketError, reason);
 		}

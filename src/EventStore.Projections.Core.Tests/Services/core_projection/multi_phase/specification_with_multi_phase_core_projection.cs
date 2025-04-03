@@ -1,11 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
 using EventStore.Core.Services.TimerService;
+using EventStore.Core.Util;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
@@ -38,7 +39,7 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 		public FakeProjectionProcessingStrategy(
 			string name, ProjectionVersion projectionVersion, ILogger logger, FakeProjectionProcessingPhase phase1,
 			FakeProjectionProcessingPhase phase2)
-			: base(name, projectionVersion, logger) {
+			: base(name, projectionVersion, logger, Opts.MaxProjectionStateSizeDefault) {
 			_phase1 = phase1;
 			_phase2 = phase2;
 		}

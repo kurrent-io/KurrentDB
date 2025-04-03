@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -24,15 +24,15 @@ public class PeriodicallyLoggingServiceTests {
 		_logger = new FakeLogger();
 		_esVersion = "0.0.0.0";
 	}
-	
+
 	[Test]
 	public void on_start() {
 		// given
 		var sut = new PeriodicallyLoggingService(_publisher, _esVersion, _logger);
-		
+
 		// when
 		sut.Handle(new SystemMessage.SystemStart());
-		
+
 		// then
 		Assert.IsInstanceOf<MonitoringMessage.CheckEsVersion>(_publisher.Messages.Single());
 		Assert.IsEmpty(_logger.LogMessages);
@@ -42,17 +42,17 @@ public class PeriodicallyLoggingServiceTests {
 	public void log_es_version_periodically() {
 		// given
 		var sut = new PeriodicallyLoggingService(_publisher, _esVersion, _logger);
-		
+
 		// when
 		sut.Handle(new MonitoringMessage.CheckEsVersion());
-		
+
 		// then
 		var schedule = (TimerMessage.Schedule)_publisher.Messages.Single();
 		Assert.AreEqual(TimeSpan.FromHours(12), schedule.TriggerAfter);
 		Assert.IsInstanceOf<MonitoringMessage.CheckEsVersion>(schedule.ReplyMessage);
 
 		var logMessage = _logger.LogMessages.Single();
-		Assert.AreEqual($"Current version of Event Store is : \"0.0.0.0\" ", logMessage.RenderMessage());
-	} 
+		Assert.AreEqual($"Current version of KurrentDB is : \"0.0.0.0\" ", logMessage.RenderMessage());
+	}
 
 }

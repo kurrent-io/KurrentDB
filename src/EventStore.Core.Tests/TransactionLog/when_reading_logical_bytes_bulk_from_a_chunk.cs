@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
@@ -15,16 +15,13 @@ namespace EventStore.Core.Tests.TransactionLog;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_reading_logical_bytes_bulk_from_a_chunk<TLogFormat, TStreamId> : SpecificationWithDirectory {
-	public when_reading_logical_bytes_bulk_from_a_chunk() {
-	}
-
 	[Test]
 	public async Task the_file_will_not_be_deleted_until_reader_released() {
 		var chunk = await TFChunkHelper.CreateNewChunk(GetFilePathFor("file1"), 2000);
-		using (var reader = chunk.AcquireDataReader()) {
+		using (var reader = await chunk.AcquireDataReader(CancellationToken.None)) {
 			chunk.MarkForDeletion();
 			var buffer = new byte[1024];
-			var result = reader.ReadNextBytes(1024, buffer);
+			var result = await reader.ReadNextBytes(buffer, CancellationToken.None);
 			Assert.IsFalse(result.IsEOF);
 			Assert.AreEqual(0, result.BytesRead); // no data yet
 		}
@@ -35,9 +32,9 @@ public class when_reading_logical_bytes_bulk_from_a_chunk<TLogFormat, TStreamId>
 	[Test]
 	public async Task a_read_on_new_file_can_be_performed_but_returns_nothing() {
 		var chunk = await TFChunkHelper.CreateNewChunk(GetFilePathFor("file1"), 2000);
-		using (var reader = chunk.AcquireDataReader()) {
+		using (var reader = await chunk.AcquireDataReader(CancellationToken.None)) {
 			var buffer = new byte[1024];
-			var result = reader.ReadNextBytes(1024, buffer);
+			var result = await reader.ReadNextBytes(buffer, CancellationToken.None);
 			Assert.IsFalse(result.IsEOF);
 			Assert.AreEqual(0, result.BytesRead);
 		}
@@ -50,9 +47,9 @@ public class when_reading_logical_bytes_bulk_from_a_chunk<TLogFormat, TStreamId>
 	public async Task a_read_past_end_of_completed_chunk_does_not_include_footer() {
 		var chunk = await TFChunkHelper.CreateNewChunk(GetFilePathFor("file1"), 300);
 		await chunk.Complete(CancellationToken.None); // chunk has 0 bytes of actual data
-		using (var reader = chunk.AcquireDataReader()) {
+		using (var reader = await chunk.AcquireDataReader(CancellationToken.None)) {
 			var buffer = new byte[1024];
-			var result = reader.ReadNextBytes(1024, buffer);
+			var result = await reader.ReadNextBytes(buffer, CancellationToken.None);
 			Assert.IsTrue(result.IsEOF);
 			Assert.AreEqual(0, result.BytesRead);
 		}
@@ -65,9 +62,9 @@ public class when_reading_logical_bytes_bulk_from_a_chunk<TLogFormat, TStreamId>
 	public async Task a_read_on_scavenged_chunk_does_not_include_map() {
 		var chunk = await TFChunkHelper.CreateNewChunk(GetFilePathFor("afile"), 200, isScavenged: true);
 		await chunk.CompleteScavenge([new PosMap(0, 0), new PosMap(1, 1)], CancellationToken.None);
-		using (var reader = chunk.AcquireDataReader()) {
+		using (var reader = await chunk.AcquireDataReader(CancellationToken.None)) {
 			var buffer = new byte[1024];
-			var result = reader.ReadNextBytes(1024, buffer);
+			var result = await reader.ReadNextBytes(buffer, CancellationToken.None);
 			Assert.IsTrue(result.IsEOF);
 			Assert.AreEqual(0, result.BytesRead); //header 128 + footer 128 + map 16
 		}
@@ -87,9 +84,9 @@ public class when_reading_logical_bytes_bulk_from_a_chunk<TLogFormat, TStreamId>
 			new byte[2000], null);
 		Assert.IsTrue((await chunk.TryAppend(rec, CancellationToken.None)).Success, "Record was not appended");
 
-		using (var reader = chunk.AcquireDataReader()) {
+		using (var reader = await chunk.AcquireDataReader(CancellationToken.None)) {
 			var buffer = new byte[1024];
-			var result = reader.ReadNextBytes(3000, buffer);
+			var result = await reader.ReadNextBytes(buffer, CancellationToken.None);
 			Assert.IsFalse(result.IsEOF);
 			Assert.AreEqual(1024, result.BytesRead);
 		}
@@ -103,9 +100,9 @@ public class when_reading_logical_bytes_bulk_from_a_chunk<TLogFormat, TStreamId>
 		var chunk = await TFChunkHelper.CreateNewChunk(GetFilePathFor("file1"), 300);
 		var rec = LogRecord.Commit(0, Guid.NewGuid(), 0, 0);
 		Assert.IsTrue((await chunk.TryAppend(rec, CancellationToken.None)).Success, "Record was not appended");
-		using (var reader = chunk.AcquireDataReader()) {
+		using (var reader = await chunk.AcquireDataReader(CancellationToken.None)) {
 			var buffer = new byte[1024];
-			var result = reader.ReadNextBytes(1024, buffer);
+			var result = await reader.ReadNextBytes(buffer, CancellationToken.None);
 			Assert.IsFalse(result.IsEOF, "EOF was returned.");
 			//does not include header and footer space
 			Assert.AreEqual(rec.GetSizeWithLengthPrefixAndSuffix(), result.BytesRead,
@@ -124,9 +121,9 @@ public class when_reading_logical_bytes_bulk_from_a_chunk<TLogFormat, TStreamId>
 		Assert.IsTrue((await chunk.TryAppend(rec, CancellationToken.None)).Success, "Record was not appended");
 		await chunk.Complete(CancellationToken.None);
 
-		using (var reader = chunk.AcquireDataReader()) {
+		using (var reader = await chunk.AcquireDataReader(CancellationToken.None)) {
 			var buffer = new byte[1024];
-			var result = reader.ReadNextBytes(1024, buffer);
+			var result = await reader.ReadNextBytes(buffer, CancellationToken.None);
 			Assert.IsTrue(result.IsEOF, "EOF was not returned.");
 			//does not include header and footer space
 			Assert.AreEqual(rec.GetSizeWithLengthPrefixAndSuffix(), result.BytesRead,

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -52,14 +52,14 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 	private readonly INameLookup<TStreamId> _eventTypes;
 	private readonly ISystemStreamLookup<TStreamId> _systemStreams;
 	private readonly INameExistenceFilter _streamExistenceFilter;
+	private readonly INameExistenceFilterInitializer _streamExistenceFilterInitializer;
+	private readonly ICheckpoint _indexChk;
 	private readonly IIndexStatusTracker _statusTracker;
 	private readonly IIndexTracker _tracker;
-	private INameExistenceFilterInitializer _streamExistenceFilterInitializer;
 	private readonly bool _additionalCommitChecks;
 	private long _persistedPreparePos = -1;
 	private long _persistedCommitPos = -1;
 	private bool _indexRebuild = true;
-	private readonly ICheckpoint _indexChk;
 
 	public IndexCommitter(
 		IPublisher bus,
@@ -98,7 +98,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		Log.Information("TableIndex initialization...");
 
 		using (_statusTracker.StartOpening()) {
-		    _tableIndex.Initialize(buildToPosition);
+			_tableIndex.Initialize(buildToPosition);
 		}
 
 		_persistedPreparePos = _tableIndex.PrepareCheckpoint;
@@ -118,7 +118,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		Log.Information("ReadIndex building...");
 
 		// V2 index:
-		// right now its possible for entries to get into the main index before being replicated
+		// right now it's possible for entries to get into the main index before being replicated
 		// (because we catch up to the chaser position)
 		// when we join the cluster it may turn out that some of what we indexed needs truncating.
 		// this is dealt with by adjusting the checkpoints and restarting. usually
@@ -128,7 +128,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		// V3 index:
 		// the upshot for the stream name index is that here we must initialise the stream
 		// name index with the main index before we catch it up, even though it will likely
-		// mean entries need to be removed only to be readded.
+		// mean entries need to be removed only to be re-added.
 		//
 		// after we only allow replicated entries into the index we can be sure that
 		// neither index will need truncating and this will become more elegant.
@@ -151,24 +151,24 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 					case LogRecordType.Stream:
 					case LogRecordType.EventType:
 					case LogRecordType.Prepare: {
-							var prepare = (IPrepareLogRecord<TStreamId>)result.LogRecord;
-							if (prepare.Flags.HasAnyOf(PrepareFlags.IsCommitted)) {
-								if (prepare.Flags.HasAnyOf(PrepareFlags.SingleWrite)) {
-									await Commit(commitedPrepares, false, false, token);
+						var prepare = (IPrepareLogRecord<TStreamId>)result.LogRecord;
+						if (prepare.Flags.HasAnyOf(PrepareFlags.IsCommitted)) {
+							if (prepare.Flags.HasAnyOf(PrepareFlags.SingleWrite)) {
+								await Commit(commitedPrepares, false, false, token);
+								commitedPrepares.Clear();
+								await Commit([prepare], result.Eof, false, token);
+							} else {
+								if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete))
+									commitedPrepares.Add(prepare);
+								if (prepare.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
+									await Commit(commitedPrepares, result.Eof, false, token);
 									commitedPrepares.Clear();
-									await Commit([prepare], result.Eof, false, token);
-								} else {
-									if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete))
-										commitedPrepares.Add(prepare);
-									if (prepare.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
-										await Commit(commitedPrepares, result.Eof, false, token);
-										commitedPrepares.Clear();
-									}
 								}
 							}
-
-							break;
 						}
+
+						break;
+					}
 					case LogRecordType.Commit:
 						await Commit((CommitLogRecord)result.LogRecord, result.Eof, false, token);
 						break;
@@ -219,12 +219,12 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			Log.Debug("Initializing the StreamExistenceFilter. The filter can be disabled by setting the configuration option \"StreamExistenceFilterSize\" to 0");
 			_statusTracker.StartInitializing();
 			await _streamExistenceFilter.Initialize(_streamExistenceFilterInitializer, truncateToPosition: buildToPosition, token);
-			Log.Debug("StreamExistenceFilter initialized. Time elapsed: {elapsed}.",
-				DateTime.UtcNow - startTime);
+			Log.Debug("StreamExistenceFilter initialized. Time elapsed: {elapsed}.", DateTime.UtcNow - startTime);
 
 			_bus.Publish(new StorageMessage.TfEofAtNonCommitRecord());
 			_backend.SetSystemSettings(await GetSystemSettings(token));
 		}
+
 		_indexRebuild = false;
 	}
 
@@ -277,8 +277,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 				streamId = prepare.EventStreamId;
 			} else {
 				if (!StreamIdComparer.Equals(prepare.EventStreamId, streamId))
-					throw new Exception(string.Format("Expected stream: {0}, actual: {1}. LogPosition: {2}",
-						streamId, prepare.EventStreamId, commit.LogPosition));
+					throw new Exception($"Expected stream: {streamId}, actual: {prepare.EventStreamId}. LogPosition: {commit.LogPosition}");
 			}
 
 			eventNumber = prepare.Flags.HasAllOf(PrepareFlags.StreamDelete)
@@ -286,7 +285,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 				: commit.FirstEventNumber + prepare.TransactionOffset;
 
 			if (new TFPos(commit.LogPosition, prepare.LogPosition) >
-				new TFPos(_persistedCommitPos, _persistedPreparePos)) {
+			    new TFPos(_persistedCommitPos, _persistedPreparePos)) {
 				indexEntries.Add(new IndexKey<TStreamId>(streamId, eventNumber, prepare.LogPosition));
 				prepares.Add(prepare);
 			}
@@ -303,7 +302,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 
 		if (eventNumber != EventNumber.Invalid) {
 			if (eventNumber < 0)
-				throw new Exception(string.Format("EventNumber {0} is incorrect.", eventNumber));
+				throw new Exception($"EventNumber {eventNumber} is incorrect.");
 
 			if (cacheLastEventNumber) {
 				_backend.SetStreamLastEventNumber(streamId, eventNumber);
@@ -323,9 +322,9 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 
 		var newLastIndexedPosition = Math.Max(commit.LogPosition, lastIndexedPosition);
 		if (_indexChk.Read() != lastIndexedPosition) {
-			throw new Exception(
-				"Concurrency error in ReadIndex.Commit: _lastCommitPosition was modified during Commit execution!");
+			throw new Exception("Concurrency error in ReadIndex.Commit: _lastCommitPosition was modified during Commit execution!");
 		}
+
 		_indexChk.Write(newLastIndexedPosition);
 		_indexChk.Flush();
 
@@ -333,11 +332,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			var streamName = await _streamNames.LookupName(streamId, token);
 			for (int i = 0, n = indexEntries.Count; i < n; ++i) {
 				var eventType = await _eventTypes.LookupName(prepares[i].EventType, token);
-				_bus.Publish(
-					new StorageMessage.EventCommitted(
-						commit.LogPosition,
-						new EventRecord(indexEntries[i].Version, prepares[i], streamName, eventType),
-						isTfEof && i == n - 1));
+				_bus.Publish(new StorageMessage.EventCommitted(commit.LogPosition, new(indexEntries[i].Version, prepares[i], streamName, eventType), isTfEof && i == n - 1));
 			}
 		}
 
@@ -363,8 +358,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 
 			if (!StreamIdComparer.Equals(prepare.EventStreamId, streamId)) {
 				var sb = new StringBuilder();
-				sb.Append(string.Format("ERROR: Expected stream: {0}, actual: {1}.", streamId,
-					prepare.EventStreamId));
+				sb.Append($"ERROR: Expected stream: {streamId}, actual: {prepare.EventStreamId}.");
 				sb.Append(Environment.NewLine);
 				sb.Append(Environment.NewLine);
 				sb.Append("Prepares: (" + commitedPrepares.Count + ")");
@@ -389,14 +383,14 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			}
 
 			if (prepare.LogPosition < lastIndexedPosition ||
-				(prepare.LogPosition == lastIndexedPosition && !_indexRebuild))
+			    (prepare.LogPosition == lastIndexedPosition && !_indexRebuild))
 				continue; // already committed
 
 			eventNumber =
 				prepare.ExpectedVersion + 1; /* for committed prepare expected version is always explicit */
 
 			if (new TFPos(prepare.LogPosition, prepare.LogPosition) >
-				new TFPos(_persistedCommitPos, _persistedPreparePos)) {
+			    new TFPos(_persistedCommitPos, _persistedPreparePos)) {
 				indexEntries.Add(new IndexKey<TStreamId>(streamId, eventNumber, prepare.LogPosition));
 				prepares.Add(prepare);
 			}
@@ -432,9 +426,9 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 
 		var newLastIndexedPosition = Math.Max(lastPrepare.LogPosition, lastIndexedPosition);
 		if (_indexChk.Read() != lastIndexedPosition) {
-			throw new Exception(
-				"Concurrency error in ReadIndex.Commit: _lastCommitPosition was modified during Commit execution!");
+			throw new Exception("Concurrency error in ReadIndex.Commit: _lastCommitPosition was modified during Commit execution!");
 		}
+
 		_indexChk.Write(newLastIndexedPosition);
 		_indexChk.Flush();
 
@@ -442,11 +436,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			var streamName = await _streamNames.LookupName(streamId, token);
 			for (int i = 0, n = indexEntries.Count; i < n; ++i) {
 				var eventType = await _eventTypes.LookupName(prepares[i].EventType, token);
-				_bus.Publish(
-					new StorageMessage.EventCommitted(
-						prepares[i].LogPosition,
-						new EventRecord(indexEntries[i].Version, prepares[i], streamName, eventType),
-						isTfEof && i == n - 1));
+				_bus.Publish(new StorageMessage.EventCommitted(prepares[i].LogPosition, new(indexEntries[i].Version, prepares[i], streamName, eventType), isTfEof && i == n - 1));
 			}
 
 			_tracker.OnIndexed(prepares);
@@ -483,31 +473,25 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			if (Debugger.IsAttached)
 				Debugger.Break();
 			else
-				throw new Exception(
-					string.Format(
-						"Commit invariant violation: new event number {0} does not correspond to current stream version {1}.\n"
-						+ "Stream ID: {2}.\nCommit: {3}.", newEventNumber, lastEventNumber, streamId, commit));
+				throw new Exception($"Commit invariant violation: new event number {newEventNumber} does not correspond to current stream version {lastEventNumber}.\n" +
+				                    $"Stream ID: {streamId}.\nCommit: {commit}.");
 		}
 	}
 
-	private async ValueTask CheckDuplicateEvents(TStreamId streamId, CommitLogRecord commit, IReadOnlyList<IndexKey<TStreamId>> indexEntries,
-		IList<IPrepareLogRecord<TStreamId>> prepares, CancellationToken token) {
-		using (var reader = _backend.BorrowReader()) {
-			var entries = _tableIndex.GetRange(streamId, indexEntries[0].Version,
-				indexEntries[indexEntries.Count - 1].Version);
-			foreach (var indexEntry in entries) {
-				int prepareIndex = (int)(indexEntry.Version - indexEntries[0].Version);
-				var prepare = prepares[prepareIndex];
-				IPrepareLogRecord<TStreamId> indexedPrepare = await GetPrepare(reader, indexEntry.Position, token);
-				if (indexedPrepare != null && StreamIdComparer.Equals(indexedPrepare.EventStreamId, prepare.EventStreamId)) {
-					if (Debugger.IsAttached)
-						Debugger.Break();
-					else
-						throw new Exception(
-							string.Format("Trying to add duplicate event #{0} to stream {1} \nCommit: {2}\n"
-										  + "Prepare: {3}\nIndexed prepare: {4}.",
-								indexEntry.Version, prepare.EventStreamId, commit, prepare, indexedPrepare));
-				}
+	private async ValueTask CheckDuplicateEvents(TStreamId streamId, CommitLogRecord commit, List<IndexKey<TStreamId>> indexEntries,
+		List<IPrepareLogRecord<TStreamId>> prepares, CancellationToken token) {
+		using var reader = _backend.BorrowReader();
+		var entries = _tableIndex.GetRange(streamId, indexEntries[0].Version, indexEntries[^1].Version);
+		foreach (var indexEntry in entries) {
+			int prepareIndex = (int)(indexEntry.Version - indexEntries[0].Version);
+			var prepare = prepares[prepareIndex];
+			IPrepareLogRecord<TStreamId> indexedPrepare = await GetPrepare(reader, indexEntry.Position, token);
+			if (indexedPrepare != null && StreamIdComparer.Equals(indexedPrepare.EventStreamId, prepare.EventStreamId)) {
+				if (Debugger.IsAttached)
+					Debugger.Break();
+				else
+					throw new Exception($"Trying to add duplicate event #{indexEntry.Version} to stream {prepare.EventStreamId} \nCommit: {commit}\n" +
+					                    $"Prepare: {prepare}\nIndexed prepare: {indexedPrepare}.");
 			}
 		}
 	}
@@ -528,12 +512,11 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 	}
 
 	private static async ValueTask<IPrepareLogRecord<TStreamId>> GetPrepare(TFReaderLease reader, long logPosition, CancellationToken token) {
-		RecordReadResult result = await reader.TryReadAt(logPosition, couldBeScavenged: true, token);
+		var result = await reader.TryReadAt(logPosition, couldBeScavenged: true, token);
 		if (!result.Success)
 			return null;
 		if (result.LogRecord.RecordType != LogRecordType.Prepare)
-			throw new Exception(string.Format("Incorrect type of log record {0}, expected Prepare record.",
-				result.LogRecord.RecordType));
+			throw new Exception($"Incorrect type of log record {result.LogRecord.RecordType}, expected Prepare record.");
 		return (IPrepareLogRecord<TStreamId>)result.LogRecord;
 	}
 }

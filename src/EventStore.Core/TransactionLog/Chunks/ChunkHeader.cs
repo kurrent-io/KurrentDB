@@ -1,15 +1,18 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Index;
 using DotNext.Buffers;
 using DotNext.Buffers.Binary;
+using DotNext.IO;
 using EventStore.Plugins.Transforms;
 using ChunkVersions = EventStore.Core.TransactionLog.Chunks.TFChunk.TFChunk.ChunkVersions;
 
@@ -59,13 +62,12 @@ public sealed class ChunkHeader : IBinaryFormattable<ChunkHeader> {
 	public ChunkHeader(ReadOnlySpan<byte> source) {
 		Debug.Assert(source.Length >= Size);
 
-		SpanReader<byte> reader = new(source);
+		SpanReader<byte> reader = new(source.Slice(0, Size));
 
 		if ((FileType)reader.Read() is not FileType.ChunkFile)
 			throw new CorruptDatabaseException(new InvalidFileException());
 
 		MinCompatibleVersion = reader.Read();
-		Debug.Assert(MinCompatibleVersion >= 0);
 
 		ChunkSize = reader.ReadLittleEndian<int>();
 		Debug.Assert(ChunkSize >= 0);
@@ -80,9 +82,8 @@ public sealed class ChunkHeader : IBinaryFormattable<ChunkHeader> {
 		ChunkId = new(reader.Read(16));
 
 		Version = reader.Read();
-		Debug.Assert(Version >= 0);
 
-		if (Version == 0)
+		if (Version is 0)
 			Version = MinCompatibleVersion;
 		Debug.Assert(Version >= MinCompatibleVersion);
 
@@ -107,10 +108,7 @@ public sealed class ChunkHeader : IBinaryFormattable<ChunkHeader> {
 		writer.WriteLittleEndian(ChunkStartNumber);
 		writer.WriteLittleEndian(ChunkEndNumber);
 		writer.WriteLittleEndian<int>(Unsafe.BitCast<bool, byte>(IsScavenged));
-
-		Span<byte> guidBuffer = stackalloc byte[16];
-		ChunkId.TryWriteBytes(guidBuffer);
-		writer.Write(guidBuffer);
+		ChunkId.TryWriteBytes(writer.Slide(16));
 
 		if (Version >= (byte)ChunkVersions.Transformed)
 			// we started to use this byte of the chunk header to store `Version` as from `ChunkVersions.Transformed`
@@ -119,6 +117,9 @@ public sealed class ChunkHeader : IBinaryFormattable<ChunkHeader> {
 
 		if (Version >= (byte)ChunkVersions.Transformed)
 			writer.Add((byte)TransformType);
+
+		// reserved bytes must be zero
+		writer.RemainingSpan.Clear();
 	}
 
 	static ChunkHeader IBinaryFormattable<ChunkHeader>.Parse(ReadOnlySpan<byte> source)
@@ -131,11 +132,9 @@ public sealed class ChunkHeader : IBinaryFormattable<ChunkHeader> {
 		return array;
 	}
 
-	[SkipLocalsInit]
-	public static ChunkHeader FromStream(Stream stream) {
-		Span<byte> buffer = stackalloc byte[Size];
-		stream.ReadExactly(buffer);
-		return new(buffer);
+	public static async ValueTask<ChunkHeader> FromStream(Stream stream, CancellationToken token) {
+		using var buffer = Memory.AllocateExactly<byte>(Size);
+		return await stream.ReadAsync<ChunkHeader>(buffer.Memory, token);
 	}
 
 	public long GetLocalLogPosition(long globalLogicalPosition) {
@@ -155,6 +154,8 @@ public sealed class ChunkHeader : IBinaryFormattable<ChunkHeader> {
 
 		return ChunkStartPosition + localLogicalPosition;
 	}
+
+	public bool IsSingleLogicalChunk => ChunkStartNumber == ChunkEndNumber;
 
 	public override string ToString() {
 		return string.Format(

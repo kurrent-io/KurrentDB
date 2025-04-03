@@ -1,19 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Net;
-using System.Text;
-using System.Xml;
 using System.Xml.Linq;
-using EventStore.ClientAPI;
-using EventStore.ClientAPI.Common;
-using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Transport.Http;
 using NUnit.Framework;
 using Newtonsoft.Json.Linq;
@@ -25,7 +17,7 @@ using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription;
 
-abstract class SpecificationWithLongFeed<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+abstract class SpecificationWithLongFeed : with_admin_user {
 	protected int _numberOfEvents = 5;
 
 	protected string SubscriptionGroupName {
@@ -79,21 +71,21 @@ abstract class SpecificationWithLongFeed<TLogFormat, TStreamId> : with_admin_use
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_retrieving_an_empty_feed<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_retrieving_an_empty_feed(string contentType) : SpecificationWithLongFeed {
 	private JObject _feed;
 	private JObject _head;
 	private string _previous;
 
 	protected override async Task Given() {
 		await base.Given();
-		_head = await GetJson<JObject>(_subscriptionEndpoint + "/" + _numberOfEvents, ContentType.CompetingJson);
+		_head = await GetJson<JObject>(_subscriptionEndpoint + "/" + _numberOfEvents, contentType);
 		_previous = GetLink(_head, "previous");
 	}
 
 	protected override async Task When() {
-		_feed = await GetJson<JObject>(_previous, ContentType.CompetingJson);
+		_feed = await GetJson<JObject>(_previous, contentType);
 	}
 
 	[Test]
@@ -126,16 +118,15 @@ class when_retrieving_an_empty_feed<TLogFormat, TStreamId> : SpecificationWithLo
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_retrieving_a_feed_with_events<TLogFormat, TStreamId>
-	: SpecificationWithLongFeed<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_retrieving_a_feed_with_events(string contentType) : SpecificationWithLongFeed {
 	private JObject _feed;
 	private List<JToken> _entries;
 
 	protected override async Task When() {
 		var allMessagesFeedLink = String.Format("{0}/{1}", _subscriptionEndpoint, _numberOfEvents);
-		_feed = await GetJson<JObject>(allMessagesFeedLink, ContentType.CompetingJson);
+		_feed = await GetJson<JObject>(allMessagesFeedLink, contentType);
 		_entries = _feed != null ? _feed["entries"].ToList() : new List<JToken>();
 	}
 
@@ -162,7 +153,7 @@ class when_retrieving_a_feed_with_events<TLogFormat, TStreamId>
 		var nackAllLink = String.Format("subscriptions/{0}/{1}/nack", TestStreamName, SubscriptionGroupName);
 		Assert.AreEqual(MakeUrl(nackAllLink, ids), GetLink(_feed, "nackAll"));
 	}
-	
+
 	[Test]
 	public void all_entries_have_retry_count_element() {
 		var allEntriesHaveRetryCount = _feed["entries"].All(entry => entry["retryCount"] != null);
@@ -171,10 +162,9 @@ class when_retrieving_a_feed_with_events<TLogFormat, TStreamId>
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_polling_the_head_forward_and_a_new_event_appears<TLogFormat, TStreamId>
-	: SpecificationWithLongFeed<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_polling_the_head_forward_and_a_new_event_appears(string contentType) : SpecificationWithLongFeed {
 	private JObject _feed;
 	private JObject _head;
 	private string _previous;
@@ -183,13 +173,13 @@ class when_polling_the_head_forward_and_a_new_event_appears<TLogFormat, TStreamI
 
 	protected override async Task Given() {
 		await base.Given();
-		_head = await GetJson<JObject>(_subscriptionEndpoint + "/" + _numberOfEvents, ContentType.CompetingJson);
+		_head = await GetJson<JObject>(_subscriptionEndpoint + "/" + _numberOfEvents, contentType);
 		_previous = GetLink(_head, "previous");
 		_lastEventLocation = await PostEvent(-1);
 	}
 
 	protected override async Task When() {
-		_feed = await GetJson<JObject>(_previous, ContentType.CompetingJson);
+		_feed = await GetJson<JObject>(_previous, contentType);
 		_entries = _feed != null ? _feed["entries"].ToList() : new List<JToken>();
 	}
 
@@ -223,10 +213,8 @@ class when_polling_the_head_forward_and_a_new_event_appears<TLogFormat, TStreamI
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_retrieving_a_feed_with_events_with_competing_xml<TLogFormat, TStreamId>
-	: SpecificationWithLongFeed<TLogFormat, TStreamId> {
+[TestFixture]
+class when_retrieving_a_feed_with_events_with_competing_xml : SpecificationWithLongFeed {
 	private XDocument document;
 	private XElement[] _entries;
 
@@ -285,9 +273,8 @@ class when_retrieving_a_feed_with_events_with_competing_xml<TLogFormat, TStreamI
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_retrieving_a_feed_with_invalid_content_type<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+[TestFixture]
+class when_retrieving_a_feed_with_invalid_content_type : SpecificationWithLongFeed {
 	protected override Task When() {
 		return Get(MakeUrl(_subscriptionEndpoint + "/" + _numberOfEvents).ToString(), String.Empty, ContentType.Xml);
 	}
@@ -299,9 +286,9 @@ class when_retrieving_a_feed_with_invalid_content_type<TLogFormat, TStreamId> : 
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_retrieving_a_feed_with_events_using_prefix<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_retrieving_a_feed_with_events_using_prefix(string contentType) : SpecificationWithLongFeed {
 	private JObject _feed;
 	private List<JToken> _entries;
 	private string _prefix;
@@ -311,7 +298,7 @@ class when_retrieving_a_feed_with_events_using_prefix<TLogFormat, TStreamId> : S
 		var headers = new NameValueCollection();
 		headers.Add("X-Forwarded-Prefix", _prefix);
 		var allMessagesFeedLink = String.Format("{0}/{1}", _subscriptionEndpoint, _numberOfEvents);
-		_feed = await GetJson<JObject>(allMessagesFeedLink, ContentType.CompetingJson, headers: headers);
+		_feed = await GetJson<JObject>(allMessagesFeedLink, contentType, headers: headers);
 		_entries = _feed != null ? _feed["entries"].ToList() : new List<JToken>();
 	}
 

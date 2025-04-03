@@ -34,6 +34,8 @@
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 		<!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-447r-wph3-92pm -->
 		<PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
+		<!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-5f2m-466j-3848 and https://github.com/advisories/GHSA-xhfc-gr8f-ffwc -->
+		<PackageReference Include="System.Private.Uri" Version="4.3.2" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Update="Utils\version.properties">

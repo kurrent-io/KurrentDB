@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -89,7 +89,7 @@ public class when_having_TFLog_with_existing_epochs<TLogFormat, TStreamId> : Spe
 		await _db.Open();
 		_reader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 
 		_epochManager = GetManager();
 		await _epochManager.Init(CancellationToken.None);

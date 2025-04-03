@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net.Http;
@@ -16,7 +16,7 @@ namespace EventStore.Core.Telemetry;
 
 public class TelemetrySink : ITelemetrySink {
 	private static readonly ILogger _log = Log.ForContext<TelemetrySink>();
-	private const string ApiHost = "https://eventstore.com/telemetry";
+	private const string ApiHost = "https://kurrent.io/telemetry";
 	private readonly bool _optout;
 	private readonly HttpClient _httpClient;
 	private readonly JsonSerializerOptions _serializerOptions = new() {
@@ -57,14 +57,14 @@ public class TelemetrySink : ITelemetrySink {
 		sb.AppendLine("---------");
 
 		if (_optout) {
-			sb.AppendLine("You have opted out of sending telemetry by setting the EVENTSTORE_TELEMETRY_OPTOUT environment variable to true.");
+			sb.AppendLine("You have opted out of sending telemetry by setting the KURRENTDB_TELEMETRY_OPTOUT environment variable to true.");
 		} else {
-			sb.Append("EventStoreDB collects usage data in order to improve your experience. ");
-			sb.AppendLine("The data is anonymous and collected by Event Store Ltd.");
-			sb.AppendLine("You can opt out of sending telemetry by setting the EVENTSTORE_TELEMETRY_OPTOUT environment variable to true.");
+			sb.Append("KurrentDB collects usage data in order to improve your experience. ");
+			sb.AppendLine("The data is anonymous and collected by Kurrent, Inc.");
+			sb.AppendLine("You can opt out of sending telemetry by setting the KURRENTDB_TELEMETRY_OPTOUT environment variable to true.");
 		}
 
-		sb.AppendLine("For more information visit https://eventstore.com/telemetry");
+		sb.AppendLine("For more information visit https://kurrent.io/telemetry");
 		_log.Information(sb.ToString());
 	}
 }

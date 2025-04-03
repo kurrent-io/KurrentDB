@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -32,7 +32,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 		if (scavenged && !completed)
 			throw new ArgumentException("scavenged chunk must be completed");
 
-		var chunk = await TFChunkHelper.CreateNewChunk(Path.Combine(PathName, $"{Guid.NewGuid()}.chunk"), 4096, scavenged, token);
+		var chunk = await TFChunkHelper.CreateNewChunk(Path.Combine(PathName, $"{Guid.NewGuid()}.chunk"), 4096, scavenged, token: token);
 
 		var actualPos = 0;
 		for (int i = 0; i < numEvents; i++) {
@@ -67,7 +67,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 		var logPositions = new List<long>();
 		var posMap = new List<PosMap>();
 
-		var chunk = await CreateChunk(
+		using var chunk = await CreateChunk(
 			numEvents: numEvents,
 			completed: false,
 			scavenged: false,
@@ -87,7 +87,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 		var logPositions = new List<long>();
 		var posMap = new List<PosMap>();
 
-		var chunk = await CreateChunk(
+		using var chunk = await CreateChunk(
 			numEvents: numEvents,
 			completed: true,
 			scavenged: false,
@@ -107,7 +107,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 		var logPositions = new List<long>();
 		var posMap = new List<PosMap>();
 
-		var chunk = await CreateChunk(
+		using var chunk = await CreateChunk(
 			numEvents: numEvents,
 			completed: true,
 			scavenged: true,
@@ -127,7 +127,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 		var logPositions = new List<long>();
 		var posMap = new List<PosMap>();
 
-		var chunk = await CreateChunk(
+		using var chunk = await CreateChunk(
 			numEvents: 1,
 			completed: true,
 			scavenged: false,
@@ -148,7 +148,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 		var logPositions = new List<long>();
 		var posMap = new List<PosMap>();
 
-		var chunk = await CreateChunk(
+		using var chunk = await CreateChunk(
 			numEvents: 1,
 			completed: true,
 			scavenged: true,
@@ -167,7 +167,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 		var logPositions = new List<long>();
 		var posMap = new List<PosMap>();
 
-		var chunk = await CreateChunk(
+		using var chunk = await CreateChunk(
 			numEvents: 1,
 			completed: false,
 			scavenged: false,

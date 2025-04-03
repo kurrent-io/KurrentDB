@@ -5,7 +5,7 @@ dir:
 title: Introduction to projections
 ---
 
-Projections is an EventStoreDB subsystem that lets you append new events or link existing events to streams in
+Projections is a KurrentDB subsystem that lets you append new events or link existing events to streams in
 a reactive manner.
 
 Projections are good at solving one specific query type, a category known as 'temporal correlation queries'.
@@ -47,7 +47,7 @@ meet the criteria. The output of all queries is a stream, you can listen to this
 
 ## Types of projections
 
-There are two types of projections in EventStoreDB:
+There are two types of projections in KurrentDB:
 
 - [Built in (system) projections](system.md)
 - [User-defined JavaScript projections](custom.md) which you create via the API or the admin
@@ -87,3 +87,7 @@ etc. If anyone can append to the emitted streams, then the projection would have
 in terms of processing. Therefore, it can no longer trust that the projection itself emitted that event or if
 something else did.
 
+### Impact of resetting projections
+Resetting a projection in KurrentDB will soft-delete the output streams associated with the projection. If 'TrackEmittedStreams' is enabled when the projection is created, it will also allow the projection subsystem to truncate all streams created by the projection.
+
+The checkpoint will also be reset. This means that the projection will start processing events from the beginning of the event stream and not from the latest checkpoint.

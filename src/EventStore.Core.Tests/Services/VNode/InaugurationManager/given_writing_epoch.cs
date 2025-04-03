@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Messages;
@@ -22,7 +22,7 @@ public class given_writing_epoch : InaugurationManagerTests {
 		When(GenEpoch(_epochNumber));
 		Assert.AreEqual(2, _publisher.Messages.Count);
 		Assert.IsInstanceOf<SystemMessage.EnablePreLeaderReplication>(_publisher.Messages[0]);
-		var schedule = AssertIsType<TimerMessage.Schedule>(_publisher.Messages[1]);
+		var schedule = AssertEx.IsType<TimerMessage.Schedule>(_publisher.Messages[1]);
 		Assert.IsInstanceOf<SystemMessage.CheckInaugurationConditions>(schedule.ReplyMessage);
 	}
 

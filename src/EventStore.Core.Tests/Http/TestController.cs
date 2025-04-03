@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Security.Claims;
@@ -64,7 +64,7 @@ public class TestController : CommunicationController {
 		var b = match.BoundVariables["b"];
 
 		http.Reply(new {a = a, b = b, rawSegment = http.RequestedUrl.Segments[2]}.ToJson(), 200, "OK",
-			"application/json");
+			ContentType.Json);
 	}
 
 	private void TestEncodingHandler(HttpEntityManager http, UriTemplateMatch match, string a) {
@@ -77,7 +77,7 @@ public class TestController : CommunicationController {
 				rawSegment = http.RequestedUrl.Segments[1],
 				requestUri = match.RequestUri,
 				rawUrl = http.HttpEntity.Request.RawUrl
-			}.ToJson(), 200, "OK", "application/json");
+			}.ToJson(), 200, "OK", ContentType.Json);
 	}
 
 	private void TestTimeoutHandler(HttpEntityManager http, UriTemplateMatch match) {

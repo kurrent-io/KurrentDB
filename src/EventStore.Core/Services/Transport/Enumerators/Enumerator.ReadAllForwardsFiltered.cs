@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -14,7 +15,6 @@ using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Common;
 using Serilog;
-using IReadIndex = EventStore.Core.Services.Storage.ReaderIndex.IReadIndex;
 
 namespace EventStore.Core.Services.Transport.Enumerators;
 
@@ -31,8 +31,8 @@ partial class Enumerator {
 		private readonly DateTime _deadline;
 		private readonly uint _maxSearchWindow;
 		private readonly CancellationToken _cancellationToken;
-		private readonly SemaphoreSlim _semaphore;
-		private readonly Channel<ReadResponse> _channel;
+		private readonly SemaphoreSlim _semaphore = new(1, 1);
+		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
 
 		private ReadResponse _current;
 
@@ -48,25 +48,15 @@ partial class Enumerator {
 			uint? maxSearchWindow,
 			DateTime deadline,
 			CancellationToken cancellationToken) {
-			if (bus == null) {
-				throw new ArgumentNullException(nameof(bus));
-			}
-
-			if (eventFilter == null) {
-				throw new ArgumentNullException(nameof(eventFilter));
-			}
-
-			_bus = bus;
+			_bus = Ensure.NotNull(bus);
 			_maxCount = maxCount;
 			_resolveLinks = resolveLinks;
-			_eventFilter = eventFilter;
+			_eventFilter = Ensure.NotNull(eventFilter);
 			_user = user;
 			_requiresLeader = requiresLeader;
 			_maxSearchWindow = maxSearchWindow ?? ReadBatchSize;
 			_deadline = deadline;
 			_cancellationToken = cancellationToken;
-			_semaphore = new SemaphoreSlim(1, 1);
-			_channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
 
 			ReadPage(position);
 		}
@@ -97,18 +87,17 @@ partial class Enumerator {
 				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user,
 				replyOnExpired: false,
 				expires: _deadline,
-				cancellationToken: _cancellationToken));
+				cancellationToken: _cancellationToken)
+			);
 
 			async Task OnMessage(Message message, CancellationToken ct) {
-				if (message is ClientMessage.NotHandled notHandled &&
-				    TryHandleNotHandled(notHandled, out var ex)) {
+				if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 					_channel.Writer.TryComplete(ex);
 					return;
 				}
 
 				if (message is not ClientMessage.FilteredReadAllEventsForwardCompleted completed) {
-					_channel.Writer.TryComplete(
-						ReadResponseException.UnknownMessage.Create<ClientMessage.FilteredReadAllEventsForwardCompleted>(message));
+					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<ClientMessage.FilteredReadAllEventsForwardCompleted>(message));
 					return;
 				}
 

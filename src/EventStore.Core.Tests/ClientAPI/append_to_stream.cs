@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -351,8 +351,14 @@ public class append_to_stream<TLogFormat, TStreamId> : SpecificationWithDirector
 
 			var largeData = new string(' ', 20000);
 			var events = Enumerable.Range(0, 100).Select(i => TestEvent.NewTestEvent(largeData, i.ToString()));
+
+			Assert.AreEqual(3, (await store.AppendToStreamAsync(stream, ExpectedVersion.NoStream, events.Take(4))).NextExpectedVersion);
+
 			Assert.ThrowsAsync<InvalidTransactionException>(async () =>
-				await store.AppendToStreamAsync(stream, ExpectedVersion.NoStream, events));
+				await store.AppendToStreamAsync(stream, 3, events));
+
+			// can still write to the stream with ExpectedVersion 3
+			Assert.AreEqual(7, (await store.AppendToStreamAsync(stream, 3, events.Take(4))).NextExpectedVersion);
 		}
 	}
 
@@ -615,8 +621,14 @@ public class ssl_append_to_stream<TLogFormat, TStreamId> : SpecificationWithDire
 
 			var largeData = new string(' ', 20000);
 			var events = Enumerable.Range(0, 100).Select(i => TestEvent.NewTestEvent(largeData, i.ToString()));
+
+			Assert.AreEqual(3, (await store.AppendToStreamAsync(stream, ExpectedVersion.NoStream, events.Take(4))).NextExpectedVersion);
+
 			Assert.ThrowsAsync<InvalidTransactionException>(async () =>
-				await store.AppendToStreamAsync(stream, ExpectedVersion.NoStream, events));
+				await store.AppendToStreamAsync(stream, 3, events));
+
+			// can still write to the stream with ExpectedVersion 3
+			Assert.AreEqual(7, (await store.AppendToStreamAsync(stream, 3, events.Take(4))).NextExpectedVersion);
 		}
 	}
 

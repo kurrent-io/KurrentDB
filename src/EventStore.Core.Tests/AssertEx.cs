@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
@@ -10,6 +10,11 @@ using NUnit.Framework;
 namespace EventStore.Core.Tests;
 
 public static class AssertEx {
+	public static T IsType<T>(object o) {
+		Assert.IsInstanceOf<T>(o);
+		return (T)o;
+	}
+
 	public static async Task<TException> ThrowsAsync<TException>(Func<Task> code)
 		where TException : Exception {
 		var expected = default(TException);

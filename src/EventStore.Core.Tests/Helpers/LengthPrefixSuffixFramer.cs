@@ -1,12 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Buffers;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext;
 using EventStore.Core.Helpers;
 using NUnit.Framework;
 
@@ -52,10 +51,10 @@ public class length_prefix_suffix_framer_should {
 	public async Task unframe_record_when_provided_exactly_enough_data_in_one_call() {
 		int unframedCnt = 0;
 		var framer = new LengthPrefixSuffixFramer();
-		framer.RegisterMessageArrivedCallback(new Action<BinaryReader>(r => {
+		framer.RegisterMessageArrivedCallback(async (r, token) => {
 			unframedCnt += 1;
-			Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, ReadAll(r));
-		}).ToAsync());
+			Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, await ReadAll(r, token));
+		});
 
 		await framer.UnFrameData(new ArraySegment<byte>([
 			0x03, 0x00, 0x00, 0x00,
@@ -70,10 +69,10 @@ public class length_prefix_suffix_framer_should {
 	public async Task unframe_record_when_provided_with_small_chunks_of_data_at_a_time() {
 		int unframedCnt = 0;
 		var framer = new LengthPrefixSuffixFramer();
-		framer.RegisterMessageArrivedCallback(new Action<BinaryReader>(r => {
+		framer.RegisterMessageArrivedCallback(async (r, token) => {
 			unframedCnt += 1;
-			Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, ReadAll(r));
-		}).ToAsync());
+			Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, await ReadAll(r, token));
+		});
 
 		await framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x03, 0x00}), CancellationToken.None);
 		await framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x00, 0x00}), CancellationToken.None);
@@ -89,16 +88,16 @@ public class length_prefix_suffix_framer_should {
 	public async Task unframe_two_consecutive_records() {
 		int unframedCnt = 0;
 		var framer = new LengthPrefixSuffixFramer();
-		framer.RegisterMessageArrivedCallback(new Action<BinaryReader>(r => {
+		framer.RegisterMessageArrivedCallback(async (r, token) => {
 			if (unframedCnt == 0)
-				Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, ReadAll(r));
+				Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, await ReadAll(r, token));
 			else if (unframedCnt == 1)
-				Assert.AreEqual(new byte[] {0x05, 0x15}, ReadAll(r));
+				Assert.AreEqual(new byte[] {0x05, 0x15}, await ReadAll(r, token));
 			else
 				Assert.Fail();
 
 			unframedCnt += 1;
-		}).ToAsync());
+		});
 
 		await framer.UnFrameData(new ArraySegment<byte>([
 			0x03, 0x00, 0x00, 0x00,
@@ -124,16 +123,16 @@ public class length_prefix_suffix_framer_should {
 	public async Task discard_data_when_reset_and_continue_unframing_from_blank_slate() {
 		int unframedCnt = 0;
 		var framer = new LengthPrefixSuffixFramer();
-		framer.RegisterMessageArrivedCallback(new Action<BinaryReader>(r => {
+		framer.RegisterMessageArrivedCallback(async (r, token) => {
 			if (unframedCnt == 0)
-				Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, ReadAll(r));
+				Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, await ReadAll(r, token));
 			else if (unframedCnt == 1)
-				Assert.AreEqual(new byte[] {0x05, 0x15}, ReadAll(r));
+				Assert.AreEqual(new byte[] {0x05, 0x15}, await ReadAll(r, token));
 			else
 				Assert.Fail();
 
 			unframedCnt += 1;
-		}).ToAsync());
+		});
 
 		await framer.UnFrameData(new ArraySegment<byte>([
 			0x03, 0x00, 0x00, 0x00,
@@ -157,12 +156,8 @@ public class length_prefix_suffix_framer_should {
 		Assert.AreEqual(2, unframedCnt);
 	}
 
-	private byte[] ReadAll(BinaryReader br) {
-		var buf = new byte[100000];
-		int read = br.Read(buf, 0, buf.Length);
-
-		var res = new byte[read];
-		Buffer.BlockCopy(buf, 0, res, 0, read);
-		return res;
-	}
+	private static ValueTask<byte[]> ReadAll(ReadOnlySequence<byte> br, CancellationToken token)
+		=> token.IsCancellationRequested
+			? ValueTask.FromCanceled<byte[]>(token)
+			: ValueTask.FromResult(br.ToArray());
 }

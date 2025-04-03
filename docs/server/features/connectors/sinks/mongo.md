@@ -7,7 +7,10 @@ order: 2
 
 ## Overview
 
-The MongoDB sink pulls messages from an EventStoreDB stream and stores the messages to a collection.
+The MongoDB sink pulls messages from a KurrentDB stream and stores them in a
+collection. The records will be serialized into
+[BSON](https://www.mongodb.com/docs/manual/reference/glossary/#std-term-BSON)
+documents, so the data must be valid for BSON format. 
 
 ## Quickstart
 
@@ -25,6 +28,7 @@ $JSON = @"
     "database": "sampleDB",
     "collection": "sampleCollection",
     "subscription:filter:scope": "stream",
+    "subscription:filter:filterType": "streamId",
     "subscription:filter:expression": "example-stream"
   }
 }
@@ -46,6 +50,7 @@ JSON='{
     "database": "sampleDB",
     "collection": "sampleCollection",
     "subscription:filter:scope": "stream",
+    "subscription:filter:filterType": "streamId",
     "subscription:filter:expression": "example-stream"
   }
 }'
@@ -65,7 +70,7 @@ available management API endpoints in the [API Reference](../manage.md).
 
 ## Settings
 
-Adjust these settings to specify the behavior and interaction of your MongoDB sink connector with EventStoreDB, ensuring it operates according to your requirements and preferences.
+Adjust these settings to specify the behavior and interaction of your MongoDB sink connector with KurrentDB, ensuring it operates according to your requirements and preferences.
 
 ::: tip
 The MongoDB sink inherits a set of common settings that are used to configure the connector. The settings can be found in
@@ -90,20 +95,19 @@ The MongoDB sink can be configured with the following options:
 
 This MongoDB sink connector currently only supports [SCRAM](./mongo.md#scram) and [X.509 certificate authentication](./mongo.md#x509-certificate-authentication).
 
-**SCRAM**
+### SCRAM
 
 To use SCRAM for authentication, include the username and password in the
 connection string and set the `authMechanism` parameter in the connection string
 to either `SCRAM-SHA-1` or `SCRAM-SHA-256` to select the desired MongoDB
 authentication mechanism. For more explanations on the connection string URI
-refer to the official MongoDB documentation on [Authentication
-Mechanism](https://www.mongodb.com/docs/v4.4/core/authentication-mechanisms/#:~:text=To%20specify%20the%20authentication%20mechanism,mechanism%20from%20the%20command%20line.).
+refer to the official MongoDB documentation on [Authentication Mechanism](https://www.mongodb.com/docs/v4.4/core/authentication-mechanisms/#:~:text=To%20specify%20the%20authentication%20mechanism,mechanism%20from%20the%20command%20line.).
 
 ::: note
 MongoDB version 4.0 and later uses SCRAM-SHA-256 as the default authentication mechanism if the MongoDB server version supports it.
 :::
 
-**X.509 certificate authentication**
+### X.509 certificate authentication
 
 To use X.509 certificate authentication, include the base64 encoded x509
 certificate and the password in the settings. You can use an online tool like
@@ -120,7 +124,7 @@ certificate and the password in the settings. You can use an online tool like
 
 The id of the document can be generated automatically based on the source specified and expression if needed. The following options are available:
 
-By default, the MongoDB sink uses the `recordId` as the document ID. This is the unique identifier generated for every record in EventStoreDB.
+By default, the MongoDB sink uses the `recordId` as the document ID. This is the unique identifier generated for every record in KurrentDB.
 
 Here are some examples that demonstrate how to configure the MongoDB sink to generate document IDs based on different sources.
 
@@ -193,3 +197,6 @@ If your event has a partition key, you can use it as the document ID. The `Parti
 ```
 
 This uses the record's partition key as a unique document ID.
+
+## Tutorial
+[Learn how to set up and use a MongoDB Sink connector in KurrentDB through a tutorial.](/tutorials/MongoDB_Sink.md)

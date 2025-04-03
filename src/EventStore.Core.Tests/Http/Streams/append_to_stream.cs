@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -19,6 +19,8 @@ using Microsoft.Extensions.Primitives;
 
 namespace EventStore.Core.Tests.Http.Streams {
 	namespace append_to_stream {
+		public abstract class ExpectedVersionSpecification : ExpectedVersionSpecification<LogFormat.V2, string>;
+
 		public abstract class ExpectedVersionSpecification<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			public string WrongExpectedVersionDesc {
 				get { return "Wrong expected EventNumber"; }
@@ -28,34 +30,34 @@ namespace EventStore.Core.Tests.Http.Streams {
 				get { return "Stream deleted"; }
 			}
 
-			public Task<HttpResponseMessage> PostEventWithExpectedVersion(long expectedVersion) {
-				var request = CreateRequest(TestStream, "", "POST", "application/json");
-				request.Headers.Add("ES-EventType", "SomeType");
-				request.Headers.Add("ES-ExpectedVersion", expectedVersion.ToString());
-				request.Headers.Add("ES-EventId", Guid.NewGuid().ToString());
+			public Task<HttpResponseMessage> PostEventWithExpectedVersion(long expectedVersion, string expectedVersionHeader = SystemHeaders.ExpectedVersion) {
+				var request = CreateRequest(TestStream, "", "POST", ContentType.Json);
+				request.Headers.Add(SystemHeaders.EventType, "SomeType");
+				request.Headers.Add(expectedVersionHeader, expectedVersion.ToString());
+				request.Headers.Add(SystemHeaders.EventId, Guid.NewGuid().ToString());
 				var data = Encoding.UTF8.GetBytes("{a : \"1\", b:\"3\", c:\"5\" }");
 				request.Content = new ByteArrayContent(data) {
-					Headers = { ContentType = new MediaTypeHeaderValue("application/json") }
+					Headers = { ContentType = new MediaTypeHeaderValue(ContentType.Json) }
 				};
 				return GetRequestResponse(request);
 			}
 
 			public Task TombstoneTestStream() {
-				var deleteRequest = CreateRequest(TestStream, "", "DELETE", "application/json");
-				deleteRequest.Headers.Add("ES-ExpectedVersion", ExpectedVersion.Any.ToString());
-				deleteRequest.Headers.Add("ES-HardDelete", bool.TrueString);
+				var deleteRequest = CreateRequest(TestStream, "", "DELETE", ContentType.Json);
+				deleteRequest.Headers.Add(SystemHeaders.ExpectedVersion, ExpectedVersion.Any.ToString());
+				deleteRequest.Headers.Add(SystemHeaders.HardDelete, bool.TrueString);
 				return GetRequestResponse(deleteRequest);
 			}
 
 			public Task SoftDeleteTestStream() {
-				var deleteRequest = CreateRequest(TestMetadataStream, "", "POST", "application/json");
-				deleteRequest.Headers.Add("ES-EventType", SystemEventTypes.StreamMetadata);
-				deleteRequest.Headers.Add("ES-ExpectedVersion", ExpectedVersion.Any.ToString());
-				deleteRequest.Headers.Add("ES-EventId", Guid.NewGuid().ToString());
+				var deleteRequest = CreateRequest(TestMetadataStream, "", "POST", ContentType.Json);
+				deleteRequest.Headers.Add(SystemHeaders.EventType, SystemEventTypes.StreamMetadata);
+				deleteRequest.Headers.Add(SystemHeaders.ExpectedVersion, ExpectedVersion.Any.ToString());
+				deleteRequest.Headers.Add(SystemHeaders.EventId, Guid.NewGuid().ToString());
 				deleteRequest.Content = new ByteArrayContent(StreamMetadata
 					.Create(truncateBefore: long.MaxValue)
 					.AsJsonBytes()) {
-					Headers = { ContentType = new MediaTypeHeaderValue("application/json") }
+					Headers = { ContentType = new MediaTypeHeaderValue(ContentType.Json) }
 				};
 				return GetRequestResponse(deleteRequest);
 			}
@@ -63,6 +65,118 @@ namespace EventStore.Core.Tests.Http.Streams {
 			public async Task<List<JToken>> GetTestStream() {
 				var stream = await GetJson<JObject>(TestStream + "/0/forward/10", accept: ContentType.Json);
 				return stream != null ? stream["entries"].ToList() : new List<JToken>();
+			}
+		}
+
+		[Category("LongRunning")]
+		[TestFixture(-2, HttpStatusCode.Created)]
+		[TestFixture(2, HttpStatusCode.Created)]
+		[TestFixture(3, HttpStatusCode.BadRequest)]
+		public class should_support_legacy_expected_version_header(int expectedVersion, HttpStatusCode expectedResult) : ExpectedVersionSpecification {
+			private HttpResponseMessage _response;
+			private List<JToken> _read;
+
+			protected override async Task Given() {
+				for (var i = 0; i < 3; i++) {
+					await PostEventWithExpectedVersion(ExpectedVersion.Any);
+				}
+			}
+
+			protected override async Task When() {
+				_response = await PostEventWithExpectedVersion(expectedVersion, SystemHeaders.LegacyExpectedVersion);
+				_read = await GetTestStream();
+			}
+
+			[Test]
+			public void should_return_the_correct_status_code() {
+				Assert.AreEqual(expectedResult, _response.StatusCode);
+			}
+
+			[Test]
+			public void should_append_event_to_stream_if_created() {
+				if (expectedResult == HttpStatusCode.Created)
+					Assert.AreEqual(4, _read.Count);
+				else
+					Assert.AreEqual(3, _read.Count);
+			}
+		}
+
+		[TestFixture(SystemHeaders.EventId)]
+		[TestFixture(SystemHeaders.LegacyEventId)]
+		class should_support_legacy_event_id_header(string eventIdHeader) : ExpectedVersionSpecification {
+			private HttpResponseMessage _response;
+			private string _eventId = Guid.NewGuid().ToString();
+
+			protected override Task Given() => Task.CompletedTask;
+
+			protected override async Task When() {
+				var request = CreateRawJsonPostRequest(TestStream, "POST", new { A = "1" });
+				request.Headers.Add(eventIdHeader, _eventId);
+				request.Headers.Add(SystemHeaders.EventType, "event-type");
+				_response = await GetRequestResponse(request);
+			}
+
+			[Test]
+			public void returns_created_status_code() {
+				Assert.AreEqual(HttpStatusCode.Created, _response.StatusCode);
+			}
+
+			[Test]
+			public async Task created_event_uses_event_id() {
+				var stream = await GetJson<JObject>(TestStream + "/0/forward/10", accept: ContentType.Json, extra: "?embed=body");
+				var read = stream["entries"]?.ToList();
+				Assert.AreEqual(_eventId, read?[0].Value<string>("eventId"));
+			}
+		}
+
+		[TestFixture(SystemHeaders.EventType)]
+		[TestFixture(SystemHeaders.LegacyEventType)]
+		class should_support_legacy_event_type_header(string eventTypeHeader) : ExpectedVersionSpecification {
+			private HttpResponseMessage _response;
+			private string _eventType = "event-type";
+			protected override Task Given() => Task.CompletedTask;
+
+			protected override async Task When() {
+				var request = CreateRawJsonPostRequest(TestStream, "POST", new { A = "1" });
+				request.Headers.Add(SystemHeaders.EventId, Guid.NewGuid().ToString());
+				request.Headers.Add(eventTypeHeader, _eventType);
+				_response = await GetRequestResponse(request);
+			}
+
+			[Test]
+			public void returns_created_status_code() {
+				Assert.AreEqual(HttpStatusCode.Created, _response.StatusCode);
+			}
+
+			[Test]
+			public async Task created_event_uses_event_type() {
+				var stream = await GetJson<JObject>(TestStream + "/0/forward/10", accept: ContentType.Json, extra: "?embed=body");
+				var read = stream["entries"]?.ToList();
+				Assert.AreEqual(_eventType, read?[0].Value<string>("eventType"));
+			}
+		}
+
+		[Category("LongRunning")]
+		[TestFixture(SystemHeaders.HardDelete)]
+		[TestFixture(SystemHeaders.LegacyHardDelete)]
+		public class should_support_legacy_hard_delete_header(string hardDeleteHeader) : ExpectedVersionSpecification<LogFormat.V2, string> {
+			private HttpResponseMessage _response;
+
+			protected override Task Given() => Task.CompletedTask;
+
+			protected override async Task When() {
+				var deleteRequest = CreateRequest(TestStream, "", "DELETE", ContentType.Json);
+				deleteRequest.Headers.Add(SystemHeaders.ExpectedVersion, ExpectedVersion.Any.ToString());
+				deleteRequest.Headers.Add(hardDeleteHeader, bool.TrueString);
+				var response = await GetRequestResponse(deleteRequest);
+				Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode);
+
+				_response = await PostEventWithExpectedVersion(ExpectedVersion.Any);
+			}
+
+			[Test]
+			public void should_return_gone_status_code() {
+				Assert.AreEqual(HttpStatusCode.Gone, _response.StatusCode);
 			}
 		}
 
@@ -112,13 +226,18 @@ namespace EventStore.Core.Tests.Http.Streams {
 			[Test]
 			public void should_return_bad_request_with_wrong_expected_version() {
 				Assert.AreEqual(HttpStatusCode.BadRequest, _response.StatusCode);
-				// Assert.AreEqual(WrongExpectedVersionDesc, _response.StatusDescription);
 			}
 
 			[Test]
 			public void should_return_the_current_version_in_the_header() {
 				Assert.AreEqual("0",
 					new StringValues(_response.Headers.GetValues(SystemHeaders.CurrentVersion).ToArray()));
+			}
+
+			[Test]
+			public void should_return_the_current_version_in_the_legacy_header() {
+				Assert.AreEqual("0",
+					new StringValues(_response.Headers.GetValues(SystemHeaders.LegacyCurrentVersion).ToArray()));
 			}
 
 			[Test]
@@ -199,7 +318,6 @@ namespace EventStore.Core.Tests.Http.Streams {
 			[Test]
 			public void should_return_gone_status_code() {
 				Assert.AreEqual(HttpStatusCode.Gone, _response.StatusCode);
-				// Assert.AreEqual(DeletedStreamDesc, _response.StatusDescription);
 			}
 		}
 
@@ -253,13 +371,18 @@ namespace EventStore.Core.Tests.Http.Streams {
 			[Test]
 			public void should_return_bad_request_with_wrong_expected_version() {
 				Assert.AreEqual(HttpStatusCode.BadRequest, _response.StatusCode);
-				//// Assert.AreEqual(WrongExpectedVersionDesc, _response.StatusDescription);
 			}
 
 			[Test]
 			public void should_return_the_current_version_in_the_header() {
 				Assert.AreEqual("1",
 					new StringValues(_response.Headers.GetValues(SystemHeaders.CurrentVersion).ToArray()));
+			}
+
+			[Test]
+			public void should_return_the_current_version_in_the_legacy_header() {
+				Assert.AreEqual("1",
+					new StringValues(_response.Headers.GetValues(SystemHeaders.LegacyCurrentVersion).ToArray()));
 			}
 
 			[Test]
@@ -285,13 +408,18 @@ namespace EventStore.Core.Tests.Http.Streams {
 			[Test]
 			public void should_return_bad_request_with_wrong_expected_version() {
 				Assert.AreEqual(HttpStatusCode.BadRequest, _response.StatusCode);
-				// Assert.AreEqual(WrongExpectedVersionDesc, _response.StatusDescription);
 			}
 
 			[Test]
 			public void should_return_the_current_version_in_the_header() {
 				Assert.AreEqual("-1",
 					new StringValues(_response.Headers.GetValues(SystemHeaders.CurrentVersion).ToArray()));
+			}
+
+			[Test]
+			public void should_return_the_current_version_in_the_legacy_header() {
+				Assert.AreEqual("-1",
+					new StringValues(_response.Headers.GetValues(SystemHeaders.LegacyCurrentVersion).ToArray()));
 			}
 
 			[Test]
@@ -317,7 +445,6 @@ namespace EventStore.Core.Tests.Http.Streams {
 			[Test]
 			public void should_return_gone_status_code() {
 				Assert.AreEqual(HttpStatusCode.Gone, _response.StatusCode);
-				// Assert.AreEqual(DeletedStreamDesc, _response.StatusDescription);
 			}
 		}
 
@@ -338,7 +465,6 @@ namespace EventStore.Core.Tests.Http.Streams {
 			[Test]
 			public void should_return_gone_status_code() {
 				Assert.AreEqual(HttpStatusCode.Gone, _response.StatusCode);
-				// Assert.AreEqual(DeletedStreamDesc, _response.StatusDescription);
 			}
 		}
 
@@ -407,13 +533,13 @@ namespace EventStore.Core.Tests.Http.Streams {
 			private List<JToken> _read;
 
 			protected override async Task Given() {
-				var request = CreateRequest(TestMetadataStream, "", "POST", "application/json");
-				request.Headers.Add("ES-EventType", "$user-created");
-				request.Headers.Add("ES-ExpectedVersion", ExpectedVersion.Any.ToString());
-				request.Headers.Add("ES-EventId", Guid.NewGuid().ToString());
+				var request = CreateRequest(TestMetadataStream, "", "POST", ContentType.Json);
+				request.Headers.Add(SystemHeaders.EventType, "$user-created");
+				request.Headers.Add(SystemHeaders.ExpectedVersion, ExpectedVersion.Any.ToString());
+				request.Headers.Add(SystemHeaders.EventId, Guid.NewGuid().ToString());
 				var data = Encoding.UTF8.GetBytes("{a : \"1\", b:\"3\", c:\"5\" }");
 				request.Content = new ByteArrayContent(data) {
-					Headers = { ContentType = new MediaTypeHeaderValue("application/json") }
+					Headers = { ContentType = new MediaTypeHeaderValue(ContentType.Json) }
 				};
 				await GetRequestResponse(request);
 			}
@@ -452,7 +578,6 @@ namespace EventStore.Core.Tests.Http.Streams {
 			[Test]
 			public void should_return_bad_request_with_wrong_expected_version() {
 				Assert.AreEqual(HttpStatusCode.BadRequest, _response.StatusCode);
-				// Assert.AreEqual(WrongExpectedVersionDesc, _response.StatusDescription);
 			}
 
 
@@ -460,6 +585,12 @@ namespace EventStore.Core.Tests.Http.Streams {
 			public void should_return_the_current_version_in_the_header() {
 				Assert.AreEqual("-1",
 					new StringValues(_response.Headers.GetValues(SystemHeaders.CurrentVersion).ToArray()));
+			}
+
+			[Test]
+			public void should_return_the_current_version_in_the_legacy_header() {
+				Assert.AreEqual("-1",
+					new StringValues(_response.Headers.GetValues(SystemHeaders.LegacyCurrentVersion).ToArray()));
 			}
 
 			[Test]
@@ -486,7 +617,6 @@ namespace EventStore.Core.Tests.Http.Streams {
 			[Test]
 			public void should_return_gone_status_code() {
 				Assert.AreEqual(HttpStatusCode.Gone, _response.StatusCode);
-				// Assert.AreEqual(DeletedStreamDesc, _response.StatusDescription);
 			}
 		}
 
@@ -508,7 +638,6 @@ namespace EventStore.Core.Tests.Http.Streams {
 			[Test]
 			public void should_return_gone_status_code() {
 				Assert.AreEqual(HttpStatusCode.Gone, _response.StatusCode);
-				// Assert.AreEqual(DeletedStreamDesc, _response.StatusDescription);
 			}
 		}
 	}

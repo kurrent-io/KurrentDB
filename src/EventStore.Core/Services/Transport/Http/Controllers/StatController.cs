@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -24,17 +24,19 @@ public class StatController : CommunicationController {
 	}
 
 	protected override void SubscribeCore(IHttpService service) {
-		Ensure.NotNull(service, "service");
+		Ensure.NotNull(service);
 
-		service.RegisterAction(new ControllerAction("/stats", HttpMethod.Get, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Statistics.Read)),
+		service.RegisterAction(
+			new("/stats", HttpMethod.Get, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Statistics.Read)),
 			OnGetFreshStats);
 		service.RegisterAction(
-			new ControllerAction("/stats/replication", HttpMethod.Get, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Statistics.Replication)),
+			new("/stats/replication", HttpMethod.Get, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Statistics.Replication)),
 			OnGetReplicationStats);
-		service.RegisterAction(new ControllerAction("/stats/tcp", HttpMethod.Get, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Statistics.Tcp)),
+		service.RegisterAction(
+			new("/stats/tcp", HttpMethod.Get, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Statistics.Tcp)),
 			OnGetTcpConnectionStats);
 		service.RegisterAction(
-			new ControllerAction("/stats/{*statPath}", HttpMethod.Get, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Statistics.Custom)),
+			new("/stats/{*statPath}", HttpMethod.Get, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Statistics.Custom)),
 			OnGetFreshStats);
 	}
 

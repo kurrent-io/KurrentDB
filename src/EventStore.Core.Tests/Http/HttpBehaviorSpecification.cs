@@ -1,15 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Specialized;
 using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -18,12 +15,14 @@ using EventStore.Common.Utils;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using EventStore.ClientAPI.Transport.Http;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Converters;
+using ContentTypeConstant = EventStore.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Http;
+
+public abstract class HttpBehaviorSpecification : HttpBehaviorSpecification<LogFormat.V2, string>;
 
 public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	protected MiniNode<TLogFormat, TStreamId> _node;
@@ -78,8 +77,6 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 	protected virtual MiniNode<TLogFormat, TStreamId> CreateMiniNode() =>
 		new(PathName);
 
-	protected virtual bool GivenSkipInitializeStandardUsersCheck() => false;
-
 	public override async Task TestFixtureTearDown() {
 		_connection.Close();
 		await _node.Shutdown();
@@ -119,7 +116,7 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 			? new Uri(path, UriKind.RelativeOrAbsolute)
 			: new Uri(path + "?" + extra, UriKind.RelativeOrAbsolute);
 
-		if (supplied.IsAbsoluteUri && !supplied.IsFile) // NOTE: is file imporant for mono
+		if (supplied.IsAbsoluteUri && !supplied.IsFile)
 			return supplied;
 
 		var httpEndPoint = _node.HttpEndPoint;
@@ -144,54 +141,15 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 		return GetRequestResponse(request);
 	}
 
-	protected Task<HttpResponseMessage> MakeArrayEventsPost<T>(string path, T body, NetworkCredential credentials = null, string extra = null) {
+	protected Task<HttpResponseMessage> MakeArrayEventsPost<T>(string path, T body, NetworkCredential credentials = null, string extra = null, string contentType = null) {
 		credentials ??= _defaultCredentials;
-		var request = CreateEventsJsonPostRequest(path, "POST", body, credentials, extra);
+		var request = CreateEventsJsonPostRequest(path, "POST", body, credentials, extra, contentType);
 		return GetRequestResponse(request);
 	}
 
 	protected Task<HttpResponseMessage> MakeRawJsonPost<T>(string path, T body, NetworkCredential credentials = null, string extra = null) {
 		credentials ??= _defaultCredentials;
 		var request = CreateRawJsonPostRequest(path, "POST", body, credentials, extra);
-		return GetRequestResponse(request);
-	}
-
-	protected async Task<JObject> MakeJsonPostWithJsonResponse<T>(string path, T body, NetworkCredential credentials = null, string extra = null) {
-		credentials ??= _defaultCredentials;
-		var request = CreateRawJsonPostRequest(path, "POST", body, credentials, extra);
-		_lastResponse = await GetRequestResponse(request);
-		var memoryStream = new MemoryStream();
-		await _lastResponse.Content.CopyToAsync(memoryStream);
-		var bytes = memoryStream.ToArray();
-		_lastResponseBody = Helper.UTF8NoBom.GetString(bytes);
-		try {
-			return _lastResponseBody.ParseJson<JObject>();
-		} catch (JsonException ex) {
-			_lastJsonException = ex;
-			return default;
-		}
-	}
-
-	protected async Task<JObject> MakeJsonEventsPostWithJsonResponse<T>(string path, T body, NetworkCredential credentials = null, string extra = null) {
-		credentials ??= _defaultCredentials;
-		var request = CreateEventsJsonPostRequest(path, "POST", body, credentials, extra);
-		_lastResponse = await GetRequestResponse(request);
-		var memoryStream = new MemoryStream();
-		await _lastResponse.Content.CopyToAsync(memoryStream);
-		var bytes = memoryStream.ToArray();
-		_lastResponseBody = Helper.UTF8NoBom.GetString(bytes);
-		try {
-			return _lastResponseBody.ParseJson<JObject>();
-		} catch (JsonException ex) {
-			_lastJsonException = ex;
-			return default;
-		}
-	}
-
-
-	protected Task<HttpResponseMessage> MakeEventsJsonPut<T>(string path, T body, NetworkCredential credentials, string extra = null) {
-		credentials ??= _defaultCredentials;
-		var request = CreateEventsJsonPostRequest(path, "PUT", body, credentials, extra);
 		return GetRequestResponse(request);
 	}
 
@@ -237,17 +195,6 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 		}
 	}
 
-	protected async Task<T> GetJson2<T>(string path, string extra, string accept = null, NetworkCredential credentials = null) {
-		credentials ??= _defaultCredentials;
-		await Get(path, extra, accept, credentials);
-		try {
-			return _lastResponseBody.ParseJson<T>();
-		} catch (JsonException ex) {
-			_lastJsonException = ex;
-			return default;
-		}
-	}
-
 	protected async Task<T> GetJsonWithoutAcceptHeader<T>(string path) {
 		var request = CreateRequest(path, "", "GET", null);
 		_lastResponse = await GetRequestResponse(request);
@@ -268,7 +215,7 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 		credentials = credentials ?? _defaultCredentials;
 		var request = CreateRequest(path, extra, "GET", null, credentials, headers);
 		if (setAcceptHeader) {
-			request.Headers.Add("accept", accept ?? "application/json");
+			request.Headers.Add("accept", accept ?? ContentTypeConstant.Json);
 		}
 
 		_lastResponse = await GetRequestResponse(request);
@@ -283,32 +230,7 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 		var response = await _client.SendAsync(request);
 		_allResponses.Add(response);
 
-		/*if (_dumpRequest != null) {
-			var bytes = _dumpRequest(request);
-			if (bytes != null)
-				Console.WriteLine(Encoding.ASCII.GetString(bytes, 0, GetBytesLength(bytes)).TrimEnd('\0'));
-		}
-
-		if (_dumpRequest2 != null) {
-			var bytes = _dumpRequest2(request);
-			if (bytes != null)
-				Console.WriteLine(Encoding.ASCII.GetString(bytes, 0, GetBytesLength(bytes)).TrimEnd('\0'));
-		}
-
-		Console.WriteLine();
-		if (_dumpResponse != null) {
-			var bytes = _dumpResponse(response);
-			var len = _dumpResponse2(response);
-			if (bytes != null)
-				Console.WriteLine(Encoding.ASCII.GetString(bytes, 0, len).TrimEnd('\0'));
-		}*/
-
 		return response;
-	}
-
-	private int GetBytesLength(byte[] bytes) {
-		var index = Array.IndexOf(bytes, 0);
-		return index < 0 ? bytes.Length : index;
 	}
 
 	protected readonly JsonSerializerSettings TestJsonSettings = new JsonSerializerSettings {
@@ -327,11 +249,11 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 	}
 
 	protected HttpRequestMessage CreateEventsJsonPostRequest<T>(
-		string path, string method, T body, NetworkCredential credentials = null, string extra = null) {
+		string path, string method, T body, NetworkCredential credentials = null, string extra = null, string contentType = null) {
 		credentials = credentials ?? _defaultCredentials;
-		var request = CreateRequest(path, extra, method, "application/vnd.eventstore.events+json", credentials);
+		var request = CreateRequest(path, extra, method, contentType ?? ContentTypeConstant.EventsJson, credentials);
 		request.Content = new ByteArrayContent(ToJsonBytes(body)) {
-			Headers = { ContentType = new MediaTypeHeaderValue("application/vnd.eventstore.events+json") }
+			Headers = { ContentType = new MediaTypeHeaderValue(contentType ?? ContentTypeConstant.EventsJson) }
 		};
 		return request;
 	}
@@ -339,9 +261,9 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 	protected HttpRequestMessage CreateRawJsonPostRequest<T>(
 		string path, string method, T body, NetworkCredential credentials = null, string extra = null) {
 		credentials ??= _defaultCredentials;
-		var request = CreateRequest(path, extra, method, "application/json", credentials);
+		var request = CreateRequest(path, extra, method, ContentTypeConstant.Json, credentials);
 		request.Content = new ByteArrayContent(ToJsonBytes(body)) {
-			Headers = { ContentType = new MediaTypeHeaderValue("application/json") }
+			Headers = { ContentType = new MediaTypeHeaderValue(ContentTypeConstant.Json) }
 		};
 		return request;
 	}
@@ -357,94 +279,4 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 
 	protected abstract Task Given();
 	protected abstract Task When();
-
-	private static Func<HttpResponseMessage, byte[]> CreateDumpResponse() {
-		var r = Expression.Parameter(typeof(HttpResponseMessage), "r");
-		var piCoreResponseData = typeof(HttpResponseMessage).GetProperty(
-			"CoreResponseData",
-			BindingFlags.GetProperty | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy |
-			BindingFlags.Instance);
-		var fim_ConnectStream = piCoreResponseData.PropertyType.GetField("m_ConnectStream",
-			BindingFlags.GetField | BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
-		var connectStreamType = AppDomain.CurrentDomain.GetAssemblies()
-			.Select(a => a.GetType("System.Net.ConnectStream")).Where(t => t != null).FirstOrDefault();
-		var fim_ReadBuffer = connectStreamType.GetField("m_ReadBuffer",
-			BindingFlags.GetField | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
-		var body = Expression.Field(
-			Expression.Convert(Expression.Field(Expression.Property(r, piCoreResponseData), fim_ConnectStream),
-				connectStreamType), fim_ReadBuffer);
-		var debugExpression = Expression.Lambda<Func<HttpResponseMessage, byte[]>>(body, r);
-		return debugExpression.Compile();
-	}
-
-	private static Func<HttpResponseMessage, int> CreateDumpResponse2() {
-		var r = Expression.Parameter(typeof(HttpResponseMessage), "r");
-		var piCoreResponseData = typeof(HttpResponseMessage).GetProperty(
-			"CoreResponseData",
-			BindingFlags.GetProperty | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy |
-			BindingFlags.Instance);
-		var fim_ConnectStream = piCoreResponseData.PropertyType.GetField("m_ConnectStream",
-			BindingFlags.GetField | BindingFlags.Public | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
-		var connectStreamType = AppDomain.CurrentDomain.GetAssemblies()
-			.Select(a => a.GetType("System.Net.ConnectStream")).Where(t => t != null).FirstOrDefault();
-		var fim_ReadOffset = connectStreamType.GetField("m_ReadOffset",
-			BindingFlags.GetField | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
-		var fim_ReadBufferSize = connectStreamType.GetField("m_ReadBufferSize",
-			BindingFlags.GetField | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
-		var stream =
-			Expression.Convert(Expression.Field(Expression.Property(r, piCoreResponseData), fim_ConnectStream),
-				connectStreamType);
-		var body = Expression.Add(Expression.Field(stream, fim_ReadOffset),
-			Expression.Field(stream, fim_ReadBufferSize));
-		var debugExpression = Expression.Lambda<Func<HttpResponseMessage, int>>(body, r);
-		return debugExpression.Compile();
-	}
-
-	private static Func<HttpRequestMessage, byte[]> CreateDumpRequest() {
-		var r = Expression.Parameter(typeof(HttpRequestMessage), "r");
-		var fi_WriteBuffer = typeof(HttpRequestMessage).GetField("_WriteBuffer",
-			BindingFlags.GetField | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy |
-			BindingFlags.Instance);
-		var body = Expression.Field(r, fi_WriteBuffer);
-		var debugExpression = Expression.Lambda<Func<HttpRequestMessage, byte[]>>(body, r);
-		return debugExpression.Compile();
-	}
-
-	private static Func<HttpRequestMessage, byte[]> CreateDumpRequest2() {
-		var r = Expression.Parameter(typeof(HttpRequestMessage), "r");
-		var fi_SubmitWriteStream = typeof(HttpRequestMessage).GetField(
-			"_SubmitWriteStream",
-			BindingFlags.GetField | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy
-			| BindingFlags.Instance);
-		var connectStreamType = AppDomain.CurrentDomain.GetAssemblies()
-			.Select(a => a.GetType("System.Net.ConnectStream")).Where(t => t != null).FirstOrDefault();
-		var piBufferedData = connectStreamType.GetProperty(
-			"BufferedData",
-			BindingFlags.GetProperty | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy
-			| BindingFlags.Instance);
-		var fiheadChunk = piBufferedData.PropertyType.GetField(
-			"headChunk",
-			BindingFlags.GetField | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy
-			| BindingFlags.Instance);
-		var piBuffer = fiheadChunk.FieldType.GetField(
-			"Buffer",
-			BindingFlags.GetProperty | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy
-			| BindingFlags.Instance);
-		var submitWriteStreamExpression = Expression.Field(r, fi_SubmitWriteStream);
-		var headChunk =
-			Expression.Condition(
-				Expression.ReferenceNotEqual(submitWriteStreamExpression,
-					Expression.Constant(null, submitWriteStreamExpression.Type)),
-				Expression.Field(
-					Expression.Property(
-						Expression.Convert(submitWriteStreamExpression, connectStreamType), piBufferedData),
-					fiheadChunk),
-				Expression.Constant(null, fiheadChunk.FieldType));
-		var body =
-			Expression.Condition(
-				Expression.ReferenceNotEqual(headChunk, Expression.Constant(null, headChunk.Type)),
-				Expression.Field(headChunk, piBuffer), Expression.Constant(null, piBuffer.FieldType));
-		var debugExpression = Expression.Lambda<Func<HttpRequestMessage, byte[]>>(body, r);
-		return debugExpression.Compile();
-	}
 }

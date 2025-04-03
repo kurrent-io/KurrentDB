@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
 using System.Linq;
@@ -51,7 +51,7 @@ public class when_truncating_few_chunks_with_index_on_disk_and_then_reopening_db
 	}
 
 	private string GetChunkName(int chunkNumber) {
-		var allVersions = Db.Config.FileNamingStrategy.GetAllVersionsFor(chunkNumber);
+		var allVersions = Db.Manager.FileSystem.LocalNamingStrategy.GetAllVersionsFor(chunkNumber);
 		Assert.AreEqual(1, allVersions.Length);
 		return allVersions[0];
 	}
@@ -69,11 +69,15 @@ public class when_truncating_few_chunks_with_index_on_disk_and_then_reopening_db
 	}
 
 	[Test]
-	public void not_truncated_chunks_should_survive() {
-		var chunks = Db.Config.FileNamingStrategy.GetAllPresentFiles();
+	public async Task not_truncated_chunks_should_survive() {
+		var chunks = await Db.Manager.FileSystem.GetChunks().ToArrayAsync();
 		Assert.AreEqual(2, chunks.Length);
+
 		Assert.AreEqual(_chunk0, GetChunkName(0));
+		Assert.AreEqual(_chunk0, chunks[0].FileName);
+
 		Assert.AreEqual(_chunk1, GetChunkName(1));
+		Assert.AreEqual(_chunk1, chunks[1].FileName);
 	}
 
 	[Test]

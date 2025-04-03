@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ public enum TcpFlags : byte {
 	TrustedWrite = 0x02
 }
 
-public struct TcpPackage {
+public readonly struct TcpPackage {
 	private static readonly IReadOnlyDictionary<string, string> NotAuthenticated = new Dictionary<string, string>();
 	public const int CommandOffset = 0;
 	public const int FlagsOffset = CommandOffset + 1;
@@ -56,28 +56,32 @@ public struct TcpPackage {
 		var headerSize = MandatorySize;
 		string login = null;
 		string pass = null;
-		if ((flags & TcpFlags.Authenticated) != 0) {
-			var firstByte = data.Array[data.Offset + AuthOffset];
-			var tokenLength = BitConverter.ToInt16(data.Array, AuthOffset);
-			if (Math.Sign(tokenLength) == -1) {
-				var token = Helper.UTF8NoBom.GetString(data.Array, AuthOffset + 2, -tokenLength);
-
-				headerSize += token.Length + 2;
-
-				return new TcpPackage(command, flags, correlationId, token,
-					new ArraySegment<byte>(data.Array, data.Offset + headerSize, data.Count - headerSize));
-			}
-
-			var loginLen = firstByte;
-			login = Helper.UTF8NoBom.GetString(data.Array, data.Offset + AuthOffset + 1, loginLen);
-
-			var passLen = data.Array[data.Offset + AuthOffset + 1 + loginLen];
-			pass = Helper.UTF8NoBom.GetString(data.Array, data.Offset + AuthOffset + 1 + loginLen + 1, passLen);
-
-			headerSize += 1 + loginLen + 1 + passLen;
+		if ((flags & TcpFlags.Authenticated) == 0) {
+			return new(command,
+				flags,
+				correlationId,
+				login,
+				pass,
+				new ArraySegment<byte>(data.Array, data.Offset + headerSize, data.Count - headerSize));
 		}
 
-		return new TcpPackage(command,
+		var firstByte = data.Array[data.Offset + AuthOffset];
+		var tokenLength = BitConverter.ToInt16(data.Array, AuthOffset);
+		if (Math.Sign(tokenLength) == -1) {
+			var token = Helper.UTF8NoBom.GetString(data.Array, AuthOffset + 2, -tokenLength);
+
+			headerSize += token.Length + 2;
+
+			return new(command, flags, correlationId, token, new(data.Array, data.Offset + headerSize, data.Count - headerSize));
+		}
+
+		login = Helper.UTF8NoBom.GetString(data.Array, data.Offset + AuthOffset + 1, firstByte);
+		var passLen = data.Array[data.Offset + AuthOffset + 1 + firstByte];
+		pass = Helper.UTF8NoBom.GetString(data.Array, data.Offset + AuthOffset + 1 + firstByte + 1, passLen);
+
+		headerSize += 1 + firstByte + 1 + passLen;
+
+		return new(command,
 			flags,
 			correlationId,
 			login,
@@ -86,15 +90,14 @@ public struct TcpPackage {
 	}
 
 	public TcpPackage(TcpCommand command, Guid correlationId, byte[] data)
-		: this(command, TcpFlags.None, correlationId, null, new ArraySegment<byte>(data ?? Empty.ByteArray)) {
+		: this(command, TcpFlags.None, correlationId, null, new(data ?? Empty.ByteArray)) {
 	}
 
 	public TcpPackage(TcpCommand command, Guid correlationId, ArraySegment<byte> data)
 		: this(command, TcpFlags.None, correlationId, null, data) {
 	}
 
-	public TcpPackage(TcpCommand command, TcpFlags flags, Guid correlationId, string login, string password,
-		byte[] data)
+	public TcpPackage(TcpCommand command, TcpFlags flags, Guid correlationId, string login, string password, byte[] data)
 		: this(command, flags, correlationId, login, password, new ArraySegment<byte>(data ?? Empty.ByteArray)) {
 	}
 
@@ -104,13 +107,11 @@ public struct TcpPackage {
 			Ensure.NotNull(login, nameof(login));
 			Ensure.NotNull(password, nameof(password));
 			if (Helper.UTF8NoBom.GetByteCount(login) > MaxLoginLength) {
-				throw new ArgumentException($"Login length must be less than {MaxLoginLength} bytes.",
-					nameof(login));
+				throw new ArgumentException($"Login length must be less than {MaxLoginLength} bytes.", nameof(login));
 			}
 
 			if (Helper.UTF8NoBom.GetByteCount(password) > MaxPasswordLength) {
-				throw new ArgumentException($"Password length must be less than {MaxPasswordLength} bytes.",
-					nameof(password));
+				throw new ArgumentException($"Password length must be less than {MaxPasswordLength} bytes.", nameof(password));
 			}
 		} else {
 			if (login != null) {
@@ -132,8 +133,7 @@ public struct TcpPackage {
 			Ensure.NotNull(authToken, nameof(authToken));
 
 			if (Helper.UTF8NoBom.GetByteCount(authToken) > MaxTokenLength) {
-				throw new ArgumentException($"Token length must be smaller than {MaxTokenLength} bytes",
-					nameof(authToken));
+				throw new ArgumentException($"Token length must be smaller than {MaxTokenLength} bytes", nameof(authToken));
 			}
 		}
 
@@ -156,11 +156,12 @@ public struct TcpPackage {
 	}
 
 	public byte[] AsByteArray() {
+		byte[] res;
 		if ((Flags & TcpFlags.Authenticated) != 0) {
 			if (_authToken == null) {
 				var loginLen = Helper.UTF8NoBom.GetByteCount(_login);
 				var passLen = Helper.UTF8NoBom.GetByteCount(_password);
-				var res = new byte[MandatorySize + 2 + loginLen + passLen + Data.Count];
+				res = new byte[MandatorySize + 2 + loginLen + passLen + Data.Count];
 				res[CommandOffset] = (byte)Command;
 				res[FlagsOffset] = (byte)Flags;
 				Buffer.BlockCopy(CorrelationId.ToByteArray(), 0, res, CorrelationOffset, 16);
@@ -169,33 +170,27 @@ public struct TcpPackage {
 				Helper.UTF8NoBom.GetBytes(_login, 0, _login.Length, res, AuthOffset + 1);
 				res[AuthOffset + 1 + loginLen] = (byte)passLen;
 				Helper.UTF8NoBom.GetBytes(_password, 0, _password.Length, res, AuthOffset + 1 + loginLen + 1);
-
-				Buffer.BlockCopy(Data.Array, Data.Offset, res, res.Length - Data.Count, Data.Count);
-				return res;
 			} else {
 				var authTokenLength = Helper.UTF8NoBom.GetByteCount(_authToken);
-				var res = new byte[MandatorySize + 2 + authTokenLength + Data.Count];
+				res = new byte[MandatorySize + 2 + authTokenLength + Data.Count];
 				res[CommandOffset] = (byte)Command;
 				res[FlagsOffset] = (byte)Flags;
 				Buffer.BlockCopy(CorrelationId.ToByteArray(), 0, res, CorrelationOffset, 16);
-
 				Buffer.BlockCopy(BitConverter.GetBytes(-Convert.ToInt16(authTokenLength)), 0, res, AuthOffset, 2);
 				Helper.UTF8NoBom.GetBytes(_authToken, 0, _authToken.Length, res, AuthOffset + 2);
-
-				Buffer.BlockCopy(Data.Array, Data.Offset, res, res.Length - Data.Count, Data.Count);
-				return res;
 			}
-		} else {
-			var res = new byte[MandatorySize + Data.Count];
-			res[CommandOffset] = (byte)Command;
-			res[FlagsOffset] = (byte)Flags;
-			Buffer.BlockCopy(CorrelationId.ToByteArray(), 0, res, CorrelationOffset, 16);
+
 			Buffer.BlockCopy(Data.Array, Data.Offset, res, res.Length - Data.Count, Data.Count);
 			return res;
 		}
+
+		res = new byte[MandatorySize + Data.Count];
+		res[CommandOffset] = (byte)Command;
+		res[FlagsOffset] = (byte)Flags;
+		Buffer.BlockCopy(CorrelationId.ToByteArray(), 0, res, CorrelationOffset, 16);
+		Buffer.BlockCopy(Data.Array, Data.Offset, res, res.Length - Data.Count, Data.Count);
+		return res;
 	}
 
-	public ArraySegment<byte> AsArraySegment() {
-		return new ArraySegment<byte>(AsByteArray());
-	}
+	public ArraySegment<byte> AsArraySegment() => new(AsByteArray());
 }

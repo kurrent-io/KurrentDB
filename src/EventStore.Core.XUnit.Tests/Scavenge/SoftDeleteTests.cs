@@ -1,14 +1,15 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading.Tasks;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog.Scavenging;
+using EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
 using Xunit;
-using static EventStore.Core.XUnit.Tests.Scavenge.StreamMetadatas;
+using static EventStore.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;
 
@@ -130,7 +131,7 @@ public class SoftDeleteTests : SqliteDbPerTest<SoftDeleteTests> {
 				Assert.False(state.TryGetOriginalStreamData("ab-1", out _));
 				Assert.False(state.TryGetMetastreamData("$$ab-1", out _));
 			})
-			.RunAsync(
+			.RunAndKeepDbAsync(
 				x => new[] {
 					x.Recs[0].KeepIndexes(2, 3),
 					x.Recs[1],

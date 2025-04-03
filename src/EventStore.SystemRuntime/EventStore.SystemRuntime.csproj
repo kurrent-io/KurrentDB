@@ -7,7 +7,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
+	  <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
 	  <PackageReference Include="Serilog" Version="4.0.1" />
 	  <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
 	</ItemGroup>

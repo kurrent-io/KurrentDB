@@ -117,7 +117,7 @@ Chrome, but we have tested debugging with all major browsers including Firefox, 
 ### Logging from a projection
 
 For debugging purposes, projections includes a log method which, when called, sends messages to the configured
-EventStoreDB logger (the default is `NLog`, to a file, and `stdout`).
+KurrentDB logger.
 
 You might find printing out the structure of the event body for inspection useful.
 
@@ -186,7 +186,7 @@ the `handler(state, eventEnvelope)` method.
 
 ## Configuring projections
 
-By changing these settings, you can lessen the amount of pressure projections put on an EventStoreDB node or
+By changing these settings, you can lessen the amount of pressure projections put on a KurrentDB node or
 improve projection performance. You can change these settings on a case-by-case basis, and monitor potential
 improvements.
 
@@ -205,8 +205,8 @@ create a projection with the web admin interface.
 
 These options control how projections append events.
 
-In busy systems, projections can put a lot of extra pressure on the master node. This is especially true for
-EventStoreDB servers that also have persistent subscriptions running, which only the master node can process.
+In busy systems, projections can put a lot of extra pressure on the leader node. This is especially true for
+KurrentDB servers that also have persistent subscriptions running, which only the leader node can process.
 If you see a lot of commit timeouts and slow writes from your projections and other clients, then start with
 these settings.
 
@@ -222,7 +222,7 @@ you see an error message like the following:
 'emit' is not allowed by the projection/configuration/mode
 ```
 
-EventStoreDB disables this setting by default, and is usually set when you create the projection and if you
+KurrentDB disables this setting by default, and is usually set when you create the projection and if you
 need the projection to emit events.
 
 #### Track emitted streams
@@ -235,17 +235,11 @@ should only the setting if you intend to delete a projection and create new ones
 stream.
 
 ::: warning
-By default, EventStoreDB disables the `trackemittedstreams` setting for projections. When enabled,
+By default, KurrentDB disables the `trackemittedstreams` setting for projections. When enabled,
 an event appended records the stream name (in `$projections-{projection_name}-emittedstreams`) of each event
 emitted by the projection. This means that write amplification is a possibility, as each event that the
 projection emits appends a separate event. As such, this option is not recommended for projections that emit a
 lot of events, and you should enable only where necessary.
-:::
-
-::: tip
-Between EventStoreDB versions 3.8.0 and 4.0.2, this option was enabled by default when a projection
-was created through the UI. If you have any projections created during this time frame, it's worth checking
-whether this option is enabled.
 :::
 
 #### Max allowed writes in flight
@@ -327,7 +321,9 @@ projection starts reading again.
 
 #### Projection Execution Timeout
 
-The `ProjectionExecutionTimeout` setting specifies per event projection processing timeout. If an event is not processed within the specified duration, the projection will fault and won't process further events.
+The `ProjectionExecutionTimeout` setting determines how long a projection has to process an event. If an event is not processed within the specified duration, the projection will fault and won't process further events. This setting applies to all projections unless a specific timeout is set for a particular projection.
+
+Recovering a projection from a faulted state due to a timeout can be done by restarting the projection to resume from the previous checkpoint or by increasing the `ProjectionExecutionTimeout` value, which requires a server restart. Alternatively, increasing the Per Event Projection Processing Timeout does not require a server restart.
 
 ::: tip
 Increase value of this setting if projection handler is compute intensive or server is under heavy load
@@ -338,12 +334,16 @@ Increase value of this setting if projection handler is compute intensive or ser
 Settings in this section concern projections that are running on the server.
 
 ::: warning
-Server-side projections impact the performance of the EventStoreDB server. For example, some
+Server-side projections impact the performance of the KurrentDB server. For example, some
 standard [system projections](system.md) like Category or Event Type projections produce new (link)
 events that are stored in the database in addition to the original event. This effectively doubles or triples
 the number of events appended and therefore creates pressure on the IO of the server node. We often call this
 effect "write amplification".
 :::
+
+#### Per Event Projection Processing Timeout
+
+This setting works like `ProjectionExecutionTimeout` but applies to individual projections. If both timeouts are configured for a projection, the Per Event Projection Processing Timeout takes precedence.
 
 ### Projection runtime
 
@@ -357,7 +357,7 @@ projection on the Legacy runtime versus the Interpreted runtime.
 |:---------------------|:--------------------------------|
 | Command line         | `--projection-runtime`          |
 | YAML                 | `ProjectionRuntime`             |
-| Environment variable | `EVENTSTORE_PROJECTION_RUNTIME` |
+| Environment variable | `KURRENTDB_PROJECTION_RUNTIME`  |
 
 **Default**: `Interpreted`, use the new Interpreted runtime by default.
 
@@ -371,7 +371,7 @@ projections.
 
 The option accepts three values: `None`, `System` and `All`.
 
-When the option value is set to `None`, the projections subsystem of EventStoreDB will be completely disabled
+When the option value is set to `None`, the projections subsystem of KurrentDB will be completely disabled
 and the Projections menu in the Admin UI will be disabled.
 
 By using the `System` value for this option, you can instruct the server to enable system projections when the
@@ -386,7 +386,7 @@ Finally, you can set `RunProjections` to `All` and it will enable both system an
 |:---------------------|:-----------------------------|
 | Command line         | `--run-projections`          |
 | YAML                 | `RunProjections`             |
-| Environment variable | `EVENTSTORE_RUN_PROJECTIONS` |
+| Environment variable | `KURRENTDB_RUN_PROJECTIONS`  |
 
 **Default**: `None`, all projections are disabled by default.
 
@@ -416,7 +416,7 @@ Use the `ProjectionThreads` option to adjust the number of threads dedicated to 
 |:---------------------|:--------------------------------|
 | Command line         | `--projection-threads`          |
 | YAML                 | `ProjectionThreads`             |
-| Environment variable | `EVENTSTORE_PROJECTION_THREADS` |
+| Environment variable | `KURRENTDB_PROJECTION_THREADS`  |
 
 **Default**: `3`
 
@@ -437,7 +437,6 @@ to `true`.
 |:---------------------|:--------------------------------------------|
 | Command line         | `--fault-out-of-order-projections`          |
 | YAML                 | `FaultOutOfOrderProjections`                |
-| Environment variable | `EVENTSTORE_FAULT_OUT_OF_ORDER_PROJECTIONS` |
+| Environment variable | `KURRENTDB_FAULT_OUT_OF_ORDER_PROJECTIONS`  |
 
 **Default**: `false`
-

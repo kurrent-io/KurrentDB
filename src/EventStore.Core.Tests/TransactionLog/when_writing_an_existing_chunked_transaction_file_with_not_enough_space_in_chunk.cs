@@ -1,16 +1,14 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog;
+using DotNext.IO;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Plugins.Transforms;
 using NUnit.Framework;
@@ -29,7 +27,8 @@ public class
 	public async Task a_record_is_not_written_at_first_but_written_on_second_try() {
 		var filename1 = GetFilePathFor("chunk-000000.000000");
 		var filename2 = GetFilePathFor("chunk-000001.000000");
-		var chunkHeader = new ChunkHeader(TFChunk.CurrentChunkVersion, TFChunk.CurrentChunkVersion, 10000, 0, 0, false, Guid.NewGuid(), TransformType.Identity);
+		var chunkHeader = new ChunkHeader(TFChunk.CurrentChunkVersion, TFChunk.CurrentChunkVersion, 10000, 0, 0, false,
+			Guid.NewGuid(), TransformType.Identity);
 		var chunkBytes = chunkHeader.AsByteArray();
 		var bytes = new byte[ChunkHeader.Size + 10000 + ChunkFooter.Size];
 		Buffer.BlockCopy(chunkBytes, 0, bytes, 0, chunkBytes.Length);
@@ -39,7 +38,7 @@ public class
 		var db = new TFChunkDb(TFChunkHelper.CreateDbConfig(PathName, _checkpoint, new InMemoryCheckpoint()));
 		await db.Open();
 		var tf = new TFChunkWriter(db);
-		tf.Open();
+		await tf.Open(CancellationToken.None);
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -57,7 +56,7 @@ public class
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
+			data: new byte[] { 1, 2, 3, 4, 5 },
 			metadata: new byte[8000]);
 
 		var (written, pos) = await tf.Write(record1, CancellationToken.None);
@@ -75,7 +74,7 @@ public class
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
+			data: new byte[] { 1, 2, 3, 4, 5 },
 			metadata: new byte[8000]);
 
 		(written, pos) = await tf.Write(record2, CancellationToken.None);
@@ -93,7 +92,7 @@ public class
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
+			data: new byte[] { 1, 2, 3, 4, 5 },
 			metadata: new byte[2000]);
 
 		(written, _) = await tf.Write(record3, CancellationToken.None);
@@ -102,11 +101,16 @@ public class
 		await db.DisposeAsync();
 
 		Assert.AreEqual(record3.GetSizeWithLengthPrefixAndSuffix() + 10000, _checkpoint.Read());
-		using (var filestream = File.Open(filename2, FileMode.Open, FileAccess.Read)) {
-			filestream.Seek(ChunkHeader.Size + sizeof(int), SeekOrigin.Begin);
-			var reader = new BinaryReader(filestream);
-			var read = LogRecord.ReadFrom(reader, (int)reader.BaseStream.Length);
-			Assert.AreEqual(record3, read);
-		}
+		await using var filestream = File.Open(filename2, new FileStreamOptions
+			{ Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
+		filestream.Seek(ChunkHeader.Size + sizeof(int), SeekOrigin.Begin);
+
+		var recordLength = filestream.Length - filestream.Position;
+		var buffer = new byte[recordLength];
+		await filestream.ReadExactlyAsync(buffer);
+
+		var reader = new SequenceReader(new(buffer));
+		var read = LogRecord.ReadFrom(ref reader);
+		Assert.AreEqual(record3, read);
 	}
 }

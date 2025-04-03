@@ -1,14 +1,15 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Core.TransactionLog.Scavenging.Interfaces;
 using EventStore.LogCommon;
 
-namespace EventStore.Core.TransactionLog.Scavenging;
+namespace EventStore.Core.TransactionLog.Scavenging.DbAccess;
 
 public class ChunkReaderForExecutor<TStreamId> : IChunkReaderForExecutor<TStreamId, ILogRecord> {
 	private readonly TFChunk _chunk;
@@ -26,6 +27,8 @@ public class ChunkReaderForExecutor<TStreamId> : IChunkReaderForExecutor<TStream
 	public int ChunkEndNumber => _chunk.ChunkHeader.ChunkEndNumber;
 
 	public bool IsReadOnly => _chunk.IsReadOnly;
+
+	public bool IsRemote => _chunk.IsRemote;
 
 	public long ChunkStartPosition => _chunk.ChunkHeader.ChunkStartPosition;
 

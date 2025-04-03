@@ -1,10 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.TransactionLog.Validation;
 using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.Transforms.Identity;
 using NUnit.Framework;
 
@@ -36,18 +38,18 @@ public class when_truncating_against_max_truncation_config : SpecificationWithDi
 
 	[Test]
 	public void truncate_above_max_throws_exception() {
-		Assert.Throws<Exception>(() => {
-			var truncator = new TFChunkDbTruncator(_config, _ => new IdentityChunkTransformFactory());
-			truncator.TruncateDb(0);
+		Assert.ThrowsAsync<Exception>(async () => {
+			var truncator = new TFChunkDbTruncator(_config, new ChunkLocalFileSystem(_config.Path), static _ => new IdentityChunkTransformFactory());
+			await truncator.TruncateDb(0, CancellationToken.None);
 		});
 	}
 
 	[Test]
 	public void truncate_within_max_does_not_throw_exception() {
 
-		Assert.DoesNotThrow(() => {
-			var truncator = new TFChunkDbTruncator(_config, _ => new IdentityChunkTransformFactory());
-			truncator.TruncateDb(4800);
+		Assert.DoesNotThrowAsync(async () => {
+			var truncator = new TFChunkDbTruncator(_config, new ChunkLocalFileSystem(_config.Path), static _ => new IdentityChunkTransformFactory());
+			await truncator.TruncateDb(4800 ,CancellationToken.None);
 		});
 	}
 }

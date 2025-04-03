@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
@@ -51,7 +51,7 @@ public class PartitionState {
 	private readonly string _state;
 	private readonly string _result;
 	private readonly CheckpointTag _causedBy;
-	private int _size;
+	private readonly int _size;
 
 	public PartitionState(string state, string result, CheckpointTag causedBy) {
 		if (state == null) throw new ArgumentNullException("state");
@@ -60,7 +60,7 @@ public class PartitionState {
 		_state = state;
 		_result = result;
 		_causedBy = causedBy;
-		_size = _state.Length + _result?.Length ?? 0;
+		_size = _state.Length + (_result?.Length ?? 0);
 	}
 
 	public string State {

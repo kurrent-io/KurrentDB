@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 using EventStore.Core.Tests.Http.Users.users;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using HttpStatusCode = System.Net.HttpStatusCode;
 using EventStore.Transport.Http;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams;
 
 public class Filtered {
-	public abstract class SpecificationWithLongFeed<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+	public abstract class SpecificationWithLongFeed : with_admin_user {
 		protected int NumberOfEvents;
 
 		protected override async Task Given() {
@@ -54,12 +54,12 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_backward_with_invalid_context<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_backward_with_invalid_context(string contentType) : SpecificationWithLongFeed {
 		protected override Task When() =>
 			GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson,
+				contentType,
 				DefaultData.AdminNetworkCredentials,
 				extra: "context=foo");
 
@@ -69,12 +69,12 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_backward_with_invalid_type<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_backward_with_invalid_type(string contentType) : SpecificationWithLongFeed {
 		protected override Task When() =>
 			GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson,
+				contentType,
 				DefaultData.AdminNetworkCredentials,
 				extra: "context=streamid&type=foo");
 
@@ -84,12 +84,12 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_backward_with_invalid_data<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_backward_with_invalid_data(string contentType) : SpecificationWithLongFeed {
 		protected override Task When() =>
 			GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson,
+				contentType,
 				DefaultData.AdminNetworkCredentials,
 				extra: "context=streamid&type=prefix");
 
@@ -99,14 +99,14 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_backward_feed_head<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_backward_feed_head(string contentType) : SpecificationWithLongFeed {
 		private JObject _feed;
 
 		protected override async Task When() =>
 			_feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				contentType,
 				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=prefix&data=event1-");
 
@@ -149,14 +149,14 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_backward_feed_events_by_event_type_and_prefix<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_backward_feed_events_by_event_type_and_prefix(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				contentType,
 				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=prefix&data=event1-,event2-");
 			_eventTypes = GetEventTypes(feed);
@@ -172,14 +172,14 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_backward_feed_events_by_event_type_and_regex<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_backward_feed_events_by_event_type_and_regex(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				contentType,
 				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=regex&data=^.*eventtype1.*$");
 			_eventTypes = GetEventTypes(feed);
@@ -194,14 +194,14 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_backward_feed_events_by_stream_id_and_prefix<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_backward_feed_events_by_stream_id_and_prefix(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				contentType,
 				DefaultData.AdminNetworkCredentials,
 				extra: $"context=streamid&type=prefix&data={TestStream}-filter");
 			_eventTypes = GetEventTypes(feed);
@@ -216,14 +216,14 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_backward_feed_events_by_stream_id_and_regex<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_backward_feed_events_by_stream_id_and_regex(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				contentType,
 				DefaultData.AdminNetworkCredentials,
 				extra: $"context=streamid&type=regex&data=^.*{TestStream}-filter.*$");
 			_eventTypes = GetEventTypes(feed);
@@ -238,15 +238,15 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_backward_feed_events_filtering_system_events<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_backward_feed_events_filtering_system_events(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: "exclude-system-events=true" );
 			_eventTypes = GetEventTypes(feed);
 		}
@@ -260,13 +260,13 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_forward_with_invalid_context<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_forward_with_invalid_context(string contentType) : SpecificationWithLongFeed {
 		protected override Task When() =>
 			GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson,
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=foo");
 
 
@@ -276,13 +276,13 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_forward_with_invalid_type<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_forward_with_invalid_type(string contentType) : SpecificationWithLongFeed {
 		protected override Task When() =>
 			GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson,
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=streamid&type=foo");
 
 		[Test]
@@ -291,13 +291,13 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_forward_with_invalid_data<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_forward_with_invalid_data(string contentType) : SpecificationWithLongFeed {
 		protected override Task When() =>
 			GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson,
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=streamid&type=prefix");
 
 		[Test]
@@ -306,15 +306,15 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_forward_feed_head<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_forward_feed_head(string contentType) : SpecificationWithLongFeed {
 		private JObject _feed;
 
 		protected override async Task When() =>
 			_feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=prefix&data=event1-" );
 
 		[Test]
@@ -348,15 +348,15 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_forward_feed_events_by_event_type_and_prefix<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_forward_feed_events_by_event_type_and_prefix(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=prefix&data=event1-,event2-");
 			_eventTypes = GetEventTypes(feed);
 		}
@@ -371,15 +371,15 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_forward_feed_events_by_event_type_and_regex<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_forward_feed_events_by_event_type_and_regex(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=regex&data=^.*eventtype1.*$");
 			_eventTypes = GetEventTypes(feed);
 		}
@@ -393,15 +393,15 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_forward_feed_events_by_stream_id_and_prefix<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_forward_feed_events_by_stream_id_and_prefix(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: $"context=streamid&type=prefix&data={TestStream}-filter");
 			_eventTypes = GetEventTypes(feed);
 		}
@@ -415,15 +415,15 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_forward_feed_events_by_stream_id_and_regex<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_forward_feed_events_by_stream_id_and_regex(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: $"context=streamid&type=regex&data=^.*{TestStream}-filter.*$");
 			_eventTypes = GetEventTypes(feed);
 		}
@@ -437,15 +437,15 @@ public class Filtered {
 	}
 
 	[Category("LongRunning")]
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class when_retrieving_forward_feed_events_filtering_system_events<TLogFormat, TStreamId> : SpecificationWithLongFeed<TLogFormat, TStreamId> {
+	[TestFixture(ContentType.AtomJson)]
+	[TestFixture(ContentType.LegacyAtomJson)]
+	public class when_retrieving_forward_feed_events_filtering_system_events(string contentType) : SpecificationWithLongFeed {
 		private List<string> _eventTypes;
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				contentType,
+				DefaultData.AdminNetworkCredentials,
 				extra: "exclude-system-events=true");
 			_eventTypes = GetEventTypes(feed);
 		}

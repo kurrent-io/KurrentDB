@@ -1,14 +1,13 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.TransactionLog;
+using DotNext.IO;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -27,7 +26,7 @@ public class when_writing_a_new_chunked_transaction_file<TLogFormat, TStreamId> 
 		var db = new TFChunkDb(TFChunkHelper.CreateDbConfig(PathName, _checkpoint, new InMemoryCheckpoint()));
 		await db.Open();
 		var tf = new TFChunkWriter(db);
-		tf.Open();
+		await tf.Open(CancellationToken.None);
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -53,13 +52,15 @@ public class when_writing_a_new_chunked_transaction_file<TLogFormat, TStreamId> 
 		await db.DisposeAsync();
 
 		Assert.AreEqual(record.GetSizeWithLengthPrefixAndSuffix(), _checkpoint.Read());
-		using (var filestream = File.Open(GetFilePathFor("chunk-000000.000000"), FileMode.Open, FileAccess.Read)) {
-			filestream.Position = ChunkHeader.Size;
+		await using var filestream = File.Open(GetFilePathFor("chunk-000000.000000"), FileMode.Open, FileAccess.Read);
+		filestream.Position = ChunkHeader.Size;
 
-			var reader = new BinaryReader(filestream);
-			reader.ReadInt32();
-			var read = LogRecord.ReadFrom(reader, (int)reader.BaseStream.Length);
-			Assert.AreEqual(record, read);
-		}
+		var recordLength = await filestream.ReadLittleEndianAsync<int>(new byte[sizeof(int)]);
+		var buffer = new byte[recordLength];
+		await filestream.ReadExactlyAsync(buffer);
+
+		var reader = new SequenceReader(new(buffer));
+		var read = LogRecord.ReadFrom(ref reader);
+		Assert.AreEqual(record, read);
 	}
 }

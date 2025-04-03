@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
@@ -7,10 +7,11 @@ using System.Threading.Tasks;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Core.TransactionLog.Scavenging.Interfaces;
 using EventStore.Core.Transforms;
 using Serilog;
 
-namespace EventStore.Core.TransactionLog.Scavenging;
+namespace EventStore.Core.TransactionLog.Scavenging.DbAccess;
 
 public class ChunkManagerForExecutor<TStreamId> : IChunkManagerForChunkExecutor<TStreamId, ILogRecord> {
 	private readonly ILogger _logger;
@@ -25,22 +26,24 @@ public class ChunkManagerForExecutor<TStreamId> : IChunkManagerForChunkExecutor<
 		_transformManager = transformManager;
 	}
 
+	public IChunkFileSystem FileSystem => _manager.FileSystem;
+
 	public async ValueTask<IChunkWriterForExecutor<TStreamId, ILogRecord>> CreateChunkWriter(
 		IChunkReaderForExecutor<TStreamId, ILogRecord> sourceChunk,
 		CancellationToken token)
 		=> await ChunkWriterForExecutor<TStreamId>.CreateAsync(_logger, this, _dbConfig, sourceChunk,
 			_transformManager, token);
 
-	public IChunkReaderForExecutor<TStreamId, ILogRecord> GetChunkReaderFor(long position) {
-		var tfChunk = _manager.GetChunkFor(position);
+	public async ValueTask<IChunkReaderForExecutor<TStreamId, ILogRecord>> GetChunkReaderFor(long position, CancellationToken token) {
+		var tfChunk = await _manager.GetInitializedChunkFor(position, token);
 		return new ChunkReaderForExecutor<TStreamId>(tfChunk);
 	}
 
-	public async ValueTask<string> SwitchChunk(
+	public async ValueTask<string> SwitchInTempChunk(
 		TFChunk chunk,
 		CancellationToken token) {
 
-		var tfChunk = await _manager.SwitchChunk(
+		var tfChunk = await _manager.SwitchInTempChunk(
 			chunk: chunk,
 			verifyHash: false,
 			removeChunksWithGreaterNumbers: false,
@@ -50,6 +53,6 @@ public class ChunkManagerForExecutor<TStreamId> : IChunkManagerForChunkExecutor<
 			throw new Exception("Unexpected error: new chunk is null after switch");
 		}
 
-		return tfChunk.FileName;
+		return tfChunk.ChunkLocator;
 	}
 }

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Common.Options;
 using EventStore.Core.Bus;
@@ -14,7 +14,8 @@ public class ProjectionsStandardComponents {
 		IPublisher leaderOutputQueue,
 		ISubscriber leaderInputBus,
 		IPublisher leaderInputQueue,
-		bool faultOutOfOrderProjections, int projectionCompilationTimeout, int projectionExecutionTimeout) {
+		bool faultOutOfOrderProjections, int projectionCompilationTimeout, int projectionExecutionTimeout,
+		int maxProjectionStateSize) {
 		ProjectionWorkerThreadCount = projectionWorkerThreadCount;
 		RunProjections = runProjections;
 		LeaderOutputBus = leaderOutputBus;
@@ -24,6 +25,7 @@ public class ProjectionsStandardComponents {
 		FaultOutOfOrderProjections = faultOutOfOrderProjections;
 		ProjectionCompilationTimeout = projectionCompilationTimeout;
 		ProjectionExecutionTimeout = projectionExecutionTimeout;
+		MaxProjectionStateSize = maxProjectionStateSize;
 	}
 
 	public int ProjectionWorkerThreadCount { get; }
@@ -41,4 +43,6 @@ public class ProjectionsStandardComponents {
 	public int ProjectionCompilationTimeout { get; }
 
 	public int ProjectionExecutionTimeout { get; }
+
+	public int MaxProjectionStateSize { get; }
 }

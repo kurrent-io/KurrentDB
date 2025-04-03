@@ -1,8 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 
@@ -20,9 +22,9 @@ public abstract class TFChunkBulkReader : IDisposable {
 	private readonly TFChunk.TFChunk _chunk;
 	private readonly Stream _stream;
 	private bool _disposed;
-	public bool IsMemory { get; init; }
+	public bool IsMemory { get; }
 
-	internal TFChunkBulkReader(TFChunk.TFChunk chunk, Stream streamToUse, bool isMemory) {
+	protected TFChunkBulkReader(TFChunk.TFChunk chunk, Stream streamToUse, bool isMemory) {
 		Ensure.NotNull(chunk, "chunk");
 		Ensure.NotNull(streamToUse, "stream");
 		_chunk = chunk;
@@ -31,14 +33,13 @@ public abstract class TFChunkBulkReader : IDisposable {
 	}
 
 	public abstract void SetPosition(long position);
-	public abstract BulkReadResult ReadNextBytes(int count, byte[] buffer);
+	public abstract ValueTask<BulkReadResult> ReadNextBytes(Memory<byte> buffer, CancellationToken token);
 
 	~TFChunkBulkReader() {
 		Dispose();
 	}
 
 	public void Release() {
-		_stream.Close();
 		_stream.Dispose();
 		_disposed = true;
 		_chunk.ReleaseReader(this);

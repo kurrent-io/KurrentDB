@@ -29,7 +29,7 @@ The projection counts the number of 'XBox One S's that customers added to their 
 
 A projection starts with a selector, in this case `fromAll()`. Another possibility is `fromCategory({category})` which this step discusses later, but for now, `fromAll` should do.
 
-The second part of a projection is a set of filters. There is a special filter called `$init` that sets up an initial state. You want to start a counter from 0 and each time EventStoreDB observes an `ItemAdded` event for an 'Xbox One S,' increment the counter.
+The second part of a projection is a set of filters. There is a special filter called `$init` that sets up an initial state. You want to start a counter from 0 and each time KurrentDB observes an `ItemAdded` event for an 'Xbox One S,' increment the counter.
 
 Here is the projection code:
 
@@ -37,7 +37,7 @@ Here is the projection code:
 
 You create a projection by calling the projection API and providing it with the definition of the projection. Here you decide how to run the projection, declaring that you want the projection to start from the beginning and keep running. You can create a projection using the Admin UI by opening the _Projections_ tab, clicking the _New Projection_ button and filling in the details of your projection.
 
-![Creating a projection with the EventStoreDB Admin UI](images/getting-started-create-projection.png)
+![Creating a projection with the KurrentDB Admin UI](images/getting-started-create-projection.png)
 
 You can also create projections programmatically. Pass the projection JSON file as a parameter of your request, along with any other settings:
 
@@ -55,7 +55,7 @@ The server will send a response similar to this:
 
 ## Append to streams from projections
 
-The above gives you the correct result but requires you to poll for the state of a projection. What if you wanted EventStoreDB to notify you about state updates via subscriptions?
+The above gives you the correct result but requires you to poll for the state of a projection. What if you wanted KurrentDB to notify you about state updates via subscriptions?
 
 ### Output state
 
@@ -89,7 +89,7 @@ And you'll get a response like this:
 
 The example in this step so far relied on a global state for the projection, but what if you wanted a count of the number of items in the shopping cart per shopping cart.
 
-EventStoreDB has a built-in `$by_category` projection that lets you select events from a particular list of streams. Enable this projection with the following command.
+KurrentDB has a built-in `$by_category` projection that lets you select events from a particular list of streams. Enable this projection with the following command.
 
 @[code](@httpapi/projections/enable-by-category.sh)
 

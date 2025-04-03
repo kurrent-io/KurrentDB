@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -12,8 +12,10 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Common;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using static EventStore.Client.PersistentSubscriptions.CreateReq.Types.Settings;
 using static EventStore.Core.Messages.ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
 using static EventStore.Core.Messages.ClientMessage.CreatePersistentSubscriptionToAllCompleted;
+using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.Options.StreamOptionOneofCase;
 using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.StreamOptions.RevisionOptionOneofCase;
 using AllOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.AllOptions.AllOptionOneofCase;
@@ -21,7 +23,7 @@ using AllOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.T
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {
-	private static readonly Operation CreateOperation = new Operation(Plugins.Authorization.Operations.Subscriptions.Create);
+	private static readonly Operation CreateOperation = new(Plugins.Authorization.Operations.Subscriptions.Create);
 
 	public override async Task<CreateResp> Create(CreateReq request, ServerCallContext context) {
 		var createPersistentSubscriptionSource = new TaskCompletionSource<CreateResp>();
@@ -29,28 +31,26 @@ internal partial class PersistentSubscriptions {
 		var correlationId = Guid.NewGuid();
 
 		var user = context.GetHttpContext().User;
-		
+
 		if (!await _authorizationProvider.CheckAccessAsync(user,
-			CreateOperation, context.CancellationToken)) {
-			throw RpcExceptions.AccessDenied();
+			    CreateOperation, context.CancellationToken)) {
+			throw AccessDenied();
 		}
 
-		string streamId = null;
-		string consumerStrategy = null;
-		if (string.IsNullOrEmpty(settings.ConsumerStrategy)) { /*for backwards compatibility*/
-		#pragma warning disable 612
+		string streamId;
+		string consumerStrategy;
+		if (string.IsNullOrEmpty(settings.ConsumerStrategy)) {
+#pragma warning disable 612
+			/*for backwards compatibility*/
 			consumerStrategy = settings.NamedConsumerStrategy.ToString();
-		#pragma warning restore 612
-
+#pragma warning restore 612
 		} else {
 			consumerStrategy = settings.ConsumerStrategy;
 		}
 
-		switch (request.Options.StreamOptionCase)
-		{
+		switch (request.Options.StreamOptionCase) {
 			case StreamOptionOneofCase.Stream:
-			case StreamOptionOneofCase.None: /*for backwards compatibility*/
-			{
+			case StreamOptionOneofCase.None: /*for backwards compatibility*/ {
 				StreamRevision startRevision;
 
 				if (request.Options.StreamOptionCase == StreamOptionOneofCase.Stream) {
@@ -59,13 +59,14 @@ internal partial class PersistentSubscriptions {
 						RevisionOptionOneofCase.Revision => new StreamRevision(request.Options.Stream.Revision),
 						RevisionOptionOneofCase.Start => StreamRevision.Start,
 						RevisionOptionOneofCase.End => StreamRevision.End,
-						_ => throw RpcExceptions.InvalidArgument(request.Options.Stream.RevisionOptionCase)
+						_ => throw InvalidArgument(request.Options.Stream.RevisionOptionCase)
 					};
-				} else { /*for backwards compatibility*/
-					#pragma warning disable 612
+				} else {
+#pragma warning disable 612
+					/*for backwards compatibility*/
 					streamId = request.Options.StreamIdentifier;
 					startRevision = new StreamRevision(request.Options.Settings.Revision);
-					#pragma warning restore 612
+#pragma warning restore 612
 				}
 
 				_publisher.Publish(
@@ -78,10 +79,8 @@ internal partial class PersistentSubscriptions {
 						settings.ResolveLinks,
 						startRevision.ToInt64(),
 						settings.MessageTimeoutCase switch {
-							CreateReq.Types.Settings.MessageTimeoutOneofCase.MessageTimeoutMs => settings
-								.MessageTimeoutMs,
-							CreateReq.Types.Settings.MessageTimeoutOneofCase.MessageTimeoutTicks => (int)TimeSpan
-								.FromTicks(settings.MessageTimeoutTicks).TotalMilliseconds,
+							MessageTimeoutOneofCase.MessageTimeoutMs => settings.MessageTimeoutMs,
+							MessageTimeoutOneofCase.MessageTimeoutTicks => (int)TimeSpan.FromTicks(settings.MessageTimeoutTicks).TotalMilliseconds,
 							_ => 0
 						},
 						settings.ExtraStatistics,
@@ -90,10 +89,8 @@ internal partial class PersistentSubscriptions {
 						settings.LiveBufferSize,
 						settings.ReadBatchSize,
 						settings.CheckpointAfterCase switch {
-							CreateReq.Types.Settings.CheckpointAfterOneofCase.CheckpointAfterMs => settings
-								.CheckpointAfterMs,
-							CreateReq.Types.Settings.CheckpointAfterOneofCase.CheckpointAfterTicks => (int)TimeSpan
-								.FromTicks(settings.CheckpointAfterTicks).TotalMilliseconds,
+							CheckpointAfterOneofCase.CheckpointAfterMs => settings.CheckpointAfterMs,
+							CheckpointAfterOneofCase.CheckpointAfterTicks => (int)TimeSpan.FromTicks(settings.CheckpointAfterTicks).TotalMilliseconds,
 							_ => 0
 						},
 						settings.MinCheckpointCount,
@@ -110,14 +107,13 @@ internal partial class PersistentSubscriptions {
 						request.Options.All.Position.PreparePosition),
 					AllOptionOneofCase.Start => Position.Start,
 					AllOptionOneofCase.End => Position.End,
-					_ => throw RpcExceptions.InvalidArgument(request.Options.All.AllOptionCase)
+					_ => throw InvalidArgument(request.Options.All.AllOptionCase)
 				};
 				var filter = request.Options.All.FilterOptionCase switch {
 					CreateReq.Types.AllOptions.FilterOptionOneofCase.NoFilter => null,
-					CreateReq.Types.AllOptions.FilterOptionOneofCase.Filter => ConvertToEventFilter(true,
-						request.Options.All.Filter),
+					CreateReq.Types.AllOptions.FilterOptionOneofCase.Filter => ConvertToEventFilter(true, request.Options.All.Filter),
 					CreateReq.Types.AllOptions.FilterOptionOneofCase.None => null,
-					_ => throw RpcExceptions.InvalidArgument(request.Options.All.FilterOptionCase)
+					_ => throw InvalidArgument(request.Options.All.FilterOptionCase)
 				};
 
 				streamId = SystemStreams.AllStream;
@@ -129,15 +125,10 @@ internal partial class PersistentSubscriptions {
 						request.Options.GroupName,
 						filter,
 						settings.ResolveLinks,
-						new TFPos(
-							startPosition.ToInt64().commitPosition,
-							startPosition.ToInt64().preparePosition
-						),
+						new TFPos(startPosition.ToInt64().commitPosition, startPosition.ToInt64().preparePosition),
 						settings.MessageTimeoutCase switch {
-							CreateReq.Types.Settings.MessageTimeoutOneofCase.MessageTimeoutMs => settings
-								.MessageTimeoutMs,
-							CreateReq.Types.Settings.MessageTimeoutOneofCase.MessageTimeoutTicks => (int)TimeSpan
-								.FromTicks(settings.MessageTimeoutTicks).TotalMilliseconds,
+							MessageTimeoutOneofCase.MessageTimeoutMs => settings.MessageTimeoutMs,
+							MessageTimeoutOneofCase.MessageTimeoutTicks => (int)TimeSpan.FromTicks(settings.MessageTimeoutTicks).TotalMilliseconds,
 							_ => 0
 						},
 						settings.ExtraStatistics,
@@ -146,10 +137,8 @@ internal partial class PersistentSubscriptions {
 						settings.LiveBufferSize,
 						settings.ReadBatchSize,
 						settings.CheckpointAfterCase switch {
-							CreateReq.Types.Settings.CheckpointAfterOneofCase.CheckpointAfterMs => settings
-								.CheckpointAfterMs,
-							CreateReq.Types.Settings.CheckpointAfterOneofCase.CheckpointAfterTicks => (int)TimeSpan
-								.FromTicks(settings.CheckpointAfterTicks).TotalMilliseconds,
+							CheckpointAfterOneofCase.CheckpointAfterMs => settings.CheckpointAfterMs,
+							CheckpointAfterOneofCase.CheckpointAfterTicks => (int)TimeSpan.FromTicks(settings.CheckpointAfterTicks).TotalMilliseconds,
 							_ => 0
 						},
 						settings.MinCheckpointCount,
@@ -161,6 +150,7 @@ internal partial class PersistentSubscriptions {
 			default:
 				throw new InvalidOperationException();
 		}
+
 		IEventFilter ConvertToEventFilter(bool isAllStream, CreateReq.Types.AllOptions.Types.FilterOptions filter) =>
 			filter.FilterCase switch {
 				CreateReq.Types.AllOptions.Types.FilterOptions.FilterOneofCase.EventType => (
@@ -171,13 +161,13 @@ internal partial class PersistentSubscriptions {
 					string.IsNullOrEmpty(filter.StreamIdentifier.Regex)
 						? EventFilter.StreamName.Prefixes(isAllStream, filter.StreamIdentifier.Prefix.ToArray())
 						: EventFilter.StreamName.Regex(isAllStream, filter.StreamIdentifier.Regex)),
-				_ => throw RpcExceptions.InvalidArgument(filter.FilterCase)
+				_ => throw InvalidArgument(filter.FilterCase)
 			};
 
 		return await createPersistentSubscriptionSource.Task;
 
 		void HandleCreatePersistentSubscriptionCompleted(Message message) {
-			if (message is ClientMessage.NotHandled notHandled && RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+			if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 				createPersistentSubscriptionSource.TrySetException(ex);
 				return;
 			}
@@ -190,26 +180,24 @@ internal partial class PersistentSubscriptions {
 							return;
 						case CreatePersistentSubscriptionToStreamResult.Fail:
 							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.PersistentSubscriptionFailed(streamId, request.Options.GroupName,
-									completed.Reason));
+								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.Reason)
+							);
 							return;
 						case CreatePersistentSubscriptionToStreamResult.AlreadyExists:
-							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.PersistentSubscriptionExists(streamId, request.Options.GroupName));
+							createPersistentSubscriptionSource.TrySetException(PersistentSubscriptionExists(streamId, request.Options.GroupName));
 							return;
 						case CreatePersistentSubscriptionToStreamResult.AccessDenied:
-							createPersistentSubscriptionSource.TrySetException(RpcExceptions.AccessDenied());
+							createPersistentSubscriptionSource.TrySetException(AccessDenied());
 							return;
 						default:
-							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.UnknownError(completed.Result));
+							createPersistentSubscriptionSource.TrySetException(UnknownError(completed.Result));
 							return;
 					}
 				}
 
 				createPersistentSubscriptionSource.TrySetException(
-					RpcExceptions.UnknownMessage<ClientMessage.CreatePersistentSubscriptionToStreamCompleted>(
-						message));
+					UnknownMessage<ClientMessage.CreatePersistentSubscriptionToStreamCompleted>(message)
+				);
 			} else {
 				if (message is ClientMessage.CreatePersistentSubscriptionToAllCompleted completedAll) {
 					switch (completedAll.Result) {
@@ -218,26 +206,22 @@ internal partial class PersistentSubscriptions {
 							return;
 						case CreatePersistentSubscriptionToAllResult.Fail:
 							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.PersistentSubscriptionFailed(streamId, request.Options.GroupName,
-									completedAll.Reason));
+								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completedAll.Reason)
+							);
 							return;
 						case CreatePersistentSubscriptionToAllResult.AlreadyExists:
-							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.PersistentSubscriptionExists(streamId, request.Options.GroupName));
+							createPersistentSubscriptionSource.TrySetException(PersistentSubscriptionExists(streamId, request.Options.GroupName));
 							return;
 						case CreatePersistentSubscriptionToAllResult.AccessDenied:
-							createPersistentSubscriptionSource.TrySetException(RpcExceptions.AccessDenied());
+							createPersistentSubscriptionSource.TrySetException(AccessDenied());
 							return;
 						default:
-							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.UnknownError(completedAll.Result));
+							createPersistentSubscriptionSource.TrySetException(UnknownError(completedAll.Result));
 							return;
 					}
 				}
 
-				createPersistentSubscriptionSource.TrySetException(
-					RpcExceptions.UnknownMessage<ClientMessage.CreatePersistentSubscriptionToAllCompleted>(
-						message));
+				createPersistentSubscriptionSource.TrySetException(UnknownMessage<ClientMessage.CreatePersistentSubscriptionToAllCompleted>(message));
 			}
 		}
 	}

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
 using System.Linq;
@@ -13,7 +13,6 @@ public class Locations {
 	public static readonly string WebContentDirectory;
 	public static readonly string ProjectionsDirectory;
 	public static readonly string PreludeDirectory;
-	public static readonly string PreludeResourcesPath;
 	public static readonly string PluginsDirectory;
 	public static readonly string DefaultContentDirectory;
 	public static readonly string DefaultConfigurationDirectory;
@@ -22,6 +21,10 @@ public class Locations {
 	public static readonly string DefaultTestClientLogDirectory;
 	public static readonly string FallbackDefaultDataDirectory;
 	public static readonly string DefaultTrustedRootCertificateDirectory;
+	// Legacy EventStore directories
+	public static readonly string LegacyConfigurationDirectory;
+	public static readonly string LegacyDataDirectory;
+	public static readonly string LegacyLogDirectory;
 
 	static Locations() {
 		ApplicationDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ??
@@ -32,20 +35,26 @@ public class Locations {
 
 		switch (RuntimeInformation.OsPlatform) {
 			case RuntimeOSPlatform.Linux:
-				DefaultContentDirectory = "/usr/share/eventstore";
-				DefaultConfigurationDirectory = "/etc/eventstore";
-				DefaultDataDirectory = "/var/lib/eventstore";
-				DefaultLogDirectory = "/var/log/eventstore";
+				DefaultContentDirectory = "/usr/share/kurrentdb";
+				DefaultConfigurationDirectory = "/etc/kurrentdb";
+				LegacyConfigurationDirectory = "/etc/eventstore";
+				DefaultDataDirectory = "/var/lib/kurrentdb";
+				LegacyDataDirectory = "/var/lib/eventstore";
+				DefaultLogDirectory = "/var/log/kurrentdb";
+				LegacyLogDirectory = "/var/log/eventstore";
 				DefaultTrustedRootCertificateDirectory = "/etc/ssl/certs";
 				DefaultTestClientLogDirectory = Path.Combine(ApplicationDirectory, "testclientlog");
 				if (!Directory.Exists(PluginsDirectory))
 					PluginsDirectory = Path.Combine(DefaultContentDirectory, "plugins");
 				break;
 			case RuntimeOSPlatform.OSX:
-				DefaultContentDirectory = "/usr/local/share/eventstore";
-				DefaultConfigurationDirectory = "/etc/eventstore";
-				DefaultDataDirectory = "/var/lib/eventstore";
-				DefaultLogDirectory = "/var/log/eventstore";
+				DefaultContentDirectory = "/usr/local/share/kurrentdb";
+				DefaultConfigurationDirectory = "/etc/kurrentdb";
+				LegacyConfigurationDirectory = "/etc/eventstore";
+				DefaultDataDirectory = "/var/lib/kurrentdb";
+				LegacyDataDirectory = "/var/lib/eventstore";
+				DefaultLogDirectory = "/var/log/kurrentdb";
+				LegacyLogDirectory = "/var/log/eventstore";
 				DefaultTestClientLogDirectory = Path.Combine(ApplicationDirectory, "testclientlog");
 				if (!Directory.Exists(PluginsDirectory))
 					PluginsDirectory = Path.Combine(DefaultContentDirectory, "plugins");
@@ -53,6 +62,7 @@ public class Locations {
 			default:
 				DefaultContentDirectory = ApplicationDirectory;
 				DefaultConfigurationDirectory = ApplicationDirectory;
+				LegacyConfigurationDirectory = ApplicationDirectory;
 				DefaultDataDirectory = Path.Combine(ApplicationDirectory, "data");
 				DefaultLogDirectory = Path.Combine(ApplicationDirectory, "logs");
 				DefaultTestClientLogDirectory = Path.Combine(ApplicationDirectory, "testclientlog");
@@ -71,7 +81,6 @@ public class Locations {
 			Path.Combine(ApplicationDirectory, "Prelude"),
 			Path.Combine(DefaultContentDirectory, "Prelude")
 		);
-		PreludeResourcesPath = "EventStore.Projections.Core.Prelude";
 	}
 
 	/// <summary>
@@ -93,6 +102,7 @@ public class Locations {
 	/// <returns></returns>
 	public static string[] GetPotentialConfigurationDirectories() => new[] {
 		DefaultConfigurationDirectory,
+		LegacyConfigurationDirectory,
 		ApplicationDirectory,
 	}.Distinct().ToArray();
 

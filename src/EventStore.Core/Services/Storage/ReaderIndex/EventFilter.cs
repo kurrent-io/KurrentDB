@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
+using static EventStore.Client.Messages.Filter.Types;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;
 
@@ -38,45 +39,37 @@ public static class EventFilter {
 
 	public static IEventFilter Get(bool isAllStream, Client.Messages.Filter filter) {
 		if (filter == null || filter.Data.Count == 0) {
-			return isAllStream ? (IEventFilter) new DefaultAllFilterStrategy() : new DefaultStreamFilterStrategy();
+			return isAllStream ? new DefaultAllFilterStrategy() : new DefaultStreamFilterStrategy();
 		}
 
 		return filter.Context switch {
-			Client.Messages.Filter.Types.FilterContext.EventType when filter.Type ==
-			                                                          Client.Messages.Filter.Types.FilterType.Prefix =>
-			EventType.Prefixes(isAllStream, filter.Data.ToArray()),
-			Client.Messages.Filter.Types.FilterContext.EventType when filter.Type ==
-			                                                          Client.Messages.Filter.Types.FilterType.Regex =>
-			EventType.Regex(isAllStream, filter.Data[0]),
-			Client.Messages.Filter.Types.FilterContext.StreamId when filter.Type ==
-			                                                         Client.Messages.Filter.Types.FilterType.Prefix =>
-			StreamName.Prefixes(isAllStream, filter.Data.ToArray()),
-			Client.Messages.Filter.Types.FilterContext.StreamId when filter.Type ==
-			                                                         Client.Messages.Filter.Types.FilterType.Regex =>
-			StreamName.Regex(isAllStream, filter.Data[0]),
+			FilterContext.EventType when filter.Type == FilterType.Prefix => EventType.Prefixes(isAllStream, filter.Data.ToArray()),
+			FilterContext.EventType when filter.Type == FilterType.Regex => EventType.Regex(isAllStream, filter.Data[0]),
+			FilterContext.StreamId when filter.Type == FilterType.Prefix => StreamName.Prefixes(isAllStream, filter.Data.ToArray()),
+			FilterContext.StreamId when filter.Type == FilterType.Regex => StreamName.Regex(isAllStream, filter.Data[0]),
 			_ => throw new Exception() // Invalid filter
 		};
 	}
 
 	private sealed class DefaultStreamFilterStrategy : IEventFilter {
-		[MethodImpl(MethodImplOptions.AggressiveInlining|MethodImplOptions.AggressiveOptimization)]
+		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 		public bool IsEventAllowed(EventRecord eventRecord) => true;
 	}
 
 	private sealed class DefaultAllFilterStrategy : IEventFilter {
 		//first rule that matches from the top is applied
-		private (IEventFilter filter, bool allow)[] _allFilters = {
+		private readonly (IEventFilter filter, bool allow)[] _allFilters = {
 			//immediately allow all non-system events
 			(new NonSystemStreamStrategy(), true),
 			//disallow $epoch-information
 			(new OrdinalStreamIdEqualityStrategy(SystemStreams.EpochInformationStream), false),
 			//disallow persistent subscription to $all checkpoints
-			(new OrdinalStreamIdPrefixAndSuffixStrategy("$persistentsubscription-$all::","-checkpoint"), false),
+			(new OrdinalStreamIdPrefixAndSuffixStrategy("$persistentsubscription-$all::", "-checkpoint"), false),
 			//disallow persistent subscription to $all parked messages
-			(new OrdinalStreamIdPrefixAndSuffixStrategy("$persistentsubscription-$all::","-parked"), false)
+			(new OrdinalStreamIdPrefixAndSuffixStrategy("$persistentsubscription-$all::", "-parked"), false)
 		};
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining|MethodImplOptions.AggressiveOptimization)]
+		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 		public bool IsEventAllowed(EventRecord eventRecord) {
 			var filters = _allFilters.AsSpan();
 			Debug.Assert(filters.Length > 0);
@@ -85,31 +78,25 @@ public static class EventFilter {
 				if (filter.IsEventAllowed(eventRecord)) {
 					return allow;
 				}
+
 				filters = filters[1..];
 			} while (!filters.IsEmpty);
+
 			return true;
 		}
 
 		public override string ToString() => nameof(DefaultAllFilterStrategy);
 
 		private class NonSystemStreamStrategy : IEventFilter {
-			[MethodImpl(MethodImplOptions.AggressiveInlining|MethodImplOptions.AggressiveOptimization)]
-			public bool IsEventAllowed(EventRecord eventRecord) =>
-				eventRecord.EventStreamId[0] != '$';
+			[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+			public bool IsEventAllowed(EventRecord eventRecord) => eventRecord.EventStreamId[0] != '$';
 
 			public override string ToString() => nameof(NonSystemStreamStrategy);
 		}
 
-		private sealed class OrdinalStreamIdEqualityStrategy : IEventFilter {
-			private readonly string _stream;
-
-			public OrdinalStreamIdEqualityStrategy(string stream) {
-				_stream = stream;
-			}
-
+		private sealed class OrdinalStreamIdEqualityStrategy(string stream) : IEventFilter {
 			[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-			public bool IsEventAllowed(EventRecord eventRecord) =>
-				eventRecord.EventStreamId == _stream;
+			public bool IsEventAllowed(EventRecord eventRecord) => eventRecord.EventStreamId == stream;
 
 			public override string ToString() => nameof(OrdinalStreamIdEqualityStrategy);
 		}
@@ -125,24 +112,20 @@ public static class EventFilter {
 				_minLength = _prefix.Length + _suffix.Length;
 			}
 
-			[MethodImpl(MethodImplOptions.AggressiveInlining|MethodImplOptions.AggressiveOptimization)]
+			[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 			public bool IsEventAllowed(EventRecord eventRecord) =>
 				eventRecord.EventStreamId.Length >= _minLength
 				&& eventRecord.EventStreamId.StartsWith(_prefix, StringComparison.Ordinal)
 				&& eventRecord.EventStreamId.EndsWith(_suffix, StringComparison.Ordinal);
+
 			public override string ToString() =>
 				$"{nameof(OrdinalStreamIdPrefixAndSuffixStrategy)}: (prefix: {_prefix}, suffix: {_suffix})";
 		}
 	}
 
-	private sealed class StreamIdPrefixStrategy : IEventFilter {
-		internal readonly bool _isAllStream;
-		internal readonly string[] _expectedPrefixes;
-
-		public StreamIdPrefixStrategy(bool isAllStream, string[] expectedPrefixes) {
-			_isAllStream = isAllStream;
-			_expectedPrefixes = expectedPrefixes;
-		}
+	private sealed class StreamIdPrefixStrategy(bool isAllStream, string[] expectedPrefixes) : IEventFilter {
+		internal readonly bool _isAllStream = isAllStream;
+		internal readonly string[] _expectedPrefixes = expectedPrefixes;
 
 		public bool IsEventAllowed(EventRecord eventRecord) =>
 			(!_isAllStream || DefaultAllFilter.IsEventAllowed(eventRecord)) &&
@@ -152,14 +135,9 @@ public static class EventFilter {
 			$"{nameof(StreamIdPrefixStrategy)}: ({string.Join(", ", _expectedPrefixes)})";
 	}
 
-	private sealed class EventTypePrefixStrategy : IEventFilter {
-		internal readonly bool _isAllStream;
-		internal readonly string[] _expectedPrefixes;
-
-		public EventTypePrefixStrategy(bool isAllStream, string[] expectedPrefixes) {
-			_isAllStream = isAllStream;
-			_expectedPrefixes = expectedPrefixes;
-		}
+	private sealed class EventTypePrefixStrategy(bool isAllStream, string[] expectedPrefixes) : IEventFilter {
+		internal readonly bool _isAllStream = isAllStream;
+		internal readonly string[] _expectedPrefixes = expectedPrefixes;
 
 		public bool IsEventAllowed(EventRecord eventRecord) =>
 			(!_isAllStream || DefaultAllFilter.IsEventAllowed(eventRecord)) &&
@@ -169,14 +147,9 @@ public static class EventFilter {
 			$"{nameof(EventTypePrefixStrategy)}: ({string.Join(", ", _expectedPrefixes)})";
 	}
 
-	private sealed class EventTypeRegexStrategy : IEventFilter {
-		internal readonly bool _isAllStream;
-		internal readonly Regex _expectedRegex;
-
-		public EventTypeRegexStrategy(bool isAllStream, string expectedRegex) {
-			_isAllStream = isAllStream;
-			_expectedRegex = new Regex(expectedRegex, RegexOptions.Compiled);
-		}
+	private sealed class EventTypeRegexStrategy(bool isAllStream, string expectedRegex) : IEventFilter {
+		internal readonly bool _isAllStream = isAllStream;
+		internal readonly Regex _expectedRegex = new(expectedRegex, RegexOptions.Compiled);
 
 		public bool IsEventAllowed(EventRecord eventRecord) =>
 			(!_isAllStream || DefaultAllFilter.IsEventAllowed(eventRecord)) &&
@@ -186,14 +159,9 @@ public static class EventFilter {
 			$"{nameof(EventTypeRegexStrategy)}: ({string.Join(", ", _expectedRegex)})";
 	}
 
-	private sealed class StreamIdRegexStrategy : IEventFilter {
-		internal readonly bool _isAllStream;
-		internal readonly Regex _expectedRegex;
-
-		public StreamIdRegexStrategy(bool isAllStream, string expectedRegex) {
-			_isAllStream = isAllStream;
-			_expectedRegex = new Regex(expectedRegex, RegexOptions.Compiled);
-		}
+	private sealed class StreamIdRegexStrategy(bool isAllStream, string expectedRegex) : IEventFilter {
+		internal readonly bool _isAllStream = isAllStream;
+		internal readonly Regex _expectedRegex = new(expectedRegex, RegexOptions.Compiled);
 
 		public bool IsEventAllowed(EventRecord eventRecord) =>
 			(!_isAllStream || DefaultAllFilter.IsEventAllowed(eventRecord)) &&
@@ -213,28 +181,28 @@ public static class EventFilter {
 	public static EventFilterDto ParseToDto(IEventFilter filter) {
 		switch (filter) {
 			case StreamIdPrefixStrategy sips:
-				return new EventFilterDto {
+				return new() {
 					Context = StreamIdContext,
 					Type = PrefixType,
 					Data = string.Join(",", sips._expectedPrefixes.Select(x => $"{x}")),
 					IsAllStream = sips._isAllStream
 				};
 			case StreamIdRegexStrategy sirs:
-				return new EventFilterDto {
+				return new() {
 					Context = StreamIdContext,
 					Type = RegexType,
 					Data = sirs._expectedRegex.ToString(),
 					IsAllStream = sirs._isAllStream
 				};
 			case EventTypePrefixStrategy etps:
-				return new EventFilterDto {
+				return new() {
 					Context = EventTypeContext,
 					Type = PrefixType,
 					Data = string.Join(",", etps._expectedPrefixes.Select(x => $"{x}")),
 					IsAllStream = etps._isAllStream
 				};
 			case EventTypeRegexStrategy etrs:
-				return new EventFilterDto {
+				return new() {
 					Context = EventTypeContext,
 					Type = RegexType,
 					Data = etrs._expectedRegex.ToString(),
@@ -249,33 +217,32 @@ public static class EventFilter {
 		return TryParse(dto.Context, dto.IsAllStream, dto.Type, dto.Data, out filter);
 	}
 
-	public static (bool Success, string Reason) TryParse(string context, bool isAllStream, string type, string data,
-		out IEventFilter filter) {
-		Client.Messages.Filter.Types.FilterContext parsedContext;
+	public static (bool Success, string Reason) TryParse(string context, bool isAllStream, string type, string data, out IEventFilter filter) {
+		FilterContext parsedContext;
 		switch (context) {
 			case EventTypeContext:
-				parsedContext = Client.Messages.Filter.Types.FilterContext.EventType;
+				parsedContext = FilterContext.EventType;
 				break;
 			case StreamIdContext:
-				parsedContext = Client.Messages.Filter.Types.FilterContext.StreamId;
+				parsedContext = FilterContext.StreamId;
 				break;
 			default:
 				filter = null;
-				var names = string.Join(", ", Enum.GetNames(typeof(Client.Messages.Filter.Types.FilterContext)));
+				var names = string.Join(", ", Enum.GetNames(typeof(FilterContext)));
 				return (false, $"Invalid context please provide one of the following: {names}.");
 		}
 
-		Client.Messages.Filter.Types.FilterType parsedType;
+		FilterType parsedType;
 		switch (type) {
 			case RegexType:
-				parsedType = Client.Messages.Filter.Types.FilterType.Regex;
+				parsedType = FilterType.Regex;
 				break;
 			case PrefixType:
-				parsedType = Client.Messages.Filter.Types.FilterType.Prefix;
+				parsedType = FilterType.Prefix;
 				break;
 			default:
 				filter = null;
-				var names = string.Join(", ", Enum.GetNames(typeof(Client.Messages.Filter.Types.FilterType)));
+				var names = string.Join(", ", Enum.GetNames(typeof(FilterType)));
 				return (false, $"Invalid type please provide one of the following: {names}.");
 		}
 
@@ -284,13 +251,12 @@ public static class EventFilter {
 			return (false, "Please provide a comma delimited list of data with at least one item.");
 		}
 
-		if (parsedType == Client.Messages.Filter.Types.FilterType.Regex) {
-			filter = Get(isAllStream, new Client.Messages.Filter(parsedContext, parsedType, new[] {data}));
+		if (parsedType == FilterType.Regex) {
+			filter = Get(isAllStream, new(parsedContext, parsedType, [data]));
 			return (true, null);
 		}
 
-		filter = Get(isAllStream, new Client.Messages.Filter(parsedContext, parsedType,
-			data.Split(new[] {","}, StringSplitOptions.RemoveEmptyEntries)));
+		filter = Get(isAllStream, new(parsedContext, parsedType, data.Split(",", StringSplitOptions.RemoveEmptyEntries)));
 		return (true, null);
 	}
 }

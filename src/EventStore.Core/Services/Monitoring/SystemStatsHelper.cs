@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -21,33 +21,29 @@ public class SystemStatsHelper : IDisposable {
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly string _dbPath;
 	private readonly EventCountersHelper _eventCountersHelper;
-	private readonly long _totalMem;
-	private bool _giveup;
+	private readonly long _totalMem = RuntimeStats.GetTotalMemory();
+	private bool _giveUp;
 
 	public SystemStatsHelper(ILogger log, IReadOnlyCheckpoint writerCheckpoint, string dbPath, long collectIntervalMs) {
-		Ensure.NotNull(log, "log");
-		Ensure.NotNull(writerCheckpoint, "writerCheckpoint");
-
-		_log = log;
-		_writerCheckpoint = writerCheckpoint;
-		_eventCountersHelper = new EventCountersHelper(collectIntervalMs);
 		_dbPath = dbPath;
-		_totalMem = RuntimeStats.GetTotalMemory();
+		_log = Ensure.NotNull(log);
+		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
+		_eventCountersHelper = new(collectIntervalMs);
 	}
 
 	public void Start() => _eventCountersHelper.Start();
 
-        public IDictionary<string, object> GetSystemStats() {
+	public IDictionary<string, object> GetSystemStats() {
 		var stats = new Dictionary<string, object>();
 		GetPerfCounterInformation(stats, 0);
-		
+
 		var diskIo = ProcessStats.GetDiskIo();
-	
+
 		stats["proc-diskIo-readBytes"] = diskIo.ReadBytes;
 		stats["proc-diskIo-writtenBytes"] = diskIo.WrittenBytes;
 		stats["proc-diskIo-readOps"] = diskIo.ReadOps;
 		stats["proc-diskIo-writeOps"] = diskIo.WriteOps;
-            
+
 		var tcp = TcpConnectionMonitor.Default.GetTcpStats();
 		stats["proc-tcp-connections"] = tcp.Connections;
 		stats["proc-tcp-receivingSpeed"] = tcp.ReceivingSpeed;
@@ -64,46 +60,39 @@ public class SystemStatsHelper : IDisposable {
 		stats["es-checksum"] = _writerCheckpoint.Read();
 		stats["es-checksumNonFlushed"] = _writerCheckpoint.ReadNonFlushed();
 
-            var drive = DriveStats.GetDriveInfo(_dbPath);
-            
-            Func<string, string, string> driveStat = (diskName, stat) => $"sys-drive-{diskName.Replace("\\", "").Replace(":", "")}-{stat}";
-            stats[driveStat(drive.DiskName, "availableBytes")] = drive.AvailableBytes;
-            stats[driveStat(drive.DiskName, "totalBytes")]     = drive.TotalBytes;
-            stats[driveStat(drive.DiskName, "usage")]          = drive.Usage;
-            stats[driveStat(drive.DiskName, "usedBytes")]      = drive.UsedBytes;
+		var drive = DriveStats.GetDriveInfo(_dbPath);
 
-		Func<string, string, string> queueStat = (queueName, stat) =>
-			string.Format("es-queue-{0}-{1}", queueName, stat);
+		stats[DriveStat(drive.DiskName, "availableBytes")] = drive.AvailableBytes;
+		stats[DriveStat(drive.DiskName, "totalBytes")] = drive.TotalBytes;
+		stats[DriveStat(drive.DiskName, "usage")] = drive.Usage;
+		stats[DriveStat(drive.DiskName, "usedBytes")] = drive.UsedBytes;
+
 		var queues = QueueMonitor.Default.GetStats();
 		foreach (var queue in queues) {
-			stats[queueStat(queue.Name, "queueName")] = queue.Name;
-			stats[queueStat(queue.Name, "groupName")] = queue.GroupName ?? string.Empty;
-			stats[queueStat(queue.Name, "avgItemsPerSecond")] = queue.AvgItemsPerSecond;
-			stats[queueStat(queue.Name, "avgProcessingTime")] = queue.AvgProcessingTime;
-			stats[queueStat(queue.Name, "currentIdleTime")] = queue.CurrentIdleTime.HasValue
-				? queue.CurrentIdleTime.Value.ToString("G", CultureInfo.InvariantCulture)
-				: null;
-			stats[queueStat(queue.Name, "currentItemProcessingTime")] = queue.CurrentItemProcessingTime.HasValue
-				? queue.CurrentItemProcessingTime.Value.ToString("G", CultureInfo.InvariantCulture)
-				: null;
-			stats[queueStat(queue.Name, "idleTimePercent")] = queue.IdleTimePercent;
-			stats[queueStat(queue.Name, "length")] = queue.Length;
-			stats[queueStat(queue.Name, "lengthCurrentTryPeak")] = queue.LengthCurrentTryPeak;
-			stats[queueStat(queue.Name, "lengthLifetimePeak")] = queue.LengthLifetimePeak;
-			stats[queueStat(queue.Name, "totalItemsProcessed")] = queue.TotalItemsProcessed;
-			stats[queueStat(queue.Name, "inProgressMessage")] = queue.InProgressMessageType != null
-				? queue.InProgressMessageType.Name
-				: "<none>";
-			stats[queueStat(queue.Name, "lastProcessedMessage")] = queue.LastProcessedMessageType != null
-				? queue.LastProcessedMessageType.Name
-				: "<none>";
+			stats[QueueStat(queue.Name, "queueName")] = queue.Name;
+			stats[QueueStat(queue.Name, "groupName")] = queue.GroupName ?? string.Empty;
+			stats[QueueStat(queue.Name, "avgItemsPerSecond")] = queue.AvgItemsPerSecond;
+			stats[QueueStat(queue.Name, "avgProcessingTime")] = queue.AvgProcessingTime;
+			stats[QueueStat(queue.Name, "currentIdleTime")] = queue.CurrentIdleTime?.ToString("G", CultureInfo.InvariantCulture);
+			stats[QueueStat(queue.Name, "currentItemProcessingTime")] = queue.CurrentItemProcessingTime?.ToString("G", CultureInfo.InvariantCulture);
+			stats[QueueStat(queue.Name, "idleTimePercent")] = queue.IdleTimePercent;
+			stats[QueueStat(queue.Name, "length")] = queue.Length;
+			stats[QueueStat(queue.Name, "lengthCurrentTryPeak")] = queue.LengthCurrentTryPeak;
+			stats[QueueStat(queue.Name, "lengthLifetimePeak")] = queue.LengthLifetimePeak;
+			stats[QueueStat(queue.Name, "totalItemsProcessed")] = queue.TotalItemsProcessed;
+			stats[QueueStat(queue.Name, "inProgressMessage")] = queue.InProgressMessageType?.Name ?? "<none>";
+			stats[QueueStat(queue.Name, "lastProcessedMessage")] = queue.LastProcessedMessageType?.Name ?? "<none>";
 		}
 
 		return stats;
+
+		string QueueStat(string queueName, string stat) => $"es-queue-{queueName}-{stat}";
+
+		string DriveStat(string diskName, string stat) => $"sys-drive-{diskName.Replace("\\", "").Replace(":", "")}-{stat}";
 	}
 
 	private void GetPerfCounterInformation(Dictionary<string, object> stats, int count) {
-		if (_giveup)
+		if (_giveUp)
 			return;
 		var process = Process.GetCurrentProcess();
 		try {
@@ -115,16 +104,16 @@ public class SystemStatsHelper : IDisposable {
 			stats["proc-contentionsRate"] = _eventCountersHelper.GetContentionsRateCount();
 			stats["proc-thrownExceptionsRate"] = _eventCountersHelper.GetThrownExceptionsRate();
 
-                stats["sys-cpu"] = RuntimeStats.GetCpuUsage();
+			stats["sys-cpu"] = RuntimeStats.GetCpuUsage();
 
-                if (RuntimeInformation.IsUnix) {
-                    var loadAverages = RuntimeStats.GetCpuLoadAverages();
-                    stats["sys-loadavg-1m"]  = loadAverages.OneMinute;
-                    stats["sys-loadavg-5m"]  = loadAverages.FiveMinutes;
-                    stats["sys-loadavg-15m"] = loadAverages.FifteenMinutes;
-                }
+			if (RuntimeInformation.IsUnix) {
+				var loadAverages = RuntimeStats.GetCpuLoadAverages();
+				stats["sys-loadavg-1m"] = loadAverages.OneMinute;
+				stats["sys-loadavg-5m"] = loadAverages.FiveMinutes;
+				stats["sys-loadavg-15m"] = loadAverages.FifteenMinutes;
+			}
 
-			stats["sys-freeMem"]  = RuntimeStats.GetFreeMemory();
+			stats["sys-freeMem"] = RuntimeStats.GetFreeMemory();
 			stats["sys-totalMem"] = _totalMem;
 
 			var gcStats = _eventCountersHelper.GetGcStats();
@@ -141,8 +130,8 @@ public class SystemStatsHelper : IDisposable {
 			stats["proc-gc-totalBytesInHeaps"] = gcStats.TotalBytesInHeaps;
 		} catch (InvalidOperationException) {
 			_log.Information("Received error reading counters. Attempting to rebuild.");
-			_giveup = count > 10;
-			if (_giveup)
+			_giveUp = count > 10;
+			if (_giveUp)
 				_log.Error("Maximum rebuild attempts reached. Giving up on rebuilds.");
 			else
 				GetPerfCounterInformation(stats, count + 1);
@@ -151,5 +140,6 @@ public class SystemStatsHelper : IDisposable {
 
 	public void Dispose() {
 		_eventCountersHelper.Dispose();
+		GC.SuppressFinalize(this);
 	}
 }

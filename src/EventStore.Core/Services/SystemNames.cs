@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
@@ -7,17 +7,29 @@ using EventStore.Common.Utils;
 namespace EventStore.Core.Services;
 
 public static class SystemHeaders {
-	public const string ExpectedVersion = "ES-ExpectedVersion";
-	public const string RequireLeader = "ES-RequireLeader";
+	public const string ExpectedVersion = "Kurrent-ExpectedVersion";
+	public const string RequireLeader = "Kurrent-RequireLeader";
+	public const string ResolveLinkTos = "Kurrent-ResolveLinkTos";
+	public const string LongPoll = "Kurrent-LongPoll";
+	public const string TrustedAuth = "Kurrent-TrustedAuth";
+	public const string ProjectionPosition = "Kurrent-Position";
+	public const string HardDelete = "Kurrent-HardDelete";
+	public const string EventId = "Kurrent-EventId";
+	public const string EventType = "Kurrent-EventType";
+	public const string CurrentVersion = "Kurrent-CurrentVersion";
+
+	// Legacy ES-* headers
+	public const string LegacyExpectedVersion = "ES-ExpectedVersion";
+	public const string LegacyRequireLeader = "ES-RequireLeader";
 	public const string RequireMaster = "ES-RequireMaster"; // For backwards compatibility
-	public const string ResolveLinkTos = "ES-ResolveLinkTos";
-	public const string LongPoll = "ES-LongPoll";
-	public const string TrustedAuth = "ES-TrustedAuth";
-	public const string ProjectionPosition = "ES-Position";
-	public const string HardDelete = "ES-HardDelete";
-	public const string EventId = "ES-EventId";
-	public const string EventType = "ES-EventType";
-	public const string CurrentVersion = "ES-CurrentVersion";
+	public const string LegacyResolveLinkTos = "ES-ResolveLinkTos";
+	public const string LegacyLongPoll = "ES-LongPoll";
+	public const string LegacyTrustedAuth = "ES-TrustedAuth";
+	public const string LegacyProjectionPosition = "ES-Position";
+	public const string LegacyHardDelete = "ES-HardDelete";
+	public const string LegacyEventId = "ES-EventId";
+	public const string LegacyEventType = "ES-EventType";
+	public const string LegacyCurrentVersion = "ES-CurrentVersion";
 }
 
 public static class SystemStreams {
@@ -40,14 +52,19 @@ public static class SystemStreams {
 
 	public static bool IsSystemStream(string streamId) => streamId is ['$', ..];
 
+	// "" is an invalid name, and so metadata cannot be set for it
+	public static bool IsInvalidStream(string streamId) {
+		return string.IsNullOrEmpty(streamId) || streamId == "$$";
+	}
+
 	public static string MetastreamOf(string streamId) {
-		return "$$" + streamId;
+		return $"$${streamId}";
 	}
 
 	public static bool IsMetastream(string streamId) => streamId is ['$', '$', ..];
 
 	public static string OriginalStreamOf(string metastreamId) {
-		return metastreamId.Substring(2);
+		return metastreamId[2..];
 	}
 
 	public static bool IsInMemoryStream(string streamId) {
@@ -98,9 +115,10 @@ public static class SystemEventTypes {
 	public const string ScavengePoint = "$scavengePoint";
 
 	public const string AuthorizationPolicyChanged = "$authorization-policy-changed";
+	public const string PersistentSubscriptionConfig = "$PersistentConfig";
 
 	public static string StreamReferenceEventToStreamId(string eventType, ReadOnlyMemory<byte> data) {
-		string streamId = null;
+		string streamId;
 		switch (eventType) {
 			case LinkTo: {
 				string[] parts = Helper.UTF8NoBom.GetString(data.Span).Split(_linkToSeparator, 2);
@@ -121,7 +139,7 @@ public static class SystemEventTypes {
 	}
 
 	public static string StreamReferenceEventToStreamId(string eventType, string data) {
-		string streamId = null;
+		string streamId;
 		switch (eventType) {
 			case LinkTo: {
 				string[] parts = data.Split(_linkToSeparator, 2);

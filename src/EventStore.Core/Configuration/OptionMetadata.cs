@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
 
@@ -30,9 +30,9 @@ public record OptionMetadata(
 	public static OptionMetadata
 		FromPropertyInfo(SectionMetadata sectionMetadata, PropertyInfo property, int sequence) {
 		var sectionName = property.DeclaringType?.Name.Replace("Options", "") ?? "";
-		var key = EventStoreConfigurationKeys.Normalize(property.Name);
+		var key = KurrentConfigurationKeys.Normalize(property.Name);
 		var fullKey =
-			$"{EventStoreConfigurationKeys.Prefix}:{sectionName}:{EventStoreConfigurationKeys.StripConfigurationPrefix(property.Name)}";
+			$"{KurrentConfigurationKeys.Prefix}:{sectionName}:{KurrentConfigurationKeys.StripConfigurationPrefix(property.Name)}";
 
 		var description = property.GetCustomAttribute<DescriptionAttribute>()?.Description ?? "";
 		var isSensitive = property.GetCustomAttribute<SensitiveAttribute>() != null;

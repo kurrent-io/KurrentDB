@@ -1,8 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
+using DotNext.Buffers;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
@@ -145,15 +146,14 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 			return;
 		}
 
-		var memStream = new MemoryStream();
-		var binaryWriter = new BinaryWriter(memStream);
+		var binaryWriter = new BufferWriterSlim<byte>();
 
 		const int dataSize = 10000;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		var prepare = LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
 			PrepareFlags.IsRedacted, eventTypeId, new byte[dataSize], null,  DateTime.UtcNow);
 
-		prepare.WriteTo(binaryWriter);
-		Assert.True(memStream.Length >= dataSize);
+		prepare.WriteTo(ref binaryWriter);
+		Assert.True(binaryWriter.WrittenCount >= dataSize);
 	}
 }

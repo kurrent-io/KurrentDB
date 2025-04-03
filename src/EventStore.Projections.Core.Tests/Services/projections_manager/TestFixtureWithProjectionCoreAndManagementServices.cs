@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -35,14 +35,9 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 			throw new NotImplementedException();
 		}
 
-		public string Name { get; }
-		public Task Start() {
-			throw new NotImplementedException();
-		}
+		public void Start() => throw new NotImplementedException();
 
-		public void Stop() {
-			throw new NotImplementedException();
-		}
+		public Task Stop() => Task.FromException(new NotImplementedException());
 
 		public void RequestStop() {
 			throw new NotImplementedException();
@@ -190,7 +185,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 
 		var guardBus = new GuardBusToTriggerFixingIfUsed();
 		var configuration = new ProjectionsStandardComponents(1, ProjectionType.All, guardBus, guardBus, guardBus, guardBus, true,
-			500, 250);
+			500, 250, Opts.MaxProjectionStateSizeDefault);
 		var coreService = new ProjectionCoreService(
 			workerId,
 			inputQueue,

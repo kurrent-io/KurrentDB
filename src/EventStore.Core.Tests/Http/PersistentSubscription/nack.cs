@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using NUnit.Framework;
 using Newtonsoft.Json.Linq;
@@ -13,9 +13,9 @@ using EventStore.Transport.Http;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription;
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_nacking_a_message<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_nacking_a_message(string contentType) : with_subscription_having_events {
 	private HttpResponseMessage _response;
 	private string _nackLink;
 
@@ -23,7 +23,7 @@ class when_nacking_a_message<TLogFormat, TStreamId> : with_subscription_having_e
 		await base.Given();
 		var json = await GetJson<JObject>(
 			SubscriptionPath + "/1",
-			ContentType.CompetingJson,
+			contentType,
 			_admin);
 		Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 		Assert.DoesNotThrow(() => {
@@ -42,9 +42,9 @@ class when_nacking_a_message<TLogFormat, TStreamId> : with_subscription_having_e
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_nacking_messages<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_nacking_messages(string contentType) : with_subscription_having_events {
 	private HttpResponseMessage _response;
 	private string _nackAllLink;
 
@@ -52,7 +52,7 @@ class when_nacking_messages<TLogFormat, TStreamId> : with_subscription_having_ev
 		await base.Given();
 		var json = await GetJson<JObject>(
 			SubscriptionPath + "/" + Events.Count,
-			ContentType.CompetingJson,
+			contentType,
 			_admin);
 		Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 		Assert.DoesNotThrow(() => {

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -17,6 +17,7 @@ using EventStore.Core.Authorization;
 using EventStore.Core.Authorization.AuthorizationPolicies;
 using EventStore.Core.Bus;
 using EventStore.Core.Certificates;
+using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Monitoring;
 using EventStore.Core.Tests.Http;
@@ -24,6 +25,7 @@ using EventStore.Core.Tests.Services.Transport.Tcp;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.Data;
 using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
@@ -33,6 +35,7 @@ using EventStore.Plugins.Subsystems;
 using EventStore.TcpUnitTestPlugin;
 using Microsoft.Extensions.Configuration;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
+using System.Threading;
 
 namespace EventStore.Core.Tests.Helpers;
 
@@ -61,7 +64,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 	public Task AdminUserCreated => _adminUserCreated.Task;
 
 	public VNodeState NodeState = VNodeState.Unknown;
-	private readonly IWebHost _host;
+	private readonly WebApplication _host;
 
 	private static bool EnableHttps() => !RuntimeInformation.IsOSX;
 
@@ -153,12 +156,12 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 
 		var inMemConf = new ConfigurationBuilder()
 			.AddInMemoryCollection(new KeyValuePair<string, string>[] {
-				new("EventStore:TcpPlugin:NodeTcpPort", externalTcp.Port.ToString()),
-				new("EventStore:TcpPlugin:EnableExternalTcp", "true"),
-				new("EventStore:TcpUnitTestPlugin:NodeTcpPort", externalTcp.Port.ToString()),
-				new("EventStore:TcpUnitTestPlugin:NodeHeartbeatInterval", "10000"),
-				new("EventStore:TcpUnitTestPlugin:NodeHeartbeatTimeout", "10000"),
-				new("EventStore:TcpUnitTestPlugin:Insecure", options.Application.Insecure.ToString()),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:NodeTcpPort", externalTcp.Port.ToString()),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:EnableExternalTcp", "true"),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeTcpPort", externalTcp.Port.ToString()),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatInterval", "10000"),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatTimeout", "10000"),
+				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:Insecure", options.Application.Insecure.ToString()),
 			}).Build();
 		var serverCertificate = useHttps ? ssl_connections.GetServerCertificate() : null;
 		var trustedRootCertificates =
@@ -197,8 +200,9 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			Guid.NewGuid(), debugIndex);
 		Node.HttpService.SetupController(new TestController(Node.MainQueue));
 
-		_host = new WebHostBuilder()
-			.UseKestrel(o => {
+		var builder = WebApplication.CreateBuilder();
+		builder.WebHost
+			.ConfigureKestrel(o => {
 				o.Listen(HttpEndPoint, options => {
 					if (RuntimeInformation.IsOSX) {
 						options.Protocols = HttpProtocols.Http2;
@@ -217,13 +221,15 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 						});
 					}
 				});
-			})
-			.UseStartup(Node.Startup)
-			.Build();
+			});
+		Node.Startup.ConfigureServices(builder.Services);
+		_host = builder.Build();
+		Node.Startup.Configure(_host);
 	}
 
-	public void Start() {
+	public async Task Start() {
 		StartingTime.Start();
+		await _host.StartAsync();
 
 		Node.MainBus.Subscribe(
 			new AdHocHandler<SystemMessage.StateChangeMessage>(m => {
@@ -261,8 +267,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			Node.MainBus.Unsubscribe(waitForAdminUser);
 		}
 
-		_host.Start();
-		Node.Start();
+		await Node.StartAsync(waitUntilReady: false, CancellationToken.None);
 	}
 
 	public HttpClient CreateHttpClient() {
@@ -280,7 +285,10 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 
 	public async Task Shutdown(bool keepDb = false) {
 		StoppingTime.Start();
-		_host?.Dispose();
+		if (_host != null) {
+			await _host.DisposeAsync();
+		}
+
 		await Node.StopAsync().WithTimeout(TimeSpan.FromSeconds(20));
 
 		// the same message 'BecomeShutdown' triggers the disposal of the ReadIndex

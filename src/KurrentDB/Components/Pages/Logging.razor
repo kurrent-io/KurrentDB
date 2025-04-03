@@ -1,0 +1,76 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/logs"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using System.ComponentModel
+@using KurrentDB.Tools
+@using Microsoft.AspNetCore.Authorization
+@using Serilog.Events
+@using KurrentDB.Components.Licensed
+@inject LogObserver LogObserver
+@inherits LicensedPage
+@implements IDisposable
+
+<MudDataGrid @ref="_dataGrid" Items="@LogObserver.Items" Dense="@true" Filterable="true">
+	<Columns>
+		<PropertyColumn Property="x => x.Timestamp" Title="Timestamp" Format="HH:mm:ss" Filterable="@false"/>
+		<PropertyColumn Property="x => x.Level" Title="Level" CellStyleFunc="_cellStyleFunc"/>
+		<PropertyColumn Property="x => x.MessageTemplate.Render(x.Properties, null)" Title="Message"
+		                CellStyleFunc="_cellStyleFunc"/>
+	</Columns>
+</MudDataGrid>
+@if (LogObserver.Items.Count == 0) {
+	<MudText>Waiting for log events...</MudText>
+}
+
+@code {
+	MudDataGrid<LogEvent> _dataGrid;
+	bool _defaultSortingApplied;
+
+	protected override async Task OnInitializedAsync() {
+		await base.OnInitializedAsync();
+		if (HasLicense) {
+			LogObserver.PropertyChanged += HandleUpdate;
+		}
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		await base.OnAfterRenderAsync(firstRender);
+		if (!_defaultSortingApplied && _dataGrid != null) {
+			await _dataGrid.SetSortAsync(nameof(LogEvent.Timestamp), SortDirection.Descending, x => x.Timestamp);
+			_defaultSortingApplied = true;
+			StateHasChanged();
+		}
+	}
+	void HandleUpdate(object sender, PropertyChangedEventArgs e) {
+		Task.Run(() => InvokeAsync(Update));
+	}
+
+	Func<LogEvent, string> _cellStyleFunc => x => {
+		var color = x.Level switch {
+			LogEventLevel.Verbose => "--mud-palette-text-disabled",
+			LogEventLevel.Debug => "--mud-palette-text-secondary",
+			LogEventLevel.Information => "--mud-palette-text-primary",
+			LogEventLevel.Warning => "--mud-palette-warning",
+			LogEventLevel.Error => "--mud-palette-error",
+			LogEventLevel.Fatal => "--mud-palette-error",
+			_ => throw new ArgumentOutOfRangeException()
+		};
+		var style = color != "" ? $"color: var({color});" : "";
+		return style;
+	};
+
+	public void Dispose() {
+		if (HasLicense) {
+			LogObserver.PropertyChanged -= HandleUpdate;
+		}
+	}
+
+	void Update() {
+		StateHasChanged();
+	}
+
+	protected override string PageName => "Read-time logs";
+}

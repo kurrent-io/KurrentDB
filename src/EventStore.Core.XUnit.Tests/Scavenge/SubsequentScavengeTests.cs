@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -8,9 +8,11 @@ using EventStore.Core.Tests;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Scavenging;
+using EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
 using Xunit;
-using static EventStore.Core.XUnit.Tests.Scavenge.StreamMetadatas;
+using static EventStore.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
+#pragma warning disable CS0162 // Unreachable code detected
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;
 
@@ -169,24 +171,29 @@ public class SubsequentScavengeTests : SqliteDbPerTest<SubsequentScavengeTests> 
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-2 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Opening Chunk 0-0"),
 				Tracer.Line("    Switched in chunk-000000.000001"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-2 done Chunk 0"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 1-1"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-2 done Chunk 1"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 2-2"),
 				Tracer.Line("    Opening Chunk 2-2"),
 				Tracer.Line("    Switched in chunk-000002.000001"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-2 done Chunk 2"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 3-3"),
 				Tracer.Line("    Opening Chunk 3-3"),
 				Tracer.Line("    Switched in chunk-000003.000001"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-2 done Chunk 3"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 4-4"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-2 done Chunk 4"),
 				Tracer.Line("    Commit"),
@@ -373,6 +380,7 @@ public class SubsequentScavengeTests : SqliteDbPerTest<SubsequentScavengeTests> 
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-1 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-1 done Chunk 0"),
 				Tracer.Line("    Commit"),
@@ -447,12 +455,15 @@ public class SubsequentScavengeTests : SqliteDbPerTest<SubsequentScavengeTests> 
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-3 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-3 done Chunk 0"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 1-1"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-3 done Chunk 1"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 2-2"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-3 done Chunk 2"),
 				Tracer.Line("    Commit"),

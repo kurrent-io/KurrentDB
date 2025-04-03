@@ -1,23 +1,23 @@
 services:
-  eventstore.db:
-    image: docker.eventstore.com/eventstore-preview/eventstoredb-ee:24.10.0-preview1-x64-8.0-bookworm-slim
+  kurrentdb.db:
+    image: docker.kurrent.io/kurrent-latest/kurrentdb:latest
     environment:
-      - EVENTSTORE_CLUSTER_SIZE=1
-      - EVENTSTORE_RUN_PROJECTIONS=All
-      - EVENTSTORE_START_STANDARD_PROJECTIONS=true
-      - EVENTSTORE_NODE_PORT=2113
-      - EVENTSTORE_INSECURE=true
-      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+      - KURRENTDB_CLUSTER_SIZE=1
+      - KURRENTDB_RUN_PROJECTIONS=All
+      - KURRENTDB_START_STANDARD_PROJECTIONS=true
+      - KURRENTDB_NODE_PORT=2113
+      - KURRENTDB_INSECURE=true
+      - KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP=true
     ports:
       - "2113:2113"
     volumes:
       - type: volume
-        source: eventstore-volume-data
-        target: /var/lib/eventstore
+        source: kurrentdb-volume-data
+        target: /var/lib/kurrentdb
       - type: volume
-        source: eventstore-volume-logs
-        target: /var/log/eventstore
+        source: kurrentdb-volume-logs
+        target: /var/log/kurrentdb
 
 volumes:
-  eventstore-volume-data:
-  eventstore-volume-logs:
+  kurrentdb-volume-data:
+  kurrentdb-volume-logs:

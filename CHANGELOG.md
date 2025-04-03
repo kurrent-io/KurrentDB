@@ -1,37 +1,6 @@
 # Changelog
-All notable changes to this project will be documented in this file.
 
-## [Unreleased]
-
-### Changed
-- `TFChunk.TryAppend` is converted to async method [EventStore#4606](https://github.com/EventStore/EventStore/pull/4606)
-- `TFChunk.TryAppendRawData` converted to async version [EventStore#4605](https://github.com/EventStore/EventStore/pull/4605)
-- `TFChunk.Flush` converted to async version [EventStore#4600](https://github.com/EventStore/EventStore/pull/4600)
-- `TFChunk.GetActualRawPosition` converted to async method [EventStore#4604](https://github.com/EventStore/EventStore/pull/4604)
-- Migration of `TFChunk.ExistsAt`, `TFChunk.TryReadAt`, `TFChunk.TryReadClosestForward` to async [EventStore#4556](https://github.com/EventStore/EventStore/pull/4556)
-- Introduce async-friendly synchronization for `HashListMemTable` [EventStore#4536](https://github.com/EventStore/EventStore/pull/4536)
-- Move `TFChunk.VerifyFileHash` and `TFChunk.FromCompletedFile` to async [EventStore#4495](https://github.com/EventStore/EventStore/pull/4495)
-- `TFChunk.CacheInMemory` converted to async [EventStore#4458](https://github.com/EventStore/EventStore/pull/4458)
-- `TFChunk.TryReadLast` and `TFChunk.TryReadClosestBackward` converted to async [EventStore#4457](https://github.com/EventStore/EventStore/pull/4457)
-- Converted `TFChunk.TryReadClosestForwardRaw` and `EpochManager` to async [EventStore#4449](https://github.com/EventStore/EventStore/pull/4449)
-- Moved TFChunk.TryReadFirst to async [EventStore#4446](https://github.com/EventStore/EventStore/pull/4446)
-- Move TFChunk.CompleteScavenge to async [EventStore#4440](https://github.com/EventStore/EventStore/pull/4440)
-- `TFChunk.CompleteRaw` transformed into async method [EventStore#4438](https://github.com/EventStore/EventStore/pull/4438)
-- Removed `async` modifier where the async method is awaited in a tail position to reduce overhead caused by compiler-generated async state machines. [EventStore#4428](https://github.com/EventStore/EventStore/pull/4428)
-- Deprecated option `IntIp`, use `ReplicationIp` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-- Deprecated option `ExtIp`, use `NodeIp` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-- Deprecated option `HttpPort`, use `NodePort` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-- Deprecated option `IntTcpPort`, use `ReplicationPort` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-- Deprecated option `IntHostAdvertiseAs`, use `ReplicationHostAdvertiseAs` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-- Deprecated option `AdvertiseHttpPortToClientAs`, use `AdvertiseNodePortToClientAs` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-- Deprecated option `HttpPortAdvertiseAs`, use `NodePortAdvertiseAs` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-- Deprecated option `IntTcpPortAdvertiseAs`, use `ReplicationTcpPortAdvertiseAs` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-- Deprecated option `IntTcpHeartbeatTimeout`, use `ReplicationHeartbeatTimeout` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-- Deprecated option `IntTcpHeartbeatInterval`, use `ReplicationHeartbeatInterval` instead. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
-
-### Removed
-- Removed `OptimizeReadSideCache` configuration property and `OptimizeExistsAt`/`DeOptimizeExistsAt` methods. [EventStore#4579](https://github.com/EventStore/EventStore/pull/4579)
-- Deprecated options which had no effect - `AlwaysKeepScavenged`, `GossipOnSingleNode`, `DisableInternalTcpTls`, `OptimizeIndexMerge`. [EventStore#4533](https://github.com/EventStore/EventStore/pull/4533)
+**Note:** Changelog updates are no longer tracked in this file. Future changelog updates can be found in [Releases](https://github.com/EventStore/EventStore/releases).
 
 ## [24.10.0] - 2024-11-13
 

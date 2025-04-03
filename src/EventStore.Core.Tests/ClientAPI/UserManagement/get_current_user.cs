@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
 using EventStore.ClientAPI.SystemData;
@@ -15,6 +15,6 @@ public class get_current_user<TLogFormat, TStreamId> : TestWithNode<TLogFormat, 
 	public async Task returns_the_current_user() {
 		var x = await _manager.GetCurrentUserAsync(new UserCredentials("admin", "changeit"));
 		Assert.AreEqual("admin", x.LoginName);
-		Assert.AreEqual("Event Store Administrator", x.FullName);
+		Assert.AreEqual("KurrentDB Administrator", x.FullName);
 	}
 }

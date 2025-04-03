@@ -1,0 +1,43 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/config"
+@rendermode InteractiveServer
+@attribute [Authorize]
+@using EventStore.Core
+@using Microsoft.AspNetCore.Authorization
+@using KurrentDB.Components.Licensed
+@inherits LicensedPage
+@inject ClusterVNodeOptions Configuration
+
+<MudDataGrid Items="@_items" Dense="true" Filterable="true">
+	<Columns>
+		<PropertyColumn Property="x => x.Metadata.Name" Title="Option"/>
+		<TemplateColumn>
+			<CellTemplate>
+				<MudTooltip Text="@context.Item.Metadata.Description">
+					<MudIcon Icon="@Icons.Material.Outlined.Info"/>
+				</MudTooltip>
+			</CellTemplate>
+		</TemplateColumn>
+		<PropertyColumn Property="x => x.DisplayValue" Title="Value"/>
+		<PropertyColumn Property="x => x.SourceDisplayName" Title="Source"/>
+		<TemplateColumn Title="Default">
+			<CellTemplate>
+				<MudCheckBox Disabled="true" Value="context.Item.IsDefault"></MudCheckBox>
+			</CellTemplate>
+		</TemplateColumn>
+	</Columns>
+</MudDataGrid>
+
+@code {
+	IReadOnlyCollection<LoadedOption> _items;
+
+	protected override string PageName => "Configuration";
+
+	protected override void OnInitialized() {
+		base.OnInitialized();
+		_items = Configuration.LoadedOptions.Select(x => x.Value).ToList();
+	}
+
+}

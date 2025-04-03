@@ -6,17 +6,17 @@ dir:
 
 # Diagnostics
 
-EventStoreDB provides several ways to diagnose and troubleshoot issues.
+KurrentDB provides several ways to diagnose and troubleshoot issues.
 
 - [Logging](logs.md): structured or plain-text logs on the console and in log files.
 - [Metrics](metrics.md): collect standard metrics using Prometheus or OpenTelemetry.
 - [Stats](#statistics): stats collection and HTTP endpoint.
 
-You can also use external tools to measure the performance of EventStoreDB and monitor the cluster health. Learn more on the [Integrations](./integrations.md) page.
+You can also use external tools to measure the performance of KurrentDB and monitor the cluster health. Learn more on the [Integrations](./integrations.md) page.
 
 ## Statistics
 
-EventStoreDB servers collect internal statistics and make it available via HTTP over
+KurrentDB servers collect internal statistics and make it available via HTTP over
 the `https://<host>:2113/stats` in JSON format. Here, `2113` is the default HTTP port. Monitoring applications
 and metric collectors can use this endpoint to gather the information about the cluster node. The `stats`
 endpoint only exposes information about the node where you fetch it from and doesn't contain any cluster
@@ -343,13 +343,13 @@ deleted.
 
 Using this setting you can control how often stats events are generated. By default, the node will produce one
 event in 30 seconds. If you want to decrease network pressure on subscribers to the `$all` stream, you can
-tell EventStoreDB to produce stats less often.
+tell KurrentDB to produce stats less often.
 
 | Format               | Syntax                        |
 | :------------------- | :---------------------------- |
 | Command line         | `--stats-period-sec`          |
 | YAML                 | `StatsPeriodSec`              |
-| Environment variable | `EVENTSTORE_STATS_PERIOD_SEC` |
+| Environment variable | `KURRENTDB_STATS_PERIOD_SEC`  |
 
 **Default**: `30`
 
@@ -366,6 +366,6 @@ you'd need to scavenge more often to release the disk space.
 | :------------------- | :----------------------------- |
 | Command line         | `--write-stats-to-db`          |
 | YAML                 | `WriteStatsToDb`               |
-| Environment variable | `EVENTSTORE_WRITE_STATS_TO_DB` |
+| Environment variable | `KURRENTDB_WRITE_STATS_TO_DB`  |
 
 **Default**: `false`

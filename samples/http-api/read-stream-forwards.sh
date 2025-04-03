@@ -1,18 +1,18 @@
 #region curl
-curl -i http://127.0.0.1:2113/streams/newstream/1/forward/20 -H "Accept:application/vnd.eventstore.atom+json"
+curl -i http://127.0.0.1:2113/streams/newstream/1/forward/20 -H "Accept:application/vnd.kurrent.atom+json"
 #endregion curl
 
 #region response
 HTTP/1.1 200 OK
 Access-Control-Allow-Methods: GET, OPTIONS
-Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-PINGOTHER, Authorization, ES-LongPoll, ES-ExpectedVersion, ES-EventId, ES-EventType, ES-RequiresMaster, ES-HardDelete, ES-ResolveLinkTo, ES-ExpectedVersion
+Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-PINGOTHER, Authorization, Kurrent-LongPoll, Kurrent-ExpectedVersion, Kurrent-EventId, Kurrent-EventType, Kurrent-RequireLeader, Kurrent-HardDelete, Kurrent-ResolveLinkTo, Kurrent-ExpectedVersion
 Access-Control-Allow-Origin: *
-Access-Control-Expose-Headers: Location, ES-Position
+Access-Control-Expose-Headers: Location, Kurrent-Position
 Cache-Control: max-age=0, no-cache, must-revalidate
 Vary: Accept
 ETag: "0;248368668"
-Content-Type: application/vnd.eventstore.atom+json; charset=utf-8
-Server: Mono-HTTPAPI/1.0
+Content-Type: application/vnd.kurrent.atom+json; charset=utf-8
+Server: Kestrel
 Date: Fri, 13 Mar 2015 14:04:47 GMT
 Content-Length: 795
 Keep-Alive: timeout=15,max=100
@@ -23,7 +23,7 @@ Keep-Alive: timeout=15,max=100
   "updated": "0001-01-01T00:00:00Z",
   "streamId": "newstream",
   "author": {
-    "name": "EventStore"
+    "name": "Kurrent"
   },
   "headOfStream": false,
   "links": [

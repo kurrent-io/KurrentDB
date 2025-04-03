@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -17,7 +18,6 @@ namespace EventStore.Core.Services.Transport.Enumerators;
 
 partial class Enumerator {
 	public class ReadAllBackwards : IAsyncEnumerator<ReadResponse> {
-
 		private readonly IPublisher _bus;
 		private readonly ulong _maxCount;
 		private readonly bool _resolveLinks;
@@ -25,8 +25,8 @@ partial class Enumerator {
 		private readonly bool _requiresLeader;
 		private readonly DateTime _deadline;
 		private readonly CancellationToken _cancellationToken;
-		private readonly SemaphoreSlim _semaphore;
-		private readonly Channel<ReadResponse> _channel;
+		private readonly SemaphoreSlim _semaphore = new(1, 1);
+		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
 
 		private ReadResponse _current;
 
@@ -40,19 +40,13 @@ partial class Enumerator {
 			bool requiresLeader,
 			DateTime deadline,
 			CancellationToken cancellationToken) {
-			if (bus == null) {
-				throw new ArgumentNullException(nameof(bus));
-			}
-
-			_bus = bus;
+			_bus = Ensure.NotNull(bus);
 			_maxCount = maxCount;
 			_resolveLinks = resolveLinks;
 			_user = user;
 			_requiresLeader = requiresLeader;
 			_deadline = deadline;
 			_cancellationToken = cancellationToken;
-			_semaphore = new SemaphoreSlim(1, 1);
-			_channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
 
 			ReadPage(position);
 		}
@@ -84,22 +78,18 @@ partial class Enumerator {
 				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {
-				if (message is ClientMessage.NotHandled notHandled &&
-				    TryHandleNotHandled(notHandled, out var ex)) {
+				if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 					_channel.Writer.TryComplete(ex);
 					return;
 				}
 
 				if (message is not ClientMessage.ReadAllEventsBackwardCompleted completed) {
-					_channel.Writer.TryComplete(
-						ReadResponseException.UnknownMessage.Create<ClientMessage.ReadAllEventsBackwardCompleted>(message));
+					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<ClientMessage.ReadAllEventsBackwardCompleted>(message));
 					return;
 				}
 
 				switch (completed.Result) {
 					case ReadAllResult.Success:
-						var nextPosition = completed.NextPos;
-
 						foreach (var @event in completed.Events) {
 							if (readCount >= _maxCount) {
 								_channel.Writer.TryComplete();
@@ -107,7 +97,6 @@ partial class Enumerator {
 							}
 
 							await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
-							nextPosition = @event.OriginalPosition ?? TFPos.Invalid;
 							readCount++;
 						}
 
@@ -116,9 +105,7 @@ partial class Enumerator {
 							return;
 						}
 
-						ReadPage(Position.FromInt64(
-							completed.NextPos.CommitPosition,
-							completed.NextPos.PreparePosition), readCount);
+						ReadPage(Position.FromInt64(completed.NextPos.CommitPosition, completed.NextPos.PreparePosition), readCount);
 						return;
 					case ReadAllResult.AccessDenied:
 						_channel.Writer.TryComplete(new ReadResponseException.AccessDenied());

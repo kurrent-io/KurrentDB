@@ -1,7 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -12,6 +13,7 @@ using EventStore.Core.Cluster;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.Storage;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.TransactionLog.Chunks;
@@ -22,10 +24,10 @@ namespace EventStore.Core.Services.VNode;
 
 public abstract class ClusterVNodeController {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNodeController>();
+	public static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(5);
 }
 
 public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
-	public static readonly TimeSpan ShutdownTimeout = TimeSpan.FromSeconds(5);
 	public static readonly TimeSpan LeaderReconnectionDelay = TimeSpan.FromMilliseconds(500);
 	private static readonly TimeSpan LeaderSubscriptionRetryDelay = TimeSpan.FromMilliseconds(500);
 	private static readonly TimeSpan LeaderSubscriptionTimeout = TimeSpan.FromMilliseconds(1000);
@@ -63,16 +65,13 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 
 	private int _subSystemInitsToExpect;
 
-	private int _serviceInitsToExpect = 1 /* StorageChaser */
-										+ 1 /* StorageReader */
-										+ 1 /* StorageWriter */;
+	enum ServiceState {
+		Initialized,
+		Shutdown,
+	};
 
-	private int _serviceShutdownsToExpect = 1 /* StorageChaser */
-											+ 1 /* StorageReader */
-											+ 1 /* StorageWriter */
-											+ 1 /* IndexCommitterService */
-											+ 1 /* LeaderReplicationService */
-											+ 1 /* HttpService */;
+	private readonly Dictionary<string, ServiceState> _initializedServices = [];
+	private bool _publishedSystemStart;
 
 	private bool _exitProcessOnShutdown;
 
@@ -98,14 +97,6 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		_subsystemCount = options.Subsystems.Count;
 		_subSystemInitsToExpect = _subsystemCount;
 		_clusterSize = options.Cluster.ClusterSize;
-		if (_clusterSize == 1) {
-			_serviceShutdownsToExpect = 1 /* StorageChaser */
-										+ 1 /* StorageReader */
-										+ 1 /* StorageWriter */
-										+ 1 /* IndexCommitterService */
-										+ 1 /* HttpService */;
-		}
-
 
 		_forwardingProxy = forwardingProxy;
 		_forwardingTimeout = TimeSpan.FromMilliseconds(options.Database.PrepareTimeoutMs +
@@ -352,7 +343,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		return stm;
 	}
 
-	public Task Start() => _mainQueue.Start();
+	public void Start() => _mainQueue.Start();
 
 	private ValueTask Handle(SystemMessage.SystemInit message, CancellationToken token) {
 		Log.Information("========== [{httpEndPoint}] SYSTEM INIT...", _nodeInfo.HttpEndPoint);
@@ -561,7 +552,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 		}
 
 		try {
-			_node.WorkersHandler.Stop();
+			await _node.WorkersHandler.Stop();
 			_mainQueue.RequestStop();
 		} catch (Exception exc) {
 			Log.Error(exc, "Error when stopping workers/main queue.");
@@ -599,10 +590,22 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private async ValueTask Handle(SystemMessage.ServiceInitialized message, CancellationToken token) {
 		Log.Information("========== [{httpEndPoint}] Service '{service}' initialized.", _nodeInfo.HttpEndPoint,
 			message.ServiceName);
-		_serviceInitsToExpect -= 1;
+
+		_initializedServices[message.ServiceName] = ServiceState.Initialized;
+
 		await _outputBus.DispatchAsync(message, token);
-		if (_serviceInitsToExpect == 0) {
-			_mainQueue.Publish(new SystemMessage.SystemStart());
+
+		if (!_publishedSystemStart) {
+			// may be interested in these three because they facilitate the initialization of the authentication provider
+			var trioStarted =
+				_initializedServices.TryGetValue(nameof(StorageChaser), out var x) && x is ServiceState.Initialized &&
+				_initializedServices.TryGetValue(nameof(StorageReaderService), out var y) && y is ServiceState.Initialized &&
+				_initializedServices.TryGetValue(nameof(StorageWriterService), out var z) && z is ServiceState.Initialized;
+
+			if (trioStarted) {
+				_mainQueue.Publish(new SystemMessage.SystemStart());
+				_publishedSystemStart = true;
+			}
 		}
 	}
 
@@ -1287,11 +1290,13 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private async ValueTask Handle(SystemMessage.ServiceShutdown message, CancellationToken token) {
+		var serviceInfo = message.ServiceName + (string.IsNullOrWhiteSpace(message.Details) ? "" : $" {message.Details}");
 		Log.Information("========== [{httpEndPoint}] Service '{service}' has shut down.", _nodeInfo.HttpEndPoint,
-			message.ServiceName);
+			serviceInfo);
 
-		_serviceShutdownsToExpect -= 1;
-		if (_serviceShutdownsToExpect is 0) {
+		_initializedServices[message.ServiceName] = ServiceState.Shutdown;
+
+		if (_initializedServices.All(kvp => kvp.Value is ServiceState.Shutdown)) {
 			Log.Information("========== [{httpEndPoint}] All Services Shutdown.", _nodeInfo.HttpEndPoint);
 			await Shutdown(token);
 		}
@@ -1302,7 +1307,13 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	private async ValueTask Handle(SystemMessage.ShutdownTimeout message, CancellationToken token) {
 		Debug.Assert(State is VNodeState.ShuttingDown);
 
-		Log.Error("========== [{httpEndPoint}] Shutdown Timeout.", _nodeInfo.HttpEndPoint);
+		var services = string.Join(", ", _initializedServices
+			.Where(kvp => kvp.Value is not ServiceState.Shutdown)
+			.Select(kvp => kvp.Key));
+		var error = $"Gave up waiting for services: [{services}]";
+
+		Log.Error("========== [{httpEndPoint}] Shutdown Timeout. {error}", _nodeInfo.HttpEndPoint, error);
+
 		await Shutdown(token);
 		await _outputBus.DispatchAsync(message, token);
 	}

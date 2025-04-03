@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Projections.Core.Messages;
 using ILogger = Serilog.ILogger;
@@ -9,10 +9,12 @@ namespace EventStore.Projections.Core.Services.Processing.Strategies;
 public class ProcessingStrategySelector {
 	private readonly ILogger _logger = Serilog.Log.ForContext<ProcessingStrategySelector>();
 	private readonly ReaderSubscriptionDispatcher _subscriptionDispatcher;
+	private readonly int _maxProjectionStateSize;
 
 	public ProcessingStrategySelector(
-		ReaderSubscriptionDispatcher subscriptionDispatcher) {
+		ReaderSubscriptionDispatcher subscriptionDispatcher, int maxProjectionStateSize) {
 		_subscriptionDispatcher = subscriptionDispatcher;
+		_maxProjectionStateSize = maxProjectionStateSize;
 	}
 
 	public ProjectionProcessingStrategy CreateProjectionProcessingStrategy(
@@ -33,7 +35,8 @@ public class ProcessingStrategySelector {
 				sourceDefinition,
 				_logger,
 				_subscriptionDispatcher,
-				enableContentTypeValidation)
+				enableContentTypeValidation,
+				_maxProjectionStateSize)
 			: new ContinuousProjectionProcessingStrategy(
 				name,
 				projectionVersion,
@@ -42,6 +45,7 @@ public class ProcessingStrategySelector {
 				sourceDefinition,
 				_logger,
 				_subscriptionDispatcher,
-				enableContentTypeValidation);
+				enableContentTypeValidation,
+				_maxProjectionStateSize);
 	}
 }

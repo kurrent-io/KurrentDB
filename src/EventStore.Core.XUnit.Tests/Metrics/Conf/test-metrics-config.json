@@ -1,0 +1,245 @@
+{
+	// must be 0, 1, 5, 10 or a multiple of 15
+	"ExpectedScrapeIntervalSeconds": 15,
+
+	"Meters": [
+		"KurrentDB.Core",
+		"KurrentDB.Projections.Core"
+	],
+
+	"Statuses": {
+		"Index": true,
+		"Node": true,
+		"Scavenge": true
+	},
+
+	"ElectionsCount": true,
+
+	"ProjectionStats": true,
+
+	"PersistentSubscriptionStats": true,
+
+	"Checkpoints": {
+		"Writer": true,
+		"Index": true,
+		"Replication": true
+	},
+
+	"Events": {
+		"Read": true,
+		"Written": true
+	},
+
+	// maps grpc methods to labels that they are to be recorded under
+	"GrpcMethods": {
+		"StreamRead": "read",
+		"StreamAppend": "append",
+		"StreamBatchAppend": "append",
+		"StreamDelete": "",
+		"StreamTombstone": ""
+	},
+
+	"IncomingGrpcCalls": {
+		"Current": true,
+		"Total": true,
+		"Failed": true,
+		"Unimplemented": true,
+		"DeadlineExceeded": true
+	},
+
+	"Gossip": {
+		"PullFromPeer": true,
+		"PushToPeer": true,
+		"ProcessingPushFromPeer": true,
+		"ProcessingRequestFromPeer": true,
+		"ProcessingRequestFromGrpcClient": true,
+		"ProcessingRequestFromHttpClient": true
+	},
+
+	"Writer": {
+		"FlushSize": true,
+		"FlushDuration": true
+	},
+
+	"CacheHitsMisses": {
+		"StreamInfo": true,
+		"Chunk": true
+	},
+
+	"CacheResources": true,
+
+	"Kestrel": {
+		"ConnectionCount": true
+	},
+
+	"System": {
+		"Cpu": true,
+		"LoadAverage1m": true,
+		"LoadAverage5m": true,
+		"LoadAverage15m": true,
+		"FreeMem": true,
+		"TotalMem": true,
+		"DriveTotalBytes": true,
+		"DriveUsedBytes": true
+	},
+
+	"Process": {
+		"UpTime": true,
+		"Cpu": true,
+		"MemWorkingSet": true,
+		"MemPagedBytes": true,
+		"MemVirtualBytes": true,
+		"ThreadCount": true,
+		"ThreadPoolPendingWorkItemCount": true,
+		"LockContentionCount": true,
+		"ExceptionCount": true,
+		"Gen0CollectionCount": true,
+		"Gen1CollectionCount": true,
+		"Gen2CollectionCount": true,
+		"Gen0Size": true,
+		"Gen1Size": true,
+		"Gen2Size": true,
+		"LohSize": true,
+		"TimeInGc": true,
+		"GcPauseDuration": true,
+		"HeapSize": true,
+		"HeapFragmentation": true,
+		"TotalAllocatedBytes": true,
+		"DiskReadBytes": true,
+		"DiskReadOps": true,
+		"DiskWrittenBytes": true,
+		"DiskWrittenOps": true
+	},
+
+	"Queues": {
+		"Busy": true,
+		"Length": true,
+		// this is the most expensive metric, creating a histogram for each
+		// queue grouping and message type grouping as defined in the config below
+		"Processing": true
+	},
+
+	// this specifies what name to track each queue under, according to regular expressions to
+	// match the queue names against
+	"QueueLabels": [
+		{
+			"Regex": "MainQueue",
+			"Label": "Main"
+		},
+		{
+			"Regex": "MonitoringQueue",
+			"Label": "Monitoring"
+		},
+		{
+			"Regex": "Timer",
+			"Label": "Timer"
+		},
+		{
+			"Regex": "StorageReaderQueue #.*",
+			"Label": "Readers"
+		},
+		{
+			"Regex": "StorageWriterQueue",
+			"Label": "Writer"
+		},
+		{
+			"Regex": "Subscriptions",
+			"Label": "Subscriptions"
+		},
+		{
+			"Regex": "PersistentSubscriptions",
+			"Label": "Persistent Subscriptions"
+		},
+		{
+			"Regex": "Projections Leader",
+			"Label": "Projections Leader"
+		},
+		{
+			"Regex": "Projection Core #.*",
+			"Label": "Projections Core"
+		},
+		{
+			"Regex": "Worker #.*",
+			"Label": "Workers"
+		},
+		{
+			"Regex": ".*",
+			"Label": "Others"
+		}
+	],
+
+	"MessageTypes": [
+		{
+			"Regex": "CoreMessage-Authentication-.*",
+			"Label": "Authentication"
+		},
+		{
+			"Regex": "CoreMessage-Client-.*Completed",
+			"Label": "ClientMessageCompleted"
+		},
+		{
+			"Regex": "CoreMessage-Client-ReadEvent",
+			"Label": "ReadEvent"
+		},
+		{
+			"Regex": "CoreMessage-Client-.*ReadAllEvents.*",
+			"Label": "ReadAll"
+		},
+		{
+			"Regex": "CoreMessage-Client-.*ReadStreamEvents.*",
+			"Label": "ReadStream"
+		},
+		{
+			"Regex": "CoreMessage-Client-.*",
+			"Label": "OtherClientMessage"
+		},
+		{
+			"Regex": "CoreMessage-Election-.*",
+			"Label": "Election"
+		},
+		{
+			"Regex": "CoreMessage-Gossip-.*",
+			"Label": "Gossip"
+		},
+		{
+			"Regex": "CoreMessage-Grpc-.*",
+			"Label": "Grpc"
+		},
+		{
+			"Regex": "CoreMessage-Http-.*",
+			"Label": "Http"
+		},
+		{
+			"Regex": "CoreMessage-Replication-.*",
+			"Label": "Replication"
+		},
+		{
+			"Regex": "CoreMessage-ReplicationTracking-.*",
+			"Label": "Replication"
+		},
+		{
+			"Regex": "CoreMessage-Storage-.*",
+			"Label": "Storage"
+		},
+		{
+			"Regex": "CoreMessage-Subscription-.*",
+			"Label": "Subscription"
+		},
+		{
+			"Regex": "CoreMessage-System-.*",
+			"Label": "System"
+		},
+		{
+			"Regex": "CoreMessage-Tcp-.*",
+			"Label": "Tcp"
+		},
+		{
+			"Regex": "ProjectionMessage-.*",
+			"Label": "Projections"
+		},
+		{
+			"Regex": ".*",
+			"Label": "Other"
+		}
+	]
+}

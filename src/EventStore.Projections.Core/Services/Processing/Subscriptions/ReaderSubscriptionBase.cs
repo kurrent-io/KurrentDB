@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -95,7 +95,7 @@ public class ReaderSubscriptionBase {
 
 		bool passesStreamSourceFilter = _eventFilter.PassesSource(message.Data.ResolvedLinkTo, message.Data.PositionStreamId, message.Data.EventType);
 		bool passesEventFilter = _eventFilter.Passes(message.Data.ResolvedLinkTo, message.Data.PositionStreamId, message.Data.EventType, message.Data.IsStreamDeletedEvent);
-		bool isValid = !_enableContentTypeValidation || _eventFilter.PassesValidation(message.Data.IsJson, message.Data.Data);
+		bool isValid = !_enableContentTypeValidation || _eventFilter.PassesValidation(message.Data.IsJson, message.Data.DataMemory);
 		if (!isValid) {
 			_logger.Verbose($"Event {message.Data.EventSequenceNumber}@{message.Data.EventStreamId} is not valid json. Data: ({message.Data.Data})");
 		}

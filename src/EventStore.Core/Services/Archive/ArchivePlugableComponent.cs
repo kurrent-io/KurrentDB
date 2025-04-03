@@ -1,9 +1,16 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Collections.Generic;
+using EventStore.Core.Bus;
+using EventStore.Core.Configuration.Sources;
+using EventStore.Core.Resilience;
 using EventStore.Core.Services.Archive.Archiver;
+using EventStore.Core.Services.Archive.Naming;
 using EventStore.Core.Services.Archive.Storage;
+using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Plugins;
 using EventStore.Plugins.Licensing;
 using Microsoft.AspNetCore.Builder;
@@ -49,16 +56,51 @@ public class ArchivePlugableComponent : IPlugableComponent {
 	}
 
 	public void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-		var options = configuration.GetSection("EventStore:Archive").Get<ArchiveOptions>();
-		Enabled = options?.Enabled ?? false; // disabled by default
+		var options = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:Archive").Get<ArchiveOptions>() ?? new();
+		Enabled = options.Enabled;
 
-		if (options is null || !Enabled || options.StorageType is StorageType.None)
+		if (!Enabled)
 			return;
 
-		services.AddSingleton(options);
-		services.AddScoped<IArchiveStorageFactory, ArchiveStorageFactory>();
+		services.AddSingleton<ArchiveOptions>(options);
+		services.AddSingleton<IArchiveStorage>(s => {
+			var resolver = s.GetRequiredService<IArchiveNamingStrategy>();
+			return ArchiveStorageFactory.Create(options, resolver);
+		});
+		services.Decorate<IReadOnlyList<IClusterVNodeStartupTask>>(AddArchiveCatchupTask);
+		services.AddSingleton<IArchiveNamingStrategy, ArchiveNamingStrategy>();
 
-		if (_isArchiver)
-			services.AddSingleton<ArchiverService>();
+		if (_isArchiver) {
+			services.AddSingleton<ArchiverService>(s => {
+				var archiveStorage = s.GetRequiredService<IArchiveStorage>();
+				return new(
+					mainBus: s.GetRequiredService<ISubscriber>(),
+					archiveStorage: new ResilientArchiveStorage(ResiliencePipelines.RetryForever, archiveStorage),
+					chunkManager: s.GetRequiredService<IChunkRegistry<IChunkBlob>>());
+			});
+		}
+	}
+
+	private static IReadOnlyList<IClusterVNodeStartupTask> AddArchiveCatchupTask(
+		IReadOnlyList<IClusterVNodeStartupTask> startupTasks,
+		IServiceProvider serviceProvider) {
+
+		var newStartupTasks = new List<IClusterVNodeStartupTask>();
+		if (startupTasks != null)
+			newStartupTasks.AddRange(startupTasks);
+
+		var standardComponents = serviceProvider.GetRequiredService<StandardComponents>();
+		newStartupTasks.Add(new ArchiveCatchup.ArchiveCatchup(
+			dbPath: standardComponents.DbConfig.Path,
+			writerCheckpoint: standardComponents.DbConfig.WriterCheckpoint,
+			chaserCheckpoint: standardComponents.DbConfig.ChaserCheckpoint,
+			epochCheckpoint: standardComponents.DbConfig.EpochCheckpoint,
+			chunkSize: standardComponents.DbConfig.ChunkSize,
+			new ResilientArchiveStorage(
+				ResiliencePipelines.RetryForever,
+				serviceProvider.GetRequiredService<IArchiveStorage>()),
+			serviceProvider.GetRequiredService<IArchiveNamingStrategy>()));
+
+		return newStartupTasks;
 	}
 }

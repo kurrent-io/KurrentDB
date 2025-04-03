@@ -1,11 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,37 +14,27 @@ using EventStore.Core.Tests.Helpers;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Hosting;
 using NUnit.Framework;
 using Convert = System.Convert;
 using Streams = EventStore.Client.Streams.Streams;
 using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
 using EventStore.Core.Services.Storage.ReaderIndex;
+using EventStore.Core.TransactionLog.Chunks;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests;
 
 public abstract class GrpcSpecification<TLogFormat, TStreamId> {
-	protected readonly GrpcChannel Channel;
+	protected GrpcChannel Channel;
 	private readonly MiniNode<TLogFormat, TStreamId> _node;
-	protected MiniNode<TLogFormat, TStreamId> Node => _node;
-	internal Streams.StreamsClient StreamsClient { get; }
-	private readonly BatchAppender _batchAppender;
+	internal Streams.StreamsClient StreamsClient { get; set; }
+	private BatchAppender _batchAppender;
 
-	protected GrpcSpecification(IExpiryStrategy expiryStrategy = null) {
+	protected GrpcSpecification(IExpiryStrategy expiryStrategy = null,
+		int maxAppendEventSize = TFConsts.EffectiveMaxLogRecordSize) {
 		_node = new MiniNode<TLogFormat, TStreamId>(GetType().FullName,
 			inMemDb: true,
-			expiryStrategy: expiryStrategy);
-
-		Channel = GrpcChannel.ForAddress(new UriBuilder {
-			Scheme = Uri.UriSchemeHttps
-		}.Uri, new GrpcChannelOptions {
-			HttpClient = _node.HttpClient,
-			DisposeHttpClient = false,
-		});
-		StreamsClient = new Streams.StreamsClient(Channel);
-		_batchAppender = new BatchAppender(StreamsClient);
+			expiryStrategy: expiryStrategy,
+			maxAppendEventSize: maxAppendEventSize);
 	}
 
 	protected abstract Task Given();
@@ -56,6 +45,15 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 	public async Task SetUp() {
 		await _node.Start();
 		await _node.AdminUserCreated;
+
+		Channel = GrpcChannel.ForAddress(
+			new UriBuilder { Scheme = Uri.UriSchemeHttps }.Uri,
+			new() {
+				HttpClient = _node.HttpClient,
+				DisposeHttpClient = false,
+			});
+		StreamsClient = new(Channel);
+		_batchAppender = new(StreamsClient);
 		_batchAppender.Start();
 		try {
 			await Given().WithTimeout(TimeSpan.FromSeconds(30));
@@ -104,17 +102,24 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 	internal static IEnumerable<BatchAppendReq.Types.ProposedMessage> CreateEvents(int count) =>
 		Enumerable.Range(0, count).Select(_ => CreateEvent());
 
-	internal static BatchAppendReq.Types.ProposedMessage CreateEvent(string type="-") =>
-		new BatchAppendReq.Types.ProposedMessage {
-			Data = ByteString.Empty,
+	internal static BatchAppendReq.Types.ProposedMessage CreateEvent(string type = "-", int? dataSize = null, int? metadataSize = null) {
+		var data = dataSize is null
+			? ByteString.Empty
+			: ByteString.CopyFrom(Encoding.UTF8.GetBytes(new string('*', dataSize.Value)));
+		var metadata = metadataSize is null
+			? ByteString.Empty
+			: ByteString.CopyFrom(Encoding.UTF8.GetBytes(new string('*', metadataSize.Value)));
+		return new BatchAppendReq.Types.ProposedMessage {
+			Data = data,
 			Id = Uuid.NewUuid().ToDto(),
-			CustomMetadata = ByteString.Empty,
+			CustomMetadata = metadata,
 			Metadata = {
-				{GrpcMetadata.ContentType, GrpcMetadata.ContentTypes.ApplicationOctetStream},
-				{GrpcMetadata.Type, type}
+				{ GrpcMetadata.ContentType, GrpcMetadata.ContentTypes.ApplicationOctetStream },
+				{ GrpcMetadata.Type, type }
 			}
 		};
-	
+	}
+
 	private class BatchAppender : IAsyncDisposable {
 		private readonly Lazy<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>> _batchAppendLazy;
 		private AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp> BatchAppend => _batchAppendLazy.Value;

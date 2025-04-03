@@ -1,14 +1,14 @@
 # Usage telemetry
 
-Starting with version 23.10 LTS, EventStoreDB has introduced a telemetry feature. This collects anonymous, aggregated usage statistics and sends them periodically to Event Store Ltd. Telemetry data helps us refine and improve our product based on real usage patterns.
+KurrentDB collects anonymous, aggregated usage statistics and sends them periodically to Kurrent, Inc. Telemetry data helps us refine and improve our product based on real usage patterns.
 
 ## What is usage telemetry
 
-EventStoreDB telemetry only tracks non-Personally-Identifiable Information. Collected data does not allow Event Store to fingerprint the users by any of the collected data points.
+KurrentDB telemetry only tracks non-Personally-Identifiable Information. Collected data does not allow Kurrent to fingerprint the users by any of the collected data points.
 
 Examples of the telemetry data collected:
 
-* EventStoreDB version number
+* KurrentDB version number
 * Cluster or instance size
 * Node machine size
 * Is cluster or instance configured in secure mode
@@ -17,7 +17,7 @@ Examples of the telemetry data collected:
 * Number of running projections
 * Number of running persistent subscriptions
 
-What EventStoreDB **does not** track:
+What KurrentDB **does not** track:
 
 * Stream names
 * Stream metadata
@@ -76,14 +76,14 @@ Here's an example of a full telemetry message from a single-node instance:
 
 ## Disclosure
 
-On startup, EventStoreDB produces a message to the console and to the diagnostic logs, which looks similar to:
+On startup, KurrentDB produces a message to the console and to the diagnostic logs, which looks similar to:
 
 ```
 Telemetry
 ---------
-EventStoreDB collects usage data in order to improve your experience. The data is anonymous and collected by Event Store Ltd.
-You can opt out of sending telemetry by setting the EVENTSTORE_TELEMETRY_OPTOUT environment variable to true.
-For more information visit https://eventstore.com/telemetry
+KurrentDB collects usage data in order to improve your experience. The data is anonymous and collected by Kurrent, Inc.
+You can opt out of sending telemetry by setting the KURRENTDB_TELEMETRY_OPTOUT environment variable to true.
+For more information visit https://kurrent.io/telemetry
 ```
 
 If telemetry collection is disabled (see below), the disclosure is still shown with a different text:
@@ -91,9 +91,9 @@ If telemetry collection is disabled (see below), the disclosure is still shown w
 ```
 Telemetry
 ---------
-EventStoreDB collects usage data in order to improve your experience. The data is anonymous and collected by EventStore Ltd.
-You have opted out of sending telemetry by setting the EVENTSTORE_TELEMETRY_OPTOUT environment variable to true.
-For more information visit https://eventstore.com/telemetry
+KurrentDB collects usage data in order to improve your experience. The data is anonymous and collected by Kurrent, Inc.
+You have opted out of sending telemetry by setting the KURRENTDB_TELEMETRY_OPTOUT environment variable to true.
+For more information visit https://kurrent.io/telemetry
 ```
 
 ## Reporting frequency
@@ -102,4 +102,4 @@ To avoid tracking short-lived instances (like containers used for tests), teleme
 
 ## How to opt out
 
-Telemetry transmission can be disabled by setting the `EVENTSTORE_TELEMETRY_OPTOUT` environment variable to `true`. EventStoreDB will still collect the information required to produce telemetry messages, and those messages will be produced to console and diagnostic log, but they will not be sent to Event Store Ltd.
+Telemetry transmission can be disabled by setting the `KURRENTDB_TELEMETRY_OPTOUT` environment variable to `true`. KurrentDB will still collect the information required to produce telemetry messages, and those messages will be produced to console and diagnostic log, but they will not be sent to Kurrent.

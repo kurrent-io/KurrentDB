@@ -1,29 +1,21 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
-using System.Net;
-using System.Text;
-using EventStore.Core.Tests.ClientAPI;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.Http.Users;
 using EventStore.Transport.Http;
 using NUnit.Framework;
 using System.Linq;
 using Newtonsoft.Json.Linq;
-using HttpStatusCode = System.Net.HttpStatusCode;
-using EventStore.Core.Services.Transport.Http;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Http.Users.users;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams;
 
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_getting_a_stream_without_accept_header<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+[TestFixture]
+public class when_getting_a_stream_without_accept_header : with_admin_user {
 	private JObject _descriptionDocument;
 	private List<JToken> _links;
 
@@ -47,16 +39,16 @@ public class when_getting_a_stream_without_accept_header<TLogFormat, TStreamId> 
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_getting_a_stream_with_description_document_media_type<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+[TestFixture(ContentType.DescriptionDocJson)]
+[TestFixture(ContentType.LegacyDescriptionDocJson)]
+public class when_getting_a_stream_with_description_document_media_type(string contentType) : with_admin_user {
 	private JObject _descriptionDocument;
 	private List<JToken> _links;
 
 	protected override Task Given() => Task.CompletedTask;
 
 	protected override async Task When() {
-		_descriptionDocument = await GetJson<JObject>(TestStream, "application/vnd.eventstore.streamdesc+json", null);
+		_descriptionDocument = await GetJson<JObject>(TestStream, contentType, null);
 	}
 
 	[Test]
@@ -73,16 +65,16 @@ public class when_getting_a_stream_with_description_document_media_type<TLogForm
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_getting_description_document<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+[TestFixture(ContentType.DescriptionDocJson)]
+[TestFixture(ContentType.LegacyDescriptionDocJson)]
+public class when_getting_description_document(string contentType) : with_admin_user {
 	private JObject _descriptionDocument;
 	private List<JToken> _links;
 
 	protected override Task Given() => Task.CompletedTask;
 
 	protected override async Task When() {
-		_descriptionDocument = await GetJson<JObject>(TestStream, "application/vnd.eventstore.streamdesc+json", null);
+		_descriptionDocument = await GetJson<JObject>(TestStream, contentType, null);
 		_links = _descriptionDocument != null ? _descriptionDocument["_links"].ToList() : new List<JToken>();
 	}
 
@@ -107,7 +99,7 @@ public class when_getting_description_document<TLogFormat, TStreamId> : with_adm
 		var supportedContentTypes = _descriptionDocument["_links"]["self"]["supportedContentTypes"].Values<string>()
 			.ToArray();
 		Assert.AreEqual(1, supportedContentTypes.Length);
-		Assert.AreEqual("application/vnd.eventstore.streamdesc+json", supportedContentTypes[0]);
+		Assert.AreEqual(contentType, supportedContentTypes[0]);
 	}
 
 	[Test]
@@ -120,16 +112,17 @@ public class when_getting_description_document<TLogFormat, TStreamId> : with_adm
 	public void stream_link_contains_supported_stream_content_types() {
 		var supportedContentTypes = _descriptionDocument["_links"]["stream"]["supportedContentTypes"]
 			.Values<string>().ToArray();
-		Assert.AreEqual(2, supportedContentTypes.Length);
-		Assert.Contains("application/atom+xml", supportedContentTypes);
-		Assert.Contains("application/vnd.eventstore.atom+json", supportedContentTypes);
+		Assert.AreEqual(3, supportedContentTypes.Length);
+		Assert.Contains(ContentType.Atom, supportedContentTypes);
+		Assert.Contains(ContentType.AtomJson, supportedContentTypes);
+		Assert.Contains(ContentType.LegacyAtomJson, supportedContentTypes);
 	}
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_getting_description_document_and_subscription_exists_for_stream<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+[TestFixture(ContentType.DescriptionDocJson)]
+[TestFixture(ContentType.LegacyDescriptionDocJson)]
+public class when_getting_description_document_and_subscription_exists_for_stream(string contentType) : with_admin_user {
 	private JObject _descriptionDocument;
 	private List<JToken> _links;
 	private JToken[] _subscriptions;
@@ -145,7 +138,7 @@ public class when_getting_description_document_and_subscription_exists_for_strea
 	}
 
 	protected override async Task When() {
-		_descriptionDocument = await GetJson<JObject>(TestStream, "application/vnd.eventstore.streamdesc+json", null);
+		_descriptionDocument = await GetJson<JObject>(TestStream, contentType, null);
 		_links = _descriptionDocument != null ? _descriptionDocument["_links"].ToList() : new List<JToken>();
 		_subscriptions = _descriptionDocument["_links"]["streamSubscription"].Values<JToken>().ToArray();
 	}
@@ -174,8 +167,9 @@ public class when_getting_description_document_and_subscription_exists_for_strea
 	[Test]
 	public void subscriptions_link_contains_supported_subscription_content_types() {
 		var supportedContentTypes = _subscriptions[0]["supportedContentTypes"].Values<string>().ToArray();
-		Assert.AreEqual(2, supportedContentTypes.Length);
-		Assert.Contains("application/vnd.eventstore.competingatom+xml", supportedContentTypes);
-		Assert.Contains("application/vnd.eventstore.competingatom+json", supportedContentTypes);
+		Assert.AreEqual(3, supportedContentTypes.Length);
+		Assert.Contains(ContentType.Competing, supportedContentTypes);
+		Assert.Contains(ContentType.CompetingJson, supportedContentTypes);
+		Assert.Contains(ContentType.LegacyCompetingJson, supportedContentTypes);
 	}
 }

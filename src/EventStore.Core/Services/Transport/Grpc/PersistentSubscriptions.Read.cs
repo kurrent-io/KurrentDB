@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -9,8 +9,8 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -21,12 +21,15 @@ using Google.Protobuf;
 using Grpc.Core;
 using Serilog;
 using static EventStore.Core.Messages.ClientMessage.PersistentSubscriptionNackEvents;
+using static EventStore.Plugins.Authorization.Operations.Subscriptions;
+using Empty = EventStore.Client.Empty;
 using UUID = EventStore.Client.UUID;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {
-	private static readonly Operation ProcessMessagesOperation = new Operation(Plugins.Authorization.Operations.Subscriptions.ProcessMessages);
+	private static readonly Operation ProcessMessagesOperation = new(ProcessMessages);
+
 	public override async Task Read(IAsyncStreamReader<ReadReq> requestStream,
 		IServerStreamWriter<ReadResp> responseStream, ServerCallContext context) {
 		if (!await requestStream.MoveNext()) {
@@ -40,25 +43,17 @@ internal partial class PersistentSubscriptions {
 		var options = requestStream.Current.Options;
 		var user = context.GetHttpContext().User;
 
-		string streamId = null;
-		switch (options.StreamOptionCase) {
-			case ReadReq.Types.Options.StreamOptionOneofCase.StreamIdentifier:
-				streamId = options.StreamIdentifier;
-				break;
-			case ReadReq.Types.Options.StreamOptionOneofCase.All:
-				streamId = SystemStreams.AllStream;
-				break;
-			default:
-				throw new InvalidOperationException();
-		}
+		string streamId = options.StreamOptionCase switch {
+			ReadReq.Types.Options.StreamOptionOneofCase.StreamIdentifier => options.StreamIdentifier,
+			ReadReq.Types.Options.StreamOptionOneofCase.All => SystemStreams.AllStream,
+			_ => throw new InvalidOperationException()
+		};
 
-		if (!await _authorizationProvider.CheckAccessAsync(user,
-			ProcessMessagesOperation.WithParameter(Plugins.Authorization.Operations.Subscriptions.Parameters.StreamId(streamId)), context.CancellationToken)) {
+		if (!await _authorizationProvider.CheckAccessAsync(user, ProcessMessagesOperation.WithParameter(Parameters.StreamId(streamId)), context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
-		var connectionName =
-			context.RequestHeaders.FirstOrDefault(x => x.Key == Constants.Headers.ConnectionName)?.Value ??
-			"<unknown>";
+
+		var connectionName = context.RequestHeaders.FirstOrDefault(x => x.Key == Constants.Headers.ConnectionName)?.Value ?? "<unknown>";
 		var correlationId = Guid.NewGuid();
 		var uuidOptionsCase = options.UuidOption.ContentCase;
 
@@ -96,6 +91,7 @@ internal partial class PersistentSubscriptions {
 			try {
 				await requestStream.ForEachAsync(HandleAckNack, token);
 			} catch {
+				// ignore
 			}
 		}
 
@@ -105,28 +101,27 @@ internal partial class PersistentSubscriptions {
 					correlationId, correlationId, new NoopEnvelope(), subscriptionId,
 					request.Ack.Ids.Select(id => Uuid.FromDto(id).ToGuid()).ToArray(), user),
 				ReadReq.ContentOneofCase.Nack =>
-				new ClientMessage.PersistentSubscriptionNackEvents(
-					correlationId, correlationId, new NoopEnvelope(), subscriptionId,
-					request.Nack.Reason, request.Nack.Action switch {
-						ReadReq.Types.Nack.Types.Action.Unknown => NakAction.Unknown,
-						ReadReq.Types.Nack.Types.Action.Park => NakAction.Park,
-						ReadReq.Types.Nack.Types.Action.Retry => NakAction.Retry,
-						ReadReq.Types.Nack.Types.Action.Skip => NakAction.Skip,
-						ReadReq.Types.Nack.Types.Action.Stop => NakAction.Stop,
-						_ => throw RpcExceptions.InvalidArgument(request.Nack.Action)
-					},
-					request.Nack.Ids.Select(id => Uuid.FromDto(id).ToGuid()).ToArray(), user),
+					new ClientMessage.PersistentSubscriptionNackEvents(
+						correlationId, correlationId, new NoopEnvelope(), subscriptionId,
+						request.Nack.Reason, request.Nack.Action switch {
+							ReadReq.Types.Nack.Types.Action.Unknown => NakAction.Unknown,
+							ReadReq.Types.Nack.Types.Action.Park => NakAction.Park,
+							ReadReq.Types.Nack.Types.Action.Retry => NakAction.Retry,
+							ReadReq.Types.Nack.Types.Action.Skip => NakAction.Skip,
+							ReadReq.Types.Nack.Types.Action.Stop => NakAction.Stop,
+							_ => throw RpcExceptions.InvalidArgument(request.Nack.Action)
+						},
+						request.Nack.Ids.Select(id => Uuid.FromDto(id).ToGuid()).ToArray(), user),
 				_ => throw RpcExceptions.InvalidArgument(request.ContentCase)
 			});
 
 			return new ValueTask(Task.CompletedTask);
 		}
 
-		ReadResp.Types.ReadEvent.Types.RecordedEvent ConvertToRecordedEvent(EventRecord e, long? commitPosition,
-			long? preparePosition) {
+		ReadResp.Types.ReadEvent.Types.RecordedEvent ConvertToRecordedEvent(EventRecord e, long? commitPosition, long? preparePosition) {
 			if (e == null) return null;
 			var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
-			return new ReadResp.Types.ReadEvent.Types.RecordedEvent {
+			return new() {
 				Id = uuidOptionsCase switch {
 					ReadReq.Types.Options.Types.UUIDOption.ContentOneofCase.String => new UUID {
 						String = e.EventId.ToString()
@@ -152,18 +147,12 @@ internal partial class PersistentSubscriptions {
 		ReadResp.Types.ReadEvent ConvertToReadEvent((ResolvedEvent, int) _) {
 			var (e, retryCount) = _;
 			var readEvent = new ReadResp.Types.ReadEvent {
-				Link = ConvertToRecordedEvent(e.Link,
-					e.OriginalPosition?.CommitPosition,
-					e.OriginalPosition?.PreparePosition),
-				Event = ConvertToRecordedEvent(e.Event,
-					e.OriginalPosition?.CommitPosition,
-					e.OriginalPosition?.PreparePosition),
+				Link = ConvertToRecordedEvent(e.Link, e.OriginalPosition?.CommitPosition, e.OriginalPosition?.PreparePosition),
+				Event = ConvertToRecordedEvent(e.Event, e.OriginalPosition?.CommitPosition, e.OriginalPosition?.PreparePosition),
 				RetryCount = retryCount
 			};
 			if (e.OriginalPosition.HasValue) {
-				var position = Position.FromInt64(
-					e.OriginalPosition.Value.CommitPosition,
-					e.OriginalPosition.Value.PreparePosition);
+				var position = Position.FromInt64(e.OriginalPosition.Value.CommitPosition, e.OriginalPosition.Value.PreparePosition);
 				readEvent.CommitPosition = position.CommitPosition;
 			} else {
 				readEvent.NoPosition = new Empty();
@@ -173,8 +162,7 @@ internal partial class PersistentSubscriptions {
 		}
 	}
 
-	private class PersistentStreamSubscriptionEnumerator
-		: IAsyncEnumerator<(ResolvedEvent resolvedEvent, int retryCount)> {
+	private class PersistentStreamSubscriptionEnumerator : IAsyncEnumerator<(ResolvedEvent resolvedEvent, int retryCount)> {
 		private readonly TaskCompletionSource<string> _subscriptionIdSource;
 		private readonly IPublisher _publisher;
 		private readonly Guid _correlationId;
@@ -195,28 +183,13 @@ internal partial class PersistentSubscriptions {
 			int bufferSize,
 			ClaimsPrincipal user,
 			CancellationToken cancellationToken) {
-			if (connectionName == null) {
-				throw new ArgumentNullException(nameof(connectionName));
-			}
-			if (publisher == null) {
-				throw new ArgumentNullException(nameof(publisher));
-			}
+			ArgumentNullException.ThrowIfNull(connectionName);
+			ArgumentNullException.ThrowIfNull(streamName);
+			ArgumentNullException.ThrowIfNull(groupName);
 
-			if (streamName == null) {
-				throw new ArgumentNullException(nameof(streamName));
-			}
-
-			if (groupName == null) {
-				throw new ArgumentNullException(nameof(groupName));
-			}
-
-			if (correlationId == Guid.Empty) {
-				throw new ArgumentException($"{nameof(correlationId)} should be non empty.", nameof(correlationId));
-			}
-
-			_correlationId = correlationId;
-			_publisher = publisher;
-			_subscriptionIdSource = new TaskCompletionSource<string>();
+			_correlationId = Ensure.NotEmptyGuid(correlationId);
+			_publisher = Ensure.NotNull(publisher);
+			_subscriptionIdSource = new();
 			_user = user;
 			_cancellationToken = cancellationToken;
 			_channel = Channel.CreateBounded<(ResolvedEvent, int)>(new BoundedChannelOptions(bufferSize) {
@@ -227,7 +200,7 @@ internal partial class PersistentSubscriptions {
 
 			var semaphore = new SemaphoreSlim(1, 1);
 
-			switch(streamName) {
+			switch (streamName) {
 				case SystemStreams.AllStream:
 					publisher.Publish(new ClientMessage.ConnectToPersistentSubscriptionToAll(correlationId,
 						correlationId,
@@ -249,7 +222,7 @@ internal partial class PersistentSubscriptions {
 					_subscriptionIdSource.TrySetException(ex);
 					return;
 				}
-				
+
 				switch (message) {
 					case ClientMessage.SubscriptionDropped dropped:
 						switch (dropped.Reason) {
@@ -261,8 +234,7 @@ internal partial class PersistentSubscriptions {
 								Fail(RpcExceptions.PersistentSubscriptionDoesNotExist(streamName, groupName));
 								return;
 							case SubscriptionDropReason.SubscriberMaxCountReached:
-								Fail(RpcExceptions.PersistentSubscriptionMaximumSubscribersReached(streamName,
-									groupName));
+								Fail(RpcExceptions.PersistentSubscriptionMaximumSubscribersReached(streamName, groupName));
 								return;
 							case SubscriptionDropReason.Unsubscribed:
 								Fail(RpcExceptions.PersistentSubscriptionDropped(streamName, groupName));
@@ -291,8 +263,7 @@ internal partial class PersistentSubscriptions {
 		}
 
 		public ValueTask DisposeAsync() {
-			_publisher.Publish(new ClientMessage.UnsubscribeFromStream(Guid.NewGuid(), _correlationId,
-				new NoopEnvelope(), _user));
+			_publisher.Publish(new ClientMessage.UnsubscribeFromStream(Guid.NewGuid(), _correlationId, new NoopEnvelope(), _user));
 			_channel.Writer.TryComplete();
 			return new ValueTask(Task.CompletedTask);
 		}

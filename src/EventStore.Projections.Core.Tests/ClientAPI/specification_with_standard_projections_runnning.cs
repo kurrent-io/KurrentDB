@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -43,7 +43,7 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault),
 			Opts.FaultOutOfOrderProjectionsDefault,
 			500,
-			250);
+			250, Opts.MaxProjectionStateSizeDefault);
 		_projections = new ProjectionsSubsystem(configuration);
 		_node = new MiniNode<TLogFormat, TStreamId>(
 			PathName, inMemDb: true,

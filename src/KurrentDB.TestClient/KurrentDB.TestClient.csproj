@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<OutputType>Exe</OutputType>
+		<GenerateSupportedRuntime>false</GenerateSupportedRuntime>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+		<NoWarn>1701;1702;1591</NoWarn>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="EventStore.Client" Version="21.2.0" />
+		<PackageReference Include="EventStore.Client.Grpc.Streams" Version="23.3.3" />
+		<PackageReference Include="Google.Protobuf" Version="3.27.2" />
+		<PackageReference Include="Grpc.Net.Client" Version="2.64.0" />
+		<PackageReference Include="Grpc.Tools" Version="2.65.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\EventStore.BufferManagement\EventStore.BufferManagement.csproj" />
+		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
+		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
+		<ProjectReference Include="..\EventStore.Transport.Http\EventStore.Transport.Http.csproj" />
+		<ProjectReference Include="..\EventStore.Transport.Tcp\EventStore.Transport.Tcp.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Include="..\KurrentDB\logconfig.json">
+	    <Link>logconfig.json</Link>
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
+</Project>

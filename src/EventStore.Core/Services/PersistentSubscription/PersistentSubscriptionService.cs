@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -56,7 +56,10 @@ public class PersistentSubscriptionService<TStreamId> :
 	IHandle<MonitoringMessage.GetPersistentSubscriptionStats>,
 	IHandle<MonitoringMessage.GetStreamPersistentSubscriptionStats> {
 
+	// for constant time lookups in ProcessEventCommited
 	private Dictionary<string, List<PersistentSubscription>> _subscriptionTopics;
+	// for quick indexing into stable pages of topics
+	private SortedList<string, List<PersistentSubscription>> _sortedSubscriptionTopics;
 	private Dictionary<string, PersistentSubscription> _subscriptionsById;
 
 	private readonly IQueuedHandler _queuedHandler;
@@ -115,6 +118,7 @@ public class PersistentSubscriptionService<TStreamId> :
 	public void InitToEmpty() {
 		_handleTick = false;
 		_subscriptionTopics = new Dictionary<string, List<PersistentSubscription>>();
+		_sortedSubscriptionTopics = new SortedList<string, List<PersistentSubscription>>();
 		_subscriptionsById = new Dictionary<string, PersistentSubscription>();
 	}
 
@@ -874,6 +878,7 @@ public class PersistentSubscriptionService<TStreamId> :
 		if (!_subscriptionTopics.TryGetValue(eventSource, out var subscribers)) {
 			subscribers = new List<PersistentSubscription>();
 			_subscriptionTopics.Add(eventSource, subscribers);
+			_sortedSubscriptionTopics.Add(eventSource, subscribers);
 		}
 
 		// shut down any existing subscription
@@ -1253,7 +1258,7 @@ public class PersistentSubscriptionService<TStreamId> :
 	private void SaveConfiguration(Action continueWith) {
 		Log.Debug("Saving persistent subscription configuration");
 		var data = _config.GetSerializedForm();
-		var ev = new Event(Guid.NewGuid(), "$PersistentConfig", true, data, new byte[0]);
+		var ev = new Event(Guid.NewGuid(), SystemEventTypes.PersistentSubscriptionConfig, true, data, new byte[0]);
 		var metadata = new StreamMetadata(maxCount: 2);
 		Lazy<StreamMetadata> streamMetadata = new Lazy<StreamMetadata>(() => metadata);
 		Event[] events = new Event[] {ev};
@@ -1346,12 +1351,23 @@ public class PersistentSubscriptionService<TStreamId> :
 			return;
 		}
 
-		var stats = (from subscription in _subscriptionTopics.Values
+		var total = _sortedSubscriptionTopics.Count;
+		var pageOffset = Math.Clamp(message.Offset, 0, total);
+		var pageLength = Math.Clamp(message.Count, 0, total - pageOffset);
+		var topics = new List<PersistentSubscription>[pageLength];
+		for (var i = 0; i < pageLength; i++) {
+			topics[i] = _sortedSubscriptionTopics.Values[i + pageOffset];
+		}
+
+		var stats = (from subscription in topics
 			from sub in subscription
 			select sub.GetStatistics()).ToList();
 		message.Envelope.ReplyWith(new MonitoringMessage.GetPersistentSubscriptionStatsCompleted(
-			MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Success, stats)
-		);
+			MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Success,
+			stats,
+			requestedOffset: message.Offset,
+			requestedCount: message.Count,
+			total: total));
 	}
 
 	public void Handle(SubscriptionMessage.PersistentSubscriptionTimerTick message) {

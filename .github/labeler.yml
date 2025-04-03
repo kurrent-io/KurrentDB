@@ -1,0 +1,17 @@
+# Add 'documentation' label if all changes are in the docs directory or to the README file
+documentation:
+  - all:
+    - changed-files:
+      - all-globs-to-all-files:
+        - docs/*
+        - README.md
+
+# Add 'ignore-for-release' label if all changes are:
+#    - changes to workflows, codeowners, etc (.github)
+#    - changes to tests (*.Tests)
+ignore-for-release:
+  - all:
+    - changed-files:
+      - all-globs-to-all-files:
+        - .github/*
+        - src/*.Tests/*

@@ -1,13 +1,15 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Collections.Generic;
 using System;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.LogAbstraction;
+using System.Collections.Generic;
+using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
-using System.Linq;
+using EventStore.Core.Index.Hashes;
+using EventStore.Core.LogAbstraction;
+using EventStore.Core.TransactionLog.Scavenging.CollisionManagement;
+using EventStore.Core.TransactionLog.Scavenging.Interfaces;
 using Serilog;
 
 namespace EventStore.Core.TransactionLog.Scavenging;
@@ -327,11 +329,12 @@ public class ScavengeState<TStreamId> : IScavengeState<TStreamId> {
 
 // in the chunk executor each worker gets its own state so that it has its own dbconnection and
 // prepared commands.
-public struct ScavengeStateForChunkWorker<TStreamId> : 
+public readonly struct ScavengeStateForChunkWorker<TStreamId> : 
 	IScavengeStateForChunkExecutorWorker<TStreamId>{
 
 	private readonly MetastreamCollisionMap<TStreamId> _metastreamDatas;
 	private readonly OriginalStreamCollisionMap<TStreamId> _originalStreamDatas;
+	private readonly IScavengeMap<int, ChunkTimeStampRange> _chunkTimeStampRanges;
 	private readonly IChunkWeightScavengeMap _chunkWeights;
 	private readonly Action _onDispose;
 
@@ -353,6 +356,7 @@ public struct ScavengeStateForChunkWorker<TStreamId> :
 			backend.OriginalStorage,
 			backend.OriginalCollisionStorage);
 
+		_chunkTimeStampRanges = backend.ChunkTimeStampRanges;
 		_chunkWeights = backend.ChunkWeights;
 
 		_onDispose = onDispose;
@@ -361,15 +365,17 @@ public struct ScavengeStateForChunkWorker<TStreamId> :
 	public float SumChunkWeights(int startLogicalChunkNumber, int endLogicalChunkNumber) =>
 		_chunkWeights.SumChunkWeights(startLogicalChunkNumber, endLogicalChunkNumber);
 
-	public void ResetChunkWeights(int startLogicalChunkNumber, int endLogicalChunkNumber) {
+	public void ResetChunkWeights(int startLogicalChunkNumber, int endLogicalChunkNumber) =>
 		_chunkWeights.ResetChunkWeights(startLogicalChunkNumber, endLogicalChunkNumber);
-	}
 
 	public bool TryGetChunkExecutionInfo(TStreamId streamId, out ChunkExecutionInfo info) =>
 		_originalStreamDatas.TryGetChunkExecutionInfo(streamId, out info);
 
 	public bool TryGetMetastreamData(TStreamId streamId, out MetastreamData data) =>
 		_metastreamDatas.TryGetValue(streamId, out data);
+
+	public bool TryGetChunkTimeStampRange(int logicalChunkNumber, out ChunkTimeStampRange range) =>
+		_chunkTimeStampRanges.TryGetValue(logicalChunkNumber, out range);
 
 	public void Dispose() {
 		_onDispose();

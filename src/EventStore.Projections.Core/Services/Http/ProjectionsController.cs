@@ -1,12 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using EventStore.Common.Utils;
-using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
@@ -111,7 +110,7 @@ public class ProjectionsController : CommunicationController {
 			return;
 
 		http.ReplyTextContent(
-			"Moved", 302, "Found", "text/plain",
+			"Moved", 302, "Found", ContentType.PlainText,
 			new[] {
 				new KeyValuePair<string, string>(
 					"Location", new Uri(match.BaseUri, "/web/projections.htm").AbsoluteUri)
@@ -432,10 +431,10 @@ public class ProjectionsController : CommunicationController {
 			return Configure.InternalServerError();
 		else
 			return state.Position != null
-				? Configure.Ok("application/json", Helper.UTF8NoBom, null, null, false,
-					new KeyValuePair<string, string>(SystemHeaders.ProjectionPosition,
-						state.Position.ToJsonString()))
-				: Configure.Ok("application/json", Helper.UTF8NoBom, null, null, false);
+				? Configure.Ok(ContentType.Json, Helper.UTF8NoBom, null, null, false,
+					new KeyValuePair<string, string>(SystemHeaders.ProjectionPosition, state.Position.ToJsonString()),
+					new KeyValuePair<string, string>(SystemHeaders.LegacyProjectionPosition, state.Position.ToJsonString()))
+				: Configure.Ok(ContentType.Json, Helper.UTF8NoBom, null, null, false);
 	}
 
 	private ResponseConfiguration ResultConfigurator(ICodec codec,
@@ -444,16 +443,16 @@ public class ProjectionsController : CommunicationController {
 			return Configure.InternalServerError();
 		else
 			return state.Position != null
-				? Configure.Ok("application/json", Helper.UTF8NoBom, null, null, false,
-					new KeyValuePair<string, string>(SystemHeaders.ProjectionPosition,
-						state.Position.ToJsonString()))
-				: Configure.Ok("application/json", Helper.UTF8NoBom, null, null, false);
+				? Configure.Ok(ContentType.Json, Helper.UTF8NoBom, null, null, false,
+					new KeyValuePair<string, string>(SystemHeaders.ProjectionPosition, state.Position.ToJsonString()),
+					new KeyValuePair<string, string>(SystemHeaders.LegacyProjectionPosition, state.Position.ToJsonString()))
+				: Configure.Ok(ContentType.Json, Helper.UTF8NoBom, null, null, false);
 	}
 
 	private ResponseConfiguration FeedPageConfigurator(ICodec codec, FeedReaderMessage.FeedPage page) {
 		if (page.Error == FeedReaderMessage.FeedPage.ErrorStatus.NotAuthorized)
 			return Configure.Unauthorized();
-		return Configure.Ok("application/json", Helper.UTF8NoBom, null, null, false);
+		return Configure.Ok(ContentType.Json, Helper.UTF8NoBom, null, null, false);
 	}
 
 	private string StateFormatter(ICodec codec, ProjectionManagementMessage.ProjectionState state) {
@@ -519,7 +518,7 @@ public class ProjectionsController : CommunicationController {
 
 	private ResponseConfiguration QueryConfigConfigurator(ICodec codec,
 		ProjectionManagementMessage.ProjectionQuery state) {
-		return Configure.Ok("application/json", Helper.UTF8NoBom, null, null, false);
+		return Configure.Ok(ContentType.Json, Helper.UTF8NoBom, null, null, false);
 	}
 
 	private string ProjectionConfigFormatter(ICodec codec, ProjectionManagementMessage.ProjectionConfig config) {
@@ -528,7 +527,7 @@ public class ProjectionsController : CommunicationController {
 
 	private ResponseConfiguration ProjectionConfigConfigurator(ICodec codec,
 		ProjectionManagementMessage.ProjectionConfig state) {
-		return Configure.Ok("application/json", Helper.UTF8NoBom, null, null, false);
+		return Configure.Ok(ContentType.Json, Helper.UTF8NoBom, null, null, false);
 	}
 
 	private ResponseConfiguration OkResponseConfigurator<T>(ICodec codec, T message) {
@@ -569,7 +568,7 @@ public class ProjectionsController : CommunicationController {
 	}
 
 	private ResponseConfiguration NotFoundConfigurator(ICodec codec, ProjectionManagementMessage.NotFound message) {
-		return new ResponseConfiguration(404, "Not Found", "text/plain", Helper.UTF8NoBom);
+		return new ResponseConfiguration(404, "Not Found", ContentType.PlainText, Helper.UTF8NoBom);
 	}
 
 	private string NotFoundFormatter(ICodec codec, ProjectionManagementMessage.NotFound message) {
@@ -578,7 +577,7 @@ public class ProjectionsController : CommunicationController {
 
 	private ResponseConfiguration NotAuthorizedConfigurator(
 		ICodec codec, ProjectionManagementMessage.NotAuthorized message) {
-		return new ResponseConfiguration(401, "Not Authorized", "text/plain", Encoding.UTF8);
+		return new ResponseConfiguration(401, "Not Authorized", ContentType.PlainText, Encoding.UTF8);
 	}
 
 	private string NotAuthorizedFormatter(ICodec codec, ProjectionManagementMessage.NotAuthorized message) {
@@ -587,7 +586,7 @@ public class ProjectionsController : CommunicationController {
 
 	private ResponseConfiguration OperationFailedConfigurator(
 		ICodec codec, ProjectionManagementMessage.OperationFailed message) {
-		return new ResponseConfiguration(500, "Failed", "text/plain", Helper.UTF8NoBom);
+		return new ResponseConfiguration(500, "Failed", ContentType.PlainText, Helper.UTF8NoBom);
 	}
 
 	private string OperationFailedFormatter(ICodec codec, ProjectionManagementMessage.OperationFailed message) {
@@ -596,7 +595,7 @@ public class ProjectionsController : CommunicationController {
 
 	private ResponseConfiguration ConflictConfigurator(
 		ICodec codec, ProjectionManagementMessage.OperationFailed message) {
-		return new ResponseConfiguration(409, "Conflict", "text/plain", Helper.UTF8NoBom);
+		return new ResponseConfiguration(409, "Conflict", ContentType.PlainText, Helper.UTF8NoBom);
 	}
 
 	private string ConflictFormatter(ICodec codec, ProjectionManagementMessage.OperationFailed message) {
@@ -608,7 +607,7 @@ public class ProjectionsController : CommunicationController {
 	}
 
 	private ResponseConfiguration InvalidSubsystemRestartConfigurator(ICodec codec, ProjectionSubsystemMessage.InvalidSubsystemRestart message) {
-		return new ResponseConfiguration(HttpStatusCode.BadRequest, "Bad Request", "text/plain",
+		return new ResponseConfiguration(HttpStatusCode.BadRequest, "Bad Request", ContentType.PlainText,
 			Helper.UTF8NoBom);
 	}
 

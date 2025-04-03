@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -66,7 +66,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_and_deleted_recor
 
 	[Test]
 	public async Task should_have_updated_deleted_stream_event_number() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
 		while (result.Success) {
@@ -84,7 +84,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_and_deleted_recor
 
 	[Test]
 	public async Task the_log_records_are_still_version_0() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
 		while (result.Success) {

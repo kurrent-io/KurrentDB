@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using System.Linq;
@@ -10,16 +10,17 @@ using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Configuration;
 
-public class EventStoreEnvironmentVariablesSourceTests {
+public class KurrentDbEnvironmentVariablesSourceTests {
 	[Theory]
-	[InlineData("EVENTSTORE_STREAM_INFO_CACHE_CAPACITY", "EventStore:StreamInfoCacheCapacity")]
-	public void AddsEventStoreEnvVars(string key, string normalizedKey) {
+	[InlineData("KURRENTDB_STREAM_INFO_CACHE_CAPACITY", "KurrentDB:StreamInfoCacheCapacity")]
+	[InlineData("KURRENTDB__STREAM_INFO_CACHE_CAPACITY", "KurrentDB:StreamInfoCacheCapacity")]
+	public void AddsKurrentEnvVars(string key, string normalizedKey) {
 		// Arrange
 		var environment = new Dictionary<string, string> { { key, key } };
 
 		// Act
 		var configuration = new ConfigurationBuilder()
-			.AddEventStoreEnvironmentVariables(environment)
+			.AddKurrentEnvironmentVariables(environment)
 			.Build();
 
 		// Assert
@@ -32,15 +33,15 @@ public class EventStoreEnvironmentVariablesSourceTests {
 	[Theory]
 	[InlineData("StreamInfoCacheCapacity")]
 	[InlineData("stream-info-cache-capacity")]
-	[InlineData("EventStore:Cluster:StreamInfoCacheCapacity")]
-	[InlineData("UNSUPPORTED_EVENTSTORE_TCP_API_ENABLED")]
+	[InlineData("KurrentDB:Cluster:StreamInfoCacheCapacity")]
+	[InlineData("UNSUPPORTED_KURRENTDB_TCP_API_ENABLED")]
 	public void IgnoresOtherEnvVars(string key) {
 		// Arrange
 		var environment = new Dictionary<string, string> { { key, key } };
 
 		// Act
 		var configuration = new ConfigurationBuilder()
-			.AddEventStoreEnvironmentVariables(environment)
+			.AddKurrentEnvironmentVariables(environment)
 			.Build();
 
 		// Assert

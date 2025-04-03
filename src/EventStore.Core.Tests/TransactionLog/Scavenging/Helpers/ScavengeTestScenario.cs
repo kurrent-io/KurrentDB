@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -123,7 +123,7 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 		Assert.AreEqual(_keptRecords.Length, _dbResult.Db.Manager.ChunksCount, "Wrong chunks count.");
 
 		for (int i = 0; i < _keptRecords.Length; ++i) {
-			var chunk = _dbResult.Db.Manager.GetChunk(i);
+			var chunk = await _dbResult.Db.Manager.GetInitializedChunk(i, token);
 
 			var chunkRecords = new List<ILogRecord>();
 			RecordReadResult result = await chunk.TryReadFirst(token);

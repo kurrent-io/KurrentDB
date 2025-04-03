@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics.Metrics;
@@ -28,7 +28,7 @@ public sealed class CacheResourcesTrackerTests : IDisposable {
 		var listener = new TestMeterListener<long>(meter);
 		_disposables.RegisterForDispose(listener);
 
-		var metrics = new CacheResourcesMetrics(meter, "the-metric");
+		var metrics = new CacheResourcesMetrics(meter, "the-metric", legacyNames: false);
 		var sut =  new CacheResourcesTracker(metrics);
 		return (sut, listener);
 	}
@@ -50,13 +50,16 @@ public sealed class CacheResourcesTrackerTests : IDisposable {
 			numChildren: 0));
 
 		listener.Observe();
-		AssertMeasurements(listener, "the-metric-entries",
+		// here we look up -entries-entries, but both the exporters (Prometheus and OTEL) deduplicate
+		// the fact that the metric name ends with the unit. we avoid having two metrics with the same
+		// name but different units.
+		AssertMeasurements(listener, "the-metric-entries-entries",
 			AssertMeasurement("cacheA", "capacity", 1),
 			AssertMeasurement("cacheA", "size", 2),
 			AssertMeasurement("cacheA", "count", 3),
 			AssertMeasurement("cacheB", "count", 6));
 
-		AssertMeasurements(listener, "the-metric-bytes",
+		AssertMeasurements(listener, "the-metric-bytes-bytes",
 			AssertMeasurement("cacheB", "capacity", 4),
 			AssertMeasurement("cacheB", "size", 5));
 	}

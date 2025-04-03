@@ -8,9 +8,10 @@ on:
   push:
     branches:
       - master
-      - release/oss-v*
+      - release/*
     tags:
       - oss-v*
+      - v*
     paths-ignore:
       - "docs/**"
       - "samples/**"
@@ -22,3 +23,4 @@ jobs:
     with:
       os: ubuntu-20.04-arm64
       arch: arm64
+    secrets: inherit

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -42,7 +42,7 @@ public class with_ssl_enabled_and_using_a_security_certificate_from_file<TLogFor
 	}
 
 	private string GetCertificatePath() {
-		var filePath = Path.Combine(Path.GetTempPath(), $"cert-{Guid.NewGuid()}.p12");
+		var filePath = Path.Combine(PathName, $"ES-cert-{Guid.NewGuid()}.p12");
 		var cert = ssl_connections.GetUntrustedCertificate();
 
 		using var fileStream = File.Create(filePath);

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using System.Text.Json.Nodes;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Core.Cluster;
+using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
@@ -50,7 +51,7 @@ public sealed class TelemetryServiceTests : IAsyncLifetime {
 			_db.Manager,
 			new ClusterVNodeOptions().WithPlugableComponent(_plugin),
 			new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>() {
-				{ "EventStore:Telemetry:CloudIdentifier", "abc"},
+				{ $"{KurrentConfigurationKeys.Prefix}:Telemetry:CloudIdentifier", "abc"},
 			}).Build(),
 			new EnvelopePublisher(new ChannelEnvelope(channel)),
 			_sink,

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Common.Exceptions;
 using Xunit;
@@ -34,5 +34,24 @@ public class ClusterVNodeOptionsValidatorTests {
 		} else {
 			Assert.Throws<InvalidConfigurationException>(When);
 		}
+	}
+
+	[Fact]
+	public void archiver_not_compatible_with_unsafe_ignore_hard_delete() {
+		// because the archive is not scavenged at the moment and so the tombstones will not be removed
+		var options = new ClusterVNodeOptions {
+			Cluster = new() {
+				Archiver = true,
+				ClusterSize = 3,
+				ReadOnlyReplica = true,
+			},
+			Database = new() {
+				UnsafeIgnoreHardDelete = true,
+			}
+		};
+
+		Assert.Throws<InvalidConfigurationException>(() => {
+			ClusterVNodeOptionsValidator.Validate(options);
+		});
 	}
 }

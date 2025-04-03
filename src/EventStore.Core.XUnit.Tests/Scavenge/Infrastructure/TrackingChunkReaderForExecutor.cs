@@ -1,23 +1,27 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using System.Threading;
 using EventStore.Core.TransactionLog.Scavenging;
+using EventStore.Core.TransactionLog.Scavenging.Interfaces;
 
-namespace EventStore.Core.XUnit.Tests.Scavenge;
+namespace EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 
 public class TrackingChunkReaderForExecutor<TStreamId, TRecord> :
 	IChunkReaderForExecutor<TStreamId, TRecord> {
 
 	private readonly IChunkReaderForExecutor<TStreamId, TRecord> _wrapped;
+	private readonly bool _isRemote;
 	private readonly Tracer _tracer;
 
 	public TrackingChunkReaderForExecutor(
 		IChunkReaderForExecutor<TStreamId, TRecord> wrapped,
+		bool isRemote,
 		Tracer tracer) {
 
 		_wrapped = wrapped;
+		_isRemote = isRemote;
 		_tracer = tracer;
 	}
 
@@ -30,6 +34,8 @@ public class TrackingChunkReaderForExecutor<TStreamId, TRecord> :
 	public int ChunkEndNumber => _wrapped.ChunkEndNumber;
 
 	public bool IsReadOnly => _wrapped.IsReadOnly;
+
+	public bool IsRemote => _isRemote;
 
 	public long ChunkStartPosition => _wrapped.ChunkStartPosition;
 

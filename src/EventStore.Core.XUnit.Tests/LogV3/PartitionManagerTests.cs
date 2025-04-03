@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -116,21 +116,21 @@ public class PartitionManagerTests {
 	}
 
 	[Fact]
-	public void throws_on_unexpected_log_record_type() {
+	public async Task throws_on_unexpected_log_record_type() {
 		var reader = new FakeReader(UnexpectedLogRecord);
 
 		IPartitionManager partitionManager = new PartitionManager(reader, new FakeWriter(), new LogV3RecordFactory());
 
-		Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => partitionManager.Initialize(CancellationToken.None).AsTask());
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => partitionManager.Initialize(CancellationToken.None).AsTask());
 	}
 
 	[Fact]
-	public void throws_on_unexpected_system_log_record_type() {
+	public async Task throws_on_unexpected_system_log_record_type() {
 		var reader = new FakeReader(UnexpectedSystemLogRecord);
 
 		IPartitionManager partitionManager = new PartitionManager(reader, new FakeWriter(), new LogV3RecordFactory());
 
-		Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => partitionManager.Initialize(CancellationToken.None).AsTask());
+		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => partitionManager.Initialize(CancellationToken.None).AsTask());
 	}
 
 	private LogV3StreamRecord UnexpectedLogRecord => new LogV3StreamRecord(
@@ -160,7 +160,9 @@ class FakeWriter: ITransactionFileWriter {
 	public bool IsFlushed { get; private set; }
 	public List<ILogRecord> WrittenRecords { get; }
 
-	public void Open() {}
+	public ValueTask Open(CancellationToken token)
+		=> token.IsCancellationRequested ? ValueTask.FromCanceled(token) : ValueTask.CompletedTask;
+
 	public bool CanWrite(int numBytes) => true;
 
 	public ValueTask<(bool, long)> Write(ILogRecord record, CancellationToken token) {

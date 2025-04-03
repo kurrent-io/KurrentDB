@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics.Metrics;
@@ -17,7 +17,7 @@ public class DurationMaxTrackerTests : IDisposable {
 	public DurationMaxTrackerTests() {
 		var meter = new Meter($"{typeof(DurationMaxTrackerTests)}");
 		_listener = new TestMeterListener<double>(meter);
-		var metric = new DurationMaxMetric(meter, "the-metric");
+		var metric = new DurationMaxMetric(meter, "the-metric", legacyNames: false);
 		_sut = new DurationMaxTracker(
 			metric: metric,
 			name: "the-tracker",
@@ -184,7 +184,7 @@ public class DurationMaxTrackerTests : IDisposable {
 		using var meter = new Meter($"{typeof(DurationMaxTrackerTests)}");
 		using var listener = new TestMeterListener<double>(meter);
 		var sut = new DurationMaxTracker(
-			metric: new DurationMaxMetric(meter, "the-metric"),
+			metric: new DurationMaxMetric(meter, "the-metric", legacyNames: false),
 			name: null,
 			expectedScrapeIntervalSeconds: 15);
 

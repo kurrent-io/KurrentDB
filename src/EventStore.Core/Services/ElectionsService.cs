@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -65,13 +65,10 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 	private int _lastInstalledView = -1;
 	private ElectionsState _state = ElectionsState.Idle;
 
-	private readonly HashSet<Guid> _vcReceived = new HashSet<Guid>();
-
-	private readonly Dictionary<Guid, ElectionMessage.PrepareOk> _prepareOkReceived =
-		new Dictionary<Guid, ElectionMessage.PrepareOk>();
-
-	private readonly HashSet<Guid> _leaderIsResigningOkReceived = new HashSet<Guid>();
-	private readonly HashSet<Guid> _acceptsReceived = new HashSet<Guid>();
+	private readonly HashSet<Guid> _vcReceived = [];
+	private readonly Dictionary<Guid, ElectionMessage.PrepareOk> _prepareOkReceived = new();
+	private readonly HashSet<Guid> _leaderIsResigningOkReceived = [];
+	private readonly HashSet<Guid> _acceptsReceived = [];
 
 	private LeaderCandidate _leaderProposal;
 	public Guid LeaderProposalId => _leaderProposal?.InstanceId ?? Guid.Empty;
@@ -92,34 +89,26 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 		int nodePriority,
 		ITimeProvider timeProvider,
 		TimeSpan leaderElectionTimeout) {
-		Ensure.NotNull(publisher, nameof(publisher));
-		Ensure.NotNull(memberInfo, nameof(memberInfo));
-		Ensure.Positive(clusterSize, nameof(clusterSize));
-		Ensure.NotNull(writerCheckpoint, nameof(writerCheckpoint));
-		Ensure.NotNull(chaserCheckpoint, nameof(chaserCheckpoint));
-		Ensure.NotNull(proposalCheckpoint, nameof(proposalCheckpoint));
-		Ensure.NotNull(epochManager, nameof(epochManager));
-		Ensure.NotNull(getLastCommitPosition, nameof(getLastCommitPosition));
-		Ensure.NotNull(timeProvider, nameof(timeProvider));
 		if (leaderElectionTimeout.Seconds < 1) {
 			throw new ArgumentOutOfRangeException(nameof(leaderElectionTimeout),
 				$"{nameof(leaderElectionTimeout)} should be greater than 1 second.");
 		}
+
 		if (memberInfo.IsReadOnlyReplica) {
 			throw new ArgumentException("Read-only replicas are not allowed to run the Elections service.");
 		}
 
-		_publisher = publisher;
-		_memberInfo = memberInfo;
-		_publisherEnvelope = _publisher;
-		_clusterSize = clusterSize;
-		_writerCheckpoint = writerCheckpoint;
-		_chaserCheckpoint = chaserCheckpoint;
-		_proposalCheckpoint = proposalCheckpoint;
-		_epochManager = epochManager;
-		_getLastCommitPosition = getLastCommitPosition;
+		_publisher = Ensure.NotNull(publisher);
+		_memberInfo = Ensure.NotNull(memberInfo);
+		_publisherEnvelope = publisher;
+		_clusterSize = Ensure.Positive(clusterSize);
+		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
+		_chaserCheckpoint = Ensure.NotNull(chaserCheckpoint);
+		_proposalCheckpoint = Ensure.NotNull(proposalCheckpoint);
+		_epochManager = Ensure.NotNull(epochManager);
+		_getLastCommitPosition = Ensure.NotNull(getLastCommitPosition);
 		_nodePriority = nodePriority;
-		_timeProvider = timeProvider;
+		_timeProvider = Ensure.NotNull(timeProvider);
 		_leaderElectionProgressTimeout = leaderElectionTimeout;
 
 		var lastEpoch = _epochManager.LastEpochNumber;
@@ -129,7 +118,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 		}
 
 		var ownInfo = GetOwnInfo();
-		_servers = new[] {
+		_servers = [
 			MemberInfo.ForVNode(memberInfo.InstanceId,
 				_timeProvider.UtcNow,
 				VNodeState.Initializing,
@@ -141,7 +130,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 				ownInfo.LastCommitPosition, ownInfo.WriterCheckpoint, ownInfo.ChaserCheckpoint,
 				ownInfo.EpochPosition, ownInfo.EpochNumber, ownInfo.EpochId, ownInfo.NodePriority,
 				memberInfo.IsReadOnlyReplica, VersionInfo.Version)
-		};
+		];
 	}
 
 	public void SubscribeMessages(ISubscriber subscriber) {
@@ -215,7 +204,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 			message.LeaderHttpEndPoint,
 			message.LeaderId);
 		if (_leaderIsResigningOkReceived.Add(message.ServerId) &&
-				_leaderIsResigningOkReceived.Count == _clusterSize / 2 + 1) {
+		    _leaderIsResigningOkReceived.Count == _clusterSize / 2 + 1) {
 			Log.Information(
 				"ELECTIONS: MAJORITY OF ACCEPTANCE OF RESIGNATION OF LEADER [{leaderHttpEndPoint},{leaderId:B}]. NOW INITIATING LEADER RESIGNATION.",
 				message.LeaderHttpEndPoint, message.LeaderId);
@@ -235,13 +224,15 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 	}
 
 	public void Handle(ElectionMessage.StartElections message) {
-		if (_state == ElectionsState.Shutdown)
-			return;
-		if (_state == ElectionsState.ElectingLeader)
-			return;
-
-		Log.Information("ELECTIONS: STARTING ELECTIONS.");
-		ShiftToLeaderElection(_lastAttemptedView + 1);
+		switch (_state) {
+			case ElectionsState.Shutdown:
+			case ElectionsState.ElectingLeader:
+				return;
+			default:
+				Log.Information("ELECTIONS: STARTING ELECTIONS.");
+				ShiftToLeaderElection(_lastAttemptedView + 1);
+				break;
+		}
 	}
 
 	public void Handle(ElectionMessage.ElectionsTimedOut message) {
@@ -285,9 +276,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 	}
 
 	public void Handle(ElectionMessage.ViewChange message) {
-		if (_state == ElectionsState.Shutdown)
-			return;
-		if (_state == ElectionsState.Idle)
+		if (_state is ElectionsState.Shutdown or ElectionsState.Idle)
 			return;
 
 		if (message.AttemptedView <= _lastInstalledView)
@@ -311,18 +300,13 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 			return;
 
 		if (_lastInstalledView >= 0)
-			SendToAllExceptMe(new ElectionMessage.ViewChangeProof(_memberInfo.InstanceId, _memberInfo.HttpEndPoint,
-				_lastInstalledView));
+			SendToAllExceptMe(new ElectionMessage.ViewChangeProof(_memberInfo.InstanceId, _memberInfo.HttpEndPoint, _lastInstalledView));
 
-		_publisher.Publish(TimerMessage.Schedule.Create(SendViewChangeProofInterval,
-			_publisherEnvelope,
-			new ElectionMessage.SendViewChangeProof()));
+		_publisher.Publish(TimerMessage.Schedule.Create(SendViewChangeProofInterval, _publisherEnvelope, new ElectionMessage.SendViewChangeProof()));
 	}
 
 	public void Handle(ElectionMessage.ViewChangeProof message) {
-		if (_state == ElectionsState.Shutdown)
-			return;
-		if (_state == ElectionsState.Idle)
+		if (_state is ElectionsState.Shutdown or ElectionsState.Idle)
 			return;
 		if (message.InstalledView <= _lastInstalledView)
 			return;
@@ -362,8 +346,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 		_prepareOkReceived.Clear();
 
 		Handle(CreatePrepareOk(_lastInstalledView));
-		SendToAllExceptMe(new ElectionMessage.Prepare(_memberInfo.InstanceId, _memberInfo.HttpEndPoint,
-			_lastInstalledView));
+		SendToAllExceptMe(new ElectionMessage.Prepare(_memberInfo.InstanceId, _memberInfo.HttpEndPoint, _lastInstalledView));
 	}
 
 	public void Handle(ElectionMessage.Prepare message) {
@@ -404,9 +387,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 	}
 
 	public void Handle(ElectionMessage.PrepareOk msg) {
-		if (_state == ElectionsState.Shutdown)
-			return;
-		if (_state != ElectionsState.ElectingLeader)
+		if (_state is ElectionsState.Shutdown or not ElectionsState.ElectingLeader)
 			return;
 		if (msg.View != _lastAttemptedView)
 			return;
@@ -416,8 +397,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 				msg.LastCommitPosition, msg.WriterCheckpoint, msg.ChaserCheckpoint,
 				msg.EpochNumber, msg.EpochPosition, msg.EpochId, msg.EpochLeaderInstanceId, msg.NodePriority));
 
-		if (!_prepareOkReceived.ContainsKey(msg.ServerId)) {
-			_prepareOkReceived.Add(msg.ServerId, msg);
+		if (_prepareOkReceived.TryAdd(msg.ServerId, msg)) {
 			if (_prepareOkReceived.Count == _clusterSize / 2 + 1)
 				ShiftToLeader();
 		}
@@ -436,8 +416,7 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 
 		var leader = GetBestLeaderCandidate(_prepareOkReceived, _servers, _resigningLeaderInstanceId, _lastAttemptedView);
 		if (leader == null) {
-			Log.Information("ELECTIONS: (V={lastAttemptedView}) NO LEADER CANDIDATE WHEN TRYING TO SEND PROPOSAL.",
-				_lastAttemptedView);
+			Log.Information("ELECTIONS: (V={lastAttemptedView}) NO LEADER CANDIDATE WHEN TRYING TO SEND PROPOSAL.", _lastAttemptedView);
 			return;
 		}
 
@@ -462,7 +441,6 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 
 	public static LeaderCandidate GetBestLeaderCandidate(Dictionary<Guid, ElectionMessage.PrepareOk> received,
 		MemberInfo[] servers, Guid? resigningLeaderInstanceId, int lastAttemptedView) {
-
 		var best = received.Values
 			.OrderByDescending(x => x.EpochNumber) // latest election
 			.ThenByDescending(x => x.WriterCheckpoint) // log length (if not re-electing leader pick the most complete replica)
@@ -494,8 +472,8 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 
 			//we have received a PrepareOk message from the previous leader, so we definitely know it's alive.
 			if (received.TryGetValue(previousLeaderId, out var leaderMsg) &&
-				leaderMsg.EpochNumber == best.EpochNumber &&
-				leaderMsg.EpochId == best.EpochId) {
+			    leaderMsg.EpochNumber == best.EpochNumber &&
+			    leaderMsg.EpochId == best.EpochId) {
 				Log.Debug("ELECTIONS: (V={lastAttemptedView}) Previous Leader (L={previousLeaderId:B}) from last epoch record is still alive.", lastAttemptedView, previousLeaderId);
 				previousLeaderCandidate = new LeaderCandidate(leaderMsg.ServerId, leaderMsg.ServerHttpEndPoint,
 					leaderMsg.EpochNumber, leaderMsg.EpochPosition, leaderMsg.EpochId, leaderMsg.EpochLeaderInstanceId,
@@ -514,16 +492,21 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 						//these checks are not really necessary but we do them to ensure that everything is normal.
 						if (best.EpochNumber == member.EpochNumber && best.EpochId != member.EpochId) {
 							//something is definitely not right if the epoch numbers match but not the epoch ids
-							Log.Warning("ELECTIONS: (V={lastAttemptedView}) Epoch ID mismatch in gossip information from node {nodeId:B}. Best node's Epoch Id: {bestEpochId:B}, Leader node's Epoch Id: {leaderEpochId:B}", lastAttemptedView, id, best.EpochId, member.EpochId);
+							Log.Warning(
+								"ELECTIONS: (V={lastAttemptedView}) Epoch ID mismatch in gossip information from node {nodeId:B}. Best node's Epoch Id: {bestEpochId:B}, Leader node's Epoch Id: {leaderEpochId:B}",
+								lastAttemptedView, id, best.EpochId, member.EpochId);
 							continue;
 						}
 
 						if (best.EpochNumber - member.EpochNumber > 2) {
 							//gossip information may be slightly out of date. We log a warning if the epoch number is off by more than 2
-							Log.Warning("ELECTIONS: (V={lastAttemptedView}) Epoch number is off by more than two in gossip information from node {nodeId:B}. Best node's Epoch number: {bestEpochNumber}, Leader node's Epoch number: {leaderEpochNumber}.", lastAttemptedView, id, best.EpochNumber, member.EpochNumber);
+							Log.Warning(
+								"ELECTIONS: (V={lastAttemptedView}) Epoch number is off by more than two in gossip information from node {nodeId:B}. Best node's Epoch number: {bestEpochNumber}, Leader node's Epoch number: {leaderEpochNumber}.",
+								lastAttemptedView, id, best.EpochNumber, member.EpochNumber);
 						}
 
-						Log.Debug("ELECTIONS: (V={lastAttemptedView}) Previous Leader (L={previousLeaderId:B}) from last epoch record is still alive according to gossip from node {nodeId:B}.", lastAttemptedView, previousLeaderId, id);
+						Log.Debug("ELECTIONS: (V={lastAttemptedView}) Previous Leader (L={previousLeaderId:B}) from last epoch record is still alive according to gossip from node {nodeId:B}.",
+							lastAttemptedView, previousLeaderId, id);
 						previousLeaderCandidate = new LeaderCandidate(member.InstanceId,
 							member.HttpEndPoint,
 							member.EpochNumber, member.EpochPosition, member.EpochId, best.EpochLeaderInstanceId,
@@ -535,9 +518,12 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 			}
 
 			if (previousLeaderCandidate == null) {
-				Log.Debug("ELECTIONS: (V={lastAttemptedView}) Previous Leader (L={previousLeaderId:B}) from last epoch record is dead, defaulting to the best candidate (B={bestCandidateId:B}).", lastAttemptedView, previousLeaderId, bestCandidate.InstanceId);
+				Log.Debug("ELECTIONS: (V={lastAttemptedView}) Previous Leader (L={previousLeaderId:B}) from last epoch record is dead, defaulting to the best candidate (B={bestCandidateId:B}).",
+					lastAttemptedView, previousLeaderId, bestCandidate.InstanceId);
 			} else if (previousLeaderCandidate.InstanceId == resigningLeaderInstanceId) {
-				Log.Debug("ELECTIONS: (V={lastAttemptedView}) Previous Leader (L={previousLeaderId:B}) from last epoch record is alive but it is resigning, defaulting to the best candidate (B={bestCandidateId:B}).", lastAttemptedView, previousLeaderId, bestCandidate.InstanceId);
+				Log.Debug(
+					"ELECTIONS: (V={lastAttemptedView}) Previous Leader (L={previousLeaderId:B}) from last epoch record is alive but it is resigning, defaulting to the best candidate (B={bestCandidateId:B}).",
+					lastAttemptedView, previousLeaderId, bestCandidate.InstanceId);
 			} else {
 				bestCandidate = previousLeaderCandidate;
 			}
@@ -556,8 +542,8 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 
 		if (leader != null && leader.InstanceId != resigningLeader) {
 			if (candidate.InstanceId == leader.InstanceId
-				|| candidate.EpochNumber > leader.EpochNumber
-				|| (candidate.EpochNumber == leader.EpochNumber && candidate.EpochId != leader.EpochId))
+			    || candidate.EpochNumber > leader.EpochNumber
+			    || (candidate.EpochNumber == leader.EpochNumber && candidate.EpochId != leader.EpochId))
 				return true;
 
 			Log.Information(
@@ -595,11 +581,9 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 	}
 
 	public void Handle(ElectionMessage.Proposal message) {
-		if (_state == ElectionsState.Shutdown)
+		if (_state is ElectionsState.Shutdown or not ElectionsState.Acceptor)
 			return;
 		if (message.ServerId == _memberInfo.InstanceId)
-			return;
-		if (_state != ElectionsState.Acceptor)
 			return;
 		if (message.View != _lastInstalledView)
 			return;
@@ -628,8 +612,8 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 
 		var ownInfo = GetOwnInfo();
 		if (!IsLegitimateLeader(message.View, message.ServerHttpEndPoint, message.ServerId,
-			candidate, _servers, _lastElectedLeader, _memberInfo.InstanceId, ownInfo,
-			_resigningLeaderInstanceId))
+			    candidate, _servers, _lastElectedLeader, _memberInfo.InstanceId, ownInfo,
+			    _resigningLeaderInstanceId))
 			return;
 
 		Log.Information(
@@ -648,10 +632,8 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 
 		if (_leaderProposal.InstanceId == message.LeaderId) {
 			// NOTE: proposal from other server is also implicit Accept from that server
-			Handle(new ElectionMessage.Accept(message.ServerId, message.ServerHttpEndPoint,
-				message.LeaderId, message.LeaderHttpEndPoint, message.View));
-			var accept = new ElectionMessage.Accept(_memberInfo.InstanceId, _memberInfo.HttpEndPoint,
-				message.LeaderId, message.LeaderHttpEndPoint, message.View);
+			Handle(new ElectionMessage.Accept(message.ServerId, message.ServerHttpEndPoint, message.LeaderId, message.LeaderHttpEndPoint, message.View));
+			var accept = new ElectionMessage.Accept(_memberInfo.InstanceId, _memberInfo.HttpEndPoint, message.LeaderId, message.LeaderHttpEndPoint, message.View);
 			Handle(accept); // implicitly sent accept to ourselves
 			SendToAllExceptMe(accept);
 		}
@@ -703,10 +685,10 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 		var chaserCheckpoint = _chaserCheckpoint.Read();
 		var lastCommitPosition = _getLastCommitPosition();
 		return new LeaderCandidate(_memberInfo.InstanceId, _memberInfo.HttpEndPoint,
-			lastEpoch == null ? -1 : lastEpoch.EpochNumber,
-			lastEpoch == null ? -1 : lastEpoch.EpochPosition,
-			lastEpoch == null ? Guid.Empty : lastEpoch.EpochId,
-			lastEpoch == null ? Guid.Empty : lastEpoch.LeaderInstanceId,
+			lastEpoch?.EpochNumber ?? -1,
+			lastEpoch?.EpochPosition ?? -1,
+			lastEpoch?.EpochId ?? Guid.Empty,
+			lastEpoch?.LeaderInstanceId ?? Guid.Empty,
 			lastCommitPosition, writerCheckpoint, chaserCheckpoint, _nodePriority);
 	}
 
@@ -719,42 +701,30 @@ public class ElectionsService : IHandle<SystemMessage.BecomeShuttingDown>,
 	private static string FormatNodeInfo(EndPoint serverEndPoint, Guid serverId,
 		long lastCommitPosition, long writerCheckpoint, long chaserCheckpoint,
 		int epochNumber, long epochPosition, Guid epochId, Guid epochLeaderInstanceId, int priority) {
-		return string.Format("[{0},{1:B}](L={2},W={3},C={4},E{5}@{6}:{7:B} (L={8:B}),Priority={9})",
-			serverEndPoint, serverId,
-			lastCommitPosition, writerCheckpoint, chaserCheckpoint,
-			epochNumber, epochPosition, epochId, epochLeaderInstanceId, priority);
+		return $"[{serverEndPoint},{serverId:B}](L={lastCommitPosition},W={writerCheckpoint},C={chaserCheckpoint},E{epochNumber}@{epochPosition}:{epochId:B} (L={epochLeaderInstanceId:B}),Priority={priority})";
 	}
 
-	public class LeaderCandidate {
-		public readonly Guid InstanceId;
-		public readonly EndPoint HttpEndPoint;
-
+	public class LeaderCandidate(
+		Guid instanceId,
+		EndPoint httpEndPoint,
+		int epochNumber,
+		long epochPosition,
+		Guid epochId,
+		Guid epochLeaderInstanceId,
+		long lastCommitPosition,
+		long writerCheckpoint,
+		long chaserCheckpoint,
+		int nodePriority) {
+		public readonly Guid InstanceId = instanceId;
+		public readonly EndPoint HttpEndPoint = httpEndPoint;
 		public int ProposalNumber;
-		public readonly int EpochNumber;
-		public readonly long EpochPosition;
-		public readonly Guid EpochId;
-		public readonly Guid EpochLeaderInstanceId;
-
-		public readonly long LastCommitPosition;
-		public readonly long WriterCheckpoint;
-		public readonly long ChaserCheckpoint;
-
-		public readonly int NodePriority;
-
-		public LeaderCandidate(Guid instanceId, EndPoint httpEndPoint,
-			int epochNumber, long epochPosition, Guid epochId, Guid epochLeaderInstanceId,
-			long lastCommitPosition, long writerCheckpoint, long chaserCheckpoint,
-			int nodePriority) {
-			InstanceId = instanceId;
-			HttpEndPoint = httpEndPoint;
-			EpochNumber = epochNumber;
-			EpochPosition = epochPosition;
-			EpochId = epochId;
-			EpochLeaderInstanceId = epochLeaderInstanceId;
-			LastCommitPosition = lastCommitPosition;
-			WriterCheckpoint = writerCheckpoint;
-			ChaserCheckpoint = chaserCheckpoint;
-			NodePriority = nodePriority;
-		}
+		public readonly int EpochNumber = epochNumber;
+		public readonly long EpochPosition = epochPosition;
+		public readonly Guid EpochId = epochId;
+		public readonly Guid EpochLeaderInstanceId = epochLeaderInstanceId;
+		public readonly long LastCommitPosition = lastCommitPosition;
+		public readonly long WriterCheckpoint = writerCheckpoint;
+		public readonly long ChaserCheckpoint = chaserCheckpoint;
+		public readonly int NodePriority = nodePriority;
 	}
 }

@@ -5,9 +5,9 @@ order: 2
 
 # Authentication
 
-EventStoreDB provides the following means to authenticate users connecting to the database:
+KurrentDB provides the following means to authenticate users connecting to the database:
 
-- [Basic authentication](#basic-authentication) is enabled by default, and allows you to authenticate users with a username and password. Users are created and managed in EventStoreDB.
+- [Basic authentication](#basic-authentication) is enabled by default, and allows you to authenticate users with a username and password. Users are created and managed in KurrentDB.
 - [User X.509 certificates](#user-x509-certificates) to authenticate users with an X.509 certificate. This is in addition to basic authentication.
 - [LDAP authentication](#ldap-authentication) to authenticate users against an LDAP server such as OpenLDAP or Acive Directory.
 - [OAuth authentication](#oauth-authentication) to authenticate users against an identity provider such as Auth0 or Identity Server
@@ -16,17 +16,17 @@ Once a user has been authenticated, they must be [authorized](./user-authorizati
 
 ## Basic authentication
 
-EventStoreDB supports authentication based on usernames and passwords out of the box.
+KurrentDB supports authentication based on usernames and passwords out of the box.
 
-These users are created and managed within EventStoreDB. So if you back up and restore a database with configured users, the same users will exist on the restored node.
+These users are created and managed within KurrentDB. So if you back up and restore a database with configured users, the same users will exist on the restored node.
 
 ### Default users
 
-EventStoreDB provides two default users, `$ops` and `$admin`.
+KurrentDB provides two default users, `$ops` and `$admin`.
 
-`$admin` has full access to everything in EventStoreDB. It can read and write to protected streams, which is any stream that starts with `$`, such as `$projections-$all` or `$users`. Protected streams are usually system streams, for example, `$projections-$all` manages which projections exist in EventStoreDB.
+`$admin` has full access to everything in KurrentDB. It can read and write to protected streams, which is any stream that starts with `$`, such as `$projections-$all` or `$users`. Protected streams are usually system streams, for example, `$projections-$all` manages which projections exist in KurrentDB.
 
-The `$admin` user can also run operational commands, such as scavenges and shutdowns on EventStoreDB.
+The `$admin` user can also run operational commands, such as scavenges and shutdowns on KurrentDB.
 
 An `$ops` user can do everything that an `$admin` can do except manage users and read from system streams.
 
@@ -41,30 +41,30 @@ New users can be created through the following means:
 Users are created with a username, password, and optional set of groups or roles. These roles are used for [authorization](./user-authorization.md#roles).
 
 ::: tip
-Users managed in EventStoreDB are always granted a role that matches their username.
+Users managed in KurrentDB are always granted a role that matches their username.
 :::
 
 ### Externalised authentication
 
 You can also use the trusted intermediary header for externalized authentication that allows you to integrate
-almost any authentication system with EventStoreDB.
+almost any authentication system with KurrentDB.
 
-The trusted intermediary header helps EventStoreDB to support a common security architecture. There are
+The trusted intermediary header helps KurrentDB to support a common security architecture. There are
 thousands of possible methods for handling authentication and it is impossible for us to support them all. The
-header allows you to configure a trusted intermediary to handle the authentication instead of EventStoreDB.
+header allows you to configure a trusted intermediary to handle the authentication instead of KurrentDB.
 
 A sample configuration is to enable OAuth2 with the following steps:
 
-- Configure EventStoreDB to run on the local loopback.
+- Configure KurrentDB to run on the local loopback.
 - Configure nginx to handle OAuth2 authentication.
-- After authenticating the user, nginx rewrites the request and forwards it to the loopback to EventStoreDB
+- After authenticating the user, nginx rewrites the request and forwards it to the loopback to KurrentDB
   that serves the request.
 
-The header has the form of `{user}; group, group1` and the EventStoreDB ACLs use the information to handle
+The header has the form of `{user}; group, group1` and the KurrentDB ACLs use the information to handle
 security.
 
 ```http:no-line-numbers
-ES-TrustedAuth: "root; admin, other"
+Kurrent-TrustedAuth: "root; admin, other"
 ```
 
 Use the following option to enable this feature:
@@ -73,14 +73,13 @@ Use the following option to enable this feature:
 |:---------------------|:---------------------------------|
 | Command line         | `--enable-trusted-auth`          |
 | YAML                 | `EnableTrustedAuth`              |
-| Environment variable | `EVENTSTORE_ENABLE_TRUSTED_AUTH` |
+| Environment variable | `KURRENTDB_ENABLE_TRUSTED_AUTH`  |
 
 ### Disable HTTP authentication
 
 It is possible to disable authentication on all protected HTTP endpoints by setting
 the `DisableFirstLevelHttpAuthorization` setting to `true`. The setting is set to `false` by default. When
-enabled, the setting will force EventStoreDB to use the supplied credentials only to check the stream access
-using [ACLs](#access-control-lists).
+`true`, the setting will force KurrentDB to use the supplied credentials only to check [stream access](./user-authorization.md#stream-access).
 
 ## User X.509 Certificates 
 
@@ -115,7 +114,7 @@ Use the following command as an example to connect using `curl`:
 curl -i https://localhost:2113/streams/%24all --cert user-admin.crt --key user-admin.key
 ```
 
-For using X.509 user certificate with EventStoreDB client from an application, refer to the client's documentation.
+For using X.509 user certificate with KurrentDB client from an application, refer to the client's documentation.
 
 ### Creating a user certificate
 
@@ -150,8 +149,8 @@ Signature Algorithm:
     Algorithm Parameters:
     05 00
 Issuer:
-    CN=EventStoreDB CA f2993c31201bd4bb5a59f3e580d32865
-    O=Event Store Ltd
+    CN=KurrentDB CA f2993c31201bd4bb5a59f3e580d32865
+    O=Kurrent Inc
     C=UK
   Name Hash(sha1): cd4323cbb5259cfee1e1e01aaf472552cf18cbf2
   Name Hash(md5): 993adcf28aa235c593611234e6abc1fc
@@ -259,13 +258,13 @@ Signature Hash: 6d922badaba2372070f13c69b620286262eab1d8d2d2156a271a1d73aaaf64e4
 | Error                                     | Solution                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 |:------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Feature not enabled                        | The feature has to be enabled in order to authenticate user requests.<br/><br/> The following log indicates that the feature was not enabled: `UserCertificatesPlugin is not enabled`.                                                                                                                                                                                                                                                                                                                             |
-| Feature enabled and user not authenticated | If the feature has been enabled but there are still access denied errors, check the following: <ul><li>The user exists and is enabled in the EventStoreDB database. Can you log in with the username and password?</li><li>The user certificate is valid, and has a valid chain up to a trusted root CA.</li><li>The user certificate and node certificate share a common root CA.</li><li>Use 'requires leader' (which is the default) in your client configuration to rule out issues with forwarding requests.</li></ul> |
+| Feature enabled and user not authenticated | If the feature has been enabled but there are still access denied errors, check the following: <ul><li>The user exists and is enabled in the KurrentDB database. Can you log in with the username and password?</li><li>The user certificate is valid, and has a valid chain up to a trusted root CA.</li><li>The user certificate and node certificate share a common root CA.</li><li>Use 'requires leader' (which is the default) in your client configuration to rule out issues with forwarding requests.</li></ul> |
 
 ## LDAP authentication 
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The LDAP Authentication feature enables EventStoreDB to use LDAP-based directory services for authentication. 
+The LDAP Authentication feature enables KurrentDB to use LDAP-based directory services for authentication.
 
 ### Configuration
 
@@ -293,12 +292,12 @@ LdapsAuth:
   Filter: sAMAccountName
   RequireGroupMembership: false #set this to true to allow authentication only if the user is a member of the group specified by RequiredGroupDn
   GroupMembershipAttribute: memberOf
-  RequiredGroupDn: cn=ES-Users,dc=mycompany,dc=local
+  RequiredGroupDn: cn=Kurrent-Users,dc=mycompany,dc=local
   PrincipalCacheDurationSec: 60
   LdapGroupRoles:
-      'cn=ES-Accounting,ou=Staff,dc=mycompany,dc=local': accounting
-      'cn=ES-Operations,ou=Staff,dc=mycompany,dc=local': it
-      'cn=ES-Admins,ou=Staff,dc=mycompany,dc=local': '$admins'
+      'cn=Kurrent-Accounting,ou=Staff,dc=mycompany,dc=local': accounting
+      'cn=Kurrent-Operations,ou=Staff,dc=mycompany,dc=local': it
+      'cn=Kurrent-Admins,ou=Staff,dc=mycompany,dc=local': '$admins'
 ```
 
 Upon successful LDAP authentication, users are assigned [roles](./user-authorization.md#roles) based on their domain group memberships, as specified in the `LdapGroupRoles` section.
@@ -312,7 +311,7 @@ If you encounter issues, check the server's log. Common problems include:
 | Invalid Bind Credentials Specified                                                          | Confirm the `BindUser` and `BindPassword`.                                                                                                                                                                                                                                                                                                                                                                                                      |
 | Exception During Search - 'No such Object' or 'The object does not exist'                   | Verify the `BaseDn`.                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 'Server Certificate Error' or 'Connect Error - The authentication or decryption has failed' | Verify that the server certificate is valid. If it is a self-signed certificate, set `ValidateServerCertificate` to `false`.                                                                                                                                                                                                                                                                                                                    |
-| LDAP Server Unavailable                                                                     | Verify connectivity to the LDAP server from an EventStoreDB node (e.g. using `netcat` or `telnet`). Verify the `Host` and `Port` parameters.                                                                                                                                                                                                                                                                                                    |
+| LDAP Server Unavailable                                                                     | Verify connectivity to the LDAP server from a KurrentDB node (e.g. using `netcat` or `telnet`). Verify the `Host` and `Port` parameters.                                                                                                                                                                                                                                                                                                    |
 | Error Authenticating with LDAP server                                                       | Verify the `ObjectClass` and `Filter` parameters. If you have set `RequireGroupMembership` to `true`, verify that the user is part of the group specified by `RequiredGroupDn` and that the LDAP record has `GroupMembershipAttribute` set to `memberOf`.                                                                                                                                                                                       |
 | No Errors in Server Logs But Cannot Login                                                   | <ul><li>Verify that the user is part of the group specified by `RequiredGroupDn` and that the LDAP record has `GroupMembershipAttribute` set to `memberOf`.</li><li>Verify the `ObjectClass` and `Filter` parameters.</li><li>If you have set `RequireGroupMembership` to `true`, verify that the user is part of the group specified by `RequiredGroupDn` and that the LDAP record has `GroupMembershipAttribute` set to `memberOf`.</li></ul> |
 
@@ -320,12 +319,12 @@ If you encounter issues, check the server's log. Common problems include:
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The OAuth feature allows EventStoreDB to connect to an identity server and authenticate users based on a JWT rather than username and password.
+The OAuth feature allows KurrentDB to connect to an identity server and authenticate users based on a JWT rather than username and password.
 
 Access tokens can contain a "role" claim, which will be used for [authorization](./user-authorization.md).
 
 ::: tip
-With the default basic authentication, EventStoreDB treats the username as a "role" in addition to the groups they are in. If you want to have the same behaviour with OAuth authentication, you will need to add the user's username as an additional role claim.
+With the default basic authentication, KurrentDB treats the username as a "role" in addition to the groups they are in. If you want to have the same behaviour with OAuth authentication, you will need to add the user's username as an additional role claim.
 :::
 
 ### Configuration
@@ -334,14 +333,14 @@ You require a [license key](../quick-start/installation.md#license-keys) to use 
 
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
-You can enable the OAuth plugin by setting the following options in you eventstore config file:
+You can enable the OAuth plugin by setting the following options in your KurrentDB config file:
 - Set the `AuthenticationType` to `oauth`
 - Provide oauth configuration in a section named `OAuth`
 
 For example:
 
 :::tabs
-@tab eventstore.conf
+@tab kurrentdb.conf
 ```yaml
 AuthenticationType: oauth
 OAuth:
@@ -355,13 +354,13 @@ OAuth:
 Alternatively you can provide a path to a separate config file with the `AuthenticationConfig` option. For example:
 
 :::tabs
-@tab eventstore.conf
+@tab kurrentdb.conf
 ```yaml
 AuthenticationType: oauth
-AuthenticationConfig: ./es-oauth.conf
+AuthenticationConfig: ./kurrentdb-oauth.conf
 ```
 
-@tab es-oauth.conf
+@tab kurrentdb-oauth.conf
 ```yaml
 OAuth:
   Audience: {audience}
@@ -380,13 +379,13 @@ The configuration options are:
 | ClientId			          | string 	| N 		| "" 		| The id of the client configured in the identity provider. |
 | ClientSecret 		        | string 	| N 	  | "" 		| The client secret configured in the identity provider. |
 | DisableIssuerValidation | bool 	  | N 		| false 	| Disable issuer validation for testing purposes. |
-| Insecure 			          | bool 	  | N 		| false 	| Whether to validate the certificates for the identity provider. This is not related to `Insecure` in the EventStoreDB configuration. |
+| Insecure 			          | bool 	  | N 		| false 	| Whether to validate the certificates for the identity provider. This is not related to `Insecure` in the KurrentDB configuration. |
 
 ### Testing with a local identity server
 
 You can try out the OAuth feature locally with this [Identity Server 4 docker container](https://github.com/EventStore/idsrv4). This container is not intended to be used in production.
 
-You will first configure and run the identity server, and then configure and run EventStoreDB.
+You will first configure and run the identity server, and then configure and run KurrentDB.
 
 1. Create a `users.conf.json` file to configure the users for your test.
 
@@ -445,7 +444,7 @@ You need to configure the following:
 
 - A role claim (`http://schemas.microsoft.com/ws/2008/06/identity/claims/role`) must be added to the token.
 - The grant types of `password` and `authorization_code` must be allowed.
-- A redirect uri of `{eventstore_server_ip}/oauth/callback` must be allowed for the legacy UI to function.
+- A redirect uri of `{kurrentdb_server_ip}/oauth/callback` must be allowed for the legacy UI to function.
 
 ::: details idsrv4.conf.json
 ```json
@@ -474,7 +473,7 @@ You need to configure the following:
 	],
 	"ApiResources": [
 		{
-			"Name": "eventstore-client",
+			"Name": "kurrentdb-client",
 			"Scopes": [
 				"streams",
 				"openid",
@@ -493,7 +492,7 @@ You need to configure the following:
 	],
 	"Clients": [
 		{
-			"ClientId": "eventstore-client",
+			"ClientId": "kurrentdb-client",
 			"AllowedGrantTypes": [
 				"password",
 				"authorization_code",
@@ -507,9 +506,9 @@ You need to configure the following:
 			"AllowedScopes": [
 				"streams",
 				"openid",
-				"profile",
+				"profile"
 			],
-			"RedirectUris": ["https://localhost:2113/oauth/callback","https://127.0.0.1:2113/oauth/callback"],
+			"RedirectUris": ["https://localhost:2113/signin-oidc","https://127.0.0.1:2113/signin-oidc","https://localhost:2113/oauth/callback","https://127.0.0.1:2113/oauth/callback"],
 			"AlwaysIncludeUserClaimsInIdToken": true,
 			"RequireConsent": false,
 			"AlwaysSendClientClaims": true,
@@ -526,10 +525,10 @@ You need to configure the following:
 In this example we set the `RedirectUris` to both `https://localhost:2113` and `https://127.0.0.1:2113` so that you can log into the UI from either address.
 :::
 
-3. Pull and run the `eventstore/idsrv4` docker container:
+3. Pull and run the `kurrent-io/idsrv4` docker container:
 
 ```bash
-docker pull ghcr.io/eventstore/idsrv4/idsrv4
+docker pull ghcr.io/kurrent-io/idsrv4/idsrv4
 
 docker run \
     --rm -it \
@@ -537,7 +536,7 @@ docker run \
     -p 5001:5001 \                                            # HTTPS port
     --volume $PWD/users.conf.json:/etc/idsrv4/users.conf \    # mount users file; required
     --volume $PWD/idsrv4.conf.json:/etc/idsrv4/idsrv4.conf \  # mount configuration file
-    ghcr.io/eventstore/idsrv4/idsrv4
+    ghcr.io/kurrent-io/idsrv4/idsrv4
 ```
 
 You should see the identity server start up and start listening on the ports `5000` and `5001`:
@@ -549,10 +548,10 @@ info: Microsoft.Hosting.Lifetime[14]
       Now listening on: https://[::]:5001
 ```
 
-4. Add the following configuration to your EventStoreDB config file `eventstore.conf`:
+4. Add the following configuration to your KurrentDB config file `kurrentdb.conf`:
 
 :::tabs
-@tab eventstore.conf
+@tab kurrentdb.conf
 ```yaml
 IntIp: 127.0.0.1
 ExtIp: 127.0.0.1
@@ -561,9 +560,9 @@ ExtIp: 127.0.0.1
 
 AuthenticationType: oauth
 OAuth:
-  Audience: eventstore-client
+  Audience: kurrentdb-client
   Issuer: https://localhost:5001/
-  ClientId: eventstore-client
+  ClientId: kurrentdb-client
   ClientSecret: {client_secret}
   # For testing
   DisableIssuerValidation: true
@@ -571,10 +570,10 @@ OAuth:
 ```
 :::
 
-5. Start EventStoreDB. You should see the following logs indicating that OAuth is in use:
+5. Start KurrentDB. You should see the following logs indicating that OAuth is in use:
 
 ```
-[INF] OAuthAuthenticationProvider    OAuthAuthentication 24.10.0.1338 plugin enabled.
+[INF] OAuthAuthenticationProvider    OAuthAuthentication 25.0.0.1673 plugin enabled.
 ...
 [INF] OAuthAuthenticationPlugin      Obtaining auth token signing key from https://localhost:5001/
 ...

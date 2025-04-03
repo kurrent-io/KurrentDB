@@ -5,13 +5,13 @@ curl -i -X GET "http://127.0.0.1:2113/stats/proc/tcp" -u "admin:changeit"
 #region response
 HTTP/1.1 200 OK
 Access-Control-Allow-Methods: GET, OPTIONS
-Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-Forwarded-Host, X-Forwarded-Prefix, X-PINGOTHER, Authorization, ES-LongPoll, ES-ExpectedVersion, ES-EventId, ES-EventType, ES-RequiresMaster, ES-HardDelete, ES-ResolveLinkTos
+Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-Forwarded-Host, X-Forwarded-Prefix, X-PINGOTHER, Authorization, Kurrent-LongPoll, Kurrent-ExpectedVersion, Kurrent-EventId, Kurrent-EventType, Kurrent-RequireLeader, Kurrent-HardDelete, Kurrent-ResolveLinkTos
 Access-Control-Allow-Origin: *
-Access-Control-Expose-Headers: Location, ES-Position, ES-CurrentVersion
+Access-Control-Expose-Headers: Location, Kurrent-Position, Kurrent-CurrentVersion
 Cache-Control: max-age=1, public
 Vary: Accept
 Content-Type: application/json; charset=utf-8
-Server: Mono-HTTPAPI/1.0
+Server: Kestrel
 Date: Thu, 06 Dec 2018 10:03:55 GMT
 Content-Length: 280
 Keep-Alive: timeout=15,max=100

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,8 +12,8 @@ using Grpc.Core;
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Users {
-	private static readonly Operation UpdateOperation = new Operation(Plugins.Authorization.Operations.Users.Update);
-	
+	private static readonly Operation UpdateOperation = new(Plugins.Authorization.Operations.Users.Update);
+
 	public override async Task<UpdateResp> Update(UpdateReq request, ServerCallContext context) {
 		var options = request.Options;
 
@@ -25,8 +25,7 @@ internal partial class Users {
 
 		var envelope = new CallbackEnvelope(OnMessage);
 
-		_publisher.Publish(new UserManagementMessage.Update(envelope, user, options.LoginName, options.FullName,
-			options.Groups.ToArray()));
+		_publisher.Publish(new UserManagementMessage.Update(envelope, user, options.LoginName, options.FullName, options.Groups.ToArray()));
 
 		await updateSource.Task;
 

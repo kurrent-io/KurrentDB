@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Text;
@@ -40,15 +40,15 @@ public abstract class CommunicationController : IHttpController {
 
 	protected RequestParams SendBadRequest(HttpEntityManager httpEntityManager, string reason) {
 		httpEntityManager.ReplyContent(Encoding.ASCII.GetBytes(reason), HttpStatusCode.BadRequest,
-			"Bad Request",type: "text/plain", headers:null,
+			"Bad Request",type: ContentType.PlainText, headers:null,
 			e => Log.Debug("Error while closing HTTP connection (bad request): {e}.", e.Message));
- 
+
 		return new RequestParams(done: true);
 	}
 
-	protected RequestParams SendTooBig(HttpEntityManager httpEntityManager) {
+	protected RequestParams SendTooBig(HttpEntityManager httpEntityManager, int maxAppendEventSize) {
 		httpEntityManager.ReplyStatus(HttpStatusCode.RequestEntityTooLarge,
-			"Too large events received. Limit is 4mb",
+			$"Too large events received. Limit is {maxAppendEventSize} bytes.",
 			e => Log.Debug("Too large events received over HTTP"));
 		return new RequestParams(done: true);
 	}
@@ -100,6 +100,13 @@ public abstract class CommunicationController : IHttpController {
 		if (path.Length > 0 && path[0] == '/') path = path.Substring(1);
 		var hostUri = http.ResponseUrl;
 		var builder = new UriBuilder(hostUri.Scheme, hostUri.Host, hostUri.Port, hostUri.LocalPath + path);
+		return builder.Uri.AbsoluteUri;
+	}
+
+	protected static string MakeUrl(HttpEntityManager http, string path, string query) {
+		if (path.Length > 0 && path[0] == '/') path = path.Substring(1);
+		var hostUri = http.ResponseUrl;
+		var builder = new UriBuilder(hostUri.Scheme, hostUri.Host, hostUri.Port, hostUri.LocalPath + path, query);
 		return builder.Uri.AbsoluteUri;
 	}
 }

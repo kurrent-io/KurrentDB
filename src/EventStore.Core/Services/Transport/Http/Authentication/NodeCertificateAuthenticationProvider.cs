@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -15,18 +15,12 @@ using Serilog;
 
 namespace EventStore.Core.Services.Transport.Http.Authentication;
 
-public class NodeCertificateAuthenticationProvider : IHttpAuthenticationProvider {
-	private readonly Func<string> _getCertificateReservedNodeCommonName;
-
+public class NodeCertificateAuthenticationProvider(Func<string> getCertificateReservedNodeCommonName) : IHttpAuthenticationProvider {
 	public string Name => "node-certificate";
 
-	public NodeCertificateAuthenticationProvider(Func<string> getCertificateReservedNodeCommonName) {
-		_getCertificateReservedNodeCommonName = getCertificateReservedNodeCommonName;
-	}
+	static readonly ILogger Log = Serilog.Log.ForContext<NodeCertificateAuthenticationProvider>();
 
-	public bool Authenticate(HttpContext context, out HttpAuthenticationRequest request) {
-		return AuthenticateCached(context, out request);
-	}
+	public bool Authenticate(HttpContext context, out HttpAuthenticationRequest request) => AuthenticateCached(context, out request);
 
 	private bool AuthenticateCached(HttpContext context, out HttpAuthenticationRequest request) {
 		// we cache the authentication result as the same TLS connection may be used for multiple HTTP requests.
@@ -54,7 +48,7 @@ public class NodeCertificateAuthenticationProvider : IHttpAuthenticationProvider
 		if (!authenticated)
 			return false;
 
-		request = new HttpAuthenticationRequest(context, "system", "");
+		request = new(context, "system", "");
 		request.Authenticated(SystemAccounts.System);
 
 		return true;
@@ -84,7 +78,7 @@ public class NodeCertificateAuthenticationProvider : IHttpAuthenticationProvider
 		var ip = context.Connection.RemoteIpAddress?.ToString() ?? "<unknown>";
 		var isServerCertificate = clientCertificate.IsServerCertificate(out var serverCertReason);
 
-		var reservedNodeCN = _getCertificateReservedNodeCommonName();
+		var reservedNodeCN = getCertificateReservedNodeCommonName();
 		bool hasReservedNodeCN;
 		try {
 			hasReservedNodeCN = clientCertificate.ClientCertificateMatchesName(reservedNodeCN);
@@ -112,9 +106,7 @@ public class NodeCertificateAuthenticationProvider : IHttpAuthenticationProvider
 			Log.Error("Connection from node: {ip} was denied because its certificate does not have any IP or DNS Subject Alternative Names (SAN).", ip);
 		}
 		if (!isServerCertificate) {
-			Log.Error(
-				"Connection from node: {ip} was denied because it is not configured as a server certificate: {failReason}",
-				ip, serverCertReason);
+			Log.Error("Connection from node: {ip} was denied because it is not configured as a server certificate: {failReason}", ip, serverCertReason);
 		}
 
 		return hasReservedNodeCN && hasIpOrDnsSan && isServerCertificate;

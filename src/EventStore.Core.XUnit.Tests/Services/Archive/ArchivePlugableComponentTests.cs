@@ -1,7 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
+using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Services.Archive;
 using EventStore.Plugins;
 using EventStore.Plugins.Licensing;
@@ -30,7 +31,7 @@ public class ArchivePlugableComponentTests {
 
 		if (enabled)
 			configBuilder = configBuilder.AddInMemoryCollection(new Dictionary<string, string> {
-				{"EventStore:Archive:Enabled", "true"},
+				{$"{KurrentConfigurationKeys.Prefix}:Archive:Enabled", "true"},
 			});
 
 		var config = configBuilder.Build();
@@ -39,6 +40,7 @@ public class ArchivePlugableComponentTests {
 
 		var licenseService = new FakeLicenseService(licensePresent, entitlement);
 		builder.Services.AddSingleton<ILicenseService>(licenseService);
+		builder.Services.AddSingleton<IReadOnlyList<IClusterVNodeStartupTask>>([]);
 
 		((IPlugableComponent)sut).ConfigureServices(
 			builder.Services,

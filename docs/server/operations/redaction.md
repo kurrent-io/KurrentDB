@@ -6,7 +6,7 @@ order: 4
 
 <Badge text="License Required" type="info" vertical="middle"/>
 
-In EventStoreDB, events are immutable and cannot be changed after they are written. Usually, when you have an event with data that needs to be deleted you should take the following steps:
+In KurrentDB, events are immutable and cannot be changed after they are written. Usually, when you have an event with data that needs to be deleted you should take the following steps:
 
 - Rewrite the stream to a new stream without the data to be removed.
 - Delete the old stream.
@@ -23,17 +23,17 @@ Use the redactor as a last resort and only if you know what you're doing. Redact
 Using redaction has the following prerequisites:
 
 - A valid [license key](../quick-start/installation.md#license-keys).
-- EventStoreDB version 23.6.0 or above. If running on Windows, Windows Server 2019 or above is required.
+- If running on Windows, Windows Server 2019 or above is required.
 - Server configuration option: `EnableUnixSocket: True`.
 - The redactor tool (see steps below on how to get it).
 
 ## Getting the redactor
 
-Redaction requires a license key. Due to its sensitive nature, the tool is available only upon request. Please [contact us here](https://www.eventstore.com/contact) if you do not have a support contract, or reach out to our support team if you do.
+Redaction requires a license key. Due to its sensitive nature, the tool is available only upon request. Please [contact us here](https://www.kurrent.io/talk_to_expert) if you do not have a support contract, or reach out to our support team if you do.
 
 ## Running the redactor
 
-The binary needs to be extracted and run locally on an EventStoreDB node. Similar to scavenging, redaction affects only the node where it's running. Thus, it must be run once on each node of the cluster.
+The binary needs to be extracted and run locally on a KurrentDB node. Similar to scavenging, redaction affects only the node where it's running. Thus, it must be run once on each node of the cluster.
 
 The redactor takes two mandatory parameters as input:
 
@@ -53,7 +53,7 @@ If you read the data of a redacted event from an external client, you should see
 ![Redacted event in UI](./images/redaction-ui.png)
 
 ::: tip
-The redactor is not an offline tool. The EventStoreDB server must be running, as the redactor needs to communicate with it to obtain information about the events to be redacted and replace the chunk files with the redacted ones.
+The redactor is not an offline tool. The KurrentDB server must be running, as the redactor needs to communicate with it to obtain information about the events to be redacted and replace the chunk files with the redacted ones.
 :::
 
 ## How the redactor works

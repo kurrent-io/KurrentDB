@@ -1,9 +1,7 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
-using System;
-using System.IO;
 using System.Net;
 using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Tests;
@@ -17,9 +15,7 @@ namespace EventStore.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests.when
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_run_on_disk<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
-	private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"Test-{Guid.NewGuid()}");
-
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options.RunOnDisk(_dbPath);
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options.RunOnDisk(PathName);
 
 	[Test]
 	public void should_set_memdb_to_false() {
@@ -28,7 +24,7 @@ public class with_run_on_disk<TLogFormat, TStreamId> : SingleNodeScenario<TLogFo
 
 	[Test]
 	public void should_set_the_db_path() {
-		Assert.AreEqual(_dbPath, _node.Db.Config.Path);
+		Assert.AreEqual(PathName, _node.Db.Config.Path);
 	}
 }
 
@@ -117,7 +113,7 @@ public class
 
 	[Test]
 	public void should_set_max_chunk_size_to_the_size_of_the_number_of_cached_chunks() {
-		var chunkSizeResult = _cachedChunks * (long)(TFConsts.ChunkSize + ChunkHeader.Size + ChunkFooter.Size);
+		var chunkSizeResult = _cachedChunks * (long)(_node.Db.Config.ChunkSize + ChunkHeader.Size + ChunkFooter.Size);
 		Assert.AreEqual(chunkSizeResult, _node.Db.Config.MaxChunksCacheSize);
 	}
 }
@@ -186,8 +182,8 @@ public class
 	[Test]
 	public void should_return_error_when_default_password_options_pass_through_command_line() {
 		var configuration = new ConfigurationBuilder()
-			.AddEventStoreDefaultValues()
-			.AddEventStoreCommandLine(
+			.AddKurrentDefaultValues()
+			.AddKurrentCommandLine(
 				"--DefaultAdminPassword=Admin#",
 				"--DefaultOpsPassword=Ops#")
 			.Build();
@@ -201,13 +197,14 @@ public class
 
 	[Test]
 	public void should_return_null_when_default_password_options_pass_through_environment_variables() {
+		var prefix = KurrentConfigurationKeys.Prefix.ToUpper();
 		var configuration = new ConfigurationBuilder()
-			.AddEventStoreDefaultValues()
-			.AddEventStoreEnvironmentVariables(
-				("EVENTSTORE_DEFAULT_ADMIN_PASSWORD", "Admin#"),
-				("EVENTSTORE_DEFAULT_OPS_PASSWORD", "Ops#")
+			.AddKurrentDefaultValues()
+			.AddKurrentEnvironmentVariables(
+				($"{prefix}_DEFAULT_ADMIN_PASSWORD", "Admin#"),
+				($"{prefix}_DEFAULT_OPS_PASSWORD", "Ops#")
 			)
-			.AddEventStoreCommandLine()
+			.AddKurrentCommandLine()
 			.Build();
 
 		var options = ClusterVNodeOptions.FromConfiguration(configuration);
@@ -219,16 +216,17 @@ public class
 
 	[Test]
 	public void ignores_subsection_arguments() {
+		var prefix = KurrentConfigurationKeys.Prefix;
 		var configuration = new ConfigurationBuilder()
 			// we should be able to stop doing this soon as long as we bind the options automatically
-			.AddEventStoreDefaultValues()
-			.AddEventStoreEnvironmentVariables(
-				("EVENTSTORE__METRICS__X", "xxx"),
-				("EVENTSTORE__PLUGINS__Y", "yyy")
+			.AddKurrentDefaultValues()
+			.AddKurrentEnvironmentVariables(
+				($"{prefix.ToUpper()}__METRICS__X", "xxx"),
+				($"{prefix.ToUpper()}__PLUGINS__Y", "yyy")
 			)
-			.AddEventStoreCommandLine(
-				"--EventStore:Metrics:A aaa " +
-				"--EventStore:Plugins:B bbb"
+			.AddKurrentCommandLine(
+				$"--{prefix}:Metrics:A aaa " +
+				$"--{prefix}:Plugins:B bbb"
 			)
 			.Build();
 

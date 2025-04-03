@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -9,20 +9,18 @@ using EventStore.ClientAPI;
 using EventStore.Transport.Http;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using HttpStatusCode = System.Net.HttpStatusCode;
 using System.Xml.Linq;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Http.Users.users;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription;
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class
-	when_getting_statistics_for_new_subscription_for_stream_with_existing_events<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture]
+class when_getting_statistics_for_new_subscription_for_stream_with_existing_events : with_subscription_having_events {
 	private JArray _json;
 
 	protected override async Task When() {
@@ -46,9 +44,9 @@ class
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_statistics_for_subscription_with_parked_events<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_statistics_for_subscription_with_parked_events(string contentType) : with_subscription_having_events {
 	private string _nackLink;
 	private JObject _json;
 	private string _streamName;
@@ -71,10 +69,11 @@ class when_getting_statistics_for_subscription_with_parked_events<TLogFormat, TS
 		_node.Node.MainBus.Subscribe(new AdHocHandler<StorageMessage.WritePrepares>(Handle));
 		_node.Node.MainBus.Subscribe(new AdHocHandler<StorageMessage.CommitIndexed>(Handle));
 
-		var json = await GetJson2<JObject>(
-			SubscriptionPath + "/1", "embed=rich",
-			ContentType.CompetingJson,
-			_admin);
+		var json = await GetJson<JObject>(
+			SubscriptionPath + "/1",
+			extra: "embed=rich",
+			accept: contentType,
+			credentials: _admin);
 
 		Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 		Assert.DoesNotThrow(() =>
@@ -113,9 +112,8 @@ class when_getting_statistics_for_subscription_with_parked_events<TLogFormat, TS
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_all_statistics_in_json<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture]
+class when_getting_all_statistics_in_json : with_subscription_having_events {
 	private JArray _json;
 
 	protected override async Task When() {
@@ -136,9 +134,8 @@ class when_getting_all_statistics_in_json<TLogFormat, TStreamId> : with_subscrip
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_all_statistics_in_xml<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture]
+class when_getting_all_statistics_in_xml : with_subscription_having_events {
 	private XDocument _xml;
 
 	protected override async Task When() {
@@ -159,15 +156,14 @@ class when_getting_all_statistics_in_xml<TLogFormat, TStreamId> : with_subscript
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_non_existent_single_statistics<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+[TestFixture]
+class when_getting_non_existent_single_statistics : with_admin_user {
 	private HttpResponseMessage _response;
 
 	protected override Task Given() => Task.CompletedTask;
 
 	protected override async Task When() {
-		var request = CreateRequest("/subscriptions/fu/fubar", null, "GET", "text/xml");
+		var request = CreateRequest("/subscriptions/fu/fubar", null, "GET", ContentType.Xml);
 		_response = await GetRequestResponse(request);
 	}
 
@@ -179,15 +175,14 @@ class when_getting_non_existent_single_statistics<TLogFormat, TStreamId> : with_
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_non_existent_stream_statistics<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+[TestFixture]
+class when_getting_non_existent_stream_statistics : with_admin_user {
 	private HttpResponseMessage _response;
 
 	protected override Task Given() => Task.CompletedTask;
 
 	protected override async Task When() {
-		var request = CreateRequest("/subscriptions/fubar", null, "GET", "text/xml", null);
+		var request = CreateRequest("/subscriptions/fubar", null, "GET", ContentType.Xml, null);
 		_response = await GetRequestResponse(request);
 	}
 
@@ -199,9 +194,8 @@ class when_getting_non_existent_stream_statistics<TLogFormat, TStreamId> : with_
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_subscription_statistics_for_individual<TLogFormat, TStreamId> : SpecificationWithPersistentSubscriptionAndConnections<TLogFormat, TStreamId> {
+[TestFixture]
+class when_getting_subscription_statistics_for_individual : SpecificationWithPersistentSubscriptionAndConnections {
 	private JObject _json;
 
 
@@ -287,9 +281,8 @@ class when_getting_subscription_statistics_for_individual<TLogFormat, TStreamId>
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_subscription_stats_summary<TLogFormat, TStreamId> : SpecificationWithPersistentSubscriptionAndConnections<TLogFormat, TStreamId> {
+[TestFixture]
+class when_getting_subscription_stats_summary : SpecificationWithPersistentSubscriptionAndConnections {
 	private readonly PersistentSubscriptionSettings _settings = PersistentSubscriptionSettings.Create()
 		.DoNotResolveLinkTos()
 		.StartFromCurrent();
@@ -438,9 +431,8 @@ class when_getting_subscription_stats_summary<TLogFormat, TStreamId> : Specifica
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_subscription_statistics_for_stream<TLogFormat, TStreamId> : SpecificationWithPersistentSubscriptionAndConnections<TLogFormat, TStreamId> {
+[TestFixture]
+class when_getting_subscription_statistics_for_stream : SpecificationWithPersistentSubscriptionAndConnections {
 	private readonly PersistentSubscriptionSettings _settings = PersistentSubscriptionSettings.Create()
 		.DoNotResolveLinkTos()
 		.StartFromCurrent();
@@ -566,7 +558,7 @@ class when_getting_subscription_statistics_for_stream<TLogFormat, TStreamId> : S
 	}
 }
 
-public abstract class SpecificationWithPersistentSubscriptionAndConnections<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+public abstract class SpecificationWithPersistentSubscriptionAndConnections : with_admin_user {
 	protected string _streamName = Guid.NewGuid().ToString();
 	protected string _groupName = Guid.NewGuid().ToString();
 	protected IEventStoreConnection _conn;

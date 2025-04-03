@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -106,9 +106,9 @@ public abstract class specification_with_cluster<TLogFormat, TStreamId> : Specif
 
 		BeforeNodesStart();
 
-		_nodes[0].Start();
-		_nodes[1].Start();
-		_nodes[2].Start();
+		await _nodes[0].Start();
+		await _nodes[1].Start();
+		await _nodes[2].Start();
 
 		try {
 			await Task.WhenAll(_nodes.Select(x => x.Started)).WithTimeout(TimeSpan.FromSeconds(60));

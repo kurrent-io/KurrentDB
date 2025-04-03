@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Time;
@@ -9,10 +9,27 @@ namespace EventStore.Core.XUnit.Tests.Metrics;
 
 public class InstantTests {
 	[Fact]
-	public void can_measure_elapsed() {
+	public void can_measure_elapsed_seconds() {
 		var x = Instant.FromSeconds(4);
 		var y = Instant.FromSeconds(6);
 		Assert.Equal(2, y.ElapsedSecondsSince(x));
+	}
+
+	[Theory]
+	[InlineData(4, 4, 0)]
+	[InlineData(4, 6, 2_000_000)]
+	[InlineData(123, 1_000_000_000, 999_999_877_000_000)]
+	public void can_measure_elapsed_time(int startSecs, int endSecs, long elapsedMicroseconds) {
+		var x = Instant.FromSeconds(startSecs);
+		var y = Instant.FromSeconds(endSecs);
+		Assert.Equal(elapsedMicroseconds, y.ElapsedTimeSince(x).TotalMicroseconds);
+	}
+
+	[Fact]
+	public void rounds_up_elapsed_time() {
+		var x = Instant.Now;
+		var y = new Instant(x.Ticks + 1);
+		Assert.True(y.ElapsedTimeSince(x).Ticks > 0);
 	}
 
 	[Fact]

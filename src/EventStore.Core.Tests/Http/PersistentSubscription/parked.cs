@@ -1,30 +1,23 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
-using System.Net;
-using System.Text.RegularExpressions;
-using EventStore.Core.Tests.Http.Users.users;
 using NUnit.Framework;
 using System.Collections.Generic;
-using System.Threading;
 using Newtonsoft.Json.Linq;
 using System.Linq;
-using HttpStatusCode = System.Net.HttpStatusCode;
 using EventStore.Transport.Http;
-using EventStore.ClientAPI;
-using EventStore.ClientAPI.Common;
-using EventStore.Core.Data;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription;
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_parking_a_message<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_parking_a_message(string contentType) : with_subscription_having_events {
 	private string _nackLink;
 	private Guid _eventIdToPark;
 	private Guid _parkedEventId;
@@ -34,10 +27,11 @@ class when_parking_a_message<TLogFormat, TStreamId> : with_subscription_having_e
 	protected override async Task Given() {
 		NumberOfEventsToCreate = 1;
 		await base.Given();
-		var json = await GetJson2<JObject>(
-			SubscriptionPath + "/1", "embed=rich",
-			ContentType.CompetingJson,
-			_admin);
+		var json = await GetJson<JObject>(
+			SubscriptionPath + "/1",
+			extra: "embed=rich",
+			accept: contentType,
+			credentials: _admin);
 		Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 		Assert.DoesNotThrow(() => {
 			_entries = json != null ? json["entries"].ToList() : new List<JToken>();
@@ -68,9 +62,9 @@ class when_parking_a_message<TLogFormat, TStreamId> : with_subscription_having_e
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]	
-class when_replaying_one_all_parked_message<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_replaying_one_all_parked_message(string contentType) : with_subscription_having_events {
 	private string _nackLink;
 	private Guid _eventIdToPark;
 	private Guid _receivedEventId;
@@ -92,10 +86,11 @@ class when_replaying_one_all_parked_message<TLogFormat, TStreamId> : with_subscr
 		_node.Node.MainBus.Subscribe(new AdHocHandler<StorageMessage.WritePrepares>(Handle));
 		_node.Node.MainBus.Subscribe(new AdHocHandler<StorageMessage.CommitIndexed>(Handle));
 
-		var json = await GetJson2<JObject>(
-			SubscriptionPath + "/1", "embed=rich",
-			ContentType.CompetingJson,
-			_admin);
+		var json = await GetJson<JObject>(
+			SubscriptionPath + "/1",
+			extra: "embed=rich",
+			accept: contentType,
+			credentials: _admin);
 
 		Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 
@@ -127,10 +122,11 @@ class when_replaying_one_all_parked_message<TLogFormat, TStreamId> : with_subscr
 		Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
 		for (var i = 0; i < 10; i++) {
-			var json = await GetJson2<JObject>(
-				SubscriptionPath + "/1", "embed=rich",
-				ContentType.CompetingJson,
-				_admin);
+			var json = await GetJson<JObject>(
+				SubscriptionPath + "/1",
+				extra: "embed=rich",
+				accept: contentType,
+				credentials: _admin);
 
 			Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 
@@ -151,17 +147,16 @@ class when_replaying_one_all_parked_message<TLogFormat, TStreamId> : with_subscr
 	}
 }
 
-
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_replaying_multiple_all_parked_messages<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_replaying_multiple_all_parked_messages(string contentType) : with_subscription_having_events {
 	private List<Guid> _parkedEventIds = new List<Guid>();
 	private List<Guid> _receivedEventId = new List<Guid>();
 
 	private string _subscriptionParkedStream;
 	private ConcurrentDictionary<Guid, bool> _writeCorrelationId = new ConcurrentDictionary<Guid, bool>();
 	private TaskCompletionSource<bool> _eventParked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-	
+
 	protected override async Task Given() {
 		_connection.Close();
 		_connection.Dispose();
@@ -178,10 +173,11 @@ class when_replaying_multiple_all_parked_messages<TLogFormat, TStreamId> : with_
 		// park 3 events
 		for (int i = 0; i < NumberOfEventsToCreate; i++) {
 			for (var attempt = 0; attempt < 10; attempt++) {
-				var json = await GetJson2<JObject>(
-					SubscriptionPath + "/1", "embed=rich",
-					ContentType.CompetingJson,
-					_admin);
+				var json = await GetJson<JObject>(
+					SubscriptionPath + "/1",
+					extra: "embed=rich",
+					accept: contentType,
+					credentials: _admin);
 
 				Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 
@@ -222,10 +218,11 @@ class when_replaying_multiple_all_parked_messages<TLogFormat, TStreamId> : with_
 
 		for (int i = 0; i < NumberOfEventsToCreate; i++) {
 			for (var attempt = 0; attempt < 10; attempt++) {
-				var json = await GetJson2<JObject>(
-					SubscriptionPath + "/1", "embed=rich",
-					ContentType.CompetingJson,
-					_admin);
+				var json = await GetJson<JObject>(
+					SubscriptionPath + "/1",
+					extra: "embed=rich",
+					accept: contentType,
+					credentials: _admin);
 
 				Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 
@@ -249,9 +246,9 @@ class when_replaying_multiple_all_parked_messages<TLogFormat, TStreamId> : with_
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_replaying_multiple_some_parked_messages<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_replaying_multiple_some_parked_messages(string contentType) : with_subscription_having_events {
 	private List<Guid> _parkedEventIds = new List<Guid>();
 	private List<Guid> _receivedEventId = new List<Guid>();
 
@@ -275,10 +272,11 @@ class when_replaying_multiple_some_parked_messages<TLogFormat, TStreamId> : with
 		// park 3 events
 		for (int i = 0; i < NumberOfEventsToCreate; i++) {
 			for (var attempt = 0; attempt < 10; attempt++) {
-				var json = await GetJson2<JObject>(
-					SubscriptionPath + "/1", "embed=rich",
-					ContentType.CompetingJson,
-					_admin);
+				var json = await GetJson<JObject>(
+					SubscriptionPath + "/1",
+					extra: "embed=rich",
+					accept: contentType,
+					credentials: _admin);
 
 				Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 
@@ -319,10 +317,11 @@ class when_replaying_multiple_some_parked_messages<TLogFormat, TStreamId> : with
 
 		for (int i = 0; i < 2; i++) {
 			for (var attempt = 0; attempt < 10; attempt++) {
-				var json = await GetJson2<JObject>(
-					SubscriptionPath + "/1", "embed=rich",
-					ContentType.CompetingJson,
-					_admin);
+				var json = await GetJson<JObject>(
+					SubscriptionPath + "/1",
+					extra: "embed=rich",
+					accept: contentType,
+					credentials: _admin);
 
 				Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 

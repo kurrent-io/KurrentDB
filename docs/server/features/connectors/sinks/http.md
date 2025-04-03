@@ -5,8 +5,8 @@ order: 4
 
 ## Overview
 
-The HTTP sink allows for integration between EventStoreDB and external
-APIs over HTTP or HTTPS. This connector consumes events from an EventStoreDB
+The HTTP sink allows for integration between KurrentDB and external
+APIs over HTTP or HTTPS. This connector consumes events from a KurrentDB
 stream and converts each event's data into JSON format before sending it in the
 request body to a specified Url. Events are sent individually as they are
 consumed from the stream, without batching. The event data is transmitted as the
@@ -26,7 +26,8 @@ $JSON = @"
   "settings": {
     "instanceTypeName": "http-sink",
     "url": "https://api.example.com/",
-    "subscription:filter:scope": "Stream",
+    "subscription:filter:scope": "stream",
+    "subscription:filter:filterType": "streamId",
     "subscription:filter:expression": "example-stream"
   }
 }
@@ -45,7 +46,8 @@ JSON='{
   "settings": {
     "instanceTypeName": "http-sink",
     "url": "https://api.example.com/",
-    "subscription:filter:scope": "Stream",
+    "subscription:filter:scope": "stream",
+    "subscription:filter:filterType": "streamId",
     "subscription:filter:expression": "example-stream"
   }
 }'
@@ -64,7 +66,7 @@ in the [API Reference](../manage.md).
 
 ## Settings
 
-Adjust these settings to specify the behavior and interaction of your HTTP sink connector with EventStoreDB, ensuring it operates according to your requirements and preferences.
+Adjust these settings to specify the behavior and interaction of your HTTP sink connector with KurrentDB, ensuring it operates according to your requirements and preferences.
 
 ::: tip
 The HTTP sink inherits a set of common settings that are used to configure the connector. The settings can be found in
@@ -75,10 +77,10 @@ the [Sink Options](../settings.md#sink-options) page.
 
 | Name                       | Details                                                                                                                                                                                                                           |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Url`                      | _required_<br><br> **Type**: string<br><br>**Description:** The URL or endpoint to which the request or message will be sent. See [Template Parameters](http#template-parameters) for advanced settings.<br><br>**Default**: `""` |
-| `Method`                   | **Type**: string<br><br>**Description:** The method or operation to use for the request or message.<br><br>**Default**: `"POST"`                                                                                                  |
-| `DefaultHeaders`           | **Type**: string<br><br>**Description:** Headers included in all messages.<br><br>**Default**: `Accept-Encoding:*`                                                                                                                |
-| `PooledConnectionLifetime` | **Type**: TimeSpan<br><br>**Description:** Maximum time a connection can stay in the pool before it is no longer reusable.<br><br>**Default**: `00:05:00` (5 minutes)                                                             |
+| `url`                      | _required_<br><br> **Type**: string<br><br>**Description:** The URL or endpoint to which the request or message will be sent. See [Template Parameters](http#template-parameters) for advanced settings.<br><br>**Default**: `""` |
+| `method`                   | **Type**: string<br><br>**Description:** The method or operation to use for the request or message.<br><br>**Default**: `"POST"`                                                                                                  |
+| `defaultHeaders`           | **Type**: string<br><br>**Description:** Headers included in all messages.<br><br>**Default**: `Accept-Encoding:*`                                                                                                                |
+| `pooledConnectionLifetime` | **Type**: TimeSpan<br><br>**Description:** Maximum time a connection can stay in the pool before it is no longer reusable.<br><br>**Default**: `00:05:00` (5 minutes)                                                             |
 
 ### Authentication
 
@@ -86,20 +88,20 @@ The HTTP sink connector supports both [Basic](https://datatracker.ietf.org/doc/h
 
 | Name                    | Details                                                                                                                                                   |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Authentication:Method` | **Type**: string<br><br>**Description:** The authentication method to use.<br><br>**Default**: `None`<br><br>**Accepted Values:** `None`,`Basic`,`Bearer` |
+| `authentication:method` | **Type**: string<br><br>**Description:** The authentication method to use.<br><br>**Default**: `None`<br><br>**Accepted Values:** `None`,`Basic`,`Bearer` |
 
 #### Basic Authentication
 
 | Name                            | Details                                                                                                  |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `Authentication:Basic:Username` | **Type**: string<br><br>**Description:** The username for basic authentication.<br><br>**Default**: `""` |
-| `Authentication:Basic:Password` | **Type**: string<br><br>**Description:** The password for basic authentication.<br><br>**Default**: `""` |
+| `authentication:basic:username` | **Type**: string<br><br>**Description:** The username for basic authentication.<br><br>**Default**: `""` |
+| `authentication:basic:password` | **Type**: string<br><br>**Description:** The password for basic authentication.<br><br>**Default**: `""` |
 
 #### Bearer Authentication
 
 | Name                          | Details                                                                                                |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `Authentication:Bearer:Token` | **Type**: string<br><br>**Description:** The token for bearer authentication.<br><br>**Default**: `""` |
+| `authentication:bearer:token` | **Type**: string<br><br>**Description:** The token for bearer authentication.<br><br>**Default**: `""` |
 
 ## Template parameters
 
@@ -114,8 +116,7 @@ The following template parameters are available for use in the URL:
 | ------------------ | --------------------------------------------------------------- |
 | `{schema-subject}` | The event's schema subject, converted to lowercase with hyphens |
 | `{event-type}`     | Alias for `{schema-subject}`                                    |
-| `{stream}`         | The EventStoreDB stream ID                                      |
-| `{partition-key}`  | The event's partition key                                       |
+| `{stream}`         | The KurrentDB stream ID                                         |
 
 **Usage**
 
@@ -125,11 +126,15 @@ replaced with their corresponding values for each event.
 Example:
 
 ```
-https://api.example.com/{schema-subject}/{partition-key}
+https://api.example.com/{schema-subject}
 ```
 
-For an event with schema subject "TestEvent" and partition key "123", this would result in the URL:
+For an event with schema subject "TestEvent", this would result in the URL:
 
 ```
-https://api.example.com/TestEvent/123
+https://api.example.com/TestEvent
 ```
+
+### Tutorial
+
+[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](https://docs.kurrent.io/tutorials/HTTP_Connector.html)

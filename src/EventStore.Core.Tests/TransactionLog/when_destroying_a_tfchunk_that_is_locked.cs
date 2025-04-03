@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
 using System.Threading;
@@ -20,8 +20,8 @@ public class when_destroying_a_tfchunk_that_is_locked : SpecificationWithFile {
 		await base.SetUp();
 		_chunk = await TFChunkHelper.CreateNewChunk(Filename, 1000);
 		await _chunk.Complete(CancellationToken.None);
-		_chunk.UnCacheFromMemory();
-		_reader = _chunk.AcquireRawReader();
+		await _chunk.UnCacheFromMemory(CancellationToken.None);
+		_reader = await _chunk.AcquireRawReader(CancellationToken.None);
 		_chunk.MarkForDeletion();
 	}
 

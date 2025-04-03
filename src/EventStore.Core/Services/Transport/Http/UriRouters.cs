@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -20,29 +20,23 @@ public class TrieUriRouter : IUriRouter {
 	private const string Placeholder = "{}";
 	private const string GreedyPlaceholder = "{*}";
 
-	private readonly RouterNode _root = new RouterNode();
-	private readonly List<ControllerAction> _registeredRoutes;
+	private readonly RouterNode _root = new();
+	private readonly List<ControllerAction> _registeredRoutes = [];
 
-	public TrieUriRouter() {
-		_registeredRoutes = new List<ControllerAction>();
-	}
+	public void RegisterAction(ControllerAction action, Func<HttpEntityManager, UriTemplateMatch, RequestParams> handler) {
+		Ensure.NotNull(action);
+		Ensure.NotNull(handler);
 
-	public void RegisterAction(ControllerAction action,
-		Func<HttpEntityManager, UriTemplateMatch, RequestParams> handler) {
-		Ensure.NotNull(action, "action");
-		Ensure.NotNull(handler, "handler");
-
-		var segments = new Uri("http://fake" + action.UriTemplate, UriKind.Absolute).Segments;
+		var segments = new Uri($"http://fake{action.UriTemplate}", UriKind.Absolute).Segments;
 		RouterNode node = _root;
-		foreach (var segm in segments) {
-			var segment = Uri.UnescapeDataString(segm);
-			string path = segment.StartsWith("{*") ? GreedyPlaceholder
-				: segment.StartsWith("{") ? Placeholder
-				: segment;
+		foreach (var sgm in segments) {
+			var segment = Uri.UnescapeDataString(sgm);
+			string path = segment.StartsWith("{*")
+				? GreedyPlaceholder
+				: segment.StartsWith('{') ? Placeholder : segment;
 
-			RouterNode child;
-			if (!node.Children.TryGetValue(path, out child)) {
-				child = new RouterNode();
+			if (!node.Children.TryGetValue(path, out var child)) {
+				child = new();
 				node.Children.Add(path, child);
 			}
 
@@ -60,7 +54,6 @@ public class TrieUriRouter : IUriRouter {
 		var matches = new List<UriToActionMatch>();
 		var baseAddress = new UriBuilder(uri.Scheme, uri.Host, uri.Port).Uri;
 
-
 		var segments = new string[uri.Segments.Length];
 		for (int i = 0; i < uri.Segments.Length; i++) {
 			segments[i] = Uri.UnescapeDataString(uri.Segments[i]);
@@ -73,13 +66,12 @@ public class TrieUriRouter : IUriRouter {
 
 	public IEnumerable<ControllerAction> Actions => _registeredRoutes;
 
-	private void GetAllUriMatches(RouterNode node, Uri baseAddress, Uri uri, string[] segments, int index,
-		List<UriToActionMatch> matches) {
+	private static void GetAllUriMatches(RouterNode node, Uri baseAddress, Uri uri, string[] segments, int index, List<UriToActionMatch> matches) {
 		RouterNode child;
 
 		if (index == segments.Length) {
 			// /stats/ should match /stats/{*greedyStatsPath}
-			if (uri.OriginalString.EndsWith("/") && node.Children.TryGetValue(GreedyPlaceholder, out child))
+			if (uri.OriginalString.EndsWith('/') && node.Children.TryGetValue(GreedyPlaceholder, out child))
 				AddMatchingRoutes(child.LeafRoutes, baseAddress, uri, matches);
 
 			AddMatchingRoutes(node.LeafRoutes, baseAddress, uri, matches);
@@ -100,23 +92,22 @@ public class TrieUriRouter : IUriRouter {
 			var route = routes[i];
 			var match = route.UriTemplate.Match(baseAddress, uri);
 			if (match != null)
-				matches.Add(new UriToActionMatch(match, route.Action, route.Handler));
+				matches.Add(new(match, route.Action, route.Handler));
 		}
 	}
 
 	private class RouterNode {
-		public readonly Dictionary<string, RouterNode> Children = new Dictionary<string, RouterNode>();
-		public readonly List<HttpRoute> LeafRoutes = new List<HttpRoute>();
+		public readonly Dictionary<string, RouterNode> Children = new();
+		public readonly List<HttpRoute> LeafRoutes = [];
 	}
 }
 
 public class NaiveUriRouter : IUriRouter {
-	private readonly List<HttpRoute> _actions = new List<HttpRoute>();
+	private readonly List<HttpRoute> _actions = [];
 
 	public IEnumerable<ControllerAction> Actions => _actions.Select(x => x.Action);
 
-	public void RegisterAction(ControllerAction action,
-		Func<HttpEntityManager, UriTemplateMatch, RequestParams> handler) {
+	public void RegisterAction(ControllerAction action, Func<HttpEntityManager, UriTemplateMatch, RequestParams> handler) {
 		if (_actions.Contains(x => x.Action.Equals(action)))
 			throw new ArgumentException("Duplicate route.");
 		_actions.Add(new HttpRoute(action, handler));
@@ -136,14 +127,8 @@ public class NaiveUriRouter : IUriRouter {
 	}
 }
 
-internal class HttpRoute {
-	public readonly ControllerAction Action;
-	public readonly Func<HttpEntityManager, UriTemplateMatch, RequestParams> Handler;
-	public readonly UriTemplate UriTemplate;
-
-	public HttpRoute(ControllerAction action, Func<HttpEntityManager, UriTemplateMatch, RequestParams> handler) {
-		Action = action;
-		Handler = handler;
-		UriTemplate = new UriTemplate(action.UriTemplate);
-	}
+internal class HttpRoute(ControllerAction action, Func<HttpEntityManager, UriTemplateMatch, RequestParams> handler) {
+	public readonly ControllerAction Action = action;
+	public readonly Func<HttpEntityManager, UriTemplateMatch, RequestParams> Handler = handler;
+	public readonly UriTemplate UriTemplate = new(action.UriTemplate);
 }

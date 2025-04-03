@@ -1,0 +1,142 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/cluster"
+@inherits KurrentDB.Components.Licensed.WithLicense
+@attribute [Authorize]
+@attribute [ExcludeFromInteractiveRouting]
+@rendermode InteractiveServer
+@using EventStore.Common.Utils
+@using EventStore.Core.Bus
+@using EventStore.Core.Metrics
+@using KurrentDB.Services
+@using KurrentDB.Components.Cluster.Monitoring
+@using KurrentDB.Tools
+@using Microsoft.AspNetCore.Authorization
+@using KurrentDB.Components.Licensed
+@inject IPublisher Publisher
+@inject MonitoringService MonitoringService
+@inject InternalExporter InternalExporter
+@inject MetricsObserver MetricsObserver
+
+<PageTitle>KurrentDB: Cluster</PageTitle>
+
+<MudGrid>
+	<MudItem xs="12">
+		<MudDivider/>
+		<MudText>Node status</MudText>
+	</MudItem>
+	<MudItem xs="12">
+		<MudCard Class="ma-2">
+			<MudCardHeader>
+				<CardHeaderAvatar>
+					<MudAvatar Color="@ClusterIconColor">
+						<MudIcon Icon="@ClusterIcon"/>
+					</MudAvatar>
+				</CardHeaderAvatar>
+				<CardHeaderContent>
+					<MudText Typo="Typo.body1">
+						Server address: @_clusterInfo?.ServerIp:@_clusterInfo?.ServerPort
+					</MudText>
+				</CardHeaderContent>
+				<CardHeaderActions>
+					@* <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default"/> *@
+				</CardHeaderActions>
+			</MudCardHeader>
+			<MudCardContent>
+				<MudText>Version: @VersionInfo.Text</MudText>
+				<MudText>OS: @LocalOs</MudText>
+			</MudCardContent>
+		</MudCard>
+	</MudItem>
+	<MudItem xs="12">
+		<MudDivider/>
+		<MudText>Cluster status</MudText>
+	</MudItem>
+	@foreach (var member in _clusterInfo?.Members ?? []) {
+		<MudItem xs="@CardWidth">
+			<ClusterMember Member="member"></ClusterMember>
+		</MudItem>
+	}
+	<MudItem xs="12">
+		<MudDivider/>
+		<MudText>Resources</MudText>
+	</MudItem>
+	<MudItem xs="3">
+		<MudPaper Class="pa-16 ma-2" Outlined="true">
+			<div class="mud-chart mud-chart-legend-bottom">
+				<MudText Typo="Typo.h3" Align="Align.Center" Color="Color.Primary">
+					@MetricsObserver.ActiveConnections
+				</MudText>
+				<div class="mud-chart-legend">
+					<div class="mud-chart-legend-item">
+						<span class="mud-typography mud-typography-body2">Connections</span>
+					</div>
+				</div>
+			</div>
+		</MudPaper>
+	</MudItem>
+	<MudItem xs="3">
+		<MetricDonut Value="@_cpu" Name="CPU"></MetricDonut>
+	</MudItem>
+	<MudItem xs="3">
+		<MetricDonut Value="@_ram" Name="Memory"></MetricDonut>
+	</MudItem>
+	<MudItem xs="3">
+		<MetricDonut Value="@_disk" Name="Disk"></MetricDonut>
+	</MudItem>
+	<LicensedContent>
+		<MudItem xs="6">
+			<MudPaper Outlined="true">
+				<MudTimeSeriesChart
+					ChartSeries="@_cpuSeries"
+					@bind-SelectedIndex="_index"
+					Width="100%"
+					Height="350px"
+					ChartOptions="@_options"
+					TimeLabelSpacing="TimeSpan.FromMinutes(5)"/>
+			</MudPaper>
+		</MudItem>
+		<MudItem xs="6">
+			<MudPaper Outlined="true">
+				<MudTimeSeriesChart
+					ChartSeries="@_ramSeries"
+					@bind-SelectedIndex="_index"
+					Width="100%"
+					Height="350px"
+					ChartOptions="@_options"
+					TimeLabelSpacing="TimeSpan.FromMinutes(5)"/>
+			</MudPaper>
+		</MudItem>
+	</LicensedContent>
+	<LicensedContent>
+		<MudItem xs="12">
+			<MudDivider/>
+			<MudText>Throughput</MudText>
+		</MudItem>
+		<MudItem xs="6">
+			<MudPaper Outlined="true">
+				<MudTimeSeriesChart
+					ChartSeries="@_eventsSeries"
+					@bind-SelectedIndex="_index"
+					Width="100%"
+					Height="350px"
+					ChartOptions="@_options"
+					CanHideSeries
+					TimeLabelSpacing="TimeSpan.FromMinutes(5)"/>
+			</MudPaper>
+		</MudItem>
+		<MudItem xs="6">
+			<MudPaper Outlined="true">
+				<MudTimeSeriesChart
+					ChartSeries="@_eventBytesSeries"
+					@bind-SelectedIndex="_index"
+					Width="100%"
+					Height="350px"
+					ChartOptions="@_options"
+					CanHideSeries
+					TimeLabelSpacing="TimeSpan.FromMinutes(5)"/>
+			</MudPaper>
+		</MudItem>
+	</LicensedContent>
+</MudGrid>

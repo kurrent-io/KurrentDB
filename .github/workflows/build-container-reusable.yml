@@ -72,20 +72,27 @@ jobs:
         build-args: |
           CONTAINER_RUNTIME=${{ inputs.container-runtime }}
           RUNTIME=${{ steps.variables.outputs.runtime }}
+    # pass env vars so that GitHubActionsTestLogger can populate GitHub job summary 
     - name: Run Tests
-      run: |
-          docker run \
-          --volume $(pwd)/test-results:/build/test-results \
-          --rm \
-          eventstore-test
+      run: >
+        docker run
+        --volume $(pwd)/test-results:/build/test-results
+        --volume ${{ github.step_summary }}:/build/step-summary
+        --rm
+        --env GITHUB_STEP_SUMMARY=/build/step-summary
+        --env GITHUB_SERVER_URL=${{ github.server_url }}
+        --env GITHUB_REPOSITORY=${{ github.repository }}
+        --env GITHUB_WORKSPACE=${{ github.workspace }}
+        --env GITHUB_SHA=${{ github.sha }}
+        eventstore-test
     - name: Publish Test Results (HTML)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         path: test-results/test-results.html
         name: test-results-${{ inputs.container-runtime }}.html
     - name: Publish Test Results (All)
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ inputs.container-runtime }}

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -13,6 +13,7 @@ using Serilog.Events;
 
 namespace EventStore.Core.TransactionLog.Chunks;
 
+// see CancellationToken comment at the top of TFChunk.cs
 public class TFChunkWriter : ITransactionFileWriter {
 	public long Position => _writerCheckpoint.ReadNonFlushed();
 	public long FlushedPosition => _writerCheckpoint.Read();
@@ -46,13 +47,13 @@ public class TFChunkWriter : ITransactionFileWriter {
 		_nextRecordPosition = _writerCheckpoint.Read();
 	}
 
-	public void Open() {
-		if (_db.Manager.ChunksCount == 0) {
+	public async ValueTask Open(CancellationToken token) {
+		if (_db.Manager.ChunksCount is 0) {
 			// new database
 			_currentChunk = null;
-		} else if (!_db.Manager.TryGetChunkFor(_nextRecordPosition, out _currentChunk)) {
+		} else if ((_currentChunk = await _db.Manager.TryGetInitializedChunkFor(_nextRecordPosition, token)) is null) {
 			// we may have been at a chunk boundary and the new chunk wasn't yet created
-			if (!_db.Manager.TryGetChunkFor(_nextRecordPosition - 1, out _currentChunk))
+			if ((_currentChunk = await _db.Manager.TryGetInitializedChunkFor(_nextRecordPosition - 1, token)) is null)
 				throw new Exception($"Failed to get chunk for log position: {_nextRecordPosition}");
 		}
 	}
@@ -65,13 +66,12 @@ public class TFChunkWriter : ITransactionFileWriter {
 		// Workaround: The transaction cannot be canceled in a middle, it should be atomic.
 		// There is no way to rollback it on cancellation
 		token.ThrowIfCancellationRequested();
-		token = CancellationToken.None;
 
 		OpenTransaction();
 
-		if (await WriteToTransaction(record, token) is not { } result) {
-			await CompleteChunkInTransaction(token);
-			await AddNewChunk(token: token);
+		if (await WriteToTransaction(record, CancellationToken.None) is not { } result) {
+			await CompleteChunkInTransaction(CancellationToken.None);
+			await AddNewChunk(token: CancellationToken.None);
 			CommitTransaction();
 			await Flush(token);
 			return (false, _nextRecordPosition);
@@ -123,10 +123,9 @@ public class TFChunkWriter : ITransactionFileWriter {
 		// Workaround: The transaction cannot be canceled in a middle, it should be atomic.
 		// There is no way to rollback it on cancellation
 		token.ThrowIfCancellationRequested();
-		token = CancellationToken.None;
 
 		OpenTransaction();
-		await CompleteChunkInTransaction(token);
+		await CompleteChunkInTransaction(CancellationToken.None);
 		CommitTransaction();
 		await Flush(token);
 	}
@@ -134,7 +133,7 @@ public class TFChunkWriter : ITransactionFileWriter {
 	private async ValueTask CompleteReplicatedRawChunkInTransaction(TFChunk.TFChunk rawChunk,
 		CancellationToken token) {
 		await rawChunk.CompleteRaw(token);
-		_currentChunk = await _db.Manager.SwitchChunk(rawChunk, verifyHash: true,
+		_currentChunk = await _db.Manager.SwitchInTempChunk(rawChunk, verifyHash: true,
 			removeChunksWithGreaterNumbers: true, token);
 
 		_nextRecordPosition = rawChunk.ChunkHeader.ChunkEndPosition;
@@ -144,10 +143,9 @@ public class TFChunkWriter : ITransactionFileWriter {
 		// Workaround: The transaction cannot be canceled in a middle, it should be atomic.
 		// There is no way to rollback it on cancellation
 		token.ThrowIfCancellationRequested();
-		token = CancellationToken.None;
 
 		OpenTransaction();
-		await CompleteReplicatedRawChunkInTransaction(rawChunk, token);
+		await CompleteReplicatedRawChunkInTransaction(rawChunk, CancellationToken.None);
 		CommitTransaction();
 		await Flush(token);
 	}
@@ -173,7 +171,7 @@ public class TFChunkWriter : ITransactionFileWriter {
 
 	public async ValueTask Flush(CancellationToken token) {
 		Debug.Assert(HasOpenTransaction() is false);
-		
+
 		if (_currentChunk is null) // the last chunk allocation failed
 			return;
 

@@ -9,19 +9,16 @@ COPYRIGHT="Copyright 2021 Event Store Ltd. All rights reserved."
 # ------------ End of configuration -------------
 
 CONFIGURATION="Release"
-BUILD_UI="no"
 NET_FRAMEWORK="net8.0"
 
 function usage() {    
 cat <<EOF
 Usage:
-  $0 [<version=0.0.0.0>] [<configuration=Debug|Release>] [<build_ui=yes|no>]
+  $0 [<version=0.0.0.0>] [<configuration=Debug|Release>]
 
 version: EventStore build version. Versions must be complete four part identifiers valid for use on a .NET assembly.
 
 configuration: Build configuration. Valid configurations are: Debug, Release
-
-build_ui: Whether or not to build the EventStore UI. Building the UI requires an installation of Node.js (v8.11.4+)
 
 EOF
     exit 1
@@ -49,9 +46,8 @@ function checkParams() {
 
     version=$1
     configuration=$2
-    build_ui=$3
 
-    [[ $# -gt 3 ]] && usage
+    [[ $# -gt 2 ]] && usage
 
     if [[ "$version" == "" ]] ; then
         VERSIONSTRING="0.0.0.0"
@@ -70,19 +66,6 @@ function checkParams() {
             echo "Configuration set to: $CONFIGURATION"
         else
             echo "Invalid configuration: $configuration"
-            usage
-        fi
-    fi
-
-    if [[ "$build_ui" == "" ]]; then
-        BUILD_UI="no"
-        echo "Build UI defaulted to: $BUILD_UI"
-    else
-        if [[ "$build_ui" == "yes" || "$build_ui" == "no" ]]; then
-            BUILD_UI=$build_ui
-            echo "Build UI set to: $BUILD_UI"
-        else
-            echo "Invalid Build UI value: $build_ui"
             usage
         fi
     fi
@@ -135,28 +118,6 @@ function patchVersionInfo {
     done
 }
 
-function buildUI {
-    if [[ "$BUILD_UI" != "yes" ]] ; then
-        echo "Skipping UI Build"
-        return
-    fi
-
-    rm -rf src/EventStore.ClusterNode.Web/clusternode-web/
-    pushd src/EventStore.UI
-
-    if [ ! -f ./package.json ]; then
-        git submodule update --init ./
-    fi
-
-    npm install bower@~1.8.14 -g
-    bower install --allow-root
-    npm install gulp-cli -g
-    npm install
-    gulp dist
-    mv es-dist ../EventStore.ClusterNode.Web/clusternode-web/
-    popd
-}
-
 function buildEventStore {
     patchVersionInfo
     rm -rf bin/
@@ -170,8 +131,7 @@ function exitWithError {
 }
 
 detectOS
-checkParams "$1" "$2" "$3"
+checkParams "$1" "$2"
 
 echo "Running from base directory: $BASE_DIR"
-buildUI
 buildEventStore

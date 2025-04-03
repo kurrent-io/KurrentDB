@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -11,7 +11,7 @@ namespace EventStore.Core.Services.Transport.Grpc;
 // Detect calls that have been automatically retried per https://github.com/grpc/proposal/blob/master/A6-client-retries.md
 // such calls may not have been intended by the user and as such may disguise a network interruption as a slow server response
 class RetryInterceptor : Interceptor {
-	public static readonly ILogger Log = Serilog.Log.ForContext<RetryInterceptor>();
+	static readonly ILogger Log = Serilog.Log.ForContext<RetryInterceptor>();
 
 	public override Task<TResponse> ClientStreamingServerHandler<TRequest, TResponse>(
 		IAsyncStreamReader<TRequest> requestStream,
@@ -49,10 +49,9 @@ class RetryInterceptor : Interceptor {
 
 		LogRetries(context);
 		return base.UnaryServerHandler(request, context, continuation);
-
 	}
 
-	private void LogRetries(ServerCallContext context) {
+	private static void LogRetries(ServerCallContext context) {
 		var entry = context.RequestHeaders.Get("grpc-previous-rpc-attempts");
 		if (entry is null)
 			return;

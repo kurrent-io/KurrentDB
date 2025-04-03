@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Configuration;
@@ -13,6 +13,7 @@ namespace EventStore.Core.Services.Transport.Grpc;
 internal partial class Streams<TStreamId> : EventStore.Client.Streams.Streams.StreamsBase {
 	private readonly IPublisher _publisher;
 	private readonly int _maxAppendSize;
+	private readonly int _maxAppendEventSize;
 	private readonly TimeSpan _writeTimeout;
 	private readonly IExpiryStrategy _expiryStrategy;
 	private readonly IDurationTracker _readTracker;
@@ -25,7 +26,7 @@ internal partial class Streams<TStreamId> : EventStore.Client.Streams.Streams.St
 	private static readonly Operation WriteOperation = new Operation(Plugins.Authorization.Operations.Streams.Write);
 	private static readonly Operation DeleteOperation = new Operation(Plugins.Authorization.Operations.Streams.Delete);
 
-	public Streams(IPublisher publisher, int maxAppendSize, TimeSpan writeTimeout,
+	public Streams(IPublisher publisher, int maxAppendSize, int maxAppendEventSize, TimeSpan writeTimeout,
 		IExpiryStrategy expiryStrategy,
 		GrpcTrackers trackers,
 		IAuthorizationProvider provider) {
@@ -33,6 +34,7 @@ internal partial class Streams<TStreamId> : EventStore.Client.Streams.Streams.St
 		if (publisher == null) throw new ArgumentNullException(nameof(publisher));
 		_publisher = publisher;
 		_maxAppendSize = maxAppendSize;
+		_maxAppendEventSize = maxAppendEventSize;
 		_writeTimeout = writeTimeout;
 		_expiryStrategy = expiryStrategy;
 		_readTracker = trackers[MetricsConfiguration.GrpcMethod.StreamRead];

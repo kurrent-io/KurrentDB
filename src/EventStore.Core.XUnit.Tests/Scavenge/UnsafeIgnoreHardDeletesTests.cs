@@ -1,13 +1,14 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog.Scavenging;
+using EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
 using Xunit;
-using static EventStore.Core.XUnit.Tests.Scavenge.StreamMetadatas;
+using static EventStore.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;
 
@@ -63,7 +64,7 @@ public class UnsafeIgnoreHardDeletesTests : SqliteDbPerTest<UnsafeIgnoreHardDele
 						eventNumber: 0),
 					doneLogicalChunkNumber: null));
 			})
-			.RunAsync(x => new[] {
+			.RunAndKeepDbAsync(x => new[] {
 				x.Recs[0].KeepIndexes(3), // only the tombstone is kept
 				x.Recs[1],
 				x.Recs[2],
@@ -118,7 +119,7 @@ public class UnsafeIgnoreHardDeletesTests : SqliteDbPerTest<UnsafeIgnoreHardDele
 				Tracer.Line("Accumulating from checkpoint: Accumulating SP-0 done None"),
 				Tracer.AnythingElse)
 			// result of scavenging SP-0
-			.RunAsync(x => new[] {
+			.RunAndKeepDbAsync(x => new[] {
 				x.Recs[0].KeepIndexes(0, 2),
 				x.Recs[1],
 				x.Recs[2],

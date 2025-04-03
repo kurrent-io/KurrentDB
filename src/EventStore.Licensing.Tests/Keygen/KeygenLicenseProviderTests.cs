@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -135,14 +135,14 @@ public class KeygenLicenseProviderTests {
 		var endpointInfo = LicenseSummary.SelectForEndpoint(esdbLicense);
 		Assert.Equal(9, endpointInfo.Count);
 		Assert.Equal("Temporary License", endpointInfo["licenseId"]);
-		Assert.Equal("EventStore Ltd", endpointInfo["company"]);
+		Assert.Equal("Kurrent, Inc", endpointInfo["company"]);
 		Assert.Equal("false", endpointInfo["isTrial"]);
 		Assert.Equal("false", endpointInfo["isExpired"]);
 		Assert.Equal("false", endpointInfo["isValid"]);
 		Assert.Equal("true", endpointInfo["isFloating"]);
 		Assert.Equal($"{expectedDaysRemaining:N2}", endpointInfo["daysRemaining"]);
 		Assert.Equal("0", endpointInfo["startDate"]);
-		Assert.Equal("License could not be validated. Please contact EventStore support.", endpointInfo["notes"]);
+		Assert.Equal("License could not be validated. Please contact Kurrent support.", endpointInfo["notes"]);
 
 		var telemetryInfo = LicenseSummary.SelectForTelemetry(esdbLicense);
 		Assert.Equal(4, telemetryInfo.Count);

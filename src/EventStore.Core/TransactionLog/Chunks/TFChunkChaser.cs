@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,20 +13,23 @@ public class TFChunkChaser : ITransactionFileChaser {
 		get { return _chaserCheckpoint; }
 	}
 
+	private readonly TFChunkDb _db;
+	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly ICheckpoint _chaserCheckpoint;
-	private readonly TFChunkReader _reader;
+	private TFChunkReader _reader;
 
 	public TFChunkChaser(TFChunkDb db, IReadOnlyCheckpoint writerCheckpoint, ICheckpoint chaserCheckpoint) {
 		Ensure.NotNull(db, "dbConfig");
 		Ensure.NotNull(writerCheckpoint, "writerCheckpoint");
 		Ensure.NotNull(chaserCheckpoint, "chaserCheckpoint");
 
+		_db = db;
+		_writerCheckpoint = writerCheckpoint;
 		_chaserCheckpoint = chaserCheckpoint;
-		_reader = new TFChunkReader(db, writerCheckpoint, _chaserCheckpoint.Read());
 	}
 
 	public void Open() {
-		// NOOP
+		_reader = new TFChunkReader(_db, _writerCheckpoint, _chaserCheckpoint.Read());
 	}
 
 	public async ValueTask<SeqReadResult> TryReadNext(CancellationToken token) {

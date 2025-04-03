@@ -1,0 +1,10 @@
+{
+	"KurrentDB": {
+		"AutoScavenge": {
+			"Enabled": false
+		},
+		"Licensing": {
+			"LicenseKey": "valid"
+		}
+	}
+}

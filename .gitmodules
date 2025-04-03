@@ -1,3 +1,0 @@
-[submodule "src/EventStore.UI"]
-	path = src/EventStore.UI
-	url = https://github.com/EventStore/EventStore.UI.git

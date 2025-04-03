@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -11,15 +11,16 @@ using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Core.TransactionLog.Scavenging.Interfaces;
 using EventStore.LogCommon;
 
-namespace EventStore.Core.TransactionLog.Scavenging;
+namespace EventStore.Core.TransactionLog.Scavenging.DbAccess;
 
 public class ChunkReaderForAccumulator<TStreamId> : IChunkReaderForAccumulator<TStreamId> {
 	private readonly TFChunkManager _manager;
 	private readonly IMetastreamLookup<TStreamId> _metaStreamLookup;
 	private readonly IStreamIdConverter<TStreamId> _streamIdConverter;
-	private readonly ICheckpoint _replicationChk;
+	private readonly IReadOnlyCheckpoint _replicationChk;
 	private readonly int _chunkSize;
 
 	private readonly Func<int, byte[]> _getBuffer;
@@ -29,7 +30,7 @@ public class ChunkReaderForAccumulator<TStreamId> : IChunkReaderForAccumulator<T
 		TFChunkManager manager,
 		IMetastreamLookup<TStreamId> metastreamLookup,
 		IStreamIdConverter<TStreamId> streamIdConverter,
-		ICheckpoint replicationChk,
+		IReadOnlyCheckpoint replicationChk,
 		int chunkSize) {
 
 		_manager = manager;
@@ -51,7 +52,7 @@ public class ChunkReaderForAccumulator<TStreamId> : IChunkReaderForAccumulator<T
 		[EnumeratorCancellation] CancellationToken token) {
 
 		// the physical chunk might contain several logical chunks, we are only interested in one of them
-		var chunk = _manager.GetChunk(logicalChunkNumber);
+		var chunk = await _manager.GetInitializedChunk(logicalChunkNumber, token);
 		long chunkStartPos = (long)_chunkSize * logicalChunkNumber;
 		long chunkEndPos = (long)_chunkSize * (logicalChunkNumber + 1);
 		long nextPos = chunkStartPos;

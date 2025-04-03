@@ -1,0 +1,51 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using EventStore.Core.Cluster
+@using EventStore.Core.Data
+
+<MudCard Class="ma-2">
+	<MudCardHeader>
+		<CardHeaderAvatar>
+			<MudAvatar Color="@MemberIconColor">
+				<MudIcon Icon="@MemberIcon" Title="@(Member.IsAlive ? "Alive" : "Dead")"/>
+			</MudAvatar>
+		</CardHeaderAvatar>
+		<CardHeaderContent>
+			<MudText Typo="Typo.h6">@Member.State.ToString()</MudText>
+		</CardHeaderContent>
+		<CardHeaderActions>
+			@* <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default"/> *@
+		</CardHeaderActions>
+	</MudCardHeader>
+	<MudCardContent>
+		<MudText Typo="Typo.body1">@Member.HttpEndPointIp:@Member.HttpEndPointPort</MudText>
+		<MudText>Version: @Member.ESVersion</MudText>
+	</MudCardContent>
+</MudCard>
+
+@code {
+	[Parameter] public ClientClusterInfo.ClientMemberInfo Member { get; set; }
+
+	Color MemberIconColor => Member.IsAlive ? Color.Info : Color.Error;
+
+	string MemberIcon => Member.State switch {
+		VNodeState.Initializing => Icons.Material.Filled.Info,
+		VNodeState.DiscoverLeader => Icons.Material.Filled.Info,
+		VNodeState.Unknown => Icons.Material.Filled.Error,
+		VNodeState.PreReplica => Icons.Material.Filled.CompareArrows,
+		VNodeState.CatchingUp => Icons.Material.Filled.Info,
+		VNodeState.Clone => Icons.Material.Filled.Error,
+		VNodeState.Follower => Icons.Material.Filled.FileDownload,
+		VNodeState.PreLeader => Icons.Material.Filled.Warning,
+		VNodeState.Leader => Icons.Material.Filled.FileUpload,
+		VNodeState.Manager => Icons.Material.Filled.Error,
+		VNodeState.ShuttingDown => Icons.Material.Filled.Warning,
+		VNodeState.Shutdown => Icons.Material.Filled.Warning,
+		VNodeState.ReadOnlyLeaderless => Icons.Material.Filled.Warning,
+		VNodeState.PreReadOnlyReplica => Icons.Material.Filled.Info,
+		VNodeState.ReadOnlyReplica => Icons.Material.Filled.FileCopy,
+		VNodeState.ResigningLeader => Icons.Material.Filled.Warning,
+		_ => throw new ArgumentOutOfRangeException()
+	};
+}

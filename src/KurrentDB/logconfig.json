@@ -1,0 +1,12 @@
+{
+	"Logging": {
+		"LogLevel": {
+			"Amazon": "Warning",
+			"Default": "Debug",
+			"EventStore.Core.Services.Transport.Enumerators": "Information",
+			"Grpc": "Critical",
+			"Microsoft": "Warning",
+			"System": "Warning"
+		}
+	}
+}

@@ -1,13 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
-using EventStore.Core.Transforms.Identity;
+using EventStore.Core.Transforms;
 
 namespace EventStore.Core.Tests.TransactionLog;
 
@@ -34,7 +33,6 @@ public static class TFChunkHelper {
 		long maxTruncation // Default -1
 		) {
 		return new TFChunkDbConfig(pathName,
-			new VersionedPatternFileNamingStrategy(pathName, "chunk-"),
 			chunkSize,
 			0,
 			new InMemoryCheckpoint(writerCheckpointPosition),
@@ -57,7 +55,6 @@ public static class TFChunkHelper {
 		if (replicationCheckpoint == null) replicationCheckpoint = new InMemoryCheckpoint(-1);
 		return new TFChunkDbConfig(
 			pathName,
-			new VersionedPatternFileNamingStrategy(pathName, "chunk-"),
 			chunkSize,
 			0,
 			writerCheckpoint,
@@ -70,11 +67,17 @@ public static class TFChunkHelper {
 			new InMemoryCheckpoint(-1));
 	}
 
-	public static ValueTask<TFChunk> CreateNewChunk(string fileName, int chunkSize = 4096, bool isScavenged = false, CancellationToken token = default) {
-		return TFChunk.CreateNew(fileName, chunkSize, 0, 0,
-			isScavenged: isScavenged, inMem: false, unbuffered: false,
+	public static ValueTask<TFChunk> CreateNewChunk(
+		string fileName,
+		int chunkSize = 4096,
+		bool isScavenged = false,
+		int chunkStartNumber = 0,
+		int chunkEndNumber = 0,
+		CancellationToken token = default) {
+		return TFChunk.CreateNew(new ChunkLocalFileSystem(path: ""), fileName, chunkSize,
+			chunkStartNumber, chunkEndNumber, isScavenged: isScavenged, inMem: false, unbuffered: false,
 			writethrough: false, reduceFileCachePressure: false, tracker: new TFChunkTracker.NoOp(),
-			transformFactory: new IdentityChunkTransformFactory(),
+			getTransformFactory: DbTransformManager.Default,
 			token);
 	}
 }

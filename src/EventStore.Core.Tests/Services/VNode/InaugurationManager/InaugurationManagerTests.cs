@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -79,11 +79,6 @@ public abstract class InaugurationManagerTests {
 		_indexCheckpoint.Flush();
 	}
 
-	protected static T AssertIsType<T>(object o) {
-		Assert.IsInstanceOf<T>(o);
-		return (T)o;
-	}
-
 	// check that we have reset to initial state, do this by checking we can
 	// proceed forward from it
 	protected void AssertInitial() {
@@ -103,7 +98,7 @@ public abstract class InaugurationManagerTests {
 
 	protected void AssertSentBecomeLeader() {
 		Assert.AreEqual(1, _publisher.Messages.Count);
-		var becomeLeader = AssertIsType<SystemMessage.BecomeLeader>(_publisher.Messages[0]);
+		var becomeLeader = AssertEx.IsType<SystemMessage.BecomeLeader>(_publisher.Messages[0]);
 		Assert.AreEqual(_correlationId1, becomeLeader.CorrelationId);
 		_publisher.Messages.Clear();
 		AssertInitial();

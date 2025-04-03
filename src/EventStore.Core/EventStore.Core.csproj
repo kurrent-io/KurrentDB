@@ -2,13 +2,12 @@
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-		<NoWarn>CS1998</NoWarn> <!--Temporary solution to migrate TFChunk API to async-->
 	</PropertyGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" Version="24.10.6" />
+		<PackageReference Include="EventStore.Plugins" Version="25.2.5" />
 		<PackageReference Include="FluentStorage" Version="5.6.0" />
 		<PackageReference Include="FluentStorage.AWS" Version="5.5.0" />
 		<PackageReference Include="Google.Protobuf" Version="3.27.2" />
@@ -17,26 +16,29 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
+		<PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
 		<PackageReference Include="librdkafka.redist" Version="2.5.0" />
 		<PackageReference Include="Microsoft.FASTER.Core" Version="1.9.16" />
-		<PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.4.0-rc.1" />
-		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.4.0-rc.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.13" />
+		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.6.0" />
+		<PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.11.2-beta.1" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
+		<PackageReference Include="Polly.Core" Version="8.5.2" />
 		<PackageReference Include="Quickenshtein" Version="1.5.1" />
-		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
+		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.1" />
 		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
 		<PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
 		<PackageReference Include="System.Linq.Async" Version="6.0.1" />
 		<PackageReference Include="System.Net.Http" Version="4.3.4" />
-		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.452401" />
-		<PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.6" />
+		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.553101" />
+		<PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.19" />
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
-		<PackageReference Include="DotNext" Version="5.14.0" />
-		<PackageReference Include="DotNext.IO" Version="5.14.0" />
-		<PackageReference Include="DotNext.Threading" Version="5.15.0" />
-		<PackageReference Include="DotNext.Unsafe" Version="5.14.0" />
+		<PackageReference Include="DotNext.IO" Version="5.18.2" />
+		<PackageReference Include="DotNext.Threading" Version="5.18.1" />
+		<PackageReference Include="DotNext.Unsafe" Version="5.18.0" />
 		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-		<PackageReference Include="System.Threading.Channels" Version="9.0.0-rc.2.24473.5" />
+		<PackageReference Include="System.Threading.Channels" Version="9.0.1" />
+		<PackageReference Include="Scrutor" Version="5.0.2" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
@@ -91,5 +93,28 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="Services\Transport\Tcp\protos\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Update="Services\Transport\Grpc\Cluster.*.cs">
+	    <DependentUpon>Cluster.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Gossip.*.cs">
+	    <DependentUpon>Gossip.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Operations.*.cs">
+	    <DependentUpon>Operations.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\PersistentSubscriptions.*.cs">
+	    <DependentUpon>PersistentSubscriptions.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Redaction.*.cs">
+	    <DependentUpon>Redaction.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Streams.*.cs">
+	    <DependentUpon>Streams.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Services\Transport\Grpc\Users.*.cs">
+	    <DependentUpon>Users.cs</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 </Project>

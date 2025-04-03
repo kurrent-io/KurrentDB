@@ -1,8 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Client.Redaction;
+using Kurrent.Client.Redaction;
 using EventStore.Core.Data.Redaction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
@@ -45,9 +45,9 @@ internal partial class Redaction {
 			var response = new GetEventPositionResp();
 			foreach (var eventPosition in eventPositions) {
 				var pos = Position.FromInt64(eventPosition.LogPosition, eventPosition.LogPosition);
-				response.EventPositions.Add(new EventStore.Client.Redaction.EventPosition {
+				response.EventPositions.Add(new Kurrent.Client.Redaction.EventPosition {
 					LogPosition = pos.PreparePosition,
-					ChunkInfo = new EventStore.Client.Redaction.ChunkInfo {
+					ChunkInfo = new Kurrent.Client.Redaction.ChunkInfo {
 						FileName = eventPosition.ChunkInfo.FileName,
 						Version = eventPosition.ChunkInfo.Version,
 						IsComplete = eventPosition.ChunkInfo.IsComplete,

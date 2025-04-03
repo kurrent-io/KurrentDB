@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -18,6 +18,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using NUnit.Framework;
 using StatusCode = Grpc.Core.StatusCode;
+using ContentType = EventStore.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Integration;
 
@@ -59,7 +60,7 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 
 			using var response = await httpClient.PostAsync($"/streams/{ProtectedStream}",
 				new ReadOnlyMemoryContent(content) {
-					Headers = { ContentType = new MediaTypeHeaderValue("application/vnd.eventstore.events+json") }
+					Headers = { ContentType = new MediaTypeHeaderValue(ContentType.EventsJson) }
 				});
 
 			_statusCode = response.StatusCode;

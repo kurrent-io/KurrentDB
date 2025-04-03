@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Reactive.Linq;
 using EventStore.Plugins.Licensing;
@@ -43,15 +43,15 @@ public class KeygenLicenseProvider : ILicenseProvider {
 	// technical problems taking down production deployments.
 	// The primary means of protection against license tampering is the license agreement
 	static License CreateLicense(LicenseInfo.Inconclusive licenseInfo) {
-		Log.Warning("License could not be validated. Please contact EventStore support.");
+		Log.Warning("License could not be validated. Please contact Kurrent support.");
 
 		var summary = new LicenseSummary(
 			LicenseId: "Temporary License",
-			Company: "EventStore Ltd",
+			Company: "Kurrent, Inc",
 			IsTrial: false,
 			ExpiryUnixTimeSeconds: DateTimeOffset.MaxValue.ToUnixTimeSeconds(),
 			IsValid: false,
-			Notes: "License could not be validated. Please contact EventStore support.");
+			Notes: "License could not be validated. Please contact Kurrent support.");
 
 		return CreateLicense(summary, ["ALL"]);
 	}

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -64,18 +64,18 @@ public class EventStoreLoggerConfiguration {
 
 		if (logsDirectory.StartsWith("~")) {
 			throw new ApplicationInitializationException(
-				"The given log path starts with a '~'. Event Store does not expand '~'.");
+				"The given log path starts with a '~'. KurrentDB does not expand '~'.");
 		}
 
 		var configurationRoot = new ConfigurationBuilder()
-			.AddEsdbConfigFile(logConfig, reloadOnChange: true)
+			.AddKurrentConfigFile(logConfig, reloadOnChange: true)
 			.Build();
 
 		Serilog.Debugging.SelfLog.Enable(ConsoleLog.Information);
 
 		Serilog.Log.Logger = (configurationRoot.GetSection("Serilog").Exists()
 				? new LoggerConfiguration()
-					.Enrich.WithProperty(Constants.SourceContextPropertyName, "EventStore")
+					.Enrich.WithProperty(Constants.SourceContextPropertyName, "KurrentDB")
 					.ReadFrom.Configuration(configurationRoot)
 				: Default(logsDirectory, componentName, configurationRoot, logConsoleFormat, logFileInterval,
 					logFileSize, logFileRetentionCount, disableLogFile))
@@ -167,6 +167,8 @@ public class EventStoreLoggerConfiguration {
 						logFileRetentionCount, logFileInterval, logFileSize)
 					.WriteTo.Logger(Error);
 			}
+
+			configuration.WriteTo.Sink(ObservableSerilogSink.Instance);
 		}
 
 		void Error(LoggerConfiguration configuration) {
@@ -193,18 +195,28 @@ public class EventStoreLoggerConfiguration {
 				() => TrySetLogLevel(namedLogLevelSection, levelSwitch));
 		}
 
+		// the log level must be a valid microsoft level, we have been keeping the log config in the section
+		// that the ms libraries will access.
 		static void TrySetLogLevel(IConfigurationSection logLevel, LoggingLevelSwitch levelSwitch) {
-			if (!Enum.TryParse<LogEventLevel>(logLevel.Value, out var level)) {
-				return;
-			}
+			if (!Enum.TryParse<Microsoft.Extensions.Logging.LogLevel>(logLevel.Value, out var level))
+				throw new UnknownLogLevelException(logLevel.Value, logLevel.Path);
 
-			levelSwitch.MinimumLevel = level;
+			levelSwitch.MinimumLevel = level switch {
+				Microsoft.Extensions.Logging.LogLevel.None => LogEventLevel.Fatal,
+				Microsoft.Extensions.Logging.LogLevel.Trace => LogEventLevel.Verbose,
+				Microsoft.Extensions.Logging.LogLevel.Debug => LogEventLevel.Debug,
+				Microsoft.Extensions.Logging.LogLevel.Information => LogEventLevel.Information,
+				Microsoft.Extensions.Logging.LogLevel.Warning => LogEventLevel.Warning,
+				Microsoft.Extensions.Logging.LogLevel.Error => LogEventLevel.Error,
+				Microsoft.Extensions.Logging.LogLevel.Critical => LogEventLevel.Fatal,
+				_ => throw new UnknownLogLevelException(logLevel.Value, logLevel.Path)
+			};
 		}
 	}
 
 	private static LoggerConfiguration StandardLoggerConfiguration =>
 		new LoggerConfiguration()
-			.Enrich.WithProperty(Constants.SourceContextPropertyName, "EventStore")
+			.Enrich.WithProperty(Constants.SourceContextPropertyName, "KurrentDB")
 			.Enrich.WithProcessId()
 			.Enrich.WithThreadId()
 			.Enrich.FromLogContext();
@@ -217,4 +229,9 @@ public class EventStoreLoggerConfiguration {
 
 	public static implicit operator LoggerConfiguration(EventStoreLoggerConfiguration configuration) =>
 		configuration._loggerConfiguration;
+}
+
+class UnknownLogLevelException(string logLevel, string path)
+	: InvalidConfigurationException($"Unknown log level: \"{logLevel}\" at \"{path}\". Known log levels: {string.Join(", ", KnownLogLevels)}") {
+	static string[] KnownLogLevels => Enum.GetNames(typeof(Microsoft.Extensions.Logging.LogLevel));
 }

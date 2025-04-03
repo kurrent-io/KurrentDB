@@ -1,240 +1,200 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Threading;
 using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Archive.Archiver;
 using EventStore.Core.Services.Archive.Storage;
-using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.Tests;
+using EventStore.Core.Tests.TransactionLog;
+using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Services.Archive.Archiver;
 
-public class ArchiverServiceTests {
-	private static (ArchiverService, FakeArchiveStorage) CreateSut(
-		TimeSpan? chunkStorageDelay = null,
-		string[] existingChunks = null) {
-		var archive = new FakeArchiveStorage(
-			chunkStorageDelay ?? TimeSpan.Zero,
-			existingChunks ?? Array.Empty<string>());
-		var service = new ArchiverService(new FakeSubscriber(), archive);
-		return (service, archive);
-	}
+public sealed class ArchiverServiceTests : DirectoryPerTest<ArchiverServiceTests> {
 
-	private static ChunkInfo GetChunkInfo(int chunkStartNumber, int chunkEndNumber, bool complete = true) {
-		return new ChunkInfo {
-			ChunkStartNumber = chunkStartNumber,
-			ChunkEndNumber = chunkEndNumber,
-			ChunkStartPosition = (long) chunkStartNumber * TFConsts.ChunkSize,
-			ChunkEndPosition = (long) (chunkEndNumber + 1) * TFConsts.ChunkSize,
-			IsCompleted = complete,
-			ChunkFileName = $"{chunkStartNumber}-{chunkEndNumber}"
-		};
-	}
+	[Fact]
+	public async Task chunk_order_preserved() {
+		var indexDirectory = Fixture.GetFilePathFor("index");
+		using var logFormat = LogFormatHelper<LogFormat.V2, string>.LogFormatFactory.Create(new() {
+			IndexDirectory = indexDirectory,
+		});
+		var dbConfig = TFChunkHelper.CreateSizedDbConfig(Fixture.Directory, 0, chunkSize: 1024 * 1024);
+		var dbCreator = await TFChunkDbCreationHelper<LogFormat.V2, string>.CreateAsync(dbConfig, logFormat);
+		await using var result = await dbCreator
+			.Chunk(Rec.Write(0, "test"))
+			.Chunk(Rec.Write(1, "test"))
+			.Chunk(Rec.Write(2, "test"))
+			.CreateDb();
 
-	private static async Task WaitFor(int numStores, FakeArchiveStorage archive) {
-		var minDelay = TimeSpan.FromMilliseconds(200);
-		await Task.Delay(minDelay);
-		AssertEx.IsOrBecomesTrue(() => archive.Stores >= numStores, timeout: TimeSpan.FromSeconds(10));
+		var storage = new FakeArchiveStorage();
+
+		await using (var archiver = new ArchiverService(new FakeSubscriber(), storage, result.Db.Manager)) {
+			archiver.Handle(new SystemMessage.SystemStart()); // start archiving background task
+			archiver.Handle(new ReplicationTrackingMessage.ReplicatedTo(result.Db.Config.WriterCheckpoint.Read()));
+
+			var timeout = TimeSpan.FromSeconds(20);
+			while (storage.NumStores < 2) {
+				Assert.True(await storage.StoreChunkEvent.WaitAsync(timeout));
+			}
+		}
+
+		Assert.True(storage.Checkpoint > 0L);
+		Assert.Equal<int>([0, 1], storage.Chunks);
 	}
 
 	[Fact]
-	public async Task archives_a_completed_chunk_if_its_committed() {
-		var (sut, archive) = CreateSut();
+	public async Task switched_chunk_archived() {
+		var indexDirectory = Fixture.GetFilePathFor("index");
+		using var logFormat = LogFormatHelper<LogFormat.V2, string>.LogFormatFactory.Create(new() {
+			IndexDirectory = indexDirectory,
+		});
+		var dbConfig = TFChunkHelper.CreateSizedDbConfig(Fixture.Directory, 0, chunkSize: 1024 * 1024);
+		var dbCreator = await TFChunkDbCreationHelper<LogFormat.V2, string>.CreateAsync(dbConfig, logFormat);
+		await using var result = await dbCreator
+			.Chunk(Rec.Write(0, "test"))
+			.Chunk(Rec.Write(1, "test"))
+			.Chunk(Rec.Write(2, "test"))
+			.CreateDb();
 
-		var chunkInfo = GetChunkInfo(0, 0);
-		sut.Handle(new SystemMessage.ChunkCompleted(chunkInfo));
-		sut.Handle(new ReplicationTrackingMessage.ReplicatedTo(chunkInfo.ChunkEndPosition));
+		var storage = new FakeArchiveStorage();
+		await using (var archiver = new ArchiverService(new FakeSubscriber(), storage, result.Db.Manager)) {
+			archiver.Handle(new SystemMessage.SystemStart()); // start archiving background task
+			archiver.Handle(new ReplicationTrackingMessage.ReplicatedTo(result.Db.Config.WriterCheckpoint.Read()));
 
-		await WaitFor(numStores: 1, archive);
+			// ensure that chunks archived
+			var timeout = TimeSpan.FromSeconds(20);
+			while (storage.NumStores < 2) {
+				Assert.True(await storage.StoreChunkEvent.WaitAsync(timeout));
+			}
 
-		Assert.Equal(["0-0"], archive.Chunks);
-	}
+			// triggers chunk switch
+			storage.StoreChunkEvent.Reset();
+			var chunk = await result.Db.Manager.GetInitializedChunk(0, CancellationToken.None);
+			archiver.Handle(new SystemMessage.ChunkSwitched(chunk.ChunkInfo));
+			Assert.True(await storage.StoreChunkEvent.WaitAsync(timeout));
+		}
 
-
-	[Fact]
-	public async Task doesnt_archive_a_completed_chunk_if_its_not_yet_committed() {
-		var (sut, archive) = CreateSut();
-
-		var chunkInfo = GetChunkInfo(0, 0);
-		sut.Handle(new SystemMessage.ChunkCompleted(chunkInfo));
-		sut.Handle(new ReplicationTrackingMessage.ReplicatedTo(0));
-		sut.Handle(new ReplicationTrackingMessage.ReplicatedTo(chunkInfo.ChunkEndPosition - 2));
-		sut.Handle(new ReplicationTrackingMessage.ReplicatedTo(chunkInfo.ChunkEndPosition - 1));
-
-		await WaitFor(numStores: 0, archive);
-
-		Assert.Equal([], archive.Chunks);
-	}
-
-	[Fact]
-	public async Task archives_a_loaded_chunk_on_startup_if_its_complete() {
-		var (sut, archive) = CreateSut();
-
-		var chunkInfo = GetChunkInfo(0, 0, complete: true);
-		sut.Handle(new SystemMessage.ChunkLoaded(chunkInfo));
-		sut.Handle(new SystemMessage.SystemStart());
-
-		await WaitFor(numStores: 1, archive);
-
-		Assert.Equal(["0-0"], archive.Chunks);
+		Assert.Equal(3, storage.NumStores);
 	}
 
 	[Fact]
-	public async Task doesnt_archive_a_loaded_chunk_on_startup_if_its_not_complete() {
-		var (sut, archive) = CreateSut();
+	public async Task switched_chunk_not_archived_when_not_replicated() {
+		var indexDirectory = Fixture.GetFilePathFor("index");
+		using var logFormat = LogFormatHelper<LogFormat.V2, string>.LogFormatFactory.Create(new() {
+			IndexDirectory = indexDirectory,
+		});
+		var dbConfig = TFChunkHelper.CreateSizedDbConfig(Fixture.Directory, 0, chunkSize: 1024 * 1024);
+		var dbCreator = await TFChunkDbCreationHelper<LogFormat.V2, string>.CreateAsync(dbConfig, logFormat);
+		await using var result = await dbCreator
+			.Chunk(Rec.Write(0, "test"))
+			.Chunk(Rec.Write(1, "test"))
+			.Chunk(Rec.Write(2, "test"))
+			.CreateDb();
 
-		var chunkInfo = GetChunkInfo(0, 0, complete: false);
-		sut.Handle(new SystemMessage.ChunkLoaded(chunkInfo));
-		sut.Handle(new SystemMessage.SystemStart());
+		var storage = new FakeArchiveStorage();
+		await using (var archiver = new ArchiverService(new FakeSubscriber(), storage, result.Db.Manager)) {
+			archiver.Handle(new SystemMessage.SystemStart()); // start archiving background task
 
-		await WaitFor(numStores: 0, archive);
+			// archive chunk #0
+			archiver.Handle(new ReplicationTrackingMessage.ReplicatedTo((await result.Db.Manager.GetInitializedChunk(0, CancellationToken.None)).ChunkHeader.ChunkEndPosition));
 
-		Assert.Equal([], archive.Chunks);
+			// switch chunk #1
+			archiver.Handle(new SystemMessage.ChunkSwitched((await result.Db.Manager.GetInitializedChunk(1, CancellationToken.None)).ChunkInfo));
+
+			// ensure that just one chunk is archived
+			var timeout = TimeSpan.FromSeconds(20);
+			await storage.StoreChunkEvent.WaitAsync(timeout);
+		}
+
+		Assert.Equal(1, storage.NumStores);
+		Assert.Contains(0, storage.Chunks);
 	}
 
 	[Fact]
-	public async Task doesnt_archive_a_loaded_chunk_if_system_hasnt_started_up_yet() {
-		var (sut, archive) = CreateSut();
+	public async Task switched_chunk_not_archived_when_its_remote() {
+		var indexDirectory = Fixture.GetFilePathFor("index");
+		using var logFormat = LogFormatHelper<LogFormat.V2, string>.LogFormatFactory.Create(new() {
+			IndexDirectory = indexDirectory,
+		});
+		var dbConfig = TFChunkHelper.CreateSizedDbConfig(Fixture.Directory, 0, chunkSize: 1024 * 1024);
+		var dbCreator = await TFChunkDbCreationHelper<LogFormat.V2, string>.CreateAsync(dbConfig, logFormat);
+		await using var result = await dbCreator
+			.Chunk(Rec.Write(0, "test"))
+			.Chunk(Rec.Write(1, "test"))
+			.Chunk(Rec.Write(2, "test"))
+			.CreateDb();
 
-		var chunkInfo = GetChunkInfo(0, 0, complete: true);
-		sut.Handle(new SystemMessage.ChunkLoaded(chunkInfo));
+		var storage = new FakeArchiveStorage();
+		await using (var archiver = new ArchiverService(new FakeSubscriber(), storage, result.Db.Manager)) {
+			archiver.Handle(new SystemMessage.SystemStart()); // start archiving background task
+			archiver.Handle(new ReplicationTrackingMessage.ReplicatedTo(result.Db.Config.WriterCheckpoint.Read()));
 
-		await WaitFor(numStores: 0, archive);
+			// ensure that chunks archived
+			var timeout = TimeSpan.FromSeconds(20);
+			while (storage.NumStores < 2) {
+				Assert.True(await storage.StoreChunkEvent.WaitAsync(timeout));
+			}
 
-		Assert.Equal([], archive.Chunks);
-	}
+			// triggers chunk switch
+			storage.StoreChunkEvent.Reset();
+			var chunk = await result.Db.Manager.GetInitializedChunk(0, CancellationToken.None);
+			archiver.Handle(new SystemMessage.ChunkSwitched(chunk.ChunkInfo with { IsRemote = true }));
 
-	[Fact]
-	public async Task archives_a_switched_chunk() {
-		var (sut, archive) = CreateSut();
+			await storage.StoreChunkEvent.WaitAsync(timeout: TimeSpan.FromSeconds(1));
+		}
 
-		var chunkInfo = GetChunkInfo(0, 0, complete: true);
-		sut.Handle(new SystemMessage.ChunkSwitched(chunkInfo));
-
-		await WaitFor(numStores: 1, archive);
-
-		Assert.Equal(["0-0"], archive.Chunks);
-	}
-
-	[Fact]
-	public async Task prioritizes_archiving_by_chunk_number() {
-		var (sut, archive) = CreateSut(chunkStorageDelay: TimeSpan.FromMilliseconds(100));
-
-		sut.Handle(new SystemMessage.ChunkCompleted(GetChunkInfo(3, 3, complete: true)));
-		sut.Handle(new SystemMessage.ChunkCompleted(GetChunkInfo(4, 4, complete: true)));
-		sut.Handle(new ReplicationTrackingMessage.ReplicatedTo(GetChunkInfo(4, 4, complete: true).ChunkEndPosition));
-
-		// chunks can be loaded out of order, since they are opened in parallel
-		sut.Handle(new SystemMessage.ChunkLoaded(GetChunkInfo(2, 2, complete: true)));
-		sut.Handle(new SystemMessage.ChunkLoaded(GetChunkInfo(1, 1, complete: true)));
-		sut.Handle(new SystemMessage.ChunkLoaded(GetChunkInfo(0, 0, complete: true)));
-		sut.Handle(new SystemMessage.SystemStart());
-
-		await WaitFor(numStores: 5, archive);
-
-		Assert.Equal(["3-3", "0-0", "1-1", "2-2", "4-4"], archive.Chunks);
-	}
-
-	[Fact]
-	public async Task doesnt_archive_chunks_that_were_already_archived_at_startup() {
-		var (sut, archive) = CreateSut(existingChunks:	[ "0-0", "1-1" ]);
-
-		sut.Handle(new SystemMessage.ChunkLoaded(GetChunkInfo(0, 0, complete: true)));
-		sut.Handle(new SystemMessage.ChunkLoaded(GetChunkInfo(1, 1, complete: true)));
-		sut.Handle(new SystemMessage.ChunkLoaded(GetChunkInfo(2, 2, complete: true)));
-		sut.Handle(new SystemMessage.ChunkLoaded(GetChunkInfo(3, 3, complete: true)));
-		sut.Handle(new SystemMessage.SystemStart());
-
-		await WaitFor(numStores: 2, archive);
-
-		Assert.Equal([ "0-0", "1-1", "2-2", "3-3" ], archive.Chunks);
-	}
-
-	[Fact]
-	public async Task removes_previous_chunks_with_same_chunk_numbers_from_the_archive() {
-		var (sut, archive) = CreateSut(existingChunks:	[ "0-0", "1-1" ]);
-
-		sut.Handle(new SystemMessage.ChunkSwitched(GetChunkInfo(0, 1, complete: true)));
-
-		await WaitFor(numStores: 1, archive);
-
-		Assert.Equal([ "0-1" ], archive.Chunks);
-	}
-
-	[Fact]
-	public async Task cancels_archiving_when_system_shuts_down() {
-		var (sut, archive) = CreateSut(TimeSpan.FromMilliseconds(100));
-
-		var chunkInfo = GetChunkInfo(0, 0);
-		sut.Handle(new SystemMessage.ChunkCompleted(chunkInfo));
-		sut.Handle(new ReplicationTrackingMessage.ReplicatedTo(chunkInfo.ChunkEndPosition));
-		sut.Handle(new SystemMessage.BecomeShuttingDown(Guid.NewGuid(), exitProcess: true, shutdownHttp: true));
-
-		await WaitFor(numStores: 0, archive);
-
-		Assert.Equal([ ], archive.Chunks);
+		Assert.Equal(2, storage.NumStores);
 	}
 }
 
-internal class FakeSubscriber : ISubscriber {
+file sealed class FakeSubscriber : ISubscriber {
 	public void Subscribe<T>(IAsyncHandle<T> handler) where T : Message { }
 	public void Unsubscribe<T>(IAsyncHandle<T> handler) where T : Message { }
 }
 
+file sealed class FakeArchiveStorage : IArchiveStorage {
+	public readonly List<int> Chunks;
+	public readonly AsyncAutoResetEvent StoreChunkEvent;
+	public volatile int NumStores;
 
-internal class FakeArchiveStorage : IArchiveStorageWriter, IArchiveStorageReader, IArchiveStorageFactory {
-	public List<string> Chunks;
-	public int Stores => Interlocked.CompareExchange(ref _stores, 0, 0);
-	private int _stores;
+	public long Checkpoint;
 
-	private readonly TimeSpan _chunkStorageDelay;
-	private readonly string[] _existingChunks;
-
-	public FakeArchiveStorage(TimeSpan chunkStorageDelay, string[] existingChunks) {
-		_chunkStorageDelay = chunkStorageDelay;
-		_existingChunks = existingChunks;
-		Chunks = new List<string>(existingChunks);
+	public FakeArchiveStorage(long existingCheckpoint = 0L) {
+		Checkpoint = existingCheckpoint;
+		Chunks = [];
+		StoreChunkEvent = new(initialState: false);
 	}
 
-	public IArchiveStorageReader CreateReader() => this;
-	public IArchiveStorageWriter CreateWriter() => this;
-
-	public async ValueTask<bool> StoreChunk(string chunkPath, CancellationToken ct) {
-		await Task.Delay(_chunkStorageDelay, ct);
-		Chunks.Add(chunkPath);
-		Interlocked.Increment(ref _stores);
-		return true;
+	public ValueTask StoreChunk(IChunkBlob chunk, CancellationToken ct) {
+		Chunks.Add(chunk.ChunkHeader.ChunkStartNumber);
+		Interlocked.Increment(ref NumStores);
+		StoreChunkEvent.Set();
+		return ValueTask.CompletedTask;
 	}
 
-	public ValueTask<bool> RemoveChunks(int chunkStartNumber, int chunkEndNumber, string exceptChunk, CancellationToken ct) {
-		var chunks = Chunks.ToArray();
-		foreach (var chunk in chunks) {
-			if (chunk == exceptChunk)
-				continue;
-			var tokens = chunk.Split("-");
-			var curChunkStartNumber = int.Parse(tokens[0]);
-			var curChunkEndNumber = int.Parse(tokens[0]);
-			if (curChunkStartNumber >= chunkStartNumber && curChunkEndNumber <= chunkEndNumber)
-				Chunks.Remove(chunk);
-		}
-
-		return ValueTask.FromResult(true);
+	public ValueTask<long> GetCheckpoint(CancellationToken ct) {
+		return ValueTask.FromResult(Checkpoint);
 	}
 
-	public ValueTask<Stream> GetChunk(string chunkPath, CancellationToken ct) {
+	public ValueTask SetCheckpoint(long checkpoint, CancellationToken ct) {
+		Checkpoint = checkpoint;
+		return ValueTask.CompletedTask;
+	}
+
+	public ValueTask<int> ReadAsync(int logicalChunkNumber, Memory<byte> buffer, long offset, CancellationToken ct) {
 		throw new NotImplementedException();
 	}
 
-	public IAsyncEnumerable<string> ListChunks(CancellationToken ct) {
-		return _existingChunks.ToAsyncEnumerable();
+	public ValueTask<ArchivedChunkMetadata> GetMetadataAsync(int logicalChunkNumber, CancellationToken token) {
+		throw new NotImplementedException();
 	}
 }

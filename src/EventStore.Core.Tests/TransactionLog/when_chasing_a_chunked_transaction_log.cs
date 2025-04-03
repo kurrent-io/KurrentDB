@@ -1,10 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Buffers.Binary;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Buffers;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
@@ -18,12 +20,15 @@ namespace EventStore.Core.Tests.TransactionLog;
 
 public static class LogRecordExtensions {
 	public static void WriteWithLengthPrefixAndSuffixTo(this ILogRecord record, BinaryWriter writer) {
-		using (var memoryStream = new MemoryStream()) {
-			record.WriteTo(new BinaryWriter(memoryStream));
-			var length = (int)memoryStream.Length;
-			writer.Write(length);
-			writer.Write(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
-			writer.Write(length);
+		var localWriter = new BufferWriterSlim<byte>();
+		try {
+			record.WriteTo(ref localWriter);
+
+			writer.Write(localWriter.WrittenCount);
+			writer.Write(localWriter.WrittenSpan);
+			writer.Write(localWriter.WrittenCount);
+		} finally {
+			localWriter.Dispose();
 		}
 	}
 }
@@ -144,7 +149,7 @@ public class when_chasing_a_chunked_transaction_log<TLogFormat, TStreamId> : Spe
 			data: new byte[9000],
 			metadata: new byte[] {7, 17});
 		var writer = new TFChunkWriter(db);
-		writer.Open();
+		await writer.Open(CancellationToken.None);
 
 		Assert.IsTrue(await writer.Write(recordToWrite, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();
@@ -188,7 +193,7 @@ public class when_chasing_a_chunked_transaction_log<TLogFormat, TStreamId> : Spe
 			data: new byte[] {1, 2, 3, 4, 5},
 			metadata: new byte[] {7, 17});
 		var writer = new TFChunkWriter(db);
-		writer.Open();
+		await writer.Open(CancellationToken.None);
 
 		Assert.IsTrue(await writer.Write(recordToWrite, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();

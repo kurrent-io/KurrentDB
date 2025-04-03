@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -14,14 +14,14 @@ using Grpc.Core;
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {
-	private static readonly Operation GetInfoOperation = new Operation(Plugins.Authorization.Operations.Subscriptions.Statistics);
+	private static readonly Operation GetInfoOperation = new(Plugins.Authorization.Operations.Subscriptions.Statistics);
+
 	public override async Task<GetInfoResp> GetInfo(GetInfoReq request, ServerCallContext context) {
 		var getPersistentSubscriptionInfoSource = new TaskCompletionSource<GetInfoResp>();
 
 		var user = context.GetHttpContext().User;
 
-		if (!await _authorizationProvider.CheckAccessAsync(user,
-			GetInfoOperation, context.CancellationToken)) {
+		if (!await _authorizationProvider.CheckAccessAsync(user, GetInfoOperation, context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
 
@@ -38,62 +38,51 @@ internal partial class PersistentSubscriptions {
 		return await getPersistentSubscriptionInfoSource.Task;
 
 		void HandleGetPersistentSubscriptionStatsCompleted(Message message) {
-			if (message is ClientMessage.NotHandled notHandled && RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
-				getPersistentSubscriptionInfoSource.TrySetException(ex);
-				return;
+			switch (message) {
+				case ClientMessage.NotHandled notHandled when RpcExceptions.TryHandleNotHandled(notHandled, out var ex):
+					getPersistentSubscriptionInfoSource.TrySetException(ex);
+					return;
+				case MonitoringMessage.GetPersistentSubscriptionStatsCompleted completed:
+					switch (completed.Result) {
+						case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Success:
+							var getInfoResp = new GetInfoResp {
+								SubscriptionInfo = ParseSubscriptionInfo(completed.SubscriptionStats.First())
+							};
+							getPersistentSubscriptionInfoSource.TrySetResult(getInfoResp);
+							return;
+						case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.NotFound:
+							getPersistentSubscriptionInfoSource.TrySetException(RpcExceptions.PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName));
+							return;
+						case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.NotReady:
+							getPersistentSubscriptionInfoSource.TrySetException(RpcExceptions.ServerNotReady());
+							return;
+						case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Fail:
+							getPersistentSubscriptionInfoSource.TrySetException(
+								RpcExceptions.PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.ErrorString));
+							return;
+						default:
+							getPersistentSubscriptionInfoSource.TrySetException(RpcExceptions.UnknownError(completed.Result));
+							return;
+					}
+				default:
+					getPersistentSubscriptionInfoSource.TrySetException(RpcExceptions.UnknownMessage<MonitoringMessage.GetPersistentSubscriptionStatsCompleted>(message));
+					break;
 			}
-
-			if (message is MonitoringMessage.GetPersistentSubscriptionStatsCompleted completed) {
-				switch (completed.Result) {
-					case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Success:
-						var getInfoResp = new GetInfoResp {
-							SubscriptionInfo = ParseSubscriptionInfo(completed.SubscriptionStats.First())
-						};
-						getPersistentSubscriptionInfoSource.TrySetResult(getInfoResp);
-						return;
-					case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.NotFound:
-						getPersistentSubscriptionInfoSource.TrySetException(
-							RpcExceptions.PersistentSubscriptionDoesNotExist(streamId,
-								request.Options.GroupName));
-						return;
-					case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.NotReady:
-						getPersistentSubscriptionInfoSource.TrySetException(
-							RpcExceptions.ServerNotReady());
-						return;
-					case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Fail:
-						getPersistentSubscriptionInfoSource.TrySetException(
-							RpcExceptions.PersistentSubscriptionFailed(streamId, request.Options.GroupName,
-								completed.ErrorString));
-						return;
-					default:
-						getPersistentSubscriptionInfoSource.TrySetException(
-							RpcExceptions.UnknownError(completed.Result));
-						return;
-				}
-			}
-			getPersistentSubscriptionInfoSource.TrySetException(
-				RpcExceptions.UnknownMessage<MonitoringMessage.GetPersistentSubscriptionStatsCompleted>(
-					message));
 		}
 	}
 
 	public override async Task<ListResp> List(ListReq request, ServerCallContext context) {
 		var listPersistentSubscriptionsSource = new TaskCompletionSource<ListResp>();
-		var correlationId = Guid.NewGuid();
-
 		var user = context.GetHttpContext().User;
 
-		if (!await _authorizationProvider.CheckAccessAsync(user,
-			GetInfoOperation, context.CancellationToken)) {
+		if (!await _authorizationProvider.CheckAccessAsync(user, GetInfoOperation, context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
 
 		var streamId = string.Empty;
-		switch (request.Options.ListOptionCase)
-		{
+		switch (request.Options.ListOptionCase) {
 			case ListReq.Types.Options.ListOptionOneofCase.ListAllSubscriptions:
-				_publisher.Publish(new MonitoringMessage.GetAllPersistentSubscriptionStats(
-					new CallbackEnvelope(HandleListSubscriptionsCompleted)));
+				_publisher.Publish(new MonitoringMessage.GetAllPersistentSubscriptionStats(new CallbackEnvelope(HandleListSubscriptionsCompleted)));
 				break;
 			case ListReq.Types.Options.ListOptionOneofCase.ListForStream:
 				streamId = request.Options.ListForStream.StreamOptionCase switch {
@@ -113,45 +102,38 @@ internal partial class PersistentSubscriptions {
 		return await listPersistentSubscriptionsSource.Task;
 
 		void HandleListSubscriptionsCompleted(Message message) {
-			if (message is ClientMessage.NotHandled notHandled && RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
-				listPersistentSubscriptionsSource.TrySetException(ex);
-				return;
+			switch (message) {
+				case ClientMessage.NotHandled notHandled when RpcExceptions.TryHandleNotHandled(notHandled, out var ex):
+					listPersistentSubscriptionsSource.TrySetException(ex);
+					return;
+				case MonitoringMessage.GetPersistentSubscriptionStatsCompleted completed:
+					switch (completed.Result) {
+						case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Success:
+							var listResp = new ListResp();
+							listResp.Subscriptions.AddRange(completed.SubscriptionStats.Select(ParseSubscriptionInfo));
+							listPersistentSubscriptionsSource.TrySetResult(listResp);
+							return;
+						case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.NotFound:
+							listPersistentSubscriptionsSource.TrySetException(RpcExceptions.PersistentSubscriptionDoesNotExist(streamId, ""));
+							return;
+						case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.NotReady:
+							listPersistentSubscriptionsSource.TrySetException(RpcExceptions.ServerNotReady());
+							return;
+						case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Fail:
+							listPersistentSubscriptionsSource.TrySetException(RpcExceptions.PersistentSubscriptionFailed(streamId, "", completed.ErrorString));
+							return;
+						default:
+							listPersistentSubscriptionsSource.TrySetException(RpcExceptions.UnknownError(completed.Result));
+							return;
+					}
+				default:
+					listPersistentSubscriptionsSource.TrySetException(RpcExceptions.UnknownMessage<MonitoringMessage.GetPersistentSubscriptionStatsCompleted>(message));
+					break;
 			}
-
-			if (message is MonitoringMessage.GetPersistentSubscriptionStatsCompleted completed) {
-				switch (completed.Result) {
-					case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Success:
-						var listResp = new ListResp();
-						listResp.Subscriptions.AddRange(
-							completed.SubscriptionStats.Select(ParseSubscriptionInfo)
-						);
-						listPersistentSubscriptionsSource.TrySetResult(listResp);
-						return;
-					case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.NotFound:
-						listPersistentSubscriptionsSource.TrySetException(
-							RpcExceptions.PersistentSubscriptionDoesNotExist(streamId, ""));
-						return;
-					case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.NotReady:
-						listPersistentSubscriptionsSource.TrySetException(
-							RpcExceptions.ServerNotReady());
-						return;
-					case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Fail:
-						listPersistentSubscriptionsSource.TrySetException(
-							RpcExceptions.PersistentSubscriptionFailed(streamId, "", completed.ErrorString));
-						return;
-					default:
-						listPersistentSubscriptionsSource.TrySetException(
-							RpcExceptions.UnknownError(completed.Result));
-						return;
-				}
-			}
-			listPersistentSubscriptionsSource.TrySetException(
-				RpcExceptions.UnknownMessage<MonitoringMessage.GetPersistentSubscriptionStatsCompleted>(
-					message));
 		}
 	}
 
-	private SubscriptionInfo ParseSubscriptionInfo(MonitoringMessage.PersistentSubscriptionInfo input) {
+	private static SubscriptionInfo ParseSubscriptionInfo(MonitoringMessage.PersistentSubscriptionInfo input) {
 		var connectionInfo = new List<SubscriptionInfo.Types.ConnectionInfo>();
 		foreach (var conn in input.Connections) {
 			var connInfo = new SubscriptionInfo.Types.ConnectionInfo {
@@ -165,8 +147,8 @@ internal partial class PersistentSubscriptions {
 				ConnectionName = conn.ConnectionName
 			};
 			connInfo.ObservedMeasurements.AddRange(
-				conn.ObservedMeasurements.Select(x => new SubscriptionInfo.Types.Measurement
-					{Key = x.Key, Value = x.Value}));
+				conn.ObservedMeasurements.Select(x => new SubscriptionInfo.Types.Measurement { Key = x.Key, Value = x.Value })
+			);
 			connectionInfo.Add(connInfo);
 		}
 

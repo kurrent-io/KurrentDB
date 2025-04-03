@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Helpers.IODispatcherTests;
+using EventStore.Core.Util;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
@@ -56,7 +57,7 @@ public abstract class with_multi_stream_checkpoint_manager<TLogFormat, TStreamId
 		_checkpointManager = new MultiStreamMultiOutputCheckpointManager(_bus, _projectionId, _projectionVersion,
 			SystemAccounts.System,
 			_ioDispatcher, _projectionConfig, _projectionName, _positionTagger, _namingBuilder, true, true, false,
-			_coreProjectionCheckpointWriter);
+			_coreProjectionCheckpointWriter, Opts.MaxProjectionStateSizeDefault);
 
 		When();
 	}

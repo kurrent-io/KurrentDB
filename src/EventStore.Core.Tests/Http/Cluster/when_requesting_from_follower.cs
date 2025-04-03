@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -9,9 +9,11 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Core.Data;
+using EventStore.Core.Services;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Integration;
 using NUnit.Framework;
+using ContentType = EventStore.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Http.Cluster;
 
@@ -31,12 +33,12 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 		var follower = GetFollowers().First();
 		_followerEndPoint = follower.HttpEndPoint;
 		_client = follower.CreateHttpClient();
-		
+
 		// Wait for the admin user to be created
 		await leader.AdminUserCreated;
 		// Wait for the admin user created event to be replicated before starting our tests
 		var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
-		AssertEx.IsOrBecomesTrue(()=> follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex, 
+		AssertEx.IsOrBecomesTrue(()=> follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex,
 			timeout: TimeSpan.FromSeconds(10),
 			msg: $"Waiting for follower to reach index checkpoint timed out! (LeaderIndex={leaderIndex},FollowerState={follower.NodeState})");
 
@@ -55,7 +57,7 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 		AssertEx.IsOrBecomesTrue(() => leader.Db.Config.IndexCheckpoint.Read() > leaderIndex,
 			timeout: TimeSpan.FromSeconds(10),
 			msg: "Waiting for event to be processed on leader timed out!");
-		
+
 		leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
 		AssertEx.IsOrBecomesTrue(() => follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex,
 			timeout: TimeSpan.FromSeconds(10),
@@ -116,9 +118,12 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 	}
 
 	[Test]
-	public async Task should_redirect_to_leader_when_writing_with_requires_leader() {
+	[TestCase(SystemHeaders.RequireLeader)]
+	[TestCase(SystemHeaders.LegacyRequireLeader)]
+	[TestCase(SystemHeaders.RequireMaster)]
+	public async Task should_redirect_to_leader_when_writing_with_requires_leader(string requireLeaderHeader) {
 		var path = $"streams/{TestStream}";
-		var response = await PostEvent(_followerEndPoint, path);
+		var response = await PostEvent(_followerEndPoint, path, requireLeader: true, requireLeaderHeader);
 
 		Assert.AreEqual(HttpStatusCode.TemporaryRedirect, response.StatusCode);
 		var leaderLocation = CreateUri(_leaderEndPoint, path);
@@ -126,9 +131,12 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 	}
 
 	[Test]
-	public async Task should_redirect_to_leader_when_deleting_with_requires_leader() {
+	[TestCase(SystemHeaders.RequireLeader)]
+	[TestCase(SystemHeaders.LegacyRequireLeader)]
+	[TestCase(SystemHeaders.RequireMaster)]
+	public async Task should_redirect_to_leader_when_deleting_with_requires_leader(string requireLeaderHeader) {
 		var path = $"streams/{TestDeleteStream}";
-		var response = await DeleteStream(_followerEndPoint, path, requireLeader: true);
+		var response = await DeleteStream(_followerEndPoint, path, requireLeader: true, requireLeaderHeader);
 
 		Assert.AreEqual(HttpStatusCode.TemporaryRedirect, response.StatusCode);
 		var leaderLocation = CreateUri(_leaderEndPoint, path);
@@ -146,9 +154,12 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 	}
 
 	[Test]
-	public async Task should_redirect_to_leader_when_reading_from_stream_forwards_with_requires_leader() {
+	[TestCase(SystemHeaders.RequireLeader)]
+	[TestCase(SystemHeaders.LegacyRequireLeader)]
+	[TestCase(SystemHeaders.RequireMaster)]
+	public async Task should_redirect_to_leader_when_reading_from_stream_forwards_with_requires_leader(string requireLeaderHeader) {
 		var path = $"streams/{TestStream}/0/forward/1";
-		var response = await ReadStream(_followerEndPoint, path, requireLeader: true);
+		var response = await ReadStream(_followerEndPoint, path, requireLeader: true, requireLeaderHeader);
 
 		Assert.AreEqual(HttpStatusCode.TemporaryRedirect, response.StatusCode);
 		var leaderLocation = CreateUri(_leaderEndPoint, path);
@@ -166,47 +177,50 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 	}
 
 	[Test]
-	public async Task should_redirect_to_leader_when_reading_from_all_forwards_with_requires_leader() {
+	[TestCase(SystemHeaders.RequireLeader)]
+	[TestCase(SystemHeaders.LegacyRequireLeader)]
+	[TestCase(SystemHeaders.RequireMaster)]
+	public async Task should_redirect_to_leader_when_reading_from_all_forwards_with_requires_leader(string requireLeaderHeader) {
 		var path = $"streams/$all/00000000000000000000000000000000/forward/1";
-		var response = await ReadStream(_followerEndPoint, path, requireLeader: true);
+		var response = await ReadStream(_followerEndPoint, path, requireLeader: true, requireLeaderHeader);
 
 		Assert.AreEqual(HttpStatusCode.TemporaryRedirect, response.StatusCode);
 		var leaderLocation = CreateUri(_leaderEndPoint, path);
 		Assert.AreEqual(leaderLocation, response.Headers.Location);
 	}
 
-	private Task<HttpResponseMessage> ReadStream(IPEndPoint nodeEndpoint, string path, bool requireLeader) {
+	private Task<HttpResponseMessage> ReadStream(IPEndPoint nodeEndpoint, string path, bool requireLeader, string requireLeaderHeader = SystemHeaders.RequireLeader) {
 		var uri = CreateUri(nodeEndpoint, path);
-		var request = CreateRequest(uri, HttpMethod.Get, requireLeader);
-		request.Headers.Add("Accept", "application/json");
+		var request = CreateRequest(uri, HttpMethod.Get, requireLeader, requireLeaderHeader);
+		request.Headers.Add("Accept", ContentType.Json);
 		return GetRequestResponse(request);
 	}
 
-	private Task<HttpResponseMessage> DeleteStream(IPEndPoint nodeEndpoint, string path, bool requireLeader = true) {
+	private Task<HttpResponseMessage> DeleteStream(IPEndPoint nodeEndpoint, string path, bool requireLeader = true, string requireLeaderHeader = SystemHeaders.RequireLeader) {
 		var uri = CreateUri(nodeEndpoint, path);
-		var request = CreateRequest(uri, HttpMethod.Delete, requireLeader);
+		var request = CreateRequest(uri, HttpMethod.Delete, requireLeader, requireLeaderHeader);
 		return GetRequestResponse(request);
 	}
 
-	private Task<HttpResponseMessage> PostEvent(IPEndPoint nodeEndpoint, string path, bool requireLeader = true) {
+	private Task<HttpResponseMessage> PostEvent(IPEndPoint nodeEndpoint, string path, bool requireLeader = true, string requireLeaderHeader = SystemHeaders.RequireLeader) {
 		var uri = CreateUri(nodeEndpoint, path);
-		var request = CreateRequest(uri, HttpMethod.Post, requireLeader);
+		var request = CreateRequest(uri, HttpMethod.Post, requireLeader, requireLeaderHeader);
 
-		request.Headers.Add("ES-EventType", "SomeType");
-		request.Headers.Add("ES-ExpectedVersion", ExpectedVersion.Any.ToString());
-		request.Headers.Add("ES-EventId", Guid.NewGuid().ToString());
+		request.Headers.Add(SystemHeaders.EventType, "SomeType");
+		request.Headers.Add(SystemHeaders.ExpectedVersion, ExpectedVersion.Any.ToString());
+		request.Headers.Add(SystemHeaders.EventId, Guid.NewGuid().ToString());
 		var data = "{a : \"1\", b:\"3\", c:\"5\" }";
-		request.Content = new StringContent(data, Encoding.UTF8, "application/json");
+		request.Content = new StringContent(data, Encoding.UTF8, ContentType.Json);
 
 		return GetRequestResponse(request);
 	}
-	
+
 	private static string GetAuthorizationHeader(NetworkCredential credentials)
 		=> Convert.ToBase64String(Encoding.ASCII.GetBytes($"{credentials.UserName}:{credentials.Password}"));
 
-	private HttpRequestMessage CreateRequest(Uri uri, HttpMethod method, bool requireLeader) {
+	private HttpRequestMessage CreateRequest(Uri uri, HttpMethod method, bool requireLeader, string requireLeaderHeader) {
 		var request = new HttpRequestMessage(method, uri);
-		request.Headers.Add("ES-RequireLeader", requireLeader ? "True" : "False");
+		request.Headers.Add(requireLeaderHeader, requireLeader ? "True" : "False");
 		request.Headers.Authorization = new AuthenticationHeaderValue("Basic",
             					GetAuthorizationHeader(DefaultData.AdminNetworkCredentials));
 		return request;

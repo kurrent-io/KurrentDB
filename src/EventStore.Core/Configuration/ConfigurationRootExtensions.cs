@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 
@@ -16,6 +16,27 @@ using Microsoft.Extensions.Configuration;
 namespace EventStore.Core.Configuration;
 
 public static class ConfigurationRootExtensions {
+	public static string[] CheckProvidersForLegacyEventStoreConfiguration(this IConfigurationRoot? configurationRoot) {
+		if (configurationRoot == null)
+			return [];
+		var errorMessages = new List<string>();
+		foreach (var provider in configurationRoot.Providers) {
+			var source = provider.GetType();
+			if (source == typeof(EventStoreCommandLineConfigurationProvider) ||
+			    source == typeof(EventStoreEnvironmentVariablesConfigurationProvider) ||
+			    source == typeof(EventStoreJsonFileConfigurationProvider)) {
+				errorMessages.AddRange(
+					provider.GetChildKeys().Select(
+						key =>
+							$"\"{key}\" Provided by: {ClusterVNodeOptions.GetSourceDisplayName(KurrentConfigurationKeys.Prefix + ":" + key, provider)}. " +
+							$"The \"{KurrentConfigurationKeys.LegacyEventStorePrefix}\" configuration root " +
+							$"has been deprecated, use \"{KurrentConfigurationKeys.Prefix}\" instead."));
+			}
+		}
+
+		return errorMessages.ToArray();
+	}
+
 	public static string? CheckProvidersForEnvironmentVariables(this IConfigurationRoot? configurationRoot, IEnumerable<Type> optionSections) {
 		if (configurationRoot == null)
 			return null;
@@ -30,7 +51,8 @@ public static class ConfigurationRootExtensions {
 		foreach (var provider in configurationRoot.Providers) {
 			var source = provider.GetType();
 
-			if (source == typeof(EventStoreDefaultValuesConfigurationProvider) ||
+			if (source == typeof(KurrentDefaultValuesConfigurationProvider) ||
+				source == typeof(KurrentDBEnvironmentVariablesConfigurationProvider) ||
 				source == typeof(EventStoreEnvironmentVariablesConfigurationProvider))
 				continue;
 
@@ -44,12 +66,35 @@ public static class ConfigurationRootExtensions {
 				errorDescriptions
 					.Aggregate(
 						new StringBuilder(),
-						(sb, pair) => sb.AppendLine($"\"{pair.key}\" Provided by: {ClusterVNodeOptions.GetSourceDisplayName(EventStoreConfigurationKeys.Prefix + ":" + pair.key, provider)}. {pair.Message}")
+						(sb, pair) => sb.AppendLine($"\"{pair.key}\" Provided by: {ClusterVNodeOptions.GetSourceDisplayName(KurrentConfigurationKeys.Prefix + ":" + pair.key, provider)}. {pair.Message}")
 					)
 			);
 		}
 
 		return errorBuilder.Length != 0 ? errorBuilder.ToString() : null;
+	}
+
+	public static string[] CheckProvidersForEventStoreDefaultLocations(
+		this IConfigurationRoot? configurationRoot, LocationOptionWithLegacyDefault[] optionsWithLegacyDefaults) {
+		if (configurationRoot is null) {
+			return [];
+		}
+
+		var legacyLocationsProvider = configurationRoot
+			.Providers.OfType<EventStoreDefaultLocationsProvider>().FirstOrDefault();
+		if (legacyLocationsProvider is null) {
+			return [];
+		}
+
+		var warnings = new List<string>();
+		foreach (var legacyOption in optionsWithLegacyDefaults) {
+			if (!legacyLocationsProvider.TryGet(legacyOption.OptionKey, out var value)) continue;
+			if (value is not null) {
+				warnings.Add($"\"{legacyOption.OptionKey}\": The default location \"{legacyOption.KurrentPath}\" was not found, using the legacy default location \"{value}\".");
+			}
+		}
+
+		return warnings.ToArray();
 	}
 
 	public static T BindOptions<T>(this IConfiguration configuration) where T : new() {

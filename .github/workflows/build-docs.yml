@@ -1,0 +1,14 @@
+name: Build Production Site
+
+on:
+  push:
+    branches: [release/*]
+    paths:
+      - '**.md'
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger build
+        run: curl -X POST -d {} "${{ secrets.CLOUDFLARE_BUILD_HOOK }}"

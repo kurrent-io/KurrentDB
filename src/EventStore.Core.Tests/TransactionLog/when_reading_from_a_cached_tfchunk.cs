@@ -1,14 +1,15 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Transforms.Identity;
+using EventStore.Core.Transforms;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -36,9 +37,9 @@ public class when_reading_from_a_cached_tfchunk<TLogFormat, TStreamId> : Specifi
 		_result = await _chunk.TryAppend(_record, CancellationToken.None);
 		await _chunk.Flush(CancellationToken.None);
 		await _chunk.Complete(CancellationToken.None);
-		_cachedChunk = await TFChunk.FromCompletedFile(Filename, verifyHash: true, unbufferedRead: false,
+		_cachedChunk = await TFChunk.FromCompletedFile(new ChunkLocalFileSystem(Path.GetDirectoryName(Filename)), Filename, verifyHash: true, unbufferedRead: false,
 			reduceFileCachePressure: false, tracker: new TFChunkTracker.NoOp(),
-			getTransformFactory: _ => new IdentityChunkTransformFactory());
+			getTransformFactory: DbTransformManager.Default);
 		await _cachedChunk.CacheInMemory(CancellationToken.None);
 	}
 

@@ -1,14 +1,15 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Scavenging;
+using EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
 using Xunit;
-using static EventStore.Core.XUnit.Tests.Scavenge.StreamMetadatas;
+using static EventStore.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;
 
@@ -142,6 +143,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Opening Chunk 0-0"),
 				Tracer.Line("Exception executing chunks"))
 			.AssertState(state => {
@@ -192,6 +194,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done Chunk 0"),
 				Tracer.Line("    Commit"),
@@ -253,6 +256,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done Chunk 0"),
 				Tracer.Line("    Commit"),
@@ -322,7 +326,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				var accumulating = Assert.IsType<ScavengeCheckpoint.Accumulating>(checkpoint);
 				Assert.Equal(0, accumulating.DoneLogicalChunkNumber);
 			})
-			.RunAsync();
+			.RunAndKeepDbAsync();
 
 		// now complete the scavenge
 		await new Scenario<LogFormat.V2, string>()
@@ -363,14 +367,17 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Opening Chunk 0-0"),
 				Tracer.Line("    Switched in chunk-000000.000001"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done Chunk 0"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 1-1"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done Chunk 1"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 2-2"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done Chunk 2"),
 				Tracer.Line("    Commit"),
@@ -468,7 +475,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				var calculating = Assert.IsType<ScavengeCheckpoint.Calculating<string>>(checkpoint);
 				Assert.Equal("None", calculating.DoneStreamHandle.ToString());
 			})
-			.RunAsync();
+			.RunAndKeepDbAsync();
 
 		// now complete the scavenge
 		await new Scenario<LogFormat.V2, string>()
@@ -491,11 +498,13 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Opening Chunk 0-0"),
 				Tracer.Line("    Switched in chunk-000000.000001"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done Chunk 0"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 1-1"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done Chunk 1"),
 				Tracer.Line("    Commit"),
@@ -591,9 +600,11 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done Chunk 0"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 1-1"),
 				Tracer.Line("    Opening Chunk 1-1"),
 				Tracer.Line("Exception executing chunks"))
 			.AssertState(state => {
@@ -602,7 +613,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				var executing = Assert.IsType<ScavengeCheckpoint.ExecutingChunks>(checkpoint);
 				Assert.Equal(0, executing.DoneLogicalChunkNumber);
 			})
-			.RunAsync();
+			.RunAndKeepDbAsync();
 
 		// now complete the scavenge
 		await new Scenario<LogFormat.V2, string>()
@@ -615,6 +626,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				// no calculation
 				// chunk execution continues from checkpoint
 				Tracer.Line("Executing chunks from checkpoint: Executing chunks for SP-0 done Chunk 0"),
+				Tracer.Line("    Retaining Chunk 1-1"),
 				Tracer.Line("    Opening Chunk 1-1"),
 				Tracer.Line("    Switched in chunk-000001.000001"),
 				Tracer.Line("    Begin"),
@@ -712,11 +724,13 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Opening Chunk 0-0"),
 				Tracer.Line("    Switched in chunk-000000.000001"),
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done Chunk 0"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 1-1"),
 				Tracer.Line("    Opening Chunk 1-1"),
 				Tracer.Line("    Switched in chunk-000001.000001"),
 				Tracer.Line("    Begin"),
@@ -740,7 +754,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Assert.True(state.TryGetCheckpoint(out var checkpoint));
 				var executing = Assert.IsType<ScavengeCheckpoint.ExecutingIndex>(checkpoint);
 			})
-			.RunAsync();
+			.RunAndKeepDbAsync();
 
 		// now complete the scavenge
 		await new Scenario<LogFormat.V2, string>()
@@ -803,7 +817,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Assert.True(state.TryGetCheckpoint(out var checkpoint));
 				var executing = Assert.IsType<ScavengeCheckpoint.Cleaning>(checkpoint);
 			})
-			.RunAsync();
+			.RunAndKeepDbAsync();
 
 		// now complete the scavenge
 		await new Scenario<LogFormat.V2, string>()
@@ -873,6 +887,7 @@ public class CancellationAndContinuationTests : SqliteDbPerTest<CancellationAndC
 				Tracer.Line("    Begin"),
 				Tracer.Line("        Checkpoint: Executing chunks for SP-0 done None"),
 				Tracer.Line("    Commit"),
+				Tracer.Line("    Retaining Chunk 0-0"),
 				Tracer.Line("    Opening Chunk 0-0"),
 				Tracer.Line("    Switched in chunk-000000.000001"),
 				Tracer.Line("    Begin"),

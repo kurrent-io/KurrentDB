@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using NUnit.Framework;
 using System;
@@ -23,7 +23,7 @@ public class when_restarting_one_node_at_a_time<TLogFormat, TStreamId> : specifi
 			
 			var node = CreateNode(i % 3, _nodeEndpoints[i % 3],
 				new[] {_nodeEndpoints[(i+1)%3].HttpEndPoint, _nodeEndpoints[(i+2)%3].HttpEndPoint});
-			node.Start();
+			await node.Start();
 			_nodes[i % 3] = node;
 
 			await Task.WhenAll(_nodes.Select(x => x.Started)).WithTimeout(TimeSpan.FromSeconds(30));

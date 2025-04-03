@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using System.IO;
@@ -26,10 +26,10 @@ public class EventPositionTests<TLogFormat, TStreamId> : RedactionServiceTestFix
 		if (!_positions.ContainsKey(eventNumber))
 			_positions[eventNumber] = new();
 
-		var chunk = Db.Manager.GetChunkFor(eventRecord.LogPosition);
+		var chunk = await Db.Manager.GetInitializedChunkFor(eventRecord.LogPosition, token);
 		var eventOffset = await chunk.GetActualRawPosition(eventRecord.LogPosition, token);
 		var eventPosition = new EventPosition(
-			eventRecord.LogPosition, Path.GetFileName(chunk.FileName), chunk.ChunkHeader.MinCompatibleVersion, chunk.IsReadOnly, (uint)eventOffset);
+			eventRecord.LogPosition, Path.GetFileName(chunk.LocalFileName), chunk.ChunkHeader.MinCompatibleVersion, chunk.IsReadOnly, (uint)eventOffset);
 		_positions[eventNumber].Add(eventPosition);
 	}
 

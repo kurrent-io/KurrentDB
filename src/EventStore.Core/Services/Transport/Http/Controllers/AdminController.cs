@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -27,6 +27,15 @@ public class AdminController : CommunicationController {
 
 	private static readonly ICodec[] SupportedCodecs = new ICodec[]
 		{Codec.Text, Codec.Json, Codec.Xml, Codec.ApplicationXml};
+
+	private static readonly ICodec[] SupportedStreamCodecs = new ICodec[] {
+		Codec.DescriptionJson,
+		Codec.LegacyDescriptionJson,
+		Codec.Text,
+		Codec.Json,
+		Codec.Xml,
+		Codec.ApplicationXml
+	};
 
 	public static readonly char[] ETagSeparatorArray = { ';' };
 
@@ -68,9 +77,9 @@ public class AdminController : CommunicationController {
 			new ControllerAction("/admin/login", HttpMethod.Get, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Login)),
 			OnGetLogin);
 		Register(service, "/streams/$scavenges/{scavengeId}/{event}/{count}?embed={embed}", HttpMethod.Get, GetStreamEventsBackwardScavenges, Codec.NoCodecs,
-			SupportedCodecs, ReadStreamOperationForScavengeStream);
+			SupportedStreamCodecs, ReadStreamOperationForScavengeStream);
 		Register(service, "/streams/$scavenges?embed={embed}", HttpMethod.Get, GetStreamEventsBackwardScavenges, Codec.NoCodecs,
-			SupportedCodecs, ReadStreamOperationForScavengeStream);
+			SupportedStreamCodecs, ReadStreamOperationForScavengeStream);
 	}
 
 	private static Func<UriTemplateMatch, Operation> ForScavengeStream(OperationDefinition definition) {
@@ -373,7 +382,7 @@ public class AdminController : CommunicationController {
 	}
 
 	private ResponseConfiguration ScavengeInProgressConfigurator(ICodec codec, ClientMessage.ScavengeDatabaseInProgressResponse message) {
-		return new ResponseConfiguration(HttpStatusCode.BadRequest, "Bad Request", "text/plain", Helper.UTF8NoBom);
+		return new ResponseConfiguration(HttpStatusCode.BadRequest, "Bad Request", ContentType.PlainText, Helper.UTF8NoBom);
 	}
 
 	private string ScavengeInProgressFormatter(ICodec codec, ClientMessage.ScavengeDatabaseInProgressResponse message) {
@@ -381,7 +390,7 @@ public class AdminController : CommunicationController {
 	}
 
 	private ResponseConfiguration ScavengeNotFoundConfigurator(ICodec codec, ClientMessage.ScavengeDatabaseNotFoundResponse message) {
-		return new ResponseConfiguration(HttpStatusCode.NotFound, "Not Found", "text/plain", Helper.UTF8NoBom);
+		return new ResponseConfiguration(HttpStatusCode.NotFound, "Not Found", ContentType.PlainText, Helper.UTF8NoBom);
 	}
 
 	private string ScavengeNotFoundFormatter(ICodec codec, ClientMessage.ScavengeDatabaseNotFoundResponse message) {
@@ -389,7 +398,7 @@ public class AdminController : CommunicationController {
 	}
 
 	private ResponseConfiguration ScavengeUnauthorizedConfigurator(ICodec codec, ClientMessage.ScavengeDatabaseUnauthorizedResponse message) {
-		return new ResponseConfiguration(HttpStatusCode.Unauthorized, "Unauthorized", "text/plain", Helper.UTF8NoBom);
+		return new ResponseConfiguration(HttpStatusCode.Unauthorized, "Unauthorized", ContentType.PlainText, Helper.UTF8NoBom);
 	}
 
 	private string ScavengeUnauthorizedFormatter(ICodec codec, ClientMessage.ScavengeDatabaseUnauthorizedResponse message) {
@@ -400,7 +409,8 @@ public class AdminController : CommunicationController {
 		Log.Debug("Error while closing HTTP connection (admin controller): {e}.", exc.Message);
 	}
 		private bool GetDescriptionDocument(HttpEntityManager manager, UriTemplateMatch match) {
-		if (manager.ResponseCodec.ContentType == ContentType.DescriptionDocJson) {
+		if (manager.ResponseCodec.ContentType == ContentType.DescriptionDocJson ||
+		    manager.ResponseCodec.ContentType == ContentType.LegacyDescriptionDocJson) {
 			var stream = match.BoundVariables["stream"];
 			var accepts = (manager.HttpEntity.Request.AcceptTypes?.Length ?? 0) == 0 ||
 			              manager.HttpEntity.Request.AcceptTypes.Contains(ContentType.Any);
@@ -518,6 +528,9 @@ public class AdminController : CommunicationController {
 		resolveLinkTos = defaultOption;
 		var linkToHeader = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.ResolveLinkTos);
 		if (StringValues.IsNullOrEmpty(linkToHeader))
+			linkToHeader =  manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LegacyResolveLinkTos);
+
+		if (StringValues.IsNullOrEmpty(linkToHeader))
 			return true;
 		if (string.Equals(linkToHeader, "False", StringComparison.OrdinalIgnoreCase)) {
 			return true;
@@ -534,18 +547,21 @@ public class AdminController : CommunicationController {
 		requireLeader = false;
 
 		var onlyLeader = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.RequireLeader);
+		var onlyLeaderLegacy = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LegacyRequireLeader);
 		var onlyMaster = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.RequireMaster);
 
-		if (StringValues.IsNullOrEmpty(onlyLeader) && StringValues.IsNullOrEmpty(onlyMaster))
+		if (StringValues.IsNullOrEmpty(onlyLeader) && StringValues.IsNullOrEmpty(onlyMaster) && StringValues.IsNullOrEmpty(onlyLeaderLegacy))
 			return true;
 
 		if (string.Equals(onlyLeader, "True", StringComparison.OrdinalIgnoreCase) ||
+		    string.Equals(onlyLeaderLegacy, "True", StringComparison.OrdinalIgnoreCase) ||
 		    string.Equals(onlyMaster, "True", StringComparison.OrdinalIgnoreCase)) {
 			requireLeader = true;
 			return true;
 		}
 
 		return string.Equals(onlyLeader, "False", StringComparison.OrdinalIgnoreCase) ||
+		       string.Equals(onlyLeaderLegacy, "False", StringComparison.OrdinalIgnoreCase) ||
 		       string.Equals(onlyMaster, "False", StringComparison.OrdinalIgnoreCase);
 	}
 	private long? GetETagStreamVersion(HttpEntityManager manager) {

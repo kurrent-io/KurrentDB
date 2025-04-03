@@ -1,8 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
+using System.Buffers;
+using DotNext.Buffers;
+using DotNext.IO;
 using EventStore.Common.Utils;
 using EventStore.LogCommon;
 
@@ -20,14 +22,14 @@ public enum SystemRecordSerialization : byte {
 	Bson = 3
 }
 
-public class SystemLogRecord : LogRecord, IEquatable<SystemLogRecord>, ISystemLogRecord {
+public sealed class SystemLogRecord : LogRecord, IEquatable<SystemLogRecord>, ISystemLogRecord {
 	public const byte SystemRecordVersion = 0;
 
-	public readonly DateTime TimeStamp;
+	public DateTime TimeStamp { get; }
 	public SystemRecordType SystemRecordType { get; }
-	public readonly SystemRecordSerialization SystemRecordSerialization;
-	public readonly long Reserved;
-	public readonly ReadOnlyMemory<byte> Data;
+	public SystemRecordSerialization SystemRecordSerialization { get; }
+	public long Reserved { get; }
+	public ReadOnlyMemory<byte> Data { get; }
 
 	public SystemLogRecord(long logPosition,
 		DateTime timeStamp,
@@ -42,25 +44,29 @@ public class SystemLogRecord : LogRecord, IEquatable<SystemLogRecord>, ISystemLo
 		Data = data ?? NoData;
 	}
 
-	internal SystemLogRecord(BinaryReader reader, byte version, long logPosition) : base(LogRecordType.System,
-		version, logPosition) {
-		if (version != SystemRecordVersion)
-			throw new ArgumentException(string.Format(
-				"SystemRecord version {0} is incorrect. Supported version: {1}.", version, SystemRecordVersion));
+	internal SystemLogRecord(ref SequenceReader reader, byte version, long logPosition)
+		: base(LogRecordType.System, version, logPosition) {
+		if (version is not SystemRecordVersion)
+			throw new ArgumentException(
+				$"SystemRecord version {version} is incorrect. Supported version: {SystemRecordVersion}.");
 
-		TimeStamp = new DateTime(reader.ReadInt64());
-		SystemRecordType = (SystemRecordType)reader.ReadByte();
-		if (SystemRecordType == SystemRecordType.Invalid)
-			throw new ArgumentException(string.Format("Invalid SystemRecordType {0} at LogPosition {1}.",
-				SystemRecordType, LogPosition));
-		SystemRecordSerialization = (SystemRecordSerialization)reader.ReadByte();
-		if (SystemRecordSerialization == SystemRecordSerialization.Invalid)
-			throw new ArgumentException(string.Format("Invalid SystemRecordSerialization {0} at LogPosition {1}.",
-				SystemRecordSerialization, LogPosition));
-		Reserved = reader.ReadInt64();
-
-		var dataCount = reader.ReadInt32();
-		Data = dataCount == 0 ? NoData : reader.ReadBytes(dataCount);
+		TimeStamp = new(reader.ReadLittleEndian<long>());
+		SystemRecordType =
+			(SystemRecordType)(reader.ReadLittleEndian<byte>()) is var recordType
+			&& recordType is not SystemRecordType.Invalid
+				? recordType
+				: throw new ArgumentException(
+					$"Invalid SystemRecordType {recordType} at LogPosition {logPosition}.");
+		SystemRecordSerialization =
+			(SystemRecordSerialization)(reader.ReadLittleEndian<byte>()) is var recordSer
+			&& recordSer is not SystemRecordSerialization.Invalid
+				? recordSer
+				: throw new ArgumentException(
+					$"Invalid SystemRecordSerialization {recordSer} at LogPosition {logPosition}.");
+		Reserved = reader.ReadLittleEndian<long>();
+		Data = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
+			? reader.Read(dataCount).ToArray()
+			: NoData;
 	}
 
 	public EpochRecord GetEpochRecord() {
@@ -76,20 +82,30 @@ public class SystemLogRecord : LogRecord, IEquatable<SystemLogRecord>, ISystemLo
 			}
 			default:
 				throw new ArgumentOutOfRangeException(
-					string.Format("Unexpected SystemRecordSerialization type: {0}", SystemRecordSerialization),
+					$"Unexpected SystemRecordSerialization type: {SystemRecordSerialization}",
 					"SystemRecordSerialization");
 		}
 	}
 
-	public override void WriteTo(BinaryWriter writer) {
-		base.WriteTo(writer);
+	public override void WriteTo(ref BufferWriterSlim<byte> writer) {
+		base.WriteTo(ref writer);
 
-		writer.Write(TimeStamp.Ticks);
-		writer.Write((byte)SystemRecordType);
-		writer.Write((byte)SystemRecordSerialization);
-		writer.Write(Reserved);
-		writer.Write(Data.Length);
-		writer.Write(Data.Span);
+		writer.WriteLittleEndian(TimeStamp.Ticks);
+		writer.Add((byte)SystemRecordType);
+		writer.Add((byte)SystemRecordSerialization);
+		writer.WriteLittleEndian(Reserved);
+		writer.Write(Data.Span, LengthFormat.LittleEndian);
+	}
+
+	public override int GetSizeWithLengthPrefixAndSuffix() {
+		return sizeof(int) * 2	/* Length prefix & suffix */
+		       + sizeof(long)	/* TimeStamp */
+		       + sizeof(byte)	/* SystemRecordType */
+		       + sizeof(byte)	/* SystemRecordSerialization */
+		       + sizeof(long)	/* Reserved */
+		       + sizeof(int)	/* Data.Length */
+		       + Data.Length	/* Data */
+		       + BaseSize;
 	}
 
 	public bool Equals(SystemLogRecord other) {

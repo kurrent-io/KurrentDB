@@ -1,14 +1,15 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
+using DotNext;
 using EventStore.Common.Utils;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Core.Services.Monitoring.Stats;
-using System.Threading.Tasks;
 using EventStore.Core.Metrics;
+using EventStore.Core.Services.Monitoring.Stats;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Bus;
@@ -40,7 +41,6 @@ namespace EventStore.Core.Bus;
 
 		private CancellationTokenSource _lifetimeSource;
 		private readonly CancellationToken _lifetimeToken; // cached to avoid ObjectDisposedException
-		private readonly ManualResetEventSlim _stopped = new(true);
 		private readonly TimeSpan _threadStopWaitTimeout;
 
 		// monitoring
@@ -51,7 +51,7 @@ namespace EventStore.Core.Bus;
 		private int _isRunning;
 		private int _queueStatsState; //0 - never started, 1 - started, 2 - stopped
 
-		private readonly TaskCompletionSource<object> _tcs = new();
+		private readonly TaskCompletionSource _tcs = new();
 
 		public QueuedHandlerThreadPool(IAsyncHandle<Message> consumer,
 			string name,
@@ -79,9 +79,8 @@ namespace EventStore.Core.Bus;
 			_tracker = trackers.GetTrackerForQueue(name);
 		}
 
-		public Task Start() {
+		public void Start() {
 			_queueMonitor.Register(this);
-			return _tcs.Task;
 		}
 
 		private void Cancel() {
@@ -92,26 +91,35 @@ namespace EventStore.Core.Bus;
 			}
 		}
 
-		public void Stop() {
-			Cancel();
-			if (!_stopped.Wait(_threadStopWaitTimeout))
-				throw new TimeoutException(string.Format("Unable to stop thread '{0}'.", Name));
-			TryStopQueueStats();
-			_queueMonitor.Unregister(this);
+		public async Task Stop() {
+			RequestStop();
+
+			var timeoutSource = new CancellationTokenSource(_threadStopWaitTimeout);
+			try {
+				await _tcs.Task.WaitAsync(timeoutSource.Token);
+			} catch (OperationCanceledException ex) when (ex.CancellationToken == timeoutSource.Token) {
+				throw new TimeoutException($"Unable to stop thread '{Name}'.");
+			} catch (Exception) {
+				// ignore any other exceptions
+			}
 		}
 
 		public void RequestStop() {
 			Cancel();
-			TryStopQueueStats();
+			if (TryStopQueueStats()) {
+				_tcs.TrySetResult();
+			}
 			_queueMonitor.Unregister(this);
 		}
 
-		private void TryStopQueueStats() {
+		private bool TryStopQueueStats() {
 			if (Interlocked.CompareExchange(ref _isRunning, 1, 0) == 0) {
 				if (Interlocked.CompareExchange(ref _queueStatsState, 2, 1) == 1)
 					_queueStats.Stop();
-				Interlocked.CompareExchange(ref _isRunning, 0, 1);
+				return Interlocked.CompareExchange(ref _isRunning, 0, 1) is 1;
 			}
+
+			return false;
 		}
 
 		async void IThreadPoolWorkItem.Execute() {
@@ -121,7 +129,6 @@ namespace EventStore.Core.Bus;
 
 				bool proceed = true;
 				while (proceed) {
-					_stopped.Reset();
 					_queueStats.EnterBusy();
 					_tracker.EnterBusy();
 
@@ -159,6 +166,9 @@ namespace EventStore.Core.Bus;
 							}
 
 							_queueStats.ProcessingEnded(1);
+						} catch (OperationCanceledException ex) when (
+								ex.CancellationToken.IsOneOf([_lifetimeToken, msg.CancellationToken])) {
+							break;
 						} catch (Exception ex) {
 							Log.Error(ex,
 								"Error while processing message {message} in queued handler '{queue}'.", msg,
@@ -174,9 +184,8 @@ namespace EventStore.Core.Bus;
 					Interlocked.CompareExchange(ref _isRunning, 0, 1);
 					if (_lifetimeToken.IsCancellationRequested) {
 						TryStopQueueStats();
+						_tcs.TrySetCanceled(_lifetimeToken);
 					}
-
-					_stopped.Set();
 
 					// try to reacquire lock if needed
 					proceed = !_lifetimeToken.IsCancellationRequested

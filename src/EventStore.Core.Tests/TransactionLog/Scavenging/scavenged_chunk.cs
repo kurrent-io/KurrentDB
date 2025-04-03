@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Transforms.Identity;
+using EventStore.Core.Transforms;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Scavenging;
@@ -18,10 +18,10 @@ public class scavenged_chunk : SpecificationWithFile {
 	[Test]
 	public async Task is_fully_resident_in_memory_when_cached() {
 		var map = new List<PosMap>();
-		var chunk = await TFChunk.CreateNew(Filename, 1024 * 1024, 0, 0, true, false, false, false,
+		var chunk = await TFChunk.CreateNew(new ChunkLocalFileSystem(path: ""), Filename, 1024 * 1024, 0, 0, true, false, false, false,
 			false,
 			new TFChunkTracker.NoOp(),
-			new IdentityChunkTransformFactory(),
+			DbTransformManager.Default,
 			CancellationToken.None);
 		long logPos = 0;
 		for (int i = 0, n = ChunkFooter.Size / PosMap.FullSize + 1; i < n; ++i) {

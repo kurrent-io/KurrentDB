@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
 
@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
@@ -60,7 +59,7 @@ public partial record ClusterVNodeOptions {
 	public bool UnknownOptionsDetected => Unknown.Options.Any();
 
 	public static ClusterVNodeOptions FromConfiguration(IConfigurationRoot configurationRoot) {
-		var configuration = configurationRoot.GetRequiredSection("EventStore");
+		var configuration = configurationRoot.GetRequiredSection(KurrentConfigurationKeys.Prefix);
 
 		// required because of a bug in the configuration system that
 		// is not reading the attribute from the property itself
@@ -105,10 +104,10 @@ public partial record ClusterVNodeOptions {
 
 	[Description("Dev Mode Options")]
 	public record DevModeOptions {
-		[Description("Runs EventStoreDB in dev mode. This will create and add dev certificates to your certificate store, enable atompub over http, and run standard projections.")]
+		[Description("Runs KurrentDB in dev mode. This will create and add dev certificates to your certificate store, enable atompub over http, and run standard projections.")]
 		public bool Dev { get; init; } = false;
 
-		[Description("Removes any dev certificates installed on this computer without starting EventStoreDB.")]
+		[Description("Removes any dev certificates installed on this computer without starting KurrentDB.")]
 		public bool RemoveDevCerts { get; init; } = false;
 	}
 
@@ -119,13 +118,12 @@ public partial record ClusterVNodeOptions {
 		[Description("Show version.")] public bool Version { get; init; } = false;
 
 		[Description("Configuration files.")]
-		public string Config { get; init; } =
-			Path.Combine(Locations.DefaultConfigurationDirectory, DefaultFiles.DefaultConfigFile);
+		public string Config { get; init; } = DefaultFiles.DefaultConfigPath;
 
 		[Description("Print effective configuration to console and then exit.")]
 		public bool WhatIf { get; init; } = false;
 
-		[Description("Allows EventStoreDB to run with unknown configuration options present.")]
+		[Description("Allows KurrentDB to run with unknown configuration options present.")]
 		public bool AllowUnknownOptions { get; init; } = false;
 
 		[Description("Disable HTTP caching.")] public bool DisableHttpCaching { get; init; } = false;
@@ -140,7 +138,7 @@ public partial record ClusterVNodeOptions {
 		[Description("Enables the tracking of various histograms in the backend, " +
 		             "typically only used for debugging, etc.")]
 		[Deprecated("The EnableHistograms setting has been deprecated as of version 24.10.0 and currently has no effect. " +
-					"Please contact EventStore if this feature is of interest to you.")]
+					"Please contact Kurrent if this feature is of interest to you.")]
 		public bool EnableHistograms { get; init; } = false;
 
 		[Description("Log Http Requests and Responses before processing them.")]
@@ -153,8 +151,12 @@ public partial record ClusterVNodeOptions {
 		             "to stop reading duplicates.")]
 		public bool SkipIndexScanOnReads { get; init; } = false;
 
-		[Description("The maximum size of appends, in bytes. May not exceed 16MB.")]
+		[Description("The maximum size of appends, in bytes. This is the total size of all events in the append request. " +
+		             "May not exceed 16MB.")]
 		public int MaxAppendSize { get; init; } = 1_024 * 1_024;
+
+		[Description("The maximum size of an individual event in an append request received over gRPC or HTTP, in bytes.")]
+		public int MaxAppendEventSize { get; init; } = int.MaxValue;
 
 		[Description("Disable Authentication, Authorization and TLS on all TCP/HTTP interfaces.")]
 		public bool Insecure { get; init; } = false;
@@ -245,7 +247,7 @@ public partial record ClusterVNodeOptions {
 		public string? TrustedRootCertificatesPath { get; init; } =
 			Locations.DefaultTrustedRootCertificateDirectory;
 
-		[Description("The pattern the CN (Common Name) of a connecting EventStoreDB node must match to be authenticated. A wildcard FQDN can be specified if using wildcard certificates or if the CN is not the same on all nodes. Leave empty to automatically use the CN of this node's certificate.")]
+		[Description("The pattern the CN (Common Name) of a connecting KurrentDB node must match to be authenticated. A wildcard FQDN can be specified if using wildcard certificates or if the CN is not the same on all nodes. Leave empty to automatically use the CN of this node's certificate.")]
 		public string CertificateReservedNodeCommonName { get; init; } = string.Empty;
 	}
 
@@ -386,7 +388,7 @@ public partial record ClusterVNodeOptions {
 		[Description("Enables Unbuffered/DirectIO when writing to the file system, this bypasses filesystem " +
 		             "caches.")]
 		[Deprecated("The Unbuffered setting has been deprecated as of version 24.6.0 and currently has no effect. " +
-		            "Please contact EventStore if this feature is of interest to you.")]
+		            "Please contact Kurrent if this feature is of interest to you.")]
 		public bool Unbuffered { get; init; } = false;
 
 		[Description("The initial number of readers to start when opening a TFChunk.")]
@@ -587,6 +589,9 @@ public partial record ClusterVNodeOptions {
 		[Description("The maximum execution time in milliseconds for executing a handler in a user projection. It can be overridden for a specific projection by setting ProjectionExecutionTimeout config for that projection"),
 		 Unit("ms")]
 		public int ProjectionExecutionTimeout { get; set; } = DefaultProjectionExecutionTimeout;
+
+		[Description("The maximum size, in bytes, of a projection's state and result. A projection will fault if its state size exceeds this value. May not exceed 16mb.")]
+		public int MaxProjectionStateSize { get; set; } = Opts.MaxProjectionStateSizeDefault;
 	}
 
 	public record UnknownOptions(IReadOnlyList<(string, string)> Options) {
@@ -612,8 +617,8 @@ public partial record ClusterVNodeOptions {
 				var unknownKeys = configuration
 					.AsEnumerable()
 					.Select(kvp => kvp.Key)
-					.Where(key => key != EventStoreConfigurationKeys.Prefix
-					              && !knownKeys.Contains(EventStoreConfigurationKeys.Normalize(key)))
+					.Where(key => key != KurrentConfigurationKeys.Prefix
+					              && !knownKeys.Contains(KurrentConfigurationKeys.Normalize(key)))
 					.ToList();
 
 				var unknownSections = FindUnknownSections(unknownKeys);
@@ -641,10 +646,10 @@ public partial record ClusterVNodeOptions {
 					.MinBy(x => x.Distance);
 
 				return (
-					UnknownKey: EventStoreConfigurationKeys.StripConfigurationPrefix(unknownKey),
+					UnknownKey: KurrentConfigurationKeys.StripConfigurationPrefix(unknownKey),
 					SuggestedKey: suggestion.Distance > distanceThreshold
 						? ""
-						: EventStoreConfigurationKeys.StripConfigurationPrefix(suggestion.AllowedKey)
+						: KurrentConfigurationKeys.StripConfigurationPrefix(suggestion.AllowedKey)
 				);
 			}
 		}

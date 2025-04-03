@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Tests.Http.Users.users;
@@ -17,7 +17,7 @@ using EventStore.ClientAPI.Common;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription;
 
-abstract class with_subscription_having_events<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+abstract class with_subscription_having_events : with_admin_user {
 	protected List<object> Events;
 	protected string SubscriptionPath;
 	protected string GroupName;
@@ -78,9 +78,9 @@ abstract class with_subscription_having_events<TLogFormat, TStreamId> : with_adm
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_without_permission<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_without_permission(string contentType) : with_subscription_having_events {
 	protected override async Task Given() {
 		await base.Given();
 		await SecureStream();
@@ -90,7 +90,7 @@ class when_getting_messages_without_permission<TLogFormat, TStreamId> : with_sub
 		SetDefaultCredentials(null);
 		await GetJson<JObject>(
 			SubscriptionPath,
-			ContentType.CompetingJson);
+			contentType);
 	}
 
 	[Test]
@@ -100,9 +100,9 @@ class when_getting_messages_without_permission<TLogFormat, TStreamId> : with_sub
 }
 
 [Category("LongRunning")]
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_an_empty_subscription<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_an_empty_subscription(string contentType) : with_admin_user {
 	private JObject _response;
 	protected List<object> Events;
 	protected string SubscriptionPath;
@@ -135,7 +135,7 @@ class when_getting_messages_from_an_empty_subscription<TLogFormat, TStreamId> : 
 		//pull all events out.
 		_response = await GetJson<JObject>(
 			SubscriptionPath + "/" + Events.Count,
-			ContentType.CompetingJson, //todo CLC sort out allowed content types
+			contentType,
 			_admin);
 
 		var count = _response["entries"].Count();
@@ -145,7 +145,7 @@ class when_getting_messages_from_an_empty_subscription<TLogFormat, TStreamId> : 
 	protected override async Task When() {
 		_response = await GetJson<JObject>(
 			SubscriptionPath,
-			ContentType.CompetingJson,
+			contentType,
 			_admin);
 	}
 
@@ -156,15 +156,15 @@ class when_getting_messages_from_an_empty_subscription<TLogFormat, TStreamId> : 
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_a_subscription_with_n_messages<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_a_subscription_with_n_messages(string contentType) : with_subscription_having_events {
 	private JObject _response;
 
 	protected override async Task When() {
 		_response = await GetJson<JObject>(
 			SubscriptionPath + "/" + Events.Count,
-			ContentType.CompetingJson, //todo CLC sort out allowed content types
+			contentType,
 			_admin);
 	}
 
@@ -175,15 +175,15 @@ class when_getting_messages_from_a_subscription_with_n_messages<TLogFormat, TStr
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_a_subscription_with_more_than_n_messages<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_a_subscription_with_more_than_n_messages(string contentType) : with_subscription_having_events {
 	private JObject _response;
 
 	protected override async Task When() {
 		_response = await GetJson<JObject>(
 			SubscriptionPath + "/" + (Events.Count - 1),
-			ContentType.CompetingJson, //todo CLC sort out allowed content types
+			contentType,
 			_admin);
 	}
 
@@ -194,15 +194,15 @@ class when_getting_messages_from_a_subscription_with_more_than_n_messages<TLogFo
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_a_subscription_with_less_than_n_messags<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_a_subscription_with_less_than_n_messags(string contentType) : with_subscription_having_events {
 	private JObject _response;
 
 	protected override async Task When() {
 		_response = await GetJson<JObject>(
 			SubscriptionPath + "/" + (Events.Count + 1),
-			ContentType.CompetingJson, //todo CLC sort out allowed content types
+			contentType,
 			_admin);
 	}
 
@@ -213,15 +213,15 @@ class when_getting_messages_from_a_subscription_with_less_than_n_messags<TLogFor
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_a_subscription_with_unspecified_count<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_a_subscription_with_unspecified_count(string contentType) : with_subscription_having_events {
 	private JObject _response;
 
 	protected override async Task When() {
 		_response = await GetJson<JObject>(
 			SubscriptionPath,
-			ContentType.CompetingJson,
+			contentType,
 			_admin);
 	}
 
@@ -232,13 +232,13 @@ class when_getting_messages_from_a_subscription_with_unspecified_count<TLogForma
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_a_subscription_with_a_negative_count<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_a_subscription_with_a_negative_count(string contentType) : with_subscription_having_events {
 	protected override Task When() {
 		return Get(SubscriptionPath + "/-1",
 			"",
-			ContentType.CompetingJson,
+			contentType,
 			_admin);
 	}
 
@@ -248,13 +248,13 @@ class when_getting_messages_from_a_subscription_with_a_negative_count<TLogFormat
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_a_subscription_with_a_count_of_0<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_a_subscription_with_a_count_of_0(string contentType) : with_subscription_having_events {
 	protected override async Task When() {
 		await Get(SubscriptionPath + "/0",
 			"",
-			ContentType.CompetingJson,
+			contentType,
 			_admin);
 	}
 
@@ -264,13 +264,13 @@ class when_getting_messages_from_a_subscription_with_a_count_of_0<TLogFormat, TS
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_a_subscription_with_count_more_than_100<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_a_subscription_with_count_more_than_100(string contentType) : with_subscription_having_events {
 	protected override async Task When() {
 		await Get(SubscriptionPath + "/101",
 			"",
-			ContentType.CompetingJson,
+			contentType,
 			_admin);
 	}
 
@@ -280,13 +280,13 @@ class when_getting_messages_from_a_subscription_with_count_more_than_100<TLogFor
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_a_subscription_with_count_not_an_integer<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_a_subscription_with_count_not_an_integer(string contentType) : with_subscription_having_events {
 	protected override Task When() {
 		return Get(SubscriptionPath + "/10.1",
 			"",
-			ContentType.CompetingJson,
+			contentType,
 			_admin);
 	}
 
@@ -296,13 +296,13 @@ class when_getting_messages_from_a_subscription_with_count_not_an_integer<TLogFo
 	}
 }
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_from_a_subscription_with_count_not_a_number<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+[TestFixture(ContentType.CompetingJson)]
+[TestFixture(ContentType.LegacyCompetingJson)]
+class when_getting_messages_from_a_subscription_with_count_not_a_number(string contentType) : with_subscription_having_events {
 	protected override Task When() {
 		return Get(SubscriptionPath + "/one",
 			"",
-			ContentType.CompetingJson,
+			contentType,
 			_admin);
 	}
 

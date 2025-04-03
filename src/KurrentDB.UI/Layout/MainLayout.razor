@@ -1,0 +1,128 @@
+﻿@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@using KurrentDB.UI.Services
+@inherits LayoutComponentBase
+
+<MudThemeProvider @ref="@_mudThemeProvider" Theme="@_theme" IsDarkMode="_darkMode"/>
+<MudLayout>
+	<MudAppBar Elevation="1">
+		<MudStaticNavDrawerToggle DrawerId="nav-drawer" Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+		<img alt="Kurrent logo" src="@(_darkMode ? "logo_white.svg" : "logo_plum.svg")" height="32"/>
+		@* <MudText Typo="Typo.h5" Class="ml-3">KurrentDB @VersionInfo.Version</MudText> *@
+		<MudText Typo="Typo.h5" Class="ml-3">KurrentDB</MudText>
+		<MudSpacer/>
+		<AuthorizeView>
+			<Authorized>
+				<MudIconButton Icon="@(Icons.Material.Filled.Logout)" Color="Color.Inherit" Href="/ui/logout"/>
+			</Authorized>
+		</AuthorizeView>
+		@* <MudIconButton Icon="@(DarkLightModeButtonIcon)" Color="Color.Inherit" OnClick="@DarkModeToggle"/> *@
+	</MudAppBar>
+	<MudDrawer id="nav-drawer" @bind-Open="_drawerOpen" Elevation="1" Variant="@DrawerVariant.Responsive" Breakpoint="@Breakpoint.Md" ClipMode="DrawerClipMode.Always">
+		<NavMenu/>
+	</MudDrawer>
+	<MudMainContent Class="mt-16 pa-4">
+		@Body
+	</MudMainContent>
+</MudLayout>
+
+<div id="blazor-error-ui">
+	An unhandled error has occurred.
+	<a href="" class="reload">Reload</a>
+	<a class="dismiss">🗙</a>
+</div>
+
+@code {
+	bool _drawerOpen = true;
+	bool _darkMode = true;
+	MudTheme _theme = null!;
+
+	[Inject] private NavigationManager NavigationManager { get; set; } = null!;
+
+	// protected override async Task OnAfterRenderAsync(bool firstRender) {
+	// 	if (!firstRender) return;
+	//
+	// 	Preferences.SetTheme(await _mudThemeProvider.GetSystemPreference());
+	// 	StateHasChanged();
+	// }
+
+	protected override void OnInitialized() {
+		base.OnInitialized();
+
+		_theme = new() {
+			PaletteLight = _lightPalette,
+			PaletteDark = _darkPalette,
+			LayoutProperties = new(),
+			Typography = new() {
+				Default = new DefaultTypography {
+					FontFamily = [
+						"Solina",
+						"-apple-system",
+						"BlinkMacSystemFont",
+						"Segoe UI",
+						"Roboto",
+						"Helvetica Neue",
+						"Arial",
+						"Noto Sans",
+						"STHeiti",
+						"Microsoft YaHei",
+						"SimSun", "sans - serif", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"
+					]
+				},
+			}
+		};
+	}
+
+	// Remove it until we figure out how to make SSR work with dynamic actions
+	// private void DarkModeToggle() {
+	// 	Preferences.ToggleTheme();
+	// }
+
+	private readonly PaletteLight _lightPalette = new() {
+		Black = "#110e2d",
+		AppbarText = "#424242",
+		AppbarBackground = "rgba(255,255,255,0.8)",
+		DrawerBackground = "#ffffff",
+		GrayLight = "#e8e8e8",
+		GrayLighter = "#f9f9f9",
+	};
+
+	private readonly PaletteDark _darkPalette = new() {
+		Primary = "#ded9ff",
+		Secondary = "#631b3a",
+		Surface = "#1e1e2d",
+		Background = "#000",
+		BackgroundGray = "#151521",
+		AppbarText = "#9FBBC5",
+		AppbarBackground = "#000000",
+		DrawerBackground = "#000000",
+		ActionDefault = "#74718e",
+		ActionDisabled = "#9999994d",
+		ActionDisabledBackground = "#605f6d4d",
+		TextPrimary = "#9FBBC5",
+		TextSecondary = "#92929f",
+		TextDisabled = "#ffffff33",
+		DrawerIcon = "#9FBBC5",
+		DrawerText = "#9FBBC5",
+		GrayLight = "#2a2833",
+		GrayLighter = "#1e1e2d",
+		Info = "#4a86ff",
+		Success = "#3dcb6c",
+		Warning = "#ffb545",
+		Error = "#ff3f5f",
+		LinesDefault = "#33323e",
+		TableLines = "#33323e",
+		Divider = "#292838",
+		OverlayLight = "#1e1e2d80",
+	};
+
+	MudThemeProvider _mudThemeProvider = null!;
+
+	// string DarkLightModeButtonIcon => Preferences.DarkMode switch {
+	// 	true => Icons.Material.Rounded.AutoMode,
+	// 	false => Icons.Material.Outlined.DarkMode,
+	// };
+}
+
+

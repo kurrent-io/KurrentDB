@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -11,17 +11,12 @@ namespace EventStore.Core.Time;
 public struct Instant : IEquatable<Instant> {
 	public static readonly long TicksPerSecond;
 	private static readonly double SecondsPerTick;
-	private static readonly long TicksPerTimeSpanTick;
+	private static readonly double TicksPerTimeSpanTick;
 
 	static Instant() {
 		TicksPerSecond = Stopwatch.Frequency;
 		SecondsPerTick =  1 / (double)TicksPerSecond;
-
-		if (TicksPerSecond % TimeSpan.TicksPerSecond != 0)
-			throw new Exception($"Expected {nameof(TicksPerSecond)} ({TicksPerSecond}) to be an exact multiple" +
-			                    $" of {nameof(TimeSpan)}.{nameof(TimeSpan.TicksPerSecond)} ({TimeSpan.TicksPerSecond})");
-
-		TicksPerTimeSpanTick = TicksPerSecond / TimeSpan.TicksPerSecond;
+		TicksPerTimeSpanTick = (double)TicksPerSecond / TimeSpan.TicksPerSecond;
 	}
 
 	public static Instant Now => new(Stopwatch.GetTimestamp());
@@ -39,7 +34,7 @@ public struct Instant : IEquatable<Instant> {
 	private readonly long _ticks;
 
 	// Stopwatch Ticks, not DateTime Ticks - these can be different.
-	private Instant(long stopwatchTicks) {
+	public Instant(long stopwatchTicks) {
 		_ticks = stopwatchTicks;
 	}
 
@@ -68,7 +63,7 @@ public struct Instant : IEquatable<Instant> {
 		var elapsedTicks = ElapsedTicksSince(since);
 		// since we're decreasing the resolution when converting to TimeSpan, we round up to make sure that something
 		// using the TimeSpan doesn't wait for less time than it should.
-		elapsedTicks = (elapsedTicks + TicksPerTimeSpanTick - 1) / TicksPerTimeSpanTick;
+		elapsedTicks = (long) Math.Ceiling(elapsedTicks / TicksPerTimeSpanTick);
 		return new TimeSpan(elapsedTicks);
 	}
 }

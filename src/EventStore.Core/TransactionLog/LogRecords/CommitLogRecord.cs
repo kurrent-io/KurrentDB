@@ -1,22 +1,23 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
+using DotNext.Buffers;
+using DotNext.Buffers.Binary;
+using DotNext.IO;
 using EventStore.Common.Utils;
-using EventStore.Core.Helpers;
 using EventStore.LogCommon;
 
 namespace EventStore.Core.TransactionLog.LogRecords;
 
-public class CommitLogRecord : LogRecord, IEquatable<CommitLogRecord> {
+public sealed class CommitLogRecord : LogRecord, IEquatable<CommitLogRecord> {
 	public const byte CommitRecordVersion = 1;
 
-	public readonly long TransactionPosition;
-	public readonly long FirstEventNumber;
-	public readonly long SortKey;
-	public readonly Guid CorrelationId;
-	public readonly DateTime TimeStamp;
+	public long TransactionPosition { get; }
+	public long FirstEventNumber { get; }
+	public long SortKey { get; }
+	public Guid CorrelationId { get; }
+	public DateTime TimeStamp { get; }
 
 	public CommitLogRecord(long logPosition,
 		Guid correlationId,
@@ -36,39 +37,52 @@ public class CommitLogRecord : LogRecord, IEquatable<CommitLogRecord> {
 		TimeStamp = timeStamp;
 	}
 
-	internal CommitLogRecord(BinaryReader reader, byte version, long logPosition) : base(LogRecordType.Commit,
-		version, logPosition) {
-		if (version != LogRecordVersion.LogRecordV0 && version != LogRecordVersion.LogRecordV1)
+	internal CommitLogRecord(ref SequenceReader reader, byte version, long logPosition)
+		: base(LogRecordType.Commit, version, logPosition) {
+		if (version is not LogRecordVersion.LogRecordV0 and not LogRecordVersion.LogRecordV1)
 			throw new ArgumentException(
-				string.Format("CommitRecord version {0} is incorrect. Supported version: {1}.", version,
-					CommitRecordVersion));
+				$"CommitRecord version {version} is incorrect. Supported version: {CommitRecordVersion}.");
 
-		TransactionPosition = reader.ReadInt64();
-		FirstEventNumber = version == LogRecordVersion.LogRecordV0 ? reader.ReadInt32() : reader.ReadInt64();
+		TransactionPosition = reader.ReadLittleEndian<long>();
+		FirstEventNumber = version is LogRecordVersion.LogRecordV0
+			? AdjustVersion(reader.ReadLittleEndian<int>())
+			: reader.ReadLittleEndian<long>();
+		SortKey = reader.ReadLittleEndian<long>();
+		CorrelationId = reader.Read<Blittable<Guid>>().Value;
+		TimeStamp = new(reader.ReadLittleEndian<long>());
 
-		if (version == LogRecordVersion.LogRecordV0) {
-			FirstEventNumber = FirstEventNumber == int.MaxValue ? long.MaxValue : FirstEventNumber;
-		}
-
-		SortKey = reader.ReadInt64();
-		CorrelationId = new Guid(reader.ReadBytes(16));
-		TimeStamp = new DateTime(reader.ReadInt64());
+		static long AdjustVersion(int version)
+			=> version is int.MaxValue ? long.MaxValue : version;
 	}
 
-	public override void WriteTo(BinaryWriter writer) {
-		base.WriteTo(writer);
+	public override void WriteTo(ref BufferWriterSlim<byte> writer) {
+		base.WriteTo(ref writer);
 
-		writer.Write(TransactionPosition);
-		if (Version == LogRecordVersion.LogRecordV0) {
-			int firstEventNumber = FirstEventNumber == long.MaxValue ? int.MaxValue : (int)FirstEventNumber;
-			writer.Write(firstEventNumber);
+		writer.WriteLittleEndian(TransactionPosition);
+		if (Version is LogRecordVersion.LogRecordV0) {
+			int firstEventNumber = FirstEventNumber is long.MaxValue ? int.MaxValue : (int)FirstEventNumber;
+			writer.WriteLittleEndian(firstEventNumber);
 		} else {
-			writer.Write(FirstEventNumber);
+			writer.WriteLittleEndian(FirstEventNumber);
 		}
 
-		writer.Write(SortKey);
-		writer.Write(CorrelationId.ToByteArray());
-		writer.Write(TimeStamp.Ticks);
+		writer.WriteLittleEndian(SortKey);
+
+		Span<byte> correlationIdBuffer = writer.GetSpan(16);
+		CorrelationId.TryWriteBytes(correlationIdBuffer);
+		writer.Advance(16);
+
+		writer.WriteLittleEndian(TimeStamp.Ticks);
+	}
+
+	public override int GetSizeWithLengthPrefixAndSuffix() {
+		return sizeof(int) * 2														/* Length prefix & suffix */
+		+ sizeof(long)																/* TransactionPosition */
+		+ (Version is LogRecordVersion.LogRecordV0 ? sizeof(int) : sizeof(long))	/* Version */
+		+ sizeof(long)																/* SortKey */
+		+ 16																		/* CorrelationId */
+		+ sizeof(long)																/* TimeStamp */
+		+ BaseSize;
 	}
 
 	public bool Equals(CommitLogRecord other) {

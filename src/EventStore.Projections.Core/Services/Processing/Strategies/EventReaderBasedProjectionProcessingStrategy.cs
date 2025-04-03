@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Bus;
@@ -23,8 +23,9 @@ public abstract class EventReaderBasedProjectionProcessingStrategy : ProjectionP
 
 	protected EventReaderBasedProjectionProcessingStrategy(
 		string name, ProjectionVersion projectionVersion, ProjectionConfig projectionConfig,
-		IQuerySources sourceDefinition, Serilog.ILogger logger, ReaderSubscriptionDispatcher subscriptionDispatcher, bool enableContentTypeValidation)
-		: base(name, projectionVersion, logger) {
+		IQuerySources sourceDefinition, Serilog.ILogger logger, ReaderSubscriptionDispatcher subscriptionDispatcher,
+		bool enableContentTypeValidation, int maxProjectionStateSize)
+		: base(name, projectionVersion, logger, maxProjectionStateSize) {
 		_projectionConfig = projectionConfig;
 		_sourceDefinition = sourceDefinition;
 		_subscriptionDispatcher = subscriptionDispatcher;
@@ -152,13 +153,13 @@ public abstract class EventReaderBasedProjectionProcessingStrategy : ProjectionP
 				publisher, projectionCorrelationId, _projectionVersion, _projectionConfig.RunAs, ioDispatcher,
 				_projectionConfig, _name, readerStrategy.PositionTagger, namingBuilder,
 				_projectionConfig.CheckpointsEnabled, GetProducesRunningResults(), definesFold,
-				coreProjectionCheckpointWriter);
+				coreProjectionCheckpointWriter, _maxProjectionStateSize);
 		} else {
 			return new DefaultCheckpointManager(
 				publisher, projectionCorrelationId, _projectionVersion, _projectionConfig.RunAs, ioDispatcher,
 				_projectionConfig, _name, readerStrategy.PositionTagger, namingBuilder,
 				_projectionConfig.CheckpointsEnabled, GetProducesRunningResults(), definesFold,
-				coreProjectionCheckpointWriter);
+				coreProjectionCheckpointWriter, _maxProjectionStateSize);
 		}
 	}
 

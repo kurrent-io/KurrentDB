@@ -9,9 +9,10 @@ on:
   push:
     branches:
       - master
-      - release/oss-v*
+      - release/*
     tags:
       - oss-v*
+      - v*
     paths-ignore:
       - "docs/**"
       - "samples/**"
@@ -58,7 +59,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Docker Compose Smoke Test
       run: |
-        docker compose build
+        RUNTIME=linux-amd64 docker compose build
         docker compose up --detach
         printf 'Waiting for cluster'
         timeout 60 bash -c -- 'until $(curl --output /dev/null --silent --insecure --fail https://localhost:2113/health/live); do printf '.'; sleep 2; done'

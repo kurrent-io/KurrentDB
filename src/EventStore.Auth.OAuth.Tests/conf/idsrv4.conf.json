@@ -1,0 +1,72 @@
+﻿{
+	"IdentityResources": [
+		{
+			"Name": "openid",
+			"DisplayName": "Your user identifier",
+			"Required": true,
+			"UserClaims": [
+				"sub",
+				"role"
+			]
+		},
+		{
+			"Name": "profile",
+			"DisplayName": "User profile",
+			"Description": "Your user profile information (first name, last name, etc.)",
+			"Emphasize": true,
+			"UserClaims": [
+				"name",
+				"family_name",
+				"given_name",
+				"middle_name",
+				"preferred_username",
+				"profile",
+				"picture",
+				"website",
+				"gender",
+				"birthdate",
+				"zoneinfo",
+				"locale",
+				"updated_at"
+			]
+		}
+	],
+	"ApiResources": [
+		{
+			"Name": "eventstore",
+			"Scopes": ["streams"]
+		}
+	],
+	"ApiScopes": [
+		{
+			"Name": "streams",
+			"UserClaims": [
+				"http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+				"role"
+			]
+		}
+	],
+	"Clients": [
+		{
+			"ClientId": "eventstore-tcp",
+			"AllowedGrantTypes": [
+				"password"
+			],
+			"ClientSecrets": [
+				{
+					"Value": "K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols="
+				}
+			],
+			"AllowedScopes": [
+				"streams",
+				"openid",
+				"profile"
+			],
+			"AlwaysIncludeUserClaimsInIdToken": true,
+			"RequireConsent": false,
+			"AlwaysSendClientClaims": true,
+			"AllowOfflineAccess": true,
+			"RequireClientSecret": false
+		}
+	]
+}

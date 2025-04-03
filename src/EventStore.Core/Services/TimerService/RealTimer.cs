@@ -1,12 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
 
 namespace EventStore.Core.Services.TimerService;
 
-public class RealTimer : ITimer {
+public sealed class RealTimer : ITimer {
 	private Action _callback;
 	private readonly Timer _timer;
 
@@ -15,8 +15,7 @@ public class RealTimer : ITimer {
 	}
 
 	private void InvokeCallback(object state) {
-		if (_callback != null)
-			_callback();
+		_callback?.Invoke();
 	}
 
 	public void FireIn(int milliseconds, Action callback) {

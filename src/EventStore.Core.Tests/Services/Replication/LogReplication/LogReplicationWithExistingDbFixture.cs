@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Core.Transforms;
 using EventStore.Core.Transforms.Identity;
 using EventStore.Plugins.Transforms;
 
@@ -26,7 +27,7 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 	protected abstract Task CreateChunks(TFChunkDb leaderDb);
 
 	protected static async Task CreateChunk(TFChunkDb db, bool raw, bool complete, int chunkStartNumber, int chunkEndNumber, ILogRecord[] logRecords, CancellationToken token = default) {
-		var filename = db.Config.FileNamingStrategy.GetFilenameFor(chunkStartNumber, raw ? 1 : 0);
+		var filename = db.Manager.FileSystem.LocalNamingStrategy.GetFilenameFor(chunkStartNumber, raw ? 1 : 0);
 
 		if (raw && !complete)
 			throw new InvalidOperationException("A raw chunk must be complete");
@@ -46,6 +47,7 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 			transformType: TransformType.Identity);
 
 		var chunk = await TFChunk.CreateWithHeader(
+			db.Manager.FileSystem,
 			filename: filename,
 			header: header,
 			fileSize: TFChunk.GetAlignedSize(db.Config.ChunkSize + ChunkHeader.Size + ChunkFooter.Size),
@@ -55,6 +57,7 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 			reduceFileCachePressure: db.Config.ReduceFileCachePressure,
 			tracker: new TFChunkTracker.NoOp(),
 			transformFactory: new IdentityChunkTransformFactory(),
+			getTransformFactory: DbTransformManager.Default,
 			transformHeader: ReadOnlyMemory<byte>.Empty,
 			token);
 

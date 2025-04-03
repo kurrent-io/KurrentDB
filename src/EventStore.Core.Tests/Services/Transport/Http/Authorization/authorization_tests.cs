@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Tests.Integration;
 using NUnit.Framework;
+using ContentType = EventStore.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
 
@@ -28,7 +29,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 		}) {
 			Timeout = _timeout
 		};
-		
+
 		if (!string.IsNullOrEmpty(username)) {
 			client.DefaultRequestHeaders.Authorization =
 				new AuthenticationHeaderValue(
@@ -95,7 +96,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 				var data = Helper.UTF8NoBom.GetBytes(dataStr);
 				var stream = new MemoryStream(data);
 				var content = new StreamContent(stream);
-				content.Headers.Add("Content-Type", "application/json");
+				content.Headers.Add("Content-Type", ContentType.Json);
 
 				var res = await _httpClients["Admin"].PostAsync(
 					string.Format("https://{0}/users/", _nodes[_leaderId].HttpEndPoint),
@@ -234,7 +235,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 
 		var url = $"https://{nodeEndpoint}{endpointUrl}";
 		var body = GetData(httpMethod, endpointUrl);
-		var contentType = httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put || httpMethod == HttpMethod.Delete ? "application/json" : null;
+		var contentType = httpMethod == HttpMethod.Post || httpMethod == HttpMethod.Put || httpMethod == HttpMethod.Delete ? ContentType.Json : null;
 		var statusCode = await SendRequest(_httpClients[userAuthorizationLevel], httpMethod, url, body, contentType);
 
 		if (GetAuthLevel(userAuthorizationLevel) >= GetAuthLevel(requiredMinAuthorizationLevel)) {

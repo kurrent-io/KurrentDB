@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
@@ -24,7 +24,6 @@ using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Services.Transport.Tcp;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -66,7 +65,7 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 		await Db.Open();
 
 		Writer = new TFChunkWriter(Db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 
 		EpochManager = new EpochManager<TStreamId>(
 			Publisher,
@@ -166,7 +165,6 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 		ICheckpoint streamExistenceFilterCheckpoint = new InMemoryCheckpoint(-1);
 		var nodeConfig = new TFChunkDbConfig(
 			PathName,
-			new VersionedPatternFileNamingStrategy(PathName, "chunk-"),
 			chunkSize: 1000,
 			maxChunksCacheSize: 10000,
 			writerChk,

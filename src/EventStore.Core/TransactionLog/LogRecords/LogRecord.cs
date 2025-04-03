@@ -1,18 +1,23 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
+using System.Buffers;
+using DotNext.Buffers;
+using DotNext.Buffers.Binary;
+using DotNext.IO;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.LogAbstraction;
-using EventStore.Core.Services;
 using EventStore.LogCommon;
 
 namespace EventStore.Core.TransactionLog.LogRecords;
 
 public abstract class LogRecord : ILogRecord {
 	public static readonly ReadOnlyMemory<byte> NoData = Empty.ByteArray;
+
+	// RecordType + Version + LogPosition
+	protected const int BaseSize = sizeof(byte) + sizeof(byte) + sizeof(long);
 
 	public LogRecordType RecordType { get; }
 	public byte Version { get; }
@@ -26,42 +31,49 @@ public abstract class LogRecord : ILogRecord {
 		return logicalPosition - length - 2 * sizeof(int);
 	}
 
-	public static ILogRecord ReadFrom(BinaryReader reader, int length) {
-		var recordType = (LogRecordType)reader.ReadByte();
-		var version = reader.ReadByte();
+	public static ILogRecord ReadFrom(ref SequenceReader reader) {
+		var header = reader.Read<Header>();
 
-		static long ReadPosition(BinaryReader reader) {
-			var logPosition = reader.ReadInt64();
-			Ensure.Nonnegative(logPosition, "logPosition");
-			return logPosition;
-		}
-
-		switch (recordType) {
+		switch (header.Type) {
 			case LogRecordType.Prepare:
-				return new PrepareLogRecord(reader, version, ReadPosition(reader));
-			case LogRecordType.Commit:
-				return new CommitLogRecord(reader, version, ReadPosition(reader));
-			case LogRecordType.System:
-				if (version > SystemLogRecord.SystemRecordVersion)
-					return new LogV3EpochLogRecord(LogV3Reader.ReadBytes(recordType, version, reader, length));
+				var logPosition = reader.ReadLittleEndian<long>();
+				Ensure.Nonnegative(logPosition, nameof(logPosition));
+				return new PrepareLogRecord(ref reader, header.Version, logPosition);
 
-				return new SystemLogRecord(reader, version, ReadPosition(reader));
+			case LogRecordType.Commit:
+				logPosition = reader.ReadLittleEndian<long>();
+				Ensure.Nonnegative(logPosition, nameof(logPosition));
+				return new CommitLogRecord(ref reader, header.Version, logPosition);
+
+			case LogRecordType.System when header.Version > SystemLogRecord.SystemRecordVersion:
+				reader.Reset();
+				return new LogV3EpochLogRecord(reader.ReadToEnd().ToArray());
+
+			case LogRecordType.System:
+				logPosition = reader.ReadLittleEndian<long>();
+				Ensure.Nonnegative(logPosition, nameof(logPosition));
+				return new SystemLogRecord(ref reader, header.Version, logPosition);
 
 			case LogRecordType.StreamWrite:
-				return new LogV3StreamWriteRecord(LogV3Reader.ReadBytes(recordType, version, reader, length));
+				reader.Reset();
+				return new LogV3StreamWriteRecord(reader.ReadToEnd().ToArray());
 
 			case LogRecordType.Stream:
-				return new LogV3StreamRecord(LogV3Reader.ReadBytes(recordType, version, reader, length));
+				reader.Reset();
+				return new LogV3StreamRecord(reader.ReadToEnd().ToArray());
 
 			case LogRecordType.EventType:
-				return new LogV3EventTypeRecord(LogV3Reader.ReadBytes(recordType, version, reader, length));
+				reader.Reset();
+				return new LogV3EventTypeRecord(reader.ReadToEnd().ToArray());
 
 			case LogRecordType.PartitionType:
-				return new PartitionTypeLogRecord(LogV3Reader.ReadBytes(recordType, version, reader, length));
-			
+				reader.Reset();
+				return new PartitionTypeLogRecord(reader.ReadToEnd().ToArray());
+
 			case LogRecordType.Partition:
-				return new PartitionLogRecord(LogV3Reader.ReadBytes(recordType, version, reader, length));
-			
+				reader.Reset();
+				return new PartitionLogRecord(reader.ReadToEnd().ToArray());
+
 			default:
 				throw new ArgumentOutOfRangeException("recordType");
 		}
@@ -132,16 +144,33 @@ public abstract class LogRecord : ILogRecord {
 		LogPosition = logPosition;
 	}
 
-	public virtual void WriteTo(BinaryWriter writer) {
-		writer.Write((byte)RecordType);
-		writer.Write(Version);
-		writer.Write(LogPosition);
+	public virtual void WriteTo(ref BufferWriterSlim<byte> writer) {
+		writer.Add((byte)RecordType);
+		writer.Add(Version);
+		writer.WriteLittleEndian(LogPosition);
 	}
 
-	public int GetSizeWithLengthPrefixAndSuffix() {
-		using (var memoryStream = new MemoryStream()) {
-			WriteTo(new BinaryWriter(memoryStream));
-			return 8 + (int)memoryStream.Length;
+	public abstract int GetSizeWithLengthPrefixAndSuffix();
+
+	private readonly struct Header : IBinaryFormattable<Header> {
+		private const int Size = sizeof(LogRecordType) + sizeof(byte);
+		internal readonly LogRecordType Type;
+		internal readonly byte Version;
+
+		private Header(ReadOnlySpan<byte> input) {
+			// Perf: Read the span from the last element to have just one range check inserted by JIT
+			Version = input[1];
+			Type = (LogRecordType)input[0];
 		}
+
+		public void Format(Span<byte> output) {
+			output[1] = Version;
+			output[0] = (byte)Type;
+		}
+
+		static int IBinaryFormattable<Header>.Size => Size;
+
+		static Header IBinaryFormattable<Header>.Parse(ReadOnlySpan<byte> input)
+			=> new(input);
 	}
 }

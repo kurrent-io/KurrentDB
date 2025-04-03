@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -110,7 +110,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_using_transaction
 
 	[Test]
 	public async Task the_log_records_are_still_version_0_in_first_chunk() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
@@ -125,7 +125,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_using_transaction
 
 	[Test]
 	public async Task the_log_records_are_unchanged_in_second_chunk() {
-		var chunk = Db.Manager.GetChunk(1);
+		var chunk = await Db.Manager.GetInitializedChunk(1, CancellationToken.None);
 
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);

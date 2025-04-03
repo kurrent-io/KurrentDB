@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
 
@@ -69,7 +69,7 @@ public partial record ClusterVNodeOptions {
 			from option in section.GetProperties()
 			let deprecationWarning = option.GetCustomAttribute<DeprecatedAttribute>()?.Message
 			where deprecationWarning is not null
-			let value = ConfigurationRoot?.GetValue<string?>(EventStoreConfigurationKeys.Normalize(option.Name))
+			let value = ConfigurationRoot?.GetValue<string?>(KurrentConfigurationKeys.Normalize(option.Name))
 			where defaultValues.TryGetValue(option.Name, out var defaultValue)
 			      && !string.Equals(value, defaultValue?.ToString(), StringComparison.OrdinalIgnoreCase)
 			      select deprecationWarning;
@@ -83,6 +83,12 @@ public partial record ClusterVNodeOptions {
 	public string? CheckForEnvironmentOnlyOptions() =>
 		ConfigurationRoot.CheckProvidersForEnvironmentVariables(OptionSections);
 
+	public string[] CheckForLegacyEventStoreConfiguration() =>
+		ConfigurationRoot.CheckProvidersForLegacyEventStoreConfiguration();
+
+	public string[] CheckForLegacyDefaultLocations(LocationOptionWithLegacyDefault[] optionsWithLegacyDefaults) =>
+		ConfigurationRoot.CheckProvidersForEventStoreDefaultLocations(optionsWithLegacyDefaults);
+
 	public static IReadOnlyDictionary<string, LoadedOption> GetLoadedOptions(IConfigurationRoot configurationRoot) {
 		var loadedOptions = new Dictionary<string, LoadedOption>();
 
@@ -94,7 +100,7 @@ public partial record ClusterVNodeOptions {
 
 				var title = GetTitle(option);
 				var sourceDisplayName = GetSourceDisplayName(option.Value.Key, provider);
-				var isDefault = provider.GetType() == typeof(EventStoreDefaultValuesConfigurationProvider);
+				var isDefault = provider.GetType() == typeof(KurrentDefaultValuesConfigurationProvider);
 
 				// Handle options that have been configured as arrays (GossipSeed is currently the only one
 				// where this is possible)
@@ -126,11 +132,11 @@ public partial record ClusterVNodeOptions {
 		return loadedOptions;
 
 		static string GetTitle(KeyValuePair<string, OptionMetadata> option) =>
-			CombineByPascalCase(EventStoreConfigurationKeys.StripConfigurationPrefix(option.Value.Key)).ToUpper();
+			CombineByPascalCase(KurrentConfigurationKeys.StripConfigurationPrefix(option.Value.Key)).ToUpper();
 	}
 
 	public static string GetSourceDisplayName(string key, IConfigurationProvider provider) {
-		if (provider is EventStoreDefaultValuesConfigurationProvider) {
+		if (provider is KurrentDefaultValuesConfigurationProvider) {
 			return "<DEFAULT>";
 		} else if (provider is SectionProvider sectionProvider) {
 			return sectionProvider.TryGetProviderFor(key, out var innerProvider)
@@ -139,7 +145,7 @@ public partial record ClusterVNodeOptions {
 		} else {
 			return CombineByPascalCase(
 				provider.GetType().Name
-					.Replace("EventStore", "")
+					.Replace(KurrentConfigurationKeys.Prefix, "")
 					.Replace("ConfigurationProvider", "")
 			);
 		}
@@ -153,7 +159,7 @@ public partial record ClusterVNodeOptions {
 			OptionHeaderColumnWidth(o.Name, DefaultValue(o)));
 
 		var header = $"{OPTION.PadRight(optionColumnWidth, ' ')}{DESCRIPTION}";
-		
+
 		var environmentOnlyOptions = OptionSections.SelectMany(section => section.GetProperties())
 			.Where(option => option.GetCustomAttribute<EnvironmentOnlyAttribute>() != null)
 			.Select(option => option)
@@ -177,7 +183,7 @@ public partial record ClusterVNodeOptions {
 					(stringBuilder, property) => stringBuilder.Append(Line(property)).AppendLine()))
 			.AppendLine().AppendLine("EnvironmentOnly Options").Append(environmentOnlyOptionsBuilder)
 			.ToString();
-		
+
 
 		string Line(PropertyInfo property) {
 			var description = property.GetCustomAttribute<DescriptionAttribute>()?.Description;
@@ -199,7 +205,7 @@ public partial record ClusterVNodeOptions {
 
 			return builder.ToString();
 		}
-		
+
 		static IEnumerable<PropertyInfo> Options() => OptionSections.SelectMany(type => type.GetProperties());
 
 		static int OptionWidth(string name, string @default) =>
@@ -231,11 +237,11 @@ public partial record ClusterVNodeOptions {
 		}
 
 		static string GetEnvironmentOption(PropertyInfo property, int optionColumnWidth) {
-			const string Prefix = "EVENTSTORE";
+			var prefix = KurrentConfigurationKeys.Prefix.ToUpper();
 
 			var builder = new StringBuilder();
 
-			builder.Append($"{Prefix}_")
+			builder.Append($"{prefix}_")
 				.Append(CombineByPascalCase(property.Name, "_").ToUpper());
 
 			var description = property.GetCustomAttribute<EnvironmentOnlyAttribute>()?.Message;

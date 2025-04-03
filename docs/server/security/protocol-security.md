@@ -5,16 +5,16 @@ order: 1
 
 # Protocol security
 
-EventStoreDB supports gRPC and the proprietary TCP protocol for high-throughput real-time communication. It
+KurrentDB supports gRPC and the proprietary TCP protocol for high-throughput real-time communication. It
 also has some HTTP endpoints for the management operations like scavenging, creating projections and so on.
-EventStoreDB also uses HTTP for the gossip seed endpoint, both for the cluster gossip, and
+KurrentDB also uses HTTP for the gossip seed endpoint, both for the cluster gossip, and
 for clients that connect to the cluster using discovery mode.
 
 All those protocols support encryption with TLS and SSL. You can only use one set of certificates for both TLS and HTTPS.
 
 The protocol security configuration depends a lot on the deployment topology and platform. We have created an
 interactive [configuration tool](https://configurator.eventstore.com), which also has instructions on how to generate and install
-the certificates and configure EventStoreDB nodes to use them.
+the certificates and configure KurrentDB nodes to use them.
 
 ## Certificates configuration
 
@@ -24,21 +24,21 @@ In this section, you can find settings related to configuring the certificates f
 
 SSL certificates can be created with a common name (CN), which is an arbitrary string. Usually it contains the DNS name for which the certificate is issued.
 
-When cluster nodes connect to each other, they need to ensure that they indeed talk to another node and not something that pretends to be a node. To achieve that, EventStoreDB authenticates a connecting node by ensuring that it supplies a trusted client certificate having a CN that matches exactly with the CN in its own certificate. This essentially means that the CN must be the same across all node certificates by default. For example, when using the Event Store [certificate generator](#certificate-generation-tool), the CN is set to `eventstoredb-node` in all node certificates.
+When cluster nodes connect to each other, they need to ensure that they indeed talk to another node and not something that pretends to be a node. To achieve that, KurrentDB authenticates a connecting node by ensuring that it supplies a trusted client certificate having a CN that matches exactly with the CN in its own certificate. This essentially means that the CN must be the same across all node certificates by default. For example, when using the [certificate generator](#certificate-generation-tool), the CN is set to `eventstoredb-node` in all node certificates.
 
 ::: note
-Prior to version 23.10.0, the `CertificateReservedNodeCommonName` setting needed to be configured if a user had certificates with a CN other than `eventstoredb-node`. EventStoreDB will now, by default, automatically read the CN from the node's certificate and use it as the `CertificateReservedNodeCommonName`. However, if you still choose to specify the `CertificateReservedNodeCommonName` in your configuration, it will take precedence.
+KurrentDB will automatically read the CN from the node's certificate and use it as the `CertificateReservedNodeCommonName` by default. However, if you still choose to specify the `CertificateReservedNodeCommonName` in your configuration, it will take precedence.
 :::
 
 In practice, it's not always possible to obtain certificates where the CN is the same across all nodes. For instance, when using a public CA, single-domain certificates are very common and these certificates cannot be used on multiple nodes as they are valid for exactly one host. In this case, the `CertificateReservedNodeCommonName` setting can be configured with a wildcard as per the following example:
 
-If the domains are `node1.esdb.mycompany.org`, `node2.esdb.mycompany.org` and `node3.esdb.mycompany.org`, then `CertificateReservedNodeCommonName` must be set to `*.esdb.mycompany.org`.
+If the domains are `node1.kurrentdb.mycompany.org`, `node2.kurrentdb.mycompany.org` and `node3.kurrentdb.mycompany.org`, then `CertificateReservedNodeCommonName` must be set to `*.kurrentdb.mycompany.org`.
 
 | Format               | Syntax                                             |
 |:---------------------|:---------------------------------------------------|
 | Command line         | `--certificate-reserved-node-common-name`          |
 | YAML                 | `CertificateReservedNodeCommonName`                |
-| Environment variable | `EVENTSTORE_CERTIFICATE_RESERVED_NODE_COMMON_NAME` |
+| Environment variable | `KURRENTDB_CERTIFICATE_RESERVED_NODE_COMMON_NAME`  |
 
 ::: warning
 Server certificates **must** have the internal and external IP addresses (`ReplicationIp` and `NodeIp` respectively) or DNS names as subject alternative names.
@@ -48,7 +48,7 @@ Server certificates **must** have the internal and external IP addresses (`Repli
 
 When getting an incoming connection, the server needs to ensure if the certificate used for the connection can be trusted. For this to work, the server needs to know where trusted root certificates are located.
 
-EventStoreDB will use the default trusted root certificates location of `/etc/ssl/certs` when running on Linux only. So if you are running on Windows or a platform with a different default certificates location, you'd need to explicitly tell the node to use the OS default root certificate store. For certificates signed by a private CA, you just provide the path to the CA certificate file (but not the filename).
+KurrentDB will use the default trusted root certificates location of `/etc/ssl/certs` when running on Linux only. So if you are running on Windows or a platform with a different default certificates location, you'd need to explicitly tell the node to use the OS default root certificate store. For certificates signed by a private CA, you just provide the path to the CA certificate file (but not the filename).
 
 If you are running on Windows, you can also load the trusted root certificate from the Windows Certificate Store. The available options for configuring this are described [below](#certificate-store-windows).
 
@@ -56,7 +56,7 @@ If you are running on Windows, you can also load the trusted root certificate fr
 |:---------------------|:--------------------------------------------|
 | Command line         | `--trusted-root-certificates-paths`         |
 | YAML                 | `TrustedRootCertificatesPath`               |
-| Environment variable | `EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH` |
+| Environment variable | `KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH`  |
 
 **Default**: n/a on Windows, `/etc/ssl/certs` on Linux
 
@@ -68,7 +68,7 @@ The `CertificateFile` setting needs to point to the certificate file, which will
 |:---------------------|:------------------------------|
 | Command line         | `--certificate-file`          |
 | YAML                 | `CertificateFile`             |
-| Environment variable | `EVENTSTORE_CERTIFICATE_FILE` |
+| Environment variable | `KURRENTDB_CERTIFICATE_FILE`  |
 
 If the certificate file is protected by password, you'd need to set the `CertificatePassword` value accordingly, so the server can load the certificate.
 
@@ -76,7 +76,7 @@ If the certificate file is protected by password, you'd need to set the `Certifi
 |:---------------------|:----------------------------------|
 | Command line         | `--certificate-password`          |
 | YAML                 | `CertificatePassword`             |
-| Environment variable | `EVENTSTORE_CERTIFICATE_PASSWORD` |
+| Environment variable | `KURRENTDB_CERTIFICATE_PASSWORD`  |
 
 If the certificate file doesn't contain the certificate private key, you need to tell the node where to find the key file using the `CertificatePrivateKeyFile` setting. The private key can be in RSA, or PKCS8 format.
 
@@ -84,7 +84,7 @@ If the certificate file doesn't contain the certificate private key, you need to
 |:---------------------|:------------------------------------------|
 | Command line         | `--certificate-private-key-file`          |
 | YAML                 | `CertificatePrivateKeyFile`               |
-| Environment variable | `EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE` |
+| Environment variable | `KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE`  |
 
 If the private key file is an encrypted PKCS #8 file, then you need to provide the password with the `CertificatePrivateKeyPassword` option.
 
@@ -92,7 +92,7 @@ If the private key file is an encrypted PKCS #8 file, then you need to provide t
 |:---------------------|:----------------------------------------------|
 | Command line         | `--certificate-private-key-password`          |
 | YAML                 | `CertificatePrivateKeyPassword`               |
-| Environment variable | `EVENTSTORE_CERTIFICATE_PRIVATE_KEY_PASSWORD` |
+| Environment variable | `KURRENTDB_CERTIFICATE_PRIVATE_KEY_PASSWORD`  |
 
 
 ### Certificate store (Windows)
@@ -103,7 +103,7 @@ The certificate store location is the location of the Windows certificate store,
 |:---------------------|:----------------------------------------|
 | Command line         | `--certificate-store-location`          |
 | YAML                 | `CertificateStoreLocation`              |
-| Environment variable | `EVENTSTORE_CERTIFICATE_STORE_LOCATION` |
+| Environment variable | `KURRENTDB_CERTIFICATE_STORE_LOCATION`  |
 
 The certificate store name is the name of the Windows certificate store, for example `My`.
 
@@ -111,7 +111,7 @@ The certificate store name is the name of the Windows certificate store, for exa
 |:---------------------|:------------------------------------|
 | Command line         | `--certificate-store-name`          |
 | YAML                 | `CertificateStoreName`              |
-| Environment variable | `EVENTSTORE_CERTIFICATE_STORE_NAME` |
+| Environment variable | `KURRENTDB_CERTIFICATE_STORE_NAME`  |
 
 You can load a certificate using either its thumbprint or its subject name.
 If using the thumbprint, the server expects to only find one certificate file matching that thumbprint in the cert store.
@@ -120,7 +120,7 @@ If using the thumbprint, the server expects to only find one certificate file ma
 |:---------------------|:------------------------------------|
 | Command line         | `--certificate-thumbprint`          |
 | YAML                 | `CertificateThumbprint`             |
-| Environment variable | `EVENTSTORE_CERTIFICATE_THUMBPRINT` |
+| Environment variable | `KURRENTDB_CERTIFICATE_THUMBPRINT`  |
 
 The subject name matches any certificate that contains the specified name. This means that multiple matching certificates could be found.
 To match any certificate made by the `es-gencert-cli` tool, you can set the subject name to `eventstoredb-node`.
@@ -131,7 +131,7 @@ If multiple matching certificates are found, then the certificate with the lates
 |:---------------------|:--------------------------------------|
 | Command line         | `--certificate-subject-name`          |
 | YAML                 | `CertificateSubjectName`              |
-| Environment variable | `EVENTSTORE_CERTIFICATE_SUBJECT_NAME` |
+| Environment variable | `KURRENTDB_CERTIFICATE_SUBJECT_NAME`  |
 
 When you are loading your node certificates from the Windows cert store, you are likely to want to load the trusted root certificate from the cert store as well.
 The options to configure this are similar to the ones for node certificates.
@@ -142,7 +142,7 @@ The trusted root certificate store location is the location of the Windows certi
 |:---------------------|:-----------------------------------------------------|
 | Command line         | `--trusted-root-certificate-store-location`          |
 | YAML                 | `TrustedRootCertificateStoreLocation`                |
-| Environment variable | `EVENTSTORE_TRUSTED_ROOT_CERTIFICATE_STORE_LOCATION` |
+| Environment variable | `KURRENTDB_TRUSTED_ROOT_CERTIFICATE_STORE_LOCATION`  |
 
 The trusted root certificate store name is the name of the Windows certificate store in which the trusted root certificate is installed, for example `Root`.
 
@@ -150,7 +150,7 @@ The trusted root certificate store name is the name of the Windows certificate s
 |:---------------------|:-------------------------------------------------|
 | Command line         | `--trusted-root-certificate-store-name`          |
 | YAML                 | `TrustedRootCertificateStoreName`                |
-| Environment variable | `EVENTSTORE_TRUSTED_ROOT_CERTIFICATE_STORE_NAME` |
+| Environment variable | `KURRENTDB_TRUSTED_ROOT_CERTIFICATE_STORE_NAME`  |
 
 Trusted root certificates can also be loaded using either its thumbprint or its subject name.
 If using the thumbprint, the server expects to only find one trusted root certificate file matching that thumbprint in the cert store.
@@ -159,7 +159,7 @@ If using the thumbprint, the server expects to only find one trusted root certif
 |:---------------------|:-------------------------------------------------|
 | Command line         | `--trusted-root-certificate-thumbprint`          |
 | YAML                 | `TrustedRootCertificateThumbprint`               |
-| Environment variable | `EVENTSTORE_TRUSTED_ROOT_CERTIFICATE_THUMBPRINT` |
+| Environment variable | `KURRENTDB_TRUSTED_ROOT_CERTIFICATE_THUMBPRINT`  |
 
 The subject name matches any certificate that contains the specified name. This means that multiple matching certificates could be found.
 To match any root certificate made through the `es-gencert-cli` tool, you can set the Subject Name to `EventStoreDB CA`.
@@ -170,11 +170,11 @@ If multiple matching root certificates are found, then the root certificate with
 |:---------------------|:---------------------------------------------------|
 | Command line         | `--trusted-root-certificate-subject-name`          |
 | YAML                 | `TrustedRootCertificateSubjectName`                |
-| Environment variable | `EVENTSTORE_TRUSTED_ROOT_CERTIFICATE_SUBJECT_NAME` |
+| Environment variable | `KURRENTDB_TRUSTED_ROOT_CERTIFICATE_SUBJECT_NAME`  |
 
 ## Certificate generation tool
 
-Event Store provides the interactive Certificate Generation CLI, which creates certificates signed by a private, auto-generated CA for EventStoreDB. You can use the [configuration wizard](https://configurator.eventstore.com), that will provide you exact CLI commands that you need to run to generate certificates matching your configuration.
+Kurrent provides the interactive Certificate Generation CLI, which creates certificates signed by a private, auto-generated CA for KurrentDB. You can use the [configuration wizard](https://configurator.eventstore.com), that will provide you exact CLI commands that you need to run to generate certificates matching your configuration.
 
 ### Getting started
 
@@ -195,7 +195,7 @@ Getting help for a specific command:
 ```
 
 ::: warning
-If you are running EventStoreDB on Linux, remember that all certificate files should have restrictive rights, otherwise the OS won't allow using them.
+If you are running KurrentDB on Linux, remember that all certificate files should have restrictive rights, otherwise the OS won't allow using them.
 Usually, you'd need to change rights for each certificate file to prevent the "permissions are too open" error.
 
 You can do it by running the following command:
@@ -231,7 +231,7 @@ You can customise generated cert by providing following params:
 Example:
 
 ```bash
-./es-gencert-cli create-ca -out ./es-ca
+./es-gencert-cli create-ca -out ./kurrentdb-ca
 ```
 
 ### Generating the Node certificate
@@ -262,19 +262,19 @@ You can customise generated cert by providing following params:
 ::: warning
 While generating the certificate, you need to remember to pass internal end external:
 - IP addresses to `-ip-addresses`: e.g. `127.0.0.1,172.20.240.1` and/or
-- DNS names to `-dns-names`: e.g. `localhost,node1.eventstore`
-  that will match the URLs that you will be accessing EventStoreDB nodes.
+- DNS names to `-dns-names`: e.g. `localhost,node1.kurrentdb`
+  that will match the URLs that you will be accessing KurrentDB nodes.
   :::
 
 Sample:
 
 ```
 ./es-gencert-cli-cli create-node \
-    -ca-certificate ./es-ca/ca.crt \
-    -ca-key ./es-ca/ca.key \
+    -ca-certificate ./kurrentdb-ca/ca.crt \
+    -ca-key ./kurrentdb-ca/ca.key \
     -out ./node1 \
     -ip-addresses 127.0.0.1,172.20.240.1 \
-    -dns-names localhost,node1.eventstore
+    -dns-names localhost,node1.kurrentdb
 ```
 
 ### Running with Docker
@@ -300,9 +300,9 @@ services:
     command: >
       -c "mkdir -p ./certs && cd /certs
       && es-gencert-cli create-ca
-      && es-gencert-cli create-node -out ./node1 -ip-addresses 127.0.0.1,172.20.240.1 -dns-names localhost,node1.eventstore
-      && es-gencert-cli create-node -out ./node1 -ip-addresses 127.0.0.1,172.20.240.2 -dns-names localhost,node2.eventstore
-      && es-gencert-cli create-node -out ./node1 -ip-addresses 127.0.0.1,172.20.240.3 -dns-names localhost,node3.eventstore
+      && es-gencert-cli create-node -out ./node1 -ip-addresses 127.0.0.1,172.20.240.1 -dns-names localhost,node1.kurrentdb
+      && es-gencert-cli create-node -out ./node1 -ip-addresses 127.0.0.1,172.20.240.2 -dns-names localhost,node2.kurrentdb
+      && es-gencert-cli create-node -out ./node1 -ip-addresses 127.0.0.1,172.20.240.3 -dns-names localhost,node3.kurrentdb
       && find . -type f -print0 | xargs -0 chmod 666"
     container_name: setup
     volumes:
@@ -313,7 +313,7 @@ See more in the [complete sample of docker-compose secured cluster configuration
 
 ## Certificate installation on a client environment
 
-To connect to EventStoreDB, you need to install the auto-generated CA certificate file on the client machine (e.g. machine where the client is hosted, or your dev environment).
+To connect to KurrentDB, you need to install the auto-generated CA certificate file on the client machine (e.g. machine where the client is hosted, or your dev environment).
 
 ::: tabs#os
 @tab Linux
@@ -431,16 +431,16 @@ ii) To improve performance by preventing certificate downloads if your certifica
 
 ::: tabs#os
 @tab Linux
-The following script assumes EventStoreDB is running under the `eventstore` account.
+The following script assumes KurrentDB is running under the `kurrent` account.
 
 ```bash
-sudo su eventstore --shell /bin/bash
+sudo su kurrent --shell /bin/bash
 dotnet tool install --global dotnet-certificate-tool
  ~/.dotnet/tools/certificate-tool add -s CertificateAuthority -l CurrentUser --file /path/to/intermediate.crt
 ```
 
 @tab Windows
-To import the intermediate certificate in the `Intermediate Certification Authorities` certificate store, run the following PowerShell command under the same account as EventStoreDB is running:
+To import the intermediate certificate in the `Intermediate Certification Authorities` certificate store, run the following PowerShell command under the same account as KurrentDB is running:
 
 ```powershell
 Import-Certificate -FilePath .\path\to\intermediate.crt -CertStoreLocation Cert:\CurrentUser\CA

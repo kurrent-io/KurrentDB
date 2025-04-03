@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
@@ -54,7 +54,7 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 	protected virtual void OnMainBusMessage(Message msg){}
 
 	public async Task InitializeAsync() {
-		var _ = _mainQueue.Start();
+		_mainQueue.Start();
 		_mainQueue.Publish(new SystemMessage.SystemCoreReady());
 		_mainQueue.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 		await _ready.WaitAsync(TestTimeout);
@@ -64,7 +64,7 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 		_miniStore.Complete();
 		await _complete;
 		await _stop();
-		_mainQueue.Stop();
+		await _mainQueue.Stop();
 	}
 
 	protected async Task<(long commitPosition, long nextRevision)> WriteEvents(string stream, long expectedRevision, params Event[] events) {

@@ -1,10 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Services.Storage;
 using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.Transforms.Identity;
 
 namespace EventStore.Core.Tests.TransactionLog.Truncation;
@@ -34,8 +36,8 @@ public abstract class TruncateScenario<TLogFormat, TStreamId> : ReadIndexTestSce
 
 		await Db.DisposeAsync();
 
-		var truncator = new TFChunkDbTruncator(Db.Config, _ => new IdentityChunkTransformFactory());
-		truncator.TruncateDb(TruncateCheckpoint);
+		var truncator = new TFChunkDbTruncator(Db.Config, new ChunkLocalFileSystem(Db.Config.Path), static _ => new IdentityChunkTransformFactory());
+		await truncator.TruncateDb(TruncateCheckpoint, CancellationToken.None);
 	}
 
 	protected virtual void OnBeforeTruncating() {

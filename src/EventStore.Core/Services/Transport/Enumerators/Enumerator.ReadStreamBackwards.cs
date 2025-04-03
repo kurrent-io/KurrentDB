@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -26,8 +27,8 @@ partial class Enumerator {
 		private readonly DateTime _deadline;
 		private readonly uint _compatibility;
 		private readonly CancellationToken _cancellationToken;
-		private readonly SemaphoreSlim _semaphore;
-		private readonly Channel<ReadResponse> _channel;
+		private readonly SemaphoreSlim _semaphore = new(1, 1);
+		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
 
 		private ReadResponse _current;
 
@@ -43,8 +44,8 @@ partial class Enumerator {
 			DateTime deadline,
 			uint compatibility,
 			CancellationToken cancellationToken) {
-			_bus = bus ?? throw new ArgumentNullException(nameof(bus));
-			_streamName = streamName ?? throw new ArgumentNullException(nameof(streamName));
+			_bus = Ensure.NotNull(bus);
+			_streamName = Ensure.NotNullOrEmpty(streamName);
 			_maxCount = maxCount;
 			_resolveLinks = resolveLinks;
 			_user = user;
@@ -52,8 +53,6 @@ partial class Enumerator {
 			_deadline = deadline;
 			_compatibility = compatibility;
 			_cancellationToken = cancellationToken;
-			_semaphore = new SemaphoreSlim(1, 1);
-			_channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
 
 			ReadPage(startRevision);
 		}
@@ -74,7 +73,7 @@ partial class Enumerator {
 		}
 
 		private void ReadPage(StreamRevision startRevision, ulong readCount = 0) {
-			Guid correlationId = Guid.NewGuid();
+			var correlationId = Guid.NewGuid();
 
 			_bus.Publish(new ClientMessage.ReadStreamEventsBackward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
@@ -83,15 +82,13 @@ partial class Enumerator {
 				cancellationToken: _cancellationToken));
 
 			async Task OnMessage(Message message, CancellationToken ct) {
-				if (message is ClientMessage.NotHandled notHandled &&
-				    TryHandleNotHandled(notHandled, out var ex)) {
+				if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 					_channel.Writer.TryComplete(ex);
 					return;
 				}
 
 				if (message is not ClientMessage.ReadStreamEventsBackwardCompleted completed) {
-					_channel.Writer.TryComplete(
-						ReadResponseException.UnknownMessage.Create<ClientMessage.ReadStreamEventsBackwardCompleted>(message));
+					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<ClientMessage.ReadStreamEventsBackwardCompleted>(message));
 					return;
 				}
 
@@ -111,10 +108,7 @@ partial class Enumerator {
 						}
 
 						if (_compatibility >= 1) {
-							await _channel.Writer
-								.WriteAsync(
-									new ReadResponse.LastStreamPositionReceived(
-										StreamRevision.FromInt64(completed.LastEventNumber)), ct);
+							await _channel.Writer.WriteAsync(new ReadResponse.LastStreamPositionReceived(StreamRevision.FromInt64(completed.LastEventNumber)), ct);
 						}
 
 						_channel.Writer.TryComplete();

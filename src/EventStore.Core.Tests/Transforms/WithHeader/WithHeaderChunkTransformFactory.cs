@@ -1,9 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Plugins.Transforms;
 
 namespace EventStore.Core.Tests.Transforms.WithHeader;
@@ -19,14 +21,14 @@ public class WithHeaderChunkTransformFactory : IChunkTransformFactory {
 		RandomNumberGenerator.Fill(_header);
 	}
 
-	public ReadOnlyMemory<byte> CreateTransformHeader() => _header;
+	public void CreateTransformHeader(Span<byte> transformHeader) => _header.CopyTo(transformHeader);
 
-	public ReadOnlyMemory<byte> ReadTransformHeader(Stream stream) {
-		var buffer = new byte[TransformHeaderSize];
-		stream.ReadExactly(buffer);
-		return buffer.AsMemory();
+	public ValueTask ReadTransformHeader(Stream stream, Memory<byte> transformHeader, CancellationToken token) {
+		return stream.ReadExactlyAsync(transformHeader, token);
 	}
 
-	public IChunkTransform CreateTransform(ReadOnlyMemory<byte> transformHeader) =>
+	public IChunkTransform CreateTransform(ReadOnlySpan<byte> transformHeader) =>
 		new WithHeaderChunkTransform(transformHeader.Length);
+
+	public int TransformHeaderLength => _header.Length;
 }

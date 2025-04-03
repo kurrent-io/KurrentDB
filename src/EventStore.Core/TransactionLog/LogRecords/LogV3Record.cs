@@ -1,8 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
+using DotNext.Buffers;
 using EventStore.LogCommon;
 using EventStore.LogV3;
 
@@ -33,7 +34,7 @@ public class LogV3Record<TRecordView> : ILogRecord where TRecordView : IRecordVi
 	public LogV3Record() {
 	}
 
-	public void WriteTo(BinaryWriter writer) {
+	public void WriteTo(ref BufferWriterSlim<byte> writer) {
 		writer.Write(Record.Bytes.Span);
 	}
 

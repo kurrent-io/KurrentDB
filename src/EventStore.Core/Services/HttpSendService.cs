@@ -1,10 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
@@ -31,18 +30,18 @@ public class HttpSendService : IHttpForwarder,
 	private MemberInfo _leaderInfo;
 
 	public HttpSendService(HttpMessagePipe httpPipe, bool forwardRequests, CertificateDelegates.ServerCertificateValidator externServerCertValidator) {
-		Ensure.NotNull(httpPipe, "httpPipe");
-		_httpPipe = httpPipe;
+		_httpPipe = Ensure.NotNull(httpPipe);
 		_forwardRequests = forwardRequests;
 
 		var socketsHttpHandler = new SocketsHttpHandler {
 			SslOptions = {
 				CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
-				RemoteCertificateValidationCallback = (sender, certificate, chain, errors) => {
+				RemoteCertificateValidationCallback = (_, certificate, chain, errors) => {
 					var (isValid, error) = externServerCertValidator(certificate, chain, errors, _leaderInfo?.HttpEndPoint.GetOtherNames());
 					if (!isValid && error != null) {
 						Log.Error("Server certificate validation error: {e}", error);
 					}
+
 					return isValid;
 				}
 			},
@@ -74,13 +73,12 @@ public class HttpSendService : IHttpForwarder,
 				_leaderInfo = null;
 				break;
 			default:
-				throw new Exception(string.Format("Unknown node state: {0}.", message.State));
+				throw new Exception($"Unknown node state: {message.State}.");
 		}
 	}
 
 	public void Handle(HttpMessage.HttpSend message) {
-		var deniedToHandle = message.Message as HttpMessage.DeniedToHandle;
-		if (deniedToHandle != null) {
+		if (message.Message is HttpMessage.DeniedToHandle deniedToHandle) {
 			int code;
 			switch (deniedToHandle.Reason) {
 				case DenialReason.ServerTooBusy:
@@ -101,9 +99,9 @@ public class HttpSendService : IHttpForwarder,
 			var config = message.Configuration;
 
 			// todo: histogram metric?
-			if (response is byte[]) {
+			if (response is byte[] bytes) {
 				message.HttpEntityManager.ReplyContent(
-					response as byte[],
+					bytes,
 					config.Code,
 					config.Description,
 					config.ContentType,
@@ -125,17 +123,14 @@ public class HttpSendService : IHttpForwarder,
 
 	bool IHttpForwarder.ForwardRequest(HttpEntityManager manager) {
 		var leaderInfo = _leaderInfo;
-		if (_forwardRequests && leaderInfo != null) {
-			var srcUrl = manager.RequestedUrl;
-			var srcBase = new Uri($"{srcUrl.Scheme}://{srcUrl.Host}:{srcUrl.Port}/",
-				UriKind.Absolute);
-			var baseUri = new Uri(leaderInfo.HttpEndPoint.ToHttpUrl(srcUrl.Scheme));
-			var forwardUri = new Uri(baseUri, srcBase.MakeRelativeUri(srcUrl));
-			ForwardRequest(manager, forwardUri);
-			return true;
-		}
+		if (!_forwardRequests || leaderInfo == null) return false;
 
-		return false;
+		var srcUrl = manager.RequestedUrl;
+		var srcBase = new Uri($"{srcUrl.Scheme}://{srcUrl.Host}:{srcUrl.Port}/", UriKind.Absolute);
+		var baseUri = new Uri(leaderInfo.HttpEndPoint.ToHttpUrl(srcUrl.Scheme));
+		var forwardUri = new Uri(baseUri, srcBase.MakeRelativeUri(srcUrl));
+		ForwardRequest(manager, forwardUri);
+		return true;
 	}
 
 	private void ForwardRequest(HttpEntityManager manager, Uri forwardUri) {
@@ -149,12 +144,14 @@ public class HttpSendService : IHttpForwarder,
 		foreach (var headerKey in srcReq.GetHeaderKeys()) {
 			try {
 				switch (headerKey.ToLower()) {
+					case "connection":
+					case "content-type":
+					case "expect":
+					case "proxy-connection":
+					case "range":
+						break;
 					case "accept":
 						request.Headers.Accept.ParseAdd(srcReq.GetHeaderValues(headerKey).ToString());
-						break;
-					case "connection":
-						break;
-					case "content-type":
 						break;
 					case "content-length":
 						hasContentLength = true;
@@ -162,18 +159,11 @@ public class HttpSendService : IHttpForwarder,
 					case "date":
 						request.Headers.Date = DateTime.Parse(srcReq.GetHeaderValues(headerKey).ToString());
 						break;
-					case "expect":
-						break;
 					case "host":
 						request.Headers.Host = $"{forwardUri.Host}:{forwardUri.Port}";
 						break;
 					case "if-modified-since":
-						request.Headers.IfModifiedSince =
-							DateTime.Parse(srcReq.GetHeaderValues(headerKey).ToString());
-						break;
-					case "proxy-connection":
-						break;
-					case "range":
+						request.Headers.IfModifiedSince = DateTime.Parse(srcReq.GetHeaderValues(headerKey).ToString());
 						break;
 					case "referer":
 						request.Headers.Referrer = new Uri(srcReq.GetHeaderValues(headerKey).ToString());
@@ -195,8 +185,7 @@ public class HttpSendService : IHttpForwarder,
 		}
 
 		if (!request.Headers.Contains(ProxyHeaders.XForwardedHost)) {
-			request.Headers.Add(ProxyHeaders.XForwardedHost, string.Format("{0}:{1}",
-				manager.RequestedUrl.Host, manager.RequestedUrl.Port));
+			request.Headers.Add(ProxyHeaders.XForwardedHost, $"{manager.RequestedUrl.Host}:{manager.RequestedUrl.Port}");
 		}
 
 		// Copy content (if content body is allowed)
@@ -207,8 +196,7 @@ public class HttpSendService : IHttpForwarder,
 			streamContent.Headers.ContentLength = srcReq.ContentLength64;
 			request.Content = streamContent;
 
-			MediaTypeHeaderValue contentType;
-			if (MediaTypeHeaderValue.TryParse(srcReq.ContentType, out contentType)) {
+			if (MediaTypeHeaderValue.TryParse(srcReq.ContentType, out var contentType)) {
 				streamContent.Headers.ContentType = contentType;
 			}
 		}
@@ -216,7 +204,7 @@ public class HttpSendService : IHttpForwarder,
 		ForwardResponse(manager, request);
 	}
 
-	private void ForwardReplyFailed(HttpEntityManager manager) {
+	private static void ForwardReplyFailed(HttpEntityManager manager) {
 		manager.ReplyStatus(HttpStatusCode.InternalServerError, "Error while forwarding request", _ => { });
 	}
 
@@ -227,15 +215,12 @@ public class HttpSendService : IHttpForwarder,
 				try {
 					response = t.Result;
 				} catch (Exception ex) {
-					Log.Debug("Error in SendAsync for forwarded request for '{requestedUrl}': {e}.",
-						manager.RequestedUrl, ex.InnerException.Message);
+					Log.Debug("Error in SendAsync for forwarded request for '{requestedUrl}': {e}.", manager.RequestedUrl, ex.InnerException.Message);
 					ForwardReplyFailed(manager);
 					return;
 				}
 
-				manager.ForwardReply(response,
-					exc => Log.Debug("Error forwarding response for '{requestedUrl}': {e}.", manager.RequestedUrl,
-						exc.Message));
+				manager.ForwardReply(response, exc => Log.Debug("Error forwarding response for '{requestedUrl}': {e}.", manager.RequestedUrl, exc.Message));
 			});
 	}
 }

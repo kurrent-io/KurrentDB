@@ -1,11 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Data;
 
-namespace EventStore.Core.TransactionLog.Scavenging;
+namespace EventStore.Core.TransactionLog.Scavenging.Interfaces;
 
 public interface IScavengeState<TStreamId> :
 	IScavengeStateForAccumulator<TStreamId>,
@@ -38,7 +38,7 @@ public interface ITransactionCompleter {
 	void Commit(ScavengeCheckpoint checkpoint);
 }
 
-public interface ITransactionManager : ITransactionCompleter{
+public interface ITransactionManager : ITransactionCompleter {
 	void Begin();
 	void RegisterOnRollback(Action onRollback);
 	void UnregisterOnRollback();
@@ -114,6 +114,7 @@ public interface IScavengeStateForChunkExecutorWorker<TStreamId> : IDisposable {
 	float SumChunkWeights(int startLogicalChunkNumber, int endLogicalChunkNumber);
 	bool TryGetChunkExecutionInfo(TStreamId streamId, out ChunkExecutionInfo info);
 	bool TryGetMetastreamData(TStreamId streamId, out MetastreamData metastreamData);
+	bool TryGetChunkTimeStampRange(int logicalChunkNumber, out ChunkTimeStampRange range);
 }
 
 public interface IScavengeStateForChunkMerger : IScavengeStateCommon {

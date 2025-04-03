@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -27,6 +27,7 @@ namespace EventStore.Core.Services;
 public class ClusterStorageWriterService {
 }
 
+// see comment in StorageWriterService re CancellationToken handling
 public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStreamId>,
 	IAsyncHandle<ReplicationMessage.ReplicaSubscribed>,
 	IAsyncHandle<ReplicationMessage.CreateChunk>,
@@ -364,14 +365,12 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 	}
 
 	private async ValueTask OnTransactionUnframed(IEnumerable<ILogRecord> records, CancellationToken token) {
-		// Workaround: The transaction cannot be canceled in a middle, it should be atomic.
-		// There is no way to rollback it on cancellation
+		// once we start the transaction, do not abort due to cancellation, we have no way to roll it back
 		token.ThrowIfCancellationRequested();
-		token = CancellationToken.None;
 
 		Writer.OpenTransaction();
 		foreach (var record in records)
-			if (await Writer.WriteToTransaction(record, token) is null)
+			if (await Writer.WriteToTransaction(record, CancellationToken.None) is null)
 				ReplicationFail(
 					"Failed to write replicated log record at position: {0}. Writer's position: {1}.",
 					"Failed to write replicated log record at position: {recordPos}. Writer's position: {writerPos}.",

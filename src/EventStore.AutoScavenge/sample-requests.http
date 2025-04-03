@@ -1,0 +1,46 @@
+### enabled
+GET https://127.0.0.1:2113/auto-scavenge/enabled
+Authorization: Basic admin:changeit
+
+### status
+GET https://127.0.0.1:2113/auto-scavenge/status
+Authorization: Basic admin:changeit
+
+### pause
+POST https://127.0.0.1:2113/auto-scavenge/pause
+Authorization: Basic ops:changeit
+
+###
+POST https://127.0.0.1:2113/auto-scavenge/resume
+Authorization: Basic ops:changeit
+
+
+### configure to scavenge every 5 mins
+POST https://127.0.0.1:2113/auto-scavenge/configure
+Content-Type: application/json
+Authorization: Basic admin:changeit
+
+{
+    "schedule": "* * * * *"
+}
+
+
+
+#
+# manual scavenge controls
+#
+
+### Start a scavenge
+POST https://127.0.0.1:2113/admin/scavenge
+Authorization: Basic admin:changeit
+Accept: application/json
+
+### Get current scavenge
+GET https://127.0.0.1:2113/admin/scavenge/current
+Authorization: Basic admin:changeit
+Accept: application/json
+
+### Stop current scavenge
+DELETE https://127.0.0.1:2113/admin/scavenge/current
+Authorization: Basic admin:changeit
+Accept: application/json

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Common.Utils;
 using EventStore.Core.Services;
-using EventStore.Core.Tests.Http.Users;
 using NUnit.Framework;
 using Newtonsoft.Json.Linq;
+using ContentType = EventStore.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Http.StreamSecurity {
 	namespace stream_access {
@@ -59,16 +59,18 @@ namespace EventStore.Core.Tests.Http.StreamSecurity {
 			}
 
 			[Test]
-			public async Task accepts_post_event_as_authorized_user_by_trusted_auth() {
+			[TestCase(SystemHeaders.TrustedAuth)]
+			[TestCase(SystemHeaders.LegacyTrustedAuth)]
+			public async Task accepts_post_event_as_authorized_user_by_trusted_auth(string trustedAuthHeader) {
 				var uri = MakeUrl(TestStream);
 
 				var request = new HttpRequestMessage(HttpMethod.Post, uri) {
-					Headers = { { "ES-TrustedAuth", "root; admin, other" } },
+					Headers = { { trustedAuthHeader, "root; admin, other" } },
 					Content = new ByteArrayContent(
 						new[] { new { EventId = Guid.NewGuid(), EventType = "event-type", Data = new { Some = "Data" } } }
 							.ToJsonBytes()) {
 						Headers = {
-							ContentType = MediaTypeHeaderValue.Parse("application/vnd.eventstore.events+json")
+							ContentType = MediaTypeHeaderValue.Parse(ContentType.EventsJson)
 						}
 					}
 				};

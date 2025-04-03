@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Bus;
@@ -18,10 +18,10 @@ public class QueryProcessingStrategy : DefaultProjectionProcessingStrategy {
 	public QueryProcessingStrategy(
 		string name, ProjectionVersion projectionVersion, IProjectionStateHandler stateHandler,
 		ProjectionConfig projectionConfig, IQuerySources sourceDefinition, ILogger logger,
-		ReaderSubscriptionDispatcher subscriptionDispatcher, bool enableContentTypeValidation)
+		ReaderSubscriptionDispatcher subscriptionDispatcher, bool enableContentTypeValidation, int maxProjectionStateSize)
 		: base(
 			name, projectionVersion, stateHandler, projectionConfig, sourceDefinition, logger,
-			subscriptionDispatcher, enableContentTypeValidation) {
+			subscriptionDispatcher, enableContentTypeValidation, maxProjectionStateSize) {
 	}
 
 	public override bool GetStopOnEof() {
@@ -47,7 +47,7 @@ public class QueryProcessingStrategy : DefaultProjectionProcessingStrategy {
 		var checkpointManager2 = new DefaultCheckpointManager(
 			publisher, projectionCorrelationId, _projectionVersion, SystemAccounts.System, ioDispatcher,
 			_projectionConfig, _name, new PhasePositionTagger(1), namingBuilder, GetUseCheckpoints(), false,
-			_sourceDefinition.DefinesFold, coreProjectionCheckpointWriter);
+			_sourceDefinition.DefinesFold, coreProjectionCheckpointWriter, _maxProjectionStateSize);
 
 		IProjectionProcessingPhase writeResultsPhase;
 		if (GetProducesRunningResults())

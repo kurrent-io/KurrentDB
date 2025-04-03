@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -148,12 +148,18 @@ public sealed class HttpEntityManager {
 		try {
 			HttpEntity.Response.AddHeader("Access-Control-Allow-Methods", string.Join(", ", _allowedMethods));
 			HttpEntity.Response.AddHeader("Access-Control-Allow-Headers",
-				"Content-Type, X-Requested-With, X-Forwarded-Host, X-Forwarded-Prefix, X-PINGOTHER, Authorization, ES-LongPoll, ES-ExpectedVersion, ES-EventId, ES-EventType, ES-RequireMaster, ES-RequireLeader, ES-HardDelete, ES-ResolveLinkTos");
+				"Content-Type, X-Requested-With, X-Forwarded-Host, X-Forwarded-Prefix, X-PINGOTHER, Authorization, " +
+				"Kurrent-LongPoll, Kurrent-ExpectedVersion, Kurrent-EventId, Kurrent-EventType, Kurrent-RequireLeader, Kurrent-HardDelete, Kurrent-ResolveLinkTos, " +
+				"ES-LongPoll, ES-ExpectedVersion, ES-EventId, ES-EventType, ES-RequireMaster, ES-RequireLeader, ES-HardDelete, ES-ResolveLinkTos");
 			HttpEntity.Response.AddHeader("Access-Control-Allow-Origin", "*");
 			HttpEntity.Response.AddHeader("Access-Control-Expose-Headers",
-				"Location, ES-Position, ES-CurrentVersion");
-			if (HttpEntity.Response.StatusCode == HttpStatusCode.Unauthorized)
+				"Location, " +
+				"Kurrent-Position, Kurrent-CurrentVersion, " +
+				"ES-Position, ES-CurrentVersion, ");
+			if (HttpEntity.Response.StatusCode == HttpStatusCode.Unauthorized) {
+				HttpEntity.Response.AddHeader("WWW-Authenticate", "BasicCustom realm=\"Kurrent\"");
 				HttpEntity.Response.AddHeader("WWW-Authenticate", "BasicCustom realm=\"ES\"");
+			}
 		} catch (ObjectDisposedException) {
 			// ignore
 		} catch (Exception e) {

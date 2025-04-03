@@ -56,6 +56,12 @@ message MaximumAppendSizeExceeded {
 	uint32 maxAppendSize = 1;
 }
 
+message MaximumAppendEventSizeExceeded {
+	string eventId = 1;
+	uint32 proposedEventSize = 2;
+	uint32 maxAppendEventSize = 3;
+}
+
 message BadRequest {
 	string message = 1;
 }
