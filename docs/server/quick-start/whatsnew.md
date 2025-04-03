@@ -74,7 +74,7 @@ As before, there will be two categories of release:
 * Long term support (LTS) releases which are supported for a minimum of two years, with a two month grace period.
 * Short term support (STS) releases which are supported until the next LTS or STS release.
 
-The version number will now reflect whether a release is an LTS or feature release, rather than being based on the year and month. LTS releases will have _even_ major numbers, and LTS releases will have _odd_ major numbers.
+The version number will now reflect whether a release is an LTS or feature release, rather than being based on the year and month. LTS releases will have _even_ major numbers, and STS releases will have _odd_ major numbers.
 
 #### Versioning scheme
 

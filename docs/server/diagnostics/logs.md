@@ -100,6 +100,8 @@ You can change the level using the `LogLevel` setting:
 
 Acceptable values are: `Default`, `Verbose`, `Debug`, `Information`, `Warning`, `Error`, and `Fatal`.
 
+Additionally: `Trace` is equivalent to `Verbose`, `Critical` is equivalent to `Fatal`, and `None` is equivalent to `Fatal`.
+
 ## Logging options
 
 You can tune the KurrentDB logging further by using the logging options described below.

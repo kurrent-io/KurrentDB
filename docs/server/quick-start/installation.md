@@ -114,65 +114,14 @@ curl -1sLf \
 ```
 :::
 
-Alternatively, you can manually configure it yourself before installing packages:
-
-::: tabs
-@tab kurrent-latest
-```bash
-apt-get install -y debian-keyring  # debian only
-apt-get install -y debian-archive-keyring  # debian only
-apt-get install -y apt-transport-https
-# For Debian Stretch, Ubuntu 16.04 and later
-keyring_location=/usr/share/keyrings/eventstore-kurrent-latest-archive-keyring.gpg
-# For Debian Jessie, Ubuntu 15.10 and earlier
-keyring_location=/etc/apt/trusted.gpg.d/eventstore-kurrent-latest.gpg
-curl -1sLf 'https://packages.eventstore.com/public/kurrent-latest/gpg.094442D90AD50BCD.key' |  gpg --dearmor >> ${keyring_location}
-curl -1sLf 'https://packages.eventstore.com/public/kurrent-latest/config.deb.txt?distro=ubuntu&codename=xenial&component=main' > /etc/apt/sources.list.d/eventstore-kurrent-latest.list
-sudo chmod 644 ${keyring_location}
-sudo chmod 644 /etc/apt/sources.list.d/eventstore-kurrent-latest.list
-apt-get update
-```
-@tab kurrent-lts
-```bash
-apt-get install -y debian-keyring  # debian only
-apt-get install -y debian-archive-keyring  # debian only
-apt-get install -y apt-transport-https
-# For Debian Stretch, Ubuntu 16.04 and later
-keyring_location=/usr/share/keyrings/eventstore-kurrent-lts-archive-keyring.gpg
-# For Debian Jessie, Ubuntu 15.10 and earlier
-keyring_location=/etc/apt/trusted.gpg.d/eventstore-kurrent-lts.gpg
-curl -1sLf 'https://packages.eventstore.com/public/kurrent-lts/gpg.C39876BC6AE970D8.key' |  gpg --dearmor >> ${keyring_location}
-curl -1sLf 'https://packages.eventstore.com/public/kurrent-lts/config.deb.txt?distro=ubuntu&codename=xenial&component=main' > /etc/apt/sources.list.d/eventstore-kurrent-lts.list
-sudo chmod 644 ${keyring_location}
-sudo chmod 644 /etc/apt/sources.list.d/eventstore-kurrent-lts.list
-apt-get update
-```
-@tab kurrent-preview
-```bash
-apt-get install -y debian-keyring  # debian only
-apt-get install -y debian-archive-keyring  # debian only
-apt-get install -y apt-transport-https
-# For Debian Stretch, Ubuntu 16.04 and later
-keyring_location=/usr/share/keyrings/eventstore-kurrent-preview-archive-keyring.gpg
-# For Debian Jessie, Ubuntu 15.10 and earlier
-keyring_location=/etc/apt/trusted.gpg.d/eventstore-kurrent-preview.gpg
-curl -1sLf 'https://packages.eventstore.com/public/kurrent-preview/gpg.501C1F0DF3660D29.key' |  gpg --dearmor >> ${keyring_location}
-curl -1sLf 'https://packages.eventstore.com/public/kurrent-preview/config.deb.txt?distro=debian&codename=wheezy&component=main' > /etc/apt/sources.list.d/eventstore-kurrent-preview.list
-sudo chmod 644 ${keyring_location}
-sudo chmod 644 /etc/apt/sources.list.d/eventstore-kurrent-preview.list
-apt-get update
-```
-:::
+Alternatively, you can find instructions to manually configure it yourself on Cloudsmith:
+* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
 
 #### Install with apt-get
 
-Add the repository to your system according to the instructions on Cloudsmith:
-
-* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/setup/#formats-deb).
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/setup/#formats-deb).
-* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/setup/#formats-deb).
-
-Then, install the package:
+Install the package:
 
 ```bash
 apt-get install kurrentdb=25.0.0
@@ -248,48 +197,14 @@ curl -1sLf \
 ```
 :::
 
-Alternatively, you can manually configure it yourself before installing packages:
-
-::: tabs
-@tab kurrent-latest
-```bash
-yum install yum-utils pygpgme
-rpm --import 'https://packages.eventstore.com/public/kurrent-latest/gpg.094442D90AD50BCD.key'
-curl -1sLf 'https://packages.eventstore.com/public/kurrent-latest/config.rpm.txt?distro=el&codename=7' > /tmp/eventstore-kurrent-latest.repo
-yum-config-manager --add-repo '/tmp/eventstore-kurrent-latest.repo'
-yum -q makecache -y --disablerepo='*' --enablerepo='eventstore-kurrent-latest'
-```
-@tab kurrent-lts
-```bash
-yum install yum-utils pygpgme
-rpm --import 'https://packages.eventstore.com/public/kurrent-lts/gpg.C39876BC6AE970D8.key'
-curl -1sLf 'https://packages.eventstore.com/public/kurrent-lts/config.rpm.txt?distro=el&codename=7' > /tmp/eventstore-kurrent-lts.repo
-yum-config-manager --add-repo '/tmp/eventstore-kurrent-lts.repo'
-yum -q makecache -y --disablerepo='*' --enablerepo='eventstore-kurrent-lts'
-```
-@tab kurrent-preview
-```bash
-yum install yum-utils pygpgme
-rpm --import 'https://packages.eventstore.com/public/kurrent-preview/gpg.501C1F0DF3660D29.key'
-curl -1sLf 'https://packages.eventstore.com/public/kurrent-preview/config.rpm.txt?distro=el&codename=7' > /tmp/eventstore-kurrent-preview.repo
-yum-config-manager --add-repo '/tmp/eventstore-kurrent-preview.repo'
-yum -q makecache -y --disablerepo='*' --enablerepo='eventstore-kurrent-preview'
-```
-:::
-
-::: note
-Please replace el and 7 above with your actual distribution and version and use wildcards when enabling multiple repos.
-:::
-
-#### Install with yum
-
-Add the repository to your system according to the instructions on Cloudsmith:
-
+Alternatively, you can find instructions to manually configure it yourself on Cloudsmith:
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/setup/#formats-rpm).
 * [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/setup/#formats-rpm).
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/setup/#formats-rpm).
 
-Then, install the package:
+#### Install with yum
+
+Install the package:
 
 ```bash
 yum install kurrentdb-25.0.0-1.x86_64
@@ -326,49 +241,15 @@ starts automatically.
 
 ### NuGet
 
-KurrentDB has NuGet packages available on Cloudsmith, which replaces the previous Chocolatey packages.
-
-Nuget packages can be found in the following repositories:
-
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Anuget+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
-* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Anuget+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
-* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Anuget+name%3Akurrentdb) containing non-production preview packages.
-
-Add a new package source to your Chocolatey configuration:
-
-::: tabs
-@tab kurrent-latest
-```powershell
-choco source add -n eventstore-kurrent-latest -s https://nuget.eventstore.com/kurrent-latest/v2/
-```
-@tab kurrent-lts
-```powershell
-choco source add -n eventstore-kurrent-lts -s https://nuget.eventstore.com/kurrent-lts/v2/
-```
-@tab kurrent-preview
-```powershell
-choco source add -n eventstore-kurrent-preview -s https://nuget.eventstore.com/kurrent-preview/v2/
-```
-:::
+KurrentDB has NuGet packages available on [Chocolatey](https://community.chocolatey.org/packages/kurrentdb).
 
 #### Install with Chocolatey
 
 You can install KurrentDB through Chocolatey:
 
-::: tabs
-@tab kurrent-latest
 ```powershell
-choco install kurrentdb -s eventstore-kurrent-latest --version 25.0.0
+choco install kurrentdb --version=25.0.0
 ```
-@tab kurrent-lts
-```powershell
-choco install kurrentdb -s eventstore-kurrent-lts --version 25.0.0
-```
-@tab kurrent-preview
-```powershell
-choco install kurrentdb -s eventstore-kurrent-preview --version 25.0.0
-```
-:::
 
 KurrentDB can then be run with `KurrentDB.exe`:
 
@@ -516,6 +397,10 @@ You have to tell your client to use secure connection.
 As you might've noticed, the connection string has a setting to disable the certificate validation (`tlsVerifyCert=false`). It would prevent the invalid certificate error since the cluster uses a private, auto-generated CA.
 
 However, **we do not recommend using this setting in production**. Instead, you can either add the CA certificate to the trusted root CA store or instruct your application to use such a certificate. See the [security section](../security/protocol-security.md#certificate-installation-on-a-client-environment) for detailed instructions.
+
+## Kubernetes
+
+KurrentDB can be deployed and managed using the [Operator](/server/kubernetes-operator/).
 
 ## Building from source
 
