@@ -5,17 +5,17 @@ order: 3
 
 # Authorization
 
-Authorization governs what an authenticated user can access and what actions they can perform, based on that user's roles.
+Authorization governs what an authenticated user can access and what actions they can perform based on that user's roles.
 
 ## Roles
 
-Users are granted roles by the [authentication mechanism](./user-authentication.md). These roles are then used to determine what operations, endpoints, and streams a user has access to.
+Users are granted roles by the [authentication mechanism](./user-authentication.md). These roles determine what operations, endpoints, and streams a user can access.
 
 KurrentDB provides the `$admins` and `$ops` roles by default, granted respectively to the `admin` and `ops` default users. Custom roles can also be created.
 
 ### Admins role
 
-The `$admins` role is granted to the `admin` user by default, and authorizes the user to do the following:
+The `$admins` role is granted to the `admin` user by default and authorizes the user to do the following:
 
 - Read all streams, including `$all` and system streams.
 - Manage users and reset their passwords.
@@ -44,8 +44,8 @@ You can create additional ops users by assigning the `$ops` group to a user.
 
 ### Custom roles
 
-Custom roles are any role assigned to an authenticated user, outside of the `$admins` and `$ops` roles.
-These can be groups assigned to the user, their username, or a mapping from the authentication mechanism used. These roles can be anything, but typically describe the group or tenant that a user is part of. Example of custom roles are `accounting`, `sales`, or `tenant-123`.
+Custom roles are any role assigned to an authenticated user outside of the `$admins` and `$ops` roles.
+These can be groups assigned to the user, their username, or a mapping from the authentication mechanism used. These roles can be anything, but typically describe the group or tenant a user is part of. Examples of custom roles are `accounting`, `sales`, or `tenant-123`.
 
 Users with custom (or no) roles are authorized to do the following:
 
@@ -70,12 +70,12 @@ Stream access covers what actions a user can perform on a stream within KurrentD
 
 KurrentDB supports these methods of authorizing user access to streams:
 - [Access control lists](#access-control-lists) to restrict user access to streams based on metadata in each stream.
-- [Stream policies](#stream-policy-authorization) to restrict user acces to streams based on configured policies.
+- [Stream policies](#stream-policy-authorization) to restrict user access to streams based on configured policies.
 
 ### Access control lists
 
-By default, authenticated users have access to all non-system streams in the KurrentDB database. You can use Access Control Lists (ACLs) to set up more granular access control. In fact, the default access
-level is also controlled by a special ACL, which is called the [default ACL](#default-acl).
+By default, authenticated users can access all non-system streams in the KurrentDB database. You can use Access Control Lists (ACLs) to set up more granular access control. In fact, the default access
+level is also controlled by a special ACL called the [default ACL](#default-acl).
 
 #### Stream ACL
 
@@ -103,16 +103,16 @@ These fields represent the following:
 
 You can update these fields with either a single string or an array of strings representing users or
 groups (`$admins`, `$all`, or custom groups). It's possible to put an empty array into one of these fields,
-and this has the effect of removing all users from that permission.
+and this removes all users from that permission.
 
 ::: tip 
-We recommend you don't give people access to `$mw` as then they can then change the ACL.
+We recommend you don't give people access to `$mw` as then they can change the ACL.
 :::
 
 #### Default ACL
 
-The `$settings` stream has a special ACL used as the default ACL. This stream controls the default ACL for
-streams without an ACL and also controls who can create streams in the system, the default state of these is
+The `$settings` stream uses a special ACL as the default ACL. This stream controls the default ACL for
+streams without an ACL and who can create streams in the system. The default state of these is
 shown below:
 
 ```json
@@ -142,11 +142,11 @@ The `$userStreamAcl` controls the default ACL for user streams, while all system
 the `$systemStreamAcl` as the default.
 
 ::: tip 
-Members of `$admins` always have access to everything, you cannot remove this permission.
+Members of `$admins` always have access to everything. You cannot remove this permission.
 :::
 
 When you set a permission on a stream, it overrides the default values. However, it's not necessary to specify
-all permissions on a stream. It's only necessary to specify those which differ from the default.
+all permissions on a stream. It's only required to specify those which differ from the default.
 
 Here is an example of the default ACL that has been changed:
 
@@ -169,8 +169,8 @@ Here is an example of the default ACL that has been changed:
 }
 ```
 
-This default ACL gives `ouro` and `$admins` create and write permissions on all streams, while everyone else
-can read from them. Be careful allowing default access to system streams to non-admins as they would also have
+This default ACL gives `ouro` and `$admins` create and write permissions on all streams while everyone else
+can read from them. Be careful when allowing default access to system streams to non-admins, as they would also have
 access to `$settings` unless you specifically override it.
 
 Refer to the documentation of the HTTP API or SDK of your choice for more information about changing ACLs
@@ -180,13 +180,13 @@ programmatically.
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-This allows administrators to define stream access policies for KurrentDB based on stream prefix.
+This allows administrators to define stream access policies for KurrentDB based on stream prefixes.
 
 #### Enabling
 
-You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
+Using this feature requires a [license key](../quick-start/installation.md#license-keys).
 
-The stream access policy is configured by the last event in the `$authorization-policy-settings` stream.
+The last event in the `$authorization-policy-settings` stream configures the stream access policy.
 
 Enable stream policies by appending an event of type `$authorization-policy-changed` to the `$authorization-policy-settings` stream:
 
@@ -301,7 +301,7 @@ You can check that the feature is enabled by searching for the following log at 
 [22860,28,17:30:42.271,INF] StreamBasedPolicySelector      Subscribing to $policies at 0
 ```
 
-If you do not have a valid license, stream policies will log the following error and will not start. KurrentDB will continue to run with the current policy type:
+Stream policies will log the following error and not start if you do not have a valid license. KurrentDB will continue to run with the current policy type:
 
 ```
 [22928, 1,17:31:56.879,INF] StreamPolicySelector           Stream Policies plugin is not licensed, stream policy authorization may not be enabled.
@@ -318,7 +318,7 @@ If you enable the Stream Policy feature, KurrentDB will not enforce [stream ACLs
 
 If the `$authorization-policy-settings` stream is empty and there is no configuration, KurrentDB will default to using ACLs.
 
-If you would rather default to stream policies, you can do this by setting the `Authorization:DefaultPolicyType` option to `streampolicy`.
+If you would rather default to stream policies, you can set the `Authorization:DefaultPolicyType` option to `streampolicy`.
 
 ::: note
 Any events in the `$authorization-policy-settings` stream take precedence over the `Authorization:DefaultPolicyType` setting.
@@ -339,11 +339,11 @@ If the policy type configured in `Authorization:DefaultPolicyType` is not presen
 
 #### Fallback stream access policy
 
-If none of the events in the `$authorization-policy-settings` stream are valid, or if the stream policy plugin could not be started (for example, due to it being unlicensed), KurrentDB will fall back to restricted access.
+If none of the events in the `$authorization-policy-settings` stream are valid, or if the stream policy plugin cannot be started (for example, due to it being unlicensed), KurrentDB will fall back to restricted access.
 
-This locks down all stream access to admins only to prevent KurrentDB from falling back to a more permissive policy such as ACLs.
+This locks down all stream access to admins only to prevent KurrentDB from returning to a more permissive policy such as ACLs.
 
-To recover from this, either fix the issue preventing the plugin from loading, or set the stream access policy type to a different policy such as ACL:
+To recover from this, either fix the issue preventing the plugin from loading or set the stream access policy type to a different policy such as ACL:
 
 ```json
 {
@@ -435,9 +435,9 @@ Operations users in the `$ops` group are excluded from the `$all` group and do n
 
 You can create a custom stream policy by writing an event with event type `$policy-updated` to the `$policies` stream.
 
-We recommend that you start with the default policy shown above, and add your own policies and stream rules to it.
+We recommend that you start with the default policy shown above and add your own policies and stream rules to it.
 
-Define policies by adding one or more entries to the `streamPolicies` json object, with the key being your policy name, and the value being an [access policy](#accesspolicy):
+Define policies by adding one or more entries to the `streamPolicies` JSON object, with the key being your policy name and the value being an [access policy](#accesspolicy):
 
 ```json
 "streamPolicies": {
@@ -515,10 +515,10 @@ For example, to keep using the system defaults:
 ```
 
 ::: tip
-Make sure that the default policies are included in the `streamPolicies` object.
+Ensure the default policies are included in the `streamPolicies` object.
 :::
 
-To update the policies, append an event containing the json created in the above steps to the `$policies` stream with the `$policy-updated` event type:
+To update the policies, append an event containing the JSON created in the above steps to the `$policies` stream with the `$policy-updated` event type:
 
 ::: tabs
 @tab HTTP
@@ -628,7 +628,7 @@ curl -X POST \
 :::
 
 ::: note
-If a policy update is invalid, it will not be applied and an error will be logged. KurrentDB will continue running with the previous valid policy in place.
+If a policy update is invalid, it will not be applied, and an error will be logged. KurrentDB will continue running with the previous valid policy in place.
 :::
 
 ##### Stream policy schema
@@ -666,20 +666,20 @@ Having metadata read or metadata write access to a stream does not grant read or
 
 | Key           | Type     | Description   | Required |
 |---------------|----------|---------------|----------|
-| `startsWith`  | `string` | The stream prefix to apply the rule to. | Yes |
+| `startsWith`  | `string` | The stream prefix to which the rule is applied. | Yes |
 | `policy`      | `string` | The name of the policy to enforce for streams that match this prefix. | Yes |
 
 
 #### Tutorial
 
-[Learn how to set up and use Stream Policy Authorization in KurrentDB through a tutorial.](https://developers.kurrent.io/tutorials/Stream_Policy_Authorization.md)
+[Learn how to set up and use Stream Policy Authorization in KurrentDB through a tutorial.](/tutorials/Stream_Policy_Authorization.md)
 
 
 #### Troubleshooting
 
 ##### License is invalid or not found
 
-This feature requires a license to use. If a license is not found, or the provided license is invalid, you will see the following log:
+This feature requires a license to use. If a license is not found or the provided license is invalid, you will see the following log:
 
 ```
 [INF] StreamPolicySelector           Stream Policies plugin is not licensed, stream policy authorization cannot be enabled.
@@ -689,10 +689,10 @@ Trying to enable the feature will give you the following errors, and the previou
 
 ```
 [ERR] StreamPolicySelector           Stream Policies plugin is not licensed, cannot enable Stream policies
-[ERR] StreamBasedAuthorizationPolicyRegistry Failed to enable policy selector plugin streampolicy. Authorization settings will not be applied
+[ERR] StreamBasedAuthorizationPolicyRegistry Failed to enable policy selector plugin streampolicy. Authorization settings will not be applied.
 ```
 
-If the `DefaultPolicyType` is set to `streampolicy`, the [fallback policy](#fallback-stream-access-policy) will be used and stream access will be restricted to admins only:
+If the `DefaultPolicyType` is set to `streampolicy`, the [fallback policy](#fallback-stream-access-policy) will be used, and stream access will be restricted to admins only:
 
 ```
 [WRN] StreamBasedAuthorizationPolicyRegistry Could not load authorization policy settings. Restricting access to admins only.
@@ -723,7 +723,7 @@ This can happen because:
 [ERR] StreamBasedAuthorizationPolicyRegistry Invalid authorization policy settings event. Expected event type $authorization-policy-changed but got {invalid_event_type}
 ```
 
-2. The event is not valid json:
+2. The event is not valid JSON:
 
 ```
 [ERR] StreamBasedAuthorizationPolicyRegistry Could not parse authorization policy settings
