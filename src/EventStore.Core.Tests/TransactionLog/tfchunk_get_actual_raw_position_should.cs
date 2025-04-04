@@ -47,7 +47,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 
 			var result = chunk.TryAppend(CreateRecord(chunk.ChunkHeader.GetGlobalLogPosition(logicalPos), _random.Next(10, 100)));
 			Assert.True(result.Success);
-			actualPos = (int) result.NewPosition;
+			actualPos = (int)result.NewPosition;
 		}
 
 		chunk.Flush();
@@ -75,7 +75,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 			posMap);
 
 		Assert.AreEqual(numEvents, logPositions.Count);
-		foreach(var logPos in logPositions)
+		foreach (var logPos in logPositions)
 			Assert.AreEqual(ChunkHeader.Size + logPos, chunk.GetActualRawPosition(logPos));
 		Assert.IsEmpty(posMap);
 	}
@@ -95,7 +95,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 			posMap);
 
 		Assert.AreEqual(numEvents, logPositions.Count);
-		foreach(var logPos in logPositions)
+		foreach (var logPos in logPositions)
 			Assert.AreEqual(ChunkHeader.Size + logPos, chunk.GetActualRawPosition(logPos));
 		Assert.IsEmpty(posMap);
 	}

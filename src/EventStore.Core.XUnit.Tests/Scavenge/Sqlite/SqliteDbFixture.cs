@@ -26,7 +26,7 @@ public class SqliteDbFixture<T> : IAsyncLifetime {
 		connectionStringBuilder.DataSource = Path.Combine(dir, fileName);
 		_connectionString = connectionStringBuilder.ConnectionString;
 	}
-	
+
 	public Task InitializeAsync() {
 		DbConnection = new SqliteConnection(_connectionString);
 		DbConnectionPool = new ObjectPool<SqliteConnection>(

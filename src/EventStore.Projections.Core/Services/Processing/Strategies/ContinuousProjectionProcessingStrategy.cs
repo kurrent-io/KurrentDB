@@ -43,7 +43,7 @@ public class ContinuousProjectionProcessingStrategy : DefaultProjectionProcessin
 		CoreProjection coreProjection,
 		IODispatcher ioDispatcher,
 		IProjectionProcessingPhase firstPhase) {
-		return new IProjectionProcessingPhase[] {firstPhase};
+		return new IProjectionProcessingPhase[] { firstPhase };
 	}
 
 	protected override IResultEventEmitter CreateFirstPhaseResultEmitter(ProjectionNamesBuilder namingBuilder) {

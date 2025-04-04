@@ -140,25 +140,25 @@ public class time_service_should : IHandle<TestResponseMessage> {
 		_scheduler.TriggerProcessing();
 
 		Assert.That(_timerMessages.ContainsSingle<TestResponseMessage>(msg => msg.Id == 100) &&
-		            _timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(101, 104)));
+					_timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(101, 104)));
 
 		_timeProvider.AddToUtcTime(TimeSpan.FromMilliseconds(10)); // 20
 		_scheduler.TriggerProcessing();
 
 		Assert.That(_timerMessages.ContainsSingle<TestResponseMessage>(msg => msg.Id == 101) &&
-		            _timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(102, 104)));
+					_timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(102, 104)));
 
 		_timeProvider.AddToUtcTime(TimeSpan.FromMilliseconds(10)); //30
 		_scheduler.TriggerProcessing();
 
 		Assert.That(_timerMessages.ContainsSingle<TestResponseMessage>(msg => msg.Id == 102) &&
-		            _timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(103, 104)));
+					_timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(103, 104)));
 
 		_timeProvider.AddToUtcTime(TimeSpan.FromMilliseconds(10)); //40
 		_scheduler.TriggerProcessing();
 
 		Assert.That(_timerMessages.ContainsSingle<TestResponseMessage>(msg => msg.Id == 103) &&
-		            _timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id == 104));
+					_timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id == 104));
 
 		_timeProvider.AddToUtcTime(TimeSpan.FromMilliseconds(10)); //50
 		_scheduler.TriggerProcessing();

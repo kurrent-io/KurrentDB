@@ -1,12 +1,10 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
-using System;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Exceptions;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Services;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.Security;

@@ -9,8 +9,7 @@ using EventStore.Projections.Core.Standard;
 
 namespace EventStore.Projections.Core.Services.Processing.EventByType;
 
-public partial class EventByTypeIndexEventReader
-{
+public partial class EventByTypeIndexEventReader {
 	private abstract class State : IDisposable {
 		public abstract void RequestEvents();
 		public abstract bool AreEventsRequested();

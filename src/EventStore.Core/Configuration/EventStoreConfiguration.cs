@@ -39,11 +39,11 @@ public static class EventStoreConfiguration {
 			// directory. We use the subdirectory to ensure that we only load configuration files.
 			.AddEsdbConfigFiles("*.json")
 
-			#if DEBUG
+#if DEBUG
 			// load all json files in the current directory
 			.AddJsonFile("appsettings.json", true)
 			.AddJsonFile("appsettings.Development.json", true)
-			#endif
+#endif
 
 			.AddEnvironmentVariables()
 			.AddEventStoreEnvironmentVariables(environment)

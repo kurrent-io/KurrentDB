@@ -31,7 +31,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public abstract class with_replication_service_and_epoch_manager<TLogFormat, TStreamId>  : SpecificationWithDirectoryPerTestFixture {
+public abstract class with_replication_service_and_epoch_manager<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private const int _connectionPendingSendBytesThreshold = 10 * 1024;
 	private const int _connectionQueueSizeThreshold = 50000;
 

@@ -82,8 +82,8 @@ public class when_unsubscribing_from_memory_bus {
 		await _bus.DispatchAsync(new TestMessage3());
 
 		Assert.That(handler.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler.HandledMessages.ContainsNo<TestMessage2>() &&
-		            handler.HandledMessages.ContainsNo<TestMessage3>());
+					handler.HandledMessages.ContainsNo<TestMessage2>() &&
+					handler.HandledMessages.ContainsNo<TestMessage3>());
 	}
 
 	[Test]
@@ -100,8 +100,8 @@ public class when_unsubscribing_from_memory_bus {
 		await _bus.DispatchAsync(new TestMessage3());
 
 		Assert.That(handler.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler.HandledMessages.ContainsSingle<TestMessage2>() &&
-		            handler.HandledMessages.ContainsSingle<TestMessage3>());
+					handler.HandledMessages.ContainsSingle<TestMessage2>() &&
+					handler.HandledMessages.ContainsSingle<TestMessage3>());
 	}
 
 	[Test]
@@ -118,8 +118,8 @@ public class when_unsubscribing_from_memory_bus {
 		await _bus.DispatchAsync(new TestMessage());
 
 		Assert.That(handler1.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler2.HandledMessages.ContainsSingle<TestMessage>() &&
-		            handler3.HandledMessages.ContainsSingle<TestMessage>());
+					handler2.HandledMessages.ContainsSingle<TestMessage>() &&
+					handler3.HandledMessages.ContainsSingle<TestMessage>());
 	}
 
 	[Test]
@@ -138,8 +138,8 @@ public class when_unsubscribing_from_memory_bus {
 		await _bus.DispatchAsync(new TestMessage());
 
 		Assert.That(handler1.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler2.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler3.HandledMessages.ContainsNo<TestMessage>());
+					handler2.HandledMessages.ContainsNo<TestMessage>() &&
+					handler3.HandledMessages.ContainsNo<TestMessage>());
 	}
 
 	[Test]
@@ -159,8 +159,8 @@ public class when_unsubscribing_from_memory_bus {
 
 		//just to ensure
 		Assert.That(handler1.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler2.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler3.HandledMessages.ContainsNo<TestMessage>());
+					handler2.HandledMessages.ContainsNo<TestMessage>() &&
+					handler3.HandledMessages.ContainsNo<TestMessage>());
 
 		_bus.Unsubscribe(handler1);
 		_bus.Unsubscribe(handler2);
@@ -168,7 +168,7 @@ public class when_unsubscribing_from_memory_bus {
 		await _bus.DispatchAsync(new TestMessage());
 
 		Assert.That(handler1.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler2.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler3.HandledMessages.ContainsNo<TestMessage>());
+					handler2.HandledMessages.ContainsNo<TestMessage>() &&
+					handler3.HandledMessages.ContainsNo<TestMessage>());
 	}
 }

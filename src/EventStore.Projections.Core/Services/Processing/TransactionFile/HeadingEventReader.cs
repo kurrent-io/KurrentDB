@@ -81,7 +81,7 @@ public partial class HeadingEventReader {
 
 	private void ValidateEventOrder(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {
 		if (_lastEventPosition > message.DeleteLinkOrEventPosition.Value
-		    || _lastDeletePosition >= message.DeleteLinkOrEventPosition.Value)
+			|| _lastDeletePosition >= message.DeleteLinkOrEventPosition.Value)
 			throw new InvalidOperationException(
 				string.Format(
 					"Invalid partition deleted event order.  Last: '{0}' Received: '{1}'  LastDelete: '{2}'",

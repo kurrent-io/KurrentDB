@@ -2,13 +2,13 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
+using System.Diagnostics;
 using System.IO;
-using EventStore.Common.Utils;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
+using System.Runtime.CompilerServices;
 using DotNext.Buffers;
 using DotNext.Buffers.Binary;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using EventStore.Common.Utils;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 
 namespace EventStore.Core.TransactionLog.Chunks;
 

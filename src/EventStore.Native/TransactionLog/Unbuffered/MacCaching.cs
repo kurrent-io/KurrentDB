@@ -17,7 +17,7 @@ internal static class MacCaching {
 
 	public static void Disable(SafeFileHandle handle) {
 		if (!RuntimeInformation.IsOSX)
-                return;
+			return;
 
 		long r;
 		do {

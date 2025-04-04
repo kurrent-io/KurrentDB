@@ -11,7 +11,7 @@ partial class AuthenticatedHttpRequestMessage : Message {
 	public readonly HttpEntityManager Manager;
 	public readonly UriToActionMatch Match;
 
-	public AuthenticatedHttpRequestMessage(HttpEntityManager manager,  UriToActionMatch match) {
+	public AuthenticatedHttpRequestMessage(HttpEntityManager manager, UriToActionMatch match) {
 		Manager = manager;
 		Match = match;
 	}

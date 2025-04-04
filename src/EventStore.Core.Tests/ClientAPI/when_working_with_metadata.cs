@@ -1,18 +1,13 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
-using System;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.ClientAPI.Exceptions;
 using EventStore.Common.Utils;
-using EventStore.Core.Data;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
-using StreamMetadata = EventStore.ClientAPI.StreamMetadata;
-using Newtonsoft.Json.Linq;
 
 namespace EventStore.Core.Tests.ClientAPI;
 

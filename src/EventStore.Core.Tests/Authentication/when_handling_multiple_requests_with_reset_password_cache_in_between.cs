@@ -26,25 +26,25 @@ public class when_handling_multiple_requests_with_reset_password_cache_in_betwee
 
 		_internalAuthenticationProvider.Authenticate(
 			new TestAuthenticationRequest(
-				name: "user", 
-				suppliedPassword: "password", 
-				unauthorized: () => { }, 
-				authenticated: _ => { }, 
-				error: () => { }, 
+				name: "user",
+				suppliedPassword: "password",
+				unauthorized: () => { },
+				authenticated: _ => { },
+				error: () => { },
 				notReady: () => { }
 			)
 		);
-		
+
 		_internalAuthenticationProvider.Handle(new("user"));
-		
+
 		_consumer.HandledMessages.Clear();
 
 		_internalAuthenticationProvider.Authenticate(
 			new TestAuthenticationRequest(
-				name: "user", 
-				suppliedPassword: "password", 
+				name: "user",
+				suppliedPassword: "password",
 				unauthorized: () => _unauthorized = true,
-				authenticated: principal => _authenticatedAs = principal, 
+				authenticated: principal => _authenticatedAs = principal,
 				error: () => _error = true,
 				notReady: () => { }
 			)

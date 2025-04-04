@@ -38,7 +38,8 @@ public class a_checkpoint_requested_on_a_non_started_stream : TestFixtureWithRea
 	[Test]
 	public void throws_invalid_operation_exception() {
 		Assert.Throws<InvalidOperationException>(() => {
-			if (_caughtException != null) throw _caughtException;
+			if (_caughtException != null)
+				throw _caughtException;
 		});
 	}
 }

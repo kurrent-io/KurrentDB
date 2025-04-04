@@ -14,13 +14,13 @@ public class DefaultValuesConfigurationSourceTests {
 	public void Adds() {
 		// Arrange
 		var defaults = ClusterVNodeOptions.DefaultValues.OrderBy(x => x.Key).ToList();
-	
+
 		// Act
 		var configuration = new ConfigurationBuilder()
 			.AddEventStoreDefaultValues()
 			.Build()
 			.GetSection(EventStoreConfigurationKeys.Prefix);
-	
+
 		// Assert
 		foreach (var (key, expectedValue) in defaults) {
 			configuration.GetValue<object>(key)

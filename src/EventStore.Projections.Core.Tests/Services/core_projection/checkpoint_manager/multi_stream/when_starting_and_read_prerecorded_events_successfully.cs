@@ -5,10 +5,8 @@ using System.Collections.Generic;
 using System.Threading;
 using EventStore.Core.Bus;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager.multi_stream;
 
@@ -23,7 +21,7 @@ public class when_starting_and_read_prerecorded_events_successfully<TLogFormat, 
 		_bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(this);
 
 		_checkpointManager.Initialize();
-		var positions = new Dictionary<string, long> {{"a", 1}, {"b", 1}, {"c", 1}};
+		var positions = new Dictionary<string, long> { { "a", 1 }, { "b", 1 }, { "c", 1 } };
 		_checkpointManager.BeginLoadPrerecordedEvents(CheckpointTag.FromStreamPositions(0, positions));
 
 		if (!_mre.Wait(10000)) {

@@ -6,7 +6,7 @@ using EventStore.Core.Tests;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.ClientAPI.when_handling_deleted.with_from_category_foreach_projection.
-	recovery; 
+	recovery;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 // ReSharper disable once InconsistentNaming

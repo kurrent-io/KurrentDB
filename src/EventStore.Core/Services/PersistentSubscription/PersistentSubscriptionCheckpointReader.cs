@@ -37,7 +37,7 @@ public class PersistentSubscriptionCheckpointReader : IPersistentSubscriptionChe
 
 				if (checkpoint.EventType == "SubscriptionCheckpoint" ||
 					checkpoint.EventType == "$SubscriptionCheckpoint") {
-			
+
 					var checkpointJson = checkpoint.Data.ParseJson<string>();
 					_onStateLoaded(checkpointJson);
 					return;

@@ -2,14 +2,13 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
+using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Http.Controllers;
 using EventStore.Transport.Http;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
-using EventStore.Common.Utils;
-using EventStore.Core.Cluster;
 
 namespace EventStore.Core.Services.Transport.Http;
 
@@ -62,7 +61,7 @@ public static class Format {
 
 		return entity.ResponseCodec.To(Convert.ToAllEventsBackwardFeed(msg, entity.ResponseUrl, embed));
 	}
-	
+
 	public static string ReadAllEventsBackwardFilteredCompleted(HttpResponseFormatterArgs entity, Message message,
 		EmbedLevel embed) {
 		var msg = message as ClientMessage.FilteredReadAllEventsBackwardCompleted;
@@ -80,7 +79,7 @@ public static class Format {
 
 		return entity.ResponseCodec.To(Convert.ToAllEventsForwardFeed(msg, entity.ResponseUrl, embed));
 	}
-	
+
 	public static string ReadAllEventsForwardFilteredCompleted(HttpResponseFormatterArgs entity, Message message,
 		EmbedLevel embed) {
 		var msg = message as ClientMessage.FilteredReadAllEventsForwardCompleted;
@@ -139,10 +138,10 @@ public static class Format {
 		string streamId, string groupName, int count, EmbedLevel embed) {
 		var msg = message as ClientMessage.ReadNextNPersistentMessagesCompleted;
 		if (msg == null || msg.Result != ClientMessage.ReadNextNPersistentMessagesCompleted
-			    .ReadNextNPersistentMessagesResult.Success) {
+				.ReadNextNPersistentMessagesResult.Success) {
 			return msg != null ? entity.ResponseCodec.To(msg.Reason) : string.Empty;
 		}
-		
+
 		return entity.ResponseCodec.To(Convert.ToNextNPersistentMessagesFeed(msg, entity.ResponseUrl, streamId,
 			groupName, count, embed));
 	}

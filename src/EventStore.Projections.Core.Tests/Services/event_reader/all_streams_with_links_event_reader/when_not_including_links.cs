@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.Strategies;
 using EventStore.Projections.Core.Services.Processing.Subscriptions;

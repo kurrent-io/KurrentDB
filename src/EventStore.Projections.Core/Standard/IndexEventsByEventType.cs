@@ -7,9 +7,7 @@ using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace EventStore.Projections.Core.Standard;
@@ -22,7 +20,7 @@ public class IndexEventsByEventType : IProjectionStateHandler, IProjectionCheckp
 		if (!string.IsNullOrWhiteSpace(source))
 			throw new InvalidOperationException("Empty source expected");
 		if (logger != null) {
-//                logger("Index events by event type projection handler has been initialized");
+			//                logger("Index events by event type projection handler has been initialized");
 		}
 
 		// we will need to declare event types we are interested in

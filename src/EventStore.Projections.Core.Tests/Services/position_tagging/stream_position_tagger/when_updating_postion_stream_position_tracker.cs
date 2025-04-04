@@ -2,7 +2,6 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.SingleStream;
 using NUnit.Framework;

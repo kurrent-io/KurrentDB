@@ -261,7 +261,7 @@ public partial class EnumeratorTests {
 						break;
 					default:
 						Assert.Fail($"Unexpected response: {response}");
-						break ;
+						break;
 				}
 			}
 

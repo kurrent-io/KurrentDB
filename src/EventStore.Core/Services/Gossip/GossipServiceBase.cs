@@ -342,7 +342,7 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 			{
 				if ((utcNow - member.TimeStamp).Duration() > allowedTimeDifference) {
 					Log.Error("Time difference between us and [{peerEndPoint}] is too great! "
-					          + "UTC now: {dateTime:yyyy-MM-dd HH:mm:ss.fff}, peer's time stamp: {peerTimestamp:yyyy-MM-dd HH:mm:ss.fff}.",
+							  + "UTC now: {dateTime:yyyy-MM-dd HH:mm:ss.fff}, peer's time stamp: {peerTimestamp:yyyy-MM-dd HH:mm:ss.fff}.",
 						peerEndPoint, utcNow, member.TimeStamp);
 				}
 				members[member.HttpEndPoint] = member.Updated(utcNow: member.TimeStamp, esVersion: isPeerOld ? VersionInfo.OldVersion : member.ESVersion);
@@ -350,10 +350,10 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 				MemberInfo existingMem;
 				// if there is no data about this member or data is stale -- update
 				if (!members.TryGetValue(member.HttpEndPoint, out existingMem) ||
-				    IsMoreUpToDate(member, existingMem)) {
+					IsMoreUpToDate(member, existingMem)) {
 					// we do not trust leader's alive status and state to come from outside
 					if (currentLeaderInstanceId != null && existingMem != null &&
-					    member.InstanceId == currentLeaderInstanceId)
+						member.InstanceId == currentLeaderInstanceId)
 						members[member.HttpEndPoint] =
 							member.Updated(utcNow: utcNow, isAlive: existingMem.IsAlive,
 								state: existingMem.State);

@@ -65,7 +65,7 @@ public class EmittedStreamsDeleter : IEmittedStreamsDeleter {
 	private void ReadCompleted(ClientMessage.ReadStreamEventsForwardCompleted onReadCompleted,
 		Action onEmittedStreamsDeleted) {
 		if (onReadCompleted.Result == ReadStreamResult.Success ||
-		    onReadCompleted.Result == ReadStreamResult.NoStream) {
+			onReadCompleted.Result == ReadStreamResult.NoStream) {
 			if (onReadCompleted.Events.Length == 0 && !onReadCompleted.IsEndOfStream) {
 				DeleteEmittedStreamsFrom(onReadCompleted.NextEventNumber, onEmittedStreamsDeleted);
 				return;
@@ -97,7 +97,7 @@ public class EmittedStreamsDeleter : IEmittedStreamsDeleter {
 									// stream was never created
 									Log.Information("PROJECTIONS: Projection Stream '{stream}' was not deleted since it does not exist", _emittedStreamsId);
 								} else if (y.Result == OperationResult.Success ||
-								           y.Result == OperationResult.StreamDeleted) {
+										   y.Result == OperationResult.StreamDeleted) {
 									Log.Information("PROJECTIONS: Projection Stream '{stream}' deleted",
 										_emittedStreamsId);
 								} else {
@@ -121,7 +121,7 @@ public class EmittedStreamsDeleter : IEmittedStreamsDeleter {
 	private void DeleteStreamCompleted(ClientMessage.DeleteStreamCompleted deleteStreamCompleted,
 		Action onEmittedStreamsDeleted, string streamId, long eventNumber) {
 		if (deleteStreamCompleted.Result == OperationResult.Success ||
-		    deleteStreamCompleted.Result == OperationResult.StreamDeleted) {
+			deleteStreamCompleted.Result == OperationResult.StreamDeleted) {
 			_retryCount = RetryLimit;
 			_numberOfEventsProcessed++;
 			if (_numberOfEventsProcessed >= _checkPointThreshold) {

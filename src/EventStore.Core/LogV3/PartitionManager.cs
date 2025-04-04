@@ -19,9 +19,9 @@ public class PartitionManager : IPartitionManager {
 
 	private const string RootPartitionName = "Root";
 	private const string RootPartitionTypeName = "Root";
-	
+
 	public Guid? RootId { get; private set; }
-	public Guid? RootTypeId  { get; private set; }
+	public Guid? RootTypeId { get; private set; }
 
 	public PartitionManager(
 		ITransactionFileReader reader, ITransactionFileWriter writer, LogV3RecordFactory recordFactory) {
@@ -31,11 +31,11 @@ public class PartitionManager : IPartitionManager {
 	}
 
 	public void Initialize() {
-		if(RootId.HasValue)
+		if (RootId.HasValue)
 			return;
-		
+
 		ReadRootPartition();
-		
+
 		EnsureRootPartitionIsWritten();
 	}
 
@@ -48,14 +48,14 @@ public class PartitionManager : IPartitionManager {
 				timeStamp: DateTime.UtcNow,
 				logPosition: pos,
 				partitionTypeId: RootTypeId.Value,
-				partitionId: Guid.Empty, 
+				partitionId: Guid.Empty,
 				name: RootPartitionTypeName);
-		
+
 			if (!_writer.Write(rootPartitionType, out pos))
 				throw new Exception($"Failed to write root partition type!");
 
 			_writer.Flush();
-			
+
 			_log.Debug("Root partition type created, id: {id}", RootTypeId);
 		}
 
@@ -64,12 +64,12 @@ public class PartitionManager : IPartitionManager {
 			long pos = _writer.Position;
 			var rootPartition = _recordFactory.CreatePartitionRecord(
 				timeStamp: DateTime.UtcNow,
-				logPosition: pos, 
-				partitionId: RootId.Value, 
-				partitionTypeId: RootTypeId.Value, 
-				parentPartitionId: Guid.Empty, 
-				flags: 0, 
-				referenceNumber: 0, 
+				logPosition: pos,
+				partitionId: RootId.Value,
+				partitionTypeId: RootTypeId.Value,
+				parentPartitionId: Guid.Empty,
+				flags: 0,
+				referenceNumber: 0,
 				name: RootPartitionName);
 
 			if (!_writer.Write(rootPartition, out pos))
@@ -78,7 +78,7 @@ public class PartitionManager : IPartitionManager {
 			_writer.Flush();
 
 			_recordFactory.SetRootPartitionId(RootId.Value);
-		
+
 			_log.Debug("Root partition created, id: {id}", RootId);
 		}
 	}
@@ -90,10 +90,10 @@ public class PartitionManager : IPartitionManager {
 			var rec = result.LogRecord;
 			switch (rec.RecordType) {
 				case LogRecordType.PartitionType:
-					var r = ((PartitionTypeLogRecord) rec).Record;
+					var r = ((PartitionTypeLogRecord)rec).Record;
 					if (r.StringPayload == RootPartitionTypeName && r.SubHeader.PartitionId == Guid.Empty) {
 						RootTypeId = r.Header.RecordId;
-					
+
 						_log.Debug("Root partition type read, id: {id}", RootTypeId);
 
 						break;
@@ -101,22 +101,22 @@ public class PartitionManager : IPartitionManager {
 
 					throw new InvalidDataException(
 						"Unexpected partition type encountered while trying to read the root partition type.");
-				
+
 				case LogRecordType.Partition:
-					var p = ((PartitionLogRecord) rec).Record;
+					var p = ((PartitionLogRecord)rec).Record;
 					if (p.StringPayload == RootPartitionName && p.SubHeader.PartitionTypeId == RootTypeId
-					                                         && p.SubHeader.ParentPartitionId == Guid.Empty) {
+															 && p.SubHeader.ParentPartitionId == Guid.Empty) {
 						RootId = p.Header.RecordId;
 						_recordFactory.SetRootPartitionId(RootId.Value);
-					
+
 						_log.Debug("Root partition read, id: {id}", RootId);
-						
+
 						return;
 					}
-					
+
 					throw new InvalidDataException(
 						"Unexpected partition encountered while trying to read the root partition.");
-				
+
 				case LogRecordType.System:
 					var systemLogRecord = (ISystemLogRecord)result.LogRecord;
 					if (systemLogRecord.SystemRecordType == SystemRecordType.Epoch) {
@@ -125,7 +125,7 @@ public class PartitionManager : IPartitionManager {
 
 					throw new ArgumentOutOfRangeException("SystemRecordType",
 						"Unexpected system record while trying to read the root partition");
-				
+
 				default:
 					throw new ArgumentOutOfRangeException("RecordType",
 						"Unexpected record while trying to read the root partition");

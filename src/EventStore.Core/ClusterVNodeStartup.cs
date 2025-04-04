@@ -26,14 +26,14 @@ using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
+using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
+using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
 using MidFunc = System.Func<
 	Microsoft.AspNetCore.Http.HttpContext,
 	System.Func<System.Threading.Tasks.Task>,
 	System.Threading.Tasks.Task
 >;
 using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
-using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
-using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
 using ServerFeatures = EventStore.Core.Services.Transport.Grpc.ServerFeatures;
 
 #nullable enable
@@ -142,45 +142,45 @@ public class ClusterVNodeStartup<TStreamId> : IStartup, IHandle<SystemMessage.Sy
 			component.ConfigureApplication(app, _configuration);
 
 		app.UseEndpoints(ep => {
-				_authenticationProvider.ConfigureEndpoints(ep);
+			_authenticationProvider.ConfigureEndpoints(ep);
 
-				ep.MapGrpcService<PersistentSubscriptions>();
-				ep.MapGrpcService<Users>();
-				ep.MapGrpcService<Streams<TStreamId>>();
-				ep.MapGrpcService<ClusterGossip>();
-				ep.MapGrpcService<Elections>();
-				ep.MapGrpcService<Operations>();
-				ep.MapGrpcService<ClientGossip>();
-				ep.MapGrpcService<Monitoring>();
-				ep.MapGrpcService<ServerFeatures>();
+			ep.MapGrpcService<PersistentSubscriptions>();
+			ep.MapGrpcService<Users>();
+			ep.MapGrpcService<Streams<TStreamId>>();
+			ep.MapGrpcService<ClusterGossip>();
+			ep.MapGrpcService<Elections>();
+			ep.MapGrpcService<Operations>();
+			ep.MapGrpcService<ClientGossip>();
+			ep.MapGrpcService<Monitoring>();
+			ep.MapGrpcService<ServerFeatures>();
 
-				// enable redaction service on unix sockets only
-				ep.MapGrpcService<Redaction>().AddEndpointFilter(async (c, next) => {
-					if (!c.HttpContext.IsUnixSocketConnection())
-						return Results.BadRequest("Redaction is only available via Unix Sockets");
-					return await next(c).ConfigureAwait(false);
-				});
-
-				// Map the legacy controller endpoints with special middleware pipeline
-				ep.MapLegacyHttp(
-					ep.CreateApplicationBuilder()
-						// Select an appropriate controller action and codec.
-						//    Success -> Add InternalContext (HttpEntityManager, urimatch, ...) to HttpContext
-						//    Fail -> Pipeline terminated with response.
-						.UseMiddleware<KestrelToInternalBridgeMiddleware>()
-
-						// Looks up the InternalContext to perform the check.
-						// Terminal if auth check is not successful.
-						.UseMiddleware<AuthorizationMiddleware>()
-
-						// Open telemetry currently guarded by our custom authz for consistency with stats
-						.UseOpenTelemetryPrometheusScrapingEndpoint()
-
-						// Internal dispatcher looks up the InternalContext to call the appropriate controller
-						.Use(x => internalDispatcher.InvokeAsync)
-						.Build(),
-					_httpService);
+			// enable redaction service on unix sockets only
+			ep.MapGrpcService<Redaction>().AddEndpointFilter(async (c, next) => {
+				if (!c.HttpContext.IsUnixSocketConnection())
+					return Results.BadRequest("Redaction is only available via Unix Sockets");
+				return await next(c).ConfigureAwait(false);
 			});
+
+			// Map the legacy controller endpoints with special middleware pipeline
+			ep.MapLegacyHttp(
+				ep.CreateApplicationBuilder()
+					// Select an appropriate controller action and codec.
+					//    Success -> Add InternalContext (HttpEntityManager, urimatch, ...) to HttpContext
+					//    Fail -> Pipeline terminated with response.
+					.UseMiddleware<KestrelToInternalBridgeMiddleware>()
+
+					// Looks up the InternalContext to perform the check.
+					// Terminal if auth check is not successful.
+					.UseMiddleware<AuthorizationMiddleware>()
+
+					// Open telemetry currently guarded by our custom authz for consistency with stats
+					.UseOpenTelemetryPrometheusScrapingEndpoint()
+
+					// Internal dispatcher looks up the InternalContext to call the appropriate controller
+					.Use(x => internalDispatcher.InvokeAsync)
+					.Build(),
+				_httpService);
+		});
 	}
 
 	public IServiceProvider ConfigureServices(IServiceCollection services) {

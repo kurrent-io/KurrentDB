@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Http.Users.users;
+using EventStore.Transport.Http;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;
-using EventStore.Transport.Http;
 
 namespace EventStore.Core.Tests.Http.Streams;
 
@@ -106,7 +106,7 @@ public class Filtered {
 
 		protected override async Task When() =>
 			_feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				ContentType.AtomJson,
 				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=prefix&data=event1-");
 
@@ -156,7 +156,7 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				ContentType.AtomJson,
 				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=prefix&data=event1-,event2-");
 			_eventTypes = GetEventTypes(feed);
@@ -179,7 +179,7 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				ContentType.AtomJson,
 				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=regex&data=^.*eventtype1.*$");
 			_eventTypes = GetEventTypes(feed);
@@ -201,7 +201,7 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				ContentType.AtomJson,
 				DefaultData.AdminNetworkCredentials,
 				extra: $"context=streamid&type=prefix&data={TestStream}-filter");
 			_eventTypes = GetEventTypes(feed);
@@ -223,7 +223,7 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
+				ContentType.AtomJson,
 				DefaultData.AdminNetworkCredentials,
 				extra: $"context=streamid&type=regex&data=^.*{TestStream}-filter.*$");
 			_eventTypes = GetEventTypes(feed);
@@ -245,9 +245,9 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStream,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
-				extra: "exclude-system-events=true" );
+				ContentType.AtomJson,
+				DefaultData.AdminNetworkCredentials,
+				extra: "exclude-system-events=true");
 			_eventTypes = GetEventTypes(feed);
 		}
 
@@ -266,7 +266,7 @@ public class Filtered {
 		protected override Task When() =>
 			GetJson<JObject>(AllFilteredStreamForward,
 				ContentType.AtomJson,
-				DefaultData.AdminNetworkCredentials, 
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=foo");
 
 
@@ -282,7 +282,7 @@ public class Filtered {
 		protected override Task When() =>
 			GetJson<JObject>(AllFilteredStreamForward,
 				ContentType.AtomJson,
-				DefaultData.AdminNetworkCredentials, 
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=streamid&type=foo");
 
 		[Test]
@@ -297,7 +297,7 @@ public class Filtered {
 		protected override Task When() =>
 			GetJson<JObject>(AllFilteredStreamForward,
 				ContentType.AtomJson,
-				DefaultData.AdminNetworkCredentials, 
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=streamid&type=prefix");
 
 		[Test]
@@ -313,9 +313,9 @@ public class Filtered {
 
 		protected override async Task When() =>
 			_feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
-				extra: "context=eventtype&type=prefix&data=event1-" );
+				ContentType.AtomJson,
+				DefaultData.AdminNetworkCredentials,
+				extra: "context=eventtype&type=prefix&data=event1-");
 
 		[Test]
 		public void returns_ok_status_code() =>
@@ -355,8 +355,8 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				ContentType.AtomJson,
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=prefix&data=event1-,event2-");
 			_eventTypes = GetEventTypes(feed);
 		}
@@ -378,8 +378,8 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				ContentType.AtomJson,
+				DefaultData.AdminNetworkCredentials,
 				extra: "context=eventtype&type=regex&data=^.*eventtype1.*$");
 			_eventTypes = GetEventTypes(feed);
 		}
@@ -400,8 +400,8 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				ContentType.AtomJson,
+				DefaultData.AdminNetworkCredentials,
 				extra: $"context=streamid&type=prefix&data={TestStream}-filter");
 			_eventTypes = GetEventTypes(feed);
 		}
@@ -422,8 +422,8 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				ContentType.AtomJson,
+				DefaultData.AdminNetworkCredentials,
 				extra: $"context=streamid&type=regex&data=^.*{TestStream}-filter.*$");
 			_eventTypes = GetEventTypes(feed);
 		}
@@ -444,8 +444,8 @@ public class Filtered {
 
 		protected override async Task When() {
 			var feed = await GetJson<JObject>(AllFilteredStreamForward,
-				ContentType.AtomJson, 
-				DefaultData.AdminNetworkCredentials, 
+				ContentType.AtomJson,
+				DefaultData.AdminNetworkCredentials,
 				extra: "exclude-system-events=true");
 			_eventTypes = GetEventTypes(feed);
 		}

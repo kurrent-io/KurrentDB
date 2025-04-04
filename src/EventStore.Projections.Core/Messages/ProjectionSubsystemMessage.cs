@@ -8,9 +8,9 @@ namespace EventStore.Projections.Core.Messages;
 
 public static partial class ProjectionSubsystemMessage {
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class RestartSubsystem : Message  {
+	public partial class RestartSubsystem : Message {
 		public IEnvelope ReplyEnvelope { get; }
-		
+
 		public RestartSubsystem(IEnvelope replyEnvelope) {
 			ReplyEnvelope = replyEnvelope;
 		}
@@ -32,16 +32,16 @@ public static partial class ProjectionSubsystemMessage {
 	}
 
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class StartComponents : Message  {
+	public partial class StartComponents : Message {
 		public Guid InstanceCorrelationId { get; }
 
 		public StartComponents(Guid instanceCorrelationId) {
 			InstanceCorrelationId = instanceCorrelationId;
 		}
-	}	
-		
+	}
+
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class ComponentStarted : Message  {
+	public partial class ComponentStarted : Message {
 		public string ComponentName { get; }
 		public Guid InstanceCorrelationId { get; }
 
@@ -49,17 +49,17 @@ public static partial class ProjectionSubsystemMessage {
 			ComponentName = componentName;
 			InstanceCorrelationId = instanceCorrelationId;
 		}
-	}	
+	}
 
 	[DerivedMessage(ProjectionMessage.Subsystem)]
-	public partial class StopComponents : Message  {
+	public partial class StopComponents : Message {
 		public Guid InstanceCorrelationId { get; }
 
 		public StopComponents(Guid instanceCorrelationId) {
 			InstanceCorrelationId = instanceCorrelationId;
 		}
 	}
-	
+
 	[DerivedMessage(ProjectionMessage.Subsystem)]
 	public partial class ComponentStopped : Message {
 		public string ComponentName { get; }

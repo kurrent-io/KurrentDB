@@ -2,7 +2,6 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.EventByType;
 using NUnit.Framework;
@@ -16,7 +15,7 @@ public class when_updating_event_by_type_index_position_tracker_to_zero {
 
 	[SetUp]
 	public void When() {
-		_tagger = new EventByTypeIndexPositionTagger(0, new[] {"type1", "type2"});
+		_tagger = new EventByTypeIndexPositionTagger(0, new[] { "type1", "type2" });
 		_positionTracker = new PositionTracker(_tagger);
 		// when 
 

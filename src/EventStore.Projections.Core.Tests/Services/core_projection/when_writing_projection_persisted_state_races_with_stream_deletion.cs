@@ -45,13 +45,14 @@ public static class when_writing_projection_persisted_state_races_with_stream_de
 					emitEnabled: false, trackEmittedStreams: false));
 			yield return
 				new ProjectionManagementMessage.Command.Disable(_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
-			yield return new ProjectionManagementMessage.Command.Delete(new NoopEnvelope(), _projectionName, ProjectionManagementMessage.RunAs.System, 
+			yield return new ProjectionManagementMessage.Command.Delete(new NoopEnvelope(), _projectionName, ProjectionManagementMessage.RunAs.System,
 				true, false, false);
 		}
 
 		[Test]
 		public void should_publish_single_projection_deleted_event() {
 			Assert.AreEqual(
-				1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Internal.Deleted>().Count()); }
+				1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Internal.Deleted>().Count());
+		}
 	}
 }

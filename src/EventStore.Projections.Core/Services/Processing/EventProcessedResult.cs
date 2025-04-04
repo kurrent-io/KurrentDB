@@ -24,8 +24,10 @@ public class EventProcessedResult {
 		string partition, CheckpointTag checkpointTag, PartitionState oldState, PartitionState newState,
 		PartitionState oldSharedState, PartitionState newSharedState, EmittedEventEnvelope[] emittedEvents,
 		Guid causedBy, string correlationId, bool isPartitionTombstone = false) {
-		if (partition == null) throw new ArgumentNullException("partition");
-		if (checkpointTag == null) throw new ArgumentNullException("checkpointTag");
+		if (partition == null)
+			throw new ArgumentNullException("partition");
+		if (checkpointTag == null)
+			throw new ArgumentNullException("checkpointTag");
 		_emittedEvents = emittedEvents;
 		_causedBy = causedBy;
 		_correlationId = correlationId;

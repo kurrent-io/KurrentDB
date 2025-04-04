@@ -2,11 +2,8 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Core.Services;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.LogCommon;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.DeletingStream;

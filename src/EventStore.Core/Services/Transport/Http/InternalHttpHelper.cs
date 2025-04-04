@@ -13,10 +13,10 @@ public static class InternalHttpHelper {
 		match = null;
 		tcs = null;
 		return context.Items.TryGetValue(typeof(HttpEntityManager), out var untypedManager) &&
-		       context.Items.TryGetValue(typeof(UriToActionMatch), out var untypedMatch) &&
-		       context.Items.TryGetValue(typeof(TaskCompletionSource<bool>), out var untypedTcs) &&
-		       (manager = untypedManager as HttpEntityManager) != null &&
-		       (match = untypedMatch as UriToActionMatch) != null &&
-		       (tcs = untypedTcs as TaskCompletionSource<bool>) != null;
+			   context.Items.TryGetValue(typeof(UriToActionMatch), out var untypedMatch) &&
+			   context.Items.TryGetValue(typeof(TaskCompletionSource<bool>), out var untypedTcs) &&
+			   (manager = untypedManager as HttpEntityManager) != null &&
+			   (match = untypedMatch as UriToActionMatch) != null &&
+			   (tcs = untypedTcs as TaskCompletionSource<bool>) != null;
 	}
 }

@@ -17,7 +17,7 @@ public class when_transaction_single_write_completes_successfully : RequestManag
 
 	private long _transactionId = 1000;
 	private long _event1Position = 1500;
-	
+
 	protected override TransactionWrite OnManager(FakePublisher publisher) {
 		return new TransactionWrite(
 		 	publisher,
@@ -25,8 +25,8 @@ public class when_transaction_single_write_completes_successfully : RequestManag
 			Envelope,
 			InternalCorrId,
 			ClientCorrId,
-			new[] { DummyEvent()},
-		    _transactionId,
+			new[] { DummyEvent() },
+			_transactionId,
 			CommitSource);
 	}
 

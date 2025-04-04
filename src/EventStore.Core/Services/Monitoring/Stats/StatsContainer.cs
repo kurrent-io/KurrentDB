@@ -12,7 +12,7 @@ public class StatsContainer {
 	private readonly Dictionary<string, object> _stats = new Dictionary<string, object>();
 
 	private const string Separator = "-";
-	private static readonly string[] SplitSeparator = new[] {Separator};
+	private static readonly string[] SplitSeparator = new[] { Separator };
 
 	public void Add(IDictionary<string, object> statGroup) {
 		Ensure.NotNull(statGroup, "statGroup");

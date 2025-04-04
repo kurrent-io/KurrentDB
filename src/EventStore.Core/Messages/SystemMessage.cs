@@ -2,8 +2,8 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Cluster;
 using EventStore.Common.Utils;
+using EventStore.Core.Cluster;
 using EventStore.Core.Data;
 using EventStore.Core.Messaging;
 using EventStore.Core.TransactionLog.LogRecords;

@@ -2,15 +2,12 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Exceptions;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using NUnit.Framework;
 using Serilog;
 using Serilog.Core;
@@ -222,7 +219,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 
 	[Test]
 	public void when_a_chaser_checksum_is_ahead_of_writer_checksum_throws_corrupt_database_exception() {
-		var config = TFChunkHelper.CreateDbConfigEx(PathName, 0, 11,-1,-1,-1,1000,-1);
+		var config = TFChunkHelper.CreateDbConfigEx(PathName, 0, 11, -1, -1, -1, 1000, -1);
 		using (var db = new TFChunkDb(config)) {
 			Assert.That(() => db.Open(verifyHash: false),
 				Throws.Exception.InstanceOf<CorruptDatabaseException>()
@@ -232,7 +229,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 
 	[Test]
 	public void when_an_epoch_checksum_is_ahead_of_writer_checksum_throws_corrupt_database_exception() {
-		var config = TFChunkHelper.CreateDbConfigEx(PathName, 0, 0, 11,-1,-1,1000,-1);
+		var config = TFChunkHelper.CreateDbConfigEx(PathName, 0, 0, 11, -1, -1, 1000, -1);
 		using (var db = new TFChunkDb(config)) {
 			Assert.That(() => db.Open(verifyHash: false),
 				Throws.Exception.InstanceOf<CorruptDatabaseException>()

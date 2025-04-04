@@ -2,12 +2,12 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using NUnit.Framework;
-using EventStore.Projections.Core.Services.Management;
-using EventStore.Common.Options;
-using EventStore.Projections.Core.Messages;
-using EventStore.Core.Tests.Fakes;
 using System.Collections.Generic;
+using EventStore.Common.Options;
+using EventStore.Core.Tests.Fakes;
+using EventStore.Projections.Core.Messages;
+using EventStore.Projections.Core.Services.Management;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_coordinator;
 
@@ -19,7 +19,7 @@ public class when_starting_with_projection_type_all {
 
 	[SetUp]
 	public void Setup() {
-		queues = new List<FakePublisher>() {new FakePublisher()}.ToArray();
+		queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
 		publisher = new FakePublisher();
 
 		_coordinator =

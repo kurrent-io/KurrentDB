@@ -31,7 +31,7 @@ public class when_handling_an_emit_with_write_as_configured<TLogFormat, TStreamI
 	[SetUp]
 	public void setup() {
 		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_writeAs = new ClaimsPrincipal(new ClaimsIdentity(new []{new Claim(ClaimTypes.Role, "test-user") },"ES-Test"));
+		_writeAs = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Role, "test-user") }, "ES-Test"));
 		_stream = new EmittedStream(
 			"test_stream",
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),

@@ -3,9 +3,7 @@
 
 using System;
 using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
 using EventStore.Plugins.Authorization;
-using Grpc.Core;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -15,8 +13,10 @@ internal partial class PersistentSubscriptions
 	private readonly IAuthorizationProvider _authorizationProvider;
 
 	public PersistentSubscriptions(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
-		if (publisher == null) throw new ArgumentNullException(nameof(publisher));
-		if (authorizationProvider == null) throw new ArgumentNullException(nameof(authorizationProvider));
+		if (publisher == null)
+			throw new ArgumentNullException(nameof(publisher));
+		if (authorizationProvider == null)
+			throw new ArgumentNullException(nameof(authorizationProvider));
 		_publisher = publisher;
 		_authorizationProvider = authorizationProvider;
 	}

@@ -2,11 +2,8 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Net;
-using System.Text;
 
 namespace EventStore.Common.Utils;
 

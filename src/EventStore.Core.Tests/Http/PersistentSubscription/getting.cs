@@ -2,16 +2,16 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Tests.Http.Users.users;
-using NUnit.Framework;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Threading.Tasks;
-using HttpStatusCode = System.Net.HttpStatusCode;
-using EventStore.Transport.Http;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common;
+using EventStore.Core.Tests.Http.Users.users;
+using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 // ReSharper disable InconsistentNaming
 
@@ -47,7 +47,7 @@ abstract class with_subscription_having_events<TLogFormat, TStreamId> : with_adm
 			},
 			_admin);
 		Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
-		AssertEx.IsOrBecomesTrue( () => {
+		AssertEx.IsOrBecomesTrue(() => {
 			var x = GetJson<JObject>(TestStream, accept: ContentType.Json).Result;
 			return x["entries"].Count() == numberOfEventsToCreate;
 		});

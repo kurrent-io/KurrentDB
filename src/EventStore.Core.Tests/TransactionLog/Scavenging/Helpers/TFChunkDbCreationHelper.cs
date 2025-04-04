@@ -120,7 +120,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 					Write(i, chunk, streamRecord, false, out logPos);
 					records[i].Add(streamRecord);
 				}
-				
+
 				_logFormat.EventTypeIndex.GetOrReserveEventType(_logFormat.RecordFactory, rec.EventType, logPos, out var eventTypeNumber, out var eventTypeRecord);
 				if (eventTypeRecord != null) {
 					Write(i, chunk, eventTypeRecord, false, out logPos);
@@ -136,9 +136,9 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 				}
 
 				if (streamVersion == -1
-				    && rec.Type != Rec.RecType.TransStart
-				    && rec.Type != Rec.RecType.Prepare
-				    && rec.Type != Rec.RecType.Delete) {
+					&& rec.Type != Rec.RecType.TransStart
+					&& rec.Type != Rec.RecType.Prepare
+					&& rec.Type != Rec.RecType.Delete) {
 					throw new Exception(string.Format("Stream {0} is empty.", rec.StreamId));
 				}
 
@@ -158,9 +158,9 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 					? ExpectedVersion.Any // V2 transaction writes have expected version: -2, event number: -1
 					: ExpectedVersion.NoStream; // V3 doesn't have transactions so cant have a negative event number
 
-				  var expectedVersion =
-					(rec.EventNumber - 1) ??
-					(transInfo.FirstPrepareId == rec.Id ? streamVersion : logFormatDefaultExpectedVersion);
+				var expectedVersion =
+				  (rec.EventNumber - 1) ??
+				  (transInfo.FirstPrepareId == rec.Id ? streamVersion : logFormatDefaultExpectedVersion);
 
 				switch (rec.Type) {
 					case Rec.RecType.Prepare: {
@@ -450,8 +450,8 @@ public class Rec {
 
 	// commit all writes except incomplete implicit transactions
 	public bool CommitWrite => !(Type == RecType.Prepare &&
-	                             PrepareFlags.HasFlag(PrepareFlags.IsCommitted) &&
-	                             !PrepareFlags.HasFlag(PrepareFlags.TransactionEnd));
+								 PrepareFlags.HasFlag(PrepareFlags.IsCommitted) &&
+								 !PrepareFlags.HasFlag(PrepareFlags.TransactionEnd));
 
 	public Rec(RecType type, int transaction, string streamId, string eventType, DateTime? timestamp, byte version,
 		long? eventNumber = null,

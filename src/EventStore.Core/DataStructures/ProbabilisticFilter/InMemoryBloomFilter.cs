@@ -42,7 +42,8 @@ public class InMemoryBloomFilter : IProbabilisticFilter<long> {
 		//calculate number of bits required
 		long m = (long)Math.Ceiling(-n * Math.Log(p) / Math.Log(2) / Math.Log(2));
 		long buckets = m / LONG_SIZE;
-		if (m % LONG_SIZE != 0) buckets++;
+		if (m % LONG_SIZE != 0)
+			buckets++;
 		if (m > Int32.MaxValue) {
 			throw new ArgumentOutOfRangeException("p",
 				"calculated number of bits, m, is too large: " + m + ". please choose a larger value of p.");

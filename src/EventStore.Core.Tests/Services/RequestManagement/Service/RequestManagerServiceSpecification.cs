@@ -17,7 +17,7 @@ using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.Service;
 
-public abstract class RequestManagerServiceSpecification:
+public abstract class RequestManagerServiceSpecification :
 	IHandle<StorageMessage.WritePrepares>,
 	IHandle<StorageMessage.RequestCompleted> {
 	protected readonly TimeSpan PrepareTimeout = TimeSpan.FromMinutes(5);
@@ -32,7 +32,7 @@ public abstract class RequestManagerServiceSpecification:
 	protected FakeEnvelope Envelope = new();
 	protected SynchronousScheduler Dispatcher = new(nameof(RequestManagerServiceSpecification));
 	protected RequestManagementService Service;
-	protected bool GrantAccess =true;
+	protected bool GrantAccess = true;
 	protected long LogPosition = 100;
 	protected PrepareFlags PrepareFlags = PrepareFlags.Data;
 	protected string StreamId = $"{nameof(RequestManagerServiceSpecification)}-{Guid.NewGuid()}";

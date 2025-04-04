@@ -17,7 +17,7 @@ internal class ReadFloodProcessor : ICmdProcessor {
 		//                     0          1           2               3                  4
 		get { return "RDFL [<clients> <requests> [<streams-cnt> [<stream-prefix> [<require-leader>]]]]"; }
 	}
-	
+
 	public string Keyword {
 		get { return "RDFL"; }
 	}
@@ -86,11 +86,13 @@ internal class ReadFloodProcessor : ICmdProcessor {
 					var dto = pkg.Data.Deserialize<ReadEventCompleted>();
 					monitor.EndOperation(pkg.CorrelationId);
 					if (dto.Result == ReadEventCompleted.Types.ReadEventResult.Success) {
-						if (Interlocked.Increment(ref succ) % 1000 == 0) Console.Write(".");
+						if (Interlocked.Increment(ref succ) % 1000 == 0)
+							Console.Write(".");
 					} else {
-						if (Interlocked.Increment(ref fail) % 1000 == 0) Console.Write("#");
+						if (Interlocked.Increment(ref fail) % 1000 == 0)
+							Console.Write("#");
 					}
-					
+
 					Interlocked.Increment(ref received);
 					var localAll = Interlocked.Increment(ref all);
 					if (localAll % 100000 == 0) {
@@ -125,13 +127,13 @@ internal class ReadFloodProcessor : ICmdProcessor {
 
 					var localSent = Interlocked.Increment(ref sent);
 					while (localSent - Interlocked.Read(ref received) >
-					       context._tcpTestClient.Options.ReadWindow / clientsCnt) {
+						   context._tcpTestClient.Options.ReadWindow / clientsCnt) {
 						Thread.Sleep(1);
 					}
 				}
 				context.Log.Information("Reader #{clientNum} done", clientNum);
-				
-			}) {IsBackground = true});
+
+			}) { IsBackground = true });
 		}
 
 		var sw = Stopwatch.StartNew();

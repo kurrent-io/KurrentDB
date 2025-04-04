@@ -5,25 +5,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using NUnit.Framework;
-using NUnit.Framework.Internal;
-using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
 using System.Threading;
-using EventStore.Core.Services;
-using EventStore.Core.Data;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
+using EventStore.Core.Bus;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.LogV3;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
+using EventStore.Core.Services;
+using EventStore.Core.Services.Storage.EpochManager;
+using EventStore.Core.Tests.TransactionLog;
+using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.LogRecords;
+using NUnit.Framework;
+using NUnit.Framework.Internal;
 
 namespace EventStore.Core.Tests.Services.Storage;
 
@@ -180,7 +176,7 @@ public class when_having_an_epoch_manager_and_empty_tf_log<TLogFormat, TStreamId
 		_published.Clear();
 	}
 
-	public  class EpochDto {
+	public class EpochDto {
 		public Guid LeaderInstanceId { get; set; }
 	}
 }

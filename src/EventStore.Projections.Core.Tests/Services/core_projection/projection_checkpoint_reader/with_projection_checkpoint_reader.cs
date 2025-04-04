@@ -6,7 +6,6 @@ using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Helpers.IODispatcherTests;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;

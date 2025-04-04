@@ -7,16 +7,15 @@ using EventStore.Common.Options;
 using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Util;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Metrics;
-using EventStore.Projections.Core.Services.Management;
-using NUnit.Framework;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services;
+using EventStore.Projections.Core.Services.Management;
+using EventStore.Projections.Core.Services.Processing;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;
 

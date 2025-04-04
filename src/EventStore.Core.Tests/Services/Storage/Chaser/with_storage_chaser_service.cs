@@ -5,7 +5,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Storage;
 using EventStore.Core.Services.Storage.EpochManager;

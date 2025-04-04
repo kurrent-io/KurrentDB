@@ -65,7 +65,7 @@ public class pairing_heap_should {
 
 	[Test]
 	public void return_elements_in_sorted_order() {
-		var reference = new[] {2, 5, 7, 9, 11, 27, 32};
+		var reference = new[] { 2, 5, 7, 9, 11, 27, 32 };
 		var returned = new List<int>();
 
 		for (int i = reference.Length - 1; i >= 0; --i) {
@@ -81,7 +81,7 @@ public class pairing_heap_should {
 
 	[Test]
 	public void keep_all_duplicates() {
-		var reference = new[] {2, 5, 5, 7, 9, 9, 11, 11, 11, 27, 32};
+		var reference = new[] { 2, 5, 5, 7, 9, 9, 11, 11, 11, 27, 32 };
 		var returned = new List<int>();
 
 		for (int i = reference.Length - 1; i >= 0; --i) {

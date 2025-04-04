@@ -26,7 +26,7 @@ namespace EventStore.Core.XUnit.Tests.Services.PersistentSubscriptions;
 
 public class GetAllPersistentSubscriptionStatsTests {
 	private readonly FakePublisher _publisher = new();
-	private readonly FakeTimeProvider _timeProvider = new ();
+	private readonly FakeTimeProvider _timeProvider = new();
 	private readonly IODispatcher _ioDispatcher;
 
 	public GetAllPersistentSubscriptionStatsTests() {
@@ -91,7 +91,7 @@ public class GetAllPersistentSubscriptionStatsTests {
 		// Arrange
 		var responseEnvelope = new FakeEnvelope();
 		var sut = CreateSut();
-		var psubEntry = new PersistentSubscriptionEntry{
+		var psubEntry = new PersistentSubscriptionEntry {
 			Group = "test-group",
 			Stream = "test-stream",
 			HistoryBufferSize = 20,

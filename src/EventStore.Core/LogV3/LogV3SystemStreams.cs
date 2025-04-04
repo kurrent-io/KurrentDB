@@ -38,7 +38,7 @@ public class LogV3SystemStreams : ISystemStreamLookup<StreamId> {
 
 	// virtual stream for storing system settings
 	private const StreamId SettingsStreamNumber = 8;
-	
+
 	// virtual stream so that we can index EventTypeRecords for looking up event type names
 	public const StreamId EventTypesStreamNumber = 10;
 

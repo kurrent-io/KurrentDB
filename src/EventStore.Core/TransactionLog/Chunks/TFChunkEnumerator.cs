@@ -36,7 +36,7 @@ public class TFChunkEnumerator {
 			var chunkNumber = _chunkFileNamingStrategy.GetIndexFor(Path.GetFileName(_allFiles[i]));
 			var nextChunkNumber = -1;
 			if (i + 1 < _allFiles.Length)
-				nextChunkNumber = _chunkFileNamingStrategy.GetIndexFor(Path.GetFileName(_allFiles[i+1]));
+				nextChunkNumber = _chunkFileNamingStrategy.GetIndexFor(Path.GetFileName(_allFiles[i + 1]));
 
 			if (chunkNumber < expectedChunkNumber) { // present in an earlier, merged, chunk
 				yield return new OldVersion(chunkFileName, chunkNumber);

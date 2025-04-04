@@ -14,7 +14,7 @@ public class when_5_node_cluster_receives_replica_lost_after_quorum : with_clust
 	private readonly Guid _replica1 = Guid.NewGuid();
 	private readonly Guid _replica2 = Guid.NewGuid();
 
-	
+
 	protected override int ClusterSize => 5;
 
 	public override void When() {

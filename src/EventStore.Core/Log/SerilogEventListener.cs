@@ -20,7 +20,8 @@ public class SerilogEventListener : EventListener {
 	}
 
 	protected override void OnEventWritten(EventWrittenEventArgs eventData) {
-		if (eventData.Message is null) return;
+		if (eventData.Message is null)
+			return;
 		Serilog.Log.Logger.Write(ConvertToSerilogLevel(eventData.Level), eventData.Message, eventData.Payload?.ToArray());
 	}
 

@@ -7,17 +7,10 @@ using System.Net;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Services.Transport.Http.Messages;
 using EventStore.Core.Settings;
 using EventStore.Transport.Http.EntityManagement;
 using ILogger = Serilog.ILogger;
-using MidFunc = System.Func<
-	Microsoft.AspNetCore.Http.HttpContext,
-	System.Func<System.Threading.Tasks.Task>,
-	System.Threading.Tasks.Task
->;
 
 namespace EventStore.Core.Services.Transport.Http;
 

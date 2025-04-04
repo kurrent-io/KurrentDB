@@ -2,7 +2,8 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Globalization;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
@@ -11,12 +12,9 @@ using EventStore.Core.Services.Transport.Http.Controllers;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Transport.Http;
 using EventStore.Transport.Http.Atom;
+using EventStore.Transport.Http.Codecs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Linq;
-using System.Collections.Generic;
-using EventStore.Transport.Http.Codecs;
-using System.Xml.Serialization;
 
 namespace EventStore.Core.Services.Transport.Http;
 
@@ -149,7 +147,7 @@ public static class Convert {
 
 		return feed;
 	}
-	
+
 	public static FeedElement ToAllEventsForwardFilteredFeed(ClientMessage.FilteredReadAllEventsForwardCompleted msg,
 		Uri requestedUrl, EmbedLevel embedContent) {
 		var self = HostName.Combine(requestedUrl, "/streams/{0}", AllFilteredEscaped);
@@ -217,7 +215,7 @@ public static class Convert {
 
 		return feed;
 	}
-	
+
 	public static FeedElement ToFilteredAllEventsBackwardFeed(ClientMessage.FilteredReadAllEventsBackwardCompleted msg,
 		Uri requestedUrl, EmbedLevel embedContent) {
 		var self = HostName.Combine(requestedUrl, "/streams/{0}", AllFilteredEscaped);
@@ -428,7 +426,8 @@ public static class Convert {
 	private static Tuple<string, long> GetLinkData(string link) {
 		Ensure.NotNull(link, "link data cannot be null");
 		var loc = link.IndexOf("@", StringComparison.Ordinal);
-		if (loc == -1) throw new Exception(String.Format("Unable to parse link {0}", link));
+		if (loc == -1)
+			throw new Exception(String.Format("Unable to parse link {0}", link));
 		var position = long.Parse(link.Substring(0, loc));
 		var stream = link.Substring(loc + 1, link.Length - loc - 1);
 		return new Tuple<string, long>(stream, position);
@@ -495,7 +494,8 @@ public class DescriptionDocument {
 	}
 
 	public void AddStreamSubscription(string href, params string[] supportedContentTypes) {
-		if (Links.StreamSubscription == null) Links.StreamSubscription = new List<Link>();
+		if (Links.StreamSubscription == null)
+			Links.StreamSubscription = new List<Link>();
 
 		Links.StreamSubscription.Add(new Link(href, supportedContentTypes));
 	}

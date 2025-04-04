@@ -17,7 +17,8 @@ public class when_deleting_already_categorized_stream<TLogFormat, TStreamId> : s
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		foreach (var e in base.When()) yield return e;
+		foreach (var e in base.When())
+			yield return e;
 		yield return CreateWriteEvent("chat-1", "ChatMessage", @"
     {
       ""sender"": ""Greg"",

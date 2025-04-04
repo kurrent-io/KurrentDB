@@ -17,8 +17,8 @@ using NUnit.Framework;
 namespace EventStore.Projections.Core.Tests.Services.event_reader.event_reader_core_service;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_handling_subscribe_requests<TLogFormat, TStreamId> :TestFixtureWithEventReaderService<TLogFormat, TStreamId> {
-	private readonly ReaderSubscriptionOptions _defaultOptions = new (1000, 10, 1000, false, null, false);
+public class when_handling_subscribe_requests<TLogFormat, TStreamId> : TestFixtureWithEventReaderService<TLogFormat, TStreamId> {
+	private readonly ReaderSubscriptionOptions _defaultOptions = new(1000, 10, 1000, false, null, false);
 	[Test]
 	public void should_publish_subscription_failed_if_the_reader_is_not_running() {
 		EventReaderSubscriptionMessage.Failed failedMessage = null;
@@ -68,7 +68,7 @@ public class when_handling_subscribe_requests<TLogFormat, TStreamId> :TestFixtur
 		Assert.True(failedMessage.Reason.Contains(nameof(FakeReaderSubscriptionThatThrows)));
 	}
 
-	private class FakeReaderStrategyThatThrows :IReaderStrategy {
+	private class FakeReaderStrategyThatThrows : IReaderStrategy {
 		private readonly bool _throwOnCreateSubscription;
 		private readonly bool _throwOnCreatePausedReader;
 

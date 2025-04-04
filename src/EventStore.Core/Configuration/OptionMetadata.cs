@@ -83,7 +83,7 @@ public record OptionMetadata(
 		}
 
 		if (property.PropertyType == typeof(int) || property.PropertyType == typeof(long) ||
-		           property.PropertyType == typeof(double)) {
+				   property.PropertyType == typeof(double)) {
 			if (unitAttributeMessage != null) {
 				return new JObject {
 					["type"] = "integer",

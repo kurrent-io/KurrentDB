@@ -64,7 +64,7 @@ public class when_handling_an_emit_with_extra_metadata<TLogFormat, TStreamId> : 
 		var @event = writeEvent.Events[0];
 		var metadata = Helper.UTF8NoBom.GetString(@event.Metadata).ParseJson<JObject>();
 
-		HelperExtensions.AssertJson(new {a = 1, b = new { }}, metadata);
+		HelperExtensions.AssertJson(new { a = 1, b = new { } }, metadata);
 		var checkpoint = @event.Metadata.ParseCheckpointTagJson();
 		Assert.AreEqual(CheckpointTag.FromPosition(0, 200, 150), checkpoint);
 	}

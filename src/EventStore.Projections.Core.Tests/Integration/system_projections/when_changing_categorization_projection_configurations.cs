@@ -2,7 +2,6 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System.Collections.Generic;
-using EventStore.Core.Services;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing;
@@ -21,7 +20,8 @@ public class
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		foreach (var e in base.When()) yield return e;
+		foreach (var e in base.When())
+			yield return e;
 		string query = "first\r\n-";
 		yield return
 			new ProjectionManagementMessage.Command.UpdateQuery(

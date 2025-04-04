@@ -28,7 +28,8 @@ public class MultiPolicyEvaluator : IPolicyEvaluator {
 			var policyInfo = policy.Information;
 			if (policy.TryGetAssertions(operation, out var assertions)) {
 				while (!assertions.IsEmpty && evaluationContext.Grant != Grant.Deny) {
-					if (ct.IsCancellationRequested) break;
+					if (ct.IsCancellationRequested)
+						break;
 					var assertion = assertions.Span[0];
 					assertions = assertions.Slice(1);
 					await assertion.Evaluate(cp, operation, policyInfo, evaluationContext);

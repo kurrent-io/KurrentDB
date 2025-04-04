@@ -51,13 +51,20 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		ProjectionNamesBuilder namingBuilder,
 		bool usePersistentCheckpoints,
 		int maxProjectionStateSize) {
-		if (publisher == null) throw new ArgumentNullException("publisher");
-		if (projectionConfig == null) throw new ArgumentNullException("projectionConfig");
-		if (name == null) throw new ArgumentNullException("name");
-		if (positionTagger == null) throw new ArgumentNullException("positionTagger");
-		if (namingBuilder == null) throw new ArgumentNullException("namingBuilder");
-		if (name == "") throw new ArgumentException("name");
-		if (maxProjectionStateSize <= 0) throw new ArgumentException(nameof(maxProjectionStateSize));
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
+		if (projectionConfig == null)
+			throw new ArgumentNullException("projectionConfig");
+		if (name == null)
+			throw new ArgumentNullException("name");
+		if (positionTagger == null)
+			throw new ArgumentNullException("positionTagger");
+		if (namingBuilder == null)
+			throw new ArgumentNullException("namingBuilder");
+		if (name == "")
+			throw new ArgumentException("name");
+		if (maxProjectionStateSize <= 0)
+			throw new ArgumentException(nameof(maxProjectionStateSize));
 
 		_lastProcessedEventPosition = new PositionTracker(positionTagger);
 		_zeroTag = positionTagger.MakeZeroCheckpointTag();
@@ -92,8 +99,10 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 	public abstract void PartitionCompleted(string partition);
 
 	public virtual void Initialize() {
-		if (_currentCheckpoint != null) _currentCheckpoint.Dispose();
-		if (_closingCheckpoint != null) _closingCheckpoint.Dispose();
+		if (_currentCheckpoint != null)
+			_currentCheckpoint.Dispose();
+		if (_closingCheckpoint != null)
+			_closingCheckpoint.Dispose();
 		_currentCheckpoint = null;
 		_closingCheckpoint = null;
 		_requestedCheckpointPosition = null;
@@ -140,10 +149,12 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		_started = false;
 		_stopped = true;
 
-		if (_currentCheckpoint != null) _currentCheckpoint.Dispose();
+		if (_currentCheckpoint != null)
+			_currentCheckpoint.Dispose();
 		_currentCheckpoint = null;
 
-		if (_closingCheckpoint != null) _closingCheckpoint.Dispose();
+		if (_closingCheckpoint != null)
+			_closingCheckpoint.Dispose();
 		_closingCheckpoint = null;
 	}
 
@@ -164,7 +175,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 			+ +(_closingCheckpoint != null ? _closingCheckpoint.GetReadsInProgress() : 0)
 			+ (_currentCheckpoint != null ? _currentCheckpoint.GetReadsInProgress() : 0);
 		info.WritesInProgress = (_closingCheckpoint != null ? _closingCheckpoint.GetWritesInProgress() : 0)
-		                        + (_currentCheckpoint != null ? _currentCheckpoint.GetWritesInProgress() : 0);
+								+ (_currentCheckpoint != null ? _currentCheckpoint.GetWritesInProgress() : 0);
 		info.CheckpointStatus = _inCheckpoint ? "Requested" : "";
 	}
 
@@ -190,7 +201,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 			_currentProjectionState = newState;
 	}
 
-	private bool CheckStateSize(PartitionState result , string partition) {
+	private bool CheckStateSize(PartitionState result, string partition) {
 		if (result.Size > _maxProjectionStateSize) {
 			var partitionMessage = partition == string.Empty ? string.Empty : $" in partition '{partition}'";
 			Failed(
@@ -329,7 +340,8 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 	/// <returns>true - if checkpoint has been completed in-sync</returns>
 	private bool StartCheckpoint(PositionTracker lastProcessedEventPosition, PartitionState projectionState) {
 		Contract.Requires(_closingCheckpoint == null);
-		if (projectionState == null) throw new ArgumentNullException("projectionState");
+		if (projectionState == null)
+			throw new ArgumentNullException("projectionState");
 
 		CheckpointTag requestedCheckpointPosition = lastProcessedEventPosition.LastTag;
 		if (requestedCheckpointPosition == _lastCompletedCheckpointPosition)

@@ -47,7 +47,7 @@ public sealed class PluginLoader : IDisposable {
 	}
 
 	private class PluginLoadContext : AssemblyLoadContext {
-		private static readonly string[] Shared = {"Serilog", "YamlDotNet", "EventStore.Plugins"};
+		private static readonly string[] Shared = { "Serilog", "YamlDotNet", "EventStore.Plugins" };
 		private readonly Assembly _shared;
 		private readonly AssemblyDependencyResolver _resolver;
 

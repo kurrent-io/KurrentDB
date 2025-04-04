@@ -36,11 +36,15 @@ public abstract class ProjectionProcessingStrategy {
 		IODispatcher ioDispatcher,
 		ReaderSubscriptionDispatcher subscriptionDispatcher,
 		ITimeProvider timeProvider) {
-		if (inputQueue == null) throw new ArgumentNullException("inputQueue");
+		if (inputQueue == null)
+			throw new ArgumentNullException("inputQueue");
 		//if (runAs == null) throw new ArgumentNullException("runAs");
-		if (publisher == null) throw new ArgumentNullException("publisher");
-		if (ioDispatcher == null) throw new ArgumentNullException("ioDispatcher");
-		if (timeProvider == null) throw new ArgumentNullException("timeProvider");
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
+		if (ioDispatcher == null)
+			throw new ArgumentNullException("ioDispatcher");
+		if (timeProvider == null)
+			throw new ArgumentNullException("timeProvider");
 
 		var namingBuilder = new ProjectionNamesBuilder(_name, GetSourceDefinition());
 

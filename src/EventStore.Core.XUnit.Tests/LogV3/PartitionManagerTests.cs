@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.LogV3;
 using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
 using Xunit;
@@ -15,16 +14,16 @@ namespace EventStore.Core.XUnit.Tests.LogV3;
 
 
 public class PartitionManagerTests {
-	
+
 	[Fact]
 	public void creates_new_root_partition_on_first_epoch() {
 		var reader = new FakeReader(withoutRecords: true);
 		var writer = new FakeWriter();
 
 		IPartitionManager partitionManager = new PartitionManager(reader, writer, new LogV3RecordFactory());
-		
+
 		partitionManager.Initialize();
-		
+
 		Assert.Collection(writer.WrittenRecords,
 			r => {
 				Assert.Equal(LogRecordType.PartitionType, r.RecordType);
@@ -41,7 +40,7 @@ public class PartitionManagerTests {
 				Assert.Equal(partitionManager.RootTypeId, ((PartitionLogRecord)r).Record.SubHeader.PartitionTypeId);
 				Assert.Equal(Guid.Empty, ((PartitionLogRecord)r).Record.SubHeader.ParentPartitionId);
 			});
-		
+
 		Assert.True(writer.IsFlushed);
 	}
 
@@ -51,13 +50,13 @@ public class PartitionManagerTests {
 		var recordFactory = new LogV3RecordFactory();
 
 		IPartitionManager partitionManager = new PartitionManager(reader, new FakeWriter(), recordFactory);
-		
+
 		partitionManager.Initialize();
 
 		var streamRecord = (LogV3StreamRecord)recordFactory.CreateStreamRecord(Guid.NewGuid(), 1, DateTime.UtcNow, 1, "stream-1");
 		Assert.Equal(partitionManager.RootId, streamRecord.Record.SubHeader.PartitionId);
 	}
-	
+
 	[Fact]
 	public void reads_root_partition_once_initialized() {
 		var rootPartitionId = Guid.NewGuid();
@@ -66,14 +65,14 @@ public class PartitionManagerTests {
 		var writer = new FakeWriter();
 
 		IPartitionManager partitionManager = new PartitionManager(reader, writer, new LogV3RecordFactory());
-		
+
 		partitionManager.Initialize();
-		
+
 		Assert.Empty(writer.WrittenRecords);
 		Assert.Equal(rootPartitionId, partitionManager.RootId);
 		Assert.Equal(rootPartitionTypeId, partitionManager.RootTypeId);
 	}
-	
+
 	[Fact]
 	public void reads_root_partition_only_once() {
 		var reader = new FakeReader();
@@ -83,11 +82,11 @@ public class PartitionManagerTests {
 
 		partitionManager.Initialize();
 		partitionManager.Initialize();
-		
+
 		Assert.Empty(writer.WrittenRecords);
 		Assert.Equal(2, reader.ReadCount);
 	}
-	
+
 	[Fact]
 	public void creates_root_partition_in_case_it_partially_failed_previously() {
 		var rootPartitionTypeId = Guid.NewGuid();
@@ -95,9 +94,9 @@ public class PartitionManagerTests {
 		var writer = new FakeWriter();
 
 		IPartitionManager partitionManager = new PartitionManager(reader, writer, new LogV3RecordFactory());
-	
+
 		partitionManager.Initialize();
-	
+
 		Assert.True(partitionManager.RootId.HasValue);
 		Assert.Equal(rootPartitionTypeId, partitionManager.RootTypeId);
 		Assert.Collection(writer.WrittenRecords,
@@ -110,22 +109,22 @@ public class PartitionManagerTests {
 				Assert.Equal(Guid.Empty, ((PartitionLogRecord)r).Record.SubHeader.ParentPartitionId);
 			});
 	}
-	
+
 	[Fact]
 	public void throws_on_unexpected_log_record_type() {
 		var reader = new FakeReader(UnexpectedLogRecord);
 
 		IPartitionManager partitionManager = new PartitionManager(reader, new FakeWriter(), new LogV3RecordFactory());
-		
+
 		Assert.Throws<ArgumentOutOfRangeException>(() => partitionManager.Initialize());
 	}
-	
+
 	[Fact]
 	public void throws_on_unexpected_system_log_record_type() {
 		var reader = new FakeReader(UnexpectedSystemLogRecord);
 
 		IPartitionManager partitionManager = new PartitionManager(reader, new FakeWriter(), new LogV3RecordFactory());
-		
+
 		Assert.Throws<ArgumentOutOfRangeException>(() => partitionManager.Initialize());
 	}
 
@@ -136,7 +135,7 @@ public class PartitionManagerTests {
 		streamNumber: 1,
 		streamName: "unexpected-stream",
 		partitionId: Guid.NewGuid());
-	
+
 	private SystemLogRecord UnexpectedSystemLogRecord => new SystemLogRecord(
 		logPosition: 0,
 		timeStamp: DateTime.UtcNow,
@@ -145,18 +144,18 @@ public class PartitionManagerTests {
 		data: new byte[0]);
 }
 
-class FakeWriter: ITransactionFileWriter {
+class FakeWriter : ITransactionFileWriter {
 	public long Position { get; }
 	public long FlushedPosition { get; }
 
 	public FakeWriter() {
 		WrittenRecords = new List<ILogRecord>();
 	}
-	
+
 	public bool IsFlushed { get; private set; }
 	public List<ILogRecord> WrittenRecords { get; }
-	
-	public void Open() {}
+
+	public void Open() { }
 	public bool CanWrite(int numBytes) => true;
 	public bool Write(ILogRecord record, out long newPos) {
 		WrittenRecords.Add(record);
@@ -178,9 +177,9 @@ class FakeWriter: ITransactionFileWriter {
 		IsFlushed = true;
 	}
 
-	public void Close() {}
+	public void Close() { }
 
-	public void Dispose() {}
+	public void Dispose() { }
 }
 
 class FakeReader : ITransactionFileReader {
@@ -193,10 +192,10 @@ class FakeReader : ITransactionFileReader {
 	public FakeReader(ILogRecord record) {
 		_results.Add(new SeqReadResult(true, false, record, 0, 0, 0));
 	}
-	
+
 	public FakeReader(bool withoutRecords = false) : this(Guid.NewGuid(), Guid.NewGuid(), withoutRecords) {
 	}
-	
+
 	public FakeReader(Guid? rootPartitionId, Guid? rootPartitionTypeId, bool withoutRecords = false) {
 		if (withoutRecords) {
 			_results.Add(SeqReadResult.Failure);
@@ -205,29 +204,29 @@ class FakeReader : ITransactionFileReader {
 
 		if (rootPartitionTypeId.HasValue) {
 			var rootPartitionType = new PartitionTypeLogRecord(
-        			DateTime.UtcNow, 2, rootPartitionTypeId.Value, Guid.Empty, "Root");	
-			
+					DateTime.UtcNow, 2, rootPartitionTypeId.Value, Guid.Empty, "Root");
+
 			_results.Add(new SeqReadResult(true, false, rootPartitionType, 0, 0, 0));
 		}
 
 		if (rootPartitionId.HasValue && rootPartitionTypeId.HasValue) {
 			var rootPartition = new PartitionLogRecord(
-    				DateTime.UtcNow, 3, rootPartitionId.Value, rootPartitionTypeId.Value, Guid.Empty, 0, 0, "Root");
-    			
-    			_results.Add(new SeqReadResult(true, false, rootPartition, 0, 0, 0));			
+					DateTime.UtcNow, 3, rootPartitionId.Value, rootPartitionTypeId.Value, Guid.Empty, 0, 0, "Root");
+
+			_results.Add(new SeqReadResult(true, false, rootPartition, 0, 0, 0));
 		}
 	}
-	
+
 	public void Reposition(long position) {
-		_resultIndex = (int) position;
+		_resultIndex = (int)position;
 	}
 
 	public SeqReadResult TryReadNext() {
 		_readCount++;
-		
-		if(_resultIndex < _results.Count)
+
+		if (_resultIndex < _results.Count)
 			return _results[_resultIndex++];
-		
+
 		return SeqReadResult.Failure;
 	}
 

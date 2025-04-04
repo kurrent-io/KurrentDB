@@ -4,9 +4,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.Loader;
 using System.Threading.Tasks;
 using EventStore.Core.XUnit.Tests;
 using Xunit;

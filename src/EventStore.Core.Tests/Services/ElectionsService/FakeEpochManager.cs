@@ -63,10 +63,10 @@ internal class FakeEpochManager : IEpochManager {
 				return false;
 
 			return epoch.EpochPosition == epochPosition &&
-			       epoch.EpochId == epochId;
+				   epoch.EpochId == epochId;
 		}
 	}
-	
+
 	public void WriteNewEpoch(int epochNumber) {
 		throw new NotImplementedException();
 	}

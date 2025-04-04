@@ -18,7 +18,7 @@ public class when_5_node_cluster_receives_replica_lost_and_it_rejoins : with_clu
 	private readonly Guid _replicaId2 = Guid.NewGuid();
 
 	protected override int ClusterSize => 5;
-	
+
 	public override void When() {
 		BecomeLeader();
 		WriterCheckpoint.Write(_logPosition);

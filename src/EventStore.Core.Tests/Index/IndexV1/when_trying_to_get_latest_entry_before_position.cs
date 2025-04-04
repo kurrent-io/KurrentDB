@@ -67,7 +67,7 @@ public class when_trying_to_get_latest_entry_before_position : SpecificationWith
 		base.TearDown();
 	}
 
-	private ISearchTable GetTable(bool memTableOrPTable) => memTableOrPTable ? (ISearchTable) _memTable : _pTable;
+	private ISearchTable GetTable(bool memTableOrPTable) => memTableOrPTable ? (ISearchTable)_memTable : _pTable;
 
 	[TestCase(true)]
 	[TestCase(false)]

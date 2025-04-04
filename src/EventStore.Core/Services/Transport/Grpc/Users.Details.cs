@@ -2,10 +2,9 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Client;
+using EventStore.Client.Users;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.Users;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 
@@ -41,23 +40,23 @@ internal partial class Users {
 			await responseStream.WriteAsync(new DetailsResp {
 				UserDetails = new DetailsResp.Types.UserDetails {
 					Disabled = detail.Disabled,
-					Groups = {detail.Groups},
+					Groups = { detail.Groups },
 					FullName = detail.FullName,
 					LoginName = detail.LoginName,
 					LastUpdated = detail.DateLastUpdated.HasValue
-						? new DetailsResp.Types.UserDetails.Types.DateTime
-							{TicksSinceEpoch = detail.DateLastUpdated.Value.UtcDateTime.ToTicksSinceEpoch()}
+						? new DetailsResp.Types.UserDetails.Types.DateTime { TicksSinceEpoch = detail.DateLastUpdated.Value.UtcDateTime.ToTicksSinceEpoch() }
 						: null
 				}
 			});
 		}
 
 		void OnMessage(Message message) {
-			if (HandleErrors(options?.LoginName, message, detailsSource)) return;
+			if (HandleErrors(options?.LoginName, message, detailsSource))
+				return;
 
 			switch (message) {
 				case UserManagementMessage.UserDetailsResult userDetails:
-					detailsSource.TrySetResult(new[] {userDetails.Data});
+					detailsSource.TrySetResult(new[] { userDetails.Data });
 					break;
 				case UserManagementMessage.AllUserDetailsResult allUserDetails:
 					detailsSource.TrySetResult(allUserDetails.Data);

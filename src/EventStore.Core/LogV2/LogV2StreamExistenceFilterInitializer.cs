@@ -150,7 +150,7 @@ public class LogV2StreamExistenceFilterInitializer : INameExistenceFilterInitial
 					filter.Add(prepare.EventStreamId);
 					filter.CurrentCheckpoint = result.RecordPostPosition;
 					break;
-				// no need to handle commits here, see comments in the prepare handling.
+					// no need to handle commits here, see comments in the prepare handling.
 			}
 		}
 	}

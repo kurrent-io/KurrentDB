@@ -77,7 +77,7 @@ public class
 				.OfEventType(SystemEventTypes.StreamMetadata)
 				.ToArray();
 		Assert.AreEqual(1, writes.Length);
-		HelperExtensions.AssertJson(new {___tb = 2}, writes[0].Data.ParseJson<JObject>());
+		HelperExtensions.AssertJson(new { ___tb = 2 }, writes[0].Data.ParseJson<JObject>());
 	}
 
 	[Test]

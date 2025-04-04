@@ -2,9 +2,6 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using EventStore.ClientAPI;
 using NUnit.Framework;
 

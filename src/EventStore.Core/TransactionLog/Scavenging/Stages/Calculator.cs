@@ -18,7 +18,7 @@ public class Calculator<TStreamId> : ICalculator<TStreamId> {
 
 	public class Buffer {
 		public Buffer(int size) {
-			Array = new(StreamHandle<TStreamId>, OriginalStreamData)[size];
+			Array = new (StreamHandle<TStreamId>, OriginalStreamData)[size];
 		}
 
 		public (StreamHandle<TStreamId>, OriginalStreamData)[] Array { get; init; }

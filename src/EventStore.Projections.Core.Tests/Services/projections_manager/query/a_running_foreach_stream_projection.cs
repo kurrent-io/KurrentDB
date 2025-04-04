@@ -7,7 +7,6 @@ using System.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
@@ -33,7 +32,8 @@ public class a_running_foreach_stream_projection {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			var readerAssignedMessage =
 				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
 					.LastOrDefault();
@@ -69,7 +69,8 @@ public class a_running_foreach_stream_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_receiving_eof<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 
 			yield return (new ReaderSubscriptionMessage.EventReaderEof(_reader));
 		}

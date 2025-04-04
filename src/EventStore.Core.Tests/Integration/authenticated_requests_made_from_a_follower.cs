@@ -46,7 +46,7 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 				}
 			};
 
-			var content = JsonSerializer.SerializeToUtf8Bytes(new [] {
+			var content = JsonSerializer.SerializeToUtf8Bytes(new[] {
 				new {
 					eventId = Guid.NewGuid(),
 					data = new{},

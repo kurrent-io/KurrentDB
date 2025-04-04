@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Data;
 using EventStore.Core.Services;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using NUnit.Framework;

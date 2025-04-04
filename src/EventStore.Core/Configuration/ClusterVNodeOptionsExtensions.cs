@@ -4,7 +4,6 @@
 // ReSharper disable CheckNamespace
 
 using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Common.Exceptions;
@@ -21,7 +20,7 @@ public static class ClusterVNodeOptionsExtensions {
 			: ClusterVNodeOptions.FromConfiguration(options.ConfigurationRoot);
 
 	public static ClusterVNodeOptions WithPlugableComponent(this ClusterVNodeOptions options, IPlugableComponent plugableComponent) =>
-		options with { PlugableComponents = [..options.PlugableComponents, plugableComponent] };
+		options with { PlugableComponents = [.. options.PlugableComponents, plugableComponent] };
 
 	public static ClusterVNodeOptions InCluster(this ClusterVNodeOptions options, int clusterSize) => options with {
 		Cluster = options.Cluster with {
@@ -79,12 +78,12 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
 	public static ClusterVNodeOptions Secure(this ClusterVNodeOptions options,
 		X509Certificate2Collection trustedRootCertificates, X509Certificate2 serverCertificate) => options with {
-		Application = options.Application with {
-			Insecure = false,
-		},
-		ServerCertificate = serverCertificate,
-		TrustedRootCertificates = trustedRootCertificates
-	};
+			Application = options.Application with {
+				Insecure = false,
+			},
+			ServerCertificate = serverCertificate,
+			TrustedRootCertificates = trustedRootCertificates
+		};
 
 	/// <summary>
 	/// Sets gossip seeds to the specified value and turns off dns discovery
@@ -268,7 +267,8 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <returns></returns>
 	/// <exception cref="InvalidConfigurationException"></exception>
 	public static X509Certificate2Collection LoadTrustedRootCertificates(this ClusterVNodeOptions options) {
-		if (options.TrustedRootCertificates != null) return options.TrustedRootCertificates;
+		if (options.TrustedRootCertificates != null)
+			return options.TrustedRootCertificates;
 		var trustedRootCerts = new X509Certificate2Collection();
 
 		if (!string.IsNullOrWhiteSpace(options.CertificateStore.TrustedRootCertificateStoreLocation)) {
@@ -299,7 +299,7 @@ public static class ClusterVNodeOptionsExtensions {
 
 		Log.Information("Loading trusted root certificates.");
 		foreach (var (fileName, cert) in CertificateUtils
-			         .LoadAllCertificates(options.Certificate.TrustedRootCertificatesPath)) {
+					 .LoadAllCertificates(options.Certificate.TrustedRootCertificatesPath)) {
 			trustedRootCerts.Add(cert);
 			Log.Information("Loading trusted root certificate file: {file}", fileName);
 		}

@@ -16,16 +16,16 @@ using static EventStore.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Metrics;
 
-public class ProcessMetrics (Meter meter, TimeSpan timeout, int scrapingPeriodInSeconds, Dictionary<ProcessTracker, bool> config) {
-    private readonly Func<DiskIoData> _getDiskIo      = Functions.Debounce(ProcessStats.GetDiskIo, timeout);
-    private readonly Func<Process>    _getCurrentProc = Functions.Debounce(Process.GetCurrentProcess, timeout);
+public class ProcessMetrics(Meter meter, TimeSpan timeout, int scrapingPeriodInSeconds, Dictionary<ProcessTracker, bool> config) {
+	private readonly Func<DiskIoData> _getDiskIo = Functions.Debounce(ProcessStats.GetDiskIo, timeout);
+	private readonly Func<Process> _getCurrentProc = Functions.Debounce(Process.GetCurrentProcess, timeout);
 
-    public void CreateObservableMetrics(Dictionary<ProcessTracker, string> metricNames) {
+	public void CreateObservableMetrics(Dictionary<ProcessTracker, string> metricNames) {
 		var enabledNames = metricNames
 			.Where(kvp => config.TryGetValue(kvp.Key, out var enabled) && enabled)
 			.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
-        if (enabledNames.TryGetValue(ProcessTracker.UpTime, out var upTimeName))
+		if (enabledNames.TryGetValue(ProcessTracker.UpTime, out var upTimeName))
 			meter.CreateObservableCounter(upTimeName, () => {
 				var process = _getCurrentProc();
 				var upTime = (DateTime.Now - process.StartTime).TotalSeconds;
@@ -51,19 +51,19 @@ public class ProcessMetrics (Meter meter, TimeSpan timeout, int scrapingPeriodIn
 			var info = GC.GetGCMemoryInfo();
 			return info.HeapSizeBytes != 0 ? info.FragmentedBytes * 100d / info.HeapSizeBytes : 0;
 		});
-        
-        return;
 
-        void CreateObservableCounter<T>(ProcessTracker tracker, Func<T> observe, string? unit = null) where T : struct {
-            if (enabledNames.TryGetValue(tracker, out var name))
-                meter.CreateObservableCounter(name, observe);
-        }
+		return;
 
-        void CreateObservableUpDownCounter<T>(ProcessTracker tracker, Func<T> observe, string? unit = null) where T : struct {
-            if (enabledNames.TryGetValue(tracker, out var name))
-                meter.CreateObservableUpDownCounter(unit is null ? name : $"{name}-{unit}", observe);
-        }
-    }
+		void CreateObservableCounter<T>(ProcessTracker tracker, Func<T> observe, string? unit = null) where T : struct {
+			if (enabledNames.TryGetValue(tracker, out var name))
+				meter.CreateObservableCounter(name, observe);
+		}
+
+		void CreateObservableUpDownCounter<T>(ProcessTracker tracker, Func<T> observe, string? unit = null) where T : struct {
+			if (enabledNames.TryGetValue(tracker, out var name))
+				meter.CreateObservableUpDownCounter(unit is null ? name : $"{name}-{unit}", observe);
+		}
+	}
 
 	public void CreateMemoryMetric(string metricName, Dictionary<ProcessTracker, string> dimNames) {
 		var dims = new Dimensions<ProcessTracker, long>(config, dimNames, tag => new("kind", tag));

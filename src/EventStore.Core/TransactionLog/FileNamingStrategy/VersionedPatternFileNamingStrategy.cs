@@ -4,9 +4,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using EventStore.Common.Utils;
-using System.Linq;
 
 namespace EventStore.Core.TransactionLog.FileNamingStrategy;
 
@@ -70,7 +70,7 @@ public class VersionedPatternFileNamingStrategy : IVersionedFileNamingStrategy {
 		var dot = fileName.IndexOf('.', _prefix.Length);
 		Debug.Assert(dot != -1);
 
-		if (!int.TryParse(fileName[(dot+1)..], out var version))
+		if (!int.TryParse(fileName[(dot + 1)..], out var version))
 			throw new ArgumentException($"Invalid file name: {fileName}");
 
 		return version;

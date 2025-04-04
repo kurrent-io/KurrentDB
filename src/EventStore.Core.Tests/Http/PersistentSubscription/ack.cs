@@ -1,20 +1,13 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
-using System;
-using System.Net;
-using System.Text.RegularExpressions;
-using EventStore.Core.Tests.Http.Users.users;
-using NUnit.Framework;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using HttpStatusCode = System.Net.HttpStatusCode;
 using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 // ReSharper disable InconsistentNaming
 

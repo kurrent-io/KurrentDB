@@ -24,7 +24,7 @@ public sealed class CacheResourcesTrackerTests : IDisposable {
 		var meter = new Meter($"{typeof(CacheResourcesTrackerTests)}-{callerName}").DisposeWith(_disposables);
 		var listener = new TestMeterListener<long>(meter).DisposeWith(_disposables);
 		var metrics = new CacheResourcesMetrics(meter, "the-metric");
-		var sut =  new CacheResourcesTracker(metrics);
+		var sut = new CacheResourcesTracker(metrics);
 		return (sut, listener);
 	}
 

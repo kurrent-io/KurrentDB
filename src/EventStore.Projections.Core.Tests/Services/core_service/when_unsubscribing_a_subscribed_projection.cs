@@ -3,7 +3,6 @@
 
 using System;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.Subscriptions;
 using NUnit.Framework;

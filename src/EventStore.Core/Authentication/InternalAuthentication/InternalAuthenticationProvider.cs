@@ -26,13 +26,13 @@ public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandl
 	readonly PasswordHashAlgorithm _passwordHashAlgorithm;
 
 	readonly LRUCache<string, (string hash, string salt, ClaimsPrincipal principal)> _userPasswordsCache;
-	
+
 	readonly TaskCompletionSource<bool> _tcs = new();
-	
+
 	public InternalAuthenticationProvider(
 		ISubscriber subscriber, IODispatcher ioDispatcher,
 		PasswordHashAlgorithm passwordHashAlgorithm,
-		int cacheSize, bool logFailedAuthenticationAttempts, 
+		int cacheSize, bool logFailedAuthenticationAttempts,
 		ClusterVNodeOptions.DefaultUserOptions defaultUserOptions
 	) : base(name: "internal", diagnosticsName: "InternalAuthentication") {
 		_ioDispatcher = ioDispatcher;
@@ -41,13 +41,13 @@ public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandl
 		_logFailedAuthenticationAttempts = logFailedAuthenticationAttempts;
 
 		var userManagement = new UserManagementService(
-			ioDispatcher: ioDispatcher, 
-			passwordHashAlgorithm: _passwordHashAlgorithm, 
-			skipInitializeStandardUsersCheck: false, 
-			tcs: _tcs, 
+			ioDispatcher: ioDispatcher,
+			passwordHashAlgorithm: _passwordHashAlgorithm,
+			skipInitializeStandardUsersCheck: false,
+			tcs: _tcs,
 			defaultUserOptions: defaultUserOptions
 		);
-		
+
 		subscriber.Subscribe<UserManagementMessage.Create>(userManagement);
 		subscriber.Subscribe<UserManagementMessage.Update>(userManagement);
 		subscriber.Subscribe<UserManagementMessage.Enable>(userManagement);
@@ -62,7 +62,7 @@ public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandl
 		subscriber.Subscribe<SystemMessage.BecomeReadOnlyReplica>(userManagement);
 	}
 
-	public void Handle(InternalAuthenticationProviderMessages.ResetPasswordCache message) => 
+	public void Handle(InternalAuthenticationProviderMessages.ResetPasswordCache message) =>
 		_userPasswordsCache.Remove(message.LoginName);
 
 	public override void Authenticate(AuthenticationRequest authenticationRequest) {
@@ -100,11 +100,11 @@ public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandl
 			.Select(role => new Claim(ClaimTypes.Role, role))
 			.Prepend(new(ClaimTypes.Name, userData.LoginName))
 			.ToList();
-		
+
 		return new(new ClaimsIdentity(claims, "ES-Legacy"));
 	}
 
-	void CachePassword(string loginName, string hash, string salt, ClaimsPrincipal principal) => 
+	void CachePassword(string loginName, string hash, string salt, ClaimsPrincipal principal) =>
 		_userPasswordsCache.Put(loginName, (hash, salt, principal));
 
 	void AuthenticateCached(AuthenticationRequest authenticationRequest, string passwordHash, string passwordSalt, ClaimsPrincipal principal) {
@@ -123,7 +123,7 @@ public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandl
 			return true;
 
 		// otherwise default to password authentication
-		if (_passwordHashAlgorithm.Verify(authenticationRequest.SuppliedPassword, passwordHash, passwordSalt)) 
+		if (_passwordHashAlgorithm.Verify(authenticationRequest.SuppliedPassword, passwordHash, passwordSalt))
 			return true;
 
 		if (_logFailedAuthenticationAttempts)
@@ -141,8 +141,8 @@ public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandl
 		public void Handle(ClientMessage.ReadStreamEventsBackwardCompleted completed) {
 			try {
 				if (completed.Result == ReadStreamResult.StreamDeleted ||
-				    completed.Result == ReadStreamResult.NoStream ||
-				    completed.Result == ReadStreamResult.AccessDenied) {
+					completed.Result == ReadStreamResult.NoStream ||
+					completed.Result == ReadStreamResult.AccessDenied) {
 					if (self._logFailedAuthenticationAttempts)
 						Logger.Warning("Authentication Failed for {Id}: {Reason}", request.Id, "Invalid user.");
 					request.Unauthorized();
@@ -165,14 +165,12 @@ public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandl
 				if (userData.Disabled) {
 					if (self._logFailedAuthenticationAttempts)
 						Logger.Warning("Authentication Failed for {Id}: {Reason}", request.Id, "The account is disabled.");
-					
+
 					request.Unauthorized();
-				}
-				else {
+				} else {
 					self.AuthenticateUncached(request, userData);
 				}
-			}
-			catch {
+			} catch {
 				request.Unauthorized();
 			}
 		}
@@ -180,17 +178,17 @@ public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandl
 		public void Handle(ClientMessage.NotHandled notHandled) {
 			if (self._logFailedAuthenticationAttempts)
 				Logger.Warning(
-					"Authentication Failed for {Id}: {Reason}. {Description}", 
+					"Authentication Failed for {Id}: {Reason}. {Description}",
 					request.Id, notHandled.Reason, notHandled.Description
 				);
-			
+
 			request.NotReady();
 		}
 
 		public void Timeout() {
 			if (self._logFailedAuthenticationAttempts)
 				Logger.Warning("Authentication Failed for {Id}: {Reason}", request.Id, "Timeout.");
-			
+
 			request.NotReady();
 		}
 	}

@@ -4,27 +4,24 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
-using EventStore.Core.Caching;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
+using EventStore.Core.Index.Hashes;
 using EventStore.Core.LogAbstraction;
-using EventStore.Core.Messaging;
+using EventStore.Core.Metrics;
 using EventStore.Core.Services;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.TransactionLog;
+using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;
-using NUnit.Framework;
 using EventStore.Core.Util;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.LogV3;
-using EventStore.Core.Metrics;
-using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.LogCommon;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage;
 
@@ -188,7 +185,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 			Writer.Write(streamRecord, out newPos);
 		}
 	}
-	
+
 	protected void GetOrReserveEventType(string eventType, out TStreamId eventTypeId, out long newPos) {
 		newPos = Writer.Position;
 		_eventTypeIndex.GetOrReserveEventType(_logFormat.RecordFactory, eventType, newPos, out eventTypeId, out var eventTypeRecord);
@@ -236,7 +233,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 			}
 		}
 
-		
+
 		var commit = LogRecord.Commit(Writer.Position, prepare.CorrelationId, prepare.LogPosition,
 			eventNumber);
 		if (!retryOnFail) {

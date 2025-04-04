@@ -2,15 +2,10 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Net;
-using System.Threading;
-using EventStore.ClientAPI;
-using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Bus;
-using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
 using System.IO;
 using System.Threading.Tasks;
+using EventStore.Core.Tests.Helpers;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Integration;
 

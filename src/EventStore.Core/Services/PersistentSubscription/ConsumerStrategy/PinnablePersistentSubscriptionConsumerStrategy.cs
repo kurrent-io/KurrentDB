@@ -84,8 +84,7 @@ public abstract class PinnablePersistentSubscriptionConsumerStrategy : IPersiste
 
 	protected abstract string GetAssignmentSourceId(ResolvedEvent ev);
 
-	protected string GetSourceStreamId(ResolvedEvent ev)
-	{
+	protected string GetSourceStreamId(ResolvedEvent ev) {
 		var eventRecord = ev.Event ?? ev.Link; // Unresolved link just use the link
 
 		string sourceStreamId = eventRecord.EventStreamId;
@@ -94,8 +93,7 @@ public abstract class PinnablePersistentSubscriptionConsumerStrategy : IPersiste
 		{
 			sourceStreamId = Helper.UTF8NoBom.GetString(eventRecord.Data.Span);
 			int separatorIndex = sourceStreamId.IndexOf(LinkToSeparator);
-			if (separatorIndex != -1)
-			{
+			if (separatorIndex != -1) {
 				sourceStreamId = sourceStreamId.Substring(separatorIndex + 1);
 			}
 		}

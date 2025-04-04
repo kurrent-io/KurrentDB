@@ -12,6 +12,6 @@ public interface IQueuedHandler : IPublisher {
 	void Stop();
 
 	void RequestStop();
-	
+
 	QueueStats GetStatistics();
 }

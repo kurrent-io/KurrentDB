@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
@@ -11,7 +10,6 @@ using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.LogAbstraction;
-using EventStore.Core.LogV3;
 using EventStore.Core.Messages;
 using EventStore.Core.Metrics;
 using EventStore.Core.Services.Replication;
@@ -158,8 +156,8 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 			if (EpochManager.TryTruncateBefore(message.SubscriptionPosition, out var newEpoch)) {
 				if (newEpoch.EpochId != oldEpoch.EpochId) {
 					Log.Information("Truncated epoch from "
-					                + "E{oldEpochNumber}@{oldEpochPosition}:{oldEpochId:B} to "
-					                + "E{newEpochNumber}@{newEpochPosition}:{newEpochId:B}",
+									+ "E{oldEpochNumber}@{oldEpochPosition}:{oldEpochId:B} to "
+									+ "E{newEpochNumber}@{newEpochPosition}:{newEpochId:B}",
 						oldEpoch.EpochNumber, oldEpoch.EpochPosition, oldEpoch.EpochId,
 						newEpoch.EpochNumber, newEpoch.EpochPosition, newEpoch.EpochId);
 				} else {
@@ -197,11 +195,12 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 	private bool AreAnyCommittedRecordsTruncatedWithLastEpoch(long subscriptionPosition, EpochRecord lastEpoch,
 		long lastCommitPosition) {
 		return lastEpoch != null && subscriptionPosition <= lastEpoch.EpochPosition &&
-		       lastCommitPosition >= lastEpoch.EpochPosition;
+			   lastCommitPosition >= lastEpoch.EpochPosition;
 	}
 
 	public void Handle(ReplicationMessage.CreateChunk message) {
-		if (_subscriptionId != message.SubscriptionId) return;
+		if (_subscriptionId != message.SubscriptionId)
+			return;
 
 		if (_activeChunk != null) {
 			_activeChunk.MarkForDeletion();
@@ -244,14 +243,15 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 	}
 
 	async ValueTask IAsyncHandle<ReplicationMessage.RawChunkBulk>.HandleAsync(ReplicationMessage.RawChunkBulk message, CancellationToken token) {
-		if (_subscriptionId != message.SubscriptionId) return;
+		if (_subscriptionId != message.SubscriptionId)
+			return;
 		if (_activeChunk is null)
 			ReplicationFail(
 				"Physical chunk bulk received, but we do not have active chunk.",
 				"Physical chunk bulk received, but we do not have active chunk.");
 
 		if (_activeChunk.ChunkHeader.ChunkStartNumber != message.ChunkStartNumber ||
-		    _activeChunk.ChunkHeader.ChunkEndNumber != message.ChunkEndNumber) {
+			_activeChunk.ChunkHeader.ChunkEndNumber != message.ChunkEndNumber) {
 			Log.Error(
 				"Received RawChunkBulk for TFChunk {chunkStartNumber}-{chunkEndNumber}, but active chunk is {activeChunk}.",
 				message.ChunkStartNumber, message.ChunkEndNumber, _activeChunk);
@@ -299,7 +299,8 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 	public void Handle(ReplicationMessage.DataChunkBulk message) {
 		Interlocked.Decrement(ref FlushMessagesInQueue);
 		try {
-			if (_subscriptionId != message.SubscriptionId) return;
+			if (_subscriptionId != message.SubscriptionId)
+				return;
 			if (_activeChunk != null)
 				ReplicationFail(
 					"Data chunk bulk received, but we have active chunk for receiving raw chunk bulks.",
@@ -313,7 +314,7 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 			var chunk = Writer.CurrentChunk;
 
 			if (chunk.ChunkHeader.ChunkStartNumber != message.ChunkStartNumber ||
-			    chunk.ChunkHeader.ChunkEndNumber != message.ChunkEndNumber) {
+				chunk.ChunkHeader.ChunkEndNumber != message.ChunkEndNumber) {
 				Log.Error(
 					"Received DataChunkBulk for TFChunk {chunkStartNumber}-{chunkEndNumber}, but active chunk is {activeChunkStartNumber}-{activeChunkEndNumber}.",
 					message.ChunkStartNumber, message.ChunkEndNumber, chunk.ChunkHeader.ChunkStartNumber,

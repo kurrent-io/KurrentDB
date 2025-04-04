@@ -23,7 +23,8 @@ public class BoundedQueue<T> {
 	}
 
 	public void Enqueue(T obj) {
-		if (_queue.Count >= _maxCapacity) Dequeue();
+		if (_queue.Count >= _maxCapacity)
+			Dequeue();
 		_queue.Enqueue(obj);
 	}
 

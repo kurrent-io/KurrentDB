@@ -7,7 +7,6 @@ using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection;

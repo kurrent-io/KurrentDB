@@ -6,26 +6,26 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Security;
+using System.Runtime;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.Common.DevCertificates;
 using EventStore.Common.Exceptions;
 using EventStore.Common.Log;
 using EventStore.Common.Utils;
-using EventStore.Core.Services.Transport.Http;
-using EventStore.Core.Certificates;
 using EventStore.Core;
+using EventStore.Core.Certificates;
+using EventStore.Core.Configuration;
+using EventStore.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Serilog;
-using System.Runtime;
-using EventStore.Common.DevCertificates;
-using EventStore.Core.Configuration;
 using Microsoft.Extensions.Logging;
+using Serilog;
 using Serilog.Events;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
@@ -73,9 +73,9 @@ internal static class Program {
 			}
 
 			Log.Information(
-                    "{description,-25} {version} {edition} ({buildId}/{commitSha}, {timestamp})", "ES VERSION:",
+					"{description,-25} {version} {edition} ({buildId}/{commitSha}, {timestamp})", "ES VERSION:",
 				VersionInfo.Version, VersionInfo.Edition, VersionInfo.BuildId, VersionInfo.CommitSha, VersionInfo.Timestamp
-                );
+				);
 
 			Log.Information("{description,-25} {osArchitecture} ", "OS ARCHITECTURE:", System.Runtime.InteropServices.RuntimeInformation.OSArchitecture);
 			Log.Information("{description,-25} {osFlavor} ({osVersion})", "OS:", RuntimeInformation.OsPlatform, Environment.OSVersion);
@@ -234,8 +234,7 @@ internal static class Program {
 		} catch (InvalidConfigurationException ex) {
 			Log.Fatal("Invalid Configuration: " + ex.Message);
 			return 1;
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			Log.Fatal(ex, "Host terminated unexpectedly.");
 			return 1;
 		} finally {
@@ -295,7 +294,7 @@ internal static class Program {
 					offline: true),
 				ClientCertificateRequired = true, // request a client certificate but it's not necessary for the client to supply one
 				RemoteCertificateValidationCallback = (_, certificate, chain, sslPolicyErrors) => {
-					if(certificate == null) // not necessary to have a client certificate
+					if (certificate == null) // not necessary to have a client certificate
 						return true;
 
 					var (isValid, error) =

@@ -6,9 +6,7 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -17,11 +15,9 @@ using EventStore.Core.Services;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using Jint;
 using Jint.Native;
-using Jint.Native.Array;
 using Jint.Native.Function;
 using Jint.Native.Json;
 using Jint.Native.Object;
@@ -189,7 +185,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		_currentPosition = eventPosition;
 		_engine.Constraints.Reset();
 		if ((@event.IsJson && string.IsNullOrWhiteSpace(@event.Data)) ||
-		    (!_enableContentTypeValidation && !@event.IsJson && string.IsNullOrEmpty(@event.Data))) {
+			(!_enableContentTypeValidation && !@event.IsJson && string.IsNullOrEmpty(@event.Data))) {
 			PrepareOutput(out newState, out newSharedState, out emittedEvents);
 			return true;
 		}
@@ -734,12 +730,12 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 						state = transform.Call(state);
 						break;
 					case TransformType.Filter: {
-							var result = transform.Call(state);
-							if (!(result.IsBoolean() && result.AsBoolean()) || result == Null || result == Undefined) {
-								return Null;
-							}
-							break;
+						var result = transform.Call(state);
+						if (!(result.IsBoolean() && result.AsBoolean()) || result == Null || result == Undefined) {
+							return Null;
 						}
+						break;
+					}
 					case TransformType.None:
 						throw new InvalidOperationException("Unknown transform type");
 				}
@@ -1224,7 +1220,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 }
 
 internal static class ObjectInstanceExtensions {
-public static void FastAddProperty(this ObjectInstance target, string name, JsValue value, bool writable, bool enumerable, bool configurable) {
-	target.FastSetProperty(name, new PropertyDescriptor(value, writable, enumerable, configurable));
-}
+	public static void FastAddProperty(this ObjectInstance target, string name, JsValue value, bool writable, bool enumerable, bool configurable) {
+		target.FastSetProperty(name, new PropertyDescriptor(value, writable, enumerable, configurable));
+	}
 }

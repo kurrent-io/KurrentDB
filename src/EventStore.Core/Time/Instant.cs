@@ -15,7 +15,7 @@ public struct Instant : IEquatable<Instant> {
 
 	static Instant() {
 		TicksPerSecond = Stopwatch.Frequency;
-		SecondsPerTick =  1 / (double)TicksPerSecond;
+		SecondsPerTick = 1 / (double)TicksPerSecond;
 		TicksPerTimeSpanTick = (double)TicksPerSecond / TimeSpan.TicksPerSecond;
 	}
 
@@ -63,7 +63,7 @@ public struct Instant : IEquatable<Instant> {
 		var elapsedTicks = ElapsedTicksSince(since);
 		// since we're decreasing the resolution when converting to TimeSpan, we round up to make sure that something
 		// using the TimeSpan doesn't wait for less time than it should.
-		elapsedTicks = (long) Math.Ceiling(elapsedTicks / TicksPerTimeSpanTick);
+		elapsedTicks = (long)Math.Ceiling(elapsedTicks / TicksPerTimeSpanTick);
 		return new TimeSpan(elapsedTicks);
 	}
 }

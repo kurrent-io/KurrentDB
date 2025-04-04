@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Authentication;
 using EventStore.Core.Authentication.DelegatedAuthentication;
 using EventStore.Core.Authentication.PassthroughAuthentication;
 using EventStore.Core.Services.Transport.Http.Authentication;
@@ -28,7 +27,7 @@ public class PassthroughHttpAuthenticationProviderTests {
 	}
 
 	class TestAuthenticationProvider : AuthenticationProviderBase {
-		public override void Authenticate(AuthenticationRequest authenticationRequest) => 
+		public override void Authenticate(AuthenticationRequest authenticationRequest) =>
 			throw new NotImplementedException();
 	}
 }

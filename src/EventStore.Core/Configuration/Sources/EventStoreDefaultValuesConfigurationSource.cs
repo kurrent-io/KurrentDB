@@ -19,7 +19,7 @@ public class EventStoreDefaultValuesConfigurationSource(IEnumerable<KeyValuePair
 }
 
 public class EventStoreDefaultValuesConfigurationProvider(IEnumerable<KeyValuePair<string, string?>> initialData)
-	: MemoryConfigurationProvider(new(){
+	: MemoryConfigurationProvider(new() {
 		InitialData = initialData.ToDictionary(
 			kvp => $"{Prefix}:{kvp.Key}",
 			kvp => kvp.Value,

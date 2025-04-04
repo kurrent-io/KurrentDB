@@ -2,9 +2,9 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using NUnit.Framework;
 using EventStore.Core.Data;
 using EventStore.Core.TransactionLog.LogRecords;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.AllReader;
 

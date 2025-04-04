@@ -92,7 +92,7 @@ public class PersistentSubscriptionMessageParkerTests {
 			base.Given();
 			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "0@foo"));
-			_timeProvider.AddToUtcTime(new TimeSpan(0,0,1,2));
+			_timeProvider.AddToUtcTime(new TimeSpan(0, 0, 1, 2));
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "1@foo"));
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "2@foo"));
 			NoOtherStreams();
@@ -147,7 +147,7 @@ public class PersistentSubscriptionMessageParkerTests {
 			base.Given();
 			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "5@foo"));
-			_timeProvider.AddToUtcTime(new TimeSpan(0,0,1,2));
+			_timeProvider.AddToUtcTime(new TimeSpan(0, 0, 1, 2));
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "6@foo"));
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "7@foo"));
 			_eventRecords.Add(ExistingEventTimeStamp(_messageParker.ParkedStreamId, "$>", LinkMetadata, "8@foo"));
@@ -285,8 +285,8 @@ public class PersistentSubscriptionMessageParkerTests {
 		[Test]
 		public async Task should_have_one_parked_message() {
 			await _replayParked.Task;
-			_timeProvider.AddToUtcTime(new TimeSpan(0,0,1,0));
-			_messageParker.BeginParkMessage(CreateResolvedEvent(2,200), "testing", (_, __) => {
+			_timeProvider.AddToUtcTime(new TimeSpan(0, 0, 1, 0));
+			_messageParker.BeginParkMessage(CreateResolvedEvent(2, 200), "testing", (_, __) => {
 				Assert.AreEqual(1, _messageParker.ParkedMessageCount);
 				Assert.AreEqual(EventTimeStamps[2], _messageParker.GetOldestParkedMessage);
 				_done.TrySetResult(true);
@@ -361,7 +361,8 @@ public class PersistentSubscriptionMessageParkerTests {
 			_bus.Subscribe(new AdHocHandler<TimerMessage.Schedule>(
 				msg => {
 					_timerMessages.Add(msg.ReplyMessage as IODispatcherDelayedMessage);
-					if (_timerMessages.Count == 2) _timerMessagesReceived.TrySetResult(true);
+					if (_timerMessages.Count == 2)
+						_timerMessagesReceived.TrySetResult(true);
 				}));
 		}
 

@@ -20,7 +20,6 @@ using EventStore.Core.Tests.Services.Transport.Tcp;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.FileNamingStrategy;
-using EventStore.Core.Util;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Replication.LeaderReplication;

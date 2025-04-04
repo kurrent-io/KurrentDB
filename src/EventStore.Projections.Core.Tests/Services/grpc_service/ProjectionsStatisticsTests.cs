@@ -1,5 +1,5 @@
-// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
-// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
+// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -16,7 +16,7 @@ using NUnit.Framework;
 namespace EventStore.Projections.Core.Tests.Services.grpc_service;
 
 [TestFixture]
-public class ProjectionsStatisticsTests: SpecificationWithNodeAndProjectionsManager<LogFormat.V2, string> {
+public class ProjectionsStatisticsTests : SpecificationWithNodeAndProjectionsManager<LogFormat.V2, string> {
 	private Client.Projections.Projections.ProjectionsClient _client;
 	private GrpcChannel _channel;
 	private StatisticsResp _invalidProjectionStatistics;
@@ -93,10 +93,10 @@ public class ProjectionsStatisticsTests: SpecificationWithNodeAndProjectionsMana
 
 	protected CallOptions GetCallOptions() {
 		var credentials = CallCredentials.FromInterceptor((_, metadata) => {
-				metadata.Add(new Metadata.Entry("authorization",
-					$"Basic {Convert.ToBase64String("admin:changeit"u8.ToArray())}"));
-				return Task.CompletedTask;
-			});
+			metadata.Add(new Metadata.Entry("authorization",
+				$"Basic {Convert.ToBase64String("admin:changeit"u8.ToArray())}"));
+			return Task.CompletedTask;
+		});
 		return new(credentials: credentials,
 			deadline: Debugger.IsAttached
 				? DateTime.UtcNow.AddDays(1)

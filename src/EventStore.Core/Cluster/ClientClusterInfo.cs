@@ -59,7 +59,7 @@ public class ClientClusterInfo {
 
 		public int NodePriority { get; set; }
 		public bool IsReadOnlyReplica { get; set; }
-		
+
 		public string ESVersion { get; set; }
 
 		public ClientMemberInfo() {

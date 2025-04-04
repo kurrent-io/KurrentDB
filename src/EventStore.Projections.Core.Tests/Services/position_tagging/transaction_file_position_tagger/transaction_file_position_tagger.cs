@@ -3,11 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.AllStream;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
@@ -83,7 +81,7 @@ public class transaction_file_position_tagger {
 		var t = new TransactionFilePositionTagger(0);
 		var tag = CheckpointTag.FromPosition(0, 100, 50);
 		var original = CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(100, 50),
-			new Dictionary<string, long> {{"type1", 1}, {"type2", 2}});
+			new Dictionary<string, long> { { "type1", 1 }, { "type2", 2 } });
 		Assert.AreEqual(tag, t.AdjustTag(original));
 	}
 

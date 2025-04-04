@@ -36,7 +36,7 @@ public class JsonCodec : ICodec {
 		DefaultValueHandling = DefaultValueHandling.Include,
 		MissingMemberHandling = MissingMemberHandling.Ignore,
 		TypeNameHandling = TypeNameHandling.None,
-		Converters = new JsonConverter[] {new StringEnumConverter()}
+		Converters = new JsonConverter[] { new StringEnumConverter() }
 	};
 
 
@@ -62,9 +62,9 @@ public class JsonCodec : ICodec {
 
 	public bool SuitableForResponse(MediaType component) {
 		return component.Type == "*"
-		       || (string.Equals(component.Type, "application", StringComparison.OrdinalIgnoreCase)
-		           && (component.Subtype == "*"
-		               || string.Equals(component.Subtype, "json", StringComparison.OrdinalIgnoreCase)));
+			   || (string.Equals(component.Type, "application", StringComparison.OrdinalIgnoreCase)
+				   && (component.Subtype == "*"
+					   || string.Equals(component.Subtype, "json", StringComparison.OrdinalIgnoreCase)));
 	}
 
 	public T From<T>(string text) {

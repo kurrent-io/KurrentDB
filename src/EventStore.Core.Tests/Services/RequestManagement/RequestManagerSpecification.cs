@@ -33,7 +33,7 @@ public abstract class RequestManagerSpecification<TManager>
 
 	protected abstract TManager OnManager(FakePublisher publisher);
 	protected abstract IEnumerable<Message> WithInitialMessages();
-	protected virtual void Given(){ }
+	protected virtual void Given() { }
 	protected abstract Message When();
 
 	protected Event DummyEvent() {

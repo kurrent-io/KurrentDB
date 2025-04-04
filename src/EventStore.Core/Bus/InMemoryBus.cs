@@ -85,7 +85,7 @@ public partial class InMemoryBus : ISubscriber, IAsyncHandle<Message> {
 			Log.Debug("SLOW BUS MSG [{bus}]: {message} - {elapsed}ms.",
 				Name, message.GetType().Name, (int)elapsedMs);
 			if (elapsedMs > QueuedHandlerThreadPool.VerySlowMsgThreshold.TotalMilliseconds &&
-			    message is not SystemMessage.SystemInit)
+				message is not SystemMessage.SystemInit)
 				Log.Error("---!!! VERY SLOW BUS MSG [{bus}]: {message} - {elapsed}ms.",
 					Name, message.GetType().Name, (int)elapsedMs);
 		}

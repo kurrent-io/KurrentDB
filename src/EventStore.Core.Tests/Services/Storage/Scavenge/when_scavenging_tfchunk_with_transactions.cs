@@ -1,18 +1,13 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Tests.Services.Storage;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.LogCommon;
 using NUnit.Framework;
 using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
@@ -278,7 +273,7 @@ public class when_scavenging_tfchunk_with_transactions<TLogFormat, TStreamId> : 
 
 	[Test]
 	public void all_records_can_be_read_sequentially_page_by_page_in_forward_pass() {
-		var recs = new[] {_p2, _p4, _p1, _p3, _p5, _random1}; // in committed order
+		var recs = new[] { _p2, _p4, _p1, _p3, _p5, _random1 }; // in committed order
 
 		int count = 0;
 		var pos = new TFPos(0, 0);
@@ -295,7 +290,7 @@ public class when_scavenging_tfchunk_with_transactions<TLogFormat, TStreamId> : 
 
 	[Test]
 	public void all_records_can_be_read_sequentially_page_by_page_in_backward_pass() {
-		var recs = new[] {_random1, _p5, _p3, _p1, _p4, _p2}; // in reverse committed order
+		var recs = new[] { _random1, _p5, _p3, _p1, _p4, _p2 }; // in reverse committed order
 
 		int count = 0;
 		var pos = GetBackwardReadPos();
@@ -312,7 +307,7 @@ public class when_scavenging_tfchunk_with_transactions<TLogFormat, TStreamId> : 
 
 	[Test]
 	public void position_returned_for_prev_page_when_traversing_forward_allow_to_traverse_backward_correctly() {
-		var recs = new[] {_p2, _p4, _p1, _p3, _p5, _random1}; // in committed order
+		var recs = new[] { _p2, _p4, _p1, _p3, _p5, _random1 }; // in committed order
 
 		int count = 0;
 		var pos = new TFPos(0, 0);
@@ -340,7 +335,7 @@ public class when_scavenging_tfchunk_with_transactions<TLogFormat, TStreamId> : 
 
 	[Test]
 	public void position_returned_for_prev_page_when_traversing_backward_allow_to_traverse_forward_correctly() {
-		var recs = new[] {_random1, _p5, _p3, _p1, _p4, _p2}; // in reverse committed order
+		var recs = new[] { _random1, _p5, _p3, _p1, _p4, _p2 }; // in reverse committed order
 
 		int count = 0;
 		var pos = GetBackwardReadPos();

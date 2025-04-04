@@ -15,7 +15,7 @@ public class when_5_node_cluster_receives_replica_lost_before_quorum : with_clus
 	private readonly Guid _replicaId2 = Guid.NewGuid();
 	private readonly Guid _replicaId3 = Guid.NewGuid();
 
-	
+
 	protected override int ClusterSize => 5;
 
 	public override void When() {
@@ -39,7 +39,7 @@ public class when_5_node_cluster_receives_replica_lost_before_quorum : with_clus
 
 	[Test]
 	public void replication_checkpoint_should_not_advance() {
-		Assert.AreEqual(0, ReplicationCheckpoint.Read());		
-		Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());		
-	}	
+		Assert.AreEqual(0, ReplicationCheckpoint.Read());
+		Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());
+	}
 }

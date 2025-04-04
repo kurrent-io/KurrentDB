@@ -45,8 +45,7 @@ public sealed class UnmanagedMemoryAppendOnlyList<T> : IAppendOnlyList<T>, IDisp
 		if (_count >= _maxCapacity)
 			throw new MaxCapacityReachedException();
 
-		unsafe
-		{
+		unsafe {
 			new Span<T>(_dataPtr.ToPointer(), _maxCapacity) {
 				[_count] = item
 			};
@@ -74,8 +73,7 @@ public sealed class UnmanagedMemoryAppendOnlyList<T> : IAppendOnlyList<T>, IDisp
 				throw new IndexOutOfRangeException();
 			}
 
-			unsafe
-			{
+			unsafe {
 				return new ReadOnlySpan<T>(_dataPtr.ToPointer(), _maxCapacity)[index];
 			}
 		}

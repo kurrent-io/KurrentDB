@@ -5,9 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 
@@ -74,7 +72,7 @@ public class when_running_a_js_projection_emitting_metadata : TestFixtureWithInt
 			if (sw.Elapsed > TimeSpan.FromSeconds(120))
 				break;
 		}
-		
+
 		Console.WriteLine(i);
 
 		//TODO: replace with an actual benchmark

@@ -3,16 +3,16 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Common;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.Options.StreamOptionOneofCase;
-using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.StreamOptions.RevisionOptionOneofCase;
 using AllOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.AllOptions.AllOptionOneofCase;
+using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.StreamOptions.RevisionOptionOneofCase;
+using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.Options.StreamOptionOneofCase;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -31,8 +31,7 @@ internal partial class PersistentSubscriptions {
 
 		string streamId = null;
 
-		switch (request.Options.StreamOptionCase)
-		{
+		switch (request.Options.StreamOptionCase) {
 			case StreamOptionOneofCase.Stream:
 			case StreamOptionOneofCase.None: /*for backwards compatibility*/
 			{
@@ -47,10 +46,10 @@ internal partial class PersistentSubscriptions {
 						_ => throw RpcExceptions.InvalidArgument(request.Options.Stream.RevisionOptionCase)
 					};
 				} else { /*for backwards compatibility*/
-					#pragma warning disable 612
+#pragma warning disable 612
 					streamId = request.Options.StreamIdentifier;
 					startRevision = new StreamRevision(request.Options.Settings.Revision);
-					#pragma warning restore 612
+#pragma warning restore 612
 				}
 
 				_publisher.Publish(new ClientMessage.UpdatePersistentSubscriptionToStream(

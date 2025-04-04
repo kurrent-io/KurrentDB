@@ -2,7 +2,6 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System.IO;
-using EventStore.Common.Options;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Index;
 using NUnit.Framework;

@@ -3,11 +3,8 @@
 
 using System.IO;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.Tests.TransactionLog.Validation;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.Transforms.Identity;
 using NUnit.Framework;
 
@@ -21,7 +18,7 @@ public class when_truncating_to_the_very_beginning_of_multichunk_db : Specificat
 	public override async Task TestFixtureSetUp() {
 		await base.TestFixtureSetUp();
 
-		_config = TFChunkHelper.CreateDbConfigEx(PathName, 11111, 5500, 5500, -1,0, 1000, -1);
+		_config = TFChunkHelper.CreateDbConfigEx(PathName, 11111, 5500, 5500, -1, 0, 1000, -1);
 
 		DbUtil.CreateMultiChunk(_config, 0, 2, GetFilePathFor("chunk-000000.000001"));
 		DbUtil.CreateMultiChunk(_config, 0, 2, GetFilePathFor("chunk-000000.000002"));

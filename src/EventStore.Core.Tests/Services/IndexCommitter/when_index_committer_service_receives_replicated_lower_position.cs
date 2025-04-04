@@ -28,7 +28,7 @@ public class
 		ReplicationCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.ReplicatedTo(_logPosition - 1));
 	}
-	
+
 	[Test]
 	public void commit_replicated_message_should_not_have_been_published() {
 		Assert.AreEqual(0, CommitReplicatedMgs.Count);

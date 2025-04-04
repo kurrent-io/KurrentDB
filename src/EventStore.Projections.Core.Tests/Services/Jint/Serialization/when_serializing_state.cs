@@ -10,7 +10,6 @@ using EventStore.Projections.Core.Services.Interpreted;
 using Jint;
 using Jint.Native;
 using Jint.Native.Json;
-using Jint.Native.Object;
 using NUnit.Framework;
 using JsonSerializer = Jint.Native.Json.JsonSerializer;
 
@@ -148,14 +147,14 @@ public class when_serializing_state {
 		Assert.AreEqual(json, serialized);
 	}
 
-	public static string ReadJsonFromFile(string filename)
-        {
+	public static string ReadJsonFromFile(string filename) {
 		var assembly = typeof(when_serializing_state).Assembly;
 		var availableFiles = assembly.GetManifestResourceNames();
 		var streamName = availableFiles.Where(
-			x=> x.StartsWith(typeof(when_serializing_state).Namespace) && x.EndsWith(filename)
+			x => x.StartsWith(typeof(when_serializing_state).Namespace) && x.EndsWith(filename)
 			).SingleOrDefault();
-		if(streamName == null) throw new InvalidOperationException($"Could not find {filename}");
+		if (streamName == null)
+			throw new InvalidOperationException($"Could not find {filename}");
 		using var stream = assembly.GetManifestResourceStream(streamName);
 
 		var doc = JsonDocument.Parse(stream);
@@ -166,5 +165,5 @@ public class when_serializing_state {
 		ms.Position = 0;
 		using var sr = new StreamReader(ms);
 		return sr.ReadToEnd();
-        }
+	}
 }

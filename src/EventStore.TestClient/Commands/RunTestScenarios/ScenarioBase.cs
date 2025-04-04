@@ -11,13 +11,13 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.SystemData;
 using EventStore.Core.Services;
 using ConsoleLogger = EventStore.ClientAPI.Common.Log.ConsoleLogger;
 using ILogger = Serilog.ILogger;
 using TcpCommand = EventStore.Core.Services.Transport.Tcp.TcpCommand;
 using TcpPackage = EventStore.Core.Services.Transport.Tcp.TcpPackage;
-using EventStore.ClientAPI.Projections;
 
 namespace EventStore.TestClient.Commands.RunTestScenarios;
 
@@ -178,7 +178,7 @@ internal abstract class ScenarioBase : IScenario {
 	}
 
 	protected T[][] Split<T>(IEnumerable<T> sequence, int parts) {
-		return sequence.Select((x, i) => new {GroupNum = i % parts, Item = x})
+		return sequence.Select((x, i) => new { GroupNum = i % parts, Item = x })
 			.GroupBy(x => x.GroupNum, y => y.Item)
 			.Select(x => x.ToArray())
 			.ToArray();
@@ -297,7 +297,7 @@ internal abstract class ScenarioBase : IScenario {
 		var clientFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 		//../../EventStore.ClusterNode/net471/EventStore.ClusterNode.exe
 		var clusterNodeFolder = System.IO.Directory.GetParent(System.IO.Directory.GetParent(clientFolder).FullName)
-		                        + "/EventStore.ClusterNode/net471/";
+								+ "/EventStore.ClusterNode/net471/";
 		string fileName;
 		string argumentsHead;
 
@@ -452,7 +452,7 @@ internal abstract class ScenarioBase : IScenario {
 
 			var writeTask = store.AppendToStreamAsync(stream,
 				eventVersion - 1,
-				new[] {createEvent(eventVersion)});
+				new[] { createEvent(eventVersion) });
 
 			eventVersion += 1;
 

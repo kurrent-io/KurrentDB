@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Data;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Management;
@@ -22,7 +21,8 @@ public class a_failed_projection {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			var readerAssignedMessage =
 				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
 					.LastOrDefault();
@@ -39,7 +39,8 @@ public class a_failed_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_updating_query<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return
 				(new ProjectionManagementMessage.Command.UpdateQuery(
 					_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous,
@@ -77,7 +78,8 @@ public class a_failed_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_stopping<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return
 				(new ProjectionManagementMessage.Command.Disable(
 					_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous));
@@ -120,7 +122,8 @@ public class a_failed_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_starting<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return
 				(new ProjectionManagementMessage.Command.Enable(
 					_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous));

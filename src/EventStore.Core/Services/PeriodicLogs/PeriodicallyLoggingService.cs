@@ -10,12 +10,12 @@ using Serilog;
 
 namespace EventStore.Core.Services.PeriodicLogs;
 
-public class PeriodicallyLoggingService : 
+public class PeriodicallyLoggingService :
 	IHandle<SystemMessage.SystemStart>,
 	IHandle<MonitoringMessage.CheckEsVersion> {
 
 	private static readonly TimeSpan _interval = TimeSpan.FromHours(12);
-	
+
 	private readonly IPublisher _publisher;
 	private readonly string _esVersion;
 	private readonly ILogger _logger;
@@ -40,5 +40,5 @@ public class PeriodicallyLoggingService :
 		_logger.Information("Current version of Event Store is : {esVersion} ", _esVersion);
 		_publisher.Publish(_esVersionScheduleLog);
 	}
-	
+
 }

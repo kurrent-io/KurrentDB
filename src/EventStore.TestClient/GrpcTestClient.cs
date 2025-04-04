@@ -1,9 +1,7 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
-using System;
 using EventStore.Client;
-using Connection = EventStore.Transport.Tcp.TcpTypedConnection<byte[]>;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.TestClient;
@@ -42,9 +40,9 @@ public class GrpcTestClient {
 		string.IsNullOrWhiteSpace(Settings.DefaultCredentials?.Password);
 
 	private EventStoreClientSettings Settings => EventStoreClientSettings.Create(ConnectionString);
-	
+
 	private string ConnectionString => string.IsNullOrWhiteSpace(_options.ConnectionString)
 		? $"esdb://{_options.Host}:{_options.HttpPort}?tls={_options.UseTls}&tlsVerifyCert={_options.TlsValidateServer}"
 		: _options.ConnectionString;
-	
+
 }

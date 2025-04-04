@@ -213,10 +213,10 @@ public class Accumulator<TStreamId> : IAccumulator<TStreamId> {
 
 		var cancellationCheckCounter = 0;
 		foreach (var recordType in _chunkReader.ReadChunkInto(
-			         logicalChunkNumber,
-			         originalStreamRecord,
-			         metadataStreamRecord,
-			         tombStoneRecord)) {
+					 logicalChunkNumber,
+					 originalStreamRecord,
+					 metadataStreamRecord,
+					 tombStoneRecord)) {
 
 			RecordForAccumulator<TStreamId> record;
 			switch (recordType) {

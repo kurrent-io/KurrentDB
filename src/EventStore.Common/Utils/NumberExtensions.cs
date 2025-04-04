@@ -37,7 +37,7 @@ public static class NumberExtensions {
 		if (weight < 0 || weight > totalWeight)
 			throw new ArgumentOutOfRangeException(nameof(weight));
 
-		return (long)((double) x * weight / totalWeight);
+		return (long)((double)x * weight / totalWeight);
 	}
 
 	public static long ScaleByPercent(this long x, int percent) =>

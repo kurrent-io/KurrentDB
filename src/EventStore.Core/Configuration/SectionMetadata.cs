@@ -36,7 +36,7 @@ public record SectionMetadata(
 			var optionMetadata = OptionMetadata.FromPropertyInfo(metadata, optionProps[i], i);
 			metadata.Options[optionMetadata.Key] = optionMetadata;
 		}
-	
+
 		var options = property.PropertyType.GetProperties()
 			.Select((p, i) => OptionMetadata.FromPropertyInfo(metadata, p, i))
 			.ToDictionary(option => option.Key, x => x);

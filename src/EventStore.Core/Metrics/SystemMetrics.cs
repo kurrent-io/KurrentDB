@@ -14,7 +14,7 @@ using static EventStore.Common.Configuration.MetricsConfiguration;
 namespace EventStore.Core.Metrics;
 
 public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTracker, bool> config) {
-    public void CreateLoadAverageMetric(string metricName, Dictionary<SystemTracker, string> dimNames) {
+	public void CreateLoadAverageMetric(string metricName, Dictionary<SystemTracker, string> dimNames) {
 		if (RuntimeInformation.IsWindows)
 			return;
 
@@ -30,8 +30,8 @@ public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTrack
 	}
 
 	public void CreateCpuMetric(string name) {
-        if (!config.TryGetValue(SystemTracker.Cpu, out var enabled) || !enabled)
-            return;
+		if (!config.TryGetValue(SystemTracker.Cpu, out var enabled) || !enabled)
+			return;
 
 		meter.CreateObservableUpDownCounter(name, RuntimeStats.GetCpuUsage);
 	}
@@ -39,8 +39,8 @@ public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTrack
 	public void CreateMemoryMetric(string metricName, Dictionary<SystemTracker, string> dimNames) {
 		var dims = new Dimensions<SystemTracker, long>(config, dimNames, tag => new("kind", tag));
 
-        dims.Register(SystemTracker.FreeMem, RuntimeStats.GetFreeMemory);
-        dims.Register(SystemTracker.TotalMem, RuntimeStats.GetTotalMemory);
+		dims.Register(SystemTracker.FreeMem, RuntimeStats.GetFreeMemory);
+		dims.Register(SystemTracker.TotalMem, RuntimeStats.GetTotalMemory);
 
 		if (dims.AnyRegistered())
 			meter.CreateObservableGauge($"{metricName}-bytes", dims.GenObserve());
@@ -49,24 +49,24 @@ public class SystemMetrics(Meter meter, TimeSpan timeout, Dictionary<SystemTrack
 	public void CreateDiskMetric(string metricName, string dbPath, Dictionary<SystemTracker, string> dimNames) {
 		var dims = new Dimensions<SystemTracker, long>(config, dimNames, tag => new());
 
-        var getDriveInfo = Functions.Debounce(() => DriveStats.GetDriveInfo(dbPath), timeout);
+		var getDriveInfo = Functions.Debounce(() => DriveStats.GetDriveInfo(dbPath), timeout);
 
-        dims.Register(SystemTracker.DriveUsedBytes, GenMeasure(info => info.UsedBytes));
+		dims.Register(SystemTracker.DriveUsedBytes, GenMeasure(info => info.UsedBytes));
 		dims.Register(SystemTracker.DriveTotalBytes, GenMeasure(info => info.TotalBytes));
 
 		if (dims.AnyRegistered())
 			meter.CreateObservableGauge($"{metricName}-bytes", dims.GenObserve());
-        
-        return;
 
-        Func<string, Measurement<long>> GenMeasure(Func<DriveData, long> func) => tag => {
-            var info = getDriveInfo();
+		return;
 
-            return new(
-                func(info),
-                new("kind", tag),
-                new("disk", info.DiskName)
-            );
-        };
-    }
+		Func<string, Measurement<long>> GenMeasure(Func<DriveData, long> func) => tag => {
+			var info = getDriveInfo();
+
+			return new(
+				func(info),
+				new("kind", tag),
+				new("disk", info.DiskName)
+			);
+		};
+	}
 }

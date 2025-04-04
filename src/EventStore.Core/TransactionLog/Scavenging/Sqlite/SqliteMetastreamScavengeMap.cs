@@ -31,7 +31,7 @@ public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMeta
 			if (discardPointField.HasValue) {
 				discardPoint = DiscardPoint.DiscardBefore(discardPointField.Value);
 			}
-		
+
 			return new MetastreamData(isTombstoned, discardPoint);
 		};
 	}
@@ -43,7 +43,7 @@ public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMeta
 					key {keyType} PRIMARY KEY,
 					isTombstoned INTEGER DEFAULT 0,
 					discardPoint INTEGER NULL)";
-	
+
 		sqlite.InitializeDb(sql);
 
 		_add = new AddCommand(TableName, sqlite);
@@ -115,7 +115,7 @@ public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMeta
 			_sqlite.ExecuteNonQuery(_cmd);
 		}
 	}
-	
+
 	private class SetTombstoneCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _cmd;
@@ -126,7 +126,7 @@ public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMeta
 					INSERT INTO {tableName} (key, isTombstoned)
 					VALUES($key, 1) 
 					ON CONFLICT(key) DO UPDATE SET isTombstoned=1";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -168,7 +168,7 @@ public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMeta
 			_sqlite.ExecuteNonQuery(_cmd);
 		}
 	}
-	
+
 	private class GetCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _cmd;
@@ -179,12 +179,12 @@ public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMeta
 					SELECT isTombstoned, discardPoint
 					FROM {tableName}
 					WHERE key = $key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -213,7 +213,7 @@ public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMeta
 			_deleteCmd.CommandText = deleteSql;
 			_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_deleteCmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -234,7 +234,7 @@ public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMeta
 			_deleteCmd = sqlite.CreateCommand();
 			_deleteCmd.CommandText = deleteSql;
 			_deleteCmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -253,11 +253,11 @@ public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMeta
 					SELECT isTombstoned, discardPoint, key
 					FROM {tableName}
 					ORDER BY key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => {
 				var value = _readMetastreamData(reader);

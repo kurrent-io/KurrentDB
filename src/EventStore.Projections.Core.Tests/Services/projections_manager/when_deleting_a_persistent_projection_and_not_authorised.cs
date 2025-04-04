@@ -4,11 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
-using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using NUnit.Framework;
