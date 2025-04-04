@@ -1,6 +1,6 @@
 ---
 title: "MongoDB Sink"
-order: 2
+order: 3
 ---
 
 <Badge type="info" vertical="middle" text="License Required"/>

@@ -1,6 +1,6 @@
 ---
 title: "Kafka Sink"
-order: 1
+order: 2
 ---
 
 <Badge type="info" vertical="middle" text="License Required"/>

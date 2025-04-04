@@ -1,6 +1,6 @@
 ---
 title: "RabbitMQ Sink"
-order: 3
+order: 4
 ---
 
 <Badge type="info" vertical="middle" text="License Required"/>
