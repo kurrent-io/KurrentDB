@@ -51,9 +51,9 @@ public abstract class TcpDispatcher : ITcpDispatcher {
 
 	protected void AddUnwrapper<T>(TcpCommand command, Func<TcpPackage, IEnvelope, ClaimsPrincipal, IReadOnlyDictionary<string, string>, TcpConnectionManager, T> unwrapper, ClientVersion version)
 		where T : Message {
-// ReSharper disable RedundantCast
+		// ReSharper disable RedundantCast
 		_unwrappers[(byte)version][(byte)command] = (Func<TcpPackage, IEnvelope, ClaimsPrincipal, IReadOnlyDictionary<string, string>, TcpConnectionManager, Message>)unwrapper;
-// ReSharper restore RedundantCast
+		// ReSharper restore RedundantCast
 	}
 
 	public TcpPackage? WrapMessage(Message message, byte version) {

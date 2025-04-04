@@ -49,7 +49,7 @@ public class LicensingPlugin : Plugin {
 
 		builder.UseEndpoints(endpoints => endpoints
 			.MapGet("/license", (HttpContext context) => {
-				if (currentLicense is { } license )
+				if (currentLicense is { } license)
 					return Results.Json(LicenseSummary.SelectForEndpoint(license));
 
 				if (licenseError is NoLicenseKeyException)

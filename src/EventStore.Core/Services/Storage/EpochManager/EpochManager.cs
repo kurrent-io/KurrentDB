@@ -9,17 +9,17 @@ using System.Threading.Tasks;
 using DotNext.Threading;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
-using EventStore.Core.Messages;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Exceptions;
+using EventStore.Core.LogAbstraction;
+using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
-using ILogger = Serilog.ILogger;
 using EventStore.LogCommon;
+using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage.EpochManager;
 
@@ -297,7 +297,7 @@ public class EpochManager<TStreamId> : IEpochManager {
 
 			epoch = sysRec.GetEpochRecord();
 			return epoch.EpochNumber == epochNumber && epoch.EpochId == epochId;
-		} catch(Exception ex) when (ex is InvalidReadException || ex is UnableToReadPastEndOfStreamException) {
+		} catch (Exception ex) when (ex is InvalidReadException || ex is UnableToReadPastEndOfStreamException) {
 			Log.Information(ex, "Failed to read epoch {epochNumber} at {epochPosition}.", epochNumber, epochPosition);
 			return false;
 		} finally {

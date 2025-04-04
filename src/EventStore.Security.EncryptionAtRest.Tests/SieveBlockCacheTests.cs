@@ -71,7 +71,7 @@ public class SieveBlockCacheTests {
 		static ReadOnlySpan<byte> GenData(char c) {
 			var data = new byte[DataSize];
 			for (var i = 0; i < DataSize; i++)
-				data[i] = (byte) c;
+				data[i] = (byte)c;
 			return data;
 		}
 	}

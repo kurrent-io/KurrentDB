@@ -5,7 +5,6 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Security;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Xunit;
@@ -25,27 +24,27 @@ public class OAuthAuthenticationHttpIntegrationTests {
 	}
 
 	private StringContent GenerateEvents() {
-		var events = new[] {new {EventId = Guid.NewGuid(), EventType = "event-type", Data = new {A = "1"}}};
+		var events = new[] { new { EventId = Guid.NewGuid(), EventType = "event-type", Data = new { A = "1" } } };
 		return new StringContent(JsonConvert.SerializeObject(events)) {
-			Headers = {ContentType = new MediaTypeHeaderValue("application/vnd.eventstore.events+json")}
+			Headers = { ContentType = new MediaTypeHeaderValue("application/vnd.eventstore.events+json") }
 		};
 	}
 
 	[FactRequiringDocker]
 	public async Task admin() {
-		using var fixture = await Fixture.Create(_output,EnableAtomPub);
+		using var fixture = await Fixture.Create(_output, EnableAtomPub);
 		var token = await fixture.IdentityServer.GetAccessToken("admin", "password");
 
 		using var client = CreateHttpClient(token);
 
 		using var writeResponse = await client.PostAsync("/streams/a-stream", GenerateEvents());
-		Assert.Equal(HttpStatusCode.Created,writeResponse.StatusCode);
+		Assert.Equal(HttpStatusCode.Created, writeResponse.StatusCode);
 
 		using var writeSystemResponse = await client.PostAsync("/streams/$systemstream", GenerateEvents());
-		Assert.Equal(HttpStatusCode.Created,writeSystemResponse.StatusCode);
+		Assert.Equal(HttpStatusCode.Created, writeSystemResponse.StatusCode);
 
 		using var readResponse = await client.GetAsync("/streams/$all");
-		Assert.Equal(HttpStatusCode.OK,readResponse.StatusCode);
+		Assert.Equal(HttpStatusCode.OK, readResponse.StatusCode);
 	}
 
 	[FactRequiringDocker]
@@ -56,13 +55,13 @@ public class OAuthAuthenticationHttpIntegrationTests {
 		using var client = CreateHttpClient(token);
 
 		using var writeResponse = await client.PostAsync("/streams/a-stream", GenerateEvents());
-		Assert.Equal(HttpStatusCode.Created,writeResponse.StatusCode);
+		Assert.Equal(HttpStatusCode.Created, writeResponse.StatusCode);
 
 		using var writeSystemResponse = await client.PostAsync("/streams/$systemstream", GenerateEvents());
-		Assert.Equal(HttpStatusCode.Unauthorized,writeSystemResponse.StatusCode);
+		Assert.Equal(HttpStatusCode.Unauthorized, writeSystemResponse.StatusCode);
 
 		using var readResponse = await client.GetAsync("/streams/$all");
-		Assert.Equal(HttpStatusCode.Unauthorized,readResponse.StatusCode);
+		Assert.Equal(HttpStatusCode.Unauthorized, readResponse.StatusCode);
 	}
 
 
@@ -73,8 +72,7 @@ public class OAuthAuthenticationHttpIntegrationTests {
 			}
 		};
 
-		return new HttpClient(socketsHttpHandler)
-		{
+		return new HttpClient(socketsHttpHandler) {
 			BaseAddress = new UriBuilder {
 				Port = 2113,
 				Scheme = Uri.UriSchemeHttps

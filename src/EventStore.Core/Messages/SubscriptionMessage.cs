@@ -50,11 +50,11 @@ public static partial class SubscriptionMessage {
 			CorrelationId = correlationId;
 		}
 	}
-	
+
 	[DerivedMessage(CoreMessage.Subscription)]
 	public partial class PersistentSubscriptionsRestart : Message {
 		public IEnvelope ReplyEnvelope { get; }
-		
+
 		public PersistentSubscriptionsRestart(IEnvelope replyEnvelope) {
 			ReplyEnvelope = replyEnvelope;
 		}
@@ -76,7 +76,7 @@ public static partial class SubscriptionMessage {
 	[DerivedMessage(CoreMessage.Subscription)]
 	public partial class PersistentSubscriptionsStarted : Message {
 	}
-	
+
 	[DerivedMessage(CoreMessage.Subscription)]
 	public partial class PersistentSubscriptionsStopped : Message {
 	}

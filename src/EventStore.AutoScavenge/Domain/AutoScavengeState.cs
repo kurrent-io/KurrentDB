@@ -119,7 +119,8 @@ public class AutoScavengeState {
 					throw new Exception("Invalid state");
 				return onWaiting(schedule, nextOccurence);
 
-			default: throw new Exception("Unexpected Status");
+			default:
+				throw new Exception("Unexpected Status");
 		}
 	}
 

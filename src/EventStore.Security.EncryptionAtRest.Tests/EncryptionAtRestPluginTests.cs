@@ -153,9 +153,9 @@ public class EncryptionAtTestPluginTests {
 		RandomNumberGenerator.Fill(writeData);
 		RandomNumberGenerator.Fill(writeFooter);
 
-		await WriteFirstPart(writeHeader, writeData[..(dataSize/3)]);
-		await WriteMiddlePart(dataSize / 3, writeData[(dataSize/3)..(dataSize*2/3)]);
-		var writeHash = await WriteLastPart(dataSize * 2 / 3, writeData[(dataSize*2/3)..], writeFooter);
+		await WriteFirstPart(writeHeader, writeData[..(dataSize / 3)]);
+		await WriteMiddlePart(dataSize / 3, writeData[(dataSize / 3)..(dataSize * 2 / 3)]);
+		var writeHash = await WriteLastPart(dataSize * 2 / 3, writeData[(dataSize * 2 / 3)..], writeFooter);
 
 		await VerifyReads();
 		await VerifyRandomReads(numRandomReads: 1000);

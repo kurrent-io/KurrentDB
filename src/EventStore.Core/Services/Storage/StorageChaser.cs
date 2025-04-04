@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
@@ -14,10 +15,9 @@ using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
-using System.Threading.Tasks;
-using ILogger = Serilog.ILogger;
 using EventStore.LogCommon;
 using static System.Threading.Timeout;
+using ILogger = Serilog.ILogger;
 
 // ReSharper disable StaticMemberInGenericType
 
@@ -107,7 +107,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 					await ChaserIteration(_stopToken);
 				else
 					await Task.Delay(1, _stopToken).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext |
-					                                               ConfigureAwaitOptions.SuppressThrowing);
+																   ConfigureAwaitOptions.SuppressThrowing);
 			}
 		} catch (Exception exc) {
 			Log.Fatal(exc, "Error in StorageChaser. Terminating...");
@@ -116,7 +116,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 			_tcs.TrySetException(exc);
 			Application.Exit(ExitCode.Error, "Error in StorageChaser. Terminating...\nError: " + exc.Message);
 			await Task.Delay(InfiniteTimeSpan, _stopToken).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
-			                                                              ConfigureAwaitOptions.ContinueOnCapturedContext);
+																		  ConfigureAwaitOptions.ContinueOnCapturedContext);
 
 			_queueStats.ProcessingEnded(0);
 		} finally {

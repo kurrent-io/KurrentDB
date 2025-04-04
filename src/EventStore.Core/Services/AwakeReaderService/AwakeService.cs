@@ -87,10 +87,12 @@ public class AwakeService : IHandle<AwakeServiceMessage.SubscribeAwake>,
 
 	private void NotifyEventInStream(string streamId, StorageMessage.EventCommitted message) {
 		List<AwakeServiceMessage.SubscribeAwake> toRemove = null;
-		if (!_subscribers.TryGetValue(streamId, out var list)) return;
+		if (!_subscribers.TryGetValue(streamId, out var list))
+			return;
 
 		foreach (var subscriber in list) {
-			if (subscriber.From >= new TFPos(message.CommitPosition, message.Event.LogPosition)) continue;
+			if (subscriber.From >= new TFPos(message.CommitPosition, message.Event.LogPosition))
+				continue;
 
 			_batchedReplies.Add(subscriber);
 			_map.Remove(subscriber.CorrelationId);
@@ -98,7 +100,8 @@ public class AwakeService : IHandle<AwakeServiceMessage.SubscribeAwake>,
 			toRemove.Add(subscriber);
 		}
 
-		if (toRemove == null) return;
+		if (toRemove == null)
+			return;
 
 		foreach (var item in toRemove)
 			list.Remove(item);
@@ -108,7 +111,8 @@ public class AwakeService : IHandle<AwakeServiceMessage.SubscribeAwake>,
 	}
 
 	public void Handle(AwakeServiceMessage.UnsubscribeAwake message) {
-		if (!_map.Remove(message.CorrelationId, out var subscriber)) return;
+		if (!_map.Remove(message.CorrelationId, out var subscriber))
+			return;
 
 		var list = _subscribers[subscriber.StreamId ?? "$all"];
 		list.Remove(subscriber);

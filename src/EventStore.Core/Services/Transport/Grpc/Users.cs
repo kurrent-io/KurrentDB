@@ -25,7 +25,8 @@ internal partial class Users : EventStore.Client.Users.Users.UsersBase {
 			return true;
 		}
 
-		if (response.Success) return false;
+		if (response.Success)
+			return false;
 		source.TrySetException(response.Error switch {
 			Error.Unauthorized => RpcExceptions.AccessDenied(),
 			Error.NotFound => RpcExceptions.LoginNotFound(loginName),

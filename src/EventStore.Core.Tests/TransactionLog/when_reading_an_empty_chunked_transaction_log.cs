@@ -4,12 +4,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogV2;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -46,7 +42,7 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-		var rec = LogRecord.SingleWrite(recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), streamId, -1, eventTypeId, new byte[] {7}, null);
+		var rec = LogRecord.SingleWrite(recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), streamId, -1, eventTypeId, new byte[] { 7 }, null);
 
 		Assert.IsTrue(await writer.Write(rec, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();

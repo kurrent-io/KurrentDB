@@ -57,7 +57,7 @@ public partial class EventStoreClusterClient {
 	public void SendProposal(ElectionMessage.Proposal proposal, EndPoint destinationEndpoint, DateTime deadline) {
 		SendProposalAsync(proposal.ServerId, proposal.ServerHttpEndPoint, proposal.LeaderId,
 				proposal.LeaderHttpEndPoint,
-				proposal.View, proposal.EpochNumber, proposal.EpochPosition, proposal.EpochId,proposal.EpochLeaderInstanceId,
+				proposal.View, proposal.EpochNumber, proposal.EpochPosition, proposal.EpochId, proposal.EpochLeaderInstanceId,
 				proposal.LastCommitPosition, proposal.WriterCheckpoint, proposal.ChaserCheckpoint,
 				proposal.NodePriority,
 				deadline)
@@ -92,10 +92,10 @@ public partial class EventStoreClusterClient {
 		EndPoint destinationEndpoint, DateTime deadline) {
 		SendLeaderIsResigningOkAsync(resigningOk.LeaderId, resigningOk.LeaderHttpEndPoint,
 			resigningOk.ServerId, resigningOk.ServerHttpEndPoint, deadline).ContinueWith(r => {
-			if (r.Exception != null) {
-				Log.Information(r.Exception, "Leader is Resigning Ok Send Failed to {Server}", destinationEndpoint);
-			}
-		});
+				if (r.Exception != null) {
+					Log.Information(r.Exception, "Leader is Resigning Ok Send Failed to {Server}", destinationEndpoint);
+				}
+			});
 	}
 
 	private async Task SendViewChangeAsync(Guid serverId, EndPoint serverHttpEndPoint, int attemptedView,

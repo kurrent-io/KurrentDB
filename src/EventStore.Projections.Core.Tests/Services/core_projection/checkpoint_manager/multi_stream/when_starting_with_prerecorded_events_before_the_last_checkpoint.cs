@@ -4,8 +4,8 @@
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using NUnit.Framework;
 using EventStore.Projections.Core.Services;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager.multi_stream;
 

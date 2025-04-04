@@ -3,9 +3,9 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using EventStore.Client.Users;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.Users;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 
@@ -35,7 +35,8 @@ internal partial class Users {
 		return new CreateResp();
 
 		void OnMessage(Message message) {
-			if (HandleErrors(options.LoginName, message, createSource)) return;
+			if (HandleErrors(options.LoginName, message, createSource))
+				return;
 
 			createSource.TrySetResult(true);
 		}

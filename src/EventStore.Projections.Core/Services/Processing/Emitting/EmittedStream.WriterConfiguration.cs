@@ -7,8 +7,7 @@ using Serilog;
 
 namespace EventStore.Projections.Core.Services.Processing.Emitting;
 
-public partial class EmittedStream
-{
+public partial class EmittedStream {
 	public class WriterConfiguration {
 		private readonly ClaimsPrincipal _writeAs;
 		private readonly int _maxWriteBatchLength;

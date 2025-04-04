@@ -13,8 +13,8 @@ using EventStore.Common.Exceptions;
 using EventStore.Core.Authorization;
 using EventStore.Core.Authorization.AuthorizationPolicies;
 using EventStore.Core.Bus;
-using EventStore.Core.Messages;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.TransactionLog.LogRecords;
@@ -32,8 +32,7 @@ public class StreamBasedAuthPolicyRegistryTests {
 	private AsyncManualResetEvent _policyUpdated = new(false);
 	private TaskCompletionSource<ClientMessage.SubscribeToStream> _subscribed = new();
 
-	private static readonly JsonSerializerOptions SerializerOptions = new()
-		{ PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+	private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 	private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(1);
 
 	private StreamBasedAuthorizationPolicyRegistry CreateSut(
@@ -153,7 +152,7 @@ public class StreamBasedAuthPolicyRegistryTests {
 			Assert.IsType<ApplicationInitializationException>(actualException);
 
 			// It uses the fallback policy
-			Assert.Equal(new[]{FallbackPolicy, AclsPolicy},
+			Assert.Equal(new[] { FallbackPolicy, AclsPolicy },
 				sut.EffectivePolicies.Select(x => x.Information.Name).ToArray());
 		} else {
 			// It does not throw an exception
@@ -426,11 +425,10 @@ public class StreamBasedAuthPolicyRegistryTests {
 			_onSubscribed = m => {
 				m.Envelope.ReplyWith(new ClientMessage.SubscriptionConfirmation(m.CorrelationId, 100, 0));
 				Subscribed.TrySetResult(m);
-			} ;
+			};
 		}
 		public void Publish(Message message) {
-			switch (message)
-			{
+			switch (message) {
 				case ClientMessage.ReadStreamEventsBackward read:
 					_onReadBackward(read);
 					break;

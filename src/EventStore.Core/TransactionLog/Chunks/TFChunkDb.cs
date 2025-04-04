@@ -70,7 +70,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 
 					// fine for last chunk to be 'missing' (not created yet)
 					break;
-				// OldVersion: don't open old versions. they will soon be deleted
+					// OldVersion: don't open old versions. they will soon be deleted
 			}
 		}
 	}
@@ -106,7 +106,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 		// (but the last one may need completing)
 		chunkEnumerator.LastChunkNumber = lastChunkNum;
 		await Parallel.ForEachAsync(GetHistoricalChunks(chunkEnumerator, token),
-			new ParallelOptions {MaxDegreeOfParallelism = threads, CancellationToken = token},
+			new ParallelOptions { MaxDegreeOfParallelism = threads, CancellationToken = token },
 			async (chunkInfo, token) => {
 				TFChunk.TFChunk chunk;
 				if (lastChunkVersions.Length == 0 &&
@@ -279,7 +279,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 
 	private static void ValidateReaderChecksumsMustBeLess(TFChunkDbConfig config) {
 		var current = config.WriterCheckpoint.Read();
-		foreach (var checkpoint in new[] {config.ChaserCheckpoint, config.EpochCheckpoint}) {
+		foreach (var checkpoint in new[] { config.ChaserCheckpoint, config.EpochCheckpoint }) {
 			if (checkpoint.Read() > current)
 				throw new CorruptDatabaseException(new ReaderCheckpointHigherThanWriterException(checkpoint.Name));
 		}
@@ -297,8 +297,8 @@ public sealed class TFChunkDb : IAsyncDisposable {
 					// there can be at most one excessive chunk at startup:
 					// when a new chunk was created but the writer checkpoint was not yet committed and flushed
 					if (start == chunkEnumerator.LastChunkNumber + 1 &&
-					    start == end &&
-					    Manager.FileSystem.LocalNamingStrategy.GetVersionFor(Path.GetFileName(fileName)) == 0)
+						start == end &&
+						Manager.FileSystem.LocalNamingStrategy.GetVersionFor(Path.GetFileName(fileName)) == 0)
 						RemoveFile("Removing excessive chunk: {chunk}", fileName);
 					else if (start > chunkEnumerator.LastChunkNumber)
 						extraneousFiles.Add(fileName);

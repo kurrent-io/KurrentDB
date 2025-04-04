@@ -28,10 +28,10 @@ public class EventStoreDefaultLocationsSourceTests {
 	}
 
 	[Theory]
-	[InlineData(new []{"kurrentdb.conf"}, null)]
-	[InlineData(new []{"kurrentdb.conf", "eventstore.conf"}, null)]
-	[InlineData(new []{"eventstore.conf"}, "eventstore.conf")]
-	[InlineData(new string[]{}, null)]
+	[InlineData(new[] { "kurrentdb.conf" }, null)]
+	[InlineData(new[] { "kurrentdb.conf", "eventstore.conf" }, null)]
+	[InlineData(new[] { "eventstore.conf" }, "eventstore.conf")]
+	[InlineData(new string[] { }, null)]
 	public void ProvidesDefaultConfigPath(string[] existingFiles, string? expected) {
 		// Arrange
 		var mockFiles =
@@ -53,10 +53,10 @@ public class EventStoreDefaultLocationsSourceTests {
 	}
 
 	[Theory]
-	[InlineData(new []{"/kurrentdb_data/"}, null)]
-	[InlineData(new []{"/kurrentdb_data/", "/eventstore_data/"}, null)]
-	[InlineData(new []{"/eventstore_data/"}, "/eventstore_data/")]
-	[InlineData(new string[]{}, null)]
+	[InlineData(new[] { "/kurrentdb_data/" }, null)]
+	[InlineData(new[] { "/kurrentdb_data/", "/eventstore_data/" }, null)]
+	[InlineData(new[] { "/eventstore_data/" }, "/eventstore_data/")]
+	[InlineData(new string[] { }, null)]
 	public void ProvidesDefaultDataPath(string[] existingDirs, string? expected) {
 		// Arrange
 		var fileSystem = new MockFileSystem();
@@ -79,10 +79,10 @@ public class EventStoreDefaultLocationsSourceTests {
 	}
 
 	[Theory]
-	[InlineData(new []{"/kurrentdb_log/"}, null)]
-	[InlineData(new []{"/kurrentdb_log/", "/eventstore_log/"}, null)]
-	[InlineData(new []{"/eventstore_log/"}, "/eventstore_log/")]
-	[InlineData(new string[]{}, null)]
+	[InlineData(new[] { "/kurrentdb_log/" }, null)]
+	[InlineData(new[] { "/kurrentdb_log/", "/eventstore_log/" }, null)]
+	[InlineData(new[] { "/eventstore_log/" }, "/eventstore_log/")]
+	[InlineData(new string[] { }, null)]
 	public void ProvidesDefaultLogPath(string[] existingDirs, string? expected) {
 		// Arrange
 		var fileSystem = new MockFileSystem();

@@ -14,7 +14,7 @@ using NUnit.Framework;
 namespace EventStore.Core.Tests.Services.GossipService;
 
 public abstract class ClusterMultipleVersionsLoggerTests {
-	
+
 	public class if_gossip_received_has_alive_nodes_on_old_version : NodeGossipServiceTestFixture {
 		protected override Message[] Given() => GivenSystemInitializedWithKnownGossipSeedSources();
 
@@ -56,7 +56,7 @@ public abstract class ClusterMultipleVersionsLoggerTests {
 				ClusterMultipleVersionsLogger.GetIPAddressVsVersion(GetExpectedClusterInfo(),
 					out int numDistinctKnownVersions);
 			ipAddressVsVersion.Should().BeEquivalentTo(GetExpectedEndPointVsVersion());
-			
+
 			Assert.AreEqual(2, numDistinctKnownVersions);
 		}
 

@@ -90,7 +90,7 @@ partial class Enumerator {
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
-			ReadLoop:
+ReadLoop:
 
 			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
 				return false;

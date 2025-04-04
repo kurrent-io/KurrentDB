@@ -78,7 +78,7 @@ public partial class TFChunk {
 				if (logicalPosition >= Chunk.LogicalDataSize)
 					return RecordReadResult.Failure;
 
-				if (await TryReadForwardInternal(start, workItem, logicalPosition, token) is not ({ } record, var length))
+				if (await TryReadForwardInternal(start, workItem, logicalPosition, token) is not ( { } record, var length))
 					return RecordReadResult.Failure;
 
 				long nextLogicalPos = record.GetNextLogPosition(logicalPosition, length);
@@ -94,7 +94,7 @@ public partial class TFChunk {
 				if (logicalPosition >= Chunk.LogicalDataSize)
 					return RawReadResult.Failure;
 
-				if (await TryReadForwardRawInternal(workItem, logicalPosition, getBuffer, token) is not {Array: not null} record)
+				if (await TryReadForwardRawInternal(workItem, logicalPosition, getBuffer, token) is not { Array: not null } record)
 					return RawReadResult.Failure;
 
 				var nextLogicalPos = logicalPosition + record.Count + 2 * sizeof(int);
@@ -115,7 +115,7 @@ public partial class TFChunk {
 				if (logicalPosition > Chunk.LogicalDataSize)
 					return RecordReadResult.Failure;
 
-				if (await TryReadBackwardInternal(start, workItem, logicalPosition, token) is not ({ } record, var length))
+				if (await TryReadBackwardInternal(start, workItem, logicalPosition, token) is not ( { } record, var length))
 					return RecordReadResult.Failure;
 
 				long nextLogicalPos = record.GetPrevLogPosition(logicalPosition, length);
@@ -282,7 +282,7 @@ public partial class TFChunk {
 				if (actualPosition is -1 || actualPosition >= Chunk.PhysicalDataSize)
 					return RecordReadResult.Failure;
 
-				if (await TryReadForwardInternal(start, workItem, actualPosition, token) is not ({ } record, var length))
+				if (await TryReadForwardInternal(start, workItem, actualPosition, token) is not ( { } record, var length))
 					return RecordReadResult.Failure;
 
 				long nextLogicalPos =
@@ -339,7 +339,7 @@ public partial class TFChunk {
 				if (actualPosition is -1 || actualPosition > Chunk.PhysicalDataSize)
 					return RecordReadResult.Failure;
 
-				if (await TryReadBackwardInternal(start, workItem, actualPosition, token) is not ({ } record, var length))
+				if (await TryReadBackwardInternal(start, workItem, actualPosition, token) is not ( { } record, var length))
 					return RecordReadResult.Failure;
 
 				long nextLogicalPos = Chunk.ChunkHeader.GetLocalLogPosition(record.LogPosition);
@@ -602,14 +602,14 @@ public partial class TFChunk {
 				if (length <= 0) {
 					throw new InvalidReadException(
 						string.Format("Log record that ends at actual pos {0} has non-positive length: {1}. "
-						              + "In chunk {2}.",
+									  + "In chunk {2}.",
 							actualPosition, length, Chunk));
 				}
 
 				if (length > TFConsts.MaxLogRecordSize) {
 					throw new InvalidReadException(
 						string.Format("Log record that ends at actual pos {0} has too large length: {1} bytes, "
-						              + "while limit is {2} bytes. In chunk {3}.",
+									  + "while limit is {2} bytes. In chunk {3}.",
 							actualPosition, length, TFConsts.MaxLogRecordSize, Chunk));
 				}
 
@@ -617,7 +617,7 @@ public partial class TFChunk {
 				{
 					throw new UnableToReadPastEndOfStreamException(
 						string.Format("There is not enough space to read full record (length suffix: {0}). "
-						              + "Actual post-position: {1}. Something is seriously wrong in chunk {2}.",
+									  + "Actual post-position: {1}. Something is seriously wrong in chunk {2}.",
 							length, actualPosition, Chunk));
 				}
 

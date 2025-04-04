@@ -3,23 +3,19 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Caching;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
-using EventStore.Core.Index.Hashes;
+using EventStore.Core.LogAbstraction;
+using EventStore.Core.Metrics;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Services;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;
-using NUnit.Framework;
 using EventStore.Core.Util;
-using EventStore.Core.LogAbstraction;
-using EventStore.Core.Metrics;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 
@@ -90,7 +86,7 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 			new LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>("StreamMetadata", 100),
 			true, _metastreamMaxCount,
 			Opts.HashCollisionReadLimitDefault, Opts.SkipIndexScanOnReadsDefault,
-			_dbResult.Db.Config.ReplicationCheckpoint,_dbResult.Db.Config.IndexCheckpoint,
+			_dbResult.Db.Config.ReplicationCheckpoint, _dbResult.Db.Config.IndexCheckpoint,
 			new IndexStatusTracker.NoOp(),
 			new IndexTracker.NoOp(),
 			new CacheHitsMissesTracker.NoOp());

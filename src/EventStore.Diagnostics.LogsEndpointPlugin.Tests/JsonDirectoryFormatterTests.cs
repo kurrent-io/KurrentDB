@@ -111,22 +111,22 @@ public class JsonDirectoryFormatterTests {
 	}
 
 	[Fact]
-    public async Task returns_a_date_as_local_time_with_time_zone_information() {
-	    var now = DateTimeOffset.Now;
-	    List<IFileInfo> dirContent = [
-		    TestFile.Named("file-1.json").ModifiedAt(now),
-	    ];
+	public async Task returns_a_date_as_local_time_with_time_zone_information() {
+		var now = DateTimeOffset.Now;
+		List<IFileInfo> dirContent = [
+			TestFile.Named("file-1.json").ModifiedAt(now),
+		];
 
-    	var json = await GenerateResponse(dirContent);
+		var json = await GenerateResponse(dirContent);
 
-    	Assert.NotNull(json);
-    	Assert.Equal(JsonValueKind.Array, json.GetValueKind());
-    	Assert.Equal(dirContent.Count, json.AsArray().Count);
+		Assert.NotNull(json);
+		Assert.Equal(JsonValueKind.Array, json.GetValueKind());
+		Assert.Equal(dirContent.Count, json.AsArray().Count);
 
-    	Assert.Equal(
-    		now.ToString("o"),
-    		json.AsArray().First()!["lastModified"]!.GetValue<string>());
-    }
+		Assert.Equal(
+			now.ToString("o"),
+			json.AsArray().First()!["lastModified"]!.GetValue<string>());
+	}
 
 	[Fact]
 	public async Task returns_an_empty_array_when_there_is_nothing_to_return() {

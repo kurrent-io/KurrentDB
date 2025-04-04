@@ -23,7 +23,7 @@ public static class OptionsFormatter {
 
 		Log.Information(
 			Environment.NewLine +
-			name +" Configuration: " + Environment.NewLine +
+			name + " Configuration: " + Environment.NewLine +
 			confJson);
 	}
 }

@@ -52,7 +52,7 @@ internal class LdapsAuthenticationProvider : AuthenticationProviderBase {
 	}
 
 	public override IReadOnlyList<string> GetSupportedAuthenticationSchemes() {
-		return new [] {
+		return new[] {
 			"Basic"
 		};
 	}
@@ -120,7 +120,7 @@ internal class LdapsAuthenticationProvider : AuthenticationProviderBase {
 	}
 
 	private ClaimsPrincipal CreatePrincipal(LdapInfo ldapInfo) {
-		var claims = new List<Claim> {new Claim(ClaimTypes.Name, ldapInfo.LoginName)};
+		var claims = new List<Claim> { new Claim(ClaimTypes.Name, ldapInfo.LoginName) };
 		if (ldapInfo.GroupDistinguishedNames != null) {
 			claims.AddRange(ConvertLdapGroupsToRoleNames(ldapInfo).Select(x => new Claim(ClaimTypes.Role, x)));
 		}
@@ -131,7 +131,7 @@ internal class LdapsAuthenticationProvider : AuthenticationProviderBase {
 	}
 
 	private string[] ConvertLdapGroupsToRoleNames(LdapInfo ldapInfo) {
-		var roles = new List<string> {ldapInfo.LoginName};
+		var roles = new List<string> { ldapInfo.LoginName };
 		foreach (var ldapGroupDn in ldapInfo.GroupDistinguishedNames) {
 			string roleName;
 			if (!_ldapGroupDistinguishedNameToRoleNames.TryGetValue(ldapGroupDn, out roleName))

@@ -2,12 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
+using DotNext.Buffers;
 using EventStore.Core.Services.Archive;
 using EventStore.Core.Services.Archive.Storage.Exceptions;
 using Xunit;
-using DotNext.Buffers;
 
 namespace EventStore.Core.XUnit.Tests.Services.Archive.Storage;
 

@@ -33,7 +33,7 @@ public static partial class ProjectionCoreServiceMessage {
 			QueueId = queueId;
 		}
 	}
-	
+
 	[DerivedMessage(ProjectionMessage.ServiceMessage)]
 	public partial class CoreTick : Message {
 		private readonly Action _action;
@@ -51,7 +51,7 @@ public static partial class ProjectionCoreServiceMessage {
 	public partial class SubComponentStarted : Message {
 		public string SubComponent { get; }
 		public Guid InstanceCorrelationId { get; }
-	
+
 		public SubComponentStarted(string subComponent, Guid instanceCorrelationId) {
 			InstanceCorrelationId = instanceCorrelationId;
 			SubComponent = subComponent;

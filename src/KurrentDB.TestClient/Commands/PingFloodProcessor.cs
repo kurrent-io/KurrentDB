@@ -16,7 +16,7 @@ internal class PingFloodProcessor : ICmdProcessor {
 	public string Usage {
 		get { return "PINGFL [<clients> <messages>]"; }
 	}
-	
+
 	public string Keyword {
 		get { return "PINGFL"; }
 	}
@@ -56,7 +56,8 @@ internal class PingFloodProcessor : ICmdProcessor {
 				(conn, msg) => {
 					Interlocked.Increment(ref received);
 					var pongs = Interlocked.Increment(ref all);
-					if (pongs % 10000 == 0) Console.Write('.');
+					if (pongs % 10000 == 0)
+						Console.Write('.');
 					if (pongs == requestsCnt) {
 						context.Success();
 						doneEvent.Set();
@@ -72,11 +73,11 @@ internal class PingFloodProcessor : ICmdProcessor {
 
 					var localSent = Interlocked.Increment(ref sent);
 					while (localSent - Interlocked.Read(ref received) >
-					       context._tcpTestClient.Options.PingWindow / clientsCnt) {
+						   context._tcpTestClient.Options.PingWindow / clientsCnt) {
 						Thread.Sleep(1);
 					}
 				}
-			}) {IsBackground = true});
+			}) { IsBackground = true });
 		}
 
 		var sw = Stopwatch.StartNew();

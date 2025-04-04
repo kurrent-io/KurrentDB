@@ -48,7 +48,7 @@ public partial class TFChunk : IChunkBlob {
 		Transformed = 4,
 	}
 
-	public const byte CurrentChunkVersion = (byte) ChunkVersions.Transformed;
+	public const byte CurrentChunkVersion = (byte)ChunkVersions.Transformed;
 	private const int AlignmentSize = 4096;
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<TFChunk>();
@@ -378,7 +378,7 @@ public partial class TFChunk : IChunkBlob {
 		var transformFactory = getTransformFactory.ForNewChunk();
 		var version = CurrentChunkVersion;
 		var minCompatibleVersion = transformFactory.Type == TransformType.Identity
-			? (byte) ChunkVersions.Aligned
+			? (byte)ChunkVersions.Aligned
 			: version;
 
 		var chunkHeader = new ChunkHeader(version, minCompatibleVersion, chunkDataSize, chunkStartNumber, chunkEndNumber,
@@ -1029,7 +1029,7 @@ public partial class TFChunk : IChunkBlob {
 		// for non-scavenged chunk _physicalDataSize should be the same as _logicalDataSize
 		// for scavenged chunk _logicalDataSize should be at least the same as _physicalDataSize
 		if ((!_chunkHeader.IsScavenged && _logicalDataSize != _physicalDataSize)
-		    || (_chunkHeader.IsScavenged && _logicalDataSize < _physicalDataSize)) {
+			|| (_chunkHeader.IsScavenged && _logicalDataSize < _physicalDataSize)) {
 			throw new Exception(
 				$"Data sizes violation. Chunk: {ChunkLocator}, IsScavenged: {_chunkHeader.IsScavenged}, LogicalDataSize: {_logicalDataSize}, PhysicalDataSize: {_physicalDataSize}.");
 		}
@@ -1155,8 +1155,8 @@ public partial class TFChunk : IChunkBlob {
 
 			if (_cacheStatus is not CacheStatus.Uncached) {
 				throw new InvalidOperationException("Trying to write mapping while chunk is cached. "
-				                                    + "You probably are writing scavenged chunk as cached. "
-				                                    + "Do not do this.");
+													+ "You probably are writing scavenged chunk as cached. "
+													+ "Do not do this.");
 			}
 
 			mapSize = mapping.Count * PosMap.FullSize;
@@ -1277,7 +1277,8 @@ public partial class TFChunk : IChunkBlob {
 	}
 
 	public static int GetAlignedSize(int size) {
-		if (size % AlignmentSize == 0) return size;
+		if (size % AlignmentSize == 0)
+			return size;
 		return (size / AlignmentSize + 1) * AlignmentSize;
 	}
 
@@ -1708,8 +1709,7 @@ public partial class TFChunk : IChunkBlob {
 
 		// Skip index and type variance checks which is inserted by runtime typically because
 		// the array element is of reference type.
-		private static ref ReaderWorkItem UnsafeGetElement(ReaderWorkItem[] array, int index)
-		{
+		private static ref ReaderWorkItem UnsafeGetElement(ReaderWorkItem[] array, int index) {
 			Debug.Assert((uint)index < (uint)array.Length);
 
 			return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(array), index);

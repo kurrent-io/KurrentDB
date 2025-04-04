@@ -103,18 +103,18 @@ public struct PrepareLogRecordView {
 
 	public override string ToString() {
 		return $"Version: {Version}, " +
-		       $"LogPosition: {LogPosition}, " +
-		       $"Flags: {Flags}, " +
-		       $"TransactionPosition: {TransactionPosition}, " +
-		       $"TransactionOffset: {TransactionOffset}, " +
-		       $"ExpectedVersion: {ExpectedVersion}, " +
-		       $"EventStreamId: {Encoding.UTF8.GetString(EventStreamId.ToArray())}, " +
-		       $"EventId: {EventId}, " +
-		       $"CorrelationId: {CorrelationId}, " +
-		       $"TimeStamp: {TimeStamp}, " +
-		       $"EventType: {Encoding.UTF8.GetString(EventType.ToArray())}, " +
-		       $"Data size: {Data.Length}, " +
-		       $"Metadata size: {Metadata.Length}";
+			   $"LogPosition: {LogPosition}, " +
+			   $"Flags: {Flags}, " +
+			   $"TransactionPosition: {TransactionPosition}, " +
+			   $"TransactionOffset: {TransactionOffset}, " +
+			   $"ExpectedVersion: {ExpectedVersion}, " +
+			   $"EventStreamId: {Encoding.UTF8.GetString(EventStreamId.ToArray())}, " +
+			   $"EventId: {EventId}, " +
+			   $"CorrelationId: {CorrelationId}, " +
+			   $"TimeStamp: {TimeStamp}, " +
+			   $"EventType: {Encoding.UTF8.GetString(EventType.ToArray())}, " +
+			   $"Data size: {Data.Length}, " +
+			   $"Metadata size: {Metadata.Length}";
 	}
 
 	// copied and adapted from https://github.com/microsoft/referencesource/blob/master/mscorlib/system/io/binaryreader.cs

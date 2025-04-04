@@ -47,8 +47,8 @@ public class FileSource(string path) : IMasterKeySource {
 
 	private MasterKey ReadMasterKey(string file) {
 		var lines = System.IO.File.ReadAllLines(file);
-		if (lines[0]  != "-----BEGIN ESDB MASTER KEY-----" ||
-		    lines[^1] != "-----END ESDB MASTER KEY-----")
+		if (lines[0] != "-----BEGIN ESDB MASTER KEY-----" ||
+			lines[^1] != "-----END ESDB MASTER KEY-----")
 			throw new Exception($"Invalid master key file: {Path.GetFileName(file)}");
 
 		var keyId = GetKeyId(file);

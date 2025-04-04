@@ -302,7 +302,7 @@ public class ChoosingLeaderTests {
 			: null;
 		var mc = SUT.GetBestLeaderCandidate(prepareOks, members, resigningLeadership, 0);
 
-		Assert.AreEqual(IdForNode(tc.ExpectedLeaderCandidateNode), mc.InstanceId, $"Expected node {tc.ExpectedLeaderCandidateNode} got node {Array.FindIndex(members, 0, m => m.InstanceId == mc.InstanceId) + 1 }");
+		Assert.AreEqual(IdForNode(tc.ExpectedLeaderCandidateNode), mc.InstanceId, $"Expected node {tc.ExpectedLeaderCandidateNode} got node {Array.FindIndex(members, 0, m => m.InstanceId == mc.InstanceId) + 1}");
 
 		var ownInfo = CreateLeaderCandidate(1, epochId, writerCheckpoint, chaserCheckpoint,
 			nodePriority, epochNumber, previousLeaderId);

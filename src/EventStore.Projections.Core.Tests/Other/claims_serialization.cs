@@ -26,7 +26,7 @@ public class claims_serialization {
 	[Test]
 	public void should_only_serialize_role() {
 		var roleClaim = new Claim(ClaimTypes.Role, "$admins");
-		var claimsIdentity = new ClaimsIdentity(new [] {
+		var claimsIdentity = new ClaimsIdentity(new[] {
 			new(ClaimTypes.Name, "foo-name"),
 			roleClaim,
 			new("uid", "foo-uid"),

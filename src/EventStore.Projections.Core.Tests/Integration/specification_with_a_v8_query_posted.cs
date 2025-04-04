@@ -40,7 +40,7 @@ public abstract class specification_with_a_v8_query_posted<TLogFormat, TStreamId
 	protected override Tuple<SynchronousScheduler, IPublisher, SynchronousScheduler, Guid>[] GivenProcessingQueues() {
 		SynchronousScheduler[] buses = [new("1"), new("2")];
 		SynchronousScheduler[] outBuses = [new("o1"), new("o2")];
-		_otherQueues = [new (buses[0], _timeProvider), new(buses[1], _timeProvider)];
+		_otherQueues = [new(buses[0], _timeProvider), new(buses[1], _timeProvider)];
 		return [
 			Tuple.Create(
 				buses[0],

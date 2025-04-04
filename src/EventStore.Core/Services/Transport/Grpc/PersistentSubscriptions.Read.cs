@@ -119,7 +119,8 @@ internal partial class PersistentSubscriptions {
 		}
 
 		ReadResp.Types.ReadEvent.Types.RecordedEvent ConvertToRecordedEvent(EventRecord e, long? commitPosition, long? preparePosition) {
-			if (e == null) return null;
+			if (e == null)
+				return null;
 			var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
 			return new() {
 				Id = uuidOptionsCase switch {

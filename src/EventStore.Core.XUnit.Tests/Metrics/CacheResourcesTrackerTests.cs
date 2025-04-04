@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
 using EventStore.Core.Metrics;
-using EventStore.Core.Tests;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;
@@ -29,7 +28,7 @@ public sealed class CacheResourcesTrackerTests : IDisposable {
 		_disposables.RegisterForDispose(listener);
 
 		var metrics = new CacheResourcesMetrics(meter, "the-metric", legacyNames: false);
-		var sut =  new CacheResourcesTracker(metrics);
+		var sut = new CacheResourcesTracker(metrics);
 		return (sut, listener);
 	}
 

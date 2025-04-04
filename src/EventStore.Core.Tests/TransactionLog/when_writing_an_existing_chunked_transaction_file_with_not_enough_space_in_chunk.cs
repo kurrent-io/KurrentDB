@@ -101,8 +101,7 @@ public class
 		await db.DisposeAsync();
 
 		Assert.AreEqual(record3.GetSizeWithLengthPrefixAndSuffix() + 10000, _checkpoint.Read());
-		await using var filestream = File.Open(filename2, new FileStreamOptions
-			{ Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
+		await using var filestream = File.Open(filename2, new FileStreamOptions { Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
 		filestream.Seek(ChunkHeader.Size + sizeof(int), SeekOrigin.Begin);
 
 		var recordLength = filestream.Length - filestream.Position;

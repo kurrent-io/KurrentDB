@@ -27,7 +27,7 @@ internal partial class PersistentSubscriptions {
 
 		void HandleRestartSubsystemCompleted(Message message) {
 			if (message is ClientMessage.NotHandled notHandled &&
-			    RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+				RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 				restartSubsystemSource.TrySetException(ex);
 				return;
 			}

@@ -76,7 +76,7 @@ public sealed class AesGcmChunkReadStream : ChunkDataReadStream {
 		// then read the last block again. note that this code path is executed only when reading from the same stream
 		// that we're writing to, e.g when using --mem-db on the server.
 		if (_lastBlockDataSize < DataSize &&
-		    _lastBlockDataSize - _lastBlockPos < count) {
+			_lastBlockDataSize - _lastBlockPos < count) {
 			await ReadLastBlockAgain(ct);
 		}
 
@@ -238,8 +238,8 @@ public sealed class AesGcmChunkReadStream : ChunkDataReadStream {
 
 		// optimization to avoid a block read when we're already at the block we want to go to
 		if (remainder > 0 &&
-		    _lastBlockPos > 0 &&
-		    _curBlockNumber == blockNumber + 1) {
+			_lastBlockPos > 0 &&
+			_curBlockNumber == blockNumber + 1) {
 			_lastBlockPos = remainder;
 
 			// this line is required because we're using DotNext.IO.StreamSource.AsSharedStream() on the server and

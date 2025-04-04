@@ -38,9 +38,12 @@ public partial class EventByTypeIndexEventReader : EventReader {
 		ITimeProvider timeProvider,
 		bool stopOnEof = false)
 		: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-		if (eventTypes == null) throw new ArgumentNullException("eventTypes");
-		if (timeProvider == null) throw new ArgumentNullException("timeProvider");
-		if (eventTypes.Length == 0) throw new ArgumentException("empty", "eventTypes");
+		if (eventTypes == null)
+			throw new ArgumentNullException("eventTypes");
+		if (timeProvider == null)
+			throw new ArgumentNullException("timeProvider");
+		if (eventTypes.Length == 0)
+			throw new ArgumentException("empty", "eventTypes");
 
 		_includeDeletedStreamNotification = includeDeletedStreamNotification;
 		_timeProvider = timeProvider;

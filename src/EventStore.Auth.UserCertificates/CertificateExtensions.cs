@@ -30,8 +30,7 @@ public static class CertificateExtensions {
 		}
 
 		foreach (var extension in extensions) {
-			switch (extension.Oid?.Value)
-			{
+			switch (extension.Oid?.Value) {
 				case "2.5.29.15": // Oid for Key Usage extension
 					var keyUsageExt = (X509KeyUsageExtension)extension;
 					keyUsages |= keyUsageExt.KeyUsages;
@@ -56,7 +55,7 @@ public static class CertificateExtensions {
 		}
 
 		if (!keyUsageFlags.HasFlag(X509KeyUsageFlags.KeyEncipherment) &&
-		    !keyUsageFlags.HasFlag(X509KeyUsageFlags.KeyAgreement)) {
+			!keyUsageFlags.HasFlag(X509KeyUsageFlags.KeyAgreement)) {
 			failReason = "Missing key usage: Key Encipherment and/or Key Agreement";
 			return false;
 		}

@@ -5,19 +5,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Index;
-using EventStore.Core.Messages;
 using EventStore.Core.LogAbstraction;
+using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
-using ILogger = Serilog.ILogger;
 using EventStore.LogCommon;
+using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;
 
@@ -285,7 +285,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 				: commit.FirstEventNumber + prepare.TransactionOffset;
 
 			if (new TFPos(commit.LogPosition, prepare.LogPosition) >
-			    new TFPos(_persistedCommitPos, _persistedPreparePos)) {
+				new TFPos(_persistedCommitPos, _persistedPreparePos)) {
 				indexEntries.Add(new IndexKey<TStreamId>(streamId, eventNumber, prepare.LogPosition));
 				prepares.Add(prepare);
 			}
@@ -383,14 +383,14 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			}
 
 			if (prepare.LogPosition < lastIndexedPosition ||
-			    (prepare.LogPosition == lastIndexedPosition && !_indexRebuild))
+				(prepare.LogPosition == lastIndexedPosition && !_indexRebuild))
 				continue; // already committed
 
 			eventNumber =
 				prepare.ExpectedVersion + 1; /* for committed prepare expected version is always explicit */
 
 			if (new TFPos(prepare.LogPosition, prepare.LogPosition) >
-			    new TFPos(_persistedCommitPos, _persistedPreparePos)) {
+				new TFPos(_persistedCommitPos, _persistedPreparePos)) {
 				indexEntries.Add(new IndexKey<TStreamId>(streamId, eventNumber, prepare.LogPosition));
 				prepares.Add(prepare);
 			}
@@ -474,7 +474,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 				Debugger.Break();
 			else
 				throw new Exception($"Commit invariant violation: new event number {newEventNumber} does not correspond to current stream version {lastEventNumber}.\n" +
-				                    $"Stream ID: {streamId}.\nCommit: {commit}.");
+									$"Stream ID: {streamId}.\nCommit: {commit}.");
 		}
 	}
 
@@ -491,7 +491,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 					Debugger.Break();
 				else
 					throw new Exception($"Trying to add duplicate event #{indexEntry.Version} to stream {prepare.EventStreamId} \nCommit: {commit}\n" +
-					                    $"Prepare: {prepare}\nIndexed prepare: {indexedPrepare}.");
+										$"Prepare: {prepare}\nIndexed prepare: {indexedPrepare}.");
 			}
 		}
 	}

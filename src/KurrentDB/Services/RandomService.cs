@@ -21,10 +21,14 @@ public static class RandomService {
 	}
 
 	static char GetRandomChar(byte b) {
-		if (b < 26) return (char)('a' + b);
-		if (b < 52) return (char)('A' + b - 26);
-		if (b < 62) return (char)('0' + b - 52);
-		if (b < 94) return (char)('!' + b - 62);
+		if (b < 26)
+			return (char)('a' + b);
+		if (b < 52)
+			return (char)('A' + b - 26);
+		if (b < 62)
+			return (char)('0' + b - 52);
+		if (b < 94)
+			return (char)('!' + b - 62);
 		return (char)(' ' + b - 94);
 	}
 }

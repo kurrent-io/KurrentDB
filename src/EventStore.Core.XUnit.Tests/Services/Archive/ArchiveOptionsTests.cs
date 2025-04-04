@@ -29,7 +29,7 @@ public class ArchiveOptionsTests {
 			Enabled = true,
 			RetainAtLeast = new() {
 				Days = 5,
-				 LogicalBytes = 500,
+				LogicalBytes = 500,
 			},
 			StorageType = StorageType.FileSystemDevelopmentOnly,
 			FileSystem = new() {

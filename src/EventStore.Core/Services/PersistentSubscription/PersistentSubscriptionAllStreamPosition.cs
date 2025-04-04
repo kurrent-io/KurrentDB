@@ -21,19 +21,25 @@ public class PersistentSubscriptionAllStreamPosition : IPersistentSubscriptionSt
 	}
 
 	public bool Equals(IPersistentSubscriptionStreamPosition? other) {
-		if (other == null) throw new InvalidOperationException();
-		if (!(other is PersistentSubscriptionAllStreamPosition)) throw new InvalidOperationException();
+		if (other == null)
+			throw new InvalidOperationException();
+		if (!(other is PersistentSubscriptionAllStreamPosition))
+			throw new InvalidOperationException();
 		return TFPosition.Commit == other.TFPosition.Commit &&
-		       TFPosition.Prepare == other.TFPosition.Prepare;
+			   TFPosition.Prepare == other.TFPosition.Prepare;
 	}
 
 	public int CompareTo(IPersistentSubscriptionStreamPosition? other) {
-		if (other == null) throw new InvalidOperationException();
-		if (!(other is PersistentSubscriptionAllStreamPosition)) throw new InvalidOperationException();
-		if (Equals(other)) return 0;
+		if (other == null)
+			throw new InvalidOperationException();
+		if (!(other is PersistentSubscriptionAllStreamPosition))
+			throw new InvalidOperationException();
+		if (Equals(other))
+			return 0;
 		if (TFPosition.Commit < other.TFPosition.Commit ||
-		    TFPosition.Commit == other.TFPosition.Commit &&
-		    TFPosition.Prepare < other.TFPosition.Prepare) return -1;
+			TFPosition.Commit == other.TFPosition.Commit &&
+			TFPosition.Prepare < other.TFPosition.Prepare)
+			return -1;
 		return 1;
 	}
 

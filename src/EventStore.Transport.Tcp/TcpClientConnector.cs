@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Net;
-using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -168,7 +167,7 @@ public class TcpClientConnector {
 		}
 
 		return _pendingConections.TryRemove(pendingConnection.Connection.ConnectionId, out conn)
-		       && Interlocked.CompareExchange(ref conn.Done, 1, 0) == 0;
+			   && Interlocked.CompareExchange(ref conn.Done, 1, 0) == 0;
 	}
 
 	private class CallbacksStateToken {

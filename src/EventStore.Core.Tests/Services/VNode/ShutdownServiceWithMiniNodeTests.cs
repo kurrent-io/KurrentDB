@@ -21,7 +21,7 @@ namespace EventStore.Core.Tests.Services.VNode;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class ShutdownServiceWithMiniNodeTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPerTestFixture {
+public class ShutdownServiceWithMiniNodeTests<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private readonly CancellationTokenSource _cts = new();
 	private readonly TaskCompletionSource _tcs = new();
 	private MiniNode<TLogFormat, TStreamId> _node;

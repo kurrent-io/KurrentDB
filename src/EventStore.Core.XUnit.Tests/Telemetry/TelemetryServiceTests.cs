@@ -174,7 +174,7 @@ public sealed class TelemetryServiceTests : IAsyncLifetime {
 		var gossipRequest = Assert.IsType<GossipMessage.ReadGossip>(await _channelReader.ReadAsync());
 		gossipRequest.Envelope.ReplyWith(new GossipMessage.SendGossip(
 			new ClusterInfo(
-				mem1 , mem2),
+				mem1, mem2),
 			new DnsEndPoint("localhost", 123)));
 
 		// receive usage request and send response

@@ -17,7 +17,7 @@ public class ResilientArchiveStorage(ResiliencePipeline pipeline, IArchiveStorag
 
 	public ValueTask SetCheckpoint(long checkpoint, CancellationToken ct) =>
 		_executor.ExecuteAsync(
-			static (context, state) => 
+			static (context, state) =>
 				state.wrapped.SetCheckpoint(state.checkpoint, context.CancellationToken),
 			(wrapped, checkpoint),
 			ct);

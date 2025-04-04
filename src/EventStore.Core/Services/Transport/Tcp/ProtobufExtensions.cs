@@ -2,9 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
-using System.Collections.Concurrent;
 using Google.Protobuf;
 using ILogger = Serilog.ILogger;
 
@@ -42,11 +42,11 @@ public static class ProtobufExtensions {
 		_streams.Push(stream);
 	}
 
-	public static T Deserialize<T>(this byte[] data) where T: IMessage<T>, new() {
+	public static T Deserialize<T>(this byte[] data) where T : IMessage<T>, new() {
 		return Deserialize<T>(new ArraySegment<byte>(data));
 	}
 
-	public static T Deserialize<T>(this ArraySegment<byte> data) where T: IMessage<T>, new() {
+	public static T Deserialize<T>(this ArraySegment<byte> data) where T : IMessage<T>, new() {
 		try {
 			using (var memory = new MemoryStream(data.Array, data.Offset, data.Count)
 			) //uses original buffer as memory
@@ -61,7 +61,7 @@ public static class ProtobufExtensions {
 		}
 	}
 
-	public static ArraySegment<byte> Serialize<T>(this T protoContract) where T: IMessage<T> {
+	public static ArraySegment<byte> Serialize<T>(this T protoContract) where T : IMessage<T> {
 		MemoryStream stream = null;
 		try {
 			stream = AcquireStream();
@@ -75,7 +75,7 @@ public static class ProtobufExtensions {
 		}
 	}
 
-	public static byte[] SerializeToArray<T>(this T protoContract) where T: IMessage<T>{
+	public static byte[] SerializeToArray<T>(this T protoContract) where T : IMessage<T> {
 		MemoryStream stream = null;
 		try {
 			stream = AcquireStream();

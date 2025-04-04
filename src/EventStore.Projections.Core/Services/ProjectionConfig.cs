@@ -1,10 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Projections.Core.Common;
 using System;
 using System.Security.Claims;
-using EventStore.Core;
+using EventStore.Projections.Core.Common;
 
 namespace EventStore.Projections.Core.Services;
 

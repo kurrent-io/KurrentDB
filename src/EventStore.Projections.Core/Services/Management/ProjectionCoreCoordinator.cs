@@ -34,7 +34,7 @@ public class ProjectionCoreCoordinator
 	public ProjectionCoreCoordinator(
 		ProjectionType runProjections,
 		IReadOnlyList<IPublisher> queues,
-		IPublisher publisher){
+		IPublisher publisher) {
 		_runProjections = runProjections;
 		_queues = queues.ToDictionary(_ => Guid.NewGuid(), q => q);
 		_publisher = publisher;
@@ -60,7 +60,7 @@ public class ProjectionCoreCoordinator
 		}
 		if (_instanceCorrelationId != message.InstanceCorrelationId) {
 			Log.Debug("PROJECTIONS: Projection Core Coordinator received stop request for incorrect correlation id." +
-			          "Current: {correlationId}. Requested: {requestedCorrelationId}", _instanceCorrelationId, message.InstanceCorrelationId);
+					  "Current: {correlationId}. Requested: {requestedCorrelationId}", _instanceCorrelationId, message.InstanceCorrelationId);
 			return;
 		}
 		Stop(message);
@@ -90,7 +90,7 @@ public class ProjectionCoreCoordinator
 	private void Stop(ProjectionSubsystemMessage.StopComponents message) {
 		if (_currentState != CoreCoordinatorState.Started) {
 			Log.Debug("PROJECTIONS: Projections Core Coordinator trying to stop when not started. " +
-			          "Current state: {currentState}. StopCorrelation: {correlation}", _currentState,
+					  "Current state: {currentState}. StopCorrelation: {correlation}", _currentState,
 				message.InstanceCorrelationId);
 			return;
 		}
@@ -99,10 +99,10 @@ public class ProjectionCoreCoordinator
 		_currentState = CoreCoordinatorState.Stopping;
 		foreach (var queue in _queues) {
 			if (_runProjections >= ProjectionType.System) {
-				 queue.Value.Publish(new ProjectionCoreServiceMessage.StopCore(queue.Key));
+				queue.Value.Publish(new ProjectionCoreServiceMessage.StopCore(queue.Key));
 			} else {
-				 // TODO: Find out why projections still run even when ProjectionType.None
-				 queue.Value.Publish(new ReaderCoreServiceMessage.StopReader(queue.Key));
+				// TODO: Find out why projections still run even when ProjectionType.None
+				queue.Value.Publish(new ReaderCoreServiceMessage.StopReader(queue.Key));
 			}
 		}
 	}
@@ -134,7 +134,7 @@ public class ProjectionCoreCoordinator
 	public void Handle(ProjectionCoreServiceMessage.SubComponentStopped message) {
 		if (_currentState != CoreCoordinatorState.Stopping) {
 			Log.Debug("PROJECTIONS: Projection Core Coordinator received SubComponent Stopped when not stopping. " +
-			          "SubComponent: {subComponent}, CurrentState: {currentState}",
+					  "SubComponent: {subComponent}, CurrentState: {currentState}",
 				message.SubComponent, _currentState);
 			return;
 		}

@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
@@ -20,7 +19,7 @@ public class checkpoint_tag_phase {
 	private readonly CheckpointTag _p3 = CheckpointTag.FromStreamPosition(3, "stream", 100);
 
 	private readonly CheckpointTag _p4 = CheckpointTag.FromEventTypeIndexPositions(
-		4, new TFPos(200, 150), new Dictionary<string, long> {{"a", 1}});
+		4, new TFPos(200, 150), new Dictionary<string, long> { { "a", 1 } });
 
 	[Test]
 	public void equal_equals() {

@@ -19,9 +19,9 @@ public class SystemMetricsTests : IDisposable {
 	private readonly TestMeterListener<long> _longListener;
 	private readonly FakeClock _clock = new();
 	private readonly SystemMetrics _sut;
-    private readonly Meter _meter;
+	private readonly Meter _meter;
 	public SystemMetricsTests() {
-        _meter = new Meter($"{typeof(ProcessMetricsTests)}");
+		_meter = new Meter($"{typeof(ProcessMetricsTests)}");
 		_floatListener = new TestMeterListener<float>(_meter);
 		_doubleListener = new TestMeterListener<double>(_meter);
 		_longListener = new TestMeterListener<long>(_meter);
@@ -100,29 +100,29 @@ public class SystemMetricsTests : IDisposable {
 	[Fact]
 	public void can_collect_sys_cpu() {
 		Assert.Collection(
-            _doubleListener.RetrieveMeasurements("eventstore-sys-cpu"),
+			_doubleListener.RetrieveMeasurements("eventstore-sys-cpu"),
 			m => {
 				Assert.True(m.Value >= 0);
 				Assert.Empty(m.Tags);
 			});
 	}
-    
-    [Fact]
-    public void can_collect_sys_cpu_using_metrics_collector() {
-        // Arrange
-        using var collector = new MetricCollector<double>(
-            null, _meter.Name, "eventstore-sys-cpu"
-        );
 
-        // Act
-        collector.RecordObservableInstruments();
-        
-        // Assert
-        collector.LastMeasurement.Should().NotBeNull();
-        collector.LastMeasurement!.Value.Should().BeGreaterOrEqualTo(0);
-    }
-    
-   
+	[Fact]
+	public void can_collect_sys_cpu_using_metrics_collector() {
+		// Arrange
+		using var collector = new MetricCollector<double>(
+			null, _meter.Name, "eventstore-sys-cpu"
+		);
+
+		// Act
+		collector.RecordObservableInstruments();
+
+		// Assert
+		collector.LastMeasurement.Should().NotBeNull();
+		collector.LastMeasurement!.Value.Should().BeGreaterOrEqualTo(0);
+	}
+
+
 
 	[Fact]
 	public void can_collect_sys_mem() {

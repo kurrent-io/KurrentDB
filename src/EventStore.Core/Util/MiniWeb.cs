@@ -34,7 +34,7 @@ public class MiniWeb {
 		var pattern = _localWebRootPath + "/{*remaining_path}";
 		Logger.Verbose("Binding MiniWeb to {path}", pattern);
 		service.RegisterAction(
-			new ControllerAction(pattern, HttpMethod.Get, Codec.NoCodecs, new ICodec[] {Codec.ManualEncoding}, new Operation(Operations.Node.StaticContent)),
+			new ControllerAction(pattern, HttpMethod.Get, Codec.NoCodecs, new ICodec[] { Codec.ManualEncoding }, new Operation(Operations.Node.StaticContent)),
 			OnStaticContent);
 	}
 
@@ -71,8 +71,8 @@ public class MiniWeb {
 
 			string contentType;
 			if (string.IsNullOrEmpty(extension)
-			    || !extensionToContentType.TryGetValue(extension.ToLower(), out contentType)
-			    || !File.Exists(fullPath)) {
+				|| !extensionToContentType.TryGetValue(extension.ToLower(), out contentType)
+				|| !File.Exists(fullPath)) {
 				Logger.Information("Replying 404 for {contentLocalPath} ==> {fullPath}", contentLocalPath, fullPath);
 				http.ReplyTextContent(
 					"Not Found", 404, "Not Found", ContentType.PlainText, null,

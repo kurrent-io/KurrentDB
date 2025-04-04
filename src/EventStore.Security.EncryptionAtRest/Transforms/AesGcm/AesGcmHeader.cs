@@ -37,7 +37,7 @@ public static class AesGcmHeader {
 		version = header[0];
 		header = header[VersionSize..];
 
-		var keySize = (KeySize) header[..AesKeySize][0];
+		var keySize = (KeySize)header[..AesKeySize][0];
 		aesKeySizeInBits = keySize switch {
 			KeySize.Aes128 => 128,
 			KeySize.Aes192 => 192,

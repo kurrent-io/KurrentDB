@@ -7,8 +7,6 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Buffers;
-using DotNext.Collections.Generic;
 using EventStore.Common.Utils;
 using MD5 = EventStore.Core.Hashing.MD5;
 

@@ -68,7 +68,7 @@ internal class RandomizedElectionsAndGossipTestCase : RandomizedElectionsTestCas
 	}
 
 	protected override IRandTestItemProcessor[] GetAdditionalProcessors() {
-		return new IRandTestItemProcessor[] {_updateGossipProcessor};
+		return new IRandTestItemProcessor[] { _updateGossipProcessor };
 	}
 
 	protected override GossipMessage.GossipUpdated GetInitialGossipFor(ElectionsInstance instance,

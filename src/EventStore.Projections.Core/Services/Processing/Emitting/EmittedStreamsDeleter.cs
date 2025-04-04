@@ -96,7 +96,7 @@ public class EmittedStreamsDeleter : IEmittedStreamsDeleter {
 									// stream was never created
 									Log.Information("PROJECTIONS: Projection Stream '{stream}' was not deleted since it does not exist", _emittedStreamsId);
 								} else if (y.Result == OperationResult.Success ||
-								           y.Result == OperationResult.StreamDeleted) {
+										   y.Result == OperationResult.StreamDeleted) {
 									Log.Information("PROJECTIONS: Projection Stream '{stream}' deleted",
 										_emittedStreamsId);
 								} else {
@@ -120,7 +120,7 @@ public class EmittedStreamsDeleter : IEmittedStreamsDeleter {
 	private void DeleteStreamCompleted(ClientMessage.DeleteStreamCompleted deleteStreamCompleted,
 		Action onEmittedStreamsDeleted, string streamId, long eventNumber) {
 		if (deleteStreamCompleted.Result == OperationResult.Success ||
-		    deleteStreamCompleted.Result == OperationResult.StreamDeleted) {
+			deleteStreamCompleted.Result == OperationResult.StreamDeleted) {
 			_retryCount = RetryLimit;
 			_numberOfEventsProcessed++;
 			if (_numberOfEventsProcessed >= _checkPointThreshold) {

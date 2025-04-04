@@ -77,7 +77,7 @@ public sealed class TFChunkManager : IChunkRegistry<TFChunk.TFChunk>, IThreadPoo
 
 			Interlocked.Exchange(ref _backgroundRunning, 0);
 		} while (Interlocked.CompareExchange(ref _backgroundPassesRemaining, 0, 0) > 0
-		         && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
+				 && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
 	}
 
 	private async ValueTask CacheUncacheReadOnlyChunks(CancellationToken token) {
@@ -504,12 +504,10 @@ public sealed class TFChunkManager : IChunkRegistry<TFChunk.TFChunk>, IThreadPoo
 		if ((uint)chunkNum >= (uint)_chunksCount) {
 			task = ValueTask.FromException<TFChunk.TFChunk>(new ArgumentOutOfRangeException(nameof(logPosition),
 				$"LogPosition {logPosition} does not have corresponding chunk in DB."));
-		}
-		else if (_chunks[chunkNum] is not { } chunk) {
+		} else if (_chunks[chunkNum] is not { } chunk) {
 			task = ValueTask.FromException<TFChunk.TFChunk>(new Exception(
 				$"Requested chunk for LogPosition {logPosition}, which is not present in TFChunkManager."));
-		}
-		else if (chunk.Initialized) {
+		} else if (chunk.Initialized) {
 			task = new(chunk);
 		} else {
 			task = EnsureInitialized(chunk, token);
@@ -554,12 +552,10 @@ public sealed class TFChunkManager : IChunkRegistry<TFChunk.TFChunk>, IThreadPoo
 		if ((uint)chunkNum >= (uint)_chunksCount) {
 			task = ValueTask.FromException<TFChunk.TFChunk>(new ArgumentOutOfRangeException(nameof(chunkNum),
 				$"Chunk #{chunkNum} is not present in DB."));
-		}
-		else if (_chunks[chunkNum] is not { } chunk) {
+		} else if (_chunks[chunkNum] is not { } chunk) {
 			task = ValueTask.FromException<TFChunk.TFChunk>(new Exception(
 				$"Requested chunk #{chunkNum}, which is not present in TFChunkManager."));
-		}
-		else if (chunk.Initialized) {
+		} else if (chunk.Initialized) {
 			task = new(chunk);
 		} else {
 			task = EnsureInitialized(chunk, token);

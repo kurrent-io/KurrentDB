@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
@@ -90,7 +89,7 @@ static partial class Enumerator {
 		}
 
 		public override async ValueTask<bool> MoveNextAsync() {
-			ReadLoop:
+ReadLoop:
 
 			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
 				return false;
@@ -301,7 +300,7 @@ static partial class Enumerator {
 					switch (message) {
 						case ClientMessage.SubscriptionConfirmation confirmed:
 							long caughtUp = confirmed.LastEventNumber ??
-							                throw ReadResponseException.UnknownError.Create($"Live subscription {_subscriptionId} to {_streamName} failed to retrieve the last event number.");
+											throw ReadResponseException.UnknownError.Create($"Live subscription {_subscriptionId} to {_streamName} failed to retrieve the last event number.");
 
 							Log.Debug(
 								"Subscription {subscriptionId} to {streamName} confirmed. LastEventNumber is {streamRevision:N0}.",

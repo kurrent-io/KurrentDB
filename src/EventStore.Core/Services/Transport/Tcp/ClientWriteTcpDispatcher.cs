@@ -53,7 +53,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 	private ClientMessage.WriteEvents UnwrapWriteEvents(TcpPackage package, IEnvelope envelope,
 		ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<WriteEvents>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 
 		var events = new Event[dto.Events.Count];
 		for (int i = 0; i < events.Length; ++i) {
@@ -123,7 +124,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 
 	private static ClientMessage.WriteEventsCompleted UnwrapWriteEventsCompleted(TcpPackage package, IEnvelope envelope) {
 		var dto = package.Data.Deserialize<WriteEventsCompleted>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 		return dto.Result == Client.Messages.OperationResult.Success
 			? new(package.CorrelationId, dto.FirstEventNumber, dto.LastEventNumber, dto.PreparePosition, dto.CommitPosition)
 			: new(package.CorrelationId, (OperationResult)dto.Result, dto.Message, dto.CurrentVersion);
@@ -142,7 +144,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 
 	private static ClientMessage.TransactionStart UnwrapTransactionStart(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<TransactionStart>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 		return new(Guid.NewGuid(), package.CorrelationId, envelope,
 			dto.RequireLeader,
 			dto.EventStreamId, dto.ExpectedVersion, user, package.Tokens);
@@ -155,7 +158,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 
 	private static ClientMessage.TransactionStartCompleted UnwrapTransactionStartCompleted(TcpPackage package, IEnvelope envelope) {
 		var dto = package.Data.Deserialize<TransactionStartCompleted>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 		return new(package.CorrelationId, dto.TransactionId, (OperationResult)dto.Result, dto.Message);
 	}
 
@@ -166,7 +170,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 
 	private static ClientMessage.TransactionWrite UnwrapTransactionWrite(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<TransactionWrite>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 
 		var events = new Event[dto.Events.Count];
 		for (int i = 0; i < events.Length; ++i) {
@@ -193,7 +198,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 	private static ClientMessage.TransactionWriteCompleted UnwrapTransactionWriteCompleted(TcpPackage package,
 		IEnvelope envelope) {
 		var dto = package.Data.Deserialize<TransactionWriteCompleted>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 		return new(package.CorrelationId, dto.TransactionId, (OperationResult)dto.Result, dto.Message);
 	}
 
@@ -204,7 +210,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 
 	private static ClientMessage.TransactionCommit UnwrapTransactionCommit(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<TransactionCommit>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 		return new(Guid.NewGuid(), package.CorrelationId, envelope, dto.RequireLeader, dto.TransactionId, user, package.Tokens);
 	}
 
@@ -215,7 +222,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 
 	private static ClientMessage.TransactionCommitCompleted UnwrapTransactionCommitCompleted(TcpPackage package, IEnvelope envelope) {
 		var dto = package.Data.Deserialize<TransactionCommitCompleted>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 		return dto.Result == Client.Messages.OperationResult.Success
 			? new(package.CorrelationId, dto.TransactionId, dto.FirstEventNumber, dto.LastEventNumber, dto.PreparePosition, dto.CommitPosition)
 			: new(package.CorrelationId, dto.TransactionId, (OperationResult)dto.Result, dto.Message);
@@ -234,7 +242,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 
 	private ClientMessage.DeleteStream UnwrapDeleteStream(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<DeleteStream>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 
 		var cts = new CancellationTokenSource();
 		var envelopeWrapper = new CallbackEnvelope(OnMessage);
@@ -256,7 +265,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 
 	private static ClientMessage.DeleteStreamCompleted UnwrapDeleteStreamCompleted(TcpPackage package, IEnvelope envelope) {
 		var dto = package.Data.Deserialize<DeleteStreamCompleted>();
-		if (dto == null) return null;
+		if (dto == null)
+			return null;
 		return new(package.CorrelationId, (OperationResult)dto.Result, dto.Message, dto.CurrentVersion, dto.PreparePosition, dto.CommitPosition);
 	}
 

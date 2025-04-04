@@ -3,10 +3,7 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
@@ -35,9 +32,9 @@ public class when_a_default_checkpoint_manager_has_been_reinitialized<TLogFormat
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
 			_manager.Start(CheckpointTag.FromStreamPosition(0, "stream", 10), null);
-//                _manager.StateUpdated("", @"{""state"":""state1""}");
+			//                _manager.StateUpdated("", @"{""state"":""state1""}");
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 11), 77.7f);
-//                _manager.StateUpdated("", @"{""state"":""state2""}");
+			//                _manager.StateUpdated("", @"{""state"":""state2""}");
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 12), 77.7f);
 			_manager.Initialize();
 			_checkpointReader.Initialize();
@@ -59,7 +56,7 @@ public class when_a_default_checkpoint_manager_has_been_reinitialized<TLogFormat
 
 	[Test]
 	public void event_processed_throws_invalid_operation_exception() {
-//            _manager.StateUpdated("", @"{""state"":""state""}");
+		//            _manager.StateUpdated("", @"{""state"":""state""}");
 		Assert.Throws<InvalidOperationException>(() => {
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 10), 77.7f);
 		});

@@ -70,8 +70,7 @@ public class when_having_commit_spanning_multiple_chunks<TLogFormat, TStreamId> 
 	public async Task all_chunks_are_merged_and_scavenged() {
 		foreach (var rec in _scavenged) {
 			var chunk = await Db.Manager.GetInitializedChunkFor(rec.LogPosition, CancellationToken.None);
-			Assert.IsTrue(await chunk.TryReadAt(rec.LogPosition, couldBeScavenged: true, CancellationToken.None) is
-				{ Success: false });
+			Assert.IsTrue(await chunk.TryReadAt(rec.LogPosition, couldBeScavenged: true, CancellationToken.None) is { Success: false });
 		}
 
 		foreach (var rec in _survivors) {

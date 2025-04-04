@@ -5,8 +5,7 @@ using EventStore.Core.Data;
 
 namespace EventStore.Projections.Core.Services.Processing.EventByType;
 
-public partial class EventByTypeIndexEventReader
-{
+public partial class EventByTypeIndexEventReader {
 	private class PendingEvent {
 		public readonly EventStore.Core.Data.ResolvedEvent ResolvedEvent;
 		public readonly float Progress;

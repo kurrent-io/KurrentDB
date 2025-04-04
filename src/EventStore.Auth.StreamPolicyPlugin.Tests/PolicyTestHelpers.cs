@@ -39,11 +39,11 @@ internal static class PolicyTestHelpers {
 
 	public static Schema.AccessPolicy CreateAccessPolicyDtoForAction(string allowedAction, string allowedUser) =>
 		allowedAction switch {
-			"read" => new Schema.AccessPolicy{ Readers = [allowedUser], Writers = [], Deleters = [], MetadataReaders = [], MetadataWriters = [] },
-			"write" => new Schema.AccessPolicy{ Writers = [allowedUser], Readers = [], Deleters = [], MetadataReaders = [], MetadataWriters = [] },
-			"delete" => new Schema.AccessPolicy{ Deleters = [allowedUser], Readers = [], Writers = [], MetadataReaders = [], MetadataWriters = [] },
-			"metadataRead" => new Schema.AccessPolicy{ MetadataReaders = [allowedUser], Readers = [], Writers = [], Deleters = [], MetadataWriters = [] },
-			"metadataWrite" => new Schema.AccessPolicy{ MetadataWriters = [allowedUser], Readers = [], Writers = [], Deleters = [], MetadataReaders = [] },
+			"read" => new Schema.AccessPolicy { Readers = [allowedUser], Writers = [], Deleters = [], MetadataReaders = [], MetadataWriters = [] },
+			"write" => new Schema.AccessPolicy { Writers = [allowedUser], Readers = [], Deleters = [], MetadataReaders = [], MetadataWriters = [] },
+			"delete" => new Schema.AccessPolicy { Deleters = [allowedUser], Readers = [], Writers = [], MetadataReaders = [], MetadataWriters = [] },
+			"metadataRead" => new Schema.AccessPolicy { MetadataReaders = [allowedUser], Readers = [], Writers = [], Deleters = [], MetadataWriters = [] },
+			"metadataWrite" => new Schema.AccessPolicy { MetadataWriters = [allowedUser], Readers = [], Writers = [], Deleters = [], MetadataReaders = [] },
 			_ => new Schema.AccessPolicy()
 		};
 

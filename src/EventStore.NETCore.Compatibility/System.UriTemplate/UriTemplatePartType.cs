@@ -5,9 +5,8 @@
 
 namespace System;
 
-    enum UriTemplatePartType
-    {
-        Literal,
-        Compound,
-        Variable
-    }
+enum UriTemplatePartType {
+	Literal,
+	Compound,
+	Variable
+}

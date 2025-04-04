@@ -11,7 +11,6 @@ public abstract class LicensedPage : LicensedPageCore {
 
 	// Allow content to be provided by a .razor file but without
 	// overriding the content of the base class
-	protected new virtual void BuildRenderTree(RenderTreeBuilder builder)
-	{
+	protected new virtual void BuildRenderTree(RenderTreeBuilder builder) {
 	}
 }

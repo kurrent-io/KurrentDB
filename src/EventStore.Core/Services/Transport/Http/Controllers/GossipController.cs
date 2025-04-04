@@ -2,22 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Net;
-using System.Net.Http;
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
-using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
 using EventStore.Core.Metrics;
 using EventStore.Plugins.Authorization;
 using EventStore.Transport.Http;
-using EventStore.Transport.Http.Client;
 using EventStore.Transport.Http.Codecs;
 using EventStore.Transport.Http.EntityManagement;
 using HttpMethod = EventStore.Transport.Http.HttpMethod;
-using HttpStatusCode = EventStore.Transport.Http.HttpStatusCode;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers;

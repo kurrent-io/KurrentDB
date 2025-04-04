@@ -4,9 +4,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using EventStore.Core.Data;
 using EventStore.Core.TransactionLog.LogRecords;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.AllReader;
 

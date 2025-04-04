@@ -34,7 +34,7 @@ public class GetInfoTests {
 			_persistentSubscriptionsClient = new PersistentSubscriptions.PersistentSubscriptionsClient(Channel);
 
 			var settings = WithoutExtraStatistics(TestPersistentSubscriptionSettings);
-			
+
 			await _persistentSubscriptionsClient.CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					GroupName = _groupName,
@@ -47,7 +47,7 @@ public class GetInfoTests {
 					Settings = settings
 				}
 			}, GetCallOptions(AdminCredentials));
-			
+
 			// create a connection to the persistent subscription
 			var call = _persistentSubscriptionsClient.Read(GetCallOptions(AdminCredentials));
 			await call.RequestStream.WriteAsync(new ReadReq {
@@ -56,13 +56,13 @@ public class GetInfoTests {
 					StreamIdentifier = new StreamIdentifier {
 						StreamName = ByteString.CopyFromUtf8(_streamName)
 					},
-					UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()},
+					UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() },
 					BufferSize = 10
 				}
 			});
 
 			await call.ResponseStream.MoveNext();
-			
+
 			Assert.IsTrue(call.ResponseStream.Current.ContentCase == ReadResp.ContentOneofCase.SubscriptionConfirmation);
 
 			var expectedConnection = new SubscriptionInfo.Types.ConnectionInfo() {
@@ -71,7 +71,7 @@ public class GetInfoTests {
 				ConnectionName = "\u003cunknown\u003e"
 			};
 			_expectedSubscriptionInfo = GetSubscriptionInfoFromSettings(settings,
-				_groupName, _streamName, "0", string.Empty, new [] { expectedConnection });
+				_groupName, _streamName, "0", string.Empty, new[] { expectedConnection });
 		}
 
 		private CreateReq.Types.Settings WithoutExtraStatistics(CreateReq.Types.Settings settings) {
@@ -81,7 +81,7 @@ public class GetInfoTests {
 
 		protected override async Task When() {
 			await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-			
+
 			var resp = await _persistentSubscriptionsClient.GetInfoAsync(new GetInfoReq {
 				Options = new GetInfoReq.Types.Options {
 					GroupName = _groupName,
@@ -133,10 +133,10 @@ public class GetInfoTests {
 
 		protected override async Task When() {
 			await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-			
+
 			ListResp resp = await _persistentSubscriptionsClient.ListAsync(new ListReq {
 				Options = new ListReq.Types.Options {
-					ListForStream = new ListReq.Types.StreamOption{
+					ListForStream = new ListReq.Types.StreamOption {
 						Stream = new StreamIdentifier {
 							StreamName = ByteString.CopyFromUtf8(_streamName)
 						}
@@ -164,7 +164,7 @@ public class GetInfoTests {
 		protected override async Task Given() {
 			_persistentSubscriptionsClient = new PersistentSubscriptions.PersistentSubscriptionsClient(Channel);
 
-			var groupNames = new[] {"groupA", "groupB", "groupC"};
+			var groupNames = new[] { "groupA", "groupB", "groupC" };
 			foreach (var group in groupNames) {
 				await _persistentSubscriptionsClient.CreateAsync(new CreateReq {
 					Options = new CreateReq.Types.Options {
@@ -187,7 +187,7 @@ public class GetInfoTests {
 
 		protected override async Task When() {
 			await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-			
+
 			// Get the subscription info
 			ListResp resp = await _persistentSubscriptionsClient.ListAsync(new ListReq {
 				Options = new ListReq.Types.Options {
@@ -240,7 +240,7 @@ public class GetInfoTests {
 						}
 					}, GetCallOptions(AdminCredentials));
 					_expectedSubscriptionInfo.Add(GetSubscriptionInfoFromSettings(
-						TestPersistentSubscriptionSettings, group, stream, "0",	string.Empty));
+						TestPersistentSubscriptionSettings, group, stream, "0", string.Empty));
 				}
 			}
 			await _persistentSubscriptionsClient.CreateAsync(new CreateReq {
@@ -263,7 +263,7 @@ public class GetInfoTests {
 
 		protected override async Task When() {
 			await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-			
+
 			var resp = await _persistentSubscriptionsClient.ListAsync(new ListReq {
 				Options = new ListReq.Types.Options {
 					ListAllSubscriptions = new Empty()
@@ -315,7 +315,7 @@ public class GetInfoTests {
 
 		protected override async Task When() {
 			await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-			
+
 			var resp = await _persistentSubscriptionsClient.GetInfoAsync(new GetInfoReq {
 				Options = new GetInfoReq.Types.Options {
 					GroupName = _groupName,
@@ -373,7 +373,7 @@ public class GetInfoTests {
 
 	private static SubscriptionInfo GetSubscriptionInfoFromSettings(
 		CreateReq.Types.Settings settings, string groupName, string streamName, string startFrom,
-		string lastKnownEvent, SubscriptionInfo.Types.ConnectionInfo[] connections=null ) {
+		string lastKnownEvent, SubscriptionInfo.Types.ConnectionInfo[] connections = null) {
 		var info = new SubscriptionInfo() {
 			EventSource = streamName,
 			GroupName = groupName,
@@ -416,11 +416,11 @@ public class GetInfoTests {
 
 		for (int i = 0; resp.Subscriptions.Any(s => s.Status != "Live"); i++) {
 			Assert.AreNotEqual(5, i, "Reached too many retries to get all subscriptions live!");
-			
+
 			await Task.Delay(500);
 			resp = await GetSubscriptions();
 		}
-		
+
 		async Task<ListResp> GetSubscriptions() {
 			return await client.ListAsync(new ListReq {
 				Options = new ListReq.Types.Options {

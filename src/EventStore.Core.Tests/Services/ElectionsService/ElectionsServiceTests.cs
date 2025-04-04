@@ -1404,7 +1404,7 @@ public class when_electing_a_leader_and_prepare_ok_is_not_received_from_previous
 			_sut.Handle(new ElectionMessage.PrepareOk(0, _nodeTwo.InstanceId, _nodeTwo.HttpEndPoint, 10, 0,
 				_epochId, _nodeThree.InstanceId, 0, 0, 0, 0,
 				new ClusterInfo(
-					MemberInfoFromVNode(_nodeThree, _timeProvider.UtcNow, VNodeState.Unknown, true, 9, _otherEpochId , 0)
+					MemberInfoFromVNode(_nodeThree, _timeProvider.UtcNow, VNodeState.Unknown, true, 9, _otherEpochId, 0)
 				)));
 
 			_publisher.Messages.Clear();

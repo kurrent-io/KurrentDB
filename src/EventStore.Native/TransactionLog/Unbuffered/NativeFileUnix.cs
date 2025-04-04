@@ -1,13 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Microsoft.Win32.SafeHandles;
-using Mono.Unix;
-using Mono.Unix.Native;
 using System;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime;
+using Microsoft.Win32.SafeHandles;
+using Mono.Unix;
+using Mono.Unix.Native;
 
 namespace EventStore.Core.TransactionLog.Unbuffered;
 

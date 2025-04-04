@@ -126,7 +126,8 @@ public static class Configure {
 							return NotFound();
 						}
 
-						if (!headEvent) return Ok(codec.ContentType, codec.Encoding, null, MaxPossibleAge, msg.IsCachePublic);
+						if (!headEvent)
+							return Ok(codec.ContentType, codec.Encoding, null, MaxPossibleAge, msg.IsCachePublic);
 
 						var etag = msg.Record.OriginalEvent != null
 							? GetPositionETag(msg.Record.OriginalEventNumber, codec.ContentType)

@@ -30,7 +30,7 @@ public abstract class ResponseException : Exception {
 		public SubscriptionDropped(string stream, string reason) :
 			base($"Subscription to {stream} was dropped {reason}.") { }
 	}
-	
+
 	public class ServerBusy : ResponseException {
 		public ServerBusy() { }
 		public ServerBusy(Exception inner) : base(null, inner) { }

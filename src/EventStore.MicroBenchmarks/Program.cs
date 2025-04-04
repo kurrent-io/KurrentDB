@@ -15,7 +15,7 @@ namespace EventStore.MicroBenchmarks;
 
 internal class Program {
 	static void Main(string[] args) {
-		var config = System.Diagnostics.Debugger.IsAttached ? new DebugBuildConfig(){ } : DefaultConfig.Instance;
+		var config = System.Diagnostics.Debugger.IsAttached ? new DebugBuildConfig() { } : DefaultConfig.Instance;
 		BenchmarkRunner.Run<ProjectionSerializationBenchmarks>(config, args);
 	}
 }
@@ -33,7 +33,7 @@ public class ProjectionSerializationBenchmarks {
 		var parser = new JsonParser(engine);
 		_builtIn = new JsonSerializer(engine);
 		_handler = new JintProjectionStateHandler("", false, TimeSpan.FromMilliseconds(500), TimeSpan.FromMilliseconds(500));
-		
+
 		_stateInstance = parser.Parse(json);
 
 	}
@@ -51,5 +51,5 @@ public class ProjectionSerializationBenchmarks {
 		if (string.IsNullOrEmpty(s))
 			throw new Exception("something went wrong");
 	}
-	
+
 }

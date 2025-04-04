@@ -419,10 +419,10 @@ public partial class EnumeratorTests {
 
 			var filter = SubscriptionProps.EventFilterType switch {
 				EventFilterType.None => null,
-				EventFilterType.StreamPrefix => new Filter(ClientMessage.Filter.FilterContext.StreamId, ClientMessage.Filter.FilterType.Prefix, new [] {$"stream-{_testGuid}"}),
-				EventFilterType.StreamRegex => new Filter(ClientMessage.Filter.FilterContext.StreamId, ClientMessage.Filter.FilterType.Regex, new [] {$"(.*?){_testGuid}(.*?)"}),
-				EventFilterType.EventTypePrefix => new Filter(ClientMessage.Filter.FilterContext.EventType, ClientMessage.Filter.FilterType.Prefix, new [] { $"type-{_testGuid}"}),
-				EventFilterType.EventTypeRegex => new Filter(ClientMessage.Filter.FilterContext.EventType, ClientMessage.Filter.FilterType.Regex, new [] { $"(.*?){_testGuid}(.*?)"}),
+				EventFilterType.StreamPrefix => new Filter(ClientMessage.Filter.FilterContext.StreamId, ClientMessage.Filter.FilterType.Prefix, new[] { $"stream-{_testGuid}" }),
+				EventFilterType.StreamRegex => new Filter(ClientMessage.Filter.FilterContext.StreamId, ClientMessage.Filter.FilterType.Regex, new[] { $"(.*?){_testGuid}(.*?)" }),
+				EventFilterType.EventTypePrefix => new Filter(ClientMessage.Filter.FilterContext.EventType, ClientMessage.Filter.FilterType.Prefix, new[] { $"type-{_testGuid}" }),
+				EventFilterType.EventTypeRegex => new Filter(ClientMessage.Filter.FilterContext.EventType, ClientMessage.Filter.FilterType.Regex, new[] { $"(.*?){_testGuid}(.*?)" }),
 				_ => throw new ArgumentOutOfRangeException()
 			};
 
@@ -589,7 +589,7 @@ public partial class EnumeratorTests {
 						break;
 					default:
 						Assert.Fail($"Unexpected response: {response}");
-						break ;
+						break;
 				}
 			}
 

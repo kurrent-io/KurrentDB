@@ -411,7 +411,7 @@ public sealed class HttpEntityManager {
 
 	public static byte[] CompressResponse(byte[] response, string compressionAlgorithm) {
 		if (string.IsNullOrEmpty(compressionAlgorithm) ||
-		    !SupportedCompressionAlgorithms.Contains(compressionAlgorithm))
+			!SupportedCompressionAlgorithms.Contains(compressionAlgorithm))
 			return response;
 
 		MemoryStream outputStream;

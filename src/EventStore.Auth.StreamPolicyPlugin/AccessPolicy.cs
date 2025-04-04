@@ -30,9 +30,9 @@ public class AccessPolicy {
 
 	public override string ToString() {
 		return $"$r: {string.Join(',', Readers)}\n" +
-		       $"$w: {string.Join(',', Writers)}\n" +
-		       $"$d: {string.Join(',', Deleters)}\n" +
-		       $"$mr: {string.Join(',', MetadataReaders)}\n" +
-		       $"$mw: {string.Join(',', MetadataWriters)}\n";
+			   $"$w: {string.Join(',', Writers)}\n" +
+			   $"$d: {string.Join(',', Deleters)}\n" +
+			   $"$mr: {string.Join(',', MetadataReaders)}\n" +
+			   $"$mw: {string.Join(',', MetadataWriters)}\n";
 	}
 }

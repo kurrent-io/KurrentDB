@@ -9,8 +9,8 @@ using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Http;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Transport.Http.Codecs;
-using NUnit.Framework;
 using Newtonsoft.Json;
+using NUnit.Framework;
 using ContentType = EventStore.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
@@ -58,7 +58,7 @@ internal static class FakeRequest {
 	}
 
 	public static string GetJsonWrite(string data, string metadata) {
-		return GetJsonWrite(new[] {Tuple.Create(data, metadata)});
+		return GetJsonWrite(new[] { Tuple.Create(data, metadata) });
 	}
 
 	public static string GetJsonWrite(params Tuple<string, string>[] events) {
@@ -86,7 +86,7 @@ internal static class FakeRequest {
 	}
 
 	public static string GetXmlWrite(string data, string metadata) {
-		return GetXmlWrite(new[] {Tuple.Create(data, metadata)});
+		return GetXmlWrite(new[] { Tuple.Create(data, metadata) });
 	}
 
 	public static string GetXmlWrite(params Tuple<string, string>[] events) {

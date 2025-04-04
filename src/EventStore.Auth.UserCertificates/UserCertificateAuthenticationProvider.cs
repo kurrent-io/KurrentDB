@@ -46,7 +46,7 @@ public class UserCertificateAuthenticationProvider(
 		var connectionItems = context.Features.Get<IConnectionItemsFeature>()?.Items;
 		const string connectionItemsKey = "UserCertificateAuthenticationStatus";
 		if (TryGetDictionaryValue(connectionItems, connectionItemsKey, out var cached)) {
-			(authenticated, userId) = ((bool, string)) cached;
+			(authenticated, userId) = ((bool, string))cached;
 		} else {
 			authenticated = AuthenticateUncached(context, clientCertificate, out userId);
 			TrySetDictionaryValue(connectionItems, connectionItemsKey, (authenticated, userId));

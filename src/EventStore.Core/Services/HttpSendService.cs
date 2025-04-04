@@ -123,7 +123,8 @@ public class HttpSendService : IHttpForwarder,
 
 	bool IHttpForwarder.ForwardRequest(HttpEntityManager manager) {
 		var leaderInfo = _leaderInfo;
-		if (!_forwardRequests || leaderInfo == null) return false;
+		if (!_forwardRequests || leaderInfo == null)
+			return false;
 
 		var srcUrl = manager.RequestedUrl;
 		var srcBase = new Uri($"{srcUrl.Scheme}://{srcUrl.Host}:{srcUrl.Port}/", UriKind.Absolute);
@@ -190,8 +191,8 @@ public class HttpSendService : IHttpForwarder,
 
 		// Copy content (if content body is allowed)
 		if (!string.Equals(srcReq.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase)
-		    && !string.Equals(srcReq.HttpMethod, "HEAD", StringComparison.OrdinalIgnoreCase)
-		    && hasContentLength) {
+			&& !string.Equals(srcReq.HttpMethod, "HEAD", StringComparison.OrdinalIgnoreCase)
+			&& hasContentLength) {
 			var streamContent = new StreamContent(srcReq.InputStream);
 			streamContent.Headers.ContentLength = srcReq.ContentLength64;
 			request.Content = streamContent;

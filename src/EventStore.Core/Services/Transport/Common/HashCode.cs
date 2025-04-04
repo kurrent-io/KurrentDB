@@ -17,19 +17,19 @@ public readonly struct HashCode {
 
 	public HashCode Combine<T>(T? value) where T : struct => Combine(value ?? default);
 
-	public HashCode Combine<T>(T value) where T: struct {
+	public HashCode Combine<T>(T value) where T : struct {
 		unchecked {
 			return new((_value * 397) ^ value.GetHashCode());
 		}
 	}
 
-	public HashCode Combine(string value){
+	public HashCode Combine(string value) {
 		unchecked {
 			return new((_value * 397) ^ (value?.GetHashCode() ?? 0));
 		}
 	}
 
-	public static HashCode Combine<T>(IEnumerable<T> values) where T: struct =>
+	public static HashCode Combine<T>(IEnumerable<T> values) where T : struct =>
 		values.Aggregate(Hash, (previous, value) => previous.Combine(value));
 
 	public static HashCode Combine(IEnumerable<string> values) =>

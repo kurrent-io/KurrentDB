@@ -206,7 +206,7 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 	private async IAsyncEnumerable<IChunkReaderForExecutor<TStreamId, TRecord>> GetAllPhysicalChunks(
 		int startFromChunk,
 		ScavengePoint scavengePoint,
-		[EnumeratorCancellation]CancellationToken token) {
+		[EnumeratorCancellation] CancellationToken token) {
 
 		var scavengePos = _chunkSize * startFromChunk;
 		var upTo = scavengePoint.Position;

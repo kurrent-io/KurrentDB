@@ -101,7 +101,7 @@ public class StorageScavenger :
 
 		lock (_lock) {
 			if (_currentScavenge != null &&
-			    (_currentScavenge.ScavengeId == message.ScavengeId || message.ScavengeId == "current")) {
+				(_currentScavenge.ScavengeId == message.ScavengeId || message.ScavengeId == "current")) {
 				_cancellationTokenSource.Cancel();
 
 				_currentScavengeTask.ContinueWith(_ => {

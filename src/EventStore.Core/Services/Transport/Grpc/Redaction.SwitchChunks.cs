@@ -3,12 +3,12 @@
 
 using System;
 using System.Threading.Tasks;
-using Kurrent.Client.Redaction;
 using EventStore.Core.Data.Redaction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using Kurrent.Client.Redaction;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -53,7 +53,7 @@ internal partial class Redaction {
 		IServerStreamWriter<SwitchChunkResp> responseStream,
 		Guid acquisitionId) {
 
-		await foreach(var request in requestStream.ReadAllAsync()) {
+		await foreach (var request in requestStream.ReadAllAsync()) {
 			var tcsEnvelope = new TcsEnvelope<RedactionMessage.SwitchChunkCompleted>();
 			_bus.Publish(new RedactionMessage.SwitchChunk(tcsEnvelope, acquisitionId, request.TargetChunkFile, request.NewChunkFile));
 

@@ -3,11 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
-using EventStore.Transport.Http;
-using HttpStatusCode = System.Net.HttpStatusCode;
 using System.Linq;
+using System.Text;
 using EventStore.Common.Utils;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Services.Transport.Http;
 

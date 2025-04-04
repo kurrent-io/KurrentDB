@@ -4,7 +4,6 @@
 using System;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Core.Util;
 
 namespace EventStore.Core.TransactionLog.LogRecords;
 
@@ -24,7 +23,7 @@ public static class EpochRecordExtensions {
 	}
 }
 
-public class EpochRecord: IComparable {
+public class EpochRecord : IComparable {
 	public readonly long EpochPosition;
 	public readonly int EpochNumber;
 	public readonly Guid EpochId;
@@ -63,9 +62,11 @@ public class EpochRecord: IComparable {
 	}
 
 	public int CompareTo(object obj) {
-		if (obj == null) return 1;
+		if (obj == null)
+			return 1;
 		EpochRecord other = obj as EpochRecord;
-		if(other == null) throw new ArgumentException("Object is not a Epoch Record");
+		if (other == null)
+			throw new ArgumentException("Object is not a Epoch Record");
 		return EpochNumber.CompareTo(other.EpochNumber);
 	}
 

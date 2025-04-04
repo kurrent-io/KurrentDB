@@ -3,7 +3,6 @@
 
 using System.IO;
 using System.Threading.Tasks;
-using EventStore.Common.Options;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Index;
 using NUnit.Framework;

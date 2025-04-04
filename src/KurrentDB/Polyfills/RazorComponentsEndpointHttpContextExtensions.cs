@@ -30,9 +30,9 @@ public static class RazorComponentsEndpointHttpContextExtensions {
 		var pageType = context.GetEndpoint()?.Metadata.GetMetadata<ComponentTypeMetadata>()?.Type;
 
 		return pageType is not null
-		       && AcceptsInteractiveRoutingCache.GetOrAdd(
-			       pageType,
-			       static pageType => !pageType.IsDefined(typeof(ExcludeFromInteractiveRoutingAttribute)));
+			   && AcceptsInteractiveRoutingCache.GetOrAdd(
+				   pageType,
+				   static pageType => !pageType.IsDefined(typeof(ExcludeFromInteractiveRoutingAttribute)));
 	}
 
 	internal static class MetadataUpdateHandler {
