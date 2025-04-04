@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;

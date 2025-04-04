@@ -13,7 +13,8 @@ namespace EventStore.Core.Services.Transport.Grpc {
 		public static Uuid FromInt64(long msb, long lsb) => new Uuid(msb, lsb);
 
 		public static Uuid FromDto(Client.UUID dto) {
-			if (dto == null) throw new ArgumentNullException(nameof(dto));
+			if (dto == null)
+				throw new ArgumentNullException(nameof(dto));
 			return dto.ValueCase switch {
 				Client.UUID.ValueOneofCase.String => new Uuid(dto.String),
 				Client.UUID.ValueOneofCase.Structured => new Uuid(dto.Structured.MostSignificantBits,
@@ -53,7 +54,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 		}
 
 		public readonly Client.UUID ToDto() => new() {
-			Structured = new () {
+			Structured = new() {
 				LeastSignificantBits = _lsb,
 				MostSignificantBits = _msb
 			}
@@ -74,7 +75,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 			Span<byte> data = stackalloc byte[16];
 			if (!BitConverter.TryWriteBytes(data, _msb) ||
-			    !BitConverter.TryWriteBytes(data.Slice(8), _lsb)) {
+				!BitConverter.TryWriteBytes(data.Slice(8), _lsb)) {
 				throw new InvalidOperationException();
 			}
 

@@ -34,16 +34,16 @@ namespace EventStore.Core.Data {
 
 		public bool Is(EndPoint endPoint) {
 			return endPoint != null
-			       && HttpEndPoint.Equals(endPoint)
-			           || (InternalTcp != null && InternalTcp.Equals(endPoint))
-			           || (InternalSecureTcp != null && InternalSecureTcp.Equals(endPoint))
-			           || (ExternalTcp != null && ExternalTcp.Equals(endPoint))
-			           || (ExternalSecureTcp != null && ExternalSecureTcp.Equals(endPoint));
+				   && HttpEndPoint.Equals(endPoint)
+					   || (InternalTcp != null && InternalTcp.Equals(endPoint))
+					   || (InternalSecureTcp != null && InternalSecureTcp.Equals(endPoint))
+					   || (ExternalTcp != null && ExternalTcp.Equals(endPoint))
+					   || (ExternalSecureTcp != null && ExternalSecureTcp.Equals(endPoint));
 		}
 
 		public override string ToString() {
 			return string.Format("InstanceId: {0:B}, InternalTcp: {1}, InternalSecureTcp: {2}, " +
-			                     "ExternalTcp: {3}, ExternalSecureTcp: {4}, HttpEndPoint: {5}," +
+								 "ExternalTcp: {3}, ExternalSecureTcp: {4}, HttpEndPoint: {5}," +
 								 "IsReadOnlyReplica: {6}",
 				InstanceId,
 				InternalTcp,

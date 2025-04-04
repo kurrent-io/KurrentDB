@@ -11,7 +11,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		public const int ChunkHeaderSize = 128;
 		public const int ChunkFooterSize = 128;
 		public const int ChunksCacheSize = 2 * (ChunkSize + ChunkHeaderSize + ChunkFooterSize);
-		
+
 
 		public static TimeSpan MinFlushDelayMs = TimeSpan.FromMilliseconds(2);
 	}

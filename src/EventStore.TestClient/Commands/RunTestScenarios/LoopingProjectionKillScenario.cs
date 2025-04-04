@@ -90,8 +90,8 @@ namespace EventStore.TestClient.Commands.RunTestScenarios {
 					}
 
 					success = CheckProjectionState(countItem, "count", x => x == expectedAllEventsCount)
-					          && CheckProjectionState(sumCheckForBankAccount0, "success",
-						          x => x == lastExpectedEventVersion);
+							  && CheckProjectionState(sumCheckForBankAccount0, "success",
+								  x => x == lastExpectedEventVersion);
 
 					if (success)
 						break;

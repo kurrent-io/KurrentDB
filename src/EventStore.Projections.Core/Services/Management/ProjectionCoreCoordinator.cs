@@ -17,7 +17,7 @@ namespace EventStore.Projections.Core.Services.Management {
 			IHandle<ProjectionCoreServiceMessage.SubComponentStarted>,
 			IHandle<ProjectionCoreServiceMessage.SubComponentStopped> {
 		public const string ComponentName = "ProjectionCoreCoordinator";
-		
+
 		private readonly ILogger Log = Serilog.Log.ForContext<ProjectionCoreCoordinator>();
 		private readonly ProjectionType _runProjections;
 		private readonly TimeoutScheduler[] _timeoutSchedulers;
@@ -28,7 +28,7 @@ namespace EventStore.Projections.Core.Services.Management {
 
 		private int _pendingSubComponentsStarts;
 		private int _activeSubComponents;
-		
+
 		private Guid _instanceCorrelationId = Guid.Empty;
 		private CoreCoordinatorState _currentState = CoreCoordinatorState.Stopped;
 
@@ -71,7 +71,7 @@ namespace EventStore.Projections.Core.Services.Management {
 			}
 			if (_instanceCorrelationId != message.InstanceCorrelationId) {
 				Log.Debug("PROJECTIONS: Projection Core Coordinator received stop request for incorrect correlation id." +
-				          "Current: {correlationId}. Requested: {requestedCorrelationId}", _instanceCorrelationId, message.InstanceCorrelationId);
+						  "Current: {correlationId}. Requested: {requestedCorrelationId}", _instanceCorrelationId, message.InstanceCorrelationId);
 				return;
 			}
 			Stop(message);
@@ -96,9 +96,9 @@ namespace EventStore.Projections.Core.Services.Management {
 			_pendingSubComponentsStarts = 0;
 			_activeSubComponents = 0;
 			_currentState = CoreCoordinatorState.Starting;
-			
+
 			ScheduleRegularTimeout();
-			
+
 			foreach (var queue in _queues.Values) {
 				queue.Publish(new ReaderCoreServiceMessage.StartReader(_instanceCorrelationId));
 				_pendingSubComponentsStarts += 1 /*EventReaderCoreService*/;
@@ -113,7 +113,7 @@ namespace EventStore.Projections.Core.Services.Management {
 		private void Stop(ProjectionSubsystemMessage.StopComponents message) {
 			if (_currentState != CoreCoordinatorState.Started) {
 				Log.Debug("PROJECTIONS: Projections Core Coordinator trying to stop when not started. " +
-				          "Current state: {currentState}. StopCorrelation: {correlation}", _currentState,
+						  "Current state: {currentState}. StopCorrelation: {correlation}", _currentState,
 					message.InstanceCorrelationId);
 				return;
 			}
@@ -122,14 +122,14 @@ namespace EventStore.Projections.Core.Services.Management {
 			_currentState = CoreCoordinatorState.Stopping;
 			foreach (var queue in _queues) {
 				if (_runProjections >= ProjectionType.System) {
-					 queue.Value.Publish(new ProjectionCoreServiceMessage.StopCore(queue.Key));
+					queue.Value.Publish(new ProjectionCoreServiceMessage.StopCore(queue.Key));
 				} else {
-					 // TODO: Find out why projections still run even when ProjectionType.None
-					 queue.Value.Publish(new ReaderCoreServiceMessage.StopReader(queue.Key));
+					// TODO: Find out why projections still run even when ProjectionType.None
+					queue.Value.Publish(new ReaderCoreServiceMessage.StopReader(queue.Key));
 				}
 			}
 		}
-		
+
 		public void Handle(ProjectionCoreServiceMessage.SubComponentStarted message) {
 			if (_currentState != CoreCoordinatorState.Starting) {
 				Log.Debug("PROJECTIONS: Projection Core Coordinator received SubComponent Started when not starting. " +
@@ -157,7 +157,7 @@ namespace EventStore.Projections.Core.Services.Management {
 		public void Handle(ProjectionCoreServiceMessage.SubComponentStopped message) {
 			if (_currentState != CoreCoordinatorState.Stopping) {
 				Log.Debug("PROJECTIONS: Projection Core Coordinator received SubComponent Stopped when not stopping. " +
-				          "SubComponent: {subComponent}, CurrentState: {currentState}",
+						  "SubComponent: {subComponent}, CurrentState: {currentState}",
 					message.SubComponent, _currentState);
 				return;
 			}

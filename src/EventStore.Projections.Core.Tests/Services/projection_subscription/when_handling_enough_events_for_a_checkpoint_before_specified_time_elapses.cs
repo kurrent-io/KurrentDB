@@ -1,8 +1,8 @@
 ﻿using System;
 using EventStore.Core.Data;
+using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Projections.Core.Messages;
 using NUnit.Framework;
-using EventStore.Core.Tests.Services.TimeService;
 
 namespace EventStore.Projections.Core.Tests.Services.projection_subscription {
 	[TestFixture]

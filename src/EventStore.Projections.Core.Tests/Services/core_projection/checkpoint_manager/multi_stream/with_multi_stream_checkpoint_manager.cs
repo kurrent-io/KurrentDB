@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Data;
 using EventStore.Core.Bus;
+using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
@@ -16,7 +16,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_
 	public abstract class with_multi_stream_checkpoint_manager<TLogFormat, TStreamId> : IHandle<ClientMessage.ReadStreamEventsBackward> {
 		protected readonly InMemoryBus _bus = InMemoryBus.CreateTest();
 		protected readonly Guid _projectionId = Guid.NewGuid();
-		protected readonly string[] _streams = new string[] {"a", "b", "c"};
+		protected readonly string[] _streams = new string[] { "a", "b", "c" };
 		protected readonly string _projectionName = "test_projection";
 
 		protected IODispatcher _ioDispatcher;
@@ -38,7 +38,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_
 				false, 5000, 10, 250);
 			_positionTagger = new MultiStreamPositionTagger(3, _streams);
 			_positionTagger.AdjustTag(CheckpointTag.FromStreamPositions(3,
-				new Dictionary<string, long> {{"a", 0}, {"b", 0}, {"c", 0}}));
+				new Dictionary<string, long> { { "a", 0 }, { "b", 0 }, { "c", 0 } }));
 			_namingBuilder = ProjectionNamesBuilder.CreateForTest("projection");
 
 			IODispatcherTestHelpers.SubscribeIODispatcher(_ioDispatcher, _bus);
@@ -70,7 +70,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_
 			ResolvedEvent[] events;
 			if (!_hasRead) {
 				var checkpoint =
-					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"a", 5}, {"b", 5}, {"c", 5}});
+					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "a", 5 }, { "b", 5 }, { "c", 5 } });
 				events = IODispatcherTestHelpers.CreateResolvedEvent<TLogFormat, TStreamId>(message.EventStreamId, "$>",
 					"10@a", checkpoint.ToJsonString(new ProjectionVersion(3, 0, 1)));
 				_hasRead = true;

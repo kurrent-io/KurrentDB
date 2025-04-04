@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using EventStore.Common.Options;
 using EventStore.Plugins.Authentication;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers {

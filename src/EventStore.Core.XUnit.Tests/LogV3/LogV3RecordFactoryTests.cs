@@ -20,7 +20,7 @@ namespace EventStore.Core.XUnit.Tests.LogV3 {
 		readonly string _string1 = "string-one";
 		readonly LogV3RecordFactory _sut = new();
 		readonly PrepareFlags _prepareflags = PrepareFlags.SingleWrite;
-		readonly ReadOnlyMemory<byte> _bytes1 = new byte[] { 0x10 }; 
+		readonly ReadOnlyMemory<byte> _bytes1 = new byte[] { 0x10 };
 		readonly ReadOnlyMemory<byte> _bytes2 = new byte[] { 0x20, 0x01 };
 
 		[Fact]
@@ -93,7 +93,7 @@ namespace EventStore.Core.XUnit.Tests.LogV3 {
 				eventTypeVersion: _ushort,
 				logPosition: _long1,
 				timeStamp: _dateTime1);
-			
+
 			Assert.Equal(_guid1, eventType.EventId);
 			Assert.Equal(_guid2, eventType.ParentEventId);
 			Assert.Equal(_string1, eventType.EventTypeName);

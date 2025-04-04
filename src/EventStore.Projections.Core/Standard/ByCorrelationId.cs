@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
+using EventStore.Common.Utils;
 using EventStore.Core.Services;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using EventStore.Common.Utils;
 
 namespace EventStore.Projections.Core.Standard {
 	public class ByCorrelationId : IProjectionStateHandler {

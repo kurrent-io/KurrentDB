@@ -1,21 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
-using EventStore.Client.Messages;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
-using EventStore.Transport.Tcp;
-using EventStore.Transport.Tcp.Framing;
 using EventStore.Core.Settings;
 using EventStore.Plugins.Authentication;
+using EventStore.Transport.Tcp;
+using EventStore.Transport.Tcp.Framing;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Tcp {
@@ -27,7 +25,7 @@ namespace EventStore.Core.Services.Transport.Tcp {
 		public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromMilliseconds(1000);
 
 		private static readonly ILogger Log = Serilog.Log.ForContext<TcpConnectionManager>();
-		private static readonly ClaimsPrincipal Anonymous = new ClaimsPrincipal(new ClaimsIdentity(new[]{new Claim(ClaimTypes.Anonymous, ""), }));
+		private static readonly ClaimsPrincipal Anonymous = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Anonymous, ""), }));
 		public readonly Guid ConnectionId;
 		public readonly string ConnectionName;
 		public readonly EndPoint RemoteEndPoint;
@@ -196,7 +194,8 @@ namespace EventStore.Core.Services.Transport.Tcp {
 		}
 
 		private void OnConnectionFailed(ITcpConnection connection, SocketError socketError) {
-			if (Interlocked.CompareExchange(ref _isClosed, 1, 0) != 0) return;
+			if (Interlocked.CompareExchange(ref _isClosed, 1, 0) != 0)
+				return;
 			Log.Information("Connection '{connectionName}' ({connectionId:B}) to [{remoteEndPoint}] failed: {e}.",
 				ConnectionName, ConnectionId, connection.RemoteEndPoint, socketError);
 			if (_connectionClosed != null)
@@ -204,7 +203,8 @@ namespace EventStore.Core.Services.Transport.Tcp {
 		}
 
 		private void OnConnectionClosed(ITcpConnection connection, SocketError socketError) {
-			if (Interlocked.CompareExchange(ref _isClosed, 1, 0) != 0) return;
+			if (Interlocked.CompareExchange(ref _isClosed, 1, 0) != 0)
+				return;
 			Log.Information(
 				"Connection '{connectionName}{clientConnectionName}' [{remoteEndPoint}, {connectionId:B}] closed: {e}.",
 				ConnectionName, ClientConnectionName.IsEmptyString() ? string.Empty : ":" + ClientConnectionName,
@@ -215,7 +215,7 @@ namespace EventStore.Core.Services.Transport.Tcp {
 					"Unable to connect to Remote EndPoint : {remoteEndPoint}. Connection is potentially blocked. Total bytes sent: {TotalBytesSent}, Total bytes received: {TotalBytesReceived}",
 					RemoteEndPoint, _connection.TotalBytesSent, _connection.TotalBytesReceived);
 			}
-			
+
 			if (_connectionClosed != null)
 				_connectionClosed(this, socketError);
 		}
@@ -414,7 +414,7 @@ namespace EventStore.Core.Services.Transport.Tcp {
 				}
 
 				if (_connectionPendingSendBytesThreshold > ESConsts.UnrestrictedPendingSendBytes &&
-				    (queueSendBytes = _connection.PendingSendBytes) > _connectionPendingSendBytesThreshold) {
+					(queueSendBytes = _connection.PendingSendBytes) > _connectionPendingSendBytesThreshold) {
 					SendBadRequestAndClose(Guid.Empty,
 						string.Format("Connection pending send bytes is too large: {0}.", queueSendBytes));
 					return;
@@ -427,7 +427,8 @@ namespace EventStore.Core.Services.Transport.Tcp {
 		}
 
 		public void Handle(TcpMessage.Heartbeat message) {
-			if (IsClosed) return;
+			if (IsClosed)
+				return;
 
 			var receiveProgressIndicator = _receiveProgressIndicator;
 			var sendProgressIndicator = _sendProgressIndicator;
@@ -460,7 +461,8 @@ namespace EventStore.Core.Services.Transport.Tcp {
 
 		public void Handle(TcpMessage.HeartbeatTimeout message) {
 			_awaitingHeartbeatTimeoutCheck = false;
-			if (IsClosed) return;
+			if (IsClosed)
+				return;
 
 			var receiveProgressIndicator = _receiveProgressIndicator;
 			var sendProgressIndicator = _sendProgressIndicator;

@@ -1,11 +1,11 @@
-using System.Linq;
-using EventStore.Core.Index;
-using EventStore.Core.TransactionLog;
-using NUnit.Framework;
-using EventStore.Core.Index.Hashes;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using EventStore.Core.Index;
+using EventStore.Core.Index.Hashes;
+using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.LogRecords;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV3 {
 	[TestFixture, Category("LongRunning")]

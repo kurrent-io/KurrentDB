@@ -1,13 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
-using EventStore.Projections.Core.Services.Management;
 using EventStore.Common.Options;
-using EventStore.Projections.Core.Messages;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.Replication;
-using System.Collections.Generic;
+using EventStore.Projections.Core.Messages;
+using EventStore.Projections.Core.Services.Management;
 using EventStore.Projections.Core.Services.Processing;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_coordinator {
 	[TestFixture]
@@ -23,7 +23,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_coordinator {
 
 		[SetUp]
 		public void Setup() {
-			queues = new List<FakePublisher>() {new FakePublisher()}.ToArray();
+			queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
 			publisher = new FakePublisher();
 
 			var instanceCorrelationId = Guid.NewGuid();
@@ -59,7 +59,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_coordinator {
 		public void should_publish_stop_core_messages() {
 			Assert.AreEqual(1, stopCoreMessages.Count);
 		}
-		
+
 		[Test]
 		public void should_publish_stop_reader_messages_after_core_stopped() {
 			Assert.AreEqual(1, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StopReader).Count);

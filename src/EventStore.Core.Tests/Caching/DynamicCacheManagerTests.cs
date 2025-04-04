@@ -93,7 +93,7 @@ namespace EventStore.Core.Tests.Caching {
 				name: "cache2"));
 
 			var freeSystemMemReq = 0;
-			var freeSystemMem = new[] { 100, 11 + (aboveKeepFreeMem ? 1 : 0)}; // included in total free mem
+			var freeSystemMem = new[] { 100, 11 + (aboveKeepFreeMem ? 1 : 0) }; // included in total free mem
 
 			var freeHeapMemReq = 0;
 			var freeHeapMem = new[] { 0, 6 }; // included in total free mem
@@ -251,7 +251,7 @@ namespace EventStore.Core.Tests.Caching {
 			var cacheResizer = new DynamicCacheResizer(ResizerUnit.Bytes, 0, 100_000, 100, cache);
 
 			var freeMemReq = 0;
-			var freeMem = new [] { 100 /* init */, 99 /* first calculation */, 98 /* second calculation */};
+			var freeMem = new[] { 100 /* init */, 99 /* first calculation */, 98 /* second calculation */};
 
 			var gcCountReq = 0;
 			var gcCount = new[] { 0 /* init */, 0 /* reset freed size check */, 1 /* first calculation */, 1 /* second calculation */};
@@ -302,7 +302,7 @@ namespace EventStore.Core.Tests.Caching {
 
 			Assert.AreEqual(1, envelope.Replies.Count);
 
-			var msg = (MonitoringMessage.InternalStatsRequestResponse) envelope.Replies.First();
+			var msg = (MonitoringMessage.InternalStatsRequestResponse)envelope.Replies.First();
 			var expectedStats = new Dictionary<string, object> {
 				{"es-cache-name", "cache"},
 				{"es-cache-sizeBytes", 22L},

@@ -6,7 +6,7 @@ namespace EventStore.Core.DataStructures {
 		void Clear();
 	}
 
-	public interface ILRUCache<TKey, TValue>: ILRUCache {
+	public interface ILRUCache<TKey, TValue> : ILRUCache {
 		bool TryGet(TKey key, out TValue value);
 		TValue Put(TKey key, TValue value);
 

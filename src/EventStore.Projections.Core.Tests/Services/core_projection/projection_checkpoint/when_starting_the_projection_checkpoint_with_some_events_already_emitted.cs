@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
+using EventStore.Projections.Core.Common;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
-using EventStore.Projections.Core.Common;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.projection_checkpoint {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

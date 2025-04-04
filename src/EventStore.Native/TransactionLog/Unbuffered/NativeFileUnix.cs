@@ -1,10 +1,10 @@
-﻿using EventStore.Common.Utils;
+﻿using System;
+using System.ComponentModel;
+using System.IO;
+using EventStore.Common.Utils;
 using Microsoft.Win32.SafeHandles;
 using Mono.Unix;
 using Mono.Unix.Native;
-using System;
-using System.ComponentModel;
-using System.IO;
 
 namespace EventStore.Core.TransactionLog.Unbuffered {
 	public unsafe class NativeFileUnix : INativeFile {

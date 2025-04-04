@@ -41,7 +41,8 @@ namespace EventStore.TestClient.Commands {
 					false,
 					(s, e) => {
 						var c = Interlocked.Increment(ref appearedCnt);
-						if (c % 1000 == 0) Console.Write('\'');
+						if (c % 1000 == 0)
+							Console.Write('\'');
 						if (c % 100000 == 0) {
 							context.Log.Debug("Received total {events} events ({rate} per sec)...", c,
 								100000.0 / sw.Elapsed.TotalSeconds);

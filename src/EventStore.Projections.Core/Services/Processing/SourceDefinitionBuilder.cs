@@ -4,8 +4,7 @@ using System.Runtime.Serialization;
 using EventStore.Projections.Core.Messages;
 
 namespace EventStore.Projections.Core.Services.Processing {
-	public sealed class SourceDefinitionBuilder : IQuerySources
-	{
+	public sealed class SourceDefinitionBuilder : IQuerySources {
 		private readonly QuerySourceOptions _options = new QuerySourceOptions();
 		private bool _allStreams;
 		private List<string> _categories;
@@ -215,18 +214,21 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		protected bool Equals(QuerySourceOptions other) {
 			return string.Equals(ResultStreamName, other.ResultStreamName)
-			       && string.Equals(PartitionResultStreamNamePattern, other.PartitionResultStreamNamePattern)
-			       && ReorderEvents.Equals(other.ReorderEvents) && ProcessingLag == other.ProcessingLag
-			       && IsBiState.Equals(other.IsBiState) && DefinesStateTransform.Equals(other.DefinesStateTransform)
-			       && ProducesResults.Equals(other.ProducesResults) && DefinesFold.Equals(other.DefinesFold)
-			       && HandlesDeletedNotifications.Equals(other.HandlesDeletedNotifications)
-			       && IncludeLinks.Equals(other.IncludeLinks);
+				   && string.Equals(PartitionResultStreamNamePattern, other.PartitionResultStreamNamePattern)
+				   && ReorderEvents.Equals(other.ReorderEvents) && ProcessingLag == other.ProcessingLag
+				   && IsBiState.Equals(other.IsBiState) && DefinesStateTransform.Equals(other.DefinesStateTransform)
+				   && ProducesResults.Equals(other.ProducesResults) && DefinesFold.Equals(other.DefinesFold)
+				   && HandlesDeletedNotifications.Equals(other.HandlesDeletedNotifications)
+				   && IncludeLinks.Equals(other.IncludeLinks);
 		}
 
 		public override bool Equals(object obj) {
-			if (ReferenceEquals(null, obj)) return false;
-			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != this.GetType()) return false;
+			if (ReferenceEquals(null, obj))
+				return false;
+			if (ReferenceEquals(this, obj))
+				return true;
+			if (obj.GetType() != this.GetType())
+				return false;
 			return Equals((QuerySourceOptions)obj);
 		}
 
@@ -234,8 +236,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 			unchecked {
 				int hashCode = (ResultStreamName != null ? ResultStreamName.GetHashCode() : 0);
 				hashCode = (hashCode * 397) ^ (PartitionResultStreamNamePattern != null
-					           ? PartitionResultStreamNamePattern.GetHashCode()
-					           : 0);
+							   ? PartitionResultStreamNamePattern.GetHashCode()
+							   : 0);
 				hashCode = (hashCode * 397) ^ ReorderEvents.GetHashCode();
 				hashCode = (hashCode * 397) ^ ProcessingLag;
 				hashCode = (hashCode * 397) ^ IsBiState.GetHashCode();

@@ -1,14 +1,14 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.Threading;
+using EventStore.Common.Utils;
 using EventStore.Core.Messages;
+using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
+using EventStore.Core.Tests.Http;
 using EventStore.Transport.Http;
 using NUnit.Framework;
-using EventStore.Common.Utils;
-using System.Linq;
-using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Http;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Services.Transport.Http {
@@ -143,7 +143,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http {
 			_serverEndPoint = new IPEndPoint(IPAddress.Loopback, port);
 			_portableServer = new PortableServer(_serverEndPoint, _timeout);
 		}
-		
+
 		[SetUp]
 		public void SetUp() {
 			_portableServer.SetUp(service => service.SetupController(new TestController(new FakePublisher())));

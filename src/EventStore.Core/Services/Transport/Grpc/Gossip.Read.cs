@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Client.Gossip;
 using EventStore.Client;
+using EventStore.Client.Gossip;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Metrics;
@@ -21,7 +21,8 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			}
 			var tcs = new TaskCompletionSource<ClusterInfo>();
 			var duration = _tracker.Start();
-			_bus.Publish(new GossipMessage.ClientGossip(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration))));;
+			_bus.Publish(new GossipMessage.ClientGossip(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration))));
+			;
 			return await tcs.Task.ConfigureAwait(false);
 		}
 
@@ -38,7 +39,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 				TimeStamp = x.TimeStamp.ToTicksSinceEpoch(),
 				State = (MemberInfo.Types.VNodeState)x.State,
 				IsAlive = x.IsAlive,
-				HttpEndPoint = new EndPoint{
+				HttpEndPoint = new EndPoint {
 					Address = x.HttpEndPointIp,
 					Port = (uint)x.HttpEndPointPort
 				}

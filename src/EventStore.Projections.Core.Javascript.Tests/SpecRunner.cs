@@ -14,7 +14,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Javascript.Tests {
@@ -85,7 +84,7 @@ namespace EventStore.Projections.Core.Javascript.Tests {
 						if (stateCount > 2)
 							throw new InvalidOperationException("Cannot specify more than 2 states");
 
-						sequence.Events.Add(new InputEvent(et!, e.GetProperty("data").GetRawText(), e.TryGetProperty("metadata", out var metadata) ? metadata.GetRawText() : null, initializedPartitions, expectedStates, skip, e.TryGetProperty("eventId", out var idElement) && idElement.TryGetGuid(out var id) ? id: Guid.NewGuid()));
+						sequence.Events.Add(new InputEvent(et!, e.GetProperty("data").GetRawText(), e.TryGetProperty("metadata", out var metadata) ? metadata.GetRawText() : null, initializedPartitions, expectedStates, skip, e.TryGetProperty("eventId", out var idElement) && idElement.TryGetGuid(out var id) ? id : Guid.NewGuid()));
 					}
 				}
 
@@ -400,7 +399,7 @@ namespace EventStore.Projections.Core.Javascript.Tests {
 		public Task Test(TestDefinition def) {
 			return def.Execute(_output).AsTask();
 		}
-		
+
 		public class TestDefinition {
 			private readonly string _name;
 			private readonly Func<ITestOutputHelper, ValueTask> _step;

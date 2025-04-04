@@ -4,7 +4,7 @@ using EventStore.Core.Metrics;
 using EventStore.Plugins.Authorization;
 
 namespace EventStore.Core.Services.Transport.Grpc {
-	partial class Gossip : EventStore.Client.Gossip.Gossip.GossipBase  {
+	partial class Gossip : EventStore.Client.Gossip.Gossip.GossipBase {
 		private readonly IPublisher _bus;
 		private readonly IAuthorizationProvider _authorizationProvider;
 		private readonly IDurationTracker _tracker;

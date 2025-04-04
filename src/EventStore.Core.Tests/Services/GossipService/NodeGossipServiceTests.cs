@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using EventStore.Common.Utils;
@@ -349,7 +348,7 @@ namespace EventStore.Core.Tests.Services.GossipService {
 					MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow))));
 		}
 	}
-	
+
 	public class if_gossip_reply_includes_es_version : NodeGossipServiceTestFixture {
 		private Message _capturedMessage;
 		protected override Message[] Given() =>
@@ -357,7 +356,7 @@ namespace EventStore.Core.Tests.Services.GossipService {
 
 		protected override Message When() =>
 			new GossipMessage.GossipReceived(new CallbackEnvelope(CaptureGossipReply), new ClusterInfo(
-					MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber:  1, esVersion: "1.1.1.2"),
+					MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.2"),
 					MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3")),
 				_nodeTwo.HttpEndPoint);
 
@@ -411,7 +410,7 @@ namespace EventStore.Core.Tests.Services.GossipService {
 		private Message _capturedMessage;
 		protected override Message[] Given() =>
 			GivenSystemInitializedWithKnownGossipSeedSources(new GossipMessage.GossipReceived(new NoopEnvelope(), new ClusterInfo(
-					MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber:  1, esVersion: "1.1.1.2"),
+					MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.2"),
 					MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3")),
 				_nodeTwo.HttpEndPoint));
 
@@ -424,7 +423,7 @@ namespace EventStore.Core.Tests.Services.GossipService {
 				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.2"),
 				MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3")), _currentNode.HttpEndPoint.GetHost(), _currentNode.HttpEndPoint.GetPort());
 		}
-		
+
 		[Test]
 		public void reply_should_have_version_info() {
 			_capturedMessage.Should()
@@ -901,7 +900,7 @@ namespace EventStore.Core.Tests.Services.GossipService {
 			);
 
 		protected override Message When() =>
-			new ElectionMessage.ElectionsDone(0,0,
+			new ElectionMessage.ElectionsDone(0, 0,
 				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, nodeState: VNodeState.Leader));
 
 		[Test]

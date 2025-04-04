@@ -1,9 +1,7 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Text.RegularExpressions;
 using EventStore.Common.Utils;
-using EventStore.Core.Services.Monitoring.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Monitoring.Stats {
@@ -68,11 +66,13 @@ namespace EventStore.Core.Services.Monitoring.Stats {
 			// /dev/sda1      153599996 118777100  34822896  78% /media/CC88FD3288FD1C20
 
 			try {
-				if (!Directory.Exists(directory)) return null;
+				if (!Directory.Exists(directory))
+					return null;
 				var driveInfo = ShellExecutor.GetOutput("df", string.Format("-P {0}", directory));
 				var driveInfoLines =
-					driveInfo.Split(new[] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries);
-				if (driveInfoLines.Length == 0) return null;
+					driveInfo.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
+				if (driveInfoLines.Length == 0)
+					return null;
 				var ourline = driveInfoLines[1];
 				var trimmedLine = SystemStatsHelper.SpacesRegex.Replace(ourline, " ");
 				var info = trimmedLine.Split(' ');

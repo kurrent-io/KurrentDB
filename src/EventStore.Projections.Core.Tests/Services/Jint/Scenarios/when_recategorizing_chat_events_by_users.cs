@@ -2,8 +2,7 @@
 using EventStore.Core.Tests;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(long))]
 	public class when_recategorizing_chat_events_by_users<TLogFormat, TStream> : specification_with_js_query_posted<TLogFormat, TStream> {
@@ -11,7 +10,8 @@ namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var e in base.When()) yield return e;
+			foreach (var e in base.When())
+				yield return e;
 			yield return CreateWriteEvent("chat-1", "ChatMessage", @"
     {
       ""sender"": ""Greg"",

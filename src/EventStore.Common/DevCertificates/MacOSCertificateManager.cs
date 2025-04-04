@@ -75,7 +75,7 @@ namespace EventStore.Common.DevCertificates {
 				}
 
 				using (var process = Process.Start(MacOSTrustCertificateCommandLine,
-					       MacOSTrustCertificateCommandLineArguments + tmpFile)) {
+						   MacOSTrustCertificateCommandLineArguments + tmpFile)) {
 					process.WaitForExit();
 					if (process.ExitCode != 0) {
 						Log.MacOSTrustCommandError(process.ExitCode);

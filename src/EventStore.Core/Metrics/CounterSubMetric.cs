@@ -12,7 +12,7 @@ public class CounterSubMetric {
 		_tags = tags;
 		metric.Add(this);
 	}
-	
+
 	public void Add(long delta) {
 		Interlocked.Add(ref _counter, delta);
 	}

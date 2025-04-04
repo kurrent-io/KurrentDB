@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 
-namespace EventStore.Core.Telemetry; 
+namespace EventStore.Core.Telemetry;
 
 public class TelemetrySink : ITelemetrySink {
 	private static readonly ILogger _log = Log.ForContext<TelemetrySink>();

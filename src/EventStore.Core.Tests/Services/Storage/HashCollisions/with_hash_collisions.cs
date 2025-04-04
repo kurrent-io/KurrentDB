@@ -3,13 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventStore.Core.Data;
-using NUnit.Framework;
 using EventStore.Core.Index;
 using EventStore.Core.Index.Hashes;
 using EventStore.Core.LogAbstraction;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Services.Storage.ReaderIndex;
+using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
 
 namespace EventStore.Core.Tests.Services.Storage.HashCollisions {
@@ -78,10 +78,8 @@ namespace EventStore.Core.Tests.Services.Storage.HashCollisions {
 		}
 	}
 
-	class UseMaxAgeFixtureArgs: IEnumerable
-	{
-		public IEnumerator GetEnumerator()
-		{
+	class UseMaxAgeFixtureArgs : IEnumerable {
+		public IEnumerator GetEnumerator() {
 			yield return true;
 			yield return false;
 		}
@@ -122,8 +120,8 @@ namespace EventStore.Core.Tests.Services.Storage.HashCollisions {
 
 		protected override void when() {
 			if (_useMaxAge) {
-				_indexBackend.SetStreamMetadata(stream1Id, new StreamMetadata(maxAge:TimeSpan.FromDays(1)));
-				_indexBackend.SetStreamMetadata(stream2Id, new StreamMetadata(maxAge:TimeSpan.FromDays(1)));
+				_indexBackend.SetStreamMetadata(stream1Id, new StreamMetadata(maxAge: TimeSpan.FromDays(1)));
+				_indexBackend.SetStreamMetadata(stream2Id, new StreamMetadata(maxAge: TimeSpan.FromDays(1)));
 			}
 			//ptable 1
 			_tableIndex.Add(1, stream1Id, 0, 0);
@@ -159,8 +157,8 @@ namespace EventStore.Core.Tests.Services.Storage.HashCollisions {
 
 		protected override void when() {
 			if (_useMaxAge) {
-				_indexBackend.SetStreamMetadata(stream1Id, new StreamMetadata(maxAge:TimeSpan.FromDays(1)));
-				_indexBackend.SetStreamMetadata(stream2Id, new StreamMetadata(maxAge:TimeSpan.FromDays(1)));
+				_indexBackend.SetStreamMetadata(stream1Id, new StreamMetadata(maxAge: TimeSpan.FromDays(1)));
+				_indexBackend.SetStreamMetadata(stream2Id, new StreamMetadata(maxAge: TimeSpan.FromDays(1)));
 			}
 			//ptable 1
 			_tableIndex.Add(1, stream1Id, 0, 0);
@@ -195,8 +193,8 @@ namespace EventStore.Core.Tests.Services.Storage.HashCollisions {
 			string stream1Id = "account--696193173";
 			string stream2Id = "LPN-FC002_LPK51001";
 			if (_useMaxAge) {
-				_indexBackend.SetStreamMetadata(stream1Id, new StreamMetadata(maxAge:TimeSpan.FromDays(1)));
-				_indexBackend.SetStreamMetadata(stream2Id, new StreamMetadata(maxAge:TimeSpan.FromDays(1)));
+				_indexBackend.SetStreamMetadata(stream1Id, new StreamMetadata(maxAge: TimeSpan.FromDays(1)));
+				_indexBackend.SetStreamMetadata(stream2Id, new StreamMetadata(maxAge: TimeSpan.FromDays(1)));
 			}
 			//ptable 1
 			_tableIndex.Add(1, stream1Id, 0, 0);
@@ -228,7 +226,7 @@ namespace EventStore.Core.Tests.Services.Storage.HashCollisions {
 
 		protected override void when() {
 			if (_useMaxAge) {
-				_indexBackend.SetStreamMetadata(streamId, new StreamMetadata(maxAge:TimeSpan.FromDays(1)));
+				_indexBackend.SetStreamMetadata(streamId, new StreamMetadata(maxAge: TimeSpan.FromDays(1)));
 			}
 			//ptable 1
 			_tableIndex.Add(1, streamId, 0, 2);
@@ -301,7 +299,7 @@ namespace EventStore.Core.Tests.Services.Storage.HashCollisions {
 
 		protected override void when() {
 			if (_useMaxAge) {
-				_indexBackend.SetStreamMetadata(streamId, new StreamMetadata(maxAge:TimeSpan.FromDays(1)));
+				_indexBackend.SetStreamMetadata(streamId, new StreamMetadata(maxAge: TimeSpan.FromDays(1)));
 			}
 			//ptable 1 with 32bit indexes
 			_tableIndex.Add(1, streamId, 0, 2);

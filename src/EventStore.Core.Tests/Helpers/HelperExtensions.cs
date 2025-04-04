@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using System.Linq;
-using EventStore.Common.Utils;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using EventStore.Common.Utils;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Helpers {
 	public static class HelperExtensions {

@@ -3,26 +3,26 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Security;
+using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Configuration;
+using EventStore.Common.DevCertificates;
 using EventStore.Common.Exceptions;
 using EventStore.Common.Log;
 using EventStore.Common.Utils;
-using EventStore.Core.Services.Transport.Http;
-using EventStore.Core.Certificates;
 using EventStore.Core;
+using EventStore.Core.Certificates;
+using EventStore.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using System.Runtime;
-using EventStore.Common.DevCertificates;
 using Serilog.Events;
 
 namespace EventStore.ClusterNode {
@@ -87,7 +87,7 @@ namespace EventStore.ClusterNode {
 
 				foreach (var (option, suggestion) in options.Unknown.Options) {
 					if (string.IsNullOrEmpty(suggestion)) {
-						Log.Write(level, "The option {option} is not a known option.", option);	
+						Log.Write(level, "The option {option} is not a known option.", option);
 					} else {
 						Log.Write(level, "The option {option} is not a known option. Did you mean {suggestion}?", option, suggestion);
 					}
@@ -153,7 +153,7 @@ namespace EventStore.ClusterNode {
 						"INSECURE MODE WILL DISABLE ALL AUTHENTICATION, AUTHORIZATION AND TRANSPORT SECURITY FOR ALL CLIENTS AND NODES.\n" +
 						"==============================================================================================================\n");
 				}
-				
+
 				if (options.Application.WhatIf) {
 					return 0;
 				}
@@ -220,8 +220,7 @@ namespace EventStore.ClusterNode {
 			} catch (InvalidConfigurationException ex) {
 				Log.Fatal("Invalid Configuration: " + ex.Message);
 				return 1;
-			}
-			catch (Exception ex) {
+			} catch (Exception ex) {
 				Log.Fatal(ex, "Host terminated unexpectedly.");
 				return 1;
 			} finally {
@@ -281,7 +280,7 @@ namespace EventStore.ClusterNode {
 						offline: true),
 					ClientCertificateRequired = true, // request a client certificate but it's not necessary for the client to supply one
 					RemoteCertificateValidationCallback = (_, certificate, chain, sslPolicyErrors) => {
-						if(certificate == null) // not necessary to have a client certificate
+						if (certificate == null) // not necessary to have a client certificate
 							return true;
 
 						var (isValid, error) =

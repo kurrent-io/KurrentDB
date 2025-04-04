@@ -24,15 +24,14 @@ using Microsoft.Net.Http.Headers;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
+using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
+using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
 using MidFunc = System.Func<
 	Microsoft.AspNetCore.Http.HttpContext,
 	System.Func<System.Threading.Tasks.Task>,
 	System.Threading.Tasks.Task
 >;
-using ElectionsService = EventStore.Core.Services.Transport.Grpc.Cluster.Elections;
 using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
-using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
-using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
 using ServerFeatures = EventStore.Core.Services.Transport.Grpc.ServerFeatures;
 
 namespace EventStore.Core {
@@ -87,7 +86,7 @@ namespace EventStore.Core {
 				throw new ArgumentNullException(nameof(httpAuthenticationProviders));
 			}
 
-			if(authorizationProvider == null)
+			if (authorizationProvider == null)
 				throw new ArgumentNullException(nameof(authorizationProvider));
 
 			if (readIndex == null) {
@@ -134,8 +133,8 @@ namespace EventStore.Core {
 			app.Map("/health", _statusCheck.Configure)
 				.UseMiddleware<AuthenticationMiddleware>()
 				.UseRouting()
-				.UseWhen(ctx => ctx.Request.Method == HttpMethods.Options 
-				                && !(ctx.Request.GetTypedHeaders().ContentType?.IsSubsetOf(grpc)).GetValueOrDefault(false),
+				.UseWhen(ctx => ctx.Request.Method == HttpMethods.Options
+								&& !(ctx.Request.GetTypedHeaders().ContentType?.IsSubsetOf(grpc)).GetValueOrDefault(false),
 					b => b
 						.UseMiddleware<KestrelToInternalBridgeMiddleware>()
 				)

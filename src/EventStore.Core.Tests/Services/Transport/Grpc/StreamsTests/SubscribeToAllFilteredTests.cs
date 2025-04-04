@@ -10,9 +10,9 @@ using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Grpc.Core;
 using NUnit.Framework;
-using Position = EventStore.Core.Services.Transport.Grpc.Position;
 using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
 using LogV3StreamId = System.UInt32;
+using Position = EventStore.Core.Services.Transport.Grpc.Position;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 	[TestFixture]
@@ -30,9 +30,9 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 			};
 
 			return from checkpointInterval in checkpointIntervalMultipliers
-				from maxSearchWindow in maxSearchWindows
-				from logFormat in logFormats
-				select new object[] {
+				   from maxSearchWindow in maxSearchWindows
+				   from logFormat in logFormats
+				   select new object[] {
 					logFormat.Item1,
 					logFormat.Item2,
 					checkpointInterval,
@@ -59,7 +59,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 
 			public when_subscribing_to_all_with_a_filter(uint checkpointIntervalMultiplier, uint maxSearchWindow,
 				int filteredEventCount)
-				: base (new LotsOfExpiriesStrategy()) {
+				: base(new LotsOfExpiriesStrategy()) {
 				_maxSearchWindow = maxSearchWindow;
 				_checkpointIntervalMultiplier = checkpointIntervalMultiplier;
 				_checkpointInterval = checkpointIntervalMultiplier * maxSearchWindow;
@@ -189,10 +189,10 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				await AppendToStreamBatch(new BatchAppendReq {
 					Options = new() {
 						Any = new(),
-						StreamIdentifier = new() {StreamName = ByteString.CopyFromUtf8("abcd")}
+						StreamIdentifier = new() { StreamName = ByteString.CopyFromUtf8("abcd") }
 					},
 					IsFinal = true,
-					ProposedMessages = {CreateEvents(_filteredEventCount)},
+					ProposedMessages = { CreateEvents(_filteredEventCount) },
 					CorrelationId = Uuid.NewUuid().ToDto()
 				});
 			}
@@ -202,7 +202,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 					try {
 						await WhenWhichMightConsumeTooSlow(i);
 						return;
-					} catch (RpcException ex) when(ex.Message.Contains("too slow")) {
+					} catch (RpcException ex) when (ex.Message.Contains("too slow")) {
 						_positions.Clear();
 						await Task.Delay(500);
 					}
@@ -214,13 +214,13 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				using var call = StreamsClient.Read(new ReadReq {
 					Options = new ReadReq.Types.Options {
 						Subscription = new(),
-						All = new() {End = new()},
+						All = new() { End = new() },
 						Filter = new() {
 							Max = _maxSearchWindow,
 							CheckpointIntervalMultiplier = _checkpointIntervalMultiplier,
-							StreamIdentifier = new() {Prefix = {streamName}}
+							StreamIdentifier = new() { Prefix = { streamName } }
 						},
-						UuidOption = new() {Structured = new()},
+						UuidOption = new() { Structured = new() },
 						ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards
 					}
 				}, GetCallOptions(AdminCredentials));
@@ -230,18 +230,18 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				Assert.AreEqual(ReadResp.ContentOneofCase.Confirmation, call.ResponseStream.Current.ContentCase);
 
 				var success = new BatchAppendResp.Types.Success();
-				for (int i = 0; i <= _checkpointInterval ; i++) {
+				for (int i = 0; i <= _checkpointInterval; i++) {
 					success = (await AppendToStreamBatch(new BatchAppendReq {
 						Options = new() {
 							Any = new(),
-							StreamIdentifier = new() {StreamName = ByteString.CopyFromUtf8(streamName)}
+							StreamIdentifier = new() { StreamName = ByteString.CopyFromUtf8(streamName) }
 						},
 						IsFinal = true,
-						ProposedMessages = {CreateEvents(1)},
+						ProposedMessages = { CreateEvents(1) },
 						CorrelationId = Uuid.NewUuid().ToDto()
 					})).Success;
 				}
-				
+
 				_position = new Position(success.Position.CommitPosition, success.Position.PreparePosition);
 
 				while (await call.ResponseStream.MoveNext()) {
@@ -277,7 +277,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				Assert.True(_positions[0] < _position);
 			}
 		}
-		
+
 		[TestFixture(typeof(LogFormat.V2), typeof(string), 8, 6)]
 		[TestFixture(typeof(LogFormat.V2), typeof(string), 32, 6)]
 		[TestFixture(typeof(LogFormat.V2), typeof(string), 36, 6)]
@@ -288,18 +288,18 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 			private const string MarkerStream = nameof(MarkerStream);
 			private const string FinishEventType = nameof(FinishEventType);
 			private const int CheckpointIntervalMultiplier = 2;
-			private const int CheckpointInterval = CheckpointIntervalMultiplier * 32; 
+			private const int CheckpointInterval = CheckpointIntervalMultiplier * 32;
 
 			private int _expectedEventCount;
 			private AllStreamPosition _markerPosition;
 			private readonly int _numberOfEventsToCatchUp;
 			private readonly int _expectedCheckpoints;
-			private readonly List<int> _checkpointPositions = new (); 
-			private readonly Dictionary<ReadResp.ContentOneofCase, int> _contentCaseCounts = new ();
+			private readonly List<int> _checkpointPositions = new();
+			private readonly Dictionary<ReadResp.ContentOneofCase, int> _contentCaseCounts = new();
 
 			public when_subscribing_to_all_with_a_filter_and_transitioning_to_live(int catchupCount, int expectedCheckpoints)
-				: base (new LotsOfExpiriesStrategy()) {
-				
+				: base(new LotsOfExpiriesStrategy()) {
+
 				_expectedCheckpoints = expectedCheckpoints;
 				_numberOfEventsToCatchUp = catchupCount;
 
@@ -321,7 +321,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				});
 
 				_markerPosition = result.Success.Position;
-				
+
 				// initial events used for catching-up the subscription
 				await AppendToStreamBatch(new BatchAppendReq {
 					Options = new() {
@@ -342,10 +342,12 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 					using var call = StreamsClient.Read(new ReadReq {
 						Options = new ReadReq.Types.Options {
 							Subscription = new(),
-							All = new() { Position = new ReadReq.Types.Options.Types.Position() {
-								CommitPosition = _markerPosition.CommitPosition,
-								PreparePosition = _markerPosition.PreparePosition
-							}},
+							All = new() {
+								Position = new ReadReq.Types.Options.Types.Position() {
+									CommitPosition = _markerPosition.CommitPosition,
+									PreparePosition = _markerPosition.PreparePosition
+								}
+							},
 							Filter = new() {
 								Count = new Empty(),
 								CheckpointIntervalMultiplier = CheckpointIntervalMultiplier,
@@ -357,7 +359,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 							ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards
 						}
 					}, GetCallOptions(AdminCredentials));
-					
+
 					// consume
 					var cts = new CancellationTokenSource();
 					var sw = Stopwatch.StartNew();
@@ -386,16 +388,16 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 
 							sw.Restart();
 						}
-					} catch (RpcException ex) when(ex.StatusCode == StatusCode.Cancelled) {
+					} catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled) {
 						// expected
 					}
-					
+
 					cancelSubscription.TrySetResult();
 				});
 
 				// wait for initial events to be caught-up and subscription transitions to live
 				await caughtUp.Task;
-				
+
 				for (int i = 0; i < 18; i++) {
 					await AppendToStreamBatch(new BatchAppendReq {
 						Options = new() {
@@ -422,7 +424,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 					},
 					CorrelationId = Uuid.NewUuid().ToDto()
 				});
-				
+
 				await cancelSubscription.Task;
 			}
 
@@ -433,32 +435,32 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				_expectedEventCount += events.Length;
 				return events;
 			}
-			
+
 			[Test]
 			public void receives_the_correct_number_of_confirmations() {
 				Assert.AreEqual(1, _contentCaseCounts[ReadResp.ContentOneofCase.Confirmation]);
 			}
-			
+
 			[Test]
 			public void receives_the_correct_number_of_events() {
 				Assert.AreEqual(_expectedEventCount, _contentCaseCounts[ReadResp.ContentOneofCase.Event]);
 			}
-			
+
 			[Test]
 			public void receives_the_correct_number_of_checkpoints() {
 				Assert.AreEqual(_expectedCheckpoints, _contentCaseCounts[ReadResp.ContentOneofCase.Checkpoint]);
 			}
-			
+
 			[Test]
 			public void receives_the_checkpoints_on_correct_interval() {
-				_checkpointPositions.ForEach(p => Assert.Zero( p % CheckpointInterval, $"checkpoint at: {p}"));
+				_checkpointPositions.ForEach(p => Assert.Zero(p % CheckpointInterval, $"checkpoint at: {p}"));
 			}
-			
+
 			[Test]
 			public void receives_the_subscription_was_caught_up() {
 				Assert.AreEqual(1, _contentCaseCounts[ReadResp.ContentOneofCase.CaughtUp]);
 			}
-			
+
 			[Test]
 			public void does_not_receive_the_subscription_fell_behind() {
 				Assert.Zero(_contentCaseCounts[ReadResp.ContentOneofCase.FellBehind]);

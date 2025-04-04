@@ -14,7 +14,7 @@ namespace EventStore.Core.Authorization {
 		public ValueTask<bool> Evaluate(ClaimsPrincipal cp, Operation operation, PolicyInformation policy,
 			EvaluationContext context) {
 			if (!cp.Claims.Any() ||
-			    cp.Claims.Any(x => string.Equals(x.Type, ClaimTypes.Anonymous, StringComparison.Ordinal)))
+				cp.Claims.Any(x => string.Equals(x.Type, ClaimTypes.Anonymous, StringComparison.Ordinal)))
 				context.Add(new AssertionMatch(policy, new AssertionInformation("match", "authenticated", Grant.Deny)));
 			else
 				context.Add(new AssertionMatch(policy,

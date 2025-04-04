@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using System.Linq;
 using EventStore.Core.TransactionLog.Scavenging;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge {

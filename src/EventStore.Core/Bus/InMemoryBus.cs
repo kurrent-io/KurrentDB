@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Messages;

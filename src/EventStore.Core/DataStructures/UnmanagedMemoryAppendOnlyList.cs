@@ -41,8 +41,7 @@ namespace EventStore.Core.DataStructures {
 			if (_count >= _maxCapacity)
 				throw new MaxCapacityReachedException();
 
-			unsafe
-			{
+			unsafe {
 				new Span<T>(_dataPtr.ToPointer(), _maxCapacity) {
 					[_count] = item
 				};
@@ -70,8 +69,7 @@ namespace EventStore.Core.DataStructures {
 					throw new IndexOutOfRangeException();
 				}
 
-				unsafe
-				{
+				unsafe {
 					return new ReadOnlySpan<T>(_dataPtr.ToPointer(), _maxCapacity)[index];
 				}
 			}

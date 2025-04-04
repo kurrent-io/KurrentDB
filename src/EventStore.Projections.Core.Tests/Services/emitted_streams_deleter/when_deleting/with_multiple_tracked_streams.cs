@@ -1,11 +1,11 @@
-﻿using EventStore.ClientAPI;
-using EventStore.Common.Utils;
-using EventStore.Projections.Core.Services.Processing;
-using NUnit.Framework;
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.ClientAPI;
+using EventStore.Common.Utils;
 using EventStore.Core.Tests;
+using EventStore.Projections.Core.Services.Processing;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.emitted_streams_deleter.when_deleting {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

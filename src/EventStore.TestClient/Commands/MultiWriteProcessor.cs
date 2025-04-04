@@ -11,7 +11,7 @@ namespace EventStore.TestClient.Commands {
 		public string Usage {
 			get { return "MWR [<write-count=10> [<stream=test-stream> [<expected-version=ANY>]]"; }
 		}
-		
+
 		public string Keyword {
 			get { return "MWR"; }
 		}

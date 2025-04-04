@@ -1,11 +1,11 @@
-﻿using NUnit.Framework;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Services;
-using System;
-using EventStore.Core.TransactionLog;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EventStore.Core.Services;
+using EventStore.Core.TransactionLog;
+using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.DeletingStream {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

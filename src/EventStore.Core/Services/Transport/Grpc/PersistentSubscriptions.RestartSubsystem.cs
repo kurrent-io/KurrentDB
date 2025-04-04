@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Core.Messages;
@@ -26,7 +25,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 			void HandleRestartSubsystemCompleted(Message message) {
 				if (message is ClientMessage.NotHandled notHandled &&
-				    RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+					RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 					restartSubsystemSource.TrySetException(ex);
 					return;
 				}

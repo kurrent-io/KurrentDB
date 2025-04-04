@@ -57,7 +57,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint {
 		public void can_pass_though_millions_of_events() {
 			var i = 0;
 			var sw = Stopwatch.StartNew();
-			
+
 			for (i = 0; i < 100000000; i++) {
 				string state;
 				EmittedEventEnvelope[] emittedEvents;
@@ -72,10 +72,10 @@ namespace EventStore.Projections.Core.Tests.Services.Jint {
 				Assert.AreEqual("output-stream" + i, emittedEvents[0].Event.StreamId);
 				Assert.AreEqual(@"{""a"":""" + i + @"""}", emittedEvents[0].Event.Data);
 
-				if(sw.Elapsed > TimeSpan.FromSeconds(120))
+				if (sw.Elapsed > TimeSpan.FromSeconds(120))
 					break;
 			}
-			
+
 			Console.WriteLine($"processed: {i}");
 		}
 	}

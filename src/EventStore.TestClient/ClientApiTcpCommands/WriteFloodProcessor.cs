@@ -111,7 +111,8 @@ namespace EventStore.TestClient.ClientApiTcpCommands {
 					pending.Add(client.AppendToStreamAsync(streams[rnd.Next(streamsCnt)], ExpectedVersion.Any, events)
 						.ContinueWith(t => {
 							monitor.EndOperation(corrid);
-							if (t.IsCompletedSuccessfully) Interlocked.Add(ref stats.Succ, batchSize);
+							if (t.IsCompletedSuccessfully)
+								Interlocked.Add(ref stats.Succ, batchSize);
 							else {
 								if (Interlocked.Increment(ref stats.Fail) % 1000 == 0) {
 									Console.Write("#");
@@ -170,7 +171,8 @@ namespace EventStore.TestClient.ClientApiTcpCommands {
 					}
 				}
 
-				if (pending.Count > 0) await Task.WhenAll(pending);
+				if (pending.Count > 0)
+					await Task.WhenAll(pending);
 			}
 
 			var sw = Stopwatch.StartNew();

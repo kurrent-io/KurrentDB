@@ -26,7 +26,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					key INTEGER PRIMARY KEY,
 					min INTEGER,
 					max INTEGER)";
-		
+
 			sqlite.InitializeDb(sql);
 
 			_add = new AddCommand(TableName, sqlite);
@@ -92,12 +92,12 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					SELECT min, max
 					FROM {tableName}
 					WHERE key = $key";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteType.Integer);
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -119,7 +119,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					SELECT min, max
 					FROM {tableName}
 					WHERE key = $key";
-				
+
 				_selectCmd = sqlite.CreateCommand();
 				_selectCmd.CommandText = selectSql;
 				_selectKeyParam = _selectCmd.Parameters.Add("$key", SqliteType.Integer);
@@ -128,12 +128,12 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				var deleteSql = $@"
 					DELETE FROM {tableName}
 					WHERE key = $key";
-				
+
 				_deleteCmd = sqlite.CreateCommand();
 				_deleteCmd.CommandText = deleteSql;
 				_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteType.Integer);
 				_deleteCmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -154,11 +154,11 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					SELECT min, max, key
 					FROM {tableName}
 					ORDER BY key";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 
 				_reader = reader => {

@@ -10,7 +10,7 @@ namespace EventStore.Projections.Core.Tests.Services.position_tagging.event_by_t
 
 		[SetUp]
 		public void When() {
-			_tagger = new EventByTypeIndexPositionTagger(0, new[] {"type1", "type2"});
+			_tagger = new EventByTypeIndexPositionTagger(0, new[] { "type1", "type2" });
 			_positionTracker = new PositionTracker(_tagger);
 			// when 
 

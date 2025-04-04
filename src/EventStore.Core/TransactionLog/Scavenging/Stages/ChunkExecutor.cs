@@ -196,7 +196,7 @@ namespace EventStore.Core.TransactionLog.Scavenging {
 			try {
 				outputChunk = _chunkManager.CreateChunkWriter(sourceChunk);
 				_logger.Debug(
-					"SCAVENGING: Resulting temp chunk file: {tmpChunkPath}.", 
+					"SCAVENGING: Resulting temp chunk file: {tmpChunkPath}.",
 					Path.GetFileName(outputChunk.FileName));
 
 			} catch (IOException ex) {
@@ -328,7 +328,7 @@ namespace EventStore.Core.TransactionLog.Scavenging {
 					return false;
 				}
 			}
-			
+
 			if (details.IsTombstoned) {
 				if (_unsafeIgnoreHardDeletes) {
 					// remove _everything_ for metadata and original streams

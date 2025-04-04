@@ -40,7 +40,7 @@ namespace EventStore.Core.Index {
 		}
 
 		public void Add(ulong stream, long version, long position) {
-			AddEntries(new[] {new IndexEntry(stream, version, position)});
+			AddEntries(new[] { new IndexEntry(stream, version, position) });
 		}
 
 		public void AddEntries(IList<IndexEntry> entries) {
@@ -56,18 +56,18 @@ namespace EventStore.Core.Index {
 			SortedList<Entry, byte> list = null;
 			try {
 
-			if (!_hash.TryGetValue(stream, out list)) {
-				list = new SortedList<Entry, byte>(MemTableComparer);
-				if (!Monitor.TryEnter(list, 10000))
-					throw new UnableToAcquireLockInReasonableTimeException();
-				_hash.AddOrUpdate(stream, list,
-					(x, y) => {
-						throw new Exception("This should never happen as MemTable updates are single-threaded.");
-					});
-			} else{
-				if (!Monitor.TryEnter(list, 10000))
-					throw new UnableToAcquireLockInReasonableTimeException();
-			}
+				if (!_hash.TryGetValue(stream, out list)) {
+					list = new SortedList<Entry, byte>(MemTableComparer);
+					if (!Monitor.TryEnter(list, 10000))
+						throw new UnableToAcquireLockInReasonableTimeException();
+					_hash.AddOrUpdate(stream, list,
+						(x, y) => {
+							throw new Exception("This should never happen as MemTable updates are single-threaded.");
+						});
+				} else {
+					if (!Monitor.TryEnter(list, 10000))
+						throw new UnableToAcquireLockInReasonableTimeException();
+				}
 
 				for (int i = 0, n = collection.Count; i < n; ++i) {
 					var entry = collection[i];
@@ -78,7 +78,7 @@ namespace EventStore.Core.Index {
 					list.Add(new Entry(entry.Version, entry.Position), 0);
 				}
 			} finally {
-				if(list != null)
+				if (list != null)
 					Monitor.Exit(list);
 			}
 		}
@@ -92,7 +92,8 @@ namespace EventStore.Core.Index {
 
 			SortedList<Entry, byte> list;
 			if (_hash.TryGetValue(hash, out list)) {
-				if (!Monitor.TryEnter(list, 10000)) throw new UnableToAcquireLockInReasonableTimeException();
+				if (!Monitor.TryEnter(list, 10000))
+					throw new UnableToAcquireLockInReasonableTimeException();
 				try {
 					int endIdx = list.UpperBound(new Entry(number, long.MaxValue));
 					if (endIdx == -1)
@@ -287,7 +288,8 @@ namespace EventStore.Core.Index {
 
 			SortedList<Entry, byte> list;
 			if (_hash.TryGetValue(hash, out list)) {
-				if (!Monitor.TryEnter(list, 10000)) throw new UnableToAcquireLockInReasonableTimeException();
+				if (!Monitor.TryEnter(list, 10000))
+					throw new UnableToAcquireLockInReasonableTimeException();
 				try {
 					var endIdx = list.UpperBound(new Entry(endNumber, long.MaxValue));
 					for (int i = endIdx; i >= 0; i--) {
@@ -320,18 +322,24 @@ namespace EventStore.Core.Index {
 
 		private class EventNumberComparer : IComparer<Entry> {
 			public int Compare(Entry x, Entry y) {
-				if (x.EvNum < y.EvNum) return -1;
-				if (x.EvNum > y.EvNum) return 1;
-				if (x.LogPos < y.LogPos) return -1;
-				if (x.LogPos > y.LogPos) return 1;
+				if (x.EvNum < y.EvNum)
+					return -1;
+				if (x.EvNum > y.EvNum)
+					return 1;
+				if (x.LogPos < y.LogPos)
+					return -1;
+				if (x.LogPos > y.LogPos)
+					return 1;
 				return 0;
 			}
 		}
 
 		private class LogPositionComparer : IComparer<Entry> {
 			public int Compare(Entry x, Entry y) {
-				if (x.LogPos < y.LogPos) return -1;
-				if (x.LogPos > y.LogPos) return 1;
+				if (x.LogPos < y.LogPos)
+					return -1;
+				if (x.LogPos > y.LogPos)
+					return 1;
 				return 0;
 			}
 		}

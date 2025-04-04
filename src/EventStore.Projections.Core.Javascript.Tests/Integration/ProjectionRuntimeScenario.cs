@@ -8,13 +8,11 @@ using EventStore.Core.Services.Transport.Http;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.FileNamingStrategy;
-using Xunit.Abstractions;
 
-namespace EventStore.Projections.Core.Javascript.Tests.Integration
-{
-	public abstract class ProjectionRuntimeScenario: SubsystemScenario {
-		protected ProjectionRuntimeScenario() : base(CreateRuntime, "$et", new CancellationTokenSource(System.Diagnostics.Debugger.IsAttached?5*60*1000: 5*1000).Token){
-			
+namespace EventStore.Projections.Core.Javascript.Tests.Integration {
+	public abstract class ProjectionRuntimeScenario : SubsystemScenario {
+		protected ProjectionRuntimeScenario() : base(CreateRuntime, "$et", new CancellationTokenSource(System.Diagnostics.Debugger.IsAttached ? 5 * 60 * 1000 : 5 * 1000).Token) {
+
 		}
 
 		static (Action, IPublisher) CreateRuntime(InMemoryBus mainBus, IQueuedHandler mainQueue, ICheckpoint writerCheckpoint) {
@@ -27,7 +25,7 @@ namespace EventStore.Projections.Core.Javascript.Tests.Integration
 			var timeProvider = new RealTimeProvider();
 			var ts = new TimerService(new TimerBasedScheduler(new RealTimer(),
 				timeProvider));
-			
+
 			var sc = new StandardComponents(db, mainQueue, mainBus, ts, timeProvider, null, new IHttpService[] { }, mainBus, qs, new());
 			var runtime = new ProjectionsSubsystem(options);
 			runtime.Create(sc).Start();

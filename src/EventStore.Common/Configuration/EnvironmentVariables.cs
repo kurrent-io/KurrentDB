@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Linq;
 using Microsoft.Extensions.Configuration;
 
 namespace EventStore.Common.Configuration {

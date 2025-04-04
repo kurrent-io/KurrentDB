@@ -3,8 +3,7 @@ using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	[TestFixture]
 	public class when_not_returning_state_from_a_js_handler : TestFixtureWithInterpretedProjection {
 		protected override void Given() {

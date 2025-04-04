@@ -1,5 +1,4 @@
 using System;
-using EventStore.Core.Data;
 
 namespace EventStore.Core.Services.PersistentSubscription {
 	public interface IPersistentSubscriptionStreamPosition : IEquatable<IPersistentSubscriptionStreamPosition>, IComparable<IPersistentSubscriptionStreamPosition> {

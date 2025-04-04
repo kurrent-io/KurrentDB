@@ -4,8 +4,7 @@ using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	public class when_specifying_meta_data_for_linked_event : TestFixtureWithInterpretedProjection {
 		protected override void Given() {
 			_projection = @"
@@ -21,18 +20,18 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 		public void meta_data_should_be_set() {
 			string state = null;
 			EmittedEventEnvelope[] emittedEvents = null;
-		
+
 			var result = _stateHandler.ProcessEvent(
 				"", CheckpointTag.FromPosition(0, 20, 10), "stream1", "type1", "category", Guid.NewGuid(), 0,
 				"metadata",
 				null, out state, out emittedEvents, isJson: false);
-			
+
 			Assert.IsNotNull(emittedEvents);
 			Assert.AreEqual(1, emittedEvents.Length);
 			Assert.IsNotNull(emittedEvents[0].Event);
 
 			var metaData = emittedEvents[0].Event.ExtraMetaData();
-			CollectionAssert.AreEquivalent(new Dictionary<string, string> {{ "meta", "\"data\"" }}, metaData);
+			CollectionAssert.AreEquivalent(new Dictionary<string, string> { { "meta", "\"data\"" } }, metaData);
 		}
 	}
 }

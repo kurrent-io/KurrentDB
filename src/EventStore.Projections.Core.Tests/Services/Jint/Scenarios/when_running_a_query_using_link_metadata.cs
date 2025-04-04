@@ -6,8 +6,7 @@ using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Management;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_running_a_query_using_link_metadata<TLogFormat, TStream> : specification_with_js_query_posted<TLogFormat, TStream> {

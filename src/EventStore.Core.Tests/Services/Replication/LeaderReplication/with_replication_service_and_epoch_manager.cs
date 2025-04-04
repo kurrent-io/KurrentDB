@@ -27,7 +27,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public abstract class with_replication_service_and_epoch_manager<TLogFormat, TStreamId>  : SpecificationWithDirectoryPerTestFixture {
+	public abstract class with_replication_service_and_epoch_manager<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 		private const int _connectionPendingSendBytesThreshold = 10 * 1024;
 		private const int _connectionQueueSizeThreshold = 50000;
 
@@ -87,7 +87,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 
 			Service.Handle(new SystemMessage.SystemStart());
 			Service.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
-			
+
 			When();
 		}
 
@@ -115,7 +115,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 				new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 					new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()),
 					new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
-				new AuthorizationGateway(new TestAuthorizationProvider()), 
+				new AuthorizationGateway(new TestAuthorizationProvider()),
 				TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
 				_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 			var subRequest = new ReplicationMessage.ReplicaSubscriptionRequest(
@@ -156,7 +156,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 			ICheckpoint indexCheckpoint = new InMemoryCheckpoint(-1);
 			ICheckpoint streamExistenceFilterCheckpoint = new InMemoryCheckpoint(-1);
 			var nodeConfig = new TFChunkDbConfig(
-				PathName, 
+				PathName,
 				new VersionedPatternFileNamingStrategy(PathName, "chunk-"),
 				chunkSize: 1000,
 				maxChunksCacheSize: 10000,

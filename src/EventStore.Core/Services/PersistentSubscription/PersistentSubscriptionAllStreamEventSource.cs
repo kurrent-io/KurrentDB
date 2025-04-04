@@ -19,7 +19,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			EventFilter = null;
 		}
 
-		public IPersistentSubscriptionStreamPosition StreamStartPosition  => new PersistentSubscriptionAllStreamPosition(0L, 0L);
+		public IPersistentSubscriptionStreamPosition StreamStartPosition => new PersistentSubscriptionAllStreamPosition(0L, 0L);
 		public IPersistentSubscriptionStreamPosition GetStreamPositionFor(ResolvedEvent @event) {
 			if (@event.OriginalPosition.HasValue) {
 				return new PersistentSubscriptionAllStreamPosition(@event.OriginalPosition.Value.CommitPosition, @event.OriginalPosition.Value.PreparePosition);

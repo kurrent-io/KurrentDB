@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.Testing.Verifiers;
 
 namespace EventStore.SourceGenerators.Tests.Messaging {
 	// https://github.com/dotnet/roslyn/blob/main/docs/features/source-generators.cookbook.md#unit-testing-of-generators
-	public static class CSharpSourceGeneratorVerifier<TSourceGenerator> 
+	public static class CSharpSourceGeneratorVerifier<TSourceGenerator>
 		where TSourceGenerator : ISourceGenerator, new() {
 
 		public class Test : CSharpSourceGeneratorTest<TSourceGenerator, XUnitVerifier> {

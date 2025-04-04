@@ -74,7 +74,7 @@ namespace EventStore.Core.Services {
 	}
 
 	public static class SystemEventTypes {
-		private static readonly char[] _linkToSeparator = new[] {'@'};
+		private static readonly char[] _linkToSeparator = new[] { '@' };
 		public const string StreamDeleted = "$streamDeleted";
 		public const string StatsCollection = "$statsCollected";
 		public const string LinkTo = "$>";

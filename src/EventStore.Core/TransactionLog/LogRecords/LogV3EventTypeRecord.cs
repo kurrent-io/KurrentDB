@@ -58,7 +58,7 @@ namespace EventStore.Core.TransactionLog.LogRecords {
 				eventTypeVersion: Record.SubHeader.Version,
 				partitionId: Record.SubHeader.PartitionId);
 		}
-		
+
 		public bool Equals(LogV3EventTypeRecord other) {
 			if (other is null)
 				return false;

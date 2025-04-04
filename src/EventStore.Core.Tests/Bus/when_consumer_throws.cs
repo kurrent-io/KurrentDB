@@ -1,9 +1,8 @@
 ﻿using System;
 using EventStore.Core.Bus;
-using EventStore.Core.Tests.Bus.Helpers;
-using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
 using EventStore.Core.Messaging;
+using EventStore.Core.Tests.Bus.Helpers;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Bus {
 	[TestFixture, Category("bus")]
@@ -59,7 +58,7 @@ namespace EventStore.Core.Tests.Bus {
 	public class when_consumer_throws_autoreset : when_consumer_throws {
 		public when_consumer_throws_autoreset()
 			: base((consumer, name, timeout) =>
-				new QueuedHandlerAutoResetWithMpsc(consumer, name, new QueueStatsManager(),false, null, timeout)) {
+				new QueuedHandlerAutoResetWithMpsc(consumer, name, new QueueStatsManager(), false, null, timeout)) {
 		}
 	}
 }

@@ -42,7 +42,7 @@ namespace EventStore.Core.Tests.Integration {
 					}
 				};
 
-				var content = JsonSerializer.SerializeToUtf8Bytes(new [] {
+				var content = JsonSerializer.SerializeToUtf8Bytes(new[] {
 					new {
 						eventId = Guid.NewGuid(),
 						data = new{},

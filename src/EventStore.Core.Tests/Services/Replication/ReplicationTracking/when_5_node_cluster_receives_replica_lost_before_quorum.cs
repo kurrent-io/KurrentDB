@@ -11,7 +11,7 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 		private readonly Guid _replicaId2 = Guid.NewGuid();
 		private readonly Guid _replicaId3 = Guid.NewGuid();
 
-		
+
 		protected override int ClusterSize => 5;
 
 		public override void When() {
@@ -35,8 +35,8 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 
 		[Test]
 		public void replication_checkpoint_should_not_advance() {
-			Assert.AreEqual(0, ReplicationCheckpoint.Read());		
-			Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());		
-		}	
+			Assert.AreEqual(0, ReplicationCheckpoint.Read());
+			Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());
+		}
 	}
 }

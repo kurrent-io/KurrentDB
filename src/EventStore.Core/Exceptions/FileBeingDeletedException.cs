@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.Serialization;
 
 namespace EventStore.Core.Exceptions {
 	public class FileBeingDeletedException : Exception {

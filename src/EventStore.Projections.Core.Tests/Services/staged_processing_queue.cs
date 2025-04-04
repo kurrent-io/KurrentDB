@@ -10,7 +10,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true});
+				_q = new StagedProcessingQueue(new[] { true });
 			}
 
 			[Test]
@@ -37,7 +37,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true});
+				_q = new StagedProcessingQueue(new[] { true });
 				_t1 = new TestTask(1, 1);
 				_q.Enqueue(_t1);
 			}
@@ -64,7 +64,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true, true});
+				_q = new StagedProcessingQueue(new[] { true, true });
 				_t1 = new TestTask(1, 2, 0);
 				_q.Enqueue(_t1);
 			}
@@ -84,7 +84,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true, true});
+				_q = new StagedProcessingQueue(new[] { true, true });
 				_t1 = new TestTask(1, 2, 0);
 				_q.Enqueue(_t1);
 				_q.Initialize();
@@ -115,7 +115,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true, true});
+				_q = new StagedProcessingQueue(new[] { true, true });
 				_t1 = new TestTask(1, 2, 1);
 				_q.Enqueue(_t1);
 			}
@@ -143,7 +143,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true, true});
+				_q = new StagedProcessingQueue(new[] { true, true });
 				_t1 = new TestTask(1, 1);
 				_t2 = new TestTask(1, 1);
 				_q.Enqueue(_t1);
@@ -168,7 +168,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true, true});
+				_q = new StagedProcessingQueue(new[] { true, true });
 				_t1 = new TestTask(1, 1, 1);
 				_t2 = new TestTask(1, 1, 1);
 				_q.Enqueue(_t1);
@@ -192,9 +192,9 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true, true});
-				_t1 = new TestTask(null, 2, stageCorrelations: new object[] {"a", "a"});
-				_t2 = new TestTask(null, 2, stageCorrelations: new object[] {"a", "a"});
+				_q = new StagedProcessingQueue(new[] { true, true });
+				_t1 = new TestTask(null, 2, stageCorrelations: new object[] { "a", "a" });
+				_t2 = new TestTask(null, 2, stageCorrelations: new object[] { "a", "a" });
 				_q.Enqueue(_t1);
 				_q.Enqueue(_t2);
 			}
@@ -266,7 +266,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true, true});
+				_q = new StagedProcessingQueue(new[] { true, true });
 				_t1 = new TestTask(1, 2);
 				_t2 = new TestTask(2, 2, 0);
 				_q.Enqueue(_t1);
@@ -301,7 +301,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {false, false, true});
+				_q = new StagedProcessingQueue(new[] { false, false, true });
 				_t1 = new TestTask(1, 3);
 				_t2 = new TestTask(2, 3, 0);
 				_q.Enqueue(_t1);
@@ -337,7 +337,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {false, false, true});
+				_q = new StagedProcessingQueue(new[] { false, false, true });
 				_t1 = new TestTask(1, 3);
 				_t2 = new TestTask(2, 3, 0);
 				_t3 = new TestTask(3, 3, 0);
@@ -394,7 +394,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {true, true});
+				_q = new StagedProcessingQueue(new[] { true, true });
 				_t1 = new TestTask(1, 1);
 				_t2 = new TestTask(2, 1);
 				_q.Enqueue(_t1);
@@ -419,8 +419,8 @@ namespace EventStore.Projections.Core.Tests.Services {
 
 			[SetUp]
 			public void when() {
-				_q = new StagedProcessingQueue(new[] {false});
-				_t1 = new TestTask(Guid.NewGuid(), 1, stageCorrelations: new object[] {"a"});
+				_q = new StagedProcessingQueue(new[] { false });
+				_t1 = new TestTask(Guid.NewGuid(), 1, stageCorrelations: new object[] { "a" });
 				_q.Enqueue(_t1);
 			}
 

@@ -71,7 +71,8 @@ namespace EventStore.Core.Tests.Services.Storage.ReadIndex {
 			var curEvents = new List<EventRecord>();
 
 			foreach (var @event in _events) {
-				if (@event.EventStreamId != Stream) continue;
+				if (@event.EventStreamId != Stream)
+					continue;
 				curEvents.Add(@event);
 
 				int maxCount = Math.Min((int)@event.EventNumber + 1, _random.Next(10, 100));

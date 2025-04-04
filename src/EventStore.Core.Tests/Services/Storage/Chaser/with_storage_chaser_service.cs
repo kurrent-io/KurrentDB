@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Storage;
 using EventStore.Core.Services.Storage.EpochManager;
@@ -76,12 +75,12 @@ namespace EventStore.Core.Tests.Services.Storage.Chaser {
 		private TFChunkDbConfig CreateDbConfig() {
 
 			var nodeConfig = new TFChunkDbConfig(
-				PathName, 
-				new VersionedPatternFileNamingStrategy(PathName, "chunk-"), 
-				1000, 
-				10000, 
+				PathName,
+				new VersionedPatternFileNamingStrategy(PathName, "chunk-"),
+				1000,
+				10000,
 				_writerChk,
-				_chaserChk, 
+				_chaserChk,
 				_epochChk,
 				_proposalChk,
 				_truncateChk,

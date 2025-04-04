@@ -67,7 +67,7 @@ namespace EventStore.Core.Tests.Authorization {
 			public override string TestName => $"{User.Identity?.Name ?? "Anonymous (empty)"} {(IsAuthorized ? "is" : "is not")} authorized to perform operation {Operation}";
 
 			public StaticPolicyVerificationParameters(ClaimsPrincipal user, Operation operation, string stream, StorageMessage.EffectiveAcl streamAcl, bool isAuthorized, bool shouldRequestAcl) :
-			base (user, operation, stream, streamAcl){
+			base(user, operation, stream, streamAcl) {
 				IsAuthorized = isAuthorized;
 				ShouldRequestAcl = shouldRequestAcl;
 			}
@@ -79,7 +79,7 @@ namespace EventStore.Core.Tests.Authorization {
 			public override string TestName => $"Verify if Anonymous user is authorized to perform operation {Operation}";
 
 			public ConfigurablePolicyVerificationParameters(ClaimsPrincipal user, Operation operation, string stream, StorageMessage.EffectiveAcl streamAcl, Func<bool, bool, bool> authorizationCheck, Func<bool, bool> aclCheck)
-			: base(user, operation, stream, streamAcl){
+			: base(user, operation, stream, streamAcl) {
 				AuthorizationCheck = authorizationCheck;
 				AclCheck = aclCheck;
 			}
@@ -125,11 +125,11 @@ namespace EventStore.Core.Tests.Authorization {
 			ClaimsPrincipal user2 = CreatePrincipal("test2");
 			ClaimsPrincipal userSystem = SystemAccounts.System;
 
-			var admins = new[] {admin, userAdmin};
-			var operations = new[] {ops, userOps};
-			var users = new[] {user1, user2};
-			var system = new[] {userSystem};
-			var anonymous = new[]{new ClaimsPrincipal(), new ClaimsPrincipal(new ClaimsIdentity(new Claim[]{new Claim(ClaimTypes.Anonymous, ""), })), };
+			var admins = new[] { admin, userAdmin };
+			var operations = new[] { ops, userOps };
+			var users = new[] { user1, user2 };
+			var system = new[] { userSystem };
+			var anonymous = new[] { new ClaimsPrincipal(), new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim(ClaimTypes.Anonymous, ""), })), };
 			foreach (var user in system) {
 				foreach (var operation in SystemOperations()) {
 					yield return new StaticPolicyVerificationParameters(user,
@@ -169,7 +169,7 @@ namespace EventStore.Core.Tests.Authorization {
 						false
 					);
 				}
-				
+
 				foreach (var operation in AuthenticatedOperations()) {
 					yield return new StaticPolicyVerificationParameters(user,
 						operation.Item1, operation.Item2, operation.Item3,
@@ -177,7 +177,7 @@ namespace EventStore.Core.Tests.Authorization {
 						false
 					);
 				}
-				
+
 				foreach (var operation in AnonymousOperations()) {
 					yield return new StaticPolicyVerificationParameters(user,
 						operation.Item1, operation.Item2, operation.Item3,
@@ -393,16 +393,16 @@ namespace EventStore.Core.Tests.Authorization {
 				yield return CreateOperation(Operations.Node.Information.Options);
 				yield return (new Operation(Operations.Subscriptions.ReplayParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithCustomPermissions)), _streamWithCustomPermissions, null);
 				yield return (new Operation(Operations.Subscriptions.ReplayParked).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithDefaultPermissions)), _streamWithDefaultPermissions, null);
-				
+
 				yield return CreateOperation(Operations.Projections.UpdateConfiguration);
-				
+
 				yield return CreateOperation(Operations.Projections.ReadConfiguration);
 				yield return CreateOperation(Operations.Projections.Delete);
 				yield return CreateOperation(Operations.Projections.Restart);
 			}
 
 			IEnumerable<(Operation, string, StorageMessage.EffectiveAcl)> UserOperations() {
-				
+
 				yield return (new Operation(Operations.Subscriptions.ProcessMessages).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithCustomPermissions)), _streamWithCustomPermissions, userStreamPermission);
 				yield return (new Operation(Operations.Subscriptions.ProcessMessages).WithParameter(Operations.Subscriptions.Parameters.StreamId(_streamWithDefaultPermissions)), _streamWithDefaultPermissions, defaultUseruserStreamPermission);
 				yield return CreateOperation(Operations.Projections.List);
@@ -442,7 +442,7 @@ namespace EventStore.Core.Tests.Authorization {
 				yield return CreateOperation(Operations.Node.Statistics.Tcp);
 				yield return CreateOperation(Operations.Node.Statistics.Custom);
 			}
-			
+
 			IEnumerable<(Operation, string, StorageMessage.EffectiveAcl)> AllowAnonymousStreamAccessOperations() {
 				yield return (new Operation(Operations.Streams.Read).WithParameter(
 						Operations.Streams.Parameters.StreamId(_streamWithDefaultPermissions)),
@@ -460,20 +460,20 @@ namespace EventStore.Core.Tests.Authorization {
 						Operations.Streams.Parameters.StreamId(_streamWithDefaultPermissions)),
 					_streamWithDefaultPermissions, defaultUseruserStreamPermission);
 			}
-			
+
 			(Operation, string, StorageMessage.EffectiveAcl) CreateOperation(OperationDefinition def) {
-				return (new Operation(def),null, null);
+				return (new Operation(def), null, null);
 			}
 
 			ClaimsPrincipal CreatePrincipal(string name, params string[] roles) {
 				var claims =
-					(new[] {new Claim(ClaimTypes.Name, name)}).Concat(roles.Select(x => new Claim(ClaimTypes.Role, x)));
+					(new[] { new Claim(ClaimTypes.Name, name) }).Concat(roles.Select(x => new Claim(ClaimTypes.Role, x)));
 				return new ClaimsPrincipal(new ClaimsIdentity(claims));
 			}
 		}
 
 		[Test]
-		public async Task VerifyPolicy([ValueSource(nameof(PolicyTests))]PolicyVerificationParameters pvp) {
+		public async Task VerifyPolicy([ValueSource(nameof(PolicyTests))] PolicyVerificationParameters pvp) {
 			_aclResponder.ExpectedAcl(pvp.Stream, pvp.StreamAcl);
 			var result =
 					await _authorizationProvider.CheckAccessAsync(pvp.User, pvp.Operation, CancellationToken.None);
@@ -523,7 +523,8 @@ namespace EventStore.Core.Tests.Authorization {
 
 			public void ExpectedAcl(string stream, StorageMessage.EffectiveAcl acl) {
 				MessageReceived = false;
-				if (stream == null) return;
+				if (stream == null)
+					return;
 				_expectedStream = SystemStreams.IsMetastream(stream) ? SystemStreams.OriginalStreamOf(stream) : stream;
 				_acl = acl;
 			}

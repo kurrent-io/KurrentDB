@@ -5,8 +5,7 @@ using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Management;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	public abstract class TestFixtureWithInterpretedProjection {
 		protected ProjectionStateHandlerFactory _stateHandlerFactory;
 		protected IProjectionStateHandler _stateHandler;

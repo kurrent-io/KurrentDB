@@ -1,5 +1,4 @@
-﻿using System;
-using EventStore.Core.Time;
+﻿using EventStore.Core.Time;
 
 namespace EventStore.Core.XUnit.Tests.Metrics {
 	internal class FakeClock : IClock {

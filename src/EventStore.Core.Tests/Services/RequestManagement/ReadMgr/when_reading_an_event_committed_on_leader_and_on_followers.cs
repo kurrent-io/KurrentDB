@@ -99,7 +99,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.ReadMgr {
 			var quorum = (followers.Count() + 1) / 2 + 1;
 			var successfulReads = 0;
 			foreach (var s in followers) {
-				AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+				AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 				var readResult = ReplicationTestHelper.ReadAllEventsForward(s, _commitPosition);
 				successfulReads += readResult.Events.Count(x => x.OriginalStreamId == _streamId);
 			}
@@ -114,7 +114,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.ReadMgr {
 			var quorum = (followers.Count() + 1) / 2 + 1;
 			var successfulReads = 0;
 			foreach (var s in followers) {
-				AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+				AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 				var readResult = ReplicationTestHelper.ReadAllEventsBackward(s, _commitPosition);
 				successfulReads += readResult.Events.Count(x => x.OriginalStreamId == _streamId);
 			}
@@ -129,7 +129,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.ReadMgr {
 			var quorum = (followers.Count() + 1) / 2 + 1;
 			var successfulReads = 0;
 			foreach (var s in followers) {
-				AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+				AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 				var readResult = ReplicationTestHelper.ReadStreamEventsForward(s, _streamId);
 				successfulReads += readResult.Events.Count();
 				Assert.AreEqual(ReadStreamResult.Success, readResult.Result);
@@ -145,7 +145,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.ReadMgr {
 			var quorum = (followers.Count() + 1) / 2 + 1;
 			var successfulReads = 0;
 			foreach (var s in followers) {
-				AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+				AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 				var readResult = ReplicationTestHelper.ReadStreamEventsBackward(s, _streamId);
 				successfulReads += readResult.Events.Count();
 			}
@@ -160,7 +160,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.ReadMgr {
 			var quorum = (followers.Count() + 1) / 2 + 1;
 			var successfulReads = 0;
 			foreach (var s in followers) {
-				AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+				AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 				var readResult = ReplicationTestHelper.ReadEvent(s, _streamId, 0);
 				successfulReads += readResult.Result == ReadEventResult.Success ? 1 : 0;
 			}

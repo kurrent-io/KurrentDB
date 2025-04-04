@@ -25,7 +25,7 @@ namespace EventStore.Core.Tests.Bus {
 		public void autoreset_mpsc_queued_handler_10_producers_50mln_messages() {
 			QueuedHandlerAutoResetWithMpsc queue = null;
 			SpeedTest(consumer => {
-				queue = new QueuedHandlerAutoResetWithMpsc(consumer, "Queue",  new QueueStatsManager(),false);
+				queue = new QueuedHandlerAutoResetWithMpsc(consumer, "Queue", new QueueStatsManager(), false);
 				queue.Start();
 				return queue;
 			}, 10, 50000000);
@@ -36,7 +36,7 @@ namespace EventStore.Core.Tests.Bus {
 		public void autoreset_queued_handler_2_producers_50mln_messages() {
 			QueuedHandlerAutoReset queue = null;
 			SpeedTest(consumer => {
-				queue = new QueuedHandlerAutoReset(consumer, "Queue",  new QueueStatsManager(),false);
+				queue = new QueuedHandlerAutoReset(consumer, "Queue", new QueueStatsManager(), false);
 				queue.Start();
 				return queue;
 			}, 2, 50000000);
@@ -47,7 +47,7 @@ namespace EventStore.Core.Tests.Bus {
 		public void autoreset_queued_handler_10_producers_50mln_messages() {
 			QueuedHandlerAutoReset queue = null;
 			SpeedTest(consumer => {
-				queue = new QueuedHandlerAutoReset(consumer, "Queue",  new QueueStatsManager(),false);
+				queue = new QueuedHandlerAutoReset(consumer, "Queue", new QueueStatsManager(), false);
 				queue.Start();
 				return queue;
 			}, 10, 50000000);
@@ -58,7 +58,7 @@ namespace EventStore.Core.Tests.Bus {
 		public void sleep_queued_handler_2_producers_50mln_messages() {
 			QueuedHandlerSleep queue = null;
 			SpeedTest(consumer => {
-				queue = new QueuedHandlerSleep(consumer, "Queue",  new QueueStatsManager(),false);
+				queue = new QueuedHandlerSleep(consumer, "Queue", new QueueStatsManager(), false);
 				queue.Start();
 				return queue;
 			}, 2, 50000000);
@@ -69,7 +69,7 @@ namespace EventStore.Core.Tests.Bus {
 		public void sleep_queued_handler_10_producers_50mln_messages() {
 			QueuedHandlerSleep queue = null;
 			SpeedTest(consumer => {
-				queue = new QueuedHandlerSleep(consumer, "Queue",  new QueueStatsManager(),false);
+				queue = new QueuedHandlerSleep(consumer, "Queue", new QueueStatsManager(), false);
 				queue.Start();
 				return queue;
 			}, 10, 50000000);
@@ -80,7 +80,7 @@ namespace EventStore.Core.Tests.Bus {
 		public void pulse_queued_handler_2_producers_50mln_messages() {
 			QueuedHandlerPulse queue = null;
 			SpeedTest(consumer => {
-				queue = new QueuedHandlerPulse(consumer, "Queue",  new QueueStatsManager(),false);
+				queue = new QueuedHandlerPulse(consumer, "Queue", new QueueStatsManager(), false);
 				queue.Start();
 				return queue;
 			}, 2, 50000000);
@@ -91,7 +91,7 @@ namespace EventStore.Core.Tests.Bus {
 		public void pulse_queued_handler_10_producers_50mln_messages() {
 			QueuedHandlerPulse queue = null;
 			SpeedTest(consumer => {
-				queue = new QueuedHandlerPulse(consumer, "Queue",  new QueueStatsManager(),false);
+				queue = new QueuedHandlerPulse(consumer, "Queue", new QueueStatsManager(), false);
 				queue.Start();
 				return queue;
 			}, 10, 50000000);
@@ -102,7 +102,7 @@ namespace EventStore.Core.Tests.Bus {
 		public void mres_mpsc_queued_handler_2_producers_50mln_messages() {
 			QueuedHandlerMresWithMpsc queue = null;
 			SpeedTest(consumer => {
-				queue = new QueuedHandlerMresWithMpsc(consumer, "Queue",  new QueueStatsManager(),false);
+				queue = new QueuedHandlerMresWithMpsc(consumer, "Queue", new QueueStatsManager(), false);
 				queue.Start();
 				return queue;
 			}, 2, 50000000);
@@ -124,7 +124,7 @@ namespace EventStore.Core.Tests.Bus {
 		public void mres_queued_handler_2_producers_50mln_messages() {
 			QueuedHandlerMRES queue = null;
 			SpeedTest(consumer => {
-				queue = new QueuedHandlerMRES(consumer, "Queue",  new QueueStatsManager(), new(), watchSlowMsg: false);
+				queue = new QueuedHandlerMRES(consumer, "Queue", new QueueStatsManager(), new(), watchSlowMsg: false);
 				queue.Start();
 				return queue;
 			}, 2, 50000000);
@@ -172,7 +172,7 @@ namespace EventStore.Core.Tests.Bus {
 					}
 
 					endEvent.Signal();
-				}) {IsBackground = true, Name = "Producer #" + i};
+				}) { IsBackground = true, Name = "Producer #" + i };
 				threads[i].Start();
 			}
 

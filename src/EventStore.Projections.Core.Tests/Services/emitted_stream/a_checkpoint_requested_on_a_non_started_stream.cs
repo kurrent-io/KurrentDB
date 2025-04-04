@@ -31,7 +31,8 @@ namespace EventStore.Projections.Core.Tests.Services.emitted_stream {
 		[Test]
 		public void throws_invalid_operation_exception() {
 			Assert.Throws<InvalidOperationException>(() => {
-				if (_caughtException != null) throw _caughtException;
+				if (_caughtException != null)
+					throw _caughtException;
 			});
 		}
 	}

@@ -22,8 +22,8 @@ namespace EventStore.Core.Data {
 	public static class VNodeStateExtensions {
 		public static bool IsReplica(this VNodeState state) {
 			return state == VNodeState.CatchingUp
-			       || state == VNodeState.Clone
-			       || state == VNodeState.Follower
+				   || state == VNodeState.Clone
+				   || state == VNodeState.Follower
 				   || state == VNodeState.ReadOnlyReplica;
 		}
 	}

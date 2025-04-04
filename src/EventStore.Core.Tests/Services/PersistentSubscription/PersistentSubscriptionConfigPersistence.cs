@@ -15,8 +15,7 @@ namespace EventStore.Core.Tests.Services {
 			config.UpdatedBy = "Greg";
 			config.Version = "1";
 			config.Entries = new List<PersistentSubscriptionEntry>();
-			config.Entries.Add(new PersistentSubscriptionEntry()
-				{Group = "foo", ResolveLinkTos = true, Stream = "Stream"});
+			config.Entries.Add(new PersistentSubscriptionEntry() { Group = "foo", ResolveLinkTos = true, Stream = "Stream" });
 			var data = config.GetSerializedForm();
 			var config2 = PersistentSubscriptionConfig.FromSerializedForm(data);
 			Assert.AreEqual(1, config2.Entries.Count);
@@ -49,7 +48,7 @@ namespace EventStore.Core.Tests.Services {
 				Stream = "$all",
 				Filter = EventFilter.ParseToDto(filter)
 			};
-			config.Entries = new List<PersistentSubscriptionEntry>{entry};
+			config.Entries = new List<PersistentSubscriptionEntry> { entry };
 			var data = config.GetSerializedForm();
 			var config2 = PersistentSubscriptionConfig.FromSerializedForm(data);
 			var newFilterDto = config2.Entries[0].Filter;
@@ -71,7 +70,7 @@ namespace EventStore.Core.Tests.Services {
 				Stream = "$all",
 				Filter = null
 			};
-			config.Entries = new List<PersistentSubscriptionEntry>{entry};
+			config.Entries = new List<PersistentSubscriptionEntry> { entry };
 			var data = config.GetSerializedForm();
 			var config2 = PersistentSubscriptionConfig.FromSerializedForm(data);
 			Assert.AreEqual(1, config2.Entries.Count);

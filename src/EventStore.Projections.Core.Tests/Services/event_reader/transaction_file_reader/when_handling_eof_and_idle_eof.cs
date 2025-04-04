@@ -2,15 +2,14 @@ using System;
 using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Storage.ReaderIndex;
+using EventStore.Core.Services.AwakeReaderService;
+using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
-using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Tests;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reader.transaction_file_reader {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

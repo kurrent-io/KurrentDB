@@ -1,8 +1,7 @@
 ﻿using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	[TestFixture]
 	public class when_defining_a_js_projection {
 		private const string _projectionType = "INTERPRETED";
@@ -24,7 +23,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromAll();
 					b.AllEvents();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -46,7 +45,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.AllEvents();
 					b.FromStream("stream1");
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -70,7 +69,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromStream("stream2");
 					b.FromStream("stream3");
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -94,7 +93,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromStream("stream2");
 					b.FromStream("stream3");
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -118,7 +117,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromStream("$ce-category2");
 					b.FromStream("$ce-category3");
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -142,7 +141,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromStream("$ce-category2");
 					b.FromStream("$ce-category3");
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -164,7 +163,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.AllEvents();
 					b.FromCategory("category1");
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -187,7 +186,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromCategory("category1");
 					b.SetByStream();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -212,7 +211,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromAll();
 					b.SetByCustomPartitions();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -238,7 +237,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.SetDefinesStateTransform();
 					b.SetOutputState();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -262,7 +261,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.SetDefinesStateTransform();
 					b.SetOutputState();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -306,7 +305,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.NoWhen();
 					b.SetOutputState();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -325,7 +324,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromAll();
 					b.NoWhen();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -343,7 +342,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromAll();
 					b.IncludeEvent("a");
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -369,7 +368,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromAll();
 					b.SetResultStreamNameOption("state-stream");
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -395,7 +394,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromAll();
 					b.SetIncludeLinks();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -422,7 +421,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.SetDefinesFold();
 					b.SetIsBiState(true);
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -450,7 +449,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.SetProcessingLag(500);
 					b.SetReorderEvents(true);
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -481,7 +480,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.SetProcessingLag(500);
 					b.SetReorderEvents(true);
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -502,7 +501,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.SetByStream();
 					b.SetHandlesStreamDeletedNotifications();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 
@@ -522,7 +521,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 					b.FromAll();
 					b.SetHandlesStreamDeletedNotifications();
 				});
-				AssertEx.AreEqual(expected,_source);
+				AssertEx.AreEqual(expected, _source);
 			}
 		}
 	}

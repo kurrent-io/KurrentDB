@@ -2,7 +2,6 @@
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Bus;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Services.Processing;
 using Newtonsoft.Json.Linq;

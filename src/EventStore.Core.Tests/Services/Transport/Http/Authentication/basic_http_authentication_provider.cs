@@ -1,19 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Security.Claims;
-using EventStore.Core.Messages;
-using EventStore.Core.Services.Transport.Http.Authentication;
-using EventStore.Core.Services.Transport.Http.Messages;
-using EventStore.Core.Tests.Authentication;
-using EventStore.Transport.Http.EntityManagement;
-using NUnit.Framework;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EventStore.Core.Services.Transport.Http.Authentication;
+using EventStore.Core.Tests.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 	namespace basic_http_authentication_provider {

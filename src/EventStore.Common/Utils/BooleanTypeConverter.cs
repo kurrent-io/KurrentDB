@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
 
 namespace EventStore.Common.Utils {
 	public class BooleanTypeConverter : BooleanConverter {
@@ -14,7 +11,7 @@ namespace EventStore.Common.Utils {
 			object value) {
 			int possibleBinaryBoolean;
 			if (value.ToString().Length == 1 &&
-			    int.TryParse(value.ToString(), out possibleBinaryBoolean)) {
+				int.TryParse(value.ToString(), out possibleBinaryBoolean)) {
 				return possibleBinaryBoolean == 1;
 			}
 

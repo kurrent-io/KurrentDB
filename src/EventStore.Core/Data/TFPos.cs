@@ -47,7 +47,8 @@ namespace EventStore.Core.Data {
 		}
 
 		public override bool Equals(object obj) {
-			if (ReferenceEquals(null, obj)) return false;
+			if (ReferenceEquals(null, obj))
+				return false;
 			return obj is TFPos && Equals((TFPos)obj);
 		}
 
@@ -75,12 +76,12 @@ namespace EventStore.Core.Data {
 
 		public static bool operator <(TFPos left, TFPos right) {
 			return left.CommitPosition < right.CommitPosition
-			       || (left.CommitPosition == right.CommitPosition && left.PreparePosition < right.PreparePosition);
+				   || (left.CommitPosition == right.CommitPosition && left.PreparePosition < right.PreparePosition);
 		}
 
 		public static bool operator >(TFPos left, TFPos right) {
 			return left.CommitPosition > right.CommitPosition
-			       || (left.CommitPosition == right.CommitPosition && left.PreparePosition > right.PreparePosition);
+				   || (left.CommitPosition == right.CommitPosition && left.PreparePosition > right.PreparePosition);
 		}
 
 		public override string ToString() {

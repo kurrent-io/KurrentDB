@@ -33,8 +33,8 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 
 		[SetUp]
 		public new void When() {
-			_ab12Tag = new Dictionary<string, long> {{"a", 1}, {"b", 2}};
-			_abStreams = new[] {"a", "b"};
+			_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
+			_abStreams = new[] { "a", "b" };
 
 			_distibutionPointCorrelationId = Guid.NewGuid();
 			_edp = new MultiStreamEventReader(
@@ -119,13 +119,13 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 			Assert.AreEqual(2, first.Data.Metadata[0]);
 			Assert.AreEqual("a", first.Data.EventStreamId);
 			Assert.IsNull(fifth.Data);
-//            Assert.IsNullOrEmpty("", fifth.EventStreamId);
+			//            Assert.IsNullOrEmpty("", fifth.EventStreamId);
 			Assert.AreEqual(50, first.Data.Position.PreparePosition);
-//            Assert.AreEqual(0, fifth.Position.PreparePosition);
+			//            Assert.AreEqual(0, fifth.Position.PreparePosition);
 			Assert.AreEqual(-1, first.Data.Position.CommitPosition);
-//            Assert.AreEqual(0, fifth.Position.CommitPosition);
+			//            Assert.AreEqual(0, fifth.Position.CommitPosition);
 			Assert.AreEqual(50, first.SafeTransactionFileReaderJoinPosition);
-//            Assert.AreEqual(200, fifth.SafeTransactionFileReaderJoinPosition);
+			//            Assert.AreEqual(200, fifth.SafeTransactionFileReaderJoinPosition);
 			Assert.AreEqual(400, sixth.SafeTransactionFileReaderJoinPosition);
 		}
 

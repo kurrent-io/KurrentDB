@@ -1,11 +1,11 @@
-﻿using EventStore.Core.Bus;
-using EventStore.Core.Messages;
-using NUnit.Framework;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.Core.Bus;
+using EventStore.Core.Messages;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Integration {
 	[Category("LongRunning")]

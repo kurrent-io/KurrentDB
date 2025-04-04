@@ -41,7 +41,7 @@ namespace EventStore.Common.Utils {
 
 			return ".NET " + (separatorIndex == -1
 				? informationalVersion
-				: informationalVersion[..separatorIndex] + "/" + informationalVersion.Substring(separatorIndex+1, 9));
+				: informationalVersion[..separatorIndex] + "/" + informationalVersion.Substring(separatorIndex + 1, 9));
 		}
 
 		private static OsFlavor DetermineOSFlavor() {

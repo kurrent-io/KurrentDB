@@ -51,7 +51,8 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		}
 
 		public void Optimize(TFChunk.TFChunk chunk) {
-			if (!chunk.ChunkHeader.IsScavenged) return;
+			if (!chunk.ChunkHeader.IsScavenged)
+				return;
 			_cache.Put(chunk.FileName, chunk);
 		}
 

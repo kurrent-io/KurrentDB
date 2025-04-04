@@ -1,22 +1,17 @@
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
-using EventStore.Core.Index.Hashes;
 using EventStore.Core.LogAbstraction;
+using EventStore.Core.Metrics;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.Util;
 using NUnit.Framework;
-using System;
-using System.Threading.Tasks;
-using EventStore.Core.Caching;
-using EventStore.Core.Metrics;
 
 namespace EventStore.Core.Tests.Services.Storage {
 	[TestFixture]

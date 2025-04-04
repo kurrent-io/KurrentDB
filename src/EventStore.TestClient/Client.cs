@@ -5,7 +5,6 @@ using System.Threading;
 using EventStore.Common.Utils;
 using EventStore.TestClient.Commands;
 using EventStore.TestClient.Commands.DvuBasic;
-using Connection = EventStore.Transport.Tcp.TcpTypedConnection<byte[]>;
 using ILogger = Serilog.ILogger;
 #pragma warning disable 1591
 
@@ -95,7 +94,7 @@ namespace EventStore.TestClient {
 				var args = ParseCommandLine(Options.Command[0]);
 				return Execute(args, cancellationToken);
 			}
-			
+
 			new Thread(() => {
 				Thread.Sleep(100);
 				Console.WriteLine(GetCommandList());
@@ -118,12 +117,12 @@ namespace EventStore.TestClient {
 						Console.Write(">>> ");
 					}
 				}
-			}) {IsBackground = true, Name = "Client Main Loop Thread"}.Start();
+			}) { IsBackground = true, Name = "Client Main Loop Thread" }.Start();
 			return 0;
 		}
 
 		private static string[] ParseCommandLine(string line) {
-			return line.Split(new[] {' ', '\t'}, StringSplitOptions.RemoveEmptyEntries);
+			return line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
 		}
 
 		private int Execute(string[] args, CancellationToken cancellationToken) {

@@ -7,7 +7,7 @@ using EventStore.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RedactionService {
-	public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionServiceTestFixture<TLogFormat,TStreamId> {
+	public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionServiceTestFixture<TLogFormat, TStreamId> {
 		private const string StreamId = nameof(SwitchChunkTests<TLogFormat, TStreamId>);
 		protected const string FakeChunk = "fake_chunk.tmp";
 		private Guid _lockId;

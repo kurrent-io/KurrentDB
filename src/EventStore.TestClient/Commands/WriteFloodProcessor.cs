@@ -126,7 +126,7 @@ namespace EventStore.TestClient.Commands {
 						var localAll = Interlocked.Add(ref stats.All, batchSize);
 						if (localAll % 100000 == 0) {
 							stats.Elapsed = sw2.Elapsed;
-							stats.Rate =  1000.0 * 100000 / stats.Elapsed.TotalMilliseconds;
+							stats.Rate = 1000.0 * 100000 / stats.Elapsed.TotalMilliseconds;
 							sw2.Restart();
 							context.Log.Debug(
 								"\nDONE TOTAL {writes} WRITES IN {elapsed} ({rate:0.0}/s) [S:{success}, F:{failures} (WEV:{wrongExpectedVersion}, " +
@@ -169,11 +169,11 @@ namespace EventStore.TestClient.Commands {
 
 						var localSent = Interlocked.Increment(ref sent);
 						while (localSent - Interlocked.Read(ref received) >
-						       context._tcpTestClient.Options.WriteWindow / clientsCnt) {
+							   context._tcpTestClient.Options.WriteWindow / clientsCnt) {
 							Thread.Sleep(1);
 						}
 					}
-				}) {IsBackground = true});
+				}) { IsBackground = true });
 			}
 
 			var sw = Stopwatch.StartNew();

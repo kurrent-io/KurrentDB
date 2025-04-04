@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Projections.Core.Messages;
@@ -77,7 +76,7 @@ namespace EventStore.Projections.Core.Tests.Services.position_tagging.transactio
 			var t = new TransactionFilePositionTagger(0);
 			var tag = CheckpointTag.FromPosition(0, 100, 50);
 			var original = CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(100, 50),
-				new Dictionary<string, long> {{"type1", 1}, {"type2", 2}});
+				new Dictionary<string, long> { { "type1", 1 }, { "type2", 2 } });
 			Assert.AreEqual(tag, t.AdjustTag(original));
 		}
 

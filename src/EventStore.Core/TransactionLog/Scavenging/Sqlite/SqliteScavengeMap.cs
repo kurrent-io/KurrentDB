@@ -21,7 +21,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 		private readonly string _keyTypeOverride;
 
 		protected string TableName { get; }
-		
+
 		public SqliteScavengeMap(string name, string keyTypeOverride = null) {
 			TableName = name;
 			_keyTypeOverride = keyTypeOverride;
@@ -33,7 +33,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				throw new ArgumentException(
 					$"Scavenge map {TableName} has an unsupported type {typeof(TKey).Name} for key specified");
 			}
-			
+
 			if (!IsSupportedType<TValue>()) {
 				throw new ArgumentException(
 					$"Scavenge map {TableName} has an unsupported type {typeof(TValue).Name} for value specified");
@@ -59,7 +59,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 			_delete = new RemoveCommand(TableName, sqlite);
 			_all = new AllRecordsCommand(TableName, sqlite);
 		}
-		
+
 		public TValue this[TKey key] {
 			set => AddValue(key, value);
 		}
@@ -91,13 +91,13 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					INSERT INTO {tableName}
 					VALUES($key, $value)
 					ON CONFLICT(key) DO UPDATE SET value=$value";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_valueParam = _cmd.Parameters.Add("$value", SqliteTypeMapping.Map<TKey>());
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -119,12 +119,12 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					SELECT value
 					FROM {tableName}
 					WHERE key = $key";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = selectSql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => reader.GetFieldValue<TValue>(0);
 			}
@@ -148,7 +148,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					SELECT value
 					FROM {tableName}
 					WHERE key = $key";
-				
+
 				_selectCmd = sqlite.CreateCommand();
 				_selectCmd.CommandText = selectSql;
 				_selectKeyParam = _selectCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -157,12 +157,12 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				var deleteSql = $@"
 					DELETE FROM {tableName}
 					WHERE key = $key";
-				
+
 				_deleteCmd = sqlite.CreateCommand();
 				_deleteCmd.CommandText = deleteSql;
 				_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_deleteCmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => reader.GetFieldValue<TValue>(0);
 			}
@@ -184,11 +184,11 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					SELECT key, value
 					FROM {tableName}
 					ORDER BY key";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => new KeyValuePair<TKey, TValue>(
 					reader.GetFieldValue<TKey>(0), reader.GetFieldValue<TValue>(1));

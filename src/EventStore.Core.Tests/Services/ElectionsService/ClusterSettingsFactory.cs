@@ -1,9 +1,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
-using EventStore.Core.Cluster.Settings;
-using EventStore.Core.Tests.Services.Transport.Tcp;
 
 namespace EventStore.Core.Tests.Services.ElectionsService {
 	public class ClusterSettingsFactory {

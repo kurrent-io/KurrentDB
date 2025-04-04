@@ -16,11 +16,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public override bool PassesSource(bool resolvedFromLinkTo, string positionStreamId, string eventType) {
-			if (!_includeLinks && eventType == SystemEventTypes.LinkTo) return false;
+			if (!_includeLinks && eventType == SystemEventTypes.LinkTo)
+				return false;
 			return (_includeLinks || !resolvedFromLinkTo)
-			       && (!SystemStreams.IsSystemStream(positionStreamId)
-			           || SystemStreams.IsMetastream(positionStreamId)
-			           && !SystemStreams.IsSystemStream(SystemStreams.OriginalStreamOf(positionStreamId)));
+				   && (!SystemStreams.IsSystemStream(positionStreamId)
+					   || SystemStreams.IsMetastream(positionStreamId)
+					   && !SystemStreams.IsSystemStream(SystemStreams.OriginalStreamOf(positionStreamId)));
 		}
 
 		public override string GetCategory(string positionStreamId) {

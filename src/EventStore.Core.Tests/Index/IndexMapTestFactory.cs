@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using EventStore.Core.Index;
+﻿using EventStore.Core.Index;
 
 namespace EventStore.Core.Tests.Index {
 	public static class IndexMapTestFactory {

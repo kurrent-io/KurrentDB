@@ -105,7 +105,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 		private void PublishWriteStreamMetadataAndCheckpointEventDelayed() {
 			var attempt = _inCheckpointWriteAttempt;
 			var delayInSeconds = CalculateBackoffTimeSecs(attempt);
-			if(delayInSeconds == 0)
+			if (delayInSeconds == 0)
 				PublishWriteStreamMetadataAndCheckpointEvent();
 			else {
 				if (attempt >= MinAttemptWarnThreshold && _logger != null) {
@@ -189,7 +189,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		private int CalculateBackoffTimeSecs(int attempt) {
 			attempt--;
-			if (attempt == 0) return 0;
+			if (attempt == 0)
+				return 0;
 			var expBackoff = attempt < 9 ? (1 << attempt) : 256;
 			return _random.Next(1, expBackoff + 1);
 		}

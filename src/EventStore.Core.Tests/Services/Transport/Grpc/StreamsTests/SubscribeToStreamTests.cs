@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using EventStore.Core.Services.Transport.Grpc;
@@ -51,7 +50,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 					var response = call.ResponseStream.Current;
 					if (response.ContentCase == ReadResp.ContentOneofCase.Event &&
 						_positionOfLastWrite == response.Event.Event.StreamRevision) {
-							break;
+						break;
 					}
 
 					_responses.Add(response);

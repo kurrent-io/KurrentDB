@@ -52,7 +52,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http {
 			_bus = new InMemoryBus($"bus_{_serverEndPoint.Port}");
 			var pipelineBus = InMemoryBus.CreateTest();
 			var queue = new QueuedHandlerThreadPool(pipelineBus, "Test", new QueueStatsManager(), new(), true, TimeSpan.FromMilliseconds(50));
-			_multiQueuedHandler = new MultiQueuedHandler(new IQueuedHandler[] {queue}, null);
+			_multiQueuedHandler = new MultiQueuedHandler(new IQueuedHandler[] { queue }, null);
 			_multiQueuedHandler.Start();
 
 			_service = new KestrelHttpService(ServiceAccessibility.Private, _bus, new NaiveUriRouter(),
@@ -76,7 +76,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http {
 						null)));
 			_httpMessageHandler = _server.CreateHandler();
 			_client = new HttpAsyncClient(_timeout, _httpMessageHandler);
-			
+
 			HttpBootstrap.Subscribe(_bus, _service);
 		}
 
@@ -129,7 +129,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http {
 				.AddRouting()
 				.BuildServiceProvider();
 
-			public void Configure(IApplicationBuilder app) => app.UseLegacyHttp(_dispatcher ,_httpService);
+			public void Configure(IApplicationBuilder app) => app.UseLegacyHttp(_dispatcher, _httpService);
 		}
 	}
 }

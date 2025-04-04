@@ -134,19 +134,19 @@ namespace EventStore.Core.Tests.Services.ElectionsService.Randomized {
 			}
 
 			var additionalProcessors = GetAdditionalProcessors();
-			var processors = new[] {Logger}.Union(additionalProcessors);
+			var processors = new[] { Logger }.Union(additionalProcessors);
 
 			var isGood = Runner.Run(FinishCondition, processors.ToArray());
 
 			if (!isGood) {
 				Console.WriteLine("Unsuccessful run. Parameters:\n"
-				                  + "rndSeed: {0}\n"
-				                  + "maxIterCnt = {1}\n"
-				                  + "instancesCnt = {2}\n"
-				                  + "httpLossProbability = {3}\n"
-				                  + "httpMaxDelay = {4}\n"
-				                  + "timerMinDelay = {5}\n"
-				                  + "timerMaxDelay = {6}\n",
+								  + "rndSeed: {0}\n"
+								  + "maxIterCnt = {1}\n"
+								  + "instancesCnt = {2}\n"
+								  + "httpLossProbability = {3}\n"
+								  + "httpMaxDelay = {4}\n"
+								  + "timerMinDelay = {5}\n"
+								  + "timerMaxDelay = {6}\n",
 					RndSeed,
 					_maxIterCnt,
 					InstancesCnt,

@@ -29,19 +29,20 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public ProjectionNamesBuilder(string name, IQuerySources sources) {
-			if (sources == null) throw new ArgumentNullException("sources");
+			if (sources == null)
+				throw new ArgumentNullException("sources");
 			_name = name;
 			_sources = sources;
 			_resultStreamName = _sources.ResultStreamNameOption
-			                    ?? ProjectionsStreamPrefix + EffectiveProjectionName + ProjectionsStateStreamSuffix;
+								?? ProjectionsStreamPrefix + EffectiveProjectionName + ProjectionsStateStreamSuffix;
 			_partitionCatalogStreamName = ProjectionsStreamPrefix + EffectiveProjectionName
-			                                                      + ProjectionPartitionCatalogStreamSuffix;
+																  + ProjectionPartitionCatalogStreamSuffix;
 			_checkpointStreamName =
 				ProjectionsStreamPrefix + EffectiveProjectionName + ProjectionCheckpointStreamSuffix;
 			_orderStreamName = ProjectionsStreamPrefix + EffectiveProjectionName + ProjectionOrderStreamSuffix;
 			_emittedStreamsName = ProjectionsStreamPrefix + EffectiveProjectionName + ProjectionEmittedStreamSuffix;
 			_emittedStreamsCheckpointName = ProjectionsStreamPrefix + EffectiveProjectionName +
-			                                ProjectionEmittedStreamSuffix + ProjectionCheckpointStreamSuffix;
+											ProjectionEmittedStreamSuffix + ProjectionCheckpointStreamSuffix;
 		}
 
 		public string EffectiveProjectionName {
@@ -59,7 +60,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		public string GetPartitionResultStreamNamePattern() {
 			return _sources.PartitionResultStreamNamePatternOption
-			       ?? ProjectionsStreamPrefix + EffectiveProjectionName + "-{0}" + ProjectionsStateStreamSuffix;
+				   ?? ProjectionsStreamPrefix + EffectiveProjectionName + "-{0}" + ProjectionsStateStreamSuffix;
 		}
 
 		public const string ProjectionsStreamPrefix = "$projections-";
@@ -85,7 +86,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 				throw new InvalidOperationException("Root partition cannot have a partition checkpoint stream");
 
 			return ProjectionsStreamPrefix + EffectiveProjectionName + "-" + statePartition
-			       + ProjectionCheckpointStreamSuffix;
+				   + ProjectionCheckpointStreamSuffix;
 		}
 
 

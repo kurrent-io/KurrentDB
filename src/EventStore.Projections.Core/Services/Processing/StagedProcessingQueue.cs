@@ -121,14 +121,14 @@ namespace EventStore.Projections.Core.Services.Processing {
 				TaskEntry task = null;
 				if (!_orderedStage[stageIndex]) {
 					if (_byUnorderedStageFirst[stageIndex] != null
-					    && _byUnorderedStageFirst[stageIndex].Entry.PreviousByCorrelation == null) {
+						&& _byUnorderedStageFirst[stageIndex].Entry.PreviousByCorrelation == null) {
 						var stageEntry = _byUnorderedStageFirst[stageIndex];
 						task = stageEntry.Entry;
 					}
 				} else {
 					var taskEntry = _byOrderedStageLast[stageIndex];
 					if (taskEntry != null && taskEntry.ReadForStage == stageIndex && !taskEntry.Busy
-					    && !taskEntry.Completed && taskEntry.PreviousByCorrelation == null)
+						&& !taskEntry.Completed && taskEntry.PreviousByCorrelation == null)
 						task = taskEntry;
 				}
 
@@ -188,7 +188,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 		private void EnqueueForStage(TaskEntry entry, int readyForStage) {
 			entry.ReadForStage = readyForStage;
 			if (!_orderedStage[readyForStage] && (entry.PreviousByCorrelation == null)) {
-				var stageEntry = new StageEntry {Entry = entry, Next = null};
+				var stageEntry = new StageEntry { Entry = entry, Next = null };
 				if (_byUnorderedStageFirst[readyForStage] != null) {
 					_byUnorderedStageLast[readyForStage].Next = stageEntry;
 					_byUnorderedStageLast[readyForStage] = stageEntry;

@@ -41,7 +41,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge {
 		public void can_round_trip_calculating_streamid() {
 			var cp = RoundTrip(
 				new ScavengeCheckpoint.Calculating<string>(_scavengePoint, StreamHandle.ForStreamId("stream1")),
-				@"{""scavengePoint"":{""position"":1234,""eventNumber"":5,""effectiveNow"":""2022-01-05T00:00:00"",""threshold"":567},""schemaVersion"":""V0"",""checkpointStage"":""Calculating""," + 
+				@"{""scavengePoint"":{""position"":1234,""eventNumber"":5,""effectiveNow"":""2022-01-05T00:00:00"",""threshold"":567},""schemaVersion"":""V0"",""checkpointStage"":""Calculating""," +
 				@"""doneStreamHandle"":{""kind"":""Id"",""streamId"":""stream1""}}");
 			Assert.Equal("Id: stream1", cp.DoneStreamHandle.ToString());
 		}

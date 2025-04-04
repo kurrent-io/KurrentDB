@@ -18,7 +18,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager {
 		protected override void Given() {
 			NoOtherStreams();
 		}
-		
+
 		protected override IEnumerable<WhenStep> When() {
 			_projectionName = "$by_correlation_id";
 			yield return (new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));

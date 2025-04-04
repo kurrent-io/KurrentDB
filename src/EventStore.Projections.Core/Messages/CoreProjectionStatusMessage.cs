@@ -139,7 +139,7 @@ namespace EventStore.Projections.Core.Messages {
 				: base(projectionId) {
 			}
 		}
-		
+
 		[DerivedMessage(ProjectionMessage.CoreStatus)]
 		public partial class Stopped : CoreProjectionStatusMessageBase {
 			private readonly bool _completed;

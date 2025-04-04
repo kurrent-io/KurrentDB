@@ -2,8 +2,7 @@
 using EventStore.Core.Data;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	[TestFixture]
 	public class with_return_link_metadata : specification_with_event_handled {
 		protected override void Given() {

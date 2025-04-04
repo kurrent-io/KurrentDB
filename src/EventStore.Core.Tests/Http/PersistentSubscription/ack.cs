@@ -1,17 +1,10 @@
-﻿using System;
-using System.Net;
-using System.Text.RegularExpressions;
-using EventStore.Core.Tests.Http.Users.users;
-using NUnit.Framework;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
-using Newtonsoft.Json.Linq;
-using System.Linq;
+﻿using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using HttpStatusCode = System.Net.HttpStatusCode;
 using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 // ReSharper disable InconsistentNaming
 

@@ -38,10 +38,10 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc {
 			const string commitPosition = nameof(commitPosition);
 			const string preparePosition = nameof(preparePosition);
 
-			yield return new object[] {5UL, 6UL, commitPosition};
-			yield return new object[] {ulong.MaxValue - 1, 6UL, commitPosition};
-			yield return new object[] {ulong.MaxValue, ulong.MaxValue - 1, preparePosition};
-			yield return new object[] {(ulong)long.MaxValue + 1, (ulong)long.MaxValue, commitPosition};
+			yield return new object[] { 5UL, 6UL, commitPosition };
+			yield return new object[] { ulong.MaxValue - 1, 6UL, commitPosition };
+			yield return new object[] { ulong.MaxValue, ulong.MaxValue - 1, preparePosition };
+			yield return new object[] { (ulong)long.MaxValue + 1, (ulong)long.MaxValue, commitPosition };
 		}
 
 		[TestCaseSource(nameof(ArgumentOutOfRangeTestCases))]
@@ -51,37 +51,37 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc {
 		}
 
 		public static IEnumerable<object[]> GreaterThanTestCases() {
-			yield return new object[] {new Position(6, 6), new Position(6, 5)};
-			yield return new object[] {Position.End, new Position(ulong.MaxValue, 0),};
+			yield return new object[] { new Position(6, 6), new Position(6, 5) };
+			yield return new object[] { Position.End, new Position(ulong.MaxValue, 0), };
 		}
 
 		[TestCaseSource(nameof(GreaterThanTestCases))]
 		public void GreaterThan(Position left, Position right) => Assert.True(left > right);
 
 		public static IEnumerable<object[]> GreaterThanOrEqualToTestCases()
-			=> GreaterThanTestCases().Concat(new[] {new object[] {Position.Start, Position.Start}});
+			=> GreaterThanTestCases().Concat(new[] { new object[] { Position.Start, Position.Start } });
 
 		[TestCaseSource(nameof(GreaterThanOrEqualToTestCases))]
 		public void GreaterThanOrEqualTo(Position left, Position right) => Assert.True(left >= right);
 
 		public static IEnumerable<object[]> LessThanTestCases() {
-			yield return new object[] {new Position(6, 5), new Position(6, 6)};
-			yield return new object[] {new Position(ulong.MaxValue, 0), Position.End,};
+			yield return new object[] { new Position(6, 5), new Position(6, 6) };
+			yield return new object[] { new Position(ulong.MaxValue, 0), Position.End, };
 		}
 
 		[TestCaseSource(nameof(LessThanTestCases))]
 		public void LessThan(Position left, Position right) => Assert.True(left < right);
 
 		public static IEnumerable<object[]> LessThanOrEqualToTestCases()
-			=> LessThanTestCases().Concat(new[] {new object[] {Position.End, Position.End}});
+			=> LessThanTestCases().Concat(new[] { new object[] { Position.End, Position.End } });
 
 		[TestCaseSource(nameof(LessThanOrEqualToTestCases))]
 		public void LessThanOrEqualTo(Position left, Position right) => Assert.True(left <= right);
 
 		public static IEnumerable<object[]> CompareToTestCases() {
-			yield return new object[] {new Position(6, 5), new Position(6, 6), -1};
-			yield return new object[] {new Position(6, 6), new Position(6, 5), 1};
-			yield return new object[] {new Position(6, 6), new Position(6, 6), 0};
+			yield return new object[] { new Position(6, 5), new Position(6, 6), -1 };
+			yield return new object[] { new Position(6, 6), new Position(6, 5), 1 };
+			yield return new object[] { new Position(6, 6), new Position(6, 6), 0 };
 		}
 
 		[TestCaseSource(nameof(CompareToTestCases))]

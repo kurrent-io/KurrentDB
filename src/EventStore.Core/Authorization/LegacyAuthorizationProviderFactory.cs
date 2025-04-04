@@ -32,7 +32,7 @@ namespace EventStore.Core.Authorization {
 		public IAuthorizationProvider Build() {
 			var policy = new Policy("Legacy", 1, DateTimeOffset.MinValue);
 			var legacyStreamAssertion = new LegacyStreamPermissionAssertion(_mainQueue);
-			
+
 			// The Node.Ping is set to allow anonymous as it does not disclose any secure information.
 			policy.AllowAnonymous(Operations.Node.Ping);
 

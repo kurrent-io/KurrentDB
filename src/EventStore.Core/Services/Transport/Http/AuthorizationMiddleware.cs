@@ -4,8 +4,7 @@ using EventStore.Transport.Http;
 using Microsoft.AspNetCore.Http;
 using Serilog;
 
-namespace EventStore.Core.Services.Transport.Http
-{
+namespace EventStore.Core.Services.Transport.Http {
 	public class AuthorizationMiddleware : IMiddleware {
 		private static readonly ILogger Log = Serilog.Log.ForContext<AuthorizationMiddleware>();
 		private readonly IAuthorizationProvider _authorization;

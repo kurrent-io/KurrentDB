@@ -48,9 +48,9 @@ namespace EventStore.Core.Messaging {
 			int msgTypeCount = 0;
 			foreach (var msgType in
 				(from assembly in AppDomain.CurrentDomain.GetAssemblies()
-					from type in LoadAvailableTypes(assembly)
-					where rootMsgType.IsAssignableFrom(type)
-					select type)) {
+				 from type in LoadAvailableTypes(assembly)
+				 where rootMsgType.IsAssignableFrom(type)
+				 select type)) {
 				msgTypeCount += 1;
 
 				var msgTypeId = GetMsgTypeId(msgType);
@@ -90,13 +90,13 @@ namespace EventStore.Core.Messaging {
 
 			if (msgTypeCount - 1 != MaxMsgTypeId) {
 				var wrongTypes = from typeId in MsgTypeIdByType
-					group typeId.Key by typeId.Value
+								 group typeId.Key by typeId.Value
 					into g
-					where g.Count() > 1
-					select new {
-						TypeId = g.Key,
-						MsgTypes = g.ToArray()
-					};
+								 where g.Count() > 1
+								 select new {
+									 TypeId = g.Key,
+									 MsgTypes = g.ToArray()
+								 };
 
 				foreach (var wrongType in wrongTypes) {
 					Log.Fatal("MsgTypeId {typeId} is assigned to type: {messageTypes}",

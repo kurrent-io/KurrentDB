@@ -7,7 +7,8 @@ namespace EventStore.Common.Configuration {
 		private readonly IEnumerable<KeyValuePair<string, object>> _defaultValues;
 
 		public DefaultSource(IEnumerable<KeyValuePair<string, object>> defaultValues) {
-			if (defaultValues == null) throw new ArgumentNullException(nameof(defaultValues));
+			if (defaultValues == null)
+				throw new ArgumentNullException(nameof(defaultValues));
 			_defaultValues = defaultValues;
 		}
 

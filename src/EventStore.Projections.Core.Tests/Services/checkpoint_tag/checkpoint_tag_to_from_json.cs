@@ -1,9 +1,6 @@
-using System.Collections.Generic;
 using System.IO;
-using EventStore.Core.Data;
 using EventStore.Projections.Core.Services.Processing;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.checkpoint_tag {

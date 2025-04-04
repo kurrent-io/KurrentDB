@@ -9,7 +9,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 		public EventByTypeIndexEventFilter(HashSet<string> events)
 			: base(false, false, events) {
 			_streams = new HashSet<string>(from eventType in events
-				select "$et-" + eventType);
+										   select "$et-" + eventType);
 		}
 
 		protected override bool DeletedNotificationPasses(string positionStreamId) {
@@ -17,7 +17,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public override bool PassesSource(bool resolvedFromLinkTo, string positionStreamId, string eventType) {
-			if (_streams.Contains(positionStreamId)) return true;
+			if (_streams.Contains(positionStreamId))
+				return true;
 			return !resolvedFromLinkTo && !SystemStreams.IsSystemStream(positionStreamId);
 		}
 

@@ -80,7 +80,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				if (_extraStatistics != null)
 					_extraStatistics.EndOperation(processedEventId);
 				OutstandingMessage ev;
-				if (!_unconfirmedEvents.TryGetValue(processedEventId, out ev)) continue;
+				if (!_unconfirmedEvents.TryGetValue(processedEventId, out ev))
+					continue;
 				_unconfirmedEvents.Remove(processedEventId);
 				removedAny = true;
 				_allowedMessages++;
@@ -129,7 +130,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 
 		private void OnEventConfirmed(OutstandingMessage ev) {
 			var handler = EventConfirmed;
-			if (handler != null) handler(this, ev.ResolvedEvent);
+			if (handler != null)
+				handler(this, ev.ResolvedEvent);
 		}
 	}
 }

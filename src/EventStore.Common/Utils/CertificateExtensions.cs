@@ -25,7 +25,8 @@ namespace EventStore.Common.Utils {
 
 			var sans = new List<(string, string)>();
 			foreach (var extension in extensions) {
-				if (extension.Oid?.Value != "2.5.29.17") continue; // Oid for Subject Alternative Names extension
+				if (extension.Oid?.Value != "2.5.29.17")
+					continue; // Oid for Subject Alternative Names extension
 				var asnReader = new AsnReader(extension.RawData, AsnEncodingRules.DER).ReadSequence();
 				while (asnReader.HasData) {
 					Asn1Tag tag;
@@ -137,13 +138,13 @@ namespace EventStore.Common.Utils {
 			const char Delimiter = '.';
 
 			if (string.IsNullOrEmpty(certName) ||
-			    string.IsNullOrEmpty(name))
+				string.IsNullOrEmpty(name))
 				return false;
 
 			// if at least one of the names is an IP address, do an exact match
 			if (certNameType == CertificateNameType.IpAddress ||
-			    IPAddress.TryParse(certName, out _) ||
-			    IPAddress.TryParse(name, out _))
+				IPAddress.TryParse(certName, out _) ||
+				IPAddress.TryParse(name, out _))
 				return name.EqualsOrdinalIgnoreCase(certName);
 
 			Debug.Assert(certNameType == CertificateNameType.DnsName);
@@ -155,19 +156,19 @@ namespace EventStore.Common.Utils {
 				return false;
 
 			if (certNameLabels.Any(string.IsNullOrEmpty) ||
-			    dnsNameLabels.Any(string.IsNullOrEmpty))
+				dnsNameLabels.Any(string.IsNullOrEmpty))
 				return false;
 
 			if (certNameLabels.Any(IsInternationalizedDomainNameLabel) ||
-			    dnsNameLabels.Any(IsInternationalizedDomainNameLabel)) {
+				dnsNameLabels.Any(IsInternationalizedDomainNameLabel)) {
 				var idnMapping = new IdnMapping();
 				dnsNameLabels = dnsNameLabels.Select(x => idnMapping.GetAscii(x)).ToArray();
 				certNameLabels = certNameLabels.Select(x => idnMapping.GetAscii(x)).ToArray();
 			}
 
 			if (!IsValidCertificateNameFirstLabel(certNameLabels.First()) ||
-			    !certNameLabels.Skip(1).All(IsValidDnsNameLabel) ||
-			    !dnsNameLabels.All(IsValidDnsNameLabel))
+				!certNameLabels.Skip(1).All(IsValidDnsNameLabel) ||
+				!dnsNameLabels.All(IsValidDnsNameLabel))
 				return false;
 
 			// if first label is not a wildcard, check for an exact match

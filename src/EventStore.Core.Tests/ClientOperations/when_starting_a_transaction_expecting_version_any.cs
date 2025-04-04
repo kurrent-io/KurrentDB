@@ -23,7 +23,7 @@ namespace EventStore.Core.Tests.ClientOperations {
 
 		[Test]
 		public void successful_request_message_is_published() {
-			AssertEx.IsOrBecomesTrue(()=> Interlocked.Read(ref CompletionMessageCount) == 1);
+			AssertEx.IsOrBecomesTrue(() => Interlocked.Read(ref CompletionMessageCount) == 1);
 			Assert.AreEqual(InternalCorrId, CompletionMessage.CorrelationId);
 			Assert.True(CompletionMessage.Success);
 		}

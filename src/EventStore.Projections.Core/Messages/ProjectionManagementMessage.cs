@@ -1,12 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
+using EventStore.Common.Utils;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
-using System.Collections.Generic;
-using EventStore.Common.Utils;
 
 namespace EventStore.Projections.Core.Messages {
 	public static partial class ProjectionManagementMessage {
@@ -33,18 +33,17 @@ namespace EventStore.Projections.Core.Messages {
 				public PostBatch(
 					IEnvelope envelope, RunAs runAs, ProjectionPost[] projections)
 					: base(envelope, runAs) {
-						Projections = projections;
+					Projections = projections;
 				}
 
-				public class ProjectionPost
-				{
+				public class ProjectionPost {
 					public ProjectionMode Mode { get; }
-					public RunAs RunAs {get;}
+					public RunAs RunAs { get; }
 					public string Name { get; }
 					public string HandlerType { get; }
 					public string Query { get; }
-					public bool Enabled { get;}
-					public bool CheckpointsEnabled{ get;}
+					public bool Enabled { get; }
+					public bool CheckpointsEnabled { get; }
 					public bool EmitEnabled { get; }
 					public bool EnableRunAs { get; }
 					public bool TrackEmittedStreams { get; }
@@ -52,8 +51,7 @@ namespace EventStore.Projections.Core.Messages {
 					public ProjectionPost(
 						ProjectionMode mode, RunAs runAs, string name, string handlerType, string query,
 						bool enabled, bool checkpointsEnabled, bool emitEnabled, bool enableRunAs,
-						bool trackEmittedStreams)
-					{
+						bool trackEmittedStreams) {
 						Mode = mode;
 						RunAs = runAs;
 						Name = name;
@@ -439,9 +437,12 @@ namespace EventStore.Projections.Core.Messages {
 				private readonly string _partition;
 
 				public GetState(IEnvelope envelope, string name, string partition) {
-					if (envelope == null) throw new ArgumentNullException("envelope");
-					if (name == null) throw new ArgumentNullException("name");
-					if (partition == null) throw new ArgumentNullException("partition");
+					if (envelope == null)
+						throw new ArgumentNullException("envelope");
+					if (name == null)
+						throw new ArgumentNullException("name");
+					if (partition == null)
+						throw new ArgumentNullException("partition");
 					_envelope = envelope;
 					_name = name;
 					_partition = partition;
@@ -467,9 +468,12 @@ namespace EventStore.Projections.Core.Messages {
 				private readonly string _partition;
 
 				public GetResult(IEnvelope envelope, string name, string partition) {
-					if (envelope == null) throw new ArgumentNullException("envelope");
-					if (name == null) throw new ArgumentNullException("name");
-					if (partition == null) throw new ArgumentNullException("partition");
+					if (envelope == null)
+						throw new ArgumentNullException("envelope");
+					if (name == null)
+						throw new ArgumentNullException("name");
+					if (partition == null)
+						throw new ArgumentNullException("partition");
 					_envelope = envelope;
 					_name = name;
 					_partition = partition;
@@ -548,8 +552,8 @@ namespace EventStore.Projections.Core.Messages {
 			public static bool ValidateRunAs(ProjectionMode mode, ReadWrite readWrite, ClaimsPrincipal existingRunAs,
 				Command.ControlMessage message, bool replace = false) {
 				if (mode > ProjectionMode.Transient && readWrite == ReadWrite.Write
-				                                    && (message.RunAs == null || message.RunAs.Principal == null
-				                                                              || !(
+													&& (message.RunAs == null || message.RunAs.Principal == null
+																			  || !(
 																					   message.RunAs.Principal.LegacyRoleCheck(SystemRoles.Admins)
 																			  		|| message.RunAs.Principal.LegacyRoleCheck(SystemRoles.Operations)
 																				  ))) {
@@ -714,7 +718,7 @@ namespace EventStore.Projections.Core.Messages {
 			public bool? TrackEmittedStreams {
 				get { return _trackEmittedStreams; }
 			}
-			
+
 			public bool? CheckpointsEnabled {
 				get { return _checkpointsEnabled; }
 			}
@@ -848,7 +852,7 @@ namespace EventStore.Projections.Core.Messages {
 			public int MaxAllowedWritesInFlight {
 				get { return _maxAllowedWritesInFlight; }
 			}
-			
+
 			public int? ProjectionExecutionTimeout { get => _projectionExecutionTimeout; }
 		}
 	}

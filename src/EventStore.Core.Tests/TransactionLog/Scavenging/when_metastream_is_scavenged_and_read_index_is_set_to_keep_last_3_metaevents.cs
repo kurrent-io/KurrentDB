@@ -1,6 +1,4 @@
 ﻿using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;

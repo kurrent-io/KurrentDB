@@ -3,14 +3,14 @@ using System.Collections.Generic;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr {
 	[TestFixture]
-	public class when_delete_stream_gets_already_committed_before_commit: RequestManagerSpecification<DeleteStream> {
+	public class when_delete_stream_gets_already_committed_before_commit : RequestManagerSpecification<DeleteStream> {
 		private long _commitPosition = 3000;
 		private readonly string _streamId = $"delete_test-{Guid.NewGuid()}";
 		protected override DeleteStream OnManager(FakePublisher publisher) {

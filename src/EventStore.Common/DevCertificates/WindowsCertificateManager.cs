@@ -27,9 +27,9 @@ namespace EventStore.Common.DevCertificates {
 #else
 			using var key = c.GetRSAPrivateKey();
 			return (key is RSACryptoServiceProvider rsaPrivateKey &&
-			        rsaPrivateKey.CspKeyContainerInfo.Exportable) ||
-			       (key is RSACng cngPrivateKey &&
-			       cngPrivateKey.Key.ExportPolicy.HasFlag(CngExportPolicies.AllowExport));
+					rsaPrivateKey.CspKeyContainerInfo.Exportable) ||
+				   (key is RSACng cngPrivateKey &&
+				   cngPrivateKey.Key.ExportPolicy.HasFlag(CngExportPolicies.AllowExport));
 #endif
 		}
 

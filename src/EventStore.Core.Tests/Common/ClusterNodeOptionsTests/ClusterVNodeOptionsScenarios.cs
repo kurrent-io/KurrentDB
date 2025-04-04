@@ -16,10 +16,10 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests {
 		private ILogFormatAbstractorFactory<TStreamId> _logFormatFactory;
 		private readonly bool _disableMemoryOptimization;
 
-		public SingleNodeScenario (bool disableMemoryOptimization=false) {
+		public SingleNodeScenario(bool disableMemoryOptimization = false) {
 			_disableMemoryOptimization = disableMemoryOptimization;
 		}
-		
+
 		[OneTimeSetUp]
 		public virtual void TestFixtureSetUp() {
 			_logFormatFactory = LogFormatHelper<TLogFormat, TStreamId>.LogFormatFactory;
@@ -27,7 +27,7 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests {
 			var options = _disableMemoryOptimization
 				? new ClusterVNodeOptions()
 				: new ClusterVNodeOptions().ReduceMemoryUsageForTests();
-			
+
 			_options = WithOptions(options
 				.RunInMemory()
 				.Secure(new X509Certificate2Collection(ssl_connections.GetRootCertificate()),

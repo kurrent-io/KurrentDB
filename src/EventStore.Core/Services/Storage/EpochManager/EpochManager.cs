@@ -3,17 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
-using EventStore.Core.Messages;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Exceptions;
+using EventStore.Core.LogAbstraction;
+using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
-using ILogger = Serilog.ILogger;
 using EventStore.LogCommon;
+using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage.EpochManager {
 	public abstract class Epochmanager {
@@ -134,7 +134,7 @@ namespace EventStore.Core.Services.Storage.EpochManager {
 					while (epochPos >= 0 && cnt < maxEpochCount) {
 						var epoch = ReadEpochAt(reader, epochPos);
 						_epochs.AddFirst(epoch);
-						if(epoch.EpochPosition == 0){ break;}
+						if (epoch.EpochPosition == 0) { break; }
 						epochPos = epoch.PrevEpochPosition;
 						cnt += 1;
 					}
@@ -224,7 +224,7 @@ namespace EventStore.Core.Services.Storage.EpochManager {
 					_readers.Return(reader);
 				}
 			}
-			
+
 			if (epoch == null && throwIfNotFound) {
 				throw new Exception($"Concurrency failure, epoch #{epochNumber} should not be null.");
 			}
@@ -264,7 +264,7 @@ namespace EventStore.Core.Services.Storage.EpochManager {
 
 				epoch = sysRec.GetEpochRecord();
 				return epoch.EpochNumber == epochNumber && epoch.EpochId == epochId;
-			} catch(Exception ex) when (ex is InvalidReadException || ex is UnableToReadPastEndOfStreamException) {
+			} catch (Exception ex) when (ex is InvalidReadException || ex is UnableToReadPastEndOfStreamException) {
 				Log.Information(ex, "Failed to read epoch {epochNumber} at {epochPosition}.", epochNumber, epochPosition);
 				return false;
 			} finally {
@@ -450,7 +450,7 @@ namespace EventStore.Core.Services.Storage.EpochManager {
 					// in some race conditions we might have a gap in the epoch list
 					//read the epochs from the TFLog to fill in the gaps
 					if (epoch.EpochPosition > 0 &&
-						epoch.PrevEpochPosition >= 0 && 						
+						epoch.PrevEpochPosition >= 0 &&
 						epoch.PrevEpochPosition > (_epochs.Last?.Previous?.Value?.EpochPosition ?? -1)) {
 						var reader = _readers.Get();
 						var previous = _epochs.Last;
@@ -477,10 +477,10 @@ namespace EventStore.Core.Services.Storage.EpochManager {
 						"=== Cached new Last Epoch E{epochNumber}@{epochPosition}:{epochId:B} (previous epoch at {lastEpochPosition}) L={leaderId:B}.",
 						epoch.EpochNumber, epoch.EpochPosition, epoch.EpochId, epoch.PrevEpochPosition, epoch.LeaderInstanceId);
 					return true;
-				}				
-				if (epoch.EpochNumber < _epochs.First.Value.EpochNumber) {					
+				}
+				if (epoch.EpochNumber < _epochs.First.Value.EpochNumber) {
 					return false;
-				}				
+				}
 				//this should never happen
 				Log.Error("=== Unable to cache Epoch E{epochNumber}@{epochPosition}:{epochId:B} (previous epoch at {lastEpochPosition}) L={leaderId:B}.",
 					epoch.EpochNumber, epoch.EpochPosition, epoch.EpochId, epoch.PrevEpochPosition, epoch.LeaderInstanceId);

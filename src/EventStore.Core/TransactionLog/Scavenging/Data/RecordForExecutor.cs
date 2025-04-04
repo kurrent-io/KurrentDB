@@ -1,5 +1,4 @@
 ﻿using System;
-using EventStore.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.TransactionLog.Scavenging {
 	// this abstracts the actual log records from the chunk execution logic

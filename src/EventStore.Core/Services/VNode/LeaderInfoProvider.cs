@@ -12,15 +12,15 @@ namespace EventStore.Core.Services.VNode {
 
 		public LeaderInfoProvider(GossipAdvertiseInfo gossipInfo, Cluster.MemberInfo leaderInfo) {
 			Ensure.NotNull(gossipInfo, "gossipInfo");
-			
+
 			_gossipInfo = gossipInfo;
 			_leaderInfo = leaderInfo;
 		}
 
 		public (EndPoint AdvertisedTcpEndPoint, bool IsTcpEndPointSecure, EndPoint AdvertisedHttpEndPoint)
-			GetLeaderInfoEndPoints(){
+			GetLeaderInfoEndPoints() {
 
-			var endpoints = _leaderInfo != null 
+			var endpoints = _leaderInfo != null
 				? (TcpEndPoint: _leaderInfo.ExternalTcpEndPoint ?? _leaderInfo.ExternalSecureTcpEndPoint,
 					IsTcpEndPointSecure: _leaderInfo.ExternalSecureTcpEndPoint != null,
 					HttpEndPoint: _leaderInfo.HttpEndPoint,

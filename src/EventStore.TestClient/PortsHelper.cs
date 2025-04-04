@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using System.Net.Http;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.TestClient {
@@ -49,7 +49,7 @@ namespace EventStore.TestClient {
 					var listenTask = Task.Factory.StartNew(() => {
 						try {
 							var context = httpListener.GetContext();
-							context.Response.Close(new byte[] {1, 2, 3}, true);
+							context.Response.Close(new byte[] { 1, 2, 3 }, true);
 						} catch (Exception exc) {
 							httpListenerError = exc;
 						}
@@ -90,19 +90,19 @@ namespace EventStore.TestClient {
 				if (!AvailablePorts.TryDequeue(out port))
 					throw new Exception("Couldn't get free TCP port for MiniNode.");
 
-/*
-                try
-                {
-                    var listener = new TcpListener(ip, port);
-                    listener.Start();
-                    listener.Stop();
-                }
-                catch (Exception)
-                {
-                    AvailablePorts.Enqueue(port);
-                    continue;
-                }
-*/
+				/*
+								try
+								{
+									var listener = new TcpListener(ip, port);
+									listener.Start();
+									listener.Stop();
+								}
+								catch (Exception)
+								{
+									AvailablePorts.Enqueue(port);
+									continue;
+								}
+				*/
 
 				try {
 					var httpListener = new HttpListener();
@@ -112,8 +112,8 @@ namespace EventStore.TestClient {
 				} catch (Exception) {
 					AvailablePorts.Enqueue(port);
 					continue;
-//                    throw new Exception(
-//                        string.Format("HttpListener couldn't listen on port {0}, but TcpListener was OK.\nError: {1}", port, exc), exc);
+					//                    throw new Exception(
+					//                        string.Format("HttpListener couldn't listen on port {0}, but TcpListener was OK.\nError: {1}", port, exc), exc);
 				}
 
 				return port;
@@ -126,24 +126,24 @@ namespace EventStore.TestClient {
 			AvailablePorts.Enqueue(port);
 		}
 
-/*
-        private static int[] GetRandomPorts(int from, int portCount)
-        {
-            var res = new int[portCount];
-            var rnd = new Random(Math.Abs(Guid.NewGuid().GetHashCode()));
-            for (int i = 0; i < portCount; ++i)
-            {
-                res[i] = from + i;
-            }
-            for (int i = 0; i < portCount; ++i)
-            {
-                int index = rnd.Next(portCount - i);
-                int tmp = res[i];
-                res[i] = res[i + index];
-                res[i + index] = tmp;
-            }
-            return res;
-        }
-*/
+		/*
+				private static int[] GetRandomPorts(int from, int portCount)
+				{
+					var res = new int[portCount];
+					var rnd = new Random(Math.Abs(Guid.NewGuid().GetHashCode()));
+					for (int i = 0; i < portCount; ++i)
+					{
+						res[i] = from + i;
+					}
+					for (int i = 0; i < portCount; ++i)
+					{
+						int index = rnd.Next(portCount - i);
+						int tmp = res[i];
+						res[i] = res[i + index];
+						res[i + index] = tmp;
+					}
+					return res;
+				}
+		*/
 	}
 }

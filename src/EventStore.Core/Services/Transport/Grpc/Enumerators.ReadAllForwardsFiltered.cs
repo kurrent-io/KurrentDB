@@ -107,7 +107,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 				async Task OnMessage(Message message, CancellationToken ct) {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+						RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 						_channel.Writer.TryComplete(ex);
 						return;
 					}

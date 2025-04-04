@@ -6,31 +6,31 @@ using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Common.Utils;
-using EventStore.Core.Services.Monitoring;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Tests.Http;
-using EventStore.Core.Tests.Services.Transport.Tcp;
-using EventStore.Core.TransactionLog.Chunks;
 using System.Threading.Tasks;
+using EventStore.Common.Utils;
 using EventStore.Core.Authentication;
 using EventStore.Core.Authentication.InternalAuthentication;
 using EventStore.Core.Authorization;
 using EventStore.Core.Bus;
 using EventStore.Core.Certificates;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
+using EventStore.Core.Services.Monitoring;
+using EventStore.Core.Services.Storage.ReaderIndex;
+using EventStore.Core.Tests.Http;
+using EventStore.Core.Tests.Services.Transport.Tcp;
+using EventStore.Core.TransactionLog.Chunks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.AspNetCore.TestHost;
 using ILogger = Serilog.ILogger;
-using EventStore.Core.LogAbstraction;
-using Microsoft.AspNetCore.Server.Kestrel.Https;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 namespace EventStore.Core.Tests.Helpers {
 	public class MiniNode {
 		public const int ChunkSize = 1024 * 1024;
 		public const int CachedChunkSize = ChunkSize + ChunkHeader.Size + ChunkFooter.Size;
-		
+
 		protected static readonly ILogger Log = Serilog.Log.ForContext<MiniNode>();
 		public IPEndPoint TcpEndPoint { get; protected set; }
 		public IPEndPoint IntTcpEndPoint { get; protected set; }
@@ -75,7 +75,7 @@ namespace EventStore.Core.Tests.Helpers {
 			RunCount += 1;
 
 			var ip = IPAddress.Loopback;
-			
+
 			int extTcpPort = tcpPort ?? PortsHelper.GetAvailablePort(ip);
 			int httpEndPointPort = httpPort ?? PortsHelper.GetAvailablePort(ip);
 			int intTcpPort = PortsHelper.GetAvailablePort(ip);
@@ -92,41 +92,41 @@ namespace EventStore.Core.Tests.Helpers {
 			HttpEndPoint = new IPEndPoint(ip, httpEndPointPort);
 
 			var options = new ClusterVNodeOptions {
-					IndexBitnessVersion = indexBitnessVersion,
-					Application = new() {
-						AllowAnonymousEndpointAccess = true,
-						AllowAnonymousStreamAccess = true,
-						StatsPeriodSec = 60 * 60,
-						WorkerThreads = 1
-					},
-					Interface = new() {
-						NodeHeartbeatInterval = 10_000,
-						NodeHeartbeatTimeout = 10_000,
-						ReplicationHeartbeatInterval = 10_000,
-						ReplicationHeartbeatTimeout = 10_000,
-						EnableTrustedAuth = enableTrustedAuth,
-						EnableAtomPubOverHttp = true
-					},
-					Cluster = new() {
-						DiscoverViaDns = false,
-						ReadOnlyReplica = isReadOnlyReplica,
-						StreamInfoCacheCapacity = 10_000
-					},
-					Database = new() {
-						ChunkSize = chunkSize,
-						ChunksCacheSize = cachedChunkSize,
-						SkipDbVerify = true,
-						StatsStorage = StatsStorage.None,
-						MaxMemTableSize = memTableSize,
-						DisableScavengeMerging = true,
-						HashCollisionReadLimit = hashCollisionReadLimit,
-						CommitTimeoutMs = 10_000,
-						PrepareTimeoutMs = 10_000,
-						UnsafeDisableFlushToDisk = disableFlushToDisk,
-						StreamExistenceFilterSize = streamExistenceFilterSize,
-					},
-					Subsystems = new List<ISubsystemFactory>(subsystems ?? Array.Empty<ISubsystemFactory>())
-				}.Secure(new X509Certificate2Collection(ssl_connections.GetRootCertificate()),
+				IndexBitnessVersion = indexBitnessVersion,
+				Application = new() {
+					AllowAnonymousEndpointAccess = true,
+					AllowAnonymousStreamAccess = true,
+					StatsPeriodSec = 60 * 60,
+					WorkerThreads = 1
+				},
+				Interface = new() {
+					NodeHeartbeatInterval = 10_000,
+					NodeHeartbeatTimeout = 10_000,
+					ReplicationHeartbeatInterval = 10_000,
+					ReplicationHeartbeatTimeout = 10_000,
+					EnableTrustedAuth = enableTrustedAuth,
+					EnableAtomPubOverHttp = true
+				},
+				Cluster = new() {
+					DiscoverViaDns = false,
+					ReadOnlyReplica = isReadOnlyReplica,
+					StreamInfoCacheCapacity = 10_000
+				},
+				Database = new() {
+					ChunkSize = chunkSize,
+					ChunksCacheSize = cachedChunkSize,
+					SkipDbVerify = true,
+					StatsStorage = StatsStorage.None,
+					MaxMemTableSize = memTableSize,
+					DisableScavengeMerging = true,
+					HashCollisionReadLimit = hashCollisionReadLimit,
+					CommitTimeoutMs = 10_000,
+					PrepareTimeoutMs = 10_000,
+					UnsafeDisableFlushToDisk = disableFlushToDisk,
+					StreamExistenceFilterSize = streamExistenceFilterSize,
+				},
+				Subsystems = new List<ISubsystemFactory>(subsystems ?? Array.Empty<ISubsystemFactory>())
+			}.Secure(new X509Certificate2Collection(ssl_connections.GetRootCertificate()),
 					ssl_connections.GetServerCertificate())
 				.WithInternalSecureTcpOn(IntTcpEndPoint)
 				.WithExternalSecureTcpOn(TcpEndPoint)
@@ -237,7 +237,7 @@ namespace EventStore.Core.Tests.Helpers {
 				.ConfigureAwait(false); //starts the node
 
 			await Started.WithTimeout();
-			
+
 			StartingTime.Stop();
 			Log.Information("MiniNode successfully started!");
 		}

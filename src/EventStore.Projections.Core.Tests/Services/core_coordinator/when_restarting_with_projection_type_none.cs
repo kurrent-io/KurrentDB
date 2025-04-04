@@ -1,13 +1,13 @@
 using System;
-using NUnit.Framework;
-using EventStore.Projections.Core.Services.Management;
-using EventStore.Common.Options;
-using EventStore.Projections.Core.Messages;
-using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Services.Replication;
 using System.Collections.Generic;
 using System.Linq;
+using EventStore.Common.Options;
+using EventStore.Core.Tests.Fakes;
+using EventStore.Core.Tests.Services.Replication;
+using EventStore.Projections.Core.Messages;
+using EventStore.Projections.Core.Services.Management;
 using EventStore.Projections.Core.Services.Processing;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_coordinator {
 	[TestFixture]
@@ -22,7 +22,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_coordinator {
 
 		[SetUp]
 		public void Setup() {
-			queues = new List<FakePublisher>() {new FakePublisher()}.ToArray();
+			queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
 			publisher = new FakePublisher();
 
 			_coordinator =
@@ -49,7 +49,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_coordinator {
 
 			// Start components
 			_coordinator.Handle(new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
-			
+
 			Assert.AreEqual(0, queues[0].Messages.FindAll(x => x is ReaderCoreServiceMessage.StartReader).Count);
 		}
 

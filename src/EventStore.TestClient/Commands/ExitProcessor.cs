@@ -1,5 +1,4 @@
 using System.Threading;
-using EventStore.Common.Utils;
 
 namespace EventStore.TestClient.Commands {
 	internal class ExitProcessor : ICmdProcessor {

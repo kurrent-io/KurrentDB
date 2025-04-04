@@ -6,8 +6,8 @@ using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Management;
-using NUnit.Framework;
 using EventStore.Projections.Core.Services.Processing;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 	namespace a_completed_projection {
@@ -22,7 +22,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 			}
 
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 
 				var readerAssignedMessage =
 					_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
@@ -43,7 +44,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_stopping<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 
 				yield return
 					(new ProjectionManagementMessage.Command.Disable(
@@ -87,7 +89,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_starting<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 				yield return
 					(new ProjectionManagementMessage.Command.Enable(
 						new PublishEnvelope(_bus), _projectionName, ProjectionManagementMessage.RunAs.Anonymous));

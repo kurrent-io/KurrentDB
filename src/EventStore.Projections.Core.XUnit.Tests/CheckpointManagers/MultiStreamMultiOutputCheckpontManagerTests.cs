@@ -33,7 +33,7 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 		var envelope = new FakeEnvelope();
 		_ioDispatcher = new IODispatcher(_publisher, envelope);
 		_checkpointWriter = new CoreProjectionCheckpointWriter(
-				namingBuilder.MakeCheckpointStreamName(),_ioDispatcher, projectionVersion, ProjectionName);
+				namingBuilder.MakeCheckpointStreamName(), _ioDispatcher, projectionVersion, ProjectionName);
 		_existingStreams = new ExistingStreamsHelper();
 
 		var projectionConfig = new ProjectionConfig(SystemAccounts.System, 10, 1000, 20, 2,

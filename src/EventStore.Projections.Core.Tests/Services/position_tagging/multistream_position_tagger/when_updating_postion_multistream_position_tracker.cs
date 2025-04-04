@@ -12,12 +12,12 @@ namespace EventStore.Projections.Core.Tests.Services.position_tagging.multistrea
 		[SetUp]
 		public void When() {
 			// given
-			_tagger = new MultiStreamPositionTagger(0, new[] {"stream1", "stream2"});
+			_tagger = new MultiStreamPositionTagger(0, new[] { "stream1", "stream2" });
 			_positionTracker = new PositionTracker(_tagger);
 			var newTag =
-				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"stream1", 1}, {"stream2", 2}});
+				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 1 }, { "stream2", 2 } });
 			var newTag2 =
-				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"stream1", 1}, {"stream2", 3}});
+				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 1 }, { "stream2", 3 } });
 			_positionTracker.UpdateByCheckpointTagInitial(newTag);
 			_positionTracker.UpdateByCheckpointTagForward(newTag2);
 		}
@@ -33,7 +33,7 @@ namespace EventStore.Projections.Core.Tests.Services.position_tagging.multistrea
 		public void cannot_update_to_the_same_postion() {
 			Assert.Throws<InvalidOperationException>(() => {
 				var newTag =
-					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"stream1", 1}, {"stream2", 3}});
+					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 1 }, { "stream2", 3 } });
 				_positionTracker.UpdateByCheckpointTagForward(newTag);
 			});
 		}
@@ -43,7 +43,7 @@ namespace EventStore.Projections.Core.Tests.Services.position_tagging.multistrea
 			Assert.Throws<InvalidOperationException>(() => {
 				// even not initialized (UpdateToZero can be removed)
 				var newTag =
-					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"stream1", 3}, {"stream3", 2}});
+					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 3 }, { "stream3", 2 } });
 				_positionTracker.UpdateByCheckpointTagForward(newTag);
 			});
 		}

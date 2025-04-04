@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Tests.Services.projections_manager;
-using System.Linq;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_system {
 	public abstract class with_projections_subsystem<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {

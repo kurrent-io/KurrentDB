@@ -11,7 +11,8 @@ namespace EventStore.Common.Configuration {
 			var kestrelConfigurationDirectory =
 				potentialKestrelConfigurationDirectories.FirstOrDefault(directory =>
 					File.Exists(Path.Combine(directory, kestrelConfig)));
-			if (kestrelConfigurationDirectory is null) return new ConfigurationBuilder().Build();
+			if (kestrelConfigurationDirectory is null)
+				return new ConfigurationBuilder().Build();
 
 			return new ConfigurationBuilder()
 				.AddJsonFile(config => {

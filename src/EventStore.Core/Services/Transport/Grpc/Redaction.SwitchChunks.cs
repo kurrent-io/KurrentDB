@@ -49,7 +49,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			IServerStreamWriter<SwitchChunkResp> responseStream,
 			Guid acquisitionId) {
 
-			await foreach(var request in requestStream.ReadAllAsync().ConfigureAwait(false)) {
+			await foreach (var request in requestStream.ReadAllAsync().ConfigureAwait(false)) {
 				var tcsEnvelope = new TcsEnvelope<RedactionMessage.SwitchChunkCompleted>();
 				_bus.Publish(new RedactionMessage.SwitchChunk(tcsEnvelope, acquisitionId, request.TargetChunkFile, request.NewChunkFile));
 

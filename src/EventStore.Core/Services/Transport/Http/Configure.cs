@@ -262,7 +262,7 @@ namespace EventStore.Core.Services.Transport.Http {
 				return HandleNotHandled(entity.RequestedUrl, notHandled);
 			return InternalServerError();
 		}
-		
+
 		public static ResponseConfiguration ReadAllEventsBackwardFilteredCompleted(HttpResponseConfiguratorArgs entity,
 			Message message, bool headOfTf) {
 			var msg = message as ClientMessage.FilteredReadAllEventsBackwardCompleted;
@@ -320,7 +320,7 @@ namespace EventStore.Core.Services.Transport.Http {
 				return HandleNotHandled(entity.RequestedUrl, notHandled);
 			return InternalServerError();
 		}
-		
+
 		public static ResponseConfiguration ReadAllEventsForwardFilteredCompleted(HttpResponseConfiguratorArgs entity,
 			Message message, bool headOfTf) {
 			var msg = message as ClientMessage.FilteredReadAllEventsForwardCompleted;

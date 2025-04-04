@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Security;
-using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using EventStore.Common.Utils;
@@ -43,12 +40,12 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 		[TestCase(true, false, false, false, true)] //do not require valid client or server certificate
 		[TestCase(false, true, false, false, true)] //do not require valid client or server certificate
 		[TestCase(false, false, false, false, true)] //do not require valid client or server certificate
-		public void should_connect_to_each_other_and_send_data_depending_on_certificate_validity_and_settings (
-		    bool useValidServerCertificate,
-		    bool useValidClientCertificate,
-		    bool validateServerCertificate,
-		    bool validateClientCertificate,
-		    bool shouldConnectSuccessfully
+		public void should_connect_to_each_other_and_send_data_depending_on_certificate_validity_and_settings(
+			bool useValidServerCertificate,
+			bool useValidClientCertificate,
+			bool validateServerCertificate,
+			bool validateClientCertificate,
+			bool shouldConnectSuccessfully
 		) {
 			var serverEndPoint = new IPEndPoint(_ip, _port);
 			var serverCertificate = useValidServerCertificate
@@ -102,7 +99,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 				null,
 				serverEndPoint,
 				(cert, chain, err, _) => validateServerCertificate ? ClusterVNode<string>.ValidateServerCertificate(cert, chain, err, () => null, () => rootCertificates, null) : (true, null),
-				() => new X509CertificateCollection{clientCertificate},
+				() => new X509CertificateCollection { clientCertificate },
 				new TcpClientConnector(),
 				TcpConnectionManager.ConnectionTimeout,
 				conn => {
@@ -123,7 +120,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			clientSsl.Close("Normal close.");
 			Log.Information("Checking received data...");
 
-			if(shouldConnectSuccessfully)
+			if (shouldConnectSuccessfully)
 				Assert.AreEqual(sent, received.ToArray());
 			else
 				Assert.AreEqual(new byte[0], received.ToArray());

@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using EventStore.Core.Services;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
 using EventStore.Core.Tests.Http.Users.users;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Http.BasicAuthentication {
 	namespace basic_authentication {

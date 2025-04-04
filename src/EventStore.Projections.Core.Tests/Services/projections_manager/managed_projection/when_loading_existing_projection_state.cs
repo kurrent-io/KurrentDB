@@ -23,15 +23,15 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.managed
 
 		protected override void Given() {
 			var persistedState = new ManagedProjection.PersistedState {
-					Enabled = true,
-					HandlerType = "JS",
-					Query = @"log(1);", 
-					Mode = ProjectionMode.Continuous,
-					EmitEnabled = true,
-					CheckpointsDisabled = true,
-					Epoch = -1,
-					Version = -1,
-					RunAs = SerializedRunAs.SerializePrincipal(ProjectionManagementMessage.RunAs.Anonymous)
+				Enabled = true,
+				HandlerType = "JS",
+				Query = @"log(1);",
+				Mode = ProjectionMode.Continuous,
+				EmitEnabled = true,
+				CheckpointsDisabled = true,
+				Epoch = -1,
+				Version = -1,
+				RunAs = SerializedRunAs.SerializePrincipal(ProjectionManagementMessage.RunAs.Anonymous)
 			};
 			ExistingEvent(ProjectionNamesBuilder.ProjectionsStreamPrefix + _projectionName,
 				ProjectionEventTypes.ProjectionUpdated, "", persistedState.ToJson());
@@ -82,7 +82,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.managed
 			var persistedState = new ManagedProjection.PersistedState {
 				Enabled = true,
 				HandlerType = "JS",
-				Query = @"log(1);", 
+				Query = @"log(1);",
 				Mode = ProjectionMode.Continuous,
 				EmitEnabled = true,
 				CheckpointsDisabled = true,

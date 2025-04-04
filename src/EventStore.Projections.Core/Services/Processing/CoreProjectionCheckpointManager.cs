@@ -43,12 +43,18 @@ namespace EventStore.Projections.Core.Services.Processing {
 			PositionTagger positionTagger,
 			ProjectionNamesBuilder namingBuilder,
 			bool usePersistentCheckpoints) {
-			if (publisher == null) throw new ArgumentNullException("publisher");
-			if (projectionConfig == null) throw new ArgumentNullException("projectionConfig");
-			if (name == null) throw new ArgumentNullException("name");
-			if (positionTagger == null) throw new ArgumentNullException("positionTagger");
-			if (namingBuilder == null) throw new ArgumentNullException("namingBuilder");
-			if (name == "") throw new ArgumentException("name");
+			if (publisher == null)
+				throw new ArgumentNullException("publisher");
+			if (projectionConfig == null)
+				throw new ArgumentNullException("projectionConfig");
+			if (name == null)
+				throw new ArgumentNullException("name");
+			if (positionTagger == null)
+				throw new ArgumentNullException("positionTagger");
+			if (namingBuilder == null)
+				throw new ArgumentNullException("namingBuilder");
+			if (name == "")
+				throw new ArgumentException("name");
 
 			_lastProcessedEventPosition = new PositionTracker(positionTagger);
 			_zeroTag = positionTagger.MakeZeroCheckpointTag();
@@ -82,8 +88,10 @@ namespace EventStore.Projections.Core.Services.Processing {
 		public abstract void PartitionCompleted(string partition);
 
 		public virtual void Initialize() {
-			if (_currentCheckpoint != null) _currentCheckpoint.Dispose();
-			if (_closingCheckpoint != null) _closingCheckpoint.Dispose();
+			if (_currentCheckpoint != null)
+				_currentCheckpoint.Dispose();
+			if (_closingCheckpoint != null)
+				_closingCheckpoint.Dispose();
 			_currentCheckpoint = null;
 			_closingCheckpoint = null;
 			_requestedCheckpointPosition = null;
@@ -130,10 +138,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 			_started = false;
 			_stopped = true;
 
-			if (_currentCheckpoint != null) _currentCheckpoint.Dispose();
+			if (_currentCheckpoint != null)
+				_currentCheckpoint.Dispose();
 			_currentCheckpoint = null;
 
-			if (_closingCheckpoint != null) _closingCheckpoint.Dispose();
+			if (_closingCheckpoint != null)
+				_closingCheckpoint.Dispose();
 			_closingCheckpoint = null;
 		}
 
@@ -154,7 +164,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 				+ +(_closingCheckpoint != null ? _closingCheckpoint.GetReadsInProgress() : 0)
 				+ (_currentCheckpoint != null ? _currentCheckpoint.GetReadsInProgress() : 0);
 			info.WritesInProgress = (_closingCheckpoint != null ? _closingCheckpoint.GetWritesInProgress() : 0)
-			                        + (_currentCheckpoint != null ? _currentCheckpoint.GetWritesInProgress() : 0);
+									+ (_currentCheckpoint != null ? _currentCheckpoint.GetWritesInProgress() : 0);
 			info.CheckpointStatus = _inCheckpoint ? "Requested" : "";
 		}
 
@@ -304,7 +314,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		/// <returns>true - if checkpoint has been completed in-sync</returns>
 		private bool StartCheckpoint(PositionTracker lastProcessedEventPosition, PartitionState projectionState) {
 			Contract.Requires(_closingCheckpoint == null);
-			if (projectionState == null) throw new ArgumentNullException("projectionState");
+			if (projectionState == null)
+				throw new ArgumentNullException("projectionState");
 
 			CheckpointTag requestedCheckpointPosition = lastProcessedEventPosition.LastTag;
 			if (requestedCheckpointPosition == _lastCompletedCheckpointPosition)

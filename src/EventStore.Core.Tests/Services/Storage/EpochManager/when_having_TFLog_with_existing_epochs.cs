@@ -2,25 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.LogAbstraction;
+using EventStore.Core.LogV3;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services;
+using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
-using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
-using System.Threading;
-using EventStore.Core.Services;
-using EventStore.Common.Utils;
-using Newtonsoft.Json.Linq;
-using EventStore.Core.LogV3;
 
 namespace EventStore.Core.Tests.Services.Storage {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -187,7 +183,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 			Assert.That(_cache.First.Value.EpochNumber == _epochs[15].EpochNumber);
 			Assert.That(_cache.Last.Value.EpochNumber == _epochs[24].EpochNumber);
 
-			
+
 			//cannot get epoch ahead of last cached on master
 			var nextEpoch = _epochManager.GetEpochAfter(_epochs[24].EpochNumber, false);
 			Assert.Null(nextEpoch);
@@ -203,26 +199,26 @@ namespace EventStore.Core.Tests.Services.Storage {
 			Assert.That(_cache.Count == 10);
 			Assert.That(_cache.First.Value.EpochNumber == _epochs[15].EpochNumber);
 			Assert.That(_cache.Last.Value.EpochNumber == _epochs[24].EpochNumber);
-						
+
 			//can get next  in cache			
 			nextEpoch = _epochManager.GetEpochAfter(_epochs[20].EpochNumber, false);
-			
+
 			Assert.That(nextEpoch.EpochPosition == _epochs[21].EpochPosition);
 			Assert.That(_cache.Count == 10);
 			Assert.That(_cache.First.Value.EpochNumber == _epochs[15].EpochNumber);
 			Assert.That(_cache.Last.Value.EpochNumber == _epochs[24].EpochNumber);
-			
+
 			//can get next from first			
 			nextEpoch = _epochManager.GetEpochAfter(_epochs[15].EpochNumber, false);
-			
+
 			Assert.That(nextEpoch.EpochPosition == _epochs[16].EpochPosition);
 			Assert.That(_cache.Count == 10);
 			Assert.That(_cache.First.Value.EpochNumber == _epochs[15].EpochNumber);
 			Assert.That(_cache.Last.Value.EpochNumber == _epochs[24].EpochNumber);
-			
+
 			//can get next epoch from just before cache 
 			nextEpoch = _epochManager.GetEpochAfter(_epochs[14].EpochNumber, false);
-			
+
 			Assert.That(nextEpoch.EpochPosition == _epochs[15].EpochPosition);
 			Assert.That(_cache.Count == 10);
 			Assert.That(_cache.First.Value.EpochNumber == _epochs[15].EpochNumber);
@@ -230,7 +226,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 
 			//can get next epoch from before cache 
 			nextEpoch = _epochManager.GetEpochAfter(_epochs[10].EpochNumber, false);
-			
+
 			Assert.That(nextEpoch.EpochPosition == _epochs[11].EpochPosition);
 			Assert.That(_cache.Count == 10);
 			Assert.That(_cache.First.Value.EpochNumber == _epochs[15].EpochNumber);
@@ -238,7 +234,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 
 			//can get next epoch from 0 epoch
 			nextEpoch = _epochManager.GetEpochAfter(_epochs[0].EpochNumber, false);
-			
+
 			Assert.That(nextEpoch.EpochPosition == _epochs[1].EpochPosition);
 			Assert.That(_cache.Count == 10);
 			Assert.That(_cache.First.Value.EpochNumber == _epochs[15].EpochNumber);

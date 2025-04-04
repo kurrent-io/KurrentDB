@@ -4,7 +4,7 @@ using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Transport.Tcp.Framing;
 
-namespace EventStore.Core.Services.Replication; 
+namespace EventStore.Core.Services.Replication;
 
 public class TransactionFramer : IMessageFramer<IEnumerable<ILogRecord>> {
 	private readonly List<ILogRecord> _records;

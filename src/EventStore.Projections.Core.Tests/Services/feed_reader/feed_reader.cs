@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Services.UserManagement;
+using EventStore.Core.Tests;
 using EventStore.Core.Tests.Bus.Helpers;
 using EventStore.Projections.Core.EventReaders.Feeds;
 using EventStore.Projections.Core.Messages;
@@ -12,8 +14,6 @@ using EventStore.Projections.Core.Messages.EventReaders.Feeds;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
-using System.Linq;
-using EventStore.Core.Tests;
 using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services.feed_reader {
@@ -30,7 +30,7 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 			public void SetUp() {
 				_bus = new InMemoryBus("test");
 				_subscriptionDispatcher = new ReaderSubscriptionDispatcher(_bus);
-				_testQueryDefinition = new QuerySourcesDefinition {AllStreams = true, AllEvents = true};
+				_testQueryDefinition = new QuerySourcesDefinition { AllStreams = true, AllEvents = true };
 			}
 
 			[Test]
@@ -145,7 +145,7 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 		[TestFixture]
 		public class when_starting : FeedReaderSpecification {
 			protected override QuerySourcesDefinition GivenQuerySource() {
-				return new QuerySourcesDefinition {AllStreams = true, AllEvents = true};
+				return new QuerySourcesDefinition { AllStreams = true, AllEvents = true };
 			}
 
 			protected override void When() {
@@ -174,7 +174,7 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 			private int _number;
 
 			protected override QuerySourcesDefinition GivenQuerySource() {
-				return new QuerySourcesDefinition {AllStreams = true, AllEvents = true};
+				return new QuerySourcesDefinition { AllStreams = true, AllEvents = true };
 			}
 
 			protected override void Given() {
@@ -211,7 +211,7 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 			private int _maxN;
 
 			protected override QuerySourcesDefinition GivenQuerySource() {
-				return new QuerySourcesDefinition {AllStreams = true, AllEvents = true};
+				return new QuerySourcesDefinition { AllStreams = true, AllEvents = true };
 			}
 
 			protected override void Given() {
@@ -276,8 +276,7 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 				ExistingEvent("test-stream", "type1", "{}", "{Data: 2}");
 				ExistingEvent("test-stream", "type2", "{}", "{Data: 3}");
 
-				_querySourcesDefinition = new QuerySourcesDefinition
-					{Streams = new[] {"test-stream"}, AllEvents = true};
+				_querySourcesDefinition = new QuerySourcesDefinition { Streams = new[] { "test-stream" }, AllEvents = true };
 				_fromPosition = CheckpointTag.FromStreamPosition(0, "test-stream", -1);
 				_maxEvents = 2;
 			}
@@ -315,8 +314,7 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 				ExistingEvent("test-stream", "type1", "{}", "{Data: 2}");
 				ExistingEvent("test-stream", "type2", "{}", "{Data: 3}");
 
-				_querySourcesDefinition = new QuerySourcesDefinition
-					{Streams = new[] {"test-stream"}, AllEvents = true};
+				_querySourcesDefinition = new QuerySourcesDefinition { Streams = new[] { "test-stream" }, AllEvents = true };
 				_fromPosition = CheckpointTag.FromStreamPosition(0, "test-stream", -1);
 				_maxEvents = 2;
 			}

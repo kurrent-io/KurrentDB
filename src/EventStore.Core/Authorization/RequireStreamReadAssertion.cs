@@ -19,7 +19,7 @@ namespace EventStore.Core.Authorization {
 		public ValueTask<bool> Evaluate(ClaimsPrincipal cp, Operation operation, PolicyInformation policy,
 			EvaluationContext context) {
 			if (operation == Operations.Subscriptions.ProcessMessages ||
-			    operation == Operations.Subscriptions.ReplayParked) {
+				operation == Operations.Subscriptions.ReplayParked) {
 				var stream = FindStreamId(operation.Parameters.Span);
 				return _streamAssertion.Evaluate(cp,
 					StreamRead.WithParameter(Operations.Streams.Parameters.StreamId(stream)), policy, context);

@@ -66,7 +66,8 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 		}
 
 		public void FlushToDisk() {
-			if (_fileStream == null) return;
+			if (_fileStream == null)
+				return;
 			var fs = _fileStream as FileStream;
 			if (fs != null)
 				fs.FlushToDisk(); //because of broken flush in filestream in 3.5

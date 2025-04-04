@@ -16,7 +16,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 			new EmittedStream.WriterConfiguration.StreamMetadata(maxCount: 2);
 
 		public PartitionStateUpdateManager(ProjectionNamesBuilder namingBuilder) {
-			if (namingBuilder == null) throw new ArgumentNullException("namingBuilder");
+			if (namingBuilder == null)
+				throw new ArgumentNullException("namingBuilder");
 			_namingBuilder = namingBuilder;
 		}
 
@@ -25,7 +26,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 			if (_states.TryGetValue(partition, out stateEntry)) {
 				stateEntry.PartitionState = state;
 			} else {
-				_states.Add(partition, new State {PartitionState = state, ExpectedTag = basedOn});
+				_states.Add(partition, new State { PartitionState = state, ExpectedTag = basedOn });
 			}
 		}
 

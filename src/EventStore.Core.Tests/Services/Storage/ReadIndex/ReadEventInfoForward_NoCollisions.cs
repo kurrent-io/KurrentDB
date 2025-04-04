@@ -112,7 +112,7 @@ namespace EventStore.Core.Tests.Services.Storage.ReadIndex {
 					if (fromEventNumber > 3)
 						Assert.True(result.IsEndOfStream);
 					else
-						Assert.AreEqual((long) fromEventNumber + int.MaxValue, result.NextEventNumber);
+						Assert.AreEqual((long)fromEventNumber + int.MaxValue, result.NextEventNumber);
 				}
 			}
 
@@ -143,7 +143,7 @@ namespace EventStore.Core.Tests.Services.Storage.ReadIndex {
 						_events[fromEventNumber + 1].LogPosition);
 
 					CheckResult(_events.Skip(fromEventNumber).Take(1).ToArray(), result);
-					Assert.AreEqual((long) fromEventNumber + int.MaxValue, result.NextEventNumber);
+					Assert.AreEqual((long)fromEventNumber + int.MaxValue, result.NextEventNumber);
 				}
 			}
 		}
@@ -243,7 +243,7 @@ namespace EventStore.Core.Tests.Services.Storage.ReadIndex {
 					long.MaxValue);
 
 				CheckResult(_events.Skip(1).ToArray(), result);
-				Assert.AreEqual((long ) 3 + int.MaxValue, result.NextEventNumber);
+				Assert.AreEqual((long)3 + int.MaxValue, result.NextEventNumber);
 
 				result = ReadIndex.ReadEventInfoForward_NoCollisions(
 					Hash,

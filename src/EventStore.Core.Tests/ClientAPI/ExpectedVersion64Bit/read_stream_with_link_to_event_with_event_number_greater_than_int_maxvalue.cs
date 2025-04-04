@@ -1,9 +1,9 @@
+using System.Linq;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Core.Data;
 using EventStore.Core.Services;
 using NUnit.Framework;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

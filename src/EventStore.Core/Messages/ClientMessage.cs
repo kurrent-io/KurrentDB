@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
@@ -184,7 +183,7 @@ namespace EventStore.Core.Messages {
 					throw new ArgumentOutOfRangeException(nameof(eventStreamId));
 
 				if (expectedVersion < Data.ExpectedVersion.StreamExists ||
-				    expectedVersion == Data.ExpectedVersion.Invalid)
+					expectedVersion == Data.ExpectedVersion.Invalid)
 					throw new ArgumentOutOfRangeException(nameof(expectedVersion));
 
 				Ensure.NotNull(events, "events");
@@ -199,7 +198,7 @@ namespace EventStore.Core.Messages {
 				string eventStreamId, long expectedVersion, Event @event, ClaimsPrincipal user,
 				IReadOnlyDictionary<string, string> tokens = null)
 				: this(internalCorrId, correlationId, envelope, requireLeader, eventStreamId, expectedVersion,
-					@event == null ? null : new[] {@event}, user, tokens) {
+					@event == null ? null : new[] { @event }, user, tokens) {
 			}
 
 			public override string ToString() {
@@ -486,7 +485,8 @@ namespace EventStore.Core.Messages {
 				CancellationToken cancellationToken = default)
 				: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
 				Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-				if (eventNumber < -1) throw new ArgumentOutOfRangeException(nameof(eventNumber));
+				if (eventNumber < -1)
+					throw new ArgumentOutOfRangeException(nameof(eventNumber));
 
 				EventStreamId = eventStreamId;
 				EventNumber = eventNumber;
@@ -549,7 +549,8 @@ namespace EventStore.Core.Messages {
 				CancellationToken cancellationToken = default)
 				: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
 				Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-				if (fromEventNumber < -1) throw new ArgumentOutOfRangeException(nameof(fromEventNumber));
+				if (fromEventNumber < -1)
+					throw new ArgumentOutOfRangeException(nameof(fromEventNumber));
 
 				EventStreamId = eventStreamId;
 				FromEventNumber = fromEventNumber;
@@ -636,7 +637,8 @@ namespace EventStore.Core.Messages {
 				CancellationToken cancellationToken = default)
 				: base(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
 				Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-				if (fromEventNumber < -1) throw new ArgumentOutOfRangeException(nameof(fromEventNumber));
+				if (fromEventNumber < -1)
+					throw new ArgumentOutOfRangeException(nameof(fromEventNumber));
 
 				EventStreamId = eventStreamId;
 				FromEventNumber = fromEventNumber;
@@ -914,7 +916,7 @@ namespace EventStore.Core.Messages {
 
 		[DerivedMessage(CoreMessage.Client)]
 		public partial class FilteredReadAllEventsForwardCompleted : ReadResponseMessage {
-		public readonly Guid CorrelationId;
+			public readonly Guid CorrelationId;
 
 			public readonly FilteredReadAllResult Result;
 			public readonly string Error;
@@ -1734,7 +1736,7 @@ namespace EventStore.Core.Messages {
 		}
 
 		[DerivedMessage(CoreMessage.Client)]
-		public partial class SetNodePriority : Message	{
+		public partial class SetNodePriority : Message {
 			public readonly int NodePriority;
 
 			public SetNodePriority(int nodePriority) {
@@ -1816,7 +1818,7 @@ namespace EventStore.Core.Messages {
 			public readonly ScavengeResult Result;
 			public readonly string ScavengeId;
 
-			public ScavengeDatabaseGetResponse(Guid correlationId, 
+			public ScavengeDatabaseGetResponse(Guid correlationId,
 				ScavengeResult result, string scavengeId) {
 				CorrelationId = correlationId;
 				Result = result;
@@ -1883,7 +1885,7 @@ namespace EventStore.Core.Messages {
 			}
 
 			public override string ToString() => $"ScavengeId: {ScavengeId}, Reason: {Reason}";
-			
+
 		}
 
 		[DerivedMessage(CoreMessage.Client)]

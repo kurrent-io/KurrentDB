@@ -3,7 +3,6 @@ using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Helpers;
 using NUnit.Framework;
-using WriteEventsMgr = EventStore.Core.Services.RequestManager.Managers.WriteEvents;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.Service {
 	[TestFixture]

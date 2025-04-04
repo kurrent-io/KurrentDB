@@ -17,7 +17,8 @@ namespace EventStore.Projections.Core.Tests {
 					.ToDictionary(x => x, _ => new TaskCompletionSource<bool>());
 
 			bus.Subscribe(new AdHocHandler<CoreProjectionStatusMessage.Stopped>(m => {
-				if (!systemProjectionsReady.TryGetValue(m.Name, out var ready)) return;
+				if (!systemProjectionsReady.TryGetValue(m.Name, out var ready))
+					return;
 				ready.TrySetResult(true);
 			}));
 

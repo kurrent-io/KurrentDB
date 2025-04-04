@@ -60,7 +60,7 @@ namespace EventStore.Core.Tests.Index.IndexV1 {
 			base.TearDown();
 		}
 
-		private ISearchTable GetTable(bool memTableOrPTable) => memTableOrPTable ? (ISearchTable) _memTable : _pTable;
+		private ISearchTable GetTable(bool memTableOrPTable) => memTableOrPTable ? (ISearchTable)_memTable : _pTable;
 
 		[TestCase(true)]
 		[TestCase(false)]

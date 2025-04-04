@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
@@ -90,7 +89,7 @@ namespace EventStore.Core.Tests.ClientAPI {
 				using (await store.FilteredSubscribeToAllAsync(false, filter, (s, e) => {
 					if (e.OriginalStreamId == SystemStreams.EventTypesStream)
 						return Task.CompletedTask;
-					
+
 					foundEvents.Add(e);
 					if (foundEvents.Count == 5) {
 						appeared.TrySetResult(true);
@@ -231,7 +230,7 @@ namespace EventStore.Core.Tests.ClientAPI {
 						return Task.CompletedTask;
 					},
 					checkpointInterval: 2)) {
-					
+
 					await _conn.AppendToStreamAsync("stream-a", ExpectedVersion.NoStream, _testEvents);
 
 					await appeared.Task.WithTimeout(Timeout);

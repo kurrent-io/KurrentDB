@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;

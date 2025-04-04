@@ -220,7 +220,7 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 			[Test]
 			public async Task should_have_one_parked_message() {
 				await _replayParked.Task;
-				_messageParker.BeginParkMessage(CreateResolvedEvent(2,200), "testing", (_, __) => {
+				_messageParker.BeginParkMessage(CreateResolvedEvent(2, 200), "testing", (_, __) => {
 					Assert.AreEqual(1, _messageParker.ParkedMessageCount);
 					_done.TrySetResult(true);
 				});
@@ -293,7 +293,8 @@ namespace EventStore.Core.Tests.Services.PersistentSubscription {
 				_bus.Subscribe(new AdHocHandler<TimerMessage.Schedule>(
 					msg => {
 						_timerMessages.Add(msg.ReplyMessage as IODispatcherDelayedMessage);
-						if (_timerMessages.Count == 2) _timerMessagesReceived.TrySetResult(true);
+						if (_timerMessages.Count == 2)
+							_timerMessagesReceived.TrySetResult(true);
 					}));
 			}
 

@@ -325,7 +325,7 @@ namespace EventStore.BufferManagement.Tests {
 		[Test]
 		public void length_is_updated_to_include_bytes_written() {
 			BufferPool pool = new BufferPool(1, BufferManager);
-			byte[] data = {1, 2, 3, 4, 5};
+			byte[] data = { 1, 2, 3, 4, 5 };
 			pool.Append(data);
 			Assert.IsTrue(pool.Length == 5);
 		}
@@ -333,7 +333,7 @@ namespace EventStore.BufferManagement.Tests {
 		[Test]
 		public void data_is_written_to_the_internal_buffer() {
 			BufferPool pool = new BufferPool(1, BufferManager);
-			byte[] data = {1, 2, 3, 4, 5};
+			byte[] data = { 1, 2, 3, 4, 5 };
 			pool.Append(data);
 			for (byte i = 0; i < 5; i++) {
 				Assert.AreEqual(i + 1, pool[i]);
@@ -352,7 +352,7 @@ namespace EventStore.BufferManagement.Tests {
 		[Test]
 		public void can_write_given_a_self_offset() {
 			BufferPool pool = new BufferPool(1, BufferManager);
-			byte[] data = {1, 2, 3, 4, 5};
+			byte[] data = { 1, 2, 3, 4, 5 };
 			pool.Write(4, data, 0, 5); //start at position 4
 			for (byte i = 4; i < 9; i++) {
 				Assert.AreEqual(i - 3, pool[i]);
@@ -362,7 +362,7 @@ namespace EventStore.BufferManagement.Tests {
 		[Test]
 		public void can_write_given_a_source_offset() {
 			BufferPool pool = new BufferPool(1, BufferManager);
-			byte[] data = {1, 2, 3, 4, 5};
+			byte[] data = { 1, 2, 3, 4, 5 };
 			pool.Write(0, data, 3, 2);
 			Assert.AreEqual(pool[0], 4);
 			Assert.AreEqual(pool[1], 5);
@@ -441,7 +441,7 @@ namespace EventStore.BufferManagement.Tests {
 
 		[Test]
 		public void writing_multiple_bytes_throws_objectdisposedexception() {
-			Assert.Throws<ObjectDisposedException>(() => { m_DisposedPool.Append(new byte[] {1, 2, 3, 4}); });
+			Assert.Throws<ObjectDisposedException>(() => { m_DisposedPool.Append(new byte[] { 1, 2, 3, 4 }); });
 		}
 
 

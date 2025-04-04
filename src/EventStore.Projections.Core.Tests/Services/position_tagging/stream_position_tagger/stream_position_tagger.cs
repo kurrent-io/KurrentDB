@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Projections.Core.Messages;
@@ -103,7 +102,7 @@ namespace EventStore.Projections.Core.Tests.Services.position_tagging.stream_pos
 			var t = new StreamPositionTagger(0, "stream1");
 			var tag = CheckpointTag.FromStreamPosition(0, "stream1", 1);
 			var original =
-				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"stream1", 1}, {"stream2", 2}});
+				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 1 }, { "stream2", 2 } });
 			Assert.AreEqual(tag, t.AdjustTag(original));
 		}
 

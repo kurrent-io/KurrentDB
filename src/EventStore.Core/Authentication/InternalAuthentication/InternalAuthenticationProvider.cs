@@ -32,7 +32,7 @@ namespace EventStore.Core.Authentication.InternalAuthentication {
 			_userPasswordsCache = new LRUCache<string, Tuple<string, ClaimsPrincipal>>("UserPasswords", cacheSize);
 			_logFailedAuthenticationAttempts = logFailedAuthenticationAttempts;
 			_defaultUserOptions = defaultUserOptions;
-			
+
 			var userManagement = new UserManagementService(ioDispatcher, _passwordHashAlgorithm,
 				skipInitializeStandardUsersCheck: false, _tcs, _defaultUserOptions);
 			subscriber.Subscribe<UserManagementMessage.Create>(userManagement);
@@ -72,7 +72,7 @@ namespace EventStore.Core.Authentication.InternalAuthentication {
 		}
 
 		public IReadOnlyList<string> GetSupportedAuthenticationSchemes() {
-			return new [] {
+			return new[] {
 				"Basic"
 			};
 		}
@@ -92,7 +92,7 @@ namespace EventStore.Core.Authentication.InternalAuthentication {
 		}
 
 		private static ClaimsPrincipal CreatePrincipal(UserData userData) {
-			var claims = new List<Claim> {new Claim(ClaimTypes.Name, userData.LoginName)};
+			var claims = new List<Claim> { new Claim(ClaimTypes.Name, userData.LoginName) };
 			if (userData.Groups != null) {
 				claims.AddRange(userData.Groups.Select(x => new Claim(ClaimTypes.Role, x)));
 			}

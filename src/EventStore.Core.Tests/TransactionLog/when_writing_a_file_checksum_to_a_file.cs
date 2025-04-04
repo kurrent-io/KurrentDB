@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using EventStore.Core.Tests.Helpers;
 using EventStore.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
-using EventStore.Core.Tests.Helpers;
 
 namespace EventStore.Core.Tests.TransactionLog {
 	[TestFixture]

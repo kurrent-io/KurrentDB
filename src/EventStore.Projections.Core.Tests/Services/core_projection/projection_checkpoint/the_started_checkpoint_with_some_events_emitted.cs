@@ -1,7 +1,5 @@
 using System;
 using EventStore.Core.Tests;
-using EventStore.Core.Tests.Bus.Helpers;
-using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 

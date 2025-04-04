@@ -3,6 +3,6 @@
 	partial class B : Message {
 		[DerivedMessage(TestMessageGroup.NestedDerived)]
 		private partial class A : B {
-		} 
+		}
 	}
 }

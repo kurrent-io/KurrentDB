@@ -1,10 +1,10 @@
-﻿using NUnit.Framework;
-using Newtonsoft.Json.Linq;
-using System.Linq;
+﻿using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using HttpStatusCode = System.Net.HttpStatusCode;
 using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 // ReSharper disable InconsistentNaming
 

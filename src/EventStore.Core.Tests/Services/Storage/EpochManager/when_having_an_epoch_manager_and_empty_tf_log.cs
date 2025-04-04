@@ -2,25 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using NUnit.Framework;
-using NUnit.Framework.Internal;
-using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
 using System.Threading;
-using EventStore.Core.Services;
-using EventStore.Core.Data;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
+using EventStore.Core.Bus;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.LogV3;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
+using EventStore.Core.Services;
+using EventStore.Core.Services.Storage.EpochManager;
+using EventStore.Core.Tests.TransactionLog;
+using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.LogRecords;
+using NUnit.Framework;
+using NUnit.Framework.Internal;
 
 namespace EventStore.Core.Tests.Services.Storage {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -123,7 +119,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 			Assert.That(epochWritten.Epoch.TimeStamp >= beforeWrite);
 
 			// will_cache_epochs_written() {
-			
+
 			for (int i = 0; i < 4; i++) {
 				_epochManager.WriteNewEpoch(GetNextEpoch());
 			}
@@ -139,13 +135,13 @@ namespace EventStore.Core.Tests.Services.Storage {
 			CollectionAssert.IsOrdered(epochs);
 
 			// can_write_more_epochs_than_cache_size
-			
+
 			for (int i = 0; i < 16; i++) {
 				_epochManager.WriteNewEpoch(GetNextEpoch());
 			}
 			Assert.That(_cache.Count == 10);
 			Assert.That(_cache.First.Value.EpochNumber == 11);
-			Assert.That(_cache.Last.Value.EpochNumber == 20);			
+			Assert.That(_cache.Last.Value.EpochNumber == 20);
 			epochs = new List<int>();
 			epoch = _cache.First;
 			while (epoch != null) {
@@ -183,7 +179,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 			_published.Clear();
 		}
 
-		public  class EpochDto {
+		public class EpochDto {
 			public Guid LeaderInstanceId { get; set; }
 		}
 	}

@@ -14,7 +14,7 @@ namespace EventStore.Core.TransactionLog.Scavenging {
 
 		public class Buffer {
 			public Buffer(int size) {
-				Array = new(StreamHandle<TStreamId>, OriginalStreamData)[size];
+				Array = new (StreamHandle<TStreamId>, OriginalStreamData)[size];
 			}
 
 			public (StreamHandle<TStreamId>, OriginalStreamData)[] Array { get; init; }

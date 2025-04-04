@@ -22,19 +22,19 @@ namespace EventStore.Projections.Core.Services.Processing {
 			var items = _stateCache.Enumerate();
 			EmittedStream.WriterConfiguration.StreamMetadata streamMetadata = null;
 			return from item in items
-				let partitionState = item.Item2
-				select
-					new EmittedEventEnvelope(
-						new EmittedDataEvent(
-							_resultStream,
-							Guid.NewGuid(),
-							"Result",
-							true,
-							partitionState.Result,
-							null,
-							phaseCheckpointTag,
-							null),
-						streamMetadata);
+				   let partitionState = item.Item2
+				   select
+					   new EmittedEventEnvelope(
+						   new EmittedDataEvent(
+							   _resultStream,
+							   Guid.NewGuid(),
+							   "Result",
+							   true,
+							   partitionState.Result,
+							   null,
+							   phaseCheckpointTag,
+							   null),
+						   streamMetadata);
 		}
 	}
 }

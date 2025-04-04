@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr {
 	[TestFixture]

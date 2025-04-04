@@ -360,13 +360,13 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		public bool RemoveClientByConnectionId(Guid connectionId) {
 			lock (_lock) {
 				if (!_pushClients.RemoveClientByConnectionId(connectionId,
-					    out var unconfirmedEvents))
+						out var unconfirmedEvents))
 					return false;
-				
+
 				var lostMessages = unconfirmedEvents.OrderBy(v => v.ResolvedEvent.OriginalEventNumber);
 				foreach (var m in lostMessages) {
 					if (ActionTakenForRetriedMessage(m))
-						return true; 
+						return true;
 					RetryMessage(m);
 				}
 
@@ -395,7 +395,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				OutstandingMessage? lowestMessage;
 				long lowestSequenceNumber;
 
-				(lowestMessage, lowestSequenceNumber)  = _outstandingMessages.GetLowestPosition();
+				(lowestMessage, lowestSequenceNumber) = _outstandingMessages.GetLowestPosition();
 				var (lowestRetryMessage, lowestRetrySequenceNumber) = streamBuffer.GetLowestRetry();
 
 				if (lowestRetrySequenceNumber < lowestSequenceNumber) {
@@ -424,7 +424,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 					lowestSequenceNumber = _lastKnownSequenceNumber;
 					lowestPosition = _lastKnownMessage;
 					Debug.Assert((lowestPosition != null && lowestSequenceNumber >= 0L) ||
-					             (lowestPosition == null && lowestSequenceNumber == -1L));
+								 (lowestPosition == null && lowestSequenceNumber == -1L));
 				}
 
 				if (lowestSequenceNumber == -1) //we have not even pushed any messages yet
@@ -532,7 +532,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			});
 		}
 
-		
+
 		public void RetryParkedMessages(long? stopAt) {
 			lock (_lock) {
 				if (_state == PersistentSubscriptionState.NotReady)
@@ -549,7 +549,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 					}
 
 					var stopRead = stopAt.HasValue ? Math.Min(stopAt.Value, end.Value + 1) : end.Value + 1;
-					TryReadingParkedMessagesFrom(0,stopRead);
+					TryReadingParkedMessagesFrom(0, stopRead);
 				});
 			}
 		}

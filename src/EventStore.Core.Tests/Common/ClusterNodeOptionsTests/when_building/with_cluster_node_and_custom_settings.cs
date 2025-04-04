@@ -1,13 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
 using System.Net;
 using EventStore.Common.Configuration;
 using EventStore.Common.Utils;
 using EventStore.Core.Certificates;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Services;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
@@ -88,7 +85,7 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class with_custom_gossip_seeds<TLogFormat, TStreamId> : ClusterMemberScenario<TLogFormat, TStreamId> {
-		private readonly DnsEndPoint[] _gossipSeeds = {new("127.0.1.15", 2112), new("127.0.1.15", 3112)};
+		private readonly DnsEndPoint[] _gossipSeeds = { new("127.0.1.15", 2112), new("127.0.1.15", 3112) };
 
 		protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
 			options.WithGossipSeeds(_gossipSeeds);
@@ -205,7 +202,7 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 				_node.GossipAdvertiseInfo.InternalTcp);
 		}
 	}
-	
+
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class with_cluster_custom_password_for_admin_and_ops_user<TLogFormat, TStreamId> : ClusterMemberScenario<TLogFormat, TStreamId> {
@@ -219,11 +216,11 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 
 		[Test]
 		public void should_set_the_custom_admin_and_ops_user_password() {
-			Assert.AreEqual(_adminPassword,_options.DefaultUser.DefaultAdminPassword);
+			Assert.AreEqual(_adminPassword, _options.DefaultUser.DefaultAdminPassword);
 			Assert.AreEqual(_opsPassword, _options.DefaultUser.DefaultOpsPassword);
 		}
 	}
-	
+
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class with_cluster_custom_settings_check_for_environment_only_options<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat,
@@ -231,9 +228,9 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 		protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
 			options with {
 			};
-		
+
 		private IConfigurationRoot _configurationRoot;
-		
+
 		[Test]
 		public void should_return_error_when_default_password_options_pass_through_command_line() {
 
@@ -248,12 +245,12 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 				}))
 				.Add(new CommandLineSource(args))
 				.Build();
-			
+
 			var clusterVNodeOptions = ClusterVNodeOptions.FromConfiguration(_configurationRoot);
-			
+
 			Assert.NotNull(clusterVNodeOptions.CheckForEnvironmentOnlyOptions());
 		}
-		
+
 		[Test]
 		public void should_return_null_when_default_password_options_pass_through_environment_variables() {
 
@@ -261,7 +258,7 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 			IDictionary environmentVariables = new Dictionary<string, string>();
 			environmentVariables.Add("EVENTSTORE_DEFAULT_ADMIN_PASSWORD", "Admin#");
 			environmentVariables.Add("EVENTSTORE_DEFAULT_OPS_PASSWORD", "Ops#");
-			
+
 			_configurationRoot = new ConfigurationBuilder()
 				.Add(new DefaultSource(new Dictionary<string, object> {
 					[nameof(ClusterVNodeOptions.DefaultUser.DefaultAdminPassword)] = SystemUsers.DefaultAdminPassword,
@@ -270,9 +267,9 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 				.Add(new CommandLineSource(args))
 				.Add(new EnvironmentVariablesSource(environmentVariables))
 				.Build();
-			
+
 			var clusterVNodeOptions = ClusterVNodeOptions.FromConfiguration(_configurationRoot);
-			
+
 			Assert.Null(clusterVNodeOptions.CheckForEnvironmentOnlyOptions());
 		}
 	}

@@ -11,7 +11,7 @@ namespace EventStore.Core.Tests.Services.Replication.LogReplication.Tests;
 public class data_chunk_replication_with_existing_db<TLogFormat, TStreamId> : LogReplicationWithExistingDbFixture<TLogFormat, TStreamId> {
 	private const int NumCheckpoints = 5 + /* chunk 0-0 (non-raw): 3 complete transactions, 1 incomplete transaction
 	                                          at end (checkpointed for backwards compatibility), 1 chunk completion */
-	                                   0   /* chunk 1-1 (non-raw): 0 complete transactions */;
+									   0   /* chunk 1-1 (non-raw): 0 complete transactions */;
 
 	private const int NumLogicalChunks = 2;
 
@@ -23,7 +23,7 @@ public class data_chunk_replication_with_existing_db<TLogFormat, TStreamId> : Lo
 		var recs0 = GenerateLogRecords(0, new[] { 1, -3, 2, -1, 3, -5 }, out _);
 		var recs1 = GenerateLogRecords(1, Array.Empty<int>(), out _);
 
-		await CreateChunk(db, raw: false, complete: true,  0, 0, recs0);
+		await CreateChunk(db, raw: false, complete: true, 0, 0, recs0);
 		await CreateChunk(db, raw: false, complete: false, 1, 1, recs1);
 
 		db.Config.WriterCheckpoint.Flush();

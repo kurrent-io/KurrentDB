@@ -54,13 +54,12 @@ namespace EventStore.Core.Tests.Services.Storage.ReadIndex {
 		public void returns_correct_events_before_position() {
 			var curEvents = new List<EventRecord>();
 
-			foreach (var @event in _events)
-			{
+			foreach (var @event in _events) {
 				IndexReadEventInfoResult result;
 				if (@event.EventStreamId == Stream) {
 					result = ReadIndex.ReadEventInfoBackward_KnownCollisions(Stream,
 						@event.EventNumber - 1, int.MaxValue, @event.LogPosition);
-					CheckResult(curEvents.ToArray(),result);
+					CheckResult(curEvents.ToArray(), result);
 					Assert.True(result.IsEndOfStream);
 
 					// events >= @event.EventNumber should be filtered out
@@ -89,7 +88,8 @@ namespace EventStore.Core.Tests.Services.Storage.ReadIndex {
 			var curEvents = new List<EventRecord>();
 
 			foreach (var @event in _events) {
-				if (@event.EventStreamId != Stream) continue;
+				if (@event.EventStreamId != Stream)
+					continue;
 				curEvents.Add(@event);
 
 				int maxCount = Math.Min((int)@event.EventNumber + 1, _random.Next(10, 100));

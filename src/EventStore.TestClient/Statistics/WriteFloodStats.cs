@@ -118,7 +118,7 @@ namespace EventStore.TestClient.Statistics {
 					var line = StatsCsvEncoder.GetLine(rawStats);
 					var timestamp = GetTimestamp(line);
 
-					if(writeHeader){
+					if (writeHeader) {
 						log.Information(Environment.NewLine);
 						log.Information(header);
 					}
@@ -132,13 +132,12 @@ namespace EventStore.TestClient.Statistics {
 
 		private DateTime? GetTimestamp(string line) {
 			var separatorIdx = line.IndexOf(',');
-			if(separatorIdx == -1)
+			if (separatorIdx == -1)
 				return null;
 
-			try{
+			try {
 				return DateTime.Parse(line.Substring(0, separatorIdx)).ToUniversalTime();
-			}
-			catch{
+			} catch {
 				return null;
 			}
 		}

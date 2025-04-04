@@ -3,8 +3,7 @@ using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	public class when_running_a_js_projection_emitting_invalid_links : TestFixtureWithInterpretedProjection {
 		protected override void Given() {
 			_projection = @"
@@ -16,7 +15,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
                 }});
             ";
 		}
-		
+
 		[Test, Category(_projectionType)]
 		public void process_event_does_not_allow_emitted_event() {
 			var ex = Assert.Throws<Exception>(() => {

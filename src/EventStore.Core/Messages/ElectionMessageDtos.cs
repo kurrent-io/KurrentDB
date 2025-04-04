@@ -174,7 +174,7 @@ namespace EventStore.Core.Messages {
 				View = message.View;
 			}
 		}
-		
+
 		public class LeaderIsResigningDto {
 			public Guid LeaderId { get; set; }
 			public string LeaderHttpAddress { get; set; }
@@ -188,7 +188,7 @@ namespace EventStore.Core.Messages {
 				LeaderHttpPort = message.LeaderHttpEndPoint.GetPort();
 			}
 		}
-		
+
 		public class LeaderIsResigningOkDto {
 			public Guid LeaderId { get; set; }
 			public string LeaderHttpAddress { get; set; }

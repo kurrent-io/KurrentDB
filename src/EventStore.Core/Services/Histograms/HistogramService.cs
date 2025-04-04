@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -27,12 +26,14 @@ namespace EventStore.Core.Services.Histograms {
 
 		public static Measurement Measure(string name) {
 			var histogram = GetHistogram(name);
-			return new Measurement {watch = _stopwatch, Start = _stopwatch.ElapsedTicks, Histogram = histogram};
+			return new Measurement { watch = _stopwatch, Start = _stopwatch.ElapsedTicks, Histogram = histogram };
 		}
 
 		public static void SetValue(string name, long value) {
-			if (value >= NUMBEROFNS) return;
-			if (name == null) return;
+			if (value >= NUMBEROFNS)
+				return;
+			if (name == null)
+				return;
 			HistogramBase hist;
 			if (!Histograms.TryGetValue(name, out hist)) {
 				return;
@@ -80,7 +81,8 @@ namespace EventStore.Core.Services.Histograms {
 		public long Start;
 
 		public void Dispose() {
-			if (Histogram == null) return;
+			if (Histogram == null)
+				return;
 			lock (Histogram) {
 				var valueToRecord = (((double)watch.ElapsedTicks - Start) / Stopwatch.Frequency) * 1000000000;
 				if (valueToRecord < HighestPowerOf2(Histogram.HighestTrackableValue)) {

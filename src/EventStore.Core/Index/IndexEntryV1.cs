@@ -5,7 +5,7 @@ namespace EventStore.Core.Index {
 	[StructLayout(LayoutKind.Explicit)]
 	public unsafe struct IndexEntryV1 : IComparable<IndexEntryV1>, IEquatable<IndexEntryV1> {
 		[FieldOffset(0)] public UInt64 Key;
-		[FieldOffset(0)] public fixed byte Bytes [16];
+		[FieldOffset(0)] public fixed byte Bytes[16];
 		[FieldOffset(0)] public Int32 Version;
 		[FieldOffset(4)] public UInt32 Stream;
 		[FieldOffset(8)] public Int64 Position;

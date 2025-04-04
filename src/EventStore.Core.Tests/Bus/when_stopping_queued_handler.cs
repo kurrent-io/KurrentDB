@@ -94,7 +94,7 @@ namespace EventStore.Core.Tests.Bus {
 	[TestFixture]
 	public class when_stopping_queued_handler_autoreset : when_stopping_queued_handler {
 		public when_stopping_queued_handler_autoreset()
-			: base((consumer, name, timeout) => new QueuedHandlerAutoResetWithMpsc(consumer, name, new QueueStatsManager(),false, null, timeout)
+			: base((consumer, name, timeout) => new QueuedHandlerAutoResetWithMpsc(consumer, name, new QueueStatsManager(), false, null, timeout)
 			) {
 		}
 	}
@@ -102,14 +102,14 @@ namespace EventStore.Core.Tests.Bus {
 	[TestFixture]
 	public class when_stopping_queued_handler_sleep : when_stopping_queued_handler {
 		public when_stopping_queued_handler_sleep()
-			: base((consumer, name, timeout) => new QueuedHandlerSleep(consumer, name, new QueueStatsManager(),false, null, timeout)) {
+			: base((consumer, name, timeout) => new QueuedHandlerSleep(consumer, name, new QueueStatsManager(), false, null, timeout)) {
 		}
 	}
 
 	[TestFixture]
 	public class when_stopping_queued_handler_pulse : when_stopping_queued_handler {
 		public when_stopping_queued_handler_pulse()
-			: base((consumer, name, timeout) => new QueuedHandlerPulse(consumer, name, new QueueStatsManager(),false, null, timeout)) {
+			: base((consumer, name, timeout) => new QueuedHandlerPulse(consumer, name, new QueueStatsManager(), false, null, timeout)) {
 		}
 	}
 

@@ -69,7 +69,7 @@ namespace EventStore.Core.Bus {
 
 			_stopped.Reset();
 
-			_thread = new Thread(ReadFromQueue) {IsBackground = true, Name = Name};
+			_thread = new Thread(ReadFromQueue) { IsBackground = true, Name = Name };
 			_thread.Start();
 			return _tcs.Task;
 		}
@@ -132,7 +132,7 @@ namespace EventStore.Core.Bus {
 												_queue.EstimageCurrentQueueCount(),
 												msg);
 											if (elapsed > QueuedHandler.VerySlowMsgThreshold &&
-											    !(msg is SystemMessage.SystemInit))
+												!(msg is SystemMessage.SystemInit))
 												Log.Error(
 													"---!!! VERY SLOW QUEUE MSG [{queue}]: {message} - {elapsed}ms. Q: {prevEstimatedQueueCount}/{curEstimatedQueueCount}.",
 													Name, _queueStats.InProgressMessage.Name,

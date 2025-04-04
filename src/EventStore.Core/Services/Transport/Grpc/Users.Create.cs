@@ -1,8 +1,8 @@
 using System.Linq;
 using System.Threading.Tasks;
+using EventStore.Client.Users;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.Users;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 
@@ -29,7 +29,8 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			return new CreateResp();
 
 			void OnMessage(Message message) {
-				if (HandleErrors(options.LoginName, message, createSource)) return;
+				if (HandleErrors(options.LoginName, message, createSource))
+					return;
 
 				createSource.TrySetResult(true);
 			}

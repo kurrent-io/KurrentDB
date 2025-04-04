@@ -69,7 +69,7 @@ namespace EventStore.Projections.Core.Tests.Services.emitted_stream.another_epoc
 					.OfEventType(SystemEventTypes.StreamMetadata)
 					.ToArray();
 			Assert.AreEqual(1, writes.Length);
-			HelperExtensions.AssertJson(new {___tb = 2}, writes[0].Data.ParseJson<JObject>());
+			HelperExtensions.AssertJson(new { ___tb = 2 }, writes[0].Data.ParseJson<JObject>());
 		}
 
 		[Test]

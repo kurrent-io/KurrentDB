@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Core.TransactionLog.LogRecords;
@@ -27,8 +26,8 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 		protected override void Given() {
 			TicksAreHandledImmediately();
 			_fromSequenceNumber = 10;
-			_streamNames = new[] {"stream1", "stream2"};
-			_streamPositions = new Dictionary<string, long> {{"stream1", _fromSequenceNumber}, {"stream2", 100}};
+			_streamNames = new[] { "stream1", "stream2" };
+			_streamPositions = new Dictionary<string, long> { { "stream1", _fromSequenceNumber }, { "stream2", 100 } };
 		}
 
 		[SetUp]
@@ -53,7 +52,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 							eventNumber, 50 * (eventNumber + 1), Guid.NewGuid(), Guid.NewGuid(), 50 * (eventNumber + 1),
 							0, stream, ExpectedVersion.Any, DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							eventType, new byte[] {0}, new byte[] {0}
+							eventType, new byte[] { 0 }, new byte[] { 0 }
 						)
 					)
 				);
@@ -80,7 +79,8 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 
 		private void HandleEvents(string stream, long start, long end) {
 			List<long> eventNumbers = new List<long>();
-			for (long i = start; i <= end; i++) eventNumbers.Add(i);
+			for (long i = start; i <= end; i++)
+				eventNumbers.Add(i);
 			HandleEvents(stream, eventNumbers.ToArray());
 		}
 

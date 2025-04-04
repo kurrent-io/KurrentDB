@@ -30,7 +30,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 				_persistentSubscriptionsClient = new PersistentSubscriptions.PersistentSubscriptionsClient(Channel);
 
 				var settings = WithoutExtraStatistics(TestPersistentSubscriptionSettings);
-				
+
 				await _persistentSubscriptionsClient.CreateAsync(new CreateReq {
 					Options = new CreateReq.Types.Options {
 						GroupName = _groupName,
@@ -43,7 +43,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 						Settings = settings
 					}
 				}, GetCallOptions(AdminCredentials));
-				
+
 				// create a connection to the persistent subscription
 				var call = _persistentSubscriptionsClient.Read(GetCallOptions(AdminCredentials));
 				await call.RequestStream.WriteAsync(new ReadReq {
@@ -52,13 +52,13 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 						StreamIdentifier = new StreamIdentifier {
 							StreamName = ByteString.CopyFromUtf8(_streamName)
 						},
-						UuidOption = new ReadReq.Types.Options.Types.UUIDOption {Structured = new Empty()},
+						UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() },
 						BufferSize = 10
 					}
 				});
 
 				await call.ResponseStream.MoveNext().ConfigureAwait(false);
-				
+
 				Assert.IsTrue(call.ResponseStream.Current.ContentCase == ReadResp.ContentOneofCase.SubscriptionConfirmation);
 
 				var expectedConnection = new SubscriptionInfo.Types.ConnectionInfo() {
@@ -67,7 +67,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 					ConnectionName = "\u003cunknown\u003e"
 				};
 				_expectedSubscriptionInfo = GetSubscriptionInfoFromSettings(settings,
-					_groupName, _streamName, "0", string.Empty, new [] { expectedConnection });
+					_groupName, _streamName, "0", string.Empty, new[] { expectedConnection });
 			}
 
 			private CreateReq.Types.Settings WithoutExtraStatistics(CreateReq.Types.Settings settings) {
@@ -77,7 +77,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 
 			protected override async Task When() {
 				await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-				
+
 				var resp = await _persistentSubscriptionsClient.GetInfoAsync(new GetInfoReq {
 					Options = new GetInfoReq.Types.Options {
 						GroupName = _groupName,
@@ -129,10 +129,10 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 
 			protected override async Task When() {
 				await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-				
+
 				ListResp resp = await _persistentSubscriptionsClient.ListAsync(new ListReq {
 					Options = new ListReq.Types.Options {
-						ListForStream = new ListReq.Types.StreamOption{
+						ListForStream = new ListReq.Types.StreamOption {
 							Stream = new StreamIdentifier {
 								StreamName = ByteString.CopyFromUtf8(_streamName)
 							}
@@ -160,7 +160,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 			protected override async Task Given() {
 				_persistentSubscriptionsClient = new PersistentSubscriptions.PersistentSubscriptionsClient(Channel);
 
-				var groupNames = new[] {"groupA", "groupB", "groupC"};
+				var groupNames = new[] { "groupA", "groupB", "groupC" };
 				foreach (var group in groupNames) {
 					await _persistentSubscriptionsClient.CreateAsync(new CreateReq {
 						Options = new CreateReq.Types.Options {
@@ -183,7 +183,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 
 			protected override async Task When() {
 				await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-				
+
 				// Get the subscription info
 				ListResp resp = await _persistentSubscriptionsClient.ListAsync(new ListReq {
 					Options = new ListReq.Types.Options {
@@ -236,7 +236,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 							}
 						}, GetCallOptions(AdminCredentials));
 						_expectedSubscriptionInfo.Add(GetSubscriptionInfoFromSettings(
-							TestPersistentSubscriptionSettings, group, stream, "0",	string.Empty));
+							TestPersistentSubscriptionSettings, group, stream, "0", string.Empty));
 					}
 				}
 				await _persistentSubscriptionsClient.CreateAsync(new CreateReq {
@@ -259,7 +259,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 
 			protected override async Task When() {
 				await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-				
+
 				var resp = await _persistentSubscriptionsClient.ListAsync(new ListReq {
 					Options = new ListReq.Types.Options {
 						ListAllSubscriptions = new Empty()
@@ -311,7 +311,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 
 			protected override async Task When() {
 				await WaitForSubscriptionsToBeLive(_persistentSubscriptionsClient, GetCallOptions(AdminCredentials));
-				
+
 				var resp = await _persistentSubscriptionsClient.GetInfoAsync(new GetInfoReq {
 					Options = new GetInfoReq.Types.Options {
 						GroupName = _groupName,
@@ -369,7 +369,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 
 		private static SubscriptionInfo GetSubscriptionInfoFromSettings(
 			CreateReq.Types.Settings settings, string groupName, string streamName, string startFrom,
-			string lastKnownEvent, SubscriptionInfo.Types.ConnectionInfo[] connections=null ) {
+			string lastKnownEvent, SubscriptionInfo.Types.ConnectionInfo[] connections = null) {
 			var info = new SubscriptionInfo() {
 				EventSource = streamName,
 				GroupName = groupName,
@@ -412,11 +412,11 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 
 			for (int i = 0; resp.Subscriptions.Any(s => s.Status != "Live"); i++) {
 				Assert.AreNotEqual(5, i, "Reached too many retries to get all subscriptions live!");
-				
+
 				await Task.Delay(500);
 				resp = await GetSubscriptions();
 			}
-			
+
 			async Task<ListResp> GetSubscriptions() {
 				return await client.ListAsync(new ListReq {
 					Options = new ListReq.Types.Options {

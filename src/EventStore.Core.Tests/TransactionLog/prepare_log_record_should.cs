@@ -117,7 +117,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 			var emptyEventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 			Assert.DoesNotThrow(() =>
 				LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
-					PrepareFlags.None, emptyEventTypeId, new byte[0], null,  DateTime.UtcNow));
+					PrepareFlags.None, emptyEventTypeId, new byte[0], null, DateTime.UtcNow));
 		}
 
 		[Test]
@@ -130,7 +130,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 			var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 
 			var prepare = LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
-				PrepareFlags.IsRedacted, eventTypeId, new byte[100], null,  DateTime.UtcNow);
+				PrepareFlags.IsRedacted, eventTypeId, new byte[100], null, DateTime.UtcNow);
 			Assert.AreEqual(0, prepare.Data.Length);
 		}
 
@@ -147,7 +147,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 			const int dataSize = 10000;
 			var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 			var prepare = LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
-				PrepareFlags.IsRedacted, eventTypeId, new byte[dataSize], null,  DateTime.UtcNow);
+				PrepareFlags.IsRedacted, eventTypeId, new byte[dataSize], null, DateTime.UtcNow);
 
 			prepare.WriteTo(binaryWriter);
 			Assert.True(memStream.Length >= dataSize);

@@ -13,11 +13,11 @@ public class FakeIndexWriter<TStreamId> : IIndexWriter<TStreamId> {
 
 	private TStreamId GetFakeStreamId() {
 		if (typeof(TStreamId) == typeof(long)) {
-			return (TStreamId) (object) 0L;
+			return (TStreamId)(object)0L;
 		}
 
 		if (typeof(TStreamId) == typeof(string)) {
-			return (TStreamId) (object) string.Empty;
+			return (TStreamId)(object)string.Empty;
 		}
 
 		throw new NotSupportedException();

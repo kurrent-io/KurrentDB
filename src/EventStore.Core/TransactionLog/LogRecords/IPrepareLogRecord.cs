@@ -20,7 +20,7 @@ namespace EventStore.Core.TransactionLog.LogRecords {
 	public interface IPrepareLogRecord<TStreamId> : IPrepareLogRecord {
 		TStreamId EventStreamId { get; }
 		TStreamId EventType { get; }
-		
+
 		IPrepareLogRecord<TStreamId> CopyForRetry(long logPosition, long transactionPosition);
 	}
 }

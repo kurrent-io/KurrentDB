@@ -23,7 +23,7 @@ namespace EventStore.Common.Configuration {
 
 				if (x.Contains('='))
 					return x;
-				
+
 				if (i != args.Length - 1 && !args[i + 1].StartsWith("--"))
 					return x;
 

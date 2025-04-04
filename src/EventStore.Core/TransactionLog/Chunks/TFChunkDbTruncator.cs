@@ -25,7 +25,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 				throw new Exception(
 					string.Format("MaxTruncation is set ({0}) and truncate checkpoint is out of bounds (requested truncation is {1} [{2} => {3}]).", _config.MaxTruncation, requestedTruncation, writerChk, truncateChk));
 			}
-			
+
 			var oldLastChunkNum = (int)(writerChk / _config.ChunkSize);
 			var newLastChunkNum = (int)(truncateChk / _config.ChunkSize);
 			var chunkEnumerator = new TFChunkEnumerator(_config.FileNamingStrategy);
@@ -42,7 +42,8 @@ namespace EventStore.Core.TransactionLog.Chunks {
 			foreach (var chunkInfo in chunkEnumerator.EnumerateChunks(oldLastChunkNum)) {
 				switch (chunkInfo) {
 					case LatestVersion(var fileName, var _, var end):
-						if (newLastChunkFilename != null || end < newLastChunkNum) break;
+						if (newLastChunkFilename != null || end < newLastChunkNum)
+							break;
 						newLastChunkHeader = ReadChunkHeader(fileName);
 						newLastChunkFilename = fileName;
 						break;
@@ -135,9 +136,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 		private void TruncateChunkAndFillWithZeros(ChunkHeader chunkHeader, string chunkFilename, long truncateChk) {
 			if (chunkHeader.IsScavenged
-			    || chunkHeader.ChunkStartNumber != chunkHeader.ChunkEndNumber
-			    || truncateChk < chunkHeader.ChunkStartPosition
-			    || truncateChk >= chunkHeader.ChunkEndPosition) {
+				|| chunkHeader.ChunkStartNumber != chunkHeader.ChunkEndNumber
+				|| truncateChk < chunkHeader.ChunkStartPosition
+				|| truncateChk >= chunkHeader.ChunkEndPosition) {
 				throw new Exception(
 					string.Format(
 						"Chunk #{0}-{1} ({2}) is not correct unscavenged chunk. TruncatePosition: {3}, ChunkHeader: {4}.",

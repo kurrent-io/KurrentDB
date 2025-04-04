@@ -21,7 +21,7 @@ namespace EventStore.Core.Authorization {
 		public ValueTask<bool> Evaluate(ClaimsPrincipal cp, Operation operation, PolicyInformation policy,
 			EvaluationContext context) {
 			if (cp.FindFirst(_claimType) is Claim matchedClaim &&
-			    operation.Parameters.Span.Contains(new Parameter(_parameterName, matchedClaim.Value))) {
+				operation.Parameters.Span.Contains(new Parameter(_parameterName, matchedClaim.Value))) {
 				context.Add(new AssertionMatch(policy, Information, matchedClaim));
 				return new ValueTask<bool>(true);
 			}

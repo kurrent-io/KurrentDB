@@ -1,14 +1,14 @@
 ﻿using System;
-using EventStore.Core.Tests.Http.Users.users;
-using NUnit.Framework;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Threading.Tasks;
-using HttpStatusCode = System.Net.HttpStatusCode;
-using EventStore.Transport.Http;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common;
+using EventStore.Core.Tests.Http.Users.users;
+using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 // ReSharper disable InconsistentNaming
 
@@ -43,7 +43,7 @@ namespace EventStore.Core.Tests.Http.PersistentSubscription {
 				},
 				_admin);
 			Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
-			AssertEx.IsOrBecomesTrue( () => {
+			AssertEx.IsOrBecomesTrue(() => {
 				var x = GetJson<JObject>(TestStream, accept: ContentType.Json).Result;
 				return x["entries"].Count() == numberOfEventsToCreate;
 			});
@@ -76,7 +76,7 @@ namespace EventStore.Core.Tests.Http.PersistentSubscription {
 	[Category("LongRunning")]
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-class when_getting_messages_without_permission<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
+	class when_getting_messages_without_permission<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
 		protected override async Task Given() {
 			await base.Given();
 			await SecureStream();

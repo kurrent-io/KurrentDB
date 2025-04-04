@@ -20,7 +20,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 		private static Func<SqliteDataReader, OriginalStreamData> _readOriginalStreamData;
 
 		private string TableName { get; }
-		
+
 		public SqliteOriginalStreamScavengeMap(string name, string keyTypeOverride = null) {
 			TableName = name;
 			_keyTypeOverride = keyTypeOverride;
@@ -41,7 +41,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				if (maybeDiscardPoint.HasValue) {
 					d.MaybeDiscardPoint = DiscardPoint.DiscardBefore(maybeDiscardPoint.Value);
 				}
-				
+
 				d.Status = reader.GetFieldValue<CalculationStatus>(6);
 
 				return d;
@@ -61,7 +61,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					maybeDiscardPoint INTEGER DEFAULT 0,
 					status            INTEGER DEFAULT 0);
 				CREATE INDEX IF NOT EXISTS {TableName}KeyStatus ON {TableName} (status, key)";
-			
+
 			sqlite.InitializeDb(sql);
 
 			_add = new AddCommand(TableName, sqlite);
@@ -88,7 +88,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 		public bool TryRemove(TKey key, out OriginalStreamData value) {
 			return _delete.TryExecute(key, out value);
 		}
-		
+
 		public void SetTombstone(TKey key) {
 			_setTombstone.Execute(key);
 		}
@@ -96,7 +96,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 		public void SetMetadata(TKey key, StreamMetadata metadata) {
 			_setMetadata.Execute(key, metadata);
 		}
-		
+
 		public void SetDiscardPoints(TKey key, CalculationStatus status, DiscardPoint discardPoint, DiscardPoint maybeDiscardPoint) {
 			_setDiscardPoints.Execute(key, status, discardPoint, maybeDiscardPoint);
 		}
@@ -182,7 +182,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_sqlite.ExecuteNonQuery(_cmd);
 			}
 		}
-		
+
 		private class SetTombstoneCommand {
 			private readonly SqliteBackend _sqlite;
 			private readonly SqliteCommand _cmd;
@@ -195,7 +195,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					ON CONFLICT(key) DO UPDATE SET
 						isTombstoned = 1,
 						status = {(int)CalculationStatus.Active}";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -209,7 +209,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_sqlite.ExecuteNonQuery(_cmd);
 			}
 		}
-		
+
 		private class SetMetadataCommand {
 			private readonly SqliteBackend _sqlite;
 			private readonly SqliteCommand _cmd;
@@ -300,7 +300,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -326,7 +326,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => {
 					var isTombstoned = reader.GetBoolean(0);
@@ -366,7 +366,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_deleteCmd.CommandText = deleteSql;
 				_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_deleteCmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -376,7 +376,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				return _sqlite.ExecuteReadAndDelete(_selectCmd, _deleteCmd, _readOriginalStreamData, out value);
 			}
 		}
-		
+
 		private class DeleteManyCommand {
 			private readonly SqliteBackend _sqlite;
 			private readonly SqliteCommand _deleteCmd;
@@ -391,7 +391,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_deleteCmd.CommandText = deleteSql;
 				_archiveStatusParam = _deleteCmd.Parameters.Add("$archive", SqliteType.Integer);
 				_deleteCmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -430,7 +430,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => {
 					var value = _readOriginalStreamData(reader);
@@ -467,11 +467,11 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => {
 					var data = _readOriginalStreamData(reader);
-					var key = reader.GetFieldValue<TKey>(7); 
+					var key = reader.GetFieldValue<TKey>(7);
 					return new KeyValuePair<TKey, OriginalStreamData>(key, data);
 				};
 			}
@@ -480,7 +480,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				return _sqlite.ExecuteReader(_cmd, _reader);
 			}
 		}
-		
+
 		private class ActiveRecordsCommand {
 			private readonly SqliteBackend _sqlite;
 			private readonly SqliteCommand _cmd;
@@ -504,11 +504,11 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => {
 					var data = _readOriginalStreamData(reader);
-					var key = reader.GetFieldValue<TKey>(7); 
+					var key = reader.GetFieldValue<TKey>(7);
 					return new KeyValuePair<TKey, OriginalStreamData>(key, data);
 				};
 			}

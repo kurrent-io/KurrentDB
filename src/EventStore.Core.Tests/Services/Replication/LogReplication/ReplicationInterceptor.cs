@@ -37,17 +37,16 @@ internal class ReplicationInterceptor : WriterInterceptor {
 		if (Paused)
 			return;
 
-		switch (message)
-		{
+		switch (message) {
 			case ReplicationMessage.DataChunkBulk dataChunkBulk:
 				if (dataChunkBulk.SubscriptionPosition + dataChunkBulk.DataBytes.Length + bytesToAdd >
-				    _dataInfo.MaxLogPosition)
+					_dataInfo.MaxLogPosition)
 					Pause();
 				break;
 			case ReplicationMessage.RawChunkBulk rawChunkBulk:
 				if (rawChunkBulk.ChunkStartNumber == _rawInfo.ChunkStartNumber &&
-				    rawChunkBulk.ChunkEndNumber == _rawInfo.ChunkEndNumber &&
-				    rawChunkBulk.RawPosition + rawChunkBulk.RawBytes.Length + bytesToAdd > _rawInfo.MaxRawPosition)
+					rawChunkBulk.ChunkEndNumber == _rawInfo.ChunkEndNumber &&
+					rawChunkBulk.RawPosition + rawChunkBulk.RawBytes.Length + bytesToAdd > _rawInfo.MaxRawPosition)
 					Pause();
 				break;
 		}

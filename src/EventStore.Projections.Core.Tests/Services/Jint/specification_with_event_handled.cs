@@ -3,8 +3,7 @@ using EventStore.Core.Data;
 using EventStore.Projections.Core.Services.Processing;
 using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	public abstract class specification_with_event_handled : TestFixtureWithInterpretedProjection {
 		protected ResolvedEvent _handledEvent;
 		protected string _newState;

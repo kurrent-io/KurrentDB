@@ -108,7 +108,7 @@ namespace EventStore.Core.Tests.Certificates {
 			Assert.True(certificate.HasPrivateKey);
 		}
 	}
-	
+
 	public class with_passwordless_pkcs8_private_key : with_certificate_chain_of_length_1 {
 		private string _certPath;
 		private string _privateKeyPath;
@@ -117,7 +117,7 @@ namespace EventStore.Core.Tests.Certificates {
 		public void Setup() {
 			_certPath = $"{PathName}/leaf.pem";
 			File.WriteAllText(_certPath, _leaf.Export(X509ContentType.Cert).PEM("CERTIFICATE"));
-			
+
 			_privateKeyPath = $"{PathName}/leaf.p8";
 			File.WriteAllText(_privateKeyPath, _leaf.PemPkcs8PrivateKey());
 		}
@@ -130,7 +130,7 @@ namespace EventStore.Core.Tests.Certificates {
 			Assert.True(certificate.HasPrivateKey);
 		}
 	}
-	
+
 	public class with_password_protected_pkcs8_private_key : with_certificate_chain_of_length_1 {
 		private string _certPath;
 		private string _privateKeyPath;
@@ -140,7 +140,7 @@ namespace EventStore.Core.Tests.Certificates {
 		public void Setup() {
 			_certPath = $"{PathName}/leaf.pem";
 			File.WriteAllText(_certPath, _leaf.Export(X509ContentType.Cert).PEM("CERTIFICATE"));
-			
+
 			_privateKeyPath = $"{PathName}/leaf.p8";
 			File.WriteAllText(_privateKeyPath, _leaf.EncryptedPemPkcs8PrivateKey(Password));
 		}
@@ -511,7 +511,7 @@ namespace EventStore.Core.Tests.Certificates {
 		public void loads_only_certificates_with_accepted_extensions() {
 			var certs = CertificateUtils.LoadAllCertificates($"{PathName}/{CertsDir}").ToArray();
 			Assert.AreEqual(8 - 3, certs.Length);
-			var accepted = new[]{".crt", ".cert", ".cer", ".pem", ".der"};
+			var accepted = new[] { ".crt", ".cert", ".cer", ".pem", ".der" };
 			Assert.True(certs.All(x => accepted.Contains(new FileInfo(x.fileName).Extension)));
 		}
 	}

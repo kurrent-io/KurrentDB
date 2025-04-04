@@ -5,8 +5,8 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Common.Utils;
 using System.Text;
+using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
 
 namespace EventStore.Core {
@@ -28,7 +28,7 @@ namespace EventStore.Core {
 			string password,
 			out X509Certificate2 certificate,
 			out X509Certificate2Collection intermediates) {
-			var pkcs12Info =  Pkcs12Info.Decode(File.ReadAllBytes(certificatePath), out _);
+			var pkcs12Info = Pkcs12Info.Decode(File.ReadAllBytes(certificatePath), out _);
 
 			var certs = new X509Certificate2Collection();
 			using var rsa = RSA.Create();
@@ -40,13 +40,11 @@ namespace EventStore.Core {
 				}
 
 				foreach (var bag in safeContents.GetBags()) {
-					switch (bag)
-					{
+					switch (bag) {
 						case Pkcs12CertBag certBag:
 							certs.Add(certBag.GetCertificate());
 							break;
-						case Pkcs12ShroudedKeyBag shroudedKeyBag:
-						{
+						case Pkcs12ShroudedKeyBag shroudedKeyBag: {
 							if (privateKeyFound) {
 								throw new Exception("Multiple private keys found");
 							}
@@ -92,7 +90,7 @@ namespace EventStore.Core {
 						out var intermediateCertificates)) {
 						return (nodeCertificate, intermediateCertificates);
 					}
-				} catch(CryptographicException) {
+				} catch (CryptographicException) {
 					// ignored
 				}
 
@@ -129,9 +127,9 @@ namespace EventStore.Core {
 					break;
 				default:
 					throw new NotSupportedException($"Unsupported private key file format: {header}");
-					
+
 			}
-			
+
 
 			// assume it's a PEM bundle
 			var certificateBundle = new X509Certificate2Collection();
@@ -212,9 +210,9 @@ namespace EventStore.Core {
 				"No thumbprint or subject name was specified for a certificate, but a certificate store was specified.");
 		}
 
-		public static IEnumerable<(string fileName,X509Certificate2 certificate)> LoadAllCertificates(string path) {
+		public static IEnumerable<(string fileName, X509Certificate2 certificate)> LoadAllCertificates(string path) {
 			var files = Directory.GetFiles(path);
-			var acceptedExtensions = new[] {".crt", ".cert", ".cer", ".pem", ".der"};
+			var acceptedExtensions = new[] { ".crt", ".cert", ".cer", ".pem", ".der" };
 			foreach (var file in files) {
 				var fileInfo = new FileInfo(file);
 				var extension = fileInfo.Extension;
@@ -297,7 +295,7 @@ namespace EventStore.Core {
 			}
 
 			error = $"Certificate with thumbprint '{certificate.Thumbprint}' does not appear to be a valid intermediate certificate " +
-			        $"since it is self-signed (subject = {certificate.SubjectName.Name}, issuer = {certificate.IssuerName.Name}).";
+					$"since it is self-signed (subject = {certificate.SubjectName.Name}, issuer = {certificate.IssuerName.Name}).";
 			return false;
 		}
 

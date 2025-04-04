@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Index;
-using NUnit.Framework;
-using EventStore.Core.Index.Hashes;
-using System.IO;
 using System.Threading.Tasks;
-using System.Linq;
+using EventStore.Core.Index;
+using EventStore.Core.Index.Hashes;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV1 {
 	[TestFixture(false)]

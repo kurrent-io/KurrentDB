@@ -9,7 +9,6 @@ using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Monitoring.Stats;
-using EventStore.Core.Services.Monitoring.Utils;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Transport.Tcp;
@@ -148,25 +147,24 @@ namespace EventStore.Core.Services.Monitoring {
 			RegularLog.Information("{@stats}", rawStats);
 		}
 
-        private DateTime? GetTimestamp(string line) {
+		private DateTime? GetTimestamp(string line) {
 			var separatorIdx = line.IndexOf(',');
-			if(separatorIdx == -1)
+			if (separatorIdx == -1)
 				return null;
 
-			try{
+			try {
 				return DateTime.Parse(line.Substring(0, separatorIdx)).ToUniversalTime();
-			}
-			catch{
+			} catch {
 				return null;
 			}
-        }
+		}
 
-        private void SaveStatsToStream(Dictionary<string, object> rawStats) {
+		private void SaveStatsToStream(Dictionary<string, object> rawStats) {
 			var data = rawStats.ToJsonBytes();
 			var evnt = new Event(Guid.NewGuid(), SystemEventTypes.StatsCollection, true, data, null);
 			var corrId = Guid.NewGuid();
 			var msg = new ClientMessage.WriteEvents(corrId, corrId, NoopEnvelope, false, _nodeStatsStream,
-				ExpectedVersion.Any, new[] {evnt}, SystemAccounts.System);
+				ExpectedVersion.Any, new[] { evnt }, SystemAccounts.System);
 			_mainBus.Publish(msg);
 		}
 
@@ -209,7 +207,7 @@ namespace EventStore.Core.Services.Monitoring {
 				new ClientMessage.WriteEvents(
 					_streamMetadataWriteCorrId, _streamMetadataWriteCorrId, new PublishEnvelope(_monitoringQueue),
 					false, SystemStreams.MetastreamOf(_nodeStatsStream), ExpectedVersion.NoStream,
-					new[] {new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata, null)},
+					new[] { new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata, null) },
 					SystemAccounts.System));
 		}
 
@@ -307,7 +305,7 @@ namespace EventStore.Core.Services.Monitoring {
 					var tcpConnSsl = conn as TcpConnectionSsl;
 					if (tcpConnSsl != null) {
 						var isExternalConnection = _tcpSecureEndpoint != null &&
-						                           _tcpSecureEndpoint.Port == tcpConnSsl.LocalEndPoint.GetPort();
+												   _tcpSecureEndpoint.Port == tcpConnSsl.LocalEndPoint.GetPort();
 						connStats.Add(new MonitoringMessage.TcpConnectionStats {
 							IsExternalConnection = isExternalConnection,
 							RemoteEndPoint = tcpConnSsl.RemoteEndPoint.ToString(),

@@ -2,11 +2,11 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Core.Tests.Helpers;
 using Google.Protobuf;
@@ -17,9 +17,8 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Hosting;
 using NUnit.Framework;
 using Convert = System.Convert;
-using Streams = EventStore.Client.Streams.Streams;
 using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
-using EventStore.Core.Services.Storage.ReaderIndex;
+using Streams = EventStore.Client.Streams.Streams;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 	public abstract class GrpcSpecification<TLogFormat, TStreamId> {
@@ -109,7 +108,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 		internal static IEnumerable<BatchAppendReq.Types.ProposedMessage> CreateEvents(int count) =>
 			Enumerable.Range(0, count).Select(_ => CreateEvent());
 
-		internal static BatchAppendReq.Types.ProposedMessage CreateEvent(string type="-") =>
+		internal static BatchAppendReq.Types.ProposedMessage CreateEvent(string type = "-") =>
 			new BatchAppendReq.Types.ProposedMessage {
 				Data = ByteString.Empty,
 				Id = Uuid.NewUuid().ToDto(),
@@ -119,7 +118,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 					{GrpcMetadata.Type, type}
 				}
 			};
-		
+
 		private class BatchAppender : IAsyncDisposable {
 			private readonly Lazy<AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>> _batchAppendLazy;
 			private AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp> BatchAppend => _batchAppendLazy.Value;

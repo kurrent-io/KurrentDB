@@ -1,8 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using EventStore.Common.Utils;
-using System.Linq;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.TransactionLog.Chunks {
@@ -12,7 +12,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		// MaxChunksCount is currently capped at 400,000 since:
 		// - the chunk file naming strategy supports only up to 6 digits for the chunk number.
 		// - this class uses a fixed size array to keep the chunk list
-		public const int MaxChunksCount = 400_000; 
+		public const int MaxChunksCount = 400_000;
 
 		public int ChunksCount {
 			get { return _chunksCount; }
@@ -52,7 +52,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 				Interlocked.Exchange(ref _backgroundRunning, 0);
 			} while (Interlocked.CompareExchange(ref _backgroundPassesRemaining, 0, 0) > 0
-			         && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
+					 && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
 		}
 
 		private void CacheUncacheReadOnlyChunks() {
@@ -205,7 +205,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 				}
 
 				newChunk = TFChunk.TFChunk.FromCompletedFile(newFileName, verifyHash, _config.Unbuffered,
-					_config.InitialReaderCount, _config.MaxReaderCount, _tracker, _config.OptimizeReadSideCache, _config.ReduceFileCachePressure );
+					_config.InitialReaderCount, _config.MaxReaderCount, _tracker, _config.OptimizeReadSideCache, _config.ReduceFileCachePressure);
 			}
 
 			lock (_chunksLocker) {

@@ -27,12 +27,12 @@ namespace EventStore.Core.Tests.Http.Cluster {
 			var follower = GetFollowers().First();
 			_followerEndPoint = follower.HttpEndPoint;
 			_client = follower.CreateHttpClient();
-			
+
 			// Wait for the admin user to be created
 			await leader.AdminUserCreated;
 			// Wait for the admin user created event to be replicated before starting our tests
 			var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
-			AssertEx.IsOrBecomesTrue(()=> follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex, 
+			AssertEx.IsOrBecomesTrue(() => follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex,
 				timeout: TimeSpan.FromSeconds(10),
 				msg: $"Waiting for follower to reach index checkpoint timed out! (LeaderIndex={leaderIndex},FollowerState={follower.NodeState})");
 
@@ -41,8 +41,7 @@ namespace EventStore.Core.Tests.Http.Cluster {
 		}
 
 		private async Task AddStreamAndWait(MiniClusterNode<TLogFormat, TStreamId> leader,
-			MiniClusterNode<TLogFormat, TStreamId> follower, string streamName)
-		{
+			MiniClusterNode<TLogFormat, TStreamId> follower, string streamName) {
 			var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
 
 			var response = await PostEvent(_followerEndPoint, $"streams/{streamName}", requireLeader: false);
@@ -51,7 +50,7 @@ namespace EventStore.Core.Tests.Http.Cluster {
 			AssertEx.IsOrBecomesTrue(() => leader.Db.Config.IndexCheckpoint.Read() > leaderIndex,
 				timeout: TimeSpan.FromSeconds(10),
 				msg: "Waiting for event to be processed on leader timed out!");
-			
+
 			leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
 			AssertEx.IsOrBecomesTrue(() => follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex,
 				timeout: TimeSpan.FromSeconds(10),
@@ -196,7 +195,7 @@ namespace EventStore.Core.Tests.Http.Cluster {
 
 			return GetRequestResponse(request);
 		}
-		
+
 		private static string GetAuthorizationHeader(NetworkCredential credentials)
 			=> Convert.ToBase64String(Encoding.ASCII.GetBytes($"{credentials.UserName}:{credentials.Password}"));
 
@@ -204,7 +203,7 @@ namespace EventStore.Core.Tests.Http.Cluster {
 			var request = new HttpRequestMessage(method, uri);
 			request.Headers.Add("ES-RequireLeader", requireLeader ? "True" : "False");
 			request.Headers.Authorization = new AuthenticationHeaderValue("Basic",
-            					GetAuthorizationHeader(DefaultData.AdminNetworkCredentials));
+								GetAuthorizationHeader(DefaultData.AdminNetworkCredentials));
 			return request;
 		}
 

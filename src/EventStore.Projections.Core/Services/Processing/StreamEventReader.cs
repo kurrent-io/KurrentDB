@@ -6,9 +6,9 @@ using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Services.TimerService;
+using EventStore.Core.Settings;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Standard;
-using EventStore.Core.Settings;
 
 namespace EventStore.Projections.Core.Services.Processing {
 	public class StreamEventReader : EventReader,
@@ -37,9 +37,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 			bool produceStreamDeletes,
 			bool stopOnEof = false)
 			: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-			if (fromSequenceNumber < 0) throw new ArgumentException("fromSequenceNumber");
-			if (streamName == null) throw new ArgumentNullException("streamName");
-			if (string.IsNullOrEmpty(streamName)) throw new ArgumentException("streamName");
+			if (fromSequenceNumber < 0)
+				throw new ArgumentException("fromSequenceNumber");
+			if (streamName == null)
+				throw new ArgumentNullException("streamName");
+			if (string.IsNullOrEmpty(streamName))
+				throw new ArgumentException("streamName");
 			_streamName = streamName;
 			_fromSequenceNumber = fromSequenceNumber;
 			_timeProvider = timeProvider;
@@ -124,16 +127,20 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-			if (_disposed) return;
-			if (Paused) return;
-			if (message.CorrelationId != _pendingRequestCorrelationId) return;
+			if (_disposed)
+				return;
+			if (Paused)
+				return;
+			if (message.CorrelationId != _pendingRequestCorrelationId)
+				return;
 
 			_eventsRequested = false;
 			PauseOrContinueProcessing();
 		}
 
 		private long StartFrom(ClientMessage.ReadStreamEventsForwardCompleted message, long fromSequenceNumber) {
-			if (fromSequenceNumber != 0) return fromSequenceNumber;
+			if (fromSequenceNumber != 0)
+				return fromSequenceNumber;
 			if (message.Events.Length > 0) {
 				return message.Events[0].OriginalEventNumber;
 			}
@@ -147,7 +154,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		protected override void RequestEvents() {
-			if (_disposed) throw new InvalidOperationException("Disposed");
+			if (_disposed)
+				throw new InvalidOperationException("Disposed");
 			if (_eventsRequested)
 				throw new InvalidOperationException("Read operation is already in progress");
 			if (PauseRequested || Paused)

@@ -1,7 +1,7 @@
 using System;
-using NUnit.Framework;
 using EventStore.Core.Data;
 using EventStore.Core.TransactionLog.LogRecords;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.AllReader {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

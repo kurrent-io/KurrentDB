@@ -1,7 +1,7 @@
 ﻿using System;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Common.Utils;
 using static EventStore.Core.Helpers.IODispatcher;
 
 namespace EventStore.Core.Helpers {

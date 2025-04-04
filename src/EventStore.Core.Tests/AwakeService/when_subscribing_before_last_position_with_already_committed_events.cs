@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Threading;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -43,7 +42,7 @@ namespace EventStore.Core.Tests.AwakeService {
 				100,
 				LogRecord.Prepare(
 					recordFactory, 1500, Guid.NewGuid(), Guid.NewGuid(), 1500, 0, streamId, 99, PrepareFlags.Data,
-					eventTypeId, new byte[0], null, DateTime.UtcNow),"Stream", "EventType");
+					eventTypeId, new byte[0], null, DateTime.UtcNow), "Stream", "EventType");
 			_eventCommitted = new StorageMessage.EventCommitted(2000, _eventRecord, isTfEof: true);
 			_publisher = new InMemoryBus("bus");
 			_envelope = new PublishEnvelope(_publisher);

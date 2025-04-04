@@ -3,8 +3,7 @@ using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	[TestFixture]
 	public class when_initializing_state : TestFixtureWithInterpretedProjection {
 		protected override void Given() {

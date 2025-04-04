@@ -41,7 +41,7 @@ namespace EventStore.Transport.Http.Codecs {
 			_codec = codec;
 			_contentType = contentType;
 			_encoding = encoding;
-			var parts = contentType.Split(new[] {'/'}, 2);
+			var parts = contentType.Split(new[] { '/' }, 2);
 			if (parts.Length != 2)
 				throw new ArgumentException("contentType");
 			_type = parts[0];
@@ -54,9 +54,9 @@ namespace EventStore.Transport.Http.Codecs {
 
 		public bool SuitableForResponse(MediaType component) {
 			return component.Type == "*"
-			       || (string.Equals(component.Type, _type, StringComparison.OrdinalIgnoreCase)
-			           && (component.Subtype == "*"
-			               || string.Equals(component.Subtype, _subtype, StringComparison.OrdinalIgnoreCase)));
+				   || (string.Equals(component.Type, _type, StringComparison.OrdinalIgnoreCase)
+					   && (component.Subtype == "*"
+						   || string.Equals(component.Subtype, _subtype, StringComparison.OrdinalIgnoreCase)));
 		}
 
 		public T From<T>(string text) {

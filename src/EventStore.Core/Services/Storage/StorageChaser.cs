@@ -2,19 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
+using EventStore.Core.Services.Histograms;
 using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Services.Histograms;
-using System.Threading.Tasks;
-using ILogger = Serilog.ILogger;
 using EventStore.LogCommon;
+using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage {
 	public abstract class StorageChaser {

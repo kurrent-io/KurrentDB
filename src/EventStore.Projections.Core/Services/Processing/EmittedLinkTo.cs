@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.Text;
 
 namespace EventStore.Projections.Core.Services.Processing {
 	public class EmittedLinkTo : EmittedEvent {

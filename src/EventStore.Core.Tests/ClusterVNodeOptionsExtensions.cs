@@ -1,7 +1,6 @@
-﻿using EventStore.Core.Services.Monitoring;
-using EventStore.Core.Tests.Helpers;
+﻿using EventStore.Core.Tests.Helpers;
 
-namespace EventStore.Core.Tests; 
+namespace EventStore.Core.Tests;
 
 public static class ClusterVNodeOptionsExtensions {
 	public static ClusterVNodeOptions ReduceMemoryUsageForTests(this ClusterVNodeOptions options) {

@@ -78,7 +78,7 @@ namespace EventStore.Core.Tests.Services.Storage.MaxAgeMaxCount.AfterScavenge {
 
 	public class when_having_gaps_in_index_on_maxage_fast_path : MaxAgeIterationTests {
 		protected override long[] ExtantIndexEntries { get; } = new long[] { 0, 1, 2, 3, 4, 5, 6, 8, 9 };
-		
+
 		[Test]
 		public void works() => ReadOneStartingFromEach();
 	}

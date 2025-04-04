@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
-using EventStore.Projections.Core.Services.Processing;
 
 namespace EventStore.Projections.Core.Services {
 	public class PublishSubscribeDispatcher<TGuid, TSubscribeRequest, TControlMessageBase, TResponseBase>
@@ -30,7 +29,7 @@ namespace EventStore.Projections.Core.Services {
 		}
 
 		public TGuid PublishSubscribe(IPublisher publisher, TSubscribeRequest request, object subscriber) {
-//TODO: expiration?
+			//TODO: expiration?
 			TGuid requestCorrelationId;
 			lock (_map) {
 				requestCorrelationId = _getRequestCorrelationId(request);

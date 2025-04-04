@@ -1,7 +1,6 @@
-﻿using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
+﻿using System.Linq;
+using EventStore.Core.Data;
 using NUnit.Framework;
-using System.Linq;
 using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.HashCollisions {

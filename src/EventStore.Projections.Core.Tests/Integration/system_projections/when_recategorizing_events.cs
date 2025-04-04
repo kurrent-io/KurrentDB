@@ -18,7 +18,8 @@ namespace EventStore.Projections.Core.Tests.Integration.system_projections {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var e in base.When()) yield return e;
+			foreach (var e in base.When())
+				yield return e;
 		}
 
 		protected override bool GivenInitializeSystemProjections() {

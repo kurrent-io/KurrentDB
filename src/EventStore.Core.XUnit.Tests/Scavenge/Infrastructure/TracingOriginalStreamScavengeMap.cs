@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using EventStore.Core.Data;
 using EventStore.Core.TransactionLog.Scavenging;
 

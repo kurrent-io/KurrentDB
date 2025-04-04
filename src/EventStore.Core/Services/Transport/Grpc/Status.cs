@@ -8,10 +8,10 @@ namespace Google.Rpc {
 	partial class Status {
 		public static Status WrongExpectedVersion(StreamRevision currentStreamRevision,
 			long expectedVersion) => new() {
-			Message = nameof(WrongExpectedVersion),
-			Details = Any.Pack(EventStore.Client.WrongExpectedVersion.Create(currentStreamRevision, expectedVersion)),
-			Code = Code.AlreadyExists
-		};
+				Message = nameof(WrongExpectedVersion),
+				Details = Any.Pack(EventStore.Client.WrongExpectedVersion.Create(currentStreamRevision, expectedVersion)),
+				Code = Code.AlreadyExists
+			};
 
 		public static Status StreamDeleted(StreamIdentifier streamIdentifier) => new() {
 			Details = Any.Pack(new StreamDeleted {
@@ -55,7 +55,7 @@ namespace Google.Rpc {
 			};
 
 		public static Status BadRequest(string message) => new() {
-			Details = Any.Pack(new BadRequest {Message = message}),
+			Details = Any.Pack(new BadRequest { Message = message }),
 			Message = nameof(BadRequest),
 			Code = Code.InvalidArgument
 		};

@@ -40,7 +40,8 @@ namespace EventStore.Projections.Core.Messages {
 
 			public GetState(Guid correlationId, Guid projectionId, string partition, Guid workerId)
 				: base(projectionId, workerId) {
-				if (partition == null) throw new ArgumentNullException("partition");
+				if (partition == null)
+					throw new ArgumentNullException("partition");
 				_correlationId = correlationId;
 				_partition = partition;
 			}
@@ -61,7 +62,8 @@ namespace EventStore.Projections.Core.Messages {
 
 			public GetResult(Guid correlationId, Guid projectionId, string partition, Guid workerId)
 				: base(projectionId, workerId) {
-				if (partition == null) throw new ArgumentNullException("partition");
+				if (partition == null)
+					throw new ArgumentNullException("partition");
 				_correlationId = correlationId;
 				_partition = partition;
 			}
@@ -148,11 +150,16 @@ namespace EventStore.Projections.Core.Messages {
 				string query,
 				bool enableContentTypeValidation)
 				: base(projectionId, workerId) {
-				if (name == null) throw new ArgumentNullException("name");
-				if (config == null) throw new ArgumentNullException("config");
-				if (sourceDefinition == null) throw new ArgumentNullException("sourceDefinition");
-				if (handlerType == null) throw new ArgumentNullException("handlerType");
-				if (query == null) throw new ArgumentNullException("query");
+				if (name == null)
+					throw new ArgumentNullException("name");
+				if (config == null)
+					throw new ArgumentNullException("config");
+				if (sourceDefinition == null)
+					throw new ArgumentNullException("sourceDefinition");
+				if (handlerType == null)
+					throw new ArgumentNullException("handlerType");
+				if (query == null)
+					throw new ArgumentNullException("query");
 				_name = name;
 				_version = version;
 				_config = config;

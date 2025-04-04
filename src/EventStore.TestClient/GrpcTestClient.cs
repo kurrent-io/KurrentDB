@@ -1,6 +1,4 @@
-﻿using System;
-using EventStore.Client;
-using Connection = EventStore.Transport.Tcp.TcpTypedConnection<byte[]>;
+﻿using EventStore.Client;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.TestClient {
@@ -38,10 +36,10 @@ namespace EventStore.TestClient {
 			string.IsNullOrWhiteSpace(Settings.DefaultCredentials?.Password);
 
 		private EventStoreClientSettings Settings => EventStoreClientSettings.Create(ConnectionString);
-		
+
 		private string ConnectionString => string.IsNullOrWhiteSpace(_options.ConnectionString)
 			? $"esdb://{_options.Host}:{_options.HttpPort}?tls={_options.UseTls}&tlsVerifyCert={_options.TlsValidateServer}"
 			: _options.ConnectionString;
-		
+
 	}
 }

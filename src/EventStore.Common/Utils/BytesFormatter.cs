@@ -4,9 +4,9 @@ using System.Globalization;
 
 namespace EventStore.Common.Utils {
 	public static class BytesFormatter {
-		private static readonly string[] SizeOrders = new[] {"B", "KiB", "MiB", "GiB", "TiB"};
-		private static readonly string[] SpeedOrders = new[] {"B/s", "KiB/s", "MiB/s", "GiB/s", "TiB/s"};
-		private static readonly string[] NumberOrders = new[] {"", "K", "M", "G", "T"};
+		private static readonly string[] SizeOrders = new[] { "B", "KiB", "MiB", "GiB", "TiB" };
+		private static readonly string[] SpeedOrders = new[] { "B/s", "KiB/s", "MiB/s", "GiB/s", "TiB/s" };
+		private static readonly string[] NumberOrders = new[] { "", "K", "M", "G", "T" };
 
 		public static string ToFriendlySpeedString(this double bytes) {
 			return FormatSpeed((float)bytes);

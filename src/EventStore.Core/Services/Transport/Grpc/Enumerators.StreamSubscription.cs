@@ -94,7 +94,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			}
 
 			public override async ValueTask<bool> MoveNextAsync() {
-				ReadLoop:
+ReadLoop:
 
 				if (!await _channel.Reader.WaitToReadAsync(_cancellationToken).ConfigureAwait(false)) {
 					return false;
@@ -148,7 +148,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 				async Task OnMessage(Message message, CancellationToken ct) {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+						RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 						Fail(ex);
 						return;
 					}
@@ -222,11 +222,11 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 				async Task PumpLiveMessages() {
 					await caughtUpSource.Task.ConfigureAwait(false);
-					
+
 					await _channel.Writer.WriteAsync(new ReadResp {
 						CaughtUp = new ReadResp.Types.CaughtUp()
 					}, _cancellationToken).ConfigureAwait(false);
-					
+
 					await foreach (var @event in liveEvents.Reader.ReadAllAsync(_cancellationToken)
 						.ConfigureAwait(false)) {
 						await _channel.Writer.WriteAsync(new ReadResp {
@@ -237,7 +237,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 				async Task OnSubscriptionMessage(Message message, CancellationToken ct) {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+						RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 						Fail(ex);
 						return;
 					}
@@ -266,7 +266,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 							async Task OnHistoricalEventsMessage(Message message, CancellationToken ct) {
 								if (message is ClientMessage.NotHandled notHandled &&
-								    RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+									RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 									Fail(ex);
 									return;
 								}
@@ -297,7 +297,8 @@ namespace EventStore.Core.Services.Transport.Grpc {
 												"Live subscription {subscriptionId} to {streamName} enqueuing historical message {streamRevision}.",
 												_subscriptionId, _streamName, streamRevision);
 											if (!_channel.Writer.TryWrite(new ReadResp {
-												Event = ConvertToReadEvent(_uuidOption, @event)})) {
+												Event = ConvertToReadEvent(_uuidOption, @event)
+											})) {
 
 												ConsumerTooSlow(@event);
 												return;

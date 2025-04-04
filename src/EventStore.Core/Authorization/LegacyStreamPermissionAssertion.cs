@@ -49,7 +49,7 @@ namespace EventStore.Core.Authorization {
 			if (streamId == "")
 				streamId = SystemStreams.AllStream;
 			if (streamId == SystemStreams.AllStream &&
-			    (operation == Operations.Streams.Delete || operation == Operations.Streams.Write)) {
+				(operation == Operations.Streams.Delete || operation == Operations.Streams.Write)) {
 				context.Add(new AssertionMatch(policy,
 					new AssertionInformation("streamId", $"{operation.Action} denied on $all", Grant.Deny)));
 				return new ValueTask<bool>(true);
@@ -79,7 +79,8 @@ namespace EventStore.Core.Authorization {
 		private ValueTask<bool> Check(ClaimsPrincipal cp, Operation operation, string action, string streamId,
 			PolicyInformation policy, EvaluationContext context) {
 			var preChecks = IsSystemOrAdmin(cp, operation, policy, context);
-			if (preChecks.IsCompleted && preChecks.Result) return preChecks;
+			if (preChecks.IsCompleted && preChecks.Result)
+				return preChecks;
 
 			return CheckAsync(preChecks, cp, action, streamId, policy, context);
 		}
@@ -100,7 +101,8 @@ namespace EventStore.Core.Authorization {
 		private async ValueTask<bool> IsSystemOrAdminAsync(ValueTask<bool> isSystem, ClaimsPrincipal cp,
 			Operation operation,
 			PolicyInformation policy, EvaluationContext context) {
-			if (await isSystem.ConfigureAwait(false)) return true;
+			if (await isSystem.ConfigureAwait(false))
+				return true;
 
 			return await WellKnownAssertions.Admin.Evaluate(cp, operation, policy, context).ConfigureAwait(false);
 		}
@@ -150,7 +152,8 @@ namespace EventStore.Core.Authorization {
 					transactionId = parameters[i].Value;
 			}
 
-			if (transactionId != null) return FindStreamFromTransactionId(long.Parse(transactionId), cancellationToken);
+			if (transactionId != null)
+				return FindStreamFromTransactionId(long.Parse(transactionId), cancellationToken);
 			return new ValueTask<string>((string)null);
 		}
 
@@ -168,7 +171,7 @@ namespace EventStore.Core.Authorization {
 				"delete" => acl.Stream?.DeleteRoles ?? acl.System?.DeleteRoles ?? acl.Default?.DeleteRoles,
 				"metadataRead" => acl.Stream?.MetaReadRoles ?? acl.System?.MetaReadRoles ?? acl.Default?.MetaReadRoles,
 				"metadataWrite" => acl.Stream?.MetaWriteRoles ??
-				                   acl.System?.MetaWriteRoles ?? acl.Default?.MetaWriteRoles,
+								   acl.System?.MetaWriteRoles ?? acl.Default?.MetaWriteRoles,
 				_ => Array.Empty<string>()
 			};
 		}

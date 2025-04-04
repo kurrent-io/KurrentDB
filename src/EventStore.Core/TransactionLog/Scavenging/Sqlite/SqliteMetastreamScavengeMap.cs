@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 
 namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
-	
+
 	public class SqliteMetastreamScavengeMap<TKey> : IInitializeSqliteBackend, IMetastreamScavengeMap<TKey> {
 		private readonly string _keyTypeOverride;
 		private AddCommand _add;
@@ -27,7 +27,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				if (discardPointField.HasValue) {
 					discardPoint = DiscardPoint.DiscardBefore(discardPointField.Value);
 				}
-			
+
 				return new MetastreamData(isTombstoned, discardPoint);
 			};
 		}
@@ -39,7 +39,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					key {keyType} PRIMARY KEY,
 					isTombstoned INTEGER DEFAULT 0,
 					discardPoint INTEGER NULL)";
-		
+
 			sqlite.InitializeDb(sql);
 
 			_add = new AddCommand(TableName, sqlite);
@@ -111,7 +111,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_sqlite.ExecuteNonQuery(_cmd);
 			}
 		}
-		
+
 		private class SetTombstoneCommand {
 			private readonly SqliteBackend _sqlite;
 			private readonly SqliteCommand _cmd;
@@ -122,7 +122,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					INSERT INTO {tableName} (key, isTombstoned)
 					VALUES($key, 1) 
 					ON CONFLICT(key) DO UPDATE SET isTombstoned=1";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -164,7 +164,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_sqlite.ExecuteNonQuery(_cmd);
 			}
 		}
-		
+
 		private class GetCommand {
 			private readonly SqliteBackend _sqlite;
 			private readonly SqliteCommand _cmd;
@@ -175,12 +175,12 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					SELECT isTombstoned, discardPoint
 					FROM {tableName}
 					WHERE key = $key";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -209,7 +209,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_deleteCmd.CommandText = deleteSql;
 				_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_deleteCmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -230,7 +230,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_deleteCmd = sqlite.CreateCommand();
 				_deleteCmd.CommandText = deleteSql;
 				_deleteCmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -249,11 +249,11 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					SELECT isTombstoned, discardPoint, key
 					FROM {tableName}
 					ORDER BY key";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => {
 					var value = _readMetastreamData(reader);

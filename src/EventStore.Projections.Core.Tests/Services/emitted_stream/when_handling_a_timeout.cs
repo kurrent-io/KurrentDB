@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Linq;
 using EventStore.Core.Messages;
+using EventStore.Core.Tests;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
-using System.Collections.Generic;
-using EventStore.Core.Tests;
 
 namespace EventStore.Projections.Core.Tests.Services.emitted_stream.another_epoch {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -56,7 +55,7 @@ namespace EventStore.Projections.Core.Tests.Services.emitted_stream.another_epoc
 		public void should_retry_the_write_with_the_same_events() {
 			var current = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Last();
 			while (_consumer.HandledMessages.Last().GetType() ==
-			       typeof(EventStore.Core.Services.TimerService.TimerMessage.Schedule)) {
+				   typeof(EventStore.Core.Services.TimerService.TimerMessage.Schedule)) {
 				var message =
 					_consumer.HandledMessages.Last() as EventStore.Core.Services.TimerService.TimerMessage.Schedule;
 				message.Envelope.ReplyWith(message.ReplyMessage);

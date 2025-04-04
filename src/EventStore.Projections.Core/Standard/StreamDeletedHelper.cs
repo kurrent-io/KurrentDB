@@ -14,7 +14,7 @@ namespace EventStore.Projections.Core.Standard {
 				deletedPartitionStreamId = null;
 				return false;
 			}
-			
+
 			if (resolvedEvent.IsLinkToDeletedStreamTombstone) {
 				isDeletedStreamEvent = true;
 				deletedPartitionStreamId = resolvedEvent.EventStreamId;

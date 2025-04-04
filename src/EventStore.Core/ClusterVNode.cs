@@ -7,11 +7,23 @@ using System.Net.Security;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Common.Configuration;
+using EventStore.Common.Exceptions;
+using EventStore.Common.Log;
+using EventStore.Common.Options;
 using EventStore.Common.Utils;
+using EventStore.Core.Authentication;
+using EventStore.Core.Authentication.DelegatedAuthentication;
+using EventStore.Core.Authentication.PassthroughAuthentication;
+using EventStore.Core.Authorization;
 using EventStore.Core.Bus;
+using EventStore.Core.Caching;
+using EventStore.Core.Certificates;
+using EventStore.Core.Cluster;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
+using EventStore.Core.Helpers;
 using EventStore.Core.Index;
 using EventStore.Core.Index.Hashes;
 using EventStore.Core.LogAbstraction;
@@ -19,7 +31,11 @@ using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Services.Gossip;
+using EventStore.Core.Services.Histograms;
 using EventStore.Core.Services.Monitoring;
+using EventStore.Core.Services.PeriodicLogs;
+using EventStore.Core.Services.PersistentSubscription;
+using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
 using EventStore.Core.Services.Replication;
 using EventStore.Core.Services.RequestManager;
 using EventStore.Core.Services.Storage;
@@ -32,31 +48,15 @@ using EventStore.Core.Services.Transport.Http.Controllers;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.Services.VNode;
 using EventStore.Core.Settings;
+using EventStore.Core.Synchronization;
+using EventStore.Core.Telemetry;
 using EventStore.Core.TransactionLog;
+using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.TransactionLog.Scavenging;
 using EventStore.Core.TransactionLog.Scavenging.Sqlite;
-using EventStore.Core.Authentication;
-using EventStore.Core.Helpers;
-using EventStore.Core.Services.PersistentSubscription;
-using EventStore.Core.Services.Histograms;
-using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
-using System.Threading.Tasks;
-using EventStore.Common.Exceptions;
-using EventStore.Common.Log;
-using EventStore.Common.Options;
-using EventStore.Core.Authentication.DelegatedAuthentication;
-using EventStore.Core.Authentication.PassthroughAuthentication;
-using EventStore.Core.Authorization;
-using EventStore.Core.Caching;
-using EventStore.Core.Certificates;
-using EventStore.Core.Cluster;
-using EventStore.Core.Services.PeriodicLogs;
-using EventStore.Core.Synchronization;
-using EventStore.Core.Telemetry;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.Util;
 using EventStore.Native.UnixSignalManager;
 using EventStore.Plugins.Authentication;
@@ -121,7 +121,7 @@ namespace EventStore.Core {
 		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHandle<SystemMessage.BecomeShutdown>,
 		IHandle<SystemMessage.SystemStart>,
-		IHandle<ClientMessage.ReloadConfig>{
+		IHandle<ClientMessage.ReloadConfig> {
 		private readonly ClusterVNodeOptions _options;
 		public override TFChunkDb Db { get; }
 
@@ -152,7 +152,7 @@ namespace EventStore.Core {
 		public override QueueStatsManager QueueStatsManager => _queueStatsManager;
 
 		public override IStartup Startup => _startup;
-		
+
 		public override IAuthenticationProvider AuthenticationProvider {
 			get { return _authenticationProvider; }
 		}
@@ -235,16 +235,16 @@ namespace EventStore.Core {
 			Guid? instanceId = null, int debugIndex = 0) {
 
 			_certificateProvider = certificateProvider;
-			
+
 			ClusterVNodeOptionsValidator.Validate(options);
-			
+
 			ReloadLogOptions(options);
 
 			instanceId ??= Guid.NewGuid();
 			if (instanceId == Guid.Empty) {
 				throw new ArgumentException("InstanceId may not be empty.", nameof(instanceId));
 			}
-			
+
 			if (!options.Application.Insecure) {
 				ReloadCertificates(options);
 
@@ -252,7 +252,7 @@ namespace EventStore.Core {
 					throw new InvalidConfigurationException("A certificate is required unless insecure mode (--insecure) is set.");
 				}
 			}
-			
+
 			_options = options;
 
 #if DEBUG
@@ -263,28 +263,28 @@ namespace EventStore.Core {
 			var disableExternalTcpTls = options.Application.Insecure || options.Interface.DisableExternalTcpTls;
 
 			var httpEndPoint = new IPEndPoint(options.Interface.NodeIp, options.Interface.NodePort);
-			
+
 			var intTcp = disableInternalTcpTls
-				? new IPEndPoint(options.Interface.ReplicationIp, 
+				? new IPEndPoint(options.Interface.ReplicationIp,
 					options.Interface.ReplicationPort)
 				: null;
 			var intSecIp = !disableInternalTcpTls
-				? new IPEndPoint(options.Interface.ReplicationIp, 
+				? new IPEndPoint(options.Interface.ReplicationIp,
 					options.Interface.ReplicationPort)
 				: null;
 
 			var extTcp = disableExternalTcpTls
-				? new IPEndPoint(options.Interface.NodeIp, 
+				? new IPEndPoint(options.Interface.NodeIp,
 					options.Interface.NodeTcpPort)
 				: null;
 			var extSecIp = !disableExternalTcpTls
-				? new IPEndPoint(options.Interface.NodeIp, 
+				? new IPEndPoint(options.Interface.NodeIp,
 					options.Interface.NodeTcpPort)
 				: null;
 
 			var intTcpPortAdvertiseAs = disableInternalTcpTls ? options.Interface.ReplicationTcpPortAdvertiseAs : 0;
 			var intSecTcpPortAdvertiseAs = !disableInternalTcpTls ? options.Interface.ReplicationTcpPortAdvertiseAs : 0;
-			
+
 			var extTcpPortAdvertiseAs = options.Interface.EnableExternalTcp && disableExternalTcpTls
 				? options.Interface.NodeTcpPortAdvertiseAs
 				: 0;
@@ -620,7 +620,7 @@ namespace EventStore.Core {
 
 			var dynamicCacheManager = new DynamicCacheManager(
 				bus: _mainQueue,
-				getFreeSystemMem: () => (long) statsHelper.GetFreeMem(),
+				getFreeSystemMem: () => (long)statsHelper.GetFreeMem(),
 				getFreeHeapMem: () => GC.GetGCMemoryInfo().FragmentedBytes,
 				getGcCollectionCount: () => GC.CollectionCount(GC.MaxGeneration),
 				totalMem: totalMem,
@@ -864,7 +864,7 @@ namespace EventStore.Core {
 					: new DnsEndPoint(extHostToAdvertise, extSecTcpPortAdvertiseAs > 0
 						? extSecTcpPortAdvertiseAs
 						: NodeInfo.ExternalSecureTcp.Port);
-				
+
 				var httpEndPoint = new DnsEndPoint(extHostToAdvertise,
 					options.Interface.NodePortAdvertiseAs > 0
 						? options.Interface.NodePortAdvertiseAs
@@ -989,8 +989,7 @@ namespace EventStore.Core {
 			var httpAuthenticationProviders = new List<IHttpAuthenticationProvider>();
 
 			foreach (var authenticationScheme in _authenticationProvider.GetSupportedAuthenticationSchemes() ?? Enumerable.Empty<string>()) {
-				switch (authenticationScheme)
-				{
+				switch (authenticationScheme) {
 					case "Basic":
 						httpAuthenticationProviders.Add(new BasicHttpAuthenticationProvider(_authenticationProvider));
 						break;
@@ -1040,7 +1039,7 @@ namespace EventStore.Core {
 			var infoController = new InfoController(options, new Dictionary<string, bool> {
 				["projections"] = options.Projections.RunProjections != ProjectionType.None || options.DevMode.Dev,
 				["userManagement"] = options.Auth.AuthenticationType == Opts.AuthenticationTypeDefault &&
-				                     !options.Application.Insecure,
+									 !options.Application.Insecure,
 				["atomPub"] = options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev
 
 			}, _authenticationProvider);
@@ -1450,7 +1449,7 @@ namespace EventStore.Core {
 				AddTask(leaderReplicationService.Task);
 				_mainBus.Subscribe<SystemMessage.SystemStart>(leaderReplicationService);
 				_mainBus.Subscribe<SystemMessage.StateChangeMessage>(leaderReplicationService);
-				_mainBus.Subscribe<SystemMessage.EnablePreLeaderReplication>(leaderReplicationService);				
+				_mainBus.Subscribe<SystemMessage.EnablePreLeaderReplication>(leaderReplicationService);
 				_mainBus.Subscribe<ReplicationMessage.ReplicaSubscriptionRequest>(leaderReplicationService);
 				_mainBus.Subscribe<ReplicationMessage.ReplicaLogPositionAck>(leaderReplicationService);
 				_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(leaderReplicationService);
@@ -1496,14 +1495,14 @@ namespace EventStore.Core {
 				var gossipSeedSource = (
 					options.Cluster.DiscoverViaDns,
 					options.Cluster.ClusterSize > 1,
-					options.Cluster.GossipSeed is {Length: >0}) switch {
-					(true, true, _) => (IGossipSeedSource)new DnsGossipSeedSource(options.Cluster.ClusterDns,
-						options.Cluster.ClusterGossipPort),
-					(false, true, false) => throw new InvalidConfigurationException(
-						"DNS discovery is disabled, but no gossip seed endpoints have been specified. "
-						+ "Specify gossip seeds using the `GossipSeed` option."),
-					_ => new KnownEndpointGossipSeedSource(options.Cluster.GossipSeed)
-				};
+					options.Cluster.GossipSeed is { Length: > 0 }) switch {
+						(true, true, _) => (IGossipSeedSource)new DnsGossipSeedSource(options.Cluster.ClusterDns,
+							options.Cluster.ClusterGossipPort),
+						(false, true, false) => throw new InvalidConfigurationException(
+							"DNS discovery is disabled, but no gossip seed endpoints have been specified. "
+							+ "Specify gossip seeds using the `GossipSeed` option."),
+						_ => new KnownEndpointGossipSeedSource(options.Cluster.GossipSeed)
+					};
 
 				var gossip = new NodeGossipService(
 					_mainQueue,
@@ -1533,10 +1532,10 @@ namespace EventStore.Core {
 				_mainBus.Subscribe<GossipMessage.GetGossipReceived>(gossip);
 				_mainBus.Subscribe<ElectionMessage.ElectionsDone>(gossip);
 			}
-			
+
 			var clusterStateChangeListener = new ClusterMultipleVersionsLogger();
 			_mainBus.Subscribe<GossipMessage.GossipUpdated>(clusterStateChangeListener);
-			
+
 			// kestrel
 			AddTasks(_workersHandler.Start());
 			AddTask(_mainQueue.Start());
@@ -1858,8 +1857,8 @@ namespace EventStore.Core {
 				Log.Information("Skipping reload of certificates since TLS is disabled.");
 				return;
 			}
-			
-			if (_certificateProvider?.LoadCertificates(options) == LoadCertificateResult.VerificationFailed){
+
+			if (_certificateProvider?.LoadCertificates(options) == LoadCertificateResult.VerificationFailed) {
 				throw new InvalidConfigurationException("Aborting certificate loading due to verification errors.");
 			}
 		}

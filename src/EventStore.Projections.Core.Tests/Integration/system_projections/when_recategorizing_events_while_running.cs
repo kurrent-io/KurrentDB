@@ -14,7 +14,8 @@ namespace EventStore.Projections.Core.Tests.Integration.system_projections {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var e in base.When()) yield return e;
+			foreach (var e in base.When())
+				yield return e;
 			yield return CreateWriteEvent("categorized-0", SystemEventTypes.LinkTo, "1@account-01", "{\"a\":2}");
 			yield return CreateWriteEvent("categorized-0", SystemEventTypes.LinkTo, "0@account-02", "{\"a\":10}");
 			yield return CreateWriteEvent("categorized-1", SystemEventTypes.LinkTo, "0@account-01", "{\"a\":1}");

@@ -1,8 +1,6 @@
 using System;
-using System.Text;
 using EventStore.Core.Data;
 using EventStore.Core.Tests;
-using EventStore.Core.Util;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;

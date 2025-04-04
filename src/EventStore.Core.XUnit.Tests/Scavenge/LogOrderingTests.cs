@@ -54,7 +54,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge {
 					Assert.True(state.TryGetOriginalStreamData("ab-1", out var originalStreamData));
 					// not present because there is nothing to discard
 					Assert.False(state.TryGetMetastreamData("$$ab-1", out var metastreamData));
-			
+
 					Assert.Equal(DiscardPoint.KeepAll, originalStreamData.DiscardPoint);
 					Assert.Equal(DiscardPoint.KeepAll, metastreamData.DiscardPoint);
 				})

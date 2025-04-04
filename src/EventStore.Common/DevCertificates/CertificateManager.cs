@@ -5,8 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Tracing;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using EventStore.Common.Utils;
 
@@ -125,7 +125,7 @@ namespace EventStore.Common.DevCertificates {
 					.RawData;
 
 				if ((byteArray.Length == EventStoreHttpsOidFriendlyName.Length && byteArray[0] == (byte)'A') ||
-				    byteArray.Length == 0) {
+					byteArray.Length == 0) {
 					// No Version set, default to 0
 					return 0b0;
 				} else {
@@ -272,7 +272,7 @@ namespace EventStore.Common.DevCertificates {
 
 					// We don't want to mask the original source of the error here.
 					result = result != EnsureCertificateResult.Succeeded &&
-					         result != EnsureCertificateResult.ValidCertificatePresent
+							 result != EnsureCertificateResult.ValidCertificatePresent
 						? result
 						: EnsureCertificateResult.ErrorExportingTheCertificate;
 

@@ -19,7 +19,7 @@ public class IndexTrackerTests : IDisposable {
 		_listener = new TestMeterListener<long>(meter);
 
 		var eventMetric = new CounterMetric(meter, "eventstore-io", "events");
-		_sut = new IndexTracker(new CounterSubMetric(eventMetric, new[] {new KeyValuePair<string, object>("activity", "written")}));
+		_sut = new IndexTracker(new CounterSubMetric(eventMetric, new[] { new KeyValuePair<string, object>("activity", "written") }));
 	}
 
 	public void Dispose() {

@@ -115,7 +115,8 @@ namespace EventStore.Core.Services.Monitoring.Utils {
 		}
 
 		private double GetCounterValue(string name) {
-			if (!_collectedStats.TryGetValue(name, out var value)) return InvalidCounterResult;
+			if (!_collectedStats.TryGetValue(name, out var value))
+				return InvalidCounterResult;
 			return value;
 		}
 

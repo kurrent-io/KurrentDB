@@ -3,9 +3,9 @@ using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr {
 	[TestFixture]
@@ -13,8 +13,8 @@ namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr {
 		private long commitPosition = 1000;
 		protected override DeleteStream OnManager(FakePublisher publisher) {
 			return new DeleteStream(
-				publisher, 
-				CommitTimeout, 
+				publisher,
+				CommitTimeout,
 				Envelope,
 				InternalCorrId,
 				ClientCorrId,
@@ -26,10 +26,10 @@ namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr {
 
 		protected override IEnumerable<Message> WithInitialMessages() {
 			yield return new StorageMessage.CommitIndexed(InternalCorrId, commitPosition, 2, 3, 3);
-			yield return new ReplicationTrackingMessage.ReplicatedTo(commitPosition);		
+			yield return new ReplicationTrackingMessage.ReplicatedTo(commitPosition);
 		}
 
-		protected override Message When() {			
+		protected override Message When() {
 			return new StorageMessage.AlreadyCommitted(InternalCorrId, "test123", 0, 1, commitPosition);
 		}
 

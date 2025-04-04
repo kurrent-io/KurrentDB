@@ -1,19 +1,19 @@
 using System;
 using System.Threading.Tasks;
+using EventStore.Client.PersistentSubscriptions;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToAllCompleted;
+using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.DeleteReq.Types.Options.StreamOptionOneofCase;
 
 namespace EventStore.Core.Services.Transport.Grpc {
 	internal partial class PersistentSubscriptions {
 		private static readonly Operation DeleteOperation = new Operation(Plugins.Authorization.Operations.Subscriptions.Delete);
 		public override async Task<DeleteResp> Delete(DeleteReq request, ServerCallContext context) {
-			
+
 			var createPersistentSubscriptionSource = new TaskCompletionSource<DeleteResp>();
 			var correlationId = Guid.NewGuid();
 
@@ -26,10 +26,8 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 			string streamId = null;
 
-			switch (request.Options.StreamOptionCase)
-			{
-				case StreamOptionOneofCase.StreamIdentifier:
-				{
+			switch (request.Options.StreamOptionCase) {
+				case StreamOptionOneofCase.StreamIdentifier: {
 					streamId = request.Options.StreamIdentifier;
 					_publisher.Publish(new ClientMessage.DeletePersistentSubscriptionToStream(
 						correlationId,

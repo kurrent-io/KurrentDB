@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -21,7 +20,7 @@ namespace EventStore.Common.Utils {
 
 		static Locations() {
 			ApplicationDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ??
-			                       Path.GetFullPath(".");
+								   Path.GetFullPath(".");
 
 			PluginsDirectory = Path.Combine(ApplicationDirectory, "plugins");
 			FallbackDefaultDataDirectory = Path.Combine(ApplicationDirectory, "data");
@@ -80,7 +79,7 @@ namespace EventStore.Common.Utils {
 		public static string GetPrecededLocation(params string[] locations) {
 			var precedenceList = locations.Distinct().ToList();
 			return precedenceList.FirstOrDefault(Directory.Exists) ??
-			       precedenceList.Last();
+				   precedenceList.Last();
 		}
 
 		/// <summary>

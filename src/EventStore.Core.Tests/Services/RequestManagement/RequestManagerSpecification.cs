@@ -29,7 +29,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement {
 
 		protected abstract TManager OnManager(FakePublisher publisher);
 		protected abstract IEnumerable<Message> WithInitialMessages();
-		protected virtual void Given(){ }
+		protected virtual void Given() { }
 		protected abstract Message When();
 
 		protected Event DummyEvent() {
@@ -66,6 +66,6 @@ namespace EventStore.Core.Tests.Services.RequestManagement {
 			Dispatcher.Publish(When());
 			Produced = new List<Message>(Publisher.Messages);
 		}
-		
+
 	}
 }

@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Text;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
-using HttpStatusCode = System.Net.HttpStatusCode;
 using EventStore.Core.Tests.Http.Users.users;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams {
 	namespace idempotency {
@@ -91,7 +91,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_posting_to_idempotent_guid_id_twice<TLogFormat, TStreamId>
-			: HttpBehaviorSpecificationOfSuccessfulCreateEvent<TLogFormat, TStreamId>  {
+			: HttpBehaviorSpecificationOfSuccessfulCreateEvent<TLogFormat, TStreamId> {
 			private Guid _eventId;
 
 			protected override Task Given() {
@@ -121,7 +121,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_posting_to_idempotent_guid_id_three_times<TLogFormat, TStreamId>
-			: HttpBehaviorSpecificationOfSuccessfulCreateEvent<TLogFormat, TStreamId>  {
+			: HttpBehaviorSpecificationOfSuccessfulCreateEvent<TLogFormat, TStreamId> {
 			private Guid _eventId;
 
 			protected override async Task Given() {
@@ -153,7 +153,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		class when_posting_an_event_once_raw_once_with_array<TLogFormat, TStreamId>
-			: HttpBehaviorSpecificationOfSuccessfulCreateEvent<TLogFormat, TStreamId>  {
+			: HttpBehaviorSpecificationOfSuccessfulCreateEvent<TLogFormat, TStreamId> {
 			private Guid _eventId;
 
 			protected override Task Given() {

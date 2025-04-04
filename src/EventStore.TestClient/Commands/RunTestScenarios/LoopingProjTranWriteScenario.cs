@@ -187,7 +187,7 @@ namespace EventStore.TestClient.Commands.RunTestScenarios {
 
 				version += 1;
 
-				var writeTask = transaction.WriteAsync(new[] {createEvent(version)});
+				var writeTask = transaction.WriteAsync(new[] { createEvent(version) });
 				writeTask.ContinueWith(fail, TaskContinuationOptions.OnlyOnFaulted);
 				writeTask.ContinueWith(writeTransactionEvent, TaskContinuationOptions.OnlyOnRanToCompletion);
 			};

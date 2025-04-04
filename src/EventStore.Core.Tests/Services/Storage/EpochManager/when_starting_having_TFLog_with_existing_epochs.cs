@@ -1,23 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
-using EventStore.Core.LogV2;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
-using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
-using System.Threading;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.Services.Storage {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -83,7 +78,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 			_db = new TFChunkDb(TFChunkHelper.CreateDbConfig(PathName, 0));
 			_db.Open();
 			_reader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
-			_writer = new TFChunkWriter(_db);			
+			_writer = new TFChunkWriter(_db);
 			_epochs = new List<EpochRecord>();
 			var lastPos = 0L;
 			for (int i = 0; i < 30; i++) {
@@ -98,7 +93,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 			this.Dispose();
 			await base.TestFixtureTearDown();
 		}
-		
+
 		[Test]
 		public void starting_epoch_manager_loads_epochs() {
 
@@ -106,7 +101,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 			_epochManager.Init();
 			_cache = GetCache(_epochManager);
 			Assert.NotNull(_cache);
-			
+
 			Assert.That(_cache.Count == 10);
 			Assert.That(_cache.First.Value.EpochNumber == _epochs[20].EpochNumber);
 			Assert.That(_cache.Last.Value.EpochNumber == _epochs[29].EpochNumber);
@@ -133,7 +128,7 @@ namespace EventStore.Core.Tests.Services.Storage {
 			_epochManager.Init();
 			_cache = GetCache(_epochManager);
 			Assert.NotNull(_cache);
-			
+
 			Assert.That(_cache.Count == 30);
 			Assert.That(_cache.First.Value.EpochNumber == _epochs[0].EpochNumber);
 			Assert.That(_cache.Last.Value.EpochNumber == _epochs[29].EpochNumber);

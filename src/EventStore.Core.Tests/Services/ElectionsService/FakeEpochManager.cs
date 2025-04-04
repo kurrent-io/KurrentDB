@@ -59,10 +59,10 @@ namespace EventStore.Core.Tests.Services.ElectionsService {
 					return false;
 
 				return epoch.EpochPosition == epochPosition &&
-				       epoch.EpochId == epochId;
+					   epoch.EpochId == epochId;
 			}
 		}
-		
+
 		public void WriteNewEpoch(int epochNumber) {
 			throw new NotImplementedException();
 		}

@@ -55,7 +55,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 				Assert.That(_hash1 != _hash2);
 			}
 		}
-		
+
 		[TestFixture]
 		public class when_upgrading_the_hashes {
 			private Rfc2898PasswordHashAlgorithm _algorithm;

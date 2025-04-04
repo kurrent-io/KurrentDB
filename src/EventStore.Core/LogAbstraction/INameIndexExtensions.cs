@@ -30,7 +30,7 @@ namespace EventStore.Core.LogAbstraction {
 
 			return preExisting;
 		}
-		
+
 		public static bool GetOrReserveEventType<TStreamId>(
 			this INameIndex<TStreamId> eventTypeIndex,
 			IRecordFactory<TStreamId> recordFactory,

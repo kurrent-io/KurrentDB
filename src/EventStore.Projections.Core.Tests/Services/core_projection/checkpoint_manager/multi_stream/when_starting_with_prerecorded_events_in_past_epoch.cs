@@ -1,21 +1,20 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
+using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
-using EventStore.Projections.Core.Services;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager.multi_stream {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_starting_with_prerecorded_events_in_past_epoch<TLogFormat, TStreamId> : TestFixtureWithMultiStreamCheckpointManager<TLogFormat, TStreamId> {
 		private readonly CheckpointTag _tag1 =
-			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"a", 0}, {"b", 0}, {"c", 1}});
+			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "a", 0 }, { "b", 0 }, { "c", 1 } });
 
 		private readonly CheckpointTag _tag2 =
-			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"a", 1}, {"b", 0}, {"c", 1}});
+			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "a", 1 }, { "b", 0 }, { "c", 1 } });
 
 		//private readonly CheckpointTag _tag3 =CheckpointTag.FromStreamPositions(new Dictionary<string, int> {{"a", 1}, {"b", 1}, {"c", 1}});
 
@@ -63,7 +62,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_
 		public void sends_correct_checkpoint_loaded_message() {
 			Assert.AreEqual(1, _projection._checkpointLoadedMessages.Count);
 			Assert.AreEqual(
-				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"a", 0}, {"b", 0}, {"c", 0}}),
+				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "a", 0 }, { "b", 0 }, { "c", 0 } }),
 				_projection._checkpointLoadedMessages.Single().CheckpointTag);
 			Assert.AreEqual("{}", _projection._checkpointLoadedMessages.Single().CheckpointData);
 		}
@@ -72,7 +71,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_
 		public void sends_correct_prerecorded_events_loaded_message() {
 			Assert.AreEqual(1, _projection._prerecordedEventsLoadedMessages.Count);
 			Assert.AreEqual(
-				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"a", 1}, {"b", 0}, {"c", 1}}),
+				CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "a", 1 }, { "b", 0 }, { "c", 1 } }),
 				_projection._prerecordedEventsLoadedMessages.Single().CheckpointTag);
 		}
 

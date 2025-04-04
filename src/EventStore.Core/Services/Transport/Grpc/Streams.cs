@@ -26,8 +26,9 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			IExpiryStrategy expiryStrategy,
 			GrpcTrackers trackers,
 			IAuthorizationProvider provider) {
-	
-			if (publisher == null) throw new ArgumentNullException(nameof(publisher));
+
+			if (publisher == null)
+				throw new ArgumentNullException(nameof(publisher));
 			_publisher = publisher;
 			_readIndex = readIndex;
 			_maxAppendSize = maxAppendSize;

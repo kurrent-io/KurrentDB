@@ -35,7 +35,7 @@ namespace EventStore.Core.Tests.Services.Storage.Chaser {
 			Assert.True(Writer.Write(record, out _logPosition));
 			Writer.Flush();
 
-			IndexCommitter.AddPendingPrepare(new[]{ record},_logPosition);
+			IndexCommitter.AddPendingPrepare(new[] { record }, _logPosition);
 			var record2 = new CommitLogRecord(
 				logPosition: _logPosition,
 				correlationId: _transactionId,

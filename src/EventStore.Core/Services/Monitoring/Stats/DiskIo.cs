@@ -58,7 +58,7 @@ namespace EventStore.Core.Services.Monitoring.Stats {
 		public static DiskIo ParseOnUnix(string procIoStr, Serilog.ILogger log) {
 			ulong readBytes, writtenBytes, readOps, writeOps;
 			try {
-				var dict = procIoStr.Split(new[] {Environment.NewLine}, StringSplitOptions.RemoveEmptyEntries)
+				var dict = procIoStr.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
 					.Select(x => x.Split(':'))
 					.ToDictionary(s => s[0].Trim(), s => s[1].Trim());
 				readBytes = ulong.Parse(dict["read_bytes"]);

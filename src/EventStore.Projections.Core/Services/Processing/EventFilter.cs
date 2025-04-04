@@ -24,12 +24,13 @@ namespace EventStore.Projections.Core.Services.Processing {
 		public bool Passes(
 			bool resolvedFromLinkTo, string eventStreamId, string eventName, bool isStreamDeletedEvent = false) {
 			return (PassesSource(resolvedFromLinkTo, eventStreamId, eventName))
-			       && ((_allEvents || _events != null && _events.Contains(eventName))
-			           && (!isStreamDeletedEvent || _includeDeletedStreamEvents));
+				   && ((_allEvents || _events != null && _events.Contains(eventName))
+					   && (!isStreamDeletedEvent || _includeDeletedStreamEvents));
 		}
 
 		public bool PassesValidation(bool isJson, string data) {
-			if (!isJson) return true;
+			if (!isJson)
+				return true;
 			if (data is null) {
 				return false;
 			}

@@ -1,15 +1,10 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.ClientAPI.Exceptions;
 using EventStore.Common.Utils;
-using EventStore.Core.Data;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
-using StreamMetadata = EventStore.ClientAPI.StreamMetadata;
-using Newtonsoft.Json.Linq;
 
 namespace EventStore.Core.Tests.ClientAPI {
 	[Category("ClientAPI"), Category("LongRunning")]

@@ -2,11 +2,11 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Index;
 using EventStore.Core.Util;
 using NUnit.Framework;
-using EventStore.Common.Utils;
 
 namespace EventStore.Core.Tests.Index.IndexV1 {
 	[TestFixture(PTableVersions.IndexV1)]

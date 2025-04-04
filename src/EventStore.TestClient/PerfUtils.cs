@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 using ILogger = Serilog.ILogger;
 #pragma warning disable 1591

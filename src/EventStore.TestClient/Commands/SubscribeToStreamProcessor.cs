@@ -34,11 +34,11 @@ namespace EventStore.TestClient.Commands {
 						case TcpCommand.StreamEventAppeared: {
 							var dto = pkg.Data.Deserialize<StreamEventAppeared>();
 							context.Log.Information("NEW EVENT:\n\n"
-							                 + "\tEventStreamId: {stream}\n"
-							                 + "\tEventNumber:   {eventNumber}\n"
-							                 + "\tEventType:     {eventType}\n"
-							                 + "\tData:          {data}\n"
-							                 + "\tMetadata:      {metadata}\n",
+											 + "\tEventStreamId: {stream}\n"
+											 + "\tEventNumber:   {eventNumber}\n"
+											 + "\tEventType:     {eventType}\n"
+											 + "\tData:          {data}\n"
+											 + "\tMetadata:      {metadata}\n",
 								dto.Event.Event.EventStreamId,
 								dto.Event.Event.EventNumber,
 								dto.Event.Event.EventType,

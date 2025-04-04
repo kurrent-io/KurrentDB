@@ -70,7 +70,7 @@ namespace EventStore.TestClient.Commands.RunTestScenarios {
 			var sumCheckForBankAccounts = CreateSumCheckForBankAccounts("sumCheckForBankAccounts", "1");
 			var sumCheckForBankAccounts2 = CreateSumCheckForBankAccounts("sumCheckForBankAccounts", "2");
 
-			var projections = new[] {sumCheckForBankAccounts, sumCheckForBankAccounts2};
+			var projections = new[] { sumCheckForBankAccounts, sumCheckForBankAccounts2 };
 
 			var writeTask = WriteData();
 
@@ -122,7 +122,7 @@ namespace EventStore.TestClient.Commands.RunTestScenarios {
 			for (int i = 3; i < 11; ++i) {
 				var newSumCheckForBankAccounts = CreateSumCheckForBankAccounts("sumCheckForBankAccounts", i.ToString());
 				Thread.Sleep(200);
-				failed = CheckIsFaulted(new[] {newSumCheckForBankAccounts}, out failReason);
+				failed = CheckIsFaulted(new[] { newSumCheckForBankAccounts }, out failReason);
 
 				if (failed)
 					break;
@@ -167,7 +167,7 @@ namespace EventStore.TestClient.Commands.RunTestScenarios {
 			var w2 = Write(WriteMode.Bucket, slices[1], EventsPerStream, CreateBankEvent);
 			var w3 = Write(WriteMode.Transactional, slices[2], EventsPerStream, CreateBankEvent);
 
-			var task = Task.Factory.ContinueWhenAll(new[] {w1, w2, w3}, Task.WaitAll);
+			var task = Task.Factory.ContinueWhenAll(new[] { w1, w2, w3 }, Task.WaitAll);
 			return task.ContinueWith(x => Log.Information("Data written for iteration {iteration}.", GetIterationCode()));
 		}
 

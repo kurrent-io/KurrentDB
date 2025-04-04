@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Threading;
-using EventStore.Common.Utils;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.TransactionLog.Checkpoint;
 
 namespace EventStore.Core.Bus {
@@ -64,7 +60,7 @@ namespace EventStore.Core.Bus {
 			var successes = 0;
 			do {
 				if ((waitForCheckpoints && AreCheckpointsDifferent()) ||
-				    (waitForNonEmptyTf && _writerCheckpoint.Read() == 0)) {
+					(waitForNonEmptyTf && _writerCheckpoint.Read() == 0)) {
 					Console.WriteLine("Waiting for IDLE state on checkpoints...");
 					counter++;
 					if (counter > 150 * multiplier)
@@ -77,7 +73,7 @@ namespace EventStore.Core.Bus {
 		}
 
 		private bool AreCheckpointsDifferent() {
-			return _writerCheckpoint!=null && _chaserCheckpoint!=null && _writerCheckpoint.ReadNonFlushed() != _chaserCheckpoint.Read();
+			return _writerCheckpoint != null && _chaserCheckpoint != null && _writerCheckpoint.ReadNonFlushed() != _chaserCheckpoint.Read();
 		}
 
 		public void InitializeCheckpoints(

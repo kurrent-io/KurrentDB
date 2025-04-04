@@ -27,7 +27,7 @@ namespace EventStore.Core.Tests.Services.Storage.Chaser {
 				eventStreamId: streamId,
 				expectedVersion: 1234,
 				timeStamp: new DateTime(2012, 12, 21),
-				flags:   PrepareFlags.IsCommitted | PrepareFlags.TransactionEnd,
+				flags: PrepareFlags.IsCommitted | PrepareFlags.TransactionEnd,
 				eventType: eventTypeId,
 				data: new byte[] { 1, 2, 3, 4, 5 },
 				metadata: new byte[] { 7, 17 });

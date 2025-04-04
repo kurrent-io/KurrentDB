@@ -36,8 +36,10 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public void CacheAndLockPartitionState(string partition, PartitionState data, CheckpointTag at) {
-			if (partition == null) throw new ArgumentNullException("partition");
-			if (data == null) throw new ArgumentNullException("data");
+			if (partition == null)
+				throw new ArgumentNullException("partition");
+			if (data == null)
+				throw new ArgumentNullException("data");
 			EnsureCanLockPartitionAt(partition, at);
 
 			_partitionStates[partition] = Tuple.Create(data, at);
@@ -49,8 +51,10 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public void CachePartitionState(string partition, PartitionState data) {
-			if (partition == null) throw new ArgumentNullException("partition");
-			if (data == null) throw new ArgumentNullException("data");
+			if (partition == null)
+				throw new ArgumentNullException("partition");
+			if (data == null)
+				throw new ArgumentNullException("data");
 
 			_partitionStates[partition] = Tuple.Create(data, _zeroPosition);
 			_cachedItemCount = _partitionStates.Count;
@@ -60,7 +64,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public PartitionState TryGetAndLockPartitionState(string partition, CheckpointTag lockAt) {
-			if (partition == null) throw new ArgumentNullException("partition");
+			if (partition == null)
+				throw new ArgumentNullException("partition");
 			Tuple<PartitionState, CheckpointTag> stateData;
 			if (!_partitionStates.TryGetValue(partition, out stateData))
 				return null;
@@ -81,7 +86,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public PartitionState TryGetPartitionState(string partition) {
-			if (partition == null) throw new ArgumentNullException("partition");
+			if (partition == null)
+				throw new ArgumentNullException("partition");
 			Tuple<PartitionState, CheckpointTag> stateData;
 			if (!_partitionStates.TryGetValue(partition, out stateData))
 				return null;
@@ -110,7 +116,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		private void CleanUp(bool removeAllUnlocked = false) {
 			while (removeAllUnlocked || _cacheOrder.Count > _maxCachedPartitions * 5
-			                         || CachedItemCount > _maxCachedPartitions) {
+									 || CachedItemCount > _maxCachedPartitions) {
 				if (_cacheOrder.Count == 0)
 					break;
 				Tuple<CheckpointTag, string> top = _cacheOrder.FirstOrDefault();
@@ -129,7 +135,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		private void EnsureCanLockPartitionAt(string partition, CheckpointTag at) {
-			if (partition == null) throw new ArgumentNullException("partition");
+			if (partition == null)
+				throw new ArgumentNullException("partition");
 			if (at == null && partition != "")
 				throw new InvalidOperationException("Only the root partition can be locked forever");
 			if (partition == "" && at != null)

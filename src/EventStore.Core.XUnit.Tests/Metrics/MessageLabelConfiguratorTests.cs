@@ -3,7 +3,6 @@ using System.Reflection;
 using EventStore.Common.Configuration;
 using EventStore.Core.Messaging;
 using EventStore.Core.Metrics;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.ObjectModel;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;

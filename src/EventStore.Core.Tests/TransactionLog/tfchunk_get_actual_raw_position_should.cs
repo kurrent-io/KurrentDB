@@ -44,7 +44,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 
 				var result = chunk.TryAppend(CreateRecord(chunk.ChunkHeader.GetGlobalLogPosition(logicalPos), _random.Next(10, 100)));
 				Assert.True(result.Success);
-				actualPos = (int) result.NewPosition;
+				actualPos = (int)result.NewPosition;
 			}
 
 			chunk.Flush();
@@ -68,7 +68,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 				out var posMap);
 
 			Assert.AreEqual(numEvents, logPositions.Count);
-			foreach(var logPos in logPositions)
+			foreach (var logPos in logPositions)
 				Assert.AreEqual(ChunkHeader.Size + logPos, chunk.GetActualRawPosition(logPos));
 			Assert.IsNull(posMap);
 		}
@@ -86,7 +86,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 				out var posMap);
 
 			Assert.AreEqual(numEvents, logPositions.Count);
-			foreach(var logPos in logPositions)
+			foreach (var logPos in logPositions)
 				Assert.AreEqual(ChunkHeader.Size + logPos, chunk.GetActualRawPosition(logPos));
 			Assert.IsNull(posMap);
 		}

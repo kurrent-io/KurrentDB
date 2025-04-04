@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Projections.Core.Messages;
-using EventStore.Core.Bus;
 
 namespace EventStore.Projections.Core.Services.Processing {
 	public class HeadingEventReader {
@@ -120,7 +120,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		private void ValidateEventOrder(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {
 			if (_lastEventPosition > message.DeleteLinkOrEventPosition.Value
-			    || _lastDeletePosition >= message.DeleteLinkOrEventPosition.Value)
+				|| _lastDeletePosition >= message.DeleteLinkOrEventPosition.Value)
 				throw new InvalidOperationException(
 					string.Format(
 						"Invalid partition deleted event order.  Last: '{0}' Received: '{1}'  LastDelete: '{2}'",

@@ -40,7 +40,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 				flags: PrepareFlags.SingleWrite,
 				eventType: eventTypeId,
 				data: new byte[123],
-				metadata: new byte[] {0x13, 0x37});
+				metadata: new byte[] { 0x13, 0x37 });
 		}
 
 		private static ICheckpoint OpenCheckpoint(string path) =>

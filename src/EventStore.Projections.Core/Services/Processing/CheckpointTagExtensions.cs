@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using EventStore.Core.Data;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -14,7 +13,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		public CheckpointTag AdjustBy(PositionTagger tagger, ProjectionVersion version) {
 			if (SystemVersion == ProjectionsSubsystem.VERSION && Version.Version == version.Version
-			                                                  && Version.ProjectionId == version.ProjectionId)
+															  && Version.ProjectionId == version.ProjectionId)
 				return Tag;
 
 			return tagger.AdjustTag(Tag);
@@ -46,8 +45,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 		public static CheckpointTagVersion ParseCheckpointTagVersionExtraJson(this byte[] source,
 			ProjectionVersion current) {
 			if (source == null || source.Length == 0)
-				return new CheckpointTagVersion
-					{Version = new ProjectionVersion(current.ProjectionId, 0, 0), Tag = null};
+				return new CheckpointTagVersion { Version = new ProjectionVersion(current.ProjectionId, 0, 0), Tag = null };
 			var reader = new JsonTextReader(new StreamReader(new MemoryStream(source)));
 			return CheckpointTag.FromJson(reader, current);
 		}
@@ -63,8 +61,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 		public static CheckpointTagVersion ParseCheckpointTagVersionExtraJson(this string source,
 			ProjectionVersion current) {
 			if (string.IsNullOrEmpty(source))
-				return new CheckpointTagVersion
-					{Version = new ProjectionVersion(current.ProjectionId, 0, 0), Tag = null};
+				return new CheckpointTagVersion { Version = new ProjectionVersion(current.ProjectionId, 0, 0), Tag = null };
 			var reader = new JsonTextReader(new StringReader(source));
 			return CheckpointTag.FromJson(reader, current);
 		}
@@ -81,17 +78,21 @@ namespace EventStore.Projections.Core.Services.Processing {
 				if (string.IsNullOrEmpty(source))
 					return null;
 				var reader = new JsonTextReader(new StringReader(source));
-				if (!reader.Read()) return null;
-				if (reader.TokenType != JsonToken.StartObject) return null;
+				if (!reader.Read())
+					return null;
+				if (reader.TokenType != JsonToken.StartObject)
+					return null;
 				while (true) {
 					CheckpointTag.Check(reader.Read(), reader);
 					if (reader.TokenType == JsonToken.EndObject)
 						break;
-					if (reader.TokenType != JsonToken.PropertyName) return null;
+					if (reader.TokenType != JsonToken.PropertyName)
+						return null;
 					var name = (string)reader.Value;
 					switch (name) {
 						default:
-							if (!reader.Read()) return null;
+							if (!reader.Read())
+								return null;
 							var jToken = JToken.ReadFrom(reader);
 							if (name == "$correlationId")
 								return jToken.ToString();

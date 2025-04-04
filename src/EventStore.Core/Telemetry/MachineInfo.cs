@@ -1,10 +1,9 @@
 using System;
-using System.Diagnostics;
 using EventStore.Common.Utils;
 using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Native.Monitoring;
 
-namespace EventStore.Core.Telemetry; 
+namespace EventStore.Core.Telemetry;
 
 public class MachineInfo {
 	public int ProcessorCount { get; set; }
@@ -23,7 +22,7 @@ public class MachineInfo {
 	private static long GetTotalMemory() {
 		if (OS.IsUnix) {
 			var stats = new HostStat.HostStat();
-			return (long) stats.GetTotalMemory();
+			return (long)stats.GetTotalMemory();
 		}
 
 		if (OS.OsFlavor == OsFlavor.Windows) {

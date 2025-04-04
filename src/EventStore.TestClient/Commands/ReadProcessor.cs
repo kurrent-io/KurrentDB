@@ -56,12 +56,12 @@ namespace EventStore.TestClient.Commands {
 
 					var dto = pkg.Data.Deserialize<ReadEventCompleted>();
 					context.Log.Information("READ events from <{stream}>:\n\n"
-					                 + "\tEventStreamId: {stream}\n"
-					                 + "\tEventNumber:   {eventNumber}\n"
-					                 + "\tReadResult:    {readResult}\n"
-					                 + "\tEventType:     {eventType}\n"
-					                 + "\tData:          {data}\n"
-					                 + "\tMetadata:      {metadata}\n",
+									 + "\tEventStreamId: {stream}\n"
+									 + "\tEventNumber:   {eventNumber}\n"
+									 + "\tReadResult:    {readResult}\n"
+									 + "\tEventType:     {eventType}\n"
+									 + "\tData:          {data}\n"
+									 + "\tMetadata:      {metadata}\n",
 						eventStreamId,
 						eventStreamId,
 						dto.Event.Event.EventNumber,

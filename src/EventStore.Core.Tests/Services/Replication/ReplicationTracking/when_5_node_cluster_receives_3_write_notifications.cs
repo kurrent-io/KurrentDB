@@ -28,8 +28,8 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 		}
 		[Test]
 		public void replication_checkpoint_should_advance() {
-			Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());		
-			Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());		
-		}	
+			Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());
+			Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());
+		}
 	}
 }

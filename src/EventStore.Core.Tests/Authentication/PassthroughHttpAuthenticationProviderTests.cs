@@ -21,8 +21,8 @@ namespace EventStore.Core.Tests.Authentication {
 			Assert.DoesNotThrow(() => new PassthroughHttpAuthenticationProvider(provider));
 
 		public static IEnumerable<object[]> TestCases() {
-			yield return new object[] {new DelegatedAuthenticationProvider(new PassthroughAuthenticationProvider())};
-			yield return new object[] {new PassthroughAuthenticationProvider()};
+			yield return new object[] { new DelegatedAuthenticationProvider(new PassthroughAuthenticationProvider()) };
+			yield return new object[] { new PassthroughAuthenticationProvider() };
 		}
 
 		private class TestAuthenticationProvider : IAuthenticationProvider {

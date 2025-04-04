@@ -85,8 +85,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			}
 
 			var streamId = string.Empty;
-			switch (request.Options.ListOptionCase)
-			{
+			switch (request.Options.ListOptionCase) {
 				case ListReq.Types.Options.ListOptionOneofCase.ListAllSubscriptions:
 					_publisher.Publish(new MonitoringMessage.GetAllPersistentSubscriptionStats(
 						new CallbackEnvelope(HandleListSubscriptionsCompleted)));
@@ -161,8 +160,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 					ConnectionName = conn.ConnectionName
 				};
 				connInfo.ObservedMeasurements.AddRange(
-					conn.ObservedMeasurements.Select(x => new SubscriptionInfo.Types.Measurement
-						{Key = x.Key, Value = x.Value}));
+					conn.ObservedMeasurements.Select(x => new SubscriptionInfo.Types.Measurement { Key = x.Key, Value = x.Value }));
 				connectionInfo.Add(connInfo);
 			}
 

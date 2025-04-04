@@ -1,14 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using EventStore.Common.Utils;
-using EventStore.Core.Caching;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog;
-using Serilog;
-using Serilog.Events;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex {
 	public interface IIndexBackend {

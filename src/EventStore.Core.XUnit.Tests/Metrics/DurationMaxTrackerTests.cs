@@ -152,7 +152,7 @@ public class DurationMaxTrackerTests : IDisposable {
 
 		_clock.SecondsSinceEpoch = 530;
 		_sut.RecordNow(start5); // record a 5s duration
-		// original measurement has become stale
+								// original measurement has become stale
 		AssertMeasurements(9);
 	}
 

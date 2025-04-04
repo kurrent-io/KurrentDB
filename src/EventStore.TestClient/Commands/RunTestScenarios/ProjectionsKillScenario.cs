@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -60,8 +59,8 @@ namespace EventStore.TestClient.Commands.RunTestScenarios {
 				}
 
 				success = CheckProjectionState(countItem, "count", x => x == expectedAllEventsCount)
-				          && CheckProjectionState(sumCheckForBankAccount0, "success",
-					          x => x == lastExpectedEventVersion);
+						  && CheckProjectionState(sumCheckForBankAccount0, "success",
+							  x => x == lastExpectedEventVersion);
 
 				if (success)
 					break;
@@ -96,7 +95,7 @@ namespace EventStore.TestClient.Commands.RunTestScenarios {
 			var w2 = Write(WriteMode.Bucket, slices[1], EventsPerStream, CreateBankEvent);
 			var w3 = Write(WriteMode.Transactional, slices[2], EventsPerStream, CreateBankEvent);
 
-			var task = Task.Factory.ContinueWhenAll(new[] {w1, w2, w3}, Task.WaitAll);
+			var task = Task.Factory.ContinueWhenAll(new[] { w1, w2, w3 }, Task.WaitAll);
 			return task.ContinueWith(x => Log.Information("Data written for iteration {iteration}.", GetIterationCode()));
 		}
 

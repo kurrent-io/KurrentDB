@@ -1,6 +1,6 @@
-﻿using System.Net.Http;
+﻿using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Linq;
 
 namespace EventStore.Transport.Http {
 	public class HttpResponse {

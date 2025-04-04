@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
@@ -111,9 +110,9 @@ namespace EventStore.Projections.Core.Services.Processing {
 			var distributionPointCorrelationId = Guid.NewGuid();
 			var eventReader = projectionSubscription.CreatePausedEventReader(
 				_publisher, _ioDispatcher, distributionPointCorrelationId);
-//            _logger.Trace(
-//                "The '{subscriptionId}' projection subscribed to the '{distributionPointCorrelationId}' distribution point", subscriptionId,
-//                distributionPointCorrelationId);
+			//            _logger.Trace(
+			//                "The '{subscriptionId}' projection subscribed to the '{distributionPointCorrelationId}' distribution point", subscriptionId,
+			//                distributionPointCorrelationId);
 			_eventReaders.Add(distributionPointCorrelationId, eventReader);
 			_subscriptionEventReaders.Add(subscriptionId, distributionPointCorrelationId);
 			_eventReaderSubscriptions.Add(distributionPointCorrelationId, subscriptionId);
@@ -194,8 +193,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 				return; // unsubscribed
 			_subscriptions[projectionId].Handle(message);
 
-//            _pausedSubscriptions.Add(projectionId); // it is actually disposed -- workaround
-//            Handle(new ReaderSubscriptionManagement.Unsubscribe(projectionId));
+			//            _pausedSubscriptions.Add(projectionId); // it is actually disposed -- workaround
+			//            Handle(new ReaderSubscriptionManagement.Unsubscribe(projectionId));
 		}
 
 		public void Handle(ReaderSubscriptionMessage.EventReaderPartitionEof message) {
@@ -347,7 +346,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 			_publisher.Publish(new ProjectionCoreServiceMessage.SubComponentStarted(
 				SubComponentName, message.InstanceCorrelationId));
 			_reportProgressId = Guid.NewGuid();
-			 _publisher.Publish(TimerMessage.Schedule.Create(TimeSpan.FromMilliseconds(500), _publishEnvelope, new ReaderSubscriptionMessage.ReportProgress(_reportProgressId)));
+			_publisher.Publish(TimerMessage.Schedule.Create(TimeSpan.FromMilliseconds(500), _publishEnvelope, new ReaderSubscriptionMessage.ReportProgress(_reportProgressId)));
 		}
 
 		public void Handle(ReaderCoreServiceMessage.StopReader message) {

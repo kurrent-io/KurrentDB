@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using EventStore.Common.Exceptions;
-using EventStore.Core;
 using EventStore.Core.Services;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.Util;
@@ -14,11 +13,11 @@ public static class ClusterVNodeOptionsValidator {
 		if (options == null) {
 			throw new ArgumentNullException(nameof(options));
 		}
-		
+
 		if (options.Interface.NodeIp == null) {
 			throw new ArgumentNullException(nameof(options.Interface.NodeIp));
 		}
-		
+
 		if (options.Interface.ReplicationIp == null) {
 			throw new ArgumentNullException(nameof(options.Interface.ReplicationIp));
 		}
@@ -93,7 +92,7 @@ public static class ClusterVNodeOptionsValidator {
 
 	public static bool ValdiateForStartup(ClusterVNodeOptions options) {
 		if (!options.Cluster.DiscoverViaDns && options.Cluster.GossipSeed.Length == 0 &&
-		    options.Cluster.ClusterSize == 1) {
+			options.Cluster.ClusterSize == 1) {
 			Log.Information(
 				"DNS discovery is disabled, but no gossip seed endpoints have been specified. Since "
 				+ "the cluster size is set to 1, this may be intentional. Gossip seeds can be specified "

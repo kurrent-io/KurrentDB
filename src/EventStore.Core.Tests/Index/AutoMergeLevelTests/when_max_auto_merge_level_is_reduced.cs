@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using EventStore.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.AutoMergeLevelTests {

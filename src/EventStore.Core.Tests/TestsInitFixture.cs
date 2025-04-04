@@ -32,28 +32,28 @@ namespace EventStore.Core.Tests {
 
 		[OneTimeTearDown]
 		public void TearDown() {
-			var runCount = Math.Max(1, MiniNode<LogFormat.V2,string>.RunCount);
+			var runCount = Math.Max(1, MiniNode<LogFormat.V2, string>.RunCount);
 			var msg = string.Format("Total running time of MiniNode (Log V2): {0} (mean {1})\n" +
 									"Total starting time of MiniNode (Log V2): {2} (mean {3})\n" +
 									"Total stopping time of MiniNode (Log V2): {4} (mean {5})\n" +
 									"Total run count (Log V2): {6}",
-				MiniNode<LogFormat.V2,string>.RunningTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V2,string>.RunningTime.Elapsed.Ticks / runCount),
-				MiniNode<LogFormat.V2,string>.StartingTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V2,string>.StartingTime.Elapsed.Ticks / runCount),
-				MiniNode<LogFormat.V2,string>.StoppingTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V2,string>.StoppingTime.Elapsed.Ticks / runCount),
-				MiniNode<LogFormat.V2,string>.RunCount);
+				MiniNode<LogFormat.V2, string>.RunningTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V2, string>.RunningTime.Elapsed.Ticks / runCount),
+				MiniNode<LogFormat.V2, string>.StartingTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V2, string>.StartingTime.Elapsed.Ticks / runCount),
+				MiniNode<LogFormat.V2, string>.StoppingTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V2, string>.StoppingTime.Elapsed.Ticks / runCount),
+				MiniNode<LogFormat.V2, string>.RunCount);
 
 			Console.WriteLine(msg);
 			Console.WriteLine();
 
-			runCount = Math.Max(1, MiniNode<LogFormat.V3,long>.RunCount);
+			runCount = Math.Max(1, MiniNode<LogFormat.V3, long>.RunCount);
 			msg = string.Format("Total running time of MiniNode (Log V3): {0} (mean {1})\n" +
-			                        "Total starting time of MiniNode (Log V3): {2} (mean {3})\n" +
-			                        "Total stopping time of MiniNode (Log V3): {4} (mean {5})\n" +
-			                        "Total run count (Log V3): {6}",
-				MiniNode<LogFormat.V3,long>.RunningTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V3,long>.RunningTime.Elapsed.Ticks / runCount),
-				MiniNode<LogFormat.V3,long>.StartingTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V3,long>.StartingTime.Elapsed.Ticks / runCount),
-				MiniNode<LogFormat.V3,long>.StoppingTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V3,long>.StoppingTime.Elapsed.Ticks / runCount),
-				MiniNode<LogFormat.V3,long>.RunCount);
+									"Total starting time of MiniNode (Log V3): {2} (mean {3})\n" +
+									"Total stopping time of MiniNode (Log V3): {4} (mean {5})\n" +
+									"Total run count (Log V3): {6}",
+				MiniNode<LogFormat.V3, long>.RunningTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V3, long>.RunningTime.Elapsed.Ticks / runCount),
+				MiniNode<LogFormat.V3, long>.StartingTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V3, long>.StartingTime.Elapsed.Ticks / runCount),
+				MiniNode<LogFormat.V3, long>.StoppingTime.Elapsed, TimeSpan.FromTicks(MiniNode<LogFormat.V3, long>.StoppingTime.Elapsed.Ticks / runCount),
+				MiniNode<LogFormat.V3, long>.RunCount);
 
 			Console.WriteLine(msg);
 		}

@@ -1,5 +1,4 @@
-﻿namespace EventStore.Core.Services
-{
+﻿namespace EventStore.Core.Services {
 	public static class SystemUsers {
 		public const string Admin = "admin";
 		public const string Operations = "ops";

@@ -5,8 +5,7 @@ using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	[TestFixture]
 	public class when_running_counting_js_projection : TestFixtureWithInterpretedProjection {
 		protected override void Given() {
@@ -32,10 +31,10 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 				"metadata",
 				@"{""a"":""b""}", out state, out emittedEvents);
 
-			
+
 			Assert.Null(emittedEvents);
 			Assert.NotNull(state);
-			
+
 			var stateJson = JsonDocument.Parse(state);
 			Assert.True(stateJson.RootElement.TryGetProperty("count", out var stateCount));
 			Assert.AreEqual(JsonValueKind.Number, stateCount.ValueKind);

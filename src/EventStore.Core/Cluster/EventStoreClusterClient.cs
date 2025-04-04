@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
-using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using EventStore.Common.Utils;
@@ -12,11 +11,11 @@ using Grpc.Net.Client;
 using Serilog.Extensions.Logging;
 
 namespace EventStore.Core.Cluster {
-	
+
 	public partial class EventStoreClusterClient : IDisposable {
 		private readonly EventStore.Cluster.Gossip.GossipClient _gossipClient;
 		private readonly EventStore.Cluster.Elections.ElectionsClient _electionsClient;
-		
+
 		private readonly GrpcChannel _channel;
 		private readonly IPublisher _bus;
 		private readonly string _clusterDns;
@@ -33,7 +32,7 @@ namespace EventStore.Core.Cluster {
 
 			HttpMessageHandler httpMessageHandler = null;
 			_clusterDns = clusterDns;
-			if (uriScheme == Uri.UriSchemeHttps){
+			if (uriScheme == Uri.UriSchemeHttps) {
 				var socketsHttpHandler = new SocketsHttpHandler {
 					SslOptions = {
 						CertificateRevocationCheckMode = X509RevocationMode.NoCheck,
@@ -74,7 +73,8 @@ namespace EventStore.Core.Cluster {
 		}
 
 		public void Dispose() {
-			if (Disposed) return;
+			if (Disposed)
+				return;
 			_channel.Dispose();
 			Disposed = true;
 		}

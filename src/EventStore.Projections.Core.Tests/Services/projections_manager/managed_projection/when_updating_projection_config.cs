@@ -12,8 +12,8 @@ using EventStore.Projections.Core.Common;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Management;
-using EventStore.Projections.Core.Tests.Services.core_projection;
 using EventStore.Projections.Core.Services.Processing;
+using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager.managed_projection {
@@ -237,7 +237,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.managed
 
 		[Test]
 		public void persisted_state_should_have_null_projection_execution_timeout() {
-		Assert.IsNotNull(_persistedStateWrite);
+			Assert.IsNotNull(_persistedStateWrite);
 			var actualState = _persistedStateWrite.Data.ParseJson<ManagedProjection.PersistedState>();
 			Assert.IsNull(actualState.ProjectionExecutionTimeout, "ProjectionExecutionTimeout");
 		}

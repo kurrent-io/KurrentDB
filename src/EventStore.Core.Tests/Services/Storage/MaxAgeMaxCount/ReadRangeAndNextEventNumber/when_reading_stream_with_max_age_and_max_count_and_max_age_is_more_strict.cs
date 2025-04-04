@@ -243,7 +243,8 @@ namespace EventStore.Core.Tests.Services.Storage.MaxAgeMaxCount.ReadRangeAndNext
 				}
 
 				from = backwards.NextEventNumber;
-				if (backwards.IsEndOfStream) break;
+				if (backwards.IsEndOfStream)
+					break;
 			}
 
 			from = 0;
@@ -254,7 +255,8 @@ namespace EventStore.Core.Tests.Services.Storage.MaxAgeMaxCount.ReadRangeAndNext
 				}
 
 				from = forwards.NextEventNumber;
-				if (forwards.IsEndOfStream) break;
+				if (forwards.IsEndOfStream)
+					break;
 			}
 
 			Assert.AreEqual(forwardsCollected.Count, backwardsCollected.Count);

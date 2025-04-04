@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace EventStore.Core.TransactionLog.Scavenging {
+﻿namespace EventStore.Core.TransactionLog.Scavenging {
 	// The checkpoint stores which scavengepoint we are processing and where we are up to with it.
 
 	public abstract class ScavengeCheckpoint {

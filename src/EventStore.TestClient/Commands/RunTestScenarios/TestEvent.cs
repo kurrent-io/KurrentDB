@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using EventStore.ClientAPI;
 using EventStore.Common.Utils;
 

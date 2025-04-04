@@ -6,7 +6,6 @@ using System.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
@@ -16,7 +15,7 @@ using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Helpers {
-	public abstract class TestFixtureWithExistingEvents<TLogFormat,TStreamId> : TestFixtureWithReadWriteDispatchers,
+	public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : TestFixtureWithReadWriteDispatchers,
 		IHandle<ClientMessage.ReadStreamEventsBackward>,
 		IHandle<ClientMessage.ReadStreamEventsForward>,
 		IHandle<ClientMessage.ReadAllEventsForward>,
@@ -44,7 +43,7 @@ namespace EventStore.Core.Tests.Helpers {
 				}
 			}
 
-			public void Commit(ClientMessage.TransactionCommit message, TestFixtureWithExistingEvents<TLogFormat,TStreamId> fixture) {
+			public void Commit(ClientMessage.TransactionCommit message, TestFixtureWithExistingEvents<TLogFormat, TStreamId> fixture) {
 				var commitPosition = fixture._fakePosition;
 				fixture._fakePosition += 50;
 				fixture.ProcessWrite(
@@ -85,7 +84,7 @@ namespace EventStore.Core.Tests.Helpers {
 
 		protected readonly HashSet<string> _readsToTimeOutOnce = new HashSet<string>();
 
-		private static readonly char[] _linkToSeparator = new[] {'@'};
+		private static readonly char[] _linkToSeparator = new[] { '@' };
 
 		protected TFPos ExistingStreamMetadata(string streamId, string metadata) {
 			return ExistingEvent("$$" + streamId, SystemEventTypes.StreamMetadata, "", metadata, isJson: true);
@@ -95,7 +94,7 @@ namespace EventStore.Core.Tests.Helpers {
 			bool isJson = false) {
 			return WriteEvent(streamName, eventType, eventMetadata, eventData, isJson).Item2;
 		}
-		
+
 		protected (EventRecord, TFPos) WriteEvent(string streamName, string eventType, string eventMetadata, string eventData,
 			bool isJson = false) {
 			List<EventRecord> list;
@@ -258,7 +257,8 @@ namespace EventStore.Core.Tests.Helpers {
 				return;
 			}
 
-			if (_readsTimeOut) return;
+			if (_readsTimeOut)
+				return;
 			if (_readsToTimeOutOnce.Contains(message.EventStreamId)) {
 				Console.WriteLine("[TEST] Timing out read backwards for {0}", message.EventStreamId);
 				_readsToTimeOutOnce.Remove(message.EventStreamId);
@@ -278,7 +278,7 @@ namespace EventStore.Core.Tests.Helpers {
 						EventNumber.DeletedStream, true, _fakePosition));
 			} else if (_streams.TryGetValue(message.EventStreamId, out list) || _noOtherStreams) {
 				if (list != null && list.Count > 0 && (list.Last().EventNumber >= message.FromEventNumber)
-				    || (message.FromEventNumber == -1)) {
+					|| (message.FromEventNumber == -1)) {
 					ResolvedEvent[] records =
 						list.Safe()
 							.Reverse()
@@ -316,7 +316,8 @@ namespace EventStore.Core.Tests.Helpers {
 		}
 
 		public void Handle(ClientMessage.ReadStreamEventsForward message) {
-			if (_readsTimeOut) return;
+			if (_readsTimeOut)
+				return;
 			if (_readsToTimeOutOnce.Contains(message.EventStreamId)) {
 				Console.WriteLine("[TEST] Timing out read forwards for {0}", message.EventStreamId);
 				_readsToTimeOutOnce.Remove(message.EventStreamId);
@@ -349,7 +350,7 @@ namespace EventStore.Core.Tests.Helpers {
 								: lastEventNumber + 1,
 							lastEventNumber: lastEventNumber,
 							isEndOfStream: records.Length == 0 ||
-							               records.Last().OriginalEvent.EventNumber == list.Last().EventNumber,
+										   records.Last().OriginalEvent.EventNumber == list.Last().EventNumber,
 							tfLastCommitPosition: _fakePosition));
 				} else {
 					if (list == null) {
@@ -364,18 +365,18 @@ namespace EventStore.Core.Tests.Helpers {
 					}
 
 					throw new NotImplementedException();
-/*
-                    message.Envelope.ReplyWith(
-                            new ClientMessage.ReadStreamEventsBackwardCompleted(
-                                    message.CorrelationId,
-                                    message.EventStreamId,
-                                    new EventLinkPair[0],
-                                    ReadStreamResult.Success,
-                                    nextEventNumber: -1,
-                                    lastEventNumber: list.Safe().Last().EventNumber,
-                                    isEndOfStream: true,// NOTE AN: don't know how to correctly determine this here
-                                    lastCommitPosition: _lastPosition));
-*/
+					/*
+										message.Envelope.ReplyWith(
+												new ClientMessage.ReadStreamEventsBackwardCompleted(
+														message.CorrelationId,
+														message.EventStreamId,
+														new EventLinkPair[0],
+														ReadStreamResult.Success,
+														nextEventNumber: -1,
+														lastEventNumber: list.Safe().Last().EventNumber,
+														isEndOfStream: true,// NOTE AN: don't know how to correctly determine this here
+														lastCommitPosition: _lastPosition));
+					*/
 				}
 			}
 		}
@@ -444,21 +445,21 @@ namespace EventStore.Core.Tests.Helpers {
 				}
 			}
 
-			var eventRecords = (from ep in events.Zip(positions, (@event, position) => new {@event, position})
-				let e = ep.@event
-				let eventNumber = list.Count
-				//NOTE: ASSUMES STAYS ENUMERABLE
-				let tfPosition = ep.position
-				select
-					new {
-						position = tfPosition,
-						record =
-							new EventRecord(
-								eventNumber, tfPosition, correlationId, e.EventId, tfPosition, 0, streamId,
-								ExpectedVersion.Any, _timeProvider.UtcNow,
-								PrepareFlags.SingleWrite | (e.IsJson ? PrepareFlags.IsJson : PrepareFlags.None),
-								e.EventType, e.Data, e.Metadata)
-					}); //NOTE: DO NOT MAKE ARRAY 
+			var eventRecords = (from ep in events.Zip(positions, (@event, position) => new { @event, position })
+								let e = ep.@event
+								let eventNumber = list.Count
+								//NOTE: ASSUMES STAYS ENUMERABLE
+								let tfPosition = ep.position
+								select
+									new {
+										position = tfPosition,
+										record =
+											new EventRecord(
+												eventNumber, tfPosition, correlationId, e.EventId, tfPosition, 0, streamId,
+												ExpectedVersion.Any, _timeProvider.UtcNow,
+												PrepareFlags.SingleWrite | (e.IsJson ? PrepareFlags.IsJson : PrepareFlags.None),
+												e.EventType, e.Data, e.Metadata)
+									}); //NOTE: DO NOT MAKE ARRAY 
 			foreach (var eventRecord in eventRecords) {
 				list.Add(eventRecord.record);
 				var tfPos = new TFPos(commitPosition ?? eventRecord.position + 50, eventRecord.position);
@@ -510,7 +511,8 @@ namespace EventStore.Core.Tests.Helpers {
 		}
 
 		public void Handle(ClientMessage.ReadAllEventsForward message) {
-			if (_readsTimeOut) return;
+			if (_readsTimeOut)
+				return;
 			if (!_readAllEnabled)
 				return;
 			var from = new TFPos(message.CommitPosition, message.PreparePosition);
@@ -532,9 +534,10 @@ namespace EventStore.Core.Tests.Helpers {
 					prev,
 					_fakePosition));
 		}
-		
+
 		public void Handle(ClientMessage.FilteredReadAllEventsForward message) {
-			if (_readsTimeOut) return;
+			if (_readsTimeOut)
+				return;
 			if (!_readAllEnabled)
 				return;
 			var from = new TFPos(message.CommitPosition, message.PreparePosition);
@@ -555,10 +558,10 @@ namespace EventStore.Core.Tests.Helpers {
 					message.CorrelationId, FilteredReadAllResult.Success, "", events, null, false, message.MaxCount, pos, next,
 					prev, _fakePosition, list.Count < message.MaxCount, -1));
 		}
-		
+
 		public void Handle(ClientMessage.SubscribeToStream msg) {
 			_streams.TryGetValue(msg.EventStreamId, out var list);
-			
+
 			var lastEventNumber = msg.EventStreamId.IsEmptyString()
 				? (long?)null
 				: list.Safe().Any() ? list.Safe().Last().EventNumber : -1;
@@ -566,10 +569,10 @@ namespace EventStore.Core.Tests.Helpers {
 				new ClientMessage.SubscriptionConfirmation(msg.CorrelationId, -1, lastEventNumber);
 			msg.Envelope.ReplyWith(subscribedMessage);
 		}
-		
+
 		public void Handle(ClientMessage.FilteredSubscribeToStream msg) {
 			_streams.TryGetValue(msg.EventStreamId, out var list);
-			
+
 			var lastEventNumber = msg.EventStreamId.IsEmptyString()
 				? (long?)null
 				: list.Safe().Any() ? list.Safe().Last().EventNumber : -1;
@@ -669,7 +672,7 @@ namespace EventStore.Core.Tests.Helpers {
 			Assert.That(_streams.TryGetValue(streamId, out events), message + "The stream does not exist.");
 			var eventsText =
 				events.Skip(events.Count - data.Length)
-					.Select(v => new {Text = Encoding.UTF8.GetString(v.Data.Span), EventType = v.EventType})
+					.Select(v => new { Text = Encoding.UTF8.GetString(v.Data.Span), EventType = v.EventType })
 					.Select(
 						v =>
 							v.EventType == SystemEventTypes.LinkTo
@@ -690,9 +693,9 @@ namespace EventStore.Core.Tests.Helpers {
 			var stream = SystemEventTypes.StreamReferenceEventToStreamId(SystemEventTypes.LinkTo, link);
 			var eventNumber = SystemEventTypes.EventLinkToEventNumber(link);
 			return _streams[stream][(int)eventNumber].EventType + ":"
-			                                                    +
-			                                                    Encoding.UTF8.GetString(
-				                                                    _streams[stream][(int)eventNumber].Data.Span);
+																+
+																Encoding.UTF8.GetString(
+																	_streams[stream][(int)eventNumber].Data.Span);
 		}
 
 		public void AssertStreamContains(string streamId, params string[] data) {

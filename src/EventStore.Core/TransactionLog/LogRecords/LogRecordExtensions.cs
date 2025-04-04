@@ -8,8 +8,8 @@ public static class LogRecordExtensions {
 			LogRecordType.Stream => false, // log v3 stream record
 			LogRecordType.EventType => false, // log v3 event type record
 			LogRecordType.Prepare => rec is IPrepareLogRecord prepare &&
-			                         (!prepare.Flags.HasFlag(PrepareFlags.IsCommitted) || // explicit transaction
-			                         prepare.Flags.HasFlag(PrepareFlags.TransactionEnd)), // last prepare in implicit transaction
+									 (!prepare.Flags.HasFlag(PrepareFlags.IsCommitted) || // explicit transaction
+									 prepare.Flags.HasFlag(PrepareFlags.TransactionEnd)), // last prepare in implicit transaction
 			_ => true
 		};
 	}

@@ -1,7 +1,6 @@
 ﻿using System;
 using EventStore.Core.Data;
 using EventStore.Core.Services;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using NUnit.Framework;
 using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 

@@ -18,14 +18,14 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests {
 		}
 
 		public void Authenticate(AuthenticationRequest authenticationRequest) {
-			authenticationRequest.Authenticated(new ClaimsPrincipal(new ClaimsIdentity(new []{new Claim(ClaimTypes.Name, authenticationRequest.Name), })));
+			authenticationRequest.Authenticated(new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Name, authenticationRequest.Name), })));
 		}
 		public string Name => "test";
 		public IEnumerable<KeyValuePair<string, string>> GetPublicProperties() => null;
 		public void ConfigureEndpoints(IEndpointRouteBuilder endpointRouteBuilder) {
 			//nothing to do
 		}
-		public IReadOnlyList<string> GetSupportedAuthenticationSchemes() => new []{
+		public IReadOnlyList<string> GetSupportedAuthenticationSchemes() => new[]{
 			"Basic"
 		};
 	}

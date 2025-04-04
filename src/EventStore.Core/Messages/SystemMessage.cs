@@ -1,6 +1,6 @@
 ﻿using System;
-using EventStore.Core.Cluster;
 using EventStore.Common.Utils;
+using EventStore.Core.Cluster;
 using EventStore.Core.Data;
 using EventStore.Core.Messaging;
 using EventStore.Core.TransactionLog.LogRecords;

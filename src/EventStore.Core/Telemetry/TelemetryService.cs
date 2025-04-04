@@ -169,7 +169,7 @@ public sealed class TelemetryService : IDisposable,
 		var seeds = new JsonObject();
 
 		foreach (var member in gossip.ClusterInfo.Members) {
-			seeds.Add(new (member.InstanceId.ToString(), member.State.ToString()));
+			seeds.Add(new(member.InstanceId.ToString(), member.State.ToString()));
 		}
 
 		envelope.ReplyWith(new TelemetryMessage.Response("gossip", seeds));

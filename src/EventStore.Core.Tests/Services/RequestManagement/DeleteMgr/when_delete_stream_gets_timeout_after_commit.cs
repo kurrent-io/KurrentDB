@@ -4,17 +4,17 @@ using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr {
 	public class when_delete_stream_gets_timeout_after_commit : RequestManagerSpecification<DeleteStream> {
 		private long _commitPosition = 3000;
 		protected override DeleteStream OnManager(FakePublisher publisher) {
 			return new DeleteStream(
-				publisher, 
-				CommitTimeout, 
+				publisher,
+				CommitTimeout,
 				Envelope,
 				InternalCorrId,
 				ClientCorrId,
@@ -29,7 +29,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr {
 			yield return new ReplicationTrackingMessage.ReplicatedTo(_commitPosition);
 		}
 
-		protected override Message When() {			
+		protected override Message When() {
 			return new StorageMessage.RequestManagerTimerTick(DateTime.UtcNow + TimeSpan.FromMinutes(1));
 		}
 

@@ -1,18 +1,10 @@
-﻿using System;
-using System.Net;
-using System.Text;
-using EventStore.Core.Tests.ClientAPI;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.Http.Users;
-using EventStore.Transport.Http;
-using NUnit.Framework;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Newtonsoft.Json.Linq;
-using HttpStatusCode = System.Net.HttpStatusCode;
-using EventStore.Core.Services.Transport.Http;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Http.Users.users;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams {
 

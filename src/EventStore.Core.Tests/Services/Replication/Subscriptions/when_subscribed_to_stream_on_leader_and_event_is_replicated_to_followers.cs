@@ -1,13 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
-using NUnit.Framework;
-using EventStore.Core.Tests.Integration;
-using EventStore.Core.Messages;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
+using EventStore.Core.Tests.Integration;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Replication.ReadStream {
 	[Category("LongRunning")]
@@ -75,10 +75,10 @@ namespace EventStore.Core.Tests.Replication.ReadStream {
 				() => {
 					var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
 					return replicas[0].Db.Config.IndexCheckpoint.Read() == leaderIndex &&
-					       replicas[1].Db.Config.IndexCheckpoint.Read() == leaderIndex;
+						   replicas[1].Db.Config.IndexCheckpoint.Read() == leaderIndex;
 
 				},
-				timeout:TimeSpan.FromSeconds(2));
+				timeout: TimeSpan.FromSeconds(2));
 		}
 
 		[Test]

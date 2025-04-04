@@ -89,8 +89,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 			_context = new DefaultHttpContext();
 			X509Certificate2 certificate;
 
-			using (RSA rsa = RSA.Create())
-			{
+			using (RSA rsa = RSA.Create()) {
 				var certReq = new CertificateRequest("CN=hello", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 				var sanBuilder = new SubjectAlternativeNameBuilder();
 				sanBuilder.AddIpAddress(IPAddress.Loopback);
@@ -132,8 +131,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 			_context = new DefaultHttpContext();
 			X509Certificate2 certificate;
 
-			using (RSA rsa = RSA.Create())
-			{
+			using (RSA rsa = RSA.Create()) {
 				var certReq = new CertificateRequest("CN=eventstoredb-node", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 				var sanBuilder = new SubjectAlternativeNameBuilder();
 				sanBuilder.AddIpAddress(IPAddress.Loopback);
@@ -177,8 +175,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 			_context = new DefaultHttpContext();
 			X509Certificate2 certificate;
 
-			using (RSA rsa = RSA.Create())
-			{
+			using (RSA rsa = RSA.Create()) {
 				var certReq = new CertificateRequest("C=UK, O=Event Store Ltd, CN=eventstoredb-node", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 				var sanBuilder = new SubjectAlternativeNameBuilder();
 				sanBuilder.AddIpAddress(IPAddress.Loopback);
@@ -223,8 +220,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 			_context = new DefaultHttpContext();
 			X509Certificate2 certificate;
 
-			using (RSA rsa = RSA.Create())
-			{
+			using (RSA rsa = RSA.Create()) {
 				var certReq = new CertificateRequest("CN=hello", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 				var sanBuilder = new SubjectAlternativeNameBuilder();
 				sanBuilder.AddDnsName("localhost");
@@ -266,8 +262,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 			_context = new DefaultHttpContext();
 			X509Certificate2 certificate;
 
-			using (RSA rsa = RSA.Create())
-			{
+			using (RSA rsa = RSA.Create()) {
 				var certReq = new CertificateRequest("CN=eventstoredb-node", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 				var sanBuilder = new SubjectAlternativeNameBuilder();
 				sanBuilder.AddDnsName("localhost");
@@ -311,8 +306,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 			_context = new DefaultHttpContext();
 			X509Certificate2 certificate;
 
-			using (RSA rsa = RSA.Create())
-			{
+			using (RSA rsa = RSA.Create()) {
 				var certReq = new CertificateRequest("CN=eventstoredb-node", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 				var sanBuilder = new SubjectAlternativeNameBuilder();
 				sanBuilder.AddEmailAddress("hello@hello.org");

@@ -27,7 +27,7 @@ public sealed class CacheHitsMissesTrackerTests : IDisposable {
 			{ Cache.StreamInfo, "stream-info" },
 			{ Cache.Chunk, "chunk" },
 		});
-		var sut =  new CacheHitsMissesTracker(metric);
+		var sut = new CacheHitsMissesTracker(metric);
 		return (sut, listener);
 	}
 

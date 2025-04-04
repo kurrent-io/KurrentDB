@@ -9,7 +9,7 @@ using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.UserManagement {
 	[Category("LongRunning"), Category("ClientAPI")]
-	public abstract class TestWithNode<TLogFormat, TStreamId>  : SpecificationWithDirectoryPerTestFixture {
+	public abstract class TestWithNode<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 		protected MiniNode<TLogFormat, TStreamId> _node;
 		protected UsersManager _manager;
 

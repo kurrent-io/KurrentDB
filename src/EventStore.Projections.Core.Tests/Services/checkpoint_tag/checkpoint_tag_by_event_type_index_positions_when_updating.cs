@@ -8,7 +8,7 @@ namespace EventStore.Projections.Core.Tests.Services.checkpoint_tag {
 	[TestFixture]
 	public class checkpoint_tag_by_event_type_index_positions_when_updating {
 		private readonly CheckpointTag _a1b1 = CheckpointTag.FromEventTypeIndexPositions(
-			1, new TFPos(100, 50), new Dictionary<string, long> {{"a", 1}, {"b", 1}});
+			1, new TFPos(100, 50), new Dictionary<string, long> { { "a", 1 }, { "b", 1 } });
 
 		[Test]
 		public void updated_tf_only_position_is_correct() {

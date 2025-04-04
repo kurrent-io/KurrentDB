@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace EventStore.Core.Messages {
+﻿namespace EventStore.Core.Messages {
 	public class ScavengeResultDto {
 		public string ScavengeId { get; set; }
 

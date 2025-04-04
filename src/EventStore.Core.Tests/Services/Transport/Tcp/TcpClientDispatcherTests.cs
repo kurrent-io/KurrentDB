@@ -1,22 +1,20 @@
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Transport.Tcp;
-using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Authentication;
 using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Messages;
 using System.Text;
 using EventStore.Client.Messages;
 using EventStore.Core.Authentication.InternalAuthentication;
+using EventStore.Core.Bus;
+using EventStore.Core.Data;
 using EventStore.Core.LogV2;
-using EventStore.Core.Services.UserManagement;
-using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services;
+using EventStore.Core.Services.Transport.Tcp;
+using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
+using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.Util;
+using NUnit.Framework;
 using EventRecord = EventStore.Core.Data.EventRecord;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
@@ -31,14 +29,14 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 		[OneTimeSetUp]
 		public void Setup() {
 			_dispatcher = new ClientTcpDispatcher(2000);
-			
+
 			var dummyConnection = new DummyTcpConnection();
 			_connection = new TcpConnectionManager(
 				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
 				InMemoryBus.CreateTest(), dummyConnection, InMemoryBus.CreateTest(), new InternalAuthenticationProvider(
 					InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()),
 					new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
-				new AuthorizationGateway(new TestAuthorizationProvider()), 
+				new AuthorizationGateway(new TestAuthorizationProvider()),
 				TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
 				Opts.ConnectionPendingSendBytesThresholdDefault, Opts.ConnectionQueueSizeThresholdDefault);
 		}
@@ -235,9 +233,9 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			Assert.IsNotNull(dto, "DTO is null");
 			Assert.AreEqual(long.MaxValue, dto.LastEventNumber, "Last event number");
 		}
-		
+
 		[Test]
-		public void 
+		public void
 			when_wrapping_scavenge_started_response_should_return_result_and_scavengeId_for_v2_clients() {
 			var scavengeId = Guid.NewGuid().ToString();
 			var msg = new ClientMessage.ScavengeDatabaseStartedResponse(Guid.NewGuid(), scavengeId);
@@ -251,17 +249,17 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			Assert.AreEqual(dto.Result, ScavengeDatabaseResponse.Types.ScavengeResult.Started);
 			Assert.AreEqual(dto.ScavengeId, scavengeId);
 		}
-		
+
 		[Test]
-		public void 
+		public void
 			when_wrapping_scavenge_inprogress_response_should_return_result_and_scavengeId_for_v2_clients() {
 			var scavengeId = Guid.NewGuid().ToString();
-			var msg = new ClientMessage.ScavengeDatabaseInProgressResponse(Guid.NewGuid(), scavengeId, reason:"In Progress");
+			var msg = new ClientMessage.ScavengeDatabaseInProgressResponse(Guid.NewGuid(), scavengeId, reason: "In Progress");
 
 			var package = _dispatcher.WrapMessage(msg, (byte)ClientVersion.V2);
 			Assert.IsNotNull(package, "Package is null");
 			Assert.AreEqual(TcpCommand.ScavengeDatabaseResponse, package.Value.Command, "TcpCommand");
-			
+
 			var dto = package.Value.Data.Deserialize<ScavengeDatabaseResponse>();
 			Assert.IsNotNull(dto, "DTO is null");
 			Assert.AreEqual(dto.Result, ScavengeDatabaseResponse.Types.ScavengeResult.InProgress);
@@ -269,10 +267,10 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 		}
 
 		[Test]
-		public void 
+		public void
 			when_wrapping_scavenge_unauthorized_response_should_return_result_and_scavengeId_for_v2_clients() {
 			var scavengeId = Guid.NewGuid().ToString();
-			var msg = new ClientMessage.ScavengeDatabaseUnauthorizedResponse(Guid.NewGuid(), scavengeId,"Unauthorized" );
+			var msg = new ClientMessage.ScavengeDatabaseUnauthorizedResponse(Guid.NewGuid(), scavengeId, "Unauthorized");
 
 			var package = _dispatcher.WrapMessage(msg, (byte)ClientVersion.V2);
 			Assert.IsNotNull(package, "Package is null");

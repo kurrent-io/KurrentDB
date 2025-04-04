@@ -1,12 +1,12 @@
 using System;
-using NUnit.Framework;
-using EventStore.Projections.Core.Services.Management;
+using System.Collections.Generic;
 using EventStore.Common.Options;
-using EventStore.Projections.Core.Messages;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.Replication;
-using System.Collections.Generic;
+using EventStore.Projections.Core.Messages;
+using EventStore.Projections.Core.Services.Management;
 using EventStore.Projections.Core.Services.Processing;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_coordinator {
 	[TestFixture]
@@ -19,7 +19,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_coordinator {
 
 		[SetUp]
 		public void Setup() {
-			queues = new List<FakePublisher>() {new FakePublisher()}.ToArray();
+			queues = new List<FakePublisher>() { new FakePublisher() }.ToArray();
 			publisher = new FakePublisher();
 
 			var instanceCorrelationId = Guid.NewGuid();

@@ -66,7 +66,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement {
 					ExpectedVersion,
 					new CommitSource()));
 		}
-		
+
 		[Test]
 		public void empty_commit_source_throws_null_argument_exception() {
 			Assert.Throws<ArgumentNullException>(() =>

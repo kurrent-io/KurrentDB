@@ -15,7 +15,7 @@ namespace EventStore.Core.Authentication.PassthroughAuthentication {
 		}
 
 		public IReadOnlyList<string> GetSupportedAuthenticationSchemes() {
-			return new [] {
+			return new[] {
 				"Insecure"
 			};
 		}

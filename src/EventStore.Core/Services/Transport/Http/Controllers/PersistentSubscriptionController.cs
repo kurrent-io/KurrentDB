@@ -2,19 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.PersistentSubscription;
+using EventStore.Core.Settings;
+using EventStore.Plugins.Authorization;
 using EventStore.Transport.Http;
+using EventStore.Transport.Http.Atom;
 using EventStore.Transport.Http.Codecs;
 using EventStore.Transport.Http.EntityManagement;
-using ClientMessages = EventStore.Core.Messages.ClientMessage.PersistentSubscriptionNackEvents;
-using EventStore.Core.Services.PersistentSubscription;
-using EventStore.Common.Utils;
-using EventStore.Plugins.Authorization;
-using EventStore.Core.Settings;
-using EventStore.Transport.Http.Atom;
 using Microsoft.Extensions.Primitives;
+using ClientMessages = EventStore.Core.Messages.ClientMessage.PersistentSubscriptionNackEvents;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers {
@@ -22,7 +22,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 		private readonly IHttpForwarder _httpForwarder;
 		private readonly IPublisher _networkSendQueue;
 		private const int DefaultNumberOfMessagesToGet = 1;
-		private static readonly ICodec[] DefaultCodecs = {Codec.Json, Codec.Xml};
+		private static readonly ICodec[] DefaultCodecs = { Codec.Json, Codec.Xml };
 		public static readonly char[] ETagSeparatorArray = { ';' };
 		private static readonly ICodec[] AtomCodecs = {
 			Codec.CompetingXml,
@@ -58,11 +58,11 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				Codec.NoCodecs, DefaultCodecs, new Operation(Operations.Subscriptions.Statistics));
 			RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/replayParked?stopAt={stopAt}", HttpMethod.Post,
 				WithParameters(Operations.Subscriptions.ReplayParked), ReplayParkedMessages);
-			RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/ack/{messageid}", HttpMethod.Post, 
+			RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/ack/{messageid}", HttpMethod.Post,
 				WithParameters(Operations.Subscriptions.ProcessMessages), AckMessage);
 			RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/nack/{messageid}?action={action}",
 				HttpMethod.Post, WithParameters(Operations.Subscriptions.ProcessMessages), NackMessage);
-			RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/ack?ids={messageids}", HttpMethod.Post, 
+			RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/ack?ids={messageids}", HttpMethod.Post,
 				WithParameters(Operations.Subscriptions.ProcessMessages), AckMessages);
 			RegisterUrlBased(service, "/subscriptions/{stream}/{subscription}/nack?ids={messageids}&action={action}",
 				HttpMethod.Post, WithParameters(Operations.Subscriptions.ProcessMessages), NackMessages);
@@ -73,7 +73,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				ViewParkedMessagesBackward, Codec.NoCodecs, AtomCodecs,
 				WithParameters(Operations.Subscriptions.Statistics));
 			RegisterCustom(service, "/subscriptions/viewparkedmessages/{stream}/{group}/{event}/forward/{count}?embed={embed}", HttpMethod.Get,
-				ViewParkedMessagesForward, Codec.NoCodecs, AtomCodecs,  WithParameters(Operations.Subscriptions.Statistics));
+				ViewParkedMessagesForward, Codec.NoCodecs, AtomCodecs, WithParameters(Operations.Subscriptions.Statistics));
 		}
 		private RequestParams ViewParkedMessagesForward(HttpEntityManager manager, UriTemplateMatch match) {
 			var stream = match.BoundVariables["stream"];
@@ -190,21 +190,21 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 		}
 		private bool GetRequireLeader(HttpEntityManager manager, out bool requireLeader) {
 			requireLeader = false;
-			
+
 			var onlyLeader = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.RequireLeader);
 			var onlyMaster = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.RequireMaster);
-			
+
 			if (StringValues.IsNullOrEmpty(onlyLeader) && StringValues.IsNullOrEmpty(onlyMaster))
 				return true;
-		
+
 			if (string.Equals(onlyLeader, "True", StringComparison.OrdinalIgnoreCase) ||
-			    string.Equals(onlyMaster, "True", StringComparison.OrdinalIgnoreCase)) {
+				string.Equals(onlyMaster, "True", StringComparison.OrdinalIgnoreCase)) {
 				requireLeader = true;
 				return true;
 			}
 
 			return string.Equals(onlyLeader, "False", StringComparison.OrdinalIgnoreCase) ||
-			       string.Equals(onlyMaster, "False", StringComparison.OrdinalIgnoreCase);
+				   string.Equals(onlyMaster, "False", StringComparison.OrdinalIgnoreCase);
 		}
 		private bool GetResolveLinkTos(HttpEntityManager manager, out bool resolveLinkTos, bool defaultOption = false) {
 			resolveLinkTos = defaultOption;
@@ -244,7 +244,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 			return match => {
 				var operation = new Operation(definition);
 				var stream = match.BoundVariables["stream"];
-				if(!string.IsNullOrEmpty(stream))
+				if (!string.IsNullOrEmpty(stream))
 					operation = operation.WithParameter(Operations.Subscriptions.Parameters.StreamId(stream));
 				var subscription = match.BoundVariables["subscription"];
 				if (!string.IsNullOrEmpty(subscription))
@@ -258,11 +258,16 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 			NakAction nakAction = NakAction.Unknown) {
 			var rawValue = match.BoundVariables["action"] ?? string.Empty;
 			switch (rawValue.ToLowerInvariant()) {
-				case "park": return ClientMessages.NakAction.Park;
-				case "retry": return ClientMessages.NakAction.Retry;
-				case "skip": return ClientMessages.NakAction.Skip;
-				case "stop": return ClientMessages.NakAction.Stop;
-				default: return ClientMessages.NakAction.Unknown;
+				case "park":
+					return ClientMessages.NakAction.Park;
+				case "retry":
+					return ClientMessages.NakAction.Retry;
+				case "skip":
+					return ClientMessages.NakAction.Skip;
+				case "stop":
+					return ClientMessages.NakAction.Stop;
+				default:
+					return ClientMessages.NakAction.Unknown;
 			}
 		}
 
@@ -274,7 +279,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 			var stream = match.BoundVariables["stream"];
 			var messageIds = match.BoundVariables["messageIds"];
 			var ids = new List<Guid>();
-			foreach (var messageId in messageIds.Split(new[] {','})) {
+			foreach (var messageId in messageIds.Split(new[] { ',' })) {
 				Guid id;
 				if (!Guid.TryParse(messageId, out id)) {
 					http.ReplyStatus(HttpStatusCode.BadRequest, "messageid should be a properly formed guid",
@@ -305,7 +310,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 			var messageIds = match.BoundVariables["messageIds"];
 			var nakAction = GetNackAction(http, match);
 			var ids = new List<Guid>();
-			foreach (var messageId in messageIds.Split(new[] {','})) {
+			foreach (var messageId in messageIds.Split(new[] { ',' })) {
 				Guid id;
 				if (!Guid.TryParse(messageId, out id)) {
 					http.ReplyStatus(HttpStatusCode.BadRequest, "messageid should be a properly formed guid",
@@ -356,7 +361,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				Guid.NewGuid(),
 				envelope,
 				BuildSubscriptionGroupKey(stream, groupname),
-				new[] {id},
+				new[] { id },
 				http.User);
 			Publish(cmd);
 			http.ReplyStatus(HttpStatusCode.Accepted, "", exception => { });
@@ -384,12 +389,12 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				BuildSubscriptionGroupKey(stream, groupname),
 				"Nacked from HTTP",
 				nakAction,
-				new[] {id},
+				new[] { id },
 				http.User);
 			Publish(cmd);
 			http.ReplyStatus(HttpStatusCode.Accepted, "", exception => { });
 		}
-		
+
 		private void ReplayParkedMessages(HttpEntityManager http, UriTemplateMatch match) {
 			if (_httpForwarder.ForwardRequest(http))
 				return;
@@ -399,7 +404,8 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(args, message) => {
 					int code;
 					var m = message as ClientMessage.ReplayMessagesReceived;
-					if (m == null) throw new Exception("unexpected message " + message);
+					if (m == null)
+						throw new Exception("unexpected message " + message);
 					switch (m.Result) {
 						case ClientMessage.ReplayMessagesReceived.ReplayMessagesReceivedResult.Success:
 							code = HttpStatusCode.OK;
@@ -421,7 +427,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 			var groupname = match.BoundVariables["subscription"];
 			var stream = match.BoundVariables["stream"];
 			var stopAtStr = match.BoundVariables["stopAt"];
-			
+
 			long? stopAt;
 			// if stopAt is declared...
 			if (stopAtStr != null) {
@@ -454,7 +460,8 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(args, message) => {
 					int code;
 					var m = message as ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
-					if (m == null) throw new Exception("unexpected message " + message);
+					if (m == null)
+						throw new Exception("unexpected message " + message);
 					switch (m.Result) {
 						case ClientMessage.CreatePersistentSubscriptionToStreamCompleted
 							.CreatePersistentSubscriptionToStreamResult
@@ -489,16 +496,17 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(o, s) => {
 					var data = http.RequestCodec.From<SubscriptionConfigData>(s);
 					var config = ParseConfig(data);
-					if (!ValidateConfig(config, http)) return;
+					if (!ValidateConfig(config, http))
+						return;
 					var message = new ClientMessage.CreatePersistentSubscriptionToStream(Guid.NewGuid(),
 						Guid.NewGuid(),
 						envelope,
 						stream,
 						groupname,
 						config.ResolveLinktos,
-						#pragma warning disable 612
+#pragma warning disable 612
 						config.StartPosition != null ? long.Parse(config.StartPosition) : config.StartFrom,
-						#pragma warning restore 612
+#pragma warning restore 612
 						config.MessageTimeoutMilliseconds,
 						config.ExtraStatistics,
 						config.MaxRetryCount,
@@ -526,7 +534,8 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(args, message) => {
 					int code;
 					var m = message as ClientMessage.UpdatePersistentSubscriptionToStreamCompleted;
-					if (m == null) throw new Exception("unexpected message " + message);
+					if (m == null)
+						throw new Exception("unexpected message " + message);
 					switch (m.Result) {
 						case ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult
 							.Success:
@@ -559,16 +568,17 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(o, s) => {
 					var data = http.RequestCodec.From<SubscriptionConfigData>(s);
 					var config = ParseConfig(data);
-					if (!ValidateConfig(config, http)) return;
+					if (!ValidateConfig(config, http))
+						return;
 					var message = new ClientMessage.UpdatePersistentSubscriptionToStream(Guid.NewGuid(),
 						Guid.NewGuid(),
 						envelope,
 						stream,
 						groupname,
 						config.ResolveLinktos,
-						#pragma warning disable 612
+#pragma warning disable 612
 						config.StartPosition != null ? long.Parse(config.StartPosition) : config.StartFrom,
-						#pragma warning restore 612
+#pragma warning restore 612
 						config.MessageTimeoutMilliseconds,
 						config.ExtraStatistics,
 						config.MaxRetryCount,
@@ -592,9 +602,9 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 
 			return new SubscriptionConfigData {
 				ResolveLinktos = config.ResolveLinktos,
-				#pragma warning disable 612
+#pragma warning disable 612
 				StartFrom = config.StartFrom,
-				#pragma warning restore 612
+#pragma warning restore 612
 				StartPosition = config.StartPosition,
 				MessageTimeoutMilliseconds = config.MessageTimeoutMilliseconds,
 				ExtraStatistics = config.ExtraStatistics,
@@ -670,7 +680,8 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(args, message) => {
 					int code;
 					var m = message as ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
-					if (m == null) throw new Exception("unexpected message " + message);
+					if (m == null)
+						throw new Exception("unexpected message " + message);
 					switch (m.Result) {
 						case ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult
 							.Success:
@@ -702,7 +713,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				groupname, http.User);
 			Publish(cmd);
 		}
-		
+
 		private void RestartPersistentSubscriptions(HttpEntityManager http, UriTemplateMatch match) {
 			if (_httpForwarder.ForwardRequest(http))
 				return;
@@ -804,7 +815,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 			var cmd = new MonitoringMessage.GetPersistentSubscriptionStats(envelope, stream, groupName);
 			Publish(cmd);
 		}
-		
+
 		private IEnvelope CreateErrorEnvelope(HttpEntityManager http) {
 			return new SendToHttpEnvelope<SubscriptionMessage.InvalidPersistentSubscriptionsRestart>(
 				_networkSendQueue,
@@ -827,7 +838,8 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 		private static ResponseConfiguration StatsConfiguration(HttpEntityManager http, Message message) {
 			int code;
 			var m = message as MonitoringMessage.GetPersistentSubscriptionStatsCompleted;
-			if (m == null) throw new Exception("unexpected message " + message);
+			if (m == null)
+				throw new Exception("unexpected message " + message);
 			switch (m.Result) {
 				case MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Success:
 					code = HttpStatusCode.OK;
@@ -868,7 +880,8 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				(args, message) => {
 					int code;
 					var m = message as ClientMessage.ReadNextNPersistentMessagesCompleted;
-					if (m == null) throw new Exception("unexpected message " + message);
+					if (m == null)
+						throw new Exception("unexpected message " + message);
 					switch (m.Result) {
 						case
 							ClientMessage.ReadNextNPersistentMessagesCompleted.ReadNextNPersistentMessagesResult
@@ -916,12 +929,18 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 				return htmlLevel;
 			var rawValue = match.BoundVariables["embed"] ?? string.Empty;
 			switch (rawValue.ToLowerInvariant()) {
-				case "content": return EmbedLevel.Content;
-				case "rich": return EmbedLevel.Rich;
-				case "body": return EmbedLevel.Body;
-				case "pretty": return EmbedLevel.PrettyBody;
-				case "tryharder": return EmbedLevel.TryHarder;
-				default: return EmbedLevel.None;
+				case "content":
+					return EmbedLevel.Content;
+				case "rich":
+					return EmbedLevel.Rich;
+				case "body":
+					return EmbedLevel.Body;
+				case "pretty":
+					return EmbedLevel.PrettyBody;
+				case "tryharder":
+					return EmbedLevel.TryHarder;
+				default:
+					return EmbedLevel.None;
 			}
 		}
 
@@ -930,8 +949,10 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 
 		private IEnumerable<SubscriptionInfo> ToDto(HttpEntityManager manager,
 			MonitoringMessage.GetPersistentSubscriptionStatsCompleted message) {
-			if (message == null) yield break;
-			if (message.SubscriptionStats == null) yield break;
+			if (message == null)
+				yield break;
+			if (message.SubscriptionStats == null)
+				yield break;
 
 			foreach (var stat in message.SubscriptionStats) {
 				string escapedStreamId = Uri.EscapeDataString(stat.EventSource);
@@ -953,13 +974,13 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 					AverageItemsPerSecond = stat.AveragePerSecond,
 					TotalItemsProcessed = stat.TotalItems,
 					CountSinceLastMeasurement = stat.CountSinceLastMeasurement,
-					#pragma warning disable 612
+#pragma warning disable 612
 					LastKnownEventNumber = long.TryParse(stat.LastKnownEventPosition, out var lastKnownMsg) ? lastKnownMsg : 0,
-					#pragma warning restore 612
+#pragma warning restore 612
 					LastKnownEventPosition = stat.LastKnownEventPosition,
-					#pragma warning disable 612
+#pragma warning disable 612
 					LastProcessedEventNumber = long.TryParse(stat.LastCheckpointedEventPosition, out var lastProcessedPos) ? lastProcessedPos : 0,
-					#pragma warning restore 612
+#pragma warning restore 612
 					LastCheckpointedEventPosition = stat.LastCheckpointedEventPosition,
 					ReadBufferCount = stat.ReadBufferCount,
 					LiveBufferCount = stat.LiveBufferCount,
@@ -983,9 +1004,9 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 						PreferRoundRobin = stat.NamedConsumerStrategy == SystemConsumerStrategies.RoundRobin,
 						ReadBatchSize = stat.ReadBatchSize,
 						ResolveLinktos = stat.ResolveLinktos,
-						#pragma warning disable 612
+#pragma warning disable 612
 						StartFrom = long.TryParse(stat.StartFrom, out var startFrom) ? startFrom : 0,
-						#pragma warning restore 612
+#pragma warning restore 612
 						StartPosition = stat.StartFrom,
 						ExtraStatistics = stat.ExtraStatistics,
 						MaxSubscriberCount = stat.MaxSubscriberCount,
@@ -1046,8 +1067,10 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 
 		private IEnumerable<SubscriptionSummary> ToSummaryDto(HttpEntityManager manager,
 			MonitoringMessage.GetPersistentSubscriptionStatsCompleted message) {
-			if (message == null) yield break;
-			if (message.SubscriptionStats == null) yield break;
+			if (message == null)
+				yield break;
+			if (message.SubscriptionStats == null)
+				yield break;
 
 			foreach (var stat in message.SubscriptionStats) {
 				string escapedStreamId = Uri.EscapeDataString(stat.EventSource);
@@ -1064,13 +1087,13 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 					Status = stat.Status,
 					AverageItemsPerSecond = stat.AveragePerSecond,
 					TotalItemsProcessed = stat.TotalItems,
-					#pragma warning disable 612
+#pragma warning disable 612
 					LastKnownEventNumber = long.TryParse(stat.LastKnownEventPosition, out var lastKnownMsg) ? lastKnownMsg : 0,
-					#pragma warning restore 612
+#pragma warning restore 612
 					LastKnownEventPosition = stat.LastKnownEventPosition,
-					#pragma warning disable 612
+#pragma warning disable 612
 					LastProcessedEventNumber = long.TryParse(stat.LastCheckpointedEventPosition, out var lastEventPos) ? lastEventPos : 0,
-					#pragma warning restore 612
+#pragma warning restore 612
 					LastCheckpointedEventPosition = stat.LastCheckpointedEventPosition,
 					ParkedMessageUri = MakeUrl(manager,
 						string.Format(parkedMessageUriTemplate, escapedStreamId, escapedGroupName)),
@@ -1105,9 +1128,9 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 			public string NamedConsumerStrategy { get; set; }
 
 			public SubscriptionConfigData() {
-				#pragma warning disable 612
+#pragma warning disable 612
 				StartFrom = 0;
-				#pragma warning restore 612
+#pragma warning restore 612
 				StartPosition = null;
 				MessageTimeoutMilliseconds = 10000;
 				MaxRetryCount = 10;

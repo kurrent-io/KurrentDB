@@ -25,7 +25,8 @@ namespace EventStore.Core.Authorization {
 				remaining = remaining.Slice(1);
 				if (!pending.IsCompleted)
 					return EvaluateAsync(pending, remaining, cp, operation, policy, context);
-				if (pending.Result) return new ValueTask<bool>(true);
+				if (pending.Result)
+					return new ValueTask<bool>(true);
 			}
 
 			return new ValueTask<bool>(false);

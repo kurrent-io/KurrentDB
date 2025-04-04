@@ -380,7 +380,7 @@ namespace EventStore.Core.Tests.ClientAPI {
 			_conn = BuildConnection(_node);
 			AddLogging(_conn);
 			await _conn.ConnectAsync();
-			
+
 			var streamName = Guid.NewGuid().ToString();
 			var groupName = Guid.NewGuid().ToString();
 			var settings = PersistentSubscriptionSettings
@@ -391,8 +391,8 @@ namespace EventStore.Core.Tests.ClientAPI {
 
 			await _conn.CreatePersistentSubscriptionAsync(streamName, groupName, settings, DefaultData.AdminCredentials);
 			await _conn.ConnectToPersistentSubscriptionAsync(streamName, groupName, async (subscription, resolvedEvent) => {
-					await CloseConnectionAndWait(_conn);
-				},
+				await CloseConnectionAndWait(_conn);
+			},
 				(sub, reason, exception) => {
 					Console.WriteLine("Subscription dropped (reason:{0}, exception:{1}). @ {2}", reason, exception, DateTime.Now);
 					_subscriptionDropped.TrySetResult(true);
@@ -422,7 +422,7 @@ namespace EventStore.Core.Tests.ClientAPI {
 
 			await _eventReceived.Task.WithTimeout();
 			Assert.AreEqual(newEventData.EventId, _receivedEvent.Event.EventId);
-			
+
 			//flaky: temporarily added for debugging
 			void AddLogging(IEventStoreConnection conn) {
 				conn.AuthenticationFailed += (_, args) => Console.WriteLine($"_conn.AuthenticationFailed: {args.Connection.ConnectionName} @ {DateTime.Now} {TestContext.CurrentContext.CurrentRepeatCount}");

@@ -64,10 +64,10 @@ namespace EventStore.Core.Services.Transport.Tcp {
 			Func<TcpPackage, IEnvelope, ClaimsPrincipal, IReadOnlyDictionary<string, string>, TcpConnectionManager, T> unwrapper,
 			ClientVersion version)
 			where T : Message {
-// ReSharper disable RedundantCast
+			// ReSharper disable RedundantCast
 			_unwrappers[(byte)version][(byte)command] =
 				(Func<TcpPackage, IEnvelope, ClaimsPrincipal, IReadOnlyDictionary<string, string>, TcpConnectionManager, Message>)unwrapper;
-// ReSharper restore RedundantCast
+			// ReSharper restore RedundantCast
 		}
 
 		public TcpPackage? WrapMessage(Message message, byte version) {
@@ -92,7 +92,7 @@ namespace EventStore.Core.Services.Transport.Tcp {
 				throw new ArgumentNullException(nameof(envelope));
 
 			var unwrapper = _unwrappers[version][(byte)package.Command] ??
-			                _unwrappers[^1][(byte)package.Command];
+							_unwrappers[^1][(byte)package.Command];
 
 			try {
 				return unwrapper?.Invoke(package, envelope, user, tokens, connection);

@@ -1,12 +1,12 @@
-﻿using EventStore.Core.Tests.Http.Users.users;
-using NUnit.Framework;
+﻿using System;
 using System.Collections.Generic;
-using System;
 using System.Threading.Tasks;
-using HttpStatusCode = System.Net.HttpStatusCode;
-using HttpResponseMessage = System.Net.Http.HttpResponseMessage;
-using Newtonsoft.Json.Linq;
+using EventStore.Core.Tests.Http.Users.users;
 using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpResponseMessage = System.Net.Http.HttpResponseMessage;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription {
 	[Category("LongRunning")]

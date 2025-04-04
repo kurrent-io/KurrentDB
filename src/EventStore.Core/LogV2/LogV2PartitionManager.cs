@@ -7,6 +7,6 @@ namespace EventStore.Core.LogV2 {
 		public Guid? RootId => Guid.Empty;
 		public Guid? RootTypeId => Guid.Empty;
 
-		public void Initialize(){}
+		public void Initialize() { }
 	}
 }

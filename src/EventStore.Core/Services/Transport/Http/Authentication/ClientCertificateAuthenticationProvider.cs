@@ -38,7 +38,7 @@ namespace EventStore.Core.Services.Transport.Http.Authentication {
 			var connectionItems = context.Features.Get<IConnectionItemsFeature>()?.Items;
 			const string connectionItemsKey = "ClientCertificateAuthenticationStatus";
 			if (TryGetDictionaryValue(connectionItems, connectionItemsKey, out var wasAuthenticated)) {
-				authenticated = (bool) wasAuthenticated;
+				authenticated = (bool)wasAuthenticated;
 			} else {
 				authenticated = AuthenticateUncached(context, clientCertificate);
 				TrySetDictionaryValue(connectionItems, connectionItemsKey, authenticated);
@@ -102,7 +102,7 @@ namespace EventStore.Core.Services.Transport.Http.Authentication {
 				Log.Error("Connection from node: {ip} was denied because its certificate does not have any IP or DNS Subject Alternative Names (SAN).", ip);
 				return false;
 			}
-			
+
 			return true;
 		}
 	}

@@ -89,7 +89,7 @@ namespace EventStore.Transport.Tcp.Framing {
 			var length = data.Count;
 
 			yield return new ArraySegment<byte>(
-				new[] {(byte)length, (byte)(length >> 8), (byte)(length >> 16), (byte)(length >> 24)});
+				new[] { (byte)length, (byte)(length >> 8), (byte)(length >> 16), (byte)(length >> 24) });
 			yield return data;
 		}
 

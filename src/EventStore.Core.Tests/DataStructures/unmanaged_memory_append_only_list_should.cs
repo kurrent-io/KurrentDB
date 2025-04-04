@@ -47,9 +47,9 @@ namespace EventStore.Core.Tests.DataStructures {
 			for (int i = 1; i <= _maxCapacity; i++) {
 				_list.Add(i);
 				var span = _list.AsSpan();
-				Assert.AreEqual(i,span.Length);
+				Assert.AreEqual(i, span.Length);
 				for (int j = 0; j < i; j++) {
-					Assert.AreEqual(j+1, span[j]);
+					Assert.AreEqual(j + 1, span[j]);
 				}
 			}
 		}

@@ -3,9 +3,7 @@ using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -727,12 +725,12 @@ namespace EventStore.Projections.Core.Services.Interpreted {
 							state = transform.Call(state);
 							break;
 						case TransformType.Filter: {
-								var result = transform.Call(state);
-								if (!(result.IsBoolean() && result.AsBoolean()) || result == Null || result == Undefined) {
-									return Null;
-								}
-								break;
+							var result = transform.Call(state);
+							if (!(result.IsBoolean() && result.AsBoolean()) || result == Null || result == Undefined) {
+								return Null;
 							}
+							break;
+						}
 						case TransformType.None:
 							throw new InvalidOperationException("Unknown transform type");
 					}

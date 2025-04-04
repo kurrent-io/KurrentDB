@@ -77,8 +77,8 @@ namespace EventStore.Core.Tests.Bus {
 			_bus.Publish(new TestMessage3());
 
 			Assert.That(handler.HandledMessages.ContainsNo<TestMessage>() &&
-			            handler.HandledMessages.ContainsNo<TestMessage2>() &&
-			            handler.HandledMessages.ContainsNo<TestMessage3>());
+						handler.HandledMessages.ContainsNo<TestMessage2>() &&
+						handler.HandledMessages.ContainsNo<TestMessage3>());
 		}
 
 		[Test]
@@ -95,8 +95,8 @@ namespace EventStore.Core.Tests.Bus {
 			_bus.Publish(new TestMessage3());
 
 			Assert.That(handler.HandledMessages.ContainsNo<TestMessage>() &&
-			            handler.HandledMessages.ContainsSingle<TestMessage2>() &&
-			            handler.HandledMessages.ContainsSingle<TestMessage3>());
+						handler.HandledMessages.ContainsSingle<TestMessage2>() &&
+						handler.HandledMessages.ContainsSingle<TestMessage3>());
 		}
 
 		[Test]
@@ -113,8 +113,8 @@ namespace EventStore.Core.Tests.Bus {
 			_bus.Publish(new TestMessage());
 
 			Assert.That(handler1.HandledMessages.ContainsNo<TestMessage>() &&
-			            handler2.HandledMessages.ContainsSingle<TestMessage>() &&
-			            handler3.HandledMessages.ContainsSingle<TestMessage>());
+						handler2.HandledMessages.ContainsSingle<TestMessage>() &&
+						handler3.HandledMessages.ContainsSingle<TestMessage>());
 		}
 
 		[Test]
@@ -133,8 +133,8 @@ namespace EventStore.Core.Tests.Bus {
 			_bus.Publish(new TestMessage());
 
 			Assert.That(handler1.HandledMessages.ContainsNo<TestMessage>() &&
-			            handler2.HandledMessages.ContainsNo<TestMessage>() &&
-			            handler3.HandledMessages.ContainsNo<TestMessage>());
+						handler2.HandledMessages.ContainsNo<TestMessage>() &&
+						handler3.HandledMessages.ContainsNo<TestMessage>());
 		}
 
 		[Test]
@@ -154,8 +154,8 @@ namespace EventStore.Core.Tests.Bus {
 
 			//just to ensure
 			Assert.That(handler1.HandledMessages.ContainsNo<TestMessage>() &&
-			            handler2.HandledMessages.ContainsNo<TestMessage>() &&
-			            handler3.HandledMessages.ContainsNo<TestMessage>());
+						handler2.HandledMessages.ContainsNo<TestMessage>() &&
+						handler3.HandledMessages.ContainsNo<TestMessage>());
 
 			_bus.Unsubscribe(handler1);
 			_bus.Unsubscribe(handler2);
@@ -163,8 +163,8 @@ namespace EventStore.Core.Tests.Bus {
 			_bus.Publish(new TestMessage());
 
 			Assert.That(handler1.HandledMessages.ContainsNo<TestMessage>() &&
-			            handler2.HandledMessages.ContainsNo<TestMessage>() &&
-			            handler3.HandledMessages.ContainsNo<TestMessage>());
+						handler2.HandledMessages.ContainsNo<TestMessage>() &&
+						handler3.HandledMessages.ContainsNo<TestMessage>());
 		}
 	}
 }

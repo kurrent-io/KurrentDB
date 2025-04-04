@@ -1,5 +1,4 @@
 ﻿using EventStore.Core.Index.Hashes;
-using System;
 
 namespace EventStore.Core.Tests.Index {
 	public class FakeIndexHasher : IHasher<string> {

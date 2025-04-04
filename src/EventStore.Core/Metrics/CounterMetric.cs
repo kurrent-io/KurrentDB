@@ -9,7 +9,7 @@ namespace EventStore.Core.Metrics {
 		public CounterMetric(Meter meter, string name, string unit = null) {
 			meter.CreateObservableCounter(name, Observe, unit);
 		}
-		
+
 		public void Add(CounterSubMetric subMetric) {
 			lock (_lock) {
 				_subMetrics.Add(subMetric);

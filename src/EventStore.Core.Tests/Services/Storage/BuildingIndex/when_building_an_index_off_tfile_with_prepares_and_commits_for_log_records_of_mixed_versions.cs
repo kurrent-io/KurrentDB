@@ -1,6 +1,5 @@
 using System;
 using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
 using NUnit.Framework;

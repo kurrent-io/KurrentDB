@@ -12,18 +12,18 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 	public class when_projection_subsystem_starting_and_all_components_started
 		: TestFixtureWithProjectionSubsystem {
 		private readonly ManualResetEventSlim _initializedReceived = new ManualResetEventSlim();
-		
+
 		protected override void Given() {
 			Subsystem.LeaderOutputBus.Subscribe(
 				new AdHocHandler<SystemMessage.SubSystemInitialized>(msg => {
 					_initializedReceived.Set();
 				}));
-			
+
 			Subsystem.Handle(new SystemMessage.SystemCoreReady());
 			Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 
 			var startMsg = WaitForStartMessage();
-			
+
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
 				ProjectionManager.ServiceName, startMsg.InstanceCorrelationId));
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
@@ -42,16 +42,16 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 	public class when_projection_subsystem_starting_and_wrong_components_started
 		: TestFixtureWithProjectionSubsystem {
 		private readonly ManualResetEventSlim _initializedReceived = new ManualResetEventSlim();
-		
+
 		protected override void Given() {
 			Subsystem.LeaderOutputBus.Subscribe(
 				new AdHocHandler<SystemMessage.SubSystemInitialized>(msg => {
 					_initializedReceived.Set();
 				}));
-			
+
 			Subsystem.Handle(new SystemMessage.SystemCoreReady());
 			Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
-			
+
 			WaitForStartMessage();
 
 			var wrongCorrelation = Guid.NewGuid();
@@ -114,9 +114,9 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 				ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
 
 			Subsystem.Handle(new SystemMessage.BecomeUnknown(Guid.NewGuid()));
-			
+
 			WaitForStopMessage();
-			
+
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStopped(
 				ProjectionManager.ServiceName, _instanceCorrelation));
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStopped(
@@ -129,7 +129,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 		public void should_allow_starting_the_subsystem_again() {
 			Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 			var startMessage = WaitForStartMessage();
-			
+
 			Assert.AreNotEqual(_instanceCorrelation, startMessage.InstanceCorrelationId);
 		}
 	}
@@ -148,7 +148,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 
 			// Become unknown before components started
 			Subsystem.Handle(new SystemMessage.BecomeUnknown(Guid.NewGuid()));
-			
+
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
 				ProjectionManager.ServiceName, _instanceCorrelation));
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(

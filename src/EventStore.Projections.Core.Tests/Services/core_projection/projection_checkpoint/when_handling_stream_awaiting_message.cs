@@ -1,6 +1,5 @@
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.Replication;
-using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 

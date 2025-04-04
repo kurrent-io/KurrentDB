@@ -1,6 +1,6 @@
-using EventStore.Projections.Core.Common;
 using System;
 using System.Security.Claims;
+using EventStore.Projections.Core.Common;
 
 namespace EventStore.Projections.Core.Services {
 	public class ProjectionConfig {
@@ -106,7 +106,7 @@ namespace EventStore.Projections.Core.Services {
 		public int MaximumAllowedWritesInFlight {
 			get { return _maximumAllowedWritesInFlight; }
 		}
-		
+
 		public int? ProjectionExecutionTimeout { get; }
 	}
 }

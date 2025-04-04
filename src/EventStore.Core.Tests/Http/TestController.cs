@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Security.Claims;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Services.Transport.Http;
 using EventStore.Core.Services.Transport.Http.Controllers;
+using EventStore.Plugins.Authorization;
 using EventStore.Transport.Http;
 using EventStore.Transport.Http.Codecs;
 using EventStore.Transport.Http.EntityManagement;
-using EventStore.Common.Utils;
-using EventStore.Plugins.Authorization;
 
 namespace EventStore.Core.Tests.Http {
 	public class TestController : CommunicationController {
@@ -38,7 +38,7 @@ namespace EventStore.Core.Tests.Http {
 		private void Register(
 			IHttpService service, string uriTemplate, Action<HttpEntityManager, UriTemplateMatch> handler,
 			string httpMethod = HttpMethod.Get) {
-			Register(service, uriTemplate, httpMethod, handler, Codec.NoCodecs, new ICodec[] {Codec.ManualEncoding}, new Operation(Operations.Node.StaticContent));
+			Register(service, uriTemplate, httpMethod, handler, Codec.NoCodecs, new ICodec[] { Codec.ManualEncoding }, new Operation(Operations.Node.StaticContent));
 		}
 
 		private void Test1Handler(HttpEntityManager http, UriTemplateMatch match) {
@@ -59,7 +59,7 @@ namespace EventStore.Core.Tests.Http {
 			var a = match.BoundVariables["a"];
 			var b = match.BoundVariables["b"];
 
-			http.Reply(new {a = a, b = b, rawSegment = http.RequestedUrl.Segments[2]}.ToJson(), 200, "OK",
+			http.Reply(new { a = a, b = b, rawSegment = http.RequestedUrl.Segments[2] }.ToJson(), 200, "OK",
 				"application/json");
 		}
 

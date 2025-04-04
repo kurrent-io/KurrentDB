@@ -8,11 +8,9 @@ using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Services.TimerService;
+using EventStore.Core.Settings;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Standard;
-using EventStore.Projections.Core.Utils;
-using Newtonsoft.Json.Linq;
-using EventStore.Core.Settings;
 
 namespace EventStore.Projections.Core.Services.Processing {
 	public class EventByTypeIndexEventReader : EventReader {
@@ -52,9 +50,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 			ITimeProvider timeProvider,
 			bool stopOnEof = false)
 			: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-			if (eventTypes == null) throw new ArgumentNullException("eventTypes");
-			if (timeProvider == null) throw new ArgumentNullException("timeProvider");
-			if (eventTypes.Length == 0) throw new ArgumentException("empty", "eventTypes");
+			if (eventTypes == null)
+				throw new ArgumentNullException("eventTypes");
+			if (timeProvider == null)
+				throw new ArgumentNullException("timeProvider");
+			if (eventTypes.Length == 0)
+				throw new ArgumentException("empty", "eventTypes");
 
 			_includeDeletedStreamNotification = includeDeletedStreamNotification;
 			_timeProvider = timeProvider;
@@ -234,7 +235,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 					return;
 
 				lock (_lock) {
-					if (!_pendingRequests.Values.Any(x => x == message.CorrelationId)) return;
+					if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+						return;
 				}
 
 				if (!_streamToEventType.ContainsKey(message.EventStreamId))
@@ -262,10 +264,13 @@ namespace EventStore.Projections.Core.Services.Processing {
 			}
 
 			public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-				if (_disposed) return;
-				if (_reader.Paused) return;
+				if (_disposed)
+					return;
+				if (_reader.Paused)
+					return;
 				lock (_lock) {
-					if (!_pendingRequests.Values.Any(x => x == message.CorrelationId)) return;
+					if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+						return;
 				}
 
 				if (message.StreamId == "$et") {
@@ -531,13 +536,13 @@ namespace EventStore.Projections.Core.Services.Processing {
 					return false;
 				Queue<PendingEvent> q;
 				var shouldSwitch = _lastKnownIndexCheckpointPosition != null
-				                   && _streamToEventType.Keys.All(
-					                   v =>
-						                   _eofs[v]
-						                   || _buffers.TryGetValue(v, out q) && q.Count > 0
-						                                                     &&
-						                                                     !BeforeTheLastKnownIndexCheckpoint(
-							                                                     q.Peek().TfPosition));
+								   && _streamToEventType.Keys.All(
+									   v =>
+										   _eofs[v]
+										   || _buffers.TryGetValue(v, out q) && q.Count > 0
+																			 &&
+																			 !BeforeTheLastKnownIndexCheckpoint(
+																				 q.Peek().TfPosition));
 				return shouldSwitch;
 			}
 		}
@@ -639,9 +644,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 			}
 
 			public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-				if (_disposed) return;
-				if (_reader.Paused) return;
-				if (message.CorrelationId != _pendingRequestCorrelationId) return;
+				if (_disposed)
+					return;
+				if (_reader.Paused)
+					return;
+				if (message.CorrelationId != _pendingRequestCorrelationId)
+					return;
 
 				_tfEventsRequested = false;
 				_reader.PauseOrContinueProcessing();

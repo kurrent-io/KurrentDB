@@ -1,18 +1,18 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
 using static EventStore.Core.Messages.ClientMessage.CreatePersistentSubscriptionToAllCompleted;
-using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.Options.StreamOptionOneofCase;
-using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.StreamOptions.RevisionOptionOneofCase;
+using static EventStore.Core.Messages.ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
 using AllOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.AllOptions.AllOptionOneofCase;
+using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.StreamOptions.RevisionOptionOneofCase;
+using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.Options.StreamOptionOneofCase;
 
 namespace EventStore.Core.Services.Transport.Grpc {
 	internal partial class PersistentSubscriptions {
@@ -24,7 +24,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			var correlationId = Guid.NewGuid();
 
 			var user = context.GetHttpContext().User;
-			
+
 			if (!await _authorizationProvider.CheckAccessAsync(user,
 				CreateOperation, context.CancellationToken).ConfigureAwait(false)) {
 				throw RpcExceptions.AccessDenied();
@@ -33,16 +33,15 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			string streamId = null;
 			string consumerStrategy = null;
 			if (string.IsNullOrEmpty(settings.ConsumerStrategy)) { /*for backwards compatibility*/
-			#pragma warning disable 612
+#pragma warning disable 612
 				consumerStrategy = settings.NamedConsumerStrategy.ToString();
-			#pragma warning restore 612
+#pragma warning restore 612
 
 			} else {
 				consumerStrategy = settings.ConsumerStrategy;
 			}
 
-			switch (request.Options.StreamOptionCase)
-			{
+			switch (request.Options.StreamOptionCase) {
 				case StreamOptionOneofCase.Stream:
 				case StreamOptionOneofCase.None: /*for backwards compatibility*/
 				{
@@ -57,10 +56,10 @@ namespace EventStore.Core.Services.Transport.Grpc {
 							_ => throw RpcExceptions.InvalidArgument(request.Options.Stream.RevisionOptionCase)
 						};
 					} else { /*for backwards compatibility*/
-						#pragma warning disable 612
+#pragma warning disable 612
 						streamId = request.Options.StreamIdentifier;
 						startRevision = new StreamRevision(request.Options.Settings.Revision);
-						#pragma warning restore 612
+#pragma warning restore 612
 					}
 
 					_publisher.Publish(

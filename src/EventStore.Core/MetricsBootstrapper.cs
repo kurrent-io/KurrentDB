@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.Index;
 using EventStore.Core.Messaging;
 using EventStore.Core.Metrics;
 using EventStore.Core.Services.PersistentSubscription;
 using EventStore.Core.Services.VNode;
 using EventStore.Core.TransactionLog;
+using EventStore.Core.TransactionLog.Checkpoint;
+using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Scavenging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -25,7 +25,7 @@ public class Trackers {
 	public IScavengeStatusTracker ScavengeStatusTracker { get; set; } = new ScavengeStatusTracker.NoOp();
 	public GrpcTrackers GrpcTrackers { get; } = new();
 	public QueueTrackers QueueTrackers { get; set; } = new();
-	public GossipTrackers GossipTrackers { get; set; } = new ();
+	public GossipTrackers GossipTrackers { get; set; } = new();
 	public ITransactionFileTracker TransactionFileTracker { get; set; } = new TFChunkTracker.NoOp();
 	public IIndexTracker IndexTracker { get; set; } = new IndexTracker.NoOp();
 	public IMaxTracker<long> WriterFlushSizeTracker { get; set; } = new MaxTracker<long>.NoOp();
@@ -119,15 +119,15 @@ public static class MetricsBootstrapper {
 		if (conf.Events.TryGetValue(Conf.EventTracker.Read, out var readEnabled) && readEnabled) {
 			var readTag = new KeyValuePair<string, object>("activity", "read");
 			trackers.TransactionFileTracker = new TFChunkTracker(
-				readBytes: new CounterSubMetric(byteMetric, new[] {readTag}),
-				readEvents: new CounterSubMetric(eventMetric, new[] {readTag}));
+				readBytes: new CounterSubMetric(byteMetric, new[] { readTag }),
+				readEvents: new CounterSubMetric(eventMetric, new[] { readTag }));
 		}
 
 		// from a users perspective an event is written when it is indexed: thats when it can be read.
 		if (conf.Events.TryGetValue(Conf.EventTracker.Written, out var writtenEnabled) && writtenEnabled) {
 			trackers.IndexTracker = new IndexTracker(new CounterSubMetric(
 				eventMetric,
-				new[] {new KeyValuePair<string, object>("activity", "written")}));
+				new[] { new KeyValuePair<string, object>("activity", "written") }));
 		}
 
 		// gossip

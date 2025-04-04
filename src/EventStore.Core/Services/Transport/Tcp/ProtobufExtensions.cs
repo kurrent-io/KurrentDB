@@ -1,7 +1,7 @@
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
-using System.Collections.Concurrent;
 using Google.Protobuf;
 using ILogger = Serilog.ILogger;
 
@@ -38,11 +38,11 @@ namespace EventStore.Core.Services.Transport.Tcp {
 			_streams.Push(stream);
 		}
 
-		public static T Deserialize<T>(this byte[] data) where T: IMessage<T>, new() {
+		public static T Deserialize<T>(this byte[] data) where T : IMessage<T>, new() {
 			return Deserialize<T>(new ArraySegment<byte>(data));
 		}
 
-		public static T Deserialize<T>(this ArraySegment<byte> data) where T: IMessage<T>, new() {
+		public static T Deserialize<T>(this ArraySegment<byte> data) where T : IMessage<T>, new() {
 			try {
 				using (var memory = new MemoryStream(data.Array, data.Offset, data.Count)
 				) //uses original buffer as memory
@@ -57,7 +57,7 @@ namespace EventStore.Core.Services.Transport.Tcp {
 			}
 		}
 
-		public static ArraySegment<byte> Serialize<T>(this T protoContract) where T: IMessage<T> {
+		public static ArraySegment<byte> Serialize<T>(this T protoContract) where T : IMessage<T> {
 			MemoryStream stream = null;
 			try {
 				stream = AcquireStream();
@@ -71,7 +71,7 @@ namespace EventStore.Core.Services.Transport.Tcp {
 			}
 		}
 
-		public static byte[] SerializeToArray<T>(this T protoContract) where T: IMessage<T>{
+		public static byte[] SerializeToArray<T>(this T protoContract) where T : IMessage<T> {
 			MemoryStream stream = null;
 			try {
 				stream = AcquireStream();

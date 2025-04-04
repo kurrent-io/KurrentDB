@@ -11,7 +11,7 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 		private readonly Guid _replicaId2 = Guid.NewGuid();
 		private readonly Guid _replicaId3 = Guid.NewGuid();
 
-		
+
 		protected override int ClusterSize => 5;
 
 		public override void When() {

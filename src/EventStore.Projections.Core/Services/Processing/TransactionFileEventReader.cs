@@ -2,11 +2,11 @@ using System;
 using System.Security.Claims;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
-using EventStore.Core.Settings;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Services.TimerService;
+using EventStore.Core.Settings;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Standard;
 
@@ -34,7 +34,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 			bool deliverEndOfTFPosition = true,
 			bool resolveLinkTos = true)
 			: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-			if (publisher == null) throw new ArgumentNullException("publisher");
+			if (publisher == null)
+				throw new ArgumentNullException("publisher");
 			_from = @from;
 			_deliverEndOfTfPosition = deliverEndOfTFPosition;
 			_resolveLinkTos = resolveLinkTos;
@@ -89,9 +90,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-			if (_disposed) return;
-			if (Paused) return;
-			if (message.CorrelationId != _pendingRequestCorrelationId) return;
+			if (_disposed)
+				return;
+			if (Paused)
+				return;
+			if (message.CorrelationId != _pendingRequestCorrelationId)
+				return;
 
 			_eventsRequested = false;
 			PauseOrContinueProcessing();
@@ -103,7 +107,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		protected override void RequestEvents() {
-			if (_disposed) throw new InvalidOperationException("Disposed");
+			if (_disposed)
+				throw new InvalidOperationException("Disposed");
 			if (_eventsRequested)
 				throw new InvalidOperationException("Read operation is already in progress");
 			if (PauseRequested || Paused)

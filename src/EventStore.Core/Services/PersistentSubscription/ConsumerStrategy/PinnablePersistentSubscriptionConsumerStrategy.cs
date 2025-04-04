@@ -1,5 +1,4 @@
-﻿namespace EventStore.Core.Services.PersistentSubscription.ConsumerStrategy
-{
+﻿namespace EventStore.Core.Services.PersistentSubscription.ConsumerStrategy {
 	using Common.Utils;
 	using Data;
 	using Index.Hashes;
@@ -81,8 +80,7 @@
 
 		protected abstract string GetAssignmentSourceId(ResolvedEvent ev);
 
-		protected string GetSourceStreamId(ResolvedEvent ev)
-		{
+		protected string GetSourceStreamId(ResolvedEvent ev) {
 			var eventRecord = ev.Event ?? ev.Link; // Unresolved link just use the link
 
 			string sourceStreamId = eventRecord.EventStreamId;
@@ -91,8 +89,7 @@
 			{
 				sourceStreamId = Helper.UTF8NoBom.GetString(eventRecord.Data.Span);
 				int separatorIndex = sourceStreamId.IndexOf(LinkToSeparator);
-				if (separatorIndex != -1)
-				{
+				if (separatorIndex != -1) {
 					sourceStreamId = sourceStreamId.Substring(separatorIndex + 1);
 				}
 			}

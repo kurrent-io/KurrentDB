@@ -107,7 +107,7 @@ namespace EventStore.Core.LogV3 {
 			Guid partitionTypeId,
 			Guid partitionId,
 			string name) {
-			
+
 			return new PartitionTypeLogRecord(
 				timeStamp: timeStamp,
 				logPosition: logPosition,
@@ -126,7 +126,7 @@ namespace EventStore.Core.LogV3 {
 			Raw.PartitionFlags flags,
 			ushort referenceNumber,
 			string name) {
-			
+
 			return new PartitionLogRecord(
 				timeStamp: timeStamp,
 				logPosition: logPosition,

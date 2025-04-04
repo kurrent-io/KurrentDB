@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Data;
@@ -7,7 +6,6 @@ using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -62,7 +60,7 @@ namespace EventStore.Core.Tests.Services.Storage.Scavenge {
 			var id = _logFormat.StreamIds.LookupValue(_deletedEventStreamId);
 			var deletedRecord = (IPrepareLogRecord<TStreamId>)chunkRecords.First(
 				x => x.RecordType == LogRecordType.Prepare
-				     && EqualityComparer<TStreamId>.Default.Equals(((IPrepareLogRecord<TStreamId>)x).EventStreamId, id));
+					 && EqualityComparer<TStreamId>.Default.Equals(((IPrepareLogRecord<TStreamId>)x).EventStreamId, id));
 
 			Assert.AreEqual(EventNumber.DeletedStream - 1, deletedRecord.ExpectedVersion);
 		}

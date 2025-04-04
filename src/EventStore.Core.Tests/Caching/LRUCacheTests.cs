@@ -9,7 +9,7 @@ namespace EventStore.Core.Tests.Caching {
 		private static LRUCache<TKey, TValue> GenSut<TKey, TValue>(int capacity,
 			LRUCache<TKey, TValue>.CalculateItemSize calculateItemSize = null,
 			LRUCache<TKey, TValue>.CalculateFreedSize calculateFreedSize = null) =>
-			new (string.Empty, capacity, calculateItemSize, calculateFreedSize);
+			new(string.Empty, capacity, calculateItemSize, calculateFreedSize);
 
 		[Test]
 		public void can_add_and_read_item() {
@@ -70,7 +70,7 @@ namespace EventStore.Core.Tests.Caching {
 		}
 
 		public class WithCustomItemSizeCalculator {
-			private readonly LRUCache<int,int> _sut;
+			private readonly LRUCache<int, int> _sut;
 
 			public WithCustomItemSizeCalculator() =>
 				_sut = GenSut<int, int>(7, (k, v) => k + v);

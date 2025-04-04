@@ -1,9 +1,7 @@
-﻿using EventStore.Core.Data;
-using EventStore.Core.Services;
+﻿using EventStore.Core.Services;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.Metastreams {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

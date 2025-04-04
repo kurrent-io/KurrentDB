@@ -17,8 +17,8 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 		[SetUp]
 		public void setup() {
 			_timeProvider = new RealTimeProvider();
-			_ab12Tag = new Dictionary<string, long> {{"a", 1}, {"b", 2}};
-			_abStreams = new[] {"a", "b"};
+			_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
+			_abStreams = new[] { "a", "b" };
 		}
 
 		[Test]
@@ -72,7 +72,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 			Assert.Throws<ArgumentException>(() => {
 				new MultiStreamEventReader(
 					_ioDispatcher, _bus, Guid.NewGuid(), null, 0, _abStreams,
-					new Dictionary<string, long> {{"a", 1}, {"c", 2}}, false, _timeProvider);
+					new Dictionary<string, long> { { "a", 1 }, { "c", 2 } }, false, _timeProvider);
 			});
 		}
 	}

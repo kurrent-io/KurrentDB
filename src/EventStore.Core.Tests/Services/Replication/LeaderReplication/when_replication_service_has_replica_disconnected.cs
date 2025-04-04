@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 	[TestFixture]
 	public class when_replication_service_has_replica_disconnected : with_replication_service {
-		
+
 		public override void When() {
 			ReplicaManager1.Stop();
 			AssertEx.IsOrBecomesTrue(() => ReplicaManager1.IsClosed);
@@ -14,7 +14,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 			DbConfig.WriterCheckpoint.Write(writePos + 100);
 			DbConfig.WriterCheckpoint.Flush();
 		}
-		
+
 		[Test]
 		public void vnode_disconnected_should_be_published() {
 			AssertEx.IsOrBecomesTrue(() => ReplicaLostMessages.Count == 1, msg: "ReplicaLost msg not received");
@@ -28,7 +28,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 			AssertEx.IsOrBecomesTrue(() => ReplicaLostMessages.Count == 1, msg: "ReplicaLost msg not received");
 			var replicationLogPosition = DbConfig.WriterCheckpoint.Read() + 200;
 			Service.Handle(new ReplicationMessage.ReplicaLogPositionAck(ReplicaId, replicationLogPosition, replicationLogPosition));
-			
+
 			Assert.True(ReplicaWriteAcks.Count == 0, $"Got unexpected ReplicaLogAck Message");
 		}
 	}

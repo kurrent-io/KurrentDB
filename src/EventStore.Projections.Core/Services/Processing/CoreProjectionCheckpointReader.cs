@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
@@ -7,8 +6,6 @@ using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.UserManagement;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Projections.Core.Messages;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Projections.Core.Services.Processing {
@@ -82,7 +79,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 				if (checkpoint != null) {
 					var parsed = checkpoint.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
 					if (parsed.Version.ProjectionId != _projectionVersion.ProjectionId
-					    || _projectionVersion.Epoch > parsed.Version.Version) {
+						|| _projectionVersion.Epoch > parsed.Version.Version) {
 						_lastWrittenCheckpointEventNumber = checkpoint.EventNumber;
 						CheckpointLoaded(null, null);
 					} else {

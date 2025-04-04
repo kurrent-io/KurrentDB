@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Caching;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
@@ -659,7 +658,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge {
 					Assert.Equal(eventNumber, info.EventNumber);
 				}
 			}
-		
+
 			// check we don't have anything extra
 			// (we can't easily check that there aren't unexpected streams in the index, but risk of this
 			// is low)

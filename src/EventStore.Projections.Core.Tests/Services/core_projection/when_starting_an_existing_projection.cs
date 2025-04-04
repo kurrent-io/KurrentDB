@@ -2,8 +2,8 @@ using System;
 using System.Linq;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
-using NUnit.Framework;
 using EventStore.Projections.Core.Services;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

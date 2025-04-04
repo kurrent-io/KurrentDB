@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Text;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 

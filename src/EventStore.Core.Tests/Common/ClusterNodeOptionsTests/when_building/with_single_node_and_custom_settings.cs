@@ -154,13 +154,13 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 			Assert.AreEqual(_httpEndpoint.Port + 1000, _node.GossipAdvertiseInfo.AdvertiseHttpPortAs);
 		}
 	}
-	
+
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class with_custom_password_for_admin_and_ops_user<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 		private const string _adminPassword = "Admin";
 		private const string _opsPassword = "Ops";
-		
+
 		protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
 			options with {
 				DefaultUser = new ClusterVNodeOptions.DefaultUserOptions { DefaultAdminPassword = _adminPassword, DefaultOpsPassword = _opsPassword }
@@ -168,7 +168,7 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 
 		[Test]
 		public void should_set_the_custom_admin_and_ops_user_password() {
-			Assert.AreEqual(_adminPassword,_options.DefaultUser.DefaultAdminPassword);
+			Assert.AreEqual(_adminPassword, _options.DefaultUser.DefaultAdminPassword);
 			Assert.AreEqual(_opsPassword, _options.DefaultUser.DefaultOpsPassword);
 		}
 	}
@@ -180,9 +180,9 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 		protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
 			options with {
 			};
-		
+
 		private IConfigurationRoot _configurationRoot;
-		
+
 		[Test]
 		public void should_return_error_when_default_password_options_pass_through_command_line() {
 
@@ -197,12 +197,12 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 				}))
 				.Add(new CommandLineSource(args))
 				.Build();
-			
+
 			var clusterVNodeOptions = ClusterVNodeOptions.FromConfiguration(_configurationRoot);
-			
+
 			Assert.NotNull(clusterVNodeOptions.CheckForEnvironmentOnlyOptions());
 		}
-		
+
 		[Test]
 		public void should_return_null_when_default_password_options_pass_through_environment_variables() {
 
@@ -210,7 +210,7 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 			IDictionary environmentVariables = new Dictionary<string, string>();
 			environmentVariables.Add("EVENTSTORE_DEFAULT_ADMIN_PASSWORD", "Admin#");
 			environmentVariables.Add("EVENTSTORE_DEFAULT_OPS_PASSWORD", "Ops#");
-			
+
 			_configurationRoot = new ConfigurationBuilder()
 				.Add(new DefaultSource(new Dictionary<string, object> {
 					[nameof(ClusterVNodeOptions.DefaultUser.DefaultAdminPassword)] = SystemUsers.DefaultAdminPassword,
@@ -219,9 +219,9 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 				.Add(new CommandLineSource(args))
 				.Add(new EnvironmentVariablesSource(environmentVariables))
 				.Build();
-			
+
 			var clusterVNodeOptions = ClusterVNodeOptions.FromConfiguration(_configurationRoot);
-			
+
 			Assert.Null(clusterVNodeOptions.CheckForEnvironmentOnlyOptions());
 		}
 	}

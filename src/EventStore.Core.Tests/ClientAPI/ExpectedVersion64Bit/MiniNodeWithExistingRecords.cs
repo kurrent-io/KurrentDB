@@ -1,24 +1,23 @@
 using System;
+using System.IO;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Tests.ClientAPI.Helpers;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.TransactionLog;
-using NUnit.Framework;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Index;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.ReaderIndex;
+using EventStore.Core.Tests.ClientAPI.Helpers;
+using EventStore.Core.Tests.Helpers;
+using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.Util;
-using System.IO;
-using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 	public abstract class MiniNodeWithExistingRecords<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
@@ -129,7 +128,7 @@ namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 			if (streamRecord != null) {
 				Writer.Write(streamRecord, out pos);
 			}
-			
+
 			_logFormatFactory.EventTypeIndex.GetOrReserveEventType(
 				_logFormatFactory.RecordFactory,
 				eventType,

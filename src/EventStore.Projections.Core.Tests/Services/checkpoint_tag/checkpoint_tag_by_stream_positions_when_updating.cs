@@ -7,7 +7,7 @@ namespace EventStore.Projections.Core.Tests.Services.checkpoint_tag {
 	[TestFixture]
 	public class checkpoint_tag_by_stream_positions_when_updating {
 		private readonly CheckpointTag _a1b1 = CheckpointTag.FromStreamPositions(
-			1, new Dictionary<string, long> {{"a", 1}, {"b", 1}});
+			1, new Dictionary<string, long> { { "a", 1 }, { "b", 1 } });
 
 		[Test]
 		public void updated_position_is_correct() {

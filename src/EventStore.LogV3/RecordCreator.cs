@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Text;
 using System.Text.Unicode;
 using EventStore.LogCommon;
@@ -30,7 +29,7 @@ namespace EventStore.LogV3 {
 		private static LogRecordType Type(this ref Raw.ContentTypeHeader _) => LogRecordType.ContentType;
 		private static LogRecordType Type(this ref Raw.TransactionStartHeader _) => LogRecordType.TransactionStart;
 		private static LogRecordType Type(this ref Raw.TransactionEndHeader _) => LogRecordType.TransactionEnd;
-		
+
 		// todo: limit of 100 bytes when we know a good way to report the error to the client.
 		// throwing here will crash the writer.
 		const int MaxStringBytes = int.MaxValue;
@@ -98,7 +97,7 @@ namespace EventStore.LogV3 {
 
 			return StringPayloadRecord.Create(record);
 		}
-		
+
 		public static StringPayloadRecord<Raw.PartitionTypeHeader> CreatePartitionTypeRecord(
 			DateTime timeStamp,
 			long logPosition,
@@ -175,7 +174,7 @@ namespace EventStore.LogV3 {
 
 			return StringPayloadRecord.Create(record);
 		}
-		
+
 		public static StringPayloadRecord<Raw.EventTypeHeader> CreateEventTypeRecord(
 			DateTime timeStamp,
 			long logPosition,
@@ -205,7 +204,7 @@ namespace EventStore.LogV3 {
 
 			return StringPayloadRecord.Create(record);
 		}
-		
+
 		public static StringPayloadRecord<Raw.ContentTypeHeader> CreateContentTypeRecord(
 			DateTime timeStamp,
 			long logPosition,
@@ -362,7 +361,7 @@ namespace EventStore.LogV3 {
 			var record = MutableRecordView<Raw.TransactionStartHeader>.Create(payloadLength: 0);
 			ref var header = ref record.Header;
 			ref var subHeader = ref record.SubHeader;
-			
+
 			header.Type = subHeader.Type();
 			header.Version = subHeader.CurrentVersion();
 			header.TimeStamp = timeStamp;
@@ -375,7 +374,7 @@ namespace EventStore.LogV3 {
 
 			return record;
 		}
-		
+
 		public static RecordView<Raw.TransactionEndHeader> CreateTransactionEndRecord(
 			DateTime timeStamp,
 			long logPosition,
@@ -391,7 +390,7 @@ namespace EventStore.LogV3 {
 			header.TimeStamp = timeStamp;
 			header.RecordId = transactionId;
 			header.LogPosition = logPosition;
-			
+
 			subHeader.RecordCount = recordCount;
 
 			return record;

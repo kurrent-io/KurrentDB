@@ -29,7 +29,7 @@ namespace EventStore.Projections.Core.Messages {
 				QueueId = queueId;
 			}
 		}
-		
+
 		[DerivedMessage(ProjectionMessage.ServiceMessage)]
 		public partial class CoreTick : Message {
 			private readonly Action _action;
@@ -47,7 +47,7 @@ namespace EventStore.Projections.Core.Messages {
 		public partial class SubComponentStarted : Message {
 			public string SubComponent { get; }
 			public Guid InstanceCorrelationId { get; }
-		
+
 			public SubComponentStarted(string subComponent, Guid instanceCorrelationId) {
 				InstanceCorrelationId = instanceCorrelationId;
 				SubComponent = subComponent;

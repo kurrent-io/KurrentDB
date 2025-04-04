@@ -13,7 +13,7 @@ using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.Service {
-	public abstract class RequestManagerServiceSpecification:
+	public abstract class RequestManagerServiceSpecification :
 		IHandle<StorageMessage.WritePrepares>,
 		IHandle<StorageMessage.RequestCompleted> {
 		protected readonly TimeSpan PrepareTimeout = TimeSpan.FromMinutes(5);
@@ -28,7 +28,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.Service {
 		protected FakeEnvelope Envelope = new FakeEnvelope();
 		protected InMemoryBus Dispatcher = new InMemoryBus(nameof(RequestManagerServiceSpecification));
 		protected RequestManagementService Service;
-		protected bool GrantAccess =true;
+		protected bool GrantAccess = true;
 		protected long LogPosition = 100;
 		protected PrepareFlags PrepareFlags = PrepareFlags.Data;
 		protected string StreamId = $"{nameof(RequestManagerServiceSpecification)}-{Guid.NewGuid()}";
@@ -68,7 +68,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.Service {
 			Publisher.Messages.Clear();
 
 			Dispatcher.Publish(When());
-			
+
 		}
 
 
@@ -91,10 +91,10 @@ namespace EventStore.Core.Tests.Services.RequestManagement.Service {
 				LogPosition += 100;
 			}
 			Dispatcher.Publish(new StorageMessage.CommitIndexed(
-									message.CorrelationId, 
-									LogPosition, 
+									message.CorrelationId,
+									LogPosition,
 									transactionPosition,
-									0, 
+									0,
 									message.Events.Length));
 		}
 

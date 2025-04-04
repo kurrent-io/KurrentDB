@@ -6,7 +6,6 @@ using System.Threading;
 using EventStore.Client.Messages;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Transport.Tcp;
 using OperationResult = EventStore.Client.Messages.OperationResult;
@@ -20,11 +19,11 @@ namespace EventStore.TestClient.Commands.DvuBasic {
 		public string Usage {
 			get {
 				return string.Format("{0} " +
-				                     "<writers, default = 20> " +
-				                     "<readers, default = 30> " +
-				                     "<events, default = 1000000> " +
-				                     "<streams per plugin, default = 1000> " +
-				                     "<producers, default = [bank], available = [{1}]>",
+									 "<writers, default = 20> " +
+									 "<readers, default = 30> " +
+									 "<events, default = 1000000> " +
+									 "<streams per plugin, default = 1000> " +
+									 "<producers, default = [bank], available = [{1}]>",
 					Keyword,
 					string.Join(",", AvailableProducers));
 			}
@@ -48,7 +47,7 @@ namespace EventStore.TestClient.Commands.DvuBasic {
 			var readers = 30;
 			var events = 1000000;
 			var streams = 1000;
-			var producers = new[] {"bank"};
+			var producers = new[] { "bank" };
 
 			if (args.Length != 0 && args.Length != 5) {
 				context.Log.Error("Invalid number of arguments. Should be 0 or 5");
@@ -81,7 +80,7 @@ namespace EventStore.TestClient.Commands.DvuBasic {
 					return false;
 				}
 
-				string[] producersArg = args[4].Split(new[] {","}, StringSplitOptions.RemoveEmptyEntries)
+				string[] producersArg = args[4].Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries)
 					.Select(p => p.Trim().ToLower()).Distinct().ToArray();
 				if (producersArg.Length <= 0) {
 					context.Log.Error("Invalid argument value for <plugins>");
@@ -107,7 +106,7 @@ namespace EventStore.TestClient.Commands.DvuBasic {
 
 		private bool InitProducers(string[] producers) {
 			if (producers.Length == 1 && producers[0] == "bank") {
-				Producers = new IBasicProducer[] {new BankAccountBasicProducer()};
+				Producers = new IBasicProducer[] { new BankAccountBasicProducer() };
 				return true;
 			}
 
@@ -249,7 +248,8 @@ namespace EventStore.TestClient.Commands.DvuBasic {
 			Action<TcpTypedConnection<byte[]>> established = _ => { };
 			Action<TcpTypedConnection<byte[]>, SocketError> closed = null;
 			closed = (_, __) => {
-				if (!context._tcpTestClient.Options.Reconnect) return;
+				if (!context._tcpTestClient.Options.Reconnect)
+					return;
 				Thread.Sleep(TimeSpan.FromSeconds(1));
 				connection =
 					context._tcpTestClient.CreateTcpConnection(context, packageHandler, cn => iteration.Set(), closed, false);
@@ -330,7 +330,8 @@ namespace EventStore.TestClient.Commands.DvuBasic {
 			Action<TcpTypedConnection<byte[]>> established = _ => { };
 			Action<TcpTypedConnection<byte[]>, SocketError> closed = null;
 			closed = (_, __) => {
-				if (!context._tcpTestClient.Options.Reconnect) return;
+				if (!context._tcpTestClient.Options.Reconnect)
+					return;
 				Thread.Sleep(TimeSpan.FromSeconds(1));
 				connection =
 					context._tcpTestClient.CreateTcpConnection(context, packageReceived, cn => iteration.Set(), closed, false);

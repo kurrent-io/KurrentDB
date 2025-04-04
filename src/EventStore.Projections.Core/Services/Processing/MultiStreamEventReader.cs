@@ -1,6 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using EventStore.Core.Bus;
@@ -10,9 +10,9 @@ using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Services.TimerService;
+using EventStore.Core.Settings;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Messaging;
-using EventStore.Core.Settings;
 
 namespace EventStore.Projections.Core.Services.Processing {
 	public class MultiStreamEventReader : EventReader,
@@ -45,9 +45,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 			string[] streams, Dictionary<string, long> fromPositions, bool resolveLinkTos, ITimeProvider timeProvider,
 			bool stopOnEof = false, int? stopAfterNEvents = null)
 			: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-			if (streams == null) throw new ArgumentNullException("streams");
-			if (timeProvider == null) throw new ArgumentNullException("timeProvider");
-			if (streams.Length == 0) throw new ArgumentException("streams");
+			if (streams == null)
+				throw new ArgumentNullException("streams");
+			if (timeProvider == null)
+				throw new ArgumentNullException("timeProvider");
+			if (streams.Length == 0)
+				throw new ArgumentException("streams");
 			_streams = new HashSet<string>(streams);
 			_eofs = new ConcurrentDictionary<string, bool>(_streams.ToDictionary(v => v, v => false));
 			var positions = CheckpointTag.FromStreamPositions(phase, fromPositions);
@@ -103,7 +106,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 				throw new InvalidOperationException("Read events has not been requested");
 			if (Paused)
 				throw new InvalidOperationException("Paused");
-			if (!_pendingRequests.Values.Any(x => x == message.CorrelationId)) return;
+			if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+				return;
 
 			_lastPosition = message.TfLastCommitPosition;
 			switch (message.Result) {
@@ -112,7 +116,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 					_eofs[message.EventStreamId] = true;
 					UpdateSafePositionToJoin(message.EventStreamId, MessageToLastCommitPosition(message));
 					if (message.Result == ReadStreamResult.StreamDeleted
-					    || (message.Result == ReadStreamResult.NoStream && message.LastEventNumber >= 0))
+						|| (message.Result == ReadStreamResult.NoStream && message.LastEventNumber >= 0))
 						EnqueueItem(null, message.EventStreamId);
 					ProcessBuffers();
 					_eventsRequested.Remove(message.EventStreamId);
@@ -159,9 +163,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-			if (_disposed) return;
-			if (Paused) return;
-			if (!_pendingRequests.Values.Any(x => x == message.CorrelationId)) return;
+			if (_disposed)
+				return;
+			if (Paused)
+				return;
+			if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+				return;
 
 			_eventsRequested.Remove(message.StreamId);
 			PauseOrContinueProcessing();
@@ -215,8 +222,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 					if (head != null) {
 						var itemPosition = GetItemPosition(head);
 						if (_safePositionToJoin != null
-						    && itemPosition.CompareTo(_safePositionToJoin.GetValueOrDefault()) <= 0
-						    && itemPosition.CompareTo(minPosition) < 0) {
+							&& itemPosition.CompareTo(_safePositionToJoin.GetValueOrDefault()) <= 0
+							&& itemPosition.CompareTo(minPosition) < 0) {
 							minPosition = itemPosition;
 							minStreamId = currentStreamId;
 							anyEvent = true;
@@ -249,7 +256,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		private void RequestEvents(string stream, bool delay) {
-			if (_disposed) throw new InvalidOperationException("Disposed");
+			if (_disposed)
+				throw new InvalidOperationException("Disposed");
 			if (PauseRequested || Paused)
 				throw new InvalidOperationException("Paused or pause requested");
 

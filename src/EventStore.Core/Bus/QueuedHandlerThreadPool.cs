@@ -1,11 +1,11 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Core.Services.Monitoring.Stats;
-using System.Threading.Tasks;
 using EventStore.Core.Metrics;
+using EventStore.Core.Services.Monitoring.Stats;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Bus {
@@ -130,7 +130,7 @@ namespace EventStore.Core.Bus {
 										_queueStats.Name, _queueStats.InProgressMessage.Name,
 										(int)elapsed.TotalMilliseconds, queueCnt, _queue.Count, msg);
 									if (elapsed > QueuedHandler.VerySlowMsgThreshold &&
-									    !(msg is SystemMessage.SystemInit))
+										!(msg is SystemMessage.SystemInit))
 										Log.Error(
 											"---!!! VERY SLOW QUEUE MSG [{queue}]: {message} - {elapsed}ms. Q: {prevQueueCount}/{curQueueCount}.",
 											_queueStats.Name, _queueStats.InProgressMessage.Name,

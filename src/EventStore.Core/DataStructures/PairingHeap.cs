@@ -1,7 +1,6 @@
 ﻿#define USE_POOL
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using EventStore.Common.Utils;
 

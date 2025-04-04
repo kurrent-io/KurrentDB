@@ -168,7 +168,7 @@ namespace EventStore.Core.XUnit.Tests.LogV3 {
 		// populate the sut with a given number of confirmed streams.
 		void PopulateSut(int numStreams) {
 			var xs = _streamsSource.Take(numStreams).ToList();
-				
+
 			foreach (var (streamId, streamName) in xs) {
 				_sut.GetOrReserve(streamName, out var outStreamId, out var _, out var _);
 				Assert.Equal(streamId, outStreamId);

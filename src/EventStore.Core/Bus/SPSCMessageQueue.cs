@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Threading;
 using EventStore.Core.Messaging;
 
 namespace EventStore.Core.Bus {

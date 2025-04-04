@@ -2,7 +2,7 @@ using System.Reflection;
 
 namespace EventStore.Common.Utils {
 	public static class VersionInfo {
-		public const string DefaultVersion = "0.0.0.0"; 
+		public const string DefaultVersion = "0.0.0.0";
 		public const string UnknownVersion = "unknown_version";
 		public const string OldVersion = "old_version";
 		public static string Version => typeof(VersionInfo).Assembly

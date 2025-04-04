@@ -1,15 +1,15 @@
-namespace EventStore.Projections.Core.Tests.Services.projections_manager{
+namespace EventStore.Projections.Core.Tests.Services.projections_manager {
 	using Core.Services.Management;
 	using NUnit.Framework;
 
 	[TestFixture]
 	public class VerifyPersistentStateRulesForDeletingStreams {
 		[Test]
-		[TestCase(true,true,true)]
-		[TestCase(false,true,false)]
-		[TestCase(true,false,false)]
-		[TestCase(false,false,false)]
-		public void EmitStreamNeedsDeletedAsExpected(bool emitEnabled,bool deleteEmitStreams,bool expectedResult) {
+		[TestCase(true, true, true)]
+		[TestCase(false, true, false)]
+		[TestCase(true, false, false)]
+		[TestCase(false, false, false)]
+		public void EmitStreamNeedsDeletedAsExpected(bool emitEnabled, bool deleteEmitStreams, bool expectedResult) {
 			ManagedProjection.PersistedState persistedState = new ManagedProjection.PersistedState();
 
 			persistedState.EmitEnabled = emitEnabled;

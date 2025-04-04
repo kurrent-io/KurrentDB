@@ -70,7 +70,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection.multi_phase
 				ITimeProvider timeProvider,
 				IODispatcher ioDispatcher,
 				CoreProjectionCheckpointWriter coreProjectionCheckpointWriter) {
-				return new IProjectionProcessingPhase[] {_phase1, _phase2};
+				return new IProjectionProcessingPhase[] { _phase1, _phase2 };
 			}
 		}
 

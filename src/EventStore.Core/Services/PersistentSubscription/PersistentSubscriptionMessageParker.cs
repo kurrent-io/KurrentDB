@@ -29,7 +29,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			ParkedStreamId = "$persistentsubscription-" + subscriptionId + "-parked";
 			_ioDispatcher = ioDispatcher;
 		}
-		
+
 		public void BeginLoadStats(Action completed) {
 			BeginReadParkedMessageStats(completed);
 		}
@@ -55,8 +55,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 
 		public void BeginParkMessage(ResolvedEvent ev, string reason,
 			Action<ResolvedEvent, OperationResult> completed) {
-			var metadata = new ParkedMessageMetadata
-				{Added = DateTime.Now, Reason = reason, SubscriptionEventNumber = ev.OriginalEventNumber};
+			var metadata = new ParkedMessageMetadata { Added = DateTime.Now, Reason = reason, SubscriptionEventNumber = ev.OriginalEventNumber };
 
 			string data = GetLinkToFor(ev);
 
@@ -82,7 +81,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 
 		private void BeginReadParkedMessageStats(Action completed) {
 			BeginReadLastEvent(lastEventNumber => {
-				if (lastEventNumber is null) completed();
+				if (lastEventNumber is null)
+					completed();
 				BeginReadFirstEvent(0, firstEventNumber => {
 					_lastTruncateBefore = firstEventNumber ?? -1;
 					_lastParkedEventNumber = lastEventNumber ?? -1;

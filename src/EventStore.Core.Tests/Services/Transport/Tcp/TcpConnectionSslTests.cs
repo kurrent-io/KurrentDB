@@ -1,15 +1,12 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
-using EventStore.Transport.Tcp;
 using System.Net.Sockets;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
+using EventStore.Transport.Tcp;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp {
 	[TestFixture]
@@ -109,8 +106,8 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 						null,
 						new TcpClientConnector(),
 						TimeSpan.FromSeconds(5),
-						(conn) => {},
-						(conn, error) => {},
+						(conn) => { },
+						(conn, error) => { },
 						false);
 
 					clientTcpConnection.ConnectionClosed += (conn, error) => {

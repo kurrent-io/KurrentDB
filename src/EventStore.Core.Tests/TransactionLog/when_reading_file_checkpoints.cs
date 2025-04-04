@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using EventStore.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
 

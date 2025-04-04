@@ -13,7 +13,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.MonitoringTests {
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_reading_stats<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
-			
+
 			private const int _expected = 3;
 			private const int _refreshTimePeriodInMs = 250;
 			private readonly List<StatsResp> _stats;
@@ -21,11 +21,11 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.MonitoringTests {
 			public when_reading_stats() {
 				_stats = new List<StatsResp>();
 			}
-			
+
 			protected override async Task Given() {
 				var node = GetLeader();
 				await Task.WhenAll(node.AdminUserCreated, node.Started);
-				
+
 				using var channel = GrpcChannel.ForAddress(new Uri($"https://{node.HttpEndPoint}"),
 					new GrpcChannelOptions {
 						HttpClient = new HttpClient(new SocketsHttpHandler {
@@ -38,9 +38,9 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.MonitoringTests {
 				var request = new StatsReq {
 					RefreshTimePeriodInMs = _refreshTimePeriodInMs
 				};
-				
+
 				using var resp = client.Stats(request);
-			
+
 				var count = 0;
 				var cts = new CancellationTokenSource(_refreshTimePeriodInMs * _expected * 2);
 				while (count < _expected && await resp.ResponseStream.MoveNext(cts.Token)) {
@@ -54,6 +54,6 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.MonitoringTests {
 				Assert.AreEqual(_expected, _stats.Count);
 			}
 
-		}	
+		}
 	}
 }

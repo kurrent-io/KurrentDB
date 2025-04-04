@@ -33,7 +33,7 @@ namespace EventStore.Core.Services.RequestManager.Managers {
 			_events = events;
 			_transactionId = transactionId;
 		}
-		
+
 		protected override Message WriteRequestMsg =>
 			new StorageMessage.WriteTransactionData(
 					InternalCorrId,

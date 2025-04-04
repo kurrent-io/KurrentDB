@@ -29,7 +29,8 @@ public abstract class race_conditions_when_successive_writes_are_quick {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return (new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));
 		}
 
@@ -55,14 +56,14 @@ public abstract class race_conditions_when_successive_writes_are_quick {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint), false, true)]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint), false, false)]
 	public class create_create_race_condition<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
-		
+
 		private readonly bool shouldBatchCreate1;
 		private readonly bool shouldBatchCreate2;
 		public create_create_race_condition(bool shouldBatchCreate1, bool shouldBatchCreate2) {
 			this.shouldBatchCreate1 = shouldBatchCreate1;
 			this.shouldBatchCreate2 = shouldBatchCreate2;
 		}
-		
+
 		private WhenStep GetCreate(string name, bool batch) {
 			if (batch) {
 				var projectionPost = new ProjectionManagementMessage.Command.PostBatch.ProjectionPost(
@@ -79,14 +80,15 @@ public abstract class race_conditions_when_successive_writes_are_quick {
 				_projectionSource, enabled: true, checkpointsEnabled: true,
 				emitEnabled: false, trackEmittedStreams: false));
 		}
-		
+
 		protected override void Given() {
 			base.Given();
 			AllWritesQueueUp();
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return GetCreate(_projection1, shouldBatchCreate1);
 			yield return GetCreate(_projection2, shouldBatchCreate2);
 		}
@@ -125,14 +127,15 @@ public abstract class race_conditions_when_successive_writes_are_quick {
 		public create_delete_race_condition(bool shouldBatchCreate) {
 			this.shouldBatchCreate = shouldBatchCreate;
 		}
-		
+
 		protected override void Given() {
 			base.Given();
 			AllWritesSucceed();
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return
 				(new ProjectionManagementMessage.Command.Post(new PublishEnvelope(_bus), ProjectionMode.Continuous,
 					_projection1,
@@ -146,7 +149,7 @@ public abstract class race_conditions_when_successive_writes_are_quick {
 			yield return
 				(new ProjectionManagementMessage.Internal.Deleted(_projection1, projectionToDeletedId));
 		}
-		
+
 		private WhenStep GetCreate(string name) {
 			if (shouldBatchCreate) {
 				var projectionPost = new ProjectionManagementMessage.Command.PostBatch.ProjectionPost(
@@ -223,7 +226,8 @@ public abstract class race_conditions_when_successive_writes_are_quick {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return (new ProjectionManagementMessage.Command.Post(new PublishEnvelope(_bus),
 				ProjectionMode.Continuous,
 				_projection1,
@@ -306,7 +310,8 @@ public abstract class race_conditions_when_successive_writes_are_quick {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return
 				(new ProjectionManagementMessage.Command.Post(new PublishEnvelope(_bus), ProjectionMode.Continuous,
 					_projection1,

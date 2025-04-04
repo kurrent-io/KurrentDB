@@ -13,19 +13,19 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 			BecomeLeader();
 			var replicaId1 = Guid.NewGuid();
 			var replicaId2 = Guid.NewGuid();
-			Service.Handle(new ReplicationTrackingMessage.ReplicaWriteAck(replicaId1,_logPosition));
-			Service.Handle(new ReplicationTrackingMessage.ReplicaWriteAck(replicaId2,_logPosition));
+			Service.Handle(new ReplicationTrackingMessage.ReplicaWriteAck(replicaId1, _logPosition));
+			Service.Handle(new ReplicationTrackingMessage.ReplicaWriteAck(replicaId2, _logPosition));
 			AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 		}
 
 		[Test]
 		public void replicated_to_should_not_be_sent() {
-			Assert.AreEqual(0, ReplicatedTos.Count);			
-		}	
+			Assert.AreEqual(0, ReplicatedTos.Count);
+		}
 		[Test]
 		public void replication_checkpoint_should_not_advance() {
-			Assert.AreEqual(0, ReplicationCheckpoint.Read());		
-			Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());		
-		}	
+			Assert.AreEqual(0, ReplicationCheckpoint.Read());
+			Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());
+		}
 	}
 }

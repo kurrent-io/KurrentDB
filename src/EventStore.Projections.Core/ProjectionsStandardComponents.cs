@@ -31,7 +31,7 @@ namespace EventStore.Projections.Core {
 		public IBus LeaderMainBus { get; }
 
 		public bool FaultOutOfOrderProjections { get; }
-		
+
 		public int ProjectionCompilationTimeout { get; }
 
 		public int ProjectionExecutionTimeout { get; }

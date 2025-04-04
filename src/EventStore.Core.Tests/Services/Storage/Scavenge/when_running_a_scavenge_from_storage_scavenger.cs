@@ -2,16 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using EventStore.ClientAPI;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Services;
 using EventStore.Core.Services.UserManagement;
-using EventStore.ClientAPI;
+using EventStore.Core.Tests.ClientAPI.Helpers;
+using EventStore.Core.Tests.Helpers;
 using NUnit.Framework;
 using ILogger = Serilog.ILogger;
-using System.Threading.Tasks;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

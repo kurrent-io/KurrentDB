@@ -64,7 +64,7 @@ namespace EventStore.Core.Tests.Services.ElectionsService.Randomized {
 		}
 
 		protected override IRandTestItemProcessor[] GetAdditionalProcessors() {
-			return new IRandTestItemProcessor[] {_updateGossipProcessor};
+			return new IRandTestItemProcessor[] { _updateGossipProcessor };
 		}
 
 		protected override GossipMessage.GossipUpdated GetInitialGossipFor(ElectionsInstance instance,

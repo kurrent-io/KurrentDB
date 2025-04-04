@@ -182,12 +182,12 @@ namespace EventStore.LogV3 {
 				get => _partitionTypeId;
 				set => _partitionTypeId = value;
 			}
-			
+
 			public Guid ParentPartitionId {
 				get => _parentPartitionId;
 				set => _parentPartitionId = value;
 			}
-			
+
 			public PartitionFlags Flags {
 				get => _flags;
 				set => _flags = value;
@@ -198,7 +198,7 @@ namespace EventStore.LogV3 {
 				set => _referenceNumber = value;
 			}
 		}
-		
+
 		[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
 		public struct PartitionTypeHeader {
 			[FieldOffset(0)] private Guid _partitionId;
@@ -243,14 +243,14 @@ namespace EventStore.LogV3 {
 				set => _partitionId = value;
 			}
 		}
-		
+
 		[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
 		public struct EventTypeHeader {
 			[FieldOffset(0)] private Guid _parentEventTypeId;
 			[FieldOffset(16)] private Guid _partitionId;
 			[FieldOffset(32)] private uint _referenceNumber;
 			[FieldOffset(36)] private ushort _version;
-			
+
 			public const int Size = 38;
 
 			public Guid ParentEventTypeId {
@@ -262,7 +262,7 @@ namespace EventStore.LogV3 {
 				get => _partitionId;
 				set => _partitionId = value;
 			}
-			
+
 			public uint ReferenceNumber {
 				get => _referenceNumber;
 				set => _referenceNumber = value;
@@ -318,19 +318,19 @@ namespace EventStore.LogV3 {
 				set => _metadataSize = value;
 			}
 		}
-		
+
 		public enum TransactionStatus : byte {
 			Prepare = 0,
 			Committed = 1,
 			Failed = 2,
 			Removed = 3
 		}
-		
+
 		public enum TransactionType : byte {
 			StandardWrite = 0,
 			MultipartTransaction = 1
 		}
-		
+
 		[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
 		public struct TransactionStartHeader {
 			[FieldOffset(0)] private uint _recordCount;
@@ -353,12 +353,12 @@ namespace EventStore.LogV3 {
 				set => _recordCount = value;
 			}
 		}
-		
+
 		[StructLayout(LayoutKind.Explicit, Size = Size, Pack = 1)]
 		public struct TransactionEndHeader {
 			[FieldOffset(0)] private uint _recordCount;
 			public const int Size = 4;
-			
+
 			public uint RecordCount {
 				get => _recordCount;
 				set => _recordCount = value;

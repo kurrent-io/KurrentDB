@@ -16,7 +16,7 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 			WriterCheckpoint.Write(_logPosition);
 			WriterCheckpoint.Flush();
 			Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());
-			Service.Handle(new ReplicationTrackingMessage.ReplicaWriteAck( replicaId, _underRunPosition));
+			Service.Handle(new ReplicationTrackingMessage.ReplicaWriteAck(replicaId, _underRunPosition));
 			AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 		}
 
@@ -25,11 +25,11 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 			Assert.AreEqual(1, ReplicatedTos.Count);
 			Assert.True(ReplicatedTos.TryDequeue(out var msg));
 			Assert.AreEqual(_underRunPosition, msg.LogPosition);
-		}	
+		}
 		[Test]
 		public void replication_checkpoint_should_advance() {
-			Assert.AreEqual(_underRunPosition, ReplicationCheckpoint.Read());		
-			Assert.AreEqual(_underRunPosition, ReplicationCheckpoint.ReadNonFlushed());		
-		}	
+			Assert.AreEqual(_underRunPosition, ReplicationCheckpoint.Read());
+			Assert.AreEqual(_underRunPosition, ReplicationCheckpoint.ReadNonFlushed());
+		}
 	}
 }

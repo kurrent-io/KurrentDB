@@ -1,9 +1,8 @@
-using System;
+using System.Collections.Generic;
 using System.IO;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Index;
 using NUnit.Framework;
-using System.Collections.Generic;
 
 namespace EventStore.Core.Tests.Index.IndexV1 {
 	public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
@@ -81,7 +80,7 @@ namespace EventStore.Core.Tests.Index.IndexV1 {
 					stream.Write(data, 0, 4);
 				} else if (corruptionType == "notMultipleIndexEntrySize") {
 					var footerPosition = PTableHeader.Size + numIndexEntries * indexEntrySize +
-					                     numMidpoints * indexEntrySize;
+										 numMidpoints * indexEntrySize;
 					stream.Seek(footerPosition, SeekOrigin.Begin);
 					var buffer = new byte[4096];
 					int read = stream.Read(buffer, 0, 4096);
@@ -165,8 +164,10 @@ namespace EventStore.Core.Tests.Index.IndexV1 {
 		}
 
 		private ulong GetOriginalHash(ulong stream, byte version) {
-			if (version == PTableVersions.IndexV1) return stream << 32;
-			else return stream;
+			if (version == PTableVersions.IndexV1)
+				return stream << 32;
+			else
+				return stream;
 		}
 
 		[TestCase(PTableVersions.IndexV1, false)]

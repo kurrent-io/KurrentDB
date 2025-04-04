@@ -73,7 +73,8 @@ namespace EventStore.Core.TransactionLog.Unbuffered {
 		public SafeFileHandle CreateUnbufferedRW(string path, FileAccess acc, FileShare share, FileMode mode,
 			bool writeThrough) {
 			var flags = ExtendedFileOptions.NoBuffering;
-			if (writeThrough) flags = flags | ExtendedFileOptions.WriteThrough;
+			if (writeThrough)
+				flags = flags | ExtendedFileOptions.WriteThrough;
 			var handle = WinNative.CreateFile(path,
 				acc,
 				share,

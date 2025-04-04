@@ -79,7 +79,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			_messageParker = parker;
 			return this;
 		}
-		
+
 		/// <summary>
 		/// Sets the parked message tracker for the instance
 		/// </summary>

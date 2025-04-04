@@ -42,7 +42,7 @@ namespace EventStore.Core.Services.RequestManager.Managers {
 		protected long LastEventPosition;
 		protected bool Registered;
 		protected long CommitPosition = -1;
-		
+
 		private readonly HashSet<long> _prepareLogPositions = new HashSet<long>();
 
 		private bool _allEventsWritten;
@@ -92,7 +92,7 @@ namespace EventStore.Core.Services.RequestManager.Managers {
 			}
 		}
 		protected DateTime LiveUntil => NextTimeoutTime - _timeoutOffset;
-		
+
 		protected abstract Message WriteRequestMsg { get; }
 		protected abstract Message ClientSuccessMsg { get; }
 		protected abstract Message ClientFailMsg { get; }
@@ -133,7 +133,7 @@ namespace EventStore.Core.Services.RequestManager.Managers {
 			if (_allEventsWritten) { AllEventsWritten(); }
 		}
 		protected virtual void AllPreparesWritten() { }
-		
+
 		protected virtual void AllEventsWritten() {
 			if (CommitSource.IndexedPosition >= LastEventPosition) {
 				Committed();

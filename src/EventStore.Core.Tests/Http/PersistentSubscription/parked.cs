@@ -1,21 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Net;
-using System.Text.RegularExpressions;
-using EventStore.Core.Tests.Http.Users.users;
-using NUnit.Framework;
 using System.Collections.Generic;
-using System.Threading;
-using Newtonsoft.Json.Linq;
 using System.Linq;
-using HttpStatusCode = System.Net.HttpStatusCode;
-using EventStore.Transport.Http;
-using EventStore.ClientAPI;
-using EventStore.ClientAPI.Common;
-using EventStore.Core.Data;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
+using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -37,8 +30,8 @@ namespace EventStore.Core.Tests.Http.PersistentSubscription {
 			Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 			Assert.DoesNotThrow(() => {
 				_entries = json != null ? json["entries"].ToList() : new List<JToken>();
-	            _nackLink = _entries[0]["links"][3]["uri"].ToString() + "?action=park";
-	            _eventIdToPark = Guid.Parse(_entries[0]["eventId"].ToString());
+				_nackLink = _entries[0]["links"][3]["uri"].ToString() + "?action=park";
+				_eventIdToPark = Guid.Parse(_entries[0]["eventId"].ToString());
 			});
 		}
 
@@ -46,10 +39,10 @@ namespace EventStore.Core.Tests.Http.PersistentSubscription {
 			var parkedStreamId = String.Format("$persistentsubscription-{0}::{1}-parked", TestStreamName, GroupName);
 
 			await _connection.SubscribeToStreamAsync(parkedStreamId, true, (x, y) => {
-					_parkedEventId = y.Event.EventId;
-					_eventParked.TrySetResult(true);
-					return Task.CompletedTask;
-				},
+				_parkedEventId = y.Event.EventId;
+				_eventParked.TrySetResult(true);
+				return Task.CompletedTask;
+			},
 				(x, y, z) => { },
 				DefaultData.AdminCredentials);
 
@@ -65,7 +58,7 @@ namespace EventStore.Core.Tests.Http.PersistentSubscription {
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]	
+	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	class when_replaying_one_all_parked_message<TLogFormat, TStreamId> : with_subscription_having_events<TLogFormat, TStreamId> {
 		private string _nackLink;
 		private Guid _eventIdToPark;
@@ -157,7 +150,7 @@ namespace EventStore.Core.Tests.Http.PersistentSubscription {
 		private string _subscriptionParkedStream;
 		private ConcurrentDictionary<Guid, bool> _writeCorrelationId = new ConcurrentDictionary<Guid, bool>();
 		private TaskCompletionSource<bool> _eventParked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-		
+
 		protected override async Task Given() {
 			_connection.Close();
 			_connection.Dispose();

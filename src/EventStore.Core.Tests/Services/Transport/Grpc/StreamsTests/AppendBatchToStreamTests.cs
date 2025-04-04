@@ -1,10 +1,10 @@
 using System;
-using Google.Protobuf.WellKnownTypes;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
 using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
@@ -38,13 +38,13 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 			public void is_success() {
 				Assert.AreEqual(_response.ResultCase, BatchAppendResp.ResultOneofCase.Success);
 			}
-			
+
 			[Test]
 			public void is_correlated() {
 				Assert.AreEqual(_correlationId.ToDto(), _response.CorrelationId);
 			}
 		}
-		
+
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class single_batch_non_structured_uuid<TLogFormat, TStreamId> : GrpcSpecification<TLogFormat, TStreamId> {
@@ -65,7 +65,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 					},
 					IsFinal = true,
 					ProposedMessages = { CreateEvents(1) },
-					CorrelationId = new() {String = _correlationId.ToString()}
+					CorrelationId = new() { String = _correlationId.ToString() }
 				});
 			}
 
@@ -76,7 +76,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 
 			[Test]
 			public void is_correlated() {
-				Assert.AreEqual(new UUID() {String = _correlationId.ToString()}, _response.CorrelationId);
+				Assert.AreEqual(new UUID() { String = _correlationId.ToString() }, _response.CorrelationId);
 			}
 		}
 
@@ -125,11 +125,11 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				_response = await AppendToStreamBatch(new BatchAppendReq {
 					Options = new() {
 						Any = new(),
-						StreamIdentifier = new() {StreamName = ByteString.CopyFromUtf8("stream")},
+						StreamIdentifier = new() { StreamName = ByteString.CopyFromUtf8("stream") },
 						Deadline = Duration.FromTimeSpan(TimeSpan.Zero)
 					},
 					IsFinal = true,
-					ProposedMessages = {CreateEvents(1)},
+					ProposedMessages = { CreateEvents(1) },
 					CorrelationId = _correlationId.ToDto()
 				});
 			}
@@ -176,7 +176,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				Assert.AreEqual(_response.ResultCase, BatchAppendResp.ResultOneofCase.Error);
 				Assert.AreEqual(_response.Error.Code, Google.Rpc.Code.DeadlineExceeded);
 			}
-			
+
 			[Test]
 			public void is_correlated() {
 				Assert.AreEqual(_correlationId.ToDto(), _response.CorrelationId);

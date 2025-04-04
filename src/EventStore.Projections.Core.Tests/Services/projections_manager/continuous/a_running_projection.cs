@@ -18,7 +18,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.continu
 			}
 
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 				var readerAssignedMessage =
 					_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
 						.LastOrDefault();
@@ -39,7 +40,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.continu
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_stopping<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 
 				yield return
 					(new ProjectionManagementMessage.Command.Disable(
@@ -101,7 +103,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.continu
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_handling_event<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 				yield return
 					(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 						_reader, new TFPos(200, 150), new TFPos(200, 150), "stream", 2, "stream", 2, false,
@@ -150,7 +153,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.continu
 			}
 
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 
 				yield return
 					(new ProjectionManagementMessage.Command.Reset(
@@ -219,7 +223,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.continu
 			}
 
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 				yield return
 					(new ProjectionManagementMessage.Command.Reset(
 						new PublishEnvelope(_bus), _projectionName, ProjectionManagementMessage.RunAs.System));

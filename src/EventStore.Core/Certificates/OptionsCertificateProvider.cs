@@ -4,7 +4,7 @@ using EventStore.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.Certificates {
-	public class OptionsCertificateProvider: CertificateProvider {
+	public class OptionsCertificateProvider : CertificateProvider {
 		private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNode>();
 		private string _cachedReservedNodeCN;
 
@@ -40,7 +40,7 @@ namespace EventStore.Core.Certificates {
 			var newThumbprint = certificate.Thumbprint;
 			Log.Information("Loading the node's certificate. Subject: {subject}, Previous thumbprint: {previousThumbprint}, New thumbprint: {newThumbprint}",
 				certificate.SubjectName.Name, previousThumbprint, newThumbprint);
-			
+
 			if (intermediates != null) {
 				foreach (var intermediateCert in intermediates) {
 					Log.Information("Loading intermediate certificate. Subject: {subject}, Thumbprint: {thumbprint}", intermediateCert.SubjectName.Name, intermediateCert.Thumbprint);
@@ -103,9 +103,10 @@ namespace EventStore.Core.Certificates {
 				error = true;
 			}
 
-			if (error) return false;
+			if (error)
+				return false;
 
-			var chainStatus = CertificateUtils.BuildChain(nodeCertificate, intermediates, trustedRoots, out var chainStatusInformation );
+			var chainStatus = CertificateUtils.BuildChain(nodeCertificate, intermediates, trustedRoots, out var chainStatusInformation);
 
 			if (chainStatus != X509ChainStatusFlags.NoError) {
 				Log.Error(

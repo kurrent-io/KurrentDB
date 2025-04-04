@@ -1,11 +1,5 @@
-using System;
-using System.Security.Cryptography;
-using System.Diagnostics;
-using System.IO;
-using NUnit.Framework;
 using EventStore.Core.Index;
-using EventStore.Common.Utils;
-using EventStore.Common.Options;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV3 {
 	[TestFixture(PTable.IndexEntryV3Size), Explicit]

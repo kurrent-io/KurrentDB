@@ -119,7 +119,7 @@ namespace EventStore.Core.Tests.Services.Storage.Scavenge.ScavengeLogManager {
 
 			_bus.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(m => {
 				if (m.EventStreamId == _scavengeStreamId
-				    && m.Events[0].EventType == SystemEventTypes.ScavengeCompleted) {
+					&& m.Events[0].EventType == SystemEventTypes.ScavengeCompleted) {
 					_eventWritten.SetResult(m);
 				}
 			}));
@@ -161,7 +161,7 @@ namespace EventStore.Core.Tests.Services.Storage.Scavenge.ScavengeLogManager {
 
 			_bus.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(m => {
 				if (m.EventStreamId == _scavengeStreamId
-				    && m.Events[0].EventType == SystemEventTypes.ScavengeCompleted) {
+					&& m.Events[0].EventType == SystemEventTypes.ScavengeCompleted) {
 					_eventWritten.SetResult(m);
 				}
 			}));

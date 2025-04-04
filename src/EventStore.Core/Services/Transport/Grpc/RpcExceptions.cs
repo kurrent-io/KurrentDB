@@ -13,26 +13,26 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			new(new Status(StatusCode.Unavailable, "Server Is Not Ready"));
 
 		private static RpcException ServerBusy() =>
-			new (new Status(StatusCode.Unavailable, "Server Is Too Busy"));
+			new(new Status(StatusCode.Unavailable, "Server Is Too Busy"));
 
 		private static Exception NoLeaderInfo() =>
 			new RpcException(new Status(StatusCode.Unknown, "No leader info available in response"));
 
 		public static RpcException LeaderInfo(string host, int port) =>
-			new (new Status(StatusCode.NotFound, $"Leader info available"), new Metadata {
+			new(new Status(StatusCode.NotFound, $"Leader info available"), new Metadata {
 				{Constants.Exceptions.ExceptionKey, Constants.Exceptions.NotLeader},
 				{Constants.Exceptions.LeaderEndpointHost, host},
 				{Constants.Exceptions.LeaderEndpointPort, port.ToString()},
 			});
 
 		public static RpcException StreamNotFound(string streamName) =>
-			new (new Status(StatusCode.NotFound, $"Event stream '{streamName}' is not found."), new Metadata {
+			new(new Status(StatusCode.NotFound, $"Event stream '{streamName}' is not found."), new Metadata {
 				{Constants.Exceptions.ExceptionKey, Constants.Exceptions.StreamNotFound},
 				{Constants.Exceptions.StreamName, streamName}
 			});
 
 		public static RpcException NoStream(string streamName) =>
-			new (new Status(StatusCode.NotFound, $"Event stream '{streamName}' was not created."));
+			new(new Status(StatusCode.NotFound, $"Event stream '{streamName}' was not created."));
 
 		public static RpcException UnknownMessage<T>(Message message) where T : Message =>
 			new(new Status(StatusCode.Unknown,

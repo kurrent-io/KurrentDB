@@ -36,7 +36,7 @@ namespace EventStore.Core.Services.Transport.Tcp {
 			AddUnwrapper(TcpCommand.DropSubscription, UnwrapDropSubscription, ClientVersion.V2);
 			AddWrapper<ReplicationMessage.DropSubscription>(WrapDropSubscription, ClientVersion.V2);
 		}
-		
+
 
 		private TcpPackage WrapReplicatedTo(ReplicationTrackingMessage.ReplicatedTo msg) {
 			var dto = new ReplicatedTo(msg.LogPosition);

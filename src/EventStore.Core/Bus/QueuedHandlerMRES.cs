@@ -1,11 +1,11 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Core.Services.Monitoring.Stats;
-using System.Threading.Tasks;
 using EventStore.Core.Metrics;
+using EventStore.Core.Services.Monitoring.Stats;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Bus {
@@ -76,7 +76,7 @@ namespace EventStore.Core.Bus {
 
 			_stopped.Reset();
 
-			_thread = new Thread(ReadFromQueue) {IsBackground = true, Name = Name};
+			_thread = new Thread(ReadFromQueue) { IsBackground = true, Name = Name };
 			_thread.Start();
 			return _tcs.Task;
 		}
@@ -132,7 +132,7 @@ namespace EventStore.Core.Bus {
 										Name, _queueStats.InProgressMessage.Name, (int)elapsed.TotalMilliseconds, cnt,
 										_queue.Count, msg);
 									if (elapsed > QueuedHandler.VerySlowMsgThreshold &&
-									    !(msg is SystemMessage.SystemInit))
+										!(msg is SystemMessage.SystemInit))
 										Log.Error(
 											"---!!! VERY SLOW QUEUE MSG [{queue}]: {message} - {elapsed}ms. Q: {prevQueueCount}/{curQueueCount}.",
 											Name, _queueStats.InProgressMessage.Name, (int)elapsed.TotalMilliseconds,

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Core.TransactionLog.LogRecords;
@@ -25,8 +24,8 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 
 		[SetUp]
 		public new void When() {
-			_ab12Tag = new Dictionary<string, long> {{"a", 1}, {"b", 2}};
-			_abStreams = new[] {"a", "b"};
+			_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
+			_abStreams = new[] { "a", "b" };
 
 			_distibutionPointCorrelationId = Guid.NewGuid();
 			_edp = new MultiStreamEventReader(

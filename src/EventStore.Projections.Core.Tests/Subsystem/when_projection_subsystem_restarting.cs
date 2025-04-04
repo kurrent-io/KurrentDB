@@ -43,30 +43,30 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 			var stopMsg = WaitForStopMessage();
 			Assert.AreEqual(_instanceCorrelation, stopMsg.InstanceCorrelationId);
 		}
-		
+
 		[Test]
 		public void should_start_the_subsystem_when_fully_stopped() {
 			WaitForStopMessage();
-			
+
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStopped(
 				ProjectionManager.ServiceName, _instanceCorrelation));
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStopped(
 				ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
 			Subsystem.Handle(new ProjectionSubsystemMessage.IODispatcherDrained(ProjectionManager.ServiceName));
 			Subsystem.Handle(new ProjectionSubsystemMessage.IODispatcherDrained(ProjectionCoreService.SubComponentName));
-			
+
 			var restartMsg = WaitForStartMessage("Timed out waiting for restart StartComponents");
-			
+
 			Assert.AreNotEqual(_instanceCorrelation, restartMsg.InstanceCorrelationId);
 		}
 	}
-	
-	[TestFixture,Explicit]
+
+	[TestFixture, Explicit]
 	public class when_projection_subsystem_restarted_twice
 		: TestFixtureWithProjectionSubsystem {
 		private Guid _instanceCorrelation;
 		private Guid _restartInstanceCorrelation;
-		
+
 		private Message _secondRestartResponse;
 
 		protected override void Given() {
@@ -74,7 +74,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 			Subsystem.Handle(new SystemMessage.SystemCoreReady());
 			Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 
-			 var startMsg = WaitForStartMessage();
+			var startMsg = WaitForStartMessage();
 			_instanceCorrelation = startMsg.InstanceCorrelationId;
 
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
@@ -119,7 +119,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 			var stopMsg = WaitForStopMessage("Timed out waiting for StopComponents on second restart");
 			Assert.AreEqual(_restartInstanceCorrelation, stopMsg.InstanceCorrelationId);
 		}
-		
+
 		[Test]
 		public void should_start_the_subsystem() {
 			WaitForStopMessage("Timed out waiting for StopComponents on second restart");
@@ -127,7 +127,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 				ProjectionManager.ServiceName, _restartInstanceCorrelation));
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStopped(
 				ProjectionCoreCoordinator.ComponentName, _restartInstanceCorrelation));
-			
+
 			var restartMsg = WaitForStartMessage("Timed out waiting for StartComponents on second restart");
 			Assert.AreNotEqual(_restartInstanceCorrelation, restartMsg.InstanceCorrelationId);
 		}
@@ -155,7 +155,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 			Subsystem.Handle(new ProjectionSubsystemMessage.RestartSubsystem(new NoopEnvelope()));
 
 			_stopMsg = WaitForStopMessage();
-			
+
 			// Become unknown before components stopped
 			Subsystem.Handle(new SystemMessage.BecomeUnknown(Guid.NewGuid()));
 
@@ -178,7 +178,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 			Assert.IsNull(startMsg);
 		}
 	}
-	
+
 	[TestFixture]
 	public class when_projection_subsystem_starting_and_told_to_restart
 		: TestFixtureWithProjectionSubsystem {
@@ -189,7 +189,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 			Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 
 			WaitForStartMessage();
-			
+
 			// Restart subsystem before fully started
 			Subsystem.Handle(new ProjectionSubsystemMessage.RestartSubsystem(
 				new CallbackEnvelope(message => _restartResponse = message)));
@@ -213,7 +213,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 
 			var startMsg = WaitForStartMessage();
 			_instanceCorrelation = startMsg.InstanceCorrelationId;
-			
+
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
 				ProjectionManager.ServiceName, _instanceCorrelation));
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
@@ -248,14 +248,14 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 
 			var startMsg = WaitForStartMessage();
 			_instanceCorrelation = startMsg.InstanceCorrelationId;
-			
+
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
 				ProjectionManager.ServiceName, _instanceCorrelation));
 			Subsystem.Handle(new ProjectionSubsystemMessage.ComponentStarted(
 				ProjectionCoreCoordinator.ComponentName, _instanceCorrelation));
 			Subsystem.Handle(new ProjectionSubsystemMessage.IODispatcherDrained(ProjectionManager.ServiceName));
 			Subsystem.Handle(new ProjectionSubsystemMessage.IODispatcherDrained(ProjectionCoreService.SubComponentName));
-			
+
 			// First restart
 			Subsystem.Handle(new ProjectionSubsystemMessage.RestartSubsystem(new NoopEnvelope()));
 

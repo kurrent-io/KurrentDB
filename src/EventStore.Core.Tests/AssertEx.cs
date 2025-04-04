@@ -1,6 +1,6 @@
 using System;
-using System.Threading;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
 
@@ -62,9 +62,9 @@ namespace EventStore.Core.Tests {
 			Func<bool> func,
 			TimeSpan? timeout = null,
 			bool yieldThread = false) {
-			
+
 			if (func()) {
-				return true; 
+				return true;
 			}
 
 			var expire = DateTime.UtcNow + (timeout ?? TimeSpan.FromMilliseconds(1000));
@@ -76,11 +76,11 @@ namespace EventStore.Core.Tests {
 				}
 
 				while (!spin.NextSpinWillYield) {
-					spin.SpinOnce(); 
+					spin.SpinOnce();
 				}
 
 				if (func()) {
-					return true; 
+					return true;
 				}
 
 				spin = new SpinWait();

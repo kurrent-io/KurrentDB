@@ -149,7 +149,7 @@ namespace EventStore.Common.Configuration {
 
 		public string[] Meters { get; set; } = Array.Empty<string>();
 
-		public Dictionary<StatusTracker, bool> Statuses { get; set; } = new ();
+		public Dictionary<StatusTracker, bool> Statuses { get; set; } = new();
 
 		public Dictionary<Checkpoint, bool> Checkpoints { get; set; } = new();
 
@@ -170,7 +170,7 @@ namespace EventStore.Common.Configuration {
 		public Dictionary<EventTracker, bool> Events { get; set; } = new();
 
 		public Dictionary<Cache, bool> CacheHitsMisses { get; set; } = new();
-		
+
 		public bool CacheResources { get; set; } = false;
 
 		// must be 0, 1, 5, 10 or a multiple of 15

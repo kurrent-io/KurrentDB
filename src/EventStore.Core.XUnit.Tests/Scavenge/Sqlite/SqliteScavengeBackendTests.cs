@@ -7,7 +7,7 @@ using Xunit;
 using Xunit.Abstractions;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
-	public class SqliteScavengeBackendTests : SqliteDbPerTest<SqliteScavengeBackendTests>  {
+	public class SqliteScavengeBackendTests : SqliteDbPerTest<SqliteScavengeBackendTests> {
 		private readonly ITestOutputHelper _testOutputHelper;
 
 		public SqliteScavengeBackendTests(ITestOutputHelper testOutputHelper) {
@@ -20,13 +20,13 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 			var result = Record.Exception(() => sut.Initialize(Fixture.DbConnection));
 			Assert.Null(result);
 		}
-		
+
 		[Fact]
 		public void should_initialize_multiple_times_without_error() {
 			var sut = new SqliteScavengeBackend<string>(Serilog.Log.Logger);
 			var result = Record.Exception(() => sut.Initialize(Fixture.DbConnection));
 			Assert.Null(result);
-			
+
 			result = Record.Exception(() => sut.Initialize(Fixture.DbConnection));
 			Assert.Null(result);
 		}
@@ -35,10 +35,10 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 		public void should_commit_and_read_in_a_transaction_successfully() {
 			var sut = new SqliteScavengeBackend<string>(Serilog.Log.Logger);
 			sut.Initialize(Fixture.DbConnection);
-			
+
 			var add = sut.TransactionFactory.Begin();
 			sut.CheckpointStorage[Unit.Instance] = new ScavengeCheckpoint.ExecutingIndex(
-				new ScavengePoint(1,1, DateTime.UtcNow, 1));
+				new ScavengePoint(1, 1, DateTime.UtcNow, 1));
 			sut.ChunkTimeStampRanges[0] = new ChunkTimeStampRange(DateTime.Now, DateTime.Now.AddMinutes(1));
 			sut.ChunkWeights[0] = 1f;
 			sut.CollisionStorage["collision-1"] = Unit.Instance;
@@ -55,7 +55,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 				MaybeDiscardPoint = DiscardPoint.DiscardBefore(2)
 			};
 			sut.TransactionFactory.Commit(add);
-			
+
 			var read = sut.TransactionFactory.Begin();
 			Assert.True(sut.CheckpointStorage.TryGetValue(Unit.Instance, out _));
 			Assert.True(sut.ChunkTimeStampRanges.TryGetValue(0, out _));
@@ -72,7 +72,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 		public void should_commit_and_read_all_in_a_transaction_successfully() {
 			var sut = new SqliteScavengeBackend<string>(Serilog.Log.Logger);
 			sut.Initialize(Fixture.DbConnection);
-			
+
 			var add = sut.TransactionFactory.Begin();
 			sut.ChunkTimeStampRanges[0] = new ChunkTimeStampRange(DateTime.Now, DateTime.Now.AddMinutes(1));
 			sut.ChunkWeights[0] = 1f;
@@ -90,7 +90,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 				MaybeDiscardPoint = DiscardPoint.DiscardBefore(2)
 			};
 			sut.TransactionFactory.Commit(add);
-			
+
 			var read = sut.TransactionFactory.Begin();
 			Assert.NotEmpty(sut.ChunkTimeStampRanges.AllRecords());
 			Assert.NotEmpty(sut.ChunkWeights.AllRecords());
@@ -101,14 +101,14 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 			Assert.NotEmpty(sut.OriginalStorage.AllRecords());
 			sut.TransactionFactory.Commit(read);
 		}
-		
+
 		[Fact]
 		public void should_commit_and_delete_in_a_transaction_successfully() {
 			var sut = new SqliteScavengeBackend<string>(Serilog.Log.Logger);
 			sut.Initialize(Fixture.DbConnection);
-			
-			var checkpoint = new ScavengeCheckpoint.ExecutingIndex(new ScavengePoint(1,1, DateTime.UtcNow, 1));
-			
+
+			var checkpoint = new ScavengeCheckpoint.ExecutingIndex(new ScavengePoint(1, 1, DateTime.UtcNow, 1));
+
 			var add = sut.TransactionFactory.Begin();
 			sut.CheckpointStorage[Unit.Instance] = checkpoint;
 			sut.ChunkTimeStampRanges[0] = new ChunkTimeStampRange(DateTime.Now, DateTime.Now.AddMinutes(1));
@@ -127,7 +127,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 				MaybeDiscardPoint = DiscardPoint.DiscardBefore(2)
 			};
 			sut.TransactionFactory.Commit(add);
-			
+
 			var delete = sut.TransactionFactory.Begin();
 			Assert.True(sut.CheckpointStorage.TryRemove(Unit.Instance, out _));
 			Assert.True(sut.ChunkTimeStampRanges.TryRemove(0, out _));
@@ -139,7 +139,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 			Assert.True(sut.OriginalStorage.TryRemove(0, out _));
 			sut.TransactionFactory.Commit(delete);
 		}
-		
+
 		[Fact]
 		public void should_restore_previous_state_on_rollback() {
 			var sut = new SqliteScavengeBackend<string>(Serilog.Log.Logger);
@@ -150,29 +150,29 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 			sut.ChunkWeights[0] = 1f;
 			sut.ChunkWeights[1] = 1f;
 			sut.ChunkWeights[2] = 1f;
-			
+
 			sut.Hashes[0] = "hash-one";
 			sut.Hashes[1] = "hash-two";
 			sut.Hashes[2] = "hash-three";
 			sut.TransactionFactory.Commit(tx1);
-			
+
 			// Rollback
 			var tx2 = sut.TransactionFactory.Begin();
 			sut.ChunkWeights[3] = 2f;
 			sut.ChunkWeights[4] = 2f;
-			
+
 			sut.Hashes[3] = "hash-four";
 			sut.Hashes[4] = "hash-five";
-			
+
 			Assert.Equal(5, sut.ChunkWeights.AllRecords().Count());
 			Assert.Equal(5, sut.Hashes.AllRecords().Count());
-			
+
 			sut.TransactionFactory.Rollback(tx2);
-			
+
 			Assert.Equal(3, sut.ChunkWeights.AllRecords().Count());
 			Assert.Equal(3, sut.Hashes.AllRecords().Count());
 		}
-		
+
 		[Fact(Skip = "Long running, run manually")]
 		public void test_memory_usage() {
 			const ulong streamCount = 1_000_000;
@@ -204,7 +204,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 
 			for (int i = 0; i < chunkCount; i++) {
 				sut.ChunkWeights[i] = 0.5f;
-				sut.ChunkTimeStampRanges[i] = new ChunkTimeStampRange(DateTime.Today, DateTime.Today.AddHours(1*i));
+				sut.ChunkTimeStampRanges[i] = new ChunkTimeStampRange(DateTime.Today, DateTime.Today.AddHours(1 * i));
 			}
 
 			for (int i = 0; i < collisionStorageCount; i++) {
@@ -220,18 +220,18 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 					TruncateBefore = 15
 				};
 			}
-			
+
 			sut.TransactionFactory.Commit(transaction);
 			stopwatch.Stop();
-			
+
 			var stats = sut.GetStats();
 			_testOutputHelper.WriteLine(
 				$"SQLite Memory Usage: {stats.MemoryUsage:N0} " +
 				$"Db Size: {stats.DatabaseSize:N0} " +
 				$"Cache Size: {stats.CacheSize:N0} for {streamCount:N0} streams in {stopwatch.Elapsed}");
 		}
-		
-		[Fact (Skip = "Long running, run manually")]
+
+		[Fact(Skip = "Long running, run manually")]
 		public void test_index_with_archived() {
 			const ulong archivedCount = 50_000_000;
 			const ulong streamCount = 1_000_000;
@@ -263,7 +263,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 
 			for (int i = 0; i < chunkCount; i++) {
 				sut.ChunkWeights[i] = 0.5f;
-				sut.ChunkTimeStampRanges[i] = new ChunkTimeStampRange(DateTime.Today, DateTime.Today.AddHours(1*i));
+				sut.ChunkTimeStampRanges[i] = new ChunkTimeStampRange(DateTime.Today, DateTime.Today.AddHours(1 * i));
 			}
 
 			for (int i = 0; i < collisionStorageCount; i++) {
@@ -279,7 +279,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 					TruncateBefore = 15
 				};
 			}
-			
+
 			sut.TransactionFactory.Commit(transaction);
 			insert.Stop();
 

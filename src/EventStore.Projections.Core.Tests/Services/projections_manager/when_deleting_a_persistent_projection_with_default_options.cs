@@ -39,7 +39,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager {
 
 		[Test, Category("v8")]
 		public void a_projection_deleted_event_is_written() {
-			var deletedStreamEvents =_consumer.HandledMessages.OfType<ClientMessage.DeleteStream>().ToList();
+			var deletedStreamEvents = _consumer.HandledMessages.OfType<ClientMessage.DeleteStream>().ToList();
 			Assert.AreEqual(true, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Any(x => x.Events[0].EventType == ProjectionEventTypes.ProjectionDeleted && Helper.UTF8NoBom.GetString(x.Events[0].Data) == _projectionName));
 		}
 	}

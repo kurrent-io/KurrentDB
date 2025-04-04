@@ -216,15 +216,15 @@ namespace EventStore.Core.Services.Storage {
 
 			switch (message.State) {
 				case VNodeState.Leader: {
-						_indexWriter.Reset();
-						_streamNameIndex.CancelReservations();
-						_eventTypeIndex.CancelReservations();
-						break;
-					}
+					_indexWriter.Reset();
+					_streamNameIndex.CancelReservations();
+					_eventTypeIndex.CancelReservations();
+					break;
+				}
 				case VNodeState.ShuttingDown: {
-						Writer.Close();
-						break;
-					}
+					Writer.Close();
+					break;
+				}
 			}
 		}
 
@@ -380,12 +380,11 @@ namespace EventStore.Core.Services.Storage {
 		private TStreamId GetOrWriteEventType(string eventType, ref long logPosition) {
 			GetOrReserveEventType(eventType, logPosition, out var eventTypeId, out var eventTypeRecord);
 
-			if (eventTypeRecord != null)
-			{
+			if (eventTypeRecord != null) {
 				var result = WritePrepareWithRetry(eventTypeRecord);
 				logPosition = result.NewPos;
 			}
-			
+
 			return eventTypeId;
 		}
 
@@ -490,9 +489,9 @@ namespace EventStore.Core.Services.Storage {
 					const PrepareFlags flags = PrepareFlags.SingleWrite | PrepareFlags.IsCommitted |
 											   PrepareFlags.IsJson;
 					var data = new StreamMetadata(truncateBefore: EventNumber.DeletedStream).ToJsonBytes();
-					
+
 					var streamMetadataEventTypeId = GetOrWriteEventType(SystemEventTypes.StreamMetadata, ref logPosition);
-					
+
 					var res = WritePrepareWithRetry(
 						LogRecord.Prepare(_recordFactory, logPosition, message.CorrelationId, eventId, logPosition, 0,
 							metastreamId, expectedVersion, flags, streamMetadataEventTypeId,
@@ -722,8 +721,7 @@ namespace EventStore.Core.Services.Storage {
 
 			Writer.OpenTransaction();
 			var writerPos = Writer.Position;
-			foreach (var prepare in prepares)
-			{
+			foreach (var prepare in prepares) {
 				Writer.WriteToTransaction(prepare, out var newWriterPos);
 				if (newWriterPos - writerPos != prepare.SizeOnDisk)
 					throw new Exception($"Expected writer position to be at: {writerPos + prepare.SizeOnDisk} but it was at {newWriterPos}");

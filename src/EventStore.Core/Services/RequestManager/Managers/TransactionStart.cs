@@ -27,7 +27,7 @@ namespace EventStore.Core.Services.RequestManager.Managers {
 					 prepareCount: 1) {
 			_streamId = streamId;
 		}
-		
+
 		protected override Message WriteRequestMsg =>
 			new StorageMessage.WriteTransactionStart(
 					InternalCorrId,

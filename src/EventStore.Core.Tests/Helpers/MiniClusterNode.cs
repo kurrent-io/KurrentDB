@@ -13,18 +13,18 @@ using EventStore.Core.Authentication.InternalAuthentication;
 using EventStore.Core.Authorization;
 using EventStore.Core.Bus;
 using EventStore.Core.Certificates;
+using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Monitoring;
+using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Http;
 using EventStore.Core.Tests.Services.Transport.Tcp;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using ILogger = Serilog.ILogger;
-using EventStore.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Tests.Helpers {
 	public class MiniClusterNode<TLogFormat, TStreamId> {
@@ -68,7 +68,7 @@ namespace EventStore.Core.Tests.Helpers {
 				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport",
 					true); //TODO JPB Remove this sadness when dotnet core supports kestrel + http2 on macOS
 			}
-			
+
 			RunningTime.Start();
 			RunCount += 1;
 
@@ -187,13 +187,13 @@ namespace EventStore.Core.Tests.Helpers {
 					o.Listen(HttpEndPoint, options => {
 						if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 							options.Protocols = HttpProtocols.Http2;
-						} else { 
+						} else {
 							options.UseHttps(new HttpsConnectionAdapterOptions {
 								ServerCertificate = serverCertificate,
 								ClientCertificateMode = ClientCertificateMode.AllowCertificate,
 								ClientCertificateValidation = (certificate, chain, sslPolicyErrors) => {
 									var (isValid, error) =
-										ClusterVNode<string>.ValidateClientCertificate(certificate, chain, sslPolicyErrors,() => null,() => trustedRootCertificates);
+										ClusterVNode<string>.ValidateClientCertificate(certificate, chain, sslPolicyErrors, () => null, () => trustedRootCertificates);
 									if (!isValid && error != null) {
 										Log.Error("Client certificate validation error: {e}", error);
 									}
@@ -249,7 +249,7 @@ namespace EventStore.Core.Tests.Helpers {
 			_host.Start();
 			Node.Start();
 		}
-		
+
 		public HttpClient CreateHttpClient() {
 			var httpClient = new HttpClient(new SocketsHttpHandler {
 				AllowAutoRedirect = false,
@@ -257,7 +257,7 @@ namespace EventStore.Core.Tests.Helpers {
 					RemoteCertificateValidationCallback = delegate { return true; }
 				}
 			}, true);
-			
+
 			var scheme = Node.DisableHttps ? "http://" : "https://";
 			httpClient.BaseAddress = new Uri($"{scheme}{HttpEndPoint}");
 			return httpClient;
@@ -266,13 +266,13 @@ namespace EventStore.Core.Tests.Helpers {
 		public async Task Shutdown(bool keepDb = false) {
 			StoppingTime.Start();
 			_host?.Dispose();
-			await Node.StopAsync().WithTimeout(TimeSpan.FromSeconds(20));			
+			await Node.StopAsync().WithTimeout(TimeSpan.FromSeconds(20));
 
 			// the same message 'BecomeShutdown' triggers the disposal of the ReadIndex
 			// and also the notification here that the node as stopped so there is a race.
 			// For now let's wait for a moment before we try to delete the directory.
 			await Task.Delay(500);
-			
+
 			if (!keepDb)
 				TryDeleteDirectory(_dbPath);
 

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using EventStore.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Transport.Tcp {

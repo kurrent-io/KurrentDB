@@ -1,5 +1,4 @@
-﻿using System.Text;
-using EventStore.Projections.Core.Services.Processing;
+﻿using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.partition_state_update_manager {

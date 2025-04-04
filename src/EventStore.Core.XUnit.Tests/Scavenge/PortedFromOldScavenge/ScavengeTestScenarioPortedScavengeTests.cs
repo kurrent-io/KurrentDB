@@ -400,7 +400,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.PortedFromOldScavenge {
 				.WithUnsafeIgnoreHardDeletes(true)
 				.WithDb(x => x
 					.Chunk(
-						Rec.Write(t++, "bla"), 
+						Rec.Write(t++, "bla"),
 						Rec.Write(t++, "bla"))
 					.Chunk(
 						Rec.CommittedDelete(t++, "bla"))

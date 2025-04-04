@@ -1,4 +1,3 @@
-using System;
 using EventStore.Projections.Core.Messages;
 
 namespace EventStore.Projections.Core.Services.Processing {

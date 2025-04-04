@@ -1,6 +1,4 @@
-﻿using System.Security.Claims;
-using EventStore.Core.Services.Transport.Http.Messages;
-using EventStore.Core.Services.UserManagement;
+﻿using EventStore.Core.Services.UserManagement;
 using Microsoft.AspNetCore.Http;
 
 namespace EventStore.Core.Services.Transport.Http.Authentication {

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
 
 namespace EventStore.Core.Services.PersistentSubscription.ConsumerStrategy {
 	class RoundRobinPersistentSubscriptionConsumerStrategy : IPersistentSubscriptionConsumerStrategy {

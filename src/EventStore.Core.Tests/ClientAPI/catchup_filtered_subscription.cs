@@ -1,8 +1,3 @@
-using EventStore.ClientAPI;
-using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Tests.ClientAPI.Helpers;
-using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,7 +5,12 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.ClientAPI;
+using EventStore.ClientAPI.SystemData;
 using EventStore.Core.Services;
+using EventStore.Core.Tests.ClientAPI.Helpers;
+using EventStore.Core.Tests.Helpers;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI {
 	[Category("LongRunning"), Category("ClientAPI")]

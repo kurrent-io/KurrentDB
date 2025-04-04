@@ -2,11 +2,11 @@
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using NUnit.Framework;
 using EventStore.Core.Certificates;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Certificates {
 

@@ -15,7 +15,7 @@ namespace EventStore.Core.Tests.Integration.Idempotency {
 
 		public when_soft_deleted_stream_is_written_to_idempotently() {
 			_streamId = $"{nameof(when_soft_deleted_stream_is_written_to_idempotently<TLogFormat, TStreamId>)}-{Guid.NewGuid()}";
-			_events = new[] {new Event(Guid.NewGuid(), "event-type", false, new byte[] { }, new byte[] { })};
+			_events = new[] { new Event(Guid.NewGuid(), "event-type", false, new byte[] { }, new byte[] { }) };
 		}
 
 		protected override async Task Given() {
@@ -43,16 +43,16 @@ namespace EventStore.Core.Tests.Integration.Idempotency {
 		[Test]
 		public async Task should_return_negative_1_as_log_position() {
 			var writeEventsCompleted = new TaskCompletionSource<ClientMessage.WriteEventsCompleted>();
-			
+
 			_node.Node.MainQueue.Publish(new ClientMessage.WriteEvents(Guid.NewGuid(), Guid.NewGuid(),
 				new CallbackEnvelope(
 					msg => {
 						writeEventsCompleted.SetResult(msg as ClientMessage.WriteEventsCompleted);
 					}), false, _streamId, ExpectedVersion.NoStream, _events, SystemAccounts.System));
-			
+
 			var completed = await writeEventsCompleted.Task
 				.WithTimeout(TimeSpan.FromSeconds(2));
-			
+
 			Assert.AreEqual(-1, completed.CommitPosition);
 			Assert.AreEqual(-1, completed.PreparePosition);
 		}

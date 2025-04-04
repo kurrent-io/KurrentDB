@@ -4,7 +4,6 @@ using EventStore.Core.Authentication.InternalAuthentication;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Core.Services;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Plugins.Authentication;
 

@@ -10,7 +10,7 @@ namespace EventStore.Core.LogV2 {
 		INameIndexConfirmer<string>,
 		IValueLookup<string>,
 		INameLookup<string> {
-			
+
 		public void Dispose() {
 		}
 
@@ -22,7 +22,7 @@ namespace EventStore.Core.LogV2 {
 
 		public void Confirm(IList<IPrepareLogRecord<string>> prepares, bool catchingUp, IIndexBackend<string> backend) {
 		}
-		
+
 		public void Confirm(
 			IList<IPrepareLogRecord<string>> prepares,
 			CommitLogRecord commit,

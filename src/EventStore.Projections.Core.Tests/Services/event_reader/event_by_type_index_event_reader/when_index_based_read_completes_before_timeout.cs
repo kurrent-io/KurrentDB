@@ -1,15 +1,13 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Core.Messages;
-using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
+using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Tests.Services.core_projection;
-using EventStore.Common.Utils;
-using EventStore.Core.Tests;
 using NUnit.Framework;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
@@ -34,7 +32,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_
 			fromPositions.Add("$et-eventTypeOne", 0);
 			fromPositions.Add("$et-eventTypeTwo", 0);
 			_eventReader = new EventByTypeIndexEventReader(_bus, _distributionCorrelationId,
-				null, new string[] {"eventTypeOne", "eventTypeTwo"},
+				null, new string[] { "eventTypeOne", "eventTypeTwo" },
 				false, new TFPos(-1, -1),
 				fromPositions, true,
 				_fakeTimeProvider,

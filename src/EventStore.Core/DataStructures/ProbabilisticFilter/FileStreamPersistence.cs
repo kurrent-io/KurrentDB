@@ -130,7 +130,7 @@ namespace EventStore.Core.DataStructures.ProbabilisticFilter {
 				var bytesToReadInBlock = bytesToRead > blockSize
 					? blockSize
 					: (int)bytesToRead;
-				
+
 				// consider reading in buffer size blocks. or using random access in net6
 				var read = bulkFileStream.Read(new Span<byte>(DataAccessor.Pointer + bytesRead, bytesToReadInBlock));
 				if (read != bytesToReadInBlock)
@@ -214,7 +214,7 @@ namespace EventStore.Core.DataStructures.ProbabilisticFilter {
 				}
 			}
 
-			Done:
+Done:
 			fileStream.FlushToDisk();
 
 			activelyFlushing.Stop();

@@ -5,7 +5,7 @@ namespace EventStore.Core.Services.Transport.Tcp {
 
 		Ping = 0x03,
 		Pong = 0x04,
-				
+
 		FollowerAssignment = 0x07,
 		CloneAssignment = 0x08,
 		DropSubscription = 0x09,
@@ -20,8 +20,8 @@ namespace EventStore.Core.Services.Transport.Tcp {
 		LeaderReplicatedTo = 0x17,
 
 		// CLIENT COMMANDS
-//        CreateStream = 0x80,
-//        CreateStreamCompleted = 0x81,
+		//        CreateStream = 0x80,
+		//        CreateStreamCompleted = 0x81,
 
 		WriteEvents = 0x82,
 		WriteEventsCompleted = 0x83,

@@ -29,7 +29,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge {
 			Trace(x);
 		}
 
-		public static (string, int)  Line(string x, [CallerLineNumber] int sourceLineNumber = 0) =>
+		public static (string, int) Line(string x, [CallerLineNumber] int sourceLineNumber = 0) =>
 			(x, sourceLineNumber);
 
 		// :S

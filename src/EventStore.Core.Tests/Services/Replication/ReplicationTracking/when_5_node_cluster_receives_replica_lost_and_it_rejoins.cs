@@ -14,7 +14,7 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 		private readonly Guid _replicaId2 = Guid.NewGuid();
 
 		protected override int ClusterSize => 5;
-		
+
 		public override void When() {
 			BecomeLeader();
 			WriterCheckpoint.Write(_logPosition);

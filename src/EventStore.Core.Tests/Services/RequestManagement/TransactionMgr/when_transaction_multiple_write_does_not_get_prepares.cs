@@ -15,7 +15,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr {
 		private long _event1Position = 1500;
 		private long _event2Position = 2000;
 		private long _event3Position = 2500;
-		
+
 		protected override TransactionWrite OnManager(FakePublisher publisher) {
 			return new TransactionWrite(
 			 	publisher,
@@ -24,7 +24,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr {
 				InternalCorrId,
 				ClientCorrId,
 				new[] { DummyEvent(), DummyEvent(), DummyEvent() },
-			    _transactionId,
+				_transactionId,
 				CommitSource);
 		}
 

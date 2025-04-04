@@ -11,9 +11,9 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 		private Guid[] _followers;
 
 		protected override int ClusterSize => 5;
-		
+
 		public override void When() {
-			_followers = new [] {Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()};
+			_followers = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
 			BecomeLeader();
 			// All of the nodes have acked the first write
 			WriterCheckpoint.Write(_firstLogPosition);
@@ -25,7 +25,7 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 			AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 
 			ReplicatedTos.Clear();
-			
+
 			// Followers 3 and 4 are lagging behind, they ack the previous positions
 			WriterCheckpoint.Write(_secondLogPosition);
 			WriterCheckpoint.Flush();

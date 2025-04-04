@@ -1,5 +1,3 @@
-using System;
-
 namespace EventStore.Transport.Http {
 	public class CompressionAlgorithms {
 		public const string Gzip = "gzip";

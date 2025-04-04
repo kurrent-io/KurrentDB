@@ -1,5 +1,3 @@
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog {
@@ -32,39 +30,39 @@ namespace EventStore.Core.Tests.TransactionLog {
 			chunk.MarkForDeletion();
 			chunk.WaitForDestroy(5000);
 		}
-/*
-        [Test]
-        public void a_read_on_scavenged_chunk_includes_map()
-        {
-            var chunk = TFChunk.CreateNew(GetFilePathFor("afile"), 200, 0, 0, isScavenged: true, inMem: false, unbuffered: false, writethrough: false);
-            chunk.CompleteScavenge(new [] {new PosMap(0, 0), new PosMap(1,1) }, false);
-            using (var reader = chunk.AcquireReader())
-            {
-                var buffer = new byte[1024];
-                var result = reader.ReadNextRawBytes(1024, buffer);
-                Assert.IsFalse(result.IsEOF);
-                Assert.AreEqual(ChunkHeader.Size + ChunkHeader.Size + 2 * PosMap.FullSize, result.BytesRead);
-            }
-            chunk.MarkForDeletion();
-            chunk.WaitForDestroy(5000);
-        }
+		/*
+				[Test]
+				public void a_read_on_scavenged_chunk_includes_map()
+				{
+					var chunk = TFChunk.CreateNew(GetFilePathFor("afile"), 200, 0, 0, isScavenged: true, inMem: false, unbuffered: false, writethrough: false);
+					chunk.CompleteScavenge(new [] {new PosMap(0, 0), new PosMap(1,1) }, false);
+					using (var reader = chunk.AcquireReader())
+					{
+						var buffer = new byte[1024];
+						var result = reader.ReadNextRawBytes(1024, buffer);
+						Assert.IsFalse(result.IsEOF);
+						Assert.AreEqual(ChunkHeader.Size + ChunkHeader.Size + 2 * PosMap.FullSize, result.BytesRead);
+					}
+					chunk.MarkForDeletion();
+					chunk.WaitForDestroy(5000);
+				}
 
-        [Test]
-        public void a_read_past_end_of_completed_chunk_does_include_header_or_footer()
-        {
-            var chunk = TFChunk.CreateNew(GetFilePathFor("File1"), 300, 0, 0, isScavenged: false, inMem: false, unbuffered: false, writethrough: false);
-            chunk.Complete();
-            using (var reader = chunk.AcquireReader())
-            {
-                var buffer = new byte[1024];
-                var result = reader.ReadNextRawBytes(1024, buffer);
-                Assert.IsTrue(result.IsEOF);
-                Assert.AreEqual(ChunkHeader.Size + ChunkFooter.Size, result.BytesRead); //just header + footer = 256
-            }
-            chunk.MarkForDeletion();
-            chunk.WaitForDestroy(5000);
-        }
-*/
+				[Test]
+				public void a_read_past_end_of_completed_chunk_does_include_header_or_footer()
+				{
+					var chunk = TFChunk.CreateNew(GetFilePathFor("File1"), 300, 0, 0, isScavenged: false, inMem: false, unbuffered: false, writethrough: false);
+					chunk.Complete();
+					using (var reader = chunk.AcquireReader())
+					{
+						var buffer = new byte[1024];
+						var result = reader.ReadNextRawBytes(1024, buffer);
+						Assert.IsTrue(result.IsEOF);
+						Assert.AreEqual(ChunkHeader.Size + ChunkFooter.Size, result.BytesRead); //just header + footer = 256
+					}
+					chunk.MarkForDeletion();
+					chunk.WaitForDestroy(5000);
+				}
+		*/
 
 		[Test]
 		public void if_asked_for_more_than_buffer_size_will_only_read_buffer_size() {

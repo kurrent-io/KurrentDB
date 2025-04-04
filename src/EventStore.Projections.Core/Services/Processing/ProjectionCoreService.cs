@@ -2,14 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using EventStore.Common;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Management;
-using EventStore.Common.Utils;
-using EventStore.Core.Messaging;
 using Serilog;
 
 namespace EventStore.Projections.Core.Services.Processing {
@@ -34,7 +33,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 			IHandle<ProjectionCoreServiceMessage.StopCoreTimeout>,
 			IHandle<CoreProjectionStatusMessage.Suspended> {
 		public const string SubComponentName = "ProjectionCoreService";
-		
+
 		private readonly Guid _workerId;
 		private readonly IPublisher _publisher;
 		private readonly IPublisher _inputQueue;
@@ -98,8 +97,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 				() => _publisher.Publish(new ProjectionSubsystemMessage.IODispatcherDrained(SubComponentName)));
 
 			var allProjections = _projections.Values.ToArray();
-			foreach (var projection in allProjections)
-			{
+			foreach (var projection in allProjections) {
 				var requiresStopping = projection.Suspend();
 				if (requiresStopping) {
 					_suspendingProjections.Add(projection._projectionCorrelationId, projection);
@@ -117,13 +115,15 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public void Handle(ProjectionCoreServiceMessage.StopCoreTimeout message) {
-			if (message.QueueId != _stopQueueId) return;
+			if (message.QueueId != _stopQueueId)
+				return;
 			_logger.Debug("PROJECTIONS: Suspending projections in Projection Core Service timed out. Force stopping.");
 			FinishStopping();
 		}
 
 		public void Handle(CoreProjectionStatusMessage.Suspended message) {
-			if (!_stopping) return;
+			if (!_stopping)
+				return;
 
 			_suspendingProjections.Remove(message.ProjectionId);
 			if (_suspendingProjections.Count == 0) {
@@ -132,15 +132,16 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		private void FinishStopping() {
-			if (!_stopping) return;
-			
+			if (!_stopping)
+				return;
+
 			_projections.Clear();
 			_stopping = false;
 			_publisher.Publish(new ProjectionCoreServiceMessage.SubComponentStopped(
 				nameof(ProjectionCoreService), _stopQueueId));
 			_stopQueueId = Guid.Empty;
 		}
-		
+
 		public void Handle(ProjectionCoreServiceMessage.CoreTick message) {
 			message.Action();
 		}

@@ -4,8 +4,7 @@ using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	[TestFixture]
 	public class when_partitioning_by_custom_rule : TestFixtureWithInterpretedProjection {
 		protected override void Given() {

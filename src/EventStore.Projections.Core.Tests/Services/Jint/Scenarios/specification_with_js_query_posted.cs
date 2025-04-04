@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Helpers;
@@ -12,17 +10,15 @@ using EventStore.Projections.Core.Services.Processing;
 
 using EventStore.Projections.Core.Tests.Services.projections_manager;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios
-{
-    public abstract class specification_with_js_query_posted<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId>
-    {
-	    protected string _projectionName;
-	    protected string _projectionSource;
-	    protected ProjectionMode _projectionMode;
-	    protected bool _checkpointsEnabled;
-	    protected bool _trackEmittedStreams;
-	    protected bool _emitEnabled;
-	    protected bool _startSystemProjections;
+namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios {
+	public abstract class specification_with_js_query_posted<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
+		protected string _projectionName;
+		protected string _projectionSource;
+		protected ProjectionMode _projectionMode;
+		protected bool _checkpointsEnabled;
+		protected bool _trackEmittedStreams;
+		protected bool _emitEnabled;
+		protected bool _startSystemProjections;
 
 
 		protected override void Given() {
@@ -41,8 +37,8 @@ namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios
 		}
 
 		protected override Tuple<IBus, IPublisher, InMemoryBus, TimeoutScheduler, Guid>[] GivenProcessingQueues() {
-			var buses = new IBus[] {new InMemoryBus("1"), new InMemoryBus("2")};
-			var outBuses = new[] {new InMemoryBus("o1"), new InMemoryBus("o2")};
+			var buses = new IBus[] { new InMemoryBus("1"), new InMemoryBus("2") };
+			var outBuses = new[] { new InMemoryBus("o1"), new InMemoryBus("o2") };
 			_otherQueues = new ManualQueue[]
 				{new ManualQueue(buses[0], _timeProvider), new ManualQueue(buses[1], _timeProvider)};
 			return new[] {

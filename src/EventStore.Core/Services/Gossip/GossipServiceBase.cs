@@ -112,11 +112,11 @@ namespace EventStore.Core.Services.Gossip {
 			var now = _timeProvider.UtcNow;
 			var dnsCluster = new ClusterInfo(
 				message.GossipSeeds.Select(x => MemberInfo.ForManager(Guid.Empty, now, true, x)).ToArray());
-			
+
 			var oldCluster = _cluster;
 			_cluster = MergeClusters(_cluster, dnsCluster, null, x => x, _timeProvider.UtcNow, _memberInfo,
 				CurrentLeader?.InstanceId, AllowedTimeDifference, DeadMemberRemovalPeriod);
-			
+
 			LogClusterChange(oldCluster, _cluster, null);
 
 			_state = GossipState.Working;
@@ -307,7 +307,7 @@ namespace EventStore.Core.Services.Gossip {
 			EndPoint peerEndPoint, Func<MemberInfo, MemberInfo> update, DateTime utcNow,
 			MemberInfo me, Guid? currentLeaderInstanceId, TimeSpan allowedTimeDifference,
 			TimeSpan deadMemberRemovalTimeout) {
-			var members = myCluster.Members.ToDictionary(member => member.HttpEndPoint, 
+			var members = myCluster.Members.ToDictionary(member => member.HttpEndPoint,
 				new EndPointEqualityComparer());
 			MemberInfo peerNode = peerEndPoint != null
 				? othersCluster.Members.SingleOrDefault(member => member.Is(peerEndPoint), null) : null;
@@ -320,7 +320,7 @@ namespace EventStore.Core.Services.Gossip {
 				{
 					if ((utcNow - member.TimeStamp).Duration() > allowedTimeDifference) {
 						Log.Error("Time difference between us and [{peerEndPoint}] is too great! "
-						          + "UTC now: {dateTime:yyyy-MM-dd HH:mm:ss.fff}, peer's time stamp: {peerTimestamp:yyyy-MM-dd HH:mm:ss.fff}.",
+								  + "UTC now: {dateTime:yyyy-MM-dd HH:mm:ss.fff}, peer's time stamp: {peerTimestamp:yyyy-MM-dd HH:mm:ss.fff}.",
 							peerEndPoint, utcNow, member.TimeStamp);
 					}
 					members[member.HttpEndPoint] = member.Updated(utcNow: member.TimeStamp, esVersion: isPeerOld ? VersionInfo.OldVersion : member.ESVersion);
@@ -328,10 +328,10 @@ namespace EventStore.Core.Services.Gossip {
 					MemberInfo existingMem;
 					// if there is no data about this member or data is stale -- update
 					if (!members.TryGetValue(member.HttpEndPoint, out existingMem) ||
-					    IsMoreUpToDate(member, existingMem)) {
+						IsMoreUpToDate(member, existingMem)) {
 						// we do not trust leader's alive status and state to come from outside
 						if (currentLeaderInstanceId != null && existingMem != null &&
-						    member.InstanceId == currentLeaderInstanceId)
+							member.InstanceId == currentLeaderInstanceId)
 							members[member.HttpEndPoint] =
 								member.Updated(utcNow: utcNow, isAlive: existingMem.IsAlive,
 									state: existingMem.State);

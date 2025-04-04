@@ -80,7 +80,7 @@ namespace EventStore.Core.Tests.Services.RedactionService {
 			// zero out the footer & hash to make it an incomplete chunk
 			File.SetAttributes(newChunk, FileAttributes.Normal);
 			await using (var fs = new FileStream(newChunk, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) {
-				fs.Seek(- (ChunkFooter.Size + ChunkFooter.ChecksumSize), SeekOrigin.End);
+				fs.Seek(-(ChunkFooter.Size + ChunkFooter.ChecksumSize), SeekOrigin.End);
 				fs.Write(new byte[ChunkFooter.Size + ChunkFooter.ChecksumSize]);
 			}
 

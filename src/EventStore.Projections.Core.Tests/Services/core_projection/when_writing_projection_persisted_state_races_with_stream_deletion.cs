@@ -18,7 +18,7 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection {
 	 * * if step 2 completes after step 1, multiple ProjectionManagement.Internal.Deleted events will be published
 	 * * in addition, if step 2 completes shortly after step 1, WrongExpectedVersion will be encountered
 	 */
-	
+
 	public static class when_writing_projection_persisted_state_races_with_stream_deletion {
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
@@ -41,14 +41,15 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection {
 						emitEnabled: false, trackEmittedStreams: false));
 				yield return
 					new ProjectionManagementMessage.Command.Disable(new PublishEnvelope(_bus), _projectionName, ProjectionManagementMessage.RunAs.System);
-				yield return new ProjectionManagementMessage.Command.Delete(new NoopEnvelope(), _projectionName, ProjectionManagementMessage.RunAs.System, 
+				yield return new ProjectionManagementMessage.Command.Delete(new NoopEnvelope(), _projectionName, ProjectionManagementMessage.RunAs.System,
 					true, false, false);
 			}
 
 			[Test]
 			public void should_publish_single_projection_deleted_event() {
 				Assert.AreEqual(
-					1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Internal.Deleted>().Count()); }
+					1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Internal.Deleted>().Count());
+			}
 		}
 	}
 }

@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Plugins.Authentication;
-using EventStore.Transport.Http;
 using Microsoft.AspNetCore.Http;
 
 namespace EventStore.Core.Services.Transport.Http.Authentication {

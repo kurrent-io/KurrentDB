@@ -47,7 +47,7 @@ namespace EventStore.Projections.Core.Tests.Services.emitted_stream {
 				CheckpointTag.FromPosition(0, 40, 30),
 				_bus, _ioDispatcher, _readyHandler);
 			_stream.Start();
-			_stream.EmitEvents(new[] {_emittedDataEvent});
+			_stream.EmitEvents(new[] { _emittedDataEvent });
 		}
 
 
@@ -62,7 +62,7 @@ namespace EventStore.Projections.Core.Tests.Services.emitted_stream {
 			Assert.NotNull(writeEvent.Metadata);
 			var metadata = Helper.UTF8NoBom.GetString(writeEvent.Metadata);
 			HelperExtensions.AssertJson(
-				new {___causedBy = _causedBy, ___correlationId = _correlationId}, metadata.ParseJson<JObject>());
+				new { ___causedBy = _causedBy, ___correlationId = _correlationId }, metadata.ParseJson<JObject>());
 		}
 	}
 }

@@ -29,9 +29,9 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_
 				_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
 				_manager.Start(CheckpointTag.FromStreamPosition(0, "stream", 10), null);
-//                _manager.StateUpdated("", @"{""state"":""state1""}");
+				//                _manager.StateUpdated("", @"{""state"":""state1""}");
 				_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 11), 77.7f);
-//                _manager.StateUpdated("", @"{""state"":""state2""}");
+				//                _manager.StateUpdated("", @"{""state"":""state2""}");
 				_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 12), 77.8f);
 				_manager.CheckpointSuggested(CheckpointTag.FromStreamPosition(0, "stream", 12), 77.8f);
 				_manager.Stopping();

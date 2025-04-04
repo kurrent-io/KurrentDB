@@ -23,7 +23,7 @@ namespace EventStore.Projections.Core.Services.Management {
 		}
 
 		public void Schedule(int timeout, Action action) {
-			var entry = new Entry {Action = action, Timeout = timeout};
+			var entry = new Entry { Action = action, Timeout = timeout };
 			Interlocked.Exchange(ref _current, entry);
 		}
 	}

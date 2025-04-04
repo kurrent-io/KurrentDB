@@ -1,6 +1,6 @@
 // ReSharper disable CheckNamespace
 namespace EventStore.Client.Streams {
-// ReSharper restore CheckNamespace
+	// ReSharper restore CheckNamespace
 	partial class ReadResp {
 		partial class Types {
 			partial class ReadEvent {

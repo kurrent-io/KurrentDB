@@ -1,24 +1,23 @@
 using System;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
+using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Services.UserManagement;
+using EventStore.Projections.Core.Common;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Management.ManagedProjectionStates;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Utils;
-using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
-using System.Threading;
-using EventStore.Core;
-using EventStore.Core.Helpers;
-using EventStore.Projections.Core.Common;
 using FastSerialization;
 using ILogger = Serilog.ILogger;
+using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Projections.Core.Services.Management {
 
@@ -32,10 +31,10 @@ namespace EventStore.Projections.Core.Services.Management {
 		}
 	}
 
-		/// <summary>
-		/// managed projection controls start/stop/create/update/delete lifecycle of the projection. 
-		/// </summary>
-		public class ManagedProjection : IDisposable {
+	/// <summary>
+	/// managed projection controls start/stop/create/update/delete lifecycle of the projection. 
+	/// </summary>
+	public class ManagedProjection : IDisposable {
 		public class PersistedState {
 			public string HandlerType { get; set; }
 			public string Query { get; set; }
@@ -64,7 +63,7 @@ namespace EventStore.Projections.Core.Services.Management {
 			public int MaxWriteBatchLength { get; set; }
 			public int MaxAllowedWritesInFlight { get; set; }
 			public int? ProjectionSubsystemVersion { get; set; }
-			
+
 			public int? ProjectionExecutionTimeout { get; set; }
 
 			public PersistedState() {
@@ -148,12 +147,18 @@ namespace EventStore.Projections.Core.Services.Management {
 				getResultDispatcher,
 			IODispatcher ioDispatcher,
 			TimeSpan projectionQueryExpiry) {
-			if (id == Guid.Empty) throw new ArgumentException("id");
-			if (name == null) throw new ArgumentNullException("name");
-			if (output == null) throw new ArgumentNullException("output");
-			if (getStateDispatcher == null) throw new ArgumentNullException("getStateDispatcher");
-			if (getResultDispatcher == null) throw new ArgumentNullException("getResultDispatcher");
-			if (name == "") throw new ArgumentException("name");
+			if (id == Guid.Empty)
+				throw new ArgumentException("id");
+			if (name == null)
+				throw new ArgumentNullException("name");
+			if (output == null)
+				throw new ArgumentNullException("output");
+			if (getStateDispatcher == null)
+				throw new ArgumentNullException("getStateDispatcher");
+			if (getResultDispatcher == null)
+				throw new ArgumentNullException("getResultDispatcher");
+			if (name == "")
+				throw new ArgumentException("name");
 			_workerId = workerId;
 			_id = id;
 			_projectionId = projectionId;
@@ -188,8 +193,8 @@ namespace EventStore.Projections.Core.Services.Management {
 		private bool IsMultiStream {
 			get {
 				return PersistedProjectionState.SourceDefinition != null &&
-				       PersistedProjectionState.SourceDefinition.Streams != null &&
-				       PersistedProjectionState.SourceDefinition.Streams.Length > 1;
+					   PersistedProjectionState.SourceDefinition.Streams != null &&
+					   PersistedProjectionState.SourceDefinition.Streams.Length > 1;
 			}
 		}
 
@@ -218,7 +223,7 @@ namespace EventStore.Projections.Core.Services.Management {
 		public bool EnableContentTypeValidation {
 			get {
 				return PersistedProjectionState.ProjectionSubsystemVersion >=
-				       ProjectionsSubsystem.CONTENT_TYPE_VALIDATION_VERSION;
+					   ProjectionsSubsystem.CONTENT_TYPE_VALIDATION_VERSION;
 			}
 		}
 
@@ -298,10 +303,10 @@ namespace EventStore.Projections.Core.Services.Management {
 						? " (Enabled)"
 						: "");
 				status.Status = (status.Status == "Stopped" && _state == ManagedProjectionState.Completed
-					                ? _state.EnumValueName()
-					                : (!status.Status.StartsWith(_state.EnumValueName())
-						                ? _state.EnumValueName() + "/" + status.Status
-						                : status.Status)) + enabledSuffix;
+									? _state.EnumValueName()
+									: (!status.Status.StartsWith(_state.EnumValueName())
+										? _state.EnumValueName() + "/" + status.Status
+										: status.Status)) + enabledSuffix;
 				status.LeaderStatus = _state;
 			}
 
@@ -396,11 +401,11 @@ namespace EventStore.Projections.Core.Services.Management {
 		public void Handle(ProjectionManagementMessage.Command.Enable message) {
 			_lastAccessed = _timeProvider.UtcNow;
 			if (Enabled
-			    && !(_state == ManagedProjectionState.Completed || _state == ManagedProjectionState.Faulted
-			                                                    || _state == ManagedProjectionState.Aborted ||
-			                                                    _state == ManagedProjectionState.Loaded
-			                                                    || _state == ManagedProjectionState.Prepared ||
-			                                                    _state == ManagedProjectionState.Stopped)) {
+				&& !(_state == ManagedProjectionState.Completed || _state == ManagedProjectionState.Faulted
+																|| _state == ManagedProjectionState.Aborted ||
+																_state == ManagedProjectionState.Loaded
+																|| _state == ManagedProjectionState.Prepared ||
+																_state == ManagedProjectionState.Stopped)) {
 				//Projection is probably Running
 				message.Envelope.ReplyWith(new ProjectionManagementMessage.Updated(message.Name));
 				return;
@@ -424,7 +429,7 @@ namespace EventStore.Projections.Core.Services.Management {
 
 		public void Handle(ProjectionManagementMessage.Command.Delete message) {
 			if ((_state != ManagedProjectionState.Stopped && _state != ManagedProjectionState.Faulted) &&
-			    Mode != ProjectionMode.Transient)
+				Mode != ProjectionMode.Transient)
 				throw new InvalidOperationException("Cannot delete a projection that hasn't been stopped or faulted.");
 			_lastAccessed = _timeProvider.UtcNow;
 
@@ -437,8 +442,8 @@ namespace EventStore.Projections.Core.Services.Management {
 			}
 
 			if ((PersistedProjectionState.EmitEnabled ?? false) &&
-			    ((PersistedProjectionState.TrackEmittedStreams ?? false) &&
-			     PersistedProjectionState.DeleteEmittedStreams)) {
+				((PersistedProjectionState.TrackEmittedStreams ?? false) &&
+				 PersistedProjectionState.DeleteEmittedStreams)) {
 				PersistedProjectionState.NumberOfPrequisitesMetForDeletion++;
 			}
 
@@ -472,7 +477,7 @@ namespace EventStore.Projections.Core.Services.Management {
 
 		public void Handle(ProjectionManagementMessage.Command.UpdateConfig message) {
 			if ((_state != ManagedProjectionState.Stopped && _state != ManagedProjectionState.Faulted) &&
-			    Mode != ProjectionMode.Transient)
+				Mode != ProjectionMode.Transient)
 				throw new InvalidOperationException(
 					"Cannot update the config of a projection that hasn't been stopped or faulted.");
 			_lastAccessed = _timeProvider.UtcNow;
@@ -499,12 +504,12 @@ namespace EventStore.Projections.Core.Services.Management {
 			var sourceDefinition = PersistedProjectionState.SourceDefinition ?? new ProjectionSourceDefinition();
 			var projectionNamesBuilder = new ProjectionNamesBuilder(_name, sourceDefinition);
 
-			if (PersistedProjectionState.EmitStreamNeedsDeleted()  && IsMultiStream) {
+			if (PersistedProjectionState.EmitStreamNeedsDeleted() && IsMultiStream) {
 				DeleteStream(projectionNamesBuilder.GetOrderStreamName(), DeleteIfConditionsAreMet);
 			}
 
-			if(PersistedProjectionState.CheckpointStreamNeedsDeleted()){
-				 DeleteStream(projectionNamesBuilder.MakeCheckpointStreamName(), DeleteIfConditionsAreMet);
+			if (PersistedProjectionState.CheckpointStreamNeedsDeleted()) {
+				DeleteStream(projectionNamesBuilder.MakeCheckpointStreamName(), DeleteIfConditionsAreMet);
 			}
 
 			if (PersistedProjectionState.EmitStreamNeedsDeleted()) {
@@ -606,7 +611,7 @@ namespace EventStore.Projections.Core.Services.Management {
 
 		private bool IsExpiredProjection() {
 			return Mode == ProjectionMode.Transient &&
-			       _lastAccessed.Add(_projectionsQueryExpiry) < _timeProvider.UtcNow && _persistedStateLoaded;
+				   _lastAccessed.Add(_projectionsQueryExpiry) < _timeProvider.UtcNow && _persistedStateLoaded;
 		}
 
 		public void InitializeNew(PersistedState persistedState, IEnvelope replyEnvelope) {
@@ -693,9 +698,12 @@ namespace EventStore.Projections.Core.Services.Management {
 			var handlerType = persistedState.HandlerType;
 			var query = persistedState.Query;
 
-			if (handlerType == null) throw new ArgumentNullException("persistedState", "HandlerType");
-			if (query == null) throw new ArgumentNullException("persistedState", "Query");
-			if (handlerType == "") throw new ArgumentException("HandlerType", "persistedState");
+			if (handlerType == null)
+				throw new ArgumentNullException("persistedState", "HandlerType");
+			if (query == null)
+				throw new ArgumentNullException("persistedState", "Query");
+			if (handlerType == "")
+				throw new ArgumentException("HandlerType", "persistedState");
 
 			if (_state != ManagedProjectionState.Creating && _state != ManagedProjectionState.Loading)
 				throw new InvalidOperationException("LoadPersistedState is now allowed in this state");
@@ -764,9 +772,9 @@ namespace EventStore.Projections.Core.Services.Management {
 				eventStreamId,
 				Enum.GetName(typeof(OperationResult), message.Result));
 			if (message.Result == OperationResult.CommitTimeout || message.Result == OperationResult.ForwardTimeout
-			                                                    || message.Result == OperationResult.PrepareTimeout
-			                                                    || message.Result ==
-			                                                    OperationResult.WrongExpectedVersion) {
+																|| message.Result == OperationResult.PrepareTimeout
+																|| message.Result ==
+																OperationResult.WrongExpectedVersion) {
 				_logger.Information("Retrying write projection source for {projection}", _name);
 				WritePersistedState(eventToRetry);
 			} else
@@ -809,7 +817,7 @@ namespace EventStore.Projections.Core.Services.Management {
 				streamId,
 				Enum.GetName(typeof(OperationResult), message.Result));
 			if (message.Result == OperationResult.CommitTimeout ||
-			    message.Result == OperationResult.ForwardTimeout) {
+				message.Result == OperationResult.ForwardTimeout) {
 				DeleteStream(streamId, completed);
 			} else
 				throw new NotSupportedException("Unsupported error code received");
@@ -992,10 +1000,10 @@ namespace EventStore.Projections.Core.Services.Management {
 					LoadStopped();
 				}
 			} else if (_state == ManagedProjectionState.Aborted ||
-			           _state == ManagedProjectionState.Completed ||
-			           _state == ManagedProjectionState.Faulted ||
-			           _state == ManagedProjectionState.Stopped ||
-			           _state == ManagedProjectionState.Deleting)
+					   _state == ManagedProjectionState.Completed ||
+					   _state == ManagedProjectionState.Faulted ||
+					   _state == ManagedProjectionState.Stopped ||
+					   _state == ManagedProjectionState.Deleting)
 				Reply();
 			else
 				throw InvalidProjectionState(_state);
@@ -1078,16 +1086,16 @@ namespace EventStore.Projections.Core.Services.Management {
 		}
 
 		public static SerializedRunAs SerializePrincipal(ProjectionManagementMessage.RunAs runAs) {
-			if (runAs?.Principal == null || runAs.Principal.HasClaim(x=>x.Type == ClaimTypes.Anonymous))
+			if (runAs?.Principal == null || runAs.Principal.HasClaim(x => x.Type == ClaimTypes.Anonymous))
 				return null; // anonymous
 			if (runAs.Principal == SystemAccounts.System)
-				return new SerializedRunAs {Name = "$system"};
+				return new SerializedRunAs { Name = "$system" };
 
 			var principal = runAs.Principal;
 			var roles = principal.Claims
 				.Where(x => x.Type == ClaimTypes.Role)
 				.Select(c => $"{c.Type}$$${c.Value}").ToArray();
-			return new SerializedRunAs {Name = runAs.Principal.Identity.Name, Roles = roles};
+			return new SerializedRunAs { Name = runAs.Principal.Identity.Name, Roles = roles };
 		}
 
 		public static ClaimsPrincipal DeserializePrincipal(SerializedRunAs runAs) {
@@ -1096,11 +1104,10 @@ namespace EventStore.Projections.Core.Services.Management {
 			if (runAs.Name == "$system") //TODO: make sure nobody else uses it
 				return SystemAccounts.System;
 			var claims = runAs.Roles.Select(x => x.Split("$$$")).Select(x => {
-				return x.Length switch
-				{
-					1 =>  new Claim(ClaimTypes.Role, x[0]),
+				return x.Length switch {
+					1 => new Claim(ClaimTypes.Role, x[0]),
 					2 => new Claim(x[0], x[1]),
-					_ =>throw new SerializationException("Could not deserialize run as")
+					_ => throw new SerializationException("Could not deserialize run as")
 				};
 
 			}).ToList();

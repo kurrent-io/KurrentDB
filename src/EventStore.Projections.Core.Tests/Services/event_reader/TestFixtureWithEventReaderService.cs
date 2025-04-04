@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using EventStore.Core.Bus;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Projections.Core.Messages;

@@ -7,7 +7,7 @@ namespace EventStore.Common.Tests.Configuration;
 public class ConfigurationRootExtensionsTest {
 	private const string GOSSIP_SEED = "GossipSeed";
 	private const string CONFIG_FILE_KEY = "Config";
-	
+
 	[Fact]
 	public void successful_comma_separated_value() {
 		var config = new Dictionary<string, string?> {
@@ -35,7 +35,7 @@ public class ConfigurationRootExtensionsTest {
 			EventStore.Common.Configuration.ConfigurationRootExtensions.GetCommaSeparatedValueAsArray(
 				configuration, "GossipSeed"));
 	}
-	
+
 	[Fact]
 	public void mixed_invalid_delimiter() {
 		var config = new Dictionary<string, string?> {
@@ -64,7 +64,7 @@ public class ConfigurationRootExtensionsTest {
 
 		Assert.True(result);
 	}
-	
+
 	[Fact]
 	public void user_specified_config_file_through_command_line_returns_true() {
 		var args = new string[] {

@@ -29,7 +29,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 			}
 
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 				var readerAssignedMessage =
 					_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
 						.LastOrDefault();
@@ -65,7 +66,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_receiving_eof<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 
 				yield return (new ReaderSubscriptionMessage.EventReaderEof(_reader));
 			}

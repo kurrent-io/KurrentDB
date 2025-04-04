@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;

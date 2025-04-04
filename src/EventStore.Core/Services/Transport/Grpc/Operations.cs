@@ -9,8 +9,10 @@ namespace EventStore.Core.Services.Transport.Grpc {
 		private readonly IAuthorizationProvider _authorizationProvider;
 
 		public Operations(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
-			if (publisher == null) throw new ArgumentNullException(nameof(publisher));
-			if (authorizationProvider == null) throw new ArgumentNullException(nameof(authorizationProvider));
+			if (publisher == null)
+				throw new ArgumentNullException(nameof(publisher));
+			if (authorizationProvider == null)
+				throw new ArgumentNullException(nameof(authorizationProvider));
 			_publisher = publisher;
 			_authorizationProvider = authorizationProvider;
 		}

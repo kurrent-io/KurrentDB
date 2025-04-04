@@ -17,7 +17,7 @@ namespace EventStore.Common.Configuration {
 			_groups = _optionSections
 				.Select(sectionType => {
 					var description = sectionType.GetCustomAttribute<DescriptionAttribute>()?.Description.ToUpper()
-					                  ?? string.Empty;
+									  ?? string.Empty;
 					var props = sectionType
 						.GetProperties()
 						.Select(x => FormatOptionKey(x.Name))
@@ -39,11 +39,11 @@ namespace EventStore.Common.Configuration {
 
 			bool Modified(Type x) => x != typeof(Default);
 			bool Default(Type x) => x == typeof(Default);
-			
+
 			var nameColumnWidth = info.Keys.Select(x => x.Length).Max() + 11;
-			
+
 			return PrintOptions(nameof(Modified), info, Modified) + Environment.NewLine +
-			       PrintOptions(nameof(Default), info, Default);
+				   PrintOptions(nameof(Default), info, Default);
 
 			string PrintOptions(
 				string name,
@@ -60,12 +60,12 @@ namespace EventStore.Common.Configuration {
 						if (!configOptions.TryGetValue(option, out var optionValue) ||
 							!filter(optionValue.source))
 							continue;
-							
+
 						if (firstOptionInGroup) {
 							dumpOptions.AppendLine().Append($"    {groupName}:").AppendLine();
 							firstOptionInGroup = false;
 						}
-						
+
 						dumpOptions.Append($"         {option}:".PadRight(nameColumnWidth, ' '))
 							.Append(optionValue.value).Append(' ')
 							.Append(FormatSourceName(optionValue.source))
@@ -74,7 +74,7 @@ namespace EventStore.Common.Configuration {
 				}
 				return dumpOptions.ToString();
 			}
-			
+
 			static string FormatSourceName(Type source) =>
 				$"({(source == typeof(Default) ? "<DEFAULT>" : NameTranslators.CombineByPascalCase(source.Name, " "))})"
 			;
@@ -92,14 +92,15 @@ namespace EventStore.Common.Configuration {
 					@"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z])|(?<=[A-Za-z])(?=[^A-Za-z])");
 				return regex.Replace(name, token);
 			}
-			
+
 			public static string None(string name) {
 				return name;
 			}
 		}
 
 		public Dictionary<string, PrintableOption> GetOptionSourceInfo(IConfigurationRoot configurationRoot) {
-			if (configurationRoot is null) return null;
+			if (configurationRoot is null)
+				return null;
 
 			var result = new Dictionary<string, PrintableOption>();
 			foreach (var section in _optionSections) {
@@ -125,7 +126,7 @@ namespace EventStore.Common.Configuration {
 				var source = provider.GetType();
 				foreach (var key in provider.GetChildKeys(Enumerable.Empty<string>(), default)) {
 					if (provider.TryGet(key, out var value)) {
-						if(result.TryGetValue(key, out var opt)) {
+						if (result.TryGetValue(key, out var opt)) {
 							result[key] = opt.WithValue(value, source);
 						}
 					}

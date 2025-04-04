@@ -12,8 +12,10 @@ namespace EventStore.Core {
 		public static IApplicationBuilder UseLegacyHttp(
 			this IApplicationBuilder app, RequestDelegate dispatcher,
 			params IHttpService[] httpServices) {
-			if (app == null) throw new ArgumentNullException(nameof(app));
-			if (httpServices == null) throw new ArgumentNullException(nameof(httpServices));
+			if (app == null)
+				throw new ArgumentNullException(nameof(app));
+			if (httpServices == null)
+				throw new ArgumentNullException(nameof(httpServices));
 
 			var actions = httpServices
 				.SelectMany(x => x.Actions.Select(action =>
@@ -32,8 +34,8 @@ namespace EventStore.Core {
 					.MapMethods(
 						action.route,
 						action.method == HttpMethod.Get
-							? new[] {HttpMethod.Get, HttpMethod.Head}
-							: new[] {action.method},
+							? new[] { HttpMethod.Get, HttpMethod.Head }
+							: new[] { action.method },
 						dispatcher)
 					.WithMetadata(action.operation));
 
@@ -41,12 +43,12 @@ namespace EventStore.Core {
 				var route = uriTemplate.Split('?').First();
 				return System.Net.WebUtility.UrlDecode(route.EndsWith("/") ? route[..^1] : route);
 			}
-		} 
+		}
 		class RouteAndMethodComparer : EqualityComparer<(string, string, Func<UriTemplateMatch, Operation>)> {
 			public static readonly RouteAndMethodComparer Instance = new RouteAndMethodComparer();
 			public override bool Equals((string, string, Func<UriTemplateMatch, Operation>) x, (string, string, Func<UriTemplateMatch, Operation>) y) {
 				return string.Equals(x.Item1, y.Item1, StringComparison.Ordinal) &&
-				       string.Equals(x.Item2, y.Item2, StringComparison.Ordinal);
+					   string.Equals(x.Item2, y.Item2, StringComparison.Ordinal);
 			}
 
 			public override int GetHashCode((string, string, Func<UriTemplateMatch, Operation>) obj) {

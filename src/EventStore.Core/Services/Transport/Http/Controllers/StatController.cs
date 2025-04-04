@@ -10,7 +10,7 @@ using EventStore.Transport.Http.EntityManagement;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers {
 	public class StatController : CommunicationController {
-		private static readonly ICodec[] SupportedCodecs = new ICodec[] {Codec.Json, Codec.Xml, Codec.ApplicationXml};
+		private static readonly ICodec[] SupportedCodecs = new ICodec[] { Codec.Json, Codec.Xml, Codec.ApplicationXml };
 
 		private readonly IPublisher _networkSendQueue;
 

@@ -21,13 +21,13 @@ namespace EventStore.TestClient.Commands {
 		public string Usage {
 			get {
 				const string usage = "<max concurrent requests, int> " +
-				                     "\n<connections, int> " +
-				                     "\n<streams count, int> " +
-				                     "\n<eventsPerStream, int> " +
-				                     "\n<streams delete step, int> " +
-				                     "\n<scenario name, string, " + AllScenariosFlag + " for all scenarios>" +
-				                     "\n<execution period minutes, int>" +
-				                     "\n<dbParentPath or custom node, string or ip:tcp:http>";
+									 "\n<connections, int> " +
+									 "\n<streams count, int> " +
+									 "\n<eventsPerStream, int> " +
+									 "\n<streams delete step, int> " +
+									 "\n<scenario name, string, " + AllScenariosFlag + " for all scenarios>" +
+									 "\n<execution period minutes, int>" +
+									 "\n<dbParentPath or custom node, string or ip:tcp:http>";
 
 				return usage;
 			}
@@ -60,9 +60,9 @@ namespace EventStore.TestClient.Commands {
 
 					var atoms = args[7].Split(':');
 					if (atoms.Length == 3
-					    && IPAddress.TryParse(atoms[0], out ip)
-					    && int.TryParse(atoms[1], out tcpPort)
-					    && int.TryParse(atoms[2], out httpPort)) {
+						&& IPAddress.TryParse(atoms[0], out ip)
+						&& int.TryParse(atoms[1], out tcpPort)
+						&& int.TryParse(atoms[2], out httpPort)) {
 						customNode = new NodeConnectionInfo(ip, tcpPort, httpPort);
 
 						args = CutLastArgument(args);
@@ -96,12 +96,12 @@ namespace EventStore.TestClient.Commands {
 			context.IsAsync();
 
 			Log.Information("\n---" +
-			         "\nRunning scenario {scenario} using {connections} connections with {maxConcurrentRequests} max concurrent requests," +
-			         "\nfor {streams} streams {eventsPerStream} events each deleting every {streamDeleteStep}th stream. " +
-			         "\nExecution period {executionPeriod} minutes. " +
-			         "\nDatabase path {dbParentPath};" +
-			         "\nCustom Node {customNode};" +
-			         "\n---",
+					 "\nRunning scenario {scenario} using {connections} connections with {maxConcurrentRequests} max concurrent requests," +
+					 "\nfor {streams} streams {eventsPerStream} events each deleting every {streamDeleteStep}th stream. " +
+					 "\nExecution period {executionPeriod} minutes. " +
+					 "\nDatabase path {dbParentPath};" +
+					 "\nCustom Node {customNode};" +
+					 "\n---",
 				scenarioName,
 				connections,
 				maxConcurrentRequests,
@@ -190,8 +190,8 @@ namespace EventStore.TestClient.Commands {
 				allScenarios.Aggregate(new StringBuilder(),
 					(sb, s) => sb.AppendFormat("{0}, ", s.GetType().Name)));
 			var scenarios = allScenarios.Where(x => scenarioName == AllScenariosFlag
-			                                        || x.GetType().Name.Equals(scenarioName,
-				                                        StringComparison.InvariantCultureIgnoreCase))
+													|| x.GetType().Name.Equals(scenarioName,
+														StringComparison.InvariantCultureIgnoreCase))
 				.ToArray();
 
 			Log.Information("Running test scenarios ({scenarios} total)...", scenarios.Length);

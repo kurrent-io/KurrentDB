@@ -38,7 +38,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				using var call = StreamsClient.Append(GetCallOptions(AdminCredentials));
 				await call.RequestStream.WriteAsync(new() {
 					Options = new() {
-						StreamIdentifier = new(){StreamName = ByteString.CopyFromUtf8($"$${_streamName}")},
+						StreamIdentifier = new() { StreamName = ByteString.CopyFromUtf8($"$${_streamName}") },
 						Any = new()
 					}
 				});
@@ -62,7 +62,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 
 			protected override async Task When() {
 				using var call = StreamsClient.Read(new() {
-					Options = new () {
+					Options = new() {
 						Count = MaxCount,
 						Stream = new() {
 							StreamIdentifier = new() {
@@ -143,7 +143,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 						UuidOption = new() { Structured = new() },
 						ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
 						NoFilter = new(),
-						ControlOption = new(){ Compatibility = 21 }
+						ControlOption = new() { Compatibility = 21 }
 					}
 				});
 				_responses.AddRange(await call.ResponseStream.ReadAllAsync().ToArrayAsync());
@@ -192,7 +192,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 							NoFilter = new(),
 						}
 					}, GetCallOptions(AdminCredentials));
-					
+
 					var readEvents = await call.ResponseStream.ReadAllAsync().ToArrayAsync();
 					Assert.AreEqual(1, readEvents.Length);
 					Assert.AreEqual(evt, readEvents[0].Event.Event);
@@ -303,7 +303,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 						NoFilter = new()
 					}
 				});
-				_responses.AddRange(await  call.ResponseStream.ReadAllAsync().ToArrayAsync());
+				_responses.AddRange(await call.ResponseStream.ReadAllAsync().ToArrayAsync());
 			}
 
 			[Test]

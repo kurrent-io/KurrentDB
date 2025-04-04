@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using EventStore.Common.Utils;
-using System.Collections.Concurrent;
 
 namespace EventStore.Core.DataStructures {
 	public class ObjectPoolDisposingException : Exception {

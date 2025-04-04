@@ -17,7 +17,6 @@ using EventStore.Core.Tests.Services.Transport.Tcp;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.FileNamingStrategy;
-using EventStore.Core.Util;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
@@ -56,7 +55,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 			Publisher.Subscribe(new AdHocHandler<ReplicationTrackingMessage.ReplicaWriteAck>(msg => ReplicaWriteAcks.Enqueue(msg)));
 			Publisher.Subscribe(new AdHocHandler<SystemMessage.VNodeConnectionLost>(msg => ReplicaLostMessages.Enqueue(msg)));
 			TcpSendPublisher.Subscribe(new AdHocHandler<TcpMessage.TcpSend>(msg => TcpSends.Enqueue(msg)));
-			
+
 			DbConfig = CreateDbConfig();
 			var db = new TFChunkDb(DbConfig);
 			db.Open();
@@ -96,7 +95,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 				new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 					new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()),
 					new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
-				new AuthorizationGateway(new TestAuthorizationProvider()), 
+				new AuthorizationGateway(new TestAuthorizationProvider()),
 				TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
 				_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
 			var subRequest = new ReplicationMessage.ReplicaSubscriptionRequest(
@@ -135,7 +134,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 			ICheckpoint indexCheckpoint = new InMemoryCheckpoint(-1);
 			ICheckpoint streamExistenceFilterCheckpoint = new InMemoryCheckpoint(-1);
 			var nodeConfig = new TFChunkDbConfig(
-				PathName, 
+				PathName,
 				new VersionedPatternFileNamingStrategy(PathName, "chunk-"),
 				1000,
 				10000,

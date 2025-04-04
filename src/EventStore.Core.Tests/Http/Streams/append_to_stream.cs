@@ -6,13 +6,13 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using EventStore.Core.Services;
+using EventStore.Core.Tests.Http.Users.users;
 using EventStore.Transport.Http;
+using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using EventStore.Core.Services;
 using HttpStatusCode = System.Net.HttpStatusCode;
-using EventStore.Core.Tests.Http.Users.users;
-using Microsoft.Extensions.Primitives;
 
 namespace EventStore.Core.Tests.Http.Streams {
 	namespace append_to_stream {

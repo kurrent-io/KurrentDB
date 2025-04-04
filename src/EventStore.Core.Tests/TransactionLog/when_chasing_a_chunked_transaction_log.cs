@@ -1,10 +1,8 @@
 using System;
 using System.IO;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -83,8 +81,8 @@ namespace EventStore.Core.Tests.TransactionLog {
 				timeStamp: new DateTime(2012, 12, 21),
 				flags: PrepareFlags.None,
 				eventType: eventTypeId,
-				data: new byte[] {1, 2, 3, 4, 5},
-				metadata: new byte[] {7, 17});
+				data: new byte[] { 1, 2, 3, 4, 5 },
+				metadata: new byte[] { 7, 17 });
 
 			using (var fs = new FileStream(GetFilePathFor("chunk-000000.000000"), FileMode.CreateNew,
 				FileAccess.Write)) {
@@ -142,7 +140,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 				flags: PrepareFlags.None,
 				eventType: eventTypeId,
 				data: new byte[9000],
-				metadata: new byte[] {7, 17});
+				metadata: new byte[] { 7, 17 });
 			var writer = new TFChunkWriter(db);
 			writer.Open();
 			long pos;
@@ -188,8 +186,8 @@ namespace EventStore.Core.Tests.TransactionLog {
 				timeStamp: new DateTime(2012, 12, 21),
 				flags: PrepareFlags.None,
 				eventType: eventTypeId,
-				data: new byte[] {1, 2, 3, 4, 5},
-				metadata: new byte[] {7, 17});
+				data: new byte[] { 1, 2, 3, 4, 5 },
+				metadata: new byte[] { 7, 17 });
 			var writer = new TFChunkWriter(db);
 			writer.Open();
 			long pos;

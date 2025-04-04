@@ -46,7 +46,7 @@ namespace EventStore.LogV3.Tests {
 			Assert.Equal(_guid2, record.SubHeader.LeaderInstanceId);
 			Assert.Equal(_long2, record.SubHeader.PrevEpochPosition);
 		}
-		
+
 		[Fact]
 		public void can_create_partition_record() {
 			var record = RecordCreator.CreatePartitionRecord(
@@ -70,7 +70,7 @@ namespace EventStore.LogV3.Tests {
 			Assert.Equal(_ushort1, record.SubHeader.ReferenceNumber);
 			Assert.Equal(_string1, record.StringPayload);
 		}
-		
+
 		[Fact]
 		public void can_create_partition_type_record() {
 			var record = RecordCreator.CreatePartitionTypeRecord(
@@ -128,7 +128,7 @@ namespace EventStore.LogV3.Tests {
 			Assert.Equal(_guid2, record.SubHeader.PartitionId);
 			Assert.Equal(_string1, record.StringPayload);
 		}
-		
+
 		[Fact]
 		public void can_create_event_type_record() {
 			var record = RecordCreator.CreateEventTypeRecord(
@@ -152,7 +152,7 @@ namespace EventStore.LogV3.Tests {
 			Assert.Equal(_ushort1, record.SubHeader.Version);
 			Assert.Equal(_string1, record.StringPayload);
 		}
-		
+
 		[Fact]
 		public void can_create_content_type_record() {
 			var record = RecordCreator.CreateContentTypeRecord(
@@ -209,7 +209,7 @@ namespace EventStore.LogV3.Tests {
 			Assert.Equal(MemoryMarshal.ToEnumerable(_bytes4), MemoryMarshal.ToEnumerable(record.Event.Metadata));
 			Assert.Equal(_prepareflags, record.Event.Header.Flags);
 		}
-		
+
 		[Fact]
 		public void can_create_transaction_start() {
 			var record = RecordCreator.CreateTransactionStartRecord(
@@ -229,7 +229,7 @@ namespace EventStore.LogV3.Tests {
 			Assert.Equal(Raw.TransactionType.MultipartTransaction, record.SubHeader.Type);
 			Assert.Equal(_uint1, record.SubHeader.RecordCount);
 		}
-		
+
 		[Fact]
 		public void can_create_transaction_end() {
 			var record = RecordCreator.CreateTransactionEndRecord(

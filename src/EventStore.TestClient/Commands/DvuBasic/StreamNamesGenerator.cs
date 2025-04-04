@@ -1,5 +1,3 @@
-using System;
-
 namespace EventStore.TestClient.Commands.DvuBasic {
 	internal static class StreamNamesGenerator {
 		public static string GenerateName(string original, int index) {

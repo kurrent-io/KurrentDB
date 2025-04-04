@@ -84,7 +84,7 @@ namespace EventStore.Core.Services.PersistentSubscription.ConsumerStrategy.Pinne
 					var assignmentsToMove = Assignments
 						.Select((node, bucket) => Tuple.Create(node, bucket))
 						.Where(_ => _.Item1.NodeId == existingClient.NodeId &&
-						            _.Item1.State == BucketAssignment.BucketState.Assigned)
+									_.Item1.State == BucketAssignment.BucketState.Assigned)
 						.OrderBy(_ => _.Item1.InFlightCount) // Take buckets without inflight messages first.
 						.Take(existingClient.AssignmentCount - maxBalancedClientAssignmentCount);
 

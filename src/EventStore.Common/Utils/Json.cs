@@ -15,7 +15,7 @@ namespace EventStore.Common.Utils {
 			DefaultValueHandling = DefaultValueHandling.Ignore,
 			MissingMemberHandling = MissingMemberHandling.Ignore,
 			TypeNameHandling = TypeNameHandling.None,
-			Converters = new JsonConverter[] {new StringEnumConverter()}
+			Converters = new JsonConverter[] { new StringEnumConverter() }
 		};
 
 		public static byte[] ToJsonBytes(this object source) {
@@ -56,7 +56,7 @@ namespace EventStore.Common.Utils {
 		public static object DeserializeObject(JObject value, Type type, params JsonConverter[] converters) {
 			var settings = converters == null || converters.Length <= 0
 				? null
-				: new JsonSerializerSettings {Converters = converters};
+				: new JsonSerializerSettings { Converters = converters };
 			return DeserializeObject(value, type, settings);
 		}
 
@@ -81,7 +81,8 @@ namespace EventStore.Common.Utils {
 		}
 
 		public static bool IsValidJson(this ReadOnlyMemory<byte> value) {
-			if (value.IsEmpty) return false;  //Don't bother letting an Exception getting thrown.
+			if (value.IsEmpty)
+				return false;  //Don't bother letting an Exception getting thrown.
 			try {
 				JToken.Parse(Helper.UTF8NoBom.GetString(value.Span));
 			} catch {

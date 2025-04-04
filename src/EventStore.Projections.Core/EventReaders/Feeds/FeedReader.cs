@@ -54,11 +54,16 @@ namespace EventStore.Projections.Core.EventReaders.Feeds {
 				>
 				subscriptionDispatcher, ClaimsPrincipal user, QuerySourcesDefinition querySource, CheckpointTag fromPosition,
 			int maxEvents, Guid requestCorrelationId, IEnvelope replyEnvelope, ITimeProvider timeProvider) {
-			if (subscriptionDispatcher == null) throw new ArgumentNullException("subscriptionDispatcher");
-			if (querySource == null) throw new ArgumentNullException("querySource");
-			if (fromPosition == null) throw new ArgumentNullException("fromPosition");
-			if (replyEnvelope == null) throw new ArgumentNullException("replyEnvelope");
-			if (maxEvents <= 0) throw new ArgumentException("non-negative expected", "maxEvents");
+			if (subscriptionDispatcher == null)
+				throw new ArgumentNullException("subscriptionDispatcher");
+			if (querySource == null)
+				throw new ArgumentNullException("querySource");
+			if (fromPosition == null)
+				throw new ArgumentNullException("fromPosition");
+			if (replyEnvelope == null)
+				throw new ArgumentNullException("replyEnvelope");
+			if (maxEvents <= 0)
+				throw new ArgumentException("non-negative expected", "maxEvents");
 
 			_subscriptionDispatcher = subscriptionDispatcher;
 			_user = user;

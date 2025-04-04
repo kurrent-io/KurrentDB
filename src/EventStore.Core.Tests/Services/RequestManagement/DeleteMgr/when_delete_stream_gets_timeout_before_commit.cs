@@ -12,8 +12,8 @@ namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr {
 	public class when_delete_stream_gets_timeout_before_commit : RequestManagerSpecification<DeleteStream> {
 		protected override DeleteStream OnManager(FakePublisher publisher) {
 			return new DeleteStream(
-				publisher, 
-				CommitTimeout, 
+				publisher,
+				CommitTimeout,
 				Envelope,
 				InternalCorrId,
 				ClientCorrId,

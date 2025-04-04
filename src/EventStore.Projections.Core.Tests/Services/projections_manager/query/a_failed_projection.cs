@@ -18,7 +18,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 			}
 
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 				var readerAssignedMessage =
 					_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
 						.LastOrDefault();
@@ -35,7 +36,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_updating_query<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 				yield return
 					(new ProjectionManagementMessage.Command.UpdateQuery(
 						new PublishEnvelope(_bus), _projectionName, ProjectionManagementMessage.RunAs.Anonymous,
@@ -73,7 +75,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_stopping<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 				yield return
 					(new ProjectionManagementMessage.Command.Disable(
 						new PublishEnvelope(_bus), _projectionName, ProjectionManagementMessage.RunAs.Anonymous));
@@ -116,7 +119,8 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.query {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_starting<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 			protected override IEnumerable<WhenStep> When() {
-				foreach (var m in base.When()) yield return m;
+				foreach (var m in base.When())
+					yield return m;
 				yield return
 					(new ProjectionManagementMessage.Command.Enable(
 						new PublishEnvelope(_bus), _projectionName, ProjectionManagementMessage.RunAs.Anonymous));

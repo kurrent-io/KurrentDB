@@ -1,10 +1,7 @@
 ﻿using System.IO;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.Tests.TransactionLog.Validation;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Truncation {
@@ -16,7 +13,7 @@ namespace EventStore.Core.Tests.TransactionLog.Truncation {
 		public override async Task TestFixtureSetUp() {
 			await base.TestFixtureSetUp();
 
-			_config = TFChunkHelper.CreateDbConfigEx(PathName, 11111, 5500, 5500, -1,0, 1000, -1);
+			_config = TFChunkHelper.CreateDbConfigEx(PathName, 11111, 5500, 5500, -1, 0, 1000, -1);
 
 			DbUtil.CreateMultiChunk(_config, 0, 2, GetFilePathFor("chunk-000000.000001"));
 			DbUtil.CreateMultiChunk(_config, 0, 2, GetFilePathFor("chunk-000000.000002"));

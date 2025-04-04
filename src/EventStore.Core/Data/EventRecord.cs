@@ -84,27 +84,32 @@ namespace EventStore.Core.Data {
 		}
 
 		public bool Equals(EventRecord other) {
-			if (ReferenceEquals(null, other)) return false;
-			if (ReferenceEquals(this, other)) return true;
+			if (ReferenceEquals(null, other))
+				return false;
+			if (ReferenceEquals(this, other))
+				return true;
 			return EventNumber == other.EventNumber
-			       && LogPosition == other.LogPosition
-			       && CorrelationId.Equals(other.CorrelationId)
-			       && EventId.Equals(other.EventId)
-			       && TransactionPosition == other.TransactionPosition
-			       && TransactionOffset == other.TransactionOffset
-			       && string.Equals(EventStreamId, other.EventStreamId)
-			       && ExpectedVersion == other.ExpectedVersion
-			       && TimeStamp.Equals(other.TimeStamp)
-			       && Flags.Equals(other.Flags)
-			       && string.Equals(EventType, other.EventType)
-			       && Data.Span.SequenceEqual(other.Data.Span)
-			       && Metadata.Span.SequenceEqual(other.Metadata.Span);
+				   && LogPosition == other.LogPosition
+				   && CorrelationId.Equals(other.CorrelationId)
+				   && EventId.Equals(other.EventId)
+				   && TransactionPosition == other.TransactionPosition
+				   && TransactionOffset == other.TransactionOffset
+				   && string.Equals(EventStreamId, other.EventStreamId)
+				   && ExpectedVersion == other.ExpectedVersion
+				   && TimeStamp.Equals(other.TimeStamp)
+				   && Flags.Equals(other.Flags)
+				   && string.Equals(EventType, other.EventType)
+				   && Data.Span.SequenceEqual(other.Data.Span)
+				   && Metadata.Span.SequenceEqual(other.Metadata.Span);
 		}
 
 		public override bool Equals(object obj) {
-			if (ReferenceEquals(null, obj)) return false;
-			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != GetType()) return false;
+			if (ReferenceEquals(null, obj))
+				return false;
+			if (ReferenceEquals(this, obj))
+				return true;
+			if (obj.GetType() != GetType())
+				return false;
 			return Equals((EventRecord)obj);
 		}
 
@@ -137,16 +142,16 @@ namespace EventStore.Core.Data {
 
 		public override string ToString() {
 			return string.Format("EventNumber: {0}, "
-			                     + "LogPosition: {1}, "
-			                     + "CorrelationId: {2}, "
-			                     + "EventId: {3}, "
-			                     + "TransactionPosition: {4}, "
-			                     + "TransactionOffset: {5}, "
-			                     + "EventStreamId: {6}, "
-			                     + "ExpectedVersion: {7}, "
-			                     + "TimeStamp: {8}, "
-			                     + "Flags: {9}, "
-			                     + "EventType: {10}",
+								 + "LogPosition: {1}, "
+								 + "CorrelationId: {2}, "
+								 + "EventId: {3}, "
+								 + "TransactionPosition: {4}, "
+								 + "TransactionOffset: {5}, "
+								 + "EventStreamId: {6}, "
+								 + "ExpectedVersion: {7}, "
+								 + "TimeStamp: {8}, "
+								 + "Flags: {9}, "
+								 + "EventType: {10}",
 				EventNumber,
 				LogPosition,
 				CorrelationId,

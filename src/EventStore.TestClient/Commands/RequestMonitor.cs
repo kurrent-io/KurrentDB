@@ -1,14 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Collections.Concurrent;
-using EventStore.Core.Data;
-using EventStore.Core.Messages;
-using EventStore.Core.Services.Transport.Tcp;
-using EventStore.Transport.Tcp;
+using System.Diagnostics;
 
 namespace EventStore.TestClient.Commands {
 	internal class RequestMonitor {
@@ -51,7 +43,7 @@ namespace EventStore.TestClient.Commands {
 			Console.WriteLine("quintiles");
 			for (int i = 20; i <= 100; i += 20) {
 				Console.WriteLine(i + "% : " + items[GetPercentile((decimal)i - 20, items.Length)] + "-" +
-				                  items[GetPercentile((decimal)i, items.Length)]);
+								  items[GetPercentile((decimal)i, items.Length)]);
 			}
 
 			Console.WriteLine("90% : " + items[GetPercentile(90m, items.Length)]);
@@ -71,7 +63,8 @@ namespace EventStore.TestClient.Commands {
 			decimal percent = 0;
 			percent = percentile / 100m;
 			var ret = (int)(percent * size);
-			if (ret == size) ret -= 1;
+			if (ret == size)
+				ret -= 1;
 			return ret;
 		}
 

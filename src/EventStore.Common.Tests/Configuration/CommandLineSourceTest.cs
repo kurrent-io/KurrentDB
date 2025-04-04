@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Configuration;
 using EventStore.Common.Configuration;
+using Microsoft.Extensions.Configuration;
 
 namespace EventStore.Common.Tests.Configuration;
 
@@ -34,13 +34,13 @@ public class CommandLineSourceTest {
 		var c = BuildConfiguration("--whatever");
 		Assert.Equal("true", c.GetValue<string>("Whatever"));
 	}
-	
+
 	[Fact]
 	public void normalize_keys_equals() {
 		var c = BuildConfiguration("--cluster-size=3");
 		Assert.Equal(3, c.GetValue<int>("ClusterSize"));
 	}
-	
+
 	[Fact]
 	public void normalize_keys_one_dash() {
 		var c = BuildConfiguration("-cluster-size=3");

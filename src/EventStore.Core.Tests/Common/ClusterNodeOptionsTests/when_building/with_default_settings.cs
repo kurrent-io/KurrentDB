@@ -4,7 +4,6 @@ using EventStore.Common.Utils;
 using EventStore.Core.Authentication.DelegatedAuthentication;
 using EventStore.Core.Services.Monitoring;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.Util;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
@@ -13,9 +12,9 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 	public class with_default_node_as_single_node<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 		protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options;
 
-		public with_default_node_as_single_node () : base(disableMemoryOptimization:true) {
+		public with_default_node_as_single_node() : base(disableMemoryOptimization: true) {
 		}
-		
+
 		[Test]
 		public void should_create_single_cluster_node() {
 			Assert.IsNotNull(_node);
@@ -64,15 +63,15 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 			Assert.AreEqual(2000, _options.Database.PrepareTimeoutMs, "PrepareTimeout");
 			Assert.AreEqual(2000, _options.Database.CommitTimeoutMs, "CommitTimeout");
 			Assert.AreEqual(2000, _options.Database.WriteTimeoutMs, "WriteTimeout");
-			
+
 			Assert.AreEqual(700, _options.Interface.ReplicationHeartbeatInterval, "ReplicationHeartbeatInterval");
-			
+
 			Assert.AreEqual(700, _options.Interface.ReplicationHeartbeatTimeout,
 				"ReplicationHeartbeatTimeout");
-			
+
 			Assert.AreEqual(2000, _options.Interface.NodeHeartbeatInterval,
 				"NodeHeartbeatInterval");
-			
+
 			Assert.AreEqual(1000, _options.Interface.NodeHeartbeatTimeout,
 				"NodeHeartbeatTimeout");
 
@@ -141,7 +140,7 @@ namespace EventStore.Core.Tests.Common.ClusterNodeOptionsTests.when_building {
 			Assert.AreEqual(externalTcp.ToDnsEndPoint(), _node.GossipAdvertiseInfo.ExternalTcp);
 			Assert.AreEqual(httpEndPoint.ToDnsEndPoint(), _node.GossipAdvertiseInfo.HttpEndPoint);
 		}
-		
+
 		protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
 			options.Insecure();
 	}

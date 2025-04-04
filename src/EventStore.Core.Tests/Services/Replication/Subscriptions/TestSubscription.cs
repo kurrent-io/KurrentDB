@@ -1,11 +1,11 @@
 using System;
-using System.Threading;
 using System.Collections.Generic;
-using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
+using System.Threading;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.UserManagement;
+using EventStore.Core.Tests.Helpers;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Replication.ReadStream {
 	public class TestSubscription<TLogFormat, TStreamId> {

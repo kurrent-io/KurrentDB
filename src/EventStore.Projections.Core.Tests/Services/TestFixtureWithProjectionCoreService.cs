@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using EventStore.Common;
 using EventStore.Common.Options;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
-using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.Services.TimerService;
@@ -16,7 +14,6 @@ using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Management;
 using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Tests.Services.projections_manager;
 using NUnit.Framework;
 using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
 
@@ -126,7 +123,7 @@ namespace EventStore.Projections.Core.Tests.Services {
 			_bus.Subscribe(_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.NotAuthorized>());
 			_bus.Subscribe(
 				_subscriptionDispatcher.CreateSubscriber<EventReaderSubscriptionMessage.ReaderAssignedReader>());
-			
+
 			var instanceCorrelationId = Guid.NewGuid();
 			_readerService.Handle(new ReaderCoreServiceMessage.StartReader(instanceCorrelationId));
 			_service.Handle(new ProjectionCoreServiceMessage.StartCore(instanceCorrelationId));

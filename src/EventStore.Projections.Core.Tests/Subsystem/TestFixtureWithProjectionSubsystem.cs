@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Threading;
-using EventStore.Common;
 using EventStore.Common.Options;
 using EventStore.Core;
 using EventStore.Core.Bus;
@@ -16,7 +15,7 @@ using NUnit.Framework;
 namespace EventStore.Projections.Core.Tests.Subsystem {
 	public class TestFixtureWithProjectionSubsystem {
 		private StandardComponents _standardComponents;
-		
+
 		protected ProjectionsSubsystem Subsystem;
 		protected const int WaitTimeoutMs = 3000;
 
@@ -25,7 +24,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 
 		private readonly ManualResetEvent _startReceived = new ManualResetEvent(false);
 		private ProjectionSubsystemMessage.StartComponents _lastStartMessage;
-	
+
 		private StandardComponents CreateStandardComponents() {
 			var db = new TFChunkDb(TFChunkHelper.CreateDbConfig(Path.GetTempPath(), 0));
 			var mainQueue = QueuedHandler.CreateQueuedHandler
@@ -52,7 +51,7 @@ namespace EventStore.Projections.Core.Tests.Subsystem {
 			// Unsubscribe from the actual components so we can test in isolation
 			Subsystem.LeaderMainBus.Unsubscribe<ProjectionSubsystemMessage.ComponentStarted>(Subsystem);
 			Subsystem.LeaderMainBus.Unsubscribe<ProjectionSubsystemMessage.ComponentStopped>(Subsystem);
-			
+
 			Subsystem.LeaderMainBus.Subscribe(new AdHocHandler<Message>(
 				msg => {
 					switch (msg) {

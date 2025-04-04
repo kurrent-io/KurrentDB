@@ -42,13 +42,13 @@ namespace EventStore.Core.Tests.TransactionLog {
 				var res = chunk.TryAppend(streamRecord);
 				pos = res.NewPosition;
 			}
-			
+
 			_logFormat.EventTypeIndex.GetOrReserveEventType(_logFormat.RecordFactory, "et1", pos, out var eventTypeId, out var eventTypeRecord);
 			if (eventTypeRecord is not null) {
 				var res = chunk.TryAppend(eventTypeRecord);
 				pos = res.NewPosition;
 			}
-			
+
 			var expectedVersion = ExpectedVersion.NoStream;
 			_p1 = LogRecord.SingleWrite(_logFormat.RecordFactory, pos, Guid.NewGuid(), Guid.NewGuid(), streamId, expectedVersion++, eventTypeId,
 				new byte[2048], new byte[] { 5, 7 });
@@ -161,8 +161,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 
 			if (LogFormatHelper<TLogFormat, TStreamId>.IsV2) {
 				Assert.AreEqual(0, records.Count);
-			}
-			else {
+			} else {
 				Assert.AreEqual(2, records.Count);
 			}
 		}

@@ -1,7 +1,6 @@
 ﻿using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	[TestFixture]
 	public class with_foreach_and_deleted_notification_handled : TestFixtureWithInterpretedProjection {
 		protected override void Given() {

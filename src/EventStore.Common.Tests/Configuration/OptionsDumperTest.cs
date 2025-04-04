@@ -38,7 +38,7 @@ public class OptionsDumperTest {
 
 			return type.GetProperties().Select(property =>
 				new KeyValuePair<string, object?>(property.Name, property.PropertyType switch {
-					{IsArray: true} => string.Join(",",
+					{ IsArray: true } => string.Join(",",
 						((Array)(property.GetValue(defaultInstance) ?? Array.Empty<object>())).OfType<object>()),
 					_ => property.GetValue(defaultInstance)
 				}));
@@ -58,14 +58,14 @@ public class OptionsDumperTest {
 	public readonly OptionsDumper OptionsDumper;
 
 	public OptionsDumperTest() {
-		OptionsDumper = new (new[]
+		OptionsDumper = new(new[]
 		{ typeof(TestOptions.FirstSection), typeof(TestOptions.SecondSection) });
 	}
 
 	[Fact]
 	public void printable_options_do_not_contain_sensitive_values() {
 		var secretText = "secret_text";
-		var options = new TestOptions(new Dictionary<string, string>(), new [] {
+		var options = new TestOptions(new Dictionary<string, string>(), new[] {
 			$"--sensitive-option={secretText}",
 		});
 		var printable = OptionsDumper.GetOptionSourceInfo(options.ConfigurationRoot);
@@ -81,7 +81,7 @@ public class OptionsDumperTest {
 
 	[Fact]
 	public void printable_options_show_allowed_values() {
-		var options = new TestOptions(new Dictionary<string, string>(), new [] {
+		var options = new TestOptions(new Dictionary<string, string>(), new[] {
 			$"--enum-option={TestOptions.TestOptionEnum.OptionB}"
 		});
 		var printable = OptionsDumper.GetOptionSourceInfo(options.ConfigurationRoot);
@@ -95,7 +95,7 @@ public class OptionsDumperTest {
 	[Fact]
 	public void array_options_are_comma_separated() {
 		var expectedValues = "foo,bar,baz";
-		var options = new TestOptions(new Dictionary<string, string>(), new [] {
+		var options = new TestOptions(new Dictionary<string, string>(), new[] {
 			$"--array-of-strings={expectedValues}"
 		});
 		var printable = OptionsDumper.GetOptionSourceInfo(options.ConfigurationRoot);

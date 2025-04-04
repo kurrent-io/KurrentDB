@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
@@ -7,8 +8,6 @@ using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.TimerService;
-using System.Linq;
-using EventStore.Core.Util;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services {

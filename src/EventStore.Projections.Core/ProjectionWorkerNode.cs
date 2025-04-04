@@ -1,7 +1,7 @@
 ﻿using System;
 using EventStore.Common.Options;
-using EventStore.Core.Bus;
 using EventStore.Common.Utils;
+using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;

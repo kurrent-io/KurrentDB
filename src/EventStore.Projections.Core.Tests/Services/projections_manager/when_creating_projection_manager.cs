@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore.Common.Options;
 using EventStore.Core.Bus;
+using EventStore.Core.Helpers;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
@@ -10,7 +11,6 @@ using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.Util;
 using EventStore.Projections.Core.Services.Management;
 using NUnit.Framework;
-using EventStore.Core.Helpers;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager {
 	[TestFixture]
@@ -23,7 +23,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager {
 		[SetUp]
 		public void setup() {
 			_timeProvider = new FakeTimeProvider();
-			_queues = new Dictionary<Guid, IPublisher> {{Guid.NewGuid(), new FakePublisher()}};
+			_queues = new Dictionary<Guid, IPublisher> { { Guid.NewGuid(), new FakePublisher() } };
 			_timeoutSchedulers = ProjectionCoreWorkersNode.CreateTimeoutSchedulers(_queues.Count);
 			var fakePublisher = new FakePublisher();
 			new ProjectionCoreCoordinator(

@@ -1,11 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Core.Data;
-using EventStore.Core.LogV2;
 using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 

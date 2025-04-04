@@ -1,9 +1,9 @@
-﻿using EventStore.Core.Data;
+﻿using System;
+using System.Linq;
+using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.UserManagement;
 using NUnit.Framework;
-using System;
-using System.Linq;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests.QueueWriteEventsTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -11,10 +11,10 @@ namespace EventStore.Core.Tests.Helpers.IODispatcherTests.QueueWriteEventsTests 
 	public class when_requesting_multiple_writes_with_different_keys<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		protected override void Given() {
 			_ioDispatcher.QueueWriteEvents(Guid.NewGuid(), $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-				new Event[] {new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty)},
+				new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
 				SystemAccounts.System, (msg) => { });
 			_ioDispatcher.QueueWriteEvents(Guid.NewGuid(), $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-				new Event[] {new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty)},
+				new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
 				SystemAccounts.System, (msg) => { });
 		}
 

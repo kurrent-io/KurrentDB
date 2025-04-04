@@ -1,11 +1,11 @@
 using System;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Messaging;
-using System.Linq;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Projections.Core.Services.Processing {
@@ -380,7 +380,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 			var oldState = _partitionStateCache.GetLockedPartitionState(partition);
 			var oldSharedState = _isBiState ? _partitionStateCache.GetLockedPartitionState("") : null;
 			bool changed = oldState.IsChanged(newPartitionState)
-			               || (_isBiState && oldSharedState.IsChanged(newSharedPartitionState));
+						   || (_isBiState && oldSharedState.IsChanged(newSharedPartitionState));
 
 			PartitionState partitionState = null;
 			// NOTE: projectionResult cannot change independently unless projection definition has changed
@@ -399,7 +399,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 				return new EventProcessedResult(
 					partition, message.CheckpointTag, oldState, partitionState, oldSharedState, newSharedPartitionState,
 					emittedEvents, message.Data.EventId, correlationId);
-			} else return null;
+			} else
+				return null;
 		}
 
 		protected EventProcessedResult InternalPartitionDeletedProcessed(

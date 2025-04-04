@@ -24,11 +24,11 @@ namespace EventStore.Core.Services {
 				TFPos.Invalid, default);
 
 		private static readonly Func<ClientMessage.ReadStreamEventsForward, Message> ReadStreamEventsForwardDenied =
-			msg => new ClientMessage.ReadStreamEventsForwardCompleted(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,ReadStreamResult.AccessDenied, Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, AccessDenied, -1, default, true, default);
+			msg => new ClientMessage.ReadStreamEventsForwardCompleted(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, ReadStreamResult.AccessDenied, Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, false, AccessDenied, -1, default, true, default);
 
 		private static readonly Func<ClientMessage.ReadStreamEventsBackward, Message> ReadStreamEventsBackwardDenied =
 			msg => new ClientMessage.ReadStreamEventsBackwardCompleted(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,
-				ReadStreamResult.AccessDenied,Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, default, AccessDenied, -1, default, true, default);
+				ReadStreamResult.AccessDenied, Array.Empty<ResolvedEvent>(), StreamMetadata.Empty, default, AccessDenied, -1, default, true, default);
 
 		private static readonly Func<ClientMessage.WriteEvents, Message> WriteEventsDenied = msg =>
 			new ClientMessage.WriteEventsCompleted(msg.CorrelationId, OperationResult.AccessDenied, AccessDenied);
@@ -147,7 +147,7 @@ namespace EventStore.Core.Services {
 				case ClientMessage.UpdatePersistentSubscriptionToStream msg:
 					Authorize(msg, destination);
 					break;
-				case ClientMessage.SubscribeToStream msg: 
+				case ClientMessage.SubscribeToStream msg:
 					Authorize(msg, destination);
 					break;
 				case ClientMessage.ConnectToPersistentSubscriptionToStream msg:
@@ -339,16 +339,16 @@ namespace EventStore.Core.Services {
 			Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.TransactionId(msg.TransactionId)),
 				msg.Envelope, destination, msg, TransactionCommitDenied);
 		}
-	
 
-	void Authorize<TRequest>(ClaimsPrincipal user, Operation operation, IEnvelope replyTo,
-			IPublisher destination, TRequest request, Func<TRequest, Message> createAccessDenied)
-			where TRequest : Message {
+
+		void Authorize<TRequest>(ClaimsPrincipal user, Operation operation, IEnvelope replyTo,
+				IPublisher destination, TRequest request, Func<TRequest, Message> createAccessDenied)
+				where TRequest : Message {
 			var accessCheck = _authorizationProvider.CheckAccessAsync(user, operation, CancellationToken.None);
 			if (!accessCheck.IsCompleted)
 				AuthorizeAsync(accessCheck, replyTo, destination, request, createAccessDenied);
 			else {
-				if(accessCheck.Result)
+				if (accessCheck.Result)
 					destination.Publish(request);
 				else {
 					replyTo.ReplyWith(createAccessDenied(request));

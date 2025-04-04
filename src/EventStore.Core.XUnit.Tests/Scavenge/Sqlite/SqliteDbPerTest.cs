@@ -10,7 +10,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite {
 			DirFixture = new DirectoryFixture<T>();
 			Fixture = new SqliteDbFixture<T>(DirFixture.Directory);
 		}
-		
+
 		public async Task InitializeAsync() {
 			await DirFixture.InitializeAsync();
 			await Fixture.InitializeAsync();

@@ -1,23 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Net;
-using System.Text;
-using System.Xml;
-using System.Xml.Linq;
-using EventStore.ClientAPI;
-using EventStore.ClientAPI.Common;
-using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Tests.ClientAPI.Helpers;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Transport.Http;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Http.Streams;
 using EventStore.Core.Tests.Http.Users.users;
+using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription {
@@ -158,7 +150,7 @@ namespace EventStore.Core.Tests.Http.PersistentSubscription {
 			var nackAllLink = String.Format("subscriptions/{0}/{1}/nack", TestStreamName, SubscriptionGroupName);
 			Assert.AreEqual(MakeUrl(nackAllLink, ids), GetLink(_feed, "nackAll"));
 		}
-		
+
 		[Test]
 		public void all_entries_have_retry_count_element() {
 			var allEntriesHaveRetryCount = _feed["entries"].All(entry => entry["retryCount"] != null);

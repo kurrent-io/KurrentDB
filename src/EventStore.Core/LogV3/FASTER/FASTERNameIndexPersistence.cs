@@ -381,16 +381,20 @@ namespace EventStore.Core.LogV3.FASTER {
 				userContext: context);
 
 			switch (status) {
-				case Status.OK: return true;
-				case Status.NOTFOUND: return false;
+				case Status.OK:
+					return true;
+				case Status.NOTFOUND:
+					return false;
 				case Status.PENDING:
 					session.CompletePending(wait: true);
 					switch (context.Status) {
 						case Status.OK:
 							value = context.Value;
 							return true;
-						case Status.NOTFOUND: return false;
-						default: throw new Exception($"{_indexName} Unexpected status {context.Status} completing read for \"{name}\"");
+						case Status.NOTFOUND:
+							return false;
+						default:
+							throw new Exception($"{_indexName} Unexpected status {context.Status} completing read for \"{name}\"");
 					}
 				case Status.ERROR:
 				default:

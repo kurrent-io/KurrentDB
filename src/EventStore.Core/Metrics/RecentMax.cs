@@ -42,7 +42,7 @@ public class RecentMax<T> {
 
 		_maxBuckets = new T[_numBuckets];
 	}
-	 
+
 	public long MinPeriodSeconds { get; init; }
 	public long MaxPeriodSeconds { get; init; }
 

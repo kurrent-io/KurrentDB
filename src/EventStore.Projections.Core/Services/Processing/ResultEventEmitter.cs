@@ -8,7 +8,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 			new EmittedStream.WriterConfiguration.StreamMetadata( /* TBD */);
 
 		public ResultEventEmitter(ProjectionNamesBuilder namesBuilder) {
-			if (namesBuilder == null) throw new ArgumentNullException("namesBuilder");
+			if (namesBuilder == null)
+				throw new ArgumentNullException("namesBuilder");
 			_namesBuilder = namesBuilder;
 		}
 
@@ -30,7 +31,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 								streamId, Guid.NewGuid(), "Result", true, projectionResult, null, at, null),
 						_resultStreamMetadata);
 
-				return new[] {result};
+				return new[] { result };
 			} else {
 				var linkTo = new EmittedLinkTo(allResultsStreamId, Guid.NewGuid(), streamId, at, null);
 				var linkToEnvelope = new EmittedEventEnvelope(linkTo, _resultStreamMetadata);
@@ -43,7 +44,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 							: new EmittedDataEvent(
 								streamId, Guid.NewGuid(), "Result", true, projectionResult, null, at, null,
 								linkTo.SetTargetEventNumber), _resultStreamMetadata);
-				return new[] {result, linkToEnvelope};
+				return new[] { result, linkToEnvelope };
 			}
 		}
 	}

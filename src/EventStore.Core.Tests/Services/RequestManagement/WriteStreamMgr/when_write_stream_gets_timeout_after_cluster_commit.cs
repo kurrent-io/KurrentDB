@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.WriteStreamMgr {
 	[TestFixture]
@@ -15,25 +15,25 @@ namespace EventStore.Core.Tests.Services.RequestManagement.WriteStreamMgr {
 		private long _commitPosition = 100;
 		protected override WriteEvents OnManager(FakePublisher publisher) {
 			return new WriteEvents(
-				publisher, 
-				CommitTimeout, 
+				publisher,
+				CommitTimeout,
 				Envelope,
 				InternalCorrId,
 				ClientCorrId,
 				"test123",
 				ExpectedVersion.Any,
-				new[] {DummyEvent()},
+				new[] { DummyEvent() },
 				CommitSource);
 		}
 
 		protected override IEnumerable<Message> WithInitialMessages() {
-			yield return new StorageMessage.PrepareAck(InternalCorrId, _prepareLogPosition, PrepareFlags.SingleWrite|PrepareFlags.Data);
+			yield return new StorageMessage.PrepareAck(InternalCorrId, _prepareLogPosition, PrepareFlags.SingleWrite | PrepareFlags.Data);
 			yield return new StorageMessage.CommitIndexed(InternalCorrId, _commitPosition, 1, 0, 0);
 			yield return new ReplicationTrackingMessage.ReplicatedTo(_commitPosition);
 		}
 
 		protected override Message When() {
-			return new StorageMessage.RequestManagerTimerTick (DateTime.UtcNow + TimeSpan.FromMinutes(1));
+			return new StorageMessage.RequestManagerTimerTick(DateTime.UtcNow + TimeSpan.FromMinutes(1));
 		}
 
 		[Test]

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using EventStore.Core.Bus;
 
 namespace EventStore.Core.Messaging {

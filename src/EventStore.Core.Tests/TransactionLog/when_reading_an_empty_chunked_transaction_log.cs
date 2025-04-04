@@ -1,10 +1,6 @@
 ﻿using System;
-using EventStore.Core.LogV2;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -42,7 +38,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 			var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 			var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 			var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-			var rec = LogRecord.SingleWrite(recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), streamId, -1, eventTypeId, new byte[] {7}, null);
+			var rec = LogRecord.SingleWrite(recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), streamId, -1, eventTypeId, new byte[] { 7 }, null);
 			long tmp;
 			Assert.IsTrue(writer.Write(rec, out tmp));
 			writer.Flush();

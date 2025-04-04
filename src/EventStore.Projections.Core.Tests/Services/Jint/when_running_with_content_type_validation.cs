@@ -3,8 +3,7 @@ using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	public class when_running_with_content_type_validation {
 		[TestFixture]
 		public class when_running_with_content_type_validation_enabled : TestFixtureWithInterpretedProjection {
@@ -20,7 +19,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 
 			protected override IProjectionStateHandler CreateStateHandler() {
 				return _stateHandlerFactory.Create(
-					_projectionType, _projection, 
+					_projectionType, _projection,
 					enableContentTypeValidation: true,
 					projectionExecutionTimeout: null,
 					logger: (s, _) => {

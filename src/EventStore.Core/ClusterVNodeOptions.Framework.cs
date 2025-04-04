@@ -32,7 +32,7 @@ namespace EventStore.Core {
 
 			return type.GetProperties().Select(property =>
 				new KeyValuePair<string, object?>(property.Name, property.PropertyType switch {
-					{IsArray: true} => string.Join(",",
+					{ IsArray: true } => string.Join(",",
 						((Array)(property.GetValue(defaultInstance) ?? Array.Empty<object>())).OfType<object>()),
 					_ => property.GetValue(defaultInstance)
 				}));
@@ -48,13 +48,13 @@ namespace EventStore.Core {
 			var defaultValues = new Dictionary<string, object?>(DefaultValues, StringComparer.OrdinalIgnoreCase);
 
 			var deprecationWarnings = from section in OptionSections
-				from option in section.GetProperties()
-				let deprecationWarning = option.GetCustomAttribute<DeprecatedAttribute>()?.Message
-				where deprecationWarning is not null
-				let value = ConfigurationRoot?.GetValue<string?>(option.Name)
-				where defaultValues.TryGetValue(option.Name, out var defaultValue)
-				      && !string.Equals(value, defaultValue?.ToString(), StringComparison.OrdinalIgnoreCase)
-				      select deprecationWarning;
+									  from option in section.GetProperties()
+									  let deprecationWarning = option.GetCustomAttribute<DeprecatedAttribute>()?.Message
+									  where deprecationWarning is not null
+									  let value = ConfigurationRoot?.GetValue<string?>(option.Name)
+									  where defaultValues.TryGetValue(option.Name, out var defaultValue)
+											&& !string.Equals(value, defaultValue?.ToString(), StringComparison.OrdinalIgnoreCase)
+									  select deprecationWarning;
 
 			var builder = deprecationWarnings
 				.Aggregate(new StringBuilder(), (builder, deprecationWarning) => builder.AppendLine(deprecationWarning));
@@ -66,10 +66,10 @@ namespace EventStore.Core {
 			return ConfigurationRootExtensions
 				.CheckProvidersForEnvironmentVariables(ConfigurationRoot, OptionSections);
 		}
-		
+
 		private static EndPoint ParseGossipEndPoint(string val) {
 			var parts = val.Split(':', 2);
-			
+
 			if (parts.Length != 2)
 				throw new Exception("You must specify the ports in the gossip seed");
 
@@ -90,7 +90,7 @@ namespace EventStore.Core {
 				OptionHeaderColumnWidth(o.Name, DefaultValue(o)));
 
 			var header = $"{OPTION.PadRight(optionColumnWidth, ' ')}{DESCRIPTION}";
-			
+
 			var environmentOnlyOptions = OptionSections.SelectMany(section => section.GetProperties())
 				.Where(option => option.GetCustomAttribute<EnvironmentOnlyAttribute>() != null)
 				.Select(option => option)
@@ -114,7 +114,7 @@ namespace EventStore.Core {
 						(stringBuilder, property) => stringBuilder.Append(Line(property)).AppendLine()))
 				.AppendLine().AppendLine("EnvironmentOnly Options").Append(environmentOnlyOptionsBuilder)
 				.ToString();
-			
+
 
 			string Line(PropertyInfo property) {
 				var description = property.GetCustomAttribute<DescriptionAttribute>()?.Description;
@@ -136,7 +136,7 @@ namespace EventStore.Core {
 
 				return builder.ToString();
 			}
-			
+
 			static IEnumerable<PropertyInfo> Options() => OptionSections.SelectMany(type => type.GetProperties());
 
 			static int OptionWidth(string name, string @default) =>
@@ -150,8 +150,8 @@ namespace EventStore.Core {
 				return (value, Runtime.IsWindows) switch {
 					(bool b, false) => b.ToString().ToLower(),
 					(bool b, true) => b.ToString(),
-					(Array {Length: 0}, _) => string.Empty,
-					(Array {Length: >0} a, _) => string.Join(",", a.OfType<object>()),
+					(Array { Length: 0 }, _) => string.Empty,
+					(Array { Length: > 0 } a, _) => string.Join(",", a.OfType<object>()),
 					_ => value?.ToString() ?? string.Empty
 				};
 			}
@@ -169,6 +169,6 @@ namespace EventStore.Core {
 		}
 
 		[AttributeUsage(AttributeTargets.Property)]
-		internal class OptionGroupAttribute : Attribute{}
+		internal class OptionGroupAttribute : Attribute { }
 	}
 }

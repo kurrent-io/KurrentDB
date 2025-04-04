@@ -94,7 +94,8 @@ namespace EventStore.Core.Services.Replication {
 		}
 
 		public void Handle(ReplicationTrackingMessage.LeaderReplicatedTo message) {
-			if (_stop) return;
+			if (_stop)
+				return;
 			if (_state != VNodeState.Leader && _state != VNodeState.PreLeader && message.LogPosition > _replicationCheckpoint.Read()) {
 				_replicationCheckpoint.Write(message.LogPosition);
 				_replicationCheckpoint.Flush();
@@ -156,7 +157,8 @@ namespace EventStore.Core.Services.Replication {
 		}
 
 		public void Handle(SystemMessage.VNodeConnectionLost msg) {
-			if ((_state != VNodeState.Leader && _state != VNodeState.PreLeader) || !msg.SubscriptionId.HasValue) return;
+			if ((_state != VNodeState.Leader && _state != VNodeState.PreLeader) || !msg.SubscriptionId.HasValue)
+				return;
 			_replicaLogPositions.TryRemove(msg.SubscriptionId.Value, out _);
 		}
 
@@ -172,7 +174,7 @@ namespace EventStore.Core.Services.Replication {
 		public void Handle(ReplicationMessage.ReplicaSubscribed message) {
 			if (message.SubscriptionPosition < _writerCheckpoint.ReadNonFlushed()) {
 				//Going offline for truncation
-				_log.Information("Offline truncation will happen, shutting down {service}",nameof(ReplicationTrackingService));
+				_log.Information("Offline truncation will happen, shutting down {service}", nameof(ReplicationTrackingService));
 				Stop();
 			}
 		}

@@ -5,9 +5,9 @@ using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
+using EventStore.Core.Messages;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Projections.Core.Messages;
-using EventStore.Core.Messages;
 
 namespace EventStore.Projections.Core.Services.Processing {
 	public class MultiStreamMultiOutputCheckpointManager : DefaultCheckpointManager, IEmittedStreamContainer {
@@ -18,7 +18,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 		private int _loadingItemsCount;
 		private readonly Stack<Item> _loadQueue = new Stack<Item>();
 		private CheckpointTag _loadingPrerecordedEventsFrom;
-		private static readonly char[] _linkToSeparator = new[] {'@'};
+		private static readonly char[] _linkToSeparator = new[] { '@' };
 
 		public MultiStreamMultiOutputCheckpointManager(
 			IPublisher publisher, Guid projectionCorrelationId, ProjectionVersion projectionVersion, ClaimsPrincipal runAs,
@@ -36,7 +36,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		public override void Initialize() {
 			base.Initialize();
 			_lastOrderCheckpointTag = null;
-			if (_orderStream != null) _orderStream.Dispose();
+			if (_orderStream != null)
+				_orderStream.Dispose();
 			_orderStream = null;
 		}
 
@@ -106,7 +107,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 									_projectionVersion);
 								//TODO: throw exception if different projectionID?
 								if (_projectionVersion.ProjectionId != parsed.Version.ProjectionId
-								    || _projectionVersion.Epoch > parsed.Version.Version) {
+									|| _projectionVersion.Epoch > parsed.Version.Version) {
 									epochEnded = true;
 									break;
 								}
@@ -141,8 +142,10 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		private void EnqueuePrerecordedEvent(EventRecord @event, CheckpointTag tag) {
-			if (@event == null) throw new ArgumentNullException("event");
-			if (tag == null) throw new ArgumentNullException("tag");
+			if (@event == null)
+				throw new ArgumentNullException("event");
+			if (tag == null)
+				throw new ArgumentNullException("tag");
 			if (@event.EventType != "$>")
 				throw new ArgumentException("linkto ($>) event expected", "event");
 

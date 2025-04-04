@@ -107,7 +107,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 						ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Backwards,
 						UuidOption = new() { Structured = new() },
 						NoFilter = new(),
-						ControlOption = new() { Compatibility = 21}
+						ControlOption = new() { Compatibility = 21 }
 					}
 				});
 				_responses.AddRange(await call.ResponseStream.ReadAllAsync().ToArrayAsync());
@@ -243,7 +243,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 			[Test]
 			public void should_receive_the_first_event() {
 				Assert.AreEqual(1, _responses.Count(x => x.Event is not null));
-				Assert.AreEqual(0, _responses.First(x=>x.Event is not null).Event.Event.StreamRevision);
+				Assert.AreEqual(0, _responses.First(x => x.Event is not null).Event.Event.StreamRevision);
 			}
 		}
 	}

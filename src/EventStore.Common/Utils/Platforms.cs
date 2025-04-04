@@ -8,7 +8,7 @@ namespace EventStore.Common.Utils {
 			switch (Environment.OSVersion.Platform) {
 				case PlatformID.Unix:
 					if (Directory.Exists("/Applications") & Directory.Exists("/System") & Directory.Exists("/Users") &
-					    Directory.Exists("/Volumes"))
+						Directory.Exists("/Volumes"))
 						return Platform.Mac;
 					return Platform.Linux;
 

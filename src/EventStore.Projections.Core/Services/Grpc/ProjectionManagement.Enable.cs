@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
-using EventStore.Core.Messaging;
 using EventStore.Client.Projections;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Plugins.Authorization;
 using EventStore.Projections.Core.Messages;

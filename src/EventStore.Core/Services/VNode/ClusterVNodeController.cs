@@ -1,10 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net;
 using System.Threading;
-using EventStore.Client.Messages;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
@@ -62,15 +59,15 @@ namespace EventStore.Core.Services.VNode {
 		private int _subSystemInitsToExpect;
 
 		private int _serviceInitsToExpect = 1 /* StorageChaser */
-		                                    + 1 /* StorageReader */
-		                                    + 1 /* StorageWriter */;
+											+ 1 /* StorageReader */
+											+ 1 /* StorageWriter */;
 
 		private int _serviceShutdownsToExpect = 1 /* StorageChaser */
-		                                        + 1 /* StorageReader */
-		                                        + 1 /* StorageWriter */
-		                                        + 1 /* IndexCommitterService */
-		                                        + 1 /* LeaderReplicationService */
-		                                        + 1 /* HttpService */;
+												+ 1 /* StorageReader */
+												+ 1 /* StorageWriter */
+												+ 1 /* IndexCommitterService */
+												+ 1 /* LeaderReplicationService */
+												+ 1 /* HttpService */;
 
 		private bool _exitProcessOnShutdown;
 
@@ -96,16 +93,16 @@ namespace EventStore.Core.Services.VNode {
 			_clusterSize = options.Cluster.ClusterSize;
 			if (_clusterSize == 1) {
 				_serviceShutdownsToExpect = 1 /* StorageChaser */
-				                            + 1 /* StorageReader */
-				                            + 1 /* StorageWriter */
-				                            + 1 /* IndexCommitterService */
-				                            + 1 /* HttpService */;
+											+ 1 /* StorageReader */
+											+ 1 /* StorageWriter */
+											+ 1 /* IndexCommitterService */
+											+ 1 /* HttpService */;
 			}
 
 
 			_forwardingProxy = forwardingProxy;
 			_forwardingTimeout = TimeSpan.FromMilliseconds(options.Database.PrepareTimeoutMs +
-			                                               options.Database.CommitTimeoutMs + 300);
+														   options.Database.CommitTimeoutMs + 300);
 
 			_fsm = CreateFSM();
 		}
@@ -224,7 +221,7 @@ namespace EventStore.Core.Services.VNode {
 				.When<ClientMessage.DeleteStream>().Do(HandleAsReadOnlyReplica)
 				.When<SystemMessage.VNodeConnectionLost>().Do(HandleAsReadOnlyReplica)
 				.When<SystemMessage.BecomePreReadOnlyReplica>().Do(Handle)
-				.InStates(VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone,VNodeState.Follower)
+				.InStates(VNodeState.PreReplica, VNodeState.CatchingUp, VNodeState.Clone, VNodeState.Follower)
 				.When<ClientMessage.WriteEvents>().Do(HandleAsNonLeader)
 				.When<ClientMessage.TransactionStart>().Do(HandleAsNonLeader)
 				.When<ClientMessage.TransactionWrite>().Do(HandleAsNonLeader)
@@ -391,7 +388,7 @@ namespace EventStore.Core.Services.VNode {
 			var msg = new LeaderDiscoveryMessage.DiscoveryTimeout();
 			_mainQueue.Publish(TimerMessage.Schedule.Create(LeaderDiscoveryTimeout, _publishEnvelope, msg));
 		}
-		
+
 		private void Handle(SystemMessage.InitiateLeaderResignation message) {
 			Log.Information("========== [{httpEndPoint}] IS INITIATING LEADER RESIGNATION...", _nodeInfo.HttpEndPoint);
 
@@ -413,7 +410,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void Handle(SystemMessage.BecomePreReplica message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
 
@@ -428,7 +426,8 @@ namespace EventStore.Core.Services.VNode {
 		private void Handle(SystemMessage.BecomePreReadOnlyReplica message) {
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 
 			Log.Information(
 				"========== [{httpEndPoint}] READ ONLY PRE-REPLICA STATE, WAITING FOR CHASER TO CATCH UP... LEADER IS [{leaderHttp},{leaderId:B}]",
@@ -439,7 +438,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void Handle(SystemMessage.BecomeCatchingUp message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
 
@@ -450,7 +450,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void Handle(SystemMessage.BecomeClone message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
 
@@ -461,7 +462,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void Handle(SystemMessage.BecomeFollower message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
 
@@ -479,7 +481,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void Handle(SystemMessage.BecomeReadOnlyReplica message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
 
@@ -490,7 +493,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void Handle(SystemMessage.BecomePreLeader message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
 
@@ -502,8 +506,10 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void Handle(SystemMessage.BecomeLeader message) {
-			if (State == VNodeState.Leader) throw new Exception("We should not BecomeLeader twice in a row.");
-			if (_leader == null) throw new Exception("_leader == null");
+			if (State == VNodeState.Leader)
+				throw new Exception("We should not BecomeLeader twice in a row.");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
 
@@ -583,7 +589,7 @@ namespace EventStore.Core.Services.VNode {
 			_outputBus.Publish(message);
 			_fsm.Handle(new SystemMessage.SystemCoreReady());
 		}
-		
+
 		private void Handle(AuthenticationMessage.AuthenticationProviderInitializationFailed message) {
 			Log.Error("Authentication Provider Initialization Failed. Shutting Down.");
 			_fsm.Handle(new SystemMessage.BecomeShutdown(Guid.NewGuid()));
@@ -845,7 +851,7 @@ namespace EventStore.Core.Services.VNode {
 			envelope.ReplyWith(
 				new ClientMessage.NotHandled(correlationId,
 					ClientMessage.NotHandled.Types.NotHandledReason.NotLeader,
-					new ClientMessage.NotHandled.Types.LeaderInfo( endpoints.AdvertisedTcpEndPoint,
+					new ClientMessage.NotHandled.Types.LeaderInfo(endpoints.AdvertisedTcpEndPoint,
 						endpoints.IsTcpEndPointSecure,
 						endpoints.AdvertisedHttpEndPoint
 						)));
@@ -938,7 +944,7 @@ namespace EventStore.Core.Services.VNode {
 
 		private void DenyRequestBecauseNotReady(IEnvelope envelope, Guid correlationId) {
 			envelope.ReplyWith(new ClientMessage.NotHandled(correlationId,
-				ClientMessage.NotHandled.Types.NotHandledReason.NotReady,((string) null)));
+				ClientMessage.NotHandled.Types.NotHandledReason.NotReady, ((string)null)));
 		}
 
 		private void Handle(SystemMessage.VNodeConnectionLost message) {
@@ -968,7 +974,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void HandleAsLeader(GossipMessage.GossipUpdated message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (message.ClusterInfo.Members.Count(x => x.IsAlive && x.State == VNodeState.Leader) > 1) {
 				Log.Debug("There are MULTIPLE LEADERS according to gossip, need to start elections. LEADER: [{leader}]",
 					_leader);
@@ -981,7 +988,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void HandleAsReadOnlyReplica(GossipMessage.GossipUpdated message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 
 			var aliveLeaders = message.ClusterInfo.Members.Where(x => x.IsAlive && x.State == VNodeState.Leader);
 			var leaderIsStillLeader = aliveLeaders.FirstOrDefault(x => x.InstanceId == _leader.InstanceId) != null;
@@ -989,7 +997,7 @@ namespace EventStore.Core.Services.VNode {
 			if (!leaderIsStillLeader) {
 				var noLeader = !aliveLeaders.Any();
 				Log.Debug(
-					(noLeader ? "NO LEADER found" : "LEADER CHANGE detected") + " in READ ONLY PRE-REPLICA/READ ONLY REPLICA state. Proceeding to READ ONLY LEADERLESS STATE. CURRENT LEADER: [{leader}]",_leader);
+					(noLeader ? "NO LEADER found" : "LEADER CHANGE detected") + " in READ ONLY PRE-REPLICA/READ ONLY REPLICA state. Proceeding to READ ONLY LEADERLESS STATE. CURRENT LEADER: [{leader}]", _leader);
 				_stateCorrelationId = Guid.NewGuid();
 				_leaderConnectionCorrelationId = Guid.NewGuid();
 				_fsm.Handle(new SystemMessage.BecomeReadOnlyLeaderless(_stateCorrelationId));
@@ -1020,7 +1028,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void HandleAsNonLeader(GossipMessage.GossipUpdated message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			var leader = message.ClusterInfo.Members.FirstOrDefault(x => x.InstanceId == _leader.InstanceId);
 			if (leader == null || !leader.IsAlive) {
 				Log.Debug(
@@ -1077,7 +1086,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void HandleAsPreLeader(SystemMessage.ChaserCaughtUp message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
 
@@ -1085,7 +1095,8 @@ namespace EventStore.Core.Services.VNode {
 		}
 
 		private void HandleAsPreReplica(SystemMessage.ChaserCaughtUp message) {
-			if (_leader == null) throw new Exception("_leader == null");
+			if (_leader == null)
+				throw new Exception("_leader == null");
 			if (_stateCorrelationId != message.CorrelationId)
 				return;
 			_outputBus.Publish(message);
@@ -1194,10 +1205,10 @@ namespace EventStore.Core.Services.VNode {
 
 			if (_leader == null || _leader.InstanceId != message.LeaderId) {
 				var msg = string.Format("{0} message passed SubscriptionId check, but leader is either null or wrong. "
-				                        + "Message.Leader: [{1:B}], VNode Leader: {2}.",
+										+ "Message.Leader: [{1:B}], VNode Leader: {2}.",
 					message.GetType().Name, message.LeaderId, _leader);
 				Log.Fatal("{messageType} message passed SubscriptionId check, but leader is either null or wrong. "
-				          + "Message.Leader: [{leaderId:B}], VNode Leader: {leaderInfo}.",
+						  + "Message.Leader: [{leaderId:B}], VNode Leader: {leaderInfo}.",
 					message.GetType().Name, message.LeaderId, _leader);
 				Application.Exit(ExitCode.Error, msg);
 				return false;

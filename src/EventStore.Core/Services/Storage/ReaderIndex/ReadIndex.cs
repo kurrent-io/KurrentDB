@@ -1,9 +1,7 @@
 using System;
-using System.Security.Claims;
 using System.Threading;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
-using EventStore.Core.Caching;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
@@ -13,7 +11,6 @@ using EventStore.Core.Metrics;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.Util;
 using static EventStore.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex {

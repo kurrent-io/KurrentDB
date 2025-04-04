@@ -27,7 +27,7 @@ public sealed class TelemetryServiceTests : IAsyncLifetime {
 		var channel = Channel.CreateUnbounded<Message>();
 		_channelReader = channel.Reader;
 		_sink = new InMemoryTelemetrySink();
-		_sut =  new TelemetryService(
+		_sut = new TelemetryService(
 			_db.Manager,
 			new ClusterVNodeOptions(),
 			new EnvelopePublisher(new ChannelEnvelope(channel)),

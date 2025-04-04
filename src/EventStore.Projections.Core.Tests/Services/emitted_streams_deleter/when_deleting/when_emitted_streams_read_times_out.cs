@@ -1,19 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services.emitted_streams_deleter.when_deleting {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

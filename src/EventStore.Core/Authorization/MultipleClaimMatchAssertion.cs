@@ -12,14 +12,16 @@ namespace EventStore.Core.Authorization {
 		private readonly MultipleMatchMode _mode;
 
 		public MultipleClaimMatchAssertion(Grant grant, MultipleMatchMode mode, params Claim[] claims) {
-			if (claims.Length == 0) throw new ArgumentException("Value cannot be an empty collection.", nameof(claims));
+			if (claims.Length == 0)
+				throw new ArgumentException("Value cannot be an empty collection.", nameof(claims));
 
 
 			_mode = mode;
 			Grant = grant;
 			_claims = claims.OrderBy(x => x.Type).ToArray();
 			var sb = new StringBuilder();
-			foreach (var claim in _claims) sb.AppendLine($"{claim.Type} {claim.Value}");
+			foreach (var claim in _claims)
+				sb.AppendLine($"{claim.Type} {claim.Value}");
 
 			var assertion = sb.ToString();
 			Information = mode switch {
@@ -43,7 +45,8 @@ namespace EventStore.Core.Authorization {
 					string.Equals(x.Type, claim.Type, StringComparison.Ordinal) &&
 					string.Equals(x.Value, claim.Value, StringComparison.Ordinal)) is Claim matched) {
 					matches.Add(matched);
-					if (_mode != MultipleMatchMode.All) break;
+					if (_mode != MultipleMatchMode.All)
+						break;
 				}
 
 			var matchFound = false;

@@ -105,7 +105,7 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 							}
 
 							if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete)
-							    && new TFPos(prepare.LogPosition, prepare.LogPosition) >= pos) {
+								&& new TFPos(prepare.LogPosition, prepare.LogPosition) >= pos) {
 								var streamName = _streamNames.LookupName(prepare.EventStreamId);
 								var eventType = _eventTypes.LookupName(prepare.EventType);
 								var eventRecord = new EventRecord(eventNumber: prepare.ExpectedVersion + 1,
@@ -148,7 +148,7 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 
 								// prepare with useful data or delete tombstone
 								if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete)
-								    && new TFPos(commit.LogPosition, prepare.LogPosition) >= pos) {
+									&& new TFPos(commit.LogPosition, prepare.LogPosition) >= pos) {
 									var streamName = _streamNames.LookupName(prepare.EventStreamId);
 									var eventType = _eventTypes.LookupName(prepare.EventType);
 									var eventRecord =
@@ -180,7 +180,7 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 				return new IndexReadAllResult(records, pos, nextPos, prevPos, reachedEndOfStream, consideredEventsCount);
 			}
 		}
-		
+
 		public IndexReadAllResult ReadAllEventsBackward(TFPos pos, int maxCount) {
 			return ReadAllEventsBackwardInternal(pos, maxCount, int.MaxValue, EventFilter.DefaultAllFilter);
 		}
@@ -234,7 +234,7 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 							}
 
 							if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete)
-							    && new TFPos(result.RecordPostPosition, result.RecordPostPosition) <= pos) {
+								&& new TFPos(result.RecordPostPosition, result.RecordPostPosition) <= pos) {
 								var streamName = _streamNames.LookupName(prepare.EventStreamId);
 								var eventType = _eventTypes.LookupName(prepare.EventType);
 								var eventRecord = new EventRecord(eventNumber: prepare.ExpectedVersion + 1,
@@ -284,7 +284,7 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 
 								// prepare with useful data or delete tombstone
 								if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete)
-								    && new TFPos(commitPostPos, result.RecordPostPosition) <= pos) {
+									&& new TFPos(commitPostPos, result.RecordPostPosition) <= pos) {
 									var streamName = _streamNames.LookupName(prepare.EventStreamId);
 									var eventType = _eventTypes.LookupName(prepare.EventType);
 									var eventRecord =
@@ -320,10 +320,10 @@ namespace EventStore.Core.Services.Storage.ReaderIndex {
 
 		private static bool IsCommitAlike(ILogRecord rec) {
 			return rec.RecordType == LogRecordType.Commit
-			       || ((rec.RecordType == LogRecordType.Prepare
-			            || rec.RecordType == LogRecordType.EventType
-			            || rec.RecordType == LogRecordType.Stream) &&
-			           ((IPrepareLogRecord)rec).Flags.HasAnyOf(PrepareFlags.IsCommitted));
+				   || ((rec.RecordType == LogRecordType.Prepare
+						|| rec.RecordType == LogRecordType.EventType
+						|| rec.RecordType == LogRecordType.Stream) &&
+					   ((IPrepareLogRecord)rec).Flags.HasAnyOf(PrepareFlags.IsCommitted));
 		}
 	}
 }

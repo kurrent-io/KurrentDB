@@ -41,7 +41,7 @@ namespace EventStore.TestClient {
 		public CommandProcessorContext(TcpTestClient tcpTestClient, GrpcTestClient grpcTestClient,
 			ClientApiTcpTestClient clientApiTestClient, int timeout, ILogger log, ILogger statsLogger, bool outputCsv,
 			ManualResetEventSlim doneEvent, CancellationToken cancellationToken) {
-			
+
 			_tcpTestClient = tcpTestClient;
 			_grpcTestClient = grpcTestClient;
 			_clientApiTestClient = clientApiTestClient;
@@ -55,7 +55,7 @@ namespace EventStore.TestClient {
 
 		public void Completed(int exitCode = (int)Common.Utils.ExitCode.Success, Exception error = null,
 			string reason = null) {
-			
+
 			if (Interlocked.CompareExchange(ref _completed, 1, 0) == 0) {
 				ExitCode = exitCode;
 

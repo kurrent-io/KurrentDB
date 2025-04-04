@@ -22,8 +22,8 @@ public class TFChunkTrackerTests : IDisposable {
 
 		var readTag = new KeyValuePair<string, object>("activity", "read");
 		_sut = new TFChunkTracker(
-			readBytes: new CounterSubMetric(byteMetric, new[] {readTag}),
-			readEvents: new CounterSubMetric(eventMetric, new[] {readTag}));
+			readBytes: new CounterSubMetric(byteMetric, new[] { readTag }),
+			readEvents: new CounterSubMetric(eventMetric, new[] { readTag }));
 	}
 
 	public void Dispose() {

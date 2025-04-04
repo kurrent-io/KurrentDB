@@ -13,11 +13,11 @@ namespace EventStore.Core.Data {
 
 		public StreamAcl(string readRole, string writeRole, string deleteRole, string metaReadRole,
 			string metaWriteRole)
-			: this(readRole == null ? null : new[] {readRole},
-				writeRole == null ? null : new[] {writeRole},
-				deleteRole == null ? null : new[] {deleteRole},
-				metaReadRole == null ? null : new[] {metaReadRole},
-				metaWriteRole == null ? null : new[] {metaWriteRole}) {
+			: this(readRole == null ? null : new[] { readRole },
+				writeRole == null ? null : new[] { writeRole },
+				deleteRole == null ? null : new[] { deleteRole },
+				metaReadRole == null ? null : new[] { metaReadRole },
+				metaWriteRole == null ? null : new[] { metaWriteRole }) {
 		}
 
 		public StreamAcl(string[] readRoles, string[] writeRoles, string[] deleteRoles, string[] metaReadRoles,

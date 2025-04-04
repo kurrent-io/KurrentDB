@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr {
 	[TestFixture]
@@ -30,7 +30,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr {
 			yield return new StorageMessage.PrepareAck(InternalCorrId, transactionId, PrepareFlags.TransactionEnd);
 			yield return new StorageMessage.CommitIndexed(Guid.NewGuid(), commitPosition, transactionId, 0, 10);
 			yield return new ReplicationTrackingMessage.ReplicatedTo(commitPosition);
-			yield return new StorageMessage.CommitIndexed(InternalCorrId,commitPosition, transactionId,0,0);
+			yield return new StorageMessage.CommitIndexed(InternalCorrId, commitPosition, transactionId, 0, 0);
 		}
 
 		protected override Message When() {

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -120,7 +119,8 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 			ReadResp.Types.ReadEvent.Types.RecordedEvent ConvertToRecordedEvent(EventRecord e, long? commitPosition,
 				long? preparePosition) {
-				if (e == null) return null;
+				if (e == null)
+					return null;
 				var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
 				return new ReadResp.Types.ReadEvent.Types.RecordedEvent {
 					Id = uuidOptionsCase switch {
@@ -223,7 +223,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 				var semaphore = new SemaphoreSlim(1, 1);
 
-				switch(streamName) {
+				switch (streamName) {
 					case SystemStreams.AllStream:
 						publisher.Publish(new ClientMessage.ConnectToPersistentSubscriptionToAll(correlationId,
 							correlationId,
@@ -245,7 +245,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 						_subscriptionIdSource.TrySetException(ex);
 						return;
 					}
-					
+
 					switch (message) {
 						case ClientMessage.SubscriptionDropped dropped:
 							switch (dropped.Reason) {

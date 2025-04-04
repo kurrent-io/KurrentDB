@@ -1,7 +1,5 @@
-using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Monitoring.Stats;
 using ILogger = Serilog.ILogger;
 

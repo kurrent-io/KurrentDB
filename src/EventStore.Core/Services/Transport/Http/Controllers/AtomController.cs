@@ -1,25 +1,24 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
+using System.Threading;
+using EventStore.Client.Messages;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Settings;
+using EventStore.Plugins.Authorization;
 using EventStore.Transport.Http;
 using EventStore.Transport.Http.Atom;
 using EventStore.Transport.Http.Codecs;
 using EventStore.Transport.Http.EntityManagement;
-using Newtonsoft.Json;
-using System.Linq;
-using System.Threading;
-using EventStore.Client.Messages;
-using EventStore.Common.Utils;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Util;
-using EventStore.Plugins.Authorization;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers {
@@ -871,21 +870,21 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 
 		private bool GetRequireLeader(HttpEntityManager manager, out bool requireLeader) {
 			requireLeader = false;
-			
+
 			var onlyLeader = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.RequireLeader);
 			var onlyMaster = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.RequireMaster);
-			
+
 			if (StringValues.IsNullOrEmpty(onlyLeader) && StringValues.IsNullOrEmpty(onlyMaster))
 				return true;
-		
+
 			if (string.Equals(onlyLeader, "True", StringComparison.OrdinalIgnoreCase) ||
-			    string.Equals(onlyMaster, "True", StringComparison.OrdinalIgnoreCase)) {
+				string.Equals(onlyMaster, "True", StringComparison.OrdinalIgnoreCase)) {
 				requireLeader = true;
 				return true;
 			}
 
 			return string.Equals(onlyLeader, "False", StringComparison.OrdinalIgnoreCase) ||
-			       string.Equals(onlyMaster, "False", StringComparison.OrdinalIgnoreCase);
+				   string.Equals(onlyMaster, "False", StringComparison.OrdinalIgnoreCase);
 		}
 
 		private bool GetLongPoll(HttpEntityManager manager, out TimeSpan? longPollTimeout) {

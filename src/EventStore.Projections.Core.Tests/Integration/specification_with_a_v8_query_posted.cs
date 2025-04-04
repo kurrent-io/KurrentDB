@@ -35,8 +35,8 @@ namespace EventStore.Projections.Core.Tests.Integration {
 		}
 
 		protected override Tuple<IBus, IPublisher, InMemoryBus, TimeoutScheduler, Guid>[] GivenProcessingQueues() {
-			var buses = new IBus[] {new InMemoryBus("1"), new InMemoryBus("2")};
-			var outBuses = new[] {new InMemoryBus("o1"), new InMemoryBus("o2")};
+			var buses = new IBus[] { new InMemoryBus("1"), new InMemoryBus("2") };
+			var outBuses = new[] { new InMemoryBus("o1"), new InMemoryBus("o2") };
 			_otherQueues = new ManualQueue[]
 				{new ManualQueue(buses[0], _timeProvider), new ManualQueue(buses[1], _timeProvider)};
 			return new[] {

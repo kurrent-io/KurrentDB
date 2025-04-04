@@ -36,7 +36,7 @@ namespace EventStore.Core.Tests.Caching {
 
 		[Test]
 		public void size_in_lru_cache_is_measured_correctly_with_string_key() {
-			var lruCache = new LRUCache<string, MetadataCached>(string.Empty, 1, (_,_) => 0);
+			var lruCache = new LRUCache<string, MetadataCached>(string.Empty, 1, (_, _) => 0);
 
 			// initialize any underlying data structures (the dictionary in this case)
 			lruCache.Put("test", CreateMetadataCachedObject());
@@ -56,7 +56,7 @@ namespace EventStore.Core.Tests.Caching {
 
 		[Test]
 		public void size_in_lru_cache_is_measured_correctly_with_long_key() {
-			var lruCache = new LRUCache<long, MetadataCached>(string.Empty, 1, (_,_) => 0);
+			var lruCache = new LRUCache<long, MetadataCached>(string.Empty, 1, (_, _) => 0);
 
 			// initialize any underlying data structures (the dictionary in this case)
 			lruCache.Put(123, CreateMetadataCachedObject());

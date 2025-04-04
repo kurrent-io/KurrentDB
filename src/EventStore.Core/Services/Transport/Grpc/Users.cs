@@ -11,8 +11,10 @@ namespace EventStore.Core.Services.Transport.Grpc {
 		private IAuthorizationProvider _authorizationProvider;
 
 		public Users(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
-			if (publisher == null) throw new ArgumentNullException(nameof(publisher));
-			if (authorizationProvider == null) throw new ArgumentNullException(nameof(authorizationProvider));
+			if (publisher == null)
+				throw new ArgumentNullException(nameof(publisher));
+			if (authorizationProvider == null)
+				throw new ArgumentNullException(nameof(authorizationProvider));
 			_publisher = publisher;
 			_authorizationProvider = authorizationProvider;
 		}
@@ -24,7 +26,8 @@ namespace EventStore.Core.Services.Transport.Grpc {
 				return true;
 			}
 
-			if (response.Success) return false;
+			if (response.Success)
+				return false;
 			source.TrySetException(response.Error switch {
 				Error.Unauthorized => RpcExceptions.AccessDenied(),
 				Error.NotFound => RpcExceptions.LoginNotFound(loginName),

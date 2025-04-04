@@ -1,10 +1,8 @@
 using System;
 using System.IO;
-using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -54,7 +52,7 @@ namespace EventStore.Core.Tests.TransactionLog {
 				flags: PrepareFlags.SingleWrite,
 				eventType: eventTypeId,
 				data: bytes,
-				metadata: new byte[] {0x07, 0x17});
+				metadata: new byte[] { 0x07, 0x17 });
 
 			long pos;
 			Assert.IsTrue(writer.Write(record, out pos));

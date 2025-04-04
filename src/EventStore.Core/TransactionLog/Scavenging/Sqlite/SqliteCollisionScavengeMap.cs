@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Microsoft.Data.Sqlite;
 
 namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
-	public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScavengeMap<TKey, Unit> {
+	public class SqliteCollisionScavengeMap<TKey> : IInitializeSqliteBackend, IScavengeMap<TKey, Unit> {
 		private AddCommand _add;
 		private GetCommand _get;
 		private RemoveCommand _remove;
@@ -15,9 +15,9 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 			var sql = $@"
 				CREATE TABLE IF NOT EXISTS {TableName} (
 					key {SqliteTypeMapping.GetTypeName<TKey>()} PRIMARY KEY)";
-			
+
 			sqlite.InitializeDb(sql);
-			
+
 			_add = new AddCommand(sqlite);
 			_get = new GetCommand(sqlite);
 			_all = new AllRecordsCommand(sqlite);
@@ -64,12 +64,12 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					INSERT INTO {TableName}
 					VALUES($key)
 					ON CONFLICT(key) DO UPDATE SET key=$key";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 			}
 
@@ -78,7 +78,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_sqlite.ExecuteNonQuery(_cmd);
 			}
 		}
-		
+
 		private class GetCommand {
 			private readonly SqliteBackend _sqlite;
 			private readonly SqliteCommand _cmd;
@@ -90,12 +90,12 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 					SELECT key
 					FROM {TableName}
 					WHERE key = $key";
-				
+
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => Unit.Instance;
 			}
@@ -116,12 +116,12 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 			public RemoveCommand(SqliteBackend sqlite) {
 				_sqlite = sqlite;
 				_reader = reader => Unit.Instance;
-				
+
 				var selectSql = $@"
 					SELECT key
 					FROM {TableName}
 					WHERE key = $key";
-				
+
 				_selectCmd = sqlite.CreateCommand();
 				_selectCmd.CommandText = selectSql;
 				_selectKeyParam = _selectCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -130,7 +130,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				var deleteSql = $@"
 					DELETE FROM {TableName}
 					WHERE key = $key";
-				
+
 				_deleteCmd = sqlite.CreateCommand();
 				_deleteCmd.CommandText = deleteSql;
 				_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -143,7 +143,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				return _sqlite.ExecuteReadAndDelete(_selectCmd, _deleteCmd, _reader, out _);
 			}
 		}
-		
+
 		private class AllRecordsCommand {
 			private readonly SqliteBackend _sqlite;
 			private readonly SqliteCommand _cmd;
@@ -158,7 +158,7 @@ namespace EventStore.Core.TransactionLog.Scavenging.Sqlite {
 				_cmd = sqlite.CreateCommand();
 				_cmd.CommandText = sql;
 				_cmd.Prepare();
-				
+
 				_sqlite = sqlite;
 				_reader = reader => new KeyValuePair<TKey, Unit>(reader.GetFieldValue<TKey>(0), Unit.Instance);
 			}

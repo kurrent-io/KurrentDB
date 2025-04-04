@@ -1,11 +1,11 @@
-using System.Collections.Generic;
 using System;
-using EventStore.ClientAPI;
-using NUnit.Framework;
-using EventStore.Core.Data;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.ClientAPI;
+using EventStore.Core.Data;
 using EventStore.Core.Services;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -68,7 +68,7 @@ namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 			await _store.SubscribeToAllAsync(true, (s, e) => {
 				if (SystemStreams.IsSystemStream(e.OriginalStreamId))
 					return Task.CompletedTask;
-				
+
 				receivedEvent = e;
 				mre.Set();
 				return Task.CompletedTask;

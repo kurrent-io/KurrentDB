@@ -34,7 +34,7 @@ namespace EventStore.Core.TransactionLog.Scavenging {
 		void Commit(ScavengeCheckpoint checkpoint);
 	}
 
-	public interface ITransactionManager : ITransactionCompleter{
+	public interface ITransactionManager : ITransactionCompleter {
 		void Begin();
 		void RegisterOnRollback(Action onRollback);
 		void UnregisterOnRollback();

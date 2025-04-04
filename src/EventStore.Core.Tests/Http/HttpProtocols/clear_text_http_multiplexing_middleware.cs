@@ -14,7 +14,7 @@ using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Http.HttpProtocols {
 
-	public class Startup : IStartup{
+	public class Startup : IStartup {
 		public IServiceProvider ConfigureServices(IServiceCollection services) {
 			return services.AddRouting().BuildServiceProvider();
 		}
@@ -59,7 +59,7 @@ namespace EventStore.Core.Tests.Http.HttpProtocols {
 			using var client = new HttpClient();
 			var request = new HttpRequestMessage(HttpMethod.Get, _endpoint + "/test");
 			var result = await client.SendAsync(request);
-			Assert.AreEqual(new Version(1,1), result.Version);
+			Assert.AreEqual(new Version(1, 1), result.Version);
 			Assert.AreEqual("hello", await result.Content.ReadAsStringAsync());
 		}
 
@@ -72,7 +72,7 @@ namespace EventStore.Core.Tests.Http.HttpProtocols {
 			};
 
 			var result = await client.SendAsync(request);
-			Assert.AreEqual(new Version(2,0), result.Version);
+			Assert.AreEqual(new Version(2, 0), result.Version);
 			Assert.AreEqual("hello", await result.Content.ReadAsStringAsync());
 		}
 

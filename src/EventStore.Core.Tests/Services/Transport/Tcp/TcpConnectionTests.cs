@@ -1,11 +1,11 @@
-﻿using NUnit.Framework;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
-using EventStore.Transport.Tcp;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.Transport.Tcp;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp {
 	[TestFixture]
@@ -29,7 +29,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 				bool closed = false;
 				bool dataReceivedAfterClose = false;
 				var listeningSocket = CreateListeningSocket();
-				TaskCompletionSource<SocketError> connectionResult = new (TaskCreationOptions.RunContinuationsAsynchronously);
+				TaskCompletionSource<SocketError> connectionResult = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 				var clientTcpConnection = TcpConnection.CreateConnectingTcpConnection(
 					Guid.NewGuid(),
@@ -95,8 +95,8 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 					(IPEndPoint)listeningSocket.LocalEndPoint,
 					new TcpClientConnector(),
 					TimeSpan.FromSeconds(5),
-					(conn) => {},
-					(conn, error) => {},
+					(conn) => { },
+					(conn, error) => { },
 					false);
 
 					clientTcpConnection.ConnectionClosed += (conn, error) => {

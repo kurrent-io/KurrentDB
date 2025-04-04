@@ -86,9 +86,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 			PartitionStateCache partitionStateCache,
 			string effectiveProjectionName,
 			ITimeProvider timeProvider) {
-			if (publisher == null) throw new ArgumentNullException("publisher");
-			if (ioDispatcher == null) throw new ArgumentNullException("ioDispatcher");
-			if (subscriptionDispatcher == null) throw new ArgumentNullException("subscriptionDispatcher");
+			if (publisher == null)
+				throw new ArgumentNullException("publisher");
+			if (ioDispatcher == null)
+				throw new ArgumentNullException("ioDispatcher");
+			if (subscriptionDispatcher == null)
+				throw new ArgumentNullException("subscriptionDispatcher");
 
 			_projectionProcessingStrategy = projectionProcessingStrategy;
 			_projectionCorrelationId = projectionCorrelationId;
@@ -182,11 +185,11 @@ namespace EventStore.Projections.Core.Services.Processing {
 			if (_state != State.Stopped)
 				GoToState(State.Stopped);
 		}
-		
+
 		public bool Suspend() {
 			if (_state == State.Stopped || _state == State.Suspended)
 				return false;
-			
+
 			GoToState(State.Suspended);
 			return true;
 		}
@@ -199,7 +202,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 		private void GetStatistics(ProjectionStatistics info) {
 			_checkpointManager.GetStatistics(info);
 			if (float.IsNaN(info.Progress) || float.IsNegativeInfinity(info.Progress)
-			                               || float.IsPositiveInfinity(info.Progress)) {
+										   || float.IsPositiveInfinity(info.Progress)) {
 				info.Progress = -2.0f;
 			}
 
@@ -229,7 +232,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		public void Handle(CoreProjectionManagementMessage.GetState message) {
 			if (_state == State.LoadStateRequested || _state == State.StateLoaded ||
-			    _projectionProcessingPhase == null) {
+				_projectionProcessingPhase == null) {
 				_publisher.Publish(
 					new CoreProjectionStatusMessage.StateReport(
 						message.CorrelationId, _projectionCorrelationId, message.Partition, state: null,
@@ -246,7 +249,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		public void Handle(CoreProjectionManagementMessage.GetResult message) {
 			if (_state == State.LoadStateRequested || _state == State.StateLoaded ||
-			    _projectionProcessingPhase == null) {
+				_projectionProcessingPhase == null) {
 				_publisher.Publish(
 					new CoreProjectionStatusMessage.ResultReport(
 						message.CorrelationId, _projectionCorrelationId, message.Partition, result: null,
@@ -338,14 +341,14 @@ namespace EventStore.Projections.Core.Services.Processing {
 				_logger.Debug($"Projection {_name} has been suspended for a subsystem restart. Cannot go to state {state}");
 				return;
 			}
-//            _logger.Trace("CP: {projection} {stateFrom} => {stateTo}", _name, _state, state);
+			//            _logger.Trace("CP: {projection} {stateFrom} => {stateTo}", _name, _state, state);
 			var wasStopped = _state == State.Stopped || _state == State.Faulted || _state == State.PhaseCompleted;
 			var wasStopping = _state == State.Stopping || _state == State.FaultedStopping
-			                                           || _state == State.CompletingPhase;
+													   || _state == State.CompletingPhase;
 			var wasStarting = _state == State.LoadStateRequested || _state == State.StateLoaded
-			                                                     || _state == State.Subscribed;
+																 || _state == State.Subscribed;
 			var wasStarted = _state == State.Subscribed || _state == State.Running || _state == State.Stopping
-			                 || _state == State.FaultedStopping || _state == State.CompletingPhase;
+							 || _state == State.FaultedStopping || _state == State.CompletingPhase;
 			var wasRunning = _state == State.Running;
 			var stateChanged = _state != state;
 			_state = state; // set state before transition to allow further state change

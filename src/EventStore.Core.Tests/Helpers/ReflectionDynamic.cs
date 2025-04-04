@@ -61,7 +61,7 @@ namespace EventStore.Core.Tests.Helpers {
 			if (o == null || o.GetType().IsPrimitive || o is string)
 				return o;
 
-			return new PrivateReflectionDynamicObject() {RealObject = o};
+			return new PrivateReflectionDynamicObject() { RealObject = o };
 		}
 
 		public override bool TryGetMember(GetMemberBinder binder, out object result) {
@@ -161,12 +161,12 @@ namespace EventStore.Core.Tests.Helpers {
 
 			// First, add all the properties
 			foreach (PropertyInfo prop in type.GetProperties(bindingFlags).Where(p => p.DeclaringType == type)) {
-				typeProperties[prop.Name] = new Property() {PropertyInfo = prop};
+				typeProperties[prop.Name] = new Property() { PropertyInfo = prop };
 			}
 
 			// Now, add all the fields
 			foreach (FieldInfo field in type.GetFields(bindingFlags).Where(p => p.DeclaringType == type)) {
-				typeProperties[field.Name] = new Field() {FieldInfo = field};
+				typeProperties[field.Name] = new Field() { FieldInfo = field };
 			}
 
 			// Finally, recurse on the base class to add its fields

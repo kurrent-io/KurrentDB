@@ -35,17 +35,17 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 				ExpectedVersion.NoStream => new TombstoneReq.Types.Options { NoStream = new() },
 				ExpectedVersion.StreamExists => new TombstoneReq.Types.Options { StreamExists = new() },
 				_ => throw new InvalidOperationException()
-			}){ }
+			}) { }
 
 			[Test]
 			public void no_exception_is_thrown() {
 				Assert.Null(_caughtException);
 			}
-			
+
 			[Test]
 			public void the_stream_is_deleted() {
 				var ex = Assert.ThrowsAsync<RpcException>(async () => {
-					using var call = StreamsClient.Read(new () {
+					using var call = StreamsClient.Read(new() {
 						Options = new() {
 							UuidOption = new() { Structured = new() },
 							NoFilter = new(),

@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using EventStore.Common.Utils;
+using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using System.Linq;
 using EventStore.Projections.Core.Services.Processing;
-using NUnit.Framework;
-using EventStore.Common.Utils;
-using EventStore.Core.Tests;
 using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_system.updating_projections {
 	namespace updating_projection_sources {
@@ -114,7 +114,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_system.updating
 
 			[Test]
 			public void correct_event_sequence_has_been_processed() {
-				HelperExtensions.AssertJson(new {d = new[] {1, 5, 6}}, _stateData);
+				HelperExtensions.AssertJson(new { d = new[] { 1, 5, 6 } }, _stateData);
 			}
 
 			[Test]
@@ -122,7 +122,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_system.updating
 				var pos = GetTfPos("stream5", 0);
 				Assert.AreEqual(
 					CheckpointTag.FromEventTypeIndexPositions(0, pos,
-						new Dictionary<string, long> {{"type1", 1}, {"type3", 1}}), _state.Position);
+						new Dictionary<string, long> { { "type1", 1 }, { "type3", 1 } }), _state.Position);
 			}
 		}
 
@@ -153,7 +153,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_system.updating
 
 			[Test]
 			public void correct_event_sequence_has_been_processed() {
-				HelperExtensions.AssertJson(new {d = new[] {1, 2, 3, 5, 6, 10}}, _stateData);
+				HelperExtensions.AssertJson(new { d = new[] { 1, 2, 3, 5, 6, 10 } }, _stateData);
 			}
 
 			[Test]
@@ -161,7 +161,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_system.updating
 				var pos = GetTfPos("stream5", 0);
 				Assert.AreEqual(
 					CheckpointTag.FromEventTypeIndexPositions(0, pos,
-						new Dictionary<string, long> {{"type1", 1}, {"type3", 1}}), _state.Position);
+						new Dictionary<string, long> { { "type1", 1 }, { "type3", 1 } }), _state.Position);
 			}
 		}
 
@@ -190,14 +190,14 @@ namespace EventStore.Projections.Core.Tests.Services.projections_system.updating
 
 			[Test]
 			public void correct_event_sequence_has_been_processed() {
-				HelperExtensions.AssertJson(new {d = new[] {1, 2, 3, 4, 5, 6}}, _stateData);
+				HelperExtensions.AssertJson(new { d = new[] { 1, 2, 3, 4, 5, 6 } }, _stateData);
 			}
 
 			[Test]
 			public void projection_position_is_correct() {
 				var pos = GetTfPos("stream2", 1);
 				Assert.That(
-					CheckpointTag.FromEventTypeIndexPositions(0, pos, new Dictionary<string, long> {{"type3", 1}}) <=
+					CheckpointTag.FromEventTypeIndexPositions(0, pos, new Dictionary<string, long> { { "type3", 1 } }) <=
 					_state.Position);
 			}
 		}
@@ -228,7 +228,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_system.updating
 
 			[Test]
 			public void correct_event_sequence_has_been_processed() {
-				HelperExtensions.AssertJson(new {d = new[] {1, 2, 3, 5, 6, 7, 8, 9, 10}}, _stateData);
+				HelperExtensions.AssertJson(new { d = new[] { 1, 2, 3, 5, 6, 7, 8, 9, 10 } }, _stateData);
 			}
 
 			[Test]
@@ -264,13 +264,13 @@ namespace EventStore.Projections.Core.Tests.Services.projections_system.updating
 
 			[Test, Ignore("No position with stream tag yet")]
 			public void correct_event_sequence_has_been_processed() {
-				HelperExtensions.AssertJson(new {d = new[] {1, 2, 6}}, _stateData);
+				HelperExtensions.AssertJson(new { d = new[] { 1, 2, 6 } }, _stateData);
 			}
 
 			[Test]
 			public void projection_position_is_correct() {
 				Assert.AreEqual(
-					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"stream1", 1}, {"stream2", 1}}),
+					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 1 }, { "stream2", 1 } }),
 					_state.Position);
 			}
 		}
@@ -300,7 +300,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_system.updating
 
 			[Test]
 			public void correct_event_sequence_has_been_processed() {
-				HelperExtensions.AssertJson(new {d = new[] {1, 2, 3, 6}}, _stateData);
+				HelperExtensions.AssertJson(new { d = new[] { 1, 2, 3, 6 } }, _stateData);
 			}
 
 			[Test]
@@ -334,13 +334,13 @@ namespace EventStore.Projections.Core.Tests.Services.projections_system.updating
 
 			[Test, Ignore("No position in multi-stream tag")]
 			public void correct_event_sequence_has_been_processed() {
-				HelperExtensions.AssertJson(new {d = new[] {1, 2, 3, 6, 7, 8}}, _stateData);
+				HelperExtensions.AssertJson(new { d = new[] { 1, 2, 3, 6, 7, 8 } }, _stateData);
 			}
 
 			[Test]
 			public void projection_position_is_correct() {
 				Assert.AreEqual(
-					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"stream2", 1}, {"stream3", 3}}),
+					CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream2", 1 }, { "stream3", 3 } }),
 					_state.Position);
 			}
 		}

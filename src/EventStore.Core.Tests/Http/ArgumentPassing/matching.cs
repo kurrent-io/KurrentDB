@@ -2,8 +2,8 @@
 using System.Net;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
 using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Http.ArgumentPassing {
 	namespace matching {

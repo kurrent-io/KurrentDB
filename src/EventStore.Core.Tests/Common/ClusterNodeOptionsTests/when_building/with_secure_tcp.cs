@@ -1,11 +1,9 @@
 using System;
 using System.IO;
 using System.Net;
-using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Common.Utils;
 using EventStore.Core.Certificates;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Tests.Services.Transport.Tcp;
 using NUnit.Framework;
 

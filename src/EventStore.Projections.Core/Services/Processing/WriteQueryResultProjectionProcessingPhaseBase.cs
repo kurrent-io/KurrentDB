@@ -26,13 +26,20 @@ namespace EventStore.Projections.Core.Services.Processing {
 			ICoreProjectionCheckpointManager checkpointManager,
 			IEmittedEventWriter emittedEventWriter,
 			IEmittedStreamsTracker emittedStreamsTracker) {
-			if (resultStream == null) throw new ArgumentNullException("resultStream");
-			if (coreProjection == null) throw new ArgumentNullException("coreProjection");
-			if (stateCache == null) throw new ArgumentNullException("stateCache");
-			if (checkpointManager == null) throw new ArgumentNullException("checkpointManager");
-			if (emittedEventWriter == null) throw new ArgumentNullException("emittedEventWriter");
-			if (emittedStreamsTracker == null) throw new ArgumentNullException("emittedStreamsTracker");
-			if (string.IsNullOrEmpty(resultStream)) throw new ArgumentException("resultStream");
+			if (resultStream == null)
+				throw new ArgumentNullException("resultStream");
+			if (coreProjection == null)
+				throw new ArgumentNullException("coreProjection");
+			if (stateCache == null)
+				throw new ArgumentNullException("stateCache");
+			if (checkpointManager == null)
+				throw new ArgumentNullException("checkpointManager");
+			if (emittedEventWriter == null)
+				throw new ArgumentNullException("emittedEventWriter");
+			if (emittedStreamsTracker == null)
+				throw new ArgumentNullException("emittedStreamsTracker");
+			if (string.IsNullOrEmpty(resultStream))
+				throw new ArgumentException("resultStream");
 
 			_publisher = publisher;
 			_phase = phase;

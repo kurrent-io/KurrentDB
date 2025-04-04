@@ -28,7 +28,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http {
 		public void TearDown() {
 			_portableServer.TearDown();
 		}
-		
+
 		[Test]
 		public void respond_with_httpmessage_text_message() {
 			var url = _serverEndPoint.ToHttpUrl(EndpointExtensions.HTTP_SCHEMA, "/ping?format=json");

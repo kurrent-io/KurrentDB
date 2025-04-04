@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
@@ -52,7 +51,7 @@ namespace EventStore.Core.Tests.Cluster {
 
 			sut.Handle(new ClusterClientMessage.CleanCache());
 			await Task.Delay(oldItemThreshold.Add(TimeSpan.FromMilliseconds(500)));
-			
+
 			var newClient = sut.Get(new IPEndPoint(IPAddress.Loopback, 1113));
 			newClient = sut.Get(new IPEndPoint(IPAddress.Loopback, 1113));
 			Assert.AreNotEqual(oldClient, newClient);

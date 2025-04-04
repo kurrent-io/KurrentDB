@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
+using EventStore.Core.Services.TimerService;
+using EventStore.Core.Tests;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Tests;
 
 namespace EventStore.Projections.Core.Tests.Services.emitted_stream {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

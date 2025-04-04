@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
-using EventStore.Core.Services.UserManagement;
+using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
-using EventStore.Core.Data;
+using EventStore.Core.Services.UserManagement;
+using EventStore.Core.Tests.Helpers;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Replication.ReadStream {
 	public static class ReplicationTestHelper {
@@ -147,9 +147,9 @@ namespace EventStore.Core.Tests.Replication.ReadStream {
 			ClientMessage.ReadEventCompleted readResult = null;
 			var resetEvent = new ManualResetEventSlim();
 			var read = new ClientMessage.ReadEvent(Guid.NewGuid(), Guid.NewGuid(), new CallbackEnvelope(msg => {
-					readResult = (ClientMessage.ReadEventCompleted)msg;
-					resetEvent.Set();
-				}), streamId, eventNumber,
+				readResult = (ClientMessage.ReadEventCompleted)msg;
+				resetEvent.Set();
+			}), streamId, eventNumber,
 				false, false, SystemAccounts.System);
 			node.Node.MainQueue.Publish(read);
 

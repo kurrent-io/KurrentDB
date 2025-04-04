@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;

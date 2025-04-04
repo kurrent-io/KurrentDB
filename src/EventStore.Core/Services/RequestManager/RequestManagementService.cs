@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
+using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.Histograms;
 using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Services.TimerService;
-using System.Diagnostics;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Histograms;
 
 namespace EventStore.Core.Services.RequestManager {
-	public class RequestManagementService :		
+	public class RequestManagementService :
 		IHandle<SystemMessage.SystemInit>,
 		IHandle<ClientMessage.WriteEvents>,
 		IHandle<ClientMessage.DeleteStream>,
@@ -38,7 +38,7 @@ namespace EventStore.Core.Services.RequestManager {
 		private readonly TimeSpan _commitTimeout;
 		private readonly CommitSource _commitSource;
 		private readonly bool _explicitTransactionsSupported;
-		private VNodeState _nodeState;		
+		private VNodeState _nodeState;
 
 		public RequestManagementService(IPublisher bus,
 			TimeSpan prepareTimeout,
@@ -55,7 +55,7 @@ namespace EventStore.Core.Services.RequestManager {
 			_commitSource = new CommitSource();
 			_explicitTransactionsSupported = explicitTransactionsSupported;
 		}
-		
+
 		public void Handle(ClientMessage.WriteEvents message) {
 			var manager = new WriteEvents(
 								_bus,
@@ -164,10 +164,10 @@ namespace EventStore.Core.Services.RequestManager {
 			_currentTimedRequests.Add(message.InternalCorrId, Stopwatch.StartNew());
 			manager.Start();
 		}
-		
-		
+
+
 		public void Handle(SystemMessage.StateChangeMessage message) {
-			
+
 			if (_nodeState == VNodeState.Leader && message.State is not VNodeState.Leader or VNodeState.ResigningLeader) {
 				var keys = _currentRequests.Keys;
 				foreach (var key in keys) {
@@ -209,22 +209,22 @@ namespace EventStore.Core.Services.RequestManager {
 				// entries from _currentRequests
 			}
 		}
-		
+
 		public void Handle(ReplicationTrackingMessage.ReplicatedTo message) => _commitSource.Handle(message);
 		public void Handle(ReplicationTrackingMessage.IndexedTo message) => _commitSource.Handle(message);
 
-		public void Handle(StorageMessage.AlreadyCommitted message)  =>	DispatchInternal(message.CorrelationId, message);
-		public void Handle(StorageMessage.PrepareAck message)  =>	DispatchInternal(message.CorrelationId, message);
-		public void Handle(StorageMessage.CommitIndexed message) =>	DispatchInternal(message.CorrelationId, message);
-		public void Handle(StorageMessage.WrongExpectedVersion message)  =>	DispatchInternal(message.CorrelationId, message);
-		public void Handle(StorageMessage.InvalidTransaction message)  =>	DispatchInternal(message.CorrelationId, message);
-		public void Handle(StorageMessage.StreamDeleted message)  =>	DispatchInternal(message.CorrelationId, message);
-		
+		public void Handle(StorageMessage.AlreadyCommitted message) => DispatchInternal(message.CorrelationId, message);
+		public void Handle(StorageMessage.PrepareAck message) => DispatchInternal(message.CorrelationId, message);
+		public void Handle(StorageMessage.CommitIndexed message) => DispatchInternal(message.CorrelationId, message);
+		public void Handle(StorageMessage.WrongExpectedVersion message) => DispatchInternal(message.CorrelationId, message);
+		public void Handle(StorageMessage.InvalidTransaction message) => DispatchInternal(message.CorrelationId, message);
+		public void Handle(StorageMessage.StreamDeleted message) => DispatchInternal(message.CorrelationId, message);
+
 		private void DispatchInternal<T>(Guid correlationId, T message) where T : Message {
 			if (_currentRequests.TryGetValue(correlationId, out var manager)) {
 				var x = manager as IHandle<T>;
 				x?.Handle(message);
 			}
-		}		
+		}
 	}
 }

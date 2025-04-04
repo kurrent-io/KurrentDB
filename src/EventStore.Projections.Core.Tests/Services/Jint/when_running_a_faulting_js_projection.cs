@@ -4,8 +4,7 @@ using EventStore.Projections.Core.Services.Processing;
 using Jint.Runtime;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	public class when_running_a_faulting_js_projection {
 		[TestFixture]
 		public class when_event_handler_throws : TestFixtureWithInterpretedProjection {

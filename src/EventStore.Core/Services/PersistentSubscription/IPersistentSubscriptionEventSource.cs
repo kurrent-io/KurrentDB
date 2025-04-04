@@ -1,4 +1,3 @@
-using System;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Storage.ReaderIndex;
 

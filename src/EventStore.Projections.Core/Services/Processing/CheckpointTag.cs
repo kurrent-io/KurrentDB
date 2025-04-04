@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using EventStore.Common.Options;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using Newtonsoft.Json;
@@ -62,7 +61,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 		private CheckpointTag(int phase, IDictionary<string, long> streams) {
 			Phase = phase;
 			foreach (var stream in streams) {
-				if (stream.Key == "") throw new ArgumentException("Empty stream name", "streams");
+				if (stream.Key == "")
+					throw new ArgumentException("Empty stream name", "streams");
 				if (stream.Value < 0 && stream.Value != ExpectedVersion.NoStream)
 					throw new ArgumentException("Invalid sequence number", "streams");
 			}
@@ -76,7 +76,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 			Phase = phase;
 			Position = position;
 			foreach (var stream in eventTypes) {
-				if (stream.Key == "") throw new ArgumentException("Empty stream name", "eventTypes");
+				if (stream.Key == "")
+					throw new ArgumentException("Empty stream name", "eventTypes");
 				if (stream.Value < 0 && stream.Value != ExpectedVersion.NoStream)
 					throw new ArgumentException("Invalid sequence number", "eventTypes");
 			}
@@ -87,12 +88,14 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		private CheckpointTag(int phase, string stream, long sequenceNumber) {
 			Phase = phase;
-			if (stream == null) throw new ArgumentNullException("stream");
-			if (stream == "") throw new ArgumentException("stream");
+			if (stream == null)
+				throw new ArgumentNullException("stream");
+			if (stream == "")
+				throw new ArgumentException("stream");
 			if (sequenceNumber < 0 && sequenceNumber != ExpectedVersion.NoStream)
 				throw new ArgumentException("sequenceNumber");
 			Position = new TFPos(Int64.MinValue, Int64.MinValue);
-			Streams = new Dictionary<string, long> {{stream, sequenceNumber}};
+			Streams = new Dictionary<string, long> { { stream, sequenceNumber } };
 			Mode_ = CalculateMode();
 		}
 
@@ -145,7 +148,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 				case Mode.ByStream:
 					CheckCatalogCompatibility(left, right);
 					return left.CatalogPosition > right.CatalogPosition
-					       || (left.CatalogPosition == right.CatalogPosition && left.DataPosition > right.DataPosition);
+						   || (left.CatalogPosition == right.CatalogPosition && left.DataPosition > right.DataPosition);
 				case Mode.Phase:
 					return left.Position > right.Position;
 				case Mode.Position:
@@ -205,8 +208,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 				case Mode.ByStream:
 					CheckCatalogCompatibility(left, right);
 					return left.CatalogPosition > right.CatalogPosition
-					       || (left.CatalogPosition == right.CatalogPosition &&
-					           left.DataPosition >= right.DataPosition);
+						   || (left.CatalogPosition == right.CatalogPosition &&
+							   left.DataPosition >= right.DataPosition);
 				case Mode.Phase:
 					return left.Position >= right.Position;
 				case Mode.Position:
@@ -263,9 +266,9 @@ namespace EventStore.Projections.Core.Services.Processing {
 			switch (leftMode) {
 				case Mode.ByStream:
 					return CatalogStream == other.CatalogStream && CatalogPosition == other.CatalogPosition
-					                                            && DataStream == other.DataStream &&
-					                                            DataPosition == other.DataPosition
-					                                            && CommitPosition == other.CommitPosition;
+																&& DataStream == other.DataStream &&
+																DataPosition == other.DataPosition
+																&& CommitPosition == other.CommitPosition;
 				case Mode.Phase:
 					return Position == other.Position;
 				case Mode.EventTypeIndex:
@@ -284,16 +287,19 @@ namespace EventStore.Projections.Core.Services.Processing {
 				case Mode.MultiStream:
 					long rvalue = 0;
 					return Streams.Count == other.Streams.Count
-					       && Streams.All(l => other.Streams.TryGetValue(l.Key, out rvalue) && l.Value == rvalue);
+						   && Streams.All(l => other.Streams.TryGetValue(l.Key, out rvalue) && l.Value == rvalue);
 				default:
 					throw new NotSupportedException("Checkpoint tag mode is not supported in comparison");
 			}
 		}
 
 		public override bool Equals(object obj) {
-			if (ReferenceEquals(null, obj)) return false;
-			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != GetType()) return false;
+			if (ReferenceEquals(null, obj))
+				return false;
+			if (ReferenceEquals(this, obj))
+				return true;
+			if (obj.GetType() != GetType())
+				return false;
 			return Equals((CheckpointTag)obj);
 		}
 

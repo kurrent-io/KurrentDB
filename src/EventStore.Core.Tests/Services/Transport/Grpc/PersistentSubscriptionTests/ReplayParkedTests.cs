@@ -51,7 +51,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 				Assert.NotNull(writeRes.Success);
 
 				// Park all of the messages
-				for(var i = 0; i < _eventCount; i++) {
+				for (var i = 0; i < _eventCount; i++) {
 					Assert.True(await _subscriptionStream.ResponseStream.MoveNext());
 					Assert.AreEqual(ReadResp.ContentOneofCase.Event, _subscriptionStream.ResponseStream.Current.ContentCase);
 					var evnt = _subscriptionStream.ResponseStream.Current.Event;
@@ -89,8 +89,8 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 
 					// Ack the event otherwise the test can throw an error
 					await _subscriptionStream.RequestStream.WriteAsync(new ReadReq {
-							Ack = new ReadReq.Types.Ack {
-								Ids = {
+						Ack = new ReadReq.Types.Ack {
+							Ids = {
 								curr.Event.Event.Id
 							},
 						}
@@ -252,7 +252,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.PersistentSubscriptionTe
 							NoLimit = new()
 						}
 					}, GetCallOptions(AdminCredentials));
-				} catch(Exception e) {
+				} catch (Exception e) {
 					_exception = e;
 				}
 			}

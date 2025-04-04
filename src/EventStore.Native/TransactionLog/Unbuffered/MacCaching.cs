@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using EventStore.Common.Utils;
 using Microsoft.Win32.SafeHandles;
 using Mono.Unix;

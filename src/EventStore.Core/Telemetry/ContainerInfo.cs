@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using EventStore.Common.Utils;
 
-namespace EventStore.Core.Telemetry; 
+namespace EventStore.Core.Telemetry;
 
 public class ContainerInfo {
 	public static ContainerInfo Instance { get; } = Collect();
@@ -11,7 +11,7 @@ public class ContainerInfo {
 
 	private static ContainerInfo Collect() {
 		var info = new ContainerInfo {
-			 IsContainer = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != null,
+			IsContainer = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") != null,
 		};
 
 		if (OS.OsFlavor != OsFlavor.Linux || !File.Exists("/proc/self/cgroup"))

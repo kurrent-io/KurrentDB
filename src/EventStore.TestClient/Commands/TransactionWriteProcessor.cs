@@ -1,7 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Net.Sockets;
-using System.Text;
 using EventStore.Client.Messages;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;

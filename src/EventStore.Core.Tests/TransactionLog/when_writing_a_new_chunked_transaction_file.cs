@@ -1,9 +1,7 @@
 using System;
 using System.IO;
-using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -39,8 +37,8 @@ namespace EventStore.Core.Tests.TransactionLog {
 				timeStamp: new DateTime(2012, 12, 21),
 				flags: PrepareFlags.None,
 				eventType: eventTypeId,
-				data: new byte[] {1, 2, 3, 4, 5},
-				metadata: new byte[] {7, 17});
+				data: new byte[] { 1, 2, 3, 4, 5 },
+				metadata: new byte[] { 7, 17 });
 			long tmp;
 			tf.Write(record, out tmp);
 			tf.Close();

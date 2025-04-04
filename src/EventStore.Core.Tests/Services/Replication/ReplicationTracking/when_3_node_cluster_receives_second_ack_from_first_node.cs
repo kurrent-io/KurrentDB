@@ -24,7 +24,7 @@ namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking {
 			AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 
 			ReplicatedTos.Clear();
-			
+
 			// Follower 2 has lost connection and does not ack the write
 			WriterCheckpoint.Write(_secondLogPosition);
 			WriterCheckpoint.Flush();

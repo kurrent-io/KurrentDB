@@ -123,7 +123,7 @@ namespace EventStore.Projections.Core.Tests.Services.handlers {
 			}
 		}
 
-[TestFixture]
+		[TestFixture]
 		public class when_handling_soft_deleted_stream_metadata_event {
 			private CategorizeEventsByStreamPath _handler;
 			private string _state;
@@ -139,7 +139,7 @@ namespace EventStore.Projections.Core.Tests.Services.handlers {
 					"", CheckpointTag.FromPosition(0, 200, 150), null,
 					new ResolvedEvent(
 						"$$cat4-stream4", 20, "$$cat4-stream4", 20, true, new TFPos(200, 150), Guid.NewGuid(),
-						"$metadata", true, "{ \"$tb\": "+long.MaxValue+" }", "{}"), out _state, out sharedState, out _emittedEvents);
+						"$metadata", true, "{ \"$tb\": " + long.MaxValue + " }", "{}"), out _state, out sharedState, out _emittedEvents);
 			}
 
 			[Test]
@@ -160,8 +160,8 @@ namespace EventStore.Projections.Core.Tests.Services.handlers {
 				Assert.AreEqual("$>", @event.EventType);
 				Assert.AreEqual("$ce-cat4", @event.StreamId);
 				Assert.AreEqual("20@$$cat4-stream4", @event.Data);
-				var metadata = new Dictionary<string,string>();
-				foreach(var kvp in @event.ExtraMetaData()){
+				var metadata = new Dictionary<string, string>();
+				foreach (var kvp in @event.ExtraMetaData()) {
 					metadata[kvp.Key] = kvp.Value;
 				}
 				Assert.NotNull(metadata["$o"]);
@@ -171,7 +171,7 @@ namespace EventStore.Projections.Core.Tests.Services.handlers {
 			}
 		}
 
-[TestFixture]
+		[TestFixture]
 		public class when_handling_hard_deleted_stream_event {
 			private CategorizeEventsByStreamPath _handler;
 			private string _state;
@@ -209,8 +209,8 @@ namespace EventStore.Projections.Core.Tests.Services.handlers {
 				Assert.AreEqual("$ce-cat5", @event.StreamId);
 				Assert.AreEqual("20@cat5-stream5", @event.Data);
 
-				var metadata = new Dictionary<string,string>();
-				foreach(var kvp in @event.ExtraMetaData()){
+				var metadata = new Dictionary<string, string>();
+				foreach (var kvp in @event.ExtraMetaData()) {
 					metadata[kvp.Key] = kvp.Value;
 				}
 				Assert.NotNull(metadata["$o"]);

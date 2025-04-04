@@ -1,5 +1,4 @@
-﻿namespace EventStore.Core.Services.PersistentSubscription.ConsumerStrategy
-{
+﻿namespace EventStore.Core.Services.PersistentSubscription.ConsumerStrategy {
 	using System;
 	using System.IO;
 	using Data;
@@ -7,7 +6,7 @@
 	using Newtonsoft.Json;
 
 	public class PinnedByCorrelationPersistentSubscriptionConsumerStrategy : PinnedPersistentSubscriptionConsumerStrategy {
-		
+
 		public PinnedByCorrelationPersistentSubscriptionConsumerStrategy(IHasher<string> streamHasher) : base(streamHasher) {
 		}
 
@@ -44,7 +43,7 @@
 					}
 
 					if (reader.TokenType == JsonToken.PropertyName) {
-						if ((string) reader.Value == CorrelationIdPropertyContext.CorrelationIdProperty) {
+						if ((string)reader.Value == CorrelationIdPropertyContext.CorrelationIdProperty) {
 							reader.Read();
 
 							if (reader.TokenType == JsonToken.String) {

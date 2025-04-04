@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Threading.Tasks;
 using EventStore.Core.TransactionLog.Chunks;
@@ -10,13 +9,13 @@ namespace EventStore.Core.Tests.Services.Replication.LogReplication.Tests;
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class raw_chunk_replication<TLogFormat, TStreamId> : LogReplicationWithExistingDbFixture<TLogFormat, TStreamId> {
 	private const int NumCheckpoints = 1 + /* chunk 0-0 (raw): 1 chunk completion */
-	                                   1 + /* chunk 1-2 (raw): 1 chunk completion */
-	                                   4 + /* chunk 3-3 (non-raw): 3 complete transactions, 1 chunk completion */
-	                                   6 + /* chunk 4-4 (non-raw): 4 complete transactions, 1 incomplete
+									   1 + /* chunk 1-2 (raw): 1 chunk completion */
+									   4 + /* chunk 3-3 (non-raw): 3 complete transactions, 1 chunk completion */
+									   6 + /* chunk 4-4 (non-raw): 4 complete transactions, 1 incomplete
 	                                          transaction at end (checkpointed for backwards compatibility), 1 chunk completion */
-	                                   1 + /* chunk 5-5 (raw): 1 chunk completion */
-	                                   1 + /* chunk 6-9 (raw): 1 chunk completion */
-	                                   2   /* chunk 10-10 (non-raw): 2 complete transactions */;
+									   1 + /* chunk 5-5 (raw): 1 chunk completion */
+									   1 + /* chunk 6-9 (raw): 1 chunk completion */
+									   2   /* chunk 10-10 (non-raw): 2 complete transactions */;
 
 	private const int NumLogicalChunks = 11;
 
@@ -33,12 +32,12 @@ public class raw_chunk_replication<TLogFormat, TStreamId> : LogReplicationWithEx
 		var recs6 = GenerateLogRecords(6, new[] { 1, 1, 1, 1, -1 }, out _);
 		var recs10 = GenerateLogRecords(10, new[] { 1, 2 }, out _);
 
-		await CreateChunk(db, raw: true,  complete: true,   0,  0, recs0);
-		await CreateChunk(db, raw: true,  complete: true,   1,  2, recs1);
-		await CreateChunk(db, raw: false, complete: true,   3,  3, recs3);
-		await CreateChunk(db, raw: false, complete: true,   4,  4, recs4);
-		await CreateChunk(db, raw: true,  complete: true,   5,  5, recs5);
-		await CreateChunk(db, raw: true,  complete: true,   6,  9, recs6);
+		await CreateChunk(db, raw: true, complete: true, 0, 0, recs0);
+		await CreateChunk(db, raw: true, complete: true, 1, 2, recs1);
+		await CreateChunk(db, raw: false, complete: true, 3, 3, recs3);
+		await CreateChunk(db, raw: false, complete: true, 4, 4, recs4);
+		await CreateChunk(db, raw: true, complete: true, 5, 5, recs5);
+		await CreateChunk(db, raw: true, complete: true, 6, 9, recs6);
 		await CreateChunk(db, raw: false, complete: false, 10, 10, recs10);
 
 		db.Config.WriterCheckpoint.Flush();

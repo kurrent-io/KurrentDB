@@ -1,19 +1,19 @@
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Services.TimerService;
-using System.Collections.Generic;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Storage.ReaderIndex;
+using EventStore.Core.Services.TimerService;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Helpers {
-	
+
 	public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<ClientMessage.NotHandled> {
 		public sealed class RequestTracking {
 			public RequestTracking(bool trackPendingRequests) {
@@ -44,7 +44,7 @@ namespace EventStore.Core.Helpers {
 				lock (_lockObject) {
 					if (!_trackPendingRequests)
 						return;
-			
+
 					_allPendingRequests.Add(correlationId);
 				}
 			}
@@ -149,7 +149,7 @@ namespace EventStore.Core.Helpers {
 			Awaker;
 
 		public readonly RequestResponseDispatcher<ClientMessage.ReadEvent, ClientMessage.ReadEventCompleted> EventReader;
-		
+
 		public readonly
 			RequestResponseDispatcher
 			<ClientMessage.ReadAllEventsForward, ClientMessage.ReadAllEventsForwardCompleted> AllForwardReader;
@@ -166,11 +166,11 @@ namespace EventStore.Core.Helpers {
 			RequestResponseDispatcher
 			<ClientMessage.FilteredReadAllEventsBackward, ClientMessage.FilteredReadAllEventsBackwardCompleted> AllBackwardFilteredReader;
 
-		public IODispatcher(IPublisher publisher, IEnvelope envelope, bool trackPendingRequests=false) {
+		public IODispatcher(IPublisher publisher, IEnvelope envelope, bool trackPendingRequests = false) {
 			_publisher = publisher;
 			_inputQueueEnvelope = envelope;
 			_requestTracker = new RequestTracking(trackPendingRequests);
-			
+
 			ForwardReader =
 				new RequestResponseDispatcher
 					<ClientMessage.ReadStreamEventsForward, ClientMessage.ReadStreamEventsForwardCompleted>(
@@ -214,7 +214,7 @@ namespace EventStore.Core.Helpers {
 					v => v.CorrelationId,
 					v => v.CorrelationId,
 					envelope);
-			
+
 			AllForwardReader =
 				new RequestResponseDispatcher
 					<ClientMessage.ReadAllEventsForward, ClientMessage.ReadAllEventsForwardCompleted>(
@@ -255,7 +255,7 @@ namespace EventStore.Core.Helpers {
 		private void AddPendingRequest(Guid correlationId) {
 			_requestTracker.AddPendingRequest(correlationId);
 		}
-		
+
 		private void RemovePendingRequest(Guid correlationId) {
 			_requestTracker.RemovePendingRequest(correlationId);
 		}
@@ -418,7 +418,7 @@ namespace EventStore.Core.Helpers {
 			Delay(TimeSpan.FromMilliseconds(ReadTimeoutMs), ForwardReader, corrId);
 			return corrId;
 		}
-		
+
 		public Guid ReadEvent(
 			string streamId,
 			long fromEventNumber,
@@ -582,7 +582,7 @@ namespace EventStore.Core.Helpers {
 			Delay(TimeSpan.FromMilliseconds(ReadTimeoutMs), AllForwardFilteredReader, corrId);
 			return corrId;
 		}
-		
+
 		public Guid ReadAllBackwardFiltered(
 			long commitPosition,
 			long preparePosition,
@@ -759,7 +759,8 @@ namespace EventStore.Core.Helpers {
 
 			public void Finish(Guid key) {
 				var queue = GetQueue(key);
-				if (queue == null) return;
+				if (queue == null)
+					return;
 				queue.IsBusy = false;
 
 				CleanupQueue(key, queue);
@@ -781,8 +782,10 @@ namespace EventStore.Core.Helpers {
 			}
 
 			private void CleanupQueue(Guid key, WriterQueue queue) {
-				if (queue.IsBusy) return;
-				if (queue.Count > 0) return;
+				if (queue.IsBusy)
+					return;
+				if (queue.Count > 0)
+					return;
 				_queues.Remove(key);
 			}
 		}
@@ -802,7 +805,8 @@ namespace EventStore.Core.Helpers {
 			}
 
 			public ClientMessage.WriteEvents Dequeue() {
-				if (_queue.Count == 0) return null;
+				if (_queue.Count == 0)
+					return null;
 
 				IsBusy = true;
 
@@ -818,7 +822,7 @@ namespace EventStore.Core.Helpers {
 			ClaimsPrincipal principal,
 			Action<ClientMessage.WriteEventsCompleted> action) {
 			var corrId = Guid.NewGuid();
-			
+
 			var message = new ClientMessage.WriteEvents(
 				corrId,
 				corrId,
@@ -829,7 +833,7 @@ namespace EventStore.Core.Helpers {
 				events,
 				principal);
 			_requestTracker.QueuePendingWrite(key, corrId, action, message, Writer);
-			
+
 			return corrId;
 		}
 
@@ -850,7 +854,7 @@ namespace EventStore.Core.Helpers {
 						false,
 						streamId,
 						expectedVersion,
-						new[] {@event},
+						new[] { @event },
 						principal),
 					res => {
 						RemovePendingRequest(res.CorrelationId);
@@ -915,7 +919,7 @@ namespace EventStore.Core.Helpers {
 			WriteEvents(
 				SystemStreams.MetastreamOf(streamId),
 				expectedVersion,
-				new[] {new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata.ToJsonBytes(), null)},
+				new[] { new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata.ToJsonBytes(), null) },
 				principal,
 				completed);
 		}

@@ -10,7 +10,7 @@ namespace EventStore.Projections.Core.Tests.Services.position_tagging.multistrea
 
 		[SetUp]
 		public void When() {
-			_tagger = new MultiStreamPositionTagger(0, new[] {"stream1", "stream2"});
+			_tagger = new MultiStreamPositionTagger(0, new[] { "stream1", "stream2" });
 			_positionTracker = new PositionTracker(_tagger);
 			// when 
 

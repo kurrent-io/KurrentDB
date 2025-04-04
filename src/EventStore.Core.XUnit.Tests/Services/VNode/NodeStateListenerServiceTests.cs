@@ -1,6 +1,5 @@
 using System;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Core.Data;

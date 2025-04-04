@@ -5,8 +5,7 @@ using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
-namespace EventStore.Projections.Core.Tests.Services.Jint
-{
+namespace EventStore.Projections.Core.Tests.Services.Jint {
 	[TestFixture]
 	public class when_running_a_js_projection_emitting_metadata : TestFixtureWithInterpretedProjection {
 		protected override void Given() {
@@ -68,7 +67,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint
 				if (sw.Elapsed > TimeSpan.FromSeconds(120))
 					break;
 			}
-			
+
 			Console.WriteLine(i);
 
 			//TODO: replace with an actual benchmark

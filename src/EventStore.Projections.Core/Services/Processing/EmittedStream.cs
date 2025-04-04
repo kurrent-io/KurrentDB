@@ -31,7 +31,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 		private readonly CheckpointTag _fromCheckpointPosition;
 		private readonly IEmittedStreamContainer _readyHandler;
 		private static readonly string LinkEventType = "$>";
-		private static readonly char[] LinkToSeparator = new[] {'@'};
+		private static readonly char[] LinkToSeparator = new[] { '@' };
 
 		private readonly Stack<Tuple<CheckpointTag, string, long>> _alreadyCommittedEvents =
 			new Stack<Tuple<CheckpointTag, string, long>>();
@@ -134,13 +134,20 @@ namespace EventStore.Projections.Core.Services.Processing {
 			PositionTagger positionTagger, CheckpointTag fromCheckpointPosition, IPublisher publisher,
 			IODispatcher ioDispatcher,
 			IEmittedStreamContainer readyHandler, bool noCheckpoints = false) {
-			if (string.IsNullOrEmpty(streamId)) throw new ArgumentNullException("streamId");
-			if (writerConfiguration == null) throw new ArgumentNullException("writerConfiguration");
-			if (positionTagger == null) throw new ArgumentNullException("positionTagger");
-			if (fromCheckpointPosition == null) throw new ArgumentNullException("fromCheckpointPosition");
-			if (publisher == null) throw new ArgumentNullException("publisher");
-			if (ioDispatcher == null) throw new ArgumentNullException("ioDispatcher");
-			if (readyHandler == null) throw new ArgumentNullException("readyHandler");
+			if (string.IsNullOrEmpty(streamId))
+				throw new ArgumentNullException("streamId");
+			if (writerConfiguration == null)
+				throw new ArgumentNullException("writerConfiguration");
+			if (positionTagger == null)
+				throw new ArgumentNullException("positionTagger");
+			if (fromCheckpointPosition == null)
+				throw new ArgumentNullException("fromCheckpointPosition");
+			if (publisher == null)
+				throw new ArgumentNullException("publisher");
+			if (ioDispatcher == null)
+				throw new ArgumentNullException("ioDispatcher");
+			if (readyHandler == null)
+				throw new ArgumentNullException("readyHandler");
 			_streamId = streamId;
 			_metadataStreamId = SystemStreams.MetastreamOf(streamId);
 			_writerConfiguration = writerConfiguration;
@@ -159,13 +166,14 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 
 		public void EmitEvents(EmittedEvent[] events) {
-			if (events == null) throw new ArgumentNullException("events");
+			if (events == null)
+				throw new ArgumentNullException("events");
 			CheckpointTag groupCausedBy = null;
 			foreach (var @event in events) {
 				if (groupCausedBy == null) {
 					groupCausedBy = @event.CausedByTag;
 					if (!(_lastQueuedEventPosition != null && groupCausedBy > _lastQueuedEventPosition) &&
-					    !(_lastQueuedEventPosition == null && groupCausedBy >= _fromCheckpointPosition))
+						!(_lastQueuedEventPosition == null && groupCausedBy >= _fromCheckpointPosition))
 						throw new InvalidOperationException(
 							string.Format("Invalid event order.  '{0}' goes after '{1}'", @event.CausedByTag,
 								_lastQueuedEventPosition));
@@ -273,7 +281,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 				Failed($"Stream : {_streamId} is deleted. Cannot emit events to it");
 				return;
 			}
-			
+
 			_pendingRequestCorrelationId = Guid.Empty;
 			_awaitingListEventsCompleted = false;
 
@@ -303,8 +311,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 				}
 
 				var newLogicalStream = newPhysicalStream
-				                       || (_projectionVersion.ProjectionId != parsed.Version.ProjectionId ||
-				                           _projectionVersion.Epoch > parsed.Version.Version);
+									   || (_projectionVersion.ProjectionId != parsed.Version.ProjectionId ||
+										   _projectionVersion.Epoch > parsed.Version.Version);
 
 				_lastKnownEventNumber = newPhysicalStream ? ExpectedVersion.NoStream : message.LastEventNumber;
 
@@ -340,7 +348,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 			foreach (var e in message.Events) {
 				var checkpointTagVersion = e.Event.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
 				var ourEpoch = checkpointTagVersion.Version.ProjectionId == _projectionVersion.ProjectionId
-				               && checkpointTagVersion.Version.Version >= _projectionVersion.Epoch;
+							   && checkpointTagVersion.Version.Version >= _projectionVersion.Epoch;
 
 				if (IsV1StreamCreatedEvent(e))
 					continue;
@@ -362,7 +370,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 				}
 
 				if (doStop)
-					// ignore any events prior to the requested lastCheckpointPosition (== first emitted event position)
+				// ignore any events prior to the requested lastCheckpointPosition (== first emitted event position)
 				{
 					stop = true;
 					break;
@@ -377,13 +385,13 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		private static bool IsV1StreamCreatedEvent(EventStore.Core.Data.ResolvedEvent e) {
 			return e.Link == null && e.OriginalEventNumber == 0
-			                      && (e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreatedImplicit__
-			                          || e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreated__);
+								  && (e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreatedImplicit__
+									  || e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreated__);
 		}
 
 		private void ProcessWrites() {
 			if (_started && !_awaitingListEventsCompleted && !_awaitingWriteCompleted
-			    && !_awaitingMetadataWriteCompleted && _pendingWrites.Count > 0) {
+				&& !_awaitingMetadataWriteCompleted && _pendingWrites.Count > 0) {
 				if (_lastCommittedOrSubmittedEventPosition == null)
 					SubmitListEvents(_fromCheckpointPosition);
 				else
@@ -405,7 +413,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		private Action CreateReadTimeoutAction(Guid correlationId, CheckpointTag upTo, long fromEventNumber) {
 			return () => {
-				if (correlationId != _pendingRequestCorrelationId) return;
+				if (correlationId != _pendingRequestCorrelationId)
+					return;
 				_pendingRequestCorrelationId = Guid.Empty;
 				_awaitingListEventsCompleted = false;
 				SubmitListEvents(upTo, fromEventNumber);
@@ -443,12 +452,12 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 			if (delayInSeconds == 0) {
 				_writerConfiguration.Writer.WriteEvents(
-					_metadataStreamId, ExpectedVersion.Any, new Event[] {_submittedWriteMetaStreamEvent}, _writeAs,
+					_metadataStreamId, ExpectedVersion.Any, new Event[] { _submittedWriteMetaStreamEvent }, _writeAs,
 					m => HandleMetadataWriteCompleted(m, retryCount));
 			} else {
 				_ioDispatcher.Delay(TimeSpan.FromSeconds(delayInSeconds),
 					_ => _writerConfiguration.Writer.WriteEvents(
-						_metadataStreamId, ExpectedVersion.Any, new Event[] {_submittedWriteMetaStreamEvent}, _writeAs,
+						_metadataStreamId, ExpectedVersion.Any, new Event[] { _submittedWriteMetaStreamEvent }, _writeAs,
 						m => HandleMetadataWriteCompleted(m, retryCount)));
 			}
 		}
@@ -552,8 +561,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 			var correlationIdFound = false;
 			if (extraMetaData != null)
 				foreach (var valuePair in from pair in extraMetaData
-					where pair.Key != "$causedBy"
-					select pair) {
+										  where pair.Key != "$causedBy"
+										  select pair) {
 					if (valuePair.Key == "$correlationId")
 						correlationIdFound = true;
 					yield return new KeyValuePair<string, JToken>(valuePair.Key, new JRaw(valuePair.Value));
@@ -612,7 +621,8 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		private int CalculateBackoffTimeSecs(int attempt) {
 			attempt--;
-			if (attempt == 0) return 0;
+			if (attempt == 0)
+				return 0;
 			var expBackoff = attempt < 9 ? (1 << attempt) : 256;
 			return _random.Next(1, expBackoff + 1);
 		}
@@ -639,7 +649,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		private void ProcessRequestedCheckpoint() {
 			if (_checkpointRequested && !_awaitingWriteCompleted && !_awaitingMetadataWriteCompleted
-			    && _pendingWrites.Count == 0) {
+				&& _pendingWrites.Count == 0) {
 				EnsureCheckpointsEnabled();
 				_readyHandler.Handle(new CoreProjectionProcessingMessage.ReadyForCheckpoint(this));
 			}
@@ -661,7 +671,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 			while (_pendingWrites.Count > 0) {
 				var eventToWrite = _pendingWrites.Peek();
 				if (eventToWrite.CausedByTag > _lastCommittedOrSubmittedEventPosition ||
-				    _alreadyCommittedEvents.Count == 0)
+					_alreadyCommittedEvents.Count == 0)
 					RecoveryCompleted();
 				if (_recoveryCompleted) {
 					if (anyFound)
@@ -669,7 +679,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 					SubmitWriteEvents();
 					return;
 				}
-				
+
 				var report = ValidateEmittedEventInRecoveryMode(eventToWrite);
 
 				if (report is IgnoredEmittedEvent) {
@@ -705,20 +715,20 @@ namespace EventStore.Projections.Core.Services.Processing {
 
 		private IValidatedEmittedEvent ValidateEmittedEventInRecoveryMode(EmittedEvent eventToWrite) {
 			var topAlreadyCommitted = _alreadyCommittedEvents.Pop();
-			
+
 			if (topAlreadyCommitted.Item1 < eventToWrite.CausedByTag)
 				return new IgnoredEmittedEvent();
-			
+
 			var failed = topAlreadyCommitted.Item1 != eventToWrite.CausedByTag ||
-			             topAlreadyCommitted.Item2 != eventToWrite.EventType;
-			
+						 topAlreadyCommitted.Item2 != eventToWrite.EventType;
+
 			if (failed && eventToWrite.EventType.Equals(LinkEventType)) {
 				// We check if the linked event still exists. If not, we skip that emitted event.
 				var parts = eventToWrite.Data.Split(LinkToSeparator, 2);
 				var streamId = parts[1];
 				if (!long.TryParse(parts[0], out long eventNumber))
 					throw new Exception($"Unexpected exception: Emitted event is an invalid link event: Body ({eventToWrite.Data}) CausedByTag ({eventToWrite.CausedByTag}) StreamId ({eventToWrite.StreamId})");
-				
+
 				return new EmittedEventResolutionNeeded(streamId, eventNumber, topAlreadyCommitted);
 			}
 
@@ -741,7 +751,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 				anyFound = true;
 				NotifyEventCommitted(eventToWrite, topAlreadyCommitted.Item3);
 			} else {
-				Log.Verbose($"Emitted event ignored after resolution because it links to an event that no longer exists: eventId: {eventToWrite.EventId}, eventType: {eventToWrite.EventId}, checkpoint: {eventToWrite.CorrelationId}, causedBy: {eventToWrite.CausedBy}");	
+				Log.Verbose($"Emitted event ignored after resolution because it links to an event that no longer exists: eventId: {eventToWrite.EventId}, eventType: {eventToWrite.EventId}, checkpoint: {eventToWrite.CorrelationId}, causedBy: {eventToWrite.CausedBy}");
 			}
 			_pendingWrites.Dequeue();
 			_awaitingLinkToResolution = false;
@@ -787,7 +797,7 @@ namespace EventStore.Projections.Core.Services.Processing {
 		}
 	}
 
-	interface IValidatedEmittedEvent {}
+	interface IValidatedEmittedEvent { }
 
 	sealed class ValidEmittedEvent : IValidatedEmittedEvent {
 		public CheckpointTag Checkpoint { get; private set; }

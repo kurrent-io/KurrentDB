@@ -26,7 +26,7 @@ namespace EventStore.Core.Tests.Services.IndexCommitter {
 		protected IndexCommitterService<TStreamId> Service;
 		protected FakeIndexCommitter<TStreamId> IndexCommitter;
 		protected ITFChunkScavengerLogManager TfChunkScavengerLogManager;
-		
+
 		[OneTimeSetUp]
 		public virtual void TestFixtureSetUp() {
 			IndexCommitter = new FakeIndexCommitter<TStreamId>();
@@ -102,7 +102,7 @@ namespace EventStore.Core.Tests.Services.IndexCommitter {
 
 		public long Commit(IList<IPrepareLogRecord<TStreamId>> committedPrepares, bool isTfEof, bool cacheLastEventNumber) {
 			foreach (var prepare in committedPrepares) {
-				CommittedPrepares.Enqueue(prepare);	
+				CommittedPrepares.Enqueue(prepare);
 			}
 			return 0;
 		}

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace EventStore.Core.Index {
 	public class AddResult {
 		public readonly IndexMap NewMap;

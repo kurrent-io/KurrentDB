@@ -1,6 +1,5 @@
 using System;
 using System.Diagnostics;
-using System.Text;
 using EventStore.Client.Messages;
 using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Tcp;

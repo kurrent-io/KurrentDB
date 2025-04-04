@@ -99,7 +99,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		public void Handle(SystemMessage.StateChangeMessage message) {
 			_state = message.State;
 
-			if (message.State == VNodeState.Leader) return;
+			if (message.State == VNodeState.Leader)
+				return;
 			Log.Debug("Persistent subscriptions received state change to {state}. Stopping listening", _state);
 			ShutdownSubscriptions();
 			Stop();
@@ -109,16 +110,16 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			Log.Debug("Persistent subscriptions Became Leader so now handling subscriptions");
 			StartSubscriptions();
 		}
-		
+
 		public void Handle(SubscriptionMessage.PersistentSubscriptionsRestart message) {
 			if (!_started) {
 				message.ReplyEnvelope.ReplyWith(new SubscriptionMessage.InvalidPersistentSubscriptionsRestart("The Persistent Subscriptions subsystem cannot be restarted because it is not started."));
 				return;
 			}
-			
+
 			Log.Debug("Persistent Subscriptions are being restarted");
 			message.ReplyEnvelope.ReplyWith(new SubscriptionMessage.PersistentSubscriptionsRestarting());
-			
+
 			Stop();
 			ShutdownSubscriptions();
 			StartSubscriptions();
@@ -141,7 +142,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		}
 
 		private void ShutdownSubscriptions() {
-			if (_subscriptionsById == null) return;
+			if (_subscriptionsById == null)
+				return;
 			foreach (var subscription in _subscriptionsById.Values) {
 				subscription.Shutdown();
 			}
@@ -160,15 +162,14 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		}
 
 		public void Handle(ClientMessage.UnsubscribeFromStream message) {
-			if (!_started) return;
+			if (!_started)
+				return;
 			UnsubscribeFromStream(message.CorrelationId, true);
 		}
 
 		private bool ValidateStartFrom(IPersistentSubscriptionStreamPosition startFromPosition, out string error) {
-			switch (startFromPosition)
-			{
-				case PersistentSubscriptionSingleStreamPosition startFromStream:
-				{
+			switch (startFromPosition) {
+				case PersistentSubscriptionSingleStreamPosition startFromStream: {
 					if (startFromStream.StreamEventNumber < -1) {
 						error = "Invalid Start From position: event number must be greater than or equal to -1.";
 						return false;
@@ -177,8 +178,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 					error = null;
 					return true;
 				}
-				case PersistentSubscriptionAllStreamPosition startFromAll:
-				{
+				case PersistentSubscriptionAllStreamPosition startFromAll: {
 					var (commit, prepare) = startFromAll.TFPosition;
 
 					if (prepare > commit) {
@@ -228,7 +228,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				Action<string> onAccessDenied,
 				string user
 		) {
-			if (!_started) return;
+			if (!_started)
+				return;
 			var stream = eventSource.ToString();
 			var key = BuildSubscriptionGroupKey(stream, groupName);
 			Log.Debug("Creating persistent subscription {subscriptionKey}", key);
@@ -242,7 +243,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				onFail(startFromValidationError);
 				return;
 			}
-			
+
 			var result = TryCreateSubscriptionGroup(eventSource,
 				groupName,
 				resolveLinkTos,
@@ -282,9 +283,9 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				MaxSubscriberCount = maxSubscriberCount,
 				MessageTimeout = messageTimeoutMilliseconds,
 				NamedConsumerStrategy = namedConsumerStrategy,
-				#pragma warning disable 612
+#pragma warning disable 612
 				StartFrom = startFrom is PersistentSubscriptionSingleStreamPosition x ? x.StreamEventNumber : long.MinValue,
-				#pragma warning restore 612
+#pragma warning restore 612
 				StartPosition = startFrom.ToString()
 			};
 			UpdateSubscriptionConfig(user, stream, groupName, createEntry);
@@ -449,7 +450,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				Action<string> onAccessDenied,
 				string user
 		) {
-			if (!_started) return;
+			if (!_started)
+				return;
 
 			var key = BuildSubscriptionGroupKey(stream, groupName);
 			Log.Debug("Updating persistent subscription {subscriptionKey}", key);
@@ -468,7 +470,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				onFail(startFromValidationError);
 				return;
 			}
-			
+
 			var eventSource = genEventSource(oldSubscription);
 			var subscription = new PersistentSubscription(
 				new PersistentSubscriptionParams(
@@ -510,14 +512,14 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				MaxSubscriberCount = maxSubscriberCount,
 				MessageTimeout = messageTimeoutMilliseconds,
 				NamedConsumerStrategy = namedConsumerStrategy,
-				#pragma warning disable 612
+#pragma warning disable 612
 				StartFrom = startFrom is PersistentSubscriptionSingleStreamPosition x
 					? x.StreamEventNumber
 					: long.MinValue,
-				#pragma warning restore 612
+#pragma warning restore 612
 				StartPosition = startFrom.ToString()
 			};
-			
+
 			UpdateSubscription(stream, groupName, subscription);
 			UpdateSubscriptionConfig(user, stream, groupName, updateEntry);
 			SaveConfiguration(() => onSuccess(""));
@@ -680,7 +682,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 
 			if (_subscriptionsById.ContainsKey(key))
 				return false;
-			
+
 			var subscription = new PersistentSubscription(
 				new PersistentSubscriptionParams(
 					resolveLinkTos,
@@ -719,7 +721,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				Action<string> onAccessDenied,
 				string user
 		) {
-			if (!_started) return;
+			if (!_started)
+				return;
 			var stream = eventSource.ToString();
 			var key = BuildSubscriptionGroupKey(stream, groupName);
 			Log.Debug("Deleting persistent subscription {subscriptionKey}", key);
@@ -826,7 +829,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				message.User?.Identity?.Name
 			);
 		}
-		
+
 		private void UpdateSubscriptionConfig(string username, string eventSource, string groupName, PersistentSubscriptionEntry replaceBy) {
 			_config.Updated = DateTime.Now;
 			_config.UpdatedBy = username;
@@ -859,7 +862,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			// shut down any existing subscription
 			var subscriptionIndex = -1;
 			for (int i = 0; i < subscribers.Count; i++) {
-				if (subscribers[i].SubscriptionId != key) continue;
+				if (subscribers[i].SubscriptionId != key)
+					continue;
 
 				subscriptionIndex = i;
 				var sub = subscribers[i];
@@ -900,7 +904,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		}
 
 		public void Handle(TcpMessage.ConnectionClosed message) {
-			if (_subscriptionsById == null) return; //haven't built yet.
+			if (_subscriptionsById == null)
+				return; //haven't built yet.
 
 			foreach (var subscription in _subscriptionsById.Values) {
 				if (subscription.RemoveClientByConnectionId(message.Connection.ConnectionId))
@@ -920,7 +925,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			Guid correlationId,
 			IEnvelope envelope,
 			string user) {
-			if (!_started) return;
+			if (!_started)
+				return;
 
 			var stream = eventSource.ToString();
 			List<PersistentSubscription> subscribers;
@@ -990,7 +996,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		}
 
 		public void Handle(StorageMessage.EventCommitted message) {
-			if (!_started) return;
+			if (!_started)
+				return;
 			ProcessEventCommited(message.Event.EventStreamId, message.CommitPosition, message.Event);
 		}
 
@@ -1002,7 +1009,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			}
 
 			if (EventFilter.DefaultAllFilter.IsEventAllowed(evnt)
-			    && _subscriptionTopics.TryGetValue(SystemStreams.AllStream, out var subscriptionsToAll)) {
+				&& _subscriptionTopics.TryGetValue(SystemStreams.AllStream, out var subscriptionsToAll)) {
 				subscriptions.AddRange(subscriptionsToAll);
 			}
 
@@ -1039,7 +1046,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		}
 
 		public void Handle(ClientMessage.PersistentSubscriptionAckEvents message) {
-			if (!_started) return;
+			if (!_started)
+				return;
 			PersistentSubscription subscription;
 			if (_subscriptionsById.TryGetValue(message.SubscriptionId, out subscription)) {
 				subscription.AcknowledgeMessagesProcessed(message.CorrelationId, message.ProcessedEventIds);
@@ -1047,7 +1055,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		}
 
 		public void Handle(ClientMessage.PersistentSubscriptionNackEvents message) {
-			if (!_started) return;
+			if (!_started)
+				return;
 			PersistentSubscription subscription;
 			if (_subscriptionsById.TryGetValue(message.SubscriptionId, out subscription)) {
 				subscription.NotAcknowledgeMessagesProcessed(message.CorrelationId, message.ProcessedEventIds,
@@ -1056,7 +1065,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		}
 
 		public void Handle(ClientMessage.ReadNextNPersistentMessages message) {
-			if (!_started) return;
+			if (!_started)
+				return;
 
 			if (string.IsNullOrEmpty(message.EventStreamId)) {
 				message.Envelope.ReplyWith(new ClientMessage.ReadNextNPersistentMessagesCompleted(
@@ -1108,7 +1118,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		public void Handle(ClientMessage.ReplayParkedMessages message) {
 			PersistentSubscription subscription;
 			var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
-			Log.Debug("Replaying parked messages for persistent subscription {subscriptionKey} {to}. Requested by {user}", 
+			Log.Debug("Replaying parked messages for persistent subscription {subscriptionKey} {to}. Requested by {user}",
 				key,
 				message.StopAt.HasValue ? $" (To: '{message.StopAt.ToString()}')" : " (All)",
 				message.User?.Identity?.Name);
@@ -1190,9 +1200,9 @@ namespace EventStore.Core.Services.PersistentSubscription {
 							var result = TryCreateSubscriptionGroup(eventSource,
 								entry.Group,
 								entry.ResolveLinkTos,
-								#pragma warning disable 612
+#pragma warning disable 612
 								eventSource.GetStreamPositionFor(entry.StartPosition ?? entry.StartFrom.ToString()),
-								#pragma warning restore 612
+#pragma warning restore 612
 								entry.ExtraStatistics,
 								entry.MaxRetryCount,
 								entry.LiveBufferSize,
@@ -1204,12 +1214,12 @@ namespace EventStore.Core.Services.PersistentSubscription {
 								entry.MaxSubscriberCount,
 								entry.NamedConsumerStrategy,
 								ToMessageTimeout(entry.MessageTimeout));
-							
+
 							if (!result) {
 								var key = BuildSubscriptionGroupKey(eventSource.ToString(), entry.Group);
 								Log.Warning("A duplicate persistent subscription: {subscriptionKey} was found in the configuration. Ignoring it.", key);
 							}
-							
+
 						}
 
 						continueWith();
@@ -1219,12 +1229,12 @@ namespace EventStore.Core.Services.PersistentSubscription {
 
 					break;
 				case ReadStreamResult.NoStream:
-					_config = new PersistentSubscriptionConfig {Version = "2"};
+					_config = new PersistentSubscriptionConfig { Version = "2" };
 					continueWith();
 					break;
 				default:
 					throw new Exception(readStreamEventsBackwardCompleted.Result +
-					                    " is an unexpected result writing subscription configuration.");
+										" is an unexpected result writing subscription configuration.");
 			}
 		}
 
@@ -1234,7 +1244,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			var ev = new Event(Guid.NewGuid(), SystemEventTypes.PersistentSubscriptionConfig, true, data, new byte[0]);
 			var metadata = new StreamMetadata(maxCount: 2);
 			Lazy<StreamMetadata> streamMetadata = new Lazy<StreamMetadata>(() => metadata);
-			Event[] events = new Event[] {ev};
+			Event[] events = new Event[] { ev };
 			_ioDispatcher.ConfigureStreamAndWriteEvents(SystemStreams.PersistentSubscriptionConfig,
 				ExpectedVersion.Any, streamMetadata, events, SystemAccounts.System,
 				x => HandleSaveConfigurationCompleted(continueWith, x));
@@ -1252,7 +1262,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 					break;
 				default:
 					throw new Exception(obj.Result +
-					                    " is an unexpected result writing persistent subscription configuration.");
+										" is an unexpected result writing persistent subscription configuration.");
 			}
 		}
 
@@ -1261,7 +1271,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 				["count"] = _subscriptionsById?.Count ?? 0
 			}));
 		}
-		
+
 		public void Handle(MonitoringMessage.GetPersistentSubscriptionStats message) {
 			if (!_started) {
 				message.Envelope.ReplyWith(new MonitoringMessage.GetPersistentSubscriptionStatsCompleted(
@@ -1333,8 +1343,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			}
 
 			var stats = (from subscription in topics
-				from sub in subscription
-				select sub.GetStatistics()).ToList();
+						 from sub in subscription
+						 select sub.GetStatistics()).ToList();
 
 			message.Envelope.ReplyWith(new MonitoringMessage.GetPersistentSubscriptionStatsCompleted(
 				MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus.Success,
@@ -1345,7 +1355,8 @@ namespace EventStore.Core.Services.PersistentSubscription {
 		}
 
 		public void Handle(SubscriptionMessage.PersistentSubscriptionTimerTick message) {
-			if (!_handleTick || _timerTickCorrelationId != message.CorrelationId) return;
+			if (!_handleTick || _timerTickCorrelationId != message.CorrelationId)
+				return;
 			try {
 				WakeSubscriptions();
 			} finally {
@@ -1364,7 +1375,7 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			}
 		}
 
-		
+
 		private TimeSpan ToCheckPointAfterTimeout(int milliseconds) {
 			return milliseconds == 0 ? TimeSpan.MaxValue : TimeSpan.FromMilliseconds(milliseconds);
 		}

@@ -134,7 +134,7 @@ namespace EventStore.Projections.Core.Tests.Services.emitted_stream {
 			OneWriteCompletes();
 			Assert.AreEqual(3, eventNumber);
 		}
-		
+
 		[Test]
 		public void does_not_fail_if_link_event_target_does_not_exist() {
 			_stream.EmitEvents(

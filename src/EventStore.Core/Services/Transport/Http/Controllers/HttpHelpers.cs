@@ -14,7 +14,7 @@ namespace EventStore.Core.Services.Transport.Http.Controllers {
 					fromUrl,
 					HttpMethod.Get,
 					Codec.NoCodecs,
-					new ICodec[] {Codec.ManualEncoding},
+					new ICodec[] { Codec.ManualEncoding },
 					new Operation(Operations.Node.Redirect)),
 				(http, match) => http.ReplyTextContent(
 					"Moved", 302, "Found", "text/plain",

@@ -35,8 +35,8 @@ namespace EventStore.Core.Tests.Bus {
 			_bus.Publish(new TestMessage3());
 
 			Assert.That(handler1.HandledMessages.Count == 0
-			            && handler2.HandledMessages.Count == 0
-			            && handler3.HandledMessages.Count == 0);
+						&& handler2.HandledMessages.Count == 0
+						&& handler3.HandledMessages.Count == 0);
 		}
 
 		[Test]
@@ -115,7 +115,7 @@ namespace EventStore.Core.Tests.Bus {
 			_bus.Publish(new GrandChildTestMessage());
 
 			Assert.That(parentHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
-			            childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
+						childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
 		}
 
 		[Test]
@@ -132,8 +132,8 @@ namespace EventStore.Core.Tests.Bus {
 			_bus.Publish(new GrandChildTestMessage());
 
 			Assert.That(parentHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
-			            childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
-			            grandChildHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
+						childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
+						grandChildHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
 		}
 	}
 }

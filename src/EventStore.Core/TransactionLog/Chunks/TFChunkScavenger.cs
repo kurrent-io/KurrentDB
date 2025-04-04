@@ -135,7 +135,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 			using (var scavengeCacheObjectPool = CreateThreadLocalScavengeCachePool(_threads)) {
 				Parallel.ForEach(chunksToScavenge,
-					new ParallelOptions {MaxDegreeOfParallelism = _threads, CancellationToken = ct},
+					new ParallelOptions { MaxDegreeOfParallelism = _threads, CancellationToken = ct },
 					(chunk, pls) => {
 						var cache = scavengeCacheObjectPool.Get();
 						try {
@@ -166,7 +166,8 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 		private void ScavengeChunk(bool alwaysKeepScavenged, TFChunk.TFChunk oldChunk,
 			ThreadLocalScavengeCache threadLocalCache, CancellationToken ct) {
-			if (oldChunk == null) throw new ArgumentNullException("oldChunk");
+			if (oldChunk == null)
+				throw new ArgumentNullException("oldChunk");
 
 			var sw = Stopwatch.StartNew();
 
@@ -287,20 +288,20 @@ namespace EventStore.Core.TransactionLog.Chunks {
 						removeChunksWithGreaterNumbers: false);
 					if (chunk != null) {
 						_logger.Debug("Scavenging of chunks:"
-						          + "\n{oldChunkName}"
-						          + "\ncompleted in {elapsed}."
-						          + "\nNew chunk: {tmpChunkPath} --> #{chunkStartNumber}-{chunkEndNumber} ({newChunk})."
-						          + "\nOld chunk total size: {oldSize}, scavenged chunk size: {newSize}.",
+								  + "\n{oldChunkName}"
+								  + "\ncompleted in {elapsed}."
+								  + "\nNew chunk: {tmpChunkPath} --> #{chunkStartNumber}-{chunkEndNumber} ({newChunk})."
+								  + "\nOld chunk total size: {oldSize}, scavenged chunk size: {newSize}.",
 							oldChunkName, sw.Elapsed, Path.GetFileName(tmpChunkPath), chunkStartNumber, chunkEndNumber,
 							Path.GetFileName(chunk.FileName), oldSize, newSize);
 						var spaceSaved = oldSize - newSize;
 						_scavengerLog.ChunksScavenged(chunkStartNumber, chunkEndNumber, sw.Elapsed, spaceSaved);
 					} else {
 						_logger.Debug("Scavenging of chunks:"
-						          + "\n{oldChunkName}"
-						          + "\ncompleted in {elapsed}."
-						          + "\nBut switching was prevented for new chunk: #{chunkStartNumber}-{chunkEndNumber} ({tmpChunkPath})."
-						          + "\nOld chunks total size: {oldSize}, scavenged chunk size: {newSize}.",
+								  + "\n{oldChunkName}"
+								  + "\ncompleted in {elapsed}."
+								  + "\nBut switching was prevented for new chunk: #{chunkStartNumber}-{chunkEndNumber} ({tmpChunkPath})."
+								  + "\nOld chunks total size: {oldSize}, scavenged chunk size: {newSize}.",
 							oldChunkName, sw.Elapsed, chunkStartNumber, chunkEndNumber, Path.GetFileName(tmpChunkPath),
 							oldSize, newSize);
 						_scavengerLog.ChunksNotScavenged(chunkStartNumber, chunkEndNumber, sw.Elapsed,
@@ -400,7 +401,8 @@ namespace EventStore.Core.TransactionLog.Chunks {
 			IList<TFChunk.TFChunk> oldChunks,
 			CancellationToken ct) {
 
-			if (oldChunks.IsEmpty()) throw new ArgumentException("Provided list of chunks to merge is empty.");
+			if (oldChunks.IsEmpty())
+				throw new ArgumentException("Provided list of chunks to merge is empty.");
 
 			var oldChunksList = string.Join("\n", oldChunks);
 
@@ -416,7 +418,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 			var tmpChunkPath = Path.Combine(db.Config.Path, Guid.NewGuid() + ".merge.scavenge.tmp");
 			logger.Debug("SCAVENGING: Started to merge chunks: {oldChunksList}"
-			          + "\nResulting temp chunk file: {tmpChunkPath}.",
+					  + "\nResulting temp chunk file: {tmpChunkPath}.",
 				oldChunksList, Path.GetFileName(tmpChunkPath));
 
 			TFChunk.TFChunk newChunk;
@@ -501,15 +503,15 @@ namespace EventStore.Core.TransactionLog.Chunks {
 				return false;
 			} catch (OperationCanceledException) {
 				logger.Information("Scavenging cancelled at:"
-				         + "\n{oldChunksList}",
+						 + "\n{oldChunksList}",
 					oldChunksList);
 				newChunk.MarkForDeletion();
 				scavengerLog.ChunksNotMerged(chunkStartNumber, chunkEndNumber, sw.Elapsed, "Scavenge cancelled");
 				return false;
 			} catch (Exception ex) {
 				logger.Information("Got exception while merging chunk:"
-				         + "\n{oldChunks}"
-				         + "\nException: {e}",
+						 + "\n{oldChunks}"
+						 + "\nException: {e}",
 					oldChunks, ex.ToString()
 				);
 				newChunk.Dispose();
@@ -654,7 +656,7 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 			var eventNumber = prepare.Flags.HasAnyOf(PrepareFlags.IsCommitted)
 				? prepare.ExpectedVersion + 1 // IsCommitted prepares always have explicit expected version
-				// we always have commitInfo.EventNumber here because we early returned if isCommitted is false
+											  // we always have commitInfo.EventNumber here because we early returned if isCommitted is false
 				: commitInfo.EventNumber + prepare.TransactionOffset;
 
 			if (DiscardBecauseDuplicate(prepare, eventNumber)) {
@@ -674,8 +676,8 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 			var meta = _readIndex.GetStreamMetadata(prepare.EventStreamId);
 			bool canRemove = (meta.MaxCount.HasValue && eventNumber < lastEventNumber - meta.MaxCount.Value + 1)
-			                 || (meta.TruncateBefore.HasValue && eventNumber < meta.TruncateBefore.Value)
-			                 || (meta.MaxAge.HasValue && prepare.TimeStamp < DateTime.UtcNow - meta.MaxAge.Value);
+							 || (meta.TruncateBefore.HasValue && eventNumber < meta.TruncateBefore.Value)
+							 || (meta.MaxAge.HasValue && prepare.TimeStamp < DateTime.UtcNow - meta.MaxAge.Value);
 
 			if (canRemove) {
 				commitInfo.TryNotToKeep();
@@ -717,13 +719,13 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 			IndexEntry e;
 			var allInChunk = _tableIndex.TryGetOldestEntry(sh, out e) && e.Position >= chunkStart &&
-			                 e.Position < chunkEnd
-			                 && _tableIndex.TryGetLatestEntry(sh, out e) && e.Position >= chunkStart &&
-			                 e.Position < chunkEnd
-			                 && _tableIndex.TryGetOldestEntry(msh, out e) && e.Position >= chunkStart &&
-			                 e.Position < chunkEnd
-			                 && _tableIndex.TryGetLatestEntry(msh, out e) && e.Position >= chunkStart &&
-			                 e.Position < chunkEnd;
+							 e.Position < chunkEnd
+							 && _tableIndex.TryGetLatestEntry(sh, out e) && e.Position >= chunkStart &&
+							 e.Position < chunkEnd
+							 && _tableIndex.TryGetOldestEntry(msh, out e) && e.Position >= chunkStart &&
+							 e.Position < chunkEnd
+							 && _tableIndex.TryGetLatestEntry(msh, out e) && e.Position >= chunkStart &&
+							 e.Position < chunkEnd;
 			return allInChunk;
 		}
 

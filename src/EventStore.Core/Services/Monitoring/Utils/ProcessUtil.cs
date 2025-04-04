@@ -1,8 +1,8 @@
-using System.Runtime.InteropServices;
-using System.Diagnostics;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using EventStore.Common.Utils;
 using ILogger = Serilog.ILogger;
 
@@ -82,7 +82,8 @@ static public class ProcessUtil {
 		List<Process> processes = new List<Process>();
 
 		int res = RmStartSession(out handle, 0, key);
-		if (res != 0) throw new Exception("Could not begin restart session.  Unable to determine file locker.");
+		if (res != 0)
+			throw new Exception("Could not begin restart session.  Unable to determine file locker.");
 
 		try {
 			const int ERROR_MORE_DATA = 234;
@@ -90,11 +91,12 @@ static public class ProcessUtil {
 				pnProcInfo = 0,
 				lpdwRebootReasons = RmRebootReasonNone;
 
-			string[] resources = new string[] {path}; // Just checking on one resource.
+			string[] resources = new string[] { path }; // Just checking on one resource.
 
 			res = RmRegisterResources(handle, (uint)resources.Length, resources, 0, null, 0, null);
 
-			if (res != 0) throw new Exception("Could not register resource.");
+			if (res != 0)
+				throw new Exception("Could not register resource.");
 
 			//Note: there's a race condition here -- the first call to RmGetList() returns
 			//      the total number of process. However, when we call RmGetList() again to get
@@ -121,7 +123,8 @@ static public class ProcessUtil {
 						catch (ArgumentException) {
 						}
 					}
-				} else throw new Exception("Could not list processes locking resource.");
+				} else
+					throw new Exception("Could not list processes locking resource.");
 			} else if (res != 0)
 				throw new Exception("Could not list processes locking resource. Failed to get size of result.");
 		} finally {
@@ -132,7 +135,8 @@ static public class ProcessUtil {
 	}
 
 	static public void PrintWhoIsLocking(string path, ILogger logger) {
-		if (!Runtime.IsWindows) return;
+		if (!Runtime.IsWindows)
+			return;
 		try {
 			logger.Error(
 				"Trying to retrieve list of processes having a file handle open on {path} (requires admin privileges)",

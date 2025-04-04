@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -107,7 +106,8 @@ namespace EventStore.Common.Log {
 					throw new ArgumentException($"'{logLevel}' is not a valid log level.");
 				}
 
-				if (serilogLogLevel == _defaultLogLevelSwitch.MinimumLevel) return false;
+				if (serilogLogLevel == _defaultLogLevelSwitch.MinimumLevel)
+					return false;
 				_defaultLogLevelSwitch.MinimumLevel = serilogLogLevel;
 				return true;
 			}

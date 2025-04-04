@@ -46,14 +46,14 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc {
 		public void ToStringProducesExpectedResult() {
 			var sut = Uuid.NewUuid();
 
-			Assert.AreEqual(sut.ToGuid().ToString(),sut.ToString());
+			Assert.AreEqual(sut.ToGuid().ToString(), sut.ToString());
 		}
 
 		[Test]
 		public void ToFormattedStringProducesExpectedResult() {
 			var sut = Uuid.NewUuid();
 
-			Assert.AreEqual(sut.ToGuid().ToString("n"),sut.ToString("n"));
+			Assert.AreEqual(sut.ToGuid().ToString("n"), sut.ToString("n"));
 		}
 
 

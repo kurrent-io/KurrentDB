@@ -27,8 +27,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement {
 				 commitSource,
 				 prepareCount,
 				 transactionId,
-				 waitForCommit)
-				{}
+				 waitForCommit) { }
 		protected override Message WriteRequestMsg => throw new NotImplementedException();
 		protected override Message ClientSuccessMsg => throw new NotImplementedException();
 		protected override Message ClientFailMsg => throw new NotImplementedException();

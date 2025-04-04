@@ -1,6 +1,5 @@
 ﻿using System;
 using EventStore.Core.Services.Monitoring.Stats;
-using EventStore.Core.Tests.Fakes;
 using NUnit.Framework;
 using Serilog;
 
@@ -8,12 +7,12 @@ namespace EventStore.Core.Tests.Services.Monitoring {
 	[TestFixture]
 	public class IoParserTests {
 		private readonly string ioStr = "rchar: 23550615" + Environment.NewLine +
-		                                "wchar: 290654" + Environment.NewLine +
-		                                "syscr: 184391" + Environment.NewLine +
-		                                "syscw: 3273" + Environment.NewLine +
-		                                "read_bytes: 13824000" + Environment.NewLine +
-		                                "write_bytes: 188416" + Environment.NewLine +
-		                                "cancelled_write_bytes: 0" + Environment.NewLine;
+										"wchar: 290654" + Environment.NewLine +
+										"syscr: 184391" + Environment.NewLine +
+										"syscw: 3273" + Environment.NewLine +
+										"read_bytes: 13824000" + Environment.NewLine +
+										"write_bytes: 188416" + Environment.NewLine +
+										"cancelled_write_bytes: 0" + Environment.NewLine;
 
 		[Test]
 		public void sample_io_doesnt_crash() {

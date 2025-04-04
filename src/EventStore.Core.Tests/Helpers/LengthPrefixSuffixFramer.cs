@@ -10,7 +10,7 @@ namespace EventStore.Core.Tests.Helpers {
 		[Test]
 		public void correctly_frame_byte_array() {
 			var framer = new LengthPrefixSuffixFramer();
-			var data = new byte[] {0x7, 0x17, 0x27};
+			var data = new byte[] { 0x7, 0x17, 0x27 };
 			var framedData = MergeBytes(framer.FrameData(new ArraySegment<byte>(data)));
 
 			Assert.AreEqual(11, framedData.Length);
@@ -47,7 +47,7 @@ namespace EventStore.Core.Tests.Helpers {
 			var framer = new LengthPrefixSuffixFramer();
 			framer.RegisterMessageArrivedCallback(r => {
 				unframedCnt += 1;
-				Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, ReadAll(r));
+				Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, ReadAll(r));
 			});
 
 			framer.UnFrameData(new ArraySegment<byte>(new byte[] {
@@ -65,16 +65,16 @@ namespace EventStore.Core.Tests.Helpers {
 			var framer = new LengthPrefixSuffixFramer();
 			framer.RegisterMessageArrivedCallback(r => {
 				unframedCnt += 1;
-				Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, ReadAll(r));
+				Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, ReadAll(r));
 			});
 
-			framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x03, 0x00}));
-			framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x00, 0x00}));
-			framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x07, 0x17, 0x27}));
-			framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x03, 0x00}));
+			framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x03, 0x00 }));
+			framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x00, 0x00 }));
+			framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x07, 0x17, 0x27 }));
+			framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x03, 0x00 }));
 
 			Assert.AreEqual(0, unframedCnt);
-			framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x00, 0x00}));
+			framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x00, 0x00 }));
 			Assert.AreEqual(1, unframedCnt);
 		}
 
@@ -84,9 +84,9 @@ namespace EventStore.Core.Tests.Helpers {
 			var framer = new LengthPrefixSuffixFramer();
 			framer.RegisterMessageArrivedCallback(r => {
 				if (unframedCnt == 0)
-					Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, ReadAll(r));
+					Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, ReadAll(r));
 				else if (unframedCnt == 1)
-					Assert.AreEqual(new byte[] {0x05, 0x15}, ReadAll(r));
+					Assert.AreEqual(new byte[] { 0x05, 0x15 }, ReadAll(r));
 				else
 					Assert.Fail();
 
@@ -108,7 +108,7 @@ namespace EventStore.Core.Tests.Helpers {
 
 			Assert.AreEqual(1, unframedCnt);
 
-			framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x02, 0x00, 0x00, 0x00}));
+			framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x02, 0x00, 0x00, 0x00 }));
 
 			Assert.AreEqual(2, unframedCnt);
 		}
@@ -119,9 +119,9 @@ namespace EventStore.Core.Tests.Helpers {
 			var framer = new LengthPrefixSuffixFramer();
 			framer.RegisterMessageArrivedCallback(r => {
 				if (unframedCnt == 0)
-					Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, ReadAll(r));
+					Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, ReadAll(r));
 				else if (unframedCnt == 1)
-					Assert.AreEqual(new byte[] {0x05, 0x15}, ReadAll(r));
+					Assert.AreEqual(new byte[] { 0x05, 0x15 }, ReadAll(r));
 				else
 					Assert.Fail();
 

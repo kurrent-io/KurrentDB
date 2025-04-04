@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
-using EventStore.Transport.Http.EntityManagement;
-using NUnit.Framework;
 using System.Net;
+using EventStore.Transport.Http.EntityManagement;
 using Microsoft.Extensions.Primitives;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http {
 	[TestFixture]

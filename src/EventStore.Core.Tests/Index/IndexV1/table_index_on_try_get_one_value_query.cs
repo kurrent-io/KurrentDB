@@ -1,10 +1,10 @@
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Core.Index;
+using EventStore.Core.Index.Hashes;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.TransactionLog;
 using NUnit.Framework;
-using EventStore.Core.Index.Hashes;
 
 namespace EventStore.Core.Tests.Index.IndexV1 {
 	[TestFixture(PTableVersions.IndexV1, false)]

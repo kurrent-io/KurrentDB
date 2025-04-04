@@ -1,19 +1,12 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-using EventStore.Core.Caching;
+﻿using System.Threading.Tasks;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
+using EventStore.Core.Metrics;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Services.Storage;
 using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.Util;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.Metrics;
-using EventStore.Core.Tests.Services;
 
 namespace EventStore.Core.Tests.TransactionLog.Truncation {
 	public abstract class TruncateAndReOpenDbScenario<TLogFormat, TStreamId> : TruncateScenario<TLogFormat, TStreamId> {

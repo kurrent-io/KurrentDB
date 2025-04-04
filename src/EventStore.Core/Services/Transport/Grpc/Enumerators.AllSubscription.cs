@@ -87,7 +87,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			}
 
 			public async ValueTask<bool> MoveNextAsync() {
-				ReadLoop:
+ReadLoop:
 
 				if (!await _channel.Reader.WaitToReadAsync(_cancellationToken).ConfigureAwait(false)) {
 					return false;
@@ -121,8 +121,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 			private void Subscribe(Position? startPosition) {
 				if (startPosition == Position.End) {
 					GoLive(Position.End);
-				}
-				else if (startPosition == null || startPosition == Position.Start) {
+				} else if (startPosition == null || startPosition == Position.Start) {
 					CatchUp(Position.Start);
 				} else {
 					var (commitPosition, preparePosition) = startPosition.Value.ToInt64();
@@ -148,7 +147,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 				async Task OnMessage(Message message, CancellationToken ct) {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+						RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 						Fail(ex);
 						return;
 					}
@@ -236,7 +235,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 
 				async Task OnSubscriptionMessage(Message message, CancellationToken cancellationToken) {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+						RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 						Fail(ex);
 						return;
 					}
@@ -268,7 +267,7 @@ namespace EventStore.Core.Services.Transport.Grpc {
 							async Task OnHistoricalEventsMessage(Message message, CancellationToken ct) {
 #pragma warning restore CS1998
 								if (message is ClientMessage.NotHandled notHandled &&
-								    RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+									RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
 									Fail(ex);
 									return;
 								}
@@ -298,7 +297,8 @@ namespace EventStore.Core.Services.Transport.Grpc {
 											}
 
 											if (!_channel.Writer.TryWrite(new ReadResp {
-													Event = ConvertToReadEvent(_uuidOption, @event)})) {
+												Event = ConvertToReadEvent(_uuidOption, @event)
+											})) {
 
 												ConsumerTooSlow(@event);
 												return;

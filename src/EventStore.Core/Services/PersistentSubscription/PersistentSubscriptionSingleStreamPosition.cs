@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using EventStore.Core.Data;
 
 namespace EventStore.Core.Services.PersistentSubscription {
 	public class PersistentSubscriptionSingleStreamPosition : IPersistentSubscriptionStreamPosition {
@@ -13,14 +12,18 @@ namespace EventStore.Core.Services.PersistentSubscription {
 			StreamEventNumber = eventNumber;
 		}
 		public bool Equals(IPersistentSubscriptionStreamPosition? other) {
-			if (other == null) throw new InvalidOperationException();
-			if (!(other is PersistentSubscriptionSingleStreamPosition)) throw new InvalidOperationException();
+			if (other == null)
+				throw new InvalidOperationException();
+			if (!(other is PersistentSubscriptionSingleStreamPosition))
+				throw new InvalidOperationException();
 			return StreamEventNumber.Equals(other.StreamEventNumber);
 		}
 
 		public int CompareTo(IPersistentSubscriptionStreamPosition? other) {
-			if (other == null) throw new InvalidOperationException();
-			if (!(other is PersistentSubscriptionSingleStreamPosition)) throw new InvalidOperationException();
+			if (other == null)
+				throw new InvalidOperationException();
+			if (!(other is PersistentSubscriptionSingleStreamPosition))
+				throw new InvalidOperationException();
 			return StreamEventNumber.CompareTo(other.StreamEventNumber);
 		}
 

@@ -57,13 +57,13 @@ namespace EventStore.TestClient.GrpcCommands {
 				context.Fail(reason: "Credentials are needed in order to read from the $all stream, specify a connection string with credentials!");
 				return true;
 			}
-			
+
 			var task = ReadAll(context, clientCount, direction, position);
 			task.Wait();
 
 			return true;
 		}
-		
+
 		private async Task ReadAll(CommandProcessorContext context, int clientCount, Direction direction, Position position) {
 
 			var cts = new CancellationTokenSource();
@@ -75,18 +75,18 @@ namespace EventStore.TestClient.GrpcCommands {
 				if (i > 0) {
 					await Task.Delay(TimeSpan.FromSeconds(30));
 				}
-				
+
 				EventStoreClient client = context._grpcTestClient.CreateGrpcClient();
 				clientTasks.Add(ReadAllTask(client));
 			}
-			
+
 			await Task.WhenAll(clientTasks);
-			
+
 			monitor.Stop();
 			context.Log.Information("=== Reading ALL {readDirection} completed in {elapsed}. Total read: {total}",
 				direction, monitor.Duration, monitor.Total);
 			context.Success();
-			
+
 			async Task ReadAllTask(EventStoreClient c) {
 				var r = c.ReadAllAsync(direction, position, cancellationToken: cts.Token);
 				await foreach (var _ in r.Messages.WithCancellation(cts.Token)) {
@@ -94,14 +94,14 @@ namespace EventStore.TestClient.GrpcCommands {
 				}
 			}
 		}
-		
+
 		class ProgressMonitor {
 			private ulong _i;
 			private readonly ILogger _log;
 			private readonly Stopwatch _duration;
 			private readonly Stopwatch _interval;
 
-			public ProgressMonitor (ILogger log) {
+			public ProgressMonitor(ILogger log) {
 				_log = log;
 				_duration = Stopwatch.StartNew();
 				_interval = Stopwatch.StartNew();
@@ -109,14 +109,14 @@ namespace EventStore.TestClient.GrpcCommands {
 
 			public TimeSpan Duration => _duration.Elapsed;
 			public ulong Total => _i;
-			
+
 			public void Increment() {
 				var result = Interlocked.Increment(ref _i);
 
 				if (result % 1000 == 0) {
 					Console.Write(".");
 				}
-				
+
 				if (result % 100_000 == 0) {
 					_log.Information(
 						"\nDONE TOTAL {reads} READ IN {elapsed} ({rate:0.0}/s)",

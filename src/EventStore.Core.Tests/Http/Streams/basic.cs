@@ -1,19 +1,19 @@
 ﻿using System;
-using System.Text;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Transport.Http;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
-using HttpStatusCode = System.Net.HttpStatusCode;
-using System.Linq;
-using System.Xml.Linq;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using EventStore.Common.Utils;
+using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Http.Users.users;
+using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using HttpMethod = EventStore.Transport.Http.HttpMethod;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams {
 	namespace basic {
@@ -22,7 +22,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class
 			when_requesting_a_single_event_in_the_stream_as_atom_json<TLogFormat, TStreamId>
-			: HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId>  {
+			: HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId> {
 			private JObject _json;
 
 			protected override async Task When() {
@@ -45,7 +45,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class
 			when_requesting_a_single_event_in_the_stream_as_atom_xml<TLogFormat, TStreamId>
-			: HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId>  {
+			: HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId> {
 			private XDocument document;
 
 			protected override async Task When() {
@@ -511,10 +511,10 @@ namespace EventStore.Core.Tests.Http.Streams {
 				Assert.AreEqual(HttpStatusCode.BadRequest, _response.StatusCode);
 			}
 		}
-		
+
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-		public class when_posting_an_event_with_type<TLogFormat, TStreamId>  : with_admin_user<TLogFormat, TStreamId>  {
+		public class when_posting_an_event_with_type<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			private HttpResponseMessage _response;
 			private readonly JArray _data = JArray.Parse(@"[{
 					""eventId"": ""fd0489ed-80a5-4004-ad79-1282f657ee27"",
@@ -546,14 +546,14 @@ namespace EventStore.Core.Tests.Http.Streams {
 				var json = await GetJson<JObject>(_response.Headers.GetLocationAsString(), extra: "embed=tryharder", accept: ContentType.AtomJson);
 				HelperExtensions.AssertJson(_data.First()["data"], JObject.Parse(json["content"]["data"].ToString()));
 			}
-			
+
 			[Test]
 			public async Task the_metadata_retains_the_type() {
 				var json = await GetJson<JObject>(_response.Headers.GetLocationAsString(), extra: "embed=tryharder", accept: ContentType.AtomJson);
 				HelperExtensions.AssertJson(_data.First()["metadata"], JObject.Parse(json["content"]["metadata"].ToString()));
 			}
 		}
-		
+
 		[Category("LongRunning")]
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
@@ -625,7 +625,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 			}
 		}
 
-		public abstract class HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId>  : with_admin_user<TLogFormat, TStreamId> {
+		public abstract class HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId> : with_admin_user<TLogFormat, TStreamId> {
 			protected HttpResponseMessage _response;
 
 			protected override async Task Given() {
@@ -674,8 +674,8 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class
-			when_requesting_a_single_event_in_the_stream_without_an_accept_header<TLogFormat, TStreamId>  :
-				HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId>  {
+			when_requesting_a_single_event_in_the_stream_without_an_accept_header<TLogFormat, TStreamId> :
+				HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId> {
 			private XDocument _xmlDocument;
 
 			protected override async Task When() {
@@ -698,7 +698,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class
 			when_requesting_a_single_event_in_the_stream_as_event_json<TLogFormat, TStreamId>
-			: HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId>  {
+			: HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId> {
 			private JObject _json;
 
 			protected override async Task When() {
@@ -720,7 +720,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(typeof(LogFormat.V2), typeof(string))]
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class when_requesting_a_single_event_in_the_stream_as_json<TLogFormat, TStreamId> :
-			HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId>  {
+			HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId> {
 			private JObject _json;
 
 			protected override async Task When() {
@@ -743,7 +743,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 		public class
 			when_requesting_a_single_event_in_the_stream_as_event_xml<TLogFormat, TStreamId>
-			: HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId>  {
+			: HttpBehaviorSpecificationWithSingleEvent<TLogFormat, TStreamId> {
 			protected override Task When() {
 				return Get(TestStream + "/0", "", accept: ContentType.EventXml);
 			}

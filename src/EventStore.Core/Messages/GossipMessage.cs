@@ -59,7 +59,7 @@ namespace EventStore.Core.Messages {
 				ServerEndPoint = serverEndPoint;
 			}
 		}
-		
+
 		[DerivedMessage(CoreMessage.Gossip)]
 		public partial class ClientGossip : Message {
 			public readonly IEnvelope Envelope;
@@ -101,12 +101,12 @@ namespace EventStore.Core.Messages {
 				return String.Format("Reason: {0}, Recipient: {1}", Reason, Recipient);
 			}
 		}
-		
+
 		[DerivedMessage(CoreMessage.Gossip)]
 		public partial class GetGossip : Message {
 			public GetGossip() { }
 		}
-		
+
 		[DerivedMessage(CoreMessage.Gossip)]
 		public partial class GetGossipFailed : Message {
 			public readonly string Reason;
@@ -121,7 +121,7 @@ namespace EventStore.Core.Messages {
 				return String.Format("Reason: {0}, Recipient: {1}", Reason, Recipient);
 			}
 		}
-		
+
 		[DerivedMessage(CoreMessage.Gossip)]
 		public partial class GetGossipReceived : Message {
 			public readonly ClusterInfo ClusterInfo;

@@ -1,7 +1,6 @@
 ﻿using EventStore.Core.LogAbstraction;
 
-namespace EventStore.Core.LogV3
-{
+namespace EventStore.Core.LogV3 {
 	public class EventTypeLookupSystemTypesDecorator : INameLookup<uint> {
 		private readonly INameLookup<uint> _wrapped;
 

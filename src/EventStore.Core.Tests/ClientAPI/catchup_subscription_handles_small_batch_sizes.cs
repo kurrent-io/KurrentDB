@@ -1,13 +1,13 @@
-﻿using EventStore.ClientAPI;
-using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Tests.ClientAPI.Helpers;
-using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.ClientAPI;
+using EventStore.ClientAPI.SystemData;
+using EventStore.Core.Tests.ClientAPI.Helpers;
+using EventStore.Core.Tests.Helpers;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI {
 	[Ignore("Very long running")]

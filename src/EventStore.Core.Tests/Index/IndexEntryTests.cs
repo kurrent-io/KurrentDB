@@ -6,14 +6,14 @@ namespace EventStore.Core.Tests.Index {
 	public class IndexEntryTests {
 		[Test]
 		public void key_is_made_of_stream_and_version() {
-			var entry = new IndexEntryV1 {Stream = 0x01, Version = 0x12};
+			var entry = new IndexEntryV1 { Stream = 0x01, Version = 0x12 };
 			Assert.AreEqual(0x0000000100000012, entry.Key);
 		}
 
 		[Test]
 		public void bytes_is_made_of_key_and_position() {
 			unsafe {
-				var entry = new IndexEntryV1 {Stream = 0x0101, Version = 0x1234, Position = 0xFFFF};
+				var entry = new IndexEntryV1 { Stream = 0x0101, Version = 0x1234, Position = 0xFFFF };
 				Assert.AreEqual(0x34, entry.Bytes[0]);
 				Assert.AreEqual(0x12, entry.Bytes[1]);
 				Assert.AreEqual(0x00, entry.Bytes[2]);

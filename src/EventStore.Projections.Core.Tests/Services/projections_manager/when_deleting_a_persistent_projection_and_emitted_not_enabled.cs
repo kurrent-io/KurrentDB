@@ -1,8 +1,7 @@
-namespace EventStore.Projections.Core.Tests.Services.projections_manager{
+namespace EventStore.Projections.Core.Tests.Services.projections_manager {
 	using System;
 	using System.Collections.Generic;
 	using System.Linq;
-	using System.Runtime.CompilerServices;
 	using Core.Services;
 	using EventStore.Common.Utils;
 	using EventStore.Core.Messages;
@@ -26,16 +25,16 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager{
 			yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
 			yield return
 				new ProjectionManagementMessage.Command.Post(
-				                                             new PublishEnvelope(_bus), ProjectionMode.Continuous, _projectionName,
-				                                             ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
-				                                             enabled: true, checkpointsEnabled: true, emitEnabled: false, trackEmittedStreams: false);
+															 new PublishEnvelope(_bus), ProjectionMode.Continuous, _projectionName,
+															 ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
+															 enabled: true, checkpointsEnabled: true, emitEnabled: false, trackEmittedStreams: false);
 			yield return
 				new ProjectionManagementMessage.Command.Disable(
-				                                                new PublishEnvelope(_bus), _projectionName, ProjectionManagementMessage.RunAs.System);
+																new PublishEnvelope(_bus), _projectionName, ProjectionManagementMessage.RunAs.System);
 			yield return
 				new ProjectionManagementMessage.Command.Delete(
-				                                               new PublishEnvelope(_bus), _projectionName,
-				                                               ProjectionManagementMessage.RunAs.System, true, true, true);
+															   new PublishEnvelope(_bus), _projectionName,
+															   ProjectionManagementMessage.RunAs.System, true, true, true);
 		}
 
 		[Test, Category("v8")]
@@ -44,7 +43,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager{
 
 			Assert.AreEqual(deletedStreamEvents.Count, 1);
 
-			Assert.AreEqual(deletedStreamEvents.First().EventStreamId,$"$projections-{_projectionName}-checkpoint");
+			Assert.AreEqual(deletedStreamEvents.First().EventStreamId, $"$projections-{_projectionName}-checkpoint");
 
 			Assert.AreEqual(true, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Any(x => x.Events[0].EventType == ProjectionEventTypes.ProjectionDeleted && Helper.UTF8NoBom.GetString(x.Events[0].Data) == _projectionName));
 		}

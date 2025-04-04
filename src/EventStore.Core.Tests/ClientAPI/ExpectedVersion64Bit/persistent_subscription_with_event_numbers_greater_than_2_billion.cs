@@ -1,10 +1,10 @@
-using System.Collections.Generic;
 using System;
-using EventStore.ClientAPI;
-using NUnit.Framework;
-using EventStore.Core.Data;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.ClientAPI;
+using EventStore.Core.Data;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

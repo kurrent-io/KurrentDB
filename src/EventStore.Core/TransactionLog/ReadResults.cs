@@ -1,4 +1,3 @@
-using System;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
 

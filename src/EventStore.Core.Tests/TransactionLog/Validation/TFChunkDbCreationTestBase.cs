@@ -28,7 +28,8 @@ namespace EventStore.Core.Tests.TransactionLog.Validation {
 
 		public static void CreateMultiChunk(TFChunkDbConfig config, int chunkStartNum, int chunkEndNum, string filename,
 			int? physicalSize = null, long? logicalSize = null) {
-			if (chunkStartNum > chunkEndNum) throw new ArgumentException("chunkStartNum");
+			if (chunkStartNum > chunkEndNum)
+				throw new ArgumentException("chunkStartNum");
 
 			var chunkHeader = new ChunkHeader(TFChunk.CurrentChunkVersion, config.ChunkSize, chunkStartNum, chunkEndNum,
 				true, Guid.NewGuid());

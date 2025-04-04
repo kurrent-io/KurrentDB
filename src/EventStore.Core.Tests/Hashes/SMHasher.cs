@@ -66,12 +66,13 @@ namespace EventStore.Core.Tests.Hashes {
 			byte[] buffer2 = new byte[buflen];
 			//----------
 			for (int irep = 0; irep < reps; irep++) {
-				if (irep % (reps / 10) == 0) Console.Write(".");
+				if (irep % (reps / 10) == 0)
+					Console.Write(".");
 
 				for (int len = 4; len <= keymax; len++) {
 					for (int offset = pad; offset < pad * 2; offset++) {
-//                        byte* key1 = &buffer1[pad];
-//                        byte* key2 = &buffer2[pad+offset];
+						//                        byte* key1 = &buffer1[pad];
+						//                        byte* key2 = &buffer2[pad+offset];
 
 						rnd.NextBytes(buffer1);
 						rnd.NextBytes(buffer2);

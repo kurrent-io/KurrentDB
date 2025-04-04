@@ -30,7 +30,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager {
 			yield return
 				(new ProjectionManagementMessage.Command.Post(
 					new PublishEnvelope(_bus), ProjectionMode.Continuous, _projectionName,
-					ProjectionManagementMessage.RunAs.System,"native:EventStore.Projections.Core.Standard.ByCorrelationId", "{\"correlationIdProperty\":\"$myCorrelationId\"}",
+					ProjectionManagementMessage.RunAs.System, "native:EventStore.Projections.Core.Standard.ByCorrelationId", "{\"correlationIdProperty\":\"$myCorrelationId\"}",
 					enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true));
 			// when
 			_newProjectionSource = "{\"correlationIdProperty\":\"$updateCorrelationId\"}";
@@ -70,7 +70,7 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager {
 				new ProjectionManagementMessage.Command.GetStatistics(new PublishEnvelope(_bus), null, _projectionName,
 					false));
 
-			 Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
+			Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 			Assert.AreEqual(
 				1,
 				_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Length);

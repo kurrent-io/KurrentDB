@@ -64,7 +64,7 @@ namespace EventStore.TestClient.Commands {
 						context.Success();
 						doneEvent.Set();
 					}
-				}) {IsBackground = true});
+				}) { IsBackground = true });
 			}
 
 			var sw = Stopwatch.StartNew();

@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Common.Log;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
@@ -11,8 +9,7 @@ using EventStore.Transport.Http;
 using Microsoft.AspNetCore.Http;
 using Serilog;
 
-namespace EventStore.Core.Services.Transport.Http
-{
+namespace EventStore.Core.Services.Transport.Http {
 	public class InternalDispatcherEndpoint : IHandle<HttpMessage.PurgeTimedOutRequests> {
 		private static readonly ILogger Log = Serilog.Log.ForContext<AuthorizationMiddleware>();
 		private readonly IPublisher _inputBus;
@@ -26,7 +23,7 @@ namespace EventStore.Core.Services.Transport.Http
 			_publishEnvelope = new PublishEnvelope(inputBus);
 		}
 		public void Handle(HttpMessage.PurgeTimedOutRequests message) {
-			
+
 			_requestsMultiHandler.PublishToAll(message);
 
 			_inputBus.Publish(
@@ -35,7 +32,7 @@ namespace EventStore.Core.Services.Transport.Http
 		}
 
 		public Task InvokeAsync(HttpContext context) {
-			
+
 			if (InternalHttpHelper.TryGetInternalContext(context, out var manager, out var match, out var tcs)) {
 				_requestsMultiHandler.Publish(new AuthenticatedHttpRequestMessage(manager, match));
 				return tcs.Task;

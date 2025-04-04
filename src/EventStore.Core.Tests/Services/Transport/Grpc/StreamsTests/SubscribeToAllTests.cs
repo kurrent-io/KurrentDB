@@ -108,8 +108,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 
 						positionOfLastWrite = new Position(success.Position.CommitPosition, success.Position.PreparePosition);
 						_responses.Add(response);
-					}
-					else if (response.ContentCase == ReadResp.ContentOneofCase.Event) {
+					} else if (response.ContentCase == ReadResp.ContentOneofCase.Event) {
 						_responses.Add(response);
 						if (positionOfLastWrite <= new Position(response.Event.Event.CommitPosition, response.Event.Event.PreparePosition)) {
 							break;
@@ -128,7 +127,7 @@ namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests {
 			public void reads_all_the_live_events() {
 				Assert.AreEqual(1,
 					_responses.Count(x => x.ContentCase == ReadResp.ContentOneofCase.Event
-					                      && !x.Event.Event.Metadata["type"].StartsWith("$")));
+										  && !x.Event.Event.Metadata["type"].StartsWith("$")));
 			}
 		}
 	}

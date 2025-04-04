@@ -1,13 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http.Messages;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
 using EventStore.Transport.Http.EntityManagement;
 using HttpStatusCode = EventStore.Transport.Http.HttpStatusCode;
 using ILogger = Serilog.ILogger;
@@ -57,7 +52,7 @@ namespace EventStore.Core.Services.Transport.Http {
 
 			PurgeTimedOutRequests();
 		}
-	
+
 		private void InternalServerError(HttpEntityManager entity) {
 			entity.ReplyStatus(HttpStatusCode.InternalServerError, "Internal Server Error",
 				e => Log.Debug("Error while closing HTTP connection (HTTP service core): {e}.", e.Message));

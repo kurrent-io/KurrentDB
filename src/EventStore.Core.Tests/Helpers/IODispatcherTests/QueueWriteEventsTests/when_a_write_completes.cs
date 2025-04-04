@@ -1,7 +1,7 @@
-﻿using EventStore.Core.Data;
+﻿using System;
+using EventStore.Core.Data;
 using EventStore.Core.Services.UserManagement;
 using NUnit.Framework;
-using System;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests.QueueWriteEventsTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -13,7 +13,7 @@ namespace EventStore.Core.Tests.Helpers.IODispatcherTests.QueueWriteEventsTests 
 			AllWritesQueueUp();
 
 			_ioDispatcher.QueueWriteEvents(Guid.NewGuid(), $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-				new Event[] {new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty)},
+				new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
 				SystemAccounts.System, (msg) => { _completed = true; });
 			OneWriteCompletes();
 		}

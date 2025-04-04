@@ -60,8 +60,8 @@ namespace EventStore.Core.Tests.Bus {
 			}
 
 			Assert.That(Consumer.HandledMessages.ContainsSingle<TestMessage>() &&
-			            Consumer.HandledMessages.ContainsSingle<TestMessage2>() &&
-			            Consumer.HandledMessages.ContainsSingle<TestMessage3>());
+						Consumer.HandledMessages.ContainsSingle<TestMessage2>() &&
+						Consumer.HandledMessages.ContainsSingle<TestMessage3>());
 		}
 	}
 
@@ -69,7 +69,7 @@ namespace EventStore.Core.Tests.Bus {
 	public class when_publishing_to_queued_handler_mres_before_starting :
 		when_publishing_to_queued_handler_before_starting {
 		public when_publishing_to_queued_handler_mres_before_starting()
-			: base((consumer, name, timeout) => new QueuedHandlerMresWithMpsc(consumer, name, new QueueStatsManager(),false, null, timeout)) {
+			: base((consumer, name, timeout) => new QueuedHandlerMresWithMpsc(consumer, name, new QueueStatsManager(), false, null, timeout)) {
 		}
 	}
 
