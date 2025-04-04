@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,7 +11,6 @@ using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge;
 
@@ -70,7 +68,7 @@ public class when_scavenging_tfchunk_with_deleted_records<TLogFormat, TStreamId>
 		var id = _logFormat.StreamIds.LookupValue(_deletedEventStreamId);
 		var deletedRecord = (IPrepareLogRecord<TStreamId>)chunkRecords.First(
 			x => x.RecordType == LogRecordType.Prepare
-			     && EqualityComparer<TStreamId>.Default.Equals(((IPrepareLogRecord<TStreamId>)x).EventStreamId, id));
+				 && EqualityComparer<TStreamId>.Default.Equals(((IPrepareLogRecord<TStreamId>)x).EventStreamId, id));
 
 		Assert.AreEqual(EventNumber.DeletedStream - 1, deletedRecord.ExpectedVersion);
 	}

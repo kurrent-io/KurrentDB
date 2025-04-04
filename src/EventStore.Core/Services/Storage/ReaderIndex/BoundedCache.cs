@@ -80,7 +80,7 @@ public class BoundedCache<TKey, TValue> {
 
 	private bool IsFull() {
 		return _queue.Count >= _maxCachedEntries
-		       || (_currentSize > _maxDataSize && _queue.Count > 0);
+			   || (_currentSize > _maxDataSize && _queue.Count > 0);
 	}
 
 	public void RemoveRecord(TKey key) {

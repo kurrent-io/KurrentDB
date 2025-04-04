@@ -33,13 +33,11 @@ internal class WriteFloodProcessor : ICmdProcessor {
 		int size = 256;
 		int batchSize = 1;
 		string streamNamePrefix = string.Empty;
-		if (args.Length > 0)
-		{
-		    if (args.Length < 2 || args.Length > 6)
-		        return false;
+		if (args.Length > 0) {
+			if (args.Length < 2 || args.Length > 6)
+				return false;
 
-			try
-			{
+			try {
 				clientsCnt = MetricPrefixValue.ParseInt(args[0]);
 				requestsCnt = MetricPrefixValue.ParseLong(args[1]);
 				if (args.Length >= 3)
@@ -50,9 +48,7 @@ internal class WriteFloodProcessor : ICmdProcessor {
 					batchSize = MetricPrefixValue.ParseInt(args[4]);
 				if (args.Length >= 6)
 					streamNamePrefix = args[5];
-			}
-			catch
-			{
+			} catch {
 				return false;
 			}
 		}
@@ -115,12 +111,13 @@ internal class WriteFloodProcessor : ICmdProcessor {
 				monitor.StartOperation(corrid);
 
 				pending.Add(client.AppendToStreamAsync(streams[rnd.Next(streamsCnt)], StreamState.Any, events).ContinueWith(t => {
-					if (t.IsCompletedSuccessfully) Interlocked.Increment(ref stats.Succ);
+					if (t.IsCompletedSuccessfully)
+						Interlocked.Increment(ref stats.Succ);
 					else {
 						if (Interlocked.Increment(ref stats.Fail) % 1000 == 0) {
 							Console.Write("#");
 							if (t.Exception != null) {
-								var msg = string.Join("\n", t.Exception.ToString().Split("\n").Take(5)); 
+								var msg = string.Join("\n", t.Exception.ToString().Split("\n").Take(5));
 								context.Log.Error(msg);
 							}
 						}
@@ -141,10 +138,10 @@ internal class WriteFloodProcessor : ICmdProcessor {
 
 					monitor.EndOperation(corrid);
 				}));
-				
+
 				if (pending.Count >= capacity) {
 					await Task.WhenAny(pending);
-					
+
 					while (pending.Count > 0 && Task.WhenAny(pending).IsCompleted) {
 						pending
 							.Where(x => x.IsCompleted).ToList()
@@ -152,7 +149,7 @@ internal class WriteFloodProcessor : ICmdProcessor {
 								p.Dispose();
 								pending.Remove(p);
 							});
-						
+
 						if (stats.Succ - last > 1000) {
 							Console.Write(".");
 							last = stats.Succ;
@@ -161,7 +158,8 @@ internal class WriteFloodProcessor : ICmdProcessor {
 				}
 			}
 
-			if (pending.Count > 0) await Task.WhenAll(pending);
+			if (pending.Count > 0)
+				await Task.WhenAll(pending);
 		}
 
 		var sw = Stopwatch.StartNew();

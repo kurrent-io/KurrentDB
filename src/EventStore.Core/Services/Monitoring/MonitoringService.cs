@@ -18,7 +18,6 @@ using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Transport.Tcp;
 using ILogger = Serilog.ILogger;
-using Timeout = System.Threading.Timeout;
 
 namespace EventStore.Core.Services.Monitoring;
 
@@ -169,12 +168,12 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 		RegularLog.Information("{@stats}", rawStats);
 	}
 
-        private void SaveStatsToStream(Dictionary<string, object> rawStats) {
+	private void SaveStatsToStream(Dictionary<string, object> rawStats) {
 		var data = rawStats.ToJsonBytes();
 		var evnt = new Event(Guid.NewGuid(), SystemEventTypes.StatsCollection, true, data, null);
 		var corrId = Guid.NewGuid();
 		var msg = new ClientMessage.WriteEvents(corrId, corrId, NoopEnvelope, false, _nodeStatsStream,
-			ExpectedVersion.Any, new[] {evnt}, SystemAccounts.System);
+			ExpectedVersion.Any, new[] { evnt }, SystemAccounts.System);
 		_mainQueue.Publish(msg);
 	}
 
@@ -220,7 +219,7 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 			new ClientMessage.WriteEvents(
 				_streamMetadataWriteCorrId, _streamMetadataWriteCorrId, _monitoringQueue,
 				false, SystemStreams.MetastreamOf(_nodeStatsStream), ExpectedVersion.NoStream,
-				new[] {new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata, null)},
+				new[] { new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata, null) },
 				SystemAccounts.System));
 	}
 
@@ -318,7 +317,7 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 				var tcpConnSsl = conn as TcpConnectionSsl;
 				if (tcpConnSsl != null) {
 					var isExternalConnection = _tcpSecureEndpoint != null &&
-					                           _tcpSecureEndpoint.Port == tcpConnSsl.LocalEndPoint.GetPort();
+											   _tcpSecureEndpoint.Port == tcpConnSsl.LocalEndPoint.GetPort();
 					connStats.Add(new MonitoringMessage.TcpConnectionStats {
 						IsExternalConnection = isExternalConnection,
 						RemoteEndPoint = tcpConnSsl.RemoteEndPoint.ToString(),

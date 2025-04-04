@@ -109,7 +109,7 @@ internal class MassProjectionsScenario : ProjectionsKillScenario {
 		if (!success)
 			throw new ApplicationException("Last bank projection failed");
 	}
-	
+
 	private void StartOrStopProjection(IEnumerable<string> projections, bool enable) {
 		var manager = GetProjectionsManager();
 		const int retriesNumber = 5;

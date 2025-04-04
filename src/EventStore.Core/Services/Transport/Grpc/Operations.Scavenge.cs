@@ -3,9 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
+using EventStore.Client.Operations;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.Operations;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 
@@ -50,14 +50,14 @@ partial class Operations {
 			ScavengeId = scavengeId,
 			ScavengeResult = scavengeResult
 		};
-		
+
 		void OnMessage(Message message) => HandleScavengeDatabaseResponse(message, scavengeResultSource);
 	}
 
 	private static void HandleScavengeDatabaseResponse(
 		Message message,
 		TaskCompletionSource<(string, ScavengeResp.Types.ScavengeResult)> scavengeResultSource) {
-		
+
 		switch (message) {
 			case ClientMessage.ScavengeDatabaseUnauthorizedResponse:
 				scavengeResultSource.TrySetException(RpcExceptions.AccessDenied());

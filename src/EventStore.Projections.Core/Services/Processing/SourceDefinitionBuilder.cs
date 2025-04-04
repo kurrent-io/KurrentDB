@@ -7,8 +7,7 @@ using EventStore.Projections.Core.Messages;
 
 namespace EventStore.Projections.Core.Services.Processing;
 
-public sealed class SourceDefinitionBuilder : IQuerySources
-{
+public sealed class SourceDefinitionBuilder : IQuerySources {
 	private readonly QuerySourceOptions _options = new QuerySourceOptions();
 	private bool _allStreams;
 	private List<string> _categories;

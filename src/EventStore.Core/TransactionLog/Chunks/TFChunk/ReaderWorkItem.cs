@@ -31,7 +31,7 @@ internal sealed class ReaderWorkItem : Disposable {
 		// when the top-level stream doesn't perform any transformations. Otherwise,
 		// the buffer contains untransformed bytes that cannot be accessed directly.
 		_cachedReader = IsExactTypeOf<ChunkDataReadStream>(stream)
-		                && stream.ChunkFileStream is PoolingBufferedStream bufferedStream
+						&& stream.ChunkFileStream is PoolingBufferedStream bufferedStream
 			? bufferedStream
 			: null;
 	}

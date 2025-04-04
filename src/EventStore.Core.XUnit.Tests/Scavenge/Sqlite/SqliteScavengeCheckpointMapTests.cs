@@ -52,7 +52,7 @@ public class SqliteScavengeCheckpointMapTests : SqliteDbPerTest<SqliteScavengeCh
 			threshold: 7);
 
 		sut[Unit.Instance] = new ScavengeCheckpoint.ExecutingChunks(scavengePoint, 43);
-		
+
 		Assert.True(sut.TryGetValue(Unit.Instance, out var v));
 		Assert.NotNull(v);
 		Assert.IsType<ScavengeCheckpoint.ExecutingChunks>(v);

@@ -14,7 +14,6 @@ using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Common;
 using Serilog;
-using IReadIndex = EventStore.Core.Services.Storage.ReaderIndex.IReadIndex;
 
 namespace EventStore.Core.Services.Transport.Enumerators;
 
@@ -99,7 +98,7 @@ partial class Enumerator {
 
 			async Task OnMessage(Message message, CancellationToken ct) {
 				if (message is ClientMessage.NotHandled notHandled &&
-				    TryHandleNotHandled(notHandled, out var ex)) {
+					TryHandleNotHandled(notHandled, out var ex)) {
 					_channel.Writer.TryComplete(ex);
 					return;
 				}

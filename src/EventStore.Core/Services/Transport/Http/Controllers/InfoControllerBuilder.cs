@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using EventStore.Common.Options;
 using EventStore.Plugins.Authentication;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers;

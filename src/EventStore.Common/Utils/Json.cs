@@ -18,7 +18,7 @@ public static class Json {
 		DefaultValueHandling = DefaultValueHandling.Ignore,
 		MissingMemberHandling = MissingMemberHandling.Ignore,
 		TypeNameHandling = TypeNameHandling.None,
-		Converters = new JsonConverter[] {new StringEnumConverter()}
+		Converters = new JsonConverter[] { new StringEnumConverter() }
 	};
 
 	public static byte[] ToJsonBytes(this object source) {

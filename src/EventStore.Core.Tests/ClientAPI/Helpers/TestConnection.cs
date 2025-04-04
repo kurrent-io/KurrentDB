@@ -8,7 +8,6 @@ using EventStore.ClientAPI;
 using EventStore.ClientAPI.Internal;
 using EventStore.ClientAPI.SystemData;
 using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.Helpers;
 
@@ -17,7 +16,7 @@ public static class TestConnection {
 
 	public static IEventStoreConnection Create(IPEndPoint endPoint, TcpType tcpType = TcpType.Ssl,
 		UserCredentials userCredentials = null) {
-		
+
 		return EventStoreConnection.Create(Settings(tcpType, userCredentials),
 			endPoint.ToESTcpUri(),
 			$"ESC-{Interlocked.Increment(ref _nextConnId)}");
@@ -36,7 +35,7 @@ public static class TestConnection {
 			.UseCustomLogger(ClientApiLoggerBridge.Default)
 			.EnableVerboseLogging()
 			.LimitReconnectionsTo(10)
-			.LimitAttemptsForOperationTo(1)				
+			.LimitAttemptsForOperationTo(1)
 			.SetTimeoutCheckPeriodTo(TimeSpan.FromMilliseconds(100))
 			.SetReconnectionDelayTo(TimeSpan.Zero)
 			.FailOnNoServerResponse()

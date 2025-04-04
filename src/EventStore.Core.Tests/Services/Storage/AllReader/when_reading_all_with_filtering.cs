@@ -5,10 +5,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Messages;
-using NUnit.Framework;
 using EventStore.Core.Data;
-
 using EventStore.Core.Services.Storage.ReaderIndex;
+using NUnit.Framework;
 
 
 namespace EventStore.Core.Tests.Services.Storage.AllReader;
@@ -37,7 +36,7 @@ public class when_reading_all_with_filtering<TLogFormat, TStreamId> : ReadIndexT
 	public async Task should_read_only_events_forward_with_event_type_prefix() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.EventType,
-			Filter.Types.FilterType.Prefix, new[] {"event-type"});
+			Filter.Types.FilterType.Prefix, new[] { "event-type" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsForwardFiltered(_forwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -48,7 +47,7 @@ public class when_reading_all_with_filtering<TLogFormat, TStreamId> : ReadIndexT
 	public async Task should_read_only_events_forward_with_event_type_regex() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.EventType,
-			Filter.Types.FilterType.Regex, new[] {@"^.*other-event.*$"});
+			Filter.Types.FilterType.Regex, new[] { @"^.*other-event.*$" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsForwardFiltered(_forwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -59,7 +58,7 @@ public class when_reading_all_with_filtering<TLogFormat, TStreamId> : ReadIndexT
 	public async Task should_read_only_events_forward_with_stream_id_prefix() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.StreamId,
-			Filter.Types.FilterType.Prefix, new[] {"ES2"});
+			Filter.Types.FilterType.Prefix, new[] { "ES2" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsForwardFiltered(_forwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -70,7 +69,7 @@ public class when_reading_all_with_filtering<TLogFormat, TStreamId> : ReadIndexT
 	public async Task should_read_only_events_forward_with_stream_id_regex() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.StreamId,
-			Filter.Types.FilterType.Regex, new[] {@"^.*ES2.*$"});
+			Filter.Types.FilterType.Regex, new[] { @"^.*ES2.*$" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsForwardFiltered(_forwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -81,7 +80,7 @@ public class when_reading_all_with_filtering<TLogFormat, TStreamId> : ReadIndexT
 	public async Task should_read_only_events_backward_with_event_type_prefix() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.EventType,
-			Filter.Types.FilterType.Prefix, new[] {"event-type"});
+			Filter.Types.FilterType.Prefix, new[] { "event-type" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsBackwardFiltered(_backwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -92,7 +91,7 @@ public class when_reading_all_with_filtering<TLogFormat, TStreamId> : ReadIndexT
 	public async Task should_read_only_events_backward_with_event_type_regex() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.EventType,
-			Filter.Types.FilterType.Regex, new[] {@"^.*other-event.*$"});
+			Filter.Types.FilterType.Regex, new[] { @"^.*other-event.*$" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsBackwardFiltered(_backwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -103,7 +102,7 @@ public class when_reading_all_with_filtering<TLogFormat, TStreamId> : ReadIndexT
 	public async Task should_read_only_events_backward_with_stream_id_prefix() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.StreamId,
-			Filter.Types.FilterType.Prefix, new[] {"ES2"});
+			Filter.Types.FilterType.Prefix, new[] { "ES2" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsBackwardFiltered(_backwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -114,7 +113,7 @@ public class when_reading_all_with_filtering<TLogFormat, TStreamId> : ReadIndexT
 	public async Task should_read_only_events_backward_with_stream_id_regex() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.StreamId,
-			Filter.Types.FilterType.Regex, new[] {@"^.*ES2.*$"});
+			Filter.Types.FilterType.Regex, new[] { @"^.*ES2.*$" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsBackwardFiltered(_backwardReadPos, 10, 10, eventFilter, CancellationToken.None);

@@ -6,12 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.MultiStream;
 using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
@@ -38,8 +36,8 @@ public class when_onetime_reader_handles_eof<TLogFormat, TStreamId> : TestFixtur
 
 	[SetUp]
 	public new void When() {
-		_ab12Tag = new Dictionary<string, long> {{"a", 1}, {"b", 2}};
-		_abStreams = new[] {"a", "b"};
+		_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
+		_abStreams = new[] { "a", "b" };
 
 		_distibutionPointCorrelationId = Guid.NewGuid();
 		_fakeTimeProvider = new FakeTimeProvider();

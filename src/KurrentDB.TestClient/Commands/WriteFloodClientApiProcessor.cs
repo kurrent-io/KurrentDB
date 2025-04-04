@@ -94,7 +94,8 @@ internal class WriteFloodClientApiProcessor : ICmdProcessor {
 						}
 
 						var localAll = Interlocked.Increment(ref succ);
-						if (localAll % 1000 == 0) Console.Write('.');
+						if (localAll % 1000 == 0)
+							Console.Write('.');
 						if (localAll % 100000 == 0) {
 							var elapsed = sw2.Elapsed;
 							sw2.Restart();
@@ -110,7 +111,7 @@ internal class WriteFloodClientApiProcessor : ICmdProcessor {
 						}
 					});
 				}
-			}) {IsBackground = true});
+			}) { IsBackground = true });
 		}
 
 		var sw = Stopwatch.StartNew();

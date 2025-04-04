@@ -40,15 +40,14 @@ public class DriveStats {
 /// <param name="DiskName">The name of the disk.</param>
 /// <param name="TotalBytes">The total size of the disk in bytes.</param>
 /// <param name="AvailableBytes">The available free space on the disk in bytes.</param>
-public readonly record struct DriveData(string DiskName, long TotalBytes, long AvailableBytes) 
-{
-    /// <summary>
-    /// The used space on the disk in bytes.
-    /// </summary>
-    public long UsedBytes { get; } = TotalBytes - AvailableBytes;
+public readonly record struct DriveData(string DiskName, long TotalBytes, long AvailableBytes) {
+	/// <summary>
+	/// The used space on the disk in bytes.
+	/// </summary>
+	public long UsedBytes { get; } = TotalBytes - AvailableBytes;
 
-    /// <summary>
-    /// The usage of the disk as a percentage of the total size.
-    /// </summary>
-    public int Usage { get; } = (int)(TotalBytes != 0 ? (TotalBytes - AvailableBytes) * 100 / TotalBytes : 0);
+	/// <summary>
+	/// The usage of the disk as a percentage of the total size.
+	/// </summary>
+	public int Usage { get; } = (int)(TotalBytes != 0 ? (TotalBytes - AvailableBytes) * 100 / TotalBytes : 0);
 }

@@ -24,7 +24,7 @@ public enum PrepareFlags : ushort {
 	StreamDelete = 0x08, // prepare deletes stream
 
 	IsCommitted = 0x20, // prepare should be considered committed immediately, no commit will follow in TF
-	//Update = 0x30,                  // prepare updates previous instance of the same event, DANGEROUS!
+						//Update = 0x30,                  // prepare updates previous instance of the same event, DANGEROUS!
 
 	IsJson = 0x100, // indicates data & metadata are valid json
 	IsRedacted = 0x200,
@@ -71,19 +71,19 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	public long InMemorySize {
 		get {
 			return sizeof(LogRecordType)
-			       + 1
-			       + 8
-			       + sizeof(PrepareFlags)
-			       + 8
-			       + 4
-			       + 4
-			       + IntPtr.Size + EventStreamId.Length * 2
-			       + 16
-			       + 16
-			       + 8
-			       + IntPtr.Size + EventType.Length * 2
-			       + IntPtr.Size + _dataOnDisk.Length
-			       + IntPtr.Size + Metadata.Length;
+				   + 1
+				   + 8
+				   + sizeof(PrepareFlags)
+				   + 8
+				   + 4
+				   + 4
+				   + IntPtr.Size + EventStreamId.Length * 2
+				   + 16
+				   + 16
+				   + 8
+				   + IntPtr.Size + EventType.Length * 2
+				   + IntPtr.Size + _dataOnDisk.Length
+				   + IntPtr.Size + Metadata.Length;
 		}
 	}
 
@@ -156,7 +156,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		_eventTypeSize = eventTypeSize;
 		_dataOnDisk = data;
 		Metadata = metadata;
-		if (InMemorySize > TFConsts.MaxLogRecordSize) throw new Exception("Record too large.");
+		if (InMemorySize > TFConsts.MaxLogRecordSize)
+			throw new Exception("Record too large.");
 	}
 
 	internal PrepareLogRecord(ref SequenceReader reader, byte version, long logPosition)
@@ -258,27 +259,32 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		=> _sizeOnDisk ??= ComputeSizeOnDisk();
 
 	public bool Equals(PrepareLogRecord other) {
-		if (ReferenceEquals(null, other)) return false;
-		if (ReferenceEquals(this, other)) return true;
+		if (ReferenceEquals(null, other))
+			return false;
+		if (ReferenceEquals(this, other))
+			return true;
 		return other.LogPosition == LogPosition
-		       && other.Flags == Flags
-		       && other.TransactionPosition == TransactionPosition
-		       && other.TransactionOffset == TransactionOffset
-		       && other.ExpectedVersion == ExpectedVersion
-		       && other.EventStreamId.Equals(EventStreamId)
-		       && other.EventId == EventId
-		       && other.CorrelationId == CorrelationId
-		       && other.TimeStamp.Equals(TimeStamp)
-		       && other.EventType.Equals(EventType)
-		       && other.Data.Span.SequenceEqual(Data.Span)
-		       && other._dataOnDisk.Span.SequenceEqual(_dataOnDisk.Span)
-		       && other.Metadata.Span.SequenceEqual(Metadata.Span);
+			   && other.Flags == Flags
+			   && other.TransactionPosition == TransactionPosition
+			   && other.TransactionOffset == TransactionOffset
+			   && other.ExpectedVersion == ExpectedVersion
+			   && other.EventStreamId.Equals(EventStreamId)
+			   && other.EventId == EventId
+			   && other.CorrelationId == CorrelationId
+			   && other.TimeStamp.Equals(TimeStamp)
+			   && other.EventType.Equals(EventType)
+			   && other.Data.Span.SequenceEqual(Data.Span)
+			   && other._dataOnDisk.Span.SequenceEqual(_dataOnDisk.Span)
+			   && other.Metadata.Span.SequenceEqual(Metadata.Span);
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != typeof(PrepareLogRecord)) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != typeof(PrepareLogRecord))
+			return false;
 		return Equals((PrepareLogRecord)obj);
 	}
 
@@ -311,16 +317,16 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 
 	public override string ToString() {
 		return string.Format("LogPosition: {0}, "
-		                     + "Flags: {1}, "
-		                     + "TransactionPosition: {2}, "
-		                     + "TransactionOffset: {3}, "
-		                     + "ExpectedVersion: {4}, "
-		                     + "EventStreamId: {5}, "
-		                     + "EventId: {6}, "
-		                     + "CorrelationId: {7}, "
-		                     + "TimeStamp: {8}, "
-		                     + "EventType: {9}, "
-		                     + "InMemorySize: {10}",
+							 + "Flags: {1}, "
+							 + "TransactionPosition: {2}, "
+							 + "TransactionOffset: {3}, "
+							 + "ExpectedVersion: {4}, "
+							 + "EventStreamId: {5}, "
+							 + "EventId: {6}, "
+							 + "CorrelationId: {7}, "
+							 + "TimeStamp: {8}, "
+							 + "EventType: {9}, "
+							 + "InMemorySize: {10}",
 			LogPosition,
 			Flags,
 			TransactionPosition,

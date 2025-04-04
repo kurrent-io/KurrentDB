@@ -5,14 +5,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using EventStore.ClientAPI.Common.Utils;
 using EventStore.Core.Messages;
 using EventStore.Core.Services;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
-using EventStore.ClientAPI.Common.Utils;
 using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.UserManagementService;
 
@@ -20,7 +20,7 @@ public static class user_management_service {
 	public abstract class TestFixtureWithUserManagementService<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		protected Core.Authentication.InternalAuthentication.UserManagementService _users;
 		protected readonly ClaimsPrincipal _ordinaryUser = new ClaimsPrincipal(new ClaimsIdentity(
-				new [] {
+				new[] {
 					new Claim(ClaimTypes.Name,"user1"),
 					new Claim(ClaimTypes.Role,"role1")
 				}
@@ -35,7 +35,7 @@ public static class user_management_service {
 			AllWritesSucceed();
 
 			_users = new Core.Authentication.InternalAuthentication.UserManagementService(
-				_ioDispatcher, new StubPasswordHashAlgorithm(), skipInitializeStandardUsersCheck: true, 
+				_ioDispatcher, new StubPasswordHashAlgorithm(), skipInitializeStandardUsersCheck: true,
 				new TaskCompletionSource<bool>(), DefaultData.DefaultUserOptions);
 
 			_bus.Subscribe<UserManagementMessage.Get>(_users);
@@ -96,7 +96,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		[Test]
@@ -146,7 +146,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, _ordinaryUser, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, _ordinaryUser, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		[Test]
@@ -174,14 +174,14 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "Existing John", new[] {"admin", "other"},
+					Envelope, SystemAccounts.System, "user1", "Existing John", new[] { "admin", "other" },
 					"existing!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"bad"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "bad" }, "Johny123!");
 		}
 
 		[Test]
@@ -225,13 +225,13 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Update(
-					Envelope, SystemAccounts.System, "user1", "Doe John", new[] {"good"});
+					Envelope, SystemAccounts.System, "user1", "Doe John", new[] { "good" });
 		}
 
 		[Test]
@@ -291,12 +291,12 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
 			yield return
-				new UserManagementMessage.Update(Envelope, _ordinaryUser, "user1", "Doe John", new[] {"good"});
+				new UserManagementMessage.Update(Envelope, _ordinaryUser, "user1", "Doe John", new[] { "good" });
 		}
 
 		[Test]
@@ -353,7 +353,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Update(
-					Envelope, SystemAccounts.System, "user1", "Doe John", new[] {"admin", "other"});
+					Envelope, SystemAccounts.System, "user1", "Doe John", new[] { "admin", "other" });
 		}
 
 		[Test]
@@ -390,14 +390,14 @@ public static class user_management_service {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					replyTo, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 			yield return new UserManagementMessage.Disable(replyTo, SystemAccounts.System, "user1");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
 			yield return
 				new UserManagementMessage.Update(
-					Envelope, SystemAccounts.System, "user1", "Doe John", new[] {"good"});
+					Envelope, SystemAccounts.System, "user1", "Doe John", new[] { "good" });
 		}
 
 		[Test]
@@ -423,7 +423,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -460,7 +460,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -492,7 +492,7 @@ public static class user_management_service {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					replyTo, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 			yield return new UserManagementMessage.Disable(replyTo, SystemAccounts.System, "user1");
 		}
 
@@ -525,7 +525,7 @@ public static class user_management_service {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					replyTo, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 			yield return new UserManagementMessage.Disable(replyTo, SystemAccounts.System, "user1");
 		}
 
@@ -558,7 +558,7 @@ public static class user_management_service {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					replyTo, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 			yield return new UserManagementMessage.Disable(replyTo, SystemAccounts.System, "user1");
 		}
 
@@ -590,7 +590,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -621,7 +621,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -679,7 +679,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -703,7 +703,7 @@ public static class user_management_service {
 			var writePasswordChanged = HandledPasswordChangedNotificationMetaStreamWrites();
 			Assert.AreEqual(1, writePasswordChanged.Length);
 			var passwordChangedEvent = writePasswordChanged[0].Events.Single();
-			HelperExtensions.AssertJson(new {___maxAge = 3600}, passwordChangedEvent.Data.ParseJson<JObject>());
+			HelperExtensions.AssertJson(new { ___maxAge = 3600 }, passwordChangedEvent.Data.ParseJson<JObject>());
 		}
 	}
 
@@ -713,7 +713,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -748,7 +748,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -805,7 +805,7 @@ public static class user_management_service {
 			var writePasswordChanged = HandledPasswordChangedNotificationMetaStreamWrites();
 			Assert.AreEqual(1, writePasswordChanged.Length);
 			var passwordChangedEvent = writePasswordChanged[0].Events.Single();
-			HelperExtensions.AssertJson(new {___maxAge = 3600}, passwordChangedEvent.Data.ParseJson<JObject>());
+			HelperExtensions.AssertJson(new { ___maxAge = 3600 }, passwordChangedEvent.Data.ParseJson<JObject>());
 		}
 	}
 
@@ -815,7 +815,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -869,7 +869,7 @@ public static class user_management_service {
 		protected override IEnumerable<WhenStep> GivenCommands() {
 			yield return
 				new UserManagementMessage.Create(
-					Envelope, SystemAccounts.System, "user1", "John Doe", new[] {"admin", "other"}, "Johny123!");
+					Envelope, SystemAccounts.System, "user1", "John Doe", new[] { "admin", "other" }, "Johny123!");
 		}
 
 		protected override IEnumerable<WhenStep> When() {
@@ -915,19 +915,19 @@ public static class user_management_service {
 			var replyTo = Envelope;
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user1", "John Doe 1", new[] {"admin1", "other"},
+					replyTo, SystemAccounts.System, "user1", "John Doe 1", new[] { "admin1", "other" },
 					"Johny123!");
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user2", "John Doe 2", new[] {"admin2", "other"},
+					replyTo, SystemAccounts.System, "user2", "John Doe 2", new[] { "admin2", "other" },
 					"Johny123!");
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "user3", "Another Doe 1", new[] {"admin3", "other"},
+					replyTo, SystemAccounts.System, "user3", "Another Doe 1", new[] { "admin3", "other" },
 					"Johny123!");
 			yield return
 				new UserManagementMessage.Create(
-					replyTo, SystemAccounts.System, "another_user", "Another Doe 2", new[] {"admin4", "other"},
+					replyTo, SystemAccounts.System, "another_user", "Another Doe 2", new[] { "admin4", "other" },
 					"Johny123!");
 		}
 
@@ -947,7 +947,7 @@ public static class user_management_service {
 			var users = HandledMessages.OfType<UserManagementMessage.AllUserDetailsResult>().Single().Data;
 
 			Assert.That(
-				new[] {"another_user", "user1", "user2", "user3"}.SequenceEqual(users.Select(v => v.LoginName)));
+				new[] { "another_user", "user1", "user2", "user3" }.SequenceEqual(users.Select(v => v.LoginName)));
 		}
 
 		[Test]

@@ -8,6 +8,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Options;
 using EventStore.Common.Utils;
@@ -18,24 +19,23 @@ using EventStore.Core.Authorization.AuthorizationPolicies;
 using EventStore.Core.Bus;
 using EventStore.Core.Certificates;
 using EventStore.Core.Configuration.Sources;
+using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Monitoring;
+using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Http;
 using EventStore.Core.Tests.Services.Transport.Tcp;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
+using EventStore.Plugins.Subsystems;
+using EventStore.TcpUnitTestPlugin;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
-using ILogger = Serilog.ILogger;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Plugins.Subsystems;
-using EventStore.TcpUnitTestPlugin;
 using Microsoft.Extensions.Configuration;
+using ILogger = Serilog.ILogger;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
-using System.Threading;
 
 namespace EventStore.Core.Tests.Helpers;
 
@@ -68,11 +68,11 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 
 	private static bool EnableHttps() => !RuntimeInformation.IsOSX;
 
-        public MiniClusterNode(string pathname, int debugIndex, IPEndPoint internalTcp, IPEndPoint externalTcp,
-		IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
-		bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
-		bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
-		string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
+	public MiniClusterNode(string pathname, int debugIndex, IPEndPoint internalTcp, IPEndPoint externalTcp,
+	IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
+	bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
+	bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
+	string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
 
 		if (RuntimeInformation.IsOSX) {
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport",
@@ -97,7 +97,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 		var useHttps = EnableHttps();
 
 		subsystems ??= [];
-		subsystems = [..subsystems, new TcpApiTestPlugin()];
+		subsystems = [.. subsystems, new TcpApiTestPlugin()];
 
 		var options = new ClusterVNodeOptions {
 			Application = new() {
@@ -212,7 +212,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 							ClientCertificateMode = ClientCertificateMode.AllowCertificate,
 							ClientCertificateValidation = (certificate, chain, sslPolicyErrors) => {
 								var (isValid, error) =
-									ClusterVNode<string>.ValidateClientCertificate(certificate, chain, sslPolicyErrors,() => null,() => trustedRootCertificates);
+									ClusterVNode<string>.ValidateClientCertificate(certificate, chain, sslPolicyErrors, () => null, () => trustedRootCertificates);
 								if (!isValid && error != null) {
 									Log.Error("Client certificate validation error: {e}", error);
 								}

@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Linq;
-using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;

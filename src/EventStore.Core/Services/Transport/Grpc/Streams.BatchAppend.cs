@@ -24,11 +24,11 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Serilog;
-using Empty = Google.Protobuf.WellKnownTypes.Empty;
-using Status = Google.Rpc.Status;
 using static EventStore.Client.Streams.BatchAppendReq.Types;
 using static EventStore.Client.Streams.BatchAppendReq.Types.Options;
+using Empty = Google.Protobuf.WellKnownTypes.Empty;
 using OperationResult = EventStore.Core.Messages.OperationResult;
+using Status = Google.Rpc.Status;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -85,15 +85,15 @@ partial class Streams<TStreamId> {
 			var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
 #if DEBUG
-	var sendTask =
+			var sendTask =
 #endif
-			Send(_channel.Reader, cancellationToken)
-				.ContinueWith(HandleCompletion, CancellationToken.None);
+					Send(_channel.Reader, cancellationToken)
+						.ContinueWith(HandleCompletion, CancellationToken.None);
 #if DEBUG
-	var receiveTask =
+			var receiveTask =
 #endif
-			Receive(_channel.Writer, _user, _requiresLeader, cancellationToken)
-				.ContinueWith(HandleCompletion, CancellationToken.None);
+					Receive(_channel.Writer, _user, _requiresLeader, cancellationToken)
+						.ContinueWith(HandleCompletion, CancellationToken.None);
 
 			return tcs.Task;
 
@@ -108,8 +108,7 @@ partial class Streams<TStreamId> {
 				} catch (IOException ex) {
 					Log.Information("Closing gRPC client connection: {message}", ex.GetBaseException().Message);
 					tcs.TrySetException(ex);
-				}
-				catch (Exception ex) {
+				} catch (Exception ex) {
 					tcs.TrySetException(ex);
 				}
 			}
@@ -247,15 +246,13 @@ partial class Streams<TStreamId> {
 											StreamRevision.FromInt64(completed.CurrentVersion),
 											clientWriteRequest.ExpectedVersion)
 									},
-									OperationResult.AccessDenied => new BatchAppendResp
-										{ Error = Status.AccessDenied },
+									OperationResult.AccessDenied => new BatchAppendResp { Error = Status.AccessDenied },
 									OperationResult.StreamDeleted => new BatchAppendResp {
 										Error = Status.StreamDeleted(clientWriteRequest.StreamId)
 									},
 									OperationResult.CommitTimeout or
 										OperationResult.ForwardTimeout or
-										OperationResult.PrepareTimeout => new BatchAppendResp
-											{ Error = Status.Timeout },
+										OperationResult.PrepareTimeout => new BatchAppendResp { Error = Status.Timeout },
 									_ => new BatchAppendResp { Error = Status.Unknown }
 								},
 								_ => new BatchAppendResp {

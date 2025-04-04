@@ -9,17 +9,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Core.Tests.Helpers;
+using EventStore.Core.TransactionLog.Chunks;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
 using NUnit.Framework;
 using Convert = System.Convert;
-using Streams = EventStore.Client.Streams.Streams;
 using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.Chunks;
+using Streams = EventStore.Client.Streams.Streams;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests;
 

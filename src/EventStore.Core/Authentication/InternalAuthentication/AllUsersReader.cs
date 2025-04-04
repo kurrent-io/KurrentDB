@@ -25,8 +25,10 @@ public class AllUsersReader {
 	}
 
 	public void Run(Action<UserManagementMessage.Error, UserManagementMessage.UserData[]> completed) {
-		if (completed == null) throw new ArgumentNullException(nameof(completed));
-		if (_onCompleted != null) throw new InvalidOperationException("AllUsersReader cannot be re-used");
+		if (completed == null)
+			throw new ArgumentNullException(nameof(completed));
+		if (_onCompleted != null)
+			throw new InvalidOperationException("AllUsersReader cannot be re-used");
 
 		_onCompleted = completed;
 
@@ -44,10 +46,10 @@ public class AllUsersReader {
 		switch (result.Result) {
 			case ReadStreamResult.Success:
 				foreach (var loginName in from eventData in result.Events
-					let @event = eventData.Event
-					where @event.EventType == UserEventType
-					let stringData = Helper.UTF8NoBom.GetString(@event.Data.Span)
-					select stringData)
+										  let @event = eventData.Event
+										  where @event.EventType == UserEventType
+										  let stringData = Helper.UTF8NoBom.GetString(@event.Data.Span)
+										  select stringData)
 					BeginReadUserDetails(loginName, () => {
 						if (!result.IsEndOfStream)
 							BeginReadForward(result.NextEventNumber);
@@ -86,7 +88,8 @@ public class AllUsersReader {
 			return;
 		switch (result.Result) {
 			case ReadStreamResult.Success:
-				if (_results.Any(x => x.LoginName == loginName)) break;
+				if (_results.Any(x => x.LoginName == loginName))
+					break;
 				if (result.Events.Count is not 1) {
 					AddLoadedUserDetails(loginName, "", [], true, null);
 				} else {

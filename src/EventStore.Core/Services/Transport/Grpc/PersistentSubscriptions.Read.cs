@@ -124,7 +124,8 @@ internal partial class PersistentSubscriptions {
 
 		ReadResp.Types.ReadEvent.Types.RecordedEvent ConvertToRecordedEvent(EventRecord e, long? commitPosition,
 			long? preparePosition) {
-			if (e == null) return null;
+			if (e == null)
+				return null;
 			var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
 			return new ReadResp.Types.ReadEvent.Types.RecordedEvent {
 				Id = uuidOptionsCase switch {
@@ -227,7 +228,7 @@ internal partial class PersistentSubscriptions {
 
 			var semaphore = new SemaphoreSlim(1, 1);
 
-			switch(streamName) {
+			switch (streamName) {
 				case SystemStreams.AllStream:
 					publisher.Publish(new ClientMessage.ConnectToPersistentSubscriptionToAll(correlationId,
 						correlationId,
@@ -249,7 +250,7 @@ internal partial class PersistentSubscriptions {
 					_subscriptionIdSource.TrySetException(ex);
 					return;
 				}
-				
+
 				switch (message) {
 					case ClientMessage.SubscriptionDropped dropped:
 						switch (dropped.Reason) {

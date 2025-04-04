@@ -13,10 +13,10 @@ using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Transport.Http;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
 using EventStore.Core.Tests.Http.Users.users;
+using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;
 using SystemHeaders = EventStore.Core.Services.SystemHeaders;
 
@@ -390,7 +390,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 			private List<JToken> _entries;
 
 			protected override async Task When() {
-				_feed = await GetJson<JObject>("/streams/" + LinkedStreamName + "/0/forward/10",extra: "embed=rich",
+				_feed = await GetJson<JObject>("/streams/" + LinkedStreamName + "/0/forward/10", extra: "embed=rich",
 					accept: ContentType.Json);
 				_entries = _feed != null ? _feed["entries"].ToList() : new List<JToken>();
 			}
@@ -636,7 +636,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		private List<JToken> _entries;
 
 		protected override async Task When() {
-			var headers = new NameValueCollection {{resolveLinkTosHeader, "True"}};
+			var headers = new NameValueCollection { { resolveLinkTosHeader, "True" } };
 			_feed = await GetJson<JObject>("/streams/$all/head/backward/30",
 				ContentType.Json, DefaultData.AdminNetworkCredentials, headers);
 			_entries = _feed != null ? _feed["entries"].ToList() : new List<JToken>();
@@ -669,7 +669,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		private List<JToken> _entries;
 
 		protected override async Task When() {
-			var headers = new NameValueCollection {{resolveLinkTosHeader, "False"}};
+			var headers = new NameValueCollection { { resolveLinkTosHeader, "False" } };
 			_feed = await GetJson<JObject>("/streams/$all",
 				ContentType.Json, DefaultData.AdminNetworkCredentials, headers);
 			_entries = _feed != null ? _feed["entries"].ToList() : new List<JToken>();
@@ -702,7 +702,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		private List<JToken> _entries;
 
 		protected override async Task When() {
-			var headers = new NameValueCollection {{resolveLinkTosHeader, "True"}};
+			var headers = new NameValueCollection { { resolveLinkTosHeader, "True" } };
 			_feed = await GetJson<JObject>("/streams/$all/00000000000000000000037777777777/forward/30",
 				ContentType.Json, DefaultData.AdminNetworkCredentials, headers);
 			_entries = _feed != null ? _feed["entries"].ToList() : new List<JToken>();
@@ -735,7 +735,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		private List<JToken> _entries;
 
 		protected override async Task When() {
-			var headers = new NameValueCollection {{resolveLinkTosHeader, "False"}};
+			var headers = new NameValueCollection { { resolveLinkTosHeader, "False" } };
 			_feed = await GetJson<JObject>("/streams/$all/00000000000000000000037777777777/forward/30",
 				ContentType.Json, DefaultData.AdminNetworkCredentials, headers);
 			_entries = _feed != null ? _feed["entries"].ToList() : new List<JToken>();

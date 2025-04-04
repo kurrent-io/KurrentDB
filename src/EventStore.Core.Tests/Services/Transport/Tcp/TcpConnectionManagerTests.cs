@@ -1,27 +1,26 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Transport.Tcp;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using EventStore.Transport.Tcp;
-using System.Net.Sockets;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Authentication;
-using EventStore.Core.TransactionLog.LogRecords;
 using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Messages;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using EventStore.Client.Messages;
 using EventStore.Core.Authentication.InternalAuthentication;
+using EventStore.Core.Bus;
+using EventStore.Core.Data;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services;
+using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.Settings;
+using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
-using EventStore.Core.Util;
+using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Transport.Tcp;
+using NUnit.Framework;
 using EventRecord = EventStore.Core.Data.EventRecord;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 

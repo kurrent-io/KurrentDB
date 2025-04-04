@@ -3,20 +3,20 @@
 
 using System;
 using System.Collections.Specialized;
-using System.Text;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Transport.Http;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
-using System.Linq;
-using System.Xml.Linq;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Services;
+using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Http.Users.users;
+using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using HttpMethod = EventStore.Transport.Http.HttpMethod;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
@@ -482,7 +482,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[TestFixture(ContentType.LegacyEventsJson, ContentType.AtomJson)]
 		[TestFixture(ContentType.EventsJson, ContentType.LegacyAtomJson)]
 		[TestFixture(ContentType.LegacyEventsJson, ContentType.LegacyAtomJson)]
-		public class when_posting_an_event_with_type(string postContentType, string acceptContentType)  : with_admin_user  {
+		public class when_posting_an_event_with_type(string postContentType, string acceptContentType) : with_admin_user {
 			private HttpResponseMessage _response;
 			private readonly JArray _data = JArray.Parse(@"[{
 					""eventId"": ""fd0489ed-80a5-4004-ad79-1282f657ee27"",
@@ -634,7 +634,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 
 		[Category("LongRunning")]
 		[TestFixture]
-		public class when_requesting_a_single_event_in_the_stream_without_an_accept_header  : HttpBehaviorSpecificationWithSingleEvent  {
+		public class when_requesting_a_single_event_in_the_stream_without_an_accept_header : HttpBehaviorSpecificationWithSingleEvent {
 			private XDocument _xmlDocument;
 
 			protected override async Task When() {
@@ -696,7 +696,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[Category("LongRunning")]
 		[TestFixture(ContentType.Xml)]
 		[TestFixture(ContentType.EventXml)]
-		public class when_requesting_a_single_event_in_the_stream_as_xml(string contentType) : HttpBehaviorSpecificationWithSingleEvent  {
+		public class when_requesting_a_single_event_in_the_stream_as_xml(string contentType) : HttpBehaviorSpecificationWithSingleEvent {
 			protected override Task When() {
 				return Get(TestStream + "/0", "", accept: contentType);
 			}
@@ -757,7 +757,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 
 			protected override async Task When() {
 				var request = CreateRequest(TestStream, "", "DELETE", ContentType.Json,
-					headers: new NameValueCollection{{SystemHeaders.LegacyExpectedVersion, expectedVersion.ToString()}});
+					headers: new NameValueCollection { { SystemHeaders.LegacyExpectedVersion, expectedVersion.ToString() } });
 				_response = await _client.SendAsync(request);
 			}
 

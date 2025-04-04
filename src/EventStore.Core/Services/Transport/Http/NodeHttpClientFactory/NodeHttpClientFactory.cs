@@ -17,7 +17,7 @@ public class NodeHttpClientFactory(
 
 	public HttpClient CreateHttpClient(string[] additionalCertificateNames) {
 		HttpMessageHandler httpMessageHandler;
-		if (uriScheme == Uri.UriSchemeHttps){
+		if (uriScheme == Uri.UriSchemeHttps) {
 			var socketsHttpHandler = new SocketsHttpHandler {
 				SslOptions = {
 					CertificateRevocationCheckMode = X509RevocationMode.NoCheck,

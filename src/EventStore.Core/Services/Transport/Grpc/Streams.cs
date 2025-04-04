@@ -31,7 +31,8 @@ internal partial class Streams<TStreamId> : EventStore.Client.Streams.Streams.St
 		GrpcTrackers trackers,
 		IAuthorizationProvider provider) {
 
-		if (publisher == null) throw new ArgumentNullException(nameof(publisher));
+		if (publisher == null)
+			throw new ArgumentNullException(nameof(publisher));
 		_publisher = publisher;
 		_maxAppendSize = maxAppendSize;
 		_maxAppendEventSize = maxAppendEventSize;

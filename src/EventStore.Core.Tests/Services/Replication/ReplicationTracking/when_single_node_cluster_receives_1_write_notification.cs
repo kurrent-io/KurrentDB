@@ -16,7 +16,7 @@ public class when_single_node_cluster_receives_1_write_notification : with_clust
 		WriterCheckpoint.Write(_logPosition);
 		WriterCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());
-		AssertEx.IsOrBecomesTrue(()=> Service.IsCurrent());
+		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 	}
 
 	[Test]
@@ -27,7 +27,7 @@ public class when_single_node_cluster_receives_1_write_notification : with_clust
 	}
 	[Test]
 	public void replication_checkpoint_should_advance() {
-		Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());		
-		Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());		
-	}	
+		Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());
+		Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());
+	}
 }

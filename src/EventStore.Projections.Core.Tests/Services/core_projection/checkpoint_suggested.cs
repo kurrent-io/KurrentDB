@@ -7,10 +7,9 @@ using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
-using NUnit.Framework;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection;
 
@@ -39,7 +38,7 @@ public static class checkpoint_suggested {
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
 					_subscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(140, 130),
-						new Dictionary<string, long> {{"non-existing", -1}}), 55.5f, 0));
+						new Dictionary<string, long> { { "non-existing", -1 } }), 55.5f, 0));
 		}
 
 		[Test]
@@ -81,12 +80,12 @@ public static class checkpoint_suggested {
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
 					_subscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(140, 130),
-						new Dictionary<string, long> {{"non-existing", -1}}), 55.5f, 0));
+						new Dictionary<string, long> { { "non-existing", -1 } }), 55.5f, 0));
 			_bus.Publish(
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
 					_subscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(160, 150),
-						new Dictionary<string, long> {{"non-existing", -1}}), 55.6f, 1));
+						new Dictionary<string, long> { { "non-existing", -1 } }), 55.6f, 1));
 		}
 
 		[Test]
@@ -123,12 +122,12 @@ public static class checkpoint_suggested {
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
 					_subscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(140, 130),
-						new Dictionary<string, long> {{"non-existing", -1}}), 55.5f, 0));
+						new Dictionary<string, long> { { "non-existing", -1 } }), 55.5f, 0));
 			_bus.Publish(
 				new EventReaderSubscriptionMessage.CheckpointSuggested(
 					_subscriptionId,
 					CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(160, 150),
-						new Dictionary<string, long> {{"non-existing", -1}}), 55.6f, 1));
+						new Dictionary<string, long> { { "non-existing", -1 } }), 55.6f, 1));
 		}
 
 		[Test]

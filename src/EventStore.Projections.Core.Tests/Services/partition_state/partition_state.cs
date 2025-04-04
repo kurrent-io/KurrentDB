@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.Partitioning;
 using NUnit.Framework;
@@ -56,7 +55,7 @@ public static class partition_state {
 
 		[Test]
 		public void dates() {
-			foreach(var info in TimeZoneInfo.GetSystemTimeZones())
+			foreach (var info in TimeZoneInfo.GetSystemTimeZones())
 				AssertCorrect($@"[""{DateTimeOffset.UtcNow.ToOffset(info.BaseUtcOffset):yyyy-MM-ddThh:mm:sszzz}""]");
 		}
 

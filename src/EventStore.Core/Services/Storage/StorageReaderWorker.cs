@@ -13,14 +13,14 @@ using EventStore.Core.Data;
 using EventStore.Core.Exceptions;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services.Storage.InMemory;
 using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.Checkpoint;
-using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 using EventStore.Core.Services.TimerService;
-using EventStore.Core.Messaging;
+using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using ILogger = Serilog.ILogger;
+using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Services.Storage;
 
@@ -795,7 +795,7 @@ public class StorageReaderWorker<TStreamId> :
 		}
 	}
 
-	async ValueTask IAsyncHandle<StorageMessage.StreamIdFromTransactionIdRequest >.HandleAsync(StorageMessage.StreamIdFromTransactionIdRequest message, CancellationToken token) {
+	async ValueTask IAsyncHandle<StorageMessage.StreamIdFromTransactionIdRequest>.HandleAsync(StorageMessage.StreamIdFromTransactionIdRequest message, CancellationToken token) {
 		var cts = token.LinkTo(message.CancellationToken);
 		Message reply;
 		try {

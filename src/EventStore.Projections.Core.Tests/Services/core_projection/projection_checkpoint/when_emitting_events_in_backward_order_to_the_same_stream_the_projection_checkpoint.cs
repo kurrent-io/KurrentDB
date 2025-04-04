@@ -3,12 +3,9 @@
 
 using System;
 using EventStore.Core.Tests;
-using EventStore.Core.Tests.Bus.Helpers;
-using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.AllStream;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 
@@ -52,7 +49,8 @@ public class
 	[Test]
 	public void throws_invalid_operation_exception() {
 		Assert.Throws<InvalidOperationException>(() => {
-			if (_lastException != null) throw _lastException;
+			if (_lastException != null)
+				throw _lastException;
 		});
 	}
 }

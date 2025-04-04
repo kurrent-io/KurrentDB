@@ -166,8 +166,7 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 
 		if (LogFormatHelper<TLogFormat, TStreamId>.IsV2) {
 			Assert.AreEqual(0, records.Count);
-		}
-		else {
+		} else {
 			Assert.AreEqual(2, records.Count);
 		}
 	}

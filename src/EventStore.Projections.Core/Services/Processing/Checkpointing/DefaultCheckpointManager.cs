@@ -39,7 +39,8 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 		: base(
 			publisher, projectionCorrelationId, projectionConfig, name, positionTagger, namingBuilder,
 			usePersistentCheckpoints, maxProjectionStateSize) {
-		if (ioDispatcher == null) throw new ArgumentNullException("ioDispatcher");
+		if (ioDispatcher == null)
+			throw new ArgumentNullException("ioDispatcher");
 		_projectionVersion = projectionVersion;
 		_runAs = runAs;
 		_ioDispatcher = ioDispatcher;
@@ -122,7 +123,7 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 			if (@event.EventType == stateEventType) {
 				var parsed = @event.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
 				if (parsed.Version.ProjectionId != _projectionVersion.ProjectionId
-				    || _projectionVersion.Epoch > parsed.Version.Version) {
+					|| _projectionVersion.Epoch > parsed.Version.Version) {
 					var state = new PartitionState("", null, _zeroTag);
 					loadCompleted(state);
 					return;

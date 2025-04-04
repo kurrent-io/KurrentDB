@@ -4,11 +4,11 @@
 using System.Collections.Generic;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr;
 
@@ -16,7 +16,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr;
 public class when_transaction_commit_gets_already_committed_before_committed : RequestManagerSpecification<TransactionCommit> {
 	private long commitPosition = 1000;
 	private int transactionId = 500;
-	
+
 	protected override TransactionCommit OnManager(FakePublisher publisher) {
 		return new TransactionCommit(
 			publisher,

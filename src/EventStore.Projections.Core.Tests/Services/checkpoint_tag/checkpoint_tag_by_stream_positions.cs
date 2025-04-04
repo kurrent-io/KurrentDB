@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
@@ -15,22 +14,22 @@ namespace EventStore.Projections.Core.Tests.Services.checkpoint_tag;
 [TestFixture]
 public class checkpoint_tag_by_stream_positions {
 	private readonly CheckpointTag _a1 = CheckpointTag.FromStreamPositions(
-		1, new Dictionary<string, long> {{"a", 1}});
+		1, new Dictionary<string, long> { { "a", 1 } });
 
 	private readonly CheckpointTag _b1 = CheckpointTag.FromStreamPositions(
-		1, new Dictionary<string, long> {{"b", 1}});
+		1, new Dictionary<string, long> { { "b", 1 } });
 
 	private readonly CheckpointTag _a1b1 = CheckpointTag.FromStreamPositions(
-		1, new Dictionary<string, long> {{"a", 1}, {"b", 1}});
+		1, new Dictionary<string, long> { { "a", 1 }, { "b", 1 } });
 
 	private readonly CheckpointTag _a2b1 = CheckpointTag.FromStreamPositions(
-		1, new Dictionary<string, long> {{"a", 2}, {"b", 1}});
+		1, new Dictionary<string, long> { { "a", 2 }, { "b", 1 } });
 
 	private readonly CheckpointTag _a1b2 = CheckpointTag.FromStreamPositions(
-		1, new Dictionary<string, long> {{"a", 1}, {"b", 2}});
+		1, new Dictionary<string, long> { { "a", 1 }, { "b", 2 } });
 
 	private readonly CheckpointTag _a2b2 = CheckpointTag.FromStreamPositions(
-		1, new Dictionary<string, long> {{"a", 2}, {"b", 2}});
+		1, new Dictionary<string, long> { { "a", 2 }, { "b", 2 } });
 
 	[Test]
 	public void equal_equals() {

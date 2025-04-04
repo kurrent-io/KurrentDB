@@ -25,7 +25,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 	private static Func<SqliteDataReader, OriginalStreamData> _readOriginalStreamData;
 
 	private string TableName { get; }
-	
+
 	public SqliteOriginalStreamScavengeMap(string name, string keyTypeOverride = null) {
 		TableName = name;
 		_keyTypeOverride = keyTypeOverride;
@@ -46,7 +46,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			if (maybeDiscardPoint.HasValue) {
 				d.MaybeDiscardPoint = DiscardPoint.DiscardBefore(maybeDiscardPoint.Value);
 			}
-			
+
 			d.Status = reader.GetFieldValue<CalculationStatus>(6);
 
 			return d;
@@ -66,7 +66,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 					maybeDiscardPoint INTEGER DEFAULT 0,
 					status            INTEGER DEFAULT 0);
 				CREATE INDEX IF NOT EXISTS {TableName}KeyStatus ON {TableName} (status, key)";
-		
+
 		sqlite.InitializeDb(sql);
 
 		_add = new AddCommand(TableName, sqlite);
@@ -93,7 +93,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 	public bool TryRemove(TKey key, out OriginalStreamData value) {
 		return _delete.TryExecute(key, out value);
 	}
-	
+
 	public void SetTombstone(TKey key) {
 		_setTombstone.Execute(key);
 	}
@@ -101,7 +101,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 	public void SetMetadata(TKey key, StreamMetadata metadata) {
 		_setMetadata.Execute(key, metadata);
 	}
-	
+
 	public void SetDiscardPoints(TKey key, CalculationStatus status, DiscardPoint discardPoint, DiscardPoint maybeDiscardPoint) {
 		_setDiscardPoints.Execute(key, status, discardPoint, maybeDiscardPoint);
 	}
@@ -187,7 +187,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			_sqlite.ExecuteNonQuery(_cmd);
 		}
 	}
-	
+
 	private class SetTombstoneCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _cmd;
@@ -200,7 +200,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 					ON CONFLICT(key) DO UPDATE SET
 						isTombstoned = 1,
 						status = {(int)CalculationStatus.Active}";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -214,7 +214,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			_sqlite.ExecuteNonQuery(_cmd);
 		}
 	}
-	
+
 	private class SetMetadataCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _cmd;
@@ -305,7 +305,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -331,7 +331,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => {
 				var isTombstoned = reader.GetBoolean(0);
@@ -371,7 +371,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			_deleteCmd.CommandText = deleteSql;
 			_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_deleteCmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -381,7 +381,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			return _sqlite.ExecuteReadAndDelete(_selectCmd, _deleteCmd, _readOriginalStreamData, out value);
 		}
 	}
-	
+
 	private class DeleteManyCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _deleteCmd;
@@ -396,7 +396,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			_deleteCmd.CommandText = deleteSql;
 			_archiveStatusParam = _deleteCmd.Parameters.Add("$archive", SqliteType.Integer);
 			_deleteCmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -435,7 +435,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => {
 				var value = _readOriginalStreamData(reader);
@@ -472,11 +472,11 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => {
 				var data = _readOriginalStreamData(reader);
-				var key = reader.GetFieldValue<TKey>(7); 
+				var key = reader.GetFieldValue<TKey>(7);
 				return new KeyValuePair<TKey, OriginalStreamData>(key, data);
 			};
 		}
@@ -485,7 +485,7 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			return _sqlite.ExecuteReader(_cmd, _reader);
 		}
 	}
-	
+
 	private class ActiveRecordsCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _cmd;
@@ -509,11 +509,11 @@ public class SqliteOriginalStreamScavengeMap<TKey> : IInitializeSqliteBackend, I
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => {
 				var data = _readOriginalStreamData(reader);
-				var key = reader.GetFieldValue<TKey>(7); 
+				var key = reader.GetFieldValue<TKey>(7);
 				return new KeyValuePair<TKey, OriginalStreamData>(key, data);
 			};
 		}

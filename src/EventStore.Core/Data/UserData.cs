@@ -23,12 +23,12 @@ public record UserData {
 	public bool Disabled { get; init; }
 
 	public UserData SetFullName(string fullName) => this with { FullName = fullName };
-	
+
 	public UserData SetGroups(params string[] groups) => this with { Groups = groups };
-	
+
 	public UserData SetPassword(string hash, string salt) => this with { Hash = hash, Salt = salt };
-	
+
 	public UserData SetEnabled() => this with { Disabled = false };
-	
+
 	public UserData SetDisabled() => this with { Disabled = true };
 }

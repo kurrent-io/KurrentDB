@@ -7,7 +7,6 @@ using System.Linq;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
-using EventStore.Core.Settings;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Messaging;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
@@ -275,7 +274,8 @@ public abstract partial class EventSubscriptionBasedProjectionProcessingPhase : 
 
 	public void Handle(EventReaderSubscriptionMessage.SubscribeTimeout message) {
 		if (_subscriptionState is not PhaseSubscriptionState.Subscribing
-		    || message.SubscriptionId != _currentSubscriptionId) return;
+			|| message.SubscriptionId != _currentSubscriptionId)
+			return;
 		SubscriptionFailed("Reader subscription timed out");
 	}
 
@@ -405,7 +405,7 @@ public abstract partial class EventSubscriptionBasedProjectionProcessingPhase : 
 		var oldState = _partitionStateCache.GetLockedPartitionState(partition);
 		var oldSharedState = _isBiState ? _partitionStateCache.GetLockedPartitionState("") : null;
 		bool changed = oldState.IsChanged(newPartitionState)
-		               || (_isBiState && oldSharedState.IsChanged(newSharedPartitionState));
+					   || (_isBiState && oldSharedState.IsChanged(newSharedPartitionState));
 
 		PartitionState partitionState = null;
 		// NOTE: projectionResult cannot change independently unless projection definition has changed
@@ -424,7 +424,8 @@ public abstract partial class EventSubscriptionBasedProjectionProcessingPhase : 
 			return new EventProcessedResult(
 				partition, message.CheckpointTag, oldState, partitionState, oldSharedState, newSharedPartitionState,
 				emittedEvents, message.Data.EventId, correlationId);
-		} else return null;
+		} else
+			return null;
 	}
 
 	protected EventProcessedResult InternalPartitionDeletedProcessed(
@@ -564,7 +565,7 @@ public abstract partial class EventSubscriptionBasedProjectionProcessingPhase : 
 		if (_state != PhaseState.Starting)
 			return;
 		if (_subscriptionState is not PhaseSubscriptionState.Subscribing
-		    || message.SubscriptionId != _currentSubscriptionId)
+			|| message.SubscriptionId != _currentSubscriptionId)
 			return;
 		_subscriptionState = PhaseSubscriptionState.Subscribed;
 		_coreProjection.Subscribed();

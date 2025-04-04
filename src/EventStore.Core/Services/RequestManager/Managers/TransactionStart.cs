@@ -31,7 +31,7 @@ public class TransactionStart : RequestManagerBase {
 				 prepareCount: 1) {
 		_streamId = streamId;
 	}
-	
+
 	protected override Message WriteRequestMsg =>
 		new StorageMessage.WriteTransactionStart(
 				InternalCorrId,

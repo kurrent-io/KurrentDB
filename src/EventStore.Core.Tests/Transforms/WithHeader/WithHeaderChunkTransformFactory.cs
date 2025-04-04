@@ -13,7 +13,7 @@ public class WithHeaderChunkTransformFactory : IChunkTransformFactory {
 	private const int TransformHeaderSize = 133;
 	private readonly byte[] _header;
 
-	public TransformType Type => (TransformType) 0xFD;
+	public TransformType Type => (TransformType)0xFD;
 	public int TransformDataPosition(int dataPosition) => TransformHeaderSize + dataPosition;
 
 	public WithHeaderChunkTransformFactory() {

@@ -7,11 +7,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.LogAbstraction;
+using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
-using NUnit.Framework;
-using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.TransactionLog.LogRecords;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.EpochManager;
 

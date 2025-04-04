@@ -11,13 +11,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using EventStore.ClientAPI;
+using EventStore.ClientAPI.Transport.Http;
 using EventStore.Common.Utils;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
 using Newtonsoft.Json;
-using EventStore.ClientAPI.Transport.Http;
-using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using ContentTypeConstant = EventStore.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Http;

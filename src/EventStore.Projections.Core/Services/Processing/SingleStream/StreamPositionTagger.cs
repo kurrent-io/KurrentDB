@@ -12,8 +12,10 @@ public class StreamPositionTagger : PositionTagger {
 	private readonly string _stream;
 
 	public StreamPositionTagger(int phase, string stream) : base(phase) {
-		if (stream == null) throw new ArgumentNullException("stream");
-		if (string.IsNullOrEmpty(stream)) throw new ArgumentException("stream");
+		if (stream == null)
+			throw new ArgumentNullException("stream");
+		if (string.IsNullOrEmpty(stream))
+			throw new ArgumentException("stream");
 		_stream = stream;
 	}
 
@@ -24,7 +26,7 @@ public class StreamPositionTagger : PositionTagger {
 		if (previous.Mode_ != CheckpointTag.Mode.Stream)
 			throw new ArgumentException("Mode.Stream expected", "previous");
 		return committedEvent.Data.PositionStreamId == _stream
-		       && committedEvent.Data.PositionSequenceNumber > previous.Streams[_stream];
+			   && committedEvent.Data.PositionSequenceNumber > previous.Streams[_stream];
 	}
 
 	public override CheckpointTag MakeCheckpointTag(

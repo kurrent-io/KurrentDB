@@ -2,9 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Common.Utils;
 using static EventStore.Core.Helpers.IODispatcher;
 
 namespace EventStore.Core.Helpers;

@@ -1,15 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Threading;
-using EventStore.Licensing.Keygen;
-using System.Net.Http;
-using System.Threading.Tasks;
-using System.Threading.Channels;
-using System.Text.Json;
-using System.Text;
-using System.Net;
 using System;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Channels;
+using System.Threading.Tasks;
+using EventStore.Licensing.Keygen;
 using ContentType = EventStore.Transport.Http.ContentType;
 
 namespace EventStore.Licensing.Tests.Keygen;

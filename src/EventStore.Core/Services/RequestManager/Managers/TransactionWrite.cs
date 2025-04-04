@@ -37,7 +37,7 @@ public class TransactionWrite : RequestManagerBase {
 		_events = events;
 		_transactionId = transactionId;
 	}
-	
+
 	protected override Message WriteRequestMsg =>
 		new StorageMessage.WriteTransactionData(
 				InternalCorrId,

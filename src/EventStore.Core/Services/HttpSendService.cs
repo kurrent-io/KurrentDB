@@ -4,7 +4,6 @@
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
@@ -201,8 +200,8 @@ public class HttpSendService : IHttpForwarder,
 
 		// Copy content (if content body is allowed)
 		if (!string.Equals(srcReq.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase)
-		    && !string.Equals(srcReq.HttpMethod, "HEAD", StringComparison.OrdinalIgnoreCase)
-		    && hasContentLength) {
+			&& !string.Equals(srcReq.HttpMethod, "HEAD", StringComparison.OrdinalIgnoreCase)
+			&& hasContentLength) {
 			var streamContent = new StreamContent(srcReq.InputStream);
 			streamContent.Headers.ContentLength = srcReq.ContentLength64;
 			request.Content = streamContent;

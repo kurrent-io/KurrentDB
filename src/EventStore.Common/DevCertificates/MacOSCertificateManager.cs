@@ -20,7 +20,7 @@ internal sealed class MacOSCertificateManager : CertificateManager {
 	private const string CertificateSubjectRegex = "CN=(.*[^,]+).*";
 
 	private static readonly string MacOSUserKeyChain =
-            $"{RuntimeInformation.HomeFolder}/Library/Keychains/login.keychain-db";
+			$"{RuntimeInformation.HomeFolder}/Library/Keychains/login.keychain-db";
 
 	private const string MacOSSystemKeyChain = "/Library/Keychains/System.keychain";
 	private const string MacOSFindCertificateCommandLine = "security";
@@ -80,7 +80,7 @@ internal sealed class MacOSCertificateManager : CertificateManager {
 			}
 
 			using (var process = Process.Start(MacOSTrustCertificateCommandLine,
-				       MacOSTrustCertificateCommandLineArguments + tmpFile)) {
+					   MacOSTrustCertificateCommandLineArguments + tmpFile)) {
 				process.WaitForExit();
 				if (process.ExitCode != 0) {
 					Log.MacOSTrustCommandError(process.ExitCode);

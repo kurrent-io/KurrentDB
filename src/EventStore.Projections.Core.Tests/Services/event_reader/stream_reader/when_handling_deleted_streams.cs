@@ -6,12 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.SingleStream;
 using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
@@ -55,7 +53,7 @@ public class when_handling_deleted_streams<TLogFormat, TStreamId> : TestFixtureW
 						eventNumber, 50 * (eventNumber + 1), Guid.NewGuid(), Guid.NewGuid(), 50 * (eventNumber + 1),
 						0, stream, ExpectedVersion.Any, DateTime.UtcNow,
 						PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-						eventType, new byte[] {0}, new byte[] {0}
+						eventType, new byte[] { 0 }, new byte[] { 0 }
 					)
 				)
 			);
@@ -82,7 +80,8 @@ public class when_handling_deleted_streams<TLogFormat, TStreamId> : TestFixtureW
 
 	private void HandleEvents(string stream, long start, long end) {
 		List<long> eventNumbers = new List<long>();
-		for (long i = start; i <= end; i++) eventNumbers.Add(i);
+		for (long i = start; i <= end; i++)
+			eventNumbers.Add(i);
 		HandleEvents(stream, eventNumbers.ToArray());
 	}
 

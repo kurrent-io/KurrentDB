@@ -2,11 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Text;
 using System.Xml.Serialization;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.Messages;
 

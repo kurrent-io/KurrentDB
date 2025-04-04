@@ -2,14 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Http.Controllers;
 using EventStore.Transport.Http;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
-using EventStore.Common.Utils;
-using EventStore.Core.Cluster;
 
 namespace EventStore.Core.Services.Transport.Http;
 
@@ -140,7 +139,7 @@ public static class Format {
 		string streamId, string groupName, int count, EmbedLevel embed) {
 		var msg = message as ClientMessage.ReadNextNPersistentMessagesCompleted;
 		if (msg == null || msg.Result != ClientMessage.ReadNextNPersistentMessagesCompleted
-			    .ReadNextNPersistentMessagesResult.Success) {
+				.ReadNextNPersistentMessagesResult.Success) {
 			return msg != null ? entity.ResponseCodec.To(msg.Reason) : string.Empty;
 		}
 

@@ -14,7 +14,7 @@ public class TrustedHttpAuthenticationProvider : IHttpAuthenticationProvider {
 	public bool Authenticate(HttpContext context, out HttpAuthenticationRequest request) {
 		request = null;
 		if (!context.Request.Headers.TryGetValue(SystemHeaders.TrustedAuth, out var values) &&
-		    !context.Request.Headers.TryGetValue(SystemHeaders.LegacyTrustedAuth, out values)) {
+			!context.Request.Headers.TryGetValue(SystemHeaders.LegacyTrustedAuth, out values)) {
 			return false;
 		}
 		request = new HttpAuthenticationRequest(context, null, null);

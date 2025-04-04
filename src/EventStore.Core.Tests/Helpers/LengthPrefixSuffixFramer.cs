@@ -16,7 +16,7 @@ public class length_prefix_suffix_framer_should {
 	[Test]
 	public void correctly_frame_byte_array() {
 		var framer = new LengthPrefixSuffixFramer();
-		var data = new byte[] {0x7, 0x17, 0x27};
+		var data = new byte[] { 0x7, 0x17, 0x27 };
 		var framedData = MergeBytes(framer.FrameData(new ArraySegment<byte>(data)));
 
 		Assert.AreEqual(11, framedData.Length);
@@ -53,7 +53,7 @@ public class length_prefix_suffix_framer_should {
 		var framer = new LengthPrefixSuffixFramer();
 		framer.RegisterMessageArrivedCallback(async (r, token) => {
 			unframedCnt += 1;
-			Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, await ReadAll(r, token));
+			Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, await ReadAll(r, token));
 		});
 
 		await framer.UnFrameData(new ArraySegment<byte>([
@@ -74,13 +74,13 @@ public class length_prefix_suffix_framer_should {
 			Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, await ReadAll(r, token));
 		});
 
-		await framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x03, 0x00}), CancellationToken.None);
-		await framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x00, 0x00}), CancellationToken.None);
-		await framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x07, 0x17, 0x27}), CancellationToken.None);
-		await framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x03, 0x00}), CancellationToken.None);
+		await framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x03, 0x00 }), CancellationToken.None);
+		await framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x00, 0x00 }), CancellationToken.None);
+		await framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x07, 0x17, 0x27 }), CancellationToken.None);
+		await framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x03, 0x00 }), CancellationToken.None);
 
 		Assert.AreEqual(0, unframedCnt);
-		await framer.UnFrameData(new ArraySegment<byte>(new byte[] {0x00, 0x00}), CancellationToken.None);
+		await framer.UnFrameData(new ArraySegment<byte>(new byte[] { 0x00, 0x00 }), CancellationToken.None);
 		Assert.AreEqual(1, unframedCnt);
 	}
 
@@ -90,9 +90,9 @@ public class length_prefix_suffix_framer_should {
 		var framer = new LengthPrefixSuffixFramer();
 		framer.RegisterMessageArrivedCallback(async (r, token) => {
 			if (unframedCnt == 0)
-				Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, await ReadAll(r, token));
+				Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, await ReadAll(r, token));
 			else if (unframedCnt == 1)
-				Assert.AreEqual(new byte[] {0x05, 0x15}, await ReadAll(r, token));
+				Assert.AreEqual(new byte[] { 0x05, 0x15 }, await ReadAll(r, token));
 			else
 				Assert.Fail();
 
@@ -125,9 +125,9 @@ public class length_prefix_suffix_framer_should {
 		var framer = new LengthPrefixSuffixFramer();
 		framer.RegisterMessageArrivedCallback(async (r, token) => {
 			if (unframedCnt == 0)
-				Assert.AreEqual(new byte[] {0x07, 0x17, 0x27}, await ReadAll(r, token));
+				Assert.AreEqual(new byte[] { 0x07, 0x17, 0x27 }, await ReadAll(r, token));
 			else if (unframedCnt == 1)
-				Assert.AreEqual(new byte[] {0x05, 0x15}, await ReadAll(r, token));
+				Assert.AreEqual(new byte[] { 0x05, 0x15 }, await ReadAll(r, token));
 			else
 				Assert.Fail();
 

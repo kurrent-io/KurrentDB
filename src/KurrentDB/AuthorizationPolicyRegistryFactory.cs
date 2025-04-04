@@ -19,7 +19,7 @@ using Serilog;
 
 namespace KurrentDB;
 
-public class AuthorizationPolicyRegistryFactory: SubsystemsPlugin {
+public class AuthorizationPolicyRegistryFactory : SubsystemsPlugin {
 	private readonly ILogger _logger = Log.ForContext<AuthorizationPolicyRegistryFactory>();
 	private readonly IPolicySelectorFactory[] _pluginSelectorFactories = [];
 	private readonly Func<IPublisher, IAuthorizationPolicyRegistry> _createRegistry;

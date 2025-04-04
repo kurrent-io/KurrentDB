@@ -5,7 +5,6 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
 using EventStore.Core.Messages;

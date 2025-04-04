@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Messaging;
 using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Messages.ClientMessageTests;

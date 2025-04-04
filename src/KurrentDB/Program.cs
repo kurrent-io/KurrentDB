@@ -139,7 +139,7 @@ try {
 			manager.TrustCertificate(certs[0]);
 		} else {
 			Log.Warning("Automatically trusting dev certs is only supported on Windows.\n" +
-			            "Please trust certificate {cert} if it's not trusted already.", certs[0]);
+						"Please trust certificate {cert} if it's not trusted already.", certs[0]);
 		}
 
 		Log.Information("Running in dev mode using certificate '{cert}'", certs[0]);

@@ -64,7 +64,7 @@ public class when_projection_subsystem_restarted
 	}
 }
 
-[TestFixture,Explicit]
+[TestFixture, Explicit]
 public class when_projection_subsystem_restarted_twice
 	: TestFixtureWithProjectionSubsystem {
 	private Guid _instanceCorrelation;
@@ -77,7 +77,7 @@ public class when_projection_subsystem_restarted_twice
 		Subsystem.Handle(new SystemMessage.SystemCoreReady());
 		Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 
-		 var startMsg = WaitForStartMessage();
+		var startMsg = WaitForStartMessage();
 		ResetMessageEvents();
 		_instanceCorrelation = startMsg.InstanceCorrelationId;
 

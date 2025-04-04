@@ -4,7 +4,6 @@
 using System;
 using System.IO;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Exceptions;
 using EventStore.Core.TransactionLog.Chunks;
@@ -206,7 +205,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 
 	[Test]
 	public async Task when_a_chaser_checksum_is_ahead_of_writer_checksum_throws_corrupt_database_exception() {
-		var config = TFChunkHelper.CreateDbConfigEx(PathName, 0, 11,-1,-1,-1,1000,-1);
+		var config = TFChunkHelper.CreateDbConfigEx(PathName, 0, 11, -1, -1, -1, 1000, -1);
 		await using (var db = new TFChunkDb(config)) {
 			var ex = Assert.ThrowsAsync<CorruptDatabaseException>(async () => await db.Open(verifyHash: false));
 			Assert.True(ex?.InnerException is ReaderCheckpointHigherThanWriterException);
@@ -215,7 +214,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 
 	[Test]
 	public async Task when_an_epoch_checksum_is_ahead_of_writer_checksum_throws_corrupt_database_exception() {
-		var config = TFChunkHelper.CreateDbConfigEx(PathName, 0, 0, 11,-1,-1,1000,-1);
+		var config = TFChunkHelper.CreateDbConfigEx(PathName, 0, 0, 11, -1, -1, 1000, -1);
 		await using (var db = new TFChunkDb(config)) {
 			var ex = Assert.ThrowsAsync<CorruptDatabaseException>(async () => await db.Open(verifyHash: false));
 			Assert.True(ex?.InnerException is ReaderCheckpointHigherThanWriterException);

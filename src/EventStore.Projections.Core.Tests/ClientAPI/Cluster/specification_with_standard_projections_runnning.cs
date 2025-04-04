@@ -47,7 +47,7 @@ public abstract class specification_with_standard_projections_runnning<TLogForma
 			ExternalTcp = new IPEndPoint(address, externalTcp);
 			HttpEndPoint = new IPEndPoint(address, httpPort);
 
-			_ports = new[] {internalTcp, httpPort, externalTcp};
+			_ports = new[] { internalTcp, httpPort, externalTcp };
 		}
 
 		public IEnumerable<int> Ports => _ports;

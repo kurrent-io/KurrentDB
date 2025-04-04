@@ -140,7 +140,7 @@ public sealed class ArchiverService :
 		Cancel();
 		try {
 			await _archivingTask.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext |
-			                                    ConfigureAwaitOptions.SuppressThrowing);
+												ConfigureAwaitOptions.SuppressThrowing);
 		} finally {
 			_archivingSignal.Dispose();
 		}

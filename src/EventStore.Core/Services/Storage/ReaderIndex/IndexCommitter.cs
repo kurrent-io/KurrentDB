@@ -5,19 +5,19 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Index;
-using EventStore.Core.Messages;
 using EventStore.Core.LogAbstraction;
+using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
-using ILogger = Serilog.ILogger;
 using EventStore.LogCommon;
+using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;
 
@@ -98,7 +98,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		Log.Information("TableIndex initialization...");
 
 		using (_statusTracker.StartOpening()) {
-		    _tableIndex.Initialize(buildToPosition);
+			_tableIndex.Initialize(buildToPosition);
 		}
 
 		_persistedPreparePos = _tableIndex.PrepareCheckpoint;
@@ -151,24 +151,24 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 					case LogRecordType.Stream:
 					case LogRecordType.EventType:
 					case LogRecordType.Prepare: {
-							var prepare = (IPrepareLogRecord<TStreamId>)result.LogRecord;
-							if (prepare.Flags.HasAnyOf(PrepareFlags.IsCommitted)) {
-								if (prepare.Flags.HasAnyOf(PrepareFlags.SingleWrite)) {
-									await Commit(commitedPrepares, false, false, token);
+						var prepare = (IPrepareLogRecord<TStreamId>)result.LogRecord;
+						if (prepare.Flags.HasAnyOf(PrepareFlags.IsCommitted)) {
+							if (prepare.Flags.HasAnyOf(PrepareFlags.SingleWrite)) {
+								await Commit(commitedPrepares, false, false, token);
+								commitedPrepares.Clear();
+								await Commit([prepare], result.Eof, false, token);
+							} else {
+								if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete))
+									commitedPrepares.Add(prepare);
+								if (prepare.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
+									await Commit(commitedPrepares, result.Eof, false, token);
 									commitedPrepares.Clear();
-									await Commit([prepare], result.Eof, false, token);
-								} else {
-									if (prepare.Flags.HasAnyOf(PrepareFlags.Data | PrepareFlags.StreamDelete))
-										commitedPrepares.Add(prepare);
-									if (prepare.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
-										await Commit(commitedPrepares, result.Eof, false, token);
-										commitedPrepares.Clear();
-									}
 								}
 							}
-
-							break;
 						}
+
+						break;
+					}
 					case LogRecordType.Commit:
 						await Commit((CommitLogRecord)result.LogRecord, result.Eof, false, token);
 						break;
