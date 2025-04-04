@@ -1063,8 +1063,7 @@ public partial class TFChunk : IChunkBlob {
 		}
 
 		static MemoryOwner<byte> SerializeLogRecord(ILogRecord record, int length) {
-			using var buffer2 = Memory.AllocateExactly<byte>(length);
-			var writer = new BufferWriterSlim<byte>(buffer2.Span);
+			var writer = new BufferWriterSlim<byte>(length);
 			WriteRecord(record, ref writer);
 
 			var buffer = writer.DetachOrCopyBuffer();
