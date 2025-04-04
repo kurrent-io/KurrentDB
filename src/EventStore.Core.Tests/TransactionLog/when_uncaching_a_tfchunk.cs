@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -9,7 +9,7 @@ using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Transforms.Identity;
+using EventStore.Core.Transforms;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -39,7 +39,7 @@ public class when_uncaching_a_tfchunk<TLogFormat, TStreamId> : SpecificationWith
 		await _chunk.Complete(CancellationToken.None);
 		_uncachedChunk = await TFChunk.FromCompletedFile(new ChunkLocalFileSystem(Path.GetDirectoryName(Filename)), Filename, verifyHash: true, unbufferedRead: false,
 			reduceFileCachePressure: false, tracker: new TFChunkTracker.NoOp(),
-			getTransformFactory: _ => new IdentityChunkTransformFactory());
+			getTransformFactory: DbTransformManager.Default);
 		await _uncachedChunk.CacheInMemory(CancellationToken.None);
 		await _uncachedChunk.UnCacheFromMemory(CancellationToken.None);
 	}

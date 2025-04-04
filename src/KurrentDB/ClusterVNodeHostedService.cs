@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -9,31 +9,41 @@ using System.IO;
 using System.Linq;
 using System.Runtime;
 using System.Threading;
+using System.Threading.Tasks;
+using EventStore.Auth.Ldaps;
+using EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
+using EventStore.Auth.OAuth;
+using EventStore.Auth.UserCertificates;
+using EventStore.AutoScavenge;
 using EventStore.Common.Exceptions;
 using EventStore.Common.Options;
 using EventStore.Common.Utils;
 using EventStore.Core;
 using EventStore.Core.Authentication;
-using EventStore.Core.Services.Transport.Http.Controllers;
-using System.Threading.Tasks;
 using EventStore.Core.Authentication.InternalAuthentication;
 using EventStore.Core.Authentication.PassthroughAuthentication;
 using EventStore.Core.Authorization;
 using EventStore.Core.Certificates;
 using EventStore.Core.Hashing;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.PluginModel;
 using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
+using EventStore.Core.Services.Transport.Http.Controllers;
+using EventStore.Diagnostics.LogsEndpointPlugin;
+using EventStore.OtlpExporterPlugin;
 using EventStore.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
 using EventStore.Plugins.MD5;
 using EventStore.Plugins.Subsystems;
+using EventStore.POC.ConnectedSubsystemsPlugin;
 using EventStore.Projections.Core;
-using Microsoft.Extensions.Hosting;
+using EventStore.Security.EncryptionAtRest;
+using EventStore.TcpPlugin;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Serilog;
-using EventStore.Core.LogAbstraction;
 
 namespace KurrentDB;
 
@@ -51,7 +61,8 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		CertificateProvider certificateProvider,
 		IConfiguration configuration) {
 
-		if (options == null) throw new ArgumentNullException(nameof(options));
+		if (options == null)
+			throw new ArgumentNullException(nameof(options));
 
 		// two plugin mechanisms; pluginLoader is the new one
 		var pluginLoader = new PluginLoader(new DirectoryInfo(Locations.PluginsDirectory));
@@ -80,7 +91,8 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 					TimeSpan.FromMinutes(options.Projection.ProjectionsQueryExpiry),
 					options.Projection.FaultOutOfOrderProjections,
 					options.Projection.ProjectionCompilationTimeout,
-					options.Projection.ProjectionExecutionTimeout)))
+					options.Projection.ProjectionExecutionTimeout,
+					options.Projection.MaxProjectionStateSize)))
 			: options;
 
 		if (!_options.Database.MemDb) {
@@ -124,7 +136,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		}
 
 		var enabledNodeSubsystems = projectionMode >= ProjectionType.System
-			? new[] {NodeSubsystems.Projections}
+			? new[] { NodeSubsystems.Projections }
 			: Array.Empty<NodeSubsystems>();
 
 		RegisterWebControllers(enabledNodeSubsystems);
@@ -148,8 +160,10 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			}
 
 			var authorizationTypeToPlugin = new Dictionary<string, AuthorizationProviderFactory> { };
+			var authzPlugins = pluginLoader.Load<IAuthorizationPlugin>().ToList();
+			authzPlugins.Add(new LegacyAuthorizationWithStreamAuthorizationDisabledPlugin());
 
-			foreach (var potentialPlugin in pluginLoader.Load<IAuthorizationPlugin>()) {
+			foreach (var potentialPlugin in authzPlugins) {
 				try {
 					var commandLine = potentialPlugin.CommandLineName.ToLowerInvariant();
 					Log.Information(
@@ -230,7 +244,11 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				}
 			};
 
-			foreach (var potentialPlugin in pluginLoader.Load<IAuthenticationPlugin>()) {
+			var authPlugins = pluginLoader.Load<IAuthenticationPlugin>().ToList();
+			authPlugins.Add(new LdapsAuthenticationPlugin());
+			authPlugins.Add(new OAuthAuthenticationPlugin());
+
+			foreach (var potentialPlugin in authPlugins) {
 				try {
 					var commandLine = potentialPlugin.CommandLineName.ToLowerInvariant();
 					Log.Information(
@@ -255,7 +273,15 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		}
 
 		static ClusterVNodeOptions LoadSubsystemsPlugins(PluginLoader pluginLoader, ClusterVNodeOptions options) {
-			var plugins = pluginLoader.Load<ISubsystemsPlugin>().ToArray();
+			var plugins = pluginLoader.Load<ISubsystemsPlugin>().ToList();
+			plugins.Add(new OtlpExporterPlugin());
+			plugins.Add(new UserCertificatesPlugin());
+			plugins.Add(new LogsEndpointPlugin());
+			plugins.Add(new EncryptionAtRestPlugin());
+			plugins.Add(new ConnectedSubsystemsPlugin());
+			plugins.Add(new AutoScavengePlugin());
+			plugins.Add(new TcpApiPlugin());
+
 			foreach (var plugin in plugins) {
 				Log.Information("Loaded SubsystemsPlugin plugin: {plugin} {version}.",
 					plugin.CommandLineName,
@@ -312,13 +338,13 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 	}
 
 	public Task StartAsync(CancellationToken cancellationToken) =>
-		_options.Application.WhatIf ? Task.CompletedTask : Node.StartAsync(false);
+		_options.Application.WhatIf ? Task.CompletedTask : Node.StartAsync(waitUntilReady: false, cancellationToken);
 
 	public Task StopAsync(CancellationToken cancellationToken) =>
 		Node.StopAsync(cancellationToken: cancellationToken);
 
 	public void Dispose() {
-		if (_dbLock is not {IsAcquired: true}) {
+		if (_dbLock is not { IsAcquired: true }) {
 			return;
 		}
 		using (_dbLock) {

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using Microsoft.Data.Sqlite;
 
 namespace EventStore.Core.TransactionLog.Scavenging.Sqlite;
 
-public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScavengeMap<TKey, Unit> {
+public class SqliteCollisionScavengeMap<TKey> : IInitializeSqliteBackend, IScavengeMap<TKey, Unit> {
 	private AddCommand _add;
 	private GetCommand _get;
 	private RemoveCommand _remove;
@@ -20,9 +20,9 @@ public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScaven
 		var sql = $@"
 				CREATE TABLE IF NOT EXISTS {TableName} (
 					key {SqliteTypeMapping.GetTypeName<TKey>()} PRIMARY KEY)";
-		
+
 		sqlite.InitializeDb(sql);
-		
+
 		_add = new AddCommand(sqlite);
 		_get = new GetCommand(sqlite);
 		_all = new AllRecordsCommand(sqlite);
@@ -69,12 +69,12 @@ public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScaven
 					INSERT INTO {TableName}
 					VALUES($key)
 					ON CONFLICT(key) DO UPDATE SET key=$key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -83,7 +83,7 @@ public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScaven
 			_sqlite.ExecuteNonQuery(_cmd);
 		}
 	}
-	
+
 	private class GetCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _cmd;
@@ -95,12 +95,12 @@ public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScaven
 					SELECT key
 					FROM {TableName}
 					WHERE key = $key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => Unit.Instance;
 		}
@@ -121,12 +121,12 @@ public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScaven
 		public RemoveCommand(SqliteBackend sqlite) {
 			_sqlite = sqlite;
 			_reader = reader => Unit.Instance;
-			
+
 			var selectSql = $@"
 					SELECT key
 					FROM {TableName}
 					WHERE key = $key";
-			
+
 			_selectCmd = sqlite.CreateCommand();
 			_selectCmd.CommandText = selectSql;
 			_selectKeyParam = _selectCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -135,7 +135,7 @@ public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScaven
 			var deleteSql = $@"
 					DELETE FROM {TableName}
 					WHERE key = $key";
-			
+
 			_deleteCmd = sqlite.CreateCommand();
 			_deleteCmd.CommandText = deleteSql;
 			_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -148,7 +148,7 @@ public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScaven
 			return _sqlite.ExecuteReadAndDelete(_selectCmd, _deleteCmd, _reader, out _);
 		}
 	}
-	
+
 	private class AllRecordsCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _cmd;
@@ -163,7 +163,7 @@ public class SqliteCollisionScavengeMap<TKey>: IInitializeSqliteBackend, IScaven
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => new KeyValuePair<TKey, Unit>(reader.GetFieldValue<TKey>(0), Unit.Instance);
 		}

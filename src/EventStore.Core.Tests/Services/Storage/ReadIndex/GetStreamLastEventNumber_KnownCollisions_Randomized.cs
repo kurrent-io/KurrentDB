@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -50,16 +50,14 @@ public class GetStreamLastEventNumber_KnownCollisions_Randomized : ReadIndexTest
 		var streamLast = ExpectedVersion.NoStream;
 		var collidingStreamLast = ExpectedVersion.NoStream;
 
-		foreach (var @event in _events)
-		{
+		foreach (var @event in _events) {
 			Assert.AreEqual(streamLast,
 				await ReadIndex.GetStreamLastEventNumber_KnownCollisions(Stream, @event.LogPosition, CancellationToken.None));
 
 			Assert.AreEqual(collidingStreamLast,
 				await ReadIndex.GetStreamLastEventNumber_KnownCollisions(CollidingStream, @event.LogPosition, CancellationToken.None));
 
-			switch (@event.EventStreamId)
-			{
+			switch (@event.EventStreamId) {
 				case Stream:
 					streamLast = @event.EventNumber;
 					break;

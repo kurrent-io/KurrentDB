@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -45,13 +45,14 @@ public static class when_writing_projection_persisted_state_races_with_stream_de
 					emitEnabled: false, trackEmittedStreams: false));
 			yield return
 				new ProjectionManagementMessage.Command.Disable(_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
-			yield return new ProjectionManagementMessage.Command.Delete(new NoopEnvelope(), _projectionName, ProjectionManagementMessage.RunAs.System, 
+			yield return new ProjectionManagementMessage.Command.Delete(new NoopEnvelope(), _projectionName, ProjectionManagementMessage.RunAs.System,
 				true, false, false);
 		}
 
 		[Test]
 		public void should_publish_single_projection_deleted_event() {
 			Assert.AreEqual(
-				1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Internal.Deleted>().Count()); }
+				1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Internal.Deleted>().Count());
+		}
 	}
 }

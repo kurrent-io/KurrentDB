@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Security.Claims;
@@ -18,11 +18,13 @@ public abstract class ProjectionProcessingStrategy {
 	protected readonly string _name;
 	protected readonly ProjectionVersion _projectionVersion;
 	protected readonly ILogger _logger;
+	protected readonly int _maxProjectionStateSize;
 
-	protected ProjectionProcessingStrategy(string name, ProjectionVersion projectionVersion, ILogger logger) {
+	protected ProjectionProcessingStrategy(string name, ProjectionVersion projectionVersion, ILogger logger, int maxProjectionStateSize) {
 		_name = name;
 		_projectionVersion = projectionVersion;
 		_logger = logger;
+		_maxProjectionStateSize = maxProjectionStateSize;
 	}
 
 	public CoreProjection Create(
@@ -34,11 +36,15 @@ public abstract class ProjectionProcessingStrategy {
 		IODispatcher ioDispatcher,
 		ReaderSubscriptionDispatcher subscriptionDispatcher,
 		ITimeProvider timeProvider) {
-		if (inputQueue == null) throw new ArgumentNullException("inputQueue");
+		if (inputQueue == null)
+			throw new ArgumentNullException("inputQueue");
 		//if (runAs == null) throw new ArgumentNullException("runAs");
-		if (publisher == null) throw new ArgumentNullException("publisher");
-		if (ioDispatcher == null) throw new ArgumentNullException("ioDispatcher");
-		if (timeProvider == null) throw new ArgumentNullException("timeProvider");
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
+		if (ioDispatcher == null)
+			throw new ArgumentNullException("ioDispatcher");
+		if (timeProvider == null)
+			throw new ArgumentNullException("timeProvider");
 
 		var namingBuilder = new ProjectionNamesBuilder(_name, GetSourceDefinition());
 

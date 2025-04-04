@@ -1,0 +1,99 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/login"
+@attribute [ExcludeFromInteractiveRouting]
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using EventStore.Plugins.Authentication
+@using KurrentDB.Services
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Http
+@using MudBlazor.StaticInput
+
+<PageTitle>Log in</PageTitle>
+<MudSnackbarProvider/>
+
+<MudGrid>
+	<MudItem md="6">
+		<EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+			<DataAnnotationsValidator/>
+
+			<MudText GutterBottom="true" Typo="Typo.body1">Use a local account to log in.</MudText>
+
+			<MudGrid>
+				<MudItem md="12">
+					<MudStaticTextField For="@(() => Input.Username)" @bind-Value="Input.Username"
+					                    Label="Username" Placeholder="admin"
+					                    UserAttributes="@(new() { { "autocomplete", "username" }, { "aria-required", "true" } })"/>
+				</MudItem>
+				<MudItem md="12">
+					<MudStaticTextField For="@(() => Input.Password)" @bind-Value="Input.Password"
+					                    Label="Password" InputType="InputType.Password" Placeholder="password"
+					                    UserAttributes="@(new() { { "autocomplete", "current-password" }, { "aria-required", "true" } })"/>
+				</MudItem>
+				<MudItem md="12">
+					<MudStaticButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true"
+					                 FormAction="FormAction.Submit">
+						Log in
+					</MudStaticButton>
+				</MudItem>
+			</MudGrid>
+		</EditForm>
+
+	</MudItem>
+</MudGrid>
+
+@code {
+	[Inject] NavigationManager NavigationManager { get; set; }
+	[Inject] IAuthenticationProvider AuthProvider { get; set; }
+	[Inject] ISnackbar Snackbar { get; set; }
+	[SupplyParameterFromForm] LoginInputModel Input { get; set; } = new();
+	[SupplyParameterFromQuery] string ReturnUrl { get; set; }
+	[CascadingParameter] HttpContext HttpContext { get; set; } = default!;
+
+	protected override async Task OnAfterRenderAsync(bool firstRender) {
+		var authenticated = HttpContext.User.Identity?.IsAuthenticated == true;
+		Console.WriteLine(authenticated);
+		if (firstRender && !authenticated) {
+			// Try to log in with a dummy user that will always work in insecure mode
+			var dummy = RandomService.GenerateRandomString(10);
+			var (status, principal) = await LoginUser(dummy, dummy);
+			if (status == HttpAuthenticationRequestStatus.Authenticated) {
+				await HttpContext.SignInAsync(principal);
+				Redirect();
+			}
+		}
+	}
+
+	public async Task LoginUser() {
+		var (status, principal) = await LoginUser(Input.Username, Input.Password);
+		if (status != HttpAuthenticationRequestStatus.Authenticated) {
+			Snackbar.Add("Invalid username or password", Severity.Error);
+			return;
+		}
+
+		await HttpContext.SignInAsync(principal);
+
+		Redirect();
+	}
+
+	async Task<(HttpAuthenticationRequestStatus, ClaimsPrincipal)> LoginUser(string username, string password) {
+		var request = new HttpAuthenticationRequest(HttpContext, username, password);
+		AuthProvider.Authenticate(request);
+		return await request.AuthenticateAsync();
+	}
+
+	void Redirect() {
+		var redirectUrl = string.IsNullOrWhiteSpace(ReturnUrl) ? "/ui/cluster" : ReturnUrl;
+		NavigationManager.NavigateTo(redirectUrl);
+	}
+
+	private sealed class LoginInputModel {
+		[Required] public string Username { get; set; } = "";
+
+		[Required]
+		[DataType(DataType.Password)]
+		public string Password { get; set; } = "";
+	}
+}

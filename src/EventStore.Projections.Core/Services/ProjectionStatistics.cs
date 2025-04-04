@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Projections.Core.Services.Management;
 
@@ -60,34 +60,37 @@ public class ProjectionStatistics {
 
 	protected bool Equals(ProjectionStatistics other) {
 		return string.Equals(Status, other.Status) && Enabled.Equals(other.Enabled)
-		                                           && LeaderStatus == other.LeaderStatus &&
-		                                           string.Equals(StateReason, other.StateReason)
-		                                           && string.Equals(Name, other.Name) &&
-		                                           ProjectionId == other.ProjectionId && Epoch == other.Epoch
-		                                           && Version == other.Version && Mode == other.Mode &&
-		                                           Equals(Position, other.Position)
-		                                           && Progress.Equals(other.Progress) &&
-		                                           string.Equals(LastCheckpoint, other.LastCheckpoint)
-		                                           && EventsProcessedAfterRestart ==
-		                                           other.EventsProcessedAfterRestart
-		                                           && BufferedEvents == other.BufferedEvents &&
-		                                           string.Equals(CheckpointStatus, other.CheckpointStatus)
-		                                           && WritePendingEventsBeforeCheckpoint ==
-		                                           other.WritePendingEventsBeforeCheckpoint
-		                                           && WritePendingEventsAfterCheckpoint ==
-		                                           other.WritePendingEventsAfterCheckpoint
-		                                           && PartitionsCached == other.PartitionsCached &&
-		                                           ReadsInProgress == other.ReadsInProgress
-		                                           && WritesInProgress == other.WritesInProgress &&
-		                                           string.Equals(EffectiveName, other.EffectiveName)
-		                                           && string.Equals(ResultStreamName, other.ResultStreamName) &&
-		                                           CoreProcessingTime == other.CoreProcessingTime;
+												   && LeaderStatus == other.LeaderStatus &&
+												   string.Equals(StateReason, other.StateReason)
+												   && string.Equals(Name, other.Name) &&
+												   ProjectionId == other.ProjectionId && Epoch == other.Epoch
+												   && Version == other.Version && Mode == other.Mode &&
+												   Equals(Position, other.Position)
+												   && Progress.Equals(other.Progress) &&
+												   string.Equals(LastCheckpoint, other.LastCheckpoint)
+												   && EventsProcessedAfterRestart ==
+												   other.EventsProcessedAfterRestart
+												   && BufferedEvents == other.BufferedEvents &&
+												   string.Equals(CheckpointStatus, other.CheckpointStatus)
+												   && WritePendingEventsBeforeCheckpoint ==
+												   other.WritePendingEventsBeforeCheckpoint
+												   && WritePendingEventsAfterCheckpoint ==
+												   other.WritePendingEventsAfterCheckpoint
+												   && PartitionsCached == other.PartitionsCached &&
+												   ReadsInProgress == other.ReadsInProgress
+												   && WritesInProgress == other.WritesInProgress &&
+												   string.Equals(EffectiveName, other.EffectiveName)
+												   && string.Equals(ResultStreamName, other.ResultStreamName) &&
+												   CoreProcessingTime == other.CoreProcessingTime;
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != this.GetType()) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != this.GetType())
+			return false;
 		return Equals((ProjectionStatistics)obj);
 	}
 

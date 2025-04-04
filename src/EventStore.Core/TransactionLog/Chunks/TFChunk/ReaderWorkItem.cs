@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -13,7 +13,7 @@ using static DotNext.Runtime.Intrinsics;
 namespace EventStore.Core.TransactionLog.Chunks.TFChunk;
 
 internal sealed class ReaderWorkItem : Disposable {
-	private const int BufferSize = 4096;
+	private const int BufferSize = 8192;
 
 	// if item was taken from the pool, the field contains position within the array (>= 0)
 	private readonly int _positionInPool = -1;
@@ -31,7 +31,7 @@ internal sealed class ReaderWorkItem : Disposable {
 		// when the top-level stream doesn't perform any transformations. Otherwise,
 		// the buffer contains untransformed bytes that cannot be accessed directly.
 		_cachedReader = IsExactTypeOf<ChunkDataReadStream>(stream)
-		                && stream.ChunkFileStream is PoolingBufferedStream bufferedStream
+						&& stream.ChunkFileStream is PoolingBufferedStream bufferedStream
 			? bufferedStream
 			: null;
 	}
@@ -39,11 +39,15 @@ internal sealed class ReaderWorkItem : Disposable {
 	public ReaderWorkItem(Stream sharedStream, IChunkReadTransform chunkReadTransform)
 		: this(CreateTransformedMemoryStream(sharedStream, chunkReadTransform), leaveOpen: true) {
 		IsMemory = true;
+		Source = ITransactionFileTracker.Source.ChunkCache;
 	}
 
-	public ReaderWorkItem(IChunkHandle handle, IChunkReadTransform chunkReadTransform)
+	public ReaderWorkItem(IChunkHandle handle, IChunkReadTransform chunkReadTransform, bool isRemoteChunk)
 		: this(CreateTransformedFileStream(handle, chunkReadTransform), leaveOpen: false) {
 		IsMemory = false;
+		Source = isRemoteChunk
+			? ITransactionFileTracker.Source.Archive
+			: ITransactionFileTracker.Source.FileSystem;
 	}
 
 	private static ChunkDataReadStream CreateTransformedMemoryStream(Stream memStream, IChunkReadTransform chunkReadTransform) {
@@ -57,6 +61,8 @@ internal sealed class ReaderWorkItem : Disposable {
 	}
 
 	public bool IsMemory { get; }
+
+	public ITransactionFileTracker.Source Source { get; }
 
 	public int PositionInPool {
 		get => _positionInPool;

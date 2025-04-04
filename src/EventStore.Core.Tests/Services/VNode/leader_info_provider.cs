@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -150,20 +150,20 @@ public class leader_info_provider {
 	public record Expected(EndPoint TcpEndPoint, bool IsSecure, EndPoint HttpEndPoint);
 
 	public record LeaderInput(
-		string TcpEndPoint=null,
-		string SecureTcpEndPoint=null,
-		string HttpEndPoint=null,
-		int AdvertiseTcpPort=0,
-		int AdvertiseHttpPort=0,
-		string AdvertiseHost=null);
+		string TcpEndPoint = null,
+		string SecureTcpEndPoint = null,
+		string HttpEndPoint = null,
+		int AdvertiseTcpPort = 0,
+		int AdvertiseHttpPort = 0,
+		string AdvertiseHost = null);
 
 	public record GossipInput(
-		string TcpEndPoint=null,
-		string SecureTcpEndPoint=null,
-		string HttpEndPoint=null,
-		int AdvertiseTcpPort=0,
-		int AdvertiseHttpPort=0,
-		string AdvertiseHost=null);
+		string TcpEndPoint = null,
+		string SecureTcpEndPoint = null,
+		string HttpEndPoint = null,
+		int AdvertiseTcpPort = 0,
+		int AdvertiseHttpPort = 0,
+		string AdvertiseHost = null);
 
 	public record GivenInput(
 		LeaderInput Leader = null,
@@ -183,7 +183,7 @@ public class leader_info_provider {
 				internalSecureTcpEndPoint: IPEndPoint.Parse("4.4.5.5:6"),
 				externalTcpEndPoint: Leader.TcpEndPoint == null ? null : IPEndPoint.Parse(Leader.TcpEndPoint),
 				externalSecureTcpEndPoint: Leader.SecureTcpEndPoint == null ? null : IPEndPoint.Parse(Leader.SecureTcpEndPoint),
-				httpEndPoint: IPEndPoint.Parse(Leader.HttpEndPoint ?? DefaultHttpEndPoint), 
+				httpEndPoint: IPEndPoint.Parse(Leader.HttpEndPoint ?? DefaultHttpEndPoint),
 				advertiseHostToClientAs: Leader.AdvertiseHost,
 				advertiseHttpPortToClientAs: Leader.AdvertiseHttpPort,
 				advertiseTcpPortToClientAs: Leader.AdvertiseTcpPort,
@@ -202,8 +202,8 @@ public class leader_info_provider {
 				internalTcp: new DnsEndPoint("internal.tcp", 1),
 				internalSecureTcp: new DnsEndPoint("secure.tcp", 2),
 				advertiseInternalHostAs: null,
-                advertiseExternalHostAs: null,
-                advertiseHttpPortAs: 0);
+				advertiseExternalHostAs: null,
+				advertiseHttpPortAs: 0);
 		}
 
 		public Given Build() {
@@ -213,7 +213,7 @@ public class leader_info_provider {
 		}
 	}
 
-	public record ExpectedInput(string TcpEndPoint=null, string HttpEndPoint=null, bool IsTcpSecure=false) {
+	public record ExpectedInput(string TcpEndPoint = null, string HttpEndPoint = null, bool IsTcpSecure = false) {
 		public Expected Build() {
 			return new Expected(
 				ParseEndPoint(TcpEndPoint),

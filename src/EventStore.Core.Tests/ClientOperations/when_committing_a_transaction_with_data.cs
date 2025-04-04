@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -41,7 +41,7 @@ public class when_committing_a_transaction_with_data<TLogFormat, TStreamId> : sp
 
 	[Test]
 	public void successful_request_message_is_published() {
-		AssertEx.IsOrBecomesTrue(()=> Interlocked.Read(ref CompletionMessageCount) == 1);
+		AssertEx.IsOrBecomesTrue(() => Interlocked.Read(ref CompletionMessageCount) == 1);
 		Assert.AreEqual(InternalCorrId, CompletionMessage.CorrelationId);
 		Assert.True(CompletionMessage.Success);
 	}

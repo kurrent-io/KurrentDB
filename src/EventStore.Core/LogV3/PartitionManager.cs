@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -23,7 +23,7 @@ public class PartitionManager : IPartitionManager {
 	private const string RootPartitionTypeName = "Root";
 
 	public Guid? RootId { get; private set; }
-	public Guid? RootTypeId  { get; private set; }
+	public Guid? RootTypeId { get; private set; }
 
 	public PartitionManager(
 		ITransactionFileReader reader, ITransactionFileWriter writer, LogV3RecordFactory recordFactory) {
@@ -91,7 +91,7 @@ public class PartitionManager : IPartitionManager {
 			var rec = result.LogRecord;
 			switch (rec.RecordType) {
 				case LogRecordType.PartitionType:
-					var r = ((PartitionTypeLogRecord) rec).Record;
+					var r = ((PartitionTypeLogRecord)rec).Record;
 					if (r.StringPayload == RootPartitionTypeName && r.SubHeader.PartitionId == Guid.Empty) {
 						RootTypeId = r.Header.RecordId;
 
@@ -104,9 +104,9 @@ public class PartitionManager : IPartitionManager {
 						"Unexpected partition type encountered while trying to read the root partition type.");
 
 				case LogRecordType.Partition:
-					var p = ((PartitionLogRecord) rec).Record;
+					var p = ((PartitionLogRecord)rec).Record;
 					if (p.StringPayload == RootPartitionName && p.SubHeader.PartitionTypeId == RootTypeId
-					                                         && p.SubHeader.ParentPartitionId == Guid.Empty) {
+															 && p.SubHeader.ParentPartitionId == Guid.Empty) {
 						RootId = p.Header.RecordId;
 						_recordFactory.SetRootPartitionId(RootId.Value);
 

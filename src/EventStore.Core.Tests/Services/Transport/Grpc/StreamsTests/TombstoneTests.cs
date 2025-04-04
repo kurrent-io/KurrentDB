@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -40,17 +40,17 @@ public class TombstoneTests {
 			ExpectedVersion.NoStream => new TombstoneReq.Types.Options { NoStream = new() },
 			ExpectedVersion.StreamExists => new TombstoneReq.Types.Options { StreamExists = new() },
 			_ => throw new InvalidOperationException()
-		}){ }
+		}) { }
 
 		[Test]
 		public void no_exception_is_thrown() {
 			Assert.Null(_caughtException);
 		}
-		
+
 		[Test]
 		public void the_stream_is_deleted() {
 			var ex = Assert.ThrowsAsync<RpcException>(async () => {
-				using var call = StreamsClient.Read(new () {
+				using var call = StreamsClient.Read(new() {
 					Options = new() {
 						UuidOption = new() { Structured = new() },
 						NoFilter = new(),

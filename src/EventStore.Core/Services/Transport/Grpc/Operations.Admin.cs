@@ -1,10 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Client.Operations;
 using EventStore.Client;
+using EventStore.Client.Operations;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Plugins.Authorization;
@@ -13,21 +13,12 @@ using Grpc.Core;
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Operations {
-	private static readonly Operation ShutdownOperation =
-		new Operation(Plugins.Authorization.Operations.Node.Shutdown);
-
-	private static readonly Operation MergeIndexesOperation =
-		new Operation(Plugins.Authorization.Operations.Node.MergeIndexes);
-
-	private static readonly Operation ResignOperation = new Operation(Plugins.Authorization.Operations.Node.Resign);
-
-	private static readonly Operation SetNodePriorityOperation =
-		new Operation(Plugins.Authorization.Operations.Node.SetPriority);
-
-	private static readonly Operation RestartPersistentSubscriptionsOperation =
-		new Operation(Plugins.Authorization.Operations.Subscriptions.Restart);
-
-	private static readonly Empty EmptyResult = new Empty();
+	private static readonly Operation ShutdownOperation = new(Plugins.Authorization.Operations.Node.Shutdown);
+	private static readonly Operation MergeIndexesOperation = new(Plugins.Authorization.Operations.Node.MergeIndexes);
+	private static readonly Operation ResignOperation = new(Plugins.Authorization.Operations.Node.Resign);
+	private static readonly Operation SetNodePriorityOperation = new(Plugins.Authorization.Operations.Node.SetPriority);
+	private static readonly Operation RestartPersistentSubscriptionsOperation = new(Plugins.Authorization.Operations.Subscriptions.Restart);
+	private static readonly Empty EmptyResult = new();
 
 	public override async Task<Empty> Shutdown(Empty request, ServerCallContext context) {
 		var user = context.GetHttpContext().User;
@@ -54,10 +45,8 @@ internal partial class Operations {
 		return EmptyResult;
 
 		void OnMessage(Message message) {
-			var completed = message as ClientMessage.MergeIndexesResponse;
-			if (completed is null) {
-				mergeResultSource.TrySetException(
-					RpcExceptions.UnknownMessage<ClientMessage.MergeIndexesResponse>(message));
+			if (message is not ClientMessage.MergeIndexesResponse completed) {
+				mergeResultSource.TrySetException(RpcExceptions.UnknownMessage<ClientMessage.MergeIndexesResponse>(message));
 			} else {
 				mergeResultSource.SetResult(completed.CorrelationId.ToString());
 			}
@@ -76,8 +65,7 @@ internal partial class Operations {
 
 	public override async Task<Empty> SetNodePriority(SetNodePriorityReq request, ServerCallContext context) {
 		var user = context.GetHttpContext().User;
-		if (!await _authorizationProvider
-			.CheckAccessAsync(user, SetNodePriorityOperation, context.CancellationToken)) {
+		if (!await _authorizationProvider.CheckAccessAsync(user, SetNodePriorityOperation, context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
 
@@ -90,8 +78,7 @@ internal partial class Operations {
 		var envelope = new CallbackEnvelope(OnMessage);
 
 		var user = context.GetHttpContext().User;
-		if (!await _authorizationProvider.CheckAccessAsync(user, RestartPersistentSubscriptionsOperation,
-				context.CancellationToken)) {
+		if (!await _authorizationProvider.CheckAccessAsync(user, RestartPersistentSubscriptionsOperation, context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
 
@@ -102,16 +89,12 @@ internal partial class Operations {
 
 		void OnMessage(Message message) {
 			switch (message) {
-				case SubscriptionMessage.PersistentSubscriptionsRestarting _:
-					restart.TrySetResult(true);
-					break;
-				case SubscriptionMessage.InvalidPersistentSubscriptionsRestart _:
+				case SubscriptionMessage.PersistentSubscriptionsRestarting:
+				case SubscriptionMessage.InvalidPersistentSubscriptionsRestart:
 					restart.TrySetResult(true);
 					break;
 				default:
-					restart.TrySetException(
-						RpcExceptions
-							.UnknownMessage<SubscriptionMessage.PersistentSubscriptionsRestarting>(message));
+					restart.TrySetException(RpcExceptions.UnknownMessage<SubscriptionMessage.PersistentSubscriptionsRestarting>(message));
 					break;
 			}
 		}

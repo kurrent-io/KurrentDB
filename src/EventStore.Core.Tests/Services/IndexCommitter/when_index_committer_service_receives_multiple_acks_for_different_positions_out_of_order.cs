@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Messages;
@@ -31,12 +31,12 @@ public class
 		Service.Handle(new StorageMessage.CommitAck(_correlationId2, _logPosition4, _logPosition2, 0, 0));
 		Service.Handle(new StorageMessage.CommitAck(_correlationId1, _logPosition3, _logPosition1, 0, 0));
 
-			
+
 		ReplicationCheckpoint.Write(_logPosition4 + 1);
 		ReplicationCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.ReplicatedTo(_logPosition4 + 1));
 	}
-	
+
 	[Test]
 	public void commit_replicated_message_should_have_been_published_for_both_events() {
 		AssertEx.IsOrBecomesTrue(() => 2 == CommitReplicatedMgs.Count);

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Messages;
@@ -64,7 +64,7 @@ public class when_projection_subsystem_restarted
 	}
 }
 
-[TestFixture,Explicit]
+[TestFixture, Explicit]
 public class when_projection_subsystem_restarted_twice
 	: TestFixtureWithProjectionSubsystem {
 	private Guid _instanceCorrelation;
@@ -77,7 +77,7 @@ public class when_projection_subsystem_restarted_twice
 		Subsystem.Handle(new SystemMessage.SystemCoreReady());
 		Subsystem.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 
-		 var startMsg = WaitForStartMessage();
+		var startMsg = WaitForStartMessage();
 		ResetMessageEvents();
 		_instanceCorrelation = startMsg.InstanceCorrelationId;
 

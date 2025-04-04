@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -13,7 +13,7 @@ public static class DbUtil {
 	public static void CreateSingleChunk(TFChunkDbConfig config, int chunkNum, string filename,
 		int? actualDataSize = null, bool isScavenged = false, byte[] contents = null) {
 		var chunkHeader = new ChunkHeader(TFChunk.CurrentChunkVersion, TFChunk.CurrentChunkVersion,
-			config.ChunkSize,chunkNum, chunkNum, isScavenged, Guid.NewGuid(), TransformType.Identity);
+			config.ChunkSize, chunkNum, chunkNum, isScavenged, Guid.NewGuid(), TransformType.Identity);
 		var chunkBytes = chunkHeader.AsByteArray();
 		var dataSize = actualDataSize ?? config.ChunkSize;
 		var buf = new byte[ChunkHeader.Size + dataSize + ChunkFooter.Size];
@@ -33,7 +33,8 @@ public static class DbUtil {
 
 	public static void CreateMultiChunk(TFChunkDbConfig config, int chunkStartNum, int chunkEndNum, string filename,
 		int? physicalSize = null, long? logicalSize = null) {
-		if (chunkStartNum > chunkEndNum) throw new ArgumentException("chunkStartNum");
+		if (chunkStartNum > chunkEndNum)
+			throw new ArgumentException("chunkStartNum");
 
 		var chunkHeader = new ChunkHeader(TFChunk.CurrentChunkVersion, TFChunk.CurrentChunkVersion,
 			config.ChunkSize, chunkStartNum, chunkEndNum, true, Guid.NewGuid(), TransformType.Identity);

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -47,7 +47,7 @@ public class TFChunkDbTruncator {
 		chunkEnumerator.LastChunkNumber = oldLastChunkNum;
 		var truncatingToBoundary = truncateChk % _config.ChunkSize is 0;
 
-		var excessiveChunks = _fileSystem.NamingStrategy.GetAllVersionsFor(oldLastChunkNum + 1);
+		var excessiveChunks = _fileSystem.LocalNamingStrategy.GetAllVersionsFor(oldLastChunkNum + 1);
 		if (excessiveChunks.Length > 0)
 			throw new Exception(
 				$"During truncation of DB excessive TFChunks were found:\n{string.Join("\n", excessiveChunks)}.");
@@ -59,7 +59,8 @@ public class TFChunkDbTruncator {
 		await foreach (var chunkInfo in chunkEnumerator.WithCancellation(token)) {
 			switch (chunkInfo) {
 				case LatestVersion(var fileName, var _, var end):
-					if (newLastChunkFilename != null || end < newLastChunkNum) break;
+					if (newLastChunkFilename != null || end < newLastChunkNum)
+						break;
 					newLastChunkHeader = await _fileSystem.ReadHeaderAsync(fileName, token);
 					newLastChunkFilename = fileName;
 					break;
@@ -154,9 +155,9 @@ public class TFChunkDbTruncator {
 
 	private void TruncateChunkAndFillWithZeros(ChunkHeader chunkHeader, string chunkFilename, long truncateChk) {
 		if (chunkHeader.IsScavenged
-		    || chunkHeader.ChunkStartNumber != chunkHeader.ChunkEndNumber
-		    || truncateChk < chunkHeader.ChunkStartPosition
-		    || truncateChk >= chunkHeader.ChunkEndPosition) {
+			|| chunkHeader.ChunkStartNumber != chunkHeader.ChunkEndNumber
+			|| truncateChk < chunkHeader.ChunkStartPosition
+			|| truncateChk >= chunkHeader.ChunkEndPosition) {
 			throw new Exception(
 				string.Format(
 					"Chunk #{0}-{1} ({2}) is not correct unscavenged chunk. TruncatePosition: {3}, ChunkHeader: {4}.",
@@ -167,7 +168,7 @@ public class TFChunkDbTruncator {
 		var transformFactory = _getTransformFactory(chunkHeader.TransformType);
 		var newDataSize = transformFactory.TransformDataPosition(chunkHeader.ChunkSize);
 		var newFileSize = TFChunk.TFChunk.GetAlignedSize(ChunkHeader.Size + newDataSize + ChunkFooter.Size);
-		var dataTruncatePos = transformFactory.TransformDataPosition((int) chunkHeader.GetLocalLogPosition(truncateChk));
+		var dataTruncatePos = transformFactory.TransformDataPosition((int)chunkHeader.GetLocalLogPosition(truncateChk));
 
 		File.SetAttributes(chunkFilename, FileAttributes.Normal);
 		using (var fs = new FileStream(chunkFilename, FileMode.Open, FileAccess.ReadWrite, FileShare.Read)) {

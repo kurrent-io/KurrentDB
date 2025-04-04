@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -26,13 +26,14 @@ public class http_pipeline_should : SpecificationWithDirectory {
 	private const string SubsystemProtectedEndpoint = "/my-subsystem/protected";
 	private const string ControllerProtectedEndpoint = "/my-controller/protected";
 	private const string ControllerUnprotectedEndpoint = "/my-controller/unprotected";
+	private const string MappedProtectedEndpoint = "/my-plugin/protected";
 
 	[Test]
 	public async Task allow_subsystems_to_protect_their_endpoints() {
 		var tcs = new TaskCompletionSource();
 
-		await using var node = new MiniNode<LogFormat.V2,string>(PathName, subsystems: [ new FakeProtectedSubSystem() ]);
-		node.Node.MainBus.Subscribe(new AdHocHandler<SystemMessage.SystemReady>( t => {
+		await using var node = new MiniNode<LogFormat.V2, string>(PathName, subsystems: [new FakeProtectedSubSystem()]);
+		node.Node.MainBus.Subscribe(new AdHocHandler<SystemMessage.SystemReady>(t => {
 			tcs.TrySetResult();
 		}));
 
@@ -43,6 +44,13 @@ public class http_pipeline_should : SpecificationWithDirectory {
 		Assert.AreEqual(HttpStatusCode.Unauthorized, result.StatusCode);
 
 		result = await SendAuthenticatedGetAsync(SubsystemProtectedEndpoint);
+		Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
+
+		// subsystem endpoint protected with auth policy
+		result = await node.HttpClient.GetAsync(MappedProtectedEndpoint);
+		Assert.AreEqual(HttpStatusCode.Unauthorized, result.StatusCode);
+
+		result = await SendAuthenticatedGetAsync(MappedProtectedEndpoint);
 		Assert.AreEqual(HttpStatusCode.OK, result.StatusCode);
 
 		// subsystem unprotected endpoint
@@ -69,11 +77,11 @@ public class http_pipeline_should : SpecificationWithDirectory {
 					Authorization = new AuthenticationHeaderValue("Basic",
 						Convert.ToBase64String(Encoding.ASCII.GetBytes("admin:changeit")))
 				}
-		});
+			});
 	}
 
 	class FakeProtectedSubSystem() : SubsystemsPlugin(name: "FakeProtectedSubSystem") {
-		public override void ConfigureServices(IServiceCollection services, IConfiguration _) => 
+		public override void ConfigureServices(IServiceCollection services, IConfiguration _) =>
 			services.AddControllers().AddApplicationPart(typeof(FakeController).Assembly);
 
 		public override void ConfigureApplication(IApplicationBuilder app, IConfiguration _) =>
@@ -83,8 +91,7 @@ public class http_pipeline_should : SpecificationWithDirectory {
 				ep.MapGet(SubsystemProtectedEndpoint, context => {
 					if (context.User.IsInRole("$ops") || context.User.IsInRole("$admins")) {
 						context.Response.StatusCode = (int)HttpStatusCode.OK;
-					}
-					else {
+					} else {
 						context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
 					}
 
@@ -95,6 +102,8 @@ public class http_pipeline_should : SpecificationWithDirectory {
 					context.Response.StatusCode = (int)HttpStatusCode.OK;
 					return Task.CompletedTask;
 				});
+
+				ep.MapGet(MappedProtectedEndpoint, () => "Pong").RequireAuthorization(p => p.RequireRole("$admins"));
 			});
 	}
 }

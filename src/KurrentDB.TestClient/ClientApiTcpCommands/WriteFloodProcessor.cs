@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -115,7 +115,8 @@ internal class WriteFloodProcessor : ICmdProcessor {
 				pending.Add(client.AppendToStreamAsync(streams[rnd.Next(streamsCnt)], ExpectedVersion.Any, events)
 					.ContinueWith(t => {
 						monitor.EndOperation(corrid);
-						if (t.IsCompletedSuccessfully) Interlocked.Add(ref stats.Succ, batchSize);
+						if (t.IsCompletedSuccessfully)
+							Interlocked.Add(ref stats.Succ, batchSize);
 						else {
 							if (Interlocked.Increment(ref stats.Fail) % 1000 == 0) {
 								Console.Write("#");
@@ -174,7 +175,8 @@ internal class WriteFloodProcessor : ICmdProcessor {
 				}
 			}
 
-			if (pending.Count > 0) await Task.WhenAll(pending);
+			if (pending.Count > 0)
+				await Task.WhenAll(pending);
 		}
 
 		var sw = Stopwatch.StartNew();

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -229,6 +229,26 @@ public class StreamBufferTests {
 		//add parked events
 		buffer.AddRetry(OutstandingMessage.ForParkedEvent(Helper.BuildFakeEvent(Guid.NewGuid(), "foo", "$persistentsubscription-foo::group-parked", 1)));
 		Assert.AreEqual(2, buffer.GetLowestRetry().sequenceNumber);
+	}
+
+	[Test]
+	public void can_add_retries_after_replayed_events() {
+		var buffer = new StreamBuffer(10, 10, null, true);
+		// add parked events
+		var parkedEvent = BuildMessageAt(1);
+		buffer.AddRetry(OutstandingMessage.ForParkedEvent(Helper.BuildLinkEvent(Guid.NewGuid(), "$persistentsubscription-foo::group-parked", 0, parkedEvent.ResolvedEvent)));
+
+		// add retried events
+		buffer.AddRetry(BuildMessageAt(4));
+		buffer.AddRetry(BuildMessageAt(2));
+		buffer.AddRetry(BuildMessageAt(3));
+
+		Assert.AreEqual(2, buffer.GetLowestRetry().sequenceNumber);
+		var messagePointers = buffer.Scan().ToArray();
+		Assert.AreEqual(GetEventIdFor(1), messagePointers[0].Message.ResolvedEvent.Event.EventId);
+		Assert.AreEqual(GetEventIdFor(2), messagePointers[1].Message.EventId);
+		Assert.AreEqual(GetEventIdFor(3), messagePointers[2].Message.EventId);
+		Assert.AreEqual(GetEventIdFor(4), messagePointers[3].Message.EventId);
 	}
 
 	private OutstandingMessage BuildMessageAt(int position, Guid? forcedEventId = null) {

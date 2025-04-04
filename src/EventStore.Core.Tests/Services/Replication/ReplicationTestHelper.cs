@@ -1,16 +1,16 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
-using EventStore.Core.Services.UserManagement;
+using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
-using EventStore.Core.Data;
+using EventStore.Core.Services.UserManagement;
+using EventStore.Core.Tests.Helpers;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Replication.ReadStream;
 
@@ -151,9 +151,9 @@ public static class ReplicationTestHelper {
 		ClientMessage.ReadEventCompleted readResult = null;
 		var resetEvent = new ManualResetEventSlim();
 		var read = new ClientMessage.ReadEvent(Guid.NewGuid(), Guid.NewGuid(), new CallbackEnvelope(msg => {
-				readResult = (ClientMessage.ReadEventCompleted)msg;
-				resetEvent.Set();
-			}), streamId, eventNumber,
+			readResult = (ClientMessage.ReadEventCompleted)msg;
+			resetEvent.Set();
+		}), streamId, eventNumber,
 			false, false, SystemAccounts.System);
 		node.Node.MainQueue.Publish(read);
 

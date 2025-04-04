@@ -44,7 +44,7 @@
     "cpu": 8.282546,
     "freeMem": 375517184,
     "drive": {
-      "/var/lib/eventstore": {
+      "/var/lib/kurrentdb": {
         "availableBytes": 13525999616,
         "totalBytes": 15679725568,
         "usage": "13%",

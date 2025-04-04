@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -60,14 +60,14 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	private void WriteStateCompleted(Action<ResolvedEvent, OperationResult> completed, ResolvedEvent ev,
 		ClientMessage.WriteEventsCompleted msg, DateTime parkedMessageAdded) {
 		_lastParkedEventNumber = msg.LastEventNumber;
-		if (_oldestParkedMessage == null) _oldestParkedMessage = parkedMessageAdded.ToUniversalTime();
+		if (_oldestParkedMessage == null)
+			_oldestParkedMessage = parkedMessageAdded.ToUniversalTime();
 		completed?.Invoke(ev, msg.Result);
 	}
 
 	public void BeginParkMessage(ResolvedEvent ev, string reason,
 		Action<ResolvedEvent, OperationResult> completed) {
-		var metadata = new ParkedMessageMetadata
-			{ Added = DateTime.Now, Reason = reason, SubscriptionEventNumber = ev.OriginalEventNumber };
+		var metadata = new ParkedMessageMetadata { Added = DateTime.Now, Reason = reason, SubscriptionEventNumber = ev.OriginalEventNumber };
 
 		string data = GetLinkToFor(ev);
 
@@ -94,7 +94,8 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 
 	private void BeginReadParkedMessageStats(Action completed) {
 		BeginReadLastEvent(lastEventNumber => {
-			if (lastEventNumber is null) completed();
+			if (lastEventNumber is null)
+				completed();
 			BeginReadFirstEvent(0, (firstEventNumber, oldestParkedMessageTimeStamp) => {
 				_lastTruncateBefore = firstEventNumber ?? -1;
 				_lastParkedEventNumber = lastEventNumber ?? -1;
@@ -207,7 +208,8 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 				switch (msg.Result) {
 					case OperationResult.Success:
 						_lastTruncateBefore = sequence;
-						if (updateOldestParkedMessage) _oldestParkedMessage = timestamp;
+						if (updateOldestParkedMessage)
+							_oldestParkedMessage = timestamp;
 						completed?.Invoke();
 						break;
 					default:

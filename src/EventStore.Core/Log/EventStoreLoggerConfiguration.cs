@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -86,16 +86,17 @@ public class EventStoreLoggerConfiguration {
 
 	public static bool AdjustMinimumLogLevel(LogLevel logLevel) {
 		lock (_defaultLogLevelSwitchLock) {
-			#if !DEBUG
+#if !DEBUG
 			if (_defaultLogLevelSwitch == null) {
 				throw new InvalidOperationException("The logger configuration has not yet been initialized.");
 			}
-			#endif
+#endif
 			if (!Enum.TryParse<LogEventLevel>(logLevel.ToString(), out var serilogLogLevel)) {
 				throw new ArgumentException($"'{logLevel}' is not a valid log level.");
 			}
 
-			if (serilogLogLevel == _defaultLogLevelSwitch.MinimumLevel) return false;
+			if (serilogLogLevel == _defaultLogLevelSwitch.MinimumLevel)
+				return false;
 			_defaultLogLevelSwitch.MinimumLevel = serilogLogLevel;
 			return true;
 		}
@@ -167,6 +168,8 @@ public class EventStoreLoggerConfiguration {
 						logFileRetentionCount, logFileInterval, logFileSize)
 					.WriteTo.Logger(Error);
 			}
+
+			configuration.WriteTo.Sink(ObservableSerilogSink.Instance);
 		}
 
 		void Error(LoggerConfiguration configuration) {
@@ -193,12 +196,22 @@ public class EventStoreLoggerConfiguration {
 				() => TrySetLogLevel(namedLogLevelSection, levelSwitch));
 		}
 
+		// the log level must be a valid microsoft level, we have been keeping the log config in the section
+		// that the ms libraries will access.
 		static void TrySetLogLevel(IConfigurationSection logLevel, LoggingLevelSwitch levelSwitch) {
-			if (!Enum.TryParse<LogEventLevel>(logLevel.Value, out var level)) {
-				return;
-			}
+			if (!Enum.TryParse<Microsoft.Extensions.Logging.LogLevel>(logLevel.Value, out var level))
+				throw new UnknownLogLevelException(logLevel.Value, logLevel.Path);
 
-			levelSwitch.MinimumLevel = level;
+			levelSwitch.MinimumLevel = level switch {
+				Microsoft.Extensions.Logging.LogLevel.None => LogEventLevel.Fatal,
+				Microsoft.Extensions.Logging.LogLevel.Trace => LogEventLevel.Verbose,
+				Microsoft.Extensions.Logging.LogLevel.Debug => LogEventLevel.Debug,
+				Microsoft.Extensions.Logging.LogLevel.Information => LogEventLevel.Information,
+				Microsoft.Extensions.Logging.LogLevel.Warning => LogEventLevel.Warning,
+				Microsoft.Extensions.Logging.LogLevel.Error => LogEventLevel.Error,
+				Microsoft.Extensions.Logging.LogLevel.Critical => LogEventLevel.Fatal,
+				_ => throw new UnknownLogLevelException(logLevel.Value, logLevel.Path)
+			};
 		}
 	}
 
@@ -217,4 +230,9 @@ public class EventStoreLoggerConfiguration {
 
 	public static implicit operator LoggerConfiguration(EventStoreLoggerConfiguration configuration) =>
 		configuration._loggerConfiguration;
+}
+
+class UnknownLogLevelException(string logLevel, string path)
+	: InvalidConfigurationException($"Unknown log level: \"{logLevel}\" at \"{path}\". Known log levels: {string.Join(", ", KnownLogLevels)}") {
+	static string[] KnownLogLevels => Enum.GetNames(typeof(Microsoft.Extensions.Logging.LogLevel));
 }

@@ -1,7 +1,6 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
 using System.Net;
 using System.Threading.Tasks;
 using EventStore.Cluster;
@@ -14,23 +13,27 @@ using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using Empty = EventStore.Client.Empty;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc.Cluster;
 
 partial class Gossip {
-	private readonly IPublisher _bus;
 	private readonly IAuthorizationProvider _authorizationProvider;
+	private static readonly Operation ReadOperation = new(Plugins.Authorization.Operations.Node.Gossip.Read);
+	private static readonly Operation UpdateOperation = new(Plugins.Authorization.Operations.Node.Gossip.Update);
+	private readonly IPublisher _bus;
 	private readonly string _clusterDns;
 	private readonly IDurationTracker _updateTracker;
 	private readonly IDurationTracker _readTracker;
-	private static readonly Operation ReadOperation = new Operation(Plugins.Authorization.Operations.Node.Gossip.Read);
-	private static readonly Operation UpdateOperation = new Operation(Plugins.Authorization.Operations.Node.Gossip.Update);
 
-	public Gossip(IPublisher bus, IAuthorizationProvider authorizationProvider, string clusterDns,
+	public Gossip(
+		IPublisher bus,
+		IAuthorizationProvider authorizationProvider,
+		string clusterDns,
 		IDurationTracker updateTracker,
 		IDurationTracker readTracker) {
 
 		_bus = bus;
-		_authorizationProvider = authorizationProvider ?? throw new ArgumentNullException(nameof(authorizationProvider));
+		_authorizationProvider = Ensure.NotNull(authorizationProvider);
 		_clusterDns = clusterDns;
 		_updateTracker = updateTracker;
 		_readTracker = readTracker;
@@ -41,6 +44,7 @@ partial class Gossip {
 		if (!await _authorizationProvider.CheckAccessAsync(user, UpdateOperation, context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
+
 		var clusterInfo = EventStore.Core.Cluster.ClusterInfo.FromGrpcClusterInfo(request.Info, _clusterDns);
 		var tcs = new TaskCompletionSource<ClusterInfo>();
 		var duration = _updateTracker.Start();
@@ -54,13 +58,14 @@ partial class Gossip {
 		if (!await _authorizationProvider.CheckAccessAsync(user, ReadOperation, context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
+
 		var tcs = new TaskCompletionSource<ClusterInfo>();
 		var duration = _readTracker.Start();
 		_bus.Publish(new GossipMessage.ReadGossip(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration))));
 		return await tcs.Task;
 	}
 
-	private void GossipResponse(Message msg, TaskCompletionSource<ClusterInfo> tcs, Duration duration) {
+	private static void GossipResponse(Message msg, TaskCompletionSource<ClusterInfo> tcs, Duration duration) {
 		if (msg is GossipMessage.SendGossip received) {
 			tcs.TrySetResult(EventStore.Core.Cluster.ClusterInfo.ToGrpcClusterInfo(received.ClusterInfo));
 			duration.Dispose();

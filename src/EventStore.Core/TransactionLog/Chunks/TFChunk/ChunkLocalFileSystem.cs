@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ public sealed class ChunkLocalFileSystem : IChunkFileSystem {
 		: this(new(path, chunkFilePrefix)) {
 	}
 
-	public IVersionedFileNamingStrategy NamingStrategy => _strategy;
+	public IVersionedFileNamingStrategy LocalNamingStrategy => _strategy;
 
 	// is used from tests only
 	public Func<string, int, int, CancellationToken, ValueTask<int>> ChunkNumberProvider {
@@ -40,7 +40,7 @@ public sealed class ChunkLocalFileSystem : IChunkFileSystem {
 				Options = ChunkFileHandle.ConvertToFileOptions(hint),
 			};
 
-			task = new(new ChunkFileHandle(fileName, options));
+			task = new(ChunkFileHandle.Create(fileName, options));
 		} catch (FileNotFoundException) {
 			task = ValueTask.FromException<IChunkHandle>(
 				new CorruptDatabaseException(new ChunkNotFoundException(fileName)));

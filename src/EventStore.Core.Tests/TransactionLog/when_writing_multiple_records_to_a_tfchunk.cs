@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
@@ -100,7 +100,7 @@ public class when_writing_multiple_records_to_a_tfchunk<TLogFormat, TStreamId> :
 		var res = await _chunk.TryReadClosestForward(_prepare1.GetSizeWithLengthPrefixAndSuffix(), CancellationToken.None);
 		Assert.IsTrue(res.Success);
 		Assert.AreEqual(_prepare1.GetSizeWithLengthPrefixAndSuffix()
-		                + _prepare2.GetSizeWithLengthPrefixAndSuffix(), res.NextPosition);
+						+ _prepare2.GetSizeWithLengthPrefixAndSuffix(), res.NextPosition);
 		Assert.IsTrue(res.LogRecord is IPrepareLogRecord<TStreamId>);
 		Assert.AreEqual(_prepare2, res.LogRecord);
 	}
@@ -108,7 +108,7 @@ public class when_writing_multiple_records_to_a_tfchunk<TLogFormat, TStreamId> :
 	[Test]
 	public async Task cannot_read_past_second_record_with_closest_forward_method() {
 		var res = await _chunk.TryReadClosestForward(_prepare1.GetSizeWithLengthPrefixAndSuffix()
-		                                       + _prepare2.GetSizeWithLengthPrefixAndSuffix(), CancellationToken.None);
+											   + _prepare2.GetSizeWithLengthPrefixAndSuffix(), CancellationToken.None);
 		Assert.IsFalse(res.Success);
 	}
 

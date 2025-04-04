@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using EventStore.Core.Messaging;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication;
 
-internal class WriterInterceptor:
+internal class WriterInterceptor :
 	IHandle<SystemMessage.SystemInit>,
 	IHandle<SystemMessage.StateChangeMessage>,
 	IHandle<SystemMessage.WriteEpoch>,
@@ -77,7 +77,7 @@ internal class WriterInterceptor:
 	public void Handle(MonitoringMessage.InternalStatsRequest message) => Process(message);
 	public void Handle(ReplicationMessage.ReplicaSubscribed message) => Process(message);
 	public void Handle(ReplicationMessage.CreateChunk message) => Process(message);
-	public void Handle(ReplicationMessage.RawChunkBulk message)  => Process(message);
+	public void Handle(ReplicationMessage.RawChunkBulk message) => Process(message);
 	public void Handle(ReplicationMessage.DataChunkBulk message) => Process(message);
 
 	protected virtual void Process(Message message) {

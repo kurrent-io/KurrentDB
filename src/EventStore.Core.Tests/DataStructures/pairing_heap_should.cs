@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -65,7 +65,7 @@ public class pairing_heap_should {
 
 	[Test]
 	public void return_elements_in_sorted_order() {
-		var reference = new[] {2, 5, 7, 9, 11, 27, 32};
+		var reference = new[] { 2, 5, 7, 9, 11, 27, 32 };
 		var returned = new List<int>();
 
 		for (int i = reference.Length - 1; i >= 0; --i) {
@@ -81,7 +81,7 @@ public class pairing_heap_should {
 
 	[Test]
 	public void keep_all_duplicates() {
-		var reference = new[] {2, 5, 5, 7, 9, 9, 11, 11, 11, 27, 32};
+		var reference = new[] { 2, 5, 5, 7, 9, 9, 11, 11, 11, 27, 32 };
 		var returned = new List<int>();
 
 		for (int i = reference.Length - 1; i >= 0; --i) {

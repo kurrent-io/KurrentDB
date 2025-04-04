@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -15,6 +15,7 @@ using EventStore.Plugins.Transforms;
 
 namespace EventStore.Core.TransactionLog.Chunks.TFChunk;
 
+// see CancellationToken comment at the top of TFChunk.cs
 internal sealed class WriterWorkItem : Disposable {
 	public const int BufferSize = 8192;
 
@@ -70,12 +71,16 @@ internal sealed class WriterWorkItem : Disposable {
 			WorkingStream = memStream;
 	}
 
-	public ValueTask AppendData(ReadOnlyMemory<byte> buf, CancellationToken token) {
+	// this method can throw, and if it does the two streams may be out of sync with each other
+	// at the moment callers need to realise this and not use this object any more.
+	// we don't pass the CancellationToken to WriteAsync because cancelling there would
+	// also leave this object in an invalid state.
+	public ValueTask AppendData(ReadOnlyMemory<byte> buf, CancellationToken _) {
 		// MEMORY (in-memory write doesn't require async I/O)
 		_memStream?.Write(buf.Span);
 
 		// as we are always append-only, stream's position should be right here
-		return _fileStream?.WriteAsync(buf, token) ?? ValueTask.CompletedTask;
+		return _fileStream?.WriteAsync(buf, CancellationToken.None) ?? ValueTask.CompletedTask;
 	}
 
 	internal void AppendData(int length) {

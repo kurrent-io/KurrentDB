@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -13,7 +13,7 @@ using Google.Protobuf;
 using Grpc.Core;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.Core.Data.ExpectedVersion;
-using Metadata=EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
+using Metadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests;
 
 [TestFixture]

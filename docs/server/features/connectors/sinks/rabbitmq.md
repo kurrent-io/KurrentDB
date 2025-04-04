@@ -71,7 +71,7 @@ management API endpoints in the [API Reference](../manage.md).
 
 ## Settings
 
-Adjust these settings to specify the behavior and interaction of your RabbitMQ sink connector with EventStoreDB, ensuring it operates according to your requirements and preferences.
+Adjust these settings to specify the behavior and interaction of your RabbitMQ sink connector with KurrentDB, ensuring it operates according to your requirements and preferences.
 
 ::: tip
 The RabbitMQ sink inherits a set of common settings that are used to configure the connector. The settings can be found in
@@ -116,3 +116,6 @@ to RabbitMQ is confirmed by the broker before the publish operation is considere
 Disabling broker acknowledgment can significantly increase throughput by allowing the producer to continue sending
 messages without waiting for confirmation from the broker. This is ideal for high-throughput scenarios where performance
 is prioritized over delivery guarantees, despite a slight increase in the risk of message loss or duplication.
+
+## Tutorial
+[Learn how to set up and use a RabbitMQ Sink connector in KurrentDB through a tutorial.](/tutorials/RabbitMQ_Sink.md)

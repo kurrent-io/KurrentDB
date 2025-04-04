@@ -1,9 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
-using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
@@ -28,15 +27,15 @@ public class when_loading_existing_projection_state_with_no_projection_subsystem
 
 	protected override void Given() {
 		var persistedState = new ManagedProjection.PersistedState {
-				Enabled = true,
-				HandlerType = "JS",
-				Query = @"log(1);", 
-				Mode = ProjectionMode.Continuous,
-				EmitEnabled = true,
-				CheckpointsDisabled = true,
-				Epoch = -1,
-				Version = -1,
-				RunAs = SerializedRunAs.SerializePrincipal(ProjectionManagementMessage.RunAs.Anonymous)
+			Enabled = true,
+			HandlerType = "JS",
+			Query = @"log(1);",
+			Mode = ProjectionMode.Continuous,
+			EmitEnabled = true,
+			CheckpointsDisabled = true,
+			Epoch = -1,
+			Version = -1,
+			RunAs = SerializedRunAs.SerializePrincipal(ProjectionManagementMessage.RunAs.Anonymous)
 		};
 		ExistingEvent(ProjectionNamesBuilder.ProjectionsStreamPrefix + _projectionName,
 			ProjectionEventTypes.ProjectionUpdated, "", persistedState.ToJson());
@@ -87,7 +86,7 @@ public class when_loading_existing_projection_state_with_projection_subsystem_ve
 		var persistedState = new ManagedProjection.PersistedState {
 			Enabled = true,
 			HandlerType = "JS",
-			Query = @"log(1);", 
+			Query = @"log(1);",
 			Mode = ProjectionMode.Continuous,
 			EmitEnabled = true,
 			CheckpointsDisabled = true,

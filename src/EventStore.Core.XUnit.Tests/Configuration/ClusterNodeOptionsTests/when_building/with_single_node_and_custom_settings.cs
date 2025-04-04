@@ -1,9 +1,7 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
-using System;
-using System.IO;
 using System.Net;
 using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Tests;
@@ -17,9 +15,7 @@ namespace EventStore.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests.when
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_run_on_disk<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
-	private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"Test-{Guid.NewGuid()}");
-
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options.RunOnDisk(_dbPath);
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options.RunOnDisk(PathName);
 
 	[Test]
 	public void should_set_memdb_to_false() {
@@ -28,7 +24,7 @@ public class with_run_on_disk<TLogFormat, TStreamId> : SingleNodeScenario<TLogFo
 
 	[Test]
 	public void should_set_the_db_path() {
-		Assert.AreEqual(_dbPath, _node.Db.Config.Path);
+		Assert.AreEqual(PathName, _node.Db.Config.Path);
 	}
 }
 
@@ -117,7 +113,7 @@ public class
 
 	[Test]
 	public void should_set_max_chunk_size_to_the_size_of_the_number_of_cached_chunks() {
-		var chunkSizeResult = _cachedChunks * (long)(TFConsts.ChunkSize + ChunkHeader.Size + ChunkFooter.Size);
+		var chunkSizeResult = _cachedChunks * (long)(_node.Db.Config.ChunkSize + ChunkHeader.Size + ChunkFooter.Size);
 		Assert.AreEqual(chunkSizeResult, _node.Db.Config.MaxChunksCacheSize);
 	}
 }
@@ -165,8 +161,7 @@ public class
 
 	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
 		options with {
-			DefaultUser = new ClusterVNodeOptions.DefaultUserOptions
-				{ DefaultAdminPassword = _adminPassword, DefaultOpsPassword = _opsPassword }
+			DefaultUser = new ClusterVNodeOptions.DefaultUserOptions { DefaultAdminPassword = _adminPassword, DefaultOpsPassword = _opsPassword }
 		};
 
 	[Test]

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -17,11 +17,11 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 
 	public int NumReads { get; private set; }
 
-	public FakeInMemoryTfReader(int recordOffset){
+	public FakeInMemoryTfReader(int recordOffset) {
 		_recordOffset = recordOffset;
 	}
 
-	public void AddRecord(ILogRecord record, long position){
+	public void AddRecord(ILogRecord record, long position) {
 		_records.Add(position, record);
 	}
 
@@ -33,11 +33,11 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 		NumReads++;
 
 		SeqReadResult result;
-		if (_records.ContainsKey(_curPosition)){
+		if (_records.ContainsKey(_curPosition)) {
 			var pos = _curPosition;
 			_curPosition += _recordOffset;
 			result = new(true, false, _records[pos], _recordOffset, pos, pos + _recordOffset);
-		} else{
+		} else {
 			result = new(false, false, null, 0, 0, 0);
 		}
 
@@ -51,9 +51,9 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 		NumReads++;
 
 		RecordReadResult result;
-		if (_records.ContainsKey(position)){
+		if (_records.ContainsKey(position)) {
 			result = new RecordReadResult(true, 0, _records[position], 0);
-		} else{
+		} else {
 			result = new RecordReadResult(false, 0, _records[position], 0);
 		}
 

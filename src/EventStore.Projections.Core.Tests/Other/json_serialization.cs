@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -79,7 +79,7 @@ class can_serialize_and_deserialize {
 
 	[Test]
 	public void streams_based_checkpoint_tag() {
-		CheckpointTag tag = CheckpointTag.FromStreamPositions(1, new Dictionary<string, long> {{"a", 1}, {"b", 2}});
+		CheckpointTag tag = CheckpointTag.FromStreamPositions(1, new Dictionary<string, long> { { "a", 1 }, { "b", 2 } });
 		byte[] bytes = tag.ToJsonBytes(_version);
 		string instring = Helper.UTF8NoBom.GetString(bytes);
 		Console.WriteLine(instring);
@@ -92,7 +92,7 @@ class can_serialize_and_deserialize {
 	[Test]
 	public void event_by_type_index_based_checkpoint_tag() {
 		CheckpointTag tag = CheckpointTag.FromEventTypeIndexPositions(
-			0, new TFPos(100, 50), new Dictionary<string, long> {{"a", 1}, {"b", 2}});
+			0, new TFPos(100, 50), new Dictionary<string, long> { { "a", 1 }, { "b", 2 } });
 		byte[] bytes = tag.ToJsonBytes(_version);
 		string instring = Helper.UTF8NoBom.GetString(bytes);
 		Console.WriteLine(instring);
@@ -148,7 +148,7 @@ class can_serialize_and_deserialize {
 	[Test]
 	public void extra_metadata_are_preserved() {
 		CheckpointTag tag = CheckpointTag.FromPosition(0, -1, 0);
-		var extra = new Dictionary<string, JToken> {{"$$a", new JRaw("\"b\"")}, {"$$c", new JRaw("\"d\"")}};
+		var extra = new Dictionary<string, JToken> { { "$$a", new JRaw("\"b\"") }, { "$$c", new JRaw("\"d\"") } };
 		byte[] bytes = tag.ToJsonBytes(_version, extra);
 		string instring = Helper.UTF8NoBom.GetString(bytes);
 		Console.WriteLine(instring);
@@ -185,9 +185,12 @@ class can_serialize_and_deserialize {
 		}
 
 		public override bool Equals(object obj) {
-			if (ReferenceEquals(null, obj)) return false;
-			if (ReferenceEquals(this, obj)) return true;
-			if (obj.GetType() != GetType()) return false;
+			if (ReferenceEquals(null, obj))
+				return false;
+			if (ReferenceEquals(this, obj))
+				return true;
+			if (obj.GetType() != GetType())
+				return false;
 			return Equals((TestData)obj);
 		}
 

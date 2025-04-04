@@ -1,11 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Bus;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.Phases;
 using EventStore.Projections.Core.Services.Processing.WorkItems;
@@ -24,6 +23,9 @@ public class FakeCoreProjection : ICoreProjection,
 	public readonly List<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> _prerecordedEventsLoadedMessages =
 		new List<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>();
 
+	public readonly List<CoreProjectionProcessingMessage.Failed> _failedMessages =
+		new List<CoreProjectionProcessingMessage.Failed>();
+
 	public void Handle(CoreProjectionProcessingMessage.CheckpointCompleted message) {
 		_checkpointCompletedMessages.Add(message);
 	}
@@ -37,7 +39,7 @@ public class FakeCoreProjection : ICoreProjection,
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.Failed message) {
-		throw new System.NotImplementedException();
+		_failedMessages.Add(message);
 	}
 
 	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {

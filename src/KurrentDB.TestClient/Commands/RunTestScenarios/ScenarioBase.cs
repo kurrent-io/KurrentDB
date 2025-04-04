@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -178,7 +178,7 @@ internal abstract class ScenarioBase : IScenario {
 	}
 
 	protected T[][] Split<T>(IEnumerable<T> sequence, int parts) {
-		return sequence.Select((x, i) => new {GroupNum = i % parts, Item = x})
+		return sequence.Select((x, i) => new { GroupNum = i % parts, Item = x })
 			.GroupBy(x => x.GroupNum, y => y.Item)
 			.Select(x => x.ToArray())
 			.ToArray();
@@ -297,7 +297,7 @@ internal abstract class ScenarioBase : IScenario {
 		var clientFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 		//../../KurrentDB/net471/KurrentDB.exe
 		var clusterNodeFolder = System.IO.Directory.GetParent(System.IO.Directory.GetParent(clientFolder).FullName)
-		                        + "/KurrentDB/net471/";
+								+ "/KurrentDB/net471/";
 		string fileName;
 		string argumentsHead;
 
@@ -452,7 +452,7 @@ internal abstract class ScenarioBase : IScenario {
 
 			var writeTask = store.AppendToStreamAsync(stream,
 				eventVersion - 1,
-				new[] {createEvent(eventVersion)});
+				new[] { createEvent(eventVersion) });
 
 			eventVersion += 1;
 

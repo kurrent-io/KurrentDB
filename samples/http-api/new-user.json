@@ -1,6 +1,6 @@
 {
     "LoginName": "adminuser",
-    "FullName": "EventStore Admin",
+    "FullName": "KurrentDB Admin",
     "Groups": [
         "$admins",
         "DataScience"

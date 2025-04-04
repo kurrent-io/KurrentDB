@@ -6,14 +6,14 @@ order: 1
 
 ## Overview
 
-EventStoreDB provides a native interface of AtomPub over HTTP. AtomPub is a RESTful protocol that can reuse many existing components, for example reverse proxies and a client's native HTTP caching. Since events stored in EventStoreDB are immutable, cache expiration can be infinite. EventStoreDB leverages content type negotiation and you can access appropriately serialised events can as JSON or XML according to the request headers.
+KurrentDB provides a native interface of AtomPub over HTTP. AtomPub is a RESTful protocol that can reuse many existing components, for example reverse proxies and a client's native HTTP caching. Since events stored in KurrentDB are immutable, cache expiration can be infinite. KurrentDB leverages content type negotiation and you can access appropriately serialised events as JSON or according to the request headers.
 
 ### Compatibility with AtomPub
 
-EventStoreDB v5 is fully compatible with the [1.0 version of the Atom Protocol](https://datatracker.ietf.org/doc/html/rfc4287). EventStoreDB adds extensions to the protocol, such as headers for control and custom `rel` links.
+KurrentDB is compatible with the [1.0 version of the Atom Protocol](https://datatracker.ietf.org/doc/html/rfc4287). KurrentDB adds extensions to the protocol, such as headers for control and custom `rel` links.
 
 ::: warning
-The latest versions of EventStoreDB (v20+) have the AtomPub protocol disabled by default. We do not advise creating new applications using AtomPub as we plan to deprecate it. Please explore our new gRPC protocol available in v20. It provides more reliable real-time event streaming with wide range of platforms and language supported.
+KurrentDB has the AtomPub protocol disabled by default. We do not advise creating new applications using AtomPub as we plan to deprecate it. Please use the gRPC protocol available in v20. It provides more reliable real-time event streaming with wide range of platforms and language supported.
 :::
 
 #### Existing implementations
@@ -31,18 +31,19 @@ Many environments have already implemented the AtomPub protocol, which simplifie
 | node.js   | <https://github.com/danmactough/node-feedparser>   |
 
 ::: warning
-These are not officially supported by EventStoreDB.
+These are not officially supported by KurrentDB.
 :::
 
 #### Content types
 
-The preferred way of determining which content type responses EventStoreDB serves is to set the `Accept` header on the request. As some clients do not deal well with HTTP headers when caching, appending a format parameter to the URL is also supported, for example, `?format=xml`.
+The preferred way of determining which content type responses KurrentDB serves is to set the `Accept` header on the request. As some clients do not deal well with HTTP headers when caching, appending a format parameter to the URL is also supported, for example, `?format=xml`.
 
 The accepted content types for POST requests are:
 
 - `application/xml`
 - `application/vnd.eventstore.events+xml`
 - `application/json`
+- `application/vnd.kurrent.events+json`
 - `application/vnd.eventstore.events+json`
 - `text/xml`
 
@@ -51,18 +52,20 @@ The accepted content types for GET requests are:
 - `application/xml`
 - `application/atom+xml`
 - `application/json`
+- `application/vnd.kurrent.atom+json`
 - `application/vnd.eventstore.atom+json`
 - `text/xml`
 - `text/html`
+- `application/vnd.kurrent.streamdesc+json`
 - `application/vnd.eventstore.streamdesc+json`
 
 ## Appending Events
 
 You append to a stream over HTTP using a `POST` request to the resource of the stream. If the stream does not exist then the stream is implicitly created.
 
-### EventStoreDB media types
+### KurrentDB media types
 
-EventStoreDB supports a custom media type for posting events, `application/vnd.eventstore.events+json` or `application/vnd.eventstore.events+xml`. This format allows for extra functionality that posting events as `application/json` or `application/xml` does not. For example it allows you to post multiple events in a single batch.
+KurrentDB supports a custom media type for posting events, `application/vnd.kurrent.events+json`. This format allows for extra functionality that posting events as `application/json` does not. For example it allows you to post multiple events in a single batch.
 
 <!-- TODO: And more? Why not use it? And why are these examples not using it? -->
 
@@ -94,9 +97,9 @@ If you issue a `POST` request with data to a stream and the correct content type
 @[code{response}](@httpapi/append-event-to-new-stream.sh)
 :::
 
-Some clients may not be able to generate a unique identifier (or may not want to) for the event ID. You need this ID for idempotence purposes and EventStoreDB can generate it for you.
+Some clients may not be able to generate a unique identifier (or may not want to) for the event ID. You need this ID for idempotence purposes and KurrentDB can generate it for you.
 
-If you leave off the `ES-EventId` header you see different behavior:
+If you leave off the `Kurrent-EventId` header you see different behavior:
 
 ::: tabs
 @tab Request
@@ -105,7 +108,7 @@ If you leave off the `ES-EventId` header you see different behavior:
 @[code{response}](@httpapi/append-event-no-id.sh)
 :::
 
-In this case EventStoreDB has responded with a `307 Temporary Redirect`. The location points to another URI that you can post the event to. This new URI is idempotent for posting, even without an event ID.
+In this case KurrentDB has responded with a `307 Temporary Redirect`. The location points to another URI that you can post the event to. This new URI is idempotent for posting, even without an event ID.
 
 ::: tabs
 @tab Request
@@ -133,7 +136,7 @@ For example, the below has two events:
 
 @[code](@httpapi/multiple-events.json)
 
-When you append multiple events in a single post, EventStoreDB treats them as one transaction, it appends all events together or fails.
+When you append multiple events in a single post, KurrentDB treats them as one transaction, it appends all events together or fails.
 
 ::: tabs
 @tab Request
@@ -152,12 +155,12 @@ To append events, issue a `POST` request to the same resource with a new `eventI
 @tab Request
 @[code{curl}](@httpapi/append-event.sh)
 @tab Response
-@[code{curl}](@httpapi/append-event.sh)
+@[code{response}](@httpapi/append-event.sh)
 :::
 
 ### Data-only events
 
-Use the `application/octet-stream` content type to support data-only binary events. When creating these events, you need to provide the `ES-EventType` and `ES-EventId` headers and cannot have metadata associated with the event. In the example below `SGVsbG8gV29ybGQ=` is the data you `POST` to the stream:
+Use the `application/octet-stream` content type to support data-only binary events. When creating these events, you need to provide the `Kurrent-EventType` and `Kurrent-EventId` headers and cannot have metadata associated with the event. In the example below `SGVsbG8gV29ybGQ=` is the data you `POST` to the stream:
 
 ::: tabs
 @tab Request
@@ -210,13 +213,13 @@ Appends to streams are idempotent based upon the `EventId` assigned in your post
 
 This is important behaviour as it's how you implement error handling. If you receive a timeout, broken connection, no answer, etc from your HTTP `POST` then it's your responsibility to retry the post. You must also keep the same UUID that you assigned to the event in the first `POST`.
 
-If you are using the expected version parameter with your post, then EventStoreDB is 100% idempotent. If you use `-2` as your expected version value, EventStoreDB does its best to keep events idempotent but cannot assure that everything is fully idempotent and you end up in 'at-least-once' messaging.
+If you are using the expected version parameter with your post, then KurrentDB is 100% idempotent. If you use `-2` as your expected version value, KurrentDB does its best to keep events idempotent but cannot assure that everything is fully idempotent and you end up in 'at-least-once' messaging.
 
 ## Reading streams and events
 
 ### Reading a stream
 
-EventStoreDB exposes streams as a resource located at `http(s)://{yourdomain.com}:{port}/streams/{stream}`. If you issue a simple `GET` request to this resource, you receive a standard AtomFeed document as a response.
+KurrentDB exposes streams as a resource located at `http(s)://{yourdomain.com}:{port}/streams/{stream}`. If you issue a simple `GET` request to this resource, you receive a standard AtomFeed document as a response.
 
 ::: tabs
 @tab Request
@@ -236,6 +239,7 @@ The accepted content types for `GET` requests are:
 - `application/xml`
 - `application/atom+xml`
 - `application/json`
+- `application/vnd.kurrent.atom+json`
 - `application/vnd.eventstore.atom+json`
 - `text/xml`
 - `text/html`
@@ -244,14 +248,14 @@ The non-atom version of the event has fewer details about the event.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-event.sh)
+@[code](@httpapi/read-event.sh)
 @tab Response
-@[code{response}](@httpapi/read-event.sh)
+@[code](@httpapi/read-event.json)
 :::
 
 ### Feed paging
 
-The next step in understanding how to read a stream is the `first`/`last`/`previous`/`next` links within a stream. EventStoreDB supplies these links, so you can read through a stream, and they follow the pattern defined in [RFC 5005](https://datatracker.ietf.org/doc/html/rfc5005).
+The next step in understanding how to read a stream is the `first`/`last`/`previous`/`next` links within a stream. KurrentDB supplies these links, so you can read through a stream, and they follow the pattern defined in [RFC 5005](https://datatracker.ietf.org/doc/html/rfc5005).
 
 In the example above the server returned the following `links` as part of its result:
 
@@ -400,7 +404,7 @@ To delete a stream over the Atom interface, issue a `DELETE` request to the reso
 @[code](@httpapi/delete-stream/delete-stream-response.http)
 :::
 
-By default, when you delete a stream, EventStoreDB soft deletes it. This means you can recreate it later by setting the `$tb` metadata section in the stream. If you try to `GET` a soft deleted stream you receive a 404 response:
+By default, when you delete a stream, KurrentDB soft deletes it. This means you can recreate it later by setting the `$tb` metadata section in the stream. If you try to `GET` a soft deleted stream you receive a 404 response:
 
 ::: tabs
 @tab Request
@@ -422,7 +426,7 @@ The version numbers do not start at zero but at where you soft deleted the strea
 
 ### Hard deleting
 
-You can hard delete a stream. To issue a permanent delete use the `ES-HardDelete` header.
+You can hard delete a stream. To issue a permanent delete use the `Kurrent-HardDelete` header.
 
 ::: warning
 A hard delete is permanent and the stream is not removed during a scavenge. If you hard delete a stream, you cannot recreate the stream.
@@ -450,9 +454,9 @@ If you try to recreate the stream as in the above example you also receive a `41
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/delete-stream/append-event-deleted.sh)
+@[code](@httpapi/delete-stream/append-event-deleted.sh)
 @tab Response
-@[code{response}](@httpapi/delete-stream/append-event-deleted.sh)
+@[code](@httpapi/delete-stream/append-event-deleted.http)
 :::
 
 ## Description document
@@ -463,18 +467,18 @@ With the addition of Competing Consumers, which is another way of reading stream
 
 The introduction of the description document has some benefits:
 
-- Clients can rely on the keys (streams, streamSubscription) in the description document to remain unchanged across versions of EventStoreDB and you can rely on it as a lookup for the particular method of reading a stream.
+- Clients can rely on the keys (streams, streamSubscription) in the description document to remain unchanged across versions of KurrentDB and you can rely on it as a lookup for the particular method of reading a stream.
 - Allows the restructuring of URIs underneath without breaking clients. e.g., `/streams/newstream` -> `/streams/newstream/atom`.
 
 ### Fetching the description document
 
-There are three ways in which EventStoreDB returns the description document.
+There are three ways in which KurrentDB returns the description document.
 
 - Attempting to read a stream with an unsupported media type.
 - Attempting to read a stream with no accept header.
 - Requesting the description document explicitly.
 
-The client is able to request the description document by passing `application/vnd.eventstore.streamdesc+json` in the `accept` header, for example:
+The client is able to request the description document by passing `application/vnd.kurrent.streamdesc+json` in the `accept` header, for example:
 
 ::: tabs
 @tab Request
@@ -491,7 +495,7 @@ In the example above, the client requested the description document for the stre
 
 All operations on the HTTP interface are idempotent (unless the [expected version](#expected-version-header) is ignored). It is the responsibility of the client to retry operations under failure conditions, ensuring that the event IDs of the events posted are the same as the first attempt.
 
-Provided the client maintains this EventStoreDB will treat all operations as idempotent.
+Provided the client maintains this KurrentDB will treat all operations as idempotent.
 
 For example:
 
@@ -543,7 +547,7 @@ Keep-Alive: timeout=15,max=100
 	"id": "http://127.0.0.1:2113/streams/newstream444",
 	"updated": "2012-09-06T16:39:44.695643Z",
 	"author": {
-		"name": "EventStore"
+		"name": "Kurrent"
 	},
 	"links": [
 		{
@@ -561,7 +565,7 @@ Keep-Alive: timeout=15,max=100
 			"id": "http://127.0.0.1:2113/streams/newstream444/1",
 			"updated": "2012-09-06T16:39:44.695643Z",
 			"author": {
-				"name": "EventStore"
+				"name": "Kurrent"
 			},
 			"summary": "Entry #1",
 			"links": [
@@ -590,7 +594,7 @@ Keep-Alive: timeout=15,max=100
 			"id": "http://127.0.0.1:2113/streams/newstream444/0",
 			"updated": "2012-09-06T16:39:44.695631Z",
 			"author": {
-				"name": "EventStore"
+				"name": "Kurrent"
 			},
 			"summary": "Entry #0",
 			"links": [
@@ -621,7 +625,7 @@ Keep-Alive: timeout=15,max=100
 
 ## Stream metadata
 
-Every stream in EventStoreDB has metadata stream associated with it, prefixed by `$$`, so the metadata stream from a stream called `foo` is `$$foo`. Internally, the metadata includes information such as the ACL of the stream, the maximum count and age for the events in the stream. Client code can also add information into stream metadata for use with projections or the client API.
+Every stream in KurrentDB has metadata stream associated with it, prefixed by `$$`, so the metadata stream from a stream called `foo` is `$$foo`. Internally, the metadata includes information such as the ACL of the stream, the maximum count and age for the events in the stream. Client code can also add information into stream metadata for use with projections or the client API.
 
 Stream metadata is stored internally as JSON, and you can access it over the HTTP API.
 
@@ -630,7 +634,7 @@ Stream metadata is stored internally as JSON, and you can access it over the HTT
 To read the metadata, issue a `GET` request to the attached metadata resource, which is typically of the form:
 
 ```http
-https://{eventstore-ip-address}/streams/{stream-name}/metadata
+https://{kurrentdb-ip-address}/streams/{stream-name}/metadata
 ```
 
 You should not access metadata by constructing this URL yourself, as the right to change the resource address is reserved. Instead, you should follow the link from the stream itself, which enables your client to tolerate future changes to the addressing structure.
@@ -645,7 +649,7 @@ You should not access metadata by constructing this URL yourself, as the right t
 Once you have the URI of the metadata stream, issue a `GET` request to retrieve the metadata:
 
 ```bash
-curl -i -H "Accept:application/vnd.eventstore.atom+json" https://127.0.0.1:2113/streams/%24users/metadata --user admin:changeit
+curl -i -H "Accept:application/vnd.kurrent.atom+json" https://127.0.0.1:2113/streams/%24users/metadata --user admin:changeit
 ```
 
 If you have security enabled, reading metadata may require that you pass credentials, as in the examples above. If credentials are required and you do not pass them, then you receive a `401 Unauthorized` response.

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -174,7 +174,7 @@ public sealed class TelemetryServiceTests : IAsyncLifetime {
 		var gossipRequest = Assert.IsType<GossipMessage.ReadGossip>(await _channelReader.ReadAsync());
 		gossipRequest.Envelope.ReplyWith(new GossipMessage.SendGossip(
 			new ClusterInfo(
-				mem1 , mem2),
+				mem1, mem2),
 			new DnsEndPoint("localhost", 123)));
 
 		// receive usage request and send response

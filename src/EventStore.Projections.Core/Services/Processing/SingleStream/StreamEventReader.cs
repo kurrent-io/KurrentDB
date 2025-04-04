@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Security.Claims;
@@ -41,9 +41,12 @@ public class StreamEventReader : EventReader,
 		bool produceStreamDeletes,
 		bool stopOnEof = false)
 		: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-		if (fromSequenceNumber < 0) throw new ArgumentException("fromSequenceNumber");
-		if (streamName == null) throw new ArgumentNullException("streamName");
-		if (string.IsNullOrEmpty(streamName)) throw new ArgumentException("streamName");
+		if (fromSequenceNumber < 0)
+			throw new ArgumentException("fromSequenceNumber");
+		if (streamName == null)
+			throw new ArgumentNullException("streamName");
+		if (string.IsNullOrEmpty(streamName))
+			throw new ArgumentException("streamName");
 		_streamName = streamName;
 		_fromSequenceNumber = fromSequenceNumber;
 		_timeProvider = timeProvider;
@@ -128,16 +131,20 @@ public class StreamEventReader : EventReader,
 	}
 
 	public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-		if (_disposed) return;
-		if (Paused) return;
-		if (message.CorrelationId != _pendingRequestCorrelationId) return;
+		if (_disposed)
+			return;
+		if (Paused)
+			return;
+		if (message.CorrelationId != _pendingRequestCorrelationId)
+			return;
 
 		_eventsRequested = false;
 		PauseOrContinueProcessing();
 	}
 
 	private long StartFrom(ClientMessage.ReadStreamEventsForwardCompleted message, long fromSequenceNumber) {
-		if (fromSequenceNumber != 0) return fromSequenceNumber;
+		if (fromSequenceNumber != 0)
+			return fromSequenceNumber;
 		if (message.Events is not []) {
 			return message.Events[0].OriginalEventNumber;
 		}
@@ -151,7 +158,8 @@ public class StreamEventReader : EventReader,
 	}
 
 	protected override void RequestEvents() {
-		if (_disposed) throw new InvalidOperationException("Disposed");
+		if (_disposed)
+			throw new InvalidOperationException("Disposed");
 		if (_eventsRequested)
 			throw new InvalidOperationException("Read operation is already in progress");
 		if (PauseRequested || Paused)

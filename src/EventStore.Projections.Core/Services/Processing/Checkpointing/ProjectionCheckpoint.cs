@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -52,11 +52,16 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 		int maxWriteBatchLength,
 		int maximumAllowedWritesInFlight,
 		ILogger logger = null) {
-		if (publisher == null) throw new ArgumentNullException("publisher");
-		if (ioDispatcher == null) throw new ArgumentNullException("ioDispatcher");
-		if (readyHandler == null) throw new ArgumentNullException("readyHandler");
-		if (positionTagger == null) throw new ArgumentNullException("positionTagger");
-		if (from.CommitPosition < from.PreparePosition) throw new ArgumentException("from");
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
+		if (ioDispatcher == null)
+			throw new ArgumentNullException("ioDispatcher");
+		if (readyHandler == null)
+			throw new ArgumentNullException("readyHandler");
+		if (positionTagger == null)
+			throw new ArgumentNullException("positionTagger");
+		if (from.CommitPosition < from.PreparePosition)
+			throw new ArgumentException("from");
 		//NOTE: fromCommit can be equal fromPrepare on 0 position.  Is it possible anytime later? Ignoring for now.
 		_maximumAllowedWritesInFlight = maximumAllowedWritesInFlight;
 		_publisher = publisher;

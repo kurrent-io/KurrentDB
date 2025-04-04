@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
@@ -7,10 +7,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Runtime.CompilerServices;
 using DotNext.Threading;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
@@ -91,7 +89,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 	private bool _noQuorumNotified;
 	private bool _preLeaderReplicationEnabled;
 	private readonly AsyncManualResetEvent _flushSignal = new(false);
-	private TaskCompletionSource _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+	private readonly TaskCompletionSource _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	public Task Task => _tcs.Task;
 
@@ -104,19 +102,12 @@ public class LeaderReplicationService : IMonitoredQueue,
 		int clusterSize,
 		bool unsafeAllowSurplusNodes,
 		QueueStatsManager queueStatsManager) {
-		Ensure.NotNull(publisher, "publisher");
-		Ensure.NotEmptyGuid(instanceId, "instanceId");
-		Ensure.NotNull(db, "db");
-		Ensure.NotNull(tcpSendPublisher, "tcpSendPublisher");
-		Ensure.NotNull(epochManager, "epochManager");
-		Ensure.Positive(clusterSize, "clusterSize");
-
-		_publisher = publisher;
-		_instanceId = instanceId;
-		_db = db;
-		_tcpSendPublisher = tcpSendPublisher;
-		_epochManager = epochManager;
-		_clusterSize = clusterSize;
+		_publisher = Ensure.NotNull(publisher);
+		_instanceId = Ensure.NotEmptyGuid(instanceId);
+		_db = Ensure.NotNull(db);
+		_tcpSendPublisher = Ensure.NotNull(tcpSendPublisher);
+		_epochManager = Ensure.NotNull(epochManager);
+		_clusterSize = Ensure.Positive(clusterSize);
 		_unsafeAllowSurplusNodes = unsafeAllowSurplusNodes;
 		_queueStats = queueStatsManager.CreateQueueStatsCollector("Leader Replication Service");
 
@@ -171,12 +162,10 @@ public class LeaderReplicationService : IMonitoredQueue,
 	}
 
 	async ValueTask IAsyncHandle<ReplicationMessage.ReplicaSubscriptionRequest>.HandleAsync(ReplicationMessage.ReplicaSubscriptionRequest message, CancellationToken token) {
-		_publisher.Publish(new SystemMessage.VNodeConnectionEstablished(message.ReplicaEndPoint,
-			message.Connection.ConnectionId));
+		_publisher.Publish(new SystemMessage.VNodeConnectionEstablished(message.ReplicaEndPoint, message.Connection.ConnectionId));
 
 		if (!CanAcceptSubscription(message)) {
-			message.Envelope.ReplyWith(
-				new ReplicationMessage.ReplicaSubscriptionRetry(_instanceId, message.SubscriptionId));
+			message.Envelope.ReplyWith(new ReplicationMessage.ReplicaSubscriptionRetry(_instanceId, message.SubscriptionId));
 			return;
 		}
 
@@ -229,16 +218,15 @@ public class LeaderReplicationService : IMonitoredQueue,
 		var connections = TcpConnectionMonitor.Default.GetTcpConnectionStats();
 		var replicaStats = new List<ReplicationMessage.ReplicationStats>();
 		foreach (var conn in connections) {
-			var tcpConn = conn as ITcpConnection;
-			if (tcpConn != null) {
-				var subscription = _subscriptions.FirstOrDefault(x => x.Value.ConnectionId == tcpConn.ConnectionId);
-				if (subscription.Value != null) {
-					var stats = new ReplicationMessage.ReplicationStats(subscription.Key, tcpConn.ConnectionId,
-						subscription.Value.ReplicaEndPoint.ToString(), tcpConn.SendQueueSize,
-						conn.TotalBytesSent, conn.TotalBytesReceived, conn.PendingSendBytes,
-						conn.PendingReceivedBytes);
-					replicaStats.Add(stats);
-				}
+			if (conn is not ITcpConnection tcpConn)
+				continue;
+			var subscription = _subscriptions.FirstOrDefault(x => x.Value.ConnectionId == tcpConn.ConnectionId);
+			if (subscription.Value != null) {
+				var stats = new ReplicationMessage.ReplicationStats(subscription.Key, tcpConn.ConnectionId,
+					subscription.Value.ReplicaEndPoint.ToString(), tcpConn.SendQueueSize,
+					conn.TotalBytesSent, conn.TotalBytesReceived, conn.PendingSendBytes,
+					conn.PendingReceivedBytes);
+				replicaStats.Add(stats);
 			}
 		}
 
@@ -268,16 +256,12 @@ public class LeaderReplicationService : IMonitoredQueue,
 			return true;
 		} catch (Exception exc) {
 			Log.Error(exc, "Exception while subscribing replica. Connection will be dropped.");
-			replica.SendBadRequestAndClose(correlationId,
-				string.Format("Exception while subscribing replica. Connection will be dropped. Error: {0}",
-					exc.Message));
+			replica.SendBadRequestAndClose(correlationId, $"Exception while subscribing replica. Connection will be dropped. Error: {exc.Message}");
 			return false;
 		}
 	}
 
-	private async ValueTask<long> GetValidLogPosition(long logPosition, IReadOnlyList<Epoch> epochs, EndPoint replicaEndPoint,
-		Guid subscriptionId,
-		CancellationToken token) {
+	private async ValueTask<long> GetValidLogPosition(long logPosition, IReadOnlyList<Epoch> epochs, EndPoint replicaEndPoint, Guid subscriptionId, CancellationToken token) {
 		if (epochs.Count is 0) {
 			if (logPosition > 0) {
 				// follower has some data, but doesn't have any epoch
@@ -366,14 +350,10 @@ public class LeaderReplicationService : IMonitoredQueue,
 		bool replicationStart,
 		bool verbose,
 		CancellationToken token) {
-
 		const int maxRetryCount = 10;
-		for(var trial = 0;;){
+		for (var trial = 0; ;) {
 			try {
-				var chunk = _db.Manager.GetChunkFor(logPosition);
-				Debug.Assert(chunk != null, string.Format(
-					"Chunk for LogPosition {0} (0x{0:X}) is null in LeaderReplicationService! Replica: [{1},C:{2},S:{3}]",
-					logPosition, sub.ReplicaEndPoint, sub.ConnectionId, sub.SubscriptionId));
+				var chunk = await _db.Manager.GetInitializedChunkFor(logPosition, token);
 				var rawSend = chunk.ChunkHeader.IsScavenged;
 				var bulkReader = await (rawSend ? chunk.AcquireRawReader(token) : chunk.AcquireDataReader(token));
 				if (rawSend) {
@@ -381,8 +361,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 					if (verbose) {
 						Log.Information(
 							"Subscribed replica [{replicaEndPoint}, S:{subscriptionId}] for raw send at {chunkStartPosition} (0x{chunkStartPosition:X}) (requested {logPosition} (0x{logPosition:X})).",
-							sub.ReplicaEndPoint, sub.SubscriptionId, chunkStartPos, chunkStartPos, logPosition,
-							logPosition);
+							sub.ReplicaEndPoint, sub.SubscriptionId, chunkStartPos, chunkStartPos, logPosition, logPosition);
 						if (chunkStartPos != logPosition) {
 							Log.Information(
 								"Forcing replica [{replicaEndPoint}, S:{subscriptionId}] to recreate chunk from position {chunkStartPosition} (0x{chunkStartPosition:X})...",
@@ -394,8 +373,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 					sub.RawSend = true;
 					bulkReader.SetPosition(ChunkHeader.Size);
 					if (replicationStart)
-						sub.SendMessage(new ReplicationMessage.ReplicaSubscribed(_instanceId, sub.SubscriptionId,
-							sub.LogPosition));
+						sub.SendMessage(new ReplicationMessage.ReplicaSubscribed(_instanceId, sub.SubscriptionId, sub.LogPosition));
 					sub.SendMessage(new ReplicationMessage.CreateChunk(_instanceId,
 						sub.SubscriptionId,
 						chunk.ChunkHeader,
@@ -412,12 +390,10 @@ public class LeaderReplicationService : IMonitoredQueue,
 					sub.RawSend = false;
 					bulkReader.SetPosition(chunk.ChunkHeader.GetLocalLogPosition(logPosition));
 					if (replicationStart)
-						sub.SendMessage(new ReplicationMessage.ReplicaSubscribed(_instanceId, sub.SubscriptionId,
-							sub.LogPosition));
+						sub.SendMessage(new ReplicationMessage.ReplicaSubscribed(_instanceId, sub.SubscriptionId, sub.LogPosition));
 
 					if (logPosition == chunk.ChunkHeader.ChunkStartPosition &&
-					    sub.Version >= ReplicationSubscriptionVersions.V2) {
-
+						sub.Version >= ReplicationSubscriptionVersions.V2) {
 						sub.SendMessage(new ReplicationMessage.CreateChunk(_instanceId,
 							sub.SubscriptionId,
 							chunk.ChunkHeader,
@@ -441,6 +417,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 
 	private async void MainLoop() {
 		try {
+			_publisher.Publish(new SystemMessage.ServiceInitialized(nameof(LeaderReplicationService)));
 			_queueStats.Start();
 			QueueMonitor.Default.Register(this);
 
@@ -452,8 +429,8 @@ public class LeaderReplicationService : IMonitoredQueue,
 
 					_queueStats.ProcessingStarted(typeof(SendReplicationData), _subscriptions.Count);
 
-					_flushSignal
-						.Reset(); // Reset the flush signal as we're about to read anyway. This could be closer to the actual read but no harm from too many checks.
+					// Reset the flush signal as we're about to read anyway. This could be closer to the actual read but no harm from too many checks.
+					_flushSignal.Reset();
 
 					var dataFound = await ManageSubscriptions(_stopToken);
 					ManageNoQuorumDetection();
@@ -485,7 +462,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 
 			_db.Config.WriterCheckpoint.Flushed -= OnWriterFlushed;
 
-			_publisher.Publish(new SystemMessage.ServiceShutdown(Name));
+			_publisher.Publish(new SystemMessage.ServiceShutdown(nameof(LeaderReplicationService)));
 			_tcs.TrySetResult();
 		} catch (Exception e) {
 			_tcs.TrySetException(e);
@@ -511,20 +488,19 @@ public class LeaderReplicationService : IMonitoredQueue,
 			if (subscription.ShouldDispose) {
 				_subscriptions.TryRemove(subscription.SubscriptionId, out _);
 				if (lost) {
-					_publisher.Publish(new SystemMessage.VNodeConnectionLost(subscription.ReplicaEndPoint,
-						subscription.ConnectionId, subscription.SubscriptionId));
+					_publisher.Publish(new SystemMessage.VNodeConnectionLost(subscription.ReplicaEndPoint, subscription.ConnectionId, subscription.SubscriptionId));
 				}
 
 				subscription.Dispose();
 				continue;
 			}
 
-			if (subscription.SendQueueSize >= MaxQueueSize
-				|| subscription.LogPosition - Interlocked.Read(ref subscription.AckedLogPosition) >=
+			if (subscription.SendQueueSize >= MaxQueueSize || subscription.LogPosition - Interlocked.Read(ref subscription.AckedLogPosition) >=
 				ReplicaSendWindow)
 				continue;
 
-			if (subscription.BulkReader == null) throw new Exception("BulkReader is null for subscription.");
+			if (subscription.BulkReader == null)
+				throw new Exception("BulkReader is null for subscription.");
 
 			try {
 				var leaderCheckpoint = _db.Config.WriterCheckpoint.Read();
@@ -535,8 +511,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 				if (subscription.State == ReplicaState.CatchingUp &&
 					leaderCheckpoint - subscription.LogPosition <= CloneThreshold) {
 					subscription.State = ReplicaState.Clone;
-					subscription.SendMessage(
-						new ReplicationMessage.CloneAssignment(_instanceId, subscription.SubscriptionId));
+					subscription.SendMessage(new ReplicationMessage.CloneAssignment(_instanceId, subscription.SubscriptionId));
 				}
 			} catch (Exception exc) {
 				Log.Information(exc, "Error during replication send to replica: {subscription}.", subscription);
@@ -547,13 +522,6 @@ public class LeaderReplicationService : IMonitoredQueue,
 	}
 
 	private async ValueTask<bool> TrySendLogBulk(ReplicaSubscription subscription, long leaderCheckpoint, CancellationToken token) {
-		/*
-		if (subscription == null) throw new Exception("subscription == null");
-		if (subscription.BulkReader == null) throw new Exception("subscription.BulkReader == null");
-		if (subscription.BulkReader.Chunk == null) throw new Exception("subscription.BulkReader.Chunk == null");
-		if (subscription.DataBuffer == null) throw new Exception("subscription.DataBuffer == null");
-		*/
-
 		var bulkReader = subscription.BulkReader;
 		var chunkHeader = bulkReader.Chunk.ChunkHeader;
 
@@ -583,9 +551,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 				subscription.SendMessage(msg);
 			} else {
 				if (chunkHeader.GetLocalLogPosition(subscription.LogPosition) != bulkResult.OldPosition) {
-					throw new Exception(string.Format(
-						"Replication invariant failure. SubscriptionPosition {0}, bulkResult.OldPosition {1}",
-						subscription.LogPosition, bulkResult.OldPosition));
+					throw new Exception($"Replication invariant failure. SubscriptionPosition {subscription.LogPosition}, bulkResult.OldPosition {bulkResult.OldPosition}");
 				}
 
 				var msg = new ReplicationMessage.DataChunkBulk(
@@ -601,8 +567,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 			var newLogPosition = chunkHeader.ChunkEndPosition;
 			if (newLogPosition < leaderCheckpoint) {
 				dataFound = true;
-				await SetSubscriptionPosition(subscription, newLogPosition, replicationStart: false,
-					verbose: true, token: token);
+				await SetSubscriptionPosition(subscription, newLogPosition, replicationStart: false, verbose: true, token: token);
 			}
 		}
 
@@ -649,10 +614,9 @@ public class LeaderReplicationService : IMonitoredQueue,
 			var candidate = candidates[i];
 			if (candidate.State == ReplicaState.Follower) {
 				followerCount++;
-				candidate.LagOccurences = i < desiredFollowerCount ? 0 : candidate.LagOccurences + 1;
+				candidate.LagOccurrences = i < desiredFollowerCount ? 0 : candidate.LagOccurrences + 1;
 
-				if (candidate.LagOccurences >= LagOccurencesThreshold
-					&& leaderCheckpoint - candidate.LogPosition >= FollowerLagThreshold) {
+				if (candidate.LagOccurrences >= LagOccurencesThreshold && leaderCheckpoint - candidate.LogPosition >= FollowerLagThreshold) {
 					++laggedFollowers;
 				}
 			}
@@ -672,7 +636,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 			// we need more followers, even if there are lagging followers
 			var newFollower = candidates[cloneIndex];
 			newFollower.State = ReplicaState.Follower;
-			newFollower.LagOccurences = 0;
+			newFollower.LagOccurrences = 0;
 			newFollower.SendMessage(new ReplicationMessage.FollowerAssignment(_instanceId, newFollower.SubscriptionId));
 			cloneIndex++;
 		}
@@ -695,13 +659,13 @@ public class LeaderReplicationService : IMonitoredQueue,
 
 			var oldFollower = candidates[followerIndex];
 			oldFollower.State = ReplicaState.Clone;
-			oldFollower.LagOccurences = 0;
+			oldFollower.LagOccurrences = 0;
 			oldFollower.SendMessage(new ReplicationMessage.CloneAssignment(_instanceId, oldFollower.SubscriptionId));
 			followerIndex--;
 
 			var newFollower = candidates[cloneIndex];
 			newFollower.State = ReplicaState.Follower;
-			newFollower.LagOccurences = 0;
+			newFollower.LagOccurrences = 0;
 			newFollower.SendMessage(new ReplicationMessage.FollowerAssignment(_instanceId, newFollower.SubscriptionId));
 			cloneIndex++;
 		}
@@ -714,8 +678,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 
 			while (cloneIndex < candidates.Length && candidates[cloneIndex].State == ReplicaState.Clone) {
 				var cloneToDrop = candidates[cloneIndex];
-				cloneToDrop.SendMessage(
-					new ReplicationMessage.DropSubscription(_instanceId, cloneToDrop.SubscriptionId));
+				cloneToDrop.SendMessage(new ReplicationMessage.DropSubscription(_instanceId, cloneToDrop.SubscriptionId));
 				Log.Debug(
 					"There is a surplus of nodes in the cluster. Dropped clone: C:{connectionId:B}, S:{subscriptionId:B}.",
 					cloneToDrop.ConnectionId, cloneToDrop.SubscriptionId);
@@ -724,13 +687,16 @@ public class LeaderReplicationService : IMonitoredQueue,
 			}
 		}
 	}
+
 	public void Handle(ReplicationTrackingMessage.ReplicatedTo message) {
 		//TODO(clc): if the node is busy and misses an update it might be a long time till the next update do we need check if they get too stale?
 		foreach (var subscription in _subscriptions.Values) {
-			if (subscription.IsConnectionClosed ||subscription.SendQueueSize >= MaxQueueSize) { continue;}
+			if (subscription.IsConnectionClosed || subscription.SendQueueSize >= MaxQueueSize) { continue; }
+
 			subscription.SendMessage(message);
 		}
 	}
+
 	public QueueStats GetStatistics() {
 		return _queueStats.GetStatistics(_subscriptions.Count);
 	}
@@ -741,28 +707,28 @@ public class LeaderReplicationService : IMonitoredQueue,
 		Follower
 	}
 
-	private class SendReplicationData {
-	}
+	private class SendReplicationData;
 
-	private class ReplicaSubscription : IDisposable {
+	private class ReplicaSubscription(
+		IPublisher tcpSendPublisher,
+		int version,
+		TcpConnectionManager connection,
+		Guid subscriptionId,
+		EndPoint replicaEndPoint,
+		bool isPromotable)
+		: IDisposable {
 		public readonly byte[] DataBuffer = new byte[BulkSize];
 
-		public Guid ConnectionId {
-			get { return _connection.ConnectionId; }
-		}
+		public Guid ConnectionId => connection.ConnectionId;
 
-		public int SendQueueSize {
-			get { return _connection.SendQueueSize; }
-		}
+		public int SendQueueSize => connection.SendQueueSize;
 
-		public bool IsConnectionClosed {
-			get { return _connection.IsClosed; }
-		}
+		public bool IsConnectionClosed => connection.IsClosed;
 
-		public readonly int Version;
-		public readonly bool IsPromotable;
-		public readonly EndPoint ReplicaEndPoint;
-		public readonly Guid SubscriptionId;
+		public readonly int Version = version;
+		public readonly bool IsPromotable = isPromotable;
+		public readonly EndPoint ReplicaEndPoint = replicaEndPoint;
+		public readonly Guid SubscriptionId = subscriptionId;
 
 		public TFChunkBulkReader BulkReader;
 		public bool RawSend;
@@ -774,32 +740,17 @@ public class LeaderReplicationService : IMonitoredQueue,
 		public bool ShouldDispose;
 		public bool IsTruncating;
 		public ReplicaState State = ReplicaState.CatchingUp;
-		public int LagOccurences;
-
-		private readonly IPublisher _tcpSendPublisher;
-		private readonly TcpConnectionManager _connection;
-
-		public ReplicaSubscription(IPublisher tcpSendPublisher,
-			int version,
-			TcpConnectionManager connection,
-			Guid subscriptionId, EndPoint replicaEndPoint, bool isPromotable) {
-			_tcpSendPublisher = tcpSendPublisher;
-			Version = version;
-			_connection = connection;
-			SubscriptionId = subscriptionId;
-			ReplicaEndPoint = replicaEndPoint;
-			IsPromotable = isPromotable;
-		}
+		public int LagOccurrences;
 
 		public void SendMessage(Message msg) {
 			if (IsTruncating)
 				return;
 
-			_tcpSendPublisher.Publish(new TcpMessage.TcpSend(_connection, msg));
+			tcpSendPublisher.Publish(new TcpMessage.TcpSend(connection, msg));
 		}
 
 		public void SendBadRequestAndClose(Guid correlationId, string message) {
-			_connection.SendBadRequestAndClose(correlationId, message);
+			connection.SendBadRequestAndClose(correlationId, message);
 		}
 
 		public override string ToString() {
@@ -807,7 +758,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 				"Connection: {0:B}, ReplicaEndPoint: {1}, IsPromotable: {2}, RawSend: {3}, EOFSent: {4}, "
 				+ "LogPosition: {5} (0x{5:X}), AckedLogPosition: {6} (0x{6:X}), State: {7}, LagOccurences: {8}, "
 				+ "SubscriptionId: {9}, ShouldDispose: {10}",
-				_connection.ConnectionId,
+				connection.ConnectionId,
 				ReplicaEndPoint,
 				IsPromotable,
 				RawSend,
@@ -815,16 +766,15 @@ public class LeaderReplicationService : IMonitoredQueue,
 				LogPosition,
 				AckedLogPosition,
 				State,
-				LagOccurences,
+				LagOccurrences,
 				SubscriptionId,
 				ShouldDispose);
 		}
 
 		public void Dispose() {
-			_connection?.Stop("Closing replication subscription connection.");
+			connection?.Stop("Closing replication subscription connection.");
 			var bulkReader = Interlocked.Exchange(ref BulkReader, null);
-			if (bulkReader != null)
-				bulkReader.Release();
+			bulkReader?.Release();
 		}
 	}
 }

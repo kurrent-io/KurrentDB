@@ -4,7 +4,7 @@ order: 1
 
 # Scavenging
 
-In EventStoreDB, events are no longer present in stream reads or subscriptions after they have been deleted or they have expired according to the metadata of the stream.
+In KurrentDB, events are no longer present in stream reads or subscriptions after they have been deleted or they have expired according to the metadata of the stream.
 
 The events are, however, still present in the database and will be visible in reads and subscriptions to the `$all` stream.
 
@@ -233,7 +233,7 @@ Scavenged chunks may be small enough to be merged into a single physical chunk f
 |:---------------------|:--------------------------------------|
 | Command line         | `--disable-scavenge-merging`          |
 | YAML                 | `DisableScavengeMerging`              |
-| Environment variable | `EVENTSTORE_DISABLE_SCAVENGE_MERGING` |
+| Environment variable | `KURRENTDB_DISABLE_SCAVENGE_MERGING`  |
 
 **Default**: `false`, small scavenged chunks are merged together.
 
@@ -248,7 +248,7 @@ stays in the database:
 |:---------------------|:--------------------------------------|
 | Command line         | `--scavenge-history-max-age`          |
 | YAML                 | `ScavengeHistoryMaxAge`               |
-| Environment variable | `EVENTSTORE_SCAVENGE_HISTORY_MAX_AGE` |
+| Environment variable | `KURRENTDB_SCAVENGE_HISTORY_MAX_AGE`  |
 
 **Default**: `30` (days)
 
@@ -260,7 +260,7 @@ Specify the page size of the scavenge database. The default value is 16 KiB.
 |:---------------------|:----------------------------------------|
 | Command line         | `--scavenge-backend-page-size`          |
 | YAML                 | `ScavengeBackendPageSize`               |
-| Environment variable | `EVENTSTORE_SCAVENGE_BACKEND_PAGE_SIZE` |
+| Environment variable | `KURRENTDB_SCAVENGE_BACKEND_PAGE_SIZE`  |
 
 **Default**: `16` (KiB)
 
@@ -272,7 +272,7 @@ Specify the amount of memory, in bytes, to use for backend caching during scaven
 |:---------------------|:-----------------------------------------|
 | Command line         | `--scavenge-backend-cache-size`          |
 | YAML                 | `ScavengeBackendCacheSize`               |
-| Environment variable | `EVENTSTORE_SCAVENGE_BACKEND_CACHE_SIZE` |
+| Environment variable | `KURRENTDB_SCAVENGE_BACKEND_CACHE_SIZE`  |
 
 ### Scavenge hash users cache capacity
 
@@ -285,4 +285,4 @@ The default value is 100000.
 |:---------------------|:------------------------------------------------|
 | Command line         | `--scavenge-hash-users-cache-capacity`          |
 | YAML                 | `ScavengeHashUsersCacheCapacity`                |
-| Environment variable | `EVENTSTORE_SCAVENGE_HASH_USERS_CACHE_CAPACITY` |
+| Environment variable | `KURRENTDB_SCAVENGE_HASH_USERS_CACHE_CAPACITY`  |

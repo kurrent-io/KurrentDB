@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 
@@ -37,7 +37,7 @@ public static class NumberExtensions {
 		if (weight < 0 || weight > totalWeight)
 			throw new ArgumentOutOfRangeException(nameof(weight));
 
-		return (long)((double) x * weight / totalWeight);
+		return (long)((double)x * weight / totalWeight);
 	}
 
 	public static long ScaleByPercent(this long x, int percent) =>

@@ -1,15 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogV2;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -37,7 +33,7 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 		await db.Open();
 
 		var writer = new TFChunkWriter(db);
-		writer.Open();
+		await writer.Open(CancellationToken.None);
 
 		var reader = new TFChunkReader(db, writerchk, 0);
 
@@ -46,7 +42,7 @@ public class when_reading_an_empty_chunked_transaction_log<TLogFormat, TStreamId
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-		var rec = LogRecord.SingleWrite(recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), streamId, -1, eventTypeId, new byte[] {7}, null);
+		var rec = LogRecord.SingleWrite(recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), streamId, -1, eventTypeId, new byte[] { 7 }, null);
 
 		Assert.IsTrue(await writer.Write(rec, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();

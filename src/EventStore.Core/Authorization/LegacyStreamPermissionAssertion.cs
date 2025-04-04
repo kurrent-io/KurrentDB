@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -53,7 +53,7 @@ public class
 		if (streamId == "")
 			streamId = SystemStreams.AllStream;
 		if (streamId == SystemStreams.AllStream &&
-		    (operation == Operations.Streams.Delete || operation == Operations.Streams.Write)) {
+			(operation == Operations.Streams.Delete || operation == Operations.Streams.Write)) {
 			context.Add(new AssertionMatch(policy,
 				new AssertionInformation("streamId", $"{operation.Action} denied on $all", Grant.Deny)));
 			return new ValueTask<bool>(true);
@@ -85,7 +85,8 @@ public class
 #pragma warning disable CA2012
 		var preChecks = IsSystemOrAdmin(cp, operation, policy, context);
 #pragma warning restore CA2012
-		if (preChecks.IsCompleted && preChecks.Result) return preChecks;
+		if (preChecks.IsCompleted && preChecks.Result)
+			return preChecks;
 
 		return CheckAsync(preChecks, cp, action, streamId, policy, context);
 	}
@@ -106,7 +107,8 @@ public class
 	private async ValueTask<bool> IsSystemOrAdminAsync(ValueTask<bool> isSystem, ClaimsPrincipal cp,
 		Operation operation,
 		PolicyInformation policy, EvaluationContext context) {
-		if (await isSystem) return true;
+		if (await isSystem)
+			return true;
 
 		return await WellKnownAssertions.Admin.Evaluate(cp, operation, policy, context);
 	}
@@ -127,7 +129,7 @@ public class
 		for (int i = 0; i < roles.Length; i++) {
 			var role = roles[i];
 			if (cp.FindFirst(x => (x.Type == ClaimTypes.Name || x.Type == ClaimTypes.Role) && x.Value == role)
-			    is Claim matched) {
+				is Claim matched) {
 				context.Add(new AssertionMatch(policy, new AssertionInformation("role match", role, Grant.Allow),
 					matched));
 				return true;
@@ -155,7 +157,8 @@ public class
 				transactionId = parameters[i].Value;
 		}
 
-		if (transactionId != null) return FindStreamFromTransactionId(long.Parse(transactionId), cancellationToken);
+		if (transactionId != null)
+			return FindStreamFromTransactionId(long.Parse(transactionId), cancellationToken);
 		return new ValueTask<string>((string)null);
 	}
 
@@ -173,7 +176,7 @@ public class
 			"delete" => acl.Stream?.DeleteRoles ?? acl.System?.DeleteRoles ?? acl.Default?.DeleteRoles,
 			"metadataRead" => acl.Stream?.MetaReadRoles ?? acl.System?.MetaReadRoles ?? acl.Default?.MetaReadRoles,
 			"metadataWrite" => acl.Stream?.MetaWriteRoles ??
-			                   acl.System?.MetaWriteRoles ?? acl.Default?.MetaWriteRoles,
+							   acl.System?.MetaWriteRoles ?? acl.Default?.MetaWriteRoles,
 			_ => Array.Empty<string>()
 		};
 	}

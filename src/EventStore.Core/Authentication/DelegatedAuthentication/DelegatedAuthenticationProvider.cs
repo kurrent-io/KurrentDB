@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using System.Linq;
@@ -19,7 +19,7 @@ public class DelegatedAuthenticationProvider(IAuthenticationProvider inner) : Au
 	LicensePublicKey = inner.LicensePublicKey,
 	DiagnosticsName = inner.DiagnosticsName,
 	DiagnosticsTags = inner.DiagnosticsTags
-})  {
+}) {
 	public IAuthenticationProvider Inner { get; } = inner;
 
 	public override Task Initialize() => Inner.Initialize();
@@ -32,10 +32,10 @@ public class DelegatedAuthenticationProvider(IAuthenticationProvider inner) : Au
 
 	public override void ConfigureEndpoints(IEndpointRouteBuilder endpointRouteBuilder) =>
 		Inner.ConfigureEndpoints(endpointRouteBuilder);
-	
+
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
 		Inner.ConfigureServices(services, configuration);
-	
+
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) =>
 		Inner.ConfigureApplication(app, configuration);
 

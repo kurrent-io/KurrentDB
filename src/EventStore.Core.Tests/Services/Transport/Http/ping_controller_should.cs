@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
 using EventStore.Core.Messages;
@@ -12,13 +12,13 @@ namespace EventStore.Core.Tests.Services.Transport.Http;
 
 [TestFixture, Category("LongRunning")]
 public class ping_controller_should : SpecificationWithDirectory {
-	private MiniNode<LogFormat.V2,string> _node;
+	private MiniNode<LogFormat.V2, string> _node;
 
 	[OneTimeSetUp]
 	public override async Task SetUp() {
 		await base.SetUp();
 
-		_node = new MiniNode<LogFormat.V2,string>(PathName);
+		_node = new MiniNode<LogFormat.V2, string>(PathName);
 		await _node.Start();
 	}
 

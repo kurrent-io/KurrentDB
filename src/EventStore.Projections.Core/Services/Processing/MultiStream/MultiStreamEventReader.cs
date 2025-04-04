@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
@@ -50,9 +50,12 @@ public class MultiStreamEventReader : EventReader,
 		string[] streams, Dictionary<string, long> fromPositions, bool resolveLinkTos, ITimeProvider timeProvider,
 		bool stopOnEof = false, int? stopAfterNEvents = null)
 		: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-		if (streams == null) throw new ArgumentNullException("streams");
-		if (timeProvider == null) throw new ArgumentNullException("timeProvider");
-		if (streams.Length == 0) throw new ArgumentException("streams");
+		if (streams == null)
+			throw new ArgumentNullException("streams");
+		if (timeProvider == null)
+			throw new ArgumentNullException("timeProvider");
+		if (streams.Length == 0)
+			throw new ArgumentException("streams");
 		_streams = new HashSet<string>(streams);
 		_eofs = new ConcurrentDictionary<string, bool>(_streams.ToDictionary(v => v, v => false));
 		var positions = CheckpointTag.FromStreamPositions(phase, fromPositions);
@@ -108,7 +111,8 @@ public class MultiStreamEventReader : EventReader,
 			throw new InvalidOperationException("Read events has not been requested");
 		if (Paused)
 			throw new InvalidOperationException("Paused");
-		if (!_pendingRequests.Values.Any(x => x == message.CorrelationId)) return;
+		if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+			return;
 
 		_lastPosition = message.TfLastCommitPosition;
 		switch (message.Result) {
@@ -117,7 +121,7 @@ public class MultiStreamEventReader : EventReader,
 				_eofs[message.EventStreamId] = true;
 				UpdateSafePositionToJoin(message.EventStreamId, MessageToLastCommitPosition(message));
 				if (message.Result == ReadStreamResult.StreamDeleted
-				    || (message.Result == ReadStreamResult.NoStream && message.LastEventNumber >= 0))
+					|| (message.Result == ReadStreamResult.NoStream && message.LastEventNumber >= 0))
 					EnqueueItem(null, message.EventStreamId);
 				ProcessBuffers();
 				_eventsRequested.Remove(message.EventStreamId);
@@ -164,9 +168,12 @@ public class MultiStreamEventReader : EventReader,
 	}
 
 	public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-		if (_disposed) return;
-		if (Paused) return;
-		if (!_pendingRequests.Values.Any(x => x == message.CorrelationId)) return;
+		if (_disposed)
+			return;
+		if (Paused)
+			return;
+		if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+			return;
 
 		_eventsRequested.Remove(message.StreamId);
 		PauseOrContinueProcessing();
@@ -220,8 +227,8 @@ public class MultiStreamEventReader : EventReader,
 				if (head != null) {
 					var itemPosition = GetItemPosition(head);
 					if (_safePositionToJoin != null
-					    && itemPosition.CompareTo(_safePositionToJoin.GetValueOrDefault()) <= 0
-					    && itemPosition.CompareTo(minPosition) < 0) {
+						&& itemPosition.CompareTo(_safePositionToJoin.GetValueOrDefault()) <= 0
+						&& itemPosition.CompareTo(minPosition) < 0) {
 						minPosition = itemPosition;
 						minStreamId = currentStreamId;
 						anyEvent = true;
@@ -254,7 +261,8 @@ public class MultiStreamEventReader : EventReader,
 	}
 
 	private void RequestEvents(string stream, bool delay) {
-		if (_disposed) throw new InvalidOperationException("Disposed");
+		if (_disposed)
+			throw new InvalidOperationException("Disposed");
 		if (PauseRequested || Paused)
 			throw new InvalidOperationException("Paused or pause requested");
 

@@ -1,21 +1,22 @@
+import { dl } from "@mdit/plugin-dl";
+import viteBundler from "@vuepress/bundler-vite";
+import vueDevTools from 'vite-plugin-vue-devtools'
 import {defineUserConfig} from "vuepress";
-import {importCodePlugin} from "./markdown/xode/importCodePlugin";
+import {fs} from "vuepress/utils";
+import {hopeTheme} from "vuepress-theme-hope";
 import {resolveMultiSamplesPath} from "./lib/samples";
 import {linkCheckPlugin} from "./markdown/linkCheck";
 import {replaceLinkPlugin} from "./markdown/replaceLink";
-import viteBundler from "@vuepress/bundler-vite";
-import {hopeTheme} from "vuepress-theme-hope";
-import {fs} from "vuepress/utils";
-import { dl } from "@mdit/plugin-dl";
+import {importCodePlugin} from "./markdown/xode/importCodePlugin";
 
 const projectionSamplesPath = "https://raw.githubusercontent.com/EventStore/EventStore/53f84e55ea56ccfb981aff0e432581d72c23fbf6/samples/http-api/data/";
 
 export default defineUserConfig({
     base: "/",
     dest: "public",
-    title: "EventStoreDB Docs",
+    title: "KurrentDB Docs",
     description: "Event-native database",
-    bundler: viteBundler(),
+    bundler: viteBundler({viteOptions: {plugins: [vueDevTools(),],}}),
     markdown: {importCode: false},
     extendsMarkdown: md => {
         md.use(importCodePlugin, {
@@ -51,28 +52,32 @@ export default defineUserConfig({
                 link: "/http-api/"
             }
         ],
-        iconAssets: "iconify",
+        markdown: {
+            figure: true,
+            imgLazyload: true,
+            imgMark: true,
+            imgSize: true,
+            tabs: true,
+            codeTabs: true,
+            component: true,
+            mermaid: true,
+            highlighter: {
+                type: "shiki",
+                themes: {
+                    light: "one-light",
+                    dark: "one-dark-pro",
+                }
+            }
+        },
         plugins: {
             search: {},
-            mdEnhance: {
-                figure: true,
-                imgLazyload: true,
-                imgMark: true,
-                imgSize: true,
-                tabs: true,
-                codetabs: true,
-                mermaid: true
-            },
             sitemap:{
                 devServer: process.env.NODE_ENV === 'development',
                 modifyTimeGetter: (page, app) =>
                     fs.statSync(app.dir.source(page.filePathRelative!)).mtime.toISOString()
             },
-            shiki: {
-                themes: {
-                    light: "one-light",
-                    dark: "one-dark-pro",
-                },
+            components: {
+                components: ["Badge", "VPBanner", "VPCard", "VidStack"]
             },
         }
     }),

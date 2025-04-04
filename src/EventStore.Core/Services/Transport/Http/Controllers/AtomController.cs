@@ -1,28 +1,27 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text;
+using System.Threading;
+using EventStore.Client.Messages;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Settings;
+using EventStore.Plugins.Authorization;
 using EventStore.Transport.Http;
 using EventStore.Transport.Http.Atom;
 using EventStore.Transport.Http.Codecs;
 using EventStore.Transport.Http.EntityManagement;
-using Newtonsoft.Json;
-using System.Linq;
-using System.Threading;
-using EventStore.Client.Messages;
-using EventStore.Common.Utils;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Util;
-using EventStore.Plugins.Authorization;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers;
@@ -52,7 +51,8 @@ public class AtomController : CommunicationController {
 
 	private static readonly ICodec[] AtomCodecsWithoutBatches = {
 		Codec.EventStoreXmlCodec,
-		Codec.EventStoreJsonCodec,
+		Codec.KurrentJsonCodec,
+		Codec.LegacyEventStoreJsonCodec,
 		Codec.Xml,
 		Codec.ApplicationXml,
 		Codec.Json
@@ -60,55 +60,68 @@ public class AtomController : CommunicationController {
 
 	private static readonly ICodec[] AtomCodecs = {
 		Codec.DescriptionJson,
+		Codec.LegacyDescriptionJson,
 		Codec.EventStoreXmlCodec,
-		Codec.EventStoreJsonCodec,
+		Codec.KurrentJsonCodec,
+		Codec.LegacyEventStoreJsonCodec,
 		Codec.Xml,
 		Codec.ApplicationXml,
 		Codec.Json,
 		Codec.EventXml,
 		Codec.EventJson,
+		Codec.LegacyEventJson,
 		Codec.EventsXml,
 		Codec.EventsJson,
+		Codec.LegacyEventsJson,
 		Codec.Raw,
 	};
 
 	private static readonly ICodec[] AtomWithHtmlCodecs = {
 		Codec.DescriptionJson,
+		Codec.LegacyDescriptionJson,
 		Codec.EventStoreXmlCodec,
-		Codec.EventStoreJsonCodec,
+		Codec.KurrentJsonCodec,
+		Codec.LegacyEventStoreJsonCodec,
 		Codec.Xml,
 		Codec.ApplicationXml,
 		Codec.Json,
 		Codec.EventXml,
 		Codec.EventJson,
+		Codec.LegacyEventJson,
 		Codec.EventsXml,
 		Codec.EventsJson,
+		Codec.LegacyEventsJson,
 		HtmlFeedCodec // initialization order matters
 	};
 
 	private static readonly ICodec[] DefaultCodecs = {
 		Codec.EventStoreXmlCodec,
-		Codec.EventStoreJsonCodec,
+		Codec.KurrentJsonCodec,
+		Codec.LegacyEventStoreJsonCodec,
 		Codec.Xml,
 		Codec.ApplicationXml,
 		Codec.Json,
 		Codec.EventXml,
 		Codec.EventJson,
+		Codec.LegacyEventJson,
 		Codec.Raw,
 		HtmlFeedCodec // initialization order matters
 	};
 
 	private readonly IPublisher _networkSendQueue;
 	private readonly TimeSpan _writeTimeout;
+	private readonly int _maxAppendEventSize;
 
 	public AtomController(IPublisher publisher, IPublisher networkSendQueue,
-		bool disableHTTPCaching, TimeSpan writeTimeout) : base(publisher) {
+		bool disableHTTPCaching, int maxAppendEventSize, TimeSpan writeTimeout) : base(publisher) {
 		_networkSendQueue = networkSendQueue;
 		_writeTimeout = writeTimeout;
+		// Preserve the old behaviour where the Atom controller would not accept events larger than 4mb.
+		_maxAppendEventSize = Math.Min(maxAppendEventSize, 4 * 1024 * 1024);
 
 		if (disableHTTPCaching) {
 			// ReSharper disable once RedundantNameQualifier
-			Transport.Http.Configure.DisableHTTPCaching = true;
+			Transport.Http.Configure.DisableHttpCaching = true;
 		}
 	}
 
@@ -234,7 +247,8 @@ public class AtomController : CommunicationController {
 	}
 
 	private bool GetDescriptionDocument(HttpEntityManager manager, UriTemplateMatch match) {
-		if (manager.ResponseCodec.ContentType == ContentType.DescriptionDocJson) {
+		if (manager.ResponseCodec.ContentType == ContentType.DescriptionDocJson ||
+			manager.ResponseCodec.ContentType == ContentType.LegacyDescriptionDocJson) {
 			var stream = match.BoundVariables["stream"];
 			var accepts = (manager.HttpEntity.Request.AcceptTypes?.Length ?? 0) == 0 ||
 						  manager.HttpEntity.Request.AcceptTypes.Contains(ContentType.Any);
@@ -298,7 +312,7 @@ public class AtomController : CommunicationController {
 
 		if (!manager.RequestCodec.HasEventTypes && includedType == null) {
 			SendBadRequest(manager,
-				"Must include an event type with the request either in body or as ES-EventType header.");
+				$"Must include an event type with the request either in body or as {SystemHeaders.EventType} header.");
 			return;
 		}
 
@@ -313,7 +327,7 @@ public class AtomController : CommunicationController {
 			var header = new[]
 				{new KeyValuePair<string, string>("Location", uri)};
 			manager.ReplyTextContent("Forwarding to idempotent URI", HttpStatusCode.RedirectKeepVerb,
-				"Temporary Redirect", "text/plain", header, e => { });
+				"Temporary Redirect", ContentType.PlainText, header, e => { });
 			return;
 		}
 
@@ -843,6 +857,9 @@ public class AtomController : CommunicationController {
 
 	private bool GetExpectedVersion(HttpEntityManager manager, out long expectedVersion) {
 		var expVer = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.ExpectedVersion);
+		if (StringValues.IsNullOrEmpty(expVer))
+			expVer = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LegacyExpectedVersion);
+
 		if (StringValues.IsNullOrEmpty(expVer)) {
 			expectedVersion = ExpectedVersion.Any;
 			return true;
@@ -853,6 +870,9 @@ public class AtomController : CommunicationController {
 
 	private bool GetIncludedId(HttpEntityManager manager, out Guid includedId) {
 		var id = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.EventId);
+		if (StringValues.IsNullOrEmpty(id))
+			id = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LegacyEventId);
+
 		if (StringValues.IsNullOrEmpty(id)) {
 			includedId = Guid.Empty;
 			return true;
@@ -863,6 +883,9 @@ public class AtomController : CommunicationController {
 
 	private bool GetIncludedType(HttpEntityManager manager, out string includedType) {
 		var type = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.EventType);
+		if (StringValues.IsNullOrEmpty(type))
+			type = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LegacyEventType);
+
 		if (StringValues.IsNullOrEmpty(type)) {
 			includedType = null;
 			return true;
@@ -875,26 +898,32 @@ public class AtomController : CommunicationController {
 
 	private bool GetRequireLeader(HttpEntityManager manager, out bool requireLeader) {
 		requireLeader = false;
-		
+
 		var onlyLeader = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.RequireLeader);
+		var onlyLeaderLegacy = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LegacyRequireLeader);
 		var onlyMaster = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.RequireMaster);
-		
-		if (StringValues.IsNullOrEmpty(onlyLeader) && StringValues.IsNullOrEmpty(onlyMaster))
+
+		if (StringValues.IsNullOrEmpty(onlyLeader) && StringValues.IsNullOrEmpty(onlyMaster) && StringValues.IsNullOrEmpty(onlyLeaderLegacy))
 			return true;
-	
+
 		if (string.Equals(onlyLeader, "True", StringComparison.OrdinalIgnoreCase) ||
-		    string.Equals(onlyMaster, "True", StringComparison.OrdinalIgnoreCase)) {
+			string.Equals(onlyLeaderLegacy, "True", StringComparison.OrdinalIgnoreCase) ||
+			string.Equals(onlyMaster, "True", StringComparison.OrdinalIgnoreCase)) {
 			requireLeader = true;
 			return true;
 		}
 
 		return string.Equals(onlyLeader, "False", StringComparison.OrdinalIgnoreCase) ||
-		       string.Equals(onlyMaster, "False", StringComparison.OrdinalIgnoreCase);
+			   string.Equals(onlyLeaderLegacy, "False", StringComparison.OrdinalIgnoreCase) ||
+			   string.Equals(onlyMaster, "False", StringComparison.OrdinalIgnoreCase);
 	}
 
 	private bool GetLongPoll(HttpEntityManager manager, out TimeSpan? longPollTimeout) {
 		longPollTimeout = null;
 		var longPollHeader = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LongPoll);
+		if (StringValues.IsNullOrEmpty(longPollHeader))
+			longPollHeader = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LegacyLongPoll);
+
 		if (StringValues.IsNullOrEmpty(longPollHeader))
 			return true;
 		int longPollSec;
@@ -909,6 +938,9 @@ public class AtomController : CommunicationController {
 	private bool GetResolveLinkTos(HttpEntityManager manager, out bool resolveLinkTos, bool defaultOption = false) {
 		resolveLinkTos = defaultOption;
 		var linkToHeader = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.ResolveLinkTos);
+		if (StringValues.IsNullOrEmpty(linkToHeader))
+			linkToHeader = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LegacyResolveLinkTos);
+
 		if (StringValues.IsNullOrEmpty(linkToHeader))
 			return true;
 		if (string.Equals(linkToHeader, "False", StringComparison.OrdinalIgnoreCase)) {
@@ -926,6 +958,9 @@ public class AtomController : CommunicationController {
 	private bool GetHardDelete(HttpEntityManager manager, out bool hardDelete) {
 		hardDelete = false;
 		var hardDel = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.HardDelete);
+		if (StringValues.IsNullOrEmpty(hardDel))
+			hardDel = manager.HttpEntity.Request.GetHeaderValues(SystemHeaders.LegacyHardDelete);
+
 		if (StringValues.IsNullOrEmpty(hardDel))
 			return true;
 		if (string.Equals(hardDel, "True", StringComparison.OrdinalIgnoreCase)) {
@@ -957,8 +992,8 @@ public class AtomController : CommunicationController {
 				}
 
 				foreach (var e in events) {
-					if (e.Data.Length + e.Metadata.Length > 4 * 1024 * 1024) {
-						SendTooBig(manager);
+					if (e.Data.Length + e.Metadata.Length > _maxAppendEventSize) {
+						SendTooBig(manager, _maxAppendEventSize);
 					}
 				}
 

@@ -1,12 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
@@ -24,7 +23,8 @@ public class an_expired_projection {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			var readerAssignedMessage =
 				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
 					.LastOrDefault();
@@ -47,7 +47,8 @@ public class an_expired_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_retrieving_statistics<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var s in base.When()) yield return s;
+			foreach (var s in base.When())
+				yield return s;
 			_consumer.HandledMessages.Clear();
 			yield return (
 				new ProjectionManagementMessage.Command.GetStatistics(
@@ -65,7 +66,8 @@ public class an_expired_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_deleted_on_expiry<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var s in base.When()) yield return s;
+			foreach (var s in base.When())
+				yield return s;
 			_consumer.HandledMessages.Clear();
 		}
 

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Data;
@@ -12,9 +12,9 @@ namespace EventStore.Projections.Core.Tests.Services.event_reordering_projection
 public class when_handling_a_second_event_after_the_delay : TestFixtureWithEventReorderingProjectionSubscription {
 	private Guid _firstEventId;
 	private DateTime _firstEventTimestamp;
-#pragma warning disable 108,114
+#pragma warning disable 108, 114
 	private int _timeBetweenEvents;
-#pragma warning restore 108,114
+#pragma warning restore 108, 114
 
 	protected override void When() {
 		_firstEventId = Guid.NewGuid();

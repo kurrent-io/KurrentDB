@@ -1,10 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
@@ -34,7 +33,7 @@ public class when_updating_a_continous_system_projection_query_text<TLogFormat, 
 		yield return
 			(new ProjectionManagementMessage.Command.Post(
 				_bus, ProjectionMode.Continuous, _projectionName,
-				ProjectionManagementMessage.RunAs.System,"native:EventStore.Projections.Core.Standard.ByCorrelationId", "{\"correlationIdProperty\":\"$myCorrelationId\"}",
+				ProjectionManagementMessage.RunAs.System, "native:EventStore.Projections.Core.Standard.ByCorrelationId", "{\"correlationIdProperty\":\"$myCorrelationId\"}",
 				enabled: true, checkpointsEnabled: true, emitEnabled: true, trackEmittedStreams: true));
 		// when
 		_newProjectionSource = "{\"correlationIdProperty\":\"$updateCorrelationId\"}";
@@ -74,7 +73,7 @@ public class when_updating_a_continous_system_projection_query_text<TLogFormat, 
 			new ProjectionManagementMessage.Command.GetStatistics(_bus, null, _projectionName,
 				false));
 
-		 Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
+		Assert.AreEqual(1, _consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Count());
 		Assert.AreEqual(
 			1,
 			_consumer.HandledMessages.OfType<ProjectionManagementMessage.Statistics>().Single().Projections.Length);

@@ -1,9 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
@@ -17,6 +16,8 @@ using EventStore.Core.Services.Transport.Common;
 using EventStore.Core.Services.Transport.Enumerators;
 using Google.Protobuf;
 using Grpc.Core;
+using static EventStore.Client.Streams.ReadResp.Types;
+using static EventStore.Plugins.Authorization.Operations.Streams;
 using CountOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.CountOptionOneofCase;
 using FilterOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.FilterOptionOneofCase;
 using ReadDirection = EventStore.Client.Streams.ReadReq.Types.Options.Types.ReadDirection;
@@ -49,11 +50,8 @@ internal partial class Streams<TStreamId> {
 			}
 
 			var op = streamOptionsCase switch {
-				StreamOptionOneofCase.Stream => ReadOperation.WithParameter(
-					Plugins.Authorization.Operations.Streams.Parameters.StreamId(
-						request.Options.Stream.StreamIdentifier)),
-				StreamOptionOneofCase.All => ReadOperation.WithParameter(
-					Plugins.Authorization.Operations.Streams.Parameters.StreamId(SystemStreams.AllStream)),
+				StreamOptionOneofCase.Stream => ReadOperation.WithParameter(Parameters.StreamId(request.Options.Stream.StreamIdentifier)),
+				StreamOptionOneofCase.All => ReadOperation.WithParameter(Parameters.StreamId(SystemStreams.AllStream)),
 				_ => throw RpcExceptions.InvalidArgument(streamOptionsCase)
 			};
 
@@ -86,14 +84,6 @@ internal partial class Streams<TStreamId> {
 				}
 			} catch (ReadResponseException ex) {
 				ConvertReadResponseException(ex);
-			} catch (IOException) {
-				// ignored
-			} catch (TaskCanceledException) {
-				//ignored
-			} catch (InvalidOperationException) {
-				//ignored
-			} catch (OperationCanceledException) {
-				//ignored
 			}
 		} catch (Exception ex) {
 			duration.SetException(ex);
@@ -239,8 +229,7 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					request.Options.Filter.WindowCase switch {
 						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Count => null,
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter
-							.Max,
+						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter.Max,
 						_ => throw RpcExceptions.InvalidArgument(request.Options.Filter.WindowCase)
 					},
 					request.Options.Filter.CheckpointIntervalMultiplier,
@@ -269,23 +258,23 @@ internal partial class Streams<TStreamId> {
 				Event = ConvertToReadEvent(uuidOption, eventReceived.Event)
 			},
 			ReadResponse.SubscriptionConfirmed subscriptionConfirmed => new ReadResp {
-				Confirmation = new ReadResp.Types.SubscriptionConfirmation {
+				Confirmation = new SubscriptionConfirmation {
 					SubscriptionId = subscriptionConfirmed.SubscriptionId
 				}
 			},
 			ReadResponse.CheckpointReceived checkpointReceived => new ReadResp {
-				Checkpoint = new ReadResp.Types.Checkpoint {
+				Checkpoint = new Checkpoint {
 					CommitPosition = checkpointReceived.CommitPosition,
 					PreparePosition = checkpointReceived.PreparePosition
 				}
 			},
 			ReadResponse.StreamNotFound streamNotFound => new ReadResp {
-				StreamNotFound = new ReadResp.Types.StreamNotFound {
+				StreamNotFound = new StreamNotFound {
 					StreamIdentifier = streamNotFound.StreamName
 				}
 			},
 			ReadResponse.SubscriptionCaughtUp => new ReadResp {
-				CaughtUp = new ReadResp.Types.CaughtUp()
+				CaughtUp = new CaughtUp()
 			},
 			ReadResponse.SubscriptionFellBehind => null, // currently not sent to clients
 			ReadResponse.LastStreamPositionReceived lastStreamPositionReceived => new ReadResp {
@@ -327,12 +316,13 @@ internal partial class Streams<TStreamId> {
 		}
 	}
 
-	private static ReadResp.Types.ReadEvent.Types.RecordedEvent ConvertToRecordedEvent(
+	private static ReadEvent.Types.RecordedEvent ConvertToRecordedEvent(
 		ReadReq.Types.Options.Types.UUIDOption uuidOption, EventRecord e, long? commitPosition,
 		long? preparePosition) {
-		if (e == null) return null;
+		if (e == null)
+			return null;
 		var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
-		return new ReadResp.Types.ReadEvent.Types.RecordedEvent {
+		return new ReadEvent.Types.RecordedEvent {
 			Id = uuidOption.ContentCase switch {
 				ReadReq.Types.Options.Types.UUIDOption.ContentOneofCase.String => new UUID {
 					String = e.EventId.ToString()
@@ -355,9 +345,8 @@ internal partial class Streams<TStreamId> {
 		};
 	}
 
-	private static ReadResp.Types.ReadEvent ConvertToReadEvent(ReadReq.Types.Options.Types.UUIDOption uuidOption,
-		ResolvedEvent e) {
-		var readEvent = new ReadResp.Types.ReadEvent {
+	private static ReadEvent ConvertToReadEvent(ReadReq.Types.Options.Types.UUIDOption uuidOption, ResolvedEvent e) {
+		var readEvent = new ReadEvent {
 			Link = ConvertToRecordedEvent(uuidOption, e.Link, e.LinkPosition?.CommitPosition,
 				e.LinkPosition?.PreparePosition),
 			Event = ConvertToRecordedEvent(uuidOption, e.Event, e.EventPosition?.CommitPosition,

@@ -1,13 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
 using System.Linq;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 
@@ -74,7 +72,7 @@ public class when_running_a_js_projection_emitting_metadata : TestFixtureWithInt
 			if (sw.Elapsed > TimeSpan.FromSeconds(120))
 				break;
 		}
-		
+
 		Console.WriteLine(i);
 
 		//TODO: replace with an actual benchmark

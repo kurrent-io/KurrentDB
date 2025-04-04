@@ -1,25 +1,39 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon;
+using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.S3.Model;
 using DotNext.Buffers;
 using EventStore.Common.Exceptions;
 using FluentStorage;
 using FluentStorage.AWS.Blobs;
-using Serilog;
+using Serilog.Events;
 
 namespace EventStore.Core.Services.Archive.Storage.S3;
 
 public class S3BlobStorage : IBlobStorage {
-	protected static readonly ILogger Log = Serilog.Log.ForContext<S3BlobStorage>();
-
 	private readonly S3Options _options;
 	private readonly IAwsS3BlobStorage _awsBlobStorage;
+
+	static S3BlobStorage() {
+		AWSConfigs.AddTraceListener("Amazon", new AmazonTraceSerilogger(adjustLevel: (level, ex) =>
+			ex is AmazonS3Exception { ErrorCode: "NoSuchKey" or "InvalidRange" }
+				or HttpErrorResponseException
+				? LogEventLevel.Verbose
+				: level == LogEventLevel.Error
+					? LogEventLevel.Warning
+					: level
+		));
+		AWSConfigs.LoggingConfig.LogTo = LoggingOptions.SystemDiagnostics;
+		AWSConfigs.LoggingConfig.LogResponses = ResponseLoggingOption.OnError;
+		AWSConfigs.LoggingConfig.LogMetrics = false;
+	}
 
 	public S3BlobStorage(S3Options options) {
 		_options = options;
@@ -31,7 +45,6 @@ public class S3BlobStorage : IBlobStorage {
 			throw new InvalidConfigurationException("Please specify an Archive S3 Region");
 
 		_awsBlobStorage = StorageFactory.Blobs.AwsS3(
-			awsCliProfileName: options.AwsCliProfileName,
 			bucketName: options.Bucket,
 			region: options.Region) as IAwsS3BlobStorage;
 	}

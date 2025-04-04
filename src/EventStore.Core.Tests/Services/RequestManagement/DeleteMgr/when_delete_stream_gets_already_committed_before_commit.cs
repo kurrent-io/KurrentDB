@@ -1,20 +1,20 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr;
 
 [TestFixture]
-public class when_delete_stream_gets_already_committed_before_commit: RequestManagerSpecification<DeleteStream> {
+public class when_delete_stream_gets_already_committed_before_commit : RequestManagerSpecification<DeleteStream> {
 	private long _commitPosition = 3000;
 	private readonly string _streamId = $"delete_test-{Guid.NewGuid()}";
 	protected override DeleteStream OnManager(FakePublisher publisher) {

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using System.Linq;
@@ -113,8 +113,7 @@ public class SubscribeToAllTests {
 
 					positionOfLastWrite = new Position(success.Position.CommitPosition, success.Position.PreparePosition);
 					_responses.Add(response);
-				}
-				else if (response.ContentCase == ReadResp.ContentOneofCase.Event) {
+				} else if (response.ContentCase == ReadResp.ContentOneofCase.Event) {
 					_responses.Add(response);
 					if (positionOfLastWrite <= new Position(response.Event.Event.CommitPosition, response.Event.Event.PreparePosition)) {
 						break;
@@ -133,7 +132,7 @@ public class SubscribeToAllTests {
 		public void reads_all_the_live_events() {
 			Assert.AreEqual(1,
 				_responses.Count(x => x.ContentCase == ReadResp.ContentOneofCase.Event
-				                      && !x.Event.Event.Metadata["type"].StartsWith("$")));
+									  && !x.Event.Event.Metadata["type"].StartsWith("$")));
 		}
 	}
 }

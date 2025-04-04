@@ -1,11 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Data;
+using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Projections.Core.Messages;
 using NUnit.Framework;
-using EventStore.Core.Tests.Services.TimeService;
 
 namespace EventStore.Projections.Core.Tests.Services.projection_subscription;
 
@@ -49,7 +49,7 @@ public class
 		_exceedUnhandledBytesThreshold = exceedUnhandledBytesThreshold;
 		_checkpointIfEventsProcessed = checkpointIfEventsProcessed;
 		var passesEventFilter = (sourceStream == "$all" || stream == sourceStream) && eventType == sourceEventType;
-		_processedEvents =  passesEventFilter ? 1 : 0;
+		_processedEvents = passesEventFilter ? 1 : 0;
 	}
 
 	protected override void Given() {
@@ -93,7 +93,7 @@ public class
 	[Test]
 	public void checkpoint_is_suggested_when_processed_events_threshold_exceeded_or_unhandled_bytes_threshold_exceeded() {
 		var shouldCheckpoint = (_processedEvents >= _checkpointProcessedEventsThreshold) ||
-		                       (_processedEvents == 0 && _exceedUnhandledBytesThreshold);
+							   (_processedEvents == 0 && _exceedUnhandledBytesThreshold);
 		Assert.AreEqual(shouldCheckpoint ? 1 : 0, _checkpointHandler.HandledMessages.Count);
 	}
 }

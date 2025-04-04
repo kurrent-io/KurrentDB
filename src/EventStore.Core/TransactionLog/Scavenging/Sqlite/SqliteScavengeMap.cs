@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -26,7 +26,7 @@ public class SqliteScavengeMap<TKey, TValue> :
 	private readonly string _keyTypeOverride;
 
 	protected string TableName { get; }
-	
+
 	public SqliteScavengeMap(string name, string keyTypeOverride = null) {
 		TableName = name;
 		_keyTypeOverride = keyTypeOverride;
@@ -38,7 +38,7 @@ public class SqliteScavengeMap<TKey, TValue> :
 			throw new ArgumentException(
 				$"Scavenge map {TableName} has an unsupported type {typeof(TKey).Name} for key specified");
 		}
-		
+
 		if (!IsSupportedType<TValue>()) {
 			throw new ArgumentException(
 				$"Scavenge map {TableName} has an unsupported type {typeof(TValue).Name} for value specified");
@@ -64,7 +64,7 @@ public class SqliteScavengeMap<TKey, TValue> :
 		_delete = new RemoveCommand(TableName, sqlite);
 		_all = new AllRecordsCommand(TableName, sqlite);
 	}
-	
+
 	public TValue this[TKey key] {
 		set => AddValue(key, value);
 	}
@@ -96,13 +96,13 @@ public class SqliteScavengeMap<TKey, TValue> :
 					INSERT INTO {tableName}
 					VALUES($key, $value)
 					ON CONFLICT(key) DO UPDATE SET value=$value";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_valueParam = _cmd.Parameters.Add("$value", SqliteTypeMapping.Map<TKey>());
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -124,12 +124,12 @@ public class SqliteScavengeMap<TKey, TValue> :
 					SELECT value
 					FROM {tableName}
 					WHERE key = $key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = selectSql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => reader.GetFieldValue<TValue>(0);
 		}
@@ -153,7 +153,7 @@ public class SqliteScavengeMap<TKey, TValue> :
 					SELECT value
 					FROM {tableName}
 					WHERE key = $key";
-			
+
 			_selectCmd = sqlite.CreateCommand();
 			_selectCmd.CommandText = selectSql;
 			_selectKeyParam = _selectCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
@@ -162,12 +162,12 @@ public class SqliteScavengeMap<TKey, TValue> :
 			var deleteSql = $@"
 					DELETE FROM {tableName}
 					WHERE key = $key";
-			
+
 			_deleteCmd = sqlite.CreateCommand();
 			_deleteCmd.CommandText = deleteSql;
 			_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteTypeMapping.Map<TKey>());
 			_deleteCmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => reader.GetFieldValue<TValue>(0);
 		}
@@ -189,11 +189,11 @@ public class SqliteScavengeMap<TKey, TValue> :
 					SELECT key, value
 					FROM {tableName}
 					ORDER BY key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => new KeyValuePair<TKey, TValue>(
 				reader.GetFieldValue<TKey>(0), reader.GetFieldValue<TValue>(1));

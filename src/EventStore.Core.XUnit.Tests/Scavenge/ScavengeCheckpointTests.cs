@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.TransactionLog.Scavenging;
 using Xunit;
@@ -45,7 +45,7 @@ public class ScavengeCheckpointTests {
 	public void can_round_trip_calculating_streamid() {
 		var cp = RoundTrip(
 			new ScavengeCheckpoint.Calculating<string>(_scavengePoint, StreamHandle.ForStreamId("stream1")),
-			@"{""scavengePoint"":{""position"":1234,""eventNumber"":5,""effectiveNow"":""2022-01-05T00:00:00"",""threshold"":567},""schemaVersion"":""V0"",""checkpointStage"":""Calculating""," + 
+			@"{""scavengePoint"":{""position"":1234,""eventNumber"":5,""effectiveNow"":""2022-01-05T00:00:00"",""threshold"":567},""schemaVersion"":""V0"",""checkpointStage"":""Calculating""," +
 			@"""doneStreamHandle"":{""kind"":""Id"",""streamId"":""stream1""}}");
 		Assert.Equal("Id: stream1", cp.DoneStreamHandle.ToString());
 	}

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -33,8 +33,7 @@ public class ChunkRemoverTests {
 	ChunkRemover<string, ILogRecord> GenSut(
 		int retainDays,
 		long retainBytes,
-		Func<long> readArchiveCheckpoint,
-		int maxAttempts = 1) {
+		Func<long> readArchiveCheckpoint) {
 
 		var sut = new ChunkRemover<string, ILogRecord>(
 			logger: Serilog.Log.Logger,
@@ -42,9 +41,7 @@ public class ChunkRemoverTests {
 			chunkManager: _chunkManager,
 			locatorCodec: new PrefixingLocatorCodec(),
 			retainPeriod: TimeSpan.FromDays(retainDays),
-			retainBytes: retainBytes,
-			maxAttempts: maxAttempts,
-			retryDelayMs: 0);
+			retainBytes: retainBytes);
 		return sut;
 	}
 
@@ -119,40 +116,6 @@ public class ChunkRemoverTests {
 		} else {
 			throw new InvalidOperationException();
 		}
-	}
-
-	[Fact]
-	public async Task when_unexpected_error_accessing_archive() {
-		var minDateInChunk = new DateTime(2024, 1, 1);
-		var maxDateInChunk = new DateTime(2024, 12, 1);
-		_backend.ChunkTimeStampRanges[1] = new(minDateInChunk, maxDateInChunk);
-
-		// chunk 1 contains records with positions 1000-2000
-		var chunk = new FakeChunk(chunkStartNumber: 1, chunkEndNumber: 1, chunkSize: 1_000);
-
-		var attempts = 0;
-
-		var sut = GenSut(
-			retainDays: 10,
-			retainBytes: 1000,
-			readArchiveCheckpoint: () => {
-				attempts++;
-				throw new Exception("something happened");
-			},
-			maxAttempts: 3);
-
-		var removing = await sut.StartRemovingIfNotRetained(
-			scavengePoint: GenScavengePoint(
-				// scavenging > 1000 bytes after the end of the chunk
-				position: chunk.ChunkEndPosition + 1001,
-				// scavenging > 10 days after the last record in the chunk
-				effectiveNow: maxDateInChunk + TimeSpan.FromDays(10.1)),
-			concurrentState: _scavengeState,
-			physicalChunk: chunk,
-			CancellationToken.None);
-
-		Assert.False(removing);
-		Assert.Equal(3, attempts);
 	}
 
 	[Fact]

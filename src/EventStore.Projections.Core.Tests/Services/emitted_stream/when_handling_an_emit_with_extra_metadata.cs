@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -64,7 +64,7 @@ public class when_handling_an_emit_with_extra_metadata<TLogFormat, TStreamId> : 
 		var @event = writeEvent.Events[0];
 		var metadata = Helper.UTF8NoBom.GetString(@event.Metadata).ParseJson<JObject>();
 
-		HelperExtensions.AssertJson(new {a = 1, b = new { }}, metadata);
+		HelperExtensions.AssertJson(new { a = 1, b = new { } }, metadata);
 		var checkpoint = @event.Metadata.ParseCheckpointTagJson();
 		Assert.AreEqual(CheckpointTag.FromPosition(0, 200, 150), checkpoint);
 	}

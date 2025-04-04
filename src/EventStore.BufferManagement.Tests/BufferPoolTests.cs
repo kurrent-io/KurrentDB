@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -329,7 +329,7 @@ public class when_writing_multiple_bytes : has_buffer_manager_fixture {
 	[Test]
 	public void length_is_updated_to_include_bytes_written() {
 		BufferPool pool = new BufferPool(1, BufferManager);
-		byte[] data = {1, 2, 3, 4, 5};
+		byte[] data = { 1, 2, 3, 4, 5 };
 		pool.Append(data);
 		Assert.IsTrue(pool.Length == 5);
 	}
@@ -337,7 +337,7 @@ public class when_writing_multiple_bytes : has_buffer_manager_fixture {
 	[Test]
 	public void data_is_written_to_the_internal_buffer() {
 		BufferPool pool = new BufferPool(1, BufferManager);
-		byte[] data = {1, 2, 3, 4, 5};
+		byte[] data = { 1, 2, 3, 4, 5 };
 		pool.Append(data);
 		for (byte i = 0; i < 5; i++) {
 			Assert.AreEqual(i + 1, pool[i]);
@@ -356,7 +356,7 @@ public class when_writing_multiple_bytes : has_buffer_manager_fixture {
 	[Test]
 	public void can_write_given_a_self_offset() {
 		BufferPool pool = new BufferPool(1, BufferManager);
-		byte[] data = {1, 2, 3, 4, 5};
+		byte[] data = { 1, 2, 3, 4, 5 };
 		pool.Write(4, data, 0, 5); //start at position 4
 		for (byte i = 4; i < 9; i++) {
 			Assert.AreEqual(i - 3, pool[i]);
@@ -366,7 +366,7 @@ public class when_writing_multiple_bytes : has_buffer_manager_fixture {
 	[Test]
 	public void can_write_given_a_source_offset() {
 		BufferPool pool = new BufferPool(1, BufferManager);
-		byte[] data = {1, 2, 3, 4, 5};
+		byte[] data = { 1, 2, 3, 4, 5 };
 		pool.Write(0, data, 3, 2);
 		Assert.AreEqual(pool[0], 4);
 		Assert.AreEqual(pool[1], 5);
@@ -445,7 +445,7 @@ public class when_a_buffer_pool_has_been_disposed : has_buffer_manager_fixture {
 
 	[Test]
 	public void writing_multiple_bytes_throws_objectdisposedexception() {
-		Assert.Throws<ObjectDisposedException>(() => { m_DisposedPool.Append(new byte[] {1, 2, 3, 4}); });
+		Assert.Throws<ObjectDisposedException>(() => { m_DisposedPool.Append(new byte[] { 1, 2, 3, 4 }); });
 	}
 
 

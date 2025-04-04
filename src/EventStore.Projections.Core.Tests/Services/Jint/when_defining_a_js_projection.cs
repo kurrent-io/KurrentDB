@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
@@ -27,7 +27,7 @@ public class when_defining_a_js_projection {
 				b.FromAll();
 				b.AllEvents();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -49,7 +49,7 @@ public class when_defining_a_js_projection {
 				b.AllEvents();
 				b.FromStream("stream1");
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -73,7 +73,7 @@ public class when_defining_a_js_projection {
 				b.FromStream("stream2");
 				b.FromStream("stream3");
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -97,7 +97,7 @@ public class when_defining_a_js_projection {
 				b.FromStream("stream2");
 				b.FromStream("stream3");
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -121,7 +121,7 @@ public class when_defining_a_js_projection {
 				b.FromStream("$ce-category2");
 				b.FromStream("$ce-category3");
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -145,7 +145,7 @@ public class when_defining_a_js_projection {
 				b.FromStream("$ce-category2");
 				b.FromStream("$ce-category3");
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -167,7 +167,7 @@ public class when_defining_a_js_projection {
 				b.AllEvents();
 				b.FromCategory("category1");
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -190,7 +190,7 @@ public class when_defining_a_js_projection {
 				b.FromCategory("category1");
 				b.SetByStream();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -215,7 +215,7 @@ public class when_defining_a_js_projection {
 				b.FromAll();
 				b.SetByCustomPartitions();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -241,7 +241,7 @@ public class when_defining_a_js_projection {
 				b.SetDefinesStateTransform();
 				b.SetOutputState();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -265,7 +265,7 @@ public class when_defining_a_js_projection {
 				b.SetDefinesStateTransform();
 				b.SetOutputState();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -309,7 +309,7 @@ public class when_defining_a_js_projection {
 				b.NoWhen();
 				b.SetOutputState();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -328,7 +328,7 @@ public class when_defining_a_js_projection {
 				b.FromAll();
 				b.NoWhen();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -346,7 +346,7 @@ public class when_defining_a_js_projection {
 				b.FromAll();
 				b.IncludeEvent("a");
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -372,7 +372,7 @@ public class when_defining_a_js_projection {
 				b.FromAll();
 				b.SetResultStreamNameOption("state-stream");
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -398,7 +398,7 @@ public class when_defining_a_js_projection {
 				b.FromAll();
 				b.SetIncludeLinks();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -425,7 +425,7 @@ public class when_defining_a_js_projection {
 				b.SetDefinesFold();
 				b.SetIsBiState(true);
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -453,7 +453,7 @@ public class when_defining_a_js_projection {
 				b.SetProcessingLag(500);
 				b.SetReorderEvents(true);
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -484,7 +484,7 @@ public class when_defining_a_js_projection {
 				b.SetProcessingLag(500);
 				b.SetReorderEvents(true);
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -505,7 +505,7 @@ public class when_defining_a_js_projection {
 				b.SetByStream();
 				b.SetHandlesStreamDeletedNotifications();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 
@@ -525,7 +525,7 @@ public class when_defining_a_js_projection {
 				b.FromAll();
 				b.SetHandlesStreamDeletedNotifications();
 			});
-			AssertEx.AreEqual(expected,_source);
+			AssertEx.AreEqual(expected, _source);
 		}
 	}
 }

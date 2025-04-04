@@ -11,9 +11,9 @@ All sink connectors supports filtering events using regular expressions, JsonPat
 By default, if no filter is specified, the system will consume from the `$all` stream, excluding system events.
 :::
 
-#### EventStoreDB Record
+#### KurrentDB Record
 
-When a connector consumes events from EventStoreDB, you have access to the following objects that represent EventStoreDB records:
+When a connector consumes events from KurrentDB, you have access to the following objects that represent KurrentDB records:
 
 ```json
 {
@@ -35,7 +35,7 @@ When a connector consumes events from EventStoreDB, you have access to the follo
 }
 ```
 
-::: details Click here to see an example of EventStoreDB record
+::: details Click here to see an example of KurrentDB record
 
 ```json
 {
@@ -121,7 +121,7 @@ In this case, the filter will only match events where the stream ID starts with
 
 ### JsonPath Filters
 
-JSONPath provides a standardized string syntax for selecting and extracting JSON values from EventStoreDB records. Following the [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535.html#name-introduction) standard, JSONPath allows for efficient querying of JSON data within your EventStoreDB connectors. The filtering process is managed at the connector level and is applied only at the record scope. JSONPath filters apply exclusively to events with the `application/json` content type.
+JSONPath provides a standardized string syntax for selecting and extracting JSON values from KurrentDB records. Following the [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535.html#name-introduction) standard, JSONPath allows for efficient querying of JSON data within your KurrentDB connectors. The filtering process is managed at the connector level and is applied only at the record scope. JSONPath filters apply exclusively to events with the `application/json` content type.
 
 An example of a JsonPath filter is shown below:
 
@@ -153,7 +153,7 @@ graph TD
 ```
 
 Connectors support transformations using JavaScript, allowing you
-to modify the records received from the EventStoreDB stream. This feature
+to modify the records received from the KurrentDB stream. This feature
 enables you to tailor the data to meet your specific requirements before it is
 processed further. Transformations can be applied to any part of the record,
 providing flexibility in how the data is handled and utilized within your
@@ -178,7 +178,7 @@ function transform(record) {
 
 The transformation function must be a JavaScript function named **transform**.
 
-Additionally, it must adhere to the EventStore Record structure. Otherwise, it will not start. For example, the following will **NOT** work:
+Additionally, it must adhere to the KurrentDB Record structure. Otherwise, it will not start. For example, the following will **NOT** work:
 
 ```js
 {
@@ -207,7 +207,7 @@ Connectors periodically store the position of the last event that they have
 successfully processed. Then, if the connector host is restarted, the connectors
 can continue from close to where they got up to. The checkpoint information is
 stored in the `$connectors/{connector-id}/checkpoints` system stream in
-EventStoreDB. Each connector has its own dedicated stream for storing
+KurrentDB. Each connector has its own dedicated stream for storing
 checkpoints.
 
 By default, when the connector is started and there are no checkpoints, it will

@@ -4,7 +4,7 @@ order: 1
 
 # Database settings
 
-On this page, you find settings that tune the database server behaviour. Only modify these settings if you know what you are doing or when requested by Event Store support personnel.
+On this page, you find settings that tune the database server behaviour. Only modify these settings if you know what you are doing or when requested by Kurrent support personnel.
 
 ## Database
 
@@ -12,39 +12,39 @@ Settings described below are related to the database behaviour, like the locatio
 
 ### Database location
 
-EventStoreDB has a single database, which is spread across ever-growing number of physical files on the file system. Those files are called chunks and new data is always appended to the end of the latest chunk. When the chunk grows over 256 MiB, the server closes the chunk and opens a new one.
+KurrentDB has a single database, which is spread across ever-growing number of physical files on the file system. Those files are called chunks and new data is always appended to the end of the latest chunk. When the chunk grows over 256 MiB, the server closes the chunk and opens a new one.
 
-Normally, you'd want to keep the database files separated from the OS and other application files. The `Db` setting tells EventStoreDB where to put those chunk files. If the database server doesn't find anything at the specified location, it will create a new database.
+Normally, you'd want to keep the database files separated from the OS and other application files. The `Db` setting tells KurrentDB where to put those chunk files. If the database server doesn't find anything at the specified location, it will create a new database.
 
 | Format               | Syntax          |
 |:---------------------|:----------------|
 | Command line         | `--db`          |
 | YAML                 | `Db`            |
-| Environment variable | `EVENTSTORE_DB` |
+| Environment variable | `KURRENTDB_DB`  |
 
-**Default**: the default database location is platform specific. On Windows, the database will be stored in the `data` directory inside the EventStoreDB installation location. On Linux, it will be `/var/lib/eventstore`.
+**Default**: the default database location is platform specific. On Windows, the database will be stored in the `data` directory inside the KurrentDB installation location. On Linux, it will be `/var/lib/kurrentdb`.
 
 ### In-memory database
 
-When running EventStoreDB for educational purposes or in an automated test environment, you might want to prevent it from saving any data to the disk. EventStoreDB can keep the data in memory as soon as it has enough available RAM. When you shut down the instance that uses in-memory database, all the data will be lost.
+When running KurrentDB for educational purposes or in an automated test environment, you might want to prevent it from saving any data to the disk. KurrentDB can keep the data in memory as soon as it has enough available RAM. When you shut down the instance that uses in-memory database, all the data will be lost.
 
 | Format               | Syntax              |
 |:---------------------|:--------------------|
 | Command line         | `--mem-db`          |
 | YAML                 | `MemDb`             |
-| Environment variable | `EVENTSTORE_MEM_DB` |
+| Environment variable | `KURRENTDB_MEM_DB`  |
 
 **Default**: `false`
 
 ### Skip database verification
 
-When the database node restarts, it checks the database files to ensure they aren't corrupted. It is a lengthy process and can take hours on a large database. EventStoreDB normally flushes every write to disk, so database files are unlikely to get corrupted. In an environment where nodes restart often for some reason, you might want to disable the database verification to allow faster startup of the node.
+When the database node restarts, it checks the database files to ensure they aren't corrupted. It is a lengthy process and can take hours on a large database. KurrentDB normally flushes every write to disk, so database files are unlikely to get corrupted. In an environment where nodes restart often for some reason, you might want to disable the database verification to allow faster startup of the node.
 
 | Format               | Syntax                      |
 |:---------------------|:----------------------------|
 | Command line         | `--skip-db-verify`          |
 | YAML                 | `SkipDbVerify`              |
-| Environment variable | `EVENTSTORE_SKIP_DB_VERIFY` |
+| Environment variable | `KURRENTDB_SKIP_DB_VERIFY`  |
 
 **Default**: `false`
 
@@ -64,7 +64,7 @@ Remember that only the latest chunks get cached. Also consider that the OS has i
 |:---------------------|:-------------------------------|
 | Command line         | `--chunks-cache-size`          |
 | YAML                 | `ChunksCacheSize `             |
-| Environment variable | `EVENTSTORE_CHUNKS_CACHE_SIZE` |
+| Environment variable | `KURRENTDB_CHUNKS_CACHE_SIZE`  |
 
 **Default**: `536871424`
 
@@ -74,7 +74,7 @@ You would also need to adjust the `CachedChunks` setting to tell the server how 
 |:---------------------|:---------------------------|
 | Command line         | `--cached-chunks`          |
 | YAML                 | `CachedChunks `            |
-| Environment variable | `EVENTSTORE_CACHED_CHUNKS` |
+| Environment variable | `KURRENTDB_CACHED_CHUNKS`  |
 
 **Default**: `-1` (all)
 
@@ -88,7 +88,7 @@ Depending on your client operation timeout settings (default is 7 seconds), incr
 |:---------------------|:--------------------------------|
 | Command line         | `--prepare-timeout-ms`          |
 | YAML                 | `PrepareTimeoutMs`              |
-| Environment variable | `EVENTSTORE_PREPARE_TIMEOUT_MS` |
+| Environment variable | `KURRENTDB_PREPARE_TIMEOUT_MS`  |
 
 **Default**: `2000` (in milliseconds)
 
@@ -96,7 +96,7 @@ Depending on your client operation timeout settings (default is 7 seconds), incr
 |:---------------------|:-------------------------------|
 | Command line         | `--commit-timeout-ms`          |
 | YAML                 | `CommitTimeoutMs`              |
-| Environment variable | `EVENTSTORE_COMMIT_TIMEOUT_MS` |
+| Environment variable | `KURRENTDB_COMMIT_TIMEOUT_MS`  |
 
 **Default**: `2000` (in milliseconds)
 
@@ -106,15 +106,15 @@ Depending on your client operation timeout settings (default is 7 seconds), incr
 Using this option might cause data loss.
 :::
 
-This will prevent EventStoreDB from forcing the flush to disk after writes. Please note that this is unsafe in case of a power outage.
+This will prevent KurrentDB from forcing the flush to disk after writes. Please note that this is unsafe in case of a power outage.
 
-With this option enabled, EventStoreDB will still write data to the disk at the application level but not necessarily at the OS level. Usually, the OS should flush its buffers at regular intervals or when a process exits but it is something that's opaque to EventStoreDB.
+With this option enabled, KurrentDB will still write data to the disk at the application level but not necessarily at the OS level. Usually, the OS should flush its buffers at regular intervals or when a process exits but it is something that's opaque to KurrentDB.
 
 | Format               | Syntax                                    |
 |:---------------------|:------------------------------------------|
 | Command line         | `--unsafe-disable-flush-to-disk`          |
 | YAML                 | `UnsafeDisableFlushToDisk`                |
-| Environment variable | `EVENTSTORE_UNSAFE_DISABLE_FLUSH_TO_DISK` |
+| Environment variable | `KURRENTDB_UNSAFE_DISABLE_FLUSH_TO_DISK`  |
 
 **Default**: `false`
 
@@ -128,13 +128,13 @@ The minimum flush delay in milliseconds.
 |:---------------------|:---------------------------------|
 | Command line         | `--min-flush-delay-ms`           |
 | YAML                 | `MinFlushDelayMs`                |
-| Environment variable | `EVENTSTORE_MIN_FLUSH_DELAY_MS ` |
+| Environment variable | `KURRENTDB_MIN_FLUSH_DELAY_MS `  |
 
 **Default**: `2` (ms)
 
 ## Threading
 
-Settings described below are related to the threading model used by EventStoreDB.
+Settings described below are related to the threading model used by KurrentDB.
 
 ### Worker threads
 
@@ -146,7 +146,7 @@ Increasing the number of threads beyond that necessary to satisfy the workload g
 |:---------------------|:----------------------------|
 | Command line         | `--worker-threads`          |
 | YAML                 | `WorkerThreads`             |
-| Environment variable | `EVENTSTORE_WORKER_THREADS` |
+| Environment variable | `KURRENTDB_WORKER_THREADS`  |
 
 **Default**: `5`
 
@@ -163,7 +163,7 @@ Reader threads are used for all read operations on data files - whether the requ
 |:---------------------|:----------------------------------|
 | Command line         | `--reader-threads-count`          |
 | YAML                 | `ReaderThreadsCount`              |
-| Environment variable | `EVENTSTORE_READER_THREADS_COUNT` |
+| Environment variable | `KURRENTDB_READER_THREADS_COUNT`  |
 
 **Default**: `4`
 
@@ -174,4 +174,3 @@ The size of read operations is dependent on the size of the events appended, not
 A higher reader count can be useful, if disks are able to support more concurrent operations. Context switching incurs additional costs in terms of performance. If disks are already saturated, adding more reader threads can exacerbate that issue and lead to more failed requests.
 
 Increasing the count of reader threads can improve performance up to a point, but it is likely to rapidly tail off once that limit is reached.
-

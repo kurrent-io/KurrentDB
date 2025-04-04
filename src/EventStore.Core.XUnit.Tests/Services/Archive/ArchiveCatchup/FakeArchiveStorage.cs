@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -37,8 +37,8 @@ internal class FakeArchiveStorage : IArchiveStorage {
 		_chunkGets = [];
 	}
 
-	public ValueTask<bool> StoreChunk(string chunkPath, int logicalChunkNumber, CancellationToken ct) => throw new NotImplementedException();
-	public ValueTask<bool> SetCheckpoint(long checkpoint, CancellationToken ct) => throw new NotImplementedException();
+	public ValueTask StoreChunk(IChunkBlob chunk, CancellationToken ct) => throw new NotImplementedException();
+	public ValueTask SetCheckpoint(long checkpoint, CancellationToken ct) => throw new NotImplementedException();
 
 	public ValueTask<long> GetCheckpoint(CancellationToken ct) {
 		return ValueTask.FromResult(_checkpoint);
@@ -46,8 +46,8 @@ internal class FakeArchiveStorage : IArchiveStorage {
 
 	private ChunkHeader CreateChunkHeader(int chunkStartNumber, int chunkEndNumber) {
 		return new ChunkHeader(
-			version: (int) TFChunk.ChunkVersions.Transformed,
-			minCompatibleVersion: (int) TFChunk.ChunkVersions.Transformed,
+			version: (int)TFChunk.ChunkVersions.Transformed,
+			minCompatibleVersion: (int)TFChunk.ChunkVersions.Transformed,
 			chunkSize: _chunkSize,
 			chunkStartNumber,
 			chunkEndNumber,

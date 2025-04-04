@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
@@ -24,11 +24,12 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Serilog;
-using Empty = Google.Protobuf.WellKnownTypes.Empty;
-using Status = Google.Rpc.Status;
 using static EventStore.Client.Streams.BatchAppendReq.Types;
 using static EventStore.Client.Streams.BatchAppendReq.Types.Options;
+using static EventStore.Core.Messages.OperationResult;
+using Empty = Google.Protobuf.WellKnownTypes.Empty;
 using OperationResult = EventStore.Core.Messages.OperationResult;
+using Status = Google.Rpc.Status;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -38,19 +39,10 @@ partial class Streams<TStreamId> {
 		var worker = new BatchAppendWorker(_publisher, _provider,
 			_batchAppendTracker,
 			requestStream, responseStream,
-			context.GetHttpContext().User, _maxAppendSize, _writeTimeout,
+			context.GetHttpContext().User, _maxAppendSize, _maxAppendEventSize, _writeTimeout,
 			GetRequiresLeader(context.RequestHeaders));
-		try {
-			await worker.Work(context.CancellationToken);
-		} catch (IOException) {
-			// ignored
-		} catch (TaskCanceledException) {
-			//ignored
-		} catch (InvalidOperationException) {
-			//ignored
-		} catch (OperationCanceledException) {
-			//ignored
-		}
+
+		await worker.Work(context.CancellationToken);
 	}
 
 	private class BatchAppendWorker {
@@ -61,6 +53,7 @@ partial class Streams<TStreamId> {
 		private readonly IServerStreamWriter<BatchAppendResp> _responseStream;
 		private readonly ClaimsPrincipal _user;
 		private readonly int _maxAppendSize;
+		private readonly int _maxAppendEventSize;
 		private readonly TimeSpan _writeTimeout;
 		private readonly bool _requiresLeader;
 		private readonly Channel<BatchAppendResp> _channel;
@@ -70,7 +63,7 @@ partial class Streams<TStreamId> {
 		public BatchAppendWorker(IPublisher publisher, IAuthorizationProvider authorizationProvider,
 			IDurationTracker tracker,
 			IAsyncStreamReader<BatchAppendReq> requestStream, IServerStreamWriter<BatchAppendResp> responseStream,
-			ClaimsPrincipal user, int maxAppendSize, TimeSpan writeTimeout, bool requiresLeader) {
+			ClaimsPrincipal user, int maxAppendSize, int maxAppendEventSize, TimeSpan writeTimeout, bool requiresLeader) {
 			_publisher = publisher;
 			_authorizationProvider = authorizationProvider;
 			_tracker = tracker;
@@ -78,6 +71,7 @@ partial class Streams<TStreamId> {
 			_responseStream = responseStream;
 			_user = user;
 			_maxAppendSize = maxAppendSize;
+			_maxAppendEventSize = maxAppendEventSize;
 			_writeTimeout = writeTimeout;
 			_requiresLeader = requiresLeader;
 			_channel = Channel.CreateUnbounded<BatchAppendResp>(new() {
@@ -92,15 +86,15 @@ partial class Streams<TStreamId> {
 			var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
 #if DEBUG
-	var sendTask =
+			var sendTask =
 #endif
-			Send(_channel.Reader, cancellationToken)
-				.ContinueWith(HandleCompletion, CancellationToken.None);
+					Send(_channel.Reader, cancellationToken)
+						.ContinueWith(HandleCompletion, CancellationToken.None);
 #if DEBUG
-	var receiveTask =
+			var receiveTask =
 #endif
-			Receive(_channel.Writer, _user, _requiresLeader, cancellationToken)
-				.ContinueWith(HandleCompletion, CancellationToken.None);
+					Receive(_channel.Writer, _user, _requiresLeader, cancellationToken)
+						.ContinueWith(HandleCompletion, CancellationToken.None);
 
 			return tcs.Task;
 
@@ -115,8 +109,7 @@ partial class Streams<TStreamId> {
 				} catch (IOException ex) {
 					Log.Information("Closing gRPC client connection: {message}", ex.GetBaseException().Message);
 					tcs.TrySetException(ex);
-				}
-				catch (Exception ex) {
+				} catch (Exception ex) {
 					tcs.TrySetException(ex);
 				}
 			}
@@ -188,14 +181,23 @@ partial class Streams<TStreamId> {
 							continue;
 						}
 
-						clientWriteRequest.AddEvents(request.ProposedMessages.Select(FromProposedMessage));
+						try {
+							clientWriteRequest.AddEvents(request.ProposedMessages.Select(FromProposedMessage), _maxAppendEventSize);
 
-						if (clientWriteRequest.Size > _maxAppendSize) {
+							if (clientWriteRequest.Size > _maxAppendSize) {
+								pendingWrites.TryRemove(correlationId, out _);
+								await writer.WriteAsync(new BatchAppendResp {
+									CorrelationId = request.CorrelationId,
+									StreamIdentifier = clientWriteRequest.StreamId,
+									Error = Status.MaximumAppendSizeExceeded((uint)_maxAppendSize)
+								}, cancellationToken);
+							}
+						} catch (MaxAppendEventSizeExceededException ex) {
 							pendingWrites.TryRemove(correlationId, out _);
 							await writer.WriteAsync(new BatchAppendResp {
 								CorrelationId = request.CorrelationId,
 								StreamIdentifier = clientWriteRequest.StreamId,
-								Error = Status.MaximumAppendSizeExceeded((uint)_maxAppendSize)
+								Error = Status.MaximumAppendEventSizeExceeded(ex.EventId, (uint)ex.ProposedEventSize, (uint)ex.MaxAppendEventSize)
 							}, cancellationToken);
 						}
 
@@ -236,7 +238,7 @@ partial class Streams<TStreamId> {
 									}
 								},
 								ClientMessage.WriteEventsCompleted completed => completed.Result switch {
-									OperationResult.Success => new BatchAppendResp {
+									Success => new BatchAppendResp {
 										Success = BatchAppendResp.Types.Success.Completed(completed.CommitPosition,
 											completed.PreparePosition, completed.LastEventNumber),
 									},
@@ -245,15 +247,11 @@ partial class Streams<TStreamId> {
 											StreamRevision.FromInt64(completed.CurrentVersion),
 											clientWriteRequest.ExpectedVersion)
 									},
-									OperationResult.AccessDenied => new BatchAppendResp
-										{ Error = Status.AccessDenied },
+									OperationResult.AccessDenied => new BatchAppendResp { Error = Status.AccessDenied },
 									OperationResult.StreamDeleted => new BatchAppendResp {
 										Error = Status.StreamDeleted(clientWriteRequest.StreamId)
 									},
-									OperationResult.CommitTimeout or
-										OperationResult.ForwardTimeout or
-										OperationResult.PrepareTimeout => new BatchAppendResp
-											{ Error = Status.Timeout },
+									CommitTimeout or ForwardTimeout or PrepareTimeout => new BatchAppendResp { Error = Status.Timeout },
 									_ => new BatchAppendResp { Error = Status.Unknown }
 								},
 								_ => new BatchAppendResp {
@@ -288,8 +286,7 @@ partial class Streams<TStreamId> {
 			ClientWriteRequest FromOptions(Guid correlationId, Options options, TimeSpan timeout,
 				CancellationToken cancellationToken) =>
 				new(correlationId, options.StreamIdentifier, options.ExpectedStreamPositionCase switch {
-					ExpectedStreamPositionOneofCase.StreamPosition => new StreamRevision(options.StreamPosition)
-						.ToInt64(),
+					ExpectedStreamPositionOneofCase.StreamPosition => new StreamRevision(options.StreamPosition).ToInt64(),
 					ExpectedStreamPositionOneofCase.Any => AnyStreamRevision.Any.ToInt64(),
 					ExpectedStreamPositionOneofCase.StreamExists => AnyStreamRevision.StreamExists.ToInt64(),
 					ExpectedStreamPositionOneofCase.NoStream => AnyStreamRevision.NoStream.ToInt64(),
@@ -327,6 +324,13 @@ partial class Streams<TStreamId> {
 		}
 	}
 
+	private class MaxAppendEventSizeExceededException(string eventId, int proposedEventSize, int maxAppendEventSize)
+		: Exception($"Event with Id: {eventId}, Size: {proposedEventSize}, exceeded Max Append Event Size of {maxAppendEventSize}") {
+		public string EventId { get; } = eventId;
+		public int ProposedEventSize { get; } = proposedEventSize;
+		public int MaxAppendEventSize { get; } = maxAppendEventSize;
+	}
+
 	private record ClientWriteRequest {
 		public Guid CorrelationId { get; }
 		public string StreamId { get; }
@@ -340,16 +344,21 @@ partial class Streams<TStreamId> {
 			Func<ValueTask> onTimeout, CancellationToken cancellationToken) {
 			CorrelationId = correlationId;
 			StreamId = streamId;
-			_events = new List<Event>();
+			_events = [];
 			_size = 0;
 			ExpectedVersion = expectedVersion;
 
 			Task.Delay(timeout, cancellationToken).ContinueWith(_ => onTimeout(), cancellationToken);
 		}
 
-		public ClientWriteRequest AddEvents(IEnumerable<Event> events) {
+		public ClientWriteRequest AddEvents(IEnumerable<Event> events, int maxAppendEventSize) {
 			foreach (var e in events) {
-				_size += Event.SizeOnDisk(e.EventType, e.Data, e.Metadata);
+				var eventSize = Event.SizeOnDisk(e.EventType, e.Data, e.Metadata);
+				if (eventSize > maxAppendEventSize) {
+					throw new MaxAppendEventSizeExceededException(e.EventId.ToString(), eventSize, maxAppendEventSize);
+				}
+
+				_size += eventSize;
 				_events.Add(e);
 			}
 

@@ -1,20 +1,20 @@
 #region curl
 curl -i http://127.0.0.1:2113/streams/alphabet \
-    -H "Accept:application/vnd.eventstore.atom+json"
+    -H "Accept:application/vnd.kurrent.atom+json"
 #endregion curl
 
 #region response
 #region responseHeader
 HTTP/1.1 200 OK
 Access-Control-Allow-Methods: POST, DELETE, GET, OPTIONS
-Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-Forwarded-Host, X-Forwarded-Prefix, X-PINGOTHER, Authorization, ES-LongPoll, ES-ExpectedVersion, ES-EventId, ES-EventType, ES-RequiresMaster, ES-HardDelete, ES-ResolveLinkTos
+Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-Forwarded-Host, X-Forwarded-Prefix, X-PINGOTHER, Authorization, Kurrent-LongPoll, Kurrent-ExpectedVersion, Kurrent-EventId, Kurrent-EventType, Kurrent-RequireLeader, Kurrent-HardDelete, Kurrent-ResolveLinkTos
 Access-Control-Allow-Origin: *
-Access-Control-Expose-Headers: Location, ES-Position, ES-CurrentVersion
+Access-Control-Expose-Headers: Location, Kurrent-Position, Kurrent-CurrentVersion
 Cache-Control: max-age=0, no-cache, must-revalidate
 Vary: Accept
 ETag: "26;-2060438500"
-Content-Type: application/vnd.eventstore.atom+json; charset=utf-8
-Server: Mono-HTTPAPI/1.0
+Content-Type: application/vnd.kurrent.atom+json; charset=utf-8
+Server: Kestrel
 Date: Tue, 21 Aug 2018 10:12:31 GMT
 Content-Length: 10727
 Keep-Alive: timeout=15,max=100
@@ -26,7 +26,7 @@ Keep-Alive: timeout=15,max=100
   "updated": "2018-08-21T09:53:46.869815Z",
   "streamId": "alphabet",
   "author": {
-    "name": "EventStore"
+    "name": "Kurrent"
   },
   "headOfStream": true,
   "selfUrl": "http://127.0.0.1:2113/streams/alphabet",
@@ -63,7 +63,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/26",
       "updated": "2018-08-21T09:53:46.869815Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -82,7 +82,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/25",
       "updated": "2018-08-21T09:53:46.869811Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -101,7 +101,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/24",
       "updated": "2018-08-21T09:53:46.869809Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -120,7 +120,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/23",
       "updated": "2018-08-21T09:53:46.869806Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -139,7 +139,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/22",
       "updated": "2018-08-21T09:53:46.869804Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -158,7 +158,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/21",
       "updated": "2018-08-21T09:53:46.869802Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -177,7 +177,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/20",
       "updated": "2018-08-21T09:53:46.869799Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -196,7 +196,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/19",
       "updated": "2018-08-21T09:53:46.869791Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -215,7 +215,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/18",
       "updated": "2018-08-21T09:53:46.869788Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -234,7 +234,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/17",
       "updated": "2018-08-21T09:53:46.869786Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -253,7 +253,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/16",
       "updated": "2018-08-21T09:53:46.869782Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -272,7 +272,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/15",
       "updated": "2018-08-21T09:53:46.86978Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -291,7 +291,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/14",
       "updated": "2018-08-21T09:53:46.869778Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -310,7 +310,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/13",
       "updated": "2018-08-21T09:53:46.869773Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -329,7 +329,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/12",
       "updated": "2018-08-21T09:53:46.869771Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -348,7 +348,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/11",
       "updated": "2018-08-21T09:53:46.869769Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -367,7 +367,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/10",
       "updated": "2018-08-21T09:53:46.869766Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -386,7 +386,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/9",
       "updated": "2018-08-21T09:53:46.869764Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -405,7 +405,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/8",
       "updated": "2018-08-21T09:53:46.86976Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [
@@ -424,7 +424,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/alphabet/7",
       "updated": "2018-08-21T09:53:46.869758Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "event-type",
       "links": [

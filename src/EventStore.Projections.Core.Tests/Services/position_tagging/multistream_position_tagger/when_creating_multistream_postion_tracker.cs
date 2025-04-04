@@ -1,9 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.MultiStream;
 using NUnit.Framework;
@@ -17,7 +16,7 @@ public class when_creating_multistream_postion_tracker {
 
 	[SetUp]
 	public void when() {
-		_tagger = new MultiStreamPositionTagger(0, new[] {"stream1", "stream2"});
+		_tagger = new MultiStreamPositionTagger(0, new[] { "stream1", "stream2" });
 		_positionTracker = new PositionTracker(_tagger);
 	}
 
@@ -25,7 +24,7 @@ public class when_creating_multistream_postion_tracker {
 	public void it_can_be_updated_with_correct_streams() {
 		// even not initialized (UpdateToZero can be removed)
 		var newTag =
-			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"stream1", 10}, {"stream2", 20}});
+			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 10 }, { "stream2", 20 } });
 		_positionTracker.UpdateByCheckpointTagInitial(newTag);
 	}
 
@@ -33,7 +32,7 @@ public class when_creating_multistream_postion_tracker {
 	public void it_cannot_be_updated_with_other_streams() {
 		Assert.Throws<InvalidOperationException>(() => {
 			var newTag = CheckpointTag.FromStreamPositions(0,
-				new Dictionary<string, long> {{"stream1", 10}, {"stream3", 20}});
+				new Dictionary<string, long> { { "stream1", 10 }, { "stream3", 20 } });
 			_positionTracker.UpdateByCheckpointTagInitial(newTag);
 		});
 	}
@@ -42,7 +41,7 @@ public class when_creating_multistream_postion_tracker {
 	public void it_cannot_be_updated_forward() {
 		Assert.Throws<InvalidOperationException>(() => {
 			var newTag = CheckpointTag.FromStreamPositions(0,
-				new Dictionary<string, long> {{"stream1", 10}, {"stream2", 20}});
+				new Dictionary<string, long> { { "stream1", 10 }, { "stream2", 20 } });
 			_positionTracker.UpdateByCheckpointTagForward(newTag);
 		});
 	}
@@ -51,7 +50,7 @@ public class when_creating_multistream_postion_tracker {
 	public void initial_position_cannot_be_set_twice() {
 		Assert.Throws<InvalidOperationException>(() => {
 			var newTag = CheckpointTag.FromStreamPositions(0,
-				new Dictionary<string, long> {{"stream1", 10}, {"stream2", 20}});
+				new Dictionary<string, long> { { "stream1", 10 }, { "stream2", 20 } });
 			_positionTracker.UpdateByCheckpointTagForward(newTag);
 			_positionTracker.UpdateByCheckpointTagForward(newTag);
 		});

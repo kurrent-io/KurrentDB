@@ -1,16 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Data;
-using EventStore.Core.LogV2;
-using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -31,7 +27,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 		_db = new TFChunkDb(TFChunkHelper.CreateSizedDbConfig(PathName, 0, chunkSize: 4096));
 		await _db.Open();
 
-		var chunk = _db.Manager.GetChunk(0);
+		var chunk = await _db.Manager.GetInitializedChunk(0, CancellationToken.None);
 
 		_records = new ILogRecord[RecordsCount];
 		_results = new RecordWriteResult[RecordsCount];
@@ -154,7 +150,7 @@ public class when_sequentially_reading_db_with_one_chunk<TLogFormat, TStreamId> 
 			var seqReader = new TFChunkReader(_db, _db.Config.WriterCheckpoint, _records[i].LogPosition);
 
 			int count = 0;
-			while (await seqReader.TryReadNext(CancellationToken.None) is {Success:true} res) {
+			while (await seqReader.TryReadNext(CancellationToken.None) is { Success: true } res) {
 				var rec = _records[i + count];
 				Assert.AreEqual(rec, res.LogRecord);
 				Assert.AreEqual(rec.LogPosition, res.RecordPrePosition);

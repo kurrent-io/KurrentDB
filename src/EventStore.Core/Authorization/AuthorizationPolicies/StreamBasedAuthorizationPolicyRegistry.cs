@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 using System;
@@ -25,7 +25,7 @@ public class StreamBasedAuthorizationPolicyRegistry :
 	private readonly ILogger _logger = Log.ForContext<StreamBasedAuthorizationPolicyRegistry>();
 	private readonly IPublisher _publisher;
 
-	private readonly FallbackStreamAccessPolicySelector _fallbackStreamAccessPolicySelector = new ();
+	private readonly FallbackStreamAccessPolicySelector _fallbackStreamAccessPolicySelector = new();
 	private readonly IPolicySelector _legacyPolicySelector;
 	private readonly IPolicySelectorFactory[] _pluginSelectorFactories;
 	private readonly AuthorizationPolicySettings _defaultSettings;
@@ -89,7 +89,8 @@ public class StreamBasedAuthorizationPolicyRegistry :
 			_logger.Information("Stopping policy selector factory {name}", factory.CommandLineName);
 			await factory.Disable();
 		}
-		if (_cts is not null) await _cts.CancelAsync();
+		if (_cts is not null)
+			await _cts.CancelAsync();
 	}
 
 	private async Task StartSubscription(ulong? checkpoint, CancellationToken ct) {
@@ -152,7 +153,8 @@ public class StreamBasedAuthorizationPolicyRegistry :
 
 		try {
 			var settings = JsonSerializer.Deserialize<AuthorizationPolicySettings>(evnt.Event.Data.Span, SerializeOptions);
-			if (settings is not null) return (true, settings);
+			if (settings is not null)
+				return (true, settings);
 			_logger.Error("Could not parse authorization policy settings");
 		} catch (Exception ex) {
 			_logger.Error(ex, "Could not parse authorization policy settings");
@@ -164,7 +166,7 @@ public class StreamBasedAuthorizationPolicyRegistry :
 		_logger.Information("Starting authorization policy factory {factory}", pluginFactory.CommandLineName);
 		if (!await pluginFactory.Enable()) {
 			_logger.Error("Failed to enable policy selector plugin {pluginName}. " +
-			              "Authorization settings will not be applied", pluginFactory.CommandLineName);
+						  "Authorization settings will not be applied", pluginFactory.CommandLineName);
 			return false;
 		}
 

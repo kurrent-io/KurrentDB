@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -17,8 +17,7 @@ using EventStore.Projections.Core.Services.Processing.Checkpointing;
 
 namespace EventStore.Projections.Core.Services.Processing.EventByType;
 
-public partial class EventByTypeIndexEventReader
-{
+public partial class EventByTypeIndexEventReader {
 	private class IndexBased : State,
 		IHandle<ClientMessage.ReadStreamEventsForwardCompleted>,
 		IHandle<ClientMessage.ReadStreamEventsBackwardCompleted>,
@@ -81,7 +80,8 @@ public partial class EventByTypeIndexEventReader
 				return;
 
 			lock (_lock) {
-				if (!_pendingRequests.Values.Any(x => x == message.CorrelationId)) return;
+				if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+					return;
 			}
 
 			if (!_streamToEventType.ContainsKey(message.EventStreamId))
@@ -109,10 +109,13 @@ public partial class EventByTypeIndexEventReader
 		}
 
 		public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-			if (_disposed) return;
-			if (_reader.Paused) return;
+			if (_disposed)
+				return;
+			if (_reader.Paused)
+				return;
 			lock (_lock) {
-				if (!_pendingRequests.Values.Any(x => x == message.CorrelationId)) return;
+				if (!_pendingRequests.Values.Any(x => x == message.CorrelationId))
+					return;
 			}
 
 			if (message.StreamId == "$et") {
@@ -378,13 +381,13 @@ public partial class EventByTypeIndexEventReader
 				return false;
 			Queue<PendingEvent> q;
 			var shouldSwitch = _lastKnownIndexCheckpointPosition != null
-			                   && _streamToEventType.Keys.All(
-				                   v =>
-					                   _eofs[v]
-					                   || _buffers.TryGetValue(v, out q) && q.Count > 0
-					                                                     &&
-					                                                     !BeforeTheLastKnownIndexCheckpoint(
-						                                                     q.Peek().TfPosition));
+							   && _streamToEventType.Keys.All(
+								   v =>
+									   _eofs[v]
+									   || _buffers.TryGetValue(v, out q) && q.Count > 0
+																		 &&
+																		 !BeforeTheLastKnownIndexCheckpoint(
+																			 q.Peek().TfPosition));
 			return shouldSwitch;
 		}
 	}

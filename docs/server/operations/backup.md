@@ -4,7 +4,7 @@ order: 3
 
 # Backup and restore
 
-Backing up an EventStoreDB database is straightforward but relies on carrying out the steps below in the
+Backing up a KurrentDB database is straightforward but relies on carrying out the steps below in the
 correct order.
 
 ## Types of backups
@@ -84,7 +84,7 @@ rsync -a data/*.0* backup
 
 ### Restore
 
-1. Ensure the EventStoreDB process is stopped. Restoring a database on running instance is not possible and,
+1. Ensure the KurrentDB process is stopped. Restoring a database on running instance is not possible and,
    in most cases, will lead to data corruption.
 2. Copy all files to the desired location.
 3. Create a copy of `chaser.chk` and call it `truncate.chk`. This effectively overwrites the
@@ -127,7 +127,7 @@ Then backup the log:
 
 ### Restore
 
-1. Ensure the Event Store DB process is stopped. Restoring a database on running instance is not possible and,
+1. Ensure the KurrentDB process is stopped. Restoring a database on running instance is not possible and,
    in most cases, will lead to data corruption.
 2. Copy all files to the desired location.
 3. Create a copy of `chaser.chk` and call it `truncate.chk`.
@@ -159,7 +159,7 @@ column store. These methods would require a manual set up for restoring a cluste
 
 ### Backup cluster
 
-Use a second EventStoreDB cluster as a backup. Such a strategy is known as a primary/secondary back up scheme.
+Use a second KurrentDB cluster as a backup. Such a strategy is known as a primary/secondary back up scheme.
 
 The primary cluster asynchronously pushes data to the second cluster using a durable subscription. The second
 cluster is available in case of a disaster on the primary cluster.
@@ -167,4 +167,3 @@ cluster is available in case of a disaster on the primary cluster.
 If you are using this strategy, we recommend you only support manual fail over from primary to secondary as
 automated strategies risk causing a [split brain](http://en.wikipedia.org/wiki/Split-brain_%28computing%29)
 problem.
-

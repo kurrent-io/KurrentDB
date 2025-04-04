@@ -4726,12 +4726,12 @@
           }
         ],
         "package": {
-          "name": "event_store.client.redaction"
+          "name": "kurrent.client.redaction"
         },
         "options": [
           {
             "name": "java_package",
-            "value": "com.eventstore.dbclient.proto.redaction"
+            "value": "com.kurrent.dbclient.proto.redaction"
           }
         ]
       }
@@ -4937,6 +4937,26 @@
               {
                 "id": 1,
                 "name": "maxAppendSize",
+                "type": "uint32"
+              }
+            ]
+          },
+          {
+            "name": "MaximumAppendEventSizeExceeded",
+            "fields": [
+              {
+                "id": 1,
+                "name": "eventId",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "proposedEventSize",
+                "type": "uint32"
+              },
+              {
+                "id": 3,
+                "name": "maxAppendEventSize",
                 "type": "uint32"
               }
             ]

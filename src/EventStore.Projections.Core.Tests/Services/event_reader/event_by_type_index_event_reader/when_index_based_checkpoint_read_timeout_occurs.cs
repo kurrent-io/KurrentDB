@@ -1,19 +1,18 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using EventStore.Core.Data;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
+using System.Linq;
 using EventStore.Common.Utils;
-using NUnit.Framework;
+using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
+using EventStore.Core.Tests.Services.TimeService;
+using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing.EventByType;
+using NUnit.Framework;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_index_event_reader;
@@ -40,7 +39,7 @@ public class when_index_based_checkpoint_read_timeout_occurs<TLogFormat, TStream
 		fromPositions.Add("$et-eventTypeOne", 0);
 		fromPositions.Add("$et-eventTypeTwo", 0);
 		_eventReader = new EventByTypeIndexEventReader(_bus, _distributionCorrelationId,
-			null, new[] {"eventTypeOne", "eventTypeTwo"},
+			null, new[] { "eventTypeOne", "eventTypeTwo" },
 			false, new TFPos(0, 0),
 			fromPositions, true,
 			_fakeTimeProvider,

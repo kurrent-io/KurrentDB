@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using EventStore.Core.Services;
@@ -18,7 +18,8 @@ public class when_recategorizing_events_while_running<TLogFormat, TStreamId> : s
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		foreach (var e in base.When()) yield return e;
+		foreach (var e in base.When())
+			yield return e;
 		yield return CreateWriteEvent("categorized-0", SystemEventTypes.LinkTo, "1@account-01", "{\"a\":2}");
 		yield return CreateWriteEvent("categorized-0", SystemEventTypes.LinkTo, "0@account-02", "{\"a\":10}");
 		yield return CreateWriteEvent("categorized-1", SystemEventTypes.LinkTo, "0@account-01", "{\"a\":1}");

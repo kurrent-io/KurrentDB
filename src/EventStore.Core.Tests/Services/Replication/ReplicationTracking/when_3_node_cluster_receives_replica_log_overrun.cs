@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Messages;
@@ -20,7 +20,7 @@ public class when_3_node_cluster_receives_replica_log_overrun : with_clustered_r
 		WriterCheckpoint.Write(_logPosition);
 		WriterCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());
-		Service.Handle(new ReplicationTrackingMessage.ReplicaWriteAck( replicaId, _overrunPosition));
+		Service.Handle(new ReplicationTrackingMessage.ReplicaWriteAck(replicaId, _overrunPosition));
 		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 	}
 
@@ -29,10 +29,10 @@ public class when_3_node_cluster_receives_replica_log_overrun : with_clustered_r
 		Assert.AreEqual(1, ReplicatedTos.Count);
 		Assert.True(ReplicatedTos.TryDequeue(out var msg));
 		Assert.AreEqual(_logPosition, msg.LogPosition);
-	}	
+	}
 	[Test]
 	public void replication_checkpoint_should_advance() {
-		Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());		
-		Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());		
-	}	
+		Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());
+		Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());
+	}
 }

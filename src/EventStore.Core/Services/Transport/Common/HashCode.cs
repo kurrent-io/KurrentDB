@@ -1,12 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using System.Linq;
 
 namespace EventStore.Core.Services.Transport.Common;
 
-public struct HashCode {
+public readonly struct HashCode {
 	private readonly int _value;
 
 	private HashCode(int value) {
@@ -15,24 +15,24 @@ public struct HashCode {
 
 	public static readonly HashCode Hash = default;
 
-	public readonly HashCode Combine<T>(T? value) where T : struct => Combine(value ?? default);
-	
-	public readonly HashCode Combine<T>(T value) where T: struct {
+	public HashCode Combine<T>(T? value) where T : struct => Combine(value ?? default);
+
+	public HashCode Combine<T>(T value) where T : struct {
 		unchecked {
-			return new HashCode((_value * 397) ^ value.GetHashCode());
-		}
-	}
-	
-	public readonly HashCode Combine(string value){
-		unchecked {
-			return new HashCode((_value * 397) ^ (value?.GetHashCode() ?? 0));
+			return new((_value * 397) ^ value.GetHashCode());
 		}
 	}
 
-	public readonly HashCode Combine<T>(IEnumerable<T> values) where T: struct => 
+	public HashCode Combine(string value) {
+		unchecked {
+			return new((_value * 397) ^ (value?.GetHashCode() ?? 0));
+		}
+	}
+
+	public static HashCode Combine<T>(IEnumerable<T> values) where T : struct =>
 		values.Aggregate(Hash, (previous, value) => previous.Combine(value));
 
-	public readonly HashCode Combine(IEnumerable<string> values) => 
+	public static HashCode Combine(IEnumerable<string> values) =>
 		values.Aggregate(Hash, (previous, value) => previous.Combine(value));
 
 	public static implicit operator int(HashCode value) => value._value;

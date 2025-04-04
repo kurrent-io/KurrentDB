@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -42,7 +42,7 @@ public class
 			bytes = new byte[3994]; // this gives exactly 4097 size of record, with 3993 (rec size 4096) everything works fine!
 		Random.Shared.NextBytes(bytes);
 		var writer = new TFChunkWriter(db);
-		writer.Open();
+		await writer.Open(CancellationToken.None);
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -61,7 +61,7 @@ public class
 			flags: PrepareFlags.SingleWrite,
 			eventType: eventTypeId,
 			data: bytes,
-			metadata: new byte[] {0x07, 0x17});
+			metadata: new byte[] { 0x07, 0x17 });
 
 		Assert.IsTrue(await writer.Write(record, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();
@@ -69,8 +69,7 @@ public class
 
 		Assert.AreEqual(record.GetSizeWithLengthPrefixAndSuffix() + 137, _checkpoint.Read());
 		await using var filestream = File.Open(filename,
-			new FileStreamOptions
-				{ Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
+			new FileStreamOptions { Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
 		filestream.Seek(ChunkHeader.Size + 137 + sizeof(int), SeekOrigin.Begin);
 
 		var recordLength = filestream.Length - filestream.Position;

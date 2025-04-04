@@ -1,15 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Index;
-using EventStore.Core.Tests.Services.Storage.Transactions;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.AutoMergeLevelTests;
@@ -43,7 +39,7 @@ public abstract class when_max_auto_merge_level_is_set : SpecificationWithDirect
 			first = _result.MergedMap;
 		var pTable = PTable.FromMemtable(memtable, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify);
 		_result = first.AddAndMergePTable(pTable,
-			10, 20, _fileNameProvider, _ptableVersion,0, skipIndexVerify: _skipIndexVerify);
+			10, 20, _fileNameProvider, _ptableVersion, 0, skipIndexVerify: _skipIndexVerify);
 		for (int i = 3; i <= count * 2; i += 2) {
 			pTable = PTable.FromMemtable(memtable, GetTempFilePath(), Constants.PTableInitialReaderCount, Constants.PTableMaxReaderCountDefault, skipIndexVerify: _skipIndexVerify);
 			_result = _result.MergedMap.AddAndMergePTable(

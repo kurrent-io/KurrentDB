@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Frozen;
@@ -136,7 +136,7 @@ public partial class InMemoryBus {
 
 			// loop retries lock-free until successful
 			Func<T, CancellationToken, ValueTask> devirtHandler = handler.HandleAsync;
-			for (Func<T, CancellationToken, ValueTask>[] newArray;; Array.Clear(newArray)) {
+			for (Func<T, CancellationToken, ValueTask>[] newArray; ; Array.Clear(newArray)) {
 				var currentArray = _handlers;
 
 				// Perf: array is preferred over ImmutableHashSet because enumeration speed is much more important
@@ -166,13 +166,13 @@ public partial class InMemoryBus {
 			Debug.Assert(handler is not null);
 
 			// loop retries lock-free until successful
-			for (var currentArray = _handlers;;) {
+			for (var currentArray = _handlers; ;) {
 				var index = IndexOf(currentArray, handler);
 				if (index < 0 || currentArray.Length is 0)
 					break;
 
 				// fast path loop - no need to search over array
-				for (Func<T, CancellationToken, ValueTask>[] newArray;; Array.Clear(newArray)) {
+				for (Func<T, CancellationToken, ValueTask>[] newArray; ; Array.Clear(newArray)) {
 
 					if (currentArray.Length > 1) {
 						newArray = new Func<T, CancellationToken, ValueTask>[currentArray.Length - 1];

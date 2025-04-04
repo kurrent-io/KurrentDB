@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -26,7 +26,7 @@ public class when_writing_a_new_chunked_transaction_file<TLogFormat, TStreamId> 
 		var db = new TFChunkDb(TFChunkHelper.CreateDbConfig(PathName, _checkpoint, new InMemoryCheckpoint()));
 		await db.Open();
 		var tf = new TFChunkWriter(db);
-		tf.Open();
+		await tf.Open(CancellationToken.None);
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -44,8 +44,8 @@ public class when_writing_a_new_chunked_transaction_file<TLogFormat, TStreamId> 
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
-			metadata: new byte[] {7, 17});
+			data: new byte[] { 1, 2, 3, 4, 5 },
+			metadata: new byte[] { 7, 17 });
 
 		await tf.Write(record, CancellationToken.None);
 		await tf.DisposeAsync();

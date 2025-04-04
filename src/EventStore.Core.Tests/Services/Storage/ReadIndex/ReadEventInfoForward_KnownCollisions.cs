@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using System.Linq;
@@ -146,7 +146,7 @@ public abstract class ReadEventInfoForward_KnownCollisions : ReadIndexTestScenar
 				if (fromEventNumber > 3)
 					Assert.True(result.IsEndOfStream);
 				else
-					Assert.AreEqual((long) fromEventNumber + int.MaxValue, result.NextEventNumber);
+					Assert.AreEqual((long)fromEventNumber + int.MaxValue, result.NextEventNumber);
 			}
 		}
 
@@ -164,7 +164,7 @@ public abstract class ReadEventInfoForward_KnownCollisions : ReadIndexTestScenar
 				if (fromEventNumber > 3)
 					Assert.True(result.IsEndOfStream);
 				else
-					Assert.AreEqual((long) fromEventNumber + 2, result.NextEventNumber);
+					Assert.AreEqual((long)fromEventNumber + 2, result.NextEventNumber);
 			}
 		}
 
@@ -179,7 +179,7 @@ public abstract class ReadEventInfoForward_KnownCollisions : ReadIndexTestScenar
 					CancellationToken.None);
 
 				CheckResult(_events.Skip(fromEventNumber).Take(1).ToArray(), result);
-				Assert.AreEqual((long) fromEventNumber + int.MaxValue, result.NextEventNumber);
+				Assert.AreEqual((long)fromEventNumber + int.MaxValue, result.NextEventNumber);
 			}
 		}
 	}
@@ -287,7 +287,7 @@ public abstract class ReadEventInfoForward_KnownCollisions : ReadIndexTestScenar
 				CancellationToken.None);
 
 			CheckResult(_events.Skip(1).ToArray(), result);
-			Assert.AreEqual((long ) 3 + int.MaxValue, result.NextEventNumber);
+			Assert.AreEqual((long)3 + int.MaxValue, result.NextEventNumber);
 
 			result = await ReadIndex.ReadEventInfoForward_KnownCollisions(
 				Stream,

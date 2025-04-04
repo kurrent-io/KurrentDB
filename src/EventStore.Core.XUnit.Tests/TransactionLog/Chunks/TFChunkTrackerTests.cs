@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -11,32 +11,38 @@ using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.XUnit.Tests.Metrics;
 using Xunit;
+using static EventStore.Core.TransactionLog.ITransactionFileTracker;
 
 namespace EventStore.Core.XUnit.Tests.TransactionLog.Chunks;
 
-public class TFChunkTrackerTests : IDisposable {
+public sealed class TFChunkTrackerTests : IDisposable {
 	const long WriterCheckpoint = 4_500;
 	const int ChunkSize = 1_000;
 
 	private readonly TFChunkTracker _sut;
 	private readonly TestMeterListener<long> _listener;
+	private readonly TestMeterListener<double> _doubleListener;
+	private readonly FakeClock _clock = new();
 
 	public TFChunkTrackerTests() {
 		var meter = new Meter($"{typeof(TFChunkTrackerTests)}");
 		_listener = new TestMeterListener<long>(meter);
-		var byteMetric = new CounterMetric(meter, "eventstore-io", unit: "bytes");
-		var eventMetric = new CounterMetric(meter, "eventstore-io", unit: "events");
+		_doubleListener = new TestMeterListener<double>(meter);
+		var byteMetric = new CounterMetric(meter, "eventstore-io", unit: "bytes", legacyNames: false);
+		var eventMetric = new CounterMetric(meter, "eventstore-io", unit: "events", legacyNames: false);
 		var writerCheckpoint = new InMemoryCheckpoint(WriterCheckpoint);
 
 		var readTag = new KeyValuePair<string, object>("activity", "read");
 		_sut = new TFChunkTracker(
 			readDistribution: new LogicalChunkReadDistributionMetric(meter, "chunk-read-distribution", writerCheckpoint, ChunkSize),
+			readDurationMetric: new DurationMetric(meter, "record-read-duration", legacyNames: false, _clock),
 			readBytes: new CounterSubMetric(byteMetric, [readTag]),
 			readEvents: new CounterSubMetric(eventMetric, [readTag]));
 	}
 
 	public void Dispose() {
 		_listener.Dispose();
+		_doubleListener.Dispose();
 	}
 
 	[Fact]
@@ -45,7 +51,7 @@ public class TFChunkTrackerTests : IDisposable {
 			data: new byte[5],
 			meta: new byte[5]);
 
-		_sut.OnRead(prepare);
+		_sut.OnRead(_clock.Now, prepare, Source.Unknown);
 		_listener.Observe();
 
 		AssertEventsRead(1);
@@ -55,7 +61,7 @@ public class TFChunkTrackerTests : IDisposable {
 	[Fact]
 	public void disregard_system_log() {
 		var system = CreateSystemRecord();
-		_sut.OnRead(system);
+		_sut.OnRead(_clock.Now, system, Source.Unknown);
 		_listener.Observe();
 
 		AssertEventsRead(0);
@@ -65,11 +71,44 @@ public class TFChunkTrackerTests : IDisposable {
 	[Fact]
 	public void disregard_commit_log() {
 		var system = CreateCommit();
-		_sut.OnRead(system);
+		_sut.OnRead(_clock.Now, system, Source.Unknown);
 		_listener.Observe();
 
 		AssertEventsRead(0);
 		AssertBytesRead(0);
+	}
+
+	[Theory]
+	[InlineData(Source.ChunkCache)]
+	public void records_record_read_duration(Source source) {
+		var prepare = CreatePrepare(
+			data: new byte[5],
+			meta: new byte[5]);
+
+		var start = _clock.Now;
+		_clock.AdvanceSeconds(3);
+
+		// when
+		_sut.OnRead(start, prepare, source);
+
+		// then
+		_doubleListener.Observe();
+		var actual = _doubleListener.RetrieveMeasurements("record-read-duration-seconds");
+		Assert.Collection(
+			actual,
+			m => {
+				Assert.Equal(3, m.Value);
+				Assert.Collection(
+					m.Tags,
+					t => {
+						Assert.Equal("source", t.Key);
+						Assert.Equal(source, t.Value);
+					},
+					t => {
+						Assert.Equal("user", t.Key);
+						Assert.Equal("", t.Value);
+					});
+			});
 	}
 
 	[Theory]
@@ -85,7 +124,10 @@ public class TFChunkTrackerTests : IDisposable {
 	[InlineData(1, 4)]
 	[InlineData(0, 4)]
 	public void records_read_distribution(long logPosition, long expectedChunk) {
-		_sut.OnRead(CreatePrepare(data: new byte[5], meta: new byte[5], logPosition: logPosition));
+		_sut.OnRead(
+			_clock.Now,
+			CreatePrepare(data: new byte[5], meta: new byte[5], logPosition: logPosition),
+			Source.Unknown);
 
 		_listener.Observe();
 		var actual = _listener.RetrieveMeasurements("chunk-read-distribution");

@@ -1,6 +1,6 @@
 # Event streams
 
-EventStoreDB is purpose-built for event storage. Unlike traditional state-based databases, which retain only the most recent entity state, EventStoreDB allows you to store each state alteration as an independent event.
+KurrentDB is purpose-built for event storage. Unlike traditional state-based databases, which retain only the most recent entity state, KurrentDB allows you to store each state alteration as an independent event.
 
 These **events** are logically organized into **streams**, typically only one stream per entity.
 
@@ -8,11 +8,11 @@ These **events** are logically organized into **streams**, typically only one st
 
 ## Stream metadata
 
-In EventStoreDB, every stream and event is accompanied by metadata, distinguished by the **`$$`** prefix. For example, the stream metadata for a stream named **`foo`** is **`$$foo`**. You can modify specific metadata values and write your data to the metadata, which can be referenced in your code.
+In KurrentDB, every stream and event is accompanied by metadata, distinguished by the **`$$`** prefix. For example, the stream metadata for a stream named **`foo`** is **`$$foo`**. You can modify specific metadata values and write your data to the metadata, which can be referenced in your code.
 
 ### Reserved names
 
-EventStoreDB uses a **`$`** prefix for all internal data, such as **`$maxCount`** in a stream's metadata. Do not use a **`$`** prefix for event names, metadata keys, or stream names, except as detailed below.
+KurrentDB uses a **`$`** prefix for all internal data, such as **`$maxCount`** in a stream's metadata. Do not use a **`$`** prefix for event names, metadata keys, or stream names, except as detailed below.
 
 The supported internal settings are:
 
@@ -51,24 +51,24 @@ All names starting with **`$`** are reserved for internal use. The currently sup
 | **`$correlationId`** | The application-level correlation ID for the message. |
 | **`$causationId`**   | The application-level causation ID for the message.   |
 
-Projections within EventStoreDB adhere to both the **`correlationId`** and **`causationId`** patterns for any events they internally produce (e.g., through functions like `linkTo` and `emit`).
+Projections within KurrentDB adhere to both the **`correlationId`** and **`causationId`** patterns for any events they internally produce (e.g., through functions like `linkTo` and `emit`).
 
 ## Deleting streams and events
 
-In EventStoreDB, metadata can determine whether an event is deleted or not. You can use [stream metadata](#metadata-and-reserved-names) elements such as **`TruncateBefore`**, **`MaxAge`**, and **`MaxCount`** to
+In KurrentDB, metadata can determine whether an event is deleted or not. You can use [stream metadata](#metadata-and-reserved-names) elements such as **`TruncateBefore`**, **`MaxAge`**, and **`MaxCount`** to
 filter events marked as deleted. During a stream read, the index references the stream's metadata to determine if any events have been deleted.
 
 ::: note
-In EventStoreDB, you cannot selectively delete events from the middle of a stream. It only allows truncating the stream.
+In KurrentDB, you cannot selectively delete events from the middle of a stream. It only allows truncating the stream.
 :::
 
-When you delete a stream, EventStoreDB offers two options: **soft delete** or **hard delete**.
+When you delete a stream, KurrentDB offers two options: **soft delete** or **hard delete**.
 
 **Soft delete** triggers scavenging, removing all events from the stream during the subsequent scavenging process. This allows for the reopening of the stream by appending new events.
 
 It's worth noting that the **`$all`** stream circumvents index checking. Deleted events within this stream remain readable until a scavenging process removes them. To understand the prerequisites for successful event removal through scavenging, refer to the [scavenging guide](../operations/scavenge.md).
 
-Even if a stream has been deleted, EventStoreDB retains one event within the stream to indicate the stream's existence and provide information about the last event version. As a best practice, consider appending a specific event like **`StreamDeleted`** and then setting the **`MaxCount`** to 1 to delete the stream. Keep this in mind, especially when dealing with streams containing sensitive data that you want to erase thoroughly and without a trace.
+Even if a stream has been deleted, KurrentDB retains one event within the stream to indicate the stream's existence and provide information about the last event version. As a best practice, consider appending a specific event like **`StreamDeleted`** and then setting the **`MaxCount`** to 1 to delete the stream. Keep this in mind, especially when dealing with streams containing sensitive data that you want to erase thoroughly and without a trace.
 
 ### Soft delete and TruncateBefore
 
@@ -124,7 +124,7 @@ If you plan to use projections and delete streams, there are some considerations
 
 ## System events and streams
 
-System streams and events begin with the `$` symbol. These streams and events are used for internal data, or for configuring specific parts of EventStoreDB.
+System streams and events begin with the `$` symbol. These streams and events are used for internal data, or for configuring specific parts of KurrentDB.
 
 Metadata streams for system streams follow the same convention of prefixing the stream name with `$$`. Therefore metadata streams for system streams start with `$$$`.
 
@@ -161,7 +161,7 @@ Learn more about the default ACL in the [access control lists](../security/user-
 
 ### **`$stats`**
 
-EventStoreDB offers debugging and statistical information about a cluster within the **`$stats`** stream. Find out
+KurrentDB offers debugging and statistical information about a cluster within the **`$stats`** stream. Find out
 more in [the stats guide](../diagnostics/README.md#statistics).
 
 ### **`$scavenges`**
@@ -204,7 +204,7 @@ The system projections create the following system streams:
 
 ### **`$projections-$all`**
 
-This is the registry of all of the projections in EventStoreDB. It contains a number of `$ProjectionCreated` and `$ProjectionDeleted` events, which form the list of available projections when replayed.
+This is the registry of all of the projections in KurrentDB. It contains a number of `$ProjectionCreated` and `$ProjectionDeleted` events, which form the list of available projections when replayed.
 
 This stream contains the following event types:
 

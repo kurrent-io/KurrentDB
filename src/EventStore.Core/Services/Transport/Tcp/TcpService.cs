@@ -1,9 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
-using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Common.Utils;
@@ -28,24 +27,25 @@ public enum TcpSecurityType {
 public class TcpService : IHandle<SystemMessage.SystemInit>,
 	IHandle<SystemMessage.SystemStart>,
 	IHandle<SystemMessage.BecomeShuttingDown> {
+
 	private static readonly ILogger Log = Serilog.Log.ForContext<TcpService>();
 
 	private readonly IPublisher _publisher;
 	private readonly IPEndPoint _serverEndPoint;
 	private readonly TcpServerListener _serverListener;
 	private readonly IPublisher _networkSendQueue;
+	private readonly Func<Guid, IPEndPoint, ITcpDispatcher> _dispatcherFactory;
+	private readonly IAuthenticationProvider _authProvider;
+	private readonly AuthorizationGateway _authorizationGateway;
 	private readonly TcpServiceType _serviceType;
 	private readonly TcpSecurityType _securityType;
-	private readonly Func<Guid, IPEndPoint, ITcpDispatcher> _dispatcherFactory;
 	private readonly TimeSpan _heartbeatInterval;
 	private readonly TimeSpan _heartbeatTimeout;
-	private readonly IAuthenticationProvider _authProvider;
 	private readonly Func<X509Certificate2> _certificateSelector;
 	private readonly Func<X509Certificate2Collection> _intermediatesSelector;
 	private readonly CertificateDelegates.ClientCertificateValidator _sslClientCertValidator;
 	private readonly int _connectionPendingSendBytesThreshold;
 	private readonly int _connectionQueueSizeThreshold;
-	private readonly AuthorizationGateway _authorizationGateway;
 
 	public TcpService(IPublisher publisher,
 		IPEndPoint serverEndPoint,
@@ -62,11 +62,12 @@ public class TcpService : IHandle<SystemMessage.SystemInit>,
 		CertificateDelegates.ClientCertificateValidator sslClientCertValidator,
 		int connectionPendingSendBytesThreshold,
 		int connectionQueueSizeThreshold)
-		: this(publisher, serverEndPoint, networkSendQueue, serviceType, securityType, (_, __) => dispatcher,
+		: this(publisher, serverEndPoint, networkSendQueue, serviceType, securityType, (_, _) => dispatcher,
 			heartbeatInterval, heartbeatTimeout, authProvider, authorizationGateway, certificateSelector, intermediatesSelector, sslClientCertValidator, connectionPendingSendBytesThreshold, connectionQueueSizeThreshold) {
 	}
 
-	public TcpService(IPublisher publisher,
+	public TcpService(
+		IPublisher publisher,
 		IPEndPoint serverEndPoint,
 		IPublisher networkSendQueue,
 		TcpServiceType serviceType,
@@ -81,26 +82,20 @@ public class TcpService : IHandle<SystemMessage.SystemInit>,
 		CertificateDelegates.ClientCertificateValidator sslClientCertValidator,
 		int connectionPendingSendBytesThreshold,
 		int connectionQueueSizeThreshold) {
-		Ensure.NotNull(publisher, "publisher");
-		Ensure.NotNull(serverEndPoint, "serverEndPoint");
-		Ensure.NotNull(networkSendQueue, "networkSendQueue");
-		Ensure.NotNull(dispatcherFactory, "dispatcherFactory");
-		Ensure.NotNull(authProvider, "authProvider");
-		Ensure.NotNull(authorizationGateway, "authorizationGateway");
 
-		_publisher = publisher;
-		_serverEndPoint = serverEndPoint;
-		_serverListener = new TcpServerListener(_serverEndPoint);
-		_networkSendQueue = networkSendQueue;
+		_publisher = Ensure.NotNull(publisher);
+		_serverEndPoint = Ensure.NotNull(serverEndPoint);
+		_serverListener = new(serverEndPoint);
+		_networkSendQueue = Ensure.NotNull(networkSendQueue);
 		_serviceType = serviceType;
 		_securityType = securityType;
-		_dispatcherFactory = dispatcherFactory;
+		_dispatcherFactory = Ensure.NotNull(dispatcherFactory);
 		_heartbeatInterval = heartbeatInterval;
 		_heartbeatTimeout = heartbeatTimeout;
 		_connectionPendingSendBytesThreshold = connectionPendingSendBytesThreshold;
 		_connectionQueueSizeThreshold = connectionQueueSizeThreshold;
-		_authProvider = authProvider;
-		_authorizationGateway = authorizationGateway;
+		_authProvider = Ensure.NotNull(authProvider);
+		_authorizationGateway = Ensure.NotNull(authorizationGateway);
 		_certificateSelector = certificateSelector;
 		_intermediatesSelector = intermediatesSelector;
 		_sslClientCertValidator = sslClientCertValidator;

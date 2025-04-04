@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
 using EventStore.Transport.Http.EntityManagement;
@@ -13,10 +13,10 @@ public static class InternalHttpHelper {
 		match = null;
 		tcs = null;
 		return context.Items.TryGetValue(typeof(HttpEntityManager), out var untypedManager) &&
-		       context.Items.TryGetValue(typeof(UriToActionMatch), out var untypedMatch) &&
-		       context.Items.TryGetValue(typeof(TaskCompletionSource<bool>), out var untypedTcs) &&
-		       (manager = untypedManager as HttpEntityManager) != null &&
-		       (match = untypedMatch as UriToActionMatch) != null &&
-		       (tcs = untypedTcs as TaskCompletionSource<bool>) != null;
+			   context.Items.TryGetValue(typeof(UriToActionMatch), out var untypedMatch) &&
+			   context.Items.TryGetValue(typeof(TaskCompletionSource<bool>), out var untypedTcs) &&
+			   (manager = untypedManager as HttpEntityManager) != null &&
+			   (match = untypedMatch as UriToActionMatch) != null &&
+			   (tcs = untypedTcs as TaskCompletionSource<bool>) != null;
 	}
 }

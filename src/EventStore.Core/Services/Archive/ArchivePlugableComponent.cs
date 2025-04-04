@@ -1,13 +1,16 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
+using EventStore.Core.Bus;
 using EventStore.Core.Configuration.Sources;
+using EventStore.Core.Resilience;
 using EventStore.Core.Services.Archive.Archiver;
-using EventStore.Core.Services.Archive.Storage;
-using EventStore.Core.Services.Archive.Archiver.Unmerger;
 using EventStore.Core.Services.Archive.Naming;
+using EventStore.Core.Services.Archive.Storage;
+using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Plugins;
 using EventStore.Plugins.Licensing;
 using Microsoft.AspNetCore.Builder;
@@ -61,15 +64,20 @@ public class ArchivePlugableComponent : IPlugableComponent {
 
 		services.AddSingleton<ArchiveOptions>(options);
 		services.AddSingleton<IArchiveStorage>(s => {
-			var resolver = s.GetRequiredService<IArchiveChunkNameResolver>();
+			var resolver = s.GetRequiredService<IArchiveNamingStrategy>();
 			return ArchiveStorageFactory.Create(options, resolver);
 		});
 		services.Decorate<IReadOnlyList<IClusterVNodeStartupTask>>(AddArchiveCatchupTask);
-		services.AddSingleton<IArchiveChunkNameResolver, ArchiveChunkNameResolver>();
+		services.AddSingleton<IArchiveNamingStrategy, ArchiveNamingStrategy>();
 
 		if (_isArchiver) {
-			services.AddSingleton<IChunkUnmerger, ChunkUnmerger>();
-			services.AddSingleton<ArchiverService>();
+			services.AddSingleton<ArchiverService>(s => {
+				var archiveStorage = s.GetRequiredService<IArchiveStorage>();
+				return new(
+					mainBus: s.GetRequiredService<ISubscriber>(),
+					archiveStorage: new ResilientArchiveStorage(ResiliencePipelines.RetryForever, archiveStorage),
+					chunkManager: s.GetRequiredService<IChunkRegistry<IChunkBlob>>());
+			});
 		}
 	}
 
@@ -88,8 +96,10 @@ public class ArchivePlugableComponent : IPlugableComponent {
 			chaserCheckpoint: standardComponents.DbConfig.ChaserCheckpoint,
 			epochCheckpoint: standardComponents.DbConfig.EpochCheckpoint,
 			chunkSize: standardComponents.DbConfig.ChunkSize,
-			serviceProvider.GetRequiredService<IArchiveStorage>(),
-			serviceProvider.GetRequiredService<IArchiveChunkNameResolver>()));
+			new ResilientArchiveStorage(
+				ResiliencePipelines.RetryForever,
+				serviceProvider.GetRequiredService<IArchiveStorage>()),
+			serviceProvider.GetRequiredService<IArchiveNamingStrategy>()));
 
 		return newStartupTasks;
 	}

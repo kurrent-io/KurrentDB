@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading.Tasks;
@@ -40,8 +40,8 @@ public class when_publishing_into_memory_bus {
 		await _bus.DispatchAsync(new TestMessage3());
 
 		Assert.That(handler1.HandledMessages.Count == 0
-		            && handler2.HandledMessages.Count == 0
-		            && handler3.HandledMessages.Count == 0);
+					&& handler2.HandledMessages.Count == 0
+					&& handler3.HandledMessages.Count == 0);
 	}
 
 	[Test]
@@ -120,7 +120,7 @@ public class when_publishing_into_memory_bus {
 		await _bus.DispatchAsync(new GrandChildTestMessage());
 
 		Assert.That(parentHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
-		            childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
+					childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
 	}
 
 	[Test]
@@ -137,7 +137,7 @@ public class when_publishing_into_memory_bus {
 		await _bus.DispatchAsync(new GrandChildTestMessage());
 
 		Assert.That(parentHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
-		            childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
-		            grandChildHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
+					childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
+					grandChildHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
 	}
 }

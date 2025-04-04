@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Runtime.InteropServices;
@@ -50,7 +50,7 @@ public class RecordCreatorTests {
 		Assert.Equal(_guid2, record.SubHeader.LeaderInstanceId);
 		Assert.Equal(_long2, record.SubHeader.PrevEpochPosition);
 	}
-	
+
 	[Fact]
 	public void can_create_partition_record() {
 		var record = RecordCreator.CreatePartitionRecord(
@@ -74,7 +74,7 @@ public class RecordCreatorTests {
 		Assert.Equal(_ushort1, record.SubHeader.ReferenceNumber);
 		Assert.Equal(_string1, record.StringPayload);
 	}
-	
+
 	[Fact]
 	public void can_create_partition_type_record() {
 		var record = RecordCreator.CreatePartitionTypeRecord(
@@ -132,7 +132,7 @@ public class RecordCreatorTests {
 		Assert.Equal(_guid2, record.SubHeader.PartitionId);
 		Assert.Equal(_string1, record.StringPayload);
 	}
-	
+
 	[Fact]
 	public void can_create_event_type_record() {
 		var record = RecordCreator.CreateEventTypeRecord(
@@ -156,7 +156,7 @@ public class RecordCreatorTests {
 		Assert.Equal(_ushort1, record.SubHeader.Version);
 		Assert.Equal(_string1, record.StringPayload);
 	}
-	
+
 	[Fact]
 	public void can_create_content_type_record() {
 		var record = RecordCreator.CreateContentTypeRecord(
@@ -213,7 +213,7 @@ public class RecordCreatorTests {
 		Assert.Equal(MemoryMarshal.ToEnumerable(_bytes4), MemoryMarshal.ToEnumerable(record.Event.Metadata));
 		Assert.Equal(_prepareflags, record.Event.Header.Flags);
 	}
-	
+
 	[Fact]
 	public void can_create_transaction_start() {
 		var record = RecordCreator.CreateTransactionStartRecord(
@@ -233,7 +233,7 @@ public class RecordCreatorTests {
 		Assert.Equal(Raw.TransactionType.MultipartTransaction, record.SubHeader.Type);
 		Assert.Equal(_uint1, record.SubHeader.RecordCount);
 	}
-	
+
 	[Fact]
 	public void can_create_transaction_end() {
 		var record = RecordCreator.CreateTransactionEndRecord(

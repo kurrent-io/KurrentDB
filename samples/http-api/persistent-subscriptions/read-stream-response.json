@@ -3,7 +3,7 @@
   "id": "http://localhost:2113/subscriptions/newstream/competing_consumers_group1",
   "updated": "2015-12-02T09:17:48.556545Z",
   "author": {
-    "name": "EventStore"
+    "name": "Kurrent"
   },
   "headOfStream": false,
   "links": [
@@ -30,7 +30,7 @@
       "id": "http://localhost:2113/streams/newstream/1",
       "updated": "2015-12-02T09:17:48.556545Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "SomeEvent",
       "links": [

@@ -1,15 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Services;
-using EventStore.Core.Services.TimerService;
-using System.Threading;
 
 namespace EventStore.Core.Helpers;
 
@@ -41,7 +38,7 @@ public static class IODispatcherAsync {
 	}
 
 	public static void Run(this Step action) {
-		Run(new[] {action});
+		Run(new[] { action });
 	}
 
 	public static Step BeginReadForward(
@@ -65,12 +62,14 @@ public static class IODispatcherAsync {
 					resolveLinks,
 					principal,
 					response => {
-						if (cancellationScope.Cancelled(response.CorrelationId)) return;
+						if (cancellationScope.Cancelled(response.CorrelationId))
+							return;
 						handler(response);
 						Run(steps);
 					},
 					() => {
-						if (cancellationScope.Cancelled(corrId)) return;
+						if (cancellationScope.Cancelled(corrId))
+							return;
 						timeoutHandler();
 						Run(steps);
 					},
@@ -99,12 +98,14 @@ public static class IODispatcherAsync {
 					resolveLinks,
 					principal,
 					response => {
-						if (cancellationScope.Cancelled(response.CorrelationId)) return;
+						if (cancellationScope.Cancelled(response.CorrelationId))
+							return;
 						handler(response);
 						Run(steps);
 					},
 					() => {
-						if (cancellationScope.Cancelled(corrId)) return;
+						if (cancellationScope.Cancelled(corrId))
+							return;
 						timeoutHandler();
 						Run(steps);
 					},
@@ -158,7 +159,8 @@ public static class IODispatcherAsync {
 			streamId,
 			@from,
 			message => {
-				if (cancellationScope.Cancelled(message.CorrelationId)) return;
+				if (cancellationScope.Cancelled(message.CorrelationId))
+					return;
 				handler(message);
 				Run(steps);
 			},
@@ -194,7 +196,8 @@ public static class IODispatcherAsync {
 		return steps => ioDispatcher.Delay(
 			timeout,
 			_ => {
-				if (cancellationScope.Cancelled(Guid.Empty)) return;
+				if (cancellationScope.Cancelled(Guid.Empty))
+					return;
 				handler();
 				Run(steps);
 			});
@@ -223,7 +226,8 @@ public static class IODispatcherAsync {
 						events,
 						principal,
 						response => {
-							if (cancellationScope.Cancelled(response.CorrelationId)) return;
+							if (cancellationScope.Cancelled(response.CorrelationId))
+								return;
 							action(response, response.Result);
 						})));
 	}
@@ -251,7 +255,8 @@ public static class IODispatcherAsync {
 						hardDelete,
 						principal,
 						response => {
-							if (cancellationScope.Cancelled(response.CorrelationId)) return;
+							if (cancellationScope.Cancelled(response.CorrelationId))
+								return;
 							action(response, response.Result);
 						})));
 	}
@@ -283,7 +288,8 @@ public static class IODispatcherAsync {
 						},
 						principal,
 						response => {
-							if (cancellationScope.Cancelled(response.CorrelationId)) return;
+							if (cancellationScope.Cancelled(response.CorrelationId))
+								return;
 							action(response, response.Result);
 						})));
 	}

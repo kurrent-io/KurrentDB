@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -8,6 +8,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Options;
 using EventStore.Common.Utils;
@@ -18,21 +19,22 @@ using EventStore.Core.Authorization.AuthorizationPolicies;
 using EventStore.Core.Bus;
 using EventStore.Core.Certificates;
 using EventStore.Core.Configuration.Sources;
+using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Monitoring;
+using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
+using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Http;
 using EventStore.Core.Tests.Services.Transport.Tcp;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
+using EventStore.Plugins.Subsystems;
+using EventStore.TcpUnitTestPlugin;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
-using ILogger = Serilog.ILogger;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Plugins.Subsystems;
-using EventStore.TcpUnitTestPlugin;
 using Microsoft.Extensions.Configuration;
+using ILogger = Serilog.ILogger;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 namespace EventStore.Core.Tests.Helpers;
@@ -62,15 +64,15 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 	public Task AdminUserCreated => _adminUserCreated.Task;
 
 	public VNodeState NodeState = VNodeState.Unknown;
-	private readonly IWebHost _host;
+	private readonly WebApplication _host;
 
 	private static bool EnableHttps() => !RuntimeInformation.IsOSX;
 
-        public MiniClusterNode(string pathname, int debugIndex, IPEndPoint internalTcp, IPEndPoint externalTcp,
-		IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
-		bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
-		bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
-		string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
+	public MiniClusterNode(string pathname, int debugIndex, IPEndPoint internalTcp, IPEndPoint externalTcp,
+	IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
+	bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
+	bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
+	string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
 
 		if (RuntimeInformation.IsOSX) {
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport",
@@ -95,7 +97,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 		var useHttps = EnableHttps();
 
 		subsystems ??= [];
-		subsystems = [..subsystems, new TcpApiTestPlugin()];
+		subsystems = [.. subsystems, new TcpApiTestPlugin()];
 
 		var options = new ClusterVNodeOptions {
 			Application = new() {
@@ -198,8 +200,9 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			Guid.NewGuid(), debugIndex);
 		Node.HttpService.SetupController(new TestController(Node.MainQueue));
 
-		_host = new WebHostBuilder()
-			.UseKestrel(o => {
+		var builder = WebApplication.CreateBuilder();
+		builder.WebHost
+			.ConfigureKestrel(o => {
 				o.Listen(HttpEndPoint, options => {
 					if (RuntimeInformation.IsOSX) {
 						options.Protocols = HttpProtocols.Http2;
@@ -209,7 +212,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 							ClientCertificateMode = ClientCertificateMode.AllowCertificate,
 							ClientCertificateValidation = (certificate, chain, sslPolicyErrors) => {
 								var (isValid, error) =
-									ClusterVNode<string>.ValidateClientCertificate(certificate, chain, sslPolicyErrors,() => null,() => trustedRootCertificates);
+									ClusterVNode<string>.ValidateClientCertificate(certificate, chain, sslPolicyErrors, () => null, () => trustedRootCertificates);
 								if (!isValid && error != null) {
 									Log.Error("Client certificate validation error: {e}", error);
 								}
@@ -218,13 +221,15 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 						});
 					}
 				});
-			})
-			.UseStartup(Node.Startup)
-			.Build();
+			});
+		Node.Startup.ConfigureServices(builder.Services);
+		_host = builder.Build();
+		Node.Startup.Configure(_host);
 	}
 
-	public void Start() {
+	public async Task Start() {
 		StartingTime.Start();
+		await _host.StartAsync();
 
 		Node.MainBus.Subscribe(
 			new AdHocHandler<SystemMessage.StateChangeMessage>(m => {
@@ -262,8 +267,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			Node.MainBus.Unsubscribe(waitForAdminUser);
 		}
 
-		_host.Start();
-		Node.Start();
+		await Node.StartAsync(waitUntilReady: false, CancellationToken.None);
 	}
 
 	public HttpClient CreateHttpClient() {
@@ -281,7 +285,10 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 
 	public async Task Shutdown(bool keepDb = false) {
 		StoppingTime.Start();
-		_host?.Dispose();
+		if (_host != null) {
+			await _host.DisposeAsync();
+		}
+
 		await Node.StopAsync().WithTimeout(TimeSpan.FromSeconds(20));
 
 		// the same message 'BecomeShutdown' triggers the disposal of the ReadIndex

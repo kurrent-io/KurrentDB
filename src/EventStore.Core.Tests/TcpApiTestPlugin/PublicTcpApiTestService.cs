@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 
@@ -36,9 +36,9 @@ public class PublicTcpApiTestService : IHostedService {
 	}
 
 	public static PublicTcpApiTestService Insecure(
-		TcpApiTestOptions options, 
+		TcpApiTestOptions options,
 		IAuthenticationProvider authProvider,
-		AuthorizationGateway authGateway, 
+		AuthorizationGateway authGateway,
 		StandardComponents components
 	) {
 		var endpoint = new IPEndPoint(IPAddress.Loopback, options.NodeTcpPort);
@@ -64,10 +64,10 @@ public class PublicTcpApiTestService : IHostedService {
 	}
 
 	public static PublicTcpApiTestService Secure(
-		TcpApiTestOptions options, 
-		IAuthenticationProvider authProvider, 
-		AuthorizationGateway authGateway, 
-		StandardComponents components, 
+		TcpApiTestOptions options,
+		IAuthenticationProvider authProvider,
+		AuthorizationGateway authGateway,
+		StandardComponents components,
 		CertificateProvider? certificateProvider
 	) {
 		var endpoint = new IPEndPoint(IPAddress.Loopback, options.NodeTcpPort);

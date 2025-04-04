@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
@@ -8,8 +8,8 @@ using EventStore.Core.Cluster;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.Services.TimerService;
+using EventStore.Core.TransactionLog.Checkpoint;
 
 namespace EventStore.Core.Services.Gossip;
 
@@ -52,19 +52,19 @@ public class NodeGossipService : GossipServiceBase, IHandle<GossipMessage.Update
 
 	protected override MemberInfo GetInitialMe() {
 		var lastEpoch = _epochManager.GetLastEpoch();
-		var initialState = _memberInfo.IsReadOnlyReplica ? VNodeState.ReadOnlyLeaderless : VNodeState.Unknown;
-		return MemberInfo.ForVNode(_memberInfo.InstanceId,
+		var initialState = MemberInfo.IsReadOnlyReplica ? VNodeState.ReadOnlyLeaderless : VNodeState.Unknown;
+		return MemberInfo.ForVNode(MemberInfo.InstanceId,
 			_timeProvider.UtcNow,
 			initialState,
 			true,
-			_memberInfo.InternalTcpEndPoint,
-			_memberInfo.InternalSecureTcpEndPoint,
-			_memberInfo.ExternalTcpEndPoint,
-			_memberInfo.ExternalSecureTcpEndPoint,
-			_memberInfo.HttpEndPoint,
-			_memberInfo.AdvertiseHostToClientAs,
-			_memberInfo.AdvertiseHttpPortToClientAs,
-			_memberInfo.AdvertiseTcpPortToClientAs,
+			MemberInfo.InternalTcpEndPoint,
+			MemberInfo.InternalSecureTcpEndPoint,
+			MemberInfo.ExternalTcpEndPoint,
+			MemberInfo.ExternalSecureTcpEndPoint,
+			MemberInfo.HttpEndPoint,
+			MemberInfo.AdvertiseHostToClientAs,
+			MemberInfo.AdvertiseHttpPortToClientAs,
+			MemberInfo.AdvertiseTcpPortToClientAs,
 			_getLastCommitPosition(),
 			_writerCheckpoint.Read(),
 			_chaserCheckpoint.Read(),
@@ -72,7 +72,7 @@ public class NodeGossipService : GossipServiceBase, IHandle<GossipMessage.Update
 			lastEpoch == null ? -1 : lastEpoch.EpochNumber,
 			lastEpoch == null ? Guid.Empty : lastEpoch.EpochId,
 			_nodePriority,
-			_memberInfo.IsReadOnlyReplica, _memberInfo.ESVersion);
+			MemberInfo.IsReadOnlyReplica, MemberInfo.ESVersion);
 	}
 
 	protected override MemberInfo GetUpdatedMe(MemberInfo me) {

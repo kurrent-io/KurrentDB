@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;
 using Core.Services.Management;
@@ -8,11 +8,11 @@ using NUnit.Framework;
 [TestFixture]
 public class VerifyPersistentStateRulesForDeletingStreams {
 	[Test]
-	[TestCase(true,true,true)]
-	[TestCase(false,true,false)]
-	[TestCase(true,false,false)]
-	[TestCase(false,false,false)]
-	public void EmitStreamNeedsDeletedAsExpected(bool emitEnabled,bool deleteEmitStreams,bool expectedResult) {
+	[TestCase(true, true, true)]
+	[TestCase(false, true, false)]
+	[TestCase(true, false, false)]
+	[TestCase(false, false, false)]
+	public void EmitStreamNeedsDeletedAsExpected(bool emitEnabled, bool deleteEmitStreams, bool expectedResult) {
 		ManagedProjection.PersistedState persistedState = new ManagedProjection.PersistedState();
 
 		persistedState.EmitEnabled = emitEnabled;

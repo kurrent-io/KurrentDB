@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -21,21 +21,23 @@ public class ServerFeaturesTest {
 	public class
 		when_getting_supported_methods<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 
-		private List<SupportedMethod> _supportedEndPoints = new ();
-		private List<SupportedMethod> _expectedEndPoints = new ();
+		private List<SupportedMethod> _supportedEndPoints = new();
+		private List<SupportedMethod> _expectedEndPoints = new();
 		private string _expectedServerVersion;
 		private string _serverVersion;
 
 		protected override async Task Given() {
 			var streamEndPoints = GetEndPoints(Client.Streams.Streams.Descriptor);
 			foreach (var ep in streamEndPoints) {
-				if (ep.MethodName.Contains("read")) ep.Features.AddRange(new[] {"position", "events"});
-				else if (ep.MethodName.Contains("batchappend")) ep.Features.Add("deadline_duration");
+				if (ep.MethodName.Contains("read"))
+					ep.Features.AddRange(new[] { "position", "events" });
+				else if (ep.MethodName.Contains("batchappend"))
+					ep.Features.Add("deadline_duration");
 			}
 
 			var psubEndPoints = GetEndPoints(Client.PersistentSubscriptions.PersistentSubscriptions.Descriptor);
 			foreach (var ep in psubEndPoints) {
-				ep.Features.AddRange(new[] {"stream", "all"});
+				ep.Features.AddRange(new[] { "stream", "all" });
 			}
 
 			_expectedEndPoints.AddRange(streamEndPoints);
@@ -44,7 +46,7 @@ public class ServerFeaturesTest {
 			_expectedEndPoints.AddRange(GetEndPoints(Client.Users.Users.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(Client.Gossip.Gossip.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(Client.Monitoring.Monitoring.Descriptor));
-			_expectedEndPoints.AddRange(GetEndPoints(Client.Redaction.Redaction.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(Kurrent.Client.Redaction.Redaction.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(ServerFeatures.Descriptor));
 
 			var versionParts = EventStore.Common.Utils.VersionInfo.Version.Split('.');

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
@@ -20,39 +20,38 @@ public class ControllerAction {
 		string httpMethod,
 		ICodec[] requestCodecs,
 		ICodec[] responseCodecs,
-		Operation operation) :this(uriTemplate,httpMethod, requestCodecs, responseCodecs, _=>operation){
-
+		Operation operation) : this(uriTemplate, httpMethod, requestCodecs, responseCodecs, _ => operation) {
 	}
 
-	public ControllerAction(string uriTemplate,
+	public ControllerAction(
+		string uriTemplate,
 		string httpMethod,
 		ICodec[] requestCodecs,
 		ICodec[] responseCodecs,
 		Func<UriTemplateMatch, Operation> operation) {
-		Ensure.NotNull(uriTemplate, "uriTemplate");
-		Ensure.NotNull(httpMethod, "httpMethod");
-		Ensure.NotNull(requestCodecs, "requestCodecs");
-		Ensure.NotNull(responseCodecs, "responseCodecs");
-
-		UriTemplate = uriTemplate;
-		HttpMethod = httpMethod;
-
-		SupportedRequestCodecs = requestCodecs;
-		SupportedResponseCodecs = responseCodecs;
-		DefaultResponseCodec = responseCodecs.Length > 0 ? responseCodecs[0] : null;
+		UriTemplate = Ensure.NotNull(uriTemplate);
+		HttpMethod = Ensure.NotNull(httpMethod);
 		Operation = operation;
+		SupportedRequestCodecs = Ensure.NotNull(requestCodecs);
+		SupportedResponseCodecs = Ensure.NotNull(responseCodecs);
+		DefaultResponseCodec = responseCodecs.Length > 0 ? responseCodecs[0] : null;
 	}
 
 	public bool Equals(ControllerAction other) {
-		if (ReferenceEquals(null, other)) return false;
-		if (ReferenceEquals(this, other)) return true;
+		if (ReferenceEquals(null, other))
+			return false;
+		if (ReferenceEquals(this, other))
+			return true;
 		return Equals(other.UriTemplate, UriTemplate) && Equals(other.HttpMethod, HttpMethod);
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != typeof(ControllerAction)) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != typeof(ControllerAction))
+			return false;
 		return Equals((ControllerAction)obj);
 	}
 

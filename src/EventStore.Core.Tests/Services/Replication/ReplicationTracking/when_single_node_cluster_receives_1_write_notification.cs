@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.Messages;
 using NUnit.Framework;
@@ -16,7 +16,7 @@ public class when_single_node_cluster_receives_1_write_notification : with_clust
 		WriterCheckpoint.Write(_logPosition);
 		WriterCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());
-		AssertEx.IsOrBecomesTrue(()=> Service.IsCurrent());
+		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 	}
 
 	[Test]
@@ -27,7 +27,7 @@ public class when_single_node_cluster_receives_1_write_notification : with_clust
 	}
 	[Test]
 	public void replication_checkpoint_should_advance() {
-		Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());		
-		Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());		
-	}	
+		Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());
+		Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());
+	}
 }

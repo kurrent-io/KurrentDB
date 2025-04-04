@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
@@ -34,8 +34,8 @@ public class ChunkManagerForExecutor<TStreamId> : IChunkManagerForChunkExecutor<
 		=> await ChunkWriterForExecutor<TStreamId>.CreateAsync(_logger, this, _dbConfig, sourceChunk,
 			_transformManager, token);
 
-	public IChunkReaderForExecutor<TStreamId, ILogRecord> GetChunkReaderFor(long position) {
-		var tfChunk = _manager.GetChunkFor(position);
+	public async ValueTask<IChunkReaderForExecutor<TStreamId, ILogRecord>> GetChunkReaderFor(long position, CancellationToken token) {
+		var tfChunk = await _manager.GetInitializedChunkFor(position, token);
 		return new ChunkReaderForExecutor<TStreamId>(tfChunk);
 	}
 

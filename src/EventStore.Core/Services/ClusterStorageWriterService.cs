@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -27,6 +27,7 @@ namespace EventStore.Core.Services;
 public class ClusterStorageWriterService {
 }
 
+// see comment in StorageWriterService re CancellationToken handling
 public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStreamId>,
 	IAsyncHandle<ReplicationMessage.ReplicaSubscribed>,
 	IAsyncHandle<ReplicationMessage.CreateChunk>,
@@ -155,8 +156,8 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 			if (await EpochManager.TryTruncateBefore(message.SubscriptionPosition, token) is { } newEpoch) {
 				if (newEpoch.EpochId != oldEpoch.EpochId) {
 					Log.Information("Truncated epoch from "
-					                + "E{oldEpochNumber}@{oldEpochPosition}:{oldEpochId:B} to "
-					                + "E{newEpochNumber}@{newEpochPosition}:{newEpochId:B}",
+									+ "E{oldEpochNumber}@{oldEpochPosition}:{oldEpochId:B} to "
+									+ "E{newEpochNumber}@{newEpochPosition}:{newEpochId:B}",
 						oldEpoch.EpochNumber, oldEpoch.EpochPosition, oldEpoch.EpochId,
 						newEpoch.EpochNumber, newEpoch.EpochPosition, newEpoch.EpochId);
 				} else {
@@ -194,11 +195,12 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 	private bool AreAnyCommittedRecordsTruncatedWithLastEpoch(long subscriptionPosition, EpochRecord lastEpoch,
 		long lastCommitPosition) {
 		return lastEpoch != null && subscriptionPosition <= lastEpoch.EpochPosition &&
-		       lastCommitPosition >= lastEpoch.EpochPosition;
+			   lastCommitPosition >= lastEpoch.EpochPosition;
 	}
 
 	async ValueTask IAsyncHandle<ReplicationMessage.CreateChunk>.HandleAsync(ReplicationMessage.CreateChunk message, CancellationToken token) {
-		if (_subscriptionId != message.SubscriptionId) return;
+		if (_subscriptionId != message.SubscriptionId)
+			return;
 
 		if (_activeChunk != null) {
 			_activeChunk.MarkForDeletion();
@@ -241,14 +243,15 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 	}
 
 	async ValueTask IAsyncHandle<ReplicationMessage.RawChunkBulk>.HandleAsync(ReplicationMessage.RawChunkBulk message, CancellationToken token) {
-		if (_subscriptionId != message.SubscriptionId) return;
+		if (_subscriptionId != message.SubscriptionId)
+			return;
 		if (_activeChunk is null)
 			ReplicationFail(
 				"Physical chunk bulk received, but we do not have active chunk.",
 				"Physical chunk bulk received, but we do not have active chunk.");
 
 		if (_activeChunk.ChunkHeader.ChunkStartNumber != message.ChunkStartNumber ||
-		    _activeChunk.ChunkHeader.ChunkEndNumber != message.ChunkEndNumber) {
+			_activeChunk.ChunkHeader.ChunkEndNumber != message.ChunkEndNumber) {
 			Log.Error(
 				"Received RawChunkBulk for TFChunk {chunkStartNumber}-{chunkEndNumber}, but active chunk is {activeChunk}.",
 				message.ChunkStartNumber, message.ChunkEndNumber, _activeChunk);
@@ -296,7 +299,8 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 	async ValueTask IAsyncHandle<ReplicationMessage.DataChunkBulk>.HandleAsync(ReplicationMessage.DataChunkBulk message, CancellationToken token) {
 		Interlocked.Decrement(ref FlushMessagesInQueue);
 		try {
-			if (_subscriptionId != message.SubscriptionId) return;
+			if (_subscriptionId != message.SubscriptionId)
+				return;
 			if (_activeChunk != null)
 				ReplicationFail(
 					"Data chunk bulk received, but we have active chunk for receiving raw chunk bulks.",
@@ -310,7 +314,7 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 			var chunk = Writer.CurrentChunk;
 
 			if (chunk.ChunkHeader.ChunkStartNumber != message.ChunkStartNumber ||
-			    chunk.ChunkHeader.ChunkEndNumber != message.ChunkEndNumber) {
+				chunk.ChunkHeader.ChunkEndNumber != message.ChunkEndNumber) {
 				Log.Error(
 					"Received DataChunkBulk for TFChunk {chunkStartNumber}-{chunkEndNumber}, but active chunk is {activeChunkStartNumber}-{activeChunkEndNumber}.",
 					message.ChunkStartNumber, message.ChunkEndNumber, chunk.ChunkHeader.ChunkStartNumber,
@@ -364,14 +368,12 @@ public class ClusterStorageWriterService<TStreamId> : StorageWriterService<TStre
 	}
 
 	private async ValueTask OnTransactionUnframed(IEnumerable<ILogRecord> records, CancellationToken token) {
-		// Workaround: The transaction cannot be canceled in a middle, it should be atomic.
-		// There is no way to rollback it on cancellation
+		// once we start the transaction, do not abort due to cancellation, we have no way to roll it back
 		token.ThrowIfCancellationRequested();
-		token = CancellationToken.None;
 
 		Writer.OpenTransaction();
 		foreach (var record in records)
-			if (await Writer.WriteToTransaction(record, token) is null)
+			if (await Writer.WriteToTransaction(record, CancellationToken.None) is null)
 				ReplicationFail(
 					"Failed to write replicated log record at position: {0}. Writer's position: {1}.",
 					"Failed to write replicated log record at position: {recordPos}. Writer's position: {writerPos}.",

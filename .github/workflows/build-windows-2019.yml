@@ -9,9 +9,10 @@ on:
   push:
     branches:
       - master
-      - release/oss-v*
+      - release/*
     tags:
       - oss-v*
+      - v*
     paths-ignore:
       - "docs/**"
       - "samples/**"
@@ -23,3 +24,4 @@ jobs:
     with:
       os: windows-2019
       arch: x64
+    secrets: inherit

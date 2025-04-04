@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
 using System.Linq;
@@ -28,7 +28,7 @@ public class Locations {
 
 	static Locations() {
 		ApplicationDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ??
-		                       Path.GetFullPath(".");
+							   Path.GetFullPath(".");
 
 		PluginsDirectory = Path.Combine(ApplicationDirectory, "plugins");
 		FallbackDefaultDataDirectory = Path.Combine(ApplicationDirectory, "data");
@@ -93,7 +93,7 @@ public class Locations {
 	public static string GetPrecededLocation(params string[] locations) {
 		var precedenceList = locations.Distinct().ToList();
 		return precedenceList.FirstOrDefault(Directory.Exists) ??
-		       precedenceList.Last();
+			   precedenceList.Last();
 	}
 
 	/// <summary>

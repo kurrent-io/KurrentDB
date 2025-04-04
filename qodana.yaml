@@ -5,13 +5,18 @@ linter: jetbrains/qodana-dotnet:2024.1
 dotnet:
   solution: src/EventStore.sln
 
+exclude:
+  - name: RedundantTypeArgumentsOfMethod
+
 #
 # License Audit
 #
 
-# Dependencies to exclude from the License Audit
-dependencyIgnores:
-  - name: "EventStore.Plugins" # Our own software
+licenseRules:
+  - keys:
+      - "PROPRIETARY-LICENSE"
+    allowed:
+      - "Kurrent-1.0"
 
 customDependencies:
   # System.UriTemplate (source copied under src/EventStore.NETCore.Compatibility from .NET 4.8 with some modifications)
@@ -22,6 +27,13 @@ customDependencies:
 
 # Manually specify the licenses of the following packages
 dependencyOverrides:
+  # not automatically detectable
+  - name: "EventStore.Plugins"
+    version: "25.2.5"
+    licenses:
+      - key: "Kurrent-1.0"
+        url: "https://github.com/EventStore/EventStore/blob/master/LICENSE.md"
+
   # not automatically detectable, but the MIT license is in the nuget package
   - name: "NETStandard.Library"
     version: "2.0.3"
@@ -43,37 +55,9 @@ dependencyOverrides:
       - key: "MIT"
         url: "https://github.com/mono/mono/blob/main/LICENSE"
 
-  # not automatically detectable in this older package
-  - name: "OpenTelemetry"
-    version: "1.4.0-rc.1"
-    licenses:
-      - key: "Apache-2.0"
-        url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"
-
-  # not automatically detectable in this older package
-  - name: "OpenTelemetry.Api"
-    version: "1.4.0-rc.1"
-    licenses:
-      - key: "Apache-2.0"
-        url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"
-
-  # not automatically detectable in this older package
+  # not automatically detectable
   - name: "OpenTelemetry.Exporter.Prometheus.AspNetCore"
-    version: "1.4.0-rc.1"
-    licenses:
-      - key: "Apache-2.0"
-        url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"
-
-  # not automatically detectable in this older package
-  - name: "OpenTelemetry.Extensions.DependencyInjection"
-    version: "1.4.0-rc.1"
-    licenses:
-      - key: "Apache-2.0"
-        url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"
-
-  # not automatically detectable in this older package
-  - name: "OpenTelemetry.Extensions.Hosting"
-    version: "1.4.0-rc.1"
+    version: "1.11.0-beta.1"
     licenses:
       - key: "Apache-2.0"
         url: "https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/LICENSE.TXT"

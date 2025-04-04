@@ -11,7 +11,7 @@ Authorization governs what an authenticated user can access and what actions the
 
 Users are granted roles by the [authentication mechanism](./user-authentication.md). These roles are then used to determine what operations, endpoints, and streams a user has access to.
 
-EventStoreDB provides the `$admins` and `$ops` roles by default, granted respectively to the `admin` and `ops` default users. Custom roles can also be created.
+KurrentDB provides the `$admins` and `$ops` roles by default, granted respectively to the `admin` and `ops` default users. Custom roles can also be created.
 
 ### Admins role
 
@@ -53,12 +53,12 @@ Users with custom (or no) roles are authorized to do the following:
 - Stream access is determined by the [authorization mechanism used](#stream-access)
 
 ::: tip
-Users managed in EventStoreDB are always granted a role that matches their username.
+Users managed in KurrentDB are always granted a role that matches their username.
 :::
 
 ## Stream access
 
-Stream access covers what actions a user can perform on a stream within EventStoreDB. These actions are:
+Stream access covers what actions a user can perform on a stream within KurrentDB. These actions are:
 
 | Name              | Key   | Description |
 |-------------------|-------|-------------|
@@ -68,18 +68,18 @@ Stream access covers what actions a user can perform on a stream within EventSto
 | Metadata read     | `$mr` | The permission to read the metadata associated with a stream. |
 | Metadata write    | `$mw` | The permission to write the metadata associated with a stream. |
 
-EventStoreDB supports these methods of authorizing user access to streams:
+KurrentDB supports these methods of authorizing user access to streams:
 - [Access control lists](#access-control-lists) to restrict user access to streams based on metadata in each stream.
 - [Stream policies](#stream-policy-authorization) to restrict user acces to streams based on configured policies.
 
 ### Access control lists
 
-By default, authenticated users have access to all non-system streams in the EventStoreDB database. You can use Access Control Lists (ACLs) to set up more granular access control. In fact, the default access
+By default, authenticated users have access to all non-system streams in the KurrentDB database. You can use Access Control Lists (ACLs) to set up more granular access control. In fact, the default access
 level is also controlled by a special ACL, which is called the [default ACL](#default-acl).
 
 #### Stream ACL
 
-EventStoreDB keeps the ACL of a stream in the stream metadata as JSON with the below definition:
+KurrentDB keeps the ACL of a stream in the stream metadata as JSON with the below definition:
 
 ```json
 {
@@ -180,7 +180,7 @@ programmatically.
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-This allows administrators to define stream access policies for EventStoreDB based on stream prefix.
+This allows administrators to define stream access policies for KurrentDB based on stream prefix.
 
 #### Enabling
 
@@ -196,8 +196,8 @@ Enable stream policies by appending an event of type `$authorization-policy-chan
 POST https://localhost:2113/streams/$authorization-policy-settings
 Authorization: Basic admin changeit
 Content-Type: application/json
-ES-EventId: 11887e82-9fb4-4112-b937-aea895b32a4a
-ES-EventType: $authorization-policy-changed
+Kurrent-EventId: 11887e82-9fb4-4112-b937-aea895b32a4a
+Kurrent-EventType: $authorization-policy-changed
 
 {
     "streamAccessPolicyType": "streampolicy"
@@ -214,8 +214,8 @@ $JSON = @"
 
 curl.exe -X POST `
   -H "Content-Type: application/json" `
-  -H "ES-EventId: 11887e82-9fb4-4112-b937-aea895b32a4b" `
-  -H "ES-EventType: `$authorization-policy-changed" `
+  -H "Kurrent-EventId: 11887e82-9fb4-4112-b937-aea895b32a4b" `
+  -H "Kurrent-EventType: `$authorization-policy-changed" `
   -u "admin:changeit" `
   -d $JSON `
   https://localhost:2113/streams/%24authorization-policy-settings
@@ -229,8 +229,8 @@ JSON='{
 
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "ES-EventId: 814f6d67-515c-4bd6-a6d6-8a0235ec719a" \
-  -H "ES-EventType: \$authorization-policy-changed" \
+  -H "Kurrent-EventId: 814f6d67-515c-4bd6-a6d6-8a0235ec719a" \
+  -H "Kurrent-EventType: \$authorization-policy-changed" \
   -u "admin:changeit" \
   -d "$JSON" \
   https://localhost:2113/streams/%24authorization-policy-settings
@@ -247,8 +247,8 @@ And disable stream policies by setting the stream access policy type back to `ac
 POST https://localhost:2113/streams/$authorization-policy-settings
 Authorization: Basic admin changeit
 Content-Type: application/json
-ES-EventId: d07a6637-d9d0-43b7-8f48-6a9a8800af12
-ES-EventType: $authorization-policy-changed
+Kurrent-EventId: d07a6637-d9d0-43b7-8f48-6a9a8800af12
+Kurrent-EventType: $authorization-policy-changed
 
 {
     "streamAccessPolicyType": "acl"
@@ -265,8 +265,8 @@ $JSON = @"
 
 curl.exe -X POST `
   -H "Content-Type: application/json" `
-  -H "ES-EventId: 3762c89e-d12e-4a01-83bb-781459c93ebc" `
-  -H "ES-EventType: `$authorization-policy-changed" `
+  -H "Kurrent-EventId: 3762c89e-d12e-4a01-83bb-781459c93ebc" `
+  -H "Kurrent-EventType: `$authorization-policy-changed" `
   -u "admin:changeit" `
   -d $JSON `
   https://localhost:2113/streams/%24authorization-policy-settings
@@ -279,8 +279,8 @@ JSON='{
 
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "ES-EventId: d6b3a316-2493-4bcd-9019-e02b5ae4eec3" \
-  -H "ES-EventType: \$authorization-policy-changed" \
+  -H "Kurrent-EventId: d6b3a316-2493-4bcd-9019-e02b5ae4eec3" \
+  -H "Kurrent-EventType: \$authorization-policy-changed" \
   -u "admin:changeit" \
   -d "$JSON" \
   https://localhost:2113/streams/%24authorization-policy-settings
@@ -301,7 +301,7 @@ You can check that the feature is enabled by searching for the following log at 
 [22860,28,17:30:42.271,INF] StreamBasedPolicySelector      Subscribing to $policies at 0
 ```
 
-If you do not have a valid license, stream policies will log the following error and will not start. EventStoreDB will continue to run with the current policy type:
+If you do not have a valid license, stream policies will log the following error and will not start. KurrentDB will continue to run with the current policy type:
 
 ```
 [22928, 1,17:31:56.879,INF] StreamPolicySelector           Stream Policies plugin is not licensed, stream policy authorization may not be enabled.
@@ -311,12 +311,12 @@ If you do not have a valid license, stream policies will log the following error
 ```
 
 ::: note
-If you enable the Stream Policy feature, EventStoreDB will not enforce [stream ACLs](#access-control-lists).
+If you enable the Stream Policy feature, KurrentDB will not enforce [stream ACLs](#access-control-lists).
 :::
 
 #### Overriding the default
 
-If the `$authorization-policy-settings` stream is empty and there is no configuration, EventStoreDB will default to using ACLs.
+If the `$authorization-policy-settings` stream is empty and there is no configuration, KurrentDB will default to using ACLs.
 
 If you would rather default to stream policies, you can do this by setting the `Authorization:DefaultPolicyType` option to `streampolicy`.
 
@@ -334,14 +334,14 @@ Authorization:
 Refer to the [configuration guide](../configuration/README.md) for configuration mechanisms other than YAML.
 
 ::: warning
-If the policy type configured in `Authorization:DefaultPolicyType` is not present at startup, EventStoreDB will not start.
+If the policy type configured in `Authorization:DefaultPolicyType` is not present at startup, KurrentDB will not start.
 :::
 
 #### Fallback stream access policy
 
-If none of the events in the `$authorization-policy-settings` stream are valid, or if the stream policy plugin could not be started (for example, due to it being unlicensed), EventStoreDB will fall back to restricted access.
+If none of the events in the `$authorization-policy-settings` stream are valid, or if the stream policy plugin could not be started (for example, due to it being unlicensed), KurrentDB will fall back to restricted access.
 
-This locks down all stream access to admins only to prevent EventStoreDB from falling back to a more permissive policy such as ACLs.
+This locks down all stream access to admins only to prevent KurrentDB from falling back to a more permissive policy such as ACLs.
 
 To recover from this, either fix the issue preventing the plugin from loading, or set the stream access policy type to a different policy such as ACL:
 
@@ -357,13 +357,13 @@ Stream policies and Stream Rules are configured by events written to the `$polic
 
 ##### Default stream policy
 
-EventStoreDB creates default stream policies by adding a default policy event in the `$policies` stream when the feature is enabled for the first time. The default policies specified in that event include:
+KurrentDB creates default stream policies by adding a default policy event in the `$policies` stream when the feature is enabled for the first time. The default policies specified in that event include:
 
 - Restricts [system streams](../features/streams.md#system-events-and-streams) to the `$admins` group.
 - Grants users outside of the `$ops` group access to user streams.
 - Grants users outside of the `$ops` group read access to the [default projection streams](../features/streams.md#projections-events-and-streams) (`$ce`, `$et`, `$bc`, `$category`, `$streams`) and their metadata.
 
-EventStoreDB will log when the default policy is created:
+KurrentDB will log when the default policy is created:
 
 ```
 [31124,16,11:18:15.099,DBG] StreamBasedPolicySelector Successfully wrote default policy to stream $policies.
@@ -526,8 +526,8 @@ To update the policies, append an event containing the json created in the above
 POST https://localhost:2113/streams/$policies
 Authorization: Basic admin changeit
 Content-Type: application/json
-ES-EventId: b04a64bf-4ac2-4f36-a856-6da9b63e64b7
-ES-EventType: $policy-updated
+Kurrent-EventId: b04a64bf-4ac2-4f36-a856-6da9b63e64b7
+Kurrent-EventType: $policy-updated
 
 < ./customPolicy.json
 ```
@@ -536,8 +536,8 @@ ES-EventType: $policy-updated
 ```powershell
 curl.exe -X POST `
   -H "Content-Type: application/json" `
-  -H "ES-EventId: 8bc7c581-0f07-4987-bfcb-ab8f9404ca34" `
-  -H "ES-EventType: `$policy-updated" `
+  -H "Kurrent-EventId: 8bc7c581-0f07-4987-bfcb-ab8f9404ca34" `
+  -H "Kurrent-EventType: `$policy-updated" `
   -u "admin:changeit" `
   -d @customPolicy.json `
   https://localhost:2113/streams/%24policies
@@ -547,8 +547,8 @@ curl.exe -X POST `
 ```bash
 curl -X POST \
   -H "Content-Type: application/json" \
-  -H "ES-EventId: cb6a722d-c775-4831-929b-86870560c68e" \
-  -H "ES-EventType: \$policy-updated" \
+  -H "Kurrent-EventId: cb6a722d-c775-4831-929b-86870560c68e" \
+  -H "Kurrent-EventType: \$policy-updated" \
   -u "admin:changeit" \
   -d @customPolicy.json \
   https://localhost:2113/streams/%24policies
@@ -628,7 +628,7 @@ curl -X POST \
 :::
 
 ::: note
-If a policy update is invalid, it will not be applied and an error will be logged. EventStoreDB will continue running with the previous valid policy in place.
+If a policy update is invalid, it will not be applied and an error will be logged. KurrentDB will continue running with the previous valid policy in place.
 :::
 
 ##### Stream policy schema
@@ -672,7 +672,7 @@ Having metadata read or metadata write access to a stream does not grant read or
 
 #### Tutorial
 
-[Learn how to set up and use Stream Policy Authorization in EventStoreDB through a tutorial.](https://developers.eventstore.com/tutorials/Stream_Policy_Authorization.md) 
+[Learn how to set up and use Stream Policy Authorization in KurrentDB through a tutorial.](https://developers.kurrent.io/tutorials/Stream_Policy_Authorization.md)
 
 
 #### Troubleshooting
@@ -700,11 +700,11 @@ If the `DefaultPolicyType` is set to `streampolicy`, the [fallback policy](#fall
 
 #### The `$authorization-policy-settings` stream has been deleted
 
-If the `$authorization-policy-settings` stream has been deleted (including hard deleted), the default policy type will be used, and EventStoreDB will log the following:
+If the `$authorization-policy-settings` stream has been deleted (including hard deleted), the default policy type will be used, and KurrentDB will log the following:
 
 ```
 [WRN] StreamBasedAuthorizationPolicyRegistry Authorization policy settings stream $authorization-policy-settings has been deleted.
-[INF] EventStore                     No existing authorization policy settings were found in $authorization-policy-settings. Using the default
+[INF] KurrentDB                     No existing authorization policy settings were found in $authorization-policy-settings. Using the default
 ```
 
 #### New authorization settings could not be applied

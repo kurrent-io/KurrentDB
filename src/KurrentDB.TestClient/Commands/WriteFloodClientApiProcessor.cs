@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -94,7 +94,8 @@ internal class WriteFloodClientApiProcessor : ICmdProcessor {
 						}
 
 						var localAll = Interlocked.Increment(ref succ);
-						if (localAll % 1000 == 0) Console.Write('.');
+						if (localAll % 1000 == 0)
+							Console.Write('.');
 						if (localAll % 100000 == 0) {
 							var elapsed = sw2.Elapsed;
 							sw2.Restart();
@@ -110,7 +111,7 @@ internal class WriteFloodClientApiProcessor : ICmdProcessor {
 						}
 					});
 				}
-			}) {IsBackground = true});
+			}) { IsBackground = true });
 		}
 
 		var sw = Stopwatch.StartNew();

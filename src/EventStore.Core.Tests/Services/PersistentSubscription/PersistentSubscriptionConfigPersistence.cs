@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -19,8 +19,7 @@ public class PersistentSubscriptionConfigTests {
 		config.UpdatedBy = "Greg";
 		config.Version = "1";
 		config.Entries = new List<PersistentSubscriptionEntry>();
-		config.Entries.Add(new PersistentSubscriptionEntry()
-			{Group = "foo", ResolveLinkTos = true, Stream = "Stream"});
+		config.Entries.Add(new PersistentSubscriptionEntry() { Group = "foo", ResolveLinkTos = true, Stream = "Stream" });
 		var data = config.GetSerializedForm();
 		var config2 = PersistentSubscriptionConfig.FromSerializedForm(data);
 		Assert.AreEqual(1, config2.Entries.Count);
@@ -53,7 +52,7 @@ public class PersistentSubscriptionConfigTests {
 			Stream = "$all",
 			Filter = EventFilter.ParseToDto(filter)
 		};
-		config.Entries = new List<PersistentSubscriptionEntry>{entry};
+		config.Entries = new List<PersistentSubscriptionEntry> { entry };
 		var data = config.GetSerializedForm();
 		var config2 = PersistentSubscriptionConfig.FromSerializedForm(data);
 		var newFilterDto = config2.Entries[0].Filter;
@@ -75,7 +74,7 @@ public class PersistentSubscriptionConfigTests {
 			Stream = "$all",
 			Filter = null
 		};
-		config.Entries = new List<PersistentSubscriptionEntry>{entry};
+		config.Entries = new List<PersistentSubscriptionEntry> { entry };
 		var data = config.GetSerializedForm();
 		var config2 = PersistentSubscriptionConfig.FromSerializedForm(data);
 		Assert.AreEqual(1, config2.Entries.Count);

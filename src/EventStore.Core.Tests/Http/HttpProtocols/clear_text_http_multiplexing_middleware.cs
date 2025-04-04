@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -18,7 +18,7 @@ using NUnit.Framework;
 namespace EventStore.Core.Tests.Http.HttpProtocols;
 
 
-public class Startup : IStartup{
+public class Startup : IStartup {
 	public IServiceProvider ConfigureServices(IServiceCollection services) {
 		return services.AddRouting().BuildServiceProvider();
 	}
@@ -63,7 +63,7 @@ public class clear_text_http_multiplexing_middleware {
 		using var client = new HttpClient();
 		var request = new HttpRequestMessage(HttpMethod.Get, _endpoint + "/test");
 		var result = await client.SendAsync(request);
-		Assert.AreEqual(new Version(1,1), result.Version);
+		Assert.AreEqual(new Version(1, 1), result.Version);
 		Assert.AreEqual("hello", await result.Content.ReadAsStringAsync());
 	}
 
@@ -76,7 +76,7 @@ public class clear_text_http_multiplexing_middleware {
 		};
 
 		var result = await client.SendAsync(request);
-		Assert.AreEqual(new Version(2,0), result.Version);
+		Assert.AreEqual(new Version(2, 0), result.Version);
 		Assert.AreEqual("hello", await result.Content.ReadAsStringAsync());
 	}
 

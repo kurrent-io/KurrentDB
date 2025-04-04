@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using Serilog;
 
 namespace EventStore.Core.Transforms;
 
-public class DbTransformManager {
+public class DbTransformManager : IGetChunkTransformFactory {
 	private IReadOnlyList<IDbTransform> _transforms;
 	private IDbTransform _activeTransform;
 
@@ -32,13 +32,13 @@ public class DbTransformManager {
 	}
 
 	public IChunkTransformFactory GetFactoryForNewChunk() => _activeTransform?.ChunkFactory ??
-	                                                         throw new Exception("Active transform not set");
+															 throw new Exception("Active transform not set");
 
 	public IChunkTransformFactory GetFactoryForExistingChunk(TransformType type) => FindTransform(type).ChunkFactory;
 
 	public void LoadTransforms(IReadOnlyList<IDbTransform> transforms) {
 		_transforms = transforms;
-		Log.Information($"Loaded the following transforms: { string.Join(", ", transforms.Select(t => t.Type)) }");
+		Log.Information($"Loaded the following transforms: {string.Join(", ", transforms.Select(t => t.Type))}");
 
 		// the identity transform is always required
 		_ = FindTransform(TransformType.Identity);
@@ -64,9 +64,12 @@ public class DbTransformManager {
 		get {
 			var dbTransformManager = new DbTransformManager();
 			var identityDbTransform = new IdentityDbTransform();
-			dbTransformManager.LoadTransforms(new [] { identityDbTransform });
+			dbTransformManager.LoadTransforms(new[] { identityDbTransform });
 			dbTransformManager.SetActiveTransform(TransformType.Identity);
 			return dbTransformManager;
 		}
 	}
+
+	public IChunkTransformFactory ForNewChunk() => GetFactoryForNewChunk();
+	public IChunkTransformFactory ForExistingChunk(TransformType type) => GetFactoryForExistingChunk(type);
 }

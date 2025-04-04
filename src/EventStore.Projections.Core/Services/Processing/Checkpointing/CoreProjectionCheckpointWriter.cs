@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
@@ -32,7 +32,7 @@ public class CoreProjectionCheckpointWriter {
 	private const int MinAttemptWarnThreshold = 5;
 	private bool _metaStreamWritten;
 	private Random _random = new Random();
-	private bool _largeCheckpointStateWarningLogged = false;
+	private bool _largeCheckpointWarningLogged = false;
 
 	public CoreProjectionCheckpointWriter(
 		string projectionCheckpointStreamId, IODispatcher ioDispatcher, ProjectionVersion projectionVersion,
@@ -111,7 +111,7 @@ public class CoreProjectionCheckpointWriter {
 	private void PublishWriteStreamMetadataAndCheckpointEventDelayed() {
 		var attempt = _inCheckpointWriteAttempt;
 		var delayInSeconds = CalculateBackoffTimeSecs(attempt);
-		if(delayInSeconds == 0)
+		if (delayInSeconds == 0)
 			PublishWriteStreamMetadataAndCheckpointEvent();
 		else {
 			if (attempt >= MinAttemptWarnThreshold && _logger != null) {
@@ -167,20 +167,20 @@ public class CoreProjectionCheckpointWriter {
 	}
 
 	private void PublishWriteCheckpointEvent() {
-		CheckpointStateSizeCheck();
+		CheckpointSizeCheck();
 		_writeRequestId = _ioDispatcher.WriteEvent(
 			_projectionCheckpointStreamId, _lastWrittenCheckpointEventNumber, _checkpointEventToBePublished,
 			SystemAccounts.System,
 			msg => WriteCheckpointEventCompleted(_projectionCheckpointStreamId, msg.Result, msg.FirstEventNumber));
 	}
 
-	private void CheckpointStateSizeCheck() {
-		if (!_largeCheckpointStateWarningLogged && _checkpointEventToBePublished.Data.Length >= 8_000_000) {
+	private void CheckpointSizeCheck() {
+		if (!_largeCheckpointWarningLogged && _checkpointEventToBePublished.Data.Length >= 8_000_000) {
 			Log.Warning(
-				"State size for the Projection {projectionName} is greater than 8 MB. State size for a projection should be less than 16 MB. Current state size for Projection {projectionName} is {stateSize} MB.",
+				"Checkpoint size for the Projection {projectionName} is greater than 8 MB. Checkpoint size for a projection should be less than 16 MB. Current checkpoint size for Projection {projectionName} is {stateSize} MB.",
 				_name, _name,
 				_checkpointEventToBePublished.Data.Length / Math.Pow(10, 6));
-			_largeCheckpointStateWarningLogged = true;
+			_largeCheckpointWarningLogged = true;
 		}
 	}
 
@@ -206,7 +206,8 @@ public class CoreProjectionCheckpointWriter {
 
 	private int CalculateBackoffTimeSecs(int attempt) {
 		attempt--;
-		if (attempt == 0) return 0;
+		if (attempt == 0)
+			return 0;
 		var expBackoff = attempt < 9 ? (1 << attempt) : 256;
 		return _random.Next(1, expBackoff + 1);
 	}

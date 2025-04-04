@@ -7,7 +7,7 @@ order: 2
 
 ## Overview
 
-The MongoDB sink pulls messages from an EventStoreDB stream and stores them in a
+The MongoDB sink pulls messages from a KurrentDB stream and stores them in a
 collection. The records will be serialized into
 [BSON](https://www.mongodb.com/docs/manual/reference/glossary/#std-term-BSON)
 documents, so the data must be valid for BSON format. 
@@ -70,7 +70,7 @@ available management API endpoints in the [API Reference](../manage.md).
 
 ## Settings
 
-Adjust these settings to specify the behavior and interaction of your MongoDB sink connector with EventStoreDB, ensuring it operates according to your requirements and preferences.
+Adjust these settings to specify the behavior and interaction of your MongoDB sink connector with KurrentDB, ensuring it operates according to your requirements and preferences.
 
 ::: tip
 The MongoDB sink inherits a set of common settings that are used to configure the connector. The settings can be found in
@@ -124,7 +124,7 @@ certificate and the password in the settings. You can use an online tool like
 
 The id of the document can be generated automatically based on the source specified and expression if needed. The following options are available:
 
-By default, the MongoDB sink uses the `recordId` as the document ID. This is the unique identifier generated for every record in EventStoreDB.
+By default, the MongoDB sink uses the `recordId` as the document ID. This is the unique identifier generated for every record in KurrentDB.
 
 Here are some examples that demonstrate how to configure the MongoDB sink to generate document IDs based on different sources.
 
@@ -197,3 +197,6 @@ If your event has a partition key, you can use it as the document ID. The `Parti
 ```
 
 This uses the record's partition key as a unique document ID.
+
+## Tutorial
+[Learn how to set up and use a MongoDB Sink connector in KurrentDB through a tutorial.](/tutorials/MongoDB_Sink.md)

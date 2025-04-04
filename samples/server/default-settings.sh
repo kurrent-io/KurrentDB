@@ -1,6 +1,6 @@
 curl -i "http://localhost:2113/streams/%24settings" \
     --user admin:changeit \
-    -H "Content-Type: application/vnd.eventstore.events+json" \
+    -H "Content-Type: application/vnd.kurrent.events+json" \
     -d $'[{
         "eventId": "7c314750-05e1-439f-b2eb-f5b0e019be72",
         "eventType": "update-default-acl",

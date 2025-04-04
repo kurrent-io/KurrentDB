@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -39,7 +39,7 @@ public class ArchiveCatchupTests : DirectoryPerTest<ArchiveCatchupTests> {
 		string[] dbChunks = null,
 		Action<int> onGetChunk = null) {
 		var namingStrategy = new VersionedPatternFileNamingStrategy(string.Empty, "chunk-");
-		var archiveChunkNameResolver = new ArchiveChunkNameResolver(namingStrategy);
+		var archiveNamingStrategy = new ArchiveNamingStrategy(namingStrategy);
 
 		dbCheckpoint ??= 0L;
 		archiveCheckpoint ??= 0L;
@@ -64,7 +64,7 @@ public class ArchiveCatchupTests : DirectoryPerTest<ArchiveCatchupTests> {
 			epochCheckpoint: epochCheckpoint,
 			chunkSize: ChunkSize,
 			archiveStorageReader: archive,
-			chunkNameResolver: archiveChunkNameResolver
+			namingStrategy: archiveNamingStrategy
 		);
 
 		return new Sut {
@@ -100,7 +100,7 @@ public class ArchiveCatchupTests : DirectoryPerTest<ArchiveCatchupTests> {
 	public async Task doesnt_catch_up_if_db_is_ahead_or_in_sync_with_archive(long dbCheckpoint, long archiveCheckpoint) {
 		var sut = CreateSut(dbCheckpoint: dbCheckpoint, archiveCheckpoint: archiveCheckpoint);
 
-		await sut.Catchup.Run();
+		await sut.Catchup.Run(CancellationToken.None);
 
 		Assert.Empty(sut.Archive.ChunkGets);
 		Assert.Equal(dbCheckpoint, sut.WriterCheckpoint.Read());
@@ -122,7 +122,7 @@ public class ArchiveCatchupTests : DirectoryPerTest<ArchiveCatchupTests> {
 			dbCheckpoint: dbCheckpoint,
 			archiveCheckpoint: archiveCheckpoint);
 
-		await sut.Catchup.Run();
+		await sut.Catchup.Run(CancellationToken.None);
 
 		var chunksToGet = new List<int>();
 		for (var i = (int)(dbCheckpoint / ChunkSize); i < (int)(archiveCheckpoint / ChunkSize); i++)
@@ -152,7 +152,7 @@ public class ArchiveCatchupTests : DirectoryPerTest<ArchiveCatchupTests> {
 			archiveCheckpoint: archiveCheckpoint,
 			dbChunks: dbChunks);
 
-		await sut.Catchup.Run();
+		await sut.Catchup.Run(CancellationToken.None);
 		await VerifyCatchUp(sut, dbCheckpoint, archiveCheckpoint, expectedChunksToFetch, expectedChunksToBackup);
 	}
 
@@ -168,7 +168,7 @@ public class ArchiveCatchupTests : DirectoryPerTest<ArchiveCatchupTests> {
 			archiveCheckpoint: 2000L,
 			onGetChunk: OnGetChunk);
 
-		await sut.Catchup.Run();
+		await sut.Catchup.Run(CancellationToken.None);
 
 		Assert.Equal(2000L, sut.WriterCheckpoint.Read());
 

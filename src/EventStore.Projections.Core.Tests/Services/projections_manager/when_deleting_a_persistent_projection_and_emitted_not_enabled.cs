@@ -1,15 +1,13 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Core.Services;
 using EventStore.Common.Utils;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using Messages;
 using NUnit.Framework;
@@ -29,16 +27,16 @@ public class WhenDeletingAPersistentProjectionAndEmittedNotEnabled<TLogFormat, T
 		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
 		yield return
 			new ProjectionManagementMessage.Command.Post(
-			                                             _bus, ProjectionMode.Continuous, _projectionName,
-			                                             ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
-			                                             enabled: true, checkpointsEnabled: true, emitEnabled: false, trackEmittedStreams: false);
+														 _bus, ProjectionMode.Continuous, _projectionName,
+														 ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
+														 enabled: true, checkpointsEnabled: true, emitEnabled: false, trackEmittedStreams: false);
 		yield return
 			new ProjectionManagementMessage.Command.Disable(
-			                                                _bus, _projectionName, ProjectionManagementMessage.RunAs.System);
+															_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
 		yield return
 			new ProjectionManagementMessage.Command.Delete(
-			                                               _bus, _projectionName,
-			                                               ProjectionManagementMessage.RunAs.System, true, true, true);
+														   _bus, _projectionName,
+														   ProjectionManagementMessage.RunAs.System, true, true, true);
 	}
 
 	[Test, Category("v8")]
@@ -47,7 +45,7 @@ public class WhenDeletingAPersistentProjectionAndEmittedNotEnabled<TLogFormat, T
 
 		Assert.AreEqual(deletedStreamEvents.Count, 1);
 
-		Assert.AreEqual(deletedStreamEvents.First().EventStreamId,$"$projections-{_projectionName}-checkpoint");
+		Assert.AreEqual(deletedStreamEvents.First().EventStreamId, $"$projections-{_projectionName}-checkpoint");
 
 		Assert.AreEqual(true, _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Any(x => x.Events[0].EventType == ProjectionEventTypes.ProjectionDeleted && Helper.UTF8NoBom.GetString(x.Events[0].Data) == _projectionName));
 	}

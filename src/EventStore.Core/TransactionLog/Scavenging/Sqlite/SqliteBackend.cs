@@ -1,9 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.Data.Sqlite;
 using Serilog;
 using SQLitePCL;
@@ -47,10 +46,10 @@ public class SqliteBackend : IDisposable {
 
 		if (ExecuteSingleRead(selectCmd, getValue, out value)) {
 			var affectedRows = ExecuteNonQuery(deleteCmd);
-			
+
 			if (affectedRows == 1) {
 				return true;
-			} 
+			}
 			if (affectedRows > 1) {
 				throw new SystemException("More values removed than expected!");
 			}
@@ -64,8 +63,7 @@ public class SqliteBackend : IDisposable {
 		try {
 			cmd.Transaction = _transaction;
 			return cmd.ExecuteNonQuery();
-		}
-		catch (SqliteException e) when (e.SqliteErrorCode == SqliteDuplicateKeyError) {
+		} catch (SqliteException e) when (e.SqliteErrorCode == SqliteDuplicateKeyError) {
 			throw new ArgumentException();
 		}
 	}
@@ -78,7 +76,7 @@ public class SqliteBackend : IDisposable {
 				return true;
 			}
 		}
-		
+
 		value = default;
 		return false;
 	}
@@ -109,7 +107,7 @@ public class SqliteBackend : IDisposable {
 
 		return null;
 	}
-	
+
 	public SqliteTransaction BeginTransaction() {
 		_transaction = _connection.BeginTransaction();
 		return _transaction;
@@ -168,12 +166,12 @@ public class SqliteBackend : IDisposable {
 			cmd.ExecuteNonQuery();
 		}
 	}
-	
+
 	public string GetPragmaValue(string name) {
 		var cmd = _connection.CreateCommand();
 		cmd.CommandText = "PRAGMA " + name;
 		var result = cmd.ExecuteScalar();
-		
+
 		if (result != null) {
 			return result.ToString();
 		}
@@ -190,7 +188,7 @@ public class SqliteBackend : IDisposable {
 			throw new Exception($"Failed to configure cache size, unexpected value: {currentCacheSize}");
 		}
 	}
-	
+
 	public class Stats {
 		public Stats(long memoryUsage, long databaseSize, long cacheSize) {
 			MemoryUsage = memoryUsage;

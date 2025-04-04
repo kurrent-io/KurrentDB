@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,7 @@ using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Core.Transforms;
 using EventStore.Core.Transforms.Identity;
 using EventStore.Plugins.Transforms;
 
@@ -26,7 +27,7 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 	protected abstract Task CreateChunks(TFChunkDb leaderDb);
 
 	protected static async Task CreateChunk(TFChunkDb db, bool raw, bool complete, int chunkStartNumber, int chunkEndNumber, ILogRecord[] logRecords, CancellationToken token = default) {
-		var filename = db.Manager.FileSystem.NamingStrategy.GetFilenameFor(chunkStartNumber, raw ? 1 : 0);
+		var filename = db.Manager.FileSystem.LocalNamingStrategy.GetFilenameFor(chunkStartNumber, raw ? 1 : 0);
 
 		if (raw && !complete)
 			throw new InvalidOperationException("A raw chunk must be complete");
@@ -56,6 +57,7 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 			reduceFileCachePressure: db.Config.ReduceFileCachePressure,
 			tracker: new TFChunkTracker.NoOp(),
 			transformFactory: new IdentityChunkTransformFactory(),
+			getTransformFactory: DbTransformManager.Default,
 			transformHeader: ReadOnlyMemory<byte>.Empty,
 			token);
 
@@ -75,8 +77,8 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 			// move the (intercepted) writer checkpoint to the expected positions so that they can be compared with the
 			// replica's writer checkpoints during tests
 			if (!raw &&
-			    (logRecord.IsTransactionBoundary() /* complete transaction */
-			     || i == logRecords.Length - 1)) /* incomplete transaction at the end of a chunk - commit for backwards compatibility */
+				(logRecord.IsTransactionBoundary() /* complete transaction */
+				 || i == logRecords.Length - 1)) /* incomplete transaction at the end of a chunk - commit for backwards compatibility */
 				db.Config.WriterCheckpoint.Write(writerPos);
 
 			posMaps.Add(new PosMap(logicalPos, actualPos));
@@ -130,8 +132,10 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 
 			for (var i = 0; i < txSize; i++) {
 				var flags = PrepareFlags.Data | PrepareFlags.IsCommitted;
-				if (i == 0) flags |= PrepareFlags.TransactionBegin;
-				if (!incomplete && i == txSize - 1) flags |= PrepareFlags.TransactionEnd;
+				if (i == 0)
+					flags |= PrepareFlags.TransactionBegin;
+				if (!incomplete && i == txSize - 1)
+					flags |= PrepareFlags.TransactionEnd;
 				var logRecord = CreatePrepare(logPosition, flags);
 				logPosition += logRecord.GetSizeWithLengthPrefixAndSuffix();
 				logRecords.Add(logRecord);

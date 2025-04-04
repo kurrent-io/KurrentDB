@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -39,7 +39,7 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 		_db = new TFChunkDb(TFChunkHelper.CreateSizedDbConfig(PathName, 0, chunkSize: 16 * 1024));
 		await _db.Open();
 
-		var chunk = _db.Manager.GetChunkFor(0);
+		var chunk = await _db.Manager.GetInitializedChunkFor(0, CancellationToken.None);
 		var streamName = "es-to-scavenge";
 		var pos = 0L;
 		_logFormat.StreamNameIndex.GetOrReserve(_logFormat.RecordFactory, streamName, 0, out var streamId, out var streamRecord);
@@ -91,7 +91,7 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 			_logFormat.Metastreams);
 		await scavenger.Scavenge(alwaysKeepScavenged: true, mergeChunks: false);
 
-		_scavengedChunk = _db.Manager.GetChunk(0);
+		_scavengedChunk = await _db.Manager.GetInitializedChunk(0, CancellationToken.None);
 	}
 
 	public override async Task TestFixtureTearDown() {
@@ -166,8 +166,7 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 
 		if (LogFormatHelper<TLogFormat, TStreamId>.IsV2) {
 			Assert.AreEqual(0, records.Count);
-		}
-		else {
+		} else {
 			Assert.AreEqual(2, records.Count);
 		}
 	}

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -8,7 +8,6 @@ using System.Threading;
 using EventStore.Common.Utils;
 using KurrentDB.TestClient.Commands;
 using KurrentDB.TestClient.Commands.DvuBasic;
-using Connection = EventStore.Transport.Tcp.TcpTypedConnection<byte[]>;
 using ILogger = Serilog.ILogger;
 #pragma warning disable 1591
 
@@ -122,12 +121,12 @@ public class Client {
 					Console.Write(">>> ");
 				}
 			}
-		}) {IsBackground = true, Name = "Client Main Loop Thread"}.Start();
+		}) { IsBackground = true, Name = "Client Main Loop Thread" }.Start();
 		return 0;
 	}
 
 	private static string[] ParseCommandLine(string line) {
-		return line.Split(new[] {' ', '\t'}, StringSplitOptions.RemoveEmptyEntries);
+		return line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
 	}
 
 	private int Execute(string[] args, CancellationToken cancellationToken) {

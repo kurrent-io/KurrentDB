@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using EventStore.Core.Caching;
@@ -22,7 +22,7 @@ public class EventNumberCachedTests {
 
 	[Test]
 	public void size_in_lru_cache_is_measured_correctly_with_string_key() {
-		var lruCache = new LRUCache<string, EventNumberCached>(string.Empty, 1, (_,_) => 0);
+		var lruCache = new LRUCache<string, EventNumberCached>(string.Empty, 1, (_, _) => 0);
 
 		// initialize any underlying data structures (the dictionary in this case)
 		lruCache.Put("test", new EventNumberCached(0, 0));
@@ -41,7 +41,7 @@ public class EventNumberCachedTests {
 
 	[Test]
 	public void size_in_lru_cache_is_measured_correctly_with_long_key() {
-		var lruCache = new LRUCache<long, EventNumberCached>(string.Empty, 1, (_,_) => 0);
+		var lruCache = new LRUCache<long, EventNumberCached>(string.Empty, 1, (_, _) => 0);
 
 		// initialize any underlying data structures (the dictionary in this case)
 		lruCache.Put(123, new EventNumberCached(0, 0));

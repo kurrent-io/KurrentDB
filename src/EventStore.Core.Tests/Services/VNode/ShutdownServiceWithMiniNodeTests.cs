@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -21,7 +21,7 @@ namespace EventStore.Core.Tests.Services.VNode;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class ShutdownServiceWithMiniNodeTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPerTestFixture {
+public class ShutdownServiceWithMiniNodeTests<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private readonly CancellationTokenSource _cts = new();
 	private readonly TaskCompletionSource _tcs = new();
 	private MiniNode<TLogFormat, TStreamId> _node;

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -18,13 +18,15 @@ public class EventByTypeIndexPositionTagger : PositionTagger {
 	public EventByTypeIndexPositionTagger(
 		int phase, string[] eventTypes, bool includeStreamDeletedNotification = false)
 		: base(phase) {
-		if (eventTypes == null) throw new ArgumentNullException("eventTypes");
-		if (eventTypes.Length == 0) throw new ArgumentException("eventTypes");
+		if (eventTypes == null)
+			throw new ArgumentNullException("eventTypes");
+		if (eventTypes.Length == 0)
+			throw new ArgumentException("eventTypes");
 		_eventTypes = new HashSet<string>(eventTypes);
 		if (includeStreamDeletedNotification)
 			_eventTypes.Add("$deleted");
 		_streams = new HashSet<string>(from eventType in eventTypes
-			select "$et-" + eventType);
+									   select "$et-" + eventType);
 		_streamToEventType = eventTypes.ToDictionary(v => "$et-" + v, v => v);
 	}
 
@@ -94,7 +96,7 @@ public class EventByTypeIndexPositionTagger : PositionTagger {
 	public override bool IsCompatible(CheckpointTag checkpointTag) {
 		//TODO: should Stream be supported here as well if in the set?
 		return checkpointTag.Mode_ == CheckpointTag.Mode.EventTypeIndex
-		       && checkpointTag.Streams.All(v => _eventTypes.Contains(v.Key));
+			   && checkpointTag.Streams.All(v => _eventTypes.Contains(v.Key));
 	}
 
 	public override CheckpointTag AdjustTag(CheckpointTag tag) {

@@ -1,11 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EventStore.Auth.StreamPolicyPlugin;
 using EventStore.Common.Exceptions;
 using EventStore.Core;
 using EventStore.Core.Authorization.AuthorizationPolicies;
@@ -19,7 +20,7 @@ using Serilog;
 
 namespace KurrentDB;
 
-public class AuthorizationPolicyRegistryFactory: SubsystemsPlugin {
+public class AuthorizationPolicyRegistryFactory : SubsystemsPlugin {
 	private readonly ILogger _logger = Log.ForContext<AuthorizationPolicyRegistryFactory>();
 	private readonly IPolicySelectorFactory[] _pluginSelectorFactories = [];
 	private readonly Func<IPublisher, IAuthorizationPolicyRegistry> _createRegistry;
@@ -32,7 +33,9 @@ public class AuthorizationPolicyRegistryFactory: SubsystemsPlugin {
 		}
 
 		// Load up all policy selectors in the plugins directory
-		var factories = pluginLoader.Load<IPolicySelectorFactory>();
+		var factories = pluginLoader.Load<IPolicySelectorFactory>().ToList();
+		factories.Add(new StreamPolicySelectorFactory());
+
 		_pluginSelectorFactories = factories?
 			.Select(x => {
 				_logger.Information("Loaded Authorization Policy plugin: {plugin}.", x.CommandLineName);

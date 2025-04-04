@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
@@ -14,7 +14,8 @@ public class ResultEventEmitter : IResultEventEmitter {
 		new EmittedStream.WriterConfiguration.StreamMetadata( /* TBD */);
 
 	public ResultEventEmitter(ProjectionNamesBuilder namesBuilder) {
-		if (namesBuilder == null) throw new ArgumentNullException("namesBuilder");
+		if (namesBuilder == null)
+			throw new ArgumentNullException("namesBuilder");
 		_namesBuilder = namesBuilder;
 	}
 
@@ -36,7 +37,7 @@ public class ResultEventEmitter : IResultEventEmitter {
 							streamId, Guid.NewGuid(), "Result", true, projectionResult, null, at, null),
 					_resultStreamMetadata);
 
-			return new[] {result};
+			return new[] { result };
 		} else {
 			var linkTo = new EmittedLinkTo(allResultsStreamId, Guid.NewGuid(), streamId, at, null);
 			var linkToEnvelope = new EmittedEventEnvelope(linkTo, _resultStreamMetadata);
@@ -49,7 +50,7 @@ public class ResultEventEmitter : IResultEventEmitter {
 						: new EmittedDataEvent(
 							streamId, Guid.NewGuid(), "Result", true, projectionResult, null, at, null,
 							linkTo.SetTargetEventNumber), _resultStreamMetadata);
-			return new[] {result, linkToEnvelope};
+			return new[] { result, linkToEnvelope };
 		}
 	}
 }

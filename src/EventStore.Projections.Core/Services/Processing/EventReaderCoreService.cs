@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -206,8 +206,8 @@ public class EventReaderCoreService :
 			return; // unsubscribed
 		_subscriptions[projectionId].Handle(message);
 
-//            _pausedSubscriptions.Add(projectionId); // it is actually disposed -- workaround
-//            Handle(new ReaderSubscriptionManagement.Unsubscribe(projectionId));
+		//            _pausedSubscriptions.Add(projectionId); // it is actually disposed -- workaround
+		//            Handle(new ReaderSubscriptionManagement.Unsubscribe(projectionId));
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionEof message) {
@@ -359,7 +359,7 @@ public class EventReaderCoreService :
 		_publisher.Publish(new ProjectionCoreServiceMessage.SubComponentStarted(
 			SubComponentName, message.InstanceCorrelationId));
 		_reportProgressId = Guid.NewGuid();
-		 _publisher.Publish(TimerMessage.Schedule.Create(TimeSpan.FromMilliseconds(500), _publishEnvelope, new ReaderSubscriptionMessage.ReportProgress(_reportProgressId)));
+		_publisher.Publish(TimerMessage.Schedule.Create(TimeSpan.FromMilliseconds(500), _publishEnvelope, new ReaderSubscriptionMessage.ReportProgress(_reportProgressId)));
 	}
 
 	public void Handle(ReaderCoreServiceMessage.StopReader message) {

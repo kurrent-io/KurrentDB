@@ -1,10 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
 using EventStore.Core.TransactionLog.Scavenging;
@@ -47,7 +46,7 @@ public class ParallelLoopTests {
 		var completedItems = new List<int>();
 
 		await ParallelLoop.RunWithTrailingCheckpointAsync(
-			source: source,
+			source: source.ToAsyncEnumerable(),
 			degreeOfParallelism: degreeOfParallelism,
 			getCheckpointInclusive: x => x,
 			getCheckpointExclusive: x => {
@@ -141,7 +140,7 @@ public class ParallelLoopTests {
 	public async Task exception_during_processing_is_propagated_async() {
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => {
 			await ParallelLoop.RunWithTrailingCheckpointAsync(
-				source: new int[] { 10 },
+				source: new[] { 10 }.ToAsyncEnumerable(),
 				degreeOfParallelism: 2,
 				getCheckpointInclusive: x => x,
 				getCheckpointExclusive: x => x,
@@ -157,7 +156,7 @@ public class ParallelLoopTests {
 	public async Task exception_during_emit_is_propagated_async() {
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () => {
 			await ParallelLoop.RunWithTrailingCheckpointAsync(
-				source: new int[] { 10 },
+				source: new[] { 10 }.ToAsyncEnumerable(),
 				degreeOfParallelism: 2,
 				getCheckpointInclusive: x => x,
 				getCheckpointExclusive: x => x,

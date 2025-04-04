@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
 // ReSharper disable InconsistentNaming
@@ -10,40 +10,40 @@ using System.Runtime.InteropServices;
 namespace System.Diagnostics.Interop;
 
 public static partial class WindowsNative {
-    public static partial class IO {
-        public static DiskIoData GetDiskIo(Process process) {
-            if (GetProcessIoCounters(process.Handle, out var counters)) {
-                return new() {
-                    ReadBytes    = counters.ReadTransferCount,
-                    WrittenBytes = counters.WriteTransferCount,
-                    ReadOps      = counters.ReadOperationCount,
-                    WriteOps     = counters.WriteOperationCount
-                };
-            }
-            
-            throw new Win32Exception();
-        }
+	public static partial class IO {
+		public static DiskIoData GetDiskIo(Process process) {
+			if (GetProcessIoCounters(process.Handle, out var counters)) {
+				return new() {
+					ReadBytes = counters.ReadTransferCount,
+					WrittenBytes = counters.WriteTransferCount,
+					ReadOps = counters.ReadOperationCount,
+					WriteOps = counters.WriteOperationCount
+				};
+			}
 
-        public static DiskIoData GetDiskIo() =>
-            GetDiskIo(Process.GetCurrentProcess());
-        
-        #region . native .
-        
-        // http://msdn.microsoft.com/en-us/library/ms683218%28VS.85%29.aspx
-        [StructLayout(LayoutKind.Sequential)]
-        private struct IO_COUNTERS {
-            public ulong ReadOperationCount;
-            public ulong WriteOperationCount;
-            public ulong OtherOperationCount;
-            public ulong ReadTransferCount;
-            public ulong WriteTransferCount;
-            public ulong OtherTransferCount;
-        }
+			throw new Win32Exception();
+		}
 
-        [return: MarshalAs(UnmanagedType.Bool)]
-        [LibraryImport("kernel32.dll", SetLastError = true)]
-        private static partial bool GetProcessIoCounters(IntPtr processHandle, out IO_COUNTERS ioCounters);
-        
-        #endregion
-    }
+		public static DiskIoData GetDiskIo() =>
+			GetDiskIo(Process.GetCurrentProcess());
+
+		#region . native .
+
+		// http://msdn.microsoft.com/en-us/library/ms683218%28VS.85%29.aspx
+		[StructLayout(LayoutKind.Sequential)]
+		private struct IO_COUNTERS {
+			public ulong ReadOperationCount;
+			public ulong WriteOperationCount;
+			public ulong OtherOperationCount;
+			public ulong ReadTransferCount;
+			public ulong WriteTransferCount;
+			public ulong OtherTransferCount;
+		}
+
+		[return: MarshalAs(UnmanagedType.Bool)]
+		[LibraryImport("kernel32.dll", SetLastError = true)]
+		private static partial bool GetProcessIoCounters(IntPtr processHandle, out IO_COUNTERS ioCounters);
+
+		#endregion
+	}
 }

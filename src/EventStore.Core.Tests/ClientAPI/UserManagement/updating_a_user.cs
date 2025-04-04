@@ -1,21 +1,19 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Net;
 using System.Threading.Tasks;
 using EventStore.ClientAPI.Exceptions;
 using EventStore.ClientAPI.SystemData;
 using EventStore.ClientAPI.UserManagement;
 using NUnit.Framework;
-using HttpStatusCode = EventStore.ClientAPI.Transport.Http.HttpStatusCode;
 
 namespace EventStore.Core.Tests.ClientAPI.UserManagement;
 
 [Category("ClientAPI"), Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class updating_a_user<TLogFormat, TStreamId>  : TestWithNode<TLogFormat, TStreamId>  {
+public class updating_a_user<TLogFormat, TStreamId> : TestWithNode<TLogFormat, TStreamId> {
 	[Test]
 	public async Task updating_a_user_with_null_username_throws() {
 		await AssertEx.ThrowsAsync<ArgumentNullException>(() =>

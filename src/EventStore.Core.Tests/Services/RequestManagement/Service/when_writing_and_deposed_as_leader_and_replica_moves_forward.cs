@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -13,7 +13,7 @@ namespace EventStore.Core.Tests.Services.RequestManagement.Service;
 
 [TestFixture]
 public class when_writing_and_deposed_as_leader_and_replica_moves_forward : RequestManagerServiceSpecification {
-	
+
 	protected override void Given() {
 		Dispatcher.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 		Dispatcher.Publish(new ClientMessage.WriteEvents(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new[] { DummyEvent() }, null));

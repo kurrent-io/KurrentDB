@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -140,25 +140,25 @@ public class time_service_should : IHandle<TestResponseMessage> {
 		_scheduler.TriggerProcessing();
 
 		Assert.That(_timerMessages.ContainsSingle<TestResponseMessage>(msg => msg.Id == 100) &&
-		            _timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(101, 104)));
+					_timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(101, 104)));
 
 		_timeProvider.AddToUtcTime(TimeSpan.FromMilliseconds(10)); // 20
 		_scheduler.TriggerProcessing();
 
 		Assert.That(_timerMessages.ContainsSingle<TestResponseMessage>(msg => msg.Id == 101) &&
-		            _timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(102, 104)));
+					_timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(102, 104)));
 
 		_timeProvider.AddToUtcTime(TimeSpan.FromMilliseconds(10)); //30
 		_scheduler.TriggerProcessing();
 
 		Assert.That(_timerMessages.ContainsSingle<TestResponseMessage>(msg => msg.Id == 102) &&
-		            _timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(103, 104)));
+					_timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id.IsBetween(103, 104)));
 
 		_timeProvider.AddToUtcTime(TimeSpan.FromMilliseconds(10)); //40
 		_scheduler.TriggerProcessing();
 
 		Assert.That(_timerMessages.ContainsSingle<TestResponseMessage>(msg => msg.Id == 103) &&
-		            _timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id == 104));
+					_timerMessages.ContainsNo<TestResponseMessage>(msg => msg.Id == 104));
 
 		_timeProvider.AddToUtcTime(TimeSpan.FromMilliseconds(10)); //50
 		_scheduler.TriggerProcessing();

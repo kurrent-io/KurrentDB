@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -302,7 +302,7 @@ public class ChoosingLeaderTests {
 			: null;
 		var mc = SUT.GetBestLeaderCandidate(prepareOks, members, resigningLeadership, 0);
 
-		Assert.AreEqual(IdForNode(tc.ExpectedLeaderCandidateNode), mc.InstanceId, $"Expected node {tc.ExpectedLeaderCandidateNode} got node {Array.FindIndex(members, 0, m => m.InstanceId == mc.InstanceId) + 1 }");
+		Assert.AreEqual(IdForNode(tc.ExpectedLeaderCandidateNode), mc.InstanceId, $"Expected node {tc.ExpectedLeaderCandidateNode} got node {Array.FindIndex(members, 0, m => m.InstanceId == mc.InstanceId) + 1}");
 
 		var ownInfo = CreateLeaderCandidate(1, epochId, writerCheckpoint, chaserCheckpoint,
 			nodePriority, epochNumber, previousLeaderId);

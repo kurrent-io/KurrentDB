@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Transforms.Identity;
+using EventStore.Core.Transforms;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Services.Archive.Storage;
@@ -42,7 +42,9 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 		}
 
 		// upload the chunk
-		Assert.True(await archive.StoreChunk(chunkLocalPath, logicalChunkNumber, CancellationToken.None));
+		await using (var localChunk = new FakeChunkBlob(chunkLocalPath, logicalChunkNumber, 0, FileMode.Open)) {
+			await archive.StoreChunk(localChunk, CancellationToken.None);
+		}
 
 		// read the remote chunk
 		var codec = new PrefixingLocatorCodec();
@@ -51,8 +53,9 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 		var actualRecords = new List<ILogRecord>(recordsCount);
 		using var remoteChunk = await TFChunk.FromCompletedFile(
 			fs, remoteChunkName, verifyHash: false,
+			reduceFileCachePressure: false,
 			unbufferedRead: false, tracker: new TFChunkTracker.NoOp(),
-			getTransformFactory: static _ => new IdentityChunkTransformFactory());
+			getTransformFactory: DbTransformManager.Default);
 
 		var logPosition = 0L;
 		for (var i = 0; i < recordsCount; i++) {
@@ -87,7 +90,9 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 		}
 
 		// upload the chunk
-		Assert.True(await archive.StoreChunk(chunkLocalPath, logicalChunkNumber, CancellationToken.None));
+		await using (var localChunk = new FakeChunkBlob(chunkLocalPath, logicalChunkNumber, 0, FileMode.Open)) {
+			await archive.StoreChunk(localChunk, CancellationToken.None);
+		}
 
 		// read the remote chunk
 		var codec = new PrefixingLocatorCodec();
@@ -95,8 +100,9 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 		var fs = new FileSystemWithArchive(chunkSize: 4096, codec, new ChunkLocalFileSystem(DbPath), archive);
 		using var remoteChunk = await TFChunk.FromCompletedFile(
 			fs, remoteChunkName, verifyHash: false,
+			reduceFileCachePressure: false,
 			unbufferedRead: false, tracker: new TFChunkTracker.NoOp(),
-			getTransformFactory: static _ => new IdentityChunkTransformFactory());
+			getTransformFactory: DbTransformManager.Default);
 
 		// make sure that chunks are equivalent
 		using (var localChunk = File.OpenHandle(chunkLocalPath, options: FileOptions.Asynchronous)) {

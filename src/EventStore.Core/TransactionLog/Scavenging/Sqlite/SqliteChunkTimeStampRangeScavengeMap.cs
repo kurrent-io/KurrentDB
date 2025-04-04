@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -31,7 +31,7 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 					key INTEGER PRIMARY KEY,
 					min INTEGER,
 					max INTEGER)";
-	
+
 		sqlite.InitializeDb(sql);
 
 		_add = new AddCommand(TableName, sqlite);
@@ -97,12 +97,12 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 					SELECT min, max
 					FROM {tableName}
 					WHERE key = $key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteType.Integer);
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -124,7 +124,7 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 					SELECT min, max
 					FROM {tableName}
 					WHERE key = $key";
-			
+
 			_selectCmd = sqlite.CreateCommand();
 			_selectCmd.CommandText = selectSql;
 			_selectKeyParam = _selectCmd.Parameters.Add("$key", SqliteType.Integer);
@@ -133,12 +133,12 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 			var deleteSql = $@"
 					DELETE FROM {tableName}
 					WHERE key = $key";
-			
+
 			_deleteCmd = sqlite.CreateCommand();
 			_deleteCmd.CommandText = deleteSql;
 			_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteType.Integer);
 			_deleteCmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -159,11 +159,11 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 					SELECT min, max, key
 					FROM {tableName}
 					ORDER BY key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 
 			_reader = reader => {

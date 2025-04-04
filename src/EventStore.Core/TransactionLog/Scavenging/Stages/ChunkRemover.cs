@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 
@@ -21,8 +21,6 @@ public class ChunkRemover<TStreamId, TRecord> : IChunkRemover<TStreamId, TRecord
 	private readonly ILocatorCodec _locatorCodec;
 	private readonly TimeSpan _retainPeriod;
 	private readonly long _retainBytes;
-	private readonly int _maxAttempts;
-	private readonly TimeSpan _retryDelay;
 
 	public ChunkRemover(
 		ILogger logger,
@@ -30,9 +28,7 @@ public class ChunkRemover<TStreamId, TRecord> : IChunkRemover<TStreamId, TRecord
 		IChunkManagerForChunkRemover chunkManager,
 		ILocatorCodec locatorCodec,
 		TimeSpan retainPeriod,
-		long retainBytes,
-		int maxAttempts = 10,
-		int retryDelayMs = 1000) {
+		long retainBytes) {
 
 		_logger = logger;
 		_archiveCheckpoint = archiveCheckpoint;
@@ -40,8 +36,6 @@ public class ChunkRemover<TStreamId, TRecord> : IChunkRemover<TStreamId, TRecord
 		_locatorCodec = locatorCodec;
 		_retainPeriod = retainPeriod;
 		_retainBytes = retainBytes;
-		_maxAttempts = maxAttempts;
-		_retryDelay = TimeSpan.FromMilliseconds(retryDelayMs);
 
 		_logger.Debug("SCAVENGING: Chunk retention criteria is Days: {Days}, LogicalBytes: {LogicalBytes}",
 			retainPeriod.Days,
@@ -60,14 +54,23 @@ public class ChunkRemover<TStreamId, TRecord> : IChunkRemover<TStreamId, TRecord
 		}
 
 		if (!ShouldRemoveForBytes(scavengePoint, physicalChunk)) {
+			_logger.Debug(
+				"SCAVENGING: ChunkRemover is keeping chunk {PhysicalChunk} because of " +
+				"the retention policy for bytes", physicalChunk.Name);
 			return false;
 		}
 
 		if (!ShouldRemoveForPeriod(scavengePoint, concurrentState, physicalChunk)) {
+			_logger.Debug(
+				"SCAVENGING: ChunkRemover is keeping chunk {PhysicalChunk} because of " +
+				"the retention policy for days", physicalChunk.Name);
 			return false;
 		}
 
 		if (!await IsConfirmedPresentInArchive(physicalChunk, ct)) {
+			_logger.Debug(
+				"SCAVENGING: ChunkRemover is keeping chunk {PhysicalChunk} because it " +
+				"is not confirmed present in the archive", physicalChunk.Name);
 			return false;
 		}
 
@@ -84,22 +87,18 @@ public class ChunkRemover<TStreamId, TRecord> : IChunkRemover<TStreamId, TRecord
 
 		var logicalChunkNumber = physicalChunk.ChunkEndNumber;
 
-		for (var attempt = 0; attempt < _maxAttempts; attempt++) {
-			if (attempt != 0)
-				await Task.Delay(_retryDelay, ct);
-
-			try {
-				var isPresent = await _archiveCheckpoint.IsGreaterThanOrEqualTo(physicalChunk.ChunkEndPosition, ct);
-				if (!isPresent) {
-					_logger.Warning(
-						"Logical chunk {LogicalChunkNumber} is not yet present in the archive",
-						logicalChunkNumber);
-				}
-				return isPresent;
-			} catch (Exception ex) {
-				_logger.Warning(ex, "Unable to determine existence of logical chunk {LogicalChunkNumber} in the archive. Attempt {Attempt}/{MaxAttempts}",
-					logicalChunkNumber, attempt + 1, _maxAttempts);
+		try {
+			var isPresent = await _archiveCheckpoint.IsGreaterThanOrEqualTo(physicalChunk.ChunkEndPosition, ct);
+			if (!isPresent) {
+				_logger.Warning(
+					"Logical chunk {LogicalChunkNumber} is not yet present in the archive",
+					logicalChunkNumber);
 			}
+			return isPresent;
+		} catch (Exception ex) when (ex is not OperationCanceledException) {
+			_logger.Warning(ex,
+				"Unable to determine existence of logical chunk {LogicalChunkNumber} in the archive.",
+				logicalChunkNumber);
 		}
 
 		return false;

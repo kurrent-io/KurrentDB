@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Security.Claims;
@@ -17,7 +17,7 @@ public class MultiClaimMatchTests {
 	public async Task NoneMatchingHasMatches() {
 		var assertion = new MultipleClaimMatchAssertion(Grant.Deny, MultipleMatchMode.None,
 			new Claim("test1", "value1"), new Claim("test2", "value2"));
-		var cp = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] {new Claim("test1", "value1")}));
+		var cp = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim("test1", "value1") }));
 		var context = new EvaluationContext(new Operation("test", "test"), CancellationToken.None);
 		Assert.False(await assertion.Evaluate(cp, new Operation("test", "test"),
 			new PolicyInformation("test", 1, DateTimeOffset.MaxValue), context));
@@ -28,7 +28,7 @@ public class MultiClaimMatchTests {
 	public async Task NonMatchingHasNoMatches() {
 		var assertion = new MultipleClaimMatchAssertion(Grant.Deny, MultipleMatchMode.None,
 			new Claim("test1", "value1"), new Claim("test2", "value2"));
-		var cp = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] {new Claim("test3", "value3")}));
+		var cp = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim("test3", "value3") }));
 		var context = new EvaluationContext(new Operation("test", "test"), CancellationToken.None);
 		Assert.True(await assertion.Evaluate(cp, new Operation("test", "test"),
 			new PolicyInformation("test", 1, DateTimeOffset.MaxValue), context));

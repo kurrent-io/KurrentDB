@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -16,14 +16,16 @@ public class MultipleClaimMatchAssertion : IComparable<MultipleClaimMatchAsserti
 	private readonly MultipleMatchMode _mode;
 
 	public MultipleClaimMatchAssertion(Grant grant, MultipleMatchMode mode, params Claim[] claims) {
-		if (claims.Length == 0) throw new ArgumentException("Value cannot be an empty collection.", nameof(claims));
+		if (claims.Length == 0)
+			throw new ArgumentException("Value cannot be an empty collection.", nameof(claims));
 
 
 		_mode = mode;
 		Grant = grant;
 		_claims = claims.OrderBy(x => x.Type).ToArray();
 		var sb = new StringBuilder();
-		foreach (var claim in _claims) sb.AppendLine($"{claim.Type} {claim.Value}");
+		foreach (var claim in _claims)
+			sb.AppendLine($"{claim.Type} {claim.Value}");
 
 		var assertion = sb.ToString();
 		Information = mode switch {
@@ -47,7 +49,8 @@ public class MultipleClaimMatchAssertion : IComparable<MultipleClaimMatchAsserti
 				string.Equals(x.Type, claim.Type, StringComparison.Ordinal) &&
 				string.Equals(x.Value, claim.Value, StringComparison.Ordinal)) is Claim matched) {
 				matches.Add(matched);
-				if (_mode != MultipleMatchMode.All) break;
+				if (_mode != MultipleMatchMode.All)
+					break;
 			}
 
 		var matchFound = false;

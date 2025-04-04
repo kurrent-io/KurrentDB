@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Runtime.Serialization;
 
@@ -29,18 +29,21 @@ public class QuerySourceOptions {
 
 	protected bool Equals(QuerySourceOptions other) {
 		return string.Equals(ResultStreamName, other.ResultStreamName)
-		       && string.Equals(PartitionResultStreamNamePattern, other.PartitionResultStreamNamePattern)
-		       && ReorderEvents.Equals(other.ReorderEvents) && ProcessingLag == other.ProcessingLag
-		       && IsBiState.Equals(other.IsBiState) && DefinesStateTransform.Equals(other.DefinesStateTransform)
-		       && ProducesResults.Equals(other.ProducesResults) && DefinesFold.Equals(other.DefinesFold)
-		       && HandlesDeletedNotifications.Equals(other.HandlesDeletedNotifications)
-		       && IncludeLinks.Equals(other.IncludeLinks);
+			   && string.Equals(PartitionResultStreamNamePattern, other.PartitionResultStreamNamePattern)
+			   && ReorderEvents.Equals(other.ReorderEvents) && ProcessingLag == other.ProcessingLag
+			   && IsBiState.Equals(other.IsBiState) && DefinesStateTransform.Equals(other.DefinesStateTransform)
+			   && ProducesResults.Equals(other.ProducesResults) && DefinesFold.Equals(other.DefinesFold)
+			   && HandlesDeletedNotifications.Equals(other.HandlesDeletedNotifications)
+			   && IncludeLinks.Equals(other.IncludeLinks);
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != this.GetType()) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != this.GetType())
+			return false;
 		return Equals((QuerySourceOptions)obj);
 	}
 

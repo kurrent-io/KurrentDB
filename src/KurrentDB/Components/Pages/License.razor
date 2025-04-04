@@ -1,0 +1,98 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+@page "/ui/license"
+@inherits KurrentDB.Components.ServerSide.ServerSideBase
+@attribute [Authorize]
+@using EventStore.Licensing
+@using EventStore.Plugins.Licensing
+@using JetBrains.Annotations
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>KurrentDB: License</PageTitle>
+
+<MudCard>
+	<MudCardHeader>
+		<CardHeaderContent>
+			<MudText Typo="Typo.h6">License information</MudText>
+		</CardHeaderContent>
+	</MudCardHeader>
+	@if (_licenseSummary == null) {
+		<MudCardContent>
+			<MudAlert Severity="Severity.Warning">License not found</MudAlert>
+		</MudCardContent>
+		<MudCardActions>
+			<MudButton Variant="Variant.Filled" Href="https://www.kurrent.io/kurrent_free_trial">
+				Get free trial license
+			</MudButton>
+		</MudCardActions>
+	} else {
+		<MudCardContent>
+			<MudSimpleTable Dense="true">
+				<tbody>
+				<tr>
+					<td>License ID</td>
+					<td>@_licenseSummary["licenseId"]</td>
+				</tr>
+				<tr>
+					<td>Licensee</td>
+					<td>@Licensee</td>
+				</tr>
+				<tr>
+					<td>Validity</td>
+					<td>@Validity</td>
+				</tr>
+				<tr>
+					<td>Expiration</td>
+					<td>@Expiration</td>
+				</tr>
+				<tr>
+					<td>License type</td>
+					<td>@LicenseType</td>
+				</tr>
+				</tbody>
+			</MudSimpleTable>
+			@if (!IsTrial && IsValid) {
+				<MudAlert Severity="Severity.Success">Your deployment is fully licensed</MudAlert>
+			}
+			@if (!IsValid) {
+				<MudAlert Severity="Severity.Error">The license is applied but it is not valid</MudAlert>
+			}
+			@if (PendingRenewal) {
+				<MudAlert Severity="Severity.Warning">
+					The license is expiring soon, contact Kurrent for renewal
+				</MudAlert>
+			}
+			@if (HasExpired) {
+				<MudAlert Severity="Severity.Warning">The license has expired</MudAlert>
+			}
+		</MudCardContent>
+	}
+</MudCard>
+
+@code {
+	[Inject] ILicenseService LicenseService { get; set; }
+
+	[CanBeNull] Dictionary<string, object> _licenseSummary;
+
+	protected override void OnInitialized() {
+		base.OnInitialized();
+		if (LicenseService.CurrentLicense == null) {
+			return;
+		}
+
+		_licenseSummary = LicenseSummary.SelectForEndpoint(LicenseService.CurrentLicense);
+	}
+
+	string GetValue(string key) => _licenseSummary?[key]?.ToString() ?? string.Empty;
+
+	string Licensee => GetValue("company");
+	bool IsValid => GetValue("isValid") == "true";
+	string Validity => IsValid ? "Valid" : "Invalid";
+	bool HasExpired => GetValue("isExpired") == "true";
+	string Expiration => HasExpired ? "Expired" : $"Expires in {DaysRemaining} days";
+	bool IsTrial => GetValue("isTrial") == "true";
+	string LicenseType => IsTrial ? "Trial" : "Full";
+	int DaysRemaining => (int)Convert.ToDecimal(GetValue("daysRemaining"));
+	bool PendingRenewal => !IsTrial && DaysRemaining <= 30 && !HasExpired;
+}

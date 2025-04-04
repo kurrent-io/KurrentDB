@@ -1,18 +1,18 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Security.Claims;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Services.TimerService;
-using System.Collections.Generic;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Storage.ReaderIndex;
+using EventStore.Core.Services.TimerService;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Helpers;
@@ -170,7 +170,7 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		RequestResponseDispatcher
 		<ClientMessage.FilteredReadAllEventsBackward, ClientMessage.FilteredReadAllEventsBackwardCompleted> AllBackwardFilteredReader;
 
-	public IODispatcher(IPublisher publisher, IEnvelope envelope, bool trackPendingRequests=false) {
+	public IODispatcher(IPublisher publisher, IEnvelope envelope, bool trackPendingRequests = false) {
 		_publisher = publisher;
 		_inputQueueEnvelope = envelope;
 		_requestTracker = new RequestTracking(trackPendingRequests);
@@ -763,7 +763,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 
 		public void Finish(Guid key) {
 			var queue = GetQueue(key);
-			if (queue == null) return;
+			if (queue == null)
+				return;
 			queue.IsBusy = false;
 
 			CleanupQueue(key, queue);
@@ -785,8 +786,10 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		}
 
 		private void CleanupQueue(Guid key, WriterQueue queue) {
-			if (queue.IsBusy) return;
-			if (queue.Count > 0) return;
+			if (queue.IsBusy)
+				return;
+			if (queue.Count > 0)
+				return;
 			_queues.Remove(key);
 		}
 	}
@@ -806,7 +809,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		}
 
 		public ClientMessage.WriteEvents Dequeue() {
-			if (_queue.Count == 0) return null;
+			if (_queue.Count == 0)
+				return null;
 
 			IsBusy = true;
 
@@ -854,7 +858,7 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 					false,
 					streamId,
 					expectedVersion,
-					new[] {@event},
+					new[] { @event },
 					principal),
 				res => {
 					RemovePendingRequest(res.CorrelationId);
@@ -919,7 +923,7 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		WriteEvents(
 			SystemStreams.MetastreamOf(streamId),
 			expectedVersion,
-			new[] {new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata.ToJsonBytes(), null)},
+			new[] { new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata.ToJsonBytes(), null) },
 			principal,
 			completed);
 	}

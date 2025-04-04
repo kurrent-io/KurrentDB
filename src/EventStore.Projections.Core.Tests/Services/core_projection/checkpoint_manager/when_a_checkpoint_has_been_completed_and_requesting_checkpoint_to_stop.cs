@@ -1,11 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
@@ -34,9 +33,9 @@ public class when_a_checkpoint_has_been_completed_and_requesting_checkpoint_to_s
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
 			_manager.Start(CheckpointTag.FromStreamPosition(0, "stream", 10), null);
-//                _manager.StateUpdated("", @"{""state"":""state1""}");
+			//                _manager.StateUpdated("", @"{""state"":""state1""}");
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 11), 77.7f);
-//                _manager.StateUpdated("", @"{""state"":""state2""}");
+			//                _manager.StateUpdated("", @"{""state"":""state2""}");
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 12), 77.8f);
 			_manager.CheckpointSuggested(CheckpointTag.FromStreamPosition(0, "stream", 12), 77.8f);
 			_manager.Stopping();

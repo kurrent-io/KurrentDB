@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -130,7 +130,7 @@ internal class WriteFloodProcessor : ICmdProcessor {
 					var localAll = Interlocked.Add(ref stats.All, batchSize);
 					if (localAll % 100000 == 0) {
 						stats.Elapsed = sw2.Elapsed;
-						stats.Rate =  1000.0 * 100000 / stats.Elapsed.TotalMilliseconds;
+						stats.Rate = 1000.0 * 100000 / stats.Elapsed.TotalMilliseconds;
 						sw2.Restart();
 						context.Log.Debug(
 							"\nDONE TOTAL {writes} WRITES IN {elapsed} ({rate:0.0}/s) [S:{success}, F:{failures} (WEV:{wrongExpectedVersion}, " +
@@ -173,11 +173,11 @@ internal class WriteFloodProcessor : ICmdProcessor {
 
 					var localSent = Interlocked.Increment(ref sent);
 					while (localSent - Interlocked.Read(ref received) >
-					       context._tcpTestClient.Options.WriteWindow / clientsCnt) {
+						   context._tcpTestClient.Options.WriteWindow / clientsCnt) {
 						Thread.Sleep(1);
 					}
 				}
-			}) {IsBackground = true});
+			}) { IsBackground = true });
 		}
 
 		var sw = Stopwatch.StartNew();

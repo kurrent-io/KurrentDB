@@ -1,12 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.Bus;
 using EventStore.Plugins.Authorization;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
-internal partial class Redaction : EventStore.Client.Redaction.Redaction.RedactionBase {
+internal partial class Redaction : Kurrent.Client.Redaction.Redaction.RedactionBase {
 	private readonly IPublisher _bus;
 	private readonly IAuthorizationProvider _authorizationProvider;
 

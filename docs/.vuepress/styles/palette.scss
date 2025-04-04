@@ -1,11 +1,193 @@
-$text-color: (
-  light: #2c3e50,
-  dark: #d4d4d4,
-);
+@use 'sass:color';
 
+/* Primary colors */
+$main-color: #631b3a;
+$secondary-color: #B75781;
+
+/* Light Theme Colors */
+$color-background-light: #ffffff;
+$color-foreground-light: #000000;
+$color-link-light: #479bff;
+$color-title-light: $main-color;
+
+/* Dark Theme Colors */
+$color-background-dark: #080b0d;
+$color-foreground-dark: #f0f0f0;
+$color-title-dark: #f0f0f0;
+
+$theme-color-light: color.mix(black, $main-color, 10%); // Darken by 10%
+$theme-color-soft: #{color.scale(#631b3a, $lightness: 85%)};
+$theme-color-dark: color.mix(white, $main-color, 10%); // Lighten by 10%
+$theme-color-mask: color.adjust( $secondary-color, $alpha: -0.85 ); // Reduce opacity
+
+/* CSS Variable Definitions */
+:root {
+    --main-color: #{$main-color};
+    --secondary-color: #{$secondary-color};
+    --end-gradient: #{$secondary-color};
+    --color-link: #{$color-link-light};
+    --theme-name: light;
+    --theme-shade: light;
+    --theme-contrast: low;
+    --color-background: #{$color-background-light};
+    --color-foreground: #{$color-foreground-light};
+    --color-title: var(--main-color);
+    --color-title-contrast: #ffffff;
+    --color-highlight: var(--main-color);
+    --color-highlight-contrast: #ffffff;
+    --color-focus: #8d5fff;
+    --color-focus-contrast: #ffffff;
+    --color-error: #b75781;
+    --color-error-contrast: #ffffff;
+    --color-error-alt: #dbabc0;
+    --color-error-alt-contrast: #000000;
+    --color-warning: #7d6f05;
+    --color-warning-contrast: #ffffff;
+    --color-warning-alt: #fcf29b;
+    --color-warning-alt-contrast: #000000;
+    --color-success: #2c667d;
+    --color-success-contrast: #ffffff;
+    --color-success-alt: #dbf9ee;
+    --color-success-alt-contrast: #000000;
+    --color-info: #4855a7;
+    --color-info-contrast: #ffffff;
+    --color-info-alt: #edf1fc;
+    --color-info-alt-contrast: #000000;
+    --color-shade-10: #f5f8f9;
+    --color-shade-20: #ecf1f3;
+    --color-shade-30: #e3eaed;
+    --color-shade-40: #d9e3e8;
+    --color-shade-50: #d0dce2;
+    --color-shade-60: #b4c8d1;
+    --color-overlay: #a79ab8;
+    --color-overlay-alpha: 0.75;
+    --color-disabled: #ecf1f3;
+    --color-disabled-border: #ecf1f3;
+    --color-disabled-contrast: #000000;
+    --code-fg: #383a42;
+    --code-bg: #fffffe;
+    --code-literal: #0184bc;
+    --code-symbol: #4078f2;
+    --code-keyword: #a626a4;
+    --code-string: #50a14f;
+    --code-error: #e45649;
+    --code-variable: #986801;
+    --code-class: #c18401;
+    --code-comment: #6f7f90;
+}
+
+/* Dark Theme */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --theme-name: dark;
+        --theme-shade: dark;
+        --theme-contrast: low;
+        --end-gradient: #{$main-color};
+        --color-background: #{$color-background-dark};
+        --color-foreground: #{$color-foreground-dark};
+        --theme-name: dark;
+        --theme-shade: dark;
+        --theme-contrast: low;
+        --color-background: #080b0d;
+        --color-foreground: #f0f0f0;
+        --color-title: #f0f0f0;
+        --color-title-contrast: #080b0d;
+        --color-highlight: #64edbb;
+        --color-highlight-contrast: #080b0d;
+        --color-link: #479bff;
+        --color-link-contrast: #080b0d;
+        --color-focus: #8d5fff;
+        --color-focus-contrast: #080b0d;
+        --color-error: #ff4a80;
+        --color-error-contrast: #080b0d;
+        --color-error-alt: #631b3a;
+        --color-error-alt-contrast: #ffffff;
+        --color-warning: #ffed4e;
+        --color-warning-contrast: #080b0d;
+        --color-warning-alt: #7d6f05;
+        --color-warning-alt-contrast: #ffffff;
+        --color-success: #64edbb;
+        --color-success-contrast: #080b0d;
+        --color-success-alt: #2c667d;
+        --color-success-alt-contrast: #ffffff;
+        --color-info: #479bff;
+        --color-info-contrast: #080b0d;
+        --color-info-alt: #4855a7;
+        --color-info-alt-contrast: #ffffff;
+        --color-shade-10: #161c1e;
+        --color-shade-20: #1e2528;
+        --color-shade-30: #262e31;
+        --color-shade-40: #2e383b;
+        --color-shade-50: #364146;
+        --color-shade-60: #3f4c50;
+        --color-overlay: #2c667d;
+        --color-overlay-alpha: 0.75;
+        --color-disabled: #1e2528;
+        --color-disabled-border: #1e2528;
+        --color-disabled-contrast: #f0f0f0;
+        --code-fg: #d7dae0;
+        --code-bg: #313440;
+        --code-literal: #e5c07b;
+        --code-symbol: #56b6c2;
+        --code-keyword: #c678dd;
+        --code-string: #98c379;
+        --code-error: #e05252;
+        --code-variable: #e06c75;
+        --code-class: #e5c07b;
+        --code-comment: #5c6370;
+    }
+}
+
+$vp-font: 'Solina, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", STHeiti, "Microsoft YaHei", SimSun, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
+$vp-font-heading: 'Solina, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", STHeiti, "Microsoft YaHei", SimSun, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
+
+html[data-theme="dark"] {
+    --theme-color: var(--secondary-color);
+    --vp-c-accent-hover: var(--secondary-color);
+    --vp-c-accent: var(--secondary-color);
+    --vp-c-accent-bg: var(--secondary-color);
+    --vp-c-accent-soft: var(--main-color);
+    --theme-color-light: #{$theme-color-light};
+    --theme-color-dark: #{$theme-color-dark};
+    --theme-color-mask: #{$theme-color-mask};
+    --end-gradient: #{$main-color};
+}
+
+html[data-theme="light"] {
+    --theme-color: var(--main-color);
+    --vp-c-accent-hover: var(--main-color);
+    --vp-c-accent: var(--main-color);
+    --vp-c-accent-bg: var(--main-color);
+    --vp-c-accent-soft: #{$theme-color-soft};
+    --theme-color-light: #{$theme-color-light};
+    --theme-color-dark: #{$theme-color-dark};
+    --theme-color-mask: #{$theme-color-mask};
+}
+
+$vp-c-bg: ( light: #fff, dark: #080b0d, );
+
+$vp-c-bg-elv-soft: ( light: #fff, dark: #080b0d, );
+
+$font-body: 15px;
+
+/* Override Code Block Background */
 $sidebar-width: 18rem;
 
-$font-family: 'Museo Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", STHeiti, "Microsoft YaHei", SimSun, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
-$font-family-heading: 'Museo Sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", STHeiti, "Microsoft YaHei", SimSun, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"';
-$font-size: 15px;
+$vp-c-text: ( light: #000, dark: #f0f0f0, );
 
+.hint-container.important a,
+.hint-container.info a,
+.hint-container.note a,
+.hint-container.tip a,
+.hint-container.warning a,
+.hint-container.caution a {
+    color: var(--color-link-light);
+
+    html[data-theme="dark"] & {
+        color: var(--color-link);
+    }
+}
+
+.vp-feature-item {
+    flex-basis: 21%;
+}

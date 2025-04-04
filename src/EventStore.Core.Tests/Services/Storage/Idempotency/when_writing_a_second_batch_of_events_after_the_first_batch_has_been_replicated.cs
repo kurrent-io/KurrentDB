@@ -1,11 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Collections.Generic;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using NUnit.Framework;
@@ -14,7 +13,7 @@ namespace EventStore.Core.Tests.Services.Storage.Idempotency;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class when_writing_a_second_batch_of_events_after_the_first_batch_has_been_replicated<TLogFormat, TStreamId> : WriteEventsToIndexScenario<TLogFormat, TStreamId>{
+public class when_writing_a_second_batch_of_events_after_the_first_batch_has_been_replicated<TLogFormat, TStreamId> : WriteEventsToIndexScenario<TLogFormat, TStreamId> {
 	private const int _numEvents = 10;
 	private List<Guid> _eventIds = new List<Guid>();
 	private TStreamId _streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -59,7 +58,7 @@ public class when_writing_a_second_batch_of_events_after_the_first_batch_has_bee
 
 	[Test]
 	public async Task check_commit_with_next_expectedversion_should_return_ok_decision() {
-		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, _numEvents-1, _eventIds, streamMightExist: true, CancellationToken.None);
+		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, _numEvents - 1, _eventIds, streamMightExist: true, CancellationToken.None);
 		Assert.AreEqual(CommitDecision.Ok, commitCheckResult.Decision);
 	}
 
@@ -73,10 +72,10 @@ public class when_writing_a_second_batch_of_events_after_the_first_batch_has_bee
 	public async Task check_commit_with_same_expectedversion_but_different_non_first_event_id_should_return_corruptedidempotency_decision() {
 		/*Second, idempotent write but one of the event ids is different*/
 		var ids = new List<Guid>();
-		foreach(var id in _eventIds)
+		foreach (var id in _eventIds)
 			ids.Add(id);
 
-		ids[ids.Count-2] = Guid.NewGuid();
+		ids[ids.Count - 2] = Guid.NewGuid();
 
 		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, -1, ids, streamMightExist: true, CancellationToken.None);
 		Assert.AreEqual(CommitDecision.CorruptedIdempotency, commitCheckResult.Decision);
@@ -86,7 +85,7 @@ public class when_writing_a_second_batch_of_events_after_the_first_batch_has_bee
 	public async Task check_commit_with_same_expectedversion_but_different_first_event_id_should_return_wrongexpectedversion_decision() {
 		/*Second, idempotent write but one of the event ids is different*/
 		var ids = new List<Guid>();
-		foreach(var id in _eventIds)
+		foreach (var id in _eventIds)
 			ids.Add(id);
 
 		ids[0] = Guid.NewGuid();
@@ -94,4 +93,4 @@ public class when_writing_a_second_batch_of_events_after_the_first_batch_has_bee
 		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, -1, ids, streamMightExist: true, CancellationToken.None);
 		Assert.AreEqual(CommitDecision.WrongExpectedVersion, commitCheckResult.Decision);
 	}
-    }
+}

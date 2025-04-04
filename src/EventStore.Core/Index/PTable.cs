@@ -1,22 +1,22 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.DataStructures;
+using EventStore.Core.DataStructures.ProbabilisticFilter;
 using EventStore.Core.Exceptions;
 using EventStore.Core.TransactionLog.Unbuffered;
 using ILogger = Serilog.ILogger;
-using Range = EventStore.Core.Data.Range;
-using EventStore.Core.DataStructures.ProbabilisticFilter;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
 using MD5 = EventStore.Core.Hashing.MD5;
+using Range = EventStore.Core.Data.Range;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 namespace EventStore.Core.Index;
@@ -107,7 +107,7 @@ public partial class PTable : ISearchTable, IDisposable {
 	private bool _disposed;
 
 	public ReadOnlySpan<Midpoint> GetMidPoints() {
-		if(_midpoints == null)
+		if (_midpoints == null)
 			return ReadOnlySpan<Midpoint>.Empty;
 
 		return _midpoints.AsSpan();
@@ -682,10 +682,11 @@ public partial class PTable : ISearchTable, IDisposable {
 				if (midpointKey.GreaterThan(endKey)) {
 					low = mid + 1;
 					lowBoundsCheck = midpointKey;
-				} else if (midpointKey.SmallerThan(startKey)){
+				} else if (midpointKey.SmallerThan(startKey)) {
 					high = mid - 1;
 					highBoundsCheck = midpointKey;
-				} else 	throw new MaybeCorruptIndexException(
+				} else
+					throw new MaybeCorruptIndexException(
 					$"Midpoint key (stream: {midpointKey.Stream}, version: {midpointKey.Version}) >= "
 					+ $"start key (stream: {startKey.Stream}, version: {startKey.Version}) and <= "
 					+ $"end key (stream: {endKey.Stream}, version: {endKey.Version}) "

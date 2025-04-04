@@ -76,7 +76,7 @@ endpoints in the [API Reference](../manage.md).
 
 ## Settings
 
-Adjust these settings to specify the behavior and interaction of your Kafka sink connector with EventStoreDB, ensuring it operates according to your requirements and preferences.
+Adjust these settings to specify the behavior and interaction of your Kafka sink connector with KurrentDB, ensuring it operates according to your requirements and preferences.
 
 ::: tip
 The Kafka sink inherits a set of common settings that are used to configure the connector. The settings can be found in
@@ -158,7 +158,7 @@ the [Kafka documentation](https://docs.confluent.io/platform/current/clients/con
 
 ## Broker Acknowledgment
 
-In the Kafka sink connector for EventStoreDB, broker acknowledgment refers to
+In the Kafka sink connector for KurrentDB, broker acknowledgment refers to
 the producer waiting for confirmation from the Kafka broker that a message has
 been successfully received. When `waitForBrokerAck` is enabled (which is the
 default setting), the producer waits for this acknowledgment, ensuring more
@@ -193,7 +193,7 @@ Kafka partition keys can be generated from various sources, similar to how
 document IDs are generated in the MongoDB connector. These sources include the
 event stream, stream suffix, headers, or other record fields.
 
-By default, it will use the `PartitionKey` and grab this value from the EventStoreDB record.
+By default, it will use the `PartitionKey` and grab this value from the KurrentDB record.
 
 **Partition using Stream ID**
 
@@ -257,3 +257,7 @@ unique identifier, such as region, user ID, or other identifiers.
 ```
 
 :::
+
+## Tutorial
+
+[Learn how to set up and use a Kafka Sink connector in KurrentDB through a tutorial.](/tutorials/Kafka_Sink.md)

@@ -1,15 +1,15 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr;
 
@@ -34,7 +34,7 @@ public class when_transaction_commit_gets_already_committed_after_committed : Re
 		yield return new StorageMessage.PrepareAck(InternalCorrId, transactionId, PrepareFlags.TransactionEnd);
 		yield return new StorageMessage.CommitIndexed(Guid.NewGuid(), commitPosition, transactionId, 0, 10);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(commitPosition);
-		yield return new StorageMessage.CommitIndexed(InternalCorrId,commitPosition, transactionId,0,0);
+		yield return new StorageMessage.CommitIndexed(InternalCorrId, commitPosition, transactionId, 0, 0);
 	}
 
 	protected override Message When() {

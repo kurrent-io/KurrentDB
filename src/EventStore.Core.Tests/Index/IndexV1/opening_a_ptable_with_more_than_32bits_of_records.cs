@@ -1,15 +1,14 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using NUnit.Framework;
-using EventStore.Core.Index;
 using EventStore.Common.Utils;
-using EventStore.Common.Options;
+using EventStore.Core.Index;
+using NUnit.Framework;
 using MD5 = EventStore.Core.Hashing.MD5;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
@@ -85,12 +84,12 @@ public class opening_a_ptable_with_more_than_32bits_of_records : SpecificationWi
 		base.TestFixtureTearDown();
 	}
 
-	[Test, Explicit,Ignore("Long running, unsafe")]
+	[Test, Explicit, Ignore("Long running, unsafe")]
 	public void count_should_be_right() {
 		Assert.AreEqual(_ptableCount, _ptable.Count);
 	}
 
-	[Test, Explicit,Ignore("Long running, unsafe")]
+	[Test, Explicit, Ignore("Long running, unsafe")]
 	public void filename_is_correct() {
 		Assert.AreEqual(Filename, _ptable.Filename);
 	}

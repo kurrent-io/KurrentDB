@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Runtime.InteropServices;
@@ -24,7 +24,7 @@ public class LogV3RecordFactoryTests {
 	readonly string _string1 = "string-one";
 	readonly LogV3RecordFactory _sut = new();
 	readonly PrepareFlags _prepareflags = PrepareFlags.SingleWrite;
-	readonly ReadOnlyMemory<byte> _bytes1 = new byte[] { 0x10 }; 
+	readonly ReadOnlyMemory<byte> _bytes1 = new byte[] { 0x10 };
 	readonly ReadOnlyMemory<byte> _bytes2 = new byte[] { 0x20, 0x01 };
 
 	[Fact]
@@ -97,7 +97,7 @@ public class LogV3RecordFactoryTests {
 			eventTypeVersion: _ushort,
 			logPosition: _long1,
 			timeStamp: _dateTime1);
-		
+
 		Assert.Equal(_guid1, eventType.EventId);
 		Assert.Equal(_guid2, eventType.ParentEventId);
 		Assert.Equal(_string1, eventType.EventTypeName);

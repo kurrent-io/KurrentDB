@@ -1,18 +1,18 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using EventStore.Common.Utils;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
-using EventStore.Transport.Http.EntityManagement;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
+using EventStore.Transport.Http;
+using EventStore.Transport.Http.Codecs;
+using EventStore.Transport.Http.EntityManagement;
 using Newtonsoft.Json.Linq;
 using ILogger = Serilog.ILogger;
 
@@ -80,7 +80,7 @@ public class InfoController : IHttpController, IHandle<SystemMessage.StateChange
 
 	private void OnGetOptions(HttpEntityManager entity, UriTemplateMatch match) {
 		if (entity.User != null && (entity.User.LegacyRoleCheck(SystemRoles.Operations) ||
-		                            entity.User.LegacyRoleCheck(SystemRoles.Admins))) {
+									entity.User.LegacyRoleCheck(SystemRoles.Admins))) {
 			var options = _options.LoadedOptions.Values.Select(
 				x => new OptionStructure {
 					Name = x.Metadata.Name,

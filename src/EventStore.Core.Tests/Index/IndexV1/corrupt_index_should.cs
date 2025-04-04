@@ -1,12 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
+using System.Collections.Generic;
 using System.IO;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Index;
 using NUnit.Framework;
-using System.Collections.Generic;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
 
@@ -85,7 +84,7 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 				stream.Write(data, 0, 4);
 			} else if (corruptionType == "notMultipleIndexEntrySize") {
 				var footerPosition = PTableHeader.Size + numIndexEntries * indexEntrySize +
-				                     numMidpoints * indexEntrySize;
+									 numMidpoints * indexEntrySize;
 				stream.Seek(footerPosition, SeekOrigin.Begin);
 				var buffer = new byte[4096];
 				int read = stream.Read(buffer, 0, 4096);
@@ -169,8 +168,10 @@ public class corrupt_index_should : SpecificationWithDirectoryPerTestFixture {
 	}
 
 	private ulong GetOriginalHash(ulong stream, byte version) {
-		if (version == PTableVersions.IndexV1) return stream << 32;
-		else return stream;
+		if (version == PTableVersions.IndexV1)
+			return stream << 32;
+		else
+			return stream;
 	}
 
 	[TestCase(PTableVersions.IndexV2, false)]

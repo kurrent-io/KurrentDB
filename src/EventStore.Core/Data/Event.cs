@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
@@ -21,7 +21,7 @@ public class Event {
 	}
 
 	public static int SizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
-		data?.Length ?? 0 + metadata?.Length ?? 0 + eventType.Length * 2;
+		(data?.Length ?? 0) + (metadata?.Length ?? 0) + (eventType.Length * 2);
 
 	private static bool ExceedsMaximumSizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
 		SizeOnDisk(eventType, data, metadata) > TFConsts.EffectiveMaxLogRecordSize;

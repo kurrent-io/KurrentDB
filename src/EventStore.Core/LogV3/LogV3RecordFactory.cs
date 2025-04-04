@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.LogAbstraction;
@@ -111,7 +111,7 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 		Guid partitionTypeId,
 		Guid partitionId,
 		string name) {
-		
+
 		return new PartitionTypeLogRecord(
 			timeStamp: timeStamp,
 			logPosition: logPosition,
@@ -130,7 +130,7 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 		Raw.PartitionFlags flags,
 		ushort referenceNumber,
 		string name) {
-		
+
 		return new PartitionLogRecord(
 			timeStamp: timeStamp,
 			logPosition: logPosition,

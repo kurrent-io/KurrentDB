@@ -1,8 +1,7 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,12 +15,10 @@ using Serilog;
 namespace EventStore.Core.TransactionLog.Scavenging.DbAccess;
 
 public class ChunkWriterForExecutor<TStreamId> : IChunkWriterForExecutor<TStreamId, ILogRecord> {
-	const int BatchLength = 2000;
 	private readonly ILogger _logger;
 	private readonly ChunkManagerForExecutor<TStreamId> _manager;
 	private readonly TFChunk _outputChunk;
-	private readonly List<List<PosMap>> _posMapss;
-	private int _lastFlushedPage = -1;
+	private readonly ScavengedChunkWriter _scavengedChunkWriter;
 
 	private ChunkWriterForExecutor(
 		ILogger logger,
@@ -30,14 +27,8 @@ public class ChunkWriterForExecutor<TStreamId> : IChunkWriterForExecutor<TStream
 
 		_logger = logger;
 		_manager = manager;
-
-		// list of lists to avoid having an enormous list which could make it to the LoH
-		// and to avoid expensive resize operations on large lists
-		_posMapss = new List<List<PosMap>>(capacity: BatchLength) {
-			new(capacity: BatchLength)
-		};
-
 		_outputChunk = outputChunk;
+		_scavengedChunkWriter = new ScavengedChunkWriter(outputChunk);
 	}
 
 	public static async ValueTask<ChunkWriterForExecutor<TStreamId>> CreateAsync(
@@ -61,7 +52,7 @@ public class ChunkWriterForExecutor<TStreamId> : IChunkWriterForExecutor<TStream
 			writethrough: dbConfig.WriteThrough,
 			reduceFileCachePressure: dbConfig.ReduceFileCachePressure,
 			tracker: new TFChunkTracker.NoOp(),
-			transformFactory: transformManager.GetFactoryForNewChunk(),
+			getTransformFactory: transformManager,
 			token);
 
 		return new(logger, manager, chunk);
@@ -69,39 +60,13 @@ public class ChunkWriterForExecutor<TStreamId> : IChunkWriterForExecutor<TStream
 
 	public string LocalFileName => _outputChunk.LocalFileName;
 
-	public async ValueTask WriteRecord(RecordForExecutor<TStreamId, ILogRecord> record, CancellationToken token) {
-		var posMap = await TFChunkScavenger<TStreamId>.WriteRecord(_outputChunk, record.Record, token);
+	public ValueTask WriteRecord(RecordForExecutor<TStreamId, ILogRecord> record, CancellationToken token) =>
+		_scavengedChunkWriter.WriteRecord(record.Record, token);
 
-		// add the posmap in memory so we can write it when we complete
-		var lastBatch = _posMapss[^1];
-		if (lastBatch.Count >= BatchLength) {
-			lastBatch = new List<PosMap>(capacity: BatchLength);
-			_posMapss.Add(lastBatch);
-		}
+	public async ValueTask<(string NewFileName, long NewFileSize)> Complete(CancellationToken token) {
+		await _scavengedChunkWriter.Complete(token);
 
-		lastBatch.Add(posMap);
-
-		// occasionally flush the chunk. based on TFChunkScavenger.ScavengeChunk
-		var currentPage = _outputChunk.RawWriterPosition / 4046;
-		if (currentPage - _lastFlushedPage > TFChunkScavenger.FlushPageInterval) {
-			await _outputChunk.Flush(token);
-			_lastFlushedPage = currentPage;
-		}
-	}
-
-	public async ValueTask<(string, long)> Complete(CancellationToken token) {
-		// write posmap
-		var posMapCount = 0;
-		foreach (var list in _posMapss)
-			posMapCount += list.Count;
-
-		var unifiedPosMap = new List<PosMap>(capacity: posMapCount);
-		foreach (var list in _posMapss)
-			unifiedPosMap.AddRange(list);
-
-		await _outputChunk.CompleteScavenge(unifiedPosMap, token);
 		var newFileName = await _manager.SwitchInTempChunk(chunk: _outputChunk, token);
-
 		return (newFileName, _outputChunk.FileSize);
 	}
 

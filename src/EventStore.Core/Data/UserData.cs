@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 
@@ -23,12 +23,12 @@ public record UserData {
 	public bool Disabled { get; init; }
 
 	public UserData SetFullName(string fullName) => this with { FullName = fullName };
-	
+
 	public UserData SetGroups(params string[] groups) => this with { Groups = groups };
-	
+
 	public UserData SetPassword(string hash, string salt) => this with { Hash = hash, Salt = salt };
-	
+
 	public UserData SetEnabled() => this with { Disabled = false };
-	
+
 	public UserData SetDisabled() => this with { Disabled = true };
 }

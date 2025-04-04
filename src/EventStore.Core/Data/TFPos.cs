@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics.Contracts;
@@ -51,7 +51,8 @@ public struct TFPos : IEquatable<TFPos>, IComparable<TFPos> {
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
 		return obj is TFPos && Equals((TFPos)obj);
 	}
 
@@ -79,12 +80,12 @@ public struct TFPos : IEquatable<TFPos>, IComparable<TFPos> {
 
 	public static bool operator <(TFPos left, TFPos right) {
 		return left.CommitPosition < right.CommitPosition
-		       || (left.CommitPosition == right.CommitPosition && left.PreparePosition < right.PreparePosition);
+			   || (left.CommitPosition == right.CommitPosition && left.PreparePosition < right.PreparePosition);
 	}
 
 	public static bool operator >(TFPos left, TFPos right) {
 		return left.CommitPosition > right.CommitPosition
-		       || (left.CommitPosition == right.CommitPosition && left.PreparePosition > right.PreparePosition);
+			   || (left.CommitPosition == right.CommitPosition && left.PreparePosition > right.PreparePosition);
 	}
 
 	public override string ToString() {

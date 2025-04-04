@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Messaging;
@@ -20,65 +20,42 @@ public abstract class ReadResponseException : Exception {
 		public StreamRevision ActualStreamRevision { get; } = StreamRevision.FromInt64(actualRevision);
 	}
 
-	public class StreamDeleted : ReadResponseException {
-		public readonly string StreamName;
-
-		public StreamDeleted(string streamName) {
-			StreamName = streamName;
-		}
+	public class StreamDeleted(string streamName) : ReadResponseException {
+		public readonly string StreamName = streamName;
 	}
 
-	public class AccessDenied : ReadResponseException { }
+	public class AccessDenied : ReadResponseException;
 
-	public class InvalidPosition : ReadResponseException { }
+	public class InvalidPosition : ReadResponseException;
 
-	public class Timeout : ReadResponseException {
-		public readonly string ErrorMessage;
-
-		public Timeout(string errorMessage) {
-			ErrorMessage = errorMessage;
-		}
+	public class Timeout(string errorMessage) : ReadResponseException {
+		public readonly string ErrorMessage = errorMessage;
 	}
 
-	public class UnknownMessage : ReadResponseException {
-		public readonly Type UnknownMessageType;
-		public readonly Type ExpectedMessageType;
-
-		public UnknownMessage(Type unknownMessageType, Type expectedMessageType) {
-			UnknownMessageType = unknownMessageType;
-			ExpectedMessageType = expectedMessageType;
-		}
+	public class UnknownMessage(Type unknownMessageType, Type expectedMessageType) : ReadResponseException {
+		public readonly Type UnknownMessageType = unknownMessageType;
+		public readonly Type ExpectedMessageType = expectedMessageType;
 
 		public static UnknownMessage Create<T>(Message message) where T : Message => new(message.GetType(), typeof(T));
 	}
 
-	public class UnknownError : ReadResponseException {
-		public readonly Type ResultType;
-		public readonly object Result;
-
-		public UnknownError(Type resultType, object result) {
-			ResultType = resultType;
-			Result = result;
-		}
+	public class UnknownError(Type resultType, object result) : ReadResponseException {
+		public readonly Type ResultType = resultType;
+		public readonly object Result = result;
 
 		public static UnknownError Create<T>(T result) => new(typeof(T), result);
 	}
 
 	public abstract class NotHandled {
-		public class ServerNotReady : ReadResponseException { }
+		public class ServerNotReady : ReadResponseException;
 
-		public class ServerBusy : ReadResponseException { }
+		public class ServerBusy : ReadResponseException;
 
-		public class LeaderInfo : ReadResponseException {
-			public string Host { get; }
-			public int Port { get; }
-
-			public LeaderInfo(string host, int port) {
-				Host = host;
-				Port = port;
-			}
+		public class LeaderInfo(string host, int port) : ReadResponseException {
+			public string Host { get; } = host;
+			public int Port { get; } = port;
 		}
 
-		public class NoLeaderInfo : ReadResponseException { }
+		public class NoLeaderInfo : ReadResponseException;
 	}
 }

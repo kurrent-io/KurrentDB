@@ -1,8 +1,7 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.TransactionLog.Chunks;
 
 namespace EventStore.Core.Settings;
 
@@ -16,7 +15,7 @@ public static class ESConsts {
 	public const int ReadRequestTimeout = 10000;
 	public const bool PerformAdditionlCommitChecks = false;
 	public const int MetaStreamMaxCount = 1;
-		
+
 	public const int CachedPrincipalCount = 1000;
 
 	public static readonly TimeSpan HttpTimeout = TimeSpan.FromSeconds(10);

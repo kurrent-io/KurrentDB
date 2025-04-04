@@ -1,8 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Bus.Helpers;
@@ -21,43 +22,28 @@ public abstract class when_stopping_queued_handler : QueuedHandlerTestWithNoopCo
 	[Test]
 	public void gracefully_should_not_throw() {
 		Queue.Start();
-		Assert.DoesNotThrow(() => Queue.Stop());
+		Assert.DoesNotThrowAsync(Queue.Stop);
 	}
 
 	[Test]
-	public void gracefully_and_queue_is_not_busy_should_not_take_much_time() {
+	public async Task gracefully_and_queue_is_not_busy_should_not_take_much_time() {
 		Queue.Start();
-
-		var wait = new ManualResetEventSlim(false);
-
-		ThreadPool.QueueUserWorkItem(_ => {
-			Queue.Stop();
-			wait.Set();
-		});
-
-		Assert.IsTrue(wait.Wait(5000), "Could not stop queue in time.");
+		await Queue.Stop().WaitAsync(TimeSpan.FromMilliseconds(5000));
 	}
 
 	[Test]
 	public void second_time_should_not_throw() {
 		Queue.Start();
-		Queue.Stop();
-		Assert.DoesNotThrow(() => Queue.Stop());
+		Assert.DoesNotThrowAsync(Queue.Stop);
 	}
 
 	[Test]
-	public void second_time_should_not_take_much_time() {
+	public async Task second_time_should_not_take_much_time() {
 		Queue.Start();
-		Queue.Stop();
+		await Queue.Stop().WaitAsync(TimeSpan.FromMilliseconds(5000))
+			.ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext | ConfigureAwaitOptions.SuppressThrowing);
 
-		var wait = new ManualResetEventSlim(false);
-
-		ThreadPool.QueueUserWorkItem(_ => {
-			Queue.Stop();
-			wait.Set();
-		});
-
-		Assert.IsTrue(wait.Wait(1000), "Could not stop queue in time.");
+		Assert.IsTrue(Queue.Stop().IsCompletedSuccessfully);
 	}
 
 	[Test]
@@ -76,12 +62,12 @@ public abstract class when_stopping_queued_handler : QueuedHandlerTestWithNoopCo
 			}));
 
 			handledEvent.WaitOne();
-			Assert.Throws<TimeoutException>(() => busyQueue.Stop());
+			Assert.ThrowsAsync<TimeoutException>(busyQueue.Stop);
 		} finally {
 			waitHandle.Set();
 			consumer.Wait();
 
-			busyQueue.Stop();
+			busyQueue.RequestStop();
 			waitHandle.Dispose();
 			handledEvent.Dispose();
 			consumer.Dispose();

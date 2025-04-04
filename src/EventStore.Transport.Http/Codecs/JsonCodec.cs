@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Text;
@@ -36,7 +36,7 @@ public class JsonCodec : ICodec {
 		DefaultValueHandling = DefaultValueHandling.Include,
 		MissingMemberHandling = MissingMemberHandling.Ignore,
 		TypeNameHandling = TypeNameHandling.None,
-		Converters = new JsonConverter[] {new StringEnumConverter()}
+		Converters = new JsonConverter[] { new StringEnumConverter() }
 	};
 
 
@@ -62,9 +62,9 @@ public class JsonCodec : ICodec {
 
 	public bool SuitableForResponse(MediaType component) {
 		return component.Type == "*"
-		       || (string.Equals(component.Type, "application", StringComparison.OrdinalIgnoreCase)
-		           && (component.Subtype == "*"
-		               || string.Equals(component.Subtype, "json", StringComparison.OrdinalIgnoreCase)));
+			   || (string.Equals(component.Type, "application", StringComparison.OrdinalIgnoreCase)
+				   && (component.Subtype == "*"
+					   || string.Equals(component.Subtype, "json", StringComparison.OrdinalIgnoreCase)));
 	}
 
 	public T From<T>(string text) {

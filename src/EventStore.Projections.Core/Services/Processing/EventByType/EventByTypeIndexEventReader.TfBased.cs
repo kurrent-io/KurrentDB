@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -15,8 +15,7 @@ using EventStore.Projections.Core.Messages;
 
 namespace EventStore.Projections.Core.Services.Processing.EventByType;
 
-public partial class EventByTypeIndexEventReader
-{
+public partial class EventByTypeIndexEventReader {
 	private class TfBased : State,
 		IHandle<ClientMessage.ReadAllEventsForwardCompleted>,
 		IHandle<ProjectionManagementMessage.Internal.ReadTimeout> {
@@ -114,9 +113,12 @@ public partial class EventByTypeIndexEventReader
 		}
 
 		public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-			if (_disposed) return;
-			if (_reader.Paused) return;
-			if (message.CorrelationId != _pendingRequestCorrelationId) return;
+			if (_disposed)
+				return;
+			if (_reader.Paused)
+				return;
+			if (message.CorrelationId != _pendingRequestCorrelationId)
+				return;
 
 			_tfEventsRequested = false;
 			_reader.PauseOrContinueProcessing();

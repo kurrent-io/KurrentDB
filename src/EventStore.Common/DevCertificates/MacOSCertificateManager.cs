@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -20,7 +20,7 @@ internal sealed class MacOSCertificateManager : CertificateManager {
 	private const string CertificateSubjectRegex = "CN=(.*[^,]+).*";
 
 	private static readonly string MacOSUserKeyChain =
-            $"{RuntimeInformation.HomeFolder}/Library/Keychains/login.keychain-db";
+			$"{RuntimeInformation.HomeFolder}/Library/Keychains/login.keychain-db";
 
 	private const string MacOSSystemKeyChain = "/Library/Keychains/System.keychain";
 	private const string MacOSFindCertificateCommandLine = "security";
@@ -80,7 +80,7 @@ internal sealed class MacOSCertificateManager : CertificateManager {
 			}
 
 			using (var process = Process.Start(MacOSTrustCertificateCommandLine,
-				       MacOSTrustCertificateCommandLineArguments + tmpFile)) {
+					   MacOSTrustCertificateCommandLineArguments + tmpFile)) {
 				process.WaitForExit();
 				if (process.ExitCode != 0) {
 					Log.MacOSTrustCommandError(process.ExitCode);

@@ -4,7 +4,7 @@ order: 1
 
 # System projections
 
-EventStoreDB ships with five built in projections:
+KurrentDB ships with five built in projections:
 
 - [By Category](#by-category) (`$by_category`)
 - [By Event Type](#by-event-type) (`$by_event_type`)
@@ -14,7 +14,7 @@ EventStoreDB ships with five built in projections:
 
 ## Enabling system projections
 
-When you start EventStoreDB from a fresh database, these projections are present but disabled and querying
+When you start KurrentDB from a fresh database, these projections are present but disabled and querying
 their statuses returns `Stopped`. You can enable a projection by issuing a request which switches the status
 of the projection from `Stopped` to `Running`.
 

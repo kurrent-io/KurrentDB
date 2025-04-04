@@ -1,30 +1,31 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using EventStore.Common.Utils;
+using EventStore.Core.Authentication.InternalAuthentication;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.UserManagement;
 using Newtonsoft.Json;
-using EventStore.Common.Utils;
-using EventStore.Core.Authentication.InternalAuthentication;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http.Authentication;
 
-public class PasswordChangeNotificationReader : IHandle<SystemMessage.SystemStart>,
+public class PasswordChangeNotificationReader :
+	IHandle<SystemMessage.SystemStart>,
 	IHandle<SystemMessage.BecomeShutdown> {
+
+	private readonly ILogger _log = Serilog.Log.ForContext<UserManagementService>();
 	private readonly IPublisher _publisher;
 	private readonly IODispatcher _ioDispatcher;
-	private readonly ILogger _log;
 	private bool _stopped;
 
 	public PasswordChangeNotificationReader(IPublisher publisher, IODispatcher ioDispatcher) {
 		_publisher = publisher;
 		_ioDispatcher = ioDispatcher;
-		_log = Serilog.Log.ForContext<UserManagementService>();
 	}
 
 	private void Start() {
@@ -43,42 +44,45 @@ public class PasswordChangeNotificationReader : IHandle<SystemMessage.SystemStar
 							ReadNotificationsFrom(completed.Events[0].Event.EventNumber + 1);
 						break;
 					default:
-						throw new Exception(
-							"Failed to initialize password change notification reader. Cannot read "
-							+ UserManagementService.UserPasswordNotificationsStreamId + " Error: "
-							+ completed.Result);
+						throw new($"Failed to initialize password change notification reader. Cannot read {UserManagementService.UserPasswordNotificationsStreamId} Error: {completed.Result}");
 				}
 			});
 	}
 
 	private void ReadNotificationsFrom(long fromEventNumber) {
-		if (_stopped) return;
+		if (_stopped)
+			return;
 		_ioDispatcher.ReadForward(
-			UserManagementService.UserPasswordNotificationsStreamId, fromEventNumber, 100, false,
-			SystemAccounts.System, completed => {
-				if (_stopped) return;
+			UserManagementService.UserPasswordNotificationsStreamId,
+			fromEventNumber,
+			100,
+			false,
+			SystemAccounts.System,
+			completed => {
+				if (_stopped)
+					return;
 				switch (completed.Result) {
 					case ReadStreamResult.AccessDenied:
 					case ReadStreamResult.Error:
 					case ReadStreamResult.NotModified:
-						_log.Error("Failed to read: {stream} completed.Result={e}",
-							UserManagementService.UserPasswordNotificationsStreamId, completed.Result.ToString());
-						_ioDispatcher.Delay(
-							TimeSpan.FromSeconds(10), _ => ReadNotificationsFrom(fromEventNumber));
+						_log.Error("Failed to read: {stream} completed.Result={e}", UserManagementService.UserPasswordNotificationsStreamId, completed.Result.ToString());
+						_ioDispatcher.Delay(TimeSpan.FromSeconds(10), _ => ReadNotificationsFrom(fromEventNumber));
 						break;
 					case ReadStreamResult.NoStream:
 					case ReadStreamResult.StreamDeleted:
-						_ioDispatcher.Delay(
-							TimeSpan.FromSeconds(1), _ => ReadNotificationsFrom(0));
+						_ioDispatcher.Delay(TimeSpan.FromSeconds(1), _ => ReadNotificationsFrom(0));
 						break;
 					case ReadStreamResult.Success:
-						foreach (var @event in completed.Events)
+						foreach (var @event in completed.Events) {
 							PublishPasswordChangeNotificationFrom(@event);
-						if (completed.IsEndOfStream)
-							_ioDispatcher.Delay(
-								TimeSpan.FromSeconds(1), _ => ReadNotificationsFrom(completed.NextEventNumber));
-						else
+						}
+
+						if (completed.IsEndOfStream) {
+							_ioDispatcher.Delay(TimeSpan.FromSeconds(1), _ => ReadNotificationsFrom(completed.NextEventNumber));
+						} else {
 							ReadNotificationsFrom(completed.NextEventNumber);
+						}
+
 						break;
 					default:
 						throw new NotSupportedException();
@@ -102,19 +106,13 @@ public class PasswordChangeNotificationReader : IHandle<SystemMessage.SystemStar
 		var data = @event.Event.Data;
 		try {
 			var notification = data.ParseJson<Notification>();
-			_publisher.Publish(
-				new InternalAuthenticationProviderMessages.ResetPasswordCache(notification.LoginName));
+			_publisher.Publish(new InternalAuthenticationProviderMessages.ResetPasswordCache(notification.LoginName));
 		} catch (JsonException ex) {
-			_log.Error("Failed to de-serialize event #{eventNumber}. Error: '{e}'", @event.OriginalEventNumber,
-				ex.Message);
+			_log.Error("Failed to de-serialize event #{eventNumber}. Error: '{e}'", @event.OriginalEventNumber, ex.Message);
 		}
 	}
 
-	public void Handle(SystemMessage.SystemStart message) {
-		Start();
-	}
+	public void Handle(SystemMessage.SystemStart message) => Start();
 
-	public void Handle(SystemMessage.BecomeShutdown message) {
-		_stopped = true;
-	}
+	public void Handle(SystemMessage.BecomeShutdown message) => _stopped = true;
 }

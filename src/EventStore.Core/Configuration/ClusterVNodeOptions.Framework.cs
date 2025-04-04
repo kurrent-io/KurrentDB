@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
 
@@ -47,7 +47,7 @@ public partial record ClusterVNodeOptions {
 
 			return type.GetProperties().Select(property =>
 				new KeyValuePair<string, object?>(property.Name, property.PropertyType switch {
-					{IsArray: true} => string.Join(",",
+					{ IsArray: true } => string.Join(",",
 						((Array)(property.GetValue(defaultInstance) ?? Array.Empty<object>())).OfType<object>()),
 					_ => property.GetValue(defaultInstance)
 				}));
@@ -66,13 +66,13 @@ public partial record ClusterVNodeOptions {
 		var defaultValues = new Dictionary<string, object?>(DefaultValues, StringComparer.OrdinalIgnoreCase);
 
 		var deprecationWarnings = from section in OptionSections
-			from option in section.GetProperties()
-			let deprecationWarning = option.GetCustomAttribute<DeprecatedAttribute>()?.Message
-			where deprecationWarning is not null
-			let value = ConfigurationRoot?.GetValue<string?>(KurrentConfigurationKeys.Normalize(option.Name))
-			where defaultValues.TryGetValue(option.Name, out var defaultValue)
-			      && !string.Equals(value, defaultValue?.ToString(), StringComparison.OrdinalIgnoreCase)
-			      select deprecationWarning;
+								  from option in section.GetProperties()
+								  let deprecationWarning = option.GetCustomAttribute<DeprecatedAttribute>()?.Message
+								  where deprecationWarning is not null
+								  let value = ConfigurationRoot?.GetValue<string?>(KurrentConfigurationKeys.Normalize(option.Name))
+								  where defaultValues.TryGetValue(option.Name, out var defaultValue)
+										&& !string.Equals(value, defaultValue?.ToString(), StringComparison.OrdinalIgnoreCase)
+								  select deprecationWarning;
 
 		var builder = deprecationWarnings
 			.Aggregate(new StringBuilder(), (builder, deprecationWarning) => builder.AppendLine(deprecationWarning));
@@ -96,7 +96,8 @@ public partial record ClusterVNodeOptions {
 		// then we can override them with the actual values.
 		foreach (var provider in configurationRoot.Providers) {
 			foreach (var option in Metadata.SelectMany(x => x.Options)) {
-				if (!provider.TryGet(option.Value.Key, out var value)) continue;
+				if (!provider.TryGet(option.Value.Key, out var value))
+					continue;
 
 				var title = GetTitle(option);
 				var sourceDisplayName = GetSourceDisplayName(option.Value.Key, provider);
@@ -219,8 +220,8 @@ public partial record ClusterVNodeOptions {
 			return (value, RuntimeInformation.IsWindows) switch {
 				(bool b, false) => b.ToString().ToLower(),
 				(bool b, true) => b.ToString(),
-				(Array {Length: 0}, _) => string.Empty,
-				(Array {Length: >0} a, _) => string.Join(",", a.OfType<object>()),
+				(Array { Length: 0 }, _) => string.Empty,
+				(Array { Length: > 0 } a, _) => string.Join(",", a.OfType<object>()),
 				_ => value?.ToString() ?? string.Empty
 			};
 		}

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 namespace EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
 
@@ -84,8 +84,7 @@ public abstract class PinnablePersistentSubscriptionConsumerStrategy : IPersiste
 
 	protected abstract string GetAssignmentSourceId(ResolvedEvent ev);
 
-	protected string GetSourceStreamId(ResolvedEvent ev)
-	{
+	protected string GetSourceStreamId(ResolvedEvent ev) {
 		var eventRecord = ev.Event ?? ev.Link; // Unresolved link just use the link
 
 		string sourceStreamId = eventRecord.EventStreamId;
@@ -94,8 +93,7 @@ public abstract class PinnablePersistentSubscriptionConsumerStrategy : IPersiste
 		{
 			sourceStreamId = Helper.UTF8NoBom.GetString(eventRecord.Data.Span);
 			int separatorIndex = sourceStreamId.IndexOf(LinkToSeparator);
-			if (separatorIndex != -1)
-			{
+			if (separatorIndex != -1) {
 				sourceStreamId = sourceStreamId.Substring(separatorIndex + 1);
 			}
 		}

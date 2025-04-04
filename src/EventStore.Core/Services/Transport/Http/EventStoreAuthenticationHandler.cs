@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
@@ -13,25 +13,19 @@ namespace EventStore.Core.Services.Transport.Http;
 // ClaimsPrinciple that it has left in the context.
 // todo: figure out why AuthenticationMiddleware is as complicated as it is and whether it
 // should be replaced with an AuthenticationHandler (or several)
-public class EventStoreAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions> {
-	public EventStoreAuthenticationHandler(
-		IOptionsMonitor<AuthenticationSchemeOptions> options,
-		// we could pass the logger through instead of NullLoggerFactory but we have debug logging
-		// on by default and it will log successes unless we change the level in the config:
-		// "EventStore.Core.Services.Transport.Http.EventStoreAuthenticationHandler": "Information"
-		// instead we should rationalize the log levels, turn off debug logging, and then pass this through.
-		// ILoggerFactory logger,
-		UrlEncoder encoder)
-		: base(options, NullLoggerFactory.Instance, encoder) {
-	}
-
+public class EventStoreAuthenticationHandler(
+	IOptionsMonitor<AuthenticationSchemeOptions> options,
+	// we could pass the logger through instead of NullLoggerFactory, but we have debug logging
+	// on by default, and it will log successes unless we change the level in the config:
+	// "EventStore.Core.Services.Transport.Http.EventStoreAuthenticationHandler": "Information"
+	// instead we should rationalize the log levels, turn off debug logging, and then pass this through.
+	// ILoggerFactory logger,
+	UrlEncoder encoder) : AuthenticationHandler<AuthenticationSchemeOptions>(options, NullLoggerFactory.Instance, encoder) {
 	protected override Task<AuthenticateResult> HandleAuthenticateAsync() {
-		if (!Context.User.Identity.IsAuthenticated)
+		if (!Context.User.Identity!.IsAuthenticated)
 			return Task.FromResult(AuthenticateResult.Fail("Not authenticated"));
 
-		var ticket = new AuthenticationTicket(
-			principal: Context.User,
-			authenticationScheme: "es auth");
+		var ticket = new AuthenticationTicket(principal: Context.User, authenticationScheme: "kurrent auth");
 
 		return Task.FromResult(AuthenticateResult.Success(ticket));
 	}

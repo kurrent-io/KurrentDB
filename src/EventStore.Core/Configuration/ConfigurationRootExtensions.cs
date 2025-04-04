@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 
@@ -23,8 +23,8 @@ public static class ConfigurationRootExtensions {
 		foreach (var provider in configurationRoot.Providers) {
 			var source = provider.GetType();
 			if (source == typeof(EventStoreCommandLineConfigurationProvider) ||
-			    source == typeof(EventStoreEnvironmentVariablesConfigurationProvider) ||
-			    source == typeof(EventStoreJsonFileConfigurationProvider)) {
+				source == typeof(EventStoreEnvironmentVariablesConfigurationProvider) ||
+				source == typeof(EventStoreJsonFileConfigurationProvider)) {
 				errorMessages.AddRange(
 					provider.GetChildKeys().Select(
 						key =>
@@ -88,7 +88,8 @@ public static class ConfigurationRootExtensions {
 
 		var warnings = new List<string>();
 		foreach (var legacyOption in optionsWithLegacyDefaults) {
-			if (!legacyLocationsProvider.TryGet(legacyOption.OptionKey, out var value)) continue;
+			if (!legacyLocationsProvider.TryGet(legacyOption.OptionKey, out var value))
+				continue;
 			if (value is not null) {
 				warnings.Add($"\"{legacyOption.OptionKey}\": The default location \"{legacyOption.KurrentPath}\" was not found, using the legacy default location \"{value}\".");
 			}

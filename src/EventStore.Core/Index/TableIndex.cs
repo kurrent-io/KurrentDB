@@ -1,26 +1,21 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Diagnostics;
 using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.Util;
 using EventStore.Core.Index.Hashes;
 using EventStore.Core.Settings;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
+using EventStore.Core.TransactionLog;
+using EventStore.Core.Util;
 using ILogger = Serilog.ILogger;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.LogCommon;
 
 namespace EventStore.Core.Index;
 
@@ -110,7 +105,8 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		if (maxTablesPerLevel <= 1)
 			throw new ArgumentOutOfRangeException("maxTablesPerLevel");
 
-		if (indexCacheDepth > 28 || indexCacheDepth < 8) throw new ArgumentOutOfRangeException("indexCacheDepth");
+		if (indexCacheDepth > 28 || indexCacheDepth < 8)
+			throw new ArgumentOutOfRangeException("indexCacheDepth");
 
 		_directory = directory;
 		_memTableFactory = memTableFactory;
@@ -127,7 +123,7 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		_useBloomFilter = useBloomFilter;
 		_lruCacheSize = lruCacheSize;
 		_ptableVersion = ptableVersion;
-		_awaitingMemTables = new List<TableItem> {new TableItem(_memTableFactory(), -1, -1, 0)};
+		_awaitingMemTables = new List<TableItem> { new TableItem(_memTableFactory(), -1, -1, 0) };
 
 		_lowHasher = lowHasher;
 		_highHasher = highHasher;
@@ -202,7 +198,7 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		var indexFiles = _indexMap.InOrder().SelectMany(x => new[] {
 				Path.GetFileName(x.Filename),
  					Path.GetFileName(x.BloomFilterFilename) })
-			.Union(new[] {IndexMapFilename});
+			.Union(new[] { IndexMapFilename });
 		var toDeleteFiles = Directory.EnumerateFiles(_directory).Select(Path.GetFileName)
 			.Except(indexFiles, StringComparer.OrdinalIgnoreCase);
 		foreach (var filePath in toDeleteFiles) {
@@ -243,7 +239,7 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 		Ensure.Nonnegative(version, "version");
 		Ensure.Nonnegative(position, "position");
 
-		AddEntries(commitPos, new[] {CreateIndexKey(streamId, version, position)});
+		AddEntries(commitPos, new[] { CreateIndexKey(streamId, version, position) });
 	}
 
 	public void AddEntries(long commitPos, IList<IndexKey<TStreamId>> entries) {
@@ -275,14 +271,15 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 	//Automerge only
 	private void TryProcessAwaitingTables(long commitPos, long prepareCheckpoint) {
 		lock (_awaitingTablesLock) {
-			var newTables = new List<TableItem> {new TableItem(_memTableFactory(), -1, -1, 0)};
+			var newTables = new List<TableItem> { new TableItem(_memTableFactory(), -1, -1, 0) };
 			newTables.AddRange(_awaitingMemTables.Select(
 				(x, i) => i == 0 ? new TableItem(x.Table, prepareCheckpoint, commitPos, x.Level) : x));
 
 			Log.Debug("Switching MemTable, currently: {awaitingMemTables} awaiting tables.", newTables.Count);
 
 			_awaitingMemTables = newTables;
-			if (_inMem) return;
+			if (_inMem)
+				return;
 			TryProcessAwaitingTables();
 
 			if (_additionalReclaim)
@@ -530,7 +527,8 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 			lock (_awaitingTablesLock) {
 				for (var j = _awaitingMemTables.Count - 1; j >= 1; j--) {
 					var tableItem = _awaitingMemTables[j];
-					if (!(tableItem.Table is IMemTable) || tableItem.Table.Id != ptable.Id) continue;
+					if (!(tableItem.Table is IMemTable) || tableItem.Table.Id != ptable.Id)
+						continue;
 					swapped = true;
 					_awaitingMemTables[j] = new TableItem(ptable,
 						tableItem.PrepareCheckpoint,
@@ -923,7 +921,8 @@ public class TableIndex<TStreamId> : TableIndex, ITableIndex<TStreamId> {
 			throw new TimeoutException("Could not finish background thread in reasonable time.");
 		if (_inMem)
 			return;
-		if (_indexMap == null) return;
+		if (_indexMap == null)
+			return;
 		if (removeFiles) {
 			_indexMap.InOrder().ToList().ForEach(x => x.MarkForDestruction());
 			var fileName = Path.Combine(_directory, IndexMapFilename);

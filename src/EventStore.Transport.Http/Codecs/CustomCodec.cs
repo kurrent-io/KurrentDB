@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Text;
@@ -45,7 +45,7 @@ public class CustomCodec : ICodec {
 		_codec = codec;
 		_contentType = contentType;
 		_encoding = encoding;
-		var parts = contentType.Split(new[] {'/'}, 2);
+		var parts = contentType.Split(new[] { '/' }, 2);
 		if (parts.Length != 2)
 			throw new ArgumentException("contentType");
 		_type = parts[0];
@@ -58,9 +58,9 @@ public class CustomCodec : ICodec {
 
 	public bool SuitableForResponse(MediaType component) {
 		return component.Type == "*"
-		       || (string.Equals(component.Type, _type, StringComparison.OrdinalIgnoreCase)
-		           && (component.Subtype == "*"
-		               || string.Equals(component.Subtype, _subtype, StringComparison.OrdinalIgnoreCase)));
+			   || (string.Equals(component.Type, _type, StringComparison.OrdinalIgnoreCase)
+				   && (component.Subtype == "*"
+					   || string.Equals(component.Subtype, _subtype, StringComparison.OrdinalIgnoreCase)));
 	}
 
 	public T From<T>(string text) {

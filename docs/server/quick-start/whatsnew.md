@@ -4,16 +4,98 @@ order: 2
 
 # What's New
 
-## New features
+## New in 25.0
 
-* Connectors:
+These are the new features in KurrentDB 25.0:
+
+* [Archiving](#archiving)
+* [KurrentDB rebranding](#kurrentdb-rebranding)
+* [New embedded Web UI](#new-embedded-web-ui)
+* [New versioning scheme and release schedule](#new-versioning-scheme-and-release-schedule)
+
+### Archiving
+
+<Badge type="info" vertical="middle" text="License Required"/>
+
+KurrentDB 25.0 introduces the initial release of Archiving: a new major feature to reduce costs and increase scalability of a KurrentDB cluster.
+
+With the new Archiving feature, data is uploaded to cheaper storage such as Amazon S3 and then can be removed from the volumes attached to the cluster nodes. The volumes can be correspondingly smaller and cheaper. The nodes are all able to read the archive, and when a read request from a client requires data that is stored in the archive, the node retrieves that data from the archive transparently to the client.
+
+Refer to [the documentation](../features/archiving.md) for more information about archiving and instructions on how to set it up.
+
+### KurrentDB rebranding
+
+Event Store – the company and the product – are rebranding as Kurrent.
+
+As part of this rebrand, EventStoreDB has been renamed to KurrentDB, with the first release of KurrentDB being version 25.0.
+
+Read more about the rebrand in the [rebrand FAQ](https://www.kurrent.io/blog/kurrent-re-brand-faq).
+
+The KurrentDB packages are still hosted on [Cloudsmith](https://cloudsmith.io/~eventstore/repos/kurrent/packages/). Refer to [the upgrade guide](./upgrade-guide.md) to see what's changed between EventStoreDB and KurrentDB, or [the installation guide](./installation.md) for updated installation instructions.
+
+### New embedded Web UI
+
+In the new embedded Web UI you can see at a glance:
+
+- A summary of the cluster status
+- A summary of resource utilization
+- Recent log messages
+- Node configuration
+- License status
+
+### New versioning scheme and release schedule
+
+We are changing the version scheme with the first official release of KurrentDB.
+
+As before, there will be two categories of release:
+* Long term support (LTS) releases which are supported for a minimum of two years, with a two month grace period.
+* Short term support (STS) releases which are supported until the next LTS or STS release.
+
+The version number will now reflect whether a release is an LTS or feature release, rather than being based on the year and month. LTS releases will have _even_ major numbers, and STS releases will have _odd_ major numbers.
+
+#### Versioning scheme
+
+The new scheme is `Major.Minor.Patch` where:
+* `Major`
+    * Is _even_ for LTS releases.
+    * Is _odd_ for STS releases.
+* `Minor`
+    * Increments with scope changes or new features.
+    * Is typically `0` for LTS releases, but may be incremented in rare cases.
+* `Patch` for bug fixes.
+
+#### New release schedule
+
+The release schedule will be changing with the versioning scheme, given that the version numbers are no longer tied to the year and month:
+
+* LTS: Approximately one LTS release per year.
+* STS: Published as necessary when sets of features are ready.
+* Patch (LTS and STS): Published as necessary with bugfixes.
+
+[More information](../release-schedule/)
+
+#### New package repositories
+
+Packages for KurrentDB will still be published to [Cloudsmith](https://cloudsmith.io/~eventstore), into the following repositories:
+
+- [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+- [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
+- [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview) containing non-production preview packages.
+
+[More information](../quick-start/installation.md)
+
+## New in 24.10
+
+These are the new features that were added in EventStoreDB 24.10:
+
+* [Connectors](#connectors):
     * Kafka
     * MongoDB
     * RabbitMQ
     * HTTP
-* Auto-scavenge: Schedule and execute scavenges automatically across a cluster.
-* Stream Policy: Define stream access policies based on stream prefixes rather than using stream ACLs.
-* Encryption-at-rest: Encrypt EventStoreDB chunks to secure them against attackers with file access to the database.
+* [Auto-scavenge](#auto-scavenge): Schedule and execute scavenges automatically across a cluster.
+* [Stream policy](#stream-policy): Define stream access policies based on stream prefixes rather than using stream ACLs.
+* [Encryption-at-rest](#encryption-at-rest): Encrypt EventStoreDB chunks to secure them against attackers with file access to the database.
 
 ### Connectors
 
@@ -85,7 +167,7 @@ The auto-scavenge feature requires a license to use. EventStoreDB will only star
 
 Refer to the [documentation](../operations/auto-scavenge.md) for instructions on enabling and using this feature.
 
-### Stream Policy
+### Stream policy
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
@@ -108,18 +190,6 @@ If Encryption-at-rest is enabled, it is impossible to roll back to an unencrypte
 
 Refer to the [documentation](../security/README.md#encryption-at-rest) for more information about using and configuring this feature.
 
-## Event Store License v2
-
-Starting with the 24.10 LTS release, we are transitioning to a new licensing model: the Event Store License v2 (ESLv2).
-
-The new license model changes how EventStoreDB is packaged and how certain features are enabled. A summary of how this affects installing and running EventStoreDB is listed below. Check out [the announcement](https://www.eventstore.com/blog/introducing-event-store-license-v2-eslv2) for the full details.
-
-### Unified binary release
-
-There is no longer a distinction between OSS and commercial binaries for EventStoreDB.
-
-Instead, there is a single binary artifact that anyone can access and use, but a license key is required to use enterprise features.
-
 ### Enterprise features now require a license key
 
 Customers can unlock the enterprise features of EventStoreDB with a license key. This applies to the previous commercial plugins and several of the new features in this release.
@@ -133,9 +203,3 @@ You will need to provide a license key if you want to enable or use the followin
 * OAuth authentication
 * Logs Endpoint
 * OTLP Endpoint
-
-Refer to the [documentation](../quick-start/installation.md#license-keys) for more information about using a license key.
-
-### EventStoreDB binaries have moved to Cloudsmith
-
-All EventStoreDB binaries are now available on [Cloudsmith](https://cloudsmith.io/~eventstore/repos/eventstore/). In addition, the RedHat binaries which were previously commercial-only can now be accessed by all users of EventStoreDB.

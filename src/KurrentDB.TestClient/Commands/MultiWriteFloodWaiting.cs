@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -72,9 +72,11 @@ internal class MultiWriteFloodWaitingProcessor : ICmdProcessor {
 
 					var dto = pkg.Data.Deserialize<WriteEventsCompleted>();
 					if (dto.Result == OperationResult.Success) {
-						if (Interlocked.Increment(ref succ) % 1000 == 0) Console.Write(".");
+						if (Interlocked.Increment(ref succ) % 1000 == 0)
+							Console.Write(".");
 					} else {
-						if (Interlocked.Increment(ref fail) % 1000 == 0) Console.Write("#");
+						if (Interlocked.Increment(ref fail) % 1000 == 0)
+							Console.Write("#");
 					}
 
 					if (Interlocked.Increment(ref all) == requestsCnt) {
@@ -103,7 +105,7 @@ internal class MultiWriteFloodWaitingProcessor : ICmdProcessor {
 					client.EnqueueSend(package.AsByteArray());
 					localDoneEvent.WaitOne();
 				}
-			}) {IsBackground = true});
+			}) { IsBackground = true });
 		}
 
 		var sw = Stopwatch.StartNew();

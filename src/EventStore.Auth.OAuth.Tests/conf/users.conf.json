@@ -1,0 +1,30 @@
+[
+	{
+		"subjectId": "1",
+		"username": "admin",
+		"password": "password",
+		"claims": [{
+			"type": "role",
+			"value": "$admins"
+		}, {
+			"type": "role",
+			"value": "$ops"
+		}, {
+			"type": "given_name",
+			"value": "Alice Smith"
+		}]
+	}, 	{
+		"subjectId": "2",
+		"username": "operator",
+		"password": "password",
+		"claims": [{
+			"type": "role",
+			"value": "$ops"
+		}]
+	}, 	{
+		"subjectId": "3",
+		"username": "user",
+		"password": "password",
+		"claims": []
+	}
+]

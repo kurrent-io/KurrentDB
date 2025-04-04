@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -18,11 +18,11 @@ public class FakeIndexWriter<TStreamId> : IIndexWriter<TStreamId> {
 
 	private TStreamId GetFakeStreamId() {
 		if (typeof(TStreamId) == typeof(long)) {
-			return (TStreamId) (object) 0L;
+			return (TStreamId)(object)0L;
 		}
 
 		if (typeof(TStreamId) == typeof(string)) {
-			return (TStreamId) (object) string.Empty;
+			return (TStreamId)(object)string.Empty;
 		}
 
 		throw new NotSupportedException();

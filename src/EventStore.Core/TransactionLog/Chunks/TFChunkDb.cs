@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -30,8 +30,6 @@ public sealed class TFChunkDb : IAsyncDisposable {
 		ILogger log = null,
 		IChunkFileSystem fileSystem = null,
 		DbTransformManager transformManager = null,
-		Action<Data.ChunkInfo> onChunkLoaded = null,
-		Action<Data.ChunkInfo> onChunkCompleted = null,
 		Action<Data.ChunkInfo> onChunkSwitched = null) {
 		Ensure.NotNull(config, "config");
 
@@ -41,9 +39,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 		fileSystem ??= new ChunkLocalFileSystem(config.Path);
 
 		Manager = new TFChunkManager(Config, fileSystem, _tracker, TransformManager) {
-			OnChunkLoaded = onChunkLoaded,
-			OnChunkCompleted = onChunkCompleted,
-			OnChunkSwitched = onChunkSwitched
+			OnChunkSwitched = onChunkSwitched,
 		};
 
 		_log = log ?? Serilog.Log.ForContext<TFChunkDb>();
@@ -74,7 +70,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 
 					// fine for last chunk to be 'missing' (not created yet)
 					break;
-				// OldVersion: don't open old versions. they will soon be deleted
+					// OldVersion: don't open old versions. they will soon be deleted
 			}
 		}
 	}
@@ -101,15 +97,16 @@ public sealed class TFChunkDb : IAsyncDisposable {
 		}
 
 		var lastChunkNum = (int)(writerCheckpoint / Config.ChunkSize);
-		var lastChunkVersions = Manager.FileSystem.NamingStrategy.GetAllVersionsFor(lastChunkNum);
+		// the lastChunk num doesn't necessarily exist yet, but it has not been removed due to archiving
+		// because that can only happen after the writerCheckpoint has advanced to the next chunk.
+		var lastChunkVersions = Manager.FileSystem.LocalNamingStrategy.GetAllVersionsFor(lastChunkNum);
 		var chunkEnumerator = Manager.FileSystem.GetChunks();
-		var getTransformFactoryForExistingChunk = TransformManager.GetFactoryForExistingChunk;
 
 		// Open the historical chunks. New records will not be written to any of these.
 		// (but the last one may need completing)
 		chunkEnumerator.LastChunkNumber = lastChunkNum;
 		await Parallel.ForEachAsync(GetHistoricalChunks(chunkEnumerator, token),
-			new ParallelOptions {MaxDegreeOfParallelism = threads, CancellationToken = token},
+			new ParallelOptions { MaxDegreeOfParallelism = threads, CancellationToken = token },
 			async (chunkInfo, token) => {
 				TFChunk.TFChunk chunk;
 				if (lastChunkVersions.Length == 0 &&
@@ -126,7 +123,8 @@ public sealed class TFChunkDb : IAsyncDisposable {
 							unbufferedRead: Config.Unbuffered,
 							tracker: _tracker,
 							reduceFileCachePressure: Config.ReduceFileCachePressure,
-							getTransformFactory: getTransformFactoryForExistingChunk,
+							getTransformFactory: TransformManager,
+							footer: footer,
 							token: token);
 					else {
 						chunk = await TFChunk.TFChunk.FromOngoingFile(
@@ -137,7 +135,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 							writethrough: Config.WriteThrough,
 							reduceFileCachePressure: Config.ReduceFileCachePressure,
 							tracker: _tracker,
-							getTransformFactory: getTransformFactoryForExistingChunk,
+							getTransformFactory: TransformManager,
 							token: token);
 						// chunk is full with data, we should complete it right here
 						if (!readOnly)
@@ -152,7 +150,8 @@ public sealed class TFChunkDb : IAsyncDisposable {
 						unbufferedRead: Config.Unbuffered,
 						reduceFileCachePressure: Config.ReduceFileCachePressure,
 						tracker: _tracker,
-						getTransformFactory: getTransformFactoryForExistingChunk,
+						getTransformFactory: TransformManager,
+						startNumber: chunkInfo.ChunkStartNumber,
 						token: token);
 				}
 
@@ -165,7 +164,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 			var onBoundary = writerCheckpoint == (Config.ChunkSize * (long)lastChunkNum);
 			if (!onBoundary)
 				throw new CorruptDatabaseException(
-					new ChunkNotFoundException(Manager.FileSystem.NamingStrategy.GetFilenameFor(lastChunkNum, 0)));
+					new ChunkNotFoundException(Manager.FileSystem.LocalNamingStrategy.GetFilenameFor(lastChunkNum, 0)));
 
 			if (!readOnly && createNewChunks)
 				await Manager.AddNewChunk(token);
@@ -194,7 +193,8 @@ public sealed class TFChunkDb : IAsyncDisposable {
 					unbufferedRead: Config.Unbuffered,
 					reduceFileCachePressure: Config.ReduceFileCachePressure,
 					tracker: _tracker,
-					getTransformFactory: getTransformFactoryForExistingChunk,
+					getTransformFactory: TransformManager,
+					header: chunkHeader,
 					token: token);
 
 				lastChunkNum = lastChunk.ChunkHeader.ChunkEndNumber + 1;
@@ -209,7 +209,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 
 					// as of recent versions, it's possible that a new chunk was already created as the writer checkpoint
 					// is updated & flushed _after_ the new chunk is created. if that's the case, we remove it.
-					var newChunk = Manager.FileSystem.NamingStrategy.GetFilenameFor(lastChunkNum, 0);
+					var newChunk = Manager.FileSystem.LocalNamingStrategy.GetFilenameFor(lastChunkNum, 0);
 					if (File.Exists(newChunk))
 						RemoveFile("Removing excessive chunk: {chunk}", newChunk);
 
@@ -225,7 +225,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 					writethrough: Config.WriteThrough,
 					reduceFileCachePressure: Config.ReduceFileCachePressure,
 					tracker: _tracker,
-					getTransformFactory: getTransformFactoryForExistingChunk,
+					getTransformFactory: TransformManager,
 					token: token);
 				await Manager.AddChunk(lastChunk, token);
 			}
@@ -247,11 +247,11 @@ public sealed class TFChunkDb : IAsyncDisposable {
 		}
 
 		if (verifyHash && lastChunkNum > 0) {
-			var preLastChunk = Manager.GetChunk(lastChunkNum - 1);
+			var preLastChunk = await Manager.GetInitializedChunk(lastChunkNum - 1, token);
 			var lastBgChunkNum = preLastChunk.ChunkHeader.ChunkStartNumber;
 			ThreadPool.UnsafeQueueUserWorkItem(async token => {
 				for (int chunkNum = lastBgChunkNum; chunkNum >= 0;) {
-					var chunk = Manager.GetChunk(chunkNum);
+					var chunk = Manager.UnsafeGetChunk(chunkNum);
 					try {
 						await chunk.VerifyFileHash(token);
 					} catch (FileBeingDeletedException exc) {
@@ -269,7 +269,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 						return;
 					}
 
-					chunkNum = chunk.ChunkHeader.ChunkStartNumber - 1;
+					chunkNum = chunk.ChunkInfo.ChunkStartNumber - 1;
 				}
 			}, token, preferLocal: false);
 		}
@@ -279,7 +279,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 
 	private static void ValidateReaderChecksumsMustBeLess(TFChunkDbConfig config) {
 		var current = config.WriterCheckpoint.Read();
-		foreach (var checkpoint in new[] {config.ChaserCheckpoint, config.EpochCheckpoint}) {
+		foreach (var checkpoint in new[] { config.ChaserCheckpoint, config.EpochCheckpoint }) {
 			if (checkpoint.Read() > current)
 				throw new CorruptDatabaseException(new ReaderCheckpointHigherThanWriterException(checkpoint.Name));
 		}
@@ -297,8 +297,8 @@ public sealed class TFChunkDb : IAsyncDisposable {
 					// there can be at most one excessive chunk at startup:
 					// when a new chunk was created but the writer checkpoint was not yet committed and flushed
 					if (start == chunkEnumerator.LastChunkNumber + 1 &&
-					    start == end &&
-					    Manager.FileSystem.NamingStrategy.GetVersionFor(Path.GetFileName(fileName)) == 0)
+						start == end &&
+						Manager.FileSystem.LocalNamingStrategy.GetVersionFor(Path.GetFileName(fileName)) == 0)
 						RemoveFile("Removing excessive chunk: {chunk}", fileName);
 					else if (start > chunkEnumerator.LastChunkNumber)
 						extraneousFiles.Add(fileName);
@@ -331,7 +331,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 	}
 
 	private void CleanUpTempFiles() {
-		var tempFiles = Manager.FileSystem.NamingStrategy.GetAllTempFiles();
+		var tempFiles = Manager.FileSystem.LocalNamingStrategy.GetAllTempFiles();
 		foreach (string tempFile in tempFiles) {
 			try {
 				RemoveFile("Deleting temporary file {file}...", tempFile);

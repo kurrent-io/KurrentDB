@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -37,7 +37,7 @@ public class mono_filestream_bug {
 			file.Read(new byte[pos], 0, pos); // THIS READ IS CRITICAL, WITHOUT IT EVERYTHING WORKS
 			Assert.AreEqual(pos,
 				file.Position); // !!! here it says position is correct, but writes at different position !!!
-			// file.Position = pos; // !!! this fixes test !!!
+								// file.Position = pos; // !!! this fixes test !!!
 			file.Write(bytes, 0, bytes.Length);
 
 			//Assert.AreEqual(pos + bytes.Length, file.Length); -- fails

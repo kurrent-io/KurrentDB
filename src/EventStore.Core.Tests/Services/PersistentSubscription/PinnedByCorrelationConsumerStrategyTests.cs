@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;
 
@@ -35,15 +35,14 @@ public class PinnedByCorrelationConsumerStrategyTests {
 		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata(Encoding.UTF8.GetBytes(@"{ ""x"": ""x"" }"));
 	}
 
-	
+
 	[Test]
 	public void live_subscription_with_pinned_by_correlation_pushes_events_with_metadata_with_invalid_correlation_to_same_client_for_stream_id() {
 		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata(Encoding.UTF8.GetBytes(@"{ ""$correlationId"": 0 }"));
 	}
 
 	private static void
-		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata(byte[] metaData)
-	{
+		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata(byte[] metaData) {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
@@ -92,7 +91,7 @@ public class PinnedByCorrelationConsumerStrategyTests {
 
 	[Test]
 	public void live_subscription_with_pinned_by_correlation_pushes_events_with_metadata_with_valid_correlation_to_same_client_for_correlation_id() {
-		
+
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();

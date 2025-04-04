@@ -3,17 +3,19 @@ title: "Installation"
 order: 3
 ---
 
+<CloudBanner />
+
 ## Quick start
 
-EventStoreDB can run as a single node or as a highly-available cluster. For the cluster deployment, you'd need three server nodes.
+KurrentDB can run as a single node or as a highly-available cluster. For the cluster deployment, you'd need three server nodes.
 
 The installation procedure consists of the following steps:
 
 - Create a configuration file for each cluster node. If you are using any licensed features, ensure that you configure a [license key](#license-keys).
-- Install EventStoreDB on each node using one of the available methods.
+- Install KurrentDB on each node using one of the available methods.
 - Obtain SSL certificates, either signed by a publicly trusted or private certificate authority.
 - Copy the configuration files and SSL certificates to each node.
-- Start the EventStoreDB service on each node.
+- Start the KurrentDB service on each node.
 - Check the cluster status using the Admin UI on any node.
 
 ### Default access
@@ -25,9 +27,9 @@ The installation procedure consists of the following steps:
 
 ### License Keys
 
-Some features of EventStoreDB require a license key to access.
+Some features of KurrentDB require a license key to access. When you purchase an enterprise subscription, the license key will be sent to your company's designated license administrator. Existing customers who would like to upgrade to a 24.10+ enterprise license should contact their Kurrent (formerly Event Store) account manager or contact us [here](https://www.kurrent.io/talk_to_expert). As an existing customer, you can also try the enterprise features by signing up for a [free trial license key](https://www.kurrent.io/kurrent_free_trial).
 
-The license key can be provided to EventStoreDB in different ways. Refer to the [configuration guide](../configuration/README.md) for more information.
+There are various ways to provide the license key to KurrentDB. For more information, refer to the [configuration guide](../configuration/README.md).
 
 Configuration file:
 
@@ -39,60 +41,90 @@ Licensing:
 Environment variable:
 
 ```
-EVENTSTORE_LICENSING__LICENSE_KEY
+KURRENTDB_LICENSING__LICENSE_KEY
 ```
 
-For most features that require a license, EventStoreDB will not start if the feature is enabled but the license key is not provided or is invalid.
+For most features that require a license, KurrentDB will not start if the feature is enabled but the license key is not provided or is invalid.
+
+## Package repositories
+
+Packages for KurrentDB are hosted on [Cloudsmith](https://cloudsmith.io/~eventstore), in the following repositories:
+
+* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview) containing non-production preview packages.
 
 ## Linux
 
-EventStoreDB has pre-built packages available on Cloudsmith for RedHat or Debian-based distributions.
-The name of the EventStoreDB package is `eventstoredb-ee`.
+KurrentDB has pre-built packages available on Cloudsmith for RedHat or Debian-based distributions.
+The name of the KurrentDB package is `kurrentdb`.
 
-### Debian packages
+### Ubuntu/Debian packages
+
+Debian packages can be found in the following repositories:
+
+* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adeb+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Adeb+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Adeb+name%3Akurrentdb) containing non-production preview packages.
 
 #### Distribution setup
 To install packages, you can quickly set up the repository automatically (recommended):
 
+::: tabs
+@tab kurrent-latest
 ```bash
 curl -1sLf \
-  'https://packages.eventstore.com/public/eventstore/setup.deb.sh' \
+  'https://packages.kurrent.io/public/kurrent-latest/setup.deb.sh' \
   | sudo -E bash
 ```
+@tab kurrent-lts
+```bash
+curl -1sLf \
+  'https://packages.kurrent.io/public/kurrent-lts/setup.deb.sh' \
+  | sudo -E bash
+```
+@tab kurrent-preview
+```bash
+curl -1sLf \
+  'https://packages.kurrent.io/public/kurrent-preview/setup.deb.sh' \
+  | sudo -E bash
+```
+:::
 
 If you need to force a specific distribution, release/version, architecture, or component (if supported), you can also do that (e.g. if your system is compatible but not identical):
 
+::: tabs
+@tab kurrent-latest
 ```bash
 curl -1sLf \
-  'https://packages.eventstore.com/public/eventstore/setup.deb.sh' \
+  'https://packages.kurrent.io/public/kurrent-latest/setup.deb.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH component=COMPONENT bash
 ```
-
-Alternatively, you can manually configure it yourself before installing packages:
-
+@tab kurrent-lts
 ```bash
-apt-get install -y debian-keyring  # debian only
-apt-get install -y debian-archive-keyring  # debian only
-apt-get install -y apt-transport-https
-# For Debian Stretch, Ubuntu 16.04 and later
-keyring_location=/usr/share/keyrings/eventstore-eventstore-archive-keyring.gpg
-# For Debian Jessie, Ubuntu 15.10 and earlier
-keyring_location=/etc/apt/trusted.gpg.d/eventstore-eventstore.gpg
-curl -1sLf 'https://packages.eventstore.com/public/eventstore/gpg.D008FDA5E151E345.key' |  gpg --dearmor >> ${keyring_location}
-curl -1sLf 'https://packages.eventstore.com/public/eventstore/config.deb.txt?distro=ubuntu&codename=zorin&component=main' > /etc/apt/sources.list.d/eventstore-eventstore.list
-sudo chmod 644 ${keyring_location}
-sudo chmod 644 /etc/apt/sources.list.d/eventstore-eventstore.list
-apt-get update
+curl -1sLf \
+  'https://packages.kurrent.io/public/kurrent-lts/setup.deb.sh' \
+  | sudo -E distro=DISTRO codename=CODENAME arch=ARCH component=COMPONENT bash
 ```
+@tab kurrent-preview
+```bash
+curl -1sLf \
+  'https://packages.kurrent.io/public/kurrent-preview/setup.deb.sh' \
+  | sudo -E distro=DISTRO codename=CODENAME arch=ARCH component=COMPONENT bash
+```
+:::
+
+Alternatively, you can find instructions to manually configure it yourself on Cloudsmith:
+* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
 
 #### Install with apt-get
 
-Add the repository to your system according to the [instructions on Cloudsmith](https://cloudsmith.io/~eventstore/repos/eventstore-preview/setup/#formats-deb).
-
-Then, install the package:
+Install the package:
 
 ```bash
-apt-get install eventstoredb-ee=24.10.0
+apt-get install kurrentdb=25.0.0
 ```
 
 #### Uninstall with apt-get
@@ -100,57 +132,82 @@ apt-get install eventstoredb-ee=24.10.0
 You can uninstall the package with:
 
 ```bash
-apt-get remove eventstoredb-ee
+apt-get remove kurrentdb
 ```
 
 If you want to also remove any configuration files and user settings, use:
 
 ```bash
-apt-get purge eventstoredb-ee
+apt-get purge kurrentdb
 ```
 
 ### RedHat packages
+
+RedHat packages can be found in the following repositories:
+
+* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Arpm+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Arpm+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Arpm+name%3Akurrentdb) containing non-production preview packages.
 
 #### Distribution setup
 
 To install packages, you can quickly set up the repository automatically (recommended):
 
+::: tabs
+@tab kurrent-latest
 ```bash
 curl -1sLf \
-  'https://packages.eventstore.com/public/eventstore/setup.rpm.sh' \
+  'https://packages.kurrent.io/public/kurrent-latest/setup.rpm.sh' \
   | sudo -E bash
 ```
+@tab kurrent-lts
+```bash
+curl -1sLf \
+  'https://packages.kurrent.io/public/kurrent-lts/setup.rpm.sh' \
+  | sudo -E bash
+```
+@tab kurrent-preview
+```bash
+curl -1sLf \
+  'https://packages.kurrent.io/public/kurrent-preview/setup.rpm.sh' \
+  | sudo -E bash
+```
+:::
 
 If you need to force a specific distribution, release/version, or architecture, you can also do that (e.g. if your system is compatible but not identical):
 
+::: tabs
+@tab kurrent-latest
 ```bash
 curl -1sLf \
-  'https://packages.eventstore.com/public/eventstore/setup.rpm.sh' \
+  'https://packages.kurrent.io/public/kurrent-latest/setup.rpm.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH bash
 ```
-
-Alternatively, you can manually configure it yourself before installing packages:
-
+@tab kurrent-lts
 ```bash
-yum install yum-utils pygpgme
-rpm --import 'https://packages.eventstore.com/public/eventstore/gpg.D008FDA5E151E345.key'
-curl -1sLf 'https://packages.eventstore.com/public/eventstore/config.rpm.txt?distro=el&codename=9' > /tmp/eventstore-eventstore.repo
-yum-config-manager --add-repo '/tmp/eventstore-eventstore.repo'
-yum -q makecache -y --disablerepo='*' --enablerepo='eventstore-eventstore'
+curl -1sLf \
+  'https://packages.kurrent.io/public/kurrent-lts/setup.rpm.sh' \
+  | sudo -E distro=DISTRO codename=CODENAME arch=ARCH bash
 ```
-
-::: note
-Please replace el and 7 above with your actual distribution and version and use wildcards when enabling multiple repos.
+@tab kurrent-preview
+```bash
+curl -1sLf \
+  'https://packages.kurrent.io/public/kurrent-preview/setup.rpm.sh' \
+  | sudo -E distro=DISTRO codename=CODENAME arch=ARCH bash
+```
 :::
+
+Alternatively, you can find instructions to manually configure it yourself on Cloudsmith:
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/setup/#formats-rpm).
+* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/setup/#formats-rpm).
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/setup/#formats-rpm).
 
 #### Install with yum
 
-Add the repository to your system according to the [instructions on Cloudsmith](https://cloudsmith.io/~eventstore/repos/eventstore/setup/#formats-rpm).
-
-Then, install the package:
+Install the package:
 
 ```bash
-yum install eventstoredb-ee-24.10.0-1.x86_64
+yum install kurrentdb-25.0.0-1.x86_64
 ```
 
 #### Uninstall with yum
@@ -158,18 +215,18 @@ yum install eventstoredb-ee-24.10.0-1.x86_64
 You can uninstall the package with:
 
 ```bash
-yum remove eventstoredb-ee
+yum remove kurrentdb
 ```
 
-### Running the eventstore service
+### Running the kurrentdb service
 
-Once installed, the server is registered as a service. Therefore, you can start EventStoreDB with:
+Once installed, the server is registered as a service. Therefore, you can start KurrentDB with:
 
 ```bash
-systemctl start eventstore
+systemctl start kurrentdb
 ```
 
-When you install the EventStoreDB package, the service doesn't start by default. This allows you to change the configuration located at `etc/eventstore/eventstore.conf` and to prevent creating database and index files in the default location.
+When you install the KurrentDB package, the service doesn't start by default. This allows you to change the configuration located at `/etc/kurrentdb/kurrentdb.conf` and to prevent creating database and index files in the default location.
 
 ::: warning
 We recommend that when using Linux you set the 'open file limit' to a high number. The precise value depends on your use case, but at least between `30,000` and `60,000`.
@@ -178,69 +235,93 @@ We recommend that when using Linux you set the 'open file limit' to a high numbe
 ## Windows
 
 ::: warning
-EventStoreDB doesn't install as a Windows service. You need to ensure that the server executable
+KurrentDB doesn't install as a Windows service. You need to ensure that the server executable
 starts automatically.
 :::
 
 ### NuGet
 
-EventStoreDB has NuGet packages available on Cloudsmith, which replaces the previous Chocolatey packages.
-
-Add a new package source to your Chocolatey configuration:
-
-```powershell
-choco source add -n eventstore-eventstore -s https://nuget.eventstore.com/eventstore/v2/
-```
+KurrentDB has NuGet packages available on [Chocolatey](https://community.chocolatey.org/packages/kurrentdb).
 
 #### Install with Chocolatey
 
-You can install EventStoreDB through Chocolatey:
+You can install KurrentDB through Chocolatey:
 
 ```powershell
-choco install eventstoredb-ee -s eventstore-eventstore --version 24.10.0
+choco install kurrentdb --version=25.0.0
 ```
 
-EventStoreDB can then be run with `EventStore.ClusterNode.exe`:
+KurrentDB can then be run with `KurrentDB.exe`:
 
 ```powershell
-EventStore.ClusterNode.exe --config {your config file}
+KurrentDB.exe --config {your config file}
 ```
 
 #### Uninstall with Chocolatey
 
-You can uninstall EventStoreDB through Chocolatey with:
+You can uninstall KurrentDB through Chocolatey with:
 
 ```powershell
-choco uninstall eventstoredb-ee
+choco uninstall kurrentdb
 ```
 
 ## Docker
 
-You can run EventStoreDB in a Docker container as a single node, using insecure mode. It is useful in most
+You can run KurrentDB in a Docker container as a single node, using insecure mode. It is useful in most
 cases to try out the product and for local development purposes.
 
 It's also possible to run a three-node cluster with or without SSL using Docker Compose. Such a setup is
 closer to what you'd run in production.
 
-### Run with Docker
+KurrentDB Docker images are hosted in the following registries:
 
-EventStoreDB Docker images are now hosted in the registry `docker.eventstore.com/eventstore`.
+* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adocker+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) containers.
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Adocker+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) containers.
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Adocker+name%3Akurrentdb) containing non-production preview containers.
+
+### Run with Docker
 
 Pull the container with:
 
+::: tabs
+@tab kurrent-latest
 ```bash
-docker pull docker.eventstore.com/eventstore/eventstoredb-ee:latest
+docker pull docker.kurrent.io/kurrent-latest/kurrentdb:latest
 ```
-
-The following command will start the EventStoreDB node using the default HTTP port, without security. You can then connect to it using one of the clients and the `esdb://localhost:2113?tls=false` connection string. You can also access the Admin UI by opening http://localhost:2113 in your browser.
-
+@tab kurrent-lts
 ```bash
-docker run --name esdb-node -it -p 2113:2113 \
-    docker.eventstore.com/eventstore/eventstoredb-ee --insecure --run-projections=All
+docker pull docker.kurrent.io/kurrent-lts/kurrentdb:lts
+```
+@tab kurrent-preview
+```bash
+docker pull docker.kurrent.io/kurrent-preview/kurrentdb:latest
+```
+:::
+
+The following command will start the KurrentDB node using the default HTTP port, without security. You can then connect to it using one of the clients and the `kurrentdb://localhost:2113?tls=false` connection string. You can also access the Admin UI by opening http://localhost:2113 in your browser.
+
+::: tabs
+@tab kurrent-latest
+```bash
+docker run --name kurrentdb-node -it -p 2113:2113 \
+    docker.kurrent.io/kurrent-latest/kurrentdb --insecure --run-projections=All
     --enable-atom-pub-over-http
 ```
+@tab kurrent-lts
+```bash
+docker run --name kurrentdb-node -it -p 2113:2113 \
+    docker.kurrent.io/kurrent-lts/kurrentdb --insecure --run-projections=All
+    --enable-atom-pub-over-http
+```
+@tab kurrent-preview
+```bash
+docker run --name kurrentdb-node -it -p 2113:2113 \
+    docker.kurrent.io/kurrent-preview/kurrentdb --insecure --run-projections=All
+    --enable-atom-pub-over-http
+```
+:::
 
-Then, you'd be able to connect to EventStoreDB with gRPC clients. Also, the Stream Browser will work
+Then, you'd be able to connect to KurrentDB with gRPC clients. Also, the Stream Browser will work
 in the Admin UI.
 
 In order to sustainably keep the data, we also recommend mapping the database and index volumes.
@@ -251,7 +332,7 @@ You can also run a single-node instance or a three-node secure cluster locally u
 
 #### Insecure single node
 
-You can use Docker Compose to run EventStoreDB in the same setup as the `docker run` command mentioned before.
+You can use Docker Compose to run KurrentDB in the same setup as the `docker run` command mentioned before.
 
 Create a file `docker-compose.yaml` with the following content:
 
@@ -263,7 +344,7 @@ Run the instance:
 docker compose up
 ```
 
-The command above would run EventStoreDB as a single node without SSL. You also get AtomPub protocol enabled, so you can get the stream browser to work in the Admin UI.
+The command above would run KurrentDB as a single node without SSL. You also get AtomPub protocol enabled, so you can get the stream browser to work in the Admin UI.
 
 ::: warning
 The legacy TCP client protocol is disabled by default and is no longer be available from version 24.10. 
@@ -311,23 +392,27 @@ You have to tell your client to use secure connection.
 
 | Protocol | Connection string                                                                  |
 |:---------|:-----------------------------------------------------------------------------------|
-| gRPC     | `esdb://localhost:2111,localhost:2112,localhost:2113?tls=true&tlsVerifyCert=false` |
+| gRPC     | `kurrentdb://localhost:2111,localhost:2112,localhost:2113?tls=true&tlsVerifyCert=false` |
 
 As you might've noticed, the connection string has a setting to disable the certificate validation (`tlsVerifyCert=false`). It would prevent the invalid certificate error since the cluster uses a private, auto-generated CA.
 
 However, **we do not recommend using this setting in production**. Instead, you can either add the CA certificate to the trusted root CA store or instruct your application to use such a certificate. See the [security section](../security/protocol-security.md#certificate-installation-on-a-client-environment) for detailed instructions.
 
+## Kubernetes
+
+KurrentDB can be deployed and managed using the [Operator](/server/kubernetes-operator/).
+
 ## Building from source
 
-You can also build [EventStoreDB from source](https://github.com/EventStore/EventStore?tab=readme-ov-file#building-eventstoredb). Before doing that, you need to install the .NET 8 SDK. EventStoreDB packages have the .NET Runtime embedded, so you don't need to install anything except the EventStoreDB package.
+You can also build [KurrentDB from source](https://github.com/EventStore/EventStore?tab=readme-ov-file#building-kurrentdb). Before doing that, you need to install the .NET 8 SDK. KurrentDB packages have the .NET Runtime embedded, so you don't need to install anything except the KurrentDB package.
 
 ## Compatibility notes
 
-Depending on how your EventStoreDB instance is configured, some features might not work. Below are some features that are unavailable due to the specified options.
+Depending on how your KurrentDB instance is configured, some features might not work. Below are some features that are unavailable due to the specified options.
 
 | Feature                       | Options impact                                                                                                                                                                          |
 |:------------------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Connection without SSL or TLS | EventStoreDB is secure by default. Your clients need to establish a secure connection, unless you use the `Insecure` option.                                                      |
+| Connection without SSL or TLS | KurrentDB is secure by default. Your clients need to establish a secure connection, unless you use the `Insecure` option.                                                      |
 | Authentication and ACLs       | When using the `Insecure` option for the server, all security is disabled. The `Users` menu item is also disabled in the Admin UI.                                                      |
 | Projections                   | Running projections is disabled by default and the `Projections` menu item is disabled in the Admin UI. You need to enable projections explicitly by using the `RunProjections` option. |
 | AtomPub protocol              | The AtomPub protocol is disabled by default. If you use this protocol, you have to explicitly enable it by using the `EnableAtomPubOverHttp` option.                          |

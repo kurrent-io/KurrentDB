@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.DataStructures;
@@ -51,9 +51,9 @@ public class unmanaged_memory_append_only_list_should {
 		for (int i = 1; i <= _maxCapacity; i++) {
 			_list.Add(i);
 			var span = _list.AsSpan();
-			Assert.AreEqual(i,span.Length);
+			Assert.AreEqual(i, span.Length);
 			for (int j = 0; j < i; j++) {
-				Assert.AreEqual(j+1, span[j]);
+				Assert.AreEqual(j + 1, span[j]);
 			}
 		}
 	}

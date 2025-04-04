@@ -6,7 +6,7 @@ dir:
 
 # Understanding Connectors
 
-Connectors make it easy to integrate EventStoreDB data into other systems.
+Connectors make it easy to integrate data from KurrentDB into other systems.
 
 Each connector runs on the server-side and uses a catch-up subscription to receive events, filter or transform them, and push them to an external system via a [sink](https://en.wikipedia.org/wiki/Sink_(computing)).
 
@@ -15,7 +15,7 @@ Each connector runs on the server-side and uses a catch-up subscription to recei
 
 ```mermaid
 graph TD
-    A[EventStore DB] --> B[Subscription]
+    A[KurrentDB] --> B[Subscription]
     B --> C[Filter]
     C --> D[Sink]
     D --> E[External System]
@@ -27,19 +27,19 @@ graph TD
     end
 ```
 
-This reduces the amount of work needed to process data from EventStoreDB instances and makes it easy to create data pipelines to implement complex use cases.
+This reduces the amount of work needed to process data from KurrentDB instances and makes it easy to create data pipelines to implement complex use cases.
 
 ::: info
-The Connector plugin is pre-installed in all EventStoreDB binaries and is enabled by default.
+The Connector plugin is pre-installed in all KurrentDB binaries and is enabled by default.
 :::
 
 ## Motivation
 
-Currently, a pain point that users experience is that, on one hand, they have a convenient EventStoreDB cloud service, on the other hand, they have a convenient downstream database or processing engine, but there's nothing in between.
-As a result, users need to host and maintain their own solution in their own infrastructure for subscribing to EventStoreDB and sending the events to a downstream service.
+Currently, a pain point that users experience is that, on one hand, they have a convenient Kurrent cloud service, on the other hand, they have a convenient downstream database or processing engine, but there's nothing in between.
+As a result, users need to host and maintain their own solution in their own infrastructure for subscribing to KurrentDB and sending the events to a downstream service.
 This solution in the middle often needs to be highly available and needs to manage its own checkpoints: this quickly becomes cumbersome.
 
-EventStore Connectors remove the need for users to develop, host and maintain such a solution.
+Kurrent Connectors remove the need for users to develop, host and maintain such a solution.
 
 As an example, a developer want to send events to a lambda function, which projects events to an RDS instance.
 
@@ -52,7 +52,7 @@ In addition, the subscription service that uses a catch-up subscription would ne
 
 ```mermaid
 graph TD
-    A[EventStoreDB] --> B[Self-hosted subscription]
+    A[KurrentDB] --> B[Self-hosted subscription]
     B -->|events| C[Lambda function]
     C -->|SQL updates| D[RDS]
     B -->|checkpoints| D
@@ -69,14 +69,14 @@ graph TD
     end
 ```
 
-With connectors, the subscription service is provided natively by EventStoreDB and the lambda function acts as the sink. For this particular example, the lambda function requires an accessible HTTP endpoint, or to be exposed via the AWS API Gateway.
+With connectors, the subscription service is provided natively by KurrentDB and the lambda function acts as the sink. For this particular example, the lambda function requires an accessible HTTP endpoint, or to be exposed via the AWS API Gateway.
 
 <!-- ![Example with Connector and Lambda](./images/example-lambda-connector.svg#light)
 ![Example with Connector and Lambda](./images/example-lambda-connector-dark.svg#dark) -->
 
 ```mermaid
 graph TD
-    A[EventStoreDB] -->|events| B[Lambda function]
+    A[KurrentDB] -->|events| B[Lambda function]
     B -->|SQL updates| C[RDS]
     
     subgraph Data Tables

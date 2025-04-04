@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
@@ -7,6 +7,7 @@ using EventStore.Core.Services;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.Replication;
+using EventStore.Core.Util;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
@@ -19,7 +20,7 @@ using ExistingEvent = EventStore.Projections.Core.XUnit.Tests.TestHelpers.Existi
 namespace EventStore.Projections.Core.XUnit.Tests.CheckpointManagers;
 
 /// More tests for MultiStreamMultiOutputCheckpointManager exist in the NUnit tests,
-/// and derive from <see cref="EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager.multi_stream.TestFixtureWithMultiStreamCheckpointManager"/>
+/// and derive from <see cref="Core.Tests.Services.core_projection.checkpoint_manager.multi_stream.TestFixtureWithMultiStreamCheckpointManager"/>
 public class MultiStreamMultiOutputCheckpointManagerTests {
 	private const string ProjectionName = "test-projection";
 	private const string OrderStreamName = $"$projections-{ProjectionName}-order";
@@ -38,7 +39,7 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 		var envelope = new FakeEnvelope();
 		_ioDispatcher = new IODispatcher(_publisher, envelope);
 		_checkpointWriter = new CoreProjectionCheckpointWriter(
-				namingBuilder.MakeCheckpointStreamName(),_ioDispatcher, projectionVersion, ProjectionName);
+			namingBuilder.MakeCheckpointStreamName(), _ioDispatcher, projectionVersion, ProjectionName);
 		_existingStreams = new ExistingStreamsHelper();
 
 		var projectionConfig = new ProjectionConfig(SystemAccounts.System, 10, 1000, 20, 2,
@@ -48,7 +49,7 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 		_sut = new MultiStreamMultiOutputCheckpointManager(
 			_publisher, projectionId, projectionVersion, SystemAccounts.System, _ioDispatcher, projectionConfig, ProjectionName,
 			positionTagger, namingBuilder, usePersistentCheckpoints: true, producesRunningResults: true, definesFold: false,
-			_checkpointWriter);
+			_checkpointWriter, Opts.MaxProjectionStateSizeDefault);
 	}
 
 	[Theory]

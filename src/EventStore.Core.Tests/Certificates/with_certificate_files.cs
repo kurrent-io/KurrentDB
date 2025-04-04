@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -121,7 +121,7 @@ public class with_passwordless_pkcs8_private_key : with_certificate_chain_of_len
 	public void Setup() {
 		_certPath = $"{PathName}/leaf.pem";
 		File.WriteAllText(_certPath, _leaf.Export(X509ContentType.Cert).PEM("CERTIFICATE"));
-		
+
 		_privateKeyPath = $"{PathName}/leaf.p8";
 		File.WriteAllText(_privateKeyPath, _leaf.PemPkcs8PrivateKey());
 	}
@@ -144,7 +144,7 @@ public class with_password_protected_pkcs8_private_key : with_certificate_chain_
 	public void Setup() {
 		_certPath = $"{PathName}/leaf.pem";
 		File.WriteAllText(_certPath, _leaf.Export(X509ContentType.Cert).PEM("CERTIFICATE"));
-		
+
 		_privateKeyPath = $"{PathName}/leaf.p8";
 		File.WriteAllText(_privateKeyPath, _leaf.EncryptedPemPkcs8PrivateKey(Password));
 	}
@@ -515,7 +515,7 @@ public class when_loading_certificates_from_directory : with_certificate_chain_o
 	public void loads_only_certificates_with_accepted_extensions() {
 		var certs = CertificateUtils.LoadAllCertificates($"{PathName}/{CertsDir}").ToArray();
 		Assert.AreEqual(8 - 3, certs.Length);
-		var accepted = new[]{".crt", ".cert", ".cer", ".pem", ".der"};
+		var accepted = new[] { ".crt", ".cert", ".cer", ".pem", ".der" };
 		Assert.True(certs.All(x => accepted.Contains(new FileInfo(x.fileName).Extension)));
 	}
 }

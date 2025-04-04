@@ -1,29 +1,39 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
+using System.Collections.Generic;
 using EventStore.Core.Metrics;
+using EventStore.Core.Time;
 using EventStore.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.TransactionLog.Chunks;
 
 public class TFChunkTracker : ITransactionFileTracker {
 	private readonly LogicalChunkReadDistributionMetric _readDistribution;
+	private readonly DurationMetric _readDurationMetric;
 	private readonly CounterSubMetric _readBytes;
 	private readonly CounterSubMetric _readEvents;
 
 	public TFChunkTracker(
 		LogicalChunkReadDistributionMetric readDistribution,
+		DurationMetric readDurationMetric,
 		CounterSubMetric readBytes,
 		CounterSubMetric readEvents) {
 
+		_readDistribution = readDistribution;
+		_readDurationMetric = readDurationMetric;
 		_readBytes = readBytes;
 		_readEvents = readEvents;
-		_readDistribution = readDistribution;
 	}
 
-	public void OnRead(ILogRecord record) {
+	public void OnRead(Instant start, ILogRecord record, ITransactionFileTracker.Source source) {
 		_readDistribution.Record(record);
+
+		_readDurationMetric.Record(
+			start,
+			new KeyValuePair<string, object>("source", source),
+			new KeyValuePair<string, object>("user", "")); // placeholder for later
 
 		if (record is not PrepareLogRecord prepare)
 			return;
@@ -33,7 +43,7 @@ public class TFChunkTracker : ITransactionFileTracker {
 	}
 
 	public class NoOp : ITransactionFileTracker {
-		public void OnRead(ILogRecord record) {
+		public void OnRead(Instant start, ILogRecord record, ITransactionFileTracker.Source source) {
 		}
 	}
 }

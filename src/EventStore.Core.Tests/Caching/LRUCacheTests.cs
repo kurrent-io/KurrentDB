@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.DataStructures;
@@ -13,7 +13,7 @@ public class LRUCacheTests {
 	private static LRUCache<TKey, TValue> GenSut<TKey, TValue>(int capacity,
 		LRUCache<TKey, TValue>.CalculateItemSize calculateItemSize = null,
 		LRUCache<TKey, TValue>.CalculateFreedSize calculateFreedSize = null) =>
-		new (string.Empty, capacity, calculateItemSize, calculateFreedSize);
+		new(string.Empty, capacity, calculateItemSize, calculateFreedSize);
 
 	[Test]
 	public void can_add_and_read_item() {
@@ -74,7 +74,7 @@ public class LRUCacheTests {
 	}
 
 	public class WithCustomItemSizeCalculator {
-		private readonly LRUCache<int,int> _sut;
+		private readonly LRUCache<int, int> _sut;
 
 		public WithCustomItemSizeCalculator() =>
 			_sut = GenSut<int, int>(7, (k, v) => k + v);

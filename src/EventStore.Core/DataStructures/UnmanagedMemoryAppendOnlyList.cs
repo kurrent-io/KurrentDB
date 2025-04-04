@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Runtime.InteropServices;
@@ -45,8 +45,7 @@ public sealed class UnmanagedMemoryAppendOnlyList<T> : IAppendOnlyList<T>, IDisp
 		if (_count >= _maxCapacity)
 			throw new MaxCapacityReachedException();
 
-		unsafe
-		{
+		unsafe {
 			new Span<T>(_dataPtr.ToPointer(), _maxCapacity) {
 				[_count] = item
 			};
@@ -74,8 +73,7 @@ public sealed class UnmanagedMemoryAppendOnlyList<T> : IAppendOnlyList<T>, IDisp
 				throw new IndexOutOfRangeException();
 			}
 
-			unsafe
-			{
+			unsafe {
 				return new ReadOnlySpan<T>(_dataPtr.ToPointer(), _maxCapacity)[index];
 			}
 		}

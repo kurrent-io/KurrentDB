@@ -1,14 +1,14 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Client.Redaction;
 using EventStore.Core.Data.Redaction;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using Kurrent.Client.Redaction;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -53,7 +53,7 @@ internal partial class Redaction {
 		IServerStreamWriter<SwitchChunkResp> responseStream,
 		Guid acquisitionId) {
 
-		await foreach(var request in requestStream.ReadAllAsync()) {
+		await foreach (var request in requestStream.ReadAllAsync()) {
 			var tcsEnvelope = new TcsEnvelope<RedactionMessage.SwitchChunkCompleted>();
 			_bus.Publish(new RedactionMessage.SwitchChunk(tcsEnvelope, acquisitionId, request.TargetChunkFile, request.NewChunkFile));
 

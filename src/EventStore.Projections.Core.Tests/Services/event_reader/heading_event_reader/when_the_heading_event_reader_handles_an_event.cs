@@ -1,14 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Data;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.AllStream;
-using EventStore.Projections.Core.Tests.Services.projections_manager.managed_projection;
 using NUnit.Framework;
 using HeadingEventReader = EventStore.Projections.Core.Services.Processing.TransactionFile.HeadingEventReader;
 
@@ -51,15 +49,15 @@ public class when_the_heading_event_reader_handles_an_event : TestFixtureWithRea
 	}
 
 	//TODO: SW1
-/*
-        [Test]
-        public void can_handle_special_update_position_event()
-        {
-            _point.Handle(
-                new ProjectionCoreServiceMessage.CommittedEventDistributed(
-                    _distibutionPointCorrelationId, new EventPosition(long.MinValue, 30), "stream", 12, false, null));
-        }
-*/
+	/*
+			[Test]
+			public void can_handle_special_update_position_event()
+			{
+				_point.Handle(
+					new ProjectionCoreServiceMessage.CommittedEventDistributed(
+						_distibutionPointCorrelationId, new EventPosition(long.MinValue, 30), "stream", 12, false, null));
+			}
+	*/
 
 	[Test]
 	public void cannot_handle_previous_event() {

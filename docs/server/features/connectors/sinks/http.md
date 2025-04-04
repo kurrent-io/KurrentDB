@@ -5,8 +5,8 @@ order: 4
 
 ## Overview
 
-The HTTP sink allows for integration between EventStoreDB and external
-APIs over HTTP or HTTPS. This connector consumes events from an EventStoreDB
+The HTTP sink allows for integration between KurrentDB and external
+APIs over HTTP or HTTPS. This connector consumes events from a KurrentDB
 stream and converts each event's data into JSON format before sending it in the
 request body to a specified Url. Events are sent individually as they are
 consumed from the stream, without batching. The event data is transmitted as the
@@ -66,7 +66,7 @@ in the [API Reference](../manage.md).
 
 ## Settings
 
-Adjust these settings to specify the behavior and interaction of your HTTP sink connector with EventStoreDB, ensuring it operates according to your requirements and preferences.
+Adjust these settings to specify the behavior and interaction of your HTTP sink connector with KurrentDB, ensuring it operates according to your requirements and preferences.
 
 ::: tip
 The HTTP sink inherits a set of common settings that are used to configure the connector. The settings can be found in
@@ -116,7 +116,7 @@ The following template parameters are available for use in the URL:
 | ------------------ | --------------------------------------------------------------- |
 | `{schema-subject}` | The event's schema subject, converted to lowercase with hyphens |
 | `{event-type}`     | Alias for `{schema-subject}`                                    |
-| `{stream}`         | The EventStoreDB stream ID                                      |
+| `{stream}`         | The KurrentDB stream ID                                         |
 
 **Usage**
 
@@ -134,3 +134,7 @@ For an event with schema subject "TestEvent", this would result in the URL:
 ```
 https://api.example.com/TestEvent
 ```
+
+### Tutorial
+
+[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](https://docs.kurrent.io/tutorials/HTTP_Connector.html)

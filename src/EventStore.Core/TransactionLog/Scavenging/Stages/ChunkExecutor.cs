@@ -1,10 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Exceptions;
@@ -18,32 +19,35 @@ namespace EventStore.Core.TransactionLog.Scavenging.Stages;
 public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 	private readonly ILogger _logger;
 	private readonly IMetastreamLookup<TStreamId> _metastreamLookup;
-	private readonly IChunkRemover<TStreamId, TRecord> _chunkDeleter;
+	private readonly IChunkRemover<TStreamId, TRecord> _chunkRemover;
 	private readonly IChunkManagerForChunkExecutor<TStreamId, TRecord> _chunkManager;
 	private readonly long _chunkSize;
 	private readonly bool _unsafeIgnoreHardDeletes;
 	private readonly int _cancellationCheckPeriod;
+	private readonly bool _isArchiver;
 	private readonly int _threads;
 	private readonly Throttle _throttle;
 
 	public ChunkExecutor(
 		ILogger logger,
 		IMetastreamLookup<TStreamId> metastreamLookup,
-		IChunkRemover<TStreamId, TRecord> chunkDeleter,
+		IChunkRemover<TStreamId, TRecord> chunkRemover,
 		IChunkManagerForChunkExecutor<TStreamId, TRecord> chunkManager,
 		long chunkSize,
 		bool unsafeIgnoreHardDeletes,
 		int cancellationCheckPeriod,
 		int threads,
+		bool isArchiver,
 		Throttle throttle) {
 
 		_logger = logger;
 		_metastreamLookup = metastreamLookup;
-		_chunkDeleter = chunkDeleter;
+		_chunkRemover = chunkRemover;
 		_chunkManager = chunkManager;
 		_chunkSize = chunkSize;
 		_unsafeIgnoreHardDeletes = unsafeIgnoreHardDeletes;
 		_cancellationCheckPeriod = cancellationCheckPeriod;
+		_isArchiver = isArchiver;
 		_threads = Math.Clamp(threads, TFChunkScavenger.MinThreadCount, TFChunkScavenger.MaxThreadCount);
 		_throttle = throttle;
 
@@ -80,7 +84,7 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 		var startFromChunk = checkpoint?.DoneLogicalChunkNumber + 1 ?? 0;
 		var scavengePoint = checkpoint.ScavengePoint;
 
-		var physicalChunks = GetAllPhysicalChunks(startFromChunk, scavengePoint);
+		var physicalChunks = GetAllPhysicalChunks(startFromChunk, scavengePoint, cancellationToken);
 
 		var borrowedStates = new IScavengeStateForChunkExecutorWorker<TStreamId>[_threads];
 		var stopwatches = new Stopwatch[_threads];
@@ -120,7 +124,7 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 							physicalChunk.Name,
 							physicalWeight);
 
-					} else if (await _chunkDeleter.StartRemovingIfNotRetained(
+					} else if (await _chunkRemover.StartRemovingIfNotRetained(
 						scavengePoint,
 						concurrentState,
 						physicalChunk,
@@ -135,6 +139,17 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 						concurrentState.ResetChunkWeights(
 							physicalChunk.ChunkStartNumber,
 							physicalChunk.ChunkEndNumber);
+
+					} else if (_isArchiver) {
+						// Prevent the archive node from executing any chunks, which is important because it
+						// does not yet scavenge remote chunks, but we need to keep the remote and local chunks
+						// in sync (e.g. with the same weight) so that we do scavenge them later.
+						// (otherwise a scavenge with threshold -1 to execute all chunks would be necessary)
+						_logger.Debug(
+							"SCAVENGING: Skipped physical chunk: {oldChunkName} " +
+							"with weight {physicalWeight:N0} because we are the archiver.",
+							physicalChunk.Name,
+							physicalWeight);
 
 					} else if (physicalWeight > scavengePoint.Threshold || _unsafeIgnoreHardDeletes) {
 						await ExecutePhysicalChunk(
@@ -188,15 +203,16 @@ public class ChunkExecutor<TStreamId, TRecord> : IChunkExecutor<TStreamId> {
 		}
 	}
 
-	private IEnumerable<IChunkReaderForExecutor<TStreamId, TRecord>> GetAllPhysicalChunks(
+	private async IAsyncEnumerable<IChunkReaderForExecutor<TStreamId, TRecord>> GetAllPhysicalChunks(
 		int startFromChunk,
-		ScavengePoint scavengePoint) {
+		ScavengePoint scavengePoint,
+		[EnumeratorCancellation] CancellationToken token) {
 
 		var scavengePos = _chunkSize * startFromChunk;
 		var upTo = scavengePoint.Position;
 		while (scavengePos < upTo) {
 			// in bounds because we stop before the scavenge point
-			var physicalChunk = _chunkManager.GetChunkReaderFor(scavengePos);
+			var physicalChunk = await _chunkManager.GetChunkReaderFor(scavengePos, token);
 
 			if (!physicalChunk.IsReadOnly)
 				throw new Exception(

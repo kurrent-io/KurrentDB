@@ -1,16 +1,16 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Security.Claims;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Services.Transport.Http;
 using EventStore.Core.Services.Transport.Http.Controllers;
+using EventStore.Plugins.Authorization;
 using EventStore.Transport.Http;
 using EventStore.Transport.Http.Codecs;
 using EventStore.Transport.Http.EntityManagement;
-using EventStore.Common.Utils;
-using EventStore.Plugins.Authorization;
 
 namespace EventStore.Core.Tests.Http;
 
@@ -42,7 +42,7 @@ public class TestController : CommunicationController {
 	private void Register(
 		IHttpService service, string uriTemplate, Action<HttpEntityManager, UriTemplateMatch> handler,
 		string httpMethod = HttpMethod.Get) {
-		Register(service, uriTemplate, httpMethod, handler, Codec.NoCodecs, new ICodec[] {Codec.ManualEncoding}, new Operation(Operations.Node.StaticContent));
+		Register(service, uriTemplate, httpMethod, handler, Codec.NoCodecs, new ICodec[] { Codec.ManualEncoding }, new Operation(Operations.Node.StaticContent));
 	}
 
 	private void Test1Handler(HttpEntityManager http, UriTemplateMatch match) {
@@ -63,8 +63,8 @@ public class TestController : CommunicationController {
 		var a = match.BoundVariables["a"];
 		var b = match.BoundVariables["b"];
 
-		http.Reply(new {a = a, b = b, rawSegment = http.RequestedUrl.Segments[2]}.ToJson(), 200, "OK",
-			"application/json");
+		http.Reply(new { a = a, b = b, rawSegment = http.RequestedUrl.Segments[2] }.ToJson(), 200, "OK",
+			ContentType.Json);
 	}
 
 	private void TestEncodingHandler(HttpEntityManager http, UriTemplateMatch match, string a) {
@@ -77,7 +77,7 @@ public class TestController : CommunicationController {
 				rawSegment = http.RequestedUrl.Segments[1],
 				requestUri = match.RequestUri,
 				rawUrl = http.HttpEntity.Request.RawUrl
-			}.ToJson(), 200, "OK", "application/json");
+			}.ToJson(), 200, "OK", ContentType.Json);
 	}
 
 	private void TestTimeoutHandler(HttpEntityManager http, UriTemplateMatch match) {

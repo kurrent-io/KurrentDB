@@ -1,16 +1,16 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
 using EventStore.Core.Services.TimerService;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Management;
-using EventStore.Common.Utils;
 using EventStore.Projections.Core.Services.Processing.Strategies;
 using Serilog;
 
@@ -72,7 +72,7 @@ public class ProjectionCoreService
 		_ioDispatcher = ioDispatcher;
 		_subscriptionDispatcher = subscriptionDispatcher;
 		_timeProvider = timeProvider;
-		_processingStrategySelector = new ProcessingStrategySelector(_subscriptionDispatcher);
+		_processingStrategySelector = new ProcessingStrategySelector(_subscriptionDispatcher, configuration.MaxProjectionStateSize);
 		_factory = new ProjectionStateHandlerFactory(TimeSpan.FromMilliseconds(configuration.ProjectionCompilationTimeout),
 			TimeSpan.FromMilliseconds(configuration.ProjectionExecutionTimeout));
 	}
@@ -98,8 +98,7 @@ public class ProjectionCoreService
 			() => _publisher.Publish(new ProjectionSubsystemMessage.IODispatcherDrained(SubComponentName)));
 
 		var allProjections = _projections.Values.ToArray();
-		foreach (var projection in allProjections)
-		{
+		foreach (var projection in allProjections) {
 			var requiresStopping = projection.Suspend();
 			if (requiresStopping) {
 				_suspendingProjections.Add(projection._projectionCorrelationId, projection);
@@ -117,13 +116,15 @@ public class ProjectionCoreService
 	}
 
 	public void Handle(ProjectionCoreServiceMessage.StopCoreTimeout message) {
-		if (message.QueueId != _stopQueueId) return;
+		if (message.QueueId != _stopQueueId)
+			return;
 		_logger.Debug("PROJECTIONS: Suspending projections in Projection Core Service timed out. Force stopping.");
 		FinishStopping();
 	}
 
 	public void Handle(CoreProjectionStatusMessage.Suspended message) {
-		if (!_stopping) return;
+		if (!_stopping)
+			return;
 
 		_suspendingProjections.Remove(message.ProjectionId);
 		if (_suspendingProjections.Count == 0) {
@@ -132,7 +133,8 @@ public class ProjectionCoreService
 	}
 
 	private void FinishStopping() {
-		if (!_stopping) return;
+		if (!_stopping)
+			return;
 
 		_projections.Clear();
 		_stopping = false;

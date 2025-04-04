@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -103,7 +103,7 @@ public class when_reading_an_event_committed_on_leader_and_on_followers<TLogForm
 		var quorum = (followers.Count() + 1) / 2 + 1;
 		var successfulReads = 0;
 		foreach (var s in followers) {
-			AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+			AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 			var readResult = ReplicationTestHelper.ReadAllEventsForward(s, _commitPosition);
 			successfulReads += readResult.Events.Count(x => x.OriginalStreamId == _streamId);
 		}
@@ -118,7 +118,7 @@ public class when_reading_an_event_committed_on_leader_and_on_followers<TLogForm
 		var quorum = (followers.Count() + 1) / 2 + 1;
 		var successfulReads = 0;
 		foreach (var s in followers) {
-			AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+			AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 			var readResult = ReplicationTestHelper.ReadAllEventsBackward(s, _commitPosition);
 			successfulReads += readResult.Events.Count(x => x.OriginalStreamId == _streamId);
 		}
@@ -133,7 +133,7 @@ public class when_reading_an_event_committed_on_leader_and_on_followers<TLogForm
 		var quorum = (followers.Count() + 1) / 2 + 1;
 		var successfulReads = 0;
 		foreach (var s in followers) {
-			AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+			AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 			var readResult = ReplicationTestHelper.ReadStreamEventsForward(s, _streamId);
 			successfulReads += readResult.Events.Count();
 			Assert.AreEqual(ReadStreamResult.Success, readResult.Result);
@@ -149,7 +149,7 @@ public class when_reading_an_event_committed_on_leader_and_on_followers<TLogForm
 		var quorum = (followers.Count() + 1) / 2 + 1;
 		var successfulReads = 0;
 		foreach (var s in followers) {
-			AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+			AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 			var readResult = ReplicationTestHelper.ReadStreamEventsBackward(s, _streamId);
 			successfulReads += readResult.Events.Count();
 		}
@@ -164,7 +164,7 @@ public class when_reading_an_event_committed_on_leader_and_on_followers<TLogForm
 		var quorum = (followers.Count() + 1) / 2 + 1;
 		var successfulReads = 0;
 		foreach (var s in followers) {
-			AssertEx.IsOrBecomesTrue(()=> s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
+			AssertEx.IsOrBecomesTrue(() => s.Db.Config.IndexCheckpoint.Read() >= _indexPosition);
 			var readResult = ReplicationTestHelper.ReadEvent(s, _streamId, 0);
 			successfulReads += readResult.Result == ReadEventResult.Success ? 1 : 0;
 		}

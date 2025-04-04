@@ -11,10 +11,10 @@
 		<PackageReference Include="Grpc.Net.Client" Version="2.64.0" />
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.0" />
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-		<PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.10" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
 		<PackageReference Include="NUnit" Version="3.14.0" />
 		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+		<PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.23" />
 		<PackageReference Include="Google.Protobuf" Version="3.27.2" />
 		<PackageReference Include="Grpc.Tools" Version="2.65.0">
 			<PrivateAssets>all</PrivateAssets>
@@ -22,6 +22,7 @@
 		</PackageReference>
 		<PackageReference Include="Scrutor" Version="5.0.2" />
 		<PackageReference Include="Serilog.Sinks.InMemory" Version="0.11.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
 
 	</ItemGroup>
 	<ItemGroup>

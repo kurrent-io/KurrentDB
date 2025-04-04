@@ -1,39 +1,37 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading.Tasks;
+using EventStore.Client.PersistentSubscriptions;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
-using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToAllCompleted;
+using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
+using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.DeleteReq.Types.Options.StreamOptionOneofCase;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {
-	private static readonly Operation DeleteOperation = new Operation(Plugins.Authorization.Operations.Subscriptions.Delete);
+	private static readonly Operation DeleteOperation = new(Plugins.Authorization.Operations.Subscriptions.Delete);
+
 	public override async Task<DeleteResp> Delete(DeleteReq request, ServerCallContext context) {
-		
 		var createPersistentSubscriptionSource = new TaskCompletionSource<DeleteResp>();
 		var correlationId = Guid.NewGuid();
 
 		var user = context.GetHttpContext().User;
 
-		if (!await _authorizationProvider.CheckAccessAsync(user,
-			DeleteOperation, context.CancellationToken)) {
-			throw RpcExceptions.AccessDenied();
+		if (!await _authorizationProvider.CheckAccessAsync(user, DeleteOperation, context.CancellationToken)) {
+			throw AccessDenied();
 		}
 
-		string streamId = null;
+		string streamId;
 
-		switch (request.Options.StreamOptionCase)
-		{
-			case StreamOptionOneofCase.StreamIdentifier:
-			{
+		switch (request.Options.StreamOptionCase) {
+			case StreamOptionOneofCase.StreamIdentifier: {
 				streamId = request.Options.StreamIdentifier;
 				_publisher.Publish(new ClientMessage.DeletePersistentSubscriptionToStream(
 					correlationId,
@@ -60,7 +58,7 @@ internal partial class PersistentSubscriptions {
 		return await createPersistentSubscriptionSource.Task;
 
 		void HandleDeletePersistentSubscriptionCompleted(Message message) {
-			if (message is ClientMessage.NotHandled notHandled && RpcExceptions.TryHandleNotHandled(notHandled, out var ex)) {
+			if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 				createPersistentSubscriptionSource.TrySetException(ex);
 				return;
 			}
@@ -73,25 +71,23 @@ internal partial class PersistentSubscriptions {
 							return;
 						case DeletePersistentSubscriptionToStreamResult.Fail:
 							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.PersistentSubscriptionFailed(streamId, request.Options.GroupName,
-									completed.Reason));
+								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completed.Reason)
+							);
 							return;
 						case DeletePersistentSubscriptionToStreamResult.DoesNotExist:
 							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.PersistentSubscriptionDoesNotExist(streamId,
-									request.Options.GroupName));
+								PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName));
 							return;
 						case DeletePersistentSubscriptionToStreamResult.AccessDenied:
-							createPersistentSubscriptionSource.TrySetException(RpcExceptions.AccessDenied());
+							createPersistentSubscriptionSource.TrySetException(AccessDenied());
 							return;
 						default:
-							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.UnknownError(completed.Result));
+							createPersistentSubscriptionSource.TrySetException(UnknownError(completed.Result));
 							return;
 					}
 				}
-				createPersistentSubscriptionSource.TrySetException(
-					RpcExceptions.UnknownMessage<ClientMessage.DeletePersistentSubscriptionToStreamCompleted>(message));
+
+				createPersistentSubscriptionSource.TrySetException(UnknownMessage<ClientMessage.DeletePersistentSubscriptionToStreamCompleted>(message));
 			} else {
 				if (message is ClientMessage.DeletePersistentSubscriptionToAllCompleted completedAll) {
 					switch (completedAll.Result) {
@@ -100,27 +96,25 @@ internal partial class PersistentSubscriptions {
 							return;
 						case DeletePersistentSubscriptionToAllResult.Fail:
 							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.PersistentSubscriptionFailed(streamId, request.Options.GroupName,
-									completedAll.Reason));
+								PersistentSubscriptionFailed(streamId, request.Options.GroupName, completedAll.Reason)
+							);
 							return;
 						case DeletePersistentSubscriptionToAllResult.DoesNotExist:
 							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.PersistentSubscriptionDoesNotExist(streamId,
-									request.Options.GroupName));
+								PersistentSubscriptionDoesNotExist(streamId, request.Options.GroupName)
+							);
 							return;
 						case DeletePersistentSubscriptionToAllResult.AccessDenied:
-							createPersistentSubscriptionSource.TrySetException(RpcExceptions.AccessDenied());
+							createPersistentSubscriptionSource.TrySetException(AccessDenied());
 							return;
 						default:
-							createPersistentSubscriptionSource.TrySetException(
-								RpcExceptions.UnknownError(completedAll.Result));
+							createPersistentSubscriptionSource.TrySetException(UnknownError(completedAll.Result));
 							return;
 					}
 				}
-				createPersistentSubscriptionSource.TrySetException(
-					RpcExceptions.UnknownMessage<ClientMessage.DeletePersistentSubscriptionToAllCompleted>(message));
-			}
 
+				createPersistentSubscriptionSource.TrySetException(UnknownMessage<ClientMessage.DeletePersistentSubscriptionToAllCompleted>(message));
+			}
 		}
 	}
 }

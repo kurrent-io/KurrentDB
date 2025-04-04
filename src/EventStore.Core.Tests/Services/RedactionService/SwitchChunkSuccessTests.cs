@@ -1,7 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Data.Redaction;
 using EventStore.Core.TransactionLog.Chunks;
@@ -26,7 +27,7 @@ public class SwitchChunkSuccess<TLogFormat, TStreamId> : SwitchChunkTests<TLogFo
 			Assert.True(!File.Exists(newChunk));
 			Assert.True(!File.Exists(GetChunk(1, 0, true)));
 			Assert.True(File.Exists(GetChunk(1, 1, true)));
-			Assert.AreEqual(1, Db.Manager.FileSystem.NamingStrategy.GetVersionFor(Path.GetFileName(Db.Manager.GetChunk(1).LocalFileName)));
+			Assert.AreEqual(1, Db.Manager.FileSystem.LocalNamingStrategy.GetVersionFor(Path.GetFileName((await Db.Manager.GetInitializedChunk(1, CancellationToken.None)).LocalFileName)));
 			Assert.True(File.Exists(GetChunk(0, 0, true)));
 
 			// can switch again
@@ -37,7 +38,7 @@ public class SwitchChunkSuccess<TLogFormat, TStreamId> : SwitchChunkTests<TLogFo
 			Assert.True(!File.Exists(GetChunk(1, 0, true)));
 			Assert.True(!File.Exists(GetChunk(1, 1, true)));
 			Assert.True(File.Exists(GetChunk(1, 2, true)));
-			Assert.AreEqual(2, Db.Manager.FileSystem.NamingStrategy.GetVersionFor(Path.GetFileName(Db.Manager.GetChunk(1).LocalFileName)));
+			Assert.AreEqual(2, Db.Manager.FileSystem.LocalNamingStrategy.GetVersionFor(Path.GetFileName((await Db.Manager.GetInitializedChunk(1, CancellationToken.None)).LocalFileName)));
 			Assert.True(File.Exists(GetChunk(0, 0, true)));
 		}
 	}
@@ -78,7 +79,7 @@ public class SwitchChunkSuccess<TLogFormat, TStreamId> : SwitchChunkTests<TLogFo
 			Assert.True(!File.Exists(newChunk));
 			Assert.True(!File.Exists(GetChunk(1, 0, true)));
 			Assert.True(File.Exists(GetChunk(1, 1, true)));
-			Assert.AreEqual(1, Db.Manager.FileSystem.NamingStrategy.GetVersionFor(Path.GetFileName(Db.Manager.GetChunk(1).LocalFileName)));
+			Assert.AreEqual(1, Db.Manager.FileSystem.LocalNamingStrategy.GetVersionFor(Path.GetFileName((await Db.Manager.GetInitializedChunk(1, CancellationToken.None)).LocalFileName)));
 			Assert.True(File.Exists(GetChunk(0, 0, true)));
 		}
 	}

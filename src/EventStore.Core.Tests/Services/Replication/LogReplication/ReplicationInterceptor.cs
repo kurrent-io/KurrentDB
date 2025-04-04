@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
@@ -40,17 +40,16 @@ internal class ReplicationInterceptor : WriterInterceptor {
 		if (Paused)
 			return;
 
-		switch (message)
-		{
+		switch (message) {
 			case ReplicationMessage.DataChunkBulk dataChunkBulk:
 				if (dataChunkBulk.SubscriptionPosition + dataChunkBulk.DataBytes.Length + bytesToAdd >
-				    _dataInfo.MaxLogPosition)
+					_dataInfo.MaxLogPosition)
 					Pause();
 				break;
 			case ReplicationMessage.RawChunkBulk rawChunkBulk:
 				if (rawChunkBulk.ChunkStartNumber == _rawInfo.ChunkStartNumber &&
-				    rawChunkBulk.ChunkEndNumber == _rawInfo.ChunkEndNumber &&
-				    rawChunkBulk.RawPosition + rawChunkBulk.RawBytes.Length + bytesToAdd > _rawInfo.MaxRawPosition)
+					rawChunkBulk.ChunkEndNumber == _rawInfo.ChunkEndNumber &&
+					rawChunkBulk.RawPosition + rawChunkBulk.RawBytes.Length + bytesToAdd > _rawInfo.MaxRawPosition)
 					Pause();
 				break;
 		}

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Projections.Core.Services.Processing;
@@ -38,7 +38,8 @@ public class a_checkpoint_requested_on_a_non_started_stream : TestFixtureWithRea
 	[Test]
 	public void throws_invalid_operation_exception() {
 		Assert.Throws<InvalidOperationException>(() => {
-			if (_caughtException != null) throw _caughtException;
+			if (_caughtException != null)
+				throw _caughtException;
 		});
 	}
 }

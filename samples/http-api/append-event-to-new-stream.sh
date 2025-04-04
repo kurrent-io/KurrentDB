@@ -1,6 +1,6 @@
 #region curl
 curl -i -d "@event.json" "http://127.0.0.1:2113/streams/newstream" \
-    -H "Content-Type:application/vnd.eventstore.events+json"
+    -H "Content-Type:application/vnd.kurrent.events+json"
     -u "admin:changeit"
 #endregion curl
 
@@ -11,7 +11,7 @@ Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-PINGOTHER
 Access-Control-Allow-Origin: *
 Location: http://127.0.0.1:2113/streams/newstream/0
 Content-Type: text/plain; charset: utf-8
-Server: Mono-HTTPAPI/1.0
+Server: Kestrel
 Date: Fri, 28 Jun 2013 12:17:59 GMT
 Content-Length: 0
 Keep-Alive: timeout=15,max=100

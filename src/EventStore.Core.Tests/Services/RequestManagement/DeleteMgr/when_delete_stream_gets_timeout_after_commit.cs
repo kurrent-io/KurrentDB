@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -7,9 +7,9 @@ using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
+using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr;
 
@@ -17,8 +17,8 @@ public class when_delete_stream_gets_timeout_after_commit : RequestManagerSpecif
 	private long _commitPosition = 3000;
 	protected override DeleteStream OnManager(FakePublisher publisher) {
 		return new DeleteStream(
-			publisher, 
-			CommitTimeout, 
+			publisher,
+			CommitTimeout,
 			Envelope,
 			InternalCorrId,
 			ClientCorrId,
@@ -33,7 +33,7 @@ public class when_delete_stream_gets_timeout_after_commit : RequestManagerSpecif
 		yield return new ReplicationTrackingMessage.ReplicatedTo(_commitPosition);
 	}
 
-	protected override Message When() {			
+	protected override Message When() {
 		return new StorageMessage.RequestManagerTimerTick(DateTime.UtcNow + TimeSpan.FromMinutes(1));
 	}
 

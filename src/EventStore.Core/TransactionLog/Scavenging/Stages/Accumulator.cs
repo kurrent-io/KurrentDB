@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -84,15 +84,15 @@ public class Accumulator<TStreamId> : IAccumulator<TStreamId> {
 		var tombstoneRecord = new RecordForAccumulator<TStreamId>.TombStoneRecord();
 
 		while (await AccumulateChunkAndRecordRange(
-			       scavengePoint,
-			       state,
-			       weights,
-			       logicalChunkNumber,
-			       originalStreamRecord,
-			       metadataStreamRecord,
-			       tombstoneRecord,
-			       stopwatch,
-			       cancellationToken)) {
+				   scavengePoint,
+				   state,
+				   weights,
+				   logicalChunkNumber,
+				   originalStreamRecord,
+				   metadataStreamRecord,
+				   tombstoneRecord,
+				   stopwatch,
+				   cancellationToken)) {
 			logicalChunkNumber++;
 		}
 	}
@@ -203,11 +203,11 @@ public class Accumulator<TStreamId> : IAccumulator<TStreamId> {
 
 		var cancellationCheckCounter = 0;
 		await foreach (var recordType in _chunkReader.ReadChunkInto(
-			         logicalChunkNumber,
-			         originalStreamRecord,
-			         metadataStreamRecord,
-			         tombStoneRecord,
-			         cancellationToken)) {
+					 logicalChunkNumber,
+					 originalStreamRecord,
+					 metadataStreamRecord,
+					 tombStoneRecord,
+					 cancellationToken)) {
 
 			RecordForAccumulator<TStreamId> record;
 			switch (recordType) {
@@ -255,7 +255,7 @@ public class Accumulator<TStreamId> : IAccumulator<TStreamId> {
 
 		@continue = true;
 
-		Return:
+Return:
 		return new AccumulationResult {
 			AccumulatedRecordsCount = countAccumulatedRecords,
 			OriginalStreamRecordsCount = countOriginalStreamRecords,
@@ -434,7 +434,7 @@ public class Accumulator<TStreamId> : IAccumulator<TStreamId> {
 		var isInOrder = true;
 		foreach (var eventInfo in eventInfos) {
 			if (eventInfo.LogPosition < record.LogPosition &&
-			    eventInfo.EventNumber >= record.EventNumber) {
+				eventInfo.EventNumber >= record.EventNumber) {
 
 				// found an event that is before us in the log but has our event number or higher.
 				// that record is the metadata that we will keep, skipping over this one.
@@ -445,8 +445,8 @@ public class Accumulator<TStreamId> : IAccumulator<TStreamId> {
 		long? replacedPosition;
 		if (isInOrder) {
 			if (eventInfos.Length > 0 &&
-			    eventInfos[0].EventNumber < record.EventNumber &&
-			    eventInfos[0].LogPosition < record.LogPosition) {
+				eventInfos[0].EventNumber < record.EventNumber &&
+				eventInfos[0].LogPosition < record.LogPosition) {
 				replacedPosition = eventInfos[0].LogPosition;
 			} else {
 				replacedPosition = null;

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -18,7 +18,9 @@ public class AuthenticationMiddleware : IMiddleware {
 	private readonly IAuthenticationProvider _authenticationProvider;
 	private readonly IReadOnlyList<IHttpAuthenticationProvider> _httpAuthenticationProviders;
 
-	public AuthenticationMiddleware(IReadOnlyList<IHttpAuthenticationProvider> httpAuthenticationProviders, IAuthenticationProvider authenticationProvider) {
+	public AuthenticationMiddleware(
+		IReadOnlyList<IHttpAuthenticationProvider> httpAuthenticationProviders,
+		IAuthenticationProvider authenticationProvider) {
 		_httpAuthenticationProviders = httpAuthenticationProviders;
 		_authenticationProvider = authenticationProvider;
 	}
@@ -47,6 +49,17 @@ public class AuthenticationMiddleware : IMiddleware {
 			case HttpAuthenticationRequestStatus.Authenticated:
 				context.User = principal;
 				await next(context);
+				if (context.Response.StatusCode == 302 && principal.Identity?.IsAuthenticated == false) {
+					// Unless the call is made from a browser, return 401 instead of redirecting to the login page
+					var userAgent = context.Request.Headers.UserAgent.FirstOrDefault();
+					if (userAgent == null || userAgent.StartsWith("Mozilla") == false) {
+						// Avoid setting the status code if the response has already started
+						if (!context.Response.HasStarted) {
+							context.Response.StatusCode = 401;
+						}
+					}
+				}
+
 				break;
 			case HttpAuthenticationRequestStatus.Error:
 				context.Response.StatusCode = HttpStatusCode.InternalServerError;
@@ -115,10 +128,12 @@ public class AuthenticationMiddleware : IMiddleware {
 	private async Task AddHttp1ChallengeHeaders(HttpContext context) {
 		context.Response.StatusCode = HttpStatusCode.Unauthorized;
 		var authSchemes = _authenticationProvider.GetSupportedAuthenticationSchemes();
+		// ReSharper disable once ConditionIsAlwaysTrueOrFalse
 		if (authSchemes != null && authSchemes.Any()) {
 			//add "X-" in front to prevent any default browser behaviour e.g Basic Auth popups
 			context.Response.Headers.Append("WWW-Authenticate", $"X-{authSchemes.First()} realm=\"ESDB\"");
 			var properties = _authenticationProvider.GetPublicProperties();
+			// ReSharper disable once ConditionIsAlwaysTrueOrFalse
 			if (properties != null && properties.Any()) {
 				await context.Response.WriteAsync(JsonConvert.SerializeObject(properties));
 			}

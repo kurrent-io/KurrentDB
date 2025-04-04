@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
 using System.Linq;
@@ -16,7 +16,7 @@ public class open_api_document<TLogFormat, TStreamId> : specification_with_a_sin
 
 	[Test]
 	public async Task should_document_the_actions_of_all_controllers() {
-		var skipActionPaths = new [] {
+		var skipActionPaths = new[] {
 			"/admin/login",
 			"/users/$current",
 			// handled by: /stats/{statPath}

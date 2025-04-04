@@ -1,19 +1,17 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
-using NUnit.Framework;
-using System.Linq;
 using EventStore.Core.Tests;
+using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.Strategies;
 using EventStore.Projections.Core.Services.Processing.Subscriptions;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_reader {
 	namespace reordering {
@@ -37,9 +35,9 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 
 				_subscriptionId = Guid.NewGuid();
 				_sourceDefinition = new QuerySourcesDefinition {
-					Streams = new[] {"stream-a", "stream-b"},
+					Streams = new[] { "stream-a", "stream-b" },
 					AllEvents = true,
-					Options = new QuerySourcesDefinitionOptions {ReorderEvents = true, ProcessingLag = 100}
+					Options = new QuerySourcesDefinitionOptions { ReorderEvents = true, ProcessingLag = 100 }
 				};
 				_readerStrategy = ReaderStrategy.Create(
 					"test",
@@ -77,8 +75,8 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 
 				Assert.That(
 					(from e in receivedEvents
-						orderby e.Data.Position.PreparePosition
-						select e.Data.Position.PreparePosition).SequenceEqual(
+					 orderby e.Data.Position.PreparePosition
+					 select e.Data.Position.PreparePosition).SequenceEqual(
 						from e in receivedEvents
 						select e.Data.Position.PreparePosition), "Incorrect event order received");
 			}
@@ -93,7 +91,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 			protected override IEnumerable<WhenStep> When() {
 				var fromZeroPosition =
 					CheckpointTag.FromStreamPositions(0,
-						new Dictionary<string, long> {{"stream-a", -1}, {"stream-b", -1}});
+						new Dictionary<string, long> { { "stream-a", -1 }, { "stream-b", -1 } });
 				yield return
 					new ReaderSubscriptionManagement.Subscribe(
 						_subscriptionId, fromZeroPosition, _readerStrategy, _readerSubscriptionOptions);
@@ -113,19 +111,19 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_r
 				yield return
 					new ClientMessage.TransactionWrite(
 						Guid.NewGuid(), correlationId, GetInputQueue(), true, transactionId,
-						new[] {new Event(Guid.NewGuid(), "type1", true, "{Data: 3, Transacted=true}", "{}")}, null);
+						new[] { new Event(Guid.NewGuid(), "type1", true, "{Data: 3, Transacted=true}", "{}") }, null);
 
 				correlationId = Guid.NewGuid();
 				yield return
 					new ClientMessage.WriteEvents(
 						Guid.NewGuid(), correlationId, GetInputQueue(), true, "stream-b", 0,
-						new[] {new Event(Guid.NewGuid(), "type1", true, "{Data: 4}", "{}")}, null);
+						new[] { new Event(Guid.NewGuid(), "type1", true, "{Data: 4}", "{}") }, null);
 
 				correlationId = Guid.NewGuid();
 				yield return
 					new ClientMessage.TransactionWrite(
 						Guid.NewGuid(), correlationId, GetInputQueue(), true, transactionId,
-						new[] {new Event(Guid.NewGuid(), "type1", true, "{Data: 5, Transacted=true}", "{}")}, null);
+						new[] { new Event(Guid.NewGuid(), "type1", true, "{Data: 5, Transacted=true}", "{}") }, null);
 
 				correlationId = Guid.NewGuid();
 				yield return

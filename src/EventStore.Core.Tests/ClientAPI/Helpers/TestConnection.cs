@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -8,7 +8,6 @@ using EventStore.ClientAPI;
 using EventStore.ClientAPI.Internal;
 using EventStore.ClientAPI.SystemData;
 using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.Helpers;
 
@@ -17,7 +16,7 @@ public static class TestConnection {
 
 	public static IEventStoreConnection Create(IPEndPoint endPoint, TcpType tcpType = TcpType.Ssl,
 		UserCredentials userCredentials = null) {
-		
+
 		return EventStoreConnection.Create(Settings(tcpType, userCredentials),
 			endPoint.ToESTcpUri(),
 			$"ESC-{Interlocked.Increment(ref _nextConnId)}");
@@ -36,7 +35,7 @@ public static class TestConnection {
 			.UseCustomLogger(ClientApiLoggerBridge.Default)
 			.EnableVerboseLogging()
 			.LimitReconnectionsTo(10)
-			.LimitAttemptsForOperationTo(1)				
+			.LimitAttemptsForOperationTo(1)
 			.SetTimeoutCheckPeriodTo(TimeSpan.FromMilliseconds(100))
 			.SetReconnectionDelayTo(TimeSpan.Zero)
 			.FailOnNoServerResponse()

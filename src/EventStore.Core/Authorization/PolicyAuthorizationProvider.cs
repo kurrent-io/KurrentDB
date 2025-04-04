@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 
@@ -16,7 +16,7 @@ public class PolicyAuthorizationProvider(IPolicyEvaluator policyEvaluator, bool 
 	static readonly ILogger Logger = Log.ForContext<PolicyAuthorizationProvider>();
 	static readonly TimeProvider Time = TimeProvider.System;
 
-	bool LogAccessDenied  => logAuthorization;
+	bool LogAccessDenied => logAuthorization;
 	bool LogAccessGranted => LogAccessDenied && logSuccesses;
 
 	public override ValueTask<bool> CheckAccessAsync(ClaimsPrincipal principal, Operation operation, CancellationToken ct) {
@@ -57,8 +57,7 @@ public class PolicyAuthorizationProvider(IPolicyEvaluator policyEvaluator, bool 
 		) {
 			try {
 				return HasAccess(await evaluate, principal, startedAt, logAccessDenied, logAccessGranted);
-			}
-			catch (Exception ex) when (ex is not OperationCanceledException) {
+			} catch (Exception ex) when (ex is not OperationCanceledException) {
 				Logger.Error(ex, "Error performing permission check for {Identity}", GetIdentity(principal));
 				return false;
 			}

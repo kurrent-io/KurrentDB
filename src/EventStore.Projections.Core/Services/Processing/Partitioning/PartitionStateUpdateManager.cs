@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -23,7 +23,8 @@ public class PartitionStateUpdateManager {
 		new EmittedStream.WriterConfiguration.StreamMetadata(maxCount: 2);
 
 	public PartitionStateUpdateManager(ProjectionNamesBuilder namingBuilder) {
-		if (namingBuilder == null) throw new ArgumentNullException("namingBuilder");
+		if (namingBuilder == null)
+			throw new ArgumentNullException("namingBuilder");
 		_namingBuilder = namingBuilder;
 	}
 
@@ -32,7 +33,7 @@ public class PartitionStateUpdateManager {
 		if (_states.TryGetValue(partition, out stateEntry)) {
 			stateEntry.PartitionState = state;
 		} else {
-			_states.Add(partition, new State {PartitionState = state, ExpectedTag = basedOn});
+			_states.Add(partition, new State { PartitionState = state, ExpectedTag = basedOn });
 		}
 	}
 

@@ -1,9 +1,8 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
@@ -14,28 +13,28 @@ namespace EventStore.Projections.Core.Tests.Services.checkpoint_tag;
 [TestFixture]
 public class checkpoint_tag_by_event_type_index_positions {
 	private readonly CheckpointTag _a1 = CheckpointTag.FromEventTypeIndexPositions(
-		1, new TFPos(100, 50), new Dictionary<string, long> {{"a", 1}});
+		1, new TFPos(100, 50), new Dictionary<string, long> { { "a", 1 } });
 
 	private readonly CheckpointTag _a1_prime = CheckpointTag.FromEventTypeIndexPositions(
-		1, new TFPos(100, 50), new Dictionary<string, long> {{"a", 0}});
+		1, new TFPos(100, 50), new Dictionary<string, long> { { "a", 0 } });
 
 	private readonly CheckpointTag _b1 = CheckpointTag.FromEventTypeIndexPositions(
-		1, new TFPos(200, 150), new Dictionary<string, long> {{"b", 1}});
+		1, new TFPos(200, 150), new Dictionary<string, long> { { "b", 1 } });
 
 	private readonly CheckpointTag _a1b1 = CheckpointTag.FromEventTypeIndexPositions(
-		1, new TFPos(300, 250), new Dictionary<string, long> {{"a", 1}, {"b", 1}});
+		1, new TFPos(300, 250), new Dictionary<string, long> { { "a", 1 }, { "b", 1 } });
 
 	private readonly CheckpointTag _a2b1 = CheckpointTag.FromEventTypeIndexPositions(
-		1, new TFPos(400, 350), new Dictionary<string, long> {{"a", 2}, {"b", 1}});
+		1, new TFPos(400, 350), new Dictionary<string, long> { { "a", 2 }, { "b", 1 } });
 
 	private readonly CheckpointTag _a2b1_after = CheckpointTag.FromEventTypeIndexPositions(
-		1, new TFPos(430, 420), new Dictionary<string, long> {{"a", 2}, {"b", 1}});
+		1, new TFPos(430, 420), new Dictionary<string, long> { { "a", 2 }, { "b", 1 } });
 
 	private readonly CheckpointTag _a1b2 = CheckpointTag.FromEventTypeIndexPositions(
-		1, new TFPos(500, 450), new Dictionary<string, long> {{"a", 1}, {"b", 2}});
+		1, new TFPos(500, 450), new Dictionary<string, long> { { "a", 1 }, { "b", 2 } });
 
 	private readonly CheckpointTag _a2b2 = CheckpointTag.FromEventTypeIndexPositions(
-		1, new TFPos(600, 550), new Dictionary<string, long> {{"a", 2}, {"b", 2}});
+		1, new TFPos(600, 550), new Dictionary<string, long> { { "a", 2 }, { "b", 2 } });
 
 	[Test]
 	public void equal_equals() {

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Messaging;
@@ -50,11 +50,11 @@ public static partial class SubscriptionMessage {
 			CorrelationId = correlationId;
 		}
 	}
-	
+
 	[DerivedMessage(CoreMessage.Subscription)]
 	public partial class PersistentSubscriptionsRestart : Message {
 		public IEnvelope ReplyEnvelope { get; }
-		
+
 		public PersistentSubscriptionsRestart(IEnvelope replyEnvelope) {
 			ReplyEnvelope = replyEnvelope;
 		}
@@ -76,7 +76,7 @@ public static partial class SubscriptionMessage {
 	[DerivedMessage(CoreMessage.Subscription)]
 	public partial class PersistentSubscriptionsStarted : Message {
 	}
-	
+
 	[DerivedMessage(CoreMessage.Subscription)]
 	public partial class PersistentSubscriptionsStopped : Message {
 	}

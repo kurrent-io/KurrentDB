@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -8,8 +8,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Tcp;
-using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Certificates;
+using EventStore.Core.Tests.Helpers;
 using EventStore.Transport.Tcp;
 using NUnit.Framework;
 
@@ -28,7 +28,7 @@ public class with_intermediate_certificates : with_certificate_chain_of_length_3
 		// certificate exported to PKCS #12 due to this issue on Windows: https://github.com/dotnet/runtime/issues/45680
 		_cert = new X509Certificate2(_leaf.ExportToPkcs12());
 
-		_clientCertValidator = (_,_,_) => (true, null);
+		_clientCertValidator = (_, _, _) => (true, null);
 		_serverEndPoint = new IPEndPoint(IPAddress.Loopback, PortsHelper.GetAvailablePort(IPAddress.Loopback));
 		_listener = new TcpServerListener(_serverEndPoint);
 		_listener.StartListening((endPoint, socket) => {
@@ -38,7 +38,7 @@ public class with_intermediate_certificates : with_certificate_chain_of_length_3
 				socket,
 				() => _cert,
 				() => new X509Certificate2Collection(_intermediate),
-				(cert,chain,errors) => _clientCertValidator(cert, chain, errors),
+				(cert, chain, errors) => _clientCertValidator(cert, chain, errors),
 				verbose: true);
 		}, "Secure");
 	}

@@ -1,19 +1,19 @@
 #region curl
-curl -i -H "Accept:application/vnd.eventstore.atom+json" \
+curl -i -H "Accept:application/vnd.kurrent.atom+json" \
     http://127.0.0.1:2113/streams/%24users --user admin:changeit
 #endregion curl
 
 #region response
 HTTP/1.1 200 OK
 Access-Control-Allow-Methods: POST, DELETE, GET, OPTIONS
-Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-Forwarded-Host, X-Forwarded-Prefix, X-PINGOTHER, Authorization, ES-LongPoll, ES-ExpectedVersion, ES-EventId, ES-EventType, ES-RequiresMaster, ES-HardDelete, ES-ResolveLinkTos
+Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-Forwarded-Host, X-Forwarded-Prefix, X-PINGOTHER, Authorization, Kurrent-LongPoll, Kurrent-ExpectedVersion, Kurrent-EventId, Kurrent-EventType, Kurrent-RequireLeader, Kurrent-HardDelete, Kurrent-ResolveLinkTos
 Access-Control-Allow-Origin: *
-Access-Control-Expose-Headers: Location, ES-Position, ES-CurrentVersion
+Access-Control-Expose-Headers: Location, Kurrent-Position, Kurrent-CurrentVersion
 Cache-Control: max-age=0, no-cache, must-revalidate
 Vary: Accept
 ETag: "3;-2060438500"
-Content-Type: application/vnd.eventstore.atom+json; charset=utf-8
-Server: Mono-HTTPAPI/1.0
+Content-Type: application/vnd.kurrent.atom+json; charset=utf-8
+Server: Kestrel
 Date: Thu, 23 Aug 2018 10:03:34 GMT
 Content-Length: 2670
 Keep-Alive: timeout=15,max=100
@@ -24,7 +24,7 @@ Keep-Alive: timeout=15,max=100
   "updated": "2018-08-23T09:19:37.880827Z",
   "streamId": "$users",
   "author": {
-    "name": "EventStore"
+    "name": "Kurrent"
   },
   "headOfStream": true,
   "selfUrl": "http://127.0.0.1:2113/streams/%24users",
@@ -53,7 +53,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/%24users/3",
       "updated": "2018-08-23T09:19:37.880827Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "$User",
       "links": [
@@ -72,7 +72,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/%24users/2",
       "updated": "2018-08-23T09:08:40.499762Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "$User",
       "links": [
@@ -91,7 +91,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/%24users/1",
       "updated": "2018-08-23T07:55:39.833203Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "$User",
       "links": [
@@ -110,7 +110,7 @@ Keep-Alive: timeout=15,max=100
       "id": "http://127.0.0.1:2113/streams/%24users/0",
       "updated": "2018-08-23T07:55:39.829589Z",
       "author": {
-        "name": "EventStore"
+        "name": "Kurrent"
       },
       "summary": "$User",
       "links": [

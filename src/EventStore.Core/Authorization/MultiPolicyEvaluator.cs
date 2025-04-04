@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Security.Claims;
@@ -28,7 +28,8 @@ public class MultiPolicyEvaluator : IPolicyEvaluator {
 			var policyInfo = policy.Information;
 			if (policy.TryGetAssertions(operation, out var assertions)) {
 				while (!assertions.IsEmpty && evaluationContext.Grant != Grant.Deny) {
-					if (ct.IsCancellationRequested) break;
+					if (ct.IsCancellationRequested)
+						break;
 					var assertion = assertions.Span[0];
 					assertions = assertions.Slice(1);
 					await assertion.Evaluate(cp, operation, policyInfo, evaluationContext);

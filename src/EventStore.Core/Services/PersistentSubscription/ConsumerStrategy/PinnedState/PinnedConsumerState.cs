@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -88,7 +88,7 @@ class PinnedConsumerState {
 				var assignmentsToMove = Assignments
 					.Select((node, bucket) => Tuple.Create(node, bucket))
 					.Where(_ => _.Item1.NodeId == existingClient.NodeId &&
-					            _.Item1.State == BucketAssignment.BucketState.Assigned)
+								_.Item1.State == BucketAssignment.BucketState.Assigned)
 					.OrderBy(_ => _.Item1.InFlightCount) // Take buckets without inflight messages first.
 					.Take(existingClient.AssignmentCount - maxBalancedClientAssignmentCount);
 

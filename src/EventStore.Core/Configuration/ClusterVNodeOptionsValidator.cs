@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
 using System;
@@ -95,13 +95,18 @@ public static class ClusterVNodeOptionsValidator {
 
 		if (options.Cluster.Archiver && !options.Cluster.ReadOnlyReplica) {
 			throw new InvalidConfigurationException(
-				"Only Read Only Replica nodes can be Archivers.");
+				"The Archiver node must also be a Read Only Replica.");
+		}
+
+		if (options.Cluster.Archiver && options.Database.UnsafeIgnoreHardDelete) {
+			throw new InvalidConfigurationException(
+				"The Archiving feature is not compatible with UnsafeIgnoreHardDelete.");
 		}
 	}
 
 	public static bool ValidateForStartup(ClusterVNodeOptions options) {
 		if (!options.Cluster.DiscoverViaDns && options.Cluster.GossipSeed.Length == 0 &&
-		    options.Cluster.ClusterSize == 1) {
+			options.Cluster.ClusterSize == 1) {
 			Log.Information(
 				"DNS discovery is disabled, but no gossip seed endpoints have been specified. Since "
 				+ "the cluster size is set to 1, this may be intentional. Gossip seeds can be specified "

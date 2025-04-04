@@ -1,8 +1,7 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.MultiStream;
 using NUnit.Framework;
@@ -18,14 +17,14 @@ public class when_updating_multistream_postion_tracker_from_a_tag {
 	[SetUp]
 	public void When() {
 		// given
-		var tagger = new MultiStreamPositionTagger(0, new[] {"stream1", "stream2"});
+		var tagger = new MultiStreamPositionTagger(0, new[] { "stream1", "stream2" });
 		var tracker = new PositionTracker(tagger);
 
 		var newTag =
-			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> {{"stream1", 1}, {"stream2", 2}});
+			CheckpointTag.FromStreamPositions(0, new Dictionary<string, long> { { "stream1", 1 }, { "stream2", 2 } });
 		tracker.UpdateByCheckpointTagInitial(newTag);
 		_tag = tracker.LastTag;
-		_tagger = new MultiStreamPositionTagger(0, new[] {"stream1", "stream2"});
+		_tagger = new MultiStreamPositionTagger(0, new[] { "stream1", "stream2" });
 		_positionTracker = new PositionTracker(_tagger);
 		// when
 

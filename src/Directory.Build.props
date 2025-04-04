@@ -14,13 +14,18 @@
 		<LangVersion>12.0</LangVersion>
 		<Platforms>AnyCPU;x64;ARM64</Platforms>
 		<IsPackable>false</IsPackable>
-		<VersionPrefix>25.2.0</VersionPrefix>
+		<VersionPrefix>25.0.0</VersionPrefix>
 		<VersionSuffix>prerelease</VersionSuffix>
+		<IsTestProject>false</IsTestProject>
 	</PropertyGroup>
 	<ItemGroup>
 		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
 		<None Include="..\..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
 		<None Include="..\..\NOTICE.html" Pack="true" PackagePath="\" />
 		<None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(IsTestProject)' == 'true'">
+		<ProjectReference Include="..\EventStore.Plugins.TestHelpers\EventStore.Plugins.TestHelpers.csproj" />
 	</ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -16,11 +16,9 @@ using Xunit;
 using static EventStore.Core.TransactionLog.Chunks.TFChunk.TFChunk;
 
 namespace EventStore.Core.XUnit.Tests.TransactionLog.Chunks;
-public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
+public class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests> {
 	private readonly TFChunkManager _sut;
 	private readonly ILocatorCodec _locatorCodec;
-	private readonly List<Data.ChunkInfo> _onCompleted = [];
-	private readonly List<Data.ChunkInfo> _onLoaded = [];
 	private readonly List<Data.ChunkInfo> _onSwitched = [];
 
 	public TFChunkManagerTests() {
@@ -36,9 +34,6 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 		_sut = new TFChunkManager(dbConfig, fileSystem,
 			new TFChunkTracker.NoOp(),
 			DbTransformManager.Default) {
-
-			OnChunkCompleted = info => _onCompleted.Add(info),
-			OnChunkLoaded = info => _onLoaded.Add(info),
 			OnChunkSwitched = info => _onSwitched.Add(info),
 		};
 	}
@@ -71,9 +66,10 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 		return newChunk;
 	}
 
-	IEnumerable<string> ActualChunks => Enumerable
+	IAsyncEnumerable<string> ActualChunks => Enumerable
 		.Range(0, _sut.ChunksCount)
-		.Select(chunkNum => _sut.GetChunk(chunkNum).ChunkLocator);
+		.ToAsyncEnumerable()
+		.SelectAwaitWithCancellation(async (chunkNum, ct) => (await _sut.GetInitializedChunk(chunkNum, ct)).ChunkLocator);
 
 	[Theory]
 	[InlineData(1, 4, "too big")]
@@ -100,9 +96,7 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 		};
 
 		Assert.False(switched);
-		Assert.Equal(expectedChunks.Select(chunk => chunk.ChunkLocator), ActualChunks);
-		Assert.Equal(2, _onCompleted.Count);
-		Assert.Empty(_onLoaded);
+		Assert.Equal(expectedChunks.ToAsyncEnumerable().Select(chunk => chunk.ChunkLocator), ActualChunks);
 		Assert.Empty(_onSwitched);
 		_ = explanation;
 	}
@@ -130,8 +124,6 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 
 		Assert.True(switched);
 		Assert.Equal(expectedChunks.Select(chunk => chunk.ChunkLocator), ActualChunks);
-		Assert.Equal(2, _onCompleted.Count);
-		Assert.Empty(_onLoaded);
 		Assert.Single(_onSwitched);
 	}
 
@@ -157,8 +149,6 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 
 		Assert.True(switched);
 		Assert.Equal(expectedChunks.Select(chunk => chunk.ChunkLocator), ActualChunks);
-		Assert.Equal(2, _onCompleted.Count);
-		Assert.Empty(_onLoaded);
 		Assert.Single(_onSwitched);
 	}
 
@@ -188,8 +178,6 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 
 		Assert.False(switched);
 		Assert.Equal(expectedChunks.Select(chunk => chunk.ChunkLocator), ActualChunks);
-		Assert.Equal(2, _onCompleted.Count);
-		Assert.Empty(_onLoaded);
 		Assert.Empty(_onSwitched);
 	}
 
@@ -222,8 +210,6 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 
 		Assert.False(switched);
 		Assert.Equal(expectedChunks.Select(chunk => chunk.ChunkLocator), ActualChunks);
-		Assert.Equal(2, _onCompleted.Count);
-		Assert.Empty(_onLoaded);
 		Assert.Empty(_onSwitched);
 		_ = explanation;
 	}
@@ -257,8 +243,6 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 
 		Assert.True(switched);
 		Assert.Equal(expectedChunks, ActualChunks);
-		Assert.Equal(2, _onCompleted.Count);
-		Assert.Empty(_onLoaded);
 		Assert.Equal(3, _onSwitched.Count);
 	}
 
@@ -294,8 +278,27 @@ public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
 
 		Assert.True(switched);
 		Assert.Equal(expectedChunks, ActualChunks);
-		Assert.Equal(2, _onCompleted.Count);
-		Assert.Empty(_onLoaded);
 		Assert.Equal(5, _onSwitched.Count);
+	}
+
+	[Fact]
+	public async Task ensure_lazy_chunk_initialized() {
+		const int chunkNumber = 0;
+		var expectedChunk = await FromCompletedFile(
+			_sut.FileSystem,
+			_locatorCodec.EncodeRemote(chunkNumber),
+			verifyHash: false,
+			unbufferedRead: false,
+			new TFChunkTracker.NoOp(),
+			DbTransformManager.Default,
+			reduceFileCachePressure: false,
+			chunkNumber);
+
+		await _sut.AddChunk(expectedChunk, CancellationToken.None);
+		Assert.False(expectedChunk.Initialized);
+
+		var actualChunk = await _sut.GetInitializedChunk(chunkNumber, CancellationToken.None);
+		Assert.Same(expectedChunk, actualChunk);
+		Assert.True(actualChunk.Initialized);
 	}
 }

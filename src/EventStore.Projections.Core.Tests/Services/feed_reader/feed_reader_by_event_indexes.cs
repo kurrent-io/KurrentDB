@@ -1,16 +1,14 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Data;
-using EventStore.Core.Messaging;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Messages.EventReaders.Feeds;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
@@ -42,11 +40,11 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 
 				_querySourcesDefinition = new QuerySourcesDefinition {
 					AllStreams = true,
-					Events = new[] {"type1", "type2"},
+					Events = new[] { "type1", "type2" },
 					Options = new QuerySourcesDefinitionOptions { }
 				};
 				_fromPosition = CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(0, -1),
-					new Dictionary<string, long> {{"type1", -1}, {"type2", -1}});
+					new Dictionary<string, long> { { "type1", -1 }, { "type2", -1 } });
 				_maxEvents = 1; // reading the first event
 			}
 
@@ -72,7 +70,7 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 				var feedPage = _consumer.HandledMessages.OfType<FeedReaderMessage.FeedPage>().Single();
 				Assert.AreEqual(
 					CheckpointTag.FromEventTypeIndexPositions(0, _tfPos1,
-						new Dictionary<string, long> {{"type1", 0}, {"type2", -1}}), feedPage.LastReaderPosition);
+						new Dictionary<string, long> { { "type1", 0 }, { "type2", -1 } }), feedPage.LastReaderPosition);
 			}
 		}
 
@@ -99,11 +97,11 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 				NoStream("$et");
 				_querySourcesDefinition = new QuerySourcesDefinition {
 					AllStreams = true,
-					Events = new[] {"type1", "type2"},
+					Events = new[] { "type1", "type2" },
 					Options = new QuerySourcesDefinitionOptions { }
 				};
 				_fromPosition = CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(0, -1),
-					new Dictionary<string, long> {{"type1", -1}, {"type2", -1}});
+					new Dictionary<string, long> { { "type1", -1 }, { "type2", -1 } });
 				_maxEvents = 3;
 			}
 
@@ -129,14 +127,14 @@ namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 				var feedPage = _consumer.HandledMessages.OfType<FeedReaderMessage.FeedPage>().Single();
 				Assert.AreEqual(
 					CheckpointTag.FromEventTypeIndexPositions(0, _tfPos3,
-						new Dictionary<string, long> {{"type1", 1}, {"type2", 0}}), feedPage.LastReaderPosition);
+						new Dictionary<string, long> { { "type1", 1 }, { "type2", 0 } }), feedPage.LastReaderPosition);
 			}
 
 			[Test]
 			public void returns_correct_event_sequence() {
 				var feedPage = _consumer.HandledMessages.OfType<FeedReaderMessage.FeedPage>().Single();
 				Assert.That(
-					new long[] {0, 1, 2}.SequenceEqual(
+					new long[] { 0, 1, 2 }.SequenceEqual(
 						feedPage.Events.Select(e => e.ResolvedEvent.EventSequenceNumber).OrderBy(v => v)));
 			}
 		}

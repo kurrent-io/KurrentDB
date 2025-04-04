@@ -14,6 +14,7 @@ namespace EventStore.Core.Services.Transport.Http;
 
 public static class GrpcProtocolHelpers {
 	internal const string GrpcContentType = "application/grpc";
+	internal const string GrpcProtoContentType = "application/grpc+proto";
 	internal const string GrpcWebContentType = "application/grpc-web";
 	internal const string GrpcWebTextContentType = "application/grpc-web-text";
 	internal const string RetryPushbackHeader = "grpc-retry-pushback-ms";
@@ -44,6 +45,7 @@ public static class GrpcProtocolHelpers {
 	public static bool IsGrpc(this HttpContext context) =>
 		context.Request.ContentType
 			is GrpcContentType
+			or GrpcProtoContentType
 			or GrpcWebContentType
 			or GrpcWebTextContentType;
 

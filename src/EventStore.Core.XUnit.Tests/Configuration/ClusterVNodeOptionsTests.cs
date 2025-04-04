@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 
@@ -117,7 +117,7 @@ public class ClusterVNodeOptionsTests {
 
 	[Fact]
 	public void validation_should_return_error_when_default_password_options_pass_through_command_line() {
-		var configuration =  new ConfigurationBuilder()
+		var configuration = new ConfigurationBuilder()
 			.AddKurrentDefaultValues()
 			.AddLegacyEventStoreCommandLine(
 				$"--{EventStorePrefix}:DefaultAdminPassword=Admin#")

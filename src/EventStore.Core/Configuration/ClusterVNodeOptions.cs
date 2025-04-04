@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
 
@@ -23,8 +23,8 @@ using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Configuration;
-using Serilog;
 using Quickenshtein;
+using Serilog;
 
 namespace EventStore.Core;
 
@@ -136,7 +136,7 @@ public partial record ClusterVNodeOptions {
 		public int WorkerThreads { get; init; } = 0;
 
 		[Description("Enables the tracking of various histograms in the backend, " +
-		             "typically only used for debugging, etc.")]
+					 "typically only used for debugging, etc.")]
 		[Deprecated("The EnableHistograms setting has been deprecated as of version 24.10.0 and currently has no effect. " +
 					"Please contact Kurrent if this feature is of interest to you.")]
 		public bool EnableHistograms { get; init; } = false;
@@ -148,11 +148,15 @@ public partial record ClusterVNodeOptions {
 		public bool LogFailedAuthenticationAttempts { get; init; } = false;
 
 		[Description("Skip Index Scan on Reads. This skips the index scan which was used " +
-		             "to stop reading duplicates.")]
+					 "to stop reading duplicates.")]
 		public bool SkipIndexScanOnReads { get; init; } = false;
 
-		[Description("The maximum size of appends, in bytes. May not exceed 16MB.")]
+		[Description("The maximum size of appends, in bytes. This is the total size of all events in the append request. " +
+					 "May not exceed 16MB.")]
 		public int MaxAppendSize { get; init; } = 1_024 * 1_024;
+
+		[Description("The maximum size of an individual event in an append request received over gRPC or HTTP, in bytes.")]
+		public int MaxAppendEventSize { get; init; } = int.MaxValue;
 
 		[Description("Disable Authentication, Authorization and TLS on all TCP/HTTP interfaces.")]
 		public bool Insecure { get; init; } = false;
@@ -164,7 +168,7 @@ public partial record ClusterVNodeOptions {
 		public bool AllowAnonymousStreamAccess { get; init; } = false;
 
 		[Description("Overrides anonymous access for the gossip endpoint. If set to true, the gossip endpoint will accept anonymous access. " +
-		             $"Otherwise anonymous access will be dis/allowed based on the value of the '{nameof(AllowAnonymousEndpointAccess)}' option")]
+					 $"Otherwise anonymous access will be dis/allowed based on the value of the '{nameof(AllowAnonymousEndpointAccess)}' option")]
 		public bool OverrideAnonymousEndpointAccessForGossip { get; init; } = true;
 
 		[Description("Disable telemetry data collection."), EnvironmentOnly("You can only opt-out of telemetry using Environment Variables")]
@@ -213,18 +217,18 @@ public partial record ClusterVNodeOptions {
 		public string? AuthenticationConfig { get; init; }
 
 		[Description("Disables first level authorization checks on all HTTP endpoints. " +
-		             "This option can be enabled for backwards compatibility with EventStore 5.0.1 or earlier.")]
+					 "This option can be enabled for backwards compatibility with EventStore 5.0.1 or earlier.")]
 		public bool DisableFirstLevelHttpAuthorization { get; init; } = false;
 	}
 
 	[Description("Certificate Options (from file)")]
 	public record CertificateFileOptions {
 		[Description("The path to a PKCS #12 (.p12/.pfx) or an X.509 (.pem, .crt, .cer, .der) certificate file. " +
-		             "If you have intermediate certificates, they should be bundled together in a PEM or PKCS #12 file containing the node's certificate followed by the intermediate certificates.")]
+					 "If you have intermediate certificates, they should be bundled together in a PEM or PKCS #12 file containing the node's certificate followed by the intermediate certificates.")]
 		public string? CertificateFile { get; init; }
 
 		[Description("The path to the certificate private key file (.key) if an X.509 (.pem, .crt, .cer, .der) " +
-		             "certificate file is provided.")]
+					 "certificate file is provided.")]
 		public string? CertificatePrivateKeyFile { get; init; }
 
 		[Description("The password to the certificate if a PKCS #12 (.p12/.pfx) certificate file is provided."),
@@ -239,7 +243,7 @@ public partial record ClusterVNodeOptions {
 	[Description("Certificate Options")]
 	public record CertificateOptions {
 		[Description("The path to a directory which contains trusted X.509 (.pem, .crt, .cer, .der) " +
-		             "root certificate files.")]
+					 "root certificate files.")]
 		public string? TrustedRootCertificatesPath { get; init; } =
 			Locations.DefaultTrustedRootCertificateDirectory;
 
@@ -310,14 +314,14 @@ public partial record ClusterVNodeOptions {
 		public int GossipTimeoutMs { get; init; } = 2_500;
 
 		[Description("Sets this node as a read only replica that is not allowed to participate in elections " +
-		             "or accept writes from clients.")]
+					 "or accept writes from clients.")]
 		public bool ReadOnlyReplica { get; init; } = false;
 
 		[Description("Sets this node as an Archiver node. Requires ReadOnlyReplica to be true. Experimental.")]
 		public bool Archiver { get; init; } = false;
 
 		[Description("Allow more nodes than the cluster size to join the cluster as clones. " +
-		             "(UNSAFE: can cause data loss if a clone is promoted as leader)")]
+					 "(UNSAFE: can cause data loss if a clone is promoted as leader)")]
 		public bool UnsafeAllowSurplusNodes { get; init; } = false;
 
 		[Description("The number of seconds a dead node will remain in the gossip before being pruned."),
@@ -375,16 +379,16 @@ public partial record ClusterVNodeOptions {
 		public int IndexCacheSize { get; init; } = 0;
 
 		[Description("Bypasses the checking of file hashes of database during startup " +
-		             "(allows for faster startup).")]
+					 "(allows for faster startup).")]
 		public bool SkipDbVerify { get; init; } = false;
 
 		[Description("Enables Write Through when writing to the file system, this bypasses filesystem caches.")]
 		public bool WriteThrough { get; init; } = false;
 
 		[Description("Enables Unbuffered/DirectIO when writing to the file system, this bypasses filesystem " +
-		             "caches.")]
+					 "caches.")]
 		[Deprecated("The Unbuffered setting has been deprecated as of version 24.6.0 and currently has no effect. " +
-		            "Please contact Kurrent if this feature is of interest to you.")]
+					"Please contact Kurrent if this feature is of interest to you.")]
 		public bool Unbuffered { get; init; } = false;
 
 		[Description("The initial number of readers to start when opening a TFChunk.")]
@@ -411,7 +415,7 @@ public partial record ClusterVNodeOptions {
 		public bool UnsafeIgnoreHardDelete { get; init; } = false;
 
 		[Description("Bypasses the checking of file hashes of indexes during startup and after index merges " +
-		             "(allows for faster startup and less disk pressure after merges).")]
+					 "(allows for faster startup and less disk pressure after merges).")]
 		public bool SkipIndexVerify { get; init; } = false;
 
 		[Description("Sets the depth to cache for the mid point cache in index.")]
@@ -421,15 +425,15 @@ public partial record ClusterVNodeOptions {
 		public bool ReduceFileCachePressure { get; init; } = false;
 
 		[Description("Number of threads to be used to initialize the database. " +
-		             "Will be capped at host processor count.")]
+					 "Will be capped at host processor count.")]
 		public int InitializationThreads { get; init; } = 1;
 
 		[Description("The number of reader threads to use for processing reads. Set to '0' to scale automatically (Default)")]
 		public int ReaderThreadsCount { get; init; } = 0;
 
 		[Description("During large Index Merge operations, writes may be slowed down. Set this to the maximum " +
-		             "index file level for which automatic merges should happen. Merging indexes above this level " +
-		             "should be done manually.")]
+					 "index file level for which automatic merges should happen. Merging indexes above this level " +
+					 "should be done manually.")]
 		public int MaxAutoMergeIndexLevel { get; init; } = int.MaxValue;
 
 		[Description("Set this option to write statistics to the database.")]
@@ -442,9 +446,9 @@ public partial record ClusterVNodeOptions {
 		}
 
 		[Description("When truncate.chk is set, the database will be truncated on startup. " +
-		             "This is a safety check to ensure large amounts of data truncation does not happen " +
-		             "accidentally. This value should be set in the low 10,000s for allow for " +
-		             "standard cluster recovery operations. -1 is no max.")]
+					 "This is a safety check to ensure large amounts of data truncation does not happen " +
+					 "accidentally. This value should be set in the low 10,000s for allow for " +
+					 "standard cluster recovery operations. -1 is no max.")]
 		public long MaxTruncation { get; init; } = 256 * 1_024 * 1_024;
 
 		public int ChunkSize { get; init; } = TFConsts.ChunkSize;
@@ -452,14 +456,14 @@ public partial record ClusterVNodeOptions {
 		public StatsStorage StatsStorage { get; init; } = StatsStorage.File;
 
 		[Description("The log format version to use for storing the event log. " +
-		             "V3 is currently in development and should only be used for testing purposes.")]
+					 "V3 is currently in development and should only be used for testing purposes.")]
 		public DbLogFormat DbLogFormat { get; init; } = DbLogFormat.V2;
 
 		[Description("The amount of memory & disk space, in bytes, to use for the stream existence filter. " +
-		             "This should be set to roughly the maximum number of streams you expect to have in your database, " +
-		             "i.e if you expect to have a max of 500 million streams, use a value of 500 megabytes. " +
-		             "The value you select should also fit entirely in memory to avoid any performance degradation. " +
-		             "Use 0 to disable the filter. Resizing the filter will cause a full rebuild.")]
+					 "This should be set to roughly the maximum number of streams you expect to have in your database, " +
+					 "i.e if you expect to have a max of 500 million streams, use a value of 500 megabytes. " +
+					 "The value you select should also fit entirely in memory to avoid any performance degradation. " +
+					 "Use 0 to disable the filter. Resizing the filter will cause a full rebuild.")]
 		public long StreamExistenceFilterSize { get; init; } = Opts.StreamExistenceFilterSizeDefault;
 
 		[Description("The page size of the scavenge database.")]
@@ -475,13 +479,13 @@ public partial record ClusterVNodeOptions {
 	[Description("gRPC Options")]
 	public record GrpcOptions {
 		[Description("Controls the period (in milliseconds) after which a keepalive ping " +
-		             "is sent on the transport."),
+					 "is sent on the transport."),
 		 Unit("ms")]
 		public int KeepAliveInterval { get; init; } = 10_000;
 
 		[Description("Controls the amount of time (in milliseconds) the sender of the keepalive ping waits " +
-		             "for an acknowledgement. If it does not receive an acknowledgment within this time, " +
-		             "it will close the connection."),
+					 "for an acknowledgement. If it does not receive an acknowledgment within this time, " +
+					 "it will close the connection."),
 		 Unit("ms")]
 		public int KeepAliveTimeout { get; init; } = 10_000;
 
@@ -561,7 +565,7 @@ public partial record ClusterVNodeOptions {
 	public record ProjectionOptions {
 		public const int DefaultProjectionExecutionTimeout = 250;
 		[Description("Enables the running of projections. System runs built-in projections, " +
-		             "All runs user projections.")]
+					 "All runs user projections.")]
 		public ProjectionType RunProjections { get; init; }
 
 		[Description("Start the built in system projections.")]
@@ -575,7 +579,7 @@ public partial record ClusterVNodeOptions {
 		public int ProjectionsQueryExpiry { get; init; } = 5;
 
 		[Description("Fault the projection if the Event number that was expected in the stream differs " +
-		             "from what is received. This may happen if events have been deleted or expired.")]
+					 "from what is received. This may happen if events have been deleted or expired.")]
 		public bool FaultOutOfOrderProjections { get; init; } = false;
 
 		[Description("The time in milliseconds allowed for the compilation phase of user projections"),
@@ -585,6 +589,9 @@ public partial record ClusterVNodeOptions {
 		[Description("The maximum execution time in milliseconds for executing a handler in a user projection. It can be overridden for a specific projection by setting ProjectionExecutionTimeout config for that projection"),
 		 Unit("ms")]
 		public int ProjectionExecutionTimeout { get; set; } = DefaultProjectionExecutionTimeout;
+
+		[Description("The maximum size, in bytes, of a projection's state and result. A projection will fault if its state size exceeds this value. May not exceed 16mb.")]
+		public int MaxProjectionStateSize { get; set; } = Opts.MaxProjectionStateSizeDefault;
 	}
 
 	public record UnknownOptions(IReadOnlyList<(string, string)> Options) {
@@ -611,7 +618,7 @@ public partial record ClusterVNodeOptions {
 					.AsEnumerable()
 					.Select(kvp => kvp.Key)
 					.Where(key => key != KurrentConfigurationKeys.Prefix
-					              && !knownKeys.Contains(KurrentConfigurationKeys.Normalize(key)))
+								  && !knownKeys.Contains(KurrentConfigurationKeys.Normalize(key)))
 					.ToList();
 
 				var unknownSections = FindUnknownSections(unknownKeys);

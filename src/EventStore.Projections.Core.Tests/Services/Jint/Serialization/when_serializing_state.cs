@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -10,7 +10,6 @@ using EventStore.Projections.Core.Services.Interpreted;
 using Jint;
 using Jint.Native;
 using Jint.Native.Json;
-using Jint.Native.Object;
 using NUnit.Framework;
 using JsonSerializer = Jint.Native.Json.JsonSerializer;
 
@@ -148,14 +147,14 @@ public class when_serializing_state {
 		Assert.AreEqual(json, serialized);
 	}
 
-	public static string ReadJsonFromFile(string filename)
-        {
+	public static string ReadJsonFromFile(string filename) {
 		var assembly = typeof(when_serializing_state).Assembly;
 		var availableFiles = assembly.GetManifestResourceNames();
 		var streamName = availableFiles.Where(
-			x=> x.StartsWith(typeof(when_serializing_state).Namespace) && x.EndsWith(filename)
+			x => x.StartsWith(typeof(when_serializing_state).Namespace) && x.EndsWith(filename)
 			).SingleOrDefault();
-		if(streamName == null) throw new InvalidOperationException($"Could not find {filename}");
+		if (streamName == null)
+			throw new InvalidOperationException($"Could not find {filename}");
 		using var stream = assembly.GetManifestResourceStream(streamName);
 
 		var doc = JsonDocument.Parse(stream);
@@ -166,5 +165,5 @@ public class when_serializing_state {
 		ms.Position = 0;
 		using var sr = new StreamReader(ms);
 		return sr.ReadToEnd();
-        }
+	}
 }

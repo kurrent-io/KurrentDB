@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Linq;
 using System.Runtime.Serialization;
@@ -109,19 +109,22 @@ public class ProjectionSourceDefinition : IQuerySources {
 
 	protected bool Equals(ProjectionSourceDefinition other) {
 		return AllEvents.Equals(other.AllEvents) && AllStreams.Equals(other.AllStreams)
-		                                         && ByStream.Equals(other.ByStream) &&
-		                                         ByCustomPartitions.Equals(other.ByCustomPartitions)
-		                                         && Equals(Categories, other.Categories) &&
-		                                         Equals(Events, other.Events)
-		                                         && Equals(Streams, other.Streams)
-		                                         && LimitingCommitPosition == other.LimitingCommitPosition &&
-		                                         Equals(Options, other.Options);
+												 && ByStream.Equals(other.ByStream) &&
+												 ByCustomPartitions.Equals(other.ByCustomPartitions)
+												 && Equals(Categories, other.Categories) &&
+												 Equals(Events, other.Events)
+												 && Equals(Streams, other.Streams)
+												 && LimitingCommitPosition == other.LimitingCommitPosition &&
+												 Equals(Options, other.Options);
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != this.GetType()) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != this.GetType())
+			return false;
 		return Equals((ProjectionSourceDefinition)obj);
 	}
 

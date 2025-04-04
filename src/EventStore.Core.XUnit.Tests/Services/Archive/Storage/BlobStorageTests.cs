@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -17,7 +17,6 @@ namespace EventStore.Core.XUnit.Tests.Services.Archive.Storage;
 // some of the behavior of the blob storage implementations is covered by ArchiveStorageTests.cs
 [Collection("ArchiveStorageTests")]
 public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
-	protected const string AwsCliProfileName = "default";
 	protected const string AwsRegion = "eu-west-1";
 	protected const string AwsBucket = "archiver-unit-tests";
 
@@ -30,13 +29,12 @@ public class BlobStorageTests : DirectoryPerTest<BlobStorageTests> {
 	}
 
 	IBlobStorage CreateSut(StorageType storageType) => storageType switch {
-		StorageType.FileSystem =>
+		StorageType.FileSystemDevelopmentOnly =>
 			new FileSystemBlobStorage(new() {
 				Path = ArchivePath
 			}),
 		StorageType.S3 =>
 			new S3BlobStorage(new() {
-				AwsCliProfileName = AwsCliProfileName,
 				Bucket = AwsBucket,
 				Region = AwsRegion,
 			}),

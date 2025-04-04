@@ -1,25 +1,21 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Caching;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
-using EventStore.Core.Index.Hashes;
+using EventStore.Core.LogAbstraction;
+using EventStore.Core.Metrics;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Services;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;
-using NUnit.Framework;
 using EventStore.Core.Util;
-using EventStore.Core.LogAbstraction;
-using EventStore.Core.Metrics;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 
@@ -90,7 +86,7 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 			new LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>("StreamMetadata", 100),
 			true, _metastreamMaxCount,
 			Opts.HashCollisionReadLimitDefault, Opts.SkipIndexScanOnReadsDefault,
-			_dbResult.Db.Config.ReplicationCheckpoint,_dbResult.Db.Config.IndexCheckpoint,
+			_dbResult.Db.Config.ReplicationCheckpoint, _dbResult.Db.Config.IndexCheckpoint,
 			new IndexStatusTracker.NoOp(),
 			new IndexTracker.NoOp(),
 			new CacheHitsMissesTracker.NoOp());
@@ -123,7 +119,7 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 		Assert.AreEqual(_keptRecords.Length, _dbResult.Db.Manager.ChunksCount, "Wrong chunks count.");
 
 		for (int i = 0; i < _keptRecords.Length; ++i) {
-			var chunk = _dbResult.Db.Manager.GetChunk(i);
+			var chunk = await _dbResult.Db.Manager.GetInitializedChunk(i, token);
 
 			var chunkRecords = new List<ILogRecord>();
 			RecordReadResult result = await chunk.TryReadFirst(token);

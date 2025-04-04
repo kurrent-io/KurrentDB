@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading;
@@ -44,7 +44,7 @@ public class concurrent_queue_wrapper_should {
 		for (int i = 1; i <= 1000; i++) {
 			Assert.AreEqual(true, queue.TryDequeue(out x));
 			Assert.AreEqual(i, x);
-			Assert.AreEqual(1000-i, queue.Count);
+			Assert.AreEqual(1000 - i, queue.Count);
 		}
 	}
 }
@@ -67,8 +67,10 @@ public class concurrent_queue_wrapper_with_parallel_dequeues_should {
 		int x;
 		while (_totalDequeued < TOTAL_ENQUEUED_ITEMS) {
 			var dequeued = _concurrentQueue.TryDequeue(out x);
-			if (_concurrentQueue.Count < 0) _seenNegativeCount = true;
-			if (dequeued) Interlocked.Increment(ref _totalDequeued);
+			if (_concurrentQueue.Count < 0)
+				_seenNegativeCount = true;
+			if (dequeued)
+				Interlocked.Increment(ref _totalDequeued);
 		}
 	}
 
@@ -84,10 +86,11 @@ public class concurrent_queue_wrapper_with_parallel_dequeues_should {
 		for (int i = 0; i < TOTAL_ENQUEUED_ITEMS; i++) {
 			_concurrentQueue.Enqueue(1);
 			var dequeued = _concurrentQueue.TryDequeue(out x);
-			if (dequeued) Interlocked.Increment(ref _totalDequeued);
+			if (dequeued)
+				Interlocked.Increment(ref _totalDequeued);
 		}
 
-		for(int i=0;i<NUM_THREADS;i++)
+		for (int i = 0; i < NUM_THREADS; i++)
 			threads[i].Join(TimeSpan.FromSeconds(5));
 
 		Assert.AreEqual(false, _seenNegativeCount);

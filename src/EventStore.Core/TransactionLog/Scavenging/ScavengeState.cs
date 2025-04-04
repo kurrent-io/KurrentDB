@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -329,8 +329,8 @@ public class ScavengeState<TStreamId> : IScavengeState<TStreamId> {
 
 // in the chunk executor each worker gets its own state so that it has its own dbconnection and
 // prepared commands.
-public readonly struct ScavengeStateForChunkWorker<TStreamId> : 
-	IScavengeStateForChunkExecutorWorker<TStreamId>{
+public readonly struct ScavengeStateForChunkWorker<TStreamId> :
+	IScavengeStateForChunkExecutorWorker<TStreamId> {
 
 	private readonly MetastreamCollisionMap<TStreamId> _metastreamDatas;
 	private readonly OriginalStreamCollisionMap<TStreamId> _originalStreamDatas;

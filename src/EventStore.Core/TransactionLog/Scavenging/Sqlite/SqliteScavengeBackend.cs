@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
@@ -29,15 +29,15 @@ public class SqliteScavengeBackend<TStreamId> : IScavengeStateBackend<TStreamId>
 	private SqliteBackend _sqliteBackend;
 
 	private const int SchemaVersion = 1;
-	
+
 	public IScavengeMap<TStreamId, Unit> CollisionStorage { get; private set; }
-	public IScavengeMap<ulong,TStreamId> Hashes { get; private set; }
+	public IScavengeMap<ulong, TStreamId> Hashes { get; private set; }
 	public IMetastreamScavengeMap<ulong> MetaStorage { get; private set; }
 	public IMetastreamScavengeMap<TStreamId> MetaCollisionStorage { get; private set; }
 	public IOriginalStreamScavengeMap<ulong> OriginalStorage { get; private set; }
 	public IOriginalStreamScavengeMap<TStreamId> OriginalCollisionStorage { get; private set; }
-	public IScavengeMap<Unit,ScavengeCheckpoint> CheckpointStorage { get; private set; }
-	public IScavengeMap<int,ChunkTimeStampRange> ChunkTimeStampRanges { get; private set; }
+	public IScavengeMap<Unit, ScavengeCheckpoint> CheckpointStorage { get; private set; }
+	public IScavengeMap<int, ChunkTimeStampRange> ChunkTimeStampRanges { get; private set; }
 	public IChunkWeightScavengeMap ChunkWeights { get; private set; }
 	public ITransactionFactory<SqliteTransaction> TransactionFactory { get; private set; }
 	public ITransactionManager TransactionManager { get; private set; }
@@ -59,7 +59,7 @@ public class SqliteScavengeBackend<TStreamId> : IScavengeStateBackend<TStreamId>
 
 	public void Initialize(SqliteConnection connection) {
 		_sqliteBackend = new SqliteBackend(connection);
-		
+
 		ConfigureFeatures();
 		InitializeSchemaVersion();
 
@@ -72,7 +72,7 @@ public class SqliteScavengeBackend<TStreamId> : IScavengeStateBackend<TStreamId>
 		// passing "INT" could increase the speed of the accumulation when the database becomes large
 		var metaStorage = new SqliteMetastreamScavengeMap<ulong>("MetastreamDatas"/*, "INT"*/);
 		MetaStorage = metaStorage;
-		
+
 		var metaCollisionStorage = new SqliteMetastreamScavengeMap<TStreamId>("MetastreamDataCollisions");
 		MetaCollisionStorage = metaCollisionStorage;
 
@@ -80,16 +80,16 @@ public class SqliteScavengeBackend<TStreamId> : IScavengeStateBackend<TStreamId>
 		// but may slow down calculation and require adjustments to the iteration queries / indexes
 		var originalStorage = new SqliteOriginalStreamScavengeMap<ulong>("OriginalStreamDatas"/*, "INT"*/);
 		OriginalStorage = originalStorage;
-		
+
 		var originalCollisionStorage = new SqliteOriginalStreamScavengeMap<TStreamId>("OriginalStreamDataCollisions");
 		OriginalCollisionStorage = originalCollisionStorage;
-		
+
 		var checkpointStorage = new SqliteScavengeCheckpointMap<TStreamId>();
 		CheckpointStorage = checkpointStorage;
-		
+
 		var chunkTimeStampRanges = new SqliteChunkTimeStampRangeScavengeMap();
 		ChunkTimeStampRanges = chunkTimeStampRanges;
-		
+
 		var chunkWeights = new SqliteChunkWeightScavengeMap();
 		ChunkWeights = chunkWeights;
 
@@ -118,7 +118,7 @@ public class SqliteScavengeBackend<TStreamId> : IScavengeStateBackend<TStreamId>
 				$"Failed to configure page size to {_pageSizeInBytes}. Actually {pageSize}. " +
 				$"This is probably a pre-existing database with a different page size.");
 		}
-		
+
 		_sqliteBackend.SetPragmaValue(SqliteBackend.JournalMode, SqliteWalJournalMode);
 		var journalMode = _sqliteBackend.GetPragmaValue(SqliteBackend.JournalMode);
 		if (journalMode.ToLower() != SqliteWalJournalMode) {

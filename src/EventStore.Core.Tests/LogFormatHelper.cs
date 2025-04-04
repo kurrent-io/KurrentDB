@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.LogAbstraction;
@@ -8,8 +8,8 @@ using LogV3StreamId = System.UInt32;
 namespace EventStore.Core.Tests;
 
 public class LogFormat {
-	public class V2{}
-	public class V3{}
+	public class V2 { }
+	public class V3 { }
 }
 
 public static class LogFormatHelper<TLogFormat, TStreamId> {
@@ -23,15 +23,17 @@ public static class LogFormatHelper<TLogFormat, TStreamId> {
 
 	readonly static LogFormatAbstractor<string> _v2 = new LogV2FormatAbstractorFactory().Create(new() {
 		InMemory = true,
-	});		
+	});
 
 	public static T Choose<T>(object v2, object v3) {
 		if (typeof(TLogFormat) == typeof(LogFormat.V2)) {
-			if (typeof(TStreamId) != typeof(string)) throw new InvalidOperationException();
+			if (typeof(TStreamId) != typeof(string))
+				throw new InvalidOperationException();
 			return (T)v2;
 		}
-		if(typeof(TLogFormat) == typeof(LogFormat.V3)) {
-			if (typeof(TStreamId) != typeof(LogV3StreamId)) throw new InvalidOperationException($"TStreamId was {typeof(TStreamId)} but expected {typeof(LogV3StreamId)}");
+		if (typeof(TLogFormat) == typeof(LogFormat.V3)) {
+			if (typeof(TStreamId) != typeof(LogV3StreamId))
+				throw new InvalidOperationException($"TStreamId was {typeof(TStreamId)} but expected {typeof(LogV3StreamId)}");
 			return (T)v3;
 		}
 		throw new InvalidOperationException();
@@ -53,13 +55,13 @@ public static class LogFormatHelper<TLogFormat, TStreamId> {
 	public static TStreamId EmptyStreamId { get; } = _staticLogFormat.EmptyStreamId;
 
 	/// just a valid stream id
-	public static TStreamId StreamId { get; } =	Choose<TStreamId>("stream", 1024U);
+	public static TStreamId StreamId { get; } = Choose<TStreamId>("stream", 1024U);
 	public static TStreamId StreamId2 { get; } = Choose<TStreamId>("stream2", 1026U);
 
-	public static TStreamId EventTypeId { get; } =	Choose<TStreamId>("eventType", 1024U);
-	public static TStreamId EventTypeId2 { get; } =	Choose<TStreamId>("eventType2", 1025U);
+	public static TStreamId EventTypeId { get; } = Choose<TStreamId>("eventType", 1024U);
+	public static TStreamId EventTypeId2 { get; } = Choose<TStreamId>("eventType2", 1025U);
 	public static TStreamId EmptyEventTypeId { get; } = _staticLogFormat.EmptyEventTypeId;
-	
+
 	public static void CheckIfExplicitTransactionsSupported() {
 		if (typeof(TLogFormat) == typeof(LogFormat.V3)) {
 			throw new InvalidOperationException("Explicit transactions are not supported yet by Log V3");

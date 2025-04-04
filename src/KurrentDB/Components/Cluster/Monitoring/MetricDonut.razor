@@ -1,0 +1,29 @@
+@* Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements. *@
+@* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
+
+<MudPaper Class="pa-2 ma-2" Outlined="true">
+	<MudChart
+		ChartType="ChartType.Donut"
+		InputData="@_values" InputLabels="@(new[] { $"Used {Name}", $"Total {Name}" })">
+		<CustomGraphics>
+			<text class="donut-inner-text" x="50%" y="35%" dominant-baseline="middle" text-anchor="middle"
+			      fill="var(--mud-palette-text-primary)" font-family="Helvetica" font-size="2">@Name usage
+			</text>
+			<text class="donut-inner-text" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+			      fill="var(--mud-palette-text-primary)" font-family="Helvetica"
+			      font-size="5">@((Value / 100).ToString("P1"))</text>
+		</CustomGraphics>
+	</MudChart>
+</MudPaper>
+
+@code {
+	[Parameter] public double Value { get; set; }
+	[Parameter] public string Name { get; set; }
+
+	double[] _values = [0, 100];
+
+	protected override void OnParametersSet() {
+		base.OnParametersSet();
+		_values = [Value, 100-Value];
+	}
+}

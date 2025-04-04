@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -37,7 +37,6 @@ public class LRUCache<TKey, TValue> : LRUCache, ILRUCache<TKey, TValue> {
 	private readonly Dictionary<TKey, LinkedListNode<LRUItem>> _items = new();
 	private readonly Queue<LinkedListNode<LRUItem>> _nodesPool = new();
 	private readonly object _lock = new();
-	private readonly Func<object, bool> _onPut, _onRemove; //_onPut is not called if a key-value pair already exists in the cache
 	private readonly string _unit;
 	private readonly CalculateItemSize _calculateItemSize;
 	private readonly CalculateFreedSize _calculateFreedSize;
@@ -78,23 +77,6 @@ public class LRUCache<TKey, TValue> : LRUCache, ILRUCache<TKey, TValue> {
 		_unit = unit ?? "items";
 	}
 
-	public LRUCache(
-		string name,
-		long capacity,
-		Func<object, bool> onPut,
-		Func<object, bool> onRemove) {
-		Ensure.NotNull(name, nameof(name));
-		Ensure.Nonnegative(capacity, "capacity");
-		Name = name;
-		_capacity = capacity;
-		_size = 0L;
-		_onPut = onPut;
-		_onRemove = onRemove;
-		_calculateItemSize = _unitSize;
-		_calculateFreedSize = _zeroSize;
-		_unit = "items";
-	}
-
 	public static int ApproximateItemSize(int keyRefsSize, int valueRefsSize) =>
 		LRUItem.Size +
 		keyRefsSize +
@@ -115,8 +97,6 @@ public class LRUCache<TKey, TValue> : LRUCache, ILRUCache<TKey, TValue> {
 			_items.Add(key, node);
 			_orderList.AddLast(node);
 			_size += itemSize;
-
-			_onPut?.Invoke(node.Value.Value);
 		}
 	}
 
@@ -148,10 +128,7 @@ public class LRUCache<TKey, TValue> : LRUCache, ILRUCache<TKey, TValue> {
 				_size -= _calculateItemSize(key, node.Value.Value);
 				_freedSize += _calculateFreedSize(node.Value.Key, node.Value.Value, true, true, false);
 
-				var value = node.Value.Value;
 				ReturnNode(node);
-
-				_onRemove?.Invoke(value);
 			}
 		}
 	}
@@ -167,11 +144,8 @@ public class LRUCache<TKey, TValue> : LRUCache, ILRUCache<TKey, TValue> {
 			_size -= _calculateItemSize(node.Value.Key, node.Value.Value);
 			_freedSize += _calculateFreedSize(node.Value.Key, node.Value.Value, true, true, !reuseNode);
 
-			var value = node.Value.Value;
 			if (reuseNode)
 				ReturnNode(node);
-
-			_onRemove?.Invoke(value);
 		}
 	}
 

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -17,7 +17,7 @@ using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.TransactionLog.Chunks;
 
-public class TFChunkManager : IThreadPoolWorkItem {
+public sealed class TFChunkManager : IChunkRegistry<TFChunk.TFChunk>, IThreadPoolWorkItem {
 	private static readonly ILogger Log = Serilog.Log.ForContext<TFChunkManager>();
 
 	// MaxChunksCount is currently capped at 400,000 since:
@@ -41,8 +41,6 @@ public class TFChunkManager : IThreadPoolWorkItem {
 	private readonly AsyncExclusiveLock _chunksLocker = new();
 	private int _backgroundPassesRemaining;
 	private int _backgroundRunning;
-	public Action<ChunkInfo> OnChunkLoaded { get; init; }
-	public Action<ChunkInfo> OnChunkCompleted { get; init; }
 	public Action<ChunkInfo> OnChunkSwitched { get; init; }
 
 	public TFChunkManager(
@@ -74,15 +72,15 @@ public class TFChunkManager : IThreadPoolWorkItem {
 	async void IThreadPoolWorkItem.Execute() {
 		do {
 			do {
-				await CacheUncacheReadOnlyChunks();
+				await CacheUncacheReadOnlyChunks(CancellationToken.None);
 			} while (Interlocked.Decrement(ref _backgroundPassesRemaining) > 0);
 
 			Interlocked.Exchange(ref _backgroundRunning, 0);
 		} while (Interlocked.CompareExchange(ref _backgroundPassesRemaining, 0, 0) > 0
-		         && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
+				 && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
 	}
 
-	private async ValueTask CacheUncacheReadOnlyChunks(CancellationToken token = default) {
+	private async ValueTask CacheUncacheReadOnlyChunks(CancellationToken token) {
 		int lastChunkToCache;
 
 		await _chunksLocker.AcquireAsync(token);
@@ -94,6 +92,7 @@ public class TFChunkManager : IThreadPoolWorkItem {
 			// to cache according to the chunk cache size. determines lastChunkToCache.
 			for (int chunkNum = _chunksCount - 1; chunkNum >= 0;) {
 				var chunk = _chunks[chunkNum];
+				await chunk.EnsureInitialized(token);
 				var chunkSize = chunk.IsReadOnly
 					? chunk.ChunkFooter.PhysicalDataSize + chunk.ChunkFooter.MapSize + ChunkHeader.Size +
 					  ChunkFooter.Size
@@ -116,20 +115,23 @@ public class TFChunkManager : IThreadPoolWorkItem {
 			var chunk = _chunks[chunkNum];
 			if (chunk.IsReadOnly)
 				await chunk.UnCacheFromMemory(token);
-			chunkNum = chunk.ChunkHeader.ChunkStartNumber - 1;
+			chunkNum = chunk.ChunkInfo.ChunkStartNumber - 1;
 		}
 
 		// cache everything from lastChunkToCache up to now
 		for (int chunkNum = lastChunkToCache; chunkNum < _chunksCount;) {
 			var chunk = _chunks[chunkNum];
-			if (chunk.IsReadOnly)
+			if (chunk.IsReadOnly) {
+				await chunk.EnsureInitialized(token);
 				await chunk.CacheInMemory(token);
-			chunkNum = chunk.ChunkHeader.ChunkEndNumber + 1;
+			}
+
+			chunkNum = chunk.ChunkInfo.ChunkEndNumber + 1;
 		}
 	}
 
 	public ValueTask<TFChunk.TFChunk> CreateTempChunk(ChunkHeader chunkHeader, int fileSize, CancellationToken token) {
-		var chunkFileName = FileSystem.NamingStrategy.CreateTempFilename();
+		var chunkFileName = FileSystem.LocalNamingStrategy.CreateTempFilename();
 		return TFChunk.TFChunk.CreateWithHeader(
 			FileSystem,
 			chunkFileName,
@@ -144,7 +146,8 @@ public class TFChunkManager : IThreadPoolWorkItem {
 			// since the raw data being replicated is already transformed, we use
 			// the identity transform as we don't want to transform the data again
 			// when appending raw data to the chunk.
-			new IdentityChunkTransformFactory(),
+			transformFactory: new IdentityChunkTransformFactory(),
+			getTransformFactory: _transformManager,
 			ReadOnlyMemory<byte>.Empty,
 			token);
 	}
@@ -155,7 +158,7 @@ public class TFChunkManager : IThreadPoolWorkItem {
 		await _chunksLocker.AcquireAsync(token);
 		try {
 			var chunkNumber = _chunksCount;
-			var chunkName = FileSystem.NamingStrategy.GetFilenameFor(chunkNumber, 0);
+			var chunkName = FileSystem.LocalNamingStrategy.GetFilenameFor(chunkNumber, 0);
 			chunk = await TFChunk.TFChunk.CreateNew(
 				FileSystem,
 				chunkName,
@@ -168,9 +171,9 @@ public class TFChunkManager : IThreadPoolWorkItem {
 				writethrough: _config.WriteThrough,
 				reduceFileCachePressure: _config.ReduceFileCachePressure,
 				tracker: _tracker,
-				transformFactory: _transformManager.GetFactoryForNewChunk(),
+				getTransformFactory: _transformManager,
 				token);
-			AddChunk(chunk, isNew: true);
+			AddChunk(chunk);
 			triggerCaching = _cachingEnabled;
 		} finally {
 			_chunksLocker.Release();
@@ -195,7 +198,7 @@ public class TFChunkManager : IThreadPoolWorkItem {
 					"Received request to create a new ongoing chunk #{0}-{1}, but current chunks count is {2}.",
 					chunkHeader.ChunkStartNumber, chunkHeader.ChunkEndNumber, _chunksCount));
 
-			var chunkName = FileSystem.NamingStrategy.GetFilenameFor(chunkHeader.ChunkStartNumber, 0);
+			var chunkName = FileSystem.LocalNamingStrategy.GetFilenameFor(chunkHeader.ChunkStartNumber, 0);
 			chunk = await TFChunk.TFChunk.CreateWithHeader(
 				FileSystem,
 				chunkName,
@@ -207,9 +210,10 @@ public class TFChunkManager : IThreadPoolWorkItem {
 				reduceFileCachePressure: _config.ReduceFileCachePressure,
 				tracker: _tracker,
 				transformFactory: _transformManager.GetFactoryForExistingChunk(chunkHeader.TransformType),
+				getTransformFactory: _transformManager,
 				transformHeader: transformHeader,
 				token);
-			AddChunk(chunk, isNew: true);
+			AddChunk(chunk);
 			triggerCaching = _cachingEnabled;
 		} finally {
 			_chunksLocker.Release();
@@ -221,22 +225,16 @@ public class TFChunkManager : IThreadPoolWorkItem {
 		return chunk;
 	}
 
-	private void AddChunk(TFChunk.TFChunk chunk, bool isNew) {
+	private void AddChunk(TFChunk.TFChunk chunk) {
 		Debug.Assert(chunk is not null);
 		Debug.Assert(_chunksLocker.IsLockHeld);
 
-		for (int i = chunk.ChunkHeader.ChunkStartNumber; i <= chunk.ChunkHeader.ChunkEndNumber; ++i) {
+		var info = chunk.ChunkInfo;
+		for (int i = info.ChunkStartNumber; i <= info.ChunkEndNumber; ++i) {
 			_chunks[i] = chunk;
 		}
 
-		_chunksCount = Math.Max(chunk.ChunkHeader.ChunkEndNumber + 1, _chunksCount);
-
-		if (isNew) {
-			if (chunk.ChunkHeader.ChunkStartNumber > 0)
-				OnChunkCompleted?.Invoke(_chunks[chunk.ChunkHeader.ChunkStartNumber - 1].ChunkInfo);
-		} else {
-			OnChunkLoaded?.Invoke(chunk.ChunkInfo);
-		}
+		_chunksCount = Math.Max(info.ChunkEndNumber + 1, _chunksCount);
 	}
 
 	public async ValueTask AddChunk(TFChunk.TFChunk chunk, CancellationToken token) {
@@ -245,7 +243,7 @@ public class TFChunkManager : IThreadPoolWorkItem {
 		bool triggerCaching;
 		await _chunksLocker.AcquireAsync(token);
 		try {
-			AddChunk(chunk, isNew: false);
+			AddChunk(chunk);
 			triggerCaching = _cachingEnabled;
 		} finally {
 			_chunksLocker.Release();
@@ -259,24 +257,27 @@ public class TFChunkManager : IThreadPoolWorkItem {
 	// Takes a collection of locators for chunks which must be contiguous.
 	// Atomically switches them in if the range precisely overlaps one or more chunks in _chunks
 	public async ValueTask<bool> SwitchInCompletedChunks(IReadOnlyList<string> locators, CancellationToken token) {
-		var getFactoryForExistingChunk = _transformManager.GetFactoryForExistingChunk;
 		var newChunks = new TFChunk.TFChunk[locators.Count];
+		var i = 0;
 		try {
-			for (var i = 0; i < locators.Count; i++) {
-				newChunks[i] = await TFChunk.TFChunk.FromCompletedFile(
+			for (; i < locators.Count; i++) {
+				var chunk = await TFChunk.TFChunk.FromCompletedFile(
 					fileSystem: FileSystem,
 					filename: locators[i],
 					verifyHash: false,
 					unbufferedRead: _config.Unbuffered,
 					tracker: _tracker,
-					getTransformFactory: getFactoryForExistingChunk,
+					getTransformFactory: _transformManager,
 					reduceFileCachePressure: _config.ReduceFileCachePressure,
 					token: token);
+
+				newChunks[i] = chunk;
 			}
 		} catch {
-			for (var i = 0; i < newChunks.Length; i++) {
-				newChunks[i]?.Dispose();
+			for (var j = 0; j < i; j++) {
+				newChunks[i].Dispose();
 			}
+
 			throw;
 		}
 
@@ -333,7 +334,7 @@ public class TFChunkManager : IThreadPoolWorkItem {
 
 			// calculate the appropriate chunk version and move the chunk to the right filename.
 			var newFileName =
-				FileSystem.NamingStrategy.DetermineNewVersionFilenameForIndex(chunkHeader.ChunkStartNumber, defaultVersion: 1);
+				FileSystem.LocalNamingStrategy.DetermineNewVersionFilenameForIndex(chunkHeader.ChunkStartNumber, defaultVersion: 1);
 			Log.Information("File {oldFileName} will be moved to file {newFileName}", Path.GetFileName(oldFileName),
 				Path.GetFileName(newFileName));
 			try {
@@ -345,7 +346,7 @@ public class TFChunkManager : IThreadPoolWorkItem {
 			}
 
 			newChunk = await TFChunk.TFChunk.FromCompletedFile(FileSystem, newFileName, verifyHash, _config.Unbuffered,
-				_tracker, _transformManager.GetFactoryForExistingChunk,
+				_tracker, _transformManager,
 				_config.ReduceFileCachePressure, token: token);
 		}
 
@@ -430,10 +431,10 @@ public class TFChunkManager : IThreadPoolWorkItem {
 			if (chunk != null) {
 				// we would be removing `chunk` and replacing it with `newChunks`.
 				// check that chunk's range is covered by the newChunks.
-				var chunkHeader = chunk.ChunkHeader;
-				if (chunkHeader.ChunkStartNumber < chunkStartNumber || chunkHeader.ChunkEndNumber > chunkEndNumber)
+				var chunkInfo = chunk.ChunkInfo;
+				if (chunkInfo.ChunkStartNumber < chunkStartNumber || chunkInfo.ChunkEndNumber > chunkEndNumber)
 					return false;
-				i = chunkHeader.ChunkEndNumber + 1;
+				i = chunkInfo.ChunkEndNumber + 1;
 			} else {
 				//Cover the case of initial replication of merged chunks where they were never set
 				// in the map in the first place.
@@ -496,38 +497,75 @@ public class TFChunkManager : IThreadPoolWorkItem {
 			ThreadPool.UnsafeQueueUserWorkItem(this, preferLocal: false);
 	}
 
-	public bool TryGetChunkFor(long logPosition, out TFChunk.TFChunk chunk) {
-		try {
-			chunk = GetChunkFor(logPosition);
-			return true;
-		} catch {
-			chunk = null;
-			return false;
+	public ValueTask<TFChunk.TFChunk> GetInitializedChunkFor(long logPosition, CancellationToken token) {
+		ValueTask<TFChunk.TFChunk> task;
+
+		var chunkNum = (int)(logPosition / _config.ChunkSize);
+		if ((uint)chunkNum >= (uint)_chunksCount) {
+			task = ValueTask.FromException<TFChunk.TFChunk>(new ArgumentOutOfRangeException(nameof(logPosition),
+				$"LogPosition {logPosition} does not have corresponding chunk in DB."));
+		} else if (_chunks[chunkNum] is not { } chunk) {
+			task = ValueTask.FromException<TFChunk.TFChunk>(new Exception(
+				$"Requested chunk for LogPosition {logPosition}, which is not present in TFChunkManager."));
+		} else if (chunk.Initialized) {
+			task = new(chunk);
+		} else {
+			task = EnsureInitialized(chunk, token);
 		}
+
+		return task;
 	}
 
-	public TFChunk.TFChunk GetChunkFor(long logPosition) {
+	TFChunk.TFChunk IChunkRegistry<TFChunk.TFChunk>.UnsafeTryGetChunkFor(long logPosition) {
 		var chunkNum = (int)(logPosition / _config.ChunkSize);
-		if (chunkNum < 0 || chunkNum >= _chunksCount)
-			throw new ArgumentOutOfRangeException("logPosition",
-				string.Format("LogPosition {0} does not have corresponding chunk in DB.", logPosition));
+		return (uint)chunkNum < (uint)_chunksCount ? _chunks[chunkNum] : null;
+	}
 
-		var chunk = _chunks[chunkNum];
-		if (chunk == null)
-			throw new Exception(string.Format(
-				"Requested chunk for LogPosition {0}, which is not present in TFChunkManager.", logPosition));
+	public ValueTask<TFChunk.TFChunk> TryGetInitializedChunkFor(long logPosition, CancellationToken token) {
+		var chunkNum = (int)(logPosition / _config.ChunkSize);
+
+		ValueTask<TFChunk.TFChunk> task;
+		if ((uint)chunkNum >= (uint)_chunksCount || _chunks[chunkNum] is not { } chunk) {
+			task = default;
+		} else if (chunk.Initialized) {
+			task = new(chunk);
+		} else {
+			task = EnsureInitialized(chunk, token);
+		}
+
+		return task;
+	}
+
+	public TFChunk.TFChunk UnsafeGetChunk(int chunkNum) {
+		if ((uint)chunkNum >= (uint)_chunksCount)
+			throw new ArgumentOutOfRangeException(nameof(chunkNum),
+				$"Chunk #{chunkNum} is not present in DB.");
+
+		if (_chunks[chunkNum] is not { } chunk)
+			throw new Exception($"Requested chunk #{chunkNum}, which is not present in TFChunkManager.");
+
 		return chunk;
 	}
 
-	public TFChunk.TFChunk GetChunk(int chunkNum) {
-		if (chunkNum < 0 || chunkNum >= _chunksCount)
-			throw new ArgumentOutOfRangeException("chunkNum",
-				string.Format("Chunk #{0} is not present in DB.", chunkNum));
+	public ValueTask<TFChunk.TFChunk> GetInitializedChunk(int chunkNum, CancellationToken token) {
+		ValueTask<TFChunk.TFChunk> task;
+		if ((uint)chunkNum >= (uint)_chunksCount) {
+			task = ValueTask.FromException<TFChunk.TFChunk>(new ArgumentOutOfRangeException(nameof(chunkNum),
+				$"Chunk #{chunkNum} is not present in DB."));
+		} else if (_chunks[chunkNum] is not { } chunk) {
+			task = ValueTask.FromException<TFChunk.TFChunk>(new Exception(
+				$"Requested chunk #{chunkNum}, which is not present in TFChunkManager."));
+		} else if (chunk.Initialized) {
+			task = new(chunk);
+		} else {
+			task = EnsureInitialized(chunk, token);
+		}
 
-		if (_chunks[chunkNum] is not { } chunk)
-			throw new Exception(string.Format("Requested chunk #{0}, which is not present in TFChunkManager.",
-				chunkNum));
+		return task;
+	}
 
+	private static async ValueTask<TFChunk.TFChunk> EnsureInitialized(TFChunk.TFChunk chunk, CancellationToken token) {
+		await chunk.EnsureInitialized(token);
 		return chunk;
 	}
 

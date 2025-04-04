@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Messages;
@@ -30,7 +30,7 @@ public class when_cluster_receives_multiple_stale_acks_and_continues :
 		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 
 		ReplicatedTos.Clear();
-		
+
 		WriterCheckpoint.Write(_secondLogPosition);
 		WriterCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());
@@ -38,7 +38,7 @@ public class when_cluster_receives_multiple_stale_acks_and_continues :
 		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 	}
 
-	
+
 
 	[Test]
 	public void replicated_to_can_advance_to_second_position() {
@@ -49,7 +49,7 @@ public class when_cluster_receives_multiple_stale_acks_and_continues :
 
 	[Test]
 	public void replication_checkpoint_can_advance_to_second_position() {
-		
+
 		Assert.AreEqual(_secondLogPosition, ReplicationCheckpoint.Read());
 		Assert.AreEqual(_secondLogPosition, ReplicationCheckpoint.ReadNonFlushed());
 	}

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ using Serilog;
 
 namespace EventStore.Core.Caching;
 
-public class DynamicCacheManager:
+public class DynamicCacheManager :
 	IHandle<MonitoringMessage.DynamicCacheManagerTick>,
 	IHandle<MonitoringMessage.InternalStatsRequest> {
 
@@ -117,7 +117,7 @@ public class DynamicCacheManager:
 			var key = stat.Key;
 			Log.Information("Cache {key} capacity initialized to {capacity:N0} {unit}",
 				key, stat.Capacity, _rootCacheResizer.Unit);
-			
+
 			if (stat.NumChildren == 0)
 				_cacheResourcesTracker.Register(stat.Name, _rootCacheResizer.Unit, () => _fetchOrGetCachedStats()[key]);
 		}
@@ -141,7 +141,7 @@ public class DynamicCacheManager:
 		var stats = new Dictionary<string, object>();
 		var cachesStats = _rootCacheResizer.GetStats(string.Empty);
 
-		foreach(var cacheStat in cachesStats) {
+		foreach (var cacheStat in cachesStats) {
 			var statNamePrefix = $"es-{cacheStat.Key}-";
 			stats[statNamePrefix + "name"] = cacheStat.Name;
 			stats[statNamePrefix + "count"] = cacheStat.Count;
@@ -182,11 +182,11 @@ public class DynamicCacheManager:
 
 		if (availableMemInfo.TotalFreeMem < _keepFreeMem)
 			Log.Verbose("Total free memory is lower than "
-			          + "{thresholdPercent}% or {thresholdBytes:N0} bytes.\n"
-			          + "Free system memory: {freeSystemMem:N0} bytes.\n"
-			          + "Free heap memory: {freeHeapMem:N0} bytes.\n"
-			          + "Freed memory: {freedMem:N0} bytes.\n\n"
-			          + "Total free memory: {totalFreeMem:N0} bytes.\n",
+					  + "{thresholdPercent}% or {thresholdBytes:N0} bytes.\n"
+					  + "Free system memory: {freeSystemMem:N0} bytes.\n"
+					  + "Free heap memory: {freeHeapMem:N0} bytes.\n"
+					  + "Freed memory: {freedMem:N0} bytes.\n\n"
+					  + "Total free memory: {totalFreeMem:N0} bytes.\n",
 				_keepFreeMemPercent,
 				_keepFreeMemBytes,
 				availableMemInfo.FreeSystemMem,
@@ -221,13 +221,13 @@ public class DynamicCacheManager:
 			var availableMem = Math.Max(0L, freeSystemMem + freeHeapMem + cachedMem + freedMem - _keepFreeMem);
 
 			Log.Verbose("Calculating memory available for caching based on:\n" +
-			            "Total memory: {totalMem:N0} bytes\n" +
-			            "Free system memory: {freeSystemMem:N0} bytes\n" +
-			            "Free heap memory: {freeHeapMem:N0} bytes\n" +
-			            "Cached memory: ~{cachedMem:N0} bytes\n" +
-			            "Freed memory: ~{freedMem:N0} bytes\n" +
-			            "Keep free memory: {keepFreeMem:N0} bytes (higher of {keepFreeMemPercent}% total mem & {keepFreeMemBytes:N0} bytes)\n\n" +
-			            "Memory available for caching: ~{availableMem:N0} bytes\n",
+						"Total memory: {totalMem:N0} bytes\n" +
+						"Free system memory: {freeSystemMem:N0} bytes\n" +
+						"Free heap memory: {freeHeapMem:N0} bytes\n" +
+						"Cached memory: ~{cachedMem:N0} bytes\n" +
+						"Freed memory: ~{freedMem:N0} bytes\n" +
+						"Keep free memory: {keepFreeMem:N0} bytes (higher of {keepFreeMemPercent}% total mem & {keepFreeMemBytes:N0} bytes)\n\n" +
+						"Memory available for caching: ~{availableMem:N0} bytes\n",
 				_totalMem, freeSystemMem, freeHeapMem, cachedMem, freedMem,
 				_keepFreeMem, _keepFreeMemPercent, _keepFreeMemBytes,
 				availableMem);

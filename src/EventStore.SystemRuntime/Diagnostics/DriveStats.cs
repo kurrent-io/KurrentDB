@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
 
@@ -40,15 +40,14 @@ public class DriveStats {
 /// <param name="DiskName">The name of the disk.</param>
 /// <param name="TotalBytes">The total size of the disk in bytes.</param>
 /// <param name="AvailableBytes">The available free space on the disk in bytes.</param>
-public readonly record struct DriveData(string DiskName, long TotalBytes, long AvailableBytes) 
-{
-    /// <summary>
-    /// The used space on the disk in bytes.
-    /// </summary>
-    public long UsedBytes { get; } = TotalBytes - AvailableBytes;
+public readonly record struct DriveData(string DiskName, long TotalBytes, long AvailableBytes) {
+	/// <summary>
+	/// The used space on the disk in bytes.
+	/// </summary>
+	public long UsedBytes { get; } = TotalBytes - AvailableBytes;
 
-    /// <summary>
-    /// The usage of the disk as a percentage of the total size.
-    /// </summary>
-    public int Usage { get; } = (int)(TotalBytes != 0 ? (TotalBytes - AvailableBytes) * 100 / TotalBytes : 0);
+	/// <summary>
+	/// The usage of the disk as a percentage of the total size.
+	/// </summary>
+	public int Usage { get; } = (int)(TotalBytes != 0 ? (TotalBytes - AvailableBytes) * 100 / TotalBytes : 0);
 }

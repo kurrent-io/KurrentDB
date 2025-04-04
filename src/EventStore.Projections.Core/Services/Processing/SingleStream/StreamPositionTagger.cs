@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -12,8 +12,10 @@ public class StreamPositionTagger : PositionTagger {
 	private readonly string _stream;
 
 	public StreamPositionTagger(int phase, string stream) : base(phase) {
-		if (stream == null) throw new ArgumentNullException("stream");
-		if (string.IsNullOrEmpty(stream)) throw new ArgumentException("stream");
+		if (stream == null)
+			throw new ArgumentNullException("stream");
+		if (string.IsNullOrEmpty(stream))
+			throw new ArgumentException("stream");
 		_stream = stream;
 	}
 
@@ -24,7 +26,7 @@ public class StreamPositionTagger : PositionTagger {
 		if (previous.Mode_ != CheckpointTag.Mode.Stream)
 			throw new ArgumentException("Mode.Stream expected", "previous");
 		return committedEvent.Data.PositionStreamId == _stream
-		       && committedEvent.Data.PositionSequenceNumber > previous.Streams[_stream];
+			   && committedEvent.Data.PositionSequenceNumber > previous.Streams[_stream];
 	}
 
 	public override CheckpointTag MakeCheckpointTag(

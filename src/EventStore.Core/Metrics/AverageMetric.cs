@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -14,9 +14,12 @@ public class AverageMetric {
 	private readonly Func<string, Tag> _genTag;
 	private readonly Dictionary<string, (List<Func<double>>, Tag[])> _subMetricGroups = new();
 
-	public AverageMetric(Meter meter, string name, string unit, Func<string, Tag> genTag) {
+	public AverageMetric(Meter meter, string name, string unit, Func<string, Tag> genTag, bool legacyNames) {
 		_genTag = genTag;
-		meter.CreateObservableCounter(name + "-" + unit, Observe);
+		if (legacyNames)
+			meter.CreateObservableCounter(name + "-" + unit, Observe);
+		else
+			meter.CreateObservableCounter(name, Observe, unit);
 	}
 
 	public void Register(string group, Func<double> subMetric) {

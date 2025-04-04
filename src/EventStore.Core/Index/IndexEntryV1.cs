@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Runtime.InteropServices;
@@ -9,7 +9,7 @@ namespace EventStore.Core.Index;
 [StructLayout(LayoutKind.Explicit)]
 public unsafe struct IndexEntryV1 : IComparable<IndexEntryV1>, IEquatable<IndexEntryV1> {
 	[FieldOffset(0)] public UInt64 Key;
-	[FieldOffset(0)] public fixed byte Bytes [16];
+	[FieldOffset(0)] public fixed byte Bytes[16];
 	[FieldOffset(0)] public Int32 Version;
 	[FieldOffset(4)] public UInt32 Stream;
 	[FieldOffset(8)] public Int64 Position;

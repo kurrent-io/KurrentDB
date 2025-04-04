@@ -1,16 +1,16 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
+using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Services.TimerService;
-using System.Diagnostics;
-using EventStore.Core.Data;
 
 namespace EventStore.Core.Services.RequestManager;
 
@@ -40,7 +40,7 @@ public class RequestManagementService :
 	private readonly TimeSpan _commitTimeout;
 	private readonly CommitSource _commitSource;
 	private readonly bool _explicitTransactionsSupported;
-	private VNodeState _nodeState;		
+	private VNodeState _nodeState;
 
 	public RequestManagementService(IPublisher bus,
 		TimeSpan prepareTimeout,
@@ -57,7 +57,7 @@ public class RequestManagementService :
 		_commitSource = new CommitSource();
 		_explicitTransactionsSupported = explicitTransactionsSupported;
 	}
-	
+
 	public void Handle(ClientMessage.WriteEvents message) {
 		var manager = new WriteEvents(
 							_bus,
@@ -166,10 +166,10 @@ public class RequestManagementService :
 		_currentTimedRequests.Add(message.InternalCorrId, Stopwatch.StartNew());
 		manager.Start();
 	}
-	
-	
+
+
 	public void Handle(SystemMessage.StateChangeMessage message) {
-		
+
 		if (_nodeState == VNodeState.Leader && message.State is not VNodeState.Leader or VNodeState.ResigningLeader) {
 			var keys = _currentRequests.Keys;
 			foreach (var key in keys) {
@@ -209,7 +209,7 @@ public class RequestManagementService :
 			// entries from _currentRequests
 		}
 	}
-	
+
 	public void Handle(ReplicationTrackingMessage.ReplicatedTo message) => _commitSource.Handle(message);
 	public void Handle(ReplicationTrackingMessage.IndexedTo message) => _commitSource.Handle(message);
 
@@ -219,7 +219,7 @@ public class RequestManagementService :
 	public void Handle(StorageMessage.WrongExpectedVersion message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
 	public void Handle(StorageMessage.InvalidTransaction message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
 	public void Handle(StorageMessage.StreamDeleted message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
-	
+
 	private void DispatchInternal<T>(Guid correlationId, T message, Action<RequestManagerBase, T> handle) where T : Message {
 		if (_currentRequests.TryGetValue(correlationId, out var manager)) {
 			handle(manager, message);

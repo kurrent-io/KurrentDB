@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -60,12 +60,12 @@ internal class ReadProcessor : ICmdProcessor {
 
 				var dto = pkg.Data.Deserialize<ReadEventCompleted>();
 				context.Log.Information("READ events from <{stream}>:\n\n"
-				                 + "\tEventStreamId: {stream}\n"
-				                 + "\tEventNumber:   {eventNumber}\n"
-				                 + "\tReadResult:    {readResult}\n"
-				                 + "\tEventType:     {eventType}\n"
-				                 + "\tData:          {data}\n"
-				                 + "\tMetadata:      {metadata}\n",
+								 + "\tEventStreamId: {stream}\n"
+								 + "\tEventNumber:   {eventNumber}\n"
+								 + "\tReadResult:    {readResult}\n"
+								 + "\tEventType:     {eventType}\n"
+								 + "\tData:          {data}\n"
+								 + "\tMetadata:      {metadata}\n",
 					eventStreamId,
 					eventStreamId,
 					dto.Event.Event.EventNumber,

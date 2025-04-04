@@ -1,10 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
 using EventStore.Core.Bus;
-using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Infrastructure;
@@ -17,9 +16,12 @@ internal class InnerBusMessagesProcessor : IHandle<Message> {
 	private readonly IPublisher _bus;
 
 	public InnerBusMessagesProcessor(RandomTestRunner runner, IPEndPoint endPoint, IPublisher bus) {
-		if (runner == null) throw new ArgumentNullException("runner");
-		if (endPoint == null) throw new ArgumentNullException("endPoint");
-		if (bus == null) throw new ArgumentNullException("bus");
+		if (runner == null)
+			throw new ArgumentNullException("runner");
+		if (endPoint == null)
+			throw new ArgumentNullException("endPoint");
+		if (bus == null)
+			throw new ArgumentNullException("bus");
 
 		_runner = runner;
 		_endPoint = endPoint;

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -30,7 +30,7 @@ public class ProcessMetricsTests : IDisposable {
 			config[value] = true;
 		}
 
-		_sut = new ProcessMetrics(meter, TimeSpan.FromSeconds(42), scrapingPeriodInSeconds: 15, config);
+		_sut = new ProcessMetrics(meter, TimeSpan.FromSeconds(42), scrapingPeriodInSeconds: 15, config, legacyNames: false);
 		_sut.CreateObservableMetrics(new() {
 			{ MetricsConfiguration.ProcessTracker.UpTime, "eventstore-proc-up-time" },
 			{ MetricsConfiguration.ProcessTracker.Cpu, "eventstore-proc-cpu" },
@@ -91,7 +91,7 @@ public class ProcessMetricsTests : IDisposable {
 	[Fact]
 	public void can_collect_proc_up_time() {
 		Assert.Collection(
-			_doubleListener.RetrieveMeasurements("eventstore-proc-up-time"),
+			_doubleListener.RetrieveMeasurements("eventstore-proc-up-time-seconds"),
 			m => {
 				Assert.True(m.Value > 0);
 				Assert.Collection(
@@ -146,7 +146,7 @@ public class ProcessMetricsTests : IDisposable {
 	[Fact]
 	public void can_collect_gc_total_allocated() {
 		Assert.Collection(
-			_longListener.RetrieveMeasurements("eventstore-gc-total-allocated"),
+			_longListener.RetrieveMeasurements("eventstore-gc-total-allocated-bytes"),
 			m => {
 				Assert.True(m.Value > 0);
 				Assert.Empty(m.Tags);

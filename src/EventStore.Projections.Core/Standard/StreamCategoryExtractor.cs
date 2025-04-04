@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 
@@ -21,18 +21,18 @@ public abstract class StreamCategoryExtractor {
 		if (trimmedSource.Length == 1) {
 			var separator = trimmedSource[0];
 			if (logger != null) {
-/*
-                    logger(
-                        String.Format(
-                            "Categorize stream projection handler has been initialized with separator: '{0}'", separator));
-*/
+				/*
+									logger(
+										String.Format(
+											"Categorize stream projection handler has been initialized with separator: '{0}'", separator));
+				*/
 			}
 
 			var extractor = new StreamCategoryExtractorByLastSeparator(separator);
 			return extractor;
 		}
 
-		var parts = trimmedSource.Split(new[] {'\n'});
+		var parts = trimmedSource.Split(new[] { '\n' });
 
 		if (parts.Length != 2)
 			throw new InvalidOperationException(

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -16,24 +16,17 @@ public class BoundedCache<TKey, TValue> {
 	private readonly int _maxCachedEntries;
 	private readonly long _maxDataSize;
 	private readonly Func<TValue, long> _valueSize;
-
-	private readonly Dictionary<TKey, TValue> _cache = new Dictionary<TKey, TValue>();
-	private readonly Queue<TKey> _queue = new Queue<TKey>();
+	private readonly Dictionary<TKey, TValue> _cache = [];
+	private readonly Queue<TKey> _queue = new();
 
 	private long _currentSize;
 	private long _missCount;
 	private long _hitCount;
 
 	public BoundedCache(int maxCachedEntries, long maxDataSize, Func<TValue, long> valueSize) {
-		Ensure.NotNull(valueSize, "valueSize");
-		if (maxCachedEntries <= 0)
-			throw new ArgumentOutOfRangeException("maxCachedEntries");
-		if (maxDataSize <= 0)
-			throw new ArgumentOutOfRangeException("maxDataSize");
-
-		_maxCachedEntries = maxCachedEntries;
-		_maxDataSize = maxDataSize;
-		_valueSize = valueSize;
+		_maxCachedEntries = Ensure.Positive(maxCachedEntries);
+		_maxDataSize = Ensure.Positive(maxDataSize);
+		_valueSize = Ensure.NotNull(valueSize);
 	}
 
 	public bool TryGetRecord(TKey key, out TValue value) {
@@ -79,13 +72,11 @@ public class BoundedCache<TKey, TValue> {
 	}
 
 	private bool IsFull() {
-		return _queue.Count >= _maxCachedEntries
-		       || (_currentSize > _maxDataSize && _queue.Count > 0);
+		return _queue.Count >= _maxCachedEntries || (_currentSize > _maxDataSize && _queue.Count > 0);
 	}
 
 	public void RemoveRecord(TKey key) {
-		TValue old;
-		if (_cache.TryGetValue(key, out old)) {
+		if (_cache.TryGetValue(key, out var old)) {
 			_currentSize -= _valueSize(old);
 			_cache.Remove(key);
 		}

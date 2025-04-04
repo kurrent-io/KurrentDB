@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -38,16 +38,16 @@ public class VNodeInfo {
 
 	public bool Is(EndPoint endPoint) {
 		return endPoint != null
-		       && HttpEndPoint.Equals(endPoint)
-		           || (InternalTcp != null && InternalTcp.Equals(endPoint))
-		           || (InternalSecureTcp != null && InternalSecureTcp.Equals(endPoint))
-		           || (ExternalTcp != null && ExternalTcp.Equals(endPoint))
-		           || (ExternalSecureTcp != null && ExternalSecureTcp.Equals(endPoint));
+			   && HttpEndPoint.Equals(endPoint)
+				   || (InternalTcp != null && InternalTcp.Equals(endPoint))
+				   || (InternalSecureTcp != null && InternalSecureTcp.Equals(endPoint))
+				   || (ExternalTcp != null && ExternalTcp.Equals(endPoint))
+				   || (ExternalSecureTcp != null && ExternalSecureTcp.Equals(endPoint));
 	}
 
 	public override string ToString() {
 		return string.Format("InstanceId: {0:B}, InternalTcp: {1}, InternalSecureTcp: {2}, " +
-		                     "ExternalTcp: {3}, ExternalSecureTcp: {4}, HttpEndPoint: {5}," +
+							 "ExternalTcp: {3}, ExternalSecureTcp: {4}, HttpEndPoint: {5}," +
 							 "IsReadOnlyReplica: {6}",
 			InstanceId,
 			InternalTcp,

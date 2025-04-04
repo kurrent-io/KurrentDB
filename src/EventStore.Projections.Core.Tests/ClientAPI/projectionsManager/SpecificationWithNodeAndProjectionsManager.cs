@@ -1,23 +1,23 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using EventStore.ClientAPI;
-using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.Common.Log;
+using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.SystemData;
 using EventStore.Common.Options;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Services;
+using EventStore.Core.Tests;
+using EventStore.Core.Tests.ClientAPI.Helpers;
+using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Util;
 using EventStore.Projections.Core.Services.Processing;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.ClientAPI.projectionsManager;
 
@@ -74,7 +74,7 @@ public abstract class SpecificationWithNodeAndProjectionsManager<TLogFormat, TSt
 	public abstract Task When();
 
 	protected MiniNode<TLogFormat, TStreamId> CreateNode() {
-		_projectionsSubsystem = new ProjectionsSubsystem(new ProjectionSubsystemOptions(1, ProjectionType.All, false, TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault), Opts.FaultOutOfOrderProjectionsDefault, 500, 250));
+		_projectionsSubsystem = new ProjectionsSubsystem(new ProjectionSubsystemOptions(1, ProjectionType.All, false, TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault), Opts.FaultOutOfOrderProjectionsDefault, 500, 250, Opts.MaxProjectionStateSizeDefault));
 		_systemProjectionsCreated = SystemProjections.Created(_projectionsSubsystem.LeaderInputBus);
 		return new MiniNode<TLogFormat, TStreamId>(
 			PathName, inMemDb: true,

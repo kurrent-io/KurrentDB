@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -14,7 +14,7 @@ using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RedactionService;
 
-public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionServiceTestFixture<TLogFormat,TStreamId> {
+public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionServiceTestFixture<TLogFormat, TStreamId> {
 	private const string StreamId = nameof(SwitchChunkTests<TLogFormat, TStreamId>);
 	protected const string FakeChunk = "fake_chunk.tmp";
 	private Guid _lockId;
@@ -32,8 +32,8 @@ public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionService
 		await WriteSingleEvent(StreamId, 8, new string('8', 50), retryOnFail: true, token: token);
 
 		var writerPos = Writer.Position;
-		var chunk = Path.GetFileName(Db.Manager.GetChunkFor(writerPos).LocalFileName);
-		var chunkNum = Db.Manager.FileSystem.NamingStrategy.GetIndexFor(chunk);
+		var chunk = Path.GetFileName((await Db.Manager.GetInitializedChunkFor(writerPos, token)).LocalFileName);
+		var chunkNum = Db.Manager.FileSystem.LocalNamingStrategy.GetIndexFor(chunk);
 		Assert.AreEqual(2, chunkNum);
 
 		// create an empty file that can be used in tests that require the target or new chunk files to exist
@@ -61,7 +61,7 @@ public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionService
 	}
 
 	protected string GetChunk(int chunkNum, int chunkVersion, bool fullPath = false) {
-		var chunkPath = Db.Manager.FileSystem.NamingStrategy.GetFilenameFor(chunkNum, chunkVersion);
+		var chunkPath = Db.Manager.FileSystem.LocalNamingStrategy.GetFilenameFor(chunkNum, chunkVersion);
 		return fullPath ? chunkPath : Path.GetFileName(chunkPath);
 	}
 

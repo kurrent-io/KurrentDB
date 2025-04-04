@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -37,19 +37,19 @@ public class auth_providers_should : SpecificationWithDirectory {
 		await authorizationConfigured.Task.WithTimeout(TimeSpan.FromSeconds(5));
 		await authorizationServicesConfigured.Task.WithTimeout(TimeSpan.FromSeconds(5));
 	}
-	
+
 	class FakeAuthenticationProviderFactory(TaskCompletionSource configureAppTcs, TaskCompletionSource configureServicesTcs) : IAuthenticationProviderFactory {
 		public IAuthenticationProvider Build(bool logFailedAuthenticationAttempts) =>
 			new FakeAuthenticationProvider(configureAppTcs, configureServicesTcs);
 
 		class FakeAuthenticationProvider(TaskCompletionSource configureAppTcs, TaskCompletionSource configureServicesTcs) : AuthenticationProviderBase {
-			public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) => 
+			public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
 				configureServicesTcs.TrySetResult();
 
-			public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) => 
+			public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) =>
 				configureAppTcs.TrySetResult();
 
-			public override void Authenticate(AuthenticationRequest authenticationRequest) => 
+			public override void Authenticate(AuthenticationRequest authenticationRequest) =>
 				throw new NotImplementedException();
 
 			public override IReadOnlyList<string> GetSupportedAuthenticationSchemes() =>
@@ -61,13 +61,13 @@ public class auth_providers_should : SpecificationWithDirectory {
 		public IAuthorizationProvider Build() => new FakeAuthorizationProvider(configureAppTcs, configureServicesTcs);
 
 		class FakeAuthorizationProvider(TaskCompletionSource configureAppTcs, TaskCompletionSource configureServicesTcs) : AuthorizationProviderBase {
-			public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) => 
+			public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
 				configureServicesTcs.TrySetResult();
 
-			public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) => 
+			public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) =>
 				configureAppTcs.TrySetResult();
 
-			public override ValueTask<bool> CheckAccessAsync(ClaimsPrincipal cp, Operation operation, CancellationToken ct) => 
+			public override ValueTask<bool> CheckAccessAsync(ClaimsPrincipal cp, Operation operation, CancellationToken ct) =>
 				throw new NotImplementedException();
 		}
 	}

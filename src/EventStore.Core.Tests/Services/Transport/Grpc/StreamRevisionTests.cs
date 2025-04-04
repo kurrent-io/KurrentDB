@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -41,8 +41,8 @@ public class StreamRevisionTests {
 	}
 
 	public static IEnumerable<object[]> AdditionOutOfBoundsCases() {
-		yield return new object[] {StreamRevision.End, 1UL};
-		yield return new object[] {new StreamRevision(long.MaxValue), long.MaxValue + 2UL};
+		yield return new object[] { StreamRevision.End, 1UL };
+		yield return new object[] { new StreamRevision(long.MaxValue), long.MaxValue + 2UL };
 	}
 
 	[TestCaseSource(nameof(AdditionOutOfBoundsCases))]
@@ -63,8 +63,8 @@ public class StreamRevisionTests {
 	}
 
 	public static IEnumerable<object[]> SubtractionOutOfBoundsCases() {
-		yield return new object[] {new StreamRevision(1), 2UL};
-		yield return new object[] {StreamRevision.Start, 1UL};
+		yield return new object[] { new StreamRevision(1), 2UL };
+		yield return new object[] { StreamRevision.Start, 1UL };
 	}
 
 	[TestCaseSource(nameof(SubtractionOutOfBoundsCases))]
@@ -78,8 +78,8 @@ public class StreamRevisionTests {
 	}
 
 	public static IEnumerable<object[]> ArgumentOutOfRangeTestCases() {
-		yield return new object[] {long.MaxValue + 1UL};
-		yield return new object[] {ulong.MaxValue - 1UL};
+		yield return new object[] { long.MaxValue + 1UL };
+		yield return new object[] { ulong.MaxValue - 1UL };
 	}
 
 	[TestCaseSource(nameof(ArgumentOutOfRangeTestCases))]
@@ -89,9 +89,9 @@ public class StreamRevisionTests {
 	}
 
 	public static IEnumerable<object[]> ComparableTestCases() {
-		yield return new object[] {StreamRevision.Start, StreamRevision.Start, 0};
-		yield return new object[] {StreamRevision.Start, StreamRevision.End, -1};
-		yield return new object[] {StreamRevision.End, StreamRevision.Start, 1};
+		yield return new object[] { StreamRevision.Start, StreamRevision.Start, 0 };
+		yield return new object[] { StreamRevision.Start, StreamRevision.End, -1 };
+		yield return new object[] { StreamRevision.End, StreamRevision.Start, 1 };
 	}
 
 	[TestCaseSource(nameof(ComparableTestCases))]
@@ -99,8 +99,8 @@ public class StreamRevisionTests {
 		=> Assert.AreEqual(expected, left.CompareTo(right));
 
 	public static IEnumerable<object[]> Int64TestCases() {
-		yield return new object[] {-1L, StreamRevision.End};
-		yield return new object[] {0L, StreamRevision.Start};
+		yield return new object[] { -1L, StreamRevision.End };
+		yield return new object[] { 0L, StreamRevision.Start };
 	}
 
 	[TestCaseSource(nameof(Int64TestCases))]

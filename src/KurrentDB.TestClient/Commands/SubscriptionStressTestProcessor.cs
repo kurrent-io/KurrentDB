@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Diagnostics;
@@ -45,7 +45,8 @@ internal class SubscriptionStressTestProcessor : ICmdProcessor {
 				false,
 				(s, e) => {
 					var c = Interlocked.Increment(ref appearedCnt);
-					if (c % 1000 == 0) Console.Write('\'');
+					if (c % 1000 == 0)
+						Console.Write('\'');
 					if (c % 100000 == 0) {
 						context.Log.Debug("Received total {events} events ({rate} per sec)...", c,
 							100000.0 / sw.Elapsed.TotalSeconds);

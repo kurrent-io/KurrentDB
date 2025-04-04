@@ -28,7 +28,7 @@ AutoScavenge:
 Once the feature is enabled the server should log a similar message to the one below:
 
 ```
-[18304, 1,23:01:53.335,INF] "AutoScavenge" "24.10.0" plugin enabled.
+[18304, 1,23:01:53.335,INF] "AutoScavenge" "25.0.0.1673" plugin enabled.
 ```
 
 ::: note
@@ -145,3 +145,7 @@ Check that
 - The server is not running in `dev` mode.
 - The server is not running in `mem-db` (i.e. with an in-memory database).
 - A schedule has been set via the HTTP endpoint.
+
+### Tutorial
+
+[Learn how to schedule and manage Auto-Scavenge in KurrentDB through a tutorial.](/tutorials/Auto-Scavenge.md)

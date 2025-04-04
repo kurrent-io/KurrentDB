@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.IO;
@@ -31,10 +31,9 @@ public class ArchiveCatchup : IClusterVNodeStartupTask {
 	private readonly ICheckpoint _epochCheckpoint;
 	private readonly int _chunkSize;
 	private readonly IArchiveStorageReader _archiveReader;
-	private readonly IArchiveChunkNameResolver _chunkNameResolver;
+	private readonly IArchiveNamingStrategy _namingStrategy;
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<ArchiveCatchup>();
-	private static readonly TimeSpan RetryInterval = TimeSpan.FromMinutes(1);
 
 	public ArchiveCatchup(
 		string dbPath,
@@ -43,27 +42,31 @@ public class ArchiveCatchup : IClusterVNodeStartupTask {
 		ICheckpoint epochCheckpoint,
 		int chunkSize,
 		IArchiveStorageReader archiveStorageReader,
-		IArchiveChunkNameResolver chunkNameResolver) {
+		IArchiveNamingStrategy namingStrategy) {
 		_dbPath = dbPath;
 		_writerCheckpoint = writerCheckpoint;
 		_chaserCheckpoint = chaserCheckpoint;
 		_epochCheckpoint = epochCheckpoint;
 		_chunkSize = chunkSize;
 		_archiveReader = archiveStorageReader;
-		_chunkNameResolver = chunkNameResolver;
+		_namingStrategy = namingStrategy;
 	}
 
-	public Task Run() => Run(CancellationToken.None);
-
-	private async Task Run(CancellationToken ct) {
+	public async ValueTask Run(CancellationToken ct) {
 		var writerChk = _writerCheckpoint.Read();
-		var archiveChk = await GetArchiveCheckpoint(ct);
+		var archiveChk = await _archiveReader.GetCheckpoint(ct);
 
 		if (writerChk >= archiveChk)
 			return;
 
 		Log.Information("Catching up with the archive. Writer checkpoint: 0x{writerCheckpoint:X}, Archive checkpoint: 0x{archiveCheckpoint:X}.",
 			writerChk, archiveChk);
+
+		if (writerChk == 0)
+			Log.Warning(
+				"This node has no local data and will download the entire archive. " +
+				"It is preferable to restore the node from a backup instead, so that it will download only the most recent data. " +
+				"A new backup can be created from one of the other nodes if necessary.");
 
 		while (!await CatchUpWithArchive(writerChk, archiveChk, ct))
 			writerChk = _writerCheckpoint.Read();
@@ -72,8 +75,8 @@ public class ArchiveCatchup : IClusterVNodeStartupTask {
 	// returns true if the catchup is done
 	// returns false if it needs to be invoked again to continue the catchup
 	private async Task<bool> CatchUpWithArchive(long writerChk, long archiveChk, CancellationToken ct) {
-		var logicalChunkStartNumber = (int) (writerChk / _chunkSize);
-		var logicalChunkEndNumber = (int) (archiveChk / _chunkSize);
+		var logicalChunkStartNumber = (int)(writerChk / _chunkSize);
+		var logicalChunkEndNumber = (int)(archiveChk / _chunkSize);
 
 		for (var logicalChunkNumber = logicalChunkStartNumber; logicalChunkNumber < logicalChunkEndNumber; logicalChunkNumber++)
 			if (!await FetchAndCommitChunk(logicalChunkNumber, ct))
@@ -83,19 +86,8 @@ public class ArchiveCatchup : IClusterVNodeStartupTask {
 		return true;
 	}
 
-	private async Task<long> GetArchiveCheckpoint(CancellationToken ct) {
-		do {
-			try {
-				return await _archiveReader.GetCheckpoint(ct);
-			} catch (Exception ex) {
-				Log.Error(ex, "Failed to get archive checkpoint. Retrying in: {interval}", RetryInterval);
-				await Task.Delay(RetryInterval, ct);
-			}
-		} while (true);
-	}
-
 	private async Task<bool> FetchAndCommitChunk(int logicalChunkNumber, CancellationToken ct) {
-		var destinationFile = _chunkNameResolver.ResolveFileName(logicalChunkNumber);
+		var destinationFile = _namingStrategy.GetBlobNameFor(logicalChunkNumber);
 		var destinationPath = Path.Combine(_dbPath, destinationFile);
 		if (!await FetchChunk(logicalChunkNumber, destinationPath, ct))
 			return false;
@@ -136,10 +128,6 @@ public class ArchiveCatchup : IClusterVNodeStartupTask {
 			return true;
 		} catch (ChunkDeletedException) {
 			Log.Warning("Failed to fetch chunk: {logicalChunkNumber} from the archive as it was deleted. This can happen if the archive is being scavenged.", logicalChunkNumber);
-			return false;
-		} catch (Exception ex) {
-			Log.Error(ex, "Failed to fetch chunk: {logicalChunkNumber} from the archive. Retrying in {interval}", logicalChunkNumber, RetryInterval);
-			await Task.Delay(RetryInterval, ct);
 			return false;
 		}
 	}

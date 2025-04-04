@@ -1,18 +1,15 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.LogV3;
 using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
-using FluentAssertions;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.LogV3;
@@ -149,7 +146,7 @@ public class PartitionManagerTests {
 		data: new byte[0]);
 }
 
-class FakeWriter: ITransactionFileWriter {
+class FakeWriter : ITransactionFileWriter {
 	public long Position { get; }
 	public long FlushedPosition { get; }
 
@@ -160,7 +157,9 @@ class FakeWriter: ITransactionFileWriter {
 	public bool IsFlushed { get; private set; }
 	public List<ILogRecord> WrittenRecords { get; }
 
-	public void Open() {}
+	public ValueTask Open(CancellationToken token)
+		=> token.IsCancellationRequested ? ValueTask.FromCanceled(token) : ValueTask.CompletedTask;
+
 	public bool CanWrite(int numBytes) => true;
 
 	public ValueTask<(bool, long)> Write(ILogRecord record, CancellationToken token) {
@@ -207,21 +206,21 @@ class FakeReader : ITransactionFileReader {
 
 		if (rootPartitionTypeId.HasValue) {
 			var rootPartitionType = new PartitionTypeLogRecord(
-        			DateTime.UtcNow, 2, rootPartitionTypeId.Value, Guid.Empty, "Root");
+					DateTime.UtcNow, 2, rootPartitionTypeId.Value, Guid.Empty, "Root");
 
 			_results.Add(new SeqReadResult(true, false, rootPartitionType, 0, 0, 0));
 		}
 
 		if (rootPartitionId.HasValue && rootPartitionTypeId.HasValue) {
 			var rootPartition = new PartitionLogRecord(
-    				DateTime.UtcNow, 3, rootPartitionId.Value, rootPartitionTypeId.Value, Guid.Empty, 0, 0, "Root");
+					DateTime.UtcNow, 3, rootPartitionId.Value, rootPartitionTypeId.Value, Guid.Empty, 0, 0, "Root");
 
-    			_results.Add(new SeqReadResult(true, false, rootPartition, 0, 0, 0));
+			_results.Add(new SeqReadResult(true, false, rootPartition, 0, 0, 0));
 		}
 	}
 
 	public void Reposition(long position) {
-		_resultIndex = (int) position;
+		_resultIndex = (int)position;
 	}
 
 	public ValueTask<SeqReadResult> TryReadNext(CancellationToken token) {

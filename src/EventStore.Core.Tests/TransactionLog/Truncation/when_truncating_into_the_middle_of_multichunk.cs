@@ -1,15 +1,12 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.Tests.TransactionLog.Validation;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.Transforms.Identity;
 using NUnit.Framework;
 
@@ -23,7 +20,7 @@ public class when_truncating_into_the_middle_of_multichunk : SpecificationWithDi
 	public override async Task TestFixtureSetUp() {
 		await base.TestFixtureSetUp();
 
-		_config = TFChunkHelper.CreateDbConfigEx(PathName, 11111, 5500, 5500, -1,5757, 1000, -1);
+		_config = TFChunkHelper.CreateDbConfigEx(PathName, 11111, 5500, 5500, -1, 5757, 1000, -1);
 
 		DbUtil.CreateMultiChunk(_config, 0, 2, GetFilePathFor("chunk-000000.000001"));
 		DbUtil.CreateMultiChunk(_config, 0, 2, GetFilePathFor("chunk-000000.000002"));

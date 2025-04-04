@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 using System.Collections.Generic;
@@ -19,7 +19,7 @@ public class KurrentDBDefaultValuesConfigurationSource(IEnumerable<KeyValuePair<
 }
 
 public class KurrentDefaultValuesConfigurationProvider(IEnumerable<KeyValuePair<string, string?>> initialData)
-	: MemoryConfigurationProvider(new(){
+	: MemoryConfigurationProvider(new() {
 		InitialData = initialData.ToDictionary(
 			kvp => $"{KurrentConfigurationKeys.Prefix}:{kvp.Key}",
 			kvp => kvp.Value,

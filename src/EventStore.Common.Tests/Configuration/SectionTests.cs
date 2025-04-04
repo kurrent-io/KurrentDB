@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Reflection;
 using EventStore.Common.Configuration;
@@ -39,7 +39,7 @@ public class SectionTests {
 		Assert.Equal("v section2:a2", config.GetSection("section2")["a"]);
 		Assert.Equal("v section2:b", config.GetSection("section2")["b"]);
 		Assert.Equal("v section2:c", config.GetSection("section2")["c"]);
-		
+
 		Assert.Equal("v section2:sub:a", config.GetSection("section2").GetSection("sub")["a"]);
 		Assert.Equal("v section2:sub:b", config.GetSection("section2").GetSection("sub")["b"]);
 

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Runtime;
@@ -9,7 +9,7 @@ using Serilog;
 
 namespace EventStore.Core.Certificates;
 
-public class OptionsCertificateProvider: CertificateProvider {
+public class OptionsCertificateProvider : CertificateProvider {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ClusterVNode>();
 	private string _cachedReservedNodeCN;
 
@@ -45,7 +45,7 @@ public class OptionsCertificateProvider: CertificateProvider {
 		var newThumbprint = certificate.Thumbprint;
 		Log.Information("Loading the node's certificate. Subject: {subject}, Previous thumbprint: {previousThumbprint}, New thumbprint: {newThumbprint}",
 			certificate.SubjectName.Name, previousThumbprint, newThumbprint);
-		
+
 		if (intermediates != null) {
 			foreach (var intermediateCert in intermediates) {
 				Log.Information("Loading intermediate certificate. Subject: {subject}, Thumbprint: {thumbprint}", intermediateCert.SubjectName.Name, intermediateCert.Thumbprint);
@@ -108,9 +108,10 @@ public class OptionsCertificateProvider: CertificateProvider {
 			error = true;
 		}
 
-		if (error) return false;
+		if (error)
+			return false;
 
-		var chainStatus = CertificateUtils.BuildChain(nodeCertificate, intermediates, trustedRoots, out var chainStatusInformation );
+		var chainStatus = CertificateUtils.BuildChain(nodeCertificate, intermediates, trustedRoots, out var chainStatusInformation);
 
 		if (chainStatus != X509ChainStatusFlags.NoError) {
 			Log.Error(

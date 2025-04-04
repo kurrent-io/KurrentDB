@@ -95,7 +95,7 @@ By default, reading a stream via a persistent subscription returns a single even
 
 | URI                                                                                                                                                                  | Supported Content Types                                                                      | Method |
 |----------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|--------|
-| `/subscriptions/{stream}/{subscription_name} /subscriptions/{stream}/{subscription_name}?embed={embed} /subscriptions/{stream}/{subscription}/{count}?embed={embed}` | `application/vnd.eventstore.competingatom+xml application/vnd.eventstore.competingatom+json` | GET    |
+| `/subscriptions/{stream}/{subscription_name} /subscriptions/{stream}/{subscription_name}?embed={embed} /subscriptions/{stream}/{subscription}/{count}?embed={embed}` | `application/vnd.eventstore.competingatom+xml  application/vnd.kurrent.competingatom+json application/vnd.eventstore.competingatom+json` | GET    |
 
 ### Query parameters
 

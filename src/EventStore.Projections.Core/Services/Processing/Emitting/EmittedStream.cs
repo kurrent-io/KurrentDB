@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -37,7 +37,7 @@ public partial class EmittedStream : IDisposable,
 	private readonly CheckpointTag _fromCheckpointPosition;
 	private readonly IEmittedStreamContainer _readyHandler;
 	private static readonly string LinkEventType = "$>";
-	private static readonly char[] LinkToSeparator = new[] {'@'};
+	private static readonly char[] LinkToSeparator = new[] { '@' };
 
 	private readonly Stack<Tuple<CheckpointTag, string, long>> _alreadyCommittedEvents =
 		new Stack<Tuple<CheckpointTag, string, long>>();
@@ -74,13 +74,20 @@ public partial class EmittedStream : IDisposable,
 		PositionTagger positionTagger, CheckpointTag fromCheckpointPosition, IPublisher publisher,
 		IODispatcher ioDispatcher,
 		IEmittedStreamContainer readyHandler, bool noCheckpoints = false) {
-		if (string.IsNullOrEmpty(streamId)) throw new ArgumentNullException("streamId");
-		if (writerConfiguration == null) throw new ArgumentNullException("writerConfiguration");
-		if (positionTagger == null) throw new ArgumentNullException("positionTagger");
-		if (fromCheckpointPosition == null) throw new ArgumentNullException("fromCheckpointPosition");
-		if (publisher == null) throw new ArgumentNullException("publisher");
-		if (ioDispatcher == null) throw new ArgumentNullException("ioDispatcher");
-		if (readyHandler == null) throw new ArgumentNullException("readyHandler");
+		if (string.IsNullOrEmpty(streamId))
+			throw new ArgumentNullException("streamId");
+		if (writerConfiguration == null)
+			throw new ArgumentNullException("writerConfiguration");
+		if (positionTagger == null)
+			throw new ArgumentNullException("positionTagger");
+		if (fromCheckpointPosition == null)
+			throw new ArgumentNullException("fromCheckpointPosition");
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
+		if (ioDispatcher == null)
+			throw new ArgumentNullException("ioDispatcher");
+		if (readyHandler == null)
+			throw new ArgumentNullException("readyHandler");
 		_streamId = streamId;
 		_metadataStreamId = SystemStreams.MetastreamOf(streamId);
 		_writerConfiguration = writerConfiguration;
@@ -99,13 +106,14 @@ public partial class EmittedStream : IDisposable,
 	}
 
 	public void EmitEvents(EmittedEvent[] events) {
-		if (events == null) throw new ArgumentNullException("events");
+		if (events == null)
+			throw new ArgumentNullException("events");
 		CheckpointTag groupCausedBy = null;
 		foreach (var @event in events) {
 			if (groupCausedBy == null) {
 				groupCausedBy = @event.CausedByTag;
 				if (!(_lastQueuedEventPosition != null && groupCausedBy > _lastQueuedEventPosition) &&
-				    !(_lastQueuedEventPosition == null && groupCausedBy >= _fromCheckpointPosition))
+					!(_lastQueuedEventPosition == null && groupCausedBy >= _fromCheckpointPosition))
 					throw new InvalidOperationException(
 						string.Format("Invalid event order.  '{0}' goes after '{1}'", @event.CausedByTag,
 							_lastQueuedEventPosition));
@@ -243,8 +251,8 @@ public partial class EmittedStream : IDisposable,
 			}
 
 			var newLogicalStream = newPhysicalStream
-			                       || (_projectionVersion.ProjectionId != parsed.Version.ProjectionId ||
-			                           _projectionVersion.Epoch > parsed.Version.Version);
+								   || (_projectionVersion.ProjectionId != parsed.Version.ProjectionId ||
+									   _projectionVersion.Epoch > parsed.Version.Version);
 
 			_lastKnownEventNumber = newPhysicalStream ? ExpectedVersion.NoStream : message.LastEventNumber;
 
@@ -280,7 +288,7 @@ public partial class EmittedStream : IDisposable,
 		foreach (var e in message.Events) {
 			var checkpointTagVersion = e.Event.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
 			var ourEpoch = checkpointTagVersion.Version.ProjectionId == _projectionVersion.ProjectionId
-			               && checkpointTagVersion.Version.Version >= _projectionVersion.Epoch;
+						   && checkpointTagVersion.Version.Version >= _projectionVersion.Epoch;
 
 			if (IsV1StreamCreatedEvent(e))
 				continue;
@@ -302,7 +310,7 @@ public partial class EmittedStream : IDisposable,
 			}
 
 			if (doStop)
-				// ignore any events prior to the requested lastCheckpointPosition (== first emitted event position)
+			// ignore any events prior to the requested lastCheckpointPosition (== first emitted event position)
 			{
 				stop = true;
 				break;
@@ -317,13 +325,13 @@ public partial class EmittedStream : IDisposable,
 
 	private static bool IsV1StreamCreatedEvent(EventStore.Core.Data.ResolvedEvent e) {
 		return e.Link == null && e.OriginalEventNumber == 0
-		                      && (e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreatedImplicit__
-		                          || e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreated__);
+							  && (e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreatedImplicit__
+								  || e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreated__);
 	}
 
 	private void ProcessWrites() {
 		if (_started && !_awaitingListEventsCompleted && !_awaitingWriteCompleted
-		    && !_awaitingMetadataWriteCompleted && _pendingWrites.Count > 0) {
+			&& !_awaitingMetadataWriteCompleted && _pendingWrites.Count > 0) {
 			if (_lastCommittedOrSubmittedEventPosition == null)
 				SubmitListEvents(_fromCheckpointPosition);
 			else
@@ -345,7 +353,8 @@ public partial class EmittedStream : IDisposable,
 
 	private Action CreateReadTimeoutAction(Guid correlationId, CheckpointTag upTo, long fromEventNumber) {
 		return () => {
-			if (correlationId != _pendingRequestCorrelationId) return;
+			if (correlationId != _pendingRequestCorrelationId)
+				return;
 			_pendingRequestCorrelationId = Guid.Empty;
 			_awaitingListEventsCompleted = false;
 			SubmitListEvents(upTo, fromEventNumber);
@@ -383,12 +392,12 @@ public partial class EmittedStream : IDisposable,
 
 		if (delayInSeconds == 0) {
 			_writerConfiguration.Writer.WriteEvents(
-				_metadataStreamId, ExpectedVersion.Any, new Event[] {_submittedWriteMetaStreamEvent}, _writeAs,
+				_metadataStreamId, ExpectedVersion.Any, new Event[] { _submittedWriteMetaStreamEvent }, _writeAs,
 				m => HandleMetadataWriteCompleted(m, retryCount));
 		} else {
 			_ioDispatcher.Delay(TimeSpan.FromSeconds(delayInSeconds),
 				_ => _writerConfiguration.Writer.WriteEvents(
-					_metadataStreamId, ExpectedVersion.Any, new Event[] {_submittedWriteMetaStreamEvent}, _writeAs,
+					_metadataStreamId, ExpectedVersion.Any, new Event[] { _submittedWriteMetaStreamEvent }, _writeAs,
 					m => HandleMetadataWriteCompleted(m, retryCount)));
 		}
 	}
@@ -492,8 +501,8 @@ public partial class EmittedStream : IDisposable,
 		var correlationIdFound = false;
 		if (extraMetaData != null)
 			foreach (var valuePair in from pair in extraMetaData
-				where pair.Key != "$causedBy"
-				select pair) {
+									  where pair.Key != "$causedBy"
+									  select pair) {
 				if (valuePair.Key == "$correlationId")
 					correlationIdFound = true;
 				yield return new KeyValuePair<string, JToken>(valuePair.Key, new JRaw(valuePair.Value));
@@ -552,7 +561,8 @@ public partial class EmittedStream : IDisposable,
 
 	private int CalculateBackoffTimeSecs(int attempt) {
 		attempt--;
-		if (attempt == 0) return 0;
+		if (attempt == 0)
+			return 0;
 		var expBackoff = attempt < 9 ? (1 << attempt) : 256;
 		return _random.Next(1, expBackoff + 1);
 	}
@@ -579,7 +589,7 @@ public partial class EmittedStream : IDisposable,
 
 	private void ProcessRequestedCheckpoint() {
 		if (_checkpointRequested && !_awaitingWriteCompleted && !_awaitingMetadataWriteCompleted
-		    && _pendingWrites.Count == 0) {
+			&& _pendingWrites.Count == 0) {
 			EnsureCheckpointsEnabled();
 			_readyHandler.Handle(new CoreProjectionProcessingMessage.ReadyForCheckpoint(this));
 		}
@@ -601,7 +611,7 @@ public partial class EmittedStream : IDisposable,
 		while (_pendingWrites.Count > 0) {
 			var eventToWrite = _pendingWrites.Peek();
 			if (eventToWrite.CausedByTag > _lastCommittedOrSubmittedEventPosition ||
-			    _alreadyCommittedEvents.Count == 0)
+				_alreadyCommittedEvents.Count == 0)
 				RecoveryCompleted();
 			if (_recoveryCompleted) {
 				if (anyFound)
@@ -650,7 +660,7 @@ public partial class EmittedStream : IDisposable,
 			return new IgnoredEmittedEvent();
 
 		var failed = topAlreadyCommitted.Item1 != eventToWrite.CausedByTag ||
-		             topAlreadyCommitted.Item2 != eventToWrite.EventType;
+					 topAlreadyCommitted.Item2 != eventToWrite.EventType;
 
 		if (failed && eventToWrite.EventType.Equals(LinkEventType)) {
 			// We check if the linked event still exists. If not, we skip that emitted event.

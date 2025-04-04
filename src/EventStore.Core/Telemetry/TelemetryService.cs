@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -35,8 +35,7 @@ public sealed class TelemetryService :
 	IHandle<ElectionMessage.ElectionsDone>,
 	IHandle<SystemMessage.ReplicaStateMessage>,
 	IHandle<LeaderDiscoveryMessage.LeaderFound>,
-	IAsyncDisposable
-{
+	IAsyncDisposable {
 	private static readonly ILogger Logger = Log.ForContext<TelemetryService>();
 
 	private static readonly TimeSpan InitialInterval = TimeSpan.FromHours(1);
@@ -231,8 +230,7 @@ public sealed class TelemetryService :
 					var payload = JsonSerializer.SerializeToNode(
 						evt.Data.ToDictionary(kvp => LowerFirstLetter(kvp.Key), kvp => kvp.Value));
 					message.Envelope.ReplyWith(new TelemetryMessage.Response(LowerFirstLetter(evt.Source), payload));
-				}
-				catch (Exception ex) {
+				} catch (Exception ex) {
 					Logger.Warning(ex, "Failed to collect telemetry from pluggable component {Source}", evt.Source);
 				}
 			});
@@ -269,7 +267,7 @@ public sealed class TelemetryService :
 
 	private async ValueTask ReadFirstEpoch(CancellationToken token) {
 		try {
-			var chunk = _manager.GetChunkFor(0);
+			var chunk = await _manager.GetInitializedChunkFor(0, token);
 			var result = await chunk.TryReadAt(0, false, token);
 
 			if (!result.Success)

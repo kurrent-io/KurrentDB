@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
@@ -90,29 +90,34 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 	}
 
 	public bool Equals(LogV3StreamWriteRecord other) {
-		if (ReferenceEquals(null, other)) return false;
-		if (ReferenceEquals(this, other)) return true;
-		return 	other.Version == Version
-		        && other.LogPosition == LogPosition
-		        && other.TimeStamp.Equals(TimeStamp)
-		        && other.RecordType == RecordType
-		        && other.Flags == Flags
-		        && other.TransactionPosition == TransactionPosition
-		        && other.TransactionOffset == TransactionOffset
-		        && other.ExpectedVersion == ExpectedVersion
-		        && other.EventStreamId.Equals(EventStreamId)
-		        && other.EventId == EventId
-		        && other.CorrelationId == CorrelationId
-		        && other.EventType.Equals(EventType)
-		        && other.Data.Span.SequenceEqual(Data.Span)
-		        && other.Metadata.Span.SequenceEqual(Metadata.Span);
+		if (ReferenceEquals(null, other))
+			return false;
+		if (ReferenceEquals(this, other))
+			return true;
+		return other.Version == Version
+				&& other.LogPosition == LogPosition
+				&& other.TimeStamp.Equals(TimeStamp)
+				&& other.RecordType == RecordType
+				&& other.Flags == Flags
+				&& other.TransactionPosition == TransactionPosition
+				&& other.TransactionOffset == TransactionOffset
+				&& other.ExpectedVersion == ExpectedVersion
+				&& other.EventStreamId.Equals(EventStreamId)
+				&& other.EventId == EventId
+				&& other.CorrelationId == CorrelationId
+				&& other.EventType.Equals(EventType)
+				&& other.Data.Span.SequenceEqual(Data.Span)
+				&& other.Metadata.Span.SequenceEqual(Metadata.Span);
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != this.GetType()) return false;
-		return Equals((LogV3StreamWriteRecord) obj);
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != this.GetType())
+			return false;
+		return Equals((LogV3StreamWriteRecord)obj);
 	}
 
 	public override int GetHashCode() {

@@ -1,13 +1,13 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Exceptions;
@@ -35,9 +35,12 @@ public class IndexMap {
 	private IndexMap(int version, List<List<PTable>> tables, long prepareCheckpoint, long commitCheckpoint,
 		int maxTablesPerLevel, int maxTableLevelsForAutomaticMerge, int pTableMaxReaderCount) {
 		Ensure.Nonnegative(version, "version");
-		if (prepareCheckpoint < -1) throw new ArgumentOutOfRangeException("prepareCheckpoint");
-		if (commitCheckpoint < -1) throw new ArgumentOutOfRangeException("commitCheckpoint");
-		if (maxTablesPerLevel <= 1) throw new ArgumentOutOfRangeException("maxTablesPerLevel");
+		if (prepareCheckpoint < -1)
+			throw new ArgumentOutOfRangeException("prepareCheckpoint");
+		if (commitCheckpoint < -1)
+			throw new ArgumentOutOfRangeException("commitCheckpoint");
+		if (maxTablesPerLevel <= 1)
+			throw new ArgumentOutOfRangeException("maxTablesPerLevel");
 
 		Version = version;
 
@@ -111,8 +114,8 @@ public class IndexMap {
 
 	public IEnumerable<string> GetAllFilenames() {
 		return from level in _map
-			from table in level
-			select table.Filename;
+			   from table in level
+			   select table.Filename;
 	}
 
 	public static IndexMap CreateEmpty(int maxTablesPerLevel, int maxTableLevelsForAutomaticMerge, int pTableMaxReaderCount) {
@@ -193,7 +196,7 @@ public class IndexMap {
 		if (expectedHash.Length != realHash.Length) {
 			throw new CorruptIndexException(
 				string.Format("Hash validation error (different hash sizes).\n"
-				              + "Expected hash ({0}): {1}, real hash ({2}): {3}.",
+							  + "Expected hash ({0}): {1}, real hash ({2}): {3}.",
 					expectedHash.Length, BitConverter.ToString(expectedHash),
 					realHash.Length, BitConverter.ToString(realHash)));
 		}
@@ -202,7 +205,7 @@ public class IndexMap {
 			if (expectedHash[i] != realHash[i]) {
 				throw new CorruptIndexException(
 					string.Format("Hash validation error (different hashes).\n"
-					              + "Expected hash ({0}): {1}, real hash ({2}): {3}.",
+								  + "Expected hash ({0}): {1}, real hash ({2}): {3}.",
 						expectedHash.Length, BitConverter.ToString(expectedHash),
 						realHash.Length, BitConverter.ToString(realHash)));
 			}
@@ -260,7 +263,7 @@ public class IndexMap {
 				Parallel.ForEach(
 					GetAllLines(reader)
 						.Reverse(), // Reverse so we load the highest levels (biggest files) first - ensures we use concurrency in the most efficient way.
-					new ParallelOptions {MaxDegreeOfParallelism = threads},
+					new ParallelOptions { MaxDegreeOfParallelism = threads },
 					indexMapEntry => {
 						if (checkpoints.PreparePosition < 0 || checkpoints.CommitPosition < 0)
 							throw new CorruptIndexException(

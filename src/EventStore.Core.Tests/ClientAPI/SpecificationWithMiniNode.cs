@@ -1,12 +1,14 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
+using EventStore.Core.Tests.Helpers.Logging;
 using NUnit.Framework;
+using Serilog;
 
 namespace EventStore.Core.Tests.ClientAPI;
 
@@ -26,12 +28,12 @@ public abstract class SpecificationWithMiniNode<TLogFormat, TStreamId> : Specifi
 
 	protected async Task CloseConnectionAndWait(IEventStoreConnection conn) {
 		TaskCompletionSource closed = new TaskCompletionSource();
-		conn.Closed += (_,_) => closed.SetResult();
+		conn.Closed += (_, _) => closed.SetResult();
 		conn.Close();
 		await closed.Task.WithTimeout(Timeout);
 	}
 
-	protected SpecificationWithMiniNode() : this(chunkSize: 1024*1024) { }
+	protected SpecificationWithMiniNode() : this(chunkSize: 1024 * 1024) { }
 
 	protected SpecificationWithMiniNode(int chunkSize) {
 		_chunkSize = chunkSize;
@@ -39,20 +41,20 @@ public abstract class SpecificationWithMiniNode<TLogFormat, TStreamId> : Specifi
 
 	[OneTimeSetUp]
 	public override async Task TestFixtureSetUp() {
-		
+		Log.Logger = new LoggerConfiguration().WriteTo.Console().WriteTo.NUnitOutput().MinimumLevel.Debug().CreateLogger();
 		MiniNodeLogging.Setup();
-		
+
 		try {
 			await base.TestFixtureSetUp();
 		} catch (Exception ex) {
 			throw new Exception("TestFixtureSetUp Failed", ex);
 		}
-		
+
 		try {
 			_node = new MiniNode<TLogFormat, TStreamId>(PathName, chunkSize: _chunkSize);
 			await _node.Start();
 			_conn = BuildConnection(_node);
-			await _conn.ConnectAsync();		
+			await _conn.ConnectAsync();
 		} catch (Exception ex) {
 			MiniNodeLogging.WriteLogs();
 			throw new Exception("MiniNodeSetUp Failed", ex);

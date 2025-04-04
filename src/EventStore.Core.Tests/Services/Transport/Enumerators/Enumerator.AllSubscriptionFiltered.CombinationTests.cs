@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -411,10 +411,10 @@ public partial class EnumeratorTests {
 
 			var filter = SubscriptionProps.EventFilterType switch {
 				EventFilterType.None => null,
-				EventFilterType.StreamPrefix => new Filter(ClientMessage.Filter.FilterContext.StreamId, ClientMessage.Filter.FilterType.Prefix, new [] {$"stream-{_testGuid}"}),
-				EventFilterType.StreamRegex => new Filter(ClientMessage.Filter.FilterContext.StreamId, ClientMessage.Filter.FilterType.Regex, new [] {$"(.*?){_testGuid}(.*?)"}),
-				EventFilterType.EventTypePrefix => new Filter(ClientMessage.Filter.FilterContext.EventType, ClientMessage.Filter.FilterType.Prefix, new [] { $"type-{_testGuid}"}),
-				EventFilterType.EventTypeRegex => new Filter(ClientMessage.Filter.FilterContext.EventType, ClientMessage.Filter.FilterType.Regex, new [] { $"(.*?){_testGuid}(.*?)"}),
+				EventFilterType.StreamPrefix => new Filter(ClientMessage.Filter.FilterContext.StreamId, ClientMessage.Filter.FilterType.Prefix, new[] { $"stream-{_testGuid}" }),
+				EventFilterType.StreamRegex => new Filter(ClientMessage.Filter.FilterContext.StreamId, ClientMessage.Filter.FilterType.Regex, new[] { $"(.*?){_testGuid}(.*?)" }),
+				EventFilterType.EventTypePrefix => new Filter(ClientMessage.Filter.FilterContext.EventType, ClientMessage.Filter.FilterType.Prefix, new[] { $"type-{_testGuid}" }),
+				EventFilterType.EventTypeRegex => new Filter(ClientMessage.Filter.FilterContext.EventType, ClientMessage.Filter.FilterType.Regex, new[] { $"(.*?){_testGuid}(.*?)" }),
 				_ => throw new ArgumentOutOfRangeException()
 			};
 
@@ -552,6 +552,7 @@ public partial class EnumeratorTests {
 						// not always straightforward to calculate how many checkpoints we will receive.
 						numResponsesExpected++;
 
+						Assert.True(checkpoint.CheckpointPosition < Position.End);
 						var checkpointPos = checkpoint.CheckpointPosition.ToInt64();
 						var checkpointTfPos = new TFPos(checkpointPos.commitPosition, checkpointPos.preparePosition);
 
@@ -563,7 +564,7 @@ public partial class EnumeratorTests {
 						break;
 					default:
 						Assert.Fail($"Unexpected response: {response}");
-						break ;
+						break;
 				}
 			}
 
@@ -580,7 +581,8 @@ public partial class EnumeratorTests {
 
 			// then expect a final checkpoint
 			if (shouldCheckpoint) {
-				Assert.True(await sub.GetNext() is Checkpoint);
+				var checkpoint = AssertEx.IsType<Checkpoint>(await sub.GetNext());
+				Assert.True(checkpoint.CheckpointPosition < Position.End);
 				numEventsSinceLastCheckpoint = 0;
 			}
 

@@ -1,25 +1,23 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Transport.Tcp;
-using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Authentication;
 using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Messages;
 using System.Text;
 using EventStore.Client.Messages;
 using EventStore.Core.Authentication.InternalAuthentication;
+using EventStore.Core.Bus;
+using EventStore.Core.Data;
 using EventStore.Core.LogV2;
-using EventStore.Core.Services.UserManagement;
-using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
 using EventStore.Core.Services;
+using EventStore.Core.Services.Transport.Tcp;
+using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
+using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.Util;
+using NUnit.Framework;
 using EventRecord = EventStore.Core.Data.EventRecord;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
@@ -260,7 +258,7 @@ public class TcpClientDispatcherTests {
 	public void
 		when_wrapping_scavenge_inprogress_response_should_return_result_and_scavengeId_for_v2_clients() {
 		var scavengeId = Guid.NewGuid().ToString();
-		var msg = new ClientMessage.ScavengeDatabaseInProgressResponse(Guid.NewGuid(), scavengeId, reason:"In Progress");
+		var msg = new ClientMessage.ScavengeDatabaseInProgressResponse(Guid.NewGuid(), scavengeId, reason: "In Progress");
 
 		var package = _dispatcher.WrapMessage(msg, (byte)ClientVersion.V2);
 		Assert.IsNotNull(package, "Package is null");
@@ -276,7 +274,7 @@ public class TcpClientDispatcherTests {
 	public void
 		when_wrapping_scavenge_unauthorized_response_should_return_result_and_scavengeId_for_v2_clients() {
 		var scavengeId = Guid.NewGuid().ToString();
-		var msg = new ClientMessage.ScavengeDatabaseUnauthorizedResponse(Guid.NewGuid(), scavengeId,"Unauthorized" );
+		var msg = new ClientMessage.ScavengeDatabaseUnauthorizedResponse(Guid.NewGuid(), scavengeId, "Unauthorized");
 
 		var package = _dispatcher.WrapMessage(msg, (byte)ClientVersion.V2);
 		Assert.IsNotNull(package, "Package is null");

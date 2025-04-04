@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
@@ -27,12 +27,13 @@ public class RequestStatistics {
 	}
 
 	public void StartOperation(Guid id) {
-		var record = new Operation {Start = _getElapsedTicks()};
+		var record = new Operation { Start = _getElapsedTicks() };
 		_operations.AddOrUpdate(id, record, (_, _) => record);
 	}
 
 	public void EndOperation(Guid id) {
-		if (!_operations.TryRemove(id, out var record)) return;
+		if (!_operations.TryRemove(id, out var record))
+			return;
 		var current = _getElapsedTicks();
 		var time = current - record.Start;
 		var ms = time / TimeSpan.TicksPerMillisecond;
@@ -45,7 +46,8 @@ public class RequestStatistics {
 
 	public ObservedTimingMeasurement GetMeasurementDetails() {
 		var ret = new ObservedTimingMeasurement();
-		if (_measurements == null || _measurements.Count == 0) return ret;
+		if (_measurements == null || _measurements.Count == 0)
+			return ret;
 		var items = _measurements.ToArray();
 		Array.Sort(items);
 		ret.Measurements.Add(Measurement.From("Mean", items.Sum() / items.Length));
@@ -73,7 +75,8 @@ public class RequestStatistics {
 		decimal percent = 0;
 		percent = percentile / 100m;
 		var ret = (int)(percent * size);
-		if (ret == size) ret -= 1;
+		if (ret == size)
+			ret -= 1;
 		return ret;
 	}
 

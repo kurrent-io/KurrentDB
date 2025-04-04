@@ -1,12 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
@@ -94,7 +93,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 			using (await store.FilteredSubscribeToAllAsync(false, filter, (s, e) => {
 				if (e.OriginalStreamId == SystemStreams.EventTypesStream)
 					return Task.CompletedTask;
-				
+
 				foundEvents.Add(e);
 				if (foundEvents.Count == 5) {
 					appeared.TrySetResult(true);
@@ -235,7 +234,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 					return Task.CompletedTask;
 				},
 				checkpointInterval: 2)) {
-				
+
 				await _conn.AppendToStreamAsync("stream-a", ExpectedVersion.NoStream, _testEvents);
 
 				await appeared.Task.WithTimeout(Timeout);

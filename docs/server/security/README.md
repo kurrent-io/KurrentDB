@@ -7,16 +7,16 @@ title: Security options
 
 # Security
 
-For production use, it is important to configure EventStoreDB security features to prevent unauthorised access
+For production use, it is important to configure KurrentDB security features to prevent unauthorised access
 to your data.
 
-Security features of EventStoreDB include:
+Security features of KurrentDB include:
 
 - [Encryption in-flight](./protocol-security.md) using HTTPS and TLS
 - [User authentication](./user-authentication.md) for allowing users with different roles to access the database
 - [User authorization](./user-authorization.md) to restrict access to specific event streams
 - [Encryption-at-rest](#encryption-at-rest) to protect data on disk
-- [FIPS compatibility](#fips-140-2) to allow running EventStoreDB on FIPS-enabled operating systems 
+- [FIPS compatibility](#fips-140-2) to allow running KurrentDB on FIPS-enabled operating systems
 
 ## Configuration options
 
@@ -24,9 +24,9 @@ Below you can find more details about each of the available security options.
 
 ### Running without security
 
-Unlike previous versions, EventStoreDB v20+ is secure by default. It means that you have to supply valid certificates and configuration for the database node to work.
+KurrentDB is secure by default. It means that you have to supply valid certificates and configuration for the database node to work.
 
-We realise that many users want to try out the latest version with their existing applications, and also run a previous version of EventStoreDB without any security in their internal networks.
+We realise that many users want to try out the latest version with their existing applications without any security in their internal networks.
 
 For this to work, you can use the `Insecure` option:
 
@@ -34,12 +34,12 @@ For this to work, you can use the `Insecure` option:
 |:---------------------|:----------------------|
 | Command line         | `--insecure`          |
 | YAML                 | `Insecure`            |
-| Environment variable | `EVENTSTORE_INSECURE` |
+| Environment variable | `KURRENTDB_INSECURE`  |
 
 **Default**: `false`
 
 ::: warning
-When running with protocol security disabled, everything is sent unencrypted over the wire. In the previous version it included the server credentials. Sending username and password over the wire without encryption is not secure by definition, but it might give a false sense of security. To make things explicit, EventStoreDB v20+ **does not use any authentication and authorisation** (including ACLs) when running insecure.
+When running with protocol security disabled, everything is sent unencrypted over the wire. To make things explicit, KurrentDB **does not use any authentication and authorisation** (including ACLs) when running insecure.
 :::
 
 ### Set initial passwords
@@ -50,7 +50,7 @@ Set the password for the `admin` user with the `DefaultAdminPassword` option:
 
 | Format               | Syntax                              |
 |:---------------------|:------------------------------------|
-| Environment variable | `EVENTSTORE_DEFAULT_ADMIN_PASSWORD` |
+| Environment variable | `KURRENTDB_DEFAULT_ADMIN_PASSWORD`  |
 
 **Default**: `changeit`
 
@@ -58,7 +58,7 @@ And set the password for the `ops` user with the `DefaultOpsPassword` option:
 
 | Format               | Syntax                              |
 |:---------------------|:------------------------------------|
-| Environment variable | `EVENTSTORE_DEFAULT_OPS_PASSWORD`   |
+| Environment variable | `KURRENTDB_DEFAULT_OPS_PASSWORD`    |
 
 **Default**: `changeit`
 
@@ -76,7 +76,7 @@ This is now disabled by default but can be enabled by setting `AllowAnonymousStr
 |:---------------------|:-------------------------------------------|
 | Command line         | `--allow-anonymous-stream-access`          |
 | YAML                 | `AllowAnonymousStreamAccess`               |
-| Environment variable | `EVENTSTORE_ALLOW_ANONYMOUS_STREAM_ACCESS` |
+| Environment variable | `KURRENTDB_ALLOW_ANONYMOUS_STREAM_ACCESS`  |
 
 **Default**: `false`
 
@@ -92,7 +92,7 @@ The `AllowAnonymousEndpointAccess` option controls anonymous access to these end
 |:---------------------|:---------------------------------------------|
 | Command line         | `--allow-anonymous-endpoint-access`          |
 | YAML                 | `AllowAnonymousEndpointAccess`               |
-| Environment variable | `EVENTSTORE_ALLOW_ANONYMOUS_ENDPOINT_ACCESS` |
+| Environment variable | `KURRENTDB_ALLOW_ANONYMOUS_ENDPOINT_ACCESS`  |
 
 **Default**: `false`
 
@@ -100,7 +100,7 @@ The `AllowAnonymousEndpointAccess` option controls anonymous access to these end
 |:---------------------|:-----------------------------------------------------------|
 | Command line         | `--override-anonymous-endpoint-access-for-gossip`          |
 | YAML                 | `OverrideAnonymousEndpointAccessForGossip`                 |
-| Environment variable | `EVENTSTORE_OVERRIDE_ANONYMOUS_ENDPOINT_ACCESS_FOR_GOSSIP` |
+| Environment variable | `KURRENTDB_OVERRIDE_ANONYMOUS_ENDPOINT_ACCESS_FOR_GOSSIP`  |
 
 **Default**: `true`
 
@@ -110,30 +110,26 @@ Anonymous access is still always granted to `/ping`, `/info`, the static content
 
 ## FIPS 140-2 
 
-<Badge type="info" vertical="middle" text="License Required"/>
-
-EventStoreDB runs on FIPS 140-2 enabled operating systems. Depending on your environment, this feature may require a [licence key](../quick-start/installation.md#license-keys).
+KurrentDB runs on FIPS 140-2 enabled operating systems.
 
 The Federal Information Processing Standards (FIPS) of the United States are a set of publicly announced standards that the National Institute of Standards and Technology (NIST) has developed for use in computer systems of non-military United States government agencies and contractors.
 
 The 140 series of FIPS (FIPS 140) are U.S. government computer security standards that specify requirements for cryptography modules.
 
-To run EventStoreDB on FIPS 140-2 enabled operating systems, the following is required:
+To run KurrentDB on FIPS 140-2 enabled operating systems, the following is required:
 
 1. The node's certificates & keys must be FIPS 140-2 compatible
     - Our certificate generation tool, [es-gencert-cli](https://github.com/EventStore/es-gencert-cli/releases), generates FIPS 140-2 compatible certificates & keys as from version 1.2.0 (only the linux build).
     - If you want to manually generate your certificates or keys with openssl, you must use openssl 3 or later.
     - If you want to use PKCS #12 bundles (.p12/.pfx extension), you must use a FIPS 140-2 compatible encryption algorithm (e.g AES-256) & hash algorithm (e.g SHA-256) to encrypt the bundle's contents.
 
-It used to be necessary to download an additional commercial plugin, but this is no longer required. The functionality now ships in the server package and automatically enables if necessary in FIPS environments.
-
-Note that EventStoreDB will also likely run properly on FIPS 140-3 compliant operating systems with the above steps but this cannot reliably be confirmed at the moment as FIPS 140-3 certification is still ongoing for the operating systems themselves.
+Note that KurrentDB will also likely run properly on FIPS 140-3 compliant operating systems with the above steps but this cannot reliably be confirmed at the moment as FIPS 140-3 certification is still ongoing for the operating systems themselves.
 
 ## Encryption-At-Rest
 
 <Badge type="info" vertical="middle" text="License Required"/>
 
-The Encryption-At-Rest feature allows users to encrypt their EventStoreDB database. Currently, only chunk files are encrypted - the indexes are not. The primary objective is to protect against an attacker who obtains access to the physical disk. In contrast to volume or filesystem encryption, file level encryption provides some degree of protection for attacks against the live system or remote exploits as the plaintext data is not directly readable. Protecting against memory-dump based attacks is out of the scope of this feature.
+The Encryption-At-Rest feature allows users to encrypt their KurrentDB database. Currently, only chunk files are encrypted - the indexes are not. The primary objective is to protect against an attacker who obtains access to the physical disk. In contrast to volume or filesystem encryption, file level encryption provides some degree of protection for attacks against the live system or remote exploits as the plaintext data is not directly readable. Protecting against memory-dump based attacks is out of the scope of this feature.
 
 You require a [license key](../quick-start/installation.md#license-keys) to use this feature.
 
@@ -168,7 +164,7 @@ The feature is designed to support different master key sources. Currently, the 
   - For proper security, the master key files must be located on a drive other than where the database files are.
   - This master key source is not recommended to be used in production as it provides minimal protection.
 
-You can contact Event Store if you want us to support a particular master key source.
+You can contact Kurrent if you want us to support a particular master key source.
 
 ### Configuration
 
@@ -219,4 +215,4 @@ The encrypted chunks would first need to be decrypted before a user can revert t
 
 ### Tutorial
 
-[Learn how to set up and use Encryption-At-Rest in EventStoreDB through a tutorial.](https://developers.eventstore.com/tutorials/Encryption-At-Rest.md) 
+[Learn how to set up and use Encryption-At-Rest in KurrentDB through a tutorial.](https://developers.kurrent.io/tutorials/Encryption-At-Rest.md)

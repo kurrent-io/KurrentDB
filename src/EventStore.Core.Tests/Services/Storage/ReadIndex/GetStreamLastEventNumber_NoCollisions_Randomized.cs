@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -51,8 +51,7 @@ public class GetStreamLastEventNumber_NoCollisions_Randomized : ReadIndexTestSce
 	public async Task returns_correct_last_event_number_before_position() {
 		var expectedLastEventNumber = ExpectedVersion.NoStream;
 
-		foreach (var @event in _events)
-		{
+		foreach (var @event in _events) {
 			Assert.AreEqual(expectedLastEventNumber,
 				await ReadIndex.GetStreamLastEventNumber_NoCollisions(Hash, GetStreamId, @event.LogPosition, CancellationToken.None));
 

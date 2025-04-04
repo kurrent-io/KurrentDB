@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Messages;
@@ -15,9 +15,9 @@ public class when_5_node_cluster_has_2_lagging_nodes : with_clustered_replicatio
 	private Guid[] _followers;
 
 	protected override int ClusterSize => 5;
-	
+
 	public override void When() {
-		_followers = new [] {Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()};
+		_followers = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
 		BecomeLeader();
 		// All of the nodes have acked the first write
 		WriterCheckpoint.Write(_firstLogPosition);
@@ -29,7 +29,7 @@ public class when_5_node_cluster_has_2_lagging_nodes : with_clustered_replicatio
 		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 
 		ReplicatedTos.Clear();
-		
+
 		// Followers 3 and 4 are lagging behind, they ack the previous positions
 		WriterCheckpoint.Write(_secondLogPosition);
 		WriterCheckpoint.Flush();

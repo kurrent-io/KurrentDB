@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -42,7 +42,7 @@ public class ReadStreamsForwardTests {
 			using var call = StreamsClient.Append(GetCallOptions(AdminCredentials));
 			await call.RequestStream.WriteAsync(new() {
 				Options = new() {
-					StreamIdentifier = new(){StreamName = ByteString.CopyFromUtf8($"$${_streamName}")},
+					StreamIdentifier = new() { StreamName = ByteString.CopyFromUtf8($"$${_streamName}") },
 					Any = new()
 				}
 			});
@@ -66,7 +66,7 @@ public class ReadStreamsForwardTests {
 
 		protected override async Task When() {
 			using var call = StreamsClient.Read(new() {
-				Options = new () {
+				Options = new() {
 					Count = MaxCount,
 					Stream = new() {
 						StreamIdentifier = new() {
@@ -147,7 +147,7 @@ public class ReadStreamsForwardTests {
 					UuidOption = new() { Structured = new() },
 					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
 					NoFilter = new(),
-					ControlOption = new(){ Compatibility = 21 }
+					ControlOption = new() { Compatibility = 21 }
 				}
 			});
 			_responses.AddRange(await call.ResponseStream.ReadAllAsync().ToArrayAsync());
@@ -196,7 +196,7 @@ public class ReadStreamsForwardTests {
 						NoFilter = new(),
 					}
 				}, GetCallOptions(AdminCredentials));
-				
+
 				var readEvents = await call.ResponseStream.ReadAllAsync().ToArrayAsync();
 				Assert.AreEqual(1, readEvents.Length);
 				Assert.AreEqual(evt, readEvents[0].Event.Event);
@@ -307,7 +307,7 @@ public class ReadStreamsForwardTests {
 					NoFilter = new()
 				}
 			});
-			_responses.AddRange(await  call.ResponseStream.ReadAllAsync().ToArrayAsync());
+			_responses.AddRange(await call.ResponseStream.ReadAllAsync().ToArrayAsync());
 		}
 
 		[Test]

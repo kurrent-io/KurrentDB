@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Security.Claims;
@@ -38,7 +38,8 @@ public class TransactionFileEventReader : EventReader,
 		bool deliverEndOfTFPosition = true,
 		bool resolveLinkTos = true)
 		: base(publisher, eventReaderCorrelationId, readAs, stopOnEof) {
-		if (publisher == null) throw new ArgumentNullException("publisher");
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
 		_from = @from;
 		_deliverEndOfTfPosition = deliverEndOfTFPosition;
 		_resolveLinkTos = resolveLinkTos;
@@ -93,9 +94,12 @@ public class TransactionFileEventReader : EventReader,
 	}
 
 	public void Handle(ProjectionManagementMessage.Internal.ReadTimeout message) {
-		if (_disposed) return;
-		if (Paused) return;
-		if (message.CorrelationId != _pendingRequestCorrelationId) return;
+		if (_disposed)
+			return;
+		if (Paused)
+			return;
+		if (message.CorrelationId != _pendingRequestCorrelationId)
+			return;
 
 		_eventsRequested = false;
 		PauseOrContinueProcessing();
@@ -107,7 +111,8 @@ public class TransactionFileEventReader : EventReader,
 	}
 
 	protected override void RequestEvents() {
-		if (_disposed) throw new InvalidOperationException("Disposed");
+		if (_disposed)
+			throw new InvalidOperationException("Disposed");
 		if (_eventsRequested)
 			throw new InvalidOperationException("Read operation is already in progress");
 		if (PauseRequested || Paused)

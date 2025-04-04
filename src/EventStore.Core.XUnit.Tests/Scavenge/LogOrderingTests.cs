@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
 using EventStore.Core.Tests;
@@ -59,7 +59,7 @@ public class LogDisorderingTests : SqliteDbPerTest<LogDisorderingTests> {
 				Assert.True(state.TryGetOriginalStreamData("ab-1", out var originalStreamData));
 				// not present because there is nothing to discard
 				Assert.False(state.TryGetMetastreamData("$$ab-1", out var metastreamData));
-		
+
 				Assert.Equal(DiscardPoint.KeepAll, originalStreamData.DiscardPoint);
 				Assert.Equal(DiscardPoint.KeepAll, metastreamData.DiscardPoint);
 			})

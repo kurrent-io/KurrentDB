@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Common.Utils;
@@ -15,8 +15,8 @@ public static partial class ReplicationTrackingMessage {
 	[DerivedMessage(CoreMessage.ReplicationTracking)]
 	public partial class IndexedTo : Message {
 		public readonly long LogPosition;
-		
-		public IndexedTo(long logPosition ) {
+
+		public IndexedTo(long logPosition) {
 			Ensure.Nonnegative(logPosition + 1, "logPosition");
 			LogPosition = logPosition;
 		}
@@ -25,8 +25,8 @@ public static partial class ReplicationTrackingMessage {
 	[DerivedMessage(CoreMessage.ReplicationTracking)]
 	public partial class ReplicatedTo : Message {
 		public readonly long LogPosition;
-		
-		public ReplicatedTo(long logPosition ) {
+
+		public ReplicatedTo(long logPosition) {
 			Ensure.Nonnegative(logPosition + 1, "logPosition");
 			LogPosition = logPosition;
 		}
@@ -35,8 +35,8 @@ public static partial class ReplicationTrackingMessage {
 	[DerivedMessage(CoreMessage.ReplicationTracking)]
 	public partial class LeaderReplicatedTo : Message {
 		public readonly long LogPosition;
-		
-		public LeaderReplicatedTo(long logPosition ) {
+
+		public LeaderReplicatedTo(long logPosition) {
 			Ensure.Nonnegative(logPosition + 1, "logPosition");
 			LogPosition = logPosition;
 		}

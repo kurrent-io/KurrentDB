@@ -1,23 +1,16 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Security.Claims;
-using EventStore.Core.Messages;
-using EventStore.Core.Services.Transport.Http.Authentication;
-using EventStore.Core.Services.Transport.Http.Messages;
-using EventStore.Core.Tests.Authentication;
-using EventStore.Transport.Http.EntityManagement;
-using NUnit.Framework;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EventStore.Core.Services.Transport.Http.Authentication;
+using EventStore.Core.Tests.Authentication;
 using EventStore.Plugins.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 	namespace basic_http_authentication_provider {

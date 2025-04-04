@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Text;
@@ -103,18 +103,18 @@ public struct PrepareLogRecordView {
 
 	public override string ToString() {
 		return $"Version: {Version}, " +
-		       $"LogPosition: {LogPosition}, " +
-		       $"Flags: {Flags}, " +
-		       $"TransactionPosition: {TransactionPosition}, " +
-		       $"TransactionOffset: {TransactionOffset}, " +
-		       $"ExpectedVersion: {ExpectedVersion}, " +
-		       $"EventStreamId: {Encoding.UTF8.GetString(EventStreamId.ToArray())}, " +
-		       $"EventId: {EventId}, " +
-		       $"CorrelationId: {CorrelationId}, " +
-		       $"TimeStamp: {TimeStamp}, " +
-		       $"EventType: {Encoding.UTF8.GetString(EventType.ToArray())}, " +
-		       $"Data size: {Data.Length}, " +
-		       $"Metadata size: {Metadata.Length}";
+			   $"LogPosition: {LogPosition}, " +
+			   $"Flags: {Flags}, " +
+			   $"TransactionPosition: {TransactionPosition}, " +
+			   $"TransactionOffset: {TransactionOffset}, " +
+			   $"ExpectedVersion: {ExpectedVersion}, " +
+			   $"EventStreamId: {Encoding.UTF8.GetString(EventStreamId.ToArray())}, " +
+			   $"EventId: {EventId}, " +
+			   $"CorrelationId: {CorrelationId}, " +
+			   $"TimeStamp: {TimeStamp}, " +
+			   $"EventType: {Encoding.UTF8.GetString(EventType.ToArray())}, " +
+			   $"Data size: {Data.Length}, " +
+			   $"Metadata size: {Metadata.Length}";
 	}
 
 	// copied and adapted from https://github.com/microsoft/referencesource/blob/master/mscorlib/system/io/binaryreader.cs

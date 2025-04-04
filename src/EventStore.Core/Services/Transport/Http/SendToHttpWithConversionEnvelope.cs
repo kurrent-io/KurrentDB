@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Bus;
@@ -9,14 +9,13 @@ using EventStore.Transport.Http.EntityManagement;
 
 namespace EventStore.Core.Services.Transport.Http;
 
-public class SendToHttpWithConversionEnvelope<TExpectedResponseMessage, TExpectedHttpFormattedResponseMessage> :
-	IEnvelope
+public class SendToHttpWithConversionEnvelope<TExpectedResponseMessage, TExpectedHttpFormattedResponseMessage> : IEnvelope
 	where TExpectedResponseMessage : Message {
 	private readonly Func<ICodec, TExpectedHttpFormattedResponseMessage, string> _formatter;
 	private readonly Func<ICodec, TExpectedHttpFormattedResponseMessage, ResponseConfiguration> _configurator;
 	private readonly Func<TExpectedResponseMessage, TExpectedHttpFormattedResponseMessage> _convertor;
 
-	private readonly IEnvelope _httpEnvelope;
+	private readonly SendToHttpEnvelope<TExpectedResponseMessage> _httpEnvelope;
 
 	public SendToHttpWithConversionEnvelope(IPublisher networkSendQueue,
 		HttpEntityManager entity,
@@ -27,8 +26,7 @@ public class SendToHttpWithConversionEnvelope<TExpectedResponseMessage, TExpecte
 		_formatter = formatter;
 		_configurator = configurator;
 		_convertor = convertor;
-		_httpEnvelope = new SendToHttpEnvelope<TExpectedResponseMessage>(networkSendQueue, entity, Formatter,
-			Configurator, nonMatchingEnvelope);
+		_httpEnvelope = new(networkSendQueue, entity, Formatter, Configurator, nonMatchingEnvelope);
 	}
 
 	private ResponseConfiguration Configurator(ICodec codec, TExpectedResponseMessage message) {

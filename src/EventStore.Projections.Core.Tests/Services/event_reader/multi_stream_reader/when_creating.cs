@@ -1,11 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.MultiStream;
 using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
@@ -22,8 +21,8 @@ public class when_creating<TLogFormat, TStreamId> : TestFixtureWithExistingEvent
 	[SetUp]
 	public void setup() {
 		_timeProvider = new RealTimeProvider();
-		_ab12Tag = new Dictionary<string, long> {{"a", 1}, {"b", 2}};
-		_abStreams = new[] {"a", "b"};
+		_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
+		_abStreams = new[] { "a", "b" };
 	}
 
 	[Test]
@@ -77,7 +76,7 @@ public class when_creating<TLogFormat, TStreamId> : TestFixtureWithExistingEvent
 		Assert.Throws<ArgumentException>(() => {
 			new MultiStreamEventReader(
 				_ioDispatcher, _bus, Guid.NewGuid(), null, 0, _abStreams,
-				new Dictionary<string, long> {{"a", 1}, {"c", 2}}, false, _timeProvider);
+				new Dictionary<string, long> { { "a", 1 }, { "c", 2 } }, false, _timeProvider);
 		});
 	}
 }

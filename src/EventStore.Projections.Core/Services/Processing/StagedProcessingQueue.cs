@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -125,14 +125,14 @@ public class StagedProcessingQueue {
 			TaskEntry task = null;
 			if (!_orderedStage[stageIndex]) {
 				if (_byUnorderedStageFirst[stageIndex] != null
-				    && _byUnorderedStageFirst[stageIndex].Entry.PreviousByCorrelation == null) {
+					&& _byUnorderedStageFirst[stageIndex].Entry.PreviousByCorrelation == null) {
 					var stageEntry = _byUnorderedStageFirst[stageIndex];
 					task = stageEntry.Entry;
 				}
 			} else {
 				var taskEntry = _byOrderedStageLast[stageIndex];
 				if (taskEntry != null && taskEntry.ReadForStage == stageIndex && !taskEntry.Busy
-				    && !taskEntry.Completed && taskEntry.PreviousByCorrelation == null)
+					&& !taskEntry.Completed && taskEntry.PreviousByCorrelation == null)
 					task = taskEntry;
 			}
 
@@ -192,7 +192,7 @@ public class StagedProcessingQueue {
 	private void EnqueueForStage(TaskEntry entry, int readyForStage) {
 		entry.ReadForStage = readyForStage;
 		if (!_orderedStage[readyForStage] && (entry.PreviousByCorrelation == null)) {
-			var stageEntry = new StageEntry {Entry = entry, Next = null};
+			var stageEntry = new StageEntry { Entry = entry, Next = null };
 			if (_byUnorderedStageFirst[readyForStage] != null) {
 				_byUnorderedStageLast[readyForStage].Next = stageEntry;
 				_byUnorderedStageLast[readyForStage] = stageEntry;

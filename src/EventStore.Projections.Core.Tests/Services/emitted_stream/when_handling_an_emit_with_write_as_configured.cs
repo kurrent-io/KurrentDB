@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -31,7 +31,7 @@ public class when_handling_an_emit_with_write_as_configured<TLogFormat, TStreamI
 	[SetUp]
 	public void setup() {
 		_readyHandler = new TestCheckpointManagerMessageHandler();
-		_writeAs = new ClaimsPrincipal(new ClaimsIdentity(new []{new Claim(ClaimTypes.Role, "test-user") },"ES-Test"));
+		_writeAs = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.Role, "test-user") }, "ES-Test"));
 		_stream = new EmittedStream(
 			"test_stream",
 			new EmittedStream.WriterConfiguration(new EmittedStreamsWriter(_ioDispatcher),

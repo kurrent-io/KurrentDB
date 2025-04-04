@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -23,12 +23,18 @@ internal class TimerMessageProcessor : IHandle<TimerMessage.Schedule> {
 		IPublisher bus,
 		int delayMin,
 		int delayMax) {
-		if (rnd == null) throw new ArgumentNullException("rnd");
-		if (runner == null) throw new ArgumentNullException("runner");
-		if (endPoint == null) throw new ArgumentNullException("endPoint");
-		if (bus == null) throw new ArgumentNullException("bus");
-		if (delayMin <= 0) throw new ArgumentOutOfRangeException("delayMin");
-		if (delayMin >= delayMax) throw new ArgumentException("DelayMin should be strictly less than DelayMax.");
+		if (rnd == null)
+			throw new ArgumentNullException("rnd");
+		if (runner == null)
+			throw new ArgumentNullException("runner");
+		if (endPoint == null)
+			throw new ArgumentNullException("endPoint");
+		if (bus == null)
+			throw new ArgumentNullException("bus");
+		if (delayMin <= 0)
+			throw new ArgumentOutOfRangeException("delayMin");
+		if (delayMin >= delayMax)
+			throw new ArgumentException("DelayMin should be strictly less than DelayMax.");
 
 		_rnd = rnd;
 		_runner = runner;

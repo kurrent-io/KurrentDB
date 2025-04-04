@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Messages;
@@ -28,7 +28,7 @@ public class when_3_node_cluster_receives_second_ack_from_first_node :
 		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 
 		ReplicatedTos.Clear();
-		
+
 		// Follower 2 has lost connection and does not ack the write
 		WriterCheckpoint.Write(_secondLogPosition);
 		WriterCheckpoint.Flush();

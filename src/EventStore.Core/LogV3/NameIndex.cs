@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
@@ -140,8 +140,7 @@ public class NameIndex :
 					// updated during the catchup if we do write some events to those streams.
 					// therefore leave the entry blank so it will be (cheaply because in mem) be
 					// populated on miss.
-				}
-				else {
+				} else {
 					// we just created the stream so we know that no events exist in either
 					// the stream itself or its metastream.
 					var createdStreamNumber = streamRecord.StreamNumber;
@@ -149,9 +148,8 @@ public class NameIndex :
 					backend.SetStreamLastEventNumber(createdStreamNumber, ExpectedVersion.NoStream);
 					backend.SetStreamLastEventNumber(createdMetaStreamNumber, ExpectedVersion.NoStream);
 				}
-			}
-			else if (prepare.RecordType == LogRecordType.EventType &&
-			         prepare is LogV3EventTypeRecord eventTypeRecord && prepare.GetType() == _recordTypeToHandle) {
+			} else if (prepare.RecordType == LogRecordType.EventType &&
+					   prepare is LogV3EventTypeRecord eventTypeRecord && prepare.GetType() == _recordTypeToHandle) {
 				Confirm(
 					name: eventTypeRecord.EventTypeName,
 					value: eventTypeRecord.EventTypeNumber);

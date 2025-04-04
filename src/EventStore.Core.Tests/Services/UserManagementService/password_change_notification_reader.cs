@@ -1,12 +1,11 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http.Authentication;
 using EventStore.Core.Services.UserManagement;
 using NUnit.Framework;
-using System.Linq;
 
 namespace EventStore.Core.Tests.Services.UserManagementService {
 	namespace password_change_notification_reader {
@@ -21,7 +20,8 @@ namespace EventStore.Core.Tests.Services.UserManagementService {
 			}
 
 			protected override IEnumerable<WhenStep> PreWhen() {
-				foreach (var m in base.PreWhen()) yield return m;
+				foreach (var m in base.PreWhen())
+					yield return m;
 				yield return new SystemMessage.SystemStart();
 				yield return
 					new UserManagementMessage.Create(

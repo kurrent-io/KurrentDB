@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -63,7 +63,7 @@ public static partial class GossipMessage {
 			ServerEndPoint = serverEndPoint;
 		}
 	}
-	
+
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class ClientGossip : Message {
 		public readonly IEnvelope Envelope;
@@ -105,12 +105,12 @@ public static partial class GossipMessage {
 			return String.Format("Reason: {0}, Recipient: {1}", Reason, Recipient);
 		}
 	}
-	
+
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GetGossip : Message {
 		public GetGossip() { }
 	}
-	
+
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GetGossipFailed : Message {
 		public readonly string Reason;
@@ -125,7 +125,7 @@ public static partial class GossipMessage {
 			return String.Format("Reason: {0}, Recipient: {1}", Reason, Recipient);
 		}
 	}
-	
+
 	[DerivedMessage(CoreMessage.Gossip)]
 	public partial class GetGossipReceived : Message {
 		public readonly ClusterInfo ClusterInfo;

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -19,9 +19,9 @@ public class SystemMetricsTests : IDisposable {
 	private readonly TestMeterListener<long> _longListener;
 	private readonly FakeClock _clock = new();
 	private readonly SystemMetrics _sut;
-    private readonly Meter _meter;
+	private readonly Meter _meter;
 	public SystemMetricsTests() {
-        _meter = new Meter($"{typeof(ProcessMetricsTests)}");
+		_meter = new Meter($"{typeof(ProcessMetricsTests)}");
 		_floatListener = new TestMeterListener<float>(_meter);
 		_doubleListener = new TestMeterListener<double>(_meter);
 		_longListener = new TestMeterListener<long>(_meter);
@@ -31,7 +31,7 @@ public class SystemMetricsTests : IDisposable {
 		foreach (var value in Enum.GetValues<MetricsConfiguration.SystemTracker>()) {
 			config[value] = true;
 		}
-		_sut = new SystemMetrics(_meter, TimeSpan.FromSeconds(42), config);
+		_sut = new SystemMetrics(_meter, TimeSpan.FromSeconds(42), config, legacyNames: false);
 		_sut.CreateLoadAverageMetric("eventstore-sys-load-avg", new() {
 			{ MetricsConfiguration.SystemTracker.LoadAverage1m, "1m" },
 			{ MetricsConfiguration.SystemTracker.LoadAverage5m, "5m" },
@@ -100,29 +100,29 @@ public class SystemMetricsTests : IDisposable {
 	[Fact]
 	public void can_collect_sys_cpu() {
 		Assert.Collection(
-            _doubleListener.RetrieveMeasurements("eventstore-sys-cpu"),
+			_doubleListener.RetrieveMeasurements("eventstore-sys-cpu"),
 			m => {
 				Assert.True(m.Value >= 0);
 				Assert.Empty(m.Tags);
 			});
 	}
-    
-    [Fact]
-    public void can_collect_sys_cpu_using_metrics_collector() {
-        // Arrange
-        using var collector = new MetricCollector<double>(
-            null, _meter.Name, "eventstore-sys-cpu"
-        );
 
-        // Act
-        collector.RecordObservableInstruments();
-        
-        // Assert
-        collector.LastMeasurement.Should().NotBeNull();
-        collector.LastMeasurement!.Value.Should().BeGreaterOrEqualTo(0);
-    }
-    
-   
+	[Fact]
+	public void can_collect_sys_cpu_using_metrics_collector() {
+		// Arrange
+		using var collector = new MetricCollector<double>(
+			null, _meter.Name, "eventstore-sys-cpu"
+		);
+
+		// Act
+		collector.RecordObservableInstruments();
+
+		// Assert
+		collector.LastMeasurement.Should().NotBeNull();
+		collector.LastMeasurement!.Value.Should().BeGreaterOrEqualTo(0);
+	}
+
+
 
 	[Fact]
 	public void can_collect_sys_mem() {

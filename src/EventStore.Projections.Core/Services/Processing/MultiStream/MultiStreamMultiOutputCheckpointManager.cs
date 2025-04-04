@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -26,25 +26,26 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 	private int _loadingItemsCount;
 	private readonly Stack<Item> _loadQueue = new Stack<Item>();
 	private CheckpointTag _loadingPrerecordedEventsFrom;
-	private static readonly char[] _linkToSeparator = new[] {'@'};
+	private static readonly char[] _linkToSeparator = new[] { '@' };
 
 	public MultiStreamMultiOutputCheckpointManager(
 		IPublisher publisher, Guid projectionCorrelationId, ProjectionVersion projectionVersion, ClaimsPrincipal runAs,
 		IODispatcher ioDispatcher, ProjectionConfig projectionConfig, string name, PositionTagger positionTagger,
 		ProjectionNamesBuilder namingBuilder, bool usePersistentCheckpoints, bool producesRunningResults,
 		bool definesFold,
-		CoreProjectionCheckpointWriter coreProjectionCheckpointWriter)
+		CoreProjectionCheckpointWriter coreProjectionCheckpointWriter, int maxProjectionStateSize)
 		: base(
 			publisher, projectionCorrelationId, projectionVersion, runAs, ioDispatcher, projectionConfig, name,
 			positionTagger, namingBuilder, usePersistentCheckpoints, producesRunningResults, definesFold,
-			coreProjectionCheckpointWriter) {
+			coreProjectionCheckpointWriter, maxProjectionStateSize) {
 		_positionTagger = positionTagger;
 	}
 
 	public override void Initialize() {
 		base.Initialize();
 		_lastOrderCheckpointTag = null;
-		if (_orderStream != null) _orderStream.Dispose();
+		if (_orderStream != null)
+			_orderStream.Dispose();
 		_orderStream = null;
 	}
 
@@ -114,7 +115,7 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 								_projectionVersion);
 							//TODO: throw exception if different projectionID?
 							if (_projectionVersion.ProjectionId != parsed.Version.ProjectionId
-							    || _projectionVersion.Epoch > parsed.Version.Version) {
+								|| _projectionVersion.Epoch > parsed.Version.Version) {
 								epochEnded = true;
 								break;
 							}
@@ -149,8 +150,10 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 	}
 
 	private void EnqueuePrerecordedEvent(EventRecord @event, CheckpointTag tag) {
-		if (@event == null) throw new ArgumentNullException("event");
-		if (tag == null) throw new ArgumentNullException("tag");
+		if (@event == null)
+			throw new ArgumentNullException("event");
+		if (tag == null)
+			throw new ArgumentNullException("tag");
 		if (@event.EventType != "$>")
 			throw new ArgumentException("linkto ($>) event expected", "event");
 

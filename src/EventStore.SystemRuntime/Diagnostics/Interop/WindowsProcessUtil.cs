@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
 
@@ -77,26 +77,28 @@ public static class WindowsProcessUtil {
 	/// <remarks>See also:
 	/// http://msdn.microsoft.com/en-us/library/windows/desktop/aa373661(v=vs.85).aspx
 	/// </remarks>
-    static List<Process> WhoIsLocking(string path) {
+	static List<Process> WhoIsLocking(string path) {
 		uint handle;
 		var key = Guid.NewGuid().ToString();
 		List<Process> processes = [];
 
 		var res = RmStartSession(out handle, 0, key);
-		if (res != 0) throw new Exception("Could not begin restart session.  Unable to determine file locker.");
+		if (res != 0)
+			throw new Exception("Could not begin restart session.  Unable to determine file locker.");
 
 		try {
 			const int ERROR_MORE_DATA = 234;
-            
+
 			uint pnProcInfoNeeded = 0,
 				pnProcInfo = 0,
 				lpdwRebootReasons = RmRebootReasonNone;
 
-			var resources = new string[] {path}; // Just checking on one resource.
+			var resources = new string[] { path }; // Just checking on one resource.
 
 			res = RmRegisterResources(handle, (uint)resources.Length, resources, 0, null!, 0, null!);
 
-			if (res != 0) throw new Exception("Could not register resource.");
+			if (res != 0)
+				throw new Exception("Could not register resource.");
 
 			//Note: there's a race condition here -- the first call to RmGetList() returns
 			//      the total number of process. However, when we call RmGetList() again to get
@@ -111,7 +113,7 @@ public static class WindowsProcessUtil {
 				// Get the list
 				res = RmGetList(handle, out pnProcInfoNeeded, ref pnProcInfo, processInfo, ref lpdwRebootReasons);
 				if (res == 0) {
-					processes = new ((int)pnProcInfo);
+					processes = new((int)pnProcInfo);
 
 					// Enumerate all the results and add them to the
 					// list to be returned
@@ -123,7 +125,8 @@ public static class WindowsProcessUtil {
 						catch (ArgumentException) {
 						}
 					}
-				} else throw new Exception("Could not list processes locking resource.");
+				} else
+					throw new Exception("Could not list processes locking resource.");
 			} else if (res != 0)
 				throw new Exception("Could not list processes locking resource. Failed to get size of result.");
 		} finally {
@@ -133,32 +136,32 @@ public static class WindowsProcessUtil {
 		return processes;
 	}
 
-    public static bool TryGetWhoIsLocking(string path, out List<Process> processes, out Exception? error) {
-        if (!RuntimeInformation.IsWindows) {
-            processes = [];
-            error = null;
-            return false;
-        }
-        
-        try {
-             processes = WhoIsLocking(path);
-             error = null;
-             return true;
-        } catch (Exception ex) {
-            processes = [];
-            error = ex;
-            return false;
-        }
-    }
-    
-    public static void PrintWhoIsLocking(string path, ILogger logger) {
-        logger.Information("Trying to retrieve list of processes having a file handle open on {Path} (requires admin privileges)", path);
-        if (TryGetWhoIsLocking(path, out var processes, out var error))
-            logger.Information(
-                $"Processes locking {{Path}}:{Environment.NewLine}{{ProcessList}}",
-                path, string.Join(Environment.NewLine, processes.Select(x => $"[{x.Id}] {x.MainModule?.FileName}"))
-            );
-        else
-            logger.Error(error, "Could not retrieve list of processes using file handle {Path}", path);
-    }
+	public static bool TryGetWhoIsLocking(string path, out List<Process> processes, out Exception? error) {
+		if (!RuntimeInformation.IsWindows) {
+			processes = [];
+			error = null;
+			return false;
+		}
+
+		try {
+			processes = WhoIsLocking(path);
+			error = null;
+			return true;
+		} catch (Exception ex) {
+			processes = [];
+			error = ex;
+			return false;
+		}
+	}
+
+	public static void PrintWhoIsLocking(string path, ILogger logger) {
+		logger.Information("Trying to retrieve list of processes having a file handle open on {Path} (requires admin privileges)", path);
+		if (TryGetWhoIsLocking(path, out var processes, out var error))
+			logger.Information(
+				$"Processes locking {{Path}}:{Environment.NewLine}{{ProcessList}}",
+				path, string.Join(Environment.NewLine, processes.Select(x => $"[{x.Id}] {x.MainModule?.FileName}"))
+			);
+		else
+			logger.Error(error, "Could not retrieve list of processes using file handle {Path}", path);
+	}
 }

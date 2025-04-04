@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -128,7 +128,9 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 		// convert the Recs into LogRecords and write them to the database.
 		// for each chunk i
 		for (int i = 0; i < _chunkRecs.Count; ++i) {
-			var chunk = i == 0 ? _db.Manager.GetChunk(0) : await _db.Manager.AddNewChunk(token);
+			var chunk = await (i is 0
+				? _db.Manager.GetInitializedChunk(0, token)
+				: _db.Manager.AddNewChunk(token));
 			logPos = i * (long)_db.Config.ChunkSize;
 
 			var completedChunk = false;
@@ -160,9 +162,9 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 				}
 
 				if (streamVersion == -1
-				    && rec.Type != Rec.RecType.TransStart
-				    && rec.Type != Rec.RecType.Prepare
-				    && rec.Type != Rec.RecType.Delete) {
+					&& rec.Type != Rec.RecType.TransStart
+					&& rec.Type != Rec.RecType.Prepare
+					&& rec.Type != Rec.RecType.Delete) {
 					throw new Exception(string.Format("Stream {0} is empty.", rec.StreamId));
 				}
 
@@ -182,9 +184,9 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 					? ExpectedVersion.Any // V2 transaction writes have expected version: -2, event number: -1
 					: ExpectedVersion.NoStream; // V3 doesn't have transactions so cant have a negative event number
 
-				  var expectedVersion =
-					(rec.EventNumber - 1) ??
-					(transInfo.FirstPrepareId == rec.Id ? streamVersion : logFormatDefaultExpectedVersion);
+				var expectedVersion =
+				  (rec.EventNumber - 1) ??
+				  (transInfo.FirstPrepareId == rec.Id ? streamVersion : logFormatDefaultExpectedVersion);
 
 				switch (rec.Type) {
 					case Rec.RecType.Prepare: {
@@ -486,8 +488,8 @@ public class Rec {
 
 	// commit all writes except incomplete implicit transactions
 	public bool CommitWrite => !(Type == RecType.Prepare &&
-	                             PrepareFlags.HasFlag(PrepareFlags.IsCommitted) &&
-	                             !PrepareFlags.HasFlag(PrepareFlags.TransactionEnd));
+								 PrepareFlags.HasFlag(PrepareFlags.IsCommitted) &&
+								 !PrepareFlags.HasFlag(PrepareFlags.TransactionEnd));
 
 	public Rec(RecType type, int transaction, string streamId, string eventType, DateTime? timestamp, byte version,
 		long? eventNumber = null,

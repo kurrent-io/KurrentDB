@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -17,10 +17,12 @@ public sealed class AssertionComparer : IComparer<IAssertion> {
 
 	public int Compare(IAssertion x, IAssertion y) {
 		var grant = x.Grant.CompareTo(y.Grant);
-		if (grant != 0) return grant * -1;
+		if (grant != 0)
+			return grant * -1;
 
 		var type = Comparer<Type>.Default.Compare(x.GetType(), y.GetType());
-		if (type != 0) return type;
+		if (type != 0)
+			return type;
 
 		var closed = (Func<IAssertion, IAssertion, int>)OpenTypeComparer.MakeGenericMethod(x.GetType())
 			.CreateDelegate(typeof(Func<IAssertion, IAssertion, int>));

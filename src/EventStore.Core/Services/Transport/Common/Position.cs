@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 
@@ -9,7 +9,7 @@ namespace EventStore.Core.Services.Transport.Common;
 /// A structure referring to a potential logical record position
 /// in the Event Store transaction file.
 /// </summary>
-public struct Position : IEquatable<Position>, IComparable<Position> {
+public readonly struct Position : IEquatable<Position>, IComparable<Position> {
 	/// <summary>
 	/// Position representing the start of the transaction file
 	/// </summary>
@@ -39,7 +39,7 @@ public struct Position : IEquatable<Position>, IComparable<Position> {
 	/// Constructs a position with the given commit and prepare positions.
 	/// It is not guaranteed that the position is actually the start of a
 	/// record in the transaction file.
-	/// 
+	///
 	/// The commit position cannot be less than the prepare position.
 	/// </summary>
 	/// <param name="commitPosition">The commit position of the record.</param>

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Bus;
@@ -25,7 +25,8 @@ abstract class GetDataWorkItemBase : WorkItem {
 		IProjectionPhaseStateManager projection,
 		string partition)
 		: base(null) {
-		if (partition == null) throw new ArgumentNullException("partition");
+		if (partition == null)
+			throw new ArgumentNullException("partition");
 		_publisher = publisher;
 		_partition = partition;
 		_correlationId = correlationId;

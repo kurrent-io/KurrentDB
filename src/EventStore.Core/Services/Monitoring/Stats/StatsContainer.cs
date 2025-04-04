@@ -1,38 +1,34 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Common.Utils;
+using JetBrains.Annotations;
 
 namespace EventStore.Core.Services.Monitoring.Stats;
 
 public class StatsContainer {
-	private readonly Dictionary<string, object> _stats = new Dictionary<string, object>();
+	private readonly Dictionary<string, object> _stats = new();
 
 	private const string Separator = "-";
-	private static readonly string[] SplitSeparator = new[] {Separator};
+	private static readonly string[] SplitSeparator = [Separator];
 
 	public void Add(IDictionary<string, object> statGroup) {
-		Ensure.NotNull(statGroup, "statGroup");
+		Ensure.NotNull(statGroup);
 
 		foreach (var stat in statGroup)
 			_stats.Add(stat.Key, stat.Value);
 	}
 
 	public Dictionary<string, object> GetStats(bool useGrouping, bool useMetadata) {
-		if (useGrouping && useMetadata)
-			return GetGroupedStatsWithMetadata();
-
-		if (useGrouping && !useMetadata)
-			return GetGroupedStats();
-
-		if (!useGrouping && useMetadata)
-			return GetRawStatsWithMetadata();
-
-		//if (!useGrouping && !useMetadata)
-		return GetRawStats();
+		return useGrouping switch {
+			true when useMetadata => GetGroupedStatsWithMetadata(),
+			true when !useMetadata => GetGroupedStats(),
+			false when useMetadata => GetRawStatsWithMetadata(),
+			_ => GetRawStats()
+		};
 	}
 
 	private Dictionary<string, object> GetGroupedStatsWithMetadata() {
@@ -47,7 +43,7 @@ public class StatsContainer {
 	}
 
 	private Dictionary<string, object> GetRawStatsWithMetadata() {
-		return new Dictionary<string, object>(_stats);
+		return new(_stats);
 	}
 
 	private Dictionary<string, object> GetRawStats() {
@@ -65,7 +61,7 @@ public class StatsContainer {
 	}
 
 	public static Dictionary<string, object> Group(Dictionary<string, object> input) {
-		Ensure.NotNull(input, "input");
+		Ensure.NotNull(input);
 
 		if (input.IsEmpty())
 			return input;
@@ -99,26 +95,17 @@ public class StatsContainer {
 
 		foreach (var entry in groupContainer) {
 			var subgroup = entry.Value as Dictionary<string, object>;
-			if (subgroup != null)
-				result[entry.Key] = Group(subgroup);
-			else
-				result[entry.Key] = entry.Value;
+			result[entry.Key] = subgroup != null ? Group(subgroup) : entry.Value;
 		}
 
 		return result;
 	}
 
-	private static Dictionary<string, object> NewDictionary() {
-		return new Dictionary<string, object>(new CaseInsensitiveStringComparer());
-	}
+	private static Dictionary<string, object> NewDictionary() => new(new CaseInsensitiveStringComparer());
 
 	private class CaseInsensitiveStringComparer : IEqualityComparer<string> {
-		public bool Equals(string x, string y) {
-			return string.Equals(x, y, StringComparison.InvariantCultureIgnoreCase);
-		}
+		public bool Equals(string x, string y) => string.Equals(x, y, StringComparison.InvariantCultureIgnoreCase);
 
-		public int GetHashCode(string obj) {
-			return obj != null ? obj.ToUpperInvariant().GetHashCode() : -1;
-		}
+		public int GetHashCode([CanBeNull] string obj) => obj != null ? obj.ToUpperInvariant().GetHashCode() : -1;
 	}
 }

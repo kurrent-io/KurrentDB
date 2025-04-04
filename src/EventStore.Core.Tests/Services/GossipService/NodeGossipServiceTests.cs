@@ -1,8 +1,7 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using EventStore.Common.Utils;
@@ -361,7 +360,7 @@ public class if_gossip_reply_includes_es_version : NodeGossipServiceTestFixture 
 
 	protected override Message When() =>
 		new GossipMessage.GossipReceived(new CallbackEnvelope(CaptureGossipReply), new ClusterInfo(
-				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber:  1, esVersion: "1.1.1.2"),
+				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.2"),
 				MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3")),
 			_nodeTwo.HttpEndPoint);
 
@@ -415,7 +414,7 @@ public class if_client_gossip_reply_includes_es_version : NodeGossipServiceTestF
 	private Message _capturedMessage;
 	protected override Message[] Given() =>
 		GivenSystemInitializedWithKnownGossipSeedSources(new GossipMessage.GossipReceived(new NoopEnvelope(), new ClusterInfo(
-				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber:  1, esVersion: "1.1.1.2"),
+				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.2"),
 				MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3")),
 			_nodeTwo.HttpEndPoint));
 
@@ -905,7 +904,7 @@ public class when_elections_are_done : NodeGossipServiceTestFixture {
 		);
 
 	protected override Message When() =>
-		new ElectionMessage.ElectionsDone(0,0,
+		new ElectionMessage.ElectionsDone(0, 0,
 			MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, nodeState: VNodeState.Leader));
 
 	[Test]

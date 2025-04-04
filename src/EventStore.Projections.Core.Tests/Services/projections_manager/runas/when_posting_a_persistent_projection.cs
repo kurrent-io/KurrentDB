@@ -1,15 +1,14 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
-using EventStore.Core.Messaging;
+using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using NUnit.Framework;
-using System.Linq;
-using EventStore.Core.Tests;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager.runas {
 	namespace when_posting_a_persistent_projection {
@@ -26,9 +25,9 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.runas {
 				_projectionName = "test-projection";
 				_projectionBody = @"fromAll().when({$any:function(s,e){return s;}});";
 				_testUserPrincipal = new ClaimsPrincipal(new ClaimsIdentity(
-					new [] {
+					new[] {
 						new Claim(ClaimTypes.Name,"test-user"),
-						new Claim(ClaimTypes.Role,"test-role1"), 
+						new Claim(ClaimTypes.Role,"test-role1"),
 						new Claim(ClaimTypes.Role,"test-role2")
 					}
 					, "ES-Test"));
@@ -114,16 +113,16 @@ namespace EventStore.Projections.Core.Tests.Services.projections_manager.runas {
 				_projectionName = "test-projection";
 				_projectionBody = @"fromAll().when({$any:function(s,e){return s;}});";
 				_testUserPrincipal = new ClaimsPrincipal(new ClaimsIdentity(
-					new [] {
+					new[] {
 						new Claim(ClaimTypes.Name,"test-user"),
-						new Claim(ClaimTypes.Role,"test-role1"), 
+						new Claim(ClaimTypes.Role,"test-role1"),
 						new Claim(ClaimTypes.Role,"test-role2")
 					}
 					, "ES-Test"));
 				_testUserPrincipal2 = new ClaimsPrincipal(new ClaimsIdentity(
-					new [] {
+					new[] {
 						new Claim(ClaimTypes.Name,"test-user2"),
-						new Claim(ClaimTypes.Role,"test-role2"), 
+						new Claim(ClaimTypes.Role,"test-role2"),
 						new Claim(ClaimTypes.Role,"test-role3")
 					}
 					, "ES-Test"));

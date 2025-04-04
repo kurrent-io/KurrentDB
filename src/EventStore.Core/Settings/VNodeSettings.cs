@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Net;
@@ -74,17 +74,17 @@ public class SingleVNodeSettings {
 
 	public override string ToString() {
 		return string.Format("ExternalTcpEndPoint: {0},\n"
-		                     + "ExternalSecureTcpEndPoint: {1},\n"
-		                     + "HttpEndPoint: {2},\n"
-		                     + "HttpPrefixes: {3},\n"
-		                     + "EnableTrustedAuth: {4},\n"
-		                     + "Certificate: {5},\n"
-		                     + "WorkerThreads: {6}\n"
-		                     + "MinFlushDelay: {7}\n"
-		                     + "PrepareTimeout: {8}\n"
-		                     + "CommitTimeout: {9}\n"
-		                     + "StatsPeriod: {10}\n"
-		                     + "StatsStorage: {11}",
+							 + "ExternalSecureTcpEndPoint: {1},\n"
+							 + "HttpEndPoint: {2},\n"
+							 + "HttpPrefixes: {3},\n"
+							 + "EnableTrustedAuth: {4},\n"
+							 + "Certificate: {5},\n"
+							 + "WorkerThreads: {6}\n"
+							 + "MinFlushDelay: {7}\n"
+							 + "PrepareTimeout: {8}\n"
+							 + "CommitTimeout: {9}\n"
+							 + "StatsPeriod: {10}\n"
+							 + "StatsStorage: {11}",
 			ExternalTcpEndPoint == null ? "n/a" : ExternalTcpEndPoint.ToString(),
 			ExternalSecureTcpEndPoint == null ? "n/a" : ExternalSecureTcpEndPoint.ToString(),
 			HttpEndPoint,

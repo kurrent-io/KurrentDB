@@ -1,18 +1,17 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Buffers.Binary;
 using System.Diagnostics;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using DotNext.Buffers;
 using DotNext.Buffers.Binary;
-using DotNext.IO;
 
 namespace EventStore.Core.TransactionLog.Chunks.TFChunk;
 
-public struct PosMap : IBinaryFormattable<PosMap> {
+[StructLayout(LayoutKind.Auto)]
+public readonly struct PosMap : IBinaryFormattable<PosMap> {
 	public const int FullSize = sizeof(long) + sizeof(int);
 	public const int DeprecatedSize = sizeof(int) + sizeof(int);
 
@@ -25,7 +24,7 @@ public struct PosMap : IBinaryFormattable<PosMap> {
 	}
 
 	// for new format only
-	public PosMap(ReadOnlySpan<byte> source){
+	public PosMap(ReadOnlySpan<byte> source) {
 		Debug.Assert(source.Length >= FullSize);
 
 		SpanReader<byte> reader = new(source);
@@ -41,14 +40,14 @@ public struct PosMap : IBinaryFormattable<PosMap> {
 	public static PosMap FromNewFormat(ReadOnlySpan<byte> source)
 		=> new(source);
 
-	public static async ValueTask<PosMap> FromOldFormat(Stream stream, Memory<byte> buffer, CancellationToken token) {
-		var posmap = await stream.ReadLittleEndianAsync<ulong>(buffer, token);
+	public static PosMap FromOldFormat(ReadOnlySpan<byte> source) {
+		var posmap = BinaryPrimitives.ReadUInt64LittleEndian(source);
 		var logPos = (int)(posmap >>> 32);
 		var actualPos = (int)(posmap & 0xFFFFFFFF);
 		return new(logPos, actualPos);
 	}
 
-	public readonly void Format(Span<byte> destination){
+	public readonly void Format(Span<byte> destination) {
 		SpanWriter<byte> writer = new(destination);
 		writer.WriteLittleEndian(ActualPos);
 		writer.WriteLittleEndian(LogPos);

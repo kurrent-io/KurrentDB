@@ -1,7 +1,7 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-# nullable enable
+#nullable enable
 
 using System.Collections.Generic;
 using System.IO.Abstractions.TestingHelpers;
@@ -28,10 +28,10 @@ public class EventStoreDefaultLocationsSourceTests {
 	}
 
 	[Theory]
-	[InlineData(new []{"kurrentdb.conf"}, null)]
-	[InlineData(new []{"kurrentdb.conf", "eventstore.conf"}, null)]
-	[InlineData(new []{"eventstore.conf"}, "eventstore.conf")]
-	[InlineData(new string[]{}, null)]
+	[InlineData(new[] { "kurrentdb.conf" }, null)]
+	[InlineData(new[] { "kurrentdb.conf", "eventstore.conf" }, null)]
+	[InlineData(new[] { "eventstore.conf" }, "eventstore.conf")]
+	[InlineData(new string[] { }, null)]
 	public void ProvidesDefaultConfigPath(string[] existingFiles, string? expected) {
 		// Arrange
 		var mockFiles =
@@ -53,10 +53,10 @@ public class EventStoreDefaultLocationsSourceTests {
 	}
 
 	[Theory]
-	[InlineData(new []{"/kurrentdb_data/"}, null)]
-	[InlineData(new []{"/kurrentdb_data/", "/eventstore_data/"}, null)]
-	[InlineData(new []{"/eventstore_data/"}, "/eventstore_data/")]
-	[InlineData(new string[]{}, null)]
+	[InlineData(new[] { "/kurrentdb_data/" }, null)]
+	[InlineData(new[] { "/kurrentdb_data/", "/eventstore_data/" }, null)]
+	[InlineData(new[] { "/eventstore_data/" }, "/eventstore_data/")]
+	[InlineData(new string[] { }, null)]
 	public void ProvidesDefaultDataPath(string[] existingDirs, string? expected) {
 		// Arrange
 		var fileSystem = new MockFileSystem();
@@ -79,10 +79,10 @@ public class EventStoreDefaultLocationsSourceTests {
 	}
 
 	[Theory]
-	[InlineData(new []{"/kurrentdb_log/"}, null)]
-	[InlineData(new []{"/kurrentdb_log/", "/eventstore_log/"}, null)]
-	[InlineData(new []{"/eventstore_log/"}, "/eventstore_log/")]
-	[InlineData(new string[]{}, null)]
+	[InlineData(new[] { "/kurrentdb_log/" }, null)]
+	[InlineData(new[] { "/kurrentdb_log/", "/eventstore_log/" }, null)]
+	[InlineData(new[] { "/eventstore_log/" }, "/eventstore_log/")]
+	[InlineData(new string[] { }, null)]
 	public void ProvidesDefaultLogPath(string[] existingDirs, string? expected) {
 		// Arrange
 		var fileSystem = new MockFileSystem();

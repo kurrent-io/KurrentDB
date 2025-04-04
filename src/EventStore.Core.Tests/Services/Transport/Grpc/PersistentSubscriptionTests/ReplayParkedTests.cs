@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -55,7 +55,7 @@ public class ReplayParkedTests {
 			Assert.NotNull(writeRes.Success);
 
 			// Park all of the messages
-			for(var i = 0; i < _eventCount; i++) {
+			for (var i = 0; i < _eventCount; i++) {
 				Assert.True(await _subscriptionStream.ResponseStream.MoveNext());
 				Assert.AreEqual(ReadResp.ContentOneofCase.Event, _subscriptionStream.ResponseStream.Current.ContentCase);
 				var evnt = _subscriptionStream.ResponseStream.Current.Event;
@@ -93,8 +93,8 @@ public class ReplayParkedTests {
 
 				// Ack the event otherwise the test can throw an error
 				await _subscriptionStream.RequestStream.WriteAsync(new ReadReq {
-						Ack = new ReadReq.Types.Ack {
-							Ids = {
+					Ack = new ReadReq.Types.Ack {
+						Ids = {
 							curr.Event.Event.Id
 						},
 					}
@@ -256,7 +256,7 @@ public class ReplayParkedTests {
 						NoLimit = new()
 					}
 				}, GetCallOptions(AdminCredentials));
-			} catch(Exception e) {
+			} catch (Exception e) {
 				_exception = e;
 			}
 		}

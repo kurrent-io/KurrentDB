@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 #nullable enable
 using System;
@@ -21,19 +21,25 @@ public class PersistentSubscriptionAllStreamPosition : IPersistentSubscriptionSt
 	}
 
 	public bool Equals(IPersistentSubscriptionStreamPosition? other) {
-		if (other == null) throw new InvalidOperationException();
-		if (!(other is PersistentSubscriptionAllStreamPosition)) throw new InvalidOperationException();
+		if (other == null)
+			throw new InvalidOperationException();
+		if (!(other is PersistentSubscriptionAllStreamPosition))
+			throw new InvalidOperationException();
 		return TFPosition.Commit == other.TFPosition.Commit &&
-		       TFPosition.Prepare == other.TFPosition.Prepare;
+			   TFPosition.Prepare == other.TFPosition.Prepare;
 	}
 
 	public int CompareTo(IPersistentSubscriptionStreamPosition? other) {
-		if (other == null) throw new InvalidOperationException();
-		if (!(other is PersistentSubscriptionAllStreamPosition)) throw new InvalidOperationException();
-		if (Equals(other)) return 0;
+		if (other == null)
+			throw new InvalidOperationException();
+		if (!(other is PersistentSubscriptionAllStreamPosition))
+			throw new InvalidOperationException();
+		if (Equals(other))
+			return 0;
 		if (TFPosition.Commit < other.TFPosition.Commit ||
-		    TFPosition.Commit == other.TFPosition.Commit &&
-		    TFPosition.Prepare < other.TFPosition.Prepare) return -1;
+			TFPosition.Commit == other.TFPosition.Commit &&
+			TFPosition.Prepare < other.TFPosition.Prepare)
+			return -1;
 		return 1;
 	}
 

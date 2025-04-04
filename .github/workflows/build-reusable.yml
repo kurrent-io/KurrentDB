@@ -23,6 +23,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+    - name: Login to Cloudsmith
+      uses: docker/login-action@v3
+      with:
+        registry: docker.eventstore.com
+        username: ${{ secrets.CLOUDSMITH_CICD_USER }}
+        password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
     - name: Install netcoreapp3.1
       uses: actions/setup-dotnet@v3
       with:
@@ -49,10 +55,20 @@ jobs:
         dotnet run --project src/KurrentDB --configuration ${{ matrix.configuration }} -- --insecure --what-if
     - name: Run Tests
       shell: bash
-      run: |
-        find ./src -maxdepth 1 -type d -name "*.Tests"  -print0 \
-          | xargs -I{} -0 -n1 bash -c \
-          'dotnet test --configuration ${{ matrix.configuration }} -p:Platform=${{ inputs.arch }} --blame --blame-hang-timeout 5min --blame-hang-dump-type mini --settings ./ci/ci.runsettings --logger:GitHubActions --logger:html --logger:trx --logger:"console;verbosity=normal" --results-directory=$(pwd)/test-results/$1 $1' - '{}'
+      run: >
+        dotnet test
+        --configuration ${{ matrix.configuration }}
+        -p:Platform=${{ inputs.arch }}
+        --blame
+        --blame-hang-timeout 5min
+        --blame-hang-dump-type mini
+        --settings ./ci/ci.runsettings
+        --logger:GitHubActions
+        --logger:html
+        --logger:trx
+        --logger:"console;verbosity=normal"
+        --results-directory=$(pwd)/test-results
+        src/EventStore.sln
     - name: Collect Test Results
       shell: bash
       if: always()

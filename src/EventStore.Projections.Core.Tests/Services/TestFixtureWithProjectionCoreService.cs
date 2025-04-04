@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -9,10 +9,10 @@ using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messaging;
-using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Bus.Helpers;
 using EventStore.Core.TransactionLog.Checkpoint;
+using EventStore.Core.Util;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
@@ -32,20 +32,11 @@ public class TestFixtureWithProjectionCoreService {
 			throw new NotImplementedException();
 		}
 
-		public string Name { get; }
-		public Task Start() {
-			throw new NotImplementedException();
-		}
+		public void Start() => throw new NotImplementedException();
 
-		public void Stop() {
-			throw new NotImplementedException();
-		}
+		public Task Stop() => Task.FromException(new NotImplementedException());
 
 		public void RequestStop() {
-			throw new NotImplementedException();
-		}
-
-		public QueueStats GetStatistics() {
 			throw new NotImplementedException();
 		}
 
@@ -106,7 +97,7 @@ public class TestFixtureWithProjectionCoreService {
 		_workerId = Guid.NewGuid();
 		var guardBus = new GuardBusToTriggerFixingIfUsed();
 		var configuration = new ProjectionsStandardComponents(1, ProjectionType.All, guardBus, guardBus, guardBus, guardBus, true,
-			 500, 250);
+			 500, 250, Opts.MaxProjectionStateSizeDefault);
 		_service = new ProjectionCoreService(
 			_workerId, _bus, _bus, _subscriptionDispatcher, new RealTimeProvider(), ioDispatcher, configuration);
 		_bus.Subscribe(

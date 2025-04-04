@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -26,17 +26,17 @@ public class with_tfchunk_enumerator : SpecificationWithDirectory {
 		// chunk 0 is archived
 		File.Create(GetFilePathFor("chunk-000001.000000")).Close(); // chunks 1 - 1 (latest)
 		File.Create(GetFilePathFor("chunk-000002.000001")).Close(); // chunks 2 - 2 (latest)
-		// chunk 3 is archived
-		// chunk 4 is missing
+																	// chunk 3 is archived
+																	// chunk 4 is missing
 		File.Create(GetFilePathFor("chunk-000005.000000")).Close(); // chunks 5 - 5 (old)
 		File.Create(GetFilePathFor("chunk-000005.000001")).Close(); // chunks 5 - 6 (old)
 		File.Create(GetFilePathFor("chunk-000005.000002")).Close(); // chunks 5 - 7 (latest)
 		File.Create(GetFilePathFor("chunk-000006.000000")).Close(); // chunks 6 - 6 (old)
-		// chunk 7 is not missing - it's merged with chunk 5
+																	// chunk 7 is not missing - it's merged with chunk 5
 		File.Create(GetFilePathFor("chunk-000008.000007")).Close(); // chunks 8 - 8 (latest)
-		// chunk 9 is missing
+																	// chunk 9 is missing
 		File.Create(GetFilePathFor("chunk-000010.000005")).Close(); // chunks 10 - 14 (latest)
-		// chunks 15 & 16 are missing
+																	// chunks 15 & 16 are missing
 
 		var result = new List<string>();
 		static ValueTask<int> GetNextFileNumber(string chunk, int chunkNumber, int chunkVersion, CancellationToken token) {

@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -29,7 +29,8 @@ public static class CertificateExtensions {
 
 		var sans = new List<(string, string)>();
 		foreach (var extension in extensions) {
-			if (extension.Oid?.Value != "2.5.29.17") continue; // Oid for Subject Alternative Names extension
+			if (extension.Oid?.Value != "2.5.29.17")
+				continue; // Oid for Subject Alternative Names extension
 			var asnReader = new AsnReader(extension.RawData, AsnEncodingRules.DER).ReadSequence();
 			while (asnReader.HasData) {
 				Asn1Tag tag;
@@ -141,13 +142,13 @@ public static class CertificateExtensions {
 		const char Delimiter = '.';
 
 		if (string.IsNullOrEmpty(certName) ||
-		    string.IsNullOrEmpty(name))
+			string.IsNullOrEmpty(name))
 			return false;
 
 		// if at least one of the names is an IP address, do an exact match
 		if (certNameType == CertificateNameType.IpAddress ||
-		    IPAddress.TryParse(certName, out _) ||
-		    IPAddress.TryParse(name, out _))
+			IPAddress.TryParse(certName, out _) ||
+			IPAddress.TryParse(name, out _))
 			return name.EqualsOrdinalIgnoreCase(certName);
 
 		Debug.Assert(certNameType == CertificateNameType.DnsName);
@@ -159,19 +160,19 @@ public static class CertificateExtensions {
 			return false;
 
 		if (certNameLabels.Any(string.IsNullOrEmpty) ||
-		    dnsNameLabels.Any(string.IsNullOrEmpty))
+			dnsNameLabels.Any(string.IsNullOrEmpty))
 			return false;
 
 		if (certNameLabels.Any(IsInternationalizedDomainNameLabel) ||
-		    dnsNameLabels.Any(IsInternationalizedDomainNameLabel)) {
+			dnsNameLabels.Any(IsInternationalizedDomainNameLabel)) {
 			var idnMapping = new IdnMapping();
 			dnsNameLabels = dnsNameLabels.Select(x => idnMapping.GetAscii(x)).ToArray();
 			certNameLabels = certNameLabels.Select(x => idnMapping.GetAscii(x)).ToArray();
 		}
 
 		if (!IsValidCertificateNameFirstLabel(certNameLabels.First()) ||
-		    !certNameLabels.Skip(1).All(IsValidDnsNameLabel) ||
-		    !dnsNameLabels.All(IsValidDnsNameLabel))
+			!certNameLabels.Skip(1).All(IsValidDnsNameLabel) ||
+			!dnsNameLabels.All(IsValidDnsNameLabel))
 			return false;
 
 		// if first label is not a wildcard, check for an exact match
@@ -217,8 +218,7 @@ public static class CertificateExtensions {
 		}
 
 		foreach (var extension in extensions) {
-			switch (extension.Oid?.Value)
-			{
+			switch (extension.Oid?.Value) {
 				case "2.5.29.15": // Oid for Key Usage extension
 					var keyUsageExt = (X509KeyUsageExtension)extension;
 					keyUsages |= keyUsageExt.KeyUsages;
@@ -243,7 +243,7 @@ public static class CertificateExtensions {
 		}
 
 		if (!keyUsageFlags.HasFlag(X509KeyUsageFlags.KeyEncipherment) &&
-		    !keyUsageFlags.HasFlag(X509KeyUsageFlags.KeyAgreement)) {
+			!keyUsageFlags.HasFlag(X509KeyUsageFlags.KeyAgreement)) {
 			failReason = "Missing key usage: Key Encipherment and/or Key Agreement";
 			return false;
 		}

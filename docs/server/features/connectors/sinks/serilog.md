@@ -37,7 +37,7 @@ $JSON = @"
 curl.exe -X POST `
   -H "Content-Type: application/json" `
   -d $JSON `
-  http://localhost:2113/connectors/logger-sink-connector
+  http://localhost:2113/connectors/serilog-sink-connector
 ```
 
 @tab Bash
@@ -45,7 +45,7 @@ curl.exe -X POST `
 ```bash
 JSON='{
   "settings": {
-    "instanceTypeName": "logger-sink",
+    "instanceTypeName": "serilog-sink",
     "subscription:filter:scope": "stream",
     "subscription:filter:filterType": "streamId",
     "subscription:filter:expression": "example-stream"
@@ -55,13 +55,13 @@ JSON='{
 curl -X POST \
   -H "Content-Type: application/json" \
   -d "$JSON" \
-  http://localhost:2113/connectors/logger-sink-connector
+  http://localhost:2113/connectors/serilog-sink-connector
 ```
 
 :::
 
-After creating and starting the logger sink connector, every time an event is
-appended to the `example-stream`, the Logger sink connector will print the
+After creating and starting the serilog sink connector, every time an event is
+appended to the `example-stream`, the serilog sink connector will print the
 record to the console. You can find a list of available management API endpoints
 in the [API Reference](../manage.md).
 
@@ -77,7 +77,7 @@ Here is an example:
 
 ## Settings
 
-Adjust these settings to specify the behavior and interaction of your serilog sink connector with EventStoreDB, ensuring it operates according to your requirements and preferences.
+Adjust these settings to specify the behavior and interaction of your serilog sink connector with KurrentDB, ensuring it operates according to your requirements and preferences.
 
 ::: tip
 The serilog sink inherits a set of common settings that are used to configure the connector. The settings can be found in

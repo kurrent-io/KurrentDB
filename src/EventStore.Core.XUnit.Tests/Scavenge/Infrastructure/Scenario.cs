@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -55,6 +55,8 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 	private ITFChunkScavengerLog _logger;
 
 	private int _threads = 1;
+	private bool _isArchiver;
+	private bool _skipIndexCheck;
 	private bool _mergeChunks;
 	private bool _syncOnly;
 	private string _dbPath;
@@ -103,6 +105,16 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 
 	public Scenario<TLogFormat, TStreamId> WithThreads(int threads) {
 		_threads = threads;
+		return this;
+	}
+
+	public Scenario<TLogFormat, TStreamId> IsArchiver(bool isArchiver = true) {
+		_isArchiver = isArchiver;
+		return this;
+	}
+
+	public Scenario<TLogFormat, TStreamId> SkipIndexCheck() {
+		_skipIndexCheck = true;
 		return this;
 	}
 
@@ -308,7 +320,9 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			ptableVersion: PTableVersions.IndexV4,
 			maxAutoMergeIndexLevel: int.MaxValue,
 			pTableMaxReaderCount: ESConsts.PTableInitialReaderCount,
-			maxSizeForMemory: 1, // convert everything to ptables immediately
+			maxSizeForMemory: _skipIndexCheck
+				? 1_000_000 // we aren't going to check the index so no need to convert to ptables
+				: 1, // convert everything to ptables immediately so we can check the index
 			maxTablesPerLevel: 2,
 			inMem: false);
 		logFormat.StreamNamesProvider.SetTableIndex(tableIndex);
@@ -452,7 +466,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			IChunkExecutor<TStreamId> chunkExecutor = new ChunkExecutor<TStreamId, ILogRecord>(
 				logger: logger,
 				metastreamLookup: chunkExecutorMetastreamLookup,
-				chunkDeleter: new TracingChunkRemover<TStreamId, ILogRecord>(
+				chunkRemover: new TracingChunkRemover<TStreamId, ILogRecord>(
 					new ChunkRemover<TStreamId, ILogRecord>(
 						logger: logger,
 						archiveCheckpoint: new AdvancingCheckpoint(_archiveReader.GetCheckpoint),
@@ -473,6 +487,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 				unsafeIgnoreHardDeletes: _unsafeIgnoreHardDeletes,
 				cancellationCheckPeriod: cancellationCheckPeriod,
 				threads: _threads,
+				isArchiver: _isArchiver,
 				throttle: throttle);
 
 			IChunkMerger chunkMerger = new ChunkMerger(
@@ -614,7 +629,8 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			// The index entries we expected to be kept are kept
 			if (keptRecords != null) {
 				await CheckRecords(keptRecords, dbResult, cancellationTokenSource.Token);
-				await CheckIndex(keptIndexEntries, readIndex, collidingStreams, hasher, cancellationTokenSource.Token);
+				if (!_skipIndexCheck)
+					await CheckIndex(keptIndexEntries, readIndex, collidingStreams, hasher, cancellationTokenSource.Token);
 			}
 
 			_assertState?.Invoke(scavengeState);
@@ -635,7 +651,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			$"Expected {expected.Length}. Actual {actual.Db.Manager.ChunksCount}");
 
 		for (int i = 0; i < expected.Length; ++i) {
-			var chunk = actual.Db.Manager.GetChunk(i);
+			var chunk = await actual.Db.Manager.GetInitializedChunk(i, token);
 
 			var chunkRecords = new List<ILogRecord>();
 			var result = await chunk.TryReadFirst(token);
@@ -750,7 +766,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 					beforePosition: long.MaxValue,
 					token));
 
-			if (result.EventInfos.Length > 100)
+			if (result.EventInfos.Length > 10_000)
 				throw new Exception("wasn't expecting a stream this long in the tests");
 
 			Assert.All(result.EventInfos, info => {
@@ -762,7 +778,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 
 	private async ValueTask EmptyRequestedChunks(TFChunkDb db, CancellationToken token) {
 		foreach (var chunkNum in _chunkNumsToEmpty) {
-			var chunk = db.Manager.GetChunk(chunkNum);
+			var chunk = await db.Manager.GetInitializedChunk(chunkNum, token);
 			var header = chunk.ChunkHeader;
 
 			var newChunkHeader = new ChunkHeader(
@@ -793,6 +809,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 				reduceFileCachePressure: false,
 				tracker: new TFChunkTracker.NoOp(),
 				transformFactory: transformFactory,
+				getTransformFactory: db.TransformManager,
 				transformHeader: transformHeader,
 				token);
 

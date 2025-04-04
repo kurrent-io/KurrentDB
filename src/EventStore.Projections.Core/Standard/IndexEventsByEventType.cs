@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -7,9 +7,7 @@ using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace EventStore.Projections.Core.Standard;
@@ -22,7 +20,7 @@ public class IndexEventsByEventType : IProjectionStateHandler, IProjectionCheckp
 		if (!string.IsNullOrWhiteSpace(source))
 			throw new InvalidOperationException("Empty source expected");
 		if (logger != null) {
-//                logger("Index events by event type projection handler has been initialized");
+			//                logger("Index events by event type projection handler has been initialized");
 		}
 
 		// we will need to declare event types we are interested in

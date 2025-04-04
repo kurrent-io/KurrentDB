@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -20,11 +20,16 @@ internal class SendOverGrpcProcessor : IHandle<GrpcMessage.SendOverGrpc> {
 
 	public SendOverGrpcProcessor(Random rnd, RandomTestRunner runner, double lossProb, double dupProb,
 		int maxDelay) {
-		if (rnd == null) throw new ArgumentNullException("rnd");
-		if (runner == null) throw new ArgumentNullException("runner");
-		if (lossProb < 0.0 || lossProb > 1.0) throw new ArgumentOutOfRangeException("lossProb");
-		if (dupProb < 0.0 || dupProb > 1.0) throw new ArgumentOutOfRangeException("dupProb");
-		if (maxDelay <= 0) throw new ArgumentOutOfRangeException("maxDelay");
+		if (rnd == null)
+			throw new ArgumentNullException("rnd");
+		if (runner == null)
+			throw new ArgumentNullException("runner");
+		if (lossProb < 0.0 || lossProb > 1.0)
+			throw new ArgumentOutOfRangeException("lossProb");
+		if (dupProb < 0.0 || dupProb > 1.0)
+			throw new ArgumentOutOfRangeException("dupProb");
+		if (maxDelay <= 0)
+			throw new ArgumentOutOfRangeException("maxDelay");
 
 		_rnd = rnd;
 		_runner = runner;

@@ -1,13 +1,9 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.Threading;
-using EventStore.Common.Utils;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.TransactionLog.Checkpoint;
 
 namespace EventStore.Core.Bus;
@@ -68,7 +64,7 @@ public class QueueStatsManager {
 		var successes = 0;
 		do {
 			if ((waitForCheckpoints && AreCheckpointsDifferent()) ||
-			    (waitForNonEmptyTf && _writerCheckpoint.Read() == 0)) {
+				(waitForNonEmptyTf && _writerCheckpoint.Read() == 0)) {
 				Console.WriteLine("Waiting for IDLE state on checkpoints...");
 				counter++;
 				if (counter > 150 * multiplier)
@@ -81,7 +77,7 @@ public class QueueStatsManager {
 	}
 
 	private bool AreCheckpointsDifferent() {
-		return _writerCheckpoint!=null && _chaserCheckpoint!=null && _writerCheckpoint.ReadNonFlushed() != _chaserCheckpoint.Read();
+		return _writerCheckpoint != null && _chaserCheckpoint != null && _writerCheckpoint.ReadNonFlushed() != _chaserCheckpoint.Read();
 	}
 
 	public void InitializeCheckpoints(

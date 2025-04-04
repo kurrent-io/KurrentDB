@@ -1,8 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Linq;
 using System.Xml.Linq;
+using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog.LogRecords;
@@ -10,16 +12,13 @@ using EventStore.Transport.Http;
 using EventStore.Transport.Http.Codecs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Serilog;
 using Formatting = Newtonsoft.Json.Formatting;
-using System.Linq;
-using EventStore.Common.Utils;
-using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http;
 
 public static class AutoEventConverter {
-	private static readonly ILogger Log =
-		Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "AutoEventConverter");
+	private static readonly ILogger Log = Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "AutoEventConverter");
 
 	public static object SmartFormat(ResolvedEvent evnt, ICodec targetCodec) {
 		var dto = CreateDataDto(evnt);
@@ -38,19 +37,15 @@ public static class AutoEventConverter {
 			}
 			case ContentType.Json:
 				return targetCodec.To(dto.data);
-
-
 			case ContentType.Atom:
 			case ContentType.EventXml: {
 				var serializeObject = JsonConvert.SerializeObject(dto);
 				var deserializeXmlNode = JsonConvert.DeserializeXmlNode(serializeObject, "event");
 				return deserializeXmlNode.InnerXml;
 			}
-
 			case ContentType.EventJson:
+			case ContentType.LegacyEventJson:
 				return targetCodec.To(dto);
-
-
 			default:
 				throw new NotSupportedException();
 		}
@@ -80,13 +75,13 @@ public static class AutoEventConverter {
 			case ContentType.Json:
 				return LoadRaw(sourceCodec.Encoding.GetString(request), true, includedId, includedType);
 			case ContentType.EventJson:
+			case ContentType.LegacyEventJson:
 			case ContentType.EventsJson:
+			case ContentType.LegacyEventsJson:
 			case ContentType.AtomJson:
+			case ContentType.LegacyAtomJson:
 				var writeEvents = LoadFromJson(sourceCodec.Encoding.GetString(request));
-				if (writeEvents.IsEmpty())
-					return null;
-				return Parse(writeEvents);
-
+				return writeEvents.IsEmpty() ? null : Parse(writeEvents);
 			case ContentType.ApplicationXml:
 			case ContentType.Xml:
 				return LoadRaw(sourceCodec.Encoding.GetString(request), false, includedId, includedType);
@@ -94,9 +89,7 @@ public static class AutoEventConverter {
 			case ContentType.EventsXml:
 			case ContentType.Atom:
 				var writeEvents2 = LoadFromXml(sourceCodec.Encoding.GetString(request));
-				if (writeEvents2.IsEmpty())
-					return null;
-				return Parse(writeEvents2);
+				return writeEvents2.IsEmpty() ? null : Parse(writeEvents2);
 			default:
 				return null;
 		}
@@ -121,29 +114,20 @@ public static class AutoEventConverter {
 	private static HttpClientMessageDto.ClientEventDynamic[] LoadFromXml(string xml) {
 		try {
 			XDocument doc = XDocument.Parse(xml);
-
 			XNamespace jsonNsValue = "http://james.newtonking.com/projects/json";
 			XName jsonNsName = XNamespace.Xmlns + "json";
 
 			doc.Root.SetAttributeValue(jsonNsName, jsonNsValue);
 
-			var events = doc.Root.Elements() /*.ToArray()*/;
+			var events = doc.Root.Elements();
 			foreach (var @event in events) {
 				@event.Name = "events";
 				@event.SetAttributeValue(jsonNsValue + "Array", "true");
 			}
-			//doc.Root.ReplaceNodes(events);
-//                foreach (var element in doc.Root.Descendants("data").Concat(doc.Root.Descendants("metadata")))
-//                {
-//                    element.RemoveAttributes();
-//                }
 
 			var json = JsonConvert.SerializeXNode(doc.Root, Formatting.None, true);
 			var root = JsonConvert.DeserializeObject<HttpClientMessageDto.WriteEventsDynamic>(json);
 			return root.events;
-//                var root = JsonConvert.DeserializeObject<JObject>(json);
-//                var dynamicEvents = root.ToObject<HttpClientMessageDto.WriteEventsDynamic>();
-//                return dynamicEvents.events;
 		} catch (Exception e) {
 			Log.Information(e, "Failed to load xml. Invalid format");
 			return null;
@@ -154,38 +138,33 @@ public static class AutoEventConverter {
 		var events = new Event[dynamicEvents.Length];
 		for (int i = 0, n = dynamicEvents.Length; i < n; ++i) {
 			var textEvent = dynamicEvents[i];
-			bool dataIsJson;
-			bool metadataIsJson;
-			var data = AsBytes(textEvent.data, out dataIsJson);
-			var metadata = AsBytes(textEvent.metadata, out metadataIsJson);
-
-			events[i] = new Event(textEvent.eventId, textEvent.eventType, dataIsJson || metadataIsJson, data,
-				metadata);
+			var data = AsBytes(textEvent.data, out var dataIsJson);
+			var metadata = AsBytes(textEvent.metadata, out var metadataIsJson);
+			events[i] = new Event(textEvent.eventId, textEvent.eventType, dataIsJson || metadataIsJson, data, metadata);
 		}
 
 		return events.ToArray();
 	}
 
 	private static byte[] AsBytes(object obj, out bool isJson) {
-		if (obj is JObject || obj is JArray) {
-			isJson = true;
-			return Helper.UTF8NoBom.GetBytes(Codec.Json.To(obj));
-		} else if(obj is string){
-			try{
-				var jsonObject = JsonConvert.DeserializeObject((string)obj);
-				if(jsonObject is JObject || jsonObject is JArray){
+		switch (obj) {
+			case JObject or JArray:
+				isJson = true;
+				return Helper.UTF8NoBom.GetBytes(Codec.Json.To(obj));
+			case string s:
+				try {
+					var jsonObject = JsonConvert.DeserializeObject(s);
+					if (jsonObject is not (JObject or JArray))
+						throw new JsonException();
 					isJson = true;
 					return Helper.UTF8NoBom.GetBytes(Codec.Json.To(jsonObject));
+				} catch (JsonException) {
+					isJson = false;
+					return Helper.UTF8NoBom.GetBytes(s);
 				}
-				else
-					throw new JsonException();
-			}
-			catch(JsonException){
+			default:
 				isJson = false;
-				return Helper.UTF8NoBom.GetBytes((obj as string));
-			}
+				return Helper.UTF8NoBom.GetBytes(string.Empty);
 		}
-		isJson = false;
-		return Helper.UTF8NoBom.GetBytes(string.Empty);
 	}
 }

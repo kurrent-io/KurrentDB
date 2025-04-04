@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
@@ -21,11 +21,10 @@ using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Projections.Core.Messages;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventStore.Projections.Core.Javascript.Tests.Integration;
 
-public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
+public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 	private readonly Func<ValueTask> _stop;
 	private readonly SynchronousScheduler _mainBus;
 	private readonly IQueuedHandler _mainQueue;
@@ -51,10 +50,10 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 		(_stop, _subsystemCommands) = createSubsystem(_mainBus, _mainQueue, _writerCheckpoint);
 	}
 
-	protected virtual void OnMainBusMessage(Message msg){}
+	protected virtual void OnMainBusMessage(Message msg) { }
 
 	public async Task InitializeAsync() {
-		var _ = _mainQueue.Start();
+		_mainQueue.Start();
 		_mainQueue.Publish(new SystemMessage.SystemCoreReady());
 		_mainQueue.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 		await _ready.WaitAsync(TestTimeout);
@@ -64,7 +63,7 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 		_miniStore.Complete();
 		await _complete;
 		await _stop();
-		_mainQueue.Stop();
+		await _mainQueue.Stop();
 	}
 
 	protected async Task<(long commitPosition, long nextRevision)> WriteEvents(string stream, long expectedRevision, params Event[] events) {
@@ -102,7 +101,8 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 		public TellMeWhenItsDone(CancellationToken token) {
 			_completion = new TaskCompletionSource<Message>(TaskCreationOptions.RunContinuationsAsynchronously);
 			_registration = token.Register(static o => {
-				if (o is not TellMeWhenItsDone state) return;
+				if (o is not TellMeWhenItsDone state)
+					return;
 				state._registration.Dispose();
 				state._completion.TrySetCanceled(state._registration.Token);
 			}, this);
@@ -127,16 +127,16 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 			case AwakeServiceMessage.SubscribeAwake:
 			case SystemMessage.SubSystemInitialized:
 				return;
-			case ClientMessage.ReadStreamEventsForward m :
+			case ClientMessage.ReadStreamEventsForward m:
 				_miniStore.Handle(m);
 				return;
-			case ClientMessage.ReadStreamEventsBackward m :
+			case ClientMessage.ReadStreamEventsBackward m:
 				_miniStore.Handle(m);
 				return;
-			case ClientMessage.ReadAllEventsForward m :
+			case ClientMessage.ReadAllEventsForward m:
 				_miniStore.Handle(m);
 				return;
-			case ClientMessage.WriteEvents m :
+			case ClientMessage.WriteEvents m:
 				_miniStore.Handle(m);
 				return;
 			case StorageMessage.EventCommitted e:
@@ -173,23 +173,24 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 			_bus = bus;
 			_all = new List<ResolvedEvent>();
 			_streams = new Dictionary<string, List<ResolvedEvent>>();
-			_notifications = Channel.CreateUnbounded<int>(new UnboundedChannelOptions(){AllowSynchronousContinuations = false, SingleReader = true, SingleWriter = true});
+			_notifications = Channel.CreateUnbounded<int>(new UnboundedChannelOptions() { AllowSynchronousContinuations = false, SingleReader = true, SingleWriter = true });
 		}
 
 		public async Task NotifyAll(CancellationToken cancellationToken) {
 			try {
 				int next = 0;
 				await foreach (var upTo in
-				               _notifications.Reader.ReadAllAsync(cancellationToken)) {
+							   _notifications.Reader.ReadAllAsync(cancellationToken)) {
 					while (next < upTo) {
 						var nextEvent = _all[next].OriginalEvent;
-						_bus.Publish(new StorageMessage.EventCommitted(next,nextEvent, upTo-1==next));
+						_bus.Publish(new StorageMessage.EventCommitted(next, nextEvent, upTo - 1 == next));
 						next++;
 					}
 
-					if (cancellationToken.IsCancellationRequested) break;
+					if (cancellationToken.IsCancellationRequested)
+						break;
 				}
-			}catch(Exception ex) when (ex is TaskCanceledException or OperationCanceledException){}
+			} catch (Exception ex) when (ex is TaskCanceledException or OperationCanceledException) { }
 		}
 		public void Handle(ClientMessage.ReadStreamEventsForward message) {
 			ClientMessage.ReadStreamEventsForwardCompleted response;
@@ -257,7 +258,7 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 			ClientMessage.WriteEventsCompleted response;
 			if (_streams.TryGetValue(message.EventStreamId, out var events)) {
 				if (message.ExpectedVersion == ExpectedVersion.Any ||
-				    message.ExpectedVersion == events.Count - 1) {
+					message.ExpectedVersion == events.Count - 1) {
 					response = WriteEvents(message, events);
 				} else {
 					response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
@@ -288,9 +289,12 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 				var current = message.Events[i];
 
 				var flags = PrepareFlags.IsCommitted | PrepareFlags.Data;
-				if (current.IsJson) flags |= PrepareFlags.IsJson;
-				if (i == 0) flags |= PrepareFlags.TransactionBegin;
-				if(i==message.Events.Length-1) flags |= PrepareFlags.TransactionEnd;
+				if (current.IsJson)
+					flags |= PrepareFlags.IsJson;
+				if (i == 0)
+					flags |= PrepareFlags.TransactionBegin;
+				if (i == message.Events.Length - 1)
+					flags |= PrepareFlags.TransactionEnd;
 
 				var record = new EventRecord(revision, position, message.CorrelationId,
 					current.EventId, _all.Count, i, message.EventStreamId, -1, DateTime.Now,
@@ -301,7 +305,7 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 					var number = int.Parse(parts[0]);
 					var stream = parts[1];
 					if (_streams.TryGetValue(stream, out var links) &&
-					    links.Count > number) {
+						links.Count > number) {
 						stored.Add(ResolvedEvent.ForResolvedLink(links[number].OriginalEvent, record, position));
 					} else {
 						stored.Add(ResolvedEvent.ForFailedResolvedLink(record, ReadEventResult.NotFound));
@@ -334,7 +338,8 @@ public abstract class SubsystemScenario  : IHandle<Message>, IAsyncLifetime {
 
 		public ResolvedEvent AtPosition(long position) {
 			var local = (int)position;
-			if (local < 0 || local >= _all.Count) return default;
+			if (local < 0 || local >= _all.Count)
+				return default;
 			return _all[local];
 		}
 	}

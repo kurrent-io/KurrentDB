@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Concurrent;
@@ -63,18 +63,18 @@ public class HashListMemTable : IMemTable {
 		EntryList list = null;
 		try {
 
-		if (!_hash.TryGetValue(stream, out list)) {
-			list = new(MemTableComparer);
-			if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
-				throw new UnableToAcquireLockInReasonableTimeException();
-			_hash.AddOrUpdate(stream, list,
-				(x, y) => {
-					throw new Exception("This should never happen as MemTable updates are single-threaded.");
-				});
-		} else{
-			if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
-				throw new UnableToAcquireLockInReasonableTimeException();
-		}
+			if (!_hash.TryGetValue(stream, out list)) {
+				list = new(MemTableComparer);
+				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
+					throw new UnableToAcquireLockInReasonableTimeException();
+				_hash.AddOrUpdate(stream, list,
+					(x, y) => {
+						throw new Exception("This should never happen as MemTable updates are single-threaded.");
+					});
+			} else {
+				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
+					throw new UnableToAcquireLockInReasonableTimeException();
+			}
 
 			for (int i = 0, n = collection.Count; i < n; ++i) {
 				var entry = collection[i];
@@ -96,7 +96,8 @@ public class HashListMemTable : IMemTable {
 		position = 0;
 
 		if (_hash.TryGetValue(hash, out var list)) {
-			if (!list.Lock.TryEnterReadLock(DefaultLockTimeout)) throw new UnableToAcquireLockInReasonableTimeException();
+			if (!list.Lock.TryEnterReadLock(DefaultLockTimeout))
+				throw new UnableToAcquireLockInReasonableTimeException();
 			try {
 				int endIdx = list.UpperBound(new Entry(number, long.MaxValue));
 				if (endIdx is -1)
@@ -280,7 +281,8 @@ public class HashListMemTable : IMemTable {
 		var ret = new List<IndexEntry>();
 
 		if (_hash.TryGetValue(hash, out var list)) {
-			if (!list.Lock.TryEnterReadLock(DefaultLockTimeout)) throw new UnableToAcquireLockInReasonableTimeException();
+			if (!list.Lock.TryEnterReadLock(DefaultLockTimeout))
+				throw new UnableToAcquireLockInReasonableTimeException();
 			try {
 				var endIdx = list.UpperBound(new Entry(endNumber, long.MaxValue));
 				for (int i = endIdx; i >= 0; i--) {
@@ -309,18 +311,24 @@ public class HashListMemTable : IMemTable {
 
 	private class EventNumberComparer : IComparer<Entry> {
 		public int Compare(Entry x, Entry y) {
-			if (x.EvNum < y.EvNum) return -1;
-			if (x.EvNum > y.EvNum) return 1;
-			if (x.LogPos < y.LogPos) return -1;
-			if (x.LogPos > y.LogPos) return 1;
+			if (x.EvNum < y.EvNum)
+				return -1;
+			if (x.EvNum > y.EvNum)
+				return 1;
+			if (x.LogPos < y.LogPos)
+				return -1;
+			if (x.LogPos > y.LogPos)
+				return 1;
 			return 0;
 		}
 	}
 
 	private class LogPositionComparer : IComparer<Entry> {
 		public int Compare(Entry x, Entry y) {
-			if (x.LogPos < y.LogPos) return -1;
-			if (x.LogPos > y.LogPos) return 1;
+			if (x.LogPos < y.LogPos)
+				return -1;
+			if (x.LogPos > y.LogPos)
+				return 1;
 			return 0;
 		}
 	}

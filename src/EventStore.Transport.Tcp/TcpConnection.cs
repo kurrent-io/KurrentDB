@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,6 @@ using System.Net.Sockets;
 using System.Threading;
 using EventStore.BufferManagement;
 using EventStore.Common.Utils;
-using System.Collections.Concurrent;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Transport.Tcp;
@@ -34,7 +33,7 @@ public class TcpConnection : TcpConnectionBase, ITcpConnection {
 		Action<ITcpConnection, SocketError> onConnectionFailed,
 		bool verbose) {
 		var connection = new TcpConnection(connectionId, remoteEndPoint, verbose);
-// ReSharper disable ImplicitlyCapturedClosure
+		// ReSharper disable ImplicitlyCapturedClosure
 		connector.InitConnect(remoteEndPoint,
 			(socket) => {
 				connection.InitSocket(socket);
@@ -48,7 +47,7 @@ public class TcpConnection : TcpConnectionBase, ITcpConnection {
 				if (onConnectionFailed != null)
 					onConnectionFailed(connection, socketError);
 			}, connection, connectionTimeout);
-// ReSharper restore ImplicitlyCapturedClosure
+		// ReSharper restore ImplicitlyCapturedClosure
 		return connection;
 	}
 
@@ -156,8 +155,10 @@ public class TcpConnection : TcpConnectionBase, ITcpConnection {
 		try {
 			do {
 				lock (_sendLock) {
-					if (_isSending || (_sendQueue.IsEmpty && _memoryStreamOffset >= _memoryStream.Length) || _sendSocketArgs == null) return;
-					if (TcpConnectionMonitor.Default.IsSendBlocked()) return;
+					if (_isSending || (_sendQueue.IsEmpty && _memoryStreamOffset >= _memoryStream.Length) || _sendSocketArgs == null)
+						return;
+					if (TcpConnectionMonitor.Default.IsSendBlocked())
+						return;
 					_isSending = true;
 				}
 
@@ -173,9 +174,9 @@ public class TcpConnection : TcpConnectionBase, ITcpConnection {
 					}
 				}
 
-				int sendingBytes = Math.Min((int)_memoryStream.Length - (int) _memoryStreamOffset, MaxSendPacketSize);
+				int sendingBytes = Math.Min((int)_memoryStream.Length - (int)_memoryStreamOffset, MaxSendPacketSize);
 
-				_sendSocketArgs.SetBuffer(_memoryStream.GetBuffer(), (int) _memoryStreamOffset, sendingBytes);
+				_sendSocketArgs.SetBuffer(_memoryStream.GetBuffer(), (int)_memoryStreamOffset, sendingBytes);
 				_memoryStreamOffset += sendingBytes;
 
 				NotifySendStarting(_sendSocketArgs.Count);
@@ -247,13 +248,15 @@ public class TcpConnection : TcpConnectionBase, ITcpConnection {
 				// TODO AN: do we need to lock on _receiveSocketArgs?..
 				lock (_receiveSocketArgs) {
 					_receiveSocketArgs.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
-					if (_receiveSocketArgs.Buffer == null) throw new Exception("Buffer was not set");
+					if (_receiveSocketArgs.Buffer == null)
+						throw new Exception("Buffer was not set");
 				}
 
 				NotifyReceiveStarting();
 				bool firedAsync;
 				lock (_receiveSocketArgs) {
-					if (_receiveSocketArgs.Buffer == null) throw new Exception("Buffer was lost");
+					if (_receiveSocketArgs.Buffer == null)
+						throw new Exception("Buffer was lost");
 					firedAsync = _receiveSocketArgs.AcceptSocket.ReceiveAsync(_receiveSocketArgs);
 				}
 
@@ -332,7 +335,7 @@ public class TcpConnection : TcpConnectionBase, ITcpConnection {
 		}
 
 		lock (_closeLock) {
-			if(!_isClosed)
+			if (!_isClosed)
 				callback(this, data);
 		}
 
@@ -349,7 +352,8 @@ public class TcpConnection : TcpConnectionBase, ITcpConnection {
 
 	private void CloseInternal(SocketError socketError, string reason) {
 		lock (_closeLock) {
-			if (_isClosing) return;
+			if (_isClosing)
+				return;
 			_isClosing = true;
 		}
 

@@ -1,13 +1,13 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -55,13 +55,10 @@ static partial class Enumerator {
 			ClaimsPrincipal user,
 			bool requiresLeader,
 			CancellationToken cancellationToken) {
-			ArgumentNullException.ThrowIfNull(bus);
-			ArgumentNullException.ThrowIfNull(streamName);
-
 			_expiryStrategy = expiryStrategy;
 			_subscriptionId = Guid.NewGuid();
-			_bus = bus;
-			_streamName = streamName;
+			_bus = Ensure.NotNull(bus);
+			_streamName = Ensure.NotNullOrEmpty(streamName);
 			_resolveLinks = resolveLinks;
 			_user = user;
 			_requiresLeader = requiresLeader;
@@ -80,8 +77,7 @@ static partial class Enumerator {
 				return ValueTask.CompletedTask;
 			}
 
-			Log.Verbose("Subscription {subscriptionId} to {streamName} disposed.", _subscriptionId,
-				_streamName);
+			Log.Verbose("Subscription {subscriptionId} to {streamName} disposed.", _subscriptionId, _streamName);
 			_disposed = true;
 
 			Unsubscribe();
@@ -93,7 +89,7 @@ static partial class Enumerator {
 		}
 
 		public override async ValueTask<bool> MoveNextAsync() {
-			ReadLoop:
+ReadLoop:
 
 			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
 				return false;
@@ -116,9 +112,7 @@ static partial class Enumerator {
 
 				_currentRevision = streamRevision;
 
-				Log.Verbose(
-					"Subscription {subscriptionId} to {streamName} seen event {streamRevision}.",
-					_subscriptionId, _streamName, streamRevision);
+				Log.Verbose("Subscription {subscriptionId} to {streamName} seen event {streamRevision}.", _subscriptionId, _streamName, streamRevision);
 			}
 
 			_current = readResponse;
@@ -164,8 +158,10 @@ static partial class Enumerator {
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
 			} catch (Exception ex) {
-				if (ex is not (OperationCanceledException or ReadResponseException.StreamDeleted))
+				if (ex is not (OperationCanceledException or ReadResponseException.StreamDeleted)) {
 					Log.Error(ex, "Subscription {subscriptionId} to {streamName} experienced an error.", _subscriptionId, _streamName);
+				}
+
 				_channel.Writer.TryComplete(ex);
 			} finally {
 				Log.Debug("Subscription {subscriptionId} to {streamName} has ended.", _subscriptionId, _streamName);
@@ -173,17 +169,13 @@ static partial class Enumerator {
 		}
 
 		private async Task NotifyCaughtUp(long checkpoint, CancellationToken ct) {
-			Log.Debug(
-				"Subscription {subscriptionId} to {streamName} caught up at checkpoint {streamRevision:N0}.",
-				_subscriptionId, _streamName, checkpoint);
+			Log.Debug("Subscription {subscriptionId} to {streamName} caught up at checkpoint {streamRevision:N0}.", _subscriptionId, _streamName, checkpoint);
 
 			await _channel.Writer.WriteAsync(new ReadResponse.SubscriptionCaughtUp(), ct);
 		}
 
 		private async Task NotifyFellBehind(long checkpoint, CancellationToken ct) {
-			Log.Debug(
-				"Subscription {subscriptionId} to {streamName} fell behind at checkpoint {streamRevision:N0}.",
-				_subscriptionId, _streamName, checkpoint);
+			Log.Debug("Subscription {subscriptionId} to {streamName} fell behind at checkpoint {streamRevision:N0}.", _subscriptionId, _streamName, checkpoint);
 
 			await _channel.Writer.WriteAsync(new ReadResponse.SubscriptionFellBehind(), ct);
 		}
@@ -207,7 +199,7 @@ static partial class Enumerator {
 				if (!sequenceCorrect) {
 					// there's a gap in the sequence numbers, at least one live event was discarded
 					// due to the live channel becoming full.
-					// switch back to catchup to make sure we didn't miss anything we wanted to send.
+					// switch back to catch up to make sure we didn't miss anything we wanted to send.
 					await NotifyFellBehind(checkpoint, ct);
 					return (checkpoint, sequenceNumber);
 				}
@@ -222,41 +214,37 @@ static partial class Enumerator {
 
 		private Task<long> CatchUp(long checkpoint, CancellationToken ct) {
 			var startEventNumber = checkpoint + 1;
-			Log.Verbose(
-				"Subscription {subscriptionId} to {streamName} is catching up from checkpoint {checkpoint:N0}",
-				_subscriptionId, _streamName, checkpoint);
+			Log.Verbose("Subscription {subscriptionId} to {streamName} is catching up from checkpoint {checkpoint:N0}", _subscriptionId, _streamName, checkpoint);
 
 			var catchupCompletionTcs = new TaskCompletionSource<long>();
 
 			// this is a safe use of AsyncTaskEnvelope. Only one call to OnMessage will be running
 			// at any given time because we only expect one reply and that reply kicks off the next read.
 			AsyncTaskEnvelope envelope = null;
-			envelope = new AsyncTaskEnvelope(OnMessage, ct);
+			envelope = new(OnMessage, ct);
 
 			ReadPage(startEventNumber, envelope, ct);
 
 			return catchupCompletionTcs.Task;
 
-			async Task OnMessage(Message message, CancellationToken ct) {
+			async Task OnMessage(Message message, CancellationToken token) {
 				try {
-					if (message is ClientMessage.NotHandled notHandled &&
-					    TryHandleNotHandled(notHandled, out var ex))
+					if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 						throw ex;
+					}
 
-					if (message is not ClientMessage.ReadStreamEventsForwardCompleted completed)
-						throw ReadResponseException.UnknownMessage
-							.Create<ClientMessage.ReadStreamEventsForwardCompleted>(message);
+					if (message is not ClientMessage.ReadStreamEventsForwardCompleted completed) {
+						throw ReadResponseException.UnknownMessage.Create<ClientMessage.ReadStreamEventsForwardCompleted>(message);
+					}
 
 					switch (completed.Result) {
 						case ReadStreamResult.Success:
 							foreach (var @event in completed.Events) {
 								var streamRevision = StreamRevision.FromInt64(@event.OriginalEvent.EventNumber);
 
-								Log.Verbose(
-									"Subscription {subscriptionId} to {streamName} received catch-up event {streamRevision}.",
-									_subscriptionId, _streamName, streamRevision);
+								Log.Verbose("Subscription {subscriptionId} to {streamName} received catch-up event {streamRevision}.", _subscriptionId, _streamName, streamRevision);
 
-								await SendEventToSubscription(@event, ct);
+								await SendEventToSubscription(@event, token);
 								checkpoint = @event.OriginalEventNumber;
 							}
 
@@ -265,18 +253,16 @@ static partial class Enumerator {
 								return;
 							}
 
-							ReadPage(completed.NextEventNumber, envelope, ct);
+							ReadPage(completed.NextEventNumber, envelope, token);
 							return;
 						case ReadStreamResult.Expired:
-							ReadPage(completed.FromEventNumber, envelope, ct);
+							ReadPage(completed.FromEventNumber, envelope, token);
 							return;
 						case ReadStreamResult.NoStream:
 							catchupCompletionTcs.TrySetResult(checkpoint);
 							return;
 						case ReadStreamResult.StreamDeleted:
-							Log.Debug(
-								"Subscription {subscriptionId} to {streamName} stream deleted.",
-								_subscriptionId, _streamName);
+							Log.Debug("Subscription {subscriptionId} to {streamName} stream deleted.", _subscriptionId, _streamName);
 							throw new ReadResponseException.StreamDeleted(_streamName);
 						case ReadStreamResult.AccessDenied:
 							throw new ReadResponseException.AccessDenied();
@@ -292,31 +278,29 @@ static partial class Enumerator {
 		private async Task SendEventToSubscription(ResolvedEvent @event, CancellationToken ct) {
 			await _channel.Writer.WriteAsync(new ReadResponse.EventReceived(@event), ct);
 
-			if (@event.OriginalEvent.EventType == SystemEventTypes.StreamDeleted)
+			if (@event.OriginalEvent.EventType == SystemEventTypes.StreamDeleted) {
 				throw new ReadResponseException.StreamDeleted(_streamName);
+			}
 		}
 
 		private Task<long> SubscribeToLive() {
 			var nextLiveSequenceNumber = 0UL;
 			var confirmationEventNumberTcs = new TaskCompletionSource<long>();
 
-			_bus.Publish(new ClientMessage.SubscribeToStream(Guid.NewGuid(), _subscriptionId,
-				new CallbackEnvelope(OnSubscriptionMessage), _subscriptionId,
-				_streamName, _resolveLinks, _user));
+			_bus.Publish(new ClientMessage.SubscribeToStream(Guid.NewGuid(), _subscriptionId, new CallbackEnvelope(OnSubscriptionMessage), _subscriptionId, _streamName, _resolveLinks, _user));
 
 			return confirmationEventNumberTcs.Task;
 
 			void OnSubscriptionMessage(Message message) {
 				try {
-					if (message is ClientMessage.NotHandled notHandled &&
-					    TryHandleNotHandled(notHandled, out var ex))
+					if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 						throw ex;
+					}
 
 					switch (message) {
 						case ClientMessage.SubscriptionConfirmation confirmed:
 							long caughtUp = confirmed.LastEventNumber ??
-							                throw ReadResponseException.UnknownError.Create(
-								                $"Live subscription {_subscriptionId} to {_streamName} failed to retrieve the last event number.");
+											throw ReadResponseException.UnknownError.Create($"Live subscription {_subscriptionId} to {_streamName} failed to retrieve the last event number.");
 
 							Log.Debug(
 								"Subscription {subscriptionId} to {streamName} confirmed. LastEventNumber is {streamRevision:N0}.",
@@ -352,8 +336,7 @@ static partial class Enumerator {
 							return;
 						}
 						default:
-							throw ReadResponseException.UnknownMessage
-								.Create<ClientMessage.SubscriptionConfirmation>(message);
+							throw ReadResponseException.UnknownMessage.Create<ClientMessage.SubscriptionConfirmation>(message);
 					}
 				} catch (Exception exception) {
 					_liveEvents.Writer.TryComplete(exception);
@@ -367,10 +350,8 @@ static partial class Enumerator {
 		}
 
 		private void ReadPage(long startEventNumber, IEnvelope envelope, CancellationToken ct) {
-			Guid correlationId = Guid.NewGuid();
-			Log.Verbose(
-				"Subscription {subscriptionId} to {streamName} reading next page starting from {streamRevision}.",
-				_subscriptionId, _streamName, startEventNumber);
+			var correlationId = Guid.NewGuid();
+			Log.Verbose("Subscription {subscriptionId} to {streamName} reading next page starting from {streamRevision}.", _subscriptionId, _streamName, startEventNumber);
 
 			_bus.Publish(new ClientMessage.ReadStreamEventsForward(
 				correlationId, correlationId, envelope,
@@ -381,7 +362,6 @@ static partial class Enumerator {
 				cancellationToken: ct));
 		}
 
-		private void Unsubscribe() => _bus.Publish(new ClientMessage.UnsubscribeFromStream(Guid.NewGuid(),
-			_subscriptionId, new NoopEnvelope(), _user));
+		private void Unsubscribe() => _bus.Publish(new ClientMessage.UnsubscribeFromStream(Guid.NewGuid(), _subscriptionId, new NoopEnvelope(), _user));
 	}
 }

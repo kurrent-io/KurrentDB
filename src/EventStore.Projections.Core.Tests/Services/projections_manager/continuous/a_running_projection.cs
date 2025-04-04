@@ -1,11 +1,10 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Data;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Management;
@@ -22,7 +21,8 @@ public class a_running_projection {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			var readerAssignedMessage =
 				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
 					.LastOrDefault();
@@ -43,7 +43,8 @@ public class a_running_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_stopping<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 
 			yield return
 				(new ProjectionManagementMessage.Command.Disable(
@@ -105,7 +106,8 @@ public class a_running_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_handling_event<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return
 				(ReaderSubscriptionMessage.CommittedEventDistributed.Sample(
 					_reader, new TFPos(200, 150), new TFPos(200, 150), "stream", 2, "stream", 2, false,
@@ -154,7 +156,8 @@ public class a_running_projection {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 
 			yield return
 				(new ProjectionManagementMessage.Command.Reset(
@@ -223,7 +226,8 @@ public class a_running_projection {
 		}
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return
 				(new ProjectionManagementMessage.Command.Reset(
 					_bus, _projectionName, ProjectionManagementMessage.RunAs.System));

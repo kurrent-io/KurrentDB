@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Linq;
@@ -83,7 +83,7 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 			if (checkpoint != null) {
 				var parsed = checkpoint.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
 				if (parsed.Version.ProjectionId != _projectionVersion.ProjectionId
-				    || _projectionVersion.Epoch > parsed.Version.Version) {
+					|| _projectionVersion.Epoch > parsed.Version.Version) {
 					_lastWrittenCheckpointEventNumber = checkpoint.EventNumber;
 					CheckpointLoaded(null, null);
 				} else {

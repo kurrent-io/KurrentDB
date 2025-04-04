@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using System.Collections.Generic;
@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -52,15 +53,13 @@ partial class Enumerator {
 			uint? maxSearchWindow,
 			uint checkpointIntervalMultiplier,
 			CancellationToken cancellationToken) {
-			ArgumentNullException.ThrowIfNull(bus);
-			ArgumentNullException.ThrowIfNull(eventFilter);
 			ArgumentOutOfRangeException.ThrowIfZero(checkpointIntervalMultiplier);
 
 			_expiryStrategy = expiryStrategy;
 			_subscriptionId = Guid.NewGuid();
-			_bus = bus;
+			_bus = Ensure.NotNull(bus);
 			_resolveLinks = resolveLinks;
-			_eventFilter = eventFilter;
+			_eventFilter = Ensure.NotNull(eventFilter);
 			_user = user;
 			_requiresLeader = requiresLeader;
 			_maxSearchWindow = maxSearchWindow ?? ReadBatchSize;
@@ -91,7 +90,7 @@ partial class Enumerator {
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
-			ReadLoop:
+ReadLoop:
 
 			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
 				return false;
@@ -110,25 +109,21 @@ partial class Enumerator {
 					goto ReadLoop;
 				}
 
-				Log.Verbose(
-					"Subscription {subscriptionId} to $all:{eventFilter} seen event {position}.",
-					_subscriptionId, _eventFilter, position);
-				
+				Log.Verbose("Subscription {subscriptionId} to $all:{eventFilter} seen event {position}.", _subscriptionId, _eventFilter, position);
+
 				_currentPosition = position;
 			} else if (readResponse is ReadResponse.CheckpointReceived checkpointReceived) {
 				var checkpointPos = new Position(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition);
 
 				if (_currentCheckpoint.HasValue && checkpointPos <= _currentCheckpoint.Value) {
 					// in some cases, it's possible to receive the same checkpoint twice for example:
-					// i) when the subscription goes live and it turns out that the next thing on the live channel is a checkpoint
+					// i) when the subscription goes live, and it turns out that the next thing on the live channel is a checkpoint
 					// ii) when catching-up, reaching the checkpoint interval and the next page read reaches the end of the stream
 
 					goto ReadLoop;
 				}
 
-				Log.Verbose(
-					"Subscription {subscriptionId} to $all:{eventFilter} received checkpoint {position}.",
-					_subscriptionId, _eventFilter, checkpointPos);
+				Log.Verbose("Subscription {subscriptionId} to $all:{eventFilter} received checkpoint {position}.", _subscriptionId, _eventFilter, checkpointPos);
 
 				_currentCheckpoint = checkpointPos;
 			}
@@ -144,7 +139,7 @@ partial class Enumerator {
 
 		private static TFPos ConvertCheckpoint(Position? checkpoint, TFPos lastLivePos) {
 			if (!checkpoint.HasValue)
-				return new TFPos(-1, -1);
+				return TFPos.HeadOfTf;
 
 			if (checkpoint == Position.End)
 				return lastLivePos;
@@ -168,8 +163,9 @@ partial class Enumerator {
 				// the most recently read sequence number from the live channel. 0 when we haven't read any.
 				var sequenceNumber = 0UL;
 
-				if (checkpoint >= confirmationLastPos)
+				if (checkpoint >= confirmationLastPos) {
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
+				}
 
 				while (true) {
 					ct.ThrowIfCancellationRequested();
@@ -177,13 +173,13 @@ partial class Enumerator {
 					(checkpoint, sequenceNumber) = await GoLive(checkpoint, sequenceNumber, ct);
 				}
 			} catch (Exception ex) {
-				if (ex is not (OperationCanceledException or ReadResponseException.InvalidPosition))
-					Log.Error(ex, "Subscription {subscriptionId} to $all:{eventFilter} experienced an error.",
-						_subscriptionId, _eventFilter);
+				if (ex is not (OperationCanceledException or ReadResponseException.InvalidPosition)) {
+					Log.Error(ex, "Subscription {subscriptionId} to $all:{eventFilter} experienced an error.", _subscriptionId, _eventFilter);
+				}
+
 				_channel.Writer.TryComplete(ex);
 			} finally {
-				Log.Debug("Subscription {subscriptionId} to $all:{eventFilter} has ended.",
-					_subscriptionId, _eventFilter);
+				Log.Debug("Subscription {subscriptionId} to $all:{eventFilter} has ended.", _subscriptionId, _eventFilter);
 			}
 		}
 
@@ -227,10 +223,10 @@ partial class Enumerator {
 				if (!sequenceCorrect) {
 					// there's a gap in the sequence numbers, at least one live event was discarded
 					// due to the live channel becoming full.
-					// switch back to catchup to make sure we didn't miss anything we wanted to send.
+					// switch back to catch up to make sure we didn't miss anything we wanted to send.
 					await NotifyFellBehind(checkpoint, ct);
 
-					// issue a checkpoint before falling behind to catch-up to make sure that
+					// issue a checkpoint before falling behind to catch up to make sure that
 					// at least one checkpoint is issued within the checkpoint interval
 					await SendCheckpointToSubscription(checkpoint, ct);
 
@@ -262,7 +258,7 @@ partial class Enumerator {
 			// this is a safe use of AsyncTaskEnvelope. Only one call to OnMessage will be running
 			// at any given time because we only expect one reply and that reply kicks off the next read.
 			AsyncTaskEnvelope envelope = null;
-			envelope = new AsyncTaskEnvelope(OnMessage, ct);
+			envelope = new(OnMessage, ct);
 
 			ReadPage(checkpoint, envelope, ct);
 
@@ -270,13 +266,12 @@ partial class Enumerator {
 
 			async Task OnMessage(Message message, CancellationToken ct) {
 				try {
-					if (message is ClientMessage.NotHandled notHandled &&
-					    TryHandleNotHandled(notHandled, out var ex))
+					if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 						throw ex;
+					}
 
 					if (message is not ClientMessage.FilteredReadAllEventsForwardCompleted completed)
-						throw ReadResponseException.UnknownMessage
-							.Create<ClientMessage.FilteredReadAllEventsForwardCompleted>(message);
+						throw ReadResponseException.UnknownMessage.Create<ClientMessage.FilteredReadAllEventsForwardCompleted>(message);
 
 					switch (completed.Result) {
 						case FilteredReadAllResult.Success:
@@ -304,6 +299,9 @@ partial class Enumerator {
 							if (completed.IsEndOfStream) {
 								// issue a checkpoint when going live to make sure that at least
 								// one checkpoint is issued within the checkpoint interval
+								if (checkpoint < completed.CurrentPos)
+									checkpoint = completed.CurrentPos;
+
 								await SendCheckpointToSubscription(checkpoint, ct);
 
 								catchupCompletionTcs.TrySetResult(checkpoint);
@@ -346,6 +344,10 @@ partial class Enumerator {
 		}
 
 		private async Task SendCheckpointToSubscription(TFPos checkpoint, CancellationToken ct) {
+			if (checkpoint == TFPos.HeadOfTf) {
+				// there is not yet any checkpoint to send (failsafe)
+				return;
+			}
 			var checkpointPos = Position.FromInt64(checkpoint.CommitPosition, checkpoint.PreparePosition);
 			await _channel.Writer.WriteAsync(new ReadResponse.CheckpointReceived(
 				commitPosition: checkpointPos.CommitPosition,
@@ -359,15 +361,16 @@ partial class Enumerator {
 			_bus.Publish(new ClientMessage.FilteredSubscribeToStream(Guid.NewGuid(), _subscriptionId,
 				new CallbackEnvelope(OnSubscriptionMessage), _subscriptionId,
 				string.Empty, _resolveLinks, _user,
-				_eventFilter, (int)_checkpointInterval, checkpointIntervalCurrent: 0));
+				_eventFilter, (int)_checkpointInterval, checkpointIntervalCurrent: 0)
+			);
 
 			return confirmationPositionTcs.Task;
 
 			void OnSubscriptionMessage(Message message) {
 				try {
-					if (message is ClientMessage.NotHandled notHandled &&
-					    TryHandleNotHandled(notHandled, out var ex))
+					if (message is ClientMessage.NotHandled notHandled && TryHandleNotHandled(notHandled, out var ex)) {
 						throw ex;
+					}
 
 					switch (message) {
 						case ClientMessage.SubscriptionConfirmation confirmed:
@@ -412,15 +415,13 @@ partial class Enumerator {
 
 							if (!_liveEvents.Writer.TryWrite((++nextLiveSequenceNumber, null, checkpointReached.Position!.Value))) {
 								// this cannot happen because _liveEvents does not have full mode 'wait'.
-								throw new Exception(
-									$"Unexpected error: could not write to live events channel for subscription {_subscriptionId} to $all:{_eventFilter}");
+								throw new Exception($"Unexpected error: could not write to live events channel for subscription {_subscriptionId} to $all:{_eventFilter}");
 							}
 
 							return;
 						}
 						default:
-							throw ReadResponseException.UnknownMessage
-								.Create<ClientMessage.SubscriptionConfirmation>(message);
+							throw ReadResponseException.UnknownMessage.Create<ClientMessage.SubscriptionConfirmation>(message);
 					}
 				} catch (Exception exception) {
 					_liveEvents.Writer.TryComplete(exception);
@@ -451,7 +452,6 @@ partial class Enumerator {
 				cancellationToken: ct));
 		}
 
-		private void Unsubscribe() => _bus.Publish(new ClientMessage.UnsubscribeFromStream(Guid.NewGuid(),
-			_subscriptionId, new NoopEnvelope(), _user));
+		private void Unsubscribe() => _bus.Publish(new ClientMessage.UnsubscribeFromStream(Guid.NewGuid(), _subscriptionId, new NoopEnvelope(), _user));
 	}
 }

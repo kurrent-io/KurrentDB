@@ -1,5 +1,5 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
-// Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
 using EventStore.Core.Services;
@@ -7,7 +7,6 @@ using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 
 namespace EventStore.Projections.Core.Standard;
@@ -19,7 +18,7 @@ public class IndexStreams : IProjectionStateHandler {
 			throw new InvalidOperationException(
 				"Cannot initialize categorize stream projection handler.  No source is allowed.");
 		if (logger != null) {
-//                logger(string.Format("Index streams projection handler has been initialized"));
+			//                logger(string.Format("Index streams projection handler has been initialized"));
 		}
 	}
 
