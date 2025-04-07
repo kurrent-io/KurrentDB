@@ -206,8 +206,8 @@ public class EventReaderCoreService :
 			return; // unsubscribed
 		_subscriptions[projectionId].Handle(message);
 
-//            _pausedSubscriptions.Add(projectionId); // it is actually disposed -- workaround
-//            Handle(new ReaderSubscriptionManagement.Unsubscribe(projectionId));
+		//            _pausedSubscriptions.Add(projectionId); // it is actually disposed -- workaround
+		//            Handle(new ReaderSubscriptionManagement.Unsubscribe(projectionId));
 	}
 
 	public void Handle(ReaderSubscriptionMessage.EventReaderPartitionEof message) {
@@ -359,7 +359,7 @@ public class EventReaderCoreService :
 		_publisher.Publish(new ProjectionCoreServiceMessage.SubComponentStarted(
 			SubComponentName, message.InstanceCorrelationId));
 		_reportProgressId = Guid.NewGuid();
-		 _publisher.Publish(TimerMessage.Schedule.Create(TimeSpan.FromMilliseconds(500), _publishEnvelope, new ReaderSubscriptionMessage.ReportProgress(_reportProgressId)));
+		_publisher.Publish(TimerMessage.Schedule.Create(TimeSpan.FromMilliseconds(500), _publishEnvelope, new ReaderSubscriptionMessage.ReportProgress(_reportProgressId)));
 	}
 
 	public void Handle(ReaderCoreServiceMessage.StopReader message) {

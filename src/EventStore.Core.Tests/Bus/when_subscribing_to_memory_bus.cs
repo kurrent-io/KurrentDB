@@ -61,8 +61,8 @@ public class when_subscribing_to_memory_bus {
 		await _bus.DispatchAsync(new TestMessage3());
 
 		Assert.That(multiHandler.HandledMessages.ContainsSingle<TestMessage>() &&
-		            multiHandler.HandledMessages.ContainsSingle<TestMessage2>() &&
-		            multiHandler.HandledMessages.ContainsSingle<TestMessage3>());
+					multiHandler.HandledMessages.ContainsSingle<TestMessage2>() &&
+					multiHandler.HandledMessages.ContainsSingle<TestMessage3>());
 	}
 
 	[Test]
@@ -76,8 +76,8 @@ public class when_subscribing_to_memory_bus {
 		await _bus.DispatchAsync(new TestMessage3());
 
 		Assert.That(multiHandler.HandledMessages.ContainsSingle<TestMessage>() &&
-		            multiHandler.HandledMessages.ContainsNo<TestMessage2>() &&
-		            multiHandler.HandledMessages.ContainsSingle<TestMessage3>());
+					multiHandler.HandledMessages.ContainsNo<TestMessage2>() &&
+					multiHandler.HandledMessages.ContainsSingle<TestMessage3>());
 	}
 
 	[Test]
@@ -114,11 +114,11 @@ public class when_subscribing_to_memory_bus {
 		await _bus.DispatchAsync(new TestMessage3());
 
 		Assert.That(handler1.HandledMessages.ContainsSingle<TestMessage>() &&
-		            handler1.HandledMessages.ContainsSingle<TestMessage3>() &&
-		            handler2.HandledMessages.ContainsSingle<TestMessage>() &&
-		            handler2.HandledMessages.ContainsSingle<TestMessage2>() &&
-		            handler3.HandledMessages.ContainsSingle<TestMessage2>() &&
-		            handler3.HandledMessages.ContainsSingle<TestMessage3>());
+					handler1.HandledMessages.ContainsSingle<TestMessage3>() &&
+					handler2.HandledMessages.ContainsSingle<TestMessage>() &&
+					handler2.HandledMessages.ContainsSingle<TestMessage2>() &&
+					handler3.HandledMessages.ContainsSingle<TestMessage2>() &&
+					handler3.HandledMessages.ContainsSingle<TestMessage3>());
 	}
 
 	[Test]
@@ -144,14 +144,14 @@ public class when_subscribing_to_memory_bus {
 
 
 		Assert.That(handler1.HandledMessages.ContainsSingle<TestMessage>() &&
-		            handler1.HandledMessages.ContainsNo<TestMessage2>() &&
-		            handler1.HandledMessages.ContainsSingle<TestMessage3>() &&
-		            handler2.HandledMessages.ContainsSingle<TestMessage>() &&
-		            handler2.HandledMessages.ContainsSingle<TestMessage2>() &&
-		            handler2.HandledMessages.ContainsNo<TestMessage3>() &&
-		            handler3.HandledMessages.ContainsNo<TestMessage>() &&
-		            handler3.HandledMessages.ContainsSingle<TestMessage2>() &&
-		            handler3.HandledMessages.ContainsSingle<TestMessage3>());
+					handler1.HandledMessages.ContainsNo<TestMessage2>() &&
+					handler1.HandledMessages.ContainsSingle<TestMessage3>() &&
+					handler2.HandledMessages.ContainsSingle<TestMessage>() &&
+					handler2.HandledMessages.ContainsSingle<TestMessage2>() &&
+					handler2.HandledMessages.ContainsNo<TestMessage3>() &&
+					handler3.HandledMessages.ContainsNo<TestMessage>() &&
+					handler3.HandledMessages.ContainsSingle<TestMessage2>() &&
+					handler3.HandledMessages.ContainsSingle<TestMessage3>());
 	}
 
 	[Test /*, Ignore("This logic is confused when having hierarchy flattening on subscription in InMemoryBus.")*/]

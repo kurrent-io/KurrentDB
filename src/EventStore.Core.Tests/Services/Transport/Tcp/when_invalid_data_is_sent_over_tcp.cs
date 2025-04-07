@@ -24,7 +24,7 @@ public class when_invalid_data_is_sent_over_tcp<TLogFormat, TStreamId> : specifi
 	public async Task connection_should_be_closed_by_remote_party(string endpointProperty, bool secure) {
 		IPEndPoint endpoint = (IPEndPoint)_nodes[0].GetType().GetProperty(endpointProperty).GetValue(_nodes[0], null);
 		var closedEvent = new ManualResetEventSlim();
-		TaskCompletionSource<SocketError> connectionResult = new (TaskCreationOptions.RunContinuationsAsynchronously);
+		TaskCompletionSource<SocketError> connectionResult = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		ITcpConnection connection;
 		if (!secure) {

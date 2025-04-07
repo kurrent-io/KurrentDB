@@ -138,8 +138,7 @@ public class NameIndex :
 					// updated during the catchup if we do write some events to those streams.
 					// therefore leave the entry blank so it will be (cheaply because in mem) be
 					// populated on miss.
-				}
-				else {
+				} else {
 					// we just created the stream so we know that no events exist in either
 					// the stream itself or its metastream.
 					var createdStreamNumber = streamRecord.StreamNumber;
@@ -147,9 +146,8 @@ public class NameIndex :
 					backend.SetStreamLastEventNumber(createdStreamNumber, ExpectedVersion.NoStream);
 					backend.SetStreamLastEventNumber(createdMetaStreamNumber, ExpectedVersion.NoStream);
 				}
-			}
-			else if (prepare.RecordType == LogRecordType.EventType &&
-			         prepare is LogV3EventTypeRecord eventTypeRecord && prepare.GetType() == _recordTypeToHandle) {
+			} else if (prepare.RecordType == LogRecordType.EventType &&
+					   prepare is LogV3EventTypeRecord eventTypeRecord && prepare.GetType() == _recordTypeToHandle) {
 				Confirm(
 					name: eventTypeRecord.EventTypeName,
 					value: eventTypeRecord.EventTypeNumber);

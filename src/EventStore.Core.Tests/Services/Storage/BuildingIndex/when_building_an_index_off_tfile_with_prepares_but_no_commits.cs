@@ -3,7 +3,6 @@
 
 using System;
 using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
@@ -18,7 +17,7 @@ public class when_building_an_index_off_tfile_with_prepares_but_no_commits<TLogF
 		GetOrReserve("test3", out var streamId3, out var p0);
 
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-		
+
 		long p1;
 		Writer.Write(LogRecord.Prepare(_logFormat.RecordFactory, p0, Guid.NewGuid(), Guid.NewGuid(), p0, 0, streamId1, -1,
 				PrepareFlags.SingleWrite, eventTypeId, new byte[0], new byte[0], DateTime.UtcNow),

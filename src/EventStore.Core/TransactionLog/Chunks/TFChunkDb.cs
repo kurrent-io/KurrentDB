@@ -9,8 +9,6 @@ using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Transforms;
-using EventStore.Core.Transforms.Identity;
-using EventStore.Plugins.Transforms;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.TransactionLog.Chunks;
@@ -72,11 +70,11 @@ public class TFChunkDb : IDisposable {
 
 		try {
 			Parallel.ForEach(GetAllLatestChunksExceptLast(chunkEnumerator, lastChunkNum), // the last chunk is dealt with separately
-				new ParallelOptions {MaxDegreeOfParallelism = threads},
+				new ParallelOptions { MaxDegreeOfParallelism = threads },
 				chunkInfo => {
 					TFChunk.TFChunk chunk;
 					if (lastChunkVersions.Length == 0 &&
-					    (chunkInfo.ChunkStartNumber + 1) * (long)Config.ChunkSize == checkpoint) {
+						(chunkInfo.ChunkStartNumber + 1) * (long)Config.ChunkSize == checkpoint) {
 						// The situation where the logical data size is exactly divisible by ChunkSize,
 						// so it might happen that we have checkpoint indicating one more chunk should exist,
 						// but the actual last chunk is (lastChunkNum-1) one and it could be not completed yet -- perfectly valid situation.
@@ -229,7 +227,7 @@ public class TFChunkDb : IDisposable {
 
 	private void ValidateReaderChecksumsMustBeLess(TFChunkDbConfig config) {
 		var current = config.WriterCheckpoint.Read();
-		foreach (var checkpoint in new[] {config.ChaserCheckpoint, config.EpochCheckpoint}) {
+		foreach (var checkpoint in new[] { config.ChaserCheckpoint, config.EpochCheckpoint }) {
 			if (checkpoint.Read() > current)
 				throw new CorruptDatabaseException(new ReaderCheckpointHigherThanWriterException(checkpoint.Name));
 		}
@@ -277,8 +275,8 @@ public class TFChunkDb : IDisposable {
 					// there can be at most one excessive chunk at startup:
 					// when a new chunk was created but the writer checkpoint was not yet committed and flushed
 					if (start == lastChunkNum + 1 &&
-					    start == end &&
-					    Config.FileNamingStrategy.GetVersionFor(Path.GetFileName(fileName)) == 0)
+						start == end &&
+						Config.FileNamingStrategy.GetVersionFor(Path.GetFileName(fileName)) == 0)
 						RemoveFile("Removing excessive chunk: {chunk}", fileName);
 					else if (start > lastChunkNum)
 						extraneousFiles.Add(fileName);

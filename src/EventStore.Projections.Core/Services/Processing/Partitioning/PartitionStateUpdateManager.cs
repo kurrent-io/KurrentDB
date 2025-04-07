@@ -23,7 +23,8 @@ public class PartitionStateUpdateManager {
 		new EmittedStream.WriterConfiguration.StreamMetadata(maxCount: 2);
 
 	public PartitionStateUpdateManager(ProjectionNamesBuilder namingBuilder) {
-		if (namingBuilder == null) throw new ArgumentNullException("namingBuilder");
+		if (namingBuilder == null)
+			throw new ArgumentNullException("namingBuilder");
 		_namingBuilder = namingBuilder;
 	}
 
@@ -32,7 +33,7 @@ public class PartitionStateUpdateManager {
 		if (_states.TryGetValue(partition, out stateEntry)) {
 			stateEntry.PartitionState = state;
 		} else {
-			_states.Add(partition, new State {PartitionState = state, ExpectedTag = basedOn});
+			_states.Add(partition, new State { PartitionState = state, ExpectedTag = basedOn });
 		}
 	}
 

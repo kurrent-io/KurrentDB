@@ -31,12 +31,12 @@ public class
 		Service.Handle(new StorageMessage.CommitAck(_correlationId2, _logPosition4, _logPosition2, 0, 0));
 		Service.Handle(new StorageMessage.CommitAck(_correlationId1, _logPosition3, _logPosition1, 0, 0));
 
-			
+
 		ReplicationCheckpoint.Write(_logPosition4 + 1);
 		ReplicationCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.ReplicatedTo(_logPosition4 + 1));
 	}
-	
+
 	[Test]
 	public void commit_replicated_message_should_have_been_published_for_both_events() {
 		AssertEx.IsOrBecomesTrue(() => 2 == CommitReplicatedMgs.Count);

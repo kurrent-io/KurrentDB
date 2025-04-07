@@ -31,8 +31,8 @@ public class http_pipeline_should : SpecificationWithDirectory {
 	public async Task allow_subsystems_to_protect_their_endpoints() {
 		var tcs = new TaskCompletionSource();
 
-		await using var node = new MiniNode<LogFormat.V2,string>(PathName, subsystems: [ new FakeProtectedSubSystem() ]);
-		node.Node.MainBus.Subscribe(new AdHocHandler<SystemMessage.SystemReady>( t => {
+		await using var node = new MiniNode<LogFormat.V2, string>(PathName, subsystems: [new FakeProtectedSubSystem()]);
+		node.Node.MainBus.Subscribe(new AdHocHandler<SystemMessage.SystemReady>(t => {
 			tcs.TrySetResult();
 		}));
 
@@ -69,11 +69,11 @@ public class http_pipeline_should : SpecificationWithDirectory {
 					Authorization = new AuthenticationHeaderValue("Basic",
 						Convert.ToBase64String(Encoding.ASCII.GetBytes("admin:changeit")))
 				}
-		});
+			});
 	}
 
 	class FakeProtectedSubSystem() : SubsystemsPlugin(name: "FakeProtectedSubSystem") {
-		public override void ConfigureServices(IServiceCollection services, IConfiguration _) => 
+		public override void ConfigureServices(IServiceCollection services, IConfiguration _) =>
 			services.AddControllers().AddApplicationPart(typeof(FakeController).Assembly);
 
 		public override void ConfigureApplication(IApplicationBuilder app, IConfiguration _) =>
@@ -83,8 +83,7 @@ public class http_pipeline_should : SpecificationWithDirectory {
 				ep.MapGet(SubsystemProtectedEndpoint, context => {
 					if (context.User.IsInRole("$ops") || context.User.IsInRole("$admins")) {
 						context.Response.StatusCode = (int)HttpStatusCode.OK;
-					}
-					else {
+					} else {
 						context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
 					}
 

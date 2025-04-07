@@ -90,9 +90,9 @@ public class LengthPrefixSuffixFramer : IMessageFramer<BinaryReader> {
 #if DEBUG
 					var buf = _memStream.GetBuffer();
 					int suffixLength = (buf[_packageLength - 4] << 0)
-					                   | (buf[_packageLength - 3] << 8)
-					                   | (buf[_packageLength - 2] << 16)
-					                   | (buf[_packageLength - 1] << 24);
+									   | (buf[_packageLength - 3] << 8)
+									   | (buf[_packageLength - 2] << 16)
+									   | (buf[_packageLength - 1] << 24);
 					if (_packageLength - PrefixLength != suffixLength) {
 						throw new Exception(string.Format("Prefix length: {0} is not equal to suffix length: {1}.",
 							_packageLength - PrefixLength, suffixLength));
@@ -115,7 +115,7 @@ public class LengthPrefixSuffixFramer : IMessageFramer<BinaryReader> {
 		var length = data.Count;
 
 		var lengthArray = new ArraySegment<byte>(
-			new[] {(byte)length, (byte)(length >> 8), (byte)(length >> 16), (byte)(length >> 24)});
+			new[] { (byte)length, (byte)(length >> 8), (byte)(length >> 16), (byte)(length >> 24) });
 		yield return lengthArray;
 		yield return data;
 		yield return lengthArray;

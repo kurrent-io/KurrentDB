@@ -15,8 +15,8 @@ public static partial class ReplicationTrackingMessage {
 	[DerivedMessage(CoreMessage.ReplicationTracking)]
 	public partial class IndexedTo : Message {
 		public readonly long LogPosition;
-		
-		public IndexedTo(long logPosition ) {
+
+		public IndexedTo(long logPosition) {
 			Ensure.Nonnegative(logPosition + 1, "logPosition");
 			LogPosition = logPosition;
 		}
@@ -25,8 +25,8 @@ public static partial class ReplicationTrackingMessage {
 	[DerivedMessage(CoreMessage.ReplicationTracking)]
 	public partial class ReplicatedTo : Message {
 		public readonly long LogPosition;
-		
-		public ReplicatedTo(long logPosition ) {
+
+		public ReplicatedTo(long logPosition) {
 			Ensure.Nonnegative(logPosition + 1, "logPosition");
 			LogPosition = logPosition;
 		}
@@ -35,8 +35,8 @@ public static partial class ReplicationTrackingMessage {
 	[DerivedMessage(CoreMessage.ReplicationTracking)]
 	public partial class LeaderReplicatedTo : Message {
 		public readonly long LogPosition;
-		
-		public LeaderReplicatedTo(long logPosition ) {
+
+		public LeaderReplicatedTo(long logPosition) {
 			Ensure.Nonnegative(logPosition + 1, "logPosition");
 			LogPosition = logPosition;
 		}

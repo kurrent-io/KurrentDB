@@ -4,8 +4,8 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using NUnit.Framework;
 using EventStore.Core.Data;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 

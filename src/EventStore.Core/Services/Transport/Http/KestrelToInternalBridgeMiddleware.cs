@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Transport.Http;
@@ -84,7 +83,7 @@ public class KestrelToInternalBridgeMiddleware : IMiddleware {
 			} catch (Exception exc) {
 				Log.Error(exc, "Error while handling HTTP request '{url}'.", request.Url);
 				InternalServerError(httpEntity);
-				
+
 			}
 		} catch (Exception exc) {
 			Log.Error(exc, "Unhandled exception while processing HTTP request at {url}.",
@@ -198,7 +197,7 @@ public class KestrelToInternalBridgeMiddleware : IMiddleware {
 	}
 
 	public Task InvokeAsync(HttpContext context, RequestDelegate next) {
-		if(TryMatch(context, _uriRouter, _logHttpRequests, _advertiseAsAddress, _advertiseAsPort))
+		if (TryMatch(context, _uriRouter, _logHttpRequests, _advertiseAsAddress, _advertiseAsPort))
 			return next(context);
 		return Task.CompletedTask;
 	}

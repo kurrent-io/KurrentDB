@@ -178,7 +178,7 @@ public static class ElectionMessageDto {
 			View = message.View;
 		}
 	}
-	
+
 	public class LeaderIsResigningDto {
 		public Guid LeaderId { get; set; }
 		public string LeaderHttpAddress { get; set; }
@@ -192,7 +192,7 @@ public static class ElectionMessageDto {
 			LeaderHttpPort = message.LeaderHttpEndPoint.GetPort();
 		}
 	}
-	
+
 	public class LeaderIsResigningOkDto {
 		public Guid LeaderId { get; set; }
 		public string LeaderHttpAddress { get; set; }

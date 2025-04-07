@@ -34,7 +34,7 @@ public static class INameIndexExtensions {
 
 		return preExisting;
 	}
-	
+
 	public static bool GetOrReserveEventType<TStreamId>(
 		this INameIndex<TStreamId> eventTypeIndex,
 		IRecordFactory<TStreamId> recordFactory,

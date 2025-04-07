@@ -55,7 +55,8 @@ public class FeedReader : IHandle<EventReaderSubscriptionMessage.CommittedEventR
 		ArgumentNullException.ThrowIfNull(querySource);
 		ArgumentNullException.ThrowIfNull(fromPosition);
 		ArgumentNullException.ThrowIfNull(replyEnvelope);
-		if (maxEvents <= 0) throw new ArgumentException("non-negative expected", nameof(maxEvents));
+		if (maxEvents <= 0)
+			throw new ArgumentException("non-negative expected", nameof(maxEvents));
 
 		_subscriptionDispatcher = subscriptionDispatcher;
 		_user = user;

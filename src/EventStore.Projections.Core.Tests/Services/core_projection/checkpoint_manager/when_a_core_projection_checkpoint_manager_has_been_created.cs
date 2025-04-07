@@ -2,11 +2,8 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using EventStore.Core.Data;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
@@ -28,7 +25,7 @@ public class
 
 	[Test]
 	public void event_processed_throws_invalid_operation_exception() {
-//            _manager.StateUpdated("", @"{""state"":""state""}");
+		//            _manager.StateUpdated("", @"{""state"":""state""}");
 		Assert.Throws<InvalidOperationException>(() => {
 			_manager.EventProcessed(CheckpointTag.FromStreamPosition(0, "stream", 10), 77.7f);
 		});

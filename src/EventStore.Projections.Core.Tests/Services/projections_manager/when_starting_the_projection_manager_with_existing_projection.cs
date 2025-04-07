@@ -8,7 +8,6 @@ using System.Text.Json.Nodes;
 using EventStore.Common.Options;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Telemetry;
 using EventStore.Core.Tests;
@@ -16,11 +15,11 @@ using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.Util;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Metrics;
+using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Management;
+using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;
 
@@ -44,7 +43,7 @@ public class when_starting_the_projection_manager_with_existing_projection<TLogF
 	[SetUp]
 	public void setup() {
 		_timeProvider = new FakeTimeProvider();
-		var queues = new Dictionary<Guid, IPublisher> {{_workerId, _bus}};
+		var queues = new Dictionary<Guid, IPublisher> { { _workerId, _bus } };
 		_manager = new ProjectionManager(
 			_bus,
 			_bus,

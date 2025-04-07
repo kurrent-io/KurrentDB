@@ -3,7 +3,6 @@
 
 using System.Collections.Generic;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.EventByType;
 using NUnit.Framework;
@@ -19,15 +18,15 @@ public class when_updating_event_by_type_index_position_tracker_from_a_tag {
 	[SetUp]
 	public void When() {
 		// given
-		var tagger = new EventByTypeIndexPositionTagger(0, new[] {"type1", "type2"});
+		var tagger = new EventByTypeIndexPositionTagger(0, new[] { "type1", "type2" });
 		var tracker = new PositionTracker(tagger);
 
 		var newTag = CheckpointTag.FromEventTypeIndexPositions(0, new TFPos(10, 5),
-			new Dictionary<string, long> {{"type1", 1}, {"type2", 2}});
+			new Dictionary<string, long> { { "type1", 1 }, { "type2", 2 } });
 
 		tracker.UpdateByCheckpointTagInitial(newTag);
 		_tag = tracker.LastTag;
-		_tagger = new EventByTypeIndexPositionTagger(0, new[] {"type1", "type2"});
+		_tagger = new EventByTypeIndexPositionTagger(0, new[] { "type1", "type2" });
 		_positionTracker = new PositionTracker(_tagger);
 		// when
 

@@ -14,15 +14,14 @@ using EventStore.Projections.Core.Tests.Services.projections_manager;
 
 namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios;
 
-    public abstract class specification_with_js_query_posted<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId>
-    {
-    protected string _projectionName;
-    protected string _projectionSource;
-    protected ProjectionMode _projectionMode;
-    protected bool _checkpointsEnabled;
-    protected bool _trackEmittedStreams;
-    protected bool _emitEnabled;
-    protected bool _startSystemProjections;
+public abstract class specification_with_js_query_posted<TLogFormat, TStreamId> : TestFixtureWithProjectionCoreAndManagementServices<TLogFormat, TStreamId> {
+	protected string _projectionName;
+	protected string _projectionSource;
+	protected ProjectionMode _projectionMode;
+	protected bool _checkpointsEnabled;
+	protected bool _trackEmittedStreams;
+	protected bool _emitEnabled;
+	protected bool _startSystemProjections;
 
 
 	protected override void Given() {

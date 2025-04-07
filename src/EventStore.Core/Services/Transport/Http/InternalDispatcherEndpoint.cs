@@ -27,7 +27,7 @@ public class InternalDispatcherEndpoint : IHandle<HttpMessage.PurgeTimedOutReque
 		_publishEnvelope = inputBus;
 	}
 	public void Handle(HttpMessage.PurgeTimedOutRequests message) {
-		
+
 		_requestsMultiHandler.PublishToAll(message);
 
 		_inputBus.Publish(
@@ -36,7 +36,7 @@ public class InternalDispatcherEndpoint : IHandle<HttpMessage.PurgeTimedOutReque
 	}
 
 	public Task InvokeAsync(HttpContext context) {
-		
+
 		if (InternalHttpHelper.TryGetInternalContext(context, out var manager, out var match, out var tcs)) {
 			_requestsMultiHandler.Publish(new AuthenticatedHttpRequestMessage(manager, match));
 			return tcs.Task;

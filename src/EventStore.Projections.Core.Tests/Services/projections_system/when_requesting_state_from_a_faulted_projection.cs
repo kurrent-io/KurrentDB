@@ -2,12 +2,12 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System.Collections.Generic;
+using System.Linq;
 using EventStore.Core.Data;
+using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using NUnit.Framework;
-using System.Linq;
-using EventStore.Core.Tests;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_system;
 

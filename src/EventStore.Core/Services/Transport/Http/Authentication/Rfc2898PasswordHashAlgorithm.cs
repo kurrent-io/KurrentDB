@@ -10,11 +10,11 @@ public class Rfc2898PasswordHashAlgorithm : PasswordHashAlgorithm {
 	private const int HashSize = 20;
 	private const int SaltSize = 16;
 	private const int Iterations = 1000;
-	
+
 	public override void Hash(string password, out string hash, out string salt) {
 		var saltData = new byte[SaltSize];
 		RandomNumberGenerator.Fill(saltData);
-		
+
 		using var rfcBytes = new Rfc2898DeriveBytes(password, saltData, Iterations, HashAlgorithmName.SHA1);
 		var hashData = rfcBytes.GetBytes(HashSize);
 		hash = System.Convert.ToBase64String(hashData);

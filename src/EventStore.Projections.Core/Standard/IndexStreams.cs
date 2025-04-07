@@ -7,7 +7,6 @@ using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 
 namespace EventStore.Projections.Core.Standard;
@@ -19,7 +18,7 @@ public class IndexStreams : IProjectionStateHandler {
 			throw new InvalidOperationException(
 				"Cannot initialize categorize stream projection handler.  No source is allowed.");
 		if (logger != null) {
-//                logger(string.Format("Index streams projection handler has been initialized"));
+			//                logger(string.Format("Index streams projection handler has been initialized"));
 		}
 	}
 

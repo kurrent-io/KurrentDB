@@ -47,7 +47,7 @@ public partial record ClusterVNodeOptions {
 
 			return type.GetProperties().Select(property =>
 				new KeyValuePair<string, object?>(property.Name, property.PropertyType switch {
-					{IsArray: true} => string.Join(",",
+					{ IsArray: true } => string.Join(",",
 						((Array)(property.GetValue(defaultInstance) ?? Array.Empty<object>())).OfType<object>()),
 					_ => property.GetValue(defaultInstance)
 				}));
@@ -66,13 +66,13 @@ public partial record ClusterVNodeOptions {
 		var defaultValues = new Dictionary<string, object?>(DefaultValues, StringComparer.OrdinalIgnoreCase);
 
 		var deprecationWarnings = from section in OptionSections
-			from option in section.GetProperties()
-			let deprecationWarning = option.GetCustomAttribute<DeprecatedAttribute>()?.Message
-			where deprecationWarning is not null
-			let value = ConfigurationRoot?.GetValue<string?>(EventStoreConfigurationKeys.Normalize(option.Name))
-			where defaultValues.TryGetValue(option.Name, out var defaultValue)
-			      && !string.Equals(value, defaultValue?.ToString(), StringComparison.OrdinalIgnoreCase)
-			      select deprecationWarning;
+								  from option in section.GetProperties()
+								  let deprecationWarning = option.GetCustomAttribute<DeprecatedAttribute>()?.Message
+								  where deprecationWarning is not null
+								  let value = ConfigurationRoot?.GetValue<string?>(EventStoreConfigurationKeys.Normalize(option.Name))
+								  where defaultValues.TryGetValue(option.Name, out var defaultValue)
+										&& !string.Equals(value, defaultValue?.ToString(), StringComparison.OrdinalIgnoreCase)
+								  select deprecationWarning;
 
 		var builder = deprecationWarnings
 			.Aggregate(new StringBuilder(), (builder, deprecationWarning) => builder.AppendLine(deprecationWarning));
@@ -90,7 +90,8 @@ public partial record ClusterVNodeOptions {
 		// then we can override them with the actual values.
 		foreach (var provider in configurationRoot.Providers) {
 			foreach (var option in Metadata.SelectMany(x => x.Options)) {
-				if (!provider.TryGet(option.Value.Key, out var value)) continue;
+				if (!provider.TryGet(option.Value.Key, out var value))
+					continue;
 
 				var title = GetTitle(option);
 				var sourceDisplayName = GetSourceDisplayName(option.Value.Key, provider);
@@ -153,7 +154,7 @@ public partial record ClusterVNodeOptions {
 			OptionHeaderColumnWidth(o.Name, DefaultValue(o)));
 
 		var header = $"{OPTION.PadRight(optionColumnWidth, ' ')}{DESCRIPTION}";
-		
+
 		var environmentOnlyOptions = OptionSections.SelectMany(section => section.GetProperties())
 			.Where(option => option.GetCustomAttribute<EnvironmentOnlyAttribute>() != null)
 			.Select(option => option)
@@ -177,7 +178,7 @@ public partial record ClusterVNodeOptions {
 					(stringBuilder, property) => stringBuilder.Append(Line(property)).AppendLine()))
 			.AppendLine().AppendLine("EnvironmentOnly Options").Append(environmentOnlyOptionsBuilder)
 			.ToString();
-		
+
 
 		string Line(PropertyInfo property) {
 			var description = property.GetCustomAttribute<DescriptionAttribute>()?.Description;
@@ -199,7 +200,7 @@ public partial record ClusterVNodeOptions {
 
 			return builder.ToString();
 		}
-		
+
 		static IEnumerable<PropertyInfo> Options() => OptionSections.SelectMany(type => type.GetProperties());
 
 		static int OptionWidth(string name, string @default) =>
@@ -213,8 +214,8 @@ public partial record ClusterVNodeOptions {
 			return (value, RuntimeInformation.IsWindows) switch {
 				(bool b, false) => b.ToString().ToLower(),
 				(bool b, true) => b.ToString(),
-				(Array {Length: 0}, _) => string.Empty,
-				(Array {Length: >0} a, _) => string.Join(",", a.OfType<object>()),
+				(Array { Length: 0 }, _) => string.Empty,
+				(Array { Length: > 0 } a, _) => string.Join(",", a.OfType<object>()),
 				_ => value?.ToString() ?? string.Empty
 			};
 		}

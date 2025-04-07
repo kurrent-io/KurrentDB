@@ -31,12 +31,12 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 		var follower = GetFollowers().First();
 		_followerEndPoint = follower.HttpEndPoint;
 		_client = follower.CreateHttpClient();
-		
+
 		// Wait for the admin user to be created
 		await leader.AdminUserCreated;
 		// Wait for the admin user created event to be replicated before starting our tests
 		var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
-		AssertEx.IsOrBecomesTrue(()=> follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex, 
+		AssertEx.IsOrBecomesTrue(() => follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex,
 			timeout: TimeSpan.FromSeconds(10),
 			msg: $"Waiting for follower to reach index checkpoint timed out! (LeaderIndex={leaderIndex},FollowerState={follower.NodeState})");
 
@@ -45,8 +45,7 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 	}
 
 	private async Task AddStreamAndWait(MiniClusterNode<TLogFormat, TStreamId> leader,
-		MiniClusterNode<TLogFormat, TStreamId> follower, string streamName)
-	{
+		MiniClusterNode<TLogFormat, TStreamId> follower, string streamName) {
 		var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
 
 		var response = await PostEvent(_followerEndPoint, $"streams/{streamName}", requireLeader: false);
@@ -55,7 +54,7 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 		AssertEx.IsOrBecomesTrue(() => leader.Db.Config.IndexCheckpoint.Read() > leaderIndex,
 			timeout: TimeSpan.FromSeconds(10),
 			msg: "Waiting for event to be processed on leader timed out!");
-		
+
 		leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
 		AssertEx.IsOrBecomesTrue(() => follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex,
 			timeout: TimeSpan.FromSeconds(10),
@@ -200,7 +199,7 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 
 		return GetRequestResponse(request);
 	}
-	
+
 	private static string GetAuthorizationHeader(NetworkCredential credentials)
 		=> Convert.ToBase64String(Encoding.ASCII.GetBytes($"{credentials.UserName}:{credentials.Password}"));
 
@@ -208,7 +207,7 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 		var request = new HttpRequestMessage(method, uri);
 		request.Headers.Add("ES-RequireLeader", requireLeader ? "True" : "False");
 		request.Headers.Authorization = new AuthenticationHeaderValue("Basic",
-            					GetAuthorizationHeader(DefaultData.AdminNetworkCredentials));
+								GetAuthorizationHeader(DefaultData.AdminNetworkCredentials));
 		return request;
 	}
 

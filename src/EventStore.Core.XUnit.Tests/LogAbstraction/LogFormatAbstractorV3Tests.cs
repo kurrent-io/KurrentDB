@@ -13,8 +13,8 @@ using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
 using Xunit;
-using StreamId = System.UInt32;
 using EventTypeId = System.UInt32;
+using StreamId = System.UInt32;
 
 namespace EventStore.Core.XUnit.Tests.LogAbstraction;
 
@@ -46,7 +46,7 @@ public class LogFormatAbstractorV3Tests : IDisposable {
 		Assert.False(GetOrReserve(_stream, out _streamId, out _, out _));
 		Assert.False(GetOrReserve(_systemStream, out _systemStreamId, out _, out _));
 		Assert.False(GetOrReserveEventType(_eventType, out _eventTypeId, out _, out _));
-		
+
 		_numStreams = 2;
 		_numEventTypes = 1;
 	}
@@ -71,7 +71,7 @@ public class LogFormatAbstractorV3Tests : IDisposable {
 			logPosition: 123,
 			streamId: out streamId,
 			streamRecord: out var record);
-		
+
 		if (record is LogV3StreamRecord streamRecord) {
 			createdId = streamRecord.Record.SubHeader.ReferenceNumber;
 			createdName = streamRecord.StreamName;
@@ -123,7 +123,7 @@ public class LogFormatAbstractorV3Tests : IDisposable {
 		Assert.Equal("new-event-type-2", createdName2);
 		Assert.Equal(_numEventTypes + 2, _mockIndexReader.EventTypeCount);
 	}
-	
+
 	[Fact]
 	public void can_find_existing_event_type() {
 		Assert.True(GetOrReserveEventType(_eventType, out var eventTypeId, out _, out _));
@@ -132,12 +132,12 @@ public class LogFormatAbstractorV3Tests : IDisposable {
 		_sut.EventTypes.LookupName(_eventTypeId);
 		Assert.Equal(_eventType, _sut.EventTypes.LookupName(_eventTypeId));
 	}
-	
+
 	[Theory]
 	[InlineData(0, ""/* empty event type */)]
 	[InlineData(1, "$event-type")]
 	[InlineData(2, "$stream")]
-	[InlineData(3, "$metadata")] 
+	[InlineData(3, "$metadata")]
 	[InlineData(4, "$streamDeleted")]
 	public void can_find_virtual_event_type(EventTypeId expectedId, string name) {
 		Assert.True(GetOrReserveEventType(name, out var eventTypeId, out _, out _));
@@ -156,7 +156,7 @@ public class LogFormatAbstractorV3Tests : IDisposable {
 		Assert.True(_sut.EventTypes.TryGetName((uint)expectedEventTypeNumber1, out var eventType1));
 		Assert.True(_sut.EventTypes.TryGetName((uint)expectedEventTypeNumber1 + 1, out var eventType2));
 	}
-	
+
 	[Fact]
 	public void can_add_another_stream() {
 		Assert.False(GetOrReserve("new-stream-1", out var newStreamId1, out var createdId1, out var createdName1));
@@ -313,11 +313,11 @@ public class LogFormatAbstractorV3Tests : IDisposable {
 	class MockIndexReader : IIndexReader<StreamId> {
 		private Dictionary<StreamId, Dictionary<long, IPrepareLogRecord<StreamId>>> _index = new() {
 			{LogV3SystemStreams.StreamsCreatedStreamNumber, new()},
-			{LogV3SystemStreams.EventTypesStreamNumber, new()} 
+			{LogV3SystemStreams.EventTypesStreamNumber, new()}
 		};
-		
+
 		public void Add(long eventNumber, IPrepareLogRecord<StreamId> record) => _index[record.EventStreamId].Add(eventNumber, record);
-		
+
 		public int StreamCount => _index[LogV3SystemStreams.StreamsCreatedStreamNumber].Count;
 		public int EventTypeCount => _index[LogV3SystemStreams.EventTypesStreamNumber].Count;
 

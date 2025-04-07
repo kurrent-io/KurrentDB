@@ -116,7 +116,7 @@ public abstract class ReadEventInfoForward_NoCollisions : ReadIndexTestScenario<
 				if (fromEventNumber > 3)
 					Assert.True(result.IsEndOfStream);
 				else
-					Assert.AreEqual((long) fromEventNumber + int.MaxValue, result.NextEventNumber);
+					Assert.AreEqual((long)fromEventNumber + int.MaxValue, result.NextEventNumber);
 			}
 		}
 
@@ -147,7 +147,7 @@ public abstract class ReadEventInfoForward_NoCollisions : ReadIndexTestScenario<
 					_events[fromEventNumber + 1].LogPosition);
 
 				CheckResult(_events.Skip(fromEventNumber).Take(1).ToArray(), result);
-				Assert.AreEqual((long) fromEventNumber + int.MaxValue, result.NextEventNumber);
+				Assert.AreEqual((long)fromEventNumber + int.MaxValue, result.NextEventNumber);
 			}
 		}
 	}
@@ -247,7 +247,7 @@ public abstract class ReadEventInfoForward_NoCollisions : ReadIndexTestScenario<
 				long.MaxValue);
 
 			CheckResult(_events.Skip(1).ToArray(), result);
-			Assert.AreEqual((long ) 3 + int.MaxValue, result.NextEventNumber);
+			Assert.AreEqual((long)3 + int.MaxValue, result.NextEventNumber);
 
 			result = ReadIndex.ReadEventInfoForward_NoCollisions(
 				Hash,

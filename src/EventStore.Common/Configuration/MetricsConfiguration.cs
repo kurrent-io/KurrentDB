@@ -126,7 +126,7 @@ public class MetricsConfiguration {
 
 	public string[] Meters { get; set; } = Array.Empty<string>();
 
-	public Dictionary<StatusTracker, bool> Statuses { get; set; } = new ();
+	public Dictionary<StatusTracker, bool> Statuses { get; set; } = new();
 
 	public Dictionary<Checkpoint, bool> Checkpoints { get; set; } = new();
 

@@ -7,9 +7,8 @@ using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Services.TimerService;
+using EventStore.Core.Services.UserManagement;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests.ReadEventsTests;
@@ -33,7 +32,7 @@ public abstract class with_read_io_dispatcher<TLogFormat, TStreamId> : IHandle<C
 
 	[OneTimeSetUp]
 	public virtual void TestFixtureSetUp() {
-		var _queue = new QueuedHandlerThreadPool(_bus,"TestQueuedHandler", new QueueStatsManager(), new());
+		var _queue = new QueuedHandlerThreadPool(_bus, "TestQueuedHandler", new QueueStatsManager(), new());
 		_ioDispatcher = new IODispatcher(_bus, _queue);
 		IODispatcherTestHelpers.SubscribeIODispatcher(_ioDispatcher, _bus);
 		_bus.Subscribe<ClientMessage.ReadStreamEventsForward>(this);

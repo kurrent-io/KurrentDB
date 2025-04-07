@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.ServerFeatures;
@@ -18,9 +17,9 @@ namespace EventStore.Projections.Core.Tests.Services.grpc_service;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class ServerFeaturesTests<TLogFormat, TStreamId>: SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
-	private List<SupportedMethod> _supportedEndPoints = new ();
-	private List<SupportedMethod> _expectedEndPoints = new ();
+public class ServerFeaturesTests<TLogFormat, TStreamId> : SpecificationWithNodeAndProjectionsManager<TLogFormat, TStreamId> {
+	private List<SupportedMethod> _supportedEndPoints = new();
+	private List<SupportedMethod> _expectedEndPoints = new();
 
 	public override Task Given() {
 		_expectedEndPoints.AddRange(GetEndPoints(Client.Projections.Projections.Descriptor));

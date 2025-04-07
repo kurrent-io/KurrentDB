@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Data;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
@@ -52,7 +51,8 @@ public static class a_new_posted_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_get_query<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return
 				(new ProjectionManagementMessage.Command.GetQuery(
 					_bus, _projectionName, ProjectionManagementMessage.RunAs.Anonymous));
@@ -73,7 +73,8 @@ public static class a_new_posted_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_get_state<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return (
 				new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, ""));
 		}
@@ -94,7 +95,8 @@ public static class a_new_posted_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_failing<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			var readerAssignedMessage =
 				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()
 					.LastOrDefault();

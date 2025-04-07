@@ -14,7 +14,8 @@ public class ResultEventEmitter : IResultEventEmitter {
 		new EmittedStream.WriterConfiguration.StreamMetadata( /* TBD */);
 
 	public ResultEventEmitter(ProjectionNamesBuilder namesBuilder) {
-		if (namesBuilder == null) throw new ArgumentNullException("namesBuilder");
+		if (namesBuilder == null)
+			throw new ArgumentNullException("namesBuilder");
 		_namesBuilder = namesBuilder;
 	}
 
@@ -36,7 +37,7 @@ public class ResultEventEmitter : IResultEventEmitter {
 							streamId, Guid.NewGuid(), "Result", true, projectionResult, null, at, null),
 					_resultStreamMetadata);
 
-			return new[] {result};
+			return new[] { result };
 		} else {
 			var linkTo = new EmittedLinkTo(allResultsStreamId, Guid.NewGuid(), streamId, at, null);
 			var linkToEnvelope = new EmittedEventEnvelope(linkTo, _resultStreamMetadata);
@@ -49,7 +50,7 @@ public class ResultEventEmitter : IResultEventEmitter {
 						: new EmittedDataEvent(
 							streamId, Guid.NewGuid(), "Result", true, projectionResult, null, at, null,
 							linkTo.SetTargetEventNumber), _resultStreamMetadata);
-			return new[] {result, linkToEnvelope};
+			return new[] { result, linkToEnvelope };
 		}
 	}
 }

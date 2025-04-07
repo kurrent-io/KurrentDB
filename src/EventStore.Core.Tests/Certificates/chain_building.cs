@@ -93,7 +93,7 @@ public class with_untrusted_root : with_certificate_chain_of_length_3 {
 	public void builds_with_untrusted_root() {
 		var chainStatus = CertificateUtils.BuildChain(
 			_leaf,
-			new X509Certificate2Collection(new []{_intermediate, _root}),
+			new X509Certificate2Collection(new[] { _intermediate, _root }),
 			new X509Certificate2Collection(), out _);
 		Assert.True(chainStatus == X509ChainStatusFlags.UntrustedRoot);
 	}

@@ -16,7 +16,7 @@ public class when_truncating_to_a_data_chunk_boundary : SpecificationWithDirecto
 	private TFChunkDbConfig _config;
 
 	private const int ChunkSize = 1000;
-	private  const long TruncateChk = ChunkSize * 3;
+	private const long TruncateChk = ChunkSize * 3;
 
 	[OneTimeSetUp]
 	public override async Task TestFixtureSetUp() {

@@ -37,7 +37,7 @@ public class MemberInfo : IEquatable<MemberInfo> {
 	public readonly bool IsReadOnlyReplica;
 
 	public readonly string ESVersion;
-	
+
 	public static MemberInfo ForManager(Guid instanceId, DateTime timeStamp, bool isAlive,
 		EndPoint httpEndPoint, string esVersion = VersionInfo.UnknownVersion) {
 		return new MemberInfo(instanceId, timeStamp, VNodeState.Manager, isAlive,
@@ -75,7 +75,7 @@ public class MemberInfo : IEquatable<MemberInfo> {
 			lastCommitPosition, writerCheckpoint, chaserCheckpoint,
 			epochPosition, epochNumber, epochId, nodePriority, isReadOnlyReplica, esVersion);
 	}
-	
+
 	public static MemberInfo Initial(Guid instanceId,
 		DateTime timeStamp,
 		VNodeState state,
@@ -166,13 +166,13 @@ public class MemberInfo : IEquatable<MemberInfo> {
 
 	public bool Is(EndPoint endPoint) {
 		return endPoint != null
-		       && HttpEndPoint.EndPointEquals(endPoint)
-		          || (InternalTcpEndPoint != null && InternalTcpEndPoint.EndPointEquals(endPoint))
-		          || (InternalSecureTcpEndPoint != null && InternalSecureTcpEndPoint.EndPointEquals(endPoint))
-		          || (ExternalTcpEndPoint != null && ExternalTcpEndPoint.EndPointEquals(endPoint))
-		          || (ExternalSecureTcpEndPoint != null && ExternalSecureTcpEndPoint.EndPointEquals(endPoint));
+			   && HttpEndPoint.EndPointEquals(endPoint)
+				  || (InternalTcpEndPoint != null && InternalTcpEndPoint.EndPointEquals(endPoint))
+				  || (InternalSecureTcpEndPoint != null && InternalSecureTcpEndPoint.EndPointEquals(endPoint))
+				  || (ExternalTcpEndPoint != null && ExternalTcpEndPoint.EndPointEquals(endPoint))
+				  || (ExternalSecureTcpEndPoint != null && ExternalSecureTcpEndPoint.EndPointEquals(endPoint));
 	}
-	
+
 	public MemberInfo Updated(DateTime utcNow,
 		VNodeState? state = null,
 		bool? isAlive = null,
@@ -214,37 +214,42 @@ public class MemberInfo : IEquatable<MemberInfo> {
 			$"{(ExternalTcpEndPoint == null ? "n/a" : ExternalTcpEndPoint.ToString())}, " +
 			$"{(ExternalSecureTcpEndPoint == null ? "n/a" : ExternalSecureTcpEndPoint.ToString())}, " +
 			$"{HttpEndPoint}, (ADVERTISED: HTTP:{AdvertiseHostToClientAs}:{AdvertiseHttpPortToClientAs}, TCP:{AdvertiseHostToClientAs}:{AdvertiseTcpPortToClientAs}), " +
-			$"Version: {ESVersion}] " + 
+			$"Version: {ESVersion}] " +
 			$"{LastCommitPosition}/{WriterCheckpoint}/{ChaserCheckpoint}/E{EpochNumber}@{EpochPosition}:{EpochId:B} | {TimeStamp:yyyy-MM-dd HH:mm:ss.fff}";
 	}
 
 	public bool Equals(MemberInfo other) {
 		// we ignore timestamp and checkpoints for equality comparison
-		if (ReferenceEquals(null, other)) return false;
-		if (ReferenceEquals(this, other)) return true;
+		if (ReferenceEquals(null, other))
+			return false;
+		if (ReferenceEquals(this, other))
+			return true;
 		return other.InstanceId == InstanceId
-		       && other.State == State
-		       && other.IsAlive == IsAlive
-		       && Equals(other.InternalTcpEndPoint, InternalTcpEndPoint)
-		       && Equals(other.InternalSecureTcpEndPoint, InternalSecureTcpEndPoint)
-		       && Equals(other.ExternalTcpEndPoint, ExternalTcpEndPoint)
-		       && Equals(other.ExternalSecureTcpEndPoint, ExternalSecureTcpEndPoint)
-		       && Equals(other.HttpEndPoint, HttpEndPoint)
-		       && other.AdvertiseHostToClientAs == AdvertiseHostToClientAs
-		       && other.AdvertiseHttpPortToClientAs == AdvertiseHttpPortToClientAs
-		       && other.AdvertiseTcpPortToClientAs == AdvertiseTcpPortToClientAs
-		       && other.EpochPosition == EpochPosition
-		       && other.EpochNumber == EpochNumber
-		       && other.EpochId == EpochId
-		       && other.NodePriority == NodePriority
+			   && other.State == State
+			   && other.IsAlive == IsAlive
+			   && Equals(other.InternalTcpEndPoint, InternalTcpEndPoint)
+			   && Equals(other.InternalSecureTcpEndPoint, InternalSecureTcpEndPoint)
+			   && Equals(other.ExternalTcpEndPoint, ExternalTcpEndPoint)
+			   && Equals(other.ExternalSecureTcpEndPoint, ExternalSecureTcpEndPoint)
+			   && Equals(other.HttpEndPoint, HttpEndPoint)
+			   && other.AdvertiseHostToClientAs == AdvertiseHostToClientAs
+			   && other.AdvertiseHttpPortToClientAs == AdvertiseHttpPortToClientAs
+			   && other.AdvertiseTcpPortToClientAs == AdvertiseTcpPortToClientAs
+			   && other.EpochPosition == EpochPosition
+			   && other.EpochNumber == EpochNumber
+			   && other.EpochId == EpochId
+			   && other.NodePriority == NodePriority
 			   && other.IsReadOnlyReplica == IsReadOnlyReplica
-		       && other.ESVersion == ESVersion;
+			   && other.ESVersion == ESVersion;
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != typeof(MemberInfo)) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != typeof(MemberInfo))
+			return false;
 		return Equals((MemberInfo)obj);
 	}
 
@@ -255,10 +260,10 @@ public class MemberInfo : IEquatable<MemberInfo> {
 			result = (result * 397) ^ IsAlive.GetHashCode();
 			result = (result * 397) ^ (InternalTcpEndPoint != null ? InternalTcpEndPoint.GetHashCode() : 0);
 			result = (result * 397) ^
-			         (InternalSecureTcpEndPoint != null ? InternalSecureTcpEndPoint.GetHashCode() : 0);
+					 (InternalSecureTcpEndPoint != null ? InternalSecureTcpEndPoint.GetHashCode() : 0);
 			result = (result * 397) ^ (ExternalTcpEndPoint != null ? ExternalTcpEndPoint.GetHashCode() : 0);
 			result = (result * 397) ^
-			         (ExternalSecureTcpEndPoint != null ? ExternalSecureTcpEndPoint.GetHashCode() : 0);
+					 (ExternalSecureTcpEndPoint != null ? ExternalSecureTcpEndPoint.GetHashCode() : 0);
 			result = (result * 397) ^ HttpEndPoint.GetHashCode();
 			result = (result * 397) ^ (AdvertiseHostToClientAs != null ? AdvertiseHostToClientAs.GetHashCode() : 0);
 			result = (result * 397) ^ AdvertiseHttpPortToClientAs.GetHashCode();

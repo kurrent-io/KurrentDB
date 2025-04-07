@@ -247,7 +247,8 @@ public class BufferPool : IDisposable {
 	/// <param name="releaseMemory">if set to <c>true</c> any memory no longer used will be released.</param>
 	public void SetLength(int newLength, bool releaseMemory) {
 		CheckDisposed();
-		if (newLength < 0) throw new ArgumentException("newLength must be greater than 0");
+		if (newLength < 0)
+			throw new ArgumentException("newLength must be greater than 0");
 		int oldCapacity = Capacity;
 		_length = newLength;
 

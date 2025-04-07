@@ -41,6 +41,7 @@ dotnet_diagnostic.CA2012.severity = error
 csharp_indent_block_contents = true
 csharp_indent_braces = false
 csharp_indent_case_contents = true
+csharp_indent_case_contents_when_block = false
 csharp_indent_switch_labels = true
 csharp_indent_labels = flush_left
 

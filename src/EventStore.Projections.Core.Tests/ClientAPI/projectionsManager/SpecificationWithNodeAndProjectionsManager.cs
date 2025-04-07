@@ -6,18 +6,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NUnit.Framework;
 using EventStore.ClientAPI;
-using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.Common.Log;
+using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.SystemData;
 using EventStore.Common.Options;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Services;
+using EventStore.Core.Tests;
+using EventStore.Core.Tests.ClientAPI.Helpers;
+using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Util;
 using EventStore.Projections.Core.Services.Processing;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.ClientAPI.projectionsManager;
 

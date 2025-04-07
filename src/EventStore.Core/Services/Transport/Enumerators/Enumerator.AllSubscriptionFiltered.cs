@@ -91,7 +91,7 @@ partial class Enumerator {
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
-			ReadLoop:
+ReadLoop:
 
 			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
 				return false;
@@ -113,7 +113,7 @@ partial class Enumerator {
 				Log.Verbose(
 					"Subscription {subscriptionId} to $all:{eventFilter} seen event {position}.",
 					_subscriptionId, _eventFilter, position);
-				
+
 				_currentPosition = position;
 			} else if (readResponse is ReadResponse.CheckpointReceived checkpointReceived) {
 				var checkpointPos = new Position(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition);
@@ -271,7 +271,7 @@ partial class Enumerator {
 			async Task OnMessage(Message message, CancellationToken ct) {
 				try {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    TryHandleNotHandled(notHandled, out var ex))
+						TryHandleNotHandled(notHandled, out var ex))
 						throw ex;
 
 					if (message is not ClientMessage.FilteredReadAllEventsForwardCompleted completed)
@@ -373,7 +373,7 @@ partial class Enumerator {
 			void OnSubscriptionMessage(Message message) {
 				try {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    TryHandleNotHandled(notHandled, out var ex))
+						TryHandleNotHandled(notHandled, out var ex))
 						throw ex;
 
 					switch (message) {

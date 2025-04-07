@@ -5,10 +5,9 @@
 
 namespace System;
 
-    enum UriTemplateTrieIntraNodeLocation
-    {
-        BeforeLiteral,
-        AfterLiteral,
-        AfterCompound,
-        AfterVariable,
-    }
+enum UriTemplateTrieIntraNodeLocation {
+	BeforeLiteral,
+	AfterLiteral,
+	AfterCompound,
+	AfterVariable,
+}

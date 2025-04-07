@@ -49,8 +49,7 @@ public class GetStreamLastEventNumber_NoCollisions_Randomized : ReadIndexTestSce
 	public void returns_correct_last_event_number_before_position() {
 		var expectedLastEventNumber = ExpectedVersion.NoStream;
 
-		foreach (var @event in _events)
-		{
+		foreach (var @event in _events) {
 			Assert.AreEqual(expectedLastEventNumber,
 				ReadIndex.GetStreamLastEventNumber_NoCollisions(Hash, GetStreamId, @event.LogPosition));
 

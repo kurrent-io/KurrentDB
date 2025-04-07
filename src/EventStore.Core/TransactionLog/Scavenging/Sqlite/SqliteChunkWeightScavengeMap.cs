@@ -40,7 +40,7 @@ public class SqliteChunkWeightScavengeMap : SqliteScavengeMap<int, float>, IChun
 	public void ResetChunkWeights(int startLogicalChunkNumber, int endLogicalChunkNumber) {
 		_resetChunkWeights.Execute(startLogicalChunkNumber, endLogicalChunkNumber);
 	}
-	
+
 	private class IncreaseWeightCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _cmd;
@@ -52,13 +52,13 @@ public class SqliteChunkWeightScavengeMap : SqliteScavengeMap<int, float>, IChun
 					INSERT INTO {tableName} (key, value)
 					VALUES($key, $value)
 				    ON CONFLICT(key) DO UPDATE SET value=value+$value";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteType.Integer);
 			_valueParam = _cmd.Parameters.Add("$value", SqliteType.Real);
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -109,13 +109,13 @@ public class SqliteChunkWeightScavengeMap : SqliteScavengeMap<int, float>, IChun
 					SELECT SUM(value)
 					FROM {tableName}
 					WHERE key BETWEEN $start AND $end";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_startParam = _cmd.Parameters.Add("$start", SqliteType.Integer);
 			_endParam = _cmd.Parameters.Add("$end", SqliteType.Integer);
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 			_reader = reader => reader.IsDBNull(0) ? 0 : reader.GetFloat(0);
 		}
@@ -127,7 +127,7 @@ public class SqliteChunkWeightScavengeMap : SqliteScavengeMap<int, float>, IChun
 			return value;
 		}
 	}
-	
+
 	private class ResetChunkWeightsCommand {
 		private readonly SqliteBackend _sqlite;
 		private readonly SqliteCommand _cmd;
@@ -141,7 +141,7 @@ public class SqliteChunkWeightScavengeMap : SqliteScavengeMap<int, float>, IChun
 			_startParam = _cmd.Parameters.Add("$start", SqliteType.Integer);
 			_endParam = _cmd.Parameters.Add("$end", SqliteType.Integer);
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 

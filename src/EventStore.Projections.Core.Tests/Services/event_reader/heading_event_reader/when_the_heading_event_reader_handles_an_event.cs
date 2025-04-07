@@ -6,9 +6,7 @@ using EventStore.Core.Data;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.AllStream;
-using EventStore.Projections.Core.Tests.Services.projections_manager.managed_projection;
 using NUnit.Framework;
 using HeadingEventReader = EventStore.Projections.Core.Services.Processing.TransactionFile.HeadingEventReader;
 
@@ -51,15 +49,15 @@ public class when_the_heading_event_reader_handles_an_event : TestFixtureWithRea
 	}
 
 	//TODO: SW1
-/*
-        [Test]
-        public void can_handle_special_update_position_event()
-        {
-            _point.Handle(
-                new ProjectionCoreServiceMessage.CommittedEventDistributed(
-                    _distibutionPointCorrelationId, new EventPosition(long.MinValue, 30), "stream", 12, false, null));
-        }
-*/
+	/*
+			[Test]
+			public void can_handle_special_update_position_event()
+			{
+				_point.Handle(
+					new ProjectionCoreServiceMessage.CommittedEventDistributed(
+						_distibutionPointCorrelationId, new EventPosition(long.MinValue, 30), "stream", 12, false, null));
+			}
+	*/
 
 	[Test]
 	public void cannot_handle_previous_event() {

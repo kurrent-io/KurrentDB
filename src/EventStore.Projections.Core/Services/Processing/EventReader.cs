@@ -23,7 +23,8 @@ public abstract class EventReader : IEventReader {
 	private bool _startingSent;
 
 	protected EventReader(IPublisher publisher, Guid eventReaderCorrelationId, ClaimsPrincipal readAs, bool stopOnEof) {
-		if (publisher == null) throw new ArgumentNullException("publisher");
+		if (publisher == null)
+			throw new ArgumentNullException("publisher");
 		if (eventReaderCorrelationId == Guid.Empty)
 			throw new ArgumentException("eventReaderCorrelationId");
 		_publisher = publisher;
@@ -45,7 +46,8 @@ public abstract class EventReader : IEventReader {
 	}
 
 	public void Resume() {
-		if (_disposed) throw new InvalidOperationException("Disposed");
+		if (_disposed)
+			throw new InvalidOperationException("Disposed");
 		if (!_pauseRequested)
 			throw new InvalidOperationException("Is not paused");
 		if (!_paused) {
@@ -55,7 +57,7 @@ public abstract class EventReader : IEventReader {
 
 		_paused = false;
 		_pauseRequested = false;
-//            _logger.Trace("Resuming event distribution {eventReaderCorrelationId} at '{at}'", EventReaderCorrelationId, FromAsText());
+		//            _logger.Trace("Resuming event distribution {eventReaderCorrelationId} at '{at}'", EventReaderCorrelationId, FromAsText());
 		RequestEvents();
 	}
 
@@ -68,7 +70,7 @@ public abstract class EventReader : IEventReader {
 		_pauseRequested = true;
 		if (!AreEventsRequested())
 			_paused = true;
-//            _logger.Trace("Pausing event distribution {eventReaderCorrelationId} at '{at}'", EventReaderCorrelationId, FromAsText());
+		//            _logger.Trace("Pausing event distribution {eventReaderCorrelationId} at '{at}'", EventReaderCorrelationId, FromAsText());
 	}
 
 	public virtual void Dispose() {
@@ -113,8 +115,8 @@ public abstract class EventReader : IEventReader {
 
 	protected static long? GetLastCommitPositionFrom(ClientMessage.ReadStreamEventsForwardCompleted msg) {
 		return (msg.IsEndOfStream
-		        || msg.Result == ReadStreamResult.NoStream
-		        || msg.Result == ReadStreamResult.StreamDeleted)
+				|| msg.Result == ReadStreamResult.NoStream
+				|| msg.Result == ReadStreamResult.StreamDeleted)
 			? (msg.TfLastCommitPosition == -1 ? (long?)null : msg.TfLastCommitPosition)
 			: (long?)null;
 	}

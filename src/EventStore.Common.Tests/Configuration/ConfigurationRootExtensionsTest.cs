@@ -8,19 +8,19 @@ namespace EventStore.Common.Tests.Configuration;
 
 public class ConfigurationRootExtensionsTest {
 	const string GOSSIP_SEED = "GossipSeed";
-	
+
 	[Fact]
 	public void successful_comma_separated_value() {
 		var config = new Dictionary<string, string?> {
 			{ GOSSIP_SEED, "nodeb.eventstore.test:2113,nodec.eventstore.test:3113" }
 		};
-		
+
 		var configuration = new ConfigurationBuilder()
 			.AddInMemoryCollection(config)
 			.Build();
-		
+
 		var values = configuration.GetCommaSeparatedValueAsArray("GossipSeed");
-		
+
 		Assert.Equal(2, values.Length);
 	}
 
@@ -29,7 +29,7 @@ public class ConfigurationRootExtensionsTest {
 		var config = new Dictionary<string, string?> {
 			{ GOSSIP_SEED, "nodeb.eventstore.test:2113;nodec.eventstore.test:3113" }
 		};
-		
+
 		var configuration = new ConfigurationBuilder()
 			.AddInMemoryCollection(config)
 			.Build();
@@ -37,7 +37,7 @@ public class ConfigurationRootExtensionsTest {
 		Assert.Throws<ArgumentException>(() =>
 			configuration.GetCommaSeparatedValueAsArray("GossipSeed"));
 	}
-	
+
 	[Fact]
 	public void mixed_invalid_delimiter() {
 		var config = new Dictionary<string, string?> {

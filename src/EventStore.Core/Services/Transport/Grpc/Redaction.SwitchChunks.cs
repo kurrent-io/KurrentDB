@@ -53,7 +53,7 @@ internal partial class Redaction {
 		IServerStreamWriter<SwitchChunkResp> responseStream,
 		Guid acquisitionId) {
 
-		await foreach(var request in requestStream.ReadAllAsync()) {
+		await foreach (var request in requestStream.ReadAllAsync()) {
 			var tcsEnvelope = new TcsEnvelope<RedactionMessage.SwitchChunkCompleted>();
 			_bus.Publish(new RedactionMessage.SwitchChunk(tcsEnvelope, acquisitionId, request.TargetChunkFile, request.NewChunkFile));
 

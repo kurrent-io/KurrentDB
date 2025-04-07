@@ -19,7 +19,7 @@ public class when_transaction_multiple_write_does_not_get_prepares : RequestMana
 	private long _event1Position = 1500;
 	private long _event2Position = 2000;
 	private long _event3Position = 2500;
-	
+
 	protected override TransactionWrite OnManager(FakePublisher publisher) {
 		return new TransactionWrite(
 		 	publisher,
@@ -28,7 +28,7 @@ public class when_transaction_multiple_write_does_not_get_prepares : RequestMana
 			InternalCorrId,
 			ClientCorrId,
 			new[] { DummyEvent(), DummyEvent(), DummyEvent() },
-		    _transactionId,
+			_transactionId,
 			CommitSource);
 	}
 

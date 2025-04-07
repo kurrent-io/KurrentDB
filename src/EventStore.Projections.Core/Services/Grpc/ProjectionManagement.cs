@@ -24,8 +24,10 @@ namespace EventStore.Projections.Core.Services.Grpc {
 		private readonly IAuthorizationProvider _authorizationProvider;
 
 		public ProjectionManagement(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
-			if (publisher == null) throw new ArgumentNullException(nameof(publisher));
-			if (authorizationProvider == null) throw new ArgumentNullException(nameof(authorizationProvider));
+			if (publisher == null)
+				throw new ArgumentNullException(nameof(publisher));
+			if (authorizationProvider == null)
+				throw new ArgumentNullException(nameof(authorizationProvider));
 			_publisher = publisher;
 			_authorizationProvider = authorizationProvider;
 		}
@@ -44,7 +46,7 @@ namespace EventStore.Projections.Core.Services.Grpc {
 
 		private static Value GetProtoValue(JsonElement element) =>
 			element.ValueKind switch {
-				JsonValueKind.Null => new Value {NullValue = NullValue.NullValue},
+				JsonValueKind.Null => new Value { NullValue = NullValue.NullValue },
 				JsonValueKind.Array => new Value {
 					ListValue = new ListValue {
 						Values = {
@@ -52,11 +54,11 @@ namespace EventStore.Projections.Core.Services.Grpc {
 						}
 					}
 				},
-				JsonValueKind.False => new Value {BoolValue = false},
-				JsonValueKind.True => new Value {BoolValue = true},
-				JsonValueKind.String => new Value {StringValue = element.GetString()},
-				JsonValueKind.Number => new Value {NumberValue = element.GetDouble()},
-				JsonValueKind.Object => new Value {StructValue = GetProtoStruct(element)},
+				JsonValueKind.False => new Value { BoolValue = false },
+				JsonValueKind.True => new Value { BoolValue = true },
+				JsonValueKind.String => new Value { StringValue = element.GetString() },
+				JsonValueKind.Number => new Value { NumberValue = element.GetDouble() },
+				JsonValueKind.Object => new Value { StructValue = GetProtoStruct(element) },
 				JsonValueKind.Undefined => new Value(),
 				_ => throw new InvalidOperationException()
 			};

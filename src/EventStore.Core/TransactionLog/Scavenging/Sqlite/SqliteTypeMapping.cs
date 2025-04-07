@@ -15,14 +15,14 @@ public static class SqliteTypeMapping {
 		{typeof(ulong), SqliteType.Integer},
 		{typeof(string), SqliteType.Text},
 	};
-	
+
 	/// <summary>
 	/// Returns the mapped SqliteType. 
 	/// </summary>
 	public static SqliteType Map<T>() {
 		return _sqliteTypeMap[typeof(T)];
 	}
-	
+
 	/// <summary>
 	/// Returns the name of the mapped type.
 	/// </summary>

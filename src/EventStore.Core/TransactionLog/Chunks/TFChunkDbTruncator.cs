@@ -51,7 +51,8 @@ public class TFChunkDbTruncator {
 		foreach (var chunkInfo in chunkEnumerator.EnumerateChunks(oldLastChunkNum)) {
 			switch (chunkInfo) {
 				case LatestVersion(var fileName, var _, var end):
-					if (newLastChunkFilename != null || end < newLastChunkNum) break;
+					if (newLastChunkFilename != null || end < newLastChunkNum)
+						break;
 					newLastChunkHeader = ReadChunkHeader(fileName);
 					newLastChunkFilename = fileName;
 					break;
@@ -148,9 +149,9 @@ public class TFChunkDbTruncator {
 
 	private void TruncateChunkAndFillWithZeros(ChunkHeader chunkHeader, string chunkFilename, long truncateChk) {
 		if (chunkHeader.IsScavenged
-		    || chunkHeader.ChunkStartNumber != chunkHeader.ChunkEndNumber
-		    || truncateChk < chunkHeader.ChunkStartPosition
-		    || truncateChk >= chunkHeader.ChunkEndPosition) {
+			|| chunkHeader.ChunkStartNumber != chunkHeader.ChunkEndNumber
+			|| truncateChk < chunkHeader.ChunkStartPosition
+			|| truncateChk >= chunkHeader.ChunkEndPosition) {
 			throw new Exception(
 				string.Format(
 					"Chunk #{0}-{1} ({2}) is not correct unscavenged chunk. TruncatePosition: {3}, ChunkHeader: {4}.",
@@ -161,7 +162,7 @@ public class TFChunkDbTruncator {
 		var transformFactory = _getTransformFactory(chunkHeader.TransformType);
 		var newDataSize = transformFactory.TransformDataPosition(chunkHeader.ChunkSize);
 		var newFileSize = TFChunk.TFChunk.GetAlignedSize(ChunkHeader.Size + newDataSize + ChunkFooter.Size);
-		var dataTruncatePos = transformFactory.TransformDataPosition((int) chunkHeader.GetLocalLogPosition(truncateChk));
+		var dataTruncatePos = transformFactory.TransformDataPosition((int)chunkHeader.GetLocalLogPosition(truncateChk));
 
 		File.SetAttributes(chunkFilename, FileAttributes.Normal);
 		using (var fs = new FileStream(chunkFilename, FileMode.Open, FileAccess.ReadWrite, FileShare.Read)) {

@@ -87,11 +87,11 @@ public class ClusterVNodeOptionsTests {
 
 		options.Unknown.Options.Should().BeEmpty();
 	}
-	
+
 	[Fact]
 	public void unknown_options_ignores_repeated_keys_from_other_sources() {
 		Environment.SetEnvironmentVariable("EVENTSTORE__CLUSTER_SIZE", "3");
-		
+
 		var configuration = new ConfigurationBuilder()
 			.AddEnvironmentVariables()
 			.AddEventStoreEnvironmentVariables()
@@ -104,7 +104,7 @@ public class ClusterVNodeOptionsTests {
 
 	[Fact]
 	public void validation_should_return_error_when_default_password_options_pass_through_command_line() {
-		var configuration =  new ConfigurationBuilder()
+		var configuration = new ConfigurationBuilder()
 			.AddEventStoreDefaultValues()
 			.AddEventStoreCommandLine(
 				"--DefaultAdminPassword=Admin#",

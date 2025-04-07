@@ -1,10 +1,10 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
+using System;
 using EventStore.Core.Data;
 using EventStore.Core.Services.UserManagement;
 using NUnit.Framework;
-using System;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests.QueueWriteEventsTests;
 
@@ -17,7 +17,7 @@ public class when_a_write_completes<TLogFormat, TStreamId> : TestFixtureWithExis
 		AllWritesQueueUp();
 
 		_ioDispatcher.QueueWriteEvents(Guid.NewGuid(), $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-			new Event[] {new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty)},
+			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
 			SystemAccounts.System, (msg) => { _completed = true; });
 		OneWriteCompletes();
 	}

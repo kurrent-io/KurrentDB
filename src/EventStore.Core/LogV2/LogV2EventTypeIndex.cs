@@ -14,7 +14,7 @@ public class LogV2EventTypeIndex :
 	INameIndexConfirmer<string>,
 	IValueLookup<string>,
 	INameLookup<string> {
-		
+
 	public void Dispose() {
 	}
 
@@ -26,7 +26,7 @@ public class LogV2EventTypeIndex :
 
 	public void Confirm(IList<IPrepareLogRecord<string>> prepares, bool catchingUp, IIndexBackend<string> backend) {
 	}
-	
+
 	public void Confirm(
 		IList<IPrepareLogRecord<string>> prepares,
 		CommitLogRecord commit,

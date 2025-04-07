@@ -321,7 +321,8 @@ internal partial class Streams<TStreamId> {
 	private static ReadResp.Types.ReadEvent.Types.RecordedEvent ConvertToRecordedEvent(
 		ReadReq.Types.Options.Types.UUIDOption uuidOption, EventRecord e, long? commitPosition,
 		long? preparePosition) {
-		if (e == null) return null;
+		if (e == null)
+			return null;
 		var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
 		return new ReadResp.Types.ReadEvent.Types.RecordedEvent {
 			Id = uuidOption.ContentCase switch {

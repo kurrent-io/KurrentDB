@@ -30,7 +30,7 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 					key INTEGER PRIMARY KEY,
 					min INTEGER,
 					max INTEGER)";
-	
+
 		sqlite.InitializeDb(sql);
 
 		_add = new AddCommand(TableName, sqlite);
@@ -96,12 +96,12 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 					SELECT min, max
 					FROM {tableName}
 					WHERE key = $key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_keyParam = _cmd.Parameters.Add("$key", SqliteType.Integer);
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -123,7 +123,7 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 					SELECT min, max
 					FROM {tableName}
 					WHERE key = $key";
-			
+
 			_selectCmd = sqlite.CreateCommand();
 			_selectCmd.CommandText = selectSql;
 			_selectKeyParam = _selectCmd.Parameters.Add("$key", SqliteType.Integer);
@@ -132,12 +132,12 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 			var deleteSql = $@"
 					DELETE FROM {tableName}
 					WHERE key = $key";
-			
+
 			_deleteCmd = sqlite.CreateCommand();
 			_deleteCmd.CommandText = deleteSql;
 			_deleteKeyParam = _deleteCmd.Parameters.Add("$key", SqliteType.Integer);
 			_deleteCmd.Prepare();
-			
+
 			_sqlite = sqlite;
 		}
 
@@ -158,11 +158,11 @@ public class SqliteChunkTimeStampRangeScavengeMap : IInitializeSqliteBackend, IS
 					SELECT min, max, key
 					FROM {tableName}
 					ORDER BY key";
-			
+
 			_cmd = sqlite.CreateCommand();
 			_cmd.CommandText = sql;
 			_cmd.Prepare();
-			
+
 			_sqlite = sqlite;
 
 			_reader = reader => {

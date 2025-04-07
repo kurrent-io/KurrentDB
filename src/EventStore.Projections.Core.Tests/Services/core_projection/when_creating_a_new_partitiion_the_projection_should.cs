@@ -2,13 +2,9 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using NUnit.Framework;
 using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
 

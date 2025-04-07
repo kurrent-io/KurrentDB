@@ -359,7 +359,7 @@ public class PersistentSubscription {
 	public bool RemoveClientByConnectionId(Guid connectionId) {
 		lock (_lock) {
 			if (!_pushClients.RemoveClientByConnectionId(connectionId,
-				    out var unconfirmedEvents))
+					out var unconfirmedEvents))
 				return false;
 
 			var lostMessages = unconfirmedEvents.OrderBy(v => v.ResolvedEvent.OriginalEventNumber);
@@ -394,7 +394,7 @@ public class PersistentSubscription {
 			OutstandingMessage? lowestMessage;
 			long lowestSequenceNumber;
 
-			(lowestMessage, lowestSequenceNumber)  = _outstandingMessages.GetLowestPosition();
+			(lowestMessage, lowestSequenceNumber) = _outstandingMessages.GetLowestPosition();
 			var (lowestRetryMessage, lowestRetrySequenceNumber) = streamBuffer.GetLowestRetry();
 
 			if (lowestRetrySequenceNumber < lowestSequenceNumber) {
@@ -423,7 +423,7 @@ public class PersistentSubscription {
 				lowestSequenceNumber = _lastKnownSequenceNumber;
 				lowestPosition = _lastKnownMessage;
 				Debug.Assert((lowestPosition != null && lowestSequenceNumber >= 0L) ||
-				             (lowestPosition == null && lowestSequenceNumber == -1L));
+							 (lowestPosition == null && lowestSequenceNumber == -1L));
 			}
 
 			if (lowestSequenceNumber == -1) //we have not even pushed any messages yet
@@ -541,7 +541,7 @@ public class PersistentSubscription {
 				}
 
 				var stopRead = stopAt.HasValue ? Math.Min(stopAt.Value, end.Value + 1) : end.Value + 1;
-				TryReadingParkedMessagesFrom(0,stopRead);
+				TryReadingParkedMessagesFrom(0, stopRead);
 			});
 		}
 	}
@@ -605,7 +605,7 @@ public class PersistentSubscription {
 				}
 
 				_state ^= PersistentSubscriptionState.ReplayingParkedMessages;
-			}else {
+			} else {
 				TryReadingParkedMessagesFrom(newStreamPosition.StreamEventNumber, stopAt);
 			}
 		}
@@ -613,8 +613,9 @@ public class PersistentSubscription {
 
 	private static (DateTime?, bool) GetOldestParkedMessageTimeStamp(ResolvedEvent[] events, long replayedEnd) {
 		foreach (var resolvedEvent in events) {
-			if (resolvedEvent.OriginalEvent.EventNumber != replayedEnd) continue;
-				return (resolvedEvent.OriginalEvent.TimeStamp, true);
+			if (resolvedEvent.OriginalEvent.EventNumber != replayedEnd)
+				continue;
+			return (resolvedEvent.OriginalEvent.TimeStamp, true);
 		}
 
 		return (null, false);

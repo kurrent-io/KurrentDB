@@ -4,9 +4,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using EventStore.Common.Utils;
-using System.Linq;
 using EventStore.Core.Transforms;
 using EventStore.Core.Transforms.Identity;
 using ILogger = Serilog.ILogger;
@@ -59,7 +59,7 @@ public class TFChunkManager {
 
 			Interlocked.Exchange(ref _backgroundRunning, 0);
 		} while (Interlocked.CompareExchange(ref _backgroundPassesRemaining, 0, 0) > 0
-		         && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
+				 && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
 	}
 
 	private void CacheUncacheReadOnlyChunks() {

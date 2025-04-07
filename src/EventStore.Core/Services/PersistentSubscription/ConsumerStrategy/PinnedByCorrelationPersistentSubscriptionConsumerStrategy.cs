@@ -10,7 +10,7 @@ using Index.Hashes;
 using Newtonsoft.Json;
 
 public class PinnedByCorrelationPersistentSubscriptionConsumerStrategy : PinnedPersistentSubscriptionConsumerStrategy {
-	
+
 	public PinnedByCorrelationPersistentSubscriptionConsumerStrategy(IHasher<string> streamHasher) : base(streamHasher) {
 	}
 
@@ -47,7 +47,7 @@ public class PinnedByCorrelationPersistentSubscriptionConsumerStrategy : PinnedP
 				}
 
 				if (reader.TokenType == JsonToken.PropertyName) {
-					if ((string) reader.Value == CorrelationIdPropertyContext.CorrelationIdProperty) {
+					if ((string)reader.Value == CorrelationIdPropertyContext.CorrelationIdProperty) {
 						reader.Read();
 
 						if (reader.TokenType == JsonToken.String) {

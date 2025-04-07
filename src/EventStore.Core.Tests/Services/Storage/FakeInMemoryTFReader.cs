@@ -15,11 +15,11 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 
 	public int NumReads { get; private set; }
 
-	public FakeInMemoryTfReader(int recordOffset){
+	public FakeInMemoryTfReader(int recordOffset) {
 		_recordOffset = recordOffset;
 	}
 
-	public void AddRecord(ILogRecord record, long position){
+	public void AddRecord(ILogRecord record, long position) {
 		_records.Add(position, record);
 	}
 
@@ -29,11 +29,11 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 
 	public SeqReadResult TryReadNext() {
 		NumReads++;
-		if (_records.ContainsKey(_curPosition)){
+		if (_records.ContainsKey(_curPosition)) {
 			var pos = _curPosition;
 			_curPosition += _recordOffset;
 			return new SeqReadResult(true, false, _records[pos], _recordOffset, pos, pos + _recordOffset);
-		} else{
+		} else {
 			return new SeqReadResult(false, false, null, 0, 0, 0);
 		}
 	}
@@ -44,9 +44,9 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 
 	public RecordReadResult TryReadAt(long position, bool couldBeScavenged) {
 		NumReads++;
-		if (_records.ContainsKey(position)){
+		if (_records.ContainsKey(position)) {
 			return new RecordReadResult(true, 0, _records[position], 0);
-		} else{
+		} else {
 			return new RecordReadResult(false, 0, _records[position], 0);
 		}
 	}

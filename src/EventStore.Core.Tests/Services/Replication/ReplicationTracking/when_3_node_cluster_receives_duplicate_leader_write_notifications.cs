@@ -15,18 +15,18 @@ public class when_3_node_cluster_receives_duplicate_leader_write_notifications :
 		BecomeLeader();
 		WriterCheckpoint.Write(_logPosition);
 		WriterCheckpoint.Flush();
-		Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());			
-		Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());	
+		Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());
+		Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());
 		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 	}
 
 	[Test]
 	public void replicated_to_should_not_be_sent() {
-		Assert.AreEqual(0, ReplicatedTos.Count);		
+		Assert.AreEqual(0, ReplicatedTos.Count);
 	}
 	[Test]
 	public void replication_checkpoint_should_not_advance() {
-		Assert.AreEqual(0, ReplicationCheckpoint.Read());		
-		Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());		
+		Assert.AreEqual(0, ReplicationCheckpoint.Read());
+		Assert.AreEqual(0, ReplicationCheckpoint.ReadNonFlushed());
 	}
 }

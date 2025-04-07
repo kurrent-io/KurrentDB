@@ -16,7 +16,7 @@ public class PolicyAuthorizationProvider(IPolicyEvaluator policyEvaluator, bool 
 	static readonly ILogger Logger = Log.ForContext<PolicyAuthorizationProvider>();
 	static readonly TimeProvider Time = TimeProvider.System;
 
-	bool LogAccessDenied  => logAuthorization;
+	bool LogAccessDenied => logAuthorization;
 	bool LogAccessGranted => LogAccessDenied && logSuccesses;
 
 	public override ValueTask<bool> CheckAccessAsync(ClaimsPrincipal principal, Operation operation, CancellationToken ct) {
@@ -57,8 +57,7 @@ public class PolicyAuthorizationProvider(IPolicyEvaluator policyEvaluator, bool 
 		) {
 			try {
 				return HasAccess(await evaluate, principal, startedAt, logAccessDenied, logAccessGranted);
-			}
-			catch (Exception ex) when (ex is not OperationCanceledException) {
+			} catch (Exception ex) when (ex is not OperationCanceledException) {
 				Logger.Error(ex, "Error performing permission check for {Identity}", GetIdentity(principal));
 				return false;
 			}

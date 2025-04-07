@@ -6,7 +6,6 @@ using System.IO;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.LogAbstraction;
-using EventStore.Core.Services;
 using EventStore.LogCommon;
 
 namespace EventStore.Core.TransactionLog.LogRecords;
@@ -58,10 +57,10 @@ public abstract class LogRecord : ILogRecord {
 
 			case LogRecordType.PartitionType:
 				return new PartitionTypeLogRecord(LogV3Reader.ReadBytes(recordType, version, reader, length));
-			
+
 			case LogRecordType.Partition:
 				return new PartitionLogRecord(LogV3Reader.ReadBytes(recordType, version, reader, length));
-			
+
 			default:
 				throw new ArgumentOutOfRangeException("recordType");
 		}

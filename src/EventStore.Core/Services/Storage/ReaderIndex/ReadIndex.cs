@@ -2,11 +2,9 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Security.Claims;
 using System.Threading;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
-using EventStore.Core.Caching;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
@@ -16,7 +14,6 @@ using EventStore.Core.Metrics;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.Util;
 using static EventStore.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;

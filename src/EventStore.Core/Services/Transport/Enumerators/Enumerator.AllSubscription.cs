@@ -80,7 +80,7 @@ static partial class Enumerator {
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
-			ReadLoop:
+ReadLoop:
 
 			if (!await _channel.Reader.WaitToReadAsync(_cts.Token)) {
 				return false;
@@ -224,7 +224,7 @@ static partial class Enumerator {
 			async Task OnMessage(Message message, CancellationToken ct) {
 				try {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    TryHandleNotHandled(notHandled, out var ex))
+						TryHandleNotHandled(notHandled, out var ex))
 						throw ex;
 
 					if (message is not ClientMessage.ReadAllEventsForwardCompleted completed)
@@ -289,7 +289,7 @@ static partial class Enumerator {
 			void OnSubscriptionMessage(Message message) {
 				try {
 					if (message is ClientMessage.NotHandled notHandled &&
-					    TryHandleNotHandled(notHandled, out var ex))
+						TryHandleNotHandled(notHandled, out var ex))
 						throw ex;
 
 					switch (message) {

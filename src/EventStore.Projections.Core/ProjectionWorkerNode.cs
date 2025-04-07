@@ -3,8 +3,8 @@
 
 using System;
 using EventStore.Common.Options;
-using EventStore.Core.Bus;
 using EventStore.Common.Utils;
+using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
@@ -71,7 +71,7 @@ public class ProjectionWorkerNode {
 	}
 
 	public ISubscriber CoreOutputBus {
-		get { return _coreOutputBus;  }
+		get { return _coreOutputBus; }
 	}
 
 	public void SetupMessaging(ISubscriber coreInputBus) {

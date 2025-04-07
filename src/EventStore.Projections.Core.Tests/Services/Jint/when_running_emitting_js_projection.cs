@@ -5,9 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 
@@ -64,7 +62,7 @@ public class when_running_emitting_js_projection : TestFixtureWithInterpretedPro
 	public void can_pass_though_millions_of_events() {
 		var i = 0;
 		var sw = Stopwatch.StartNew();
-		
+
 		for (i = 0; i < 100000000; i++) {
 			string state;
 			EmittedEventEnvelope[] emittedEvents;
@@ -79,10 +77,10 @@ public class when_running_emitting_js_projection : TestFixtureWithInterpretedPro
 			Assert.AreEqual("output-stream" + i, emittedEvents[0].Event.StreamId);
 			Assert.AreEqual(@"{""a"":""" + i + @"""}", emittedEvents[0].Event.Data);
 
-			if(sw.Elapsed > TimeSpan.FromSeconds(120))
+			if (sw.Elapsed > TimeSpan.FromSeconds(120))
 				break;
 		}
-		
+
 		Console.WriteLine($"processed: {i}");
 	}
 }

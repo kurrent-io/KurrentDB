@@ -165,8 +165,7 @@ public class
 
 	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
 		options with {
-			DefaultUser = new ClusterVNodeOptions.DefaultUserOptions
-				{ DefaultAdminPassword = _adminPassword, DefaultOpsPassword = _opsPassword }
+			DefaultUser = new ClusterVNodeOptions.DefaultUserOptions { DefaultAdminPassword = _adminPassword, DefaultOpsPassword = _opsPassword }
 		};
 
 	[Test]

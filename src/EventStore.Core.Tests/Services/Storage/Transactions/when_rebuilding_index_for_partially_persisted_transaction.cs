@@ -4,19 +4,17 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
-using EventStore.Core.Caching;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
+using EventStore.Core.Metrics;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;
-using NUnit.Framework;
 using EventStore.Core.Util;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.Metrics;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.Transactions;
 

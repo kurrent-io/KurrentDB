@@ -5,13 +5,12 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using EventStore.Common.Utils;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Http.Streams.basic;
+using EventStore.Core.Tests.Http.Users.users;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using System.Xml.Linq;
-using EventStore.Common.Utils;
-using EventStore.Core.Tests.Http.Users.users;
 
 namespace EventStore.Core.Tests.Http.Streams;
 

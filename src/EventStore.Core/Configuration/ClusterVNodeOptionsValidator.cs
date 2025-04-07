@@ -101,7 +101,7 @@ public static class ClusterVNodeOptionsValidator {
 
 	public static bool ValidateForStartup(ClusterVNodeOptions options) {
 		if (!options.Cluster.DiscoverViaDns && options.Cluster.GossipSeed.Length == 0 &&
-		    options.Cluster.ClusterSize == 1) {
+			options.Cluster.ClusterSize == 1) {
 			Log.Information(
 				"DNS discovery is disabled, but no gossip seed endpoints have been specified. Since "
 				+ "the cluster size is set to 1, this may be intentional. Gossip seeds can be specified "

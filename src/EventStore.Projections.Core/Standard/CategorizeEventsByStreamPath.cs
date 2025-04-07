@@ -2,13 +2,11 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Data;
 using EventStore.Core.Services;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
 
@@ -58,7 +56,7 @@ public class CategorizeEventsByStreamPath : IProjectionStateHandler {
 		var isStreamDeletedEvent = StreamDeletedHelper.IsStreamDeletedEvent(
 			data.PositionStreamId, data.EventType, data.Data, out deletedStreamId);
 
-		var category = _streamCategoryExtractor.GetCategoryByStreamId(isStreamDeletedEvent?deletedStreamId:data.PositionStreamId);
+		var category = _streamCategoryExtractor.GetCategoryByStreamId(isStreamDeletedEvent ? deletedStreamId : data.PositionStreamId);
 		if (category == null)
 			return true; // handled but not interesting
 

@@ -10,7 +10,6 @@ using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.MultiStream;
 using EventStore.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
@@ -33,8 +32,8 @@ public class when_read_for_one_stream_completes_but_times_out_for_another<TLogFo
 
 	[SetUp]
 	public new void When() {
-		_ab12Tag = new Dictionary<string, long> {{"a", 1}, {"b", 2}};
-		_abStreams = new[] {"a", "b"};
+		_ab12Tag = new Dictionary<string, long> { { "a", 1 }, { "b", 2 } };
+		_abStreams = new[] { "a", "b" };
 		_distibutionPointCorrelationId = Guid.NewGuid();
 		_eventReader = new MultiStreamEventReader(
 			_ioDispatcher, _bus, _distibutionPointCorrelationId, null, 0, _abStreams, _ab12Tag, false,

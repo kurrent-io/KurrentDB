@@ -288,7 +288,7 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 				recordsQuery = recordsQuery.OrderByDescending(x => x.Version)
 					.GroupBy(x => x.Version).Select(x => x.Last());
 			}
-			
+
 			var records = recordsQuery.Reverse().Select(x => CreateEventRecord(x.Version, x.Prepare, streamName)).ToArray();
 
 			long nextEventNumber = Math.Min(endEventNumber + 1, lastEventNumber + 1);
@@ -303,7 +303,7 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 			string streamName,
 			long fromEventNumber, int maxCount, long startEventNumber,
 			long endEventNumber, long lastEventNumber, TimeSpan maxAge, StreamMetadata metadata,
-			ITableIndex<TStreamId> tableIndex, TFReaderLease reader, INameLookup< TStreamId> eventTypes,
+			ITableIndex<TStreamId> tableIndex, TFReaderLease reader, INameLookup<TStreamId> eventTypes,
 			bool skipIndexScanOnRead) {
 
 			if (startEventNumber > lastEventNumber) {
@@ -496,14 +496,14 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 		long endEventNumber);
 
 	private static ReadIndexEntries<TStreamId> ReadIndexEntries_RemoveCollisions =
-		(indexReader, streamHandle, reader, startEventNumber, endEventNumber) => 
+		(indexReader, streamHandle, reader, startEventNumber, endEventNumber) =>
 			indexReader._tableIndex.GetRange(streamHandle, startEventNumber, endEventNumber)
 				.Select(x => new { IndexEntry = x, Prepare = ReadPrepareInternal(reader, x.Position) })
 				.Where(x => x.Prepare != null && StreamIdComparer.Equals(x.Prepare.EventStreamId, streamHandle))
 				.Select(x => x.IndexEntry);
 
 	private static ReadIndexEntries<ulong> ReadIndexEntries_NoCollisions =
-		(indexReader, streamHandle, reader, startEventNumber, endEventNumber) => 
+		(indexReader, streamHandle, reader, startEventNumber, endEventNumber) =>
 			indexReader._tableIndex.GetRange(streamHandle, startEventNumber, endEventNumber);
 
 	public IndexReadEventInfoResult ReadEventInfo_KeepDuplicates(TStreamId streamId, long eventNumber) {

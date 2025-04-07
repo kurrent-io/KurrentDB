@@ -7,7 +7,6 @@ using System.Security.Claims;
 using EventStore.Core.Authentication.InternalAuthentication;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Plugins.Authentication;
 
@@ -41,9 +40,9 @@ class TestAuthenticationRequest(
 	Action error,
 	Action notReady
 ) : AuthenticationRequest("test", new Dictionary<string, string> {
-		["uid"] = name,
-		["pwd"] = suppliedPassword
-	}) {
+	["uid"] = name,
+	["pwd"] = suppliedPassword
+}) {
 	public override void Unauthorized() => unauthorized();
 
 	public override void Authenticated(ClaimsPrincipal principal) => authenticated(principal);

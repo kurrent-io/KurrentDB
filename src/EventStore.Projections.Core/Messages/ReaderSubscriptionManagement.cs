@@ -3,7 +3,6 @@
 
 using System;
 using EventStore.Core.Messaging;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.Strategies;
 using EventStore.Projections.Core.Services.Processing.Subscriptions;
@@ -34,8 +33,10 @@ public static partial class ReaderSubscriptionManagement {
 			Guid subscriptionId, CheckpointTag from,
 			IReaderStrategy readerStrategy, ReaderSubscriptionOptions readerSubscriptionOptions) : base(
 			subscriptionId) {
-			if (@from == null) throw new ArgumentNullException("from");
-			if (readerStrategy == null) throw new ArgumentNullException("readerStrategy");
+			if (@from == null)
+				throw new ArgumentNullException("from");
+			if (readerStrategy == null)
+				throw new ArgumentNullException("readerStrategy");
 			_fromPosition = @from;
 			_readerStrategy = readerStrategy;
 			_options = readerSubscriptionOptions;

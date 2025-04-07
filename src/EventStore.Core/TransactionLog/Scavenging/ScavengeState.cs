@@ -1,13 +1,13 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
-using System.Collections.Generic;
 using System;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.LogAbstraction;
+using System.Collections.Generic;
+using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
-using System.Linq;
+using EventStore.Core.Index.Hashes;
+using EventStore.Core.LogAbstraction;
 using Serilog;
 
 namespace EventStore.Core.TransactionLog.Scavenging;
@@ -327,8 +327,8 @@ public class ScavengeState<TStreamId> : IScavengeState<TStreamId> {
 
 // in the chunk executor each worker gets its own state so that it has its own dbconnection and
 // prepared commands.
-public struct ScavengeStateForChunkWorker<TStreamId> : 
-	IScavengeStateForChunkExecutorWorker<TStreamId>{
+public struct ScavengeStateForChunkWorker<TStreamId> :
+	IScavengeStateForChunkExecutorWorker<TStreamId> {
 
 	private readonly MetastreamCollisionMap<TStreamId> _metastreamDatas;
 	private readonly OriginalStreamCollisionMap<TStreamId> _originalStreamDatas;

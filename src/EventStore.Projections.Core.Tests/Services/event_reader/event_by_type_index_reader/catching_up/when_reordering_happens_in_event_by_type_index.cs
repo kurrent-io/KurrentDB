@@ -9,7 +9,6 @@ using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.Strategies;
 using EventStore.Projections.Core.Services.Processing.Subscriptions;
@@ -43,7 +42,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_
 				_subscriptionId = Guid.NewGuid();
 				_sourceDefinition = new QuerySourcesDefinition {
 					AllStreams = true,
-					Events = new[] {"type1", "type2"},
+					Events = new[] { "type1", "type2" },
 					Options = new QuerySourcesDefinitionOptions { }
 				};
 				_readerStrategy = ReaderStrategy.Create(
@@ -81,8 +80,8 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_
 					_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.CommittedEventReceived>().ToArray();
 
 				Assert.That(
-					new long[] {0, 1, 2}.SequenceEqual(from e in receivedEvents
-						select e.Data.EventSequenceNumber),
+					new long[] { 0, 1, 2 }.SequenceEqual(from e in receivedEvents
+														 select e.Data.EventSequenceNumber),
 					"Incorrect event order received");
 			}
 		}
@@ -98,7 +97,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_
 
 			protected override IEnumerable<WhenStep> When() {
 				var fromZeroPosition = CheckpointTag.FromEventTypeIndexPositions(
-					0, new TFPos(0, -1), new Dictionary<string, long> {{"type1", -1}, {"type2", -1}});
+					0, new TFPos(0, -1), new Dictionary<string, long> { { "type1", -1 }, { "type2", -1 } });
 				yield return
 					new ReaderSubscriptionManagement.Subscribe(
 						_subscriptionId, fromZeroPosition, _readerStrategy, _readerSubscriptionOptions);
@@ -138,7 +137,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_
 
 			protected override IEnumerable<WhenStep> When() {
 				var fromZeroPosition = CheckpointTag.FromEventTypeIndexPositions(
-					0, new TFPos(0, -1), new Dictionary<string, long> {{"type1", -1}, {"type2", -1}});
+					0, new TFPos(0, -1), new Dictionary<string, long> { { "type1", -1 }, { "type2", -1 } });
 				yield return
 					new ReaderSubscriptionManagement.Subscribe(
 						_subscriptionId, fromZeroPosition, _readerStrategy, _readerSubscriptionOptions);

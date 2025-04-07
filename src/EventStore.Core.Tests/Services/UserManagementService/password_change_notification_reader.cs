@@ -6,7 +6,6 @@ using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http.Authentication;
 using EventStore.Core.Services.UserManagement;
 using NUnit.Framework;
-using System.Linq;
 
 namespace EventStore.Core.Tests.Services.UserManagementService {
 	namespace password_change_notification_reader {
@@ -21,7 +20,8 @@ namespace EventStore.Core.Tests.Services.UserManagementService {
 			}
 
 			protected override IEnumerable<WhenStep> PreWhen() {
-				foreach (var m in base.PreWhen()) yield return m;
+				foreach (var m in base.PreWhen())
+					yield return m;
 				yield return new SystemMessage.SystemStart();
 				yield return
 					new UserManagementMessage.Create(

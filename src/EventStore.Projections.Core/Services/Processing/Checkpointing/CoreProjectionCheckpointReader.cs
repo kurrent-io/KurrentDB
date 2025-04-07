@@ -83,7 +83,7 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 			if (checkpoint != null) {
 				var parsed = checkpoint.Metadata.ParseCheckpointTagVersionExtraJson(_projectionVersion);
 				if (parsed.Version.ProjectionId != _projectionVersion.ProjectionId
-				    || _projectionVersion.Epoch > parsed.Version.Version) {
+					|| _projectionVersion.Epoch > parsed.Version.Version) {
 					_lastWrittenCheckpointEventNumber = checkpoint.EventNumber;
 					CheckpointLoaded(null, null);
 				} else {

@@ -2,9 +2,9 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System.Threading.Tasks;
+using EventStore.Client.Users;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.Users;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 
@@ -30,7 +30,8 @@ internal partial class Users {
 		return new EnableResp();
 
 		void OnMessage(Message message) {
-			if (HandleErrors(options.LoginName, message, enableSource)) return;
+			if (HandleErrors(options.LoginName, message, enableSource))
+				return;
 
 			enableSource.TrySetResult(true);
 		}

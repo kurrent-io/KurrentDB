@@ -11,7 +11,7 @@ public static class AssertEx {
 	public static void AreEqual(IQuerySources expected, IQuerySources actual) {
 		Assert.AreEqual(expected.AllEvents, actual.AllEvents, $"Expected {nameof(expected.AllEvents)} to be {expected.AllEvents} but was {actual.AllEvents}");
 		Assert.AreEqual(expected.AllStreams, actual.AllStreams, $"Expected {nameof(expected.AllStreams)} to be {expected.AllStreams} but was {actual.AllStreams}");
-		Assert.AreEqual(expected.ByCustomPartitions, actual.ByCustomPartitions,$"Expected {nameof(expected.ByCustomPartitions)} to be {expected.ByCustomPartitions} but was {actual.ByCustomPartitions}");
+		Assert.AreEqual(expected.ByCustomPartitions, actual.ByCustomPartitions, $"Expected {nameof(expected.ByCustomPartitions)} to be {expected.ByCustomPartitions} but was {actual.ByCustomPartitions}");
 		Assert.AreEqual(expected.ByStreams, actual.ByStreams, $"Expected {nameof(expected.ByStreams)} to be {expected.ByStreams} but was {actual.ByStreams}");
 		Assert.AreEqual(expected.DefinesFold, actual.DefinesFold, $"Expected {nameof(expected.DefinesFold)} to be {expected.DefinesFold} but was {actual.DefinesFold}");
 		Assert.AreEqual(expected.DefinesStateTransform, actual.DefinesStateTransform, $"Expected {nameof(expected.DefinesStateTransform)} to be {expected.DefinesStateTransform} but was {actual.DefinesStateTransform}");
@@ -25,9 +25,9 @@ public static class AssertEx {
 		Assert.AreEqual(expected.ReorderEventsOption, actual.ReorderEventsOption, $"Expected {nameof(expected.ReorderEventsOption)} to be {expected.ReorderEventsOption} but was {actual.ReorderEventsOption}");
 		Assert.AreEqual(expected.ResultStreamNameOption, actual.ResultStreamNameOption, $"Expected {nameof(expected.ResultStreamNameOption)} to be {expected.ResultStreamNameOption} but was {actual.ResultStreamNameOption}");
 		Assert.AreEqual(expected.HandlesDeletedNotifications, actual.HandlesDeletedNotifications, $"Expected {nameof(expected.HandlesDeletedNotifications)} to be {expected.HandlesDeletedNotifications} but was {actual.HandlesDeletedNotifications}");
-		AssertWithName(nameof(expected.Categories),expected.Categories, actual.Categories);
-		AssertWithName(nameof(expected.Events),expected.Events, actual.Events);
-		AssertWithName(nameof(expected.Streams),expected.Streams, actual.Streams);
+		AssertWithName(nameof(expected.Categories), expected.Categories, actual.Categories);
+		AssertWithName(nameof(expected.Events), expected.Events, actual.Events);
+		AssertWithName(nameof(expected.Streams), expected.Streams, actual.Streams);
 
 		static void AssertWithName(string name, string[] expected, string[] actual) {
 			try {

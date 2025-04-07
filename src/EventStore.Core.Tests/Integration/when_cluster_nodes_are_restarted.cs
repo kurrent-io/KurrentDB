@@ -1,11 +1,11 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
-using NUnit.Framework;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Core.Data;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Integration;
 
@@ -17,12 +17,12 @@ public class when_restarting_one_node_at_a_time<TLogFormat, TStreamId> : specifi
 
 		for (int i = 0; i < 9; i++) {
 			await Task.Delay(2000); //flaky: temporary fix for getting stable cluster
-			
+
 			await _nodes[i % 3].Shutdown(keepDb: true);
 			await Task.Delay(2000);
-			
+
 			var node = CreateNode(i % 3, _nodeEndpoints[i % 3],
-				new[] {_nodeEndpoints[(i+1)%3].HttpEndPoint, _nodeEndpoints[(i+2)%3].HttpEndPoint});
+				new[] { _nodeEndpoints[(i + 1) % 3].HttpEndPoint, _nodeEndpoints[(i + 2) % 3].HttpEndPoint });
 			node.Start();
 			_nodes[i % 3] = node;
 
@@ -34,16 +34,19 @@ public class when_restarting_one_node_at_a_time<TLogFormat, TStreamId> : specifi
 	public void cluster_should_stabilize() {
 		var leaders = 0;
 		var followers = 0;
-		var acceptedStates = new[] {VNodeState.Leader, VNodeState.Follower};
+		var acceptedStates = new[] { VNodeState.Leader, VNodeState.Follower };
 
 		for (int i = 0; i < 3; i++) {
 			AssertEx.IsOrBecomesTrue(() => acceptedStates.Contains(_nodes[i].NodeState),
 				TimeSpan.FromSeconds(5), $"node {i} failed to become a leader/follower");
 
 			var state = _nodes[i].NodeState;
-			if (state == VNodeState.Leader) leaders++;
-			else if (state == VNodeState.Follower) followers++;
-			else throw new Exception($"node {i} in unexpected state {state}");
+			if (state == VNodeState.Leader)
+				leaders++;
+			else if (state == VNodeState.Follower)
+				followers++;
+			else
+				throw new Exception($"node {i} in unexpected state {state}");
 		}
 
 		Assert.AreEqual(1, leaders);

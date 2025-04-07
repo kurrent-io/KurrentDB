@@ -78,7 +78,7 @@ public static class EventStoreConfigurationKeys {
 	/// <summary>
 	/// Determines if the given key is an event store environment variable.
 	/// </summary>
-	public static bool IsEventStoreEnvVar(string? key) => 
+	public static bool IsEventStoreEnvVar(string? key) =>
 		key is not null && key.StartsWith($"{Prefix}{EnvVarWordDelimiter}", OrdinalIgnoreCase);
 
 	/// <summary>

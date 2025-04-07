@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using EventStore.Common.Utils;
-using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
@@ -29,7 +28,7 @@ namespace EventStore.Projections.Core.Services.Http;
 public class ProjectionsController : CommunicationController {
 	private static readonly ILogger Log = Serilog.Log.ForContext<ProjectionsController>();
 
-	private static readonly ICodec[] SupportedCodecs = {Codec.Json};
+	private static readonly ICodec[] SupportedCodecs = { Codec.Json };
 
 	private readonly MiniWeb _clusterNodeJs;
 	private readonly MiniWeb _miniWebPrelude;
@@ -54,9 +53,9 @@ public class ProjectionsController : CommunicationController {
 		HttpHelpers.RegisterRedirectAction(service, "/web/projections", "/web/projections.htm");
 
 		Register(service, "/projections",
-			HttpMethod.Get, OnProjections, Codec.NoCodecs, new ICodec[] {Codec.ManualEncoding}, new Operation(Operations.Projections.List));
+			HttpMethod.Get, OnProjections, Codec.NoCodecs, new ICodec[] { Codec.ManualEncoding }, new Operation(Operations.Projections.List));
 		Register(service, "/projections/restart",
-			HttpMethod.Post, OnProjectionsRestart, new ICodec[] { Codec.ManualEncoding}, SupportedCodecs, new Operation(Operations.Projections.Restart));
+			HttpMethod.Post, OnProjectionsRestart, new ICodec[] { Codec.ManualEncoding }, SupportedCodecs, new Operation(Operations.Projections.Restart));
 		Register(service, "/projections/any",
 			HttpMethod.Get, OnProjectionsGetAny, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Projections.List));
 		Register(service, "/projections/all-non-transient",
@@ -68,22 +67,22 @@ public class ProjectionsController : CommunicationController {
 		Register(service, "/projections/continuous",
 			HttpMethod.Get, OnProjectionsGetContinuous, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Projections.List));
 		Register(service, "/projections/transient?name={name}&type={type}&enabled={enabled}",
-			HttpMethod.Post, OnProjectionsPostTransient, new ICodec[] {Codec.ManualEncoding}, SupportedCodecs, new Operation(Operations.Projections.Create).WithParameter(Operations.Projections.Parameters.Query));
+			HttpMethod.Post, OnProjectionsPostTransient, new ICodec[] { Codec.ManualEncoding }, SupportedCodecs, new Operation(Operations.Projections.Create).WithParameter(Operations.Projections.Parameters.Query));
 		Register(service,
 			"/projections/onetime?name={name}&type={type}&enabled={enabled}&checkpoints={checkpoints}&emit={emit}&trackemittedstreams={trackemittedstreams}",
-			HttpMethod.Post, OnProjectionsPostOneTime, new ICodec[] {Codec.ManualEncoding}, SupportedCodecs, new Operation(Operations.Projections.Create).WithParameter(Operations.Projections.Parameters.OneTime));
+			HttpMethod.Post, OnProjectionsPostOneTime, new ICodec[] { Codec.ManualEncoding }, SupportedCodecs, new Operation(Operations.Projections.Create).WithParameter(Operations.Projections.Parameters.OneTime));
 		Register(service,
 			"/projections/continuous?name={name}&type={type}&enabled={enabled}&emit={emit}&trackemittedstreams={trackemittedstreams}",
-			HttpMethod.Post, OnProjectionsPostContinuous, new ICodec[] {Codec.ManualEncoding}, SupportedCodecs, new Operation(Operations.Projections.Create).WithParameter(Operations.Projections.Parameters.Continuous));
+			HttpMethod.Post, OnProjectionsPostContinuous, new ICodec[] { Codec.ManualEncoding }, SupportedCodecs, new Operation(Operations.Projections.Create).WithParameter(Operations.Projections.Parameters.Continuous));
 		Register(service, "/projection/{name}/query?config={config}",
-			HttpMethod.Get, OnProjectionQueryGet, Codec.NoCodecs, new ICodec[] {Codec.ManualEncoding}, new Operation(Operations.Projections.Read));
+			HttpMethod.Get, OnProjectionQueryGet, Codec.NoCodecs, new ICodec[] { Codec.ManualEncoding }, new Operation(Operations.Projections.Read));
 		Register(service, "/projection/{name}/query?type={type}&emit={emit}",
-			HttpMethod.Put, OnProjectionQueryPut, new ICodec[] {Codec.ManualEncoding}, SupportedCodecs, new Operation(Operations.Projections.Update)); /* source of transient projections can be set by a normal user. Authorization checks are done internally for non-transient projections. */
+			HttpMethod.Put, OnProjectionQueryPut, new ICodec[] { Codec.ManualEncoding }, SupportedCodecs, new Operation(Operations.Projections.Update)); /* source of transient projections can be set by a normal user. Authorization checks are done internally for non-transient projections. */
 		Register(service, "/projection/{name}",
 			HttpMethod.Get, OnProjectionStatusGet, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Projections.Status));
 		Register(service,
 			"/projection/{name}?deleteStateStream={deleteStateStream}&deleteCheckpointStream={deleteCheckpointStream}&deleteEmittedStreams={deleteEmittedStreams}",
-			HttpMethod.Delete, OnProjectionDelete, Codec.NoCodecs, SupportedCodecs,new Operation(Operations.Projections.Delete));
+			HttpMethod.Delete, OnProjectionDelete, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Projections.Delete));
 		Register(service, "/projection/{name}/statistics",
 			HttpMethod.Get, OnProjectionStatisticsGet, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Projections.Statistics));
 		Register(service, "/projections/read-events",
@@ -478,29 +477,29 @@ public class ProjectionsController : CommunicationController {
 			CorrelationId = page.CorrelationId,
 			ReaderPosition = page.LastReaderPosition.ToJsonRaw(),
 			Events = (from e in page.Events
-				let resolvedEvent = e.ResolvedEvent
-				let isJson = resolvedEvent.IsJson
-				let data = isJson
-					? EatException(() => (object)(resolvedEvent.Data.ParseJson<JObject>()), resolvedEvent.Data)
-					: resolvedEvent.Data
-				let metadata = isJson
-					? EatException(() => (object)(resolvedEvent.Metadata.ParseJson<JObject>()),
-						resolvedEvent.Metadata)
-					: resolvedEvent.Metadata
-				let linkMetadata = isJson
-					? EatException(() => (object)(resolvedEvent.PositionMetadata.ParseJson<JObject>()),
-						resolvedEvent.PositionMetadata)
-					: resolvedEvent.PositionMetadata
-				select new {
-					EventStreamId = resolvedEvent.EventStreamId,
-					EventNumber = resolvedEvent.EventSequenceNumber,
-					EventType = resolvedEvent.EventType,
-					Data = data,
-					Metadata = metadata,
-					LinkMetadata = linkMetadata,
-					IsJson = isJson,
-					ReaderPosition = e.ReaderPosition.ToJsonRaw(),
-				}).ToArray()
+					  let resolvedEvent = e.ResolvedEvent
+					  let isJson = resolvedEvent.IsJson
+					  let data = isJson
+						  ? EatException(() => (object)(resolvedEvent.Data.ParseJson<JObject>()), resolvedEvent.Data)
+						  : resolvedEvent.Data
+					  let metadata = isJson
+						  ? EatException(() => (object)(resolvedEvent.Metadata.ParseJson<JObject>()),
+							  resolvedEvent.Metadata)
+						  : resolvedEvent.Metadata
+					  let linkMetadata = isJson
+						  ? EatException(() => (object)(resolvedEvent.PositionMetadata.ParseJson<JObject>()),
+							  resolvedEvent.PositionMetadata)
+						  : resolvedEvent.PositionMetadata
+					  select new {
+						  EventStreamId = resolvedEvent.EventStreamId,
+						  EventNumber = resolvedEvent.EventSequenceNumber,
+						  EventType = resolvedEvent.EventType,
+						  Data = data,
+						  Metadata = metadata,
+						  LinkMetadata = linkMetadata,
+						  IsJson = isJson,
+						  ReaderPosition = e.ReaderPosition.ToJsonRaw(),
+					  }).ToArray()
 		}.ToJson();
 	}
 

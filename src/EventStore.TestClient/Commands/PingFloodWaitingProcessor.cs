@@ -68,7 +68,7 @@ internal class PingFloodWaitingProcessor : ICmdProcessor {
 					context.Success();
 					doneEvent.Set();
 				}
-			}) {IsBackground = true});
+			}) { IsBackground = true });
 		}
 
 		var sw = Stopwatch.StartNew();

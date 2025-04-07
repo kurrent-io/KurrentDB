@@ -1,21 +1,13 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
-using System;
-using System.Net;
-using System.Text;
-using EventStore.Core.Tests.ClientAPI;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.Http.Users;
-using EventStore.Transport.Http;
-using NUnit.Framework;
-using System.Linq;
-using Newtonsoft.Json.Linq;
-using HttpStatusCode = System.Net.HttpStatusCode;
-using EventStore.Core.Services.Transport.Http;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Http.Users.users;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams;
 

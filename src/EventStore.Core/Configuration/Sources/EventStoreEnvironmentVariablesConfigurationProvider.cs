@@ -18,9 +18,9 @@ public class EventStoreEnvironmentVariablesConfigurationProvider(IDictionary? en
 		var environment = Environment ?? GetEnvironmentVariables();
 
 		var data = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-	
+
 		foreach (var key in environment.Keys) {
-			if (EventStoreConfigurationKeys.TryNormalizeEnvVar(key, out var normalizedKey)) 
+			if (EventStoreConfigurationKeys.TryNormalizeEnvVar(key, out var normalizedKey))
 				data[normalizedKey] = environment[key]?.ToString();
 		}
 

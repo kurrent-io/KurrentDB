@@ -35,7 +35,7 @@ public unsafe partial class TFChunk : IDisposable {
 		Transformed = 4,
 	}
 
-	public const byte CurrentChunkVersion = (byte) ChunkVersions.Transformed;
+	public const byte CurrentChunkVersion = (byte)ChunkVersions.Transformed;
 	private const int AlignmentSize = 4096;
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<TFChunk>();
@@ -227,7 +227,7 @@ public unsafe partial class TFChunk : IDisposable {
 		IChunkTransformFactory transformFactory) {
 		var version = CurrentChunkVersion;
 		var minCompatibleVersion = transformFactory.Type == TransformType.Identity
-			? (byte) ChunkVersions.Aligned
+			? (byte)ChunkVersions.Aligned
 			: version;
 
 		var chunkHeader = new ChunkHeader(version, minCompatibleVersion, chunkDataSize, chunkStartNumber, chunkEndNumber,
@@ -744,12 +744,14 @@ public unsafe partial class TFChunk : IDisposable {
 	}
 
 	public void OptimizeExistsAt() {
-		if (!ChunkHeader.IsScavenged) return;
+		if (!ChunkHeader.IsScavenged)
+			return;
 		((TFChunkReadSideScavenged)_readSide).OptimizeExistsAt();
 	}
 
 	public void DeOptimizeExistsAt() {
-		if (!ChunkHeader.IsScavenged) return;
+		if (!ChunkHeader.IsScavenged)
+			return;
 		((TFChunkReadSideScavenged)_readSide).DeOptimizeExistsAt();
 	}
 
@@ -804,7 +806,7 @@ public unsafe partial class TFChunk : IDisposable {
 		// for non-scavenged chunk _physicalDataSize should be the same as _logicalDataSize
 		// for scavenged chunk _logicalDataSize should be at least the same as _physicalDataSize
 		if ((!ChunkHeader.IsScavenged && _logicalDataSize != _physicalDataSize)
-		    || (ChunkHeader.IsScavenged && _logicalDataSize < _physicalDataSize)) {
+			|| (ChunkHeader.IsScavenged && _logicalDataSize < _physicalDataSize)) {
 			throw new Exception(string.Format(
 				"Data sizes violation. Chunk: {0}, IsScavenged: {1}, LogicalDataSize: {2}, PhysicalDataSize: {3}.",
 				FileName, ChunkHeader.IsScavenged, _logicalDataSize, _physicalDataSize));
@@ -912,8 +914,8 @@ public unsafe partial class TFChunk : IDisposable {
 
 			if (_cacheStatus != CacheStatus.Uncached) {
 				throw new InvalidOperationException("Trying to write mapping while chunk is cached. "
-				                                    + "You probably are writing scavenged chunk as cached. "
-				                                    + "Do not do this.");
+													+ "You probably are writing scavenged chunk as cached. "
+													+ "Do not do this.");
 			}
 
 			mapSize = mapping.Count * PosMap.FullSize;
@@ -1017,7 +1019,8 @@ public unsafe partial class TFChunk : IDisposable {
 	}
 
 	public static int GetAlignedSize(int size) {
-		if (size % AlignmentSize == 0) return size;
+		if (size % AlignmentSize == 0)
+			return size;
 		return (size / AlignmentSize + 1) * AlignmentSize;
 	}
 
@@ -1341,8 +1344,7 @@ public unsafe partial class TFChunk : IDisposable {
 
 		// Skip index and type variance checks which is inserted by runtime typically because
 		// the array element is of reference type.
-		private static ref ReaderWorkItem UnsafeGetElement(ReaderWorkItem[] array, int index)
-		{
+		private static ref ReaderWorkItem UnsafeGetElement(ReaderWorkItem[] array, int index) {
 			Debug.Assert((uint)index < (uint)array.Length);
 
 			return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(array), index);

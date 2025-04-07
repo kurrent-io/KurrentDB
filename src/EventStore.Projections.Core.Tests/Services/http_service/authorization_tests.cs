@@ -39,7 +39,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_standard_
 	}
 
 	private async Task<int> SendRequest(HttpClient client, HttpMethod method, string url, string body, string contentType) {
-		using var request = new HttpRequestMessage {Method = method, RequestUri = new Uri(url)};
+		using var request = new HttpRequestMessage { Method = method, RequestUri = new Uri(url) };
 
 		if (body != null) {
 			var bodyBytes = Helper.UTF8NoBom.GetBytes(body);

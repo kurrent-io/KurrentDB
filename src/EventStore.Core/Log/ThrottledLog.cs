@@ -2,9 +2,7 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Threading;
 using Serilog;
-using Serilog.Events;
 
 namespace EventStore.Common.Log;
 
@@ -22,25 +20,29 @@ public class ThrottledLog<T> {
 
 	public bool Warning(string message) {
 		bool canLog = CanLog();
-		if (canLog) _log.Warning(message);
+		if (canLog)
+			_log.Warning(message);
 		return canLog;
 	}
-	
+
 	public bool Fatal(string message) {
 		bool canLog = CanLog();
-		if (canLog) _log.Fatal(message);
+		if (canLog)
+			_log.Fatal(message);
 		return canLog;
 	}
-	
+
 	public bool Information(string message) {
 		bool canLog = CanLog();
-		if (canLog) _log.Information(message);
+		if (canLog)
+			_log.Information(message);
 		return canLog;
 	}
-	
+
 	public bool Error(string message) {
 		bool canLog = CanLog();
-		if (canLog) _log.Error(message);
+		if (canLog)
+			_log.Error(message);
 		return canLog;
 	}
 
@@ -57,7 +59,7 @@ public class ThrottledLog<T> {
 				}
 			}
 		}
-		
+
 		// perform actual logging outside synchronization so that subsequent calls to this method which are not going to log can be returned quickly
 		// logging outside synchronization is safe since Serilog itself is thread-safe
 		return canLog;

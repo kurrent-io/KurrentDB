@@ -22,7 +22,7 @@ public abstract class SingleNodeScenario<TLogFormat, TStreamId> {
 	private ILogFormatAbstractorFactory<TStreamId> _logFormatFactory;
 	private readonly bool _disableMemoryOptimization;
 
-	public SingleNodeScenario (bool disableMemoryOptimization=false) {
+	public SingleNodeScenario(bool disableMemoryOptimization = false) {
 		_disableMemoryOptimization = disableMemoryOptimization;
 	}
 

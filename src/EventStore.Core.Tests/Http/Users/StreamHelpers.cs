@@ -3,7 +3,6 @@
 
 using System.IO;
 using EventStore.Common.Utils;
-using EventStore.Core.Util;
 
 namespace EventStore.Core.Tests.Http.Users;
 

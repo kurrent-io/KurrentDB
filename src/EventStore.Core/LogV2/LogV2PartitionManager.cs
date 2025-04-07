@@ -11,5 +11,5 @@ public class LogV2PartitionManager : IPartitionManager {
 	public Guid? RootId => Guid.Empty;
 	public Guid? RootTypeId => Guid.Empty;
 
-	public void Initialize(){}
+	public void Initialize() { }
 }

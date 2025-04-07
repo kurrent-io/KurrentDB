@@ -100,7 +100,7 @@ public class when_writing_multiple_records_to_a_tfchunk<TLogFormat, TStreamId> :
 		var res = _chunk.TryReadClosestForward(_prepare1.GetSizeWithLengthPrefixAndSuffix());
 		Assert.IsTrue(res.Success);
 		Assert.AreEqual(_prepare1.GetSizeWithLengthPrefixAndSuffix()
-		                + _prepare2.GetSizeWithLengthPrefixAndSuffix(), res.NextPosition);
+						+ _prepare2.GetSizeWithLengthPrefixAndSuffix(), res.NextPosition);
 		Assert.IsTrue(res.LogRecord is IPrepareLogRecord<TStreamId>);
 		Assert.AreEqual(_prepare2, res.LogRecord);
 	}
@@ -108,7 +108,7 @@ public class when_writing_multiple_records_to_a_tfchunk<TLogFormat, TStreamId> :
 	[Test]
 	public void cannot_read_past_second_record_with_closest_forward_method() {
 		var res = _chunk.TryReadClosestForward(_prepare1.GetSizeWithLengthPrefixAndSuffix()
-		                                       + _prepare2.GetSizeWithLengthPrefixAndSuffix());
+											   + _prepare2.GetSizeWithLengthPrefixAndSuffix());
 		Assert.IsFalse(res.Success);
 	}
 

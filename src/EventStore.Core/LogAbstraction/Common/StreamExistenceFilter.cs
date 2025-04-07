@@ -112,7 +112,7 @@ public class StreamExistenceFilter :
 
 		const double p = PersistentBloomFilter.RecommendedFalsePositiveProbability;
 		Log.Debug("Optimal number of items for a {filterName} with a configured size of " +
-		                "{size:N0} MB is approximately equal to: {n:N0} with false positive probability: {p:N2}",
+						"{size:N0} MB is approximately equal to: {n:N0} with false positive probability: {p:N2}",
 			_filterName,
 			size / 1000 / 1000,
 			_persistentBloomFilter.CalculateOptimalNumItems(p),
@@ -140,7 +140,7 @@ public class StreamExistenceFilter :
 			_persistentBloomFilter.Flush();
 			var endTime = DateTime.UtcNow;
 			Log.Verbose("{filterName} has flushed at {checkpoint:N0}. Diff {diff:N0}. Took {flushLength}",
-				       _filterName, checkpoint, diff, endTime - startTime);
+					   _filterName, checkpoint, diff, endTime - startTime);
 
 			// safety precaution against anything in the stack lying about the data
 			// truly being on disk.

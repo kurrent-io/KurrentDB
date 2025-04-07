@@ -6,7 +6,6 @@ using System.Linq;
 using EventStore.Core.Bus;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using EventStore.Projections.Core.Services.Processing.Partitioning;
 using EventStore.Projections.Core.Services.Processing.Phases;

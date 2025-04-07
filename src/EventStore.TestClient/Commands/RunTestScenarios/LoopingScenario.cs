@@ -113,16 +113,16 @@ internal class LoopingScenario : ScenarioBase {
 		Log.Information("== READ from picked ALL ==");
 
 		var allExistingStreamsSlice = (from run in Enumerable.Range(0, runIndex + 1)
-			from streamNum in Enumerable.Range(0, Streams)
-			where streamNum % StreamDeleteStep != 0
-			where _rnd.NextDouble() < 0.1
-			select FormatStreamName(run, streamNum)).ToArray();
+									   from streamNum in Enumerable.Range(0, Streams)
+									   where streamNum % StreamDeleteStep != 0
+									   where _rnd.NextDouble() < 0.1
+									   select FormatStreamName(run, streamNum)).ToArray();
 
 		var allDeletedStreamsSlice = (from run in Enumerable.Range(0, runIndex + 1)
-			from streamNum in Enumerable.Range(0, Streams)
-			where streamNum % StreamDeleteStep == 0
-			where _rnd.NextDouble() < 0.1
-			select FormatStreamName(run, streamNum)).ToArray();
+									  from streamNum in Enumerable.Range(0, Streams)
+									  where streamNum % StreamDeleteStep == 0
+									  where _rnd.NextDouble() < 0.1
+									  select FormatStreamName(run, streamNum)).ToArray();
 
 		var prevCheckTasks = new List<Task>();
 		if (allExistingStreamsSlice.Length > 0) {
@@ -138,7 +138,7 @@ internal class LoopingScenario : ScenarioBase {
 			prevCheckTasks.Add(dl2);
 		}
 
-		Task.WaitAll(new[] {dl1, rd1, rd2, rd3}.Union(prevCheckTasks).ToArray());
+		Task.WaitAll(new[] { dl1, rd1, rd2, rd3 }.Union(prevCheckTasks).ToArray());
 
 		_stopParalleWrites = true;
 		if (!parallelWriteTask.Wait(parallelWritesTimeout))

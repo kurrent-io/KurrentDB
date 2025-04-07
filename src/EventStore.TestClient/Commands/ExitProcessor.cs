@@ -2,7 +2,6 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System.Threading;
-using EventStore.Common.Utils;
 
 namespace EventStore.TestClient.Commands;
 

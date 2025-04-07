@@ -55,7 +55,7 @@ public class when_handling_an_emit_with_not_ready_event<TLogFormat, TStreamId> :
 	public void processes_write_on_write_completed_if_ready() {
 		var linkTo = new EmittedLinkTo(
 			"test_stream", Guid.NewGuid(), "other_stream", CheckpointTag.FromPosition(0, 1100, 1000), null);
-		_stream.EmitEvents(new[] {linkTo});
+		_stream.EmitEvents(new[] { linkTo });
 		linkTo.SetTargetEventNumber(1);
 		_stream.Handle(new CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("other_stream"));
 
@@ -71,7 +71,7 @@ public class when_handling_an_emit_with_not_ready_event<TLogFormat, TStreamId> :
 	public void replies_with_await_message_on_write_completed_if_not_yet_ready() {
 		var linkTo = new EmittedLinkTo(
 			"test_stream", Guid.NewGuid(), "other_stream", CheckpointTag.FromPosition(0, 1100, 1000), null);
-		_stream.EmitEvents(new[] {linkTo});
+		_stream.EmitEvents(new[] { linkTo });
 		_stream.Handle(new CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("one_more_stream"));
 
 		Assert.AreEqual(2, _readyHandler.HandledStreamAwaitingMessage.Count);

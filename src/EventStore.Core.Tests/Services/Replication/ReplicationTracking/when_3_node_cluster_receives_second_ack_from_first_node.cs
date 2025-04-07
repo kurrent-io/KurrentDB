@@ -28,7 +28,7 @@ public class when_3_node_cluster_receives_second_ack_from_first_node :
 		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 
 		ReplicatedTos.Clear();
-		
+
 		// Follower 2 has lost connection and does not ack the write
 		WriterCheckpoint.Write(_secondLogPosition);
 		WriterCheckpoint.Flush();

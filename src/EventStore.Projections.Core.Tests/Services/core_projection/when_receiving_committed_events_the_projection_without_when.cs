@@ -7,7 +7,6 @@ using System.Text;
 using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Strategies;
 using NUnit.Framework;
 using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;

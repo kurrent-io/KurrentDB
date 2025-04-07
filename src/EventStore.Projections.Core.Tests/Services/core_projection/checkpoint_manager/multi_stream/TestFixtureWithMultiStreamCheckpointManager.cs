@@ -14,7 +14,7 @@ public abstract class TestFixtureWithMultiStreamCheckpointManager<TLogFormat, TS
 	protected override void Given() {
 		base.Given();
 		_projectionVersion = new ProjectionVersion(1, 0, 0);
-		_streams = new[] {"a", "b", "c"};
+		_streams = new[] { "a", "b", "c" };
 	}
 
 	protected override DefaultCheckpointManager GivenCheckpointManager() {

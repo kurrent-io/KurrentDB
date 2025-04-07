@@ -210,7 +210,7 @@ public class StreamMetadata {
 	private static string[] ReadRoles(JsonTextReader reader) {
 		Check(reader.Read(), reader);
 		if (reader.TokenType == JsonToken.String)
-			return new[] {(string)reader.Value};
+			return new[] { (string)reader.Value };
 
 		if (reader.TokenType == JsonToken.StartArray) {
 			var roles = new List<string>();

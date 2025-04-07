@@ -3,7 +3,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Security.AccessControl;
 using System.Threading;
 using ILogger = Serilog.ILogger;
 

@@ -30,9 +30,9 @@ public class TextCodec : ICodec {
 
 	public bool SuitableForResponse(MediaType component) {
 		return component.Type == "*"
-		       || (string.Equals(component.Type, "text", StringComparison.OrdinalIgnoreCase)
-		           && (component.Subtype == "*"
-		               || string.Equals(component.Subtype, "plain", StringComparison.OrdinalIgnoreCase)));
+			   || (string.Equals(component.Type, "text", StringComparison.OrdinalIgnoreCase)
+				   && (component.Subtype == "*"
+					   || string.Equals(component.Subtype, "plain", StringComparison.OrdinalIgnoreCase)));
 	}
 
 	public T From<T>(string text) {

@@ -28,11 +28,11 @@ public unsafe class UnbufferedFileStream : Stream {
 	private long _readLocation = -1;
 	private bool _needsRead;
 
-	static UnbufferedFileStream() => 
-            NativeFile = RuntimeInformation.IsWindows ? new NativeFileWindows() : new NativeFileUnix();
+	static UnbufferedFileStream() =>
+			NativeFile = RuntimeInformation.IsWindows ? new NativeFileWindows() : new NativeFileUnix();
 
-        private UnbufferedFileStream(SafeFileHandle handle, uint blockSize, int internalWriteBufferSize,
-		int internalReadBufferSize) {
+	private UnbufferedFileStream(SafeFileHandle handle, uint blockSize, int internalWriteBufferSize,
+	int internalReadBufferSize) {
 		_handle = handle;
 		_readBufferSize = internalReadBufferSize;
 		_writeBufferSize = internalWriteBufferSize;
@@ -72,7 +72,8 @@ public unsafe class UnbufferedFileStream : Stream {
 
 	public override void Flush() {
 		CheckDisposed();
-		if (!_needsFlush) return;
+		if (!_needsFlush)
+			return;
 		var alignedbuffer = (int)GetLowestAlignment(_bufferedCount);
 		var positionAligned = GetLowestAlignment(_lastPosition);
 		if (!_aligned) {
@@ -131,8 +132,10 @@ public unsafe class UnbufferedFileStream : Stream {
 	public override long Seek(long offset, SeekOrigin origin) {
 		long mungedOffset = offset;
 		CheckDisposed();
-		if (origin == SeekOrigin.Current) throw new NotImplementedException("only supports seek origin begin/end");
-		if (origin == SeekOrigin.End) mungedOffset = Length + offset;
+		if (origin == SeekOrigin.Current)
+			throw new NotImplementedException("only supports seek origin begin/end");
+		if (origin == SeekOrigin.End)
+			mungedOffset = Length + offset;
 		var aligned = GetLowestAlignment(mungedOffset);
 		var left = (int)(mungedOffset - aligned);
 		Flush();
@@ -154,14 +157,16 @@ public unsafe class UnbufferedFileStream : Stream {
 		var aligned = GetLowestAlignment(value);
 		aligned = aligned == value ? aligned : aligned + _blockSize;
 		NativeFile.SetFileSize(_handle, aligned);
-		if(Position > aligned)
+		if (Position > aligned)
 			Seek(aligned, SeekOrigin.Begin);
 	}
 
 	public override int Read(byte[] buffer, int offset, int count) {
 		CheckDisposed();
-		if (offset < 0 || buffer.Length < offset) throw new ArgumentException("offset");
-		if (count < 0 || buffer.Length < count) throw new ArgumentException("offset");
+		if (offset < 0 || buffer.Length < offset)
+			throw new ArgumentException("offset");
+		if (count < 0 || buffer.Length < count)
+			throw new ArgumentException("offset");
 		if (offset + count > buffer.Length)
 			throw new ArgumentException("offset + count must be less than size of array");
 		var position = GetLowestAlignment(Position);
@@ -177,12 +182,14 @@ public unsafe class UnbufferedFileStream : Stream {
 		}
 
 		var bytesAvailable = bytesRead - roffset;
-		if (bytesAvailable <= 0) return 0;
+		if (bytesAvailable <= 0)
+			return 0;
 		var toCopy = count > bytesAvailable ? bytesAvailable : count;
 
 		MemCopy(_readBuffer, roffset, buffer, offset, toCopy);
 		_bufferedCount += toCopy;
-		if (count - toCopy == 0) return toCopy;
+		if (count - toCopy == 0)
+			return toCopy;
 		return toCopy + Read(buffer, offset + toCopy, count - toCopy);
 	}
 
@@ -268,11 +275,13 @@ public unsafe class UnbufferedFileStream : Stream {
 	[System.Diagnostics.Conditional("DEBUG")]
 	private void CheckDisposed() {
 		//only check in debug
-		if (_handle == null) throw new ObjectDisposedException("object is disposed.");
+		if (_handle == null)
+			throw new ObjectDisposedException("object is disposed.");
 	}
 
 	protected override void Dispose(bool disposing) {
-		if (_handle == null) return;
+		if (_handle == null)
+			return;
 		Flush();
 		_handle.Close();
 		_handle = null;

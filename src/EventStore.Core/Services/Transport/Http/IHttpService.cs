@@ -4,11 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
-using EventStore.Core.Bus;
-using EventStore.Core.Messages;
 using EventStore.Transport.Http.EntityManagement;
-using Microsoft.AspNetCore.Http;
 
 namespace EventStore.Core.Services.Transport.Http;
 

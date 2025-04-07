@@ -3,12 +3,9 @@
 
 using System;
 using System.IO;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Plugins.Transforms;
 using NUnit.Framework;
@@ -56,7 +53,7 @@ public class
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
+			data: new byte[] { 1, 2, 3, 4, 5 },
 			metadata: new byte[8000]);
 		Assert.IsTrue(tf.Write(record1, out pos)); // almost fill up first chunk
 
@@ -72,7 +69,7 @@ public class
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
+			data: new byte[] { 1, 2, 3, 4, 5 },
 			metadata: new byte[8000]);
 		Assert.IsFalse(tf.Write(record2, out pos)); // chunk has too small space
 
@@ -88,7 +85,7 @@ public class
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
+			data: new byte[] { 1, 2, 3, 4, 5 },
 			metadata: new byte[2000]);
 		Assert.IsTrue(tf.Write(record3, out pos));
 		tf.Close();

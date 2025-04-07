@@ -2,7 +2,6 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using EventStore.Core.TransactionLog.Chunks;
 
 namespace EventStore.Core.Settings;
 
@@ -16,7 +15,7 @@ public static class ESConsts {
 	public const int ReadRequestTimeout = 10000;
 	public const bool PerformAdditionlCommitChecks = false;
 	public const int MetaStreamMaxCount = 1;
-		
+
 	public const int CachedPrincipalCount = 1000;
 
 	public static readonly TimeSpan HttpTimeout = TimeSpan.FromSeconds(10);

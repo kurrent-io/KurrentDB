@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
-using EventStore.Core.Caching;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
@@ -38,7 +37,7 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 	protected ObjectPool<ITransactionFileReader> _readerPool;
 	protected LogFormatAbstractor<TStreamId> _logFormat;
 	protected const int RecordOffset = 1000;
-	public IList<IPrepareLogRecord<TStreamId>> CreatePrepareLogRecord(TStreamId streamId, int expectedVersion, TStreamId eventType, Guid eventId, long transactionPosition){
+	public IList<IPrepareLogRecord<TStreamId>> CreatePrepareLogRecord(TStreamId streamId, int expectedVersion, TStreamId eventType, Guid eventId, long transactionPosition) {
 		return new[]{
 			PrepareLogRecord.SingleWrite (
 				_logFormat.RecordFactory,
@@ -56,22 +55,24 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 		};
 	}
 
-	public IList<IPrepareLogRecord<TStreamId>> CreatePrepareLogRecords(TStreamId streamId, int expectedVersion, IList<TStreamId> eventTypes, IList<Guid> eventIds, long transactionPosition){
-		if(eventIds.Count != eventTypes.Count)
+	public IList<IPrepareLogRecord<TStreamId>> CreatePrepareLogRecords(TStreamId streamId, int expectedVersion, IList<TStreamId> eventTypes, IList<Guid> eventIds, long transactionPosition) {
+		if (eventIds.Count != eventTypes.Count)
 			throw new Exception("eventType and eventIds length mismatch!");
-		if(eventIds.Count == 0)
+		if (eventIds.Count == 0)
 			throw new Exception("eventIds is empty");
-		if(eventIds.Count == 1)
+		if (eventIds.Count == 1)
 			return CreatePrepareLogRecord(streamId, expectedVersion, eventTypes[0], eventIds[0], transactionPosition);
 
 		var numEvents = eventTypes.Count;
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 
 		var prepares = new List<IPrepareLogRecord<TStreamId>>();
-		for(var i=0;i<numEvents;i++){
+		for (var i = 0; i < numEvents; i++) {
 			PrepareFlags flags = PrepareFlags.Data | PrepareFlags.IsCommitted;
-			if(i==0) flags |= PrepareFlags.TransactionBegin;
-			if(i==numEvents-1) flags |= PrepareFlags.TransactionEnd;
+			if (i == 0)
+				flags |= PrepareFlags.TransactionBegin;
+			if (i == numEvents - 1)
+				flags |= PrepareFlags.TransactionEnd;
 
 			prepares.Add(
 				PrepareLogRecord.Prepare(
@@ -94,33 +95,33 @@ public abstract class WriteEventsToIndexScenario<TLogFormat, TStreamId> : Specif
 		return prepares;
 	}
 
-	public CommitLogRecord CreateCommitLogRecord(long logPosition, long transactionPosition, long firstEventNumber){
-		return new CommitLogRecord (logPosition, Guid.NewGuid(), transactionPosition, DateTime.Now, 0);
+	public CommitLogRecord CreateCommitLogRecord(long logPosition, long transactionPosition, long firstEventNumber) {
+		return new CommitLogRecord(logPosition, Guid.NewGuid(), transactionPosition, DateTime.Now, 0);
 	}
 
-	public void WriteToDB(IList<IPrepareLogRecord<TStreamId>> prepares){
-		foreach(var prepare in prepares){
+	public void WriteToDB(IList<IPrepareLogRecord<TStreamId>> prepares) {
+		foreach (var prepare in prepares) {
 			((FakeInMemoryTfReader)_tfReader).AddRecord(prepare, prepare.LogPosition);
 		}
 	}
 
-	public void WriteToDB(CommitLogRecord commit){
+	public void WriteToDB(CommitLogRecord commit) {
 		((FakeInMemoryTfReader)_tfReader).AddRecord(commit, commit.LogPosition);
 	}
 
-	public void PreCommitToIndex(IList<IPrepareLogRecord<TStreamId>> prepares){
+	public void PreCommitToIndex(IList<IPrepareLogRecord<TStreamId>> prepares) {
 		_indexWriter.PreCommit(prepares.ToArray());
 	}
 
-	public void PreCommitToIndex(CommitLogRecord commitLogRecord){
+	public void PreCommitToIndex(CommitLogRecord commitLogRecord) {
 		_indexWriter.PreCommit(commitLogRecord);
 	}
 
-	public void CommitToIndex(IList<IPrepareLogRecord<TStreamId>> prepares){
+	public void CommitToIndex(IList<IPrepareLogRecord<TStreamId>> prepares) {
 		_indexCommitter.Commit(prepares, false, false);
 	}
 
-	public void CommitToIndex(CommitLogRecord commitLogRecord){
+	public void CommitToIndex(CommitLogRecord commitLogRecord) {
 		_indexCommitter.Commit(commitLogRecord, false, false);
 	}
 

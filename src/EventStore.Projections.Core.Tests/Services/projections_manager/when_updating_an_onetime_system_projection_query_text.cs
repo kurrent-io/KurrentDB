@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
@@ -22,7 +21,7 @@ public class when_updating_an_onetime_system_projection_query_text<TLogFormat, T
 	protected override void Given() {
 		NoOtherStreams();
 	}
-	
+
 	protected override IEnumerable<WhenStep> When() {
 		_projectionName = "$by_correlation_id";
 		yield return (new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid()));

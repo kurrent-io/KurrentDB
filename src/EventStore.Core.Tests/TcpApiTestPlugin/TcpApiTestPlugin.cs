@@ -18,12 +18,12 @@ public class TcpApiTestPlugin() : SubsystemsPlugin(name: "TcpTestApi") {
 
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
 		var options = configuration.GetSection("EventStore:TcpUnitTestPlugin").Get<TcpApiTestOptions>() ?? new();
-		
+
 		services.AddHostedService<PublicTcpApiTestService>(serviceProvider => {
 			var components = serviceProvider.GetRequiredService<StandardComponents>();
 			var authGateway = serviceProvider.GetRequiredService<AuthorizationGateway>();
 			var authProvider = serviceProvider.GetRequiredService<IAuthenticationProvider>();
-			
+
 			return options.Insecure
 				? PublicTcpApiTestService.Insecure(options, authProvider, authGateway, components)
 				: PublicTcpApiTestService.Secure(options, authProvider, authGateway, components, serviceProvider.GetService<CertificateProvider>());

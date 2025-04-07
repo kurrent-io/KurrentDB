@@ -26,7 +26,7 @@ public class when_replica_subscribes_with_no_common_epochs<TLogFormat, TStreamId
 		Writer.Write(CreateLogRecord(4), out _);
 		EpochManager.WriteNewEpoch(1);
 
-		var epochs = new [] {
+		var epochs = new[] {
 			new Epoch(1010, 1, Guid.NewGuid()),
 			new Epoch(999, 2, Guid.NewGuid())
 		};

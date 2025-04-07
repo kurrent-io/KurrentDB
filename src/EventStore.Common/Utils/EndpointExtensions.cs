@@ -32,7 +32,7 @@ public static class EndpointExtensions {
 
 	public static string[] GetOtherNames(this EndPoint endpoint) =>
 		endpoint switch {
-			IPWithClusterDnsEndPoint ipWithClusterDns => new [] { ipWithClusterDns.ClusterDnsName },
+			IPWithClusterDnsEndPoint ipWithClusterDns => new[] { ipWithClusterDns.ClusterDnsName },
 			IPEndPoint => null,
 			DnsEndPoint => null,
 			_ => throw new ArgumentOutOfRangeException(nameof(endpoint), endpoint?.GetType(),

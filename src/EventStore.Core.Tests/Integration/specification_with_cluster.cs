@@ -2,16 +2,16 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Net;
-using EventStore.ClientAPI;
-using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using EventStore.ClientAPI;
 using EventStore.Core.Data;
+using EventStore.Core.Tests.Helpers;
 using EventStore.Plugins.Subsystems;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Integration;
 
@@ -113,7 +113,7 @@ public abstract class specification_with_cluster<TLogFormat, TStreamId> : Specif
 		try {
 			await Task.WhenAll(_nodes.Select(x => x.Started)).WithTimeout(TimeSpan.FromSeconds(60));
 		} catch (TimeoutException ex) {
-			if (_nodes.Select(x => x.Started).Count() < 2){
+			if (_nodes.Select(x => x.Started).Count() < 2) {
 				MiniNodeLogging.WriteLogs();
 				throw new TimeoutException($"Cluster nodes did not start. Statuses: {_nodes[0].NodeState}/{_nodes[1].NodeState}/{_nodes[2].NodeState}", ex);
 			}

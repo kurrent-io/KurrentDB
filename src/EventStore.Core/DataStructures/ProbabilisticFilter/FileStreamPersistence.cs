@@ -134,7 +134,7 @@ public unsafe class FileStreamPersistence : IPersistenceStrategy {
 			var bytesToReadInBlock = bytesToRead > blockSize
 				? blockSize
 				: (int)bytesToRead;
-			
+
 			// consider reading in buffer size blocks. or using random access in net6
 			var read = bulkFileStream.Read(new Span<byte>(DataAccessor.Pointer + bytesRead, bytesToReadInBlock));
 			if (read != bytesToReadInBlock)
@@ -218,7 +218,7 @@ public unsafe class FileStreamPersistence : IPersistenceStrategy {
 			}
 		}
 
-		Done:
+Done:
 		fileStream.FlushToDisk();
 
 		activelyFlushing.Stop();

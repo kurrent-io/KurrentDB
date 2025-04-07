@@ -8,7 +8,7 @@ namespace EventStore.Core.Index;
 
 [StructLayout(LayoutKind.Explicit)]
 public unsafe struct IndexEntry : IComparable<IndexEntry>, IEquatable<IndexEntry> {
-	[FieldOffset(0)] public fixed byte Bytes [24];
+	[FieldOffset(0)] public fixed byte Bytes[24];
 	[FieldOffset(0)] public Int64 Version;
 	[FieldOffset(8)] public UInt64 Stream;
 	[FieldOffset(16)] public Int64 Position;

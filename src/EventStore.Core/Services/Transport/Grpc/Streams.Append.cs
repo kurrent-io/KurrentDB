@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using EventStore.Client.Streams;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.Streams;
 using EventStore.Core.Services.Transport.Common;
 using Grpc.Core;
 using Empty = EventStore.Client.Empty;

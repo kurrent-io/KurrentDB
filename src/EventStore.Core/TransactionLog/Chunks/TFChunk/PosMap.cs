@@ -22,7 +22,7 @@ public struct PosMap : IBinaryFormattable<PosMap> {
 	}
 
 	// for new format only
-	public PosMap(ReadOnlySpan<byte> source){
+	public PosMap(ReadOnlySpan<byte> source) {
 		Debug.Assert(source.Length >= FullSize);
 
 		SpanReader<byte> reader = new(source);
@@ -64,7 +64,7 @@ public struct PosMap : IBinaryFormattable<PosMap> {
 		writer.Write(buffer);
 	}
 
-	public readonly void Format(Span<byte> destination){
+	public readonly void Format(Span<byte> destination) {
 		SpanWriter<byte> writer = new(destination);
 		writer.WriteLittleEndian(ActualPos);
 		writer.WriteLittleEndian(LogPos);

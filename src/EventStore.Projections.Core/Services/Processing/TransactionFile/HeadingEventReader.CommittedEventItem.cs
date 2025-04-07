@@ -6,8 +6,7 @@ using EventStore.Projections.Core.Services.Processing.Subscriptions;
 
 namespace EventStore.Projections.Core.Services.Processing.TransactionFile;
 
-public partial class HeadingEventReader
-{
+public partial class HeadingEventReader {
 	private class CommittedEventItem : HeadingEventReader.Item {
 		public readonly ReaderSubscriptionMessage.CommittedEventDistributed Message;
 

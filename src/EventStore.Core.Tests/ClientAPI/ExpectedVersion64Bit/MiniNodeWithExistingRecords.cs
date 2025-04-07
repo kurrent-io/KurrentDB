@@ -2,26 +2,24 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
+using System.IO;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Tests.ClientAPI.Helpers;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.TransactionLog;
-using NUnit.Framework;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Index;
-using EventStore.Core.Messaging;
+using EventStore.Core.LogAbstraction;
 using EventStore.Core.Services.Storage.ReaderIndex;
+using EventStore.Core.Tests.ClientAPI.Helpers;
+using EventStore.Core.Tests.Helpers;
+using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.Util;
-using System.IO;
-using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 

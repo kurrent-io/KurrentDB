@@ -2,15 +2,15 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
-using NUnit.Framework;
-using EventStore.Core.Tests.Integration;
-using EventStore.Core.Messages;
 using EventStore.Core.Data;
+using EventStore.Core.Messages;
+using EventStore.Core.Tests.Integration;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Replication.ReadStream;
 
@@ -79,10 +79,10 @@ public class when_subscribed_to_stream_on_leader_and_event_is_replicated_to_foll
 			() => {
 				var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
 				return replicas[0].Db.Config.IndexCheckpoint.Read() == leaderIndex &&
-				       replicas[1].Db.Config.IndexCheckpoint.Read() == leaderIndex;
+					   replicas[1].Db.Config.IndexCheckpoint.Read() == leaderIndex;
 
 			},
-			timeout:TimeSpan.FromSeconds(2));
+			timeout: TimeSpan.FromSeconds(2));
 	}
 
 	[Test]

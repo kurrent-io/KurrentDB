@@ -75,7 +75,7 @@ public class MediaType {
 		var parts = componentText.Split(';');
 		var mediaRange = parts[0];
 
-		var typeParts = mediaRange.Split(new[] {'/'}, 2);
+		var typeParts = mediaRange.Split(new[] { '/' }, 2);
 		if (typeParts.Length != 2) {
 			if (throwExceptions)
 				throw new ArgumentException("componentText");

@@ -5,11 +5,11 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using DotNext.Buffers;
+using DotNext.Buffers.Binary;
 using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Index;
-using DotNext.Buffers;
-using DotNext.Buffers.Binary;
 using EventStore.Plugins.Transforms;
 using ChunkVersions = EventStore.Core.TransactionLog.Chunks.TFChunk.TFChunk.ChunkVersions;
 
@@ -87,7 +87,7 @@ public sealed class ChunkHeader : IBinaryFormattable<ChunkHeader> {
 		Debug.Assert(Version >= MinCompatibleVersion);
 
 		if (Version >= (byte)ChunkVersions.Transformed)
-			TransformType = (TransformType) reader.Read();
+			TransformType = (TransformType)reader.Read();
 		else
 			TransformType = TransformType.Identity;
 

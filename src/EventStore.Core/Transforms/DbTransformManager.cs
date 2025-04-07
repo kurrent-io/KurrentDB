@@ -32,13 +32,13 @@ public class DbTransformManager {
 	}
 
 	public IChunkTransformFactory GetFactoryForNewChunk() => _activeTransform?.ChunkFactory ??
-	                                                         throw new Exception("Active transform not set");
+															 throw new Exception("Active transform not set");
 
 	public IChunkTransformFactory GetFactoryForExistingChunk(TransformType type) => FindTransform(type).ChunkFactory;
 
 	public void LoadTransforms(IReadOnlyList<IDbTransform> transforms) {
 		_transforms = transforms;
-		Log.Information($"Loaded the following transforms: { string.Join(", ", transforms.Select(t => t.Type)) }");
+		Log.Information($"Loaded the following transforms: {string.Join(", ", transforms.Select(t => t.Type))}");
 
 		// the identity transform is always required
 		_ = FindTransform(TransformType.Identity);
@@ -64,7 +64,7 @@ public class DbTransformManager {
 		get {
 			var dbTransformManager = new DbTransformManager();
 			var identityDbTransform = new IdentityDbTransform();
-			dbTransformManager.LoadTransforms(new [] { identityDbTransform });
+			dbTransformManager.LoadTransforms(new[] { identityDbTransform });
 			dbTransformManager.SetActiveTransform(TransformType.Identity);
 			return dbTransformManager;
 		}

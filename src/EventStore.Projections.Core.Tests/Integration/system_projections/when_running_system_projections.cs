@@ -25,7 +25,8 @@ public class when_running_system_projections<TLogFormat, TStreamId> : specificat
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		foreach (var e in base.When()) yield return e;
+		foreach (var e in base.When())
+			yield return e;
 		yield return CreateWriteEvent("test-1", "test1", "{}", "{}", isJson: true);
 		yield return CreateWriteEvent("test-2", SystemEventTypes.LinkTo, "0@test-1", "{}", isJson: true);
 	}

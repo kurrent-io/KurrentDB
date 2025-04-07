@@ -9,7 +9,7 @@ namespace EventStore.Core.Tests.Services.IndexCommitter;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class  when_index_committer_service_receives_duplicate_commit_acks<TLogFormat, TStreamId> : with_index_committer_service<TLogFormat, TStreamId> {
+public class when_index_committer_service_receives_duplicate_commit_acks<TLogFormat, TStreamId> : with_index_committer_service<TLogFormat, TStreamId> {
 	private readonly long _logPosition = 4000;
 	private readonly Guid _correlationId = Guid.NewGuid();
 	public override void Given() { }
@@ -18,7 +18,7 @@ public class  when_index_committer_service_receives_duplicate_commit_acks<TLogFo
 
 		Service.Handle(new StorageMessage.CommitAck(_correlationId, _logPosition, _logPosition, 0, 0));
 		Service.Handle(new StorageMessage.CommitAck(_correlationId, _logPosition, _logPosition, 0, 0));
-		Service.Handle(new ReplicationTrackingMessage.ReplicatedTo( _logPosition));
+		Service.Handle(new ReplicationTrackingMessage.ReplicatedTo(_logPosition));
 	}
 
 	[Test]

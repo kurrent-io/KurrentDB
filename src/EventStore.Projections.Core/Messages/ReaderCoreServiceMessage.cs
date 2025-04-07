@@ -19,7 +19,7 @@ public static partial class ReaderCoreServiceMessage {
 	[DerivedMessage(ProjectionMessage.ReaderCoreService)]
 	public partial class StopReader : Message {
 		public Guid QueueId { get; }
-		
+
 		public StopReader(Guid queueId) {
 			QueueId = queueId;
 		}

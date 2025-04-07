@@ -3,9 +3,7 @@
 
 using System;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 

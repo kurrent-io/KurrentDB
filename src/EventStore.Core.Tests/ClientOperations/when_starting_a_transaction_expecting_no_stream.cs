@@ -27,7 +27,7 @@ public class when_starting_a_transaction_expecting_no_stream<TLogFormat, TStream
 
 	[Test]
 	public void successful_request_message_is_published() {
-		AssertEx.IsOrBecomesTrue(()=> Interlocked.Read(ref CompletionMessageCount) == 1);
+		AssertEx.IsOrBecomesTrue(() => Interlocked.Read(ref CompletionMessageCount) == 1);
 		Assert.AreEqual(InternalCorrId, CompletionMessage.CorrelationId);
 		Assert.True(CompletionMessage.Success);
 	}

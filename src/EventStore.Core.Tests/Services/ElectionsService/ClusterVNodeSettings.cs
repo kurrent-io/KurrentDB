@@ -2,11 +2,9 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
-using System.Linq;
 using System.Net;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Core.TransactionLog.Chunks;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 

@@ -93,19 +93,24 @@ public class SystemLogRecord : LogRecord, IEquatable<SystemLogRecord>, ISystemLo
 	}
 
 	public bool Equals(SystemLogRecord other) {
-		if (ReferenceEquals(null, other)) return false;
-		if (ReferenceEquals(this, other)) return true;
+		if (ReferenceEquals(null, other))
+			return false;
+		if (ReferenceEquals(this, other))
+			return true;
 		return other.LogPosition == LogPosition
-		       && other.TimeStamp.Equals(TimeStamp)
-		       && other.SystemRecordType == SystemRecordType
-		       && other.SystemRecordSerialization == SystemRecordSerialization
-		       && other.Reserved == Reserved;
+			   && other.TimeStamp.Equals(TimeStamp)
+			   && other.SystemRecordType == SystemRecordType
+			   && other.SystemRecordSerialization == SystemRecordSerialization
+			   && other.Reserved == Reserved;
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != typeof(SystemRecordType)) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != typeof(SystemRecordType))
+			return false;
 		return Equals((SystemLogRecord)obj);
 	}
 
@@ -130,10 +135,10 @@ public class SystemLogRecord : LogRecord, IEquatable<SystemLogRecord>, ISystemLo
 
 	public override string ToString() {
 		return string.Format("LogPosition: {0}, "
-		                     + "TimeStamp: {1}, "
-		                     + "SystemRecordType: {2}, "
-		                     + "SystemRecordSerialization: {3}, "
-		                     + "Reserved: {4}",
+							 + "TimeStamp: {1}, "
+							 + "SystemRecordType: {2}, "
+							 + "SystemRecordSerialization: {3}, "
+							 + "Reserved: {4}",
 			LogPosition,
 			TimeStamp,
 			SystemRecordType,

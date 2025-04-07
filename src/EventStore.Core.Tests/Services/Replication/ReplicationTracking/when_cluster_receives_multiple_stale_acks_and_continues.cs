@@ -30,7 +30,7 @@ public class when_cluster_receives_multiple_stale_acks_and_continues :
 		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 
 		ReplicatedTos.Clear();
-		
+
 		WriterCheckpoint.Write(_secondLogPosition);
 		WriterCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.WriterCheckpointFlushed());
@@ -38,7 +38,7 @@ public class when_cluster_receives_multiple_stale_acks_and_continues :
 		AssertEx.IsOrBecomesTrue(() => Service.IsCurrent());
 	}
 
-	
+
 
 	[Test]
 	public void replicated_to_can_advance_to_second_position() {
@@ -49,7 +49,7 @@ public class when_cluster_receives_multiple_stale_acks_and_continues :
 
 	[Test]
 	public void replication_checkpoint_can_advance_to_second_position() {
-		
+
 		Assert.AreEqual(_secondLogPosition, ReplicationCheckpoint.Read());
 		Assert.AreEqual(_secondLogPosition, ReplicationCheckpoint.ReadNonFlushed());
 	}

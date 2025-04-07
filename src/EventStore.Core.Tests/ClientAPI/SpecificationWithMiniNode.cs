@@ -26,12 +26,12 @@ public abstract class SpecificationWithMiniNode<TLogFormat, TStreamId> : Specifi
 
 	protected async Task CloseConnectionAndWait(IEventStoreConnection conn) {
 		TaskCompletionSource closed = new TaskCompletionSource();
-		conn.Closed += (_,_) => closed.SetResult();
+		conn.Closed += (_, _) => closed.SetResult();
 		conn.Close();
 		await closed.Task.WithTimeout(Timeout);
 	}
 
-	protected SpecificationWithMiniNode() : this(chunkSize: 1024*1024) { }
+	protected SpecificationWithMiniNode() : this(chunkSize: 1024 * 1024) { }
 
 	protected SpecificationWithMiniNode(int chunkSize) {
 		_chunkSize = chunkSize;
@@ -39,20 +39,20 @@ public abstract class SpecificationWithMiniNode<TLogFormat, TStreamId> : Specifi
 
 	[OneTimeSetUp]
 	public override async Task TestFixtureSetUp() {
-		
+
 		MiniNodeLogging.Setup();
-		
+
 		try {
 			await base.TestFixtureSetUp();
 		} catch (Exception ex) {
 			throw new Exception("TestFixtureSetUp Failed", ex);
 		}
-		
+
 		try {
 			_node = new MiniNode<TLogFormat, TStreamId>(PathName, chunkSize: _chunkSize);
 			await _node.Start();
 			_conn = BuildConnection(_node);
-			await _conn.ConnectAsync();		
+			await _conn.ConnectAsync();
 		} catch (Exception ex) {
 			MiniNodeLogging.WriteLogs();
 			throw new Exception("MiniNodeSetUp Failed", ex);

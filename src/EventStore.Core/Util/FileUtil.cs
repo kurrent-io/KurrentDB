@@ -12,7 +12,7 @@ public static class FileUtils {
 
 		if (!dir.Exists)
 			throw new DirectoryNotFoundException("Source directory does not exist or could not be found: " +
-			                                     sourceDirName);
+												 sourceDirName);
 
 		var subdirs = copySubDirs ? dir.GetDirectories() : null;
 

@@ -147,17 +147,15 @@ public class TFChunkWriter : ITransactionFileWriter {
 	}
 
 	private static void VerifyChunkNumberLimits(int chunkNumber) {
-		switch (chunkNumber)
-		{
+		switch (chunkNumber) {
 			case >= MaxChunkNumber:
 				throw new Exception($"Max chunk number limit reached: {MaxChunkNumber:N0}. Shutting down.");
 			case < MaxChunkNumberWarning:
 				break;
-			default:
-			{
+			default: {
 				var level = chunkNumber >= MaxChunkNumberError ? LogEventLevel.Error : LogEventLevel.Warning;
 				Log.Write(level, "You are approaching the max chunk number limit: {chunkNumber:N0} / {maxChunkNumber:N0}. " +
-				                 "The server will shut down when the limit is reached!", chunkNumber, MaxChunkNumber);
+								 "The server will shut down when the limit is reached!", chunkNumber, MaxChunkNumber);
 				break;
 			}
 		}

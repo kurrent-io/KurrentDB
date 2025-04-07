@@ -3,7 +3,6 @@
 
 #pragma warning disable 1718
 
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 

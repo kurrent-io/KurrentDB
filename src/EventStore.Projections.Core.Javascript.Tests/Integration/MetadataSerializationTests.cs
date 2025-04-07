@@ -8,7 +8,6 @@ using EventStore.Core.Data;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventStore.Projections.Core.Javascript.Tests.Integration;
 

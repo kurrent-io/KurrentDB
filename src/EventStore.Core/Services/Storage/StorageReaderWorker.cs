@@ -12,12 +12,11 @@ using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Storage.InMemory;
 using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.Checkpoint;
-using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 using EventStore.Core.Services.TimerService;
-using EventStore.Core.Messaging;
+using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using ILogger = Serilog.ILogger;
+using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Services.Storage;
 
@@ -677,7 +676,7 @@ public class StorageReaderWorker<TStreamId> :
 
 					return ResolvedEvent.ForFailedResolvedLink(eventRecord, res.Result, commitPosition);
 				}
-				
+
 				Log.Warning($"Invalid link event payload [{linkPayload}]: {eventRecord}");
 				return ResolvedEvent.ForUnresolvedEvent(eventRecord, commitPosition);
 			} catch (Exception exc) {
