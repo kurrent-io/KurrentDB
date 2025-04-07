@@ -4,7 +4,7 @@
 using System.Runtime;
 using Xunit;
 
-namespace EventStore.SystemRuntime.Tests;
+namespace KurrentDB.SystemRuntime.Tests;
 
 public class RuntimeInformationTests {
 	[Fact]

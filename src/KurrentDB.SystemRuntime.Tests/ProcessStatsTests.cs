@@ -9,7 +9,7 @@ using System.Text;
 using EventStore.Core.TransactionLog.Unbuffered;
 using Xunit;
 
-namespace EventStore.SystemRuntime.Tests;
+namespace KurrentDB.SystemRuntime.Tests;
 
 public sealed class ProcessStatsTests : IDisposable {
 	private readonly DirectoryInfo _directory;

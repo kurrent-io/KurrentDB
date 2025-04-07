@@ -7,6 +7,6 @@
 		<PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\EventStore.SystemRuntime\EventStore.SystemRuntime.csproj" />
+	  <ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" />
 	</ItemGroup>
 </Project>

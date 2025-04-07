@@ -43,7 +43,7 @@
 	  </None>
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\EventStore.SystemRuntime\EventStore.SystemRuntime.csproj" />
+	  <ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" />
 	</ItemGroup>
 
 </Project>
