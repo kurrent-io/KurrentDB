@@ -8,7 +8,9 @@ using System.Threading.Tasks;
 using EventStore.Core.XUnit.Tests;
 using Xunit;
 
-namespace EventStore.PluginHosting.Tests;
+// ReSharper disable CheckNamespace
+
+namespace KurrentDB.PluginHosting.Tests;
 
 public class PluginLoaderTests : IAsyncLifetime {
 	private readonly DirectoryFixture<PluginLoaderTests> _fixture = new();

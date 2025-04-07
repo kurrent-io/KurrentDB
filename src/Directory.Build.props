@@ -26,6 +26,6 @@
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(IsTestProject)' == 'true'">
-		<ProjectReference Include="..\EventStore.Plugins.TestHelpers\EventStore.Plugins.TestHelpers.csproj" />
+		<ProjectReference Include="..\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
 	</ItemGroup>
 </Project>

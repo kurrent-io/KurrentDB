@@ -77,7 +77,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.OtlpExporterPlug
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.OtlpExporterPlugin", "EventStore.OtlpExporterPlugin\EventStore.OtlpExporterPlugin.csproj", "{D180755E-8D2A-462F-9E67-55ED985D2465}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Plugins.TestHelpers", "EventStore.Plugins.TestHelpers\EventStore.Plugins.TestHelpers.csproj", "{A93A3CAF-C3ED-4CC8-84E3-7F2641405837}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Plugins.TestHelpers", "KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj", "{A93A3CAF-C3ED-4CC8-84E3-7F2641405837}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Auth.Ldaps", "EventStore.Auth.Ldaps\EventStore.Auth.Ldaps.csproj", "{674714F6-247F-4C0F-AD59-E25AFE1145F6}"
 EndProject

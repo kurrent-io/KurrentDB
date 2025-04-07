@@ -4,8 +4,8 @@
 using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
-using EventStore.Plugins.TestHelpers;
 using FluentAssertions;
+using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
