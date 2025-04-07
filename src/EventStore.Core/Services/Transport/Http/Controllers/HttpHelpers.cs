@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using EventStore.Common.Utils;
 using EventStore.Plugins.Authorization;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.EntityManagement;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers;
 

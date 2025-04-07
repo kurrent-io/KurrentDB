@@ -29,7 +29,7 @@ public class ResponseConfiguration(
 	public ResponseConfiguration SetCreated(string location) {
 		var headers = Headers.ToDictionary(v => v.Key, v => v.Value);
 		headers["Location"] = location;
-		return new(EventStore.Transport.Http.HttpStatusCode.Created, ContentType, Encoding, headers.ToArray());
+		return new(KurrentDB.Transport.Http.HttpStatusCode.Created, ContentType, Encoding, headers.ToArray());
 	}
 
 	private static string GetHttpStatusDescription(int code) {

@@ -7,10 +7,10 @@ using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Metrics;
 using EventStore.Plugins.Authorization;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
-using EventStore.Transport.Http.EntityManagement;
-using HttpMethod = EventStore.Transport.Http.HttpMethod;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.EntityManagement;
+using HttpMethod = KurrentDB.Transport.Http.HttpMethod;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers;

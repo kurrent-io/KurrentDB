@@ -36,7 +36,7 @@ using Serilog;
 using AuthenticationMiddleware = EventStore.Core.Services.Transport.Http.AuthenticationMiddleware;
 using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
 using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
-using HttpMethod = EventStore.Transport.Http.HttpMethod;
+using HttpMethod = KurrentDB.Transport.Http.HttpMethod;
 using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
 using ServerFeatures = EventStore.Core.Services.Transport.Grpc.ServerFeatures;
 

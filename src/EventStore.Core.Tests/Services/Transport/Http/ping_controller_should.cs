@@ -4,8 +4,8 @@
 using System.Threading.Tasks;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;

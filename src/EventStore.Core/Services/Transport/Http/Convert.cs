@@ -11,8 +11,8 @@ using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http.Controllers;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Transport.Http.Atom;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.Atom;
+using KurrentDB.Transport.Http.Codecs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

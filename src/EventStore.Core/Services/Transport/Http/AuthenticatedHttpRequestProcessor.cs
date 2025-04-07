@@ -6,8 +6,8 @@ using EventStore.Core.Bus;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http.Messages;
-using EventStore.Transport.Http.EntityManagement;
-using HttpStatusCode = EventStore.Transport.Http.HttpStatusCode;
+using KurrentDB.Transport.Http.EntityManagement;
+using HttpStatusCode = KurrentDB.Transport.Http.HttpStatusCode;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Http;

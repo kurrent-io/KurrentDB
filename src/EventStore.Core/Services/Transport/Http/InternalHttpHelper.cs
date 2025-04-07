@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http.EntityManagement;
 using Microsoft.AspNetCore.Http;
 
 namespace EventStore.Core.Services.Transport.Http;

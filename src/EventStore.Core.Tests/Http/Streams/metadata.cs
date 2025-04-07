@@ -11,7 +11,7 @@ using EventStore.Core.Tests.Http.Streams.basic;
 using EventStore.Core.Tests.Http.Users.users;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using ContentType = EventStore.Transport.Http.ContentType;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams;

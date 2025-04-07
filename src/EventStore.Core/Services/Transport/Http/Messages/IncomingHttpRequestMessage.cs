@@ -3,7 +3,7 @@
 
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http.EntityManagement;
 
 namespace EventStore.Core.Services.Transport.Http.Messages;
 

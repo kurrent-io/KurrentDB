@@ -8,9 +8,9 @@ using System.IO;
 using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Http;
 using EventStore.Plugins.Authorization;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.EntityManagement;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Util;

@@ -12,9 +12,9 @@ using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http;
 using EventStore.Core.Settings;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.EntityManagement;
-using HttpStatusCode = EventStore.Transport.Http.HttpStatusCode;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.EntityManagement;
+using HttpStatusCode = KurrentDB.Transport.Http.HttpStatusCode;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services;

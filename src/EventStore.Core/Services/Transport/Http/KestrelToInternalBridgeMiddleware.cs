@@ -6,12 +6,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.EntityManagement;
 using Microsoft.AspNetCore.Http;
 using Serilog;
-using HttpStatusCode = EventStore.Transport.Http.HttpStatusCode;
+using HttpStatusCode = KurrentDB.Transport.Http.HttpStatusCode;
 
 namespace EventStore.Core.Services.Transport.Http;
 

@@ -18,7 +18,7 @@ using EventStore.Core.Tests.Helpers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
-using ContentTypeConstant = EventStore.Transport.Http.ContentType;
+using ContentTypeConstant = KurrentDB.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Http;
 

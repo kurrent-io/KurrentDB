@@ -17,7 +17,7 @@ using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
 using NUnit.Framework;
-using ContentType = EventStore.Transport.Http.ContentType;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 using StatusCode = Grpc.Core.StatusCode;
 
 namespace EventStore.Core.Tests.Integration;

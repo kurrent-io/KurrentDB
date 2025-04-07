@@ -9,7 +9,7 @@ using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http.Messages;
 using EventStore.Core.Settings;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http.EntityManagement;
 
 namespace EventStore.Core.Services.Transport.Http;
 

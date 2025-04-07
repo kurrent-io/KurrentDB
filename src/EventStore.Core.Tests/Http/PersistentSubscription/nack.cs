@@ -4,7 +4,7 @@
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using EventStore.Transport.Http;
+using KurrentDB.Transport.Http;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;

@@ -14,10 +14,10 @@ using EventStore.Common.Utils;
 using EventStore.Core.Services;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Http.Users.users;
-using EventStore.Transport.Http;
+using KurrentDB.Transport.Http;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using HttpMethod = EventStore.Transport.Http.HttpMethod;
+using HttpMethod = KurrentDB.Transport.Http.HttpMethod;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams {

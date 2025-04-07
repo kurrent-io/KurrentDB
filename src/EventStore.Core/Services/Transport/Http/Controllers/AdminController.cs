@@ -12,10 +12,10 @@ using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Plugins.Authorization;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Atom;
-using EventStore.Transport.Http.Codecs;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Atom;
+using KurrentDB.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.EntityManagement;
 using Microsoft.Extensions.Primitives;
 using Serilog;
 

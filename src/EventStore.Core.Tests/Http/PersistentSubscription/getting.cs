@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common;
 using EventStore.Core.Tests.Http.Users.users;
-using EventStore.Transport.Http;
+using KurrentDB.Transport.Http;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;

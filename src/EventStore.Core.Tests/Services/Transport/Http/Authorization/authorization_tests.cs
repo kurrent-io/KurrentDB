@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Tests.Integration;
 using NUnit.Framework;
-using ContentType = EventStore.Transport.Http.ContentType;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
 

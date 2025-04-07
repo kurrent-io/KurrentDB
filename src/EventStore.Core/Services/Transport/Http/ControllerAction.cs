@@ -4,7 +4,7 @@
 using System;
 using EventStore.Common.Utils;
 using EventStore.Plugins.Authorization;
-using EventStore.Transport.Http;
+using KurrentDB.Transport.Http;
 
 namespace EventStore.Core.Services.Transport.Http;
 

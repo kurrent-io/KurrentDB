@@ -4,8 +4,8 @@
 using System;
 using System.IO;
 using System.Xml;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Atom;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Atom;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;

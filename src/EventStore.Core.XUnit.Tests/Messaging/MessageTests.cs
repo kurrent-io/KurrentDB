@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.Messages;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Messaging;

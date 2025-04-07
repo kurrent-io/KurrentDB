@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using KurrentDB.Licensing.Keygen;
-using ContentType = EventStore.Transport.Http.ContentType;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 
 namespace KurrentDB.Licensing.Tests.Keygen;
 

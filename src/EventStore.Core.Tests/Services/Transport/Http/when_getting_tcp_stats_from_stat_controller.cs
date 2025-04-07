@@ -11,7 +11,7 @@ using EventStore.ClientAPI;
 using EventStore.Common.Utils;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.ClientAPI;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.Codecs;
 using NUnit.Framework;
 using HttpMethod = System.Net.Http.HttpMethod;
 using HttpStatusCode = System.Net.HttpStatusCode;

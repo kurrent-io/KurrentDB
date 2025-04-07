@@ -5,7 +5,7 @@ using System;
 using System.Globalization;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.Codecs;
 using ILogger = Serilog.ILogger;
 #pragma warning disable 1591
 

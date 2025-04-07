@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http.EntityManagement;
 using Microsoft.Extensions.Primitives;
 using NUnit.Framework;
 

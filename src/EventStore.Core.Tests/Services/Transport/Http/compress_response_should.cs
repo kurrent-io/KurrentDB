@@ -5,8 +5,8 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.EntityManagement;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;

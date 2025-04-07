@@ -4,8 +4,8 @@
 using System;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.EntityManagement;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.EntityManagement;
 
 namespace EventStore.Core.Services.Transport.Http;
 

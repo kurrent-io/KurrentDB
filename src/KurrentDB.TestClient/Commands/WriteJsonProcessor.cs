@@ -8,7 +8,7 @@ using EventStore.Client.Messages;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.Codecs;
 
 namespace KurrentDB.TestClient.Commands;
 

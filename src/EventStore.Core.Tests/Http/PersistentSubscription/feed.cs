@@ -10,7 +10,7 @@ using System.Xml.Linq;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Http.Streams;
 using EventStore.Core.Tests.Http.Users.users;
-using EventStore.Transport.Http;
+using KurrentDB.Transport.Http;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;

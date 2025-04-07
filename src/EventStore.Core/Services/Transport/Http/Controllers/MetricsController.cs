@@ -6,8 +6,8 @@ using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
 using EventStore.Plugins.Authorization;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
 
 namespace EventStore.Core.Services.Transport.Http.Controllers;
 

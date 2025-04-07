@@ -10,8 +10,8 @@ using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Monitoring;
 using EventStore.Core.Services.Transport.Http.Controllers;
-using ContentType = EventStore.Transport.Http.ContentType;
-using HttpStatusCode = EventStore.Transport.Http.HttpStatusCode;
+using ContentType = KurrentDB.Transport.Http.ContentType;
+using HttpStatusCode = KurrentDB.Transport.Http.HttpStatusCode;
 using OperationResult = EventStore.Core.Messages.OperationResult;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 

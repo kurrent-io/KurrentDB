@@ -11,7 +11,7 @@ using EventStore.Common.Utils;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Tests.ClientAPI.Cluster;
 using NUnit.Framework;
-using ContentType = EventStore.Transport.Http.ContentType;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 
 namespace EventStore.Projections.Core.Tests.Services.Transport.Http;
 

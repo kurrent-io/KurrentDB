@@ -3,7 +3,7 @@
 
 using System.Threading.Tasks;
 using EventStore.Plugins.Authorization;
-using EventStore.Transport.Http;
+using KurrentDB.Transport.Http;
 using Microsoft.AspNetCore.Http;
 using Serilog;
 

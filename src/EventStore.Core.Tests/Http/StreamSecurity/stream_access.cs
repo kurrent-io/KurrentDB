@@ -11,7 +11,7 @@ using EventStore.Common.Utils;
 using EventStore.Core.Services;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using ContentType = EventStore.Transport.Http.ContentType;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Http.StreamSecurity {
 	namespace stream_access {
