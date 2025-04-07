@@ -7,10 +7,10 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
-using EventStore.Licensing.Keygen;
+using KurrentDB.Licensing.Keygen;
 using Xunit;
 
-namespace EventStore.Licensing.Tests.Keygen;
+namespace KurrentDB.Licensing.Tests.Keygen;
 
 partial class KeygenSimulator {
 	public async Task<Models.ValidateLicenseRequest> ShouldReceive_ValidationRequest() {

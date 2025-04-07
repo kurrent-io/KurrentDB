@@ -9,10 +9,10 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using EventStore.Licensing.Keygen;
+using KurrentDB.Licensing.Keygen;
 using ContentType = EventStore.Transport.Http.ContentType;
 
-namespace EventStore.Licensing.Tests.Keygen;
+namespace KurrentDB.Licensing.Tests.Keygen;
 
 partial class KeygenSimulator : HttpMessageHandler {
 	readonly Channel<HttpRequestMessage> _requests;

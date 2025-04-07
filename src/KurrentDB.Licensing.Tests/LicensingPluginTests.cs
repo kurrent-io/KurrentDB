@@ -16,7 +16,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace EventStore.Licensing.Tests;
+namespace KurrentDB.Licensing.Tests;
 
 public class LicensingPluginTests : IAsyncLifetime {
 	private TestServer? _server;

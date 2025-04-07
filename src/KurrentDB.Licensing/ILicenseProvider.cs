@@ -3,7 +3,7 @@
 
 using EventStore.Plugins.Licensing;
 
-namespace EventStore.Licensing;
+namespace KurrentDB.Licensing;
 
 
 public class CurrentLicense {

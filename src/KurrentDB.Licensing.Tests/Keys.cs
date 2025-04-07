@@ -4,7 +4,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace EventStore.Licensing.Tests;
+namespace KurrentDB.Licensing.Tests;
 
 public static class Keys {
 	static Keys() {

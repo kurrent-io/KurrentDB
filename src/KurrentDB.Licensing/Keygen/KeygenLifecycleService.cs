@@ -7,9 +7,9 @@ using System.Reactive.Subjects;
 using Microsoft.Extensions.Hosting;
 using RestSharp;
 using Serilog;
-using static EventStore.Licensing.Keygen.Models;
+using static KurrentDB.Licensing.Keygen.Models;
 
-namespace EventStore.Licensing.Keygen;
+namespace KurrentDB.Licensing.Keygen;
 
 // Uses a client to try to create and maintain a license activation for this machine fingerprint.
 // current status is available via the Licenses observable.
@@ -99,15 +99,15 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 
 		var licenseName = licenseAttributes.Name;
 		switch (response.GetStatus()) {
-			case LicenseStatus.InvalidNoMachines:
-			case LicenseStatus.InvalidMachineMismatch:
+			case Models.LicenseStatus.InvalidNoMachines:
+			case Models.LicenseStatus.InvalidMachineMismatch:
 				return await Activate();
 
-			case LicenseStatus.InvalidHeartbeatNotStarted:
-			case LicenseStatus.InvalidHeartbeatDead:
+			case Models.LicenseStatus.InvalidHeartbeatNotStarted:
+			case Models.LicenseStatus.InvalidHeartbeatDead:
 				return await Deactivate();
 
-			case LicenseStatus.InvalidOther:
+			case Models.LicenseStatus.InvalidOther:
 				return CreateResult([]);
 		}
 
@@ -123,7 +123,7 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 
 		return CreateResult(entitlements);
 
-		LicenseInfo CreateResult(EntitlementAttributes[] entitlements) =>
+		LicenseInfo CreateResult(Models.EntitlementAttributes[] entitlements) =>
 			new LicenseInfo.Conclusive(
 				LicenseId: licenseData.Id,
 				Name: licenseName,
@@ -207,8 +207,8 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 		RestResponse<T> restResponse,
 		string operation,
 		[MaybeNullWhen(false)] out T response,
-		[MaybeNullWhen(true)] out KeygenError error)
-		where T : KeygenResponse {
+		[MaybeNullWhen(true)] out Models.KeygenError error)
+		where T : Models.KeygenResponse {
 
 		if (restResponse.Data is not { } data) {
 			Log.Information($"{operation} returned no response. HttpStatus {{Status}}. ResponseStatus: {{ResponseStatus}}. Error: {{Error}}",
@@ -260,7 +260,7 @@ static class ErrorExtensions {
 		"MACHINE_PROCESS_LIMIT_EXCEEDED",
 	];
 
-	public static LicenseInfo ToLicenseInfo(this KeygenError error) {
+	public static LicenseInfo ToLicenseInfo(this Models.KeygenError error) {
 		// FINGERPRINT_TAKEN is special, see when_license_validation_requires_machine_activation_which_fails
 		if (error.Code == "FINGERPRINT_TAKEN" && !error.Detail.Contains("policy"))
 			return LicenseInfo.Inconclusive.Instance;

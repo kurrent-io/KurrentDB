@@ -75,7 +75,7 @@ using EventStore.Core.TransactionLog.Scavenging.Stages;
 using EventStore.Core.Transforms;
 using EventStore.Core.Transforms.Identity;
 using EventStore.Core.Util;
-using EventStore.Licensing;
+using KurrentDB.Licensing;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
 using EventStore.Plugins.Subsystems;

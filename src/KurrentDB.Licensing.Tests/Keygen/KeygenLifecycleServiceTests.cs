@@ -5,11 +5,11 @@ using System;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using EventStore.Licensing.Keygen;
+using KurrentDB.Licensing.Keygen;
 using RestSharp;
 using Xunit;
 
-namespace EventStore.Licensing.Tests.Keygen;
+namespace KurrentDB.Licensing.Tests.Keygen;
 
 public sealed class KeygenLifecycleServiceTests : IDisposable {
 	readonly Channel<LicenseInfo> _licenses;

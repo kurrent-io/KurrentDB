@@ -8,7 +8,7 @@ using EventStore.Plugins.Licensing;
 using Microsoft.Extensions.Hosting;
 using Xunit;
 
-namespace EventStore.Licensing.Tests;
+namespace KurrentDB.Licensing.Tests;
 
 public class LicenseServiceTests {
 	[Fact]

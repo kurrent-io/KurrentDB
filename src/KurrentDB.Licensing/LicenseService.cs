@@ -5,7 +5,7 @@ using EventStore.Plugins.Licensing;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
-namespace EventStore.Licensing;
+namespace KurrentDB.Licensing;
 
 public class LicenseService : ILicenseService {
 	private static readonly ILogger Log = Serilog.Log.ForContext<LicenseService>();

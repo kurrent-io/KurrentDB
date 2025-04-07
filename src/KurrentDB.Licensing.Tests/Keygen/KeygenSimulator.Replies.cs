@@ -4,9 +4,9 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using EventStore.Licensing.Keygen;
+using KurrentDB.Licensing.Keygen;
 
-namespace EventStore.Licensing.Tests.Keygen;
+namespace KurrentDB.Licensing.Tests.Keygen;
 
 partial class KeygenSimulator {
 	public async Task ReplyWith_ValidationResponse(string code) => await Send(

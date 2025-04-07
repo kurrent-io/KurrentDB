@@ -6,7 +6,7 @@ using EventStore.Plugins.Licensing;
 using Serilog;
 using Serilog.Events;
 
-namespace EventStore.Licensing.Keygen;
+namespace KurrentDB.Licensing.Keygen;
 
 // This abstracts Keygen away from the rest of the system
 // responsible for translating the keygen output into an ESDB license (or not)

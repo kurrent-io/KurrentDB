@@ -6,7 +6,7 @@ using System.Text;
 using RestSharp;
 using RestSharp.Interceptors;
 
-namespace EventStore.Licensing.Keygen;
+namespace KurrentDB.Licensing.Keygen;
 
 public class KeygenSignatureInterceptor : Interceptor {
 	readonly RSA _rsa;

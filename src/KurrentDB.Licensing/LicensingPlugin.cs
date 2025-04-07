@@ -2,9 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Reactive.Subjects;
-using EventStore.Licensing.Keygen;
 using EventStore.Plugins;
+using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
+using KurrentDB.Licensing.Keygen;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -14,7 +15,7 @@ using RestSharp;
 using RestSharp.Authenticators.OAuth2;
 using Serilog;
 
-namespace EventStore.Licensing;
+namespace KurrentDB.Licensing;
 
 // circumventing the license mechanism is against the ESLv2 license.
 public class LicensingPlugin : Plugin {
@@ -104,7 +105,7 @@ public class LicensingPlugin : Plugin {
 			})
 			.AddHostedService(sp => new LicenseTelemetryService(
 				sp.GetRequiredService<ILicenseService>(),
-				telemetry => PublishDiagnosticsData(telemetry, Plugins.Diagnostics.PluginDiagnosticsDataCollectionMode.Snapshot)));
+				telemetry => PublishDiagnosticsData(telemetry, PluginDiagnosticsDataCollectionMode.Snapshot)));
 	}
 
 	class NoLicenseKeyException : Exception {

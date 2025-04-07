@@ -3,7 +3,7 @@
 
 using System.Net.NetworkInformation;
 
-namespace EventStore.Licensing.Keygen;
+namespace KurrentDB.Licensing.Keygen;
 
 // Identifies this ESDB node
 // We want the fingerprint to be stable across restarts so that multiple restarts do

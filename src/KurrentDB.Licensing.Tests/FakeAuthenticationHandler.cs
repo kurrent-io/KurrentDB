@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace EventStore.Licensing.Tests;
+namespace KurrentDB.Licensing.Tests;
 
 public class FakeAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions> {
 	public FakeAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,

@@ -4,7 +4,7 @@
 using EventStore.Plugins.Licensing;
 using Microsoft.Extensions.Hosting;
 
-namespace EventStore.Licensing;
+namespace KurrentDB.Licensing;
 
 public class LicenseTelemetryService : IHostedService {
 	private readonly ILicenseService _licenseProvider;

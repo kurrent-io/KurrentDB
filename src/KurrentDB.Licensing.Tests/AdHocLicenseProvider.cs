@@ -5,7 +5,7 @@ using System;
 using System.Reactive.Subjects;
 using EventStore.Plugins.Licensing;
 
-namespace EventStore.Licensing.Tests;
+namespace KurrentDB.Licensing.Tests;
 
 public class AdHocLicenseProvider : ILicenseProvider {
 	public AdHocLicenseProvider(License license) {

@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using EventStore.Plugins.Licensing;
 
-namespace EventStore.Licensing;
+namespace KurrentDB.Licensing;
 
 public record LicenseSummary(
 	string LicenseId,
