@@ -3,7 +3,7 @@
 
 using System;
 using System.IO;
-using EventStore.BufferManagement;
+using KurrentDB.BufferManagement;
 
 namespace EventStore.Transport.Tcp.Formatting;
 

@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EventStore.BufferManagement;
+namespace KurrentDB.BufferManagement;
 
 public class BufferPool : IDisposable {
 	private List<ArraySegment<byte>> _buffers;

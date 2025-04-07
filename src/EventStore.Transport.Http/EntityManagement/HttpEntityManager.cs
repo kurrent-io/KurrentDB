@@ -12,8 +12,8 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.BufferManagement;
 using EventStore.Common.Utils;
+using KurrentDB.BufferManagement;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Transport.Http.EntityManagement;

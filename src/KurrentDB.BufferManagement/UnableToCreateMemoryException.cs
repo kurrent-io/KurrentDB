@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.BufferManagement;
+namespace KurrentDB.BufferManagement;
 
 public class UnableToCreateMemoryException : Exception {
 	public UnableToCreateMemoryException()

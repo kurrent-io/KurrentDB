@@ -7,7 +7,7 @@
 		<PackageReference Include="Microsoft.Net.Http.Headers" Version="8.0.0" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.BufferManagement\EventStore.BufferManagement.csproj" />
+		<ProjectReference Include="..\KurrentDB.BufferManagement\KurrentDB.BufferManagement.csproj" />
 		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
 	</ItemGroup>
 </Project>

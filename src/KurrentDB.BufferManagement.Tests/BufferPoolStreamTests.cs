@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using NUnit.Framework;
 
-namespace EventStore.BufferManagement.Tests;
+namespace KurrentDB.BufferManagement.Tests;
 
 public abstract class has_buffer_pool_fixture : has_buffer_manager_fixture {
 	protected BufferPool BufferPool;

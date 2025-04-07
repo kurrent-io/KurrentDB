@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.BufferManagement;
 using EventStore.Common.Utils;
+using KurrentDB.BufferManagement;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Transport.Tcp.Framing;

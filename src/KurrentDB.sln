@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.BufferManagement", "EventStore.BufferManagement\EventStore.BufferManagement.csproj", "{C7B79854-21DB-48A9-89E3-136404F13DF5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.BufferManagement", "KurrentDB.BufferManagement\KurrentDB.BufferManagement.csproj", "{C7B79854-21DB-48A9-89E3-136404F13DF5}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.BufferManagement.Tests", "EventStore.BufferManagement.Tests\EventStore.BufferManagement.Tests.csproj", "{289B2A5C-9EC6-47C4-9C1B-15D4C2ADFDCD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.BufferManagement.Tests", "KurrentDB.BufferManagement.Tests\KurrentDB.BufferManagement.Tests.csproj", "{289B2A5C-9EC6-47C4-9C1B-15D4C2ADFDCD}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Projections.Core.Tests", "EventStore.Projections.Core.Tests\EventStore.Projections.Core.Tests.csproj", "{96FC74C3-8E5D-4090-B4C7-2B7ED46AE187}"
 EndProject

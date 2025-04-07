@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 
-namespace EventStore.BufferManagement.Tests;
+namespace KurrentDB.BufferManagement.Tests;
 
 [TestFixture]
 public class when_creating_a_buffer_manager {

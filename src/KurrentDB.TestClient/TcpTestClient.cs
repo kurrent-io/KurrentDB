@@ -6,12 +6,12 @@ using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
 using System.Threading;
-using EventStore.BufferManagement;
 using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Transport.Tcp;
 using EventStore.Transport.Tcp.Formatting;
 using EventStore.Transport.Tcp.Framing;
+using KurrentDB.BufferManagement;
 using Connection = EventStore.Transport.Tcp.TcpTypedConnection<byte[]>;
 using ILogger = Serilog.ILogger;
 

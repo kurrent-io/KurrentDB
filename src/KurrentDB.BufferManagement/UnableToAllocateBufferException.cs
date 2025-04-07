@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.BufferManagement;
+namespace KurrentDB.BufferManagement;
 
 public class UnableToAllocateBufferException : Exception {
 	public UnableToAllocateBufferException()

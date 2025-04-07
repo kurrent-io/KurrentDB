@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 
-namespace EventStore.BufferManagement;
+namespace KurrentDB.BufferManagement;
 
 public class BufferPoolStream : Stream {
 	private readonly BufferPool _bufferPool;

@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Serilog;
 
-namespace EventStore.BufferManagement;
+namespace KurrentDB.BufferManagement;
 
 /// <summary>
 /// A manager to handle buffers for the socket connections
