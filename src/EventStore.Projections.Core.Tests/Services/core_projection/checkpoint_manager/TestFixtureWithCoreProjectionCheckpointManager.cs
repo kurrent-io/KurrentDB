@@ -3,11 +3,12 @@
 
 using System;
 using EventStore.Core.Util;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.SingleStream;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.SingleStream;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager;
@@ -72,11 +73,11 @@ public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat,
 		_projectionCheckpointStreamId = "$projections-projection-checkpoint";
 		_projectionCorrelationId = Guid.NewGuid();
 		_projection = new FakeCoreProjection();
-		_bus.Subscribe<CoreProjectionProcessingMessage.CheckpointCompleted>(_projection);
-		_bus.Subscribe<CoreProjectionProcessingMessage.CheckpointLoaded>(_projection);
-		_bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(_projection);
-		_bus.Subscribe<CoreProjectionProcessingMessage.RestartRequested>(_projection);
-		_bus.Subscribe<CoreProjectionProcessingMessage.Failed>(_projection);
+		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted>(_projection);
+		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>(_projection);
+		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(_projection);
+		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested>(_projection);
+		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed>(_projection);
 		_bus.Subscribe<EventReaderSubscriptionMessage.ReaderAssignedReader>(_projection);
 
 		_bus.Subscribe(_subscriptionDispatcher

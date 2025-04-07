@@ -13,12 +13,14 @@ using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Bus.Helpers;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.Util;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.Strategies;
+using KurrentDB.Projections.Core;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services;
 
@@ -52,24 +54,24 @@ public class TestFixtureWithProjectionCoreService {
 		public List<EventReaderSubscriptionMessage.CommittedEventReceived> HandledMessages =
 			new List<EventReaderSubscriptionMessage.CommittedEventReceived>();
 
-		public void Handle(CoreProjectionProcessingMessage.CheckpointCompleted message) {
+		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted message) {
 			throw new NotImplementedException();
 		}
 
-		public void Handle(CoreProjectionProcessingMessage.CheckpointLoaded message) {
+		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded message) {
 			throw new NotImplementedException();
 		}
 
 
-		public void Handle(CoreProjectionProcessingMessage.RestartRequested message) {
+		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested message) {
 			throw new NotImplementedException();
 		}
 
-		public void Handle(CoreProjectionProcessingMessage.Failed message) {
+		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed message) {
 			throw new NotImplementedException();
 		}
 
-		public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 			throw new NotImplementedException();
 		}
 	}

@@ -7,11 +7,12 @@ using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Strategies;
-using EventStore.Projections.Core.Services.Processing.Subscriptions;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Strategies;
+using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_index_reader.catching_up {
@@ -86,7 +87,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_
 				ExistingEvent("$et-type1", "$>", TFPosToMetadata(_tfPos1), "0@test-stream");
 
 
-				// NOTE: do not configure $et and $et-type2 to delay ReadCompleted on this stream 
+				// NOTE: do not configure $et and $et-type2 to delay ReadCompleted on this stream
 				// ExistingEvent("$et-type2", "$>", TFPosToMetadata(_tfPos2), "1@test-stream");
 				// NoStream("$et");
 			}
@@ -140,7 +141,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_
 				ExistingEvent("$et-type2", "$>", TFPosToMetadata(_tfPos2), "1@test-stream");
 
 
-				// NOTE: do not configure $et to delay ReadCompleted on this stream 
+				// NOTE: do not configure $et to delay ReadCompleted on this stream
 				// NoStream("$et");
 			}
 
@@ -162,7 +163,7 @@ namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_
 				var receivedEvents =
 					_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.CommittedEventReceived>().ToArray();
 
-				//NOTE: 
+				//NOTE:
 				// the first event is safe to read as we know the next event in another stream
 				// the second event is not safe as there is no more events in the first stream and checkpoint is not yet available
 				Assert.AreEqual(1, receivedEvents.Length);

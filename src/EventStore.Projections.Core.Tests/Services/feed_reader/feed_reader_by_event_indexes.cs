@@ -7,9 +7,9 @@ using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Messages.EventReaders.Feeds;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages.EventReaders.Feeds;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.feed_reader {

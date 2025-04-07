@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.Partitioning;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Partitioning;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.partition_state_update_manager;

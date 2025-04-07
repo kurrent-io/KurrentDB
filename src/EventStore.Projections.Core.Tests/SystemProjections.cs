@@ -4,8 +4,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Core.Bus;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Processing;
 
 namespace EventStore.Projections.Core.Tests;
 

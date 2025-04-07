@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Common", "EventS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Core.Tests", "EventStore.Core.Tests\EventStore.Core.Tests.csproj", "{F0E1719C-88FF-4E44-BCBE-8B59ADA29134}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Projections.Core", "EventStore.Projections.Core\EventStore.Projections.Core.csproj", "{800E7456-4BC4-49B5-940F-1D634B687C6E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Projections.Core", "KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj", "{800E7456-4BC4-49B5-940F-1D634B687C6E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.TestClient", "KurrentDB.TestClient\KurrentDB.TestClient.csproj", "{68011903-5E41-41E2-891B-2C0B3B13C189}"
 EndProject

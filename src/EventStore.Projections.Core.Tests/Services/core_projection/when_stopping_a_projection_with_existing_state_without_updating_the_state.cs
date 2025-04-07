@@ -5,9 +5,10 @@ using System;
 using System.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection;

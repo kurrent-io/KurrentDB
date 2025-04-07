@@ -11,12 +11,12 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection.projection_
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_projection_reader_reads_successfully<TLogFormat, TStreamId> : with_projection_checkpoint_reader<TLogFormat, TStreamId>,
-	IHandle<CoreProjectionProcessingMessage.CheckpointLoaded> {
+	IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded> {
 	private ManualResetEventSlim _mre = new ManualResetEventSlim();
-	private CoreProjectionProcessingMessage.CheckpointLoaded _checkpointLoaded;
+	private KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded _checkpointLoaded;
 
 	public override void When() {
-		_bus.Subscribe<CoreProjectionProcessingMessage.CheckpointLoaded>(this);
+		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>(this);
 
 		_reader.Initialize();
 		_reader.BeginLoadState();
@@ -25,7 +25,7 @@ public class when_projection_reader_reads_successfully<TLogFormat, TStreamId> : 
 		}
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.CheckpointLoaded message) {
+	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded message) {
 		_checkpointLoaded = message;
 		_mre.Set();
 	}

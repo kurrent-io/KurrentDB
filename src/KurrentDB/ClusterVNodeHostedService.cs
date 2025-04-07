@@ -41,6 +41,7 @@ using EventStore.POC.ConnectedSubsystemsPlugin;
 using EventStore.Projections.Core;
 using EventStore.Security.EncryptionAtRest;
 using EventStore.TcpPlugin;
+using KurrentDB.Projections.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;

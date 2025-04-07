@@ -4,8 +4,8 @@
 using System;
 using System.Text;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing.Subscriptions;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projection_subscription;

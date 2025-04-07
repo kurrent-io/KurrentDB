@@ -7,17 +7,18 @@ using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Util;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.AllStream;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
-using EventStore.Projections.Core.Services.Processing.Partitioning;
-using EventStore.Projections.Core.Services.Processing.Phases;
-using EventStore.Projections.Core.Services.Processing.Strategies;
-using EventStore.Projections.Core.Services.Processing.Subscriptions;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services.Processing.Partitioning;
+using KurrentDB.Projections.Core.Services.Processing.Phases;
+using KurrentDB.Projections.Core.Services.Processing.Strategies;
+using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
+using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
@@ -123,7 +124,7 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 			throw new NotImplementedException();
 		}
 
-		public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 			throw new NotImplementedException();
 		}
 
@@ -234,7 +235,7 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 		public void Stopping() {
 			_stopping = true;
 			_publisher.Publish(
-				new CoreProjectionProcessingMessage.CheckpointCompleted(_projectionCorrelationId, _lastEvent));
+				new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted(_projectionCorrelationId, _lastEvent));
 		}
 
 		public void Stopped() {
@@ -274,13 +275,13 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 
 		public void BeginLoadState() {
 			_publisher.Publish(
-				new CoreProjectionProcessingMessage.CheckpointLoaded(
+				new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded(
 					_projectionCorrelationId, CheckpointTag.FromPosition(0, 0, -1), "", 0));
 		}
 
 		public void BeginLoadPrerecordedEvents(CheckpointTag checkpointTag) {
 			_publisher.Publish(
-				new CoreProjectionProcessingMessage.PrerecordedEventsLoaded(_projectionCorrelationId,
+				new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded(_projectionCorrelationId,
 					checkpointTag));
 		}
 

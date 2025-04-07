@@ -10,8 +10,9 @@ using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Services.Replication;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;

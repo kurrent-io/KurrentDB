@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reordering_projection_subscription;

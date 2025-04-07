@@ -3,8 +3,9 @@
 
 using System;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.Jint;
@@ -13,7 +14,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint;
 public class when_running_a_v8_projection_emitting_stream_links : TestFixtureWithInterpretedProjection {
 	protected override void Given() {
 		_projection = @"
-                fromAll().when({$any: 
+                fromAll().when({$any:
                     function(state, event) {
                     linkStreamTo('output-stream' + event.sequenceNumber, 'stream' + event.sequenceNumber);
                     return {};

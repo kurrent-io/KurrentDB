@@ -7,9 +7,10 @@ using System.Linq;
 using EventStore.Common.Utils;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 

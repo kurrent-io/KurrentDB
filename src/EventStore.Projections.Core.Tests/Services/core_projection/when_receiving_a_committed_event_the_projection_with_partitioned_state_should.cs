@@ -7,11 +7,11 @@ using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection;
 

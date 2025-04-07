@@ -5,11 +5,11 @@ using System;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Running;
-using EventStore.Projections.Core.Services.Interpreted;
 using EventStore.Projections.Core.Tests.Services.Jint.Serialization;
 using Jint;
 using Jint.Native;
 using Jint.Native.Json;
+using KurrentDB.Projections.Core.Services.Interpreted;
 
 namespace KurrentDB.MicroBenchmarks;
 

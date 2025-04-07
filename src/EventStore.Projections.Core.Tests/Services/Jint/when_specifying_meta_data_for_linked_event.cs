@@ -4,8 +4,9 @@
 using System;
 using System.Collections.Generic;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.Jint;
@@ -13,7 +14,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint;
 public class when_specifying_meta_data_for_linked_event : TestFixtureWithInterpretedProjection {
 	protected override void Given() {
 		_projection = @"
-            fromAll().when({$any: 
+            fromAll().when({$any:
                 function(state, event) {
                 linkTo('output-stream', event, {'meta': 'data'});
                 return {};

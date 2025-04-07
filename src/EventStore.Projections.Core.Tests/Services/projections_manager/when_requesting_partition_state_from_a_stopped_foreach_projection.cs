@@ -5,9 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;
@@ -22,7 +23,7 @@ public class when_requesting_partition_state_from_a_stopped_foreach_projection<T
 			null, "test-projection");
 		ExistingEvent(
 			"$projections-test-projection", ProjectionEventTypes.ProjectionUpdated, null,
-			@"{""Query"":""fromCategory('test').foreachStream().when({'e': function(s,e){}})"", 
+			@"{""Query"":""fromCategory('test').foreachStream().when({'e': function(s,e){}})"",
                     ""Mode"":""3"", ""Enabled"":false, ""HandlerType"":""JS"",
                     ""SourceDefinition"":{
                         ""AllEvents"":true,

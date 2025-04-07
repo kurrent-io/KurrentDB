@@ -9,7 +9,7 @@ using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager.multi_stream;
@@ -18,15 +18,15 @@ namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_starting_and_enqueue_prerecorded_events_read_times_out<TLogFormat, TStreamId> : with_multi_stream_checkpoint_manager<TLogFormat, TStreamId>,
 	IHandle<TimerMessage.Schedule>,
-	IHandle<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {
+	IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {
 	private bool _hasTimedOut;
 	private Guid _timeoutCorrelationId;
 	private ManualResetEventSlim _mre = new ManualResetEventSlim();
-	private CoreProjectionProcessingMessage.PrerecordedEventsLoaded _eventsLoadedMessage;
+	private KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded _eventsLoadedMessage;
 
 	public override void When() {
 		_bus.Subscribe<TimerMessage.Schedule>(this);
-		_bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(this);
+		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(this);
 
 		_checkpointManager.Initialize();
 		var positions = new Dictionary<string, long> { { "a", 1 }, { "b", 1 }, { "c", 1 } };
@@ -54,7 +54,7 @@ public class when_starting_and_enqueue_prerecorded_events_read_times_out<TLogFor
 		}
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 		_eventsLoadedMessage = message;
 		_mre.Set();
 	}

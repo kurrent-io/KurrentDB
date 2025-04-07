@@ -3,7 +3,7 @@
 
 using System;
 using System.Linq;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection;
 

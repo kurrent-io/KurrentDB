@@ -5,8 +5,9 @@ using System;
 using System.Globalization;
 using System.Text.Json;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.Jint;
@@ -15,7 +16,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint;
 public class when_running_counting_js_projection : TestFixtureWithInterpretedProjection {
 	protected override void Given() {
 		_projection = @"
-                fromAll().when({$any: 
+                fromAll().when({$any:
                     function(state, event) {
                         state.count = state.count + 1;
                         return state;

@@ -3,7 +3,8 @@
 
 using System;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.Jint;
@@ -11,7 +12,7 @@ namespace EventStore.Projections.Core.Tests.Services.Jint;
 public class when_running_a_js_projection_emitting_invalid_links : TestFixtureWithInterpretedProjection {
 	protected override void Given() {
 		_projection = @"
-                fromAll().when({$any: 
+                fromAll().when({$any:
                     function(state, event) {
 						event = {};
                     linkTo('output-stream', event);

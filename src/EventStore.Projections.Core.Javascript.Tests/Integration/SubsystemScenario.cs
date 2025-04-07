@@ -19,7 +19,7 @@ using EventStore.Core.Services;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using Xunit;
 
 namespace EventStore.Projections.Core.Javascript.Tests.Integration;

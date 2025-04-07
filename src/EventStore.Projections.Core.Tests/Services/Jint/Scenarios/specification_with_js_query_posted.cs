@@ -6,11 +6,11 @@ using System.Collections.Generic;
 using DotNext;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
-
 using EventStore.Projections.Core.Tests.Services.projections_manager;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing;
 
 namespace EventStore.Projections.Core.Tests.Services.Jint.Scenarios;
 

@@ -5,10 +5,10 @@ using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.AllStream;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.projection_checkpoint;
@@ -62,7 +62,7 @@ public class when_requesting_checkpoint_before_all_writes_completed<TLogFormat, 
 	[Test]
 	public void not_ready_for_checkpoint_immediately() {
 		Assert.AreEqual(0,
-			_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+			_consumer.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 
 	[Test]
@@ -74,6 +74,6 @@ public class when_requesting_checkpoint_before_all_writes_completed<TLogFormat, 
 		writes[2].Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(writes[2].CorrelationId, 0, 0, -1, -1));
 
 		Assert.AreEqual(1,
-			_readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+			_readyHandler.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 }

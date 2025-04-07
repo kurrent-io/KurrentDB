@@ -5,10 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Management;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;
@@ -27,9 +28,9 @@ public class when_a_disabled_projection_has_been_loaded<TLogFormat, TStreamId> :
 		ExistingEvent(
 			"$projections-test-projection", ProjectionEventTypes.ProjectionUpdated, null,
 			@"{
-                    ""Query"":""fromAll(); on_any(function(){});log('hello-from-projection-definition');"", 
-                    ""Mode"":""3"", 
-                    ""Enabled"":false, 
+                    ""Query"":""fromAll(); on_any(function(){});log('hello-from-projection-definition');"",
+                    ""Mode"":""3"",
+                    ""Enabled"":false,
                     ""HandlerType"":""JS"",
                     ""SourceDefinition"":{
                         ""AllEvents"":true,

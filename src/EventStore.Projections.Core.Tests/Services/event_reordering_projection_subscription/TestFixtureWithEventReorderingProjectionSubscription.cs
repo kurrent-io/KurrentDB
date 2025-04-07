@@ -3,9 +3,9 @@
 
 using System.Collections.Generic;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Subscriptions;
 using EventStore.Projections.Core.Tests.Services.projection_subscription;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reordering_projection_subscription;
 

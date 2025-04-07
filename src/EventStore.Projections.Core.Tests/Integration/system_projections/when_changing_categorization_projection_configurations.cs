@@ -3,8 +3,8 @@
 
 using System.Collections.Generic;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Integration.system_projections;

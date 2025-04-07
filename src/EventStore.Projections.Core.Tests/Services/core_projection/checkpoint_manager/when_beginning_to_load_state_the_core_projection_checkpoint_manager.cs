@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager;
@@ -62,7 +62,7 @@ public class when_beginning_to_load_state_the_core_projection_checkpoint_manager
 	[Test]
 	public void ready_for_checkpoint_throws_invalid_operation_exception() {
 		Assert.Throws<InvalidOperationException>(() => {
-			_manager.Handle(new CoreProjectionProcessingMessage.ReadyForCheckpoint(null));
+			_manager.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint(null));
 		});
 	}
 

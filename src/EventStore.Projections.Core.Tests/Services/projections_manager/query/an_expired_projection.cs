@@ -8,7 +8,7 @@ using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager.query;

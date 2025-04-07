@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Projections.Core.Services;
+
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;
 using System;
 using System.Collections.Generic;
@@ -9,7 +11,6 @@ using Core.Services;
 using EventStore.Common.Utils;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using Messages;
 using NUnit.Framework;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
@@ -24,19 +25,19 @@ public class WhenDeletingAPersistentProjectionAndEmittedNotEnabled<TLogFormat, T
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
+		yield return new KurrentDB.Projections.Core.Messages.ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
 		yield return
-			new ProjectionManagementMessage.Command.Post(
+			new KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.Command.Post(
 														 _bus, ProjectionMode.Continuous, _projectionName,
-														 ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
+														 KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
 														 enabled: true, checkpointsEnabled: true, emitEnabled: false, trackEmittedStreams: false);
 		yield return
-			new ProjectionManagementMessage.Command.Disable(
-															_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
+			new KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.Command.Disable(
+															_bus, _projectionName, KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.RunAs.System);
 		yield return
-			new ProjectionManagementMessage.Command.Delete(
+			new KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.Command.Delete(
 														   _bus, _projectionName,
-														   ProjectionManagementMessage.RunAs.System, true, true, true);
+														   KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.RunAs.System, true, true, true);
 	}
 
 	[Test, Category("v8")]

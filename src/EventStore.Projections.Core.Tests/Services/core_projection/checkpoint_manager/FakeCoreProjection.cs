@@ -4,45 +4,45 @@
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Bus;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Phases;
-using EventStore.Projections.Core.Services.Processing.WorkItems;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Phases;
+using KurrentDB.Projections.Core.Services.Processing.WorkItems;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager;
 
 public class FakeCoreProjection : ICoreProjection,
 	ICoreProjectionForProcessingPhase,
 	IHandle<EventReaderSubscriptionMessage.ReaderAssignedReader> {
-	public readonly List<CoreProjectionProcessingMessage.CheckpointCompleted> _checkpointCompletedMessages =
-		new List<CoreProjectionProcessingMessage.CheckpointCompleted>();
+	public readonly List<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted> _checkpointCompletedMessages =
+		new List<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted>();
 
-	public readonly List<CoreProjectionProcessingMessage.CheckpointLoaded> _checkpointLoadedMessages =
-		new List<CoreProjectionProcessingMessage.CheckpointLoaded>();
+	public readonly List<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded> _checkpointLoadedMessages =
+		new List<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>();
 
-	public readonly List<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> _prerecordedEventsLoadedMessages =
-		new List<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>();
+	public readonly List<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded> _prerecordedEventsLoadedMessages =
+		new List<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>();
 
-	public readonly List<CoreProjectionProcessingMessage.Failed> _failedMessages =
-		new List<CoreProjectionProcessingMessage.Failed>();
+	public readonly List<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed> _failedMessages =
+		new List<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed>();
 
-	public void Handle(CoreProjectionProcessingMessage.CheckpointCompleted message) {
+	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted message) {
 		_checkpointCompletedMessages.Add(message);
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.CheckpointLoaded message) {
+	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded message) {
 		_checkpointLoadedMessages.Add(message);
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.RestartRequested message) {
+	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested message) {
 		throw new System.NotImplementedException();
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.Failed message) {
+	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed message) {
 		_failedMessages.Add(message);
 	}
 
-	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 		_prerecordedEventsLoadedMessages.Add(message);
 	}
 

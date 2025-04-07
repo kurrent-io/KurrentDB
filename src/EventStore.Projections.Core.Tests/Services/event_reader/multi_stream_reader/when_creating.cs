@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing.MultiStream;
 using EventStore.Projections.Core.Tests.Services.core_projection;
+using KurrentDB.Projections.Core.Services.Processing.MultiStream;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reader.multi_stream_reader;

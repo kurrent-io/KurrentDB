@@ -6,10 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text.Json;
-using EventStore.Projections.Core.Services.Interpreted;
 using Jint;
 using Jint.Native;
 using Jint.Native.Json;
+using KurrentDB.Projections.Core.Services.Interpreted;
 using NUnit.Framework;
 using JsonSerializer = Jint.Native.Json.JsonSerializer;
 

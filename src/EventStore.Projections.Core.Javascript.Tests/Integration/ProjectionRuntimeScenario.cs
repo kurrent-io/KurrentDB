@@ -12,6 +12,7 @@ using EventStore.Core.Services.Transport.Http;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.Util;
+using KurrentDB.Projections.Core;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

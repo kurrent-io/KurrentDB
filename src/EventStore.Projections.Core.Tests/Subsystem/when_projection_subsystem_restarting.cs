@@ -4,10 +4,11 @@
 using System;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Management;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+
 // ReSharper disable InconsistentNaming
 
 namespace EventStore.Projections.Core.Tests.Subsystem;

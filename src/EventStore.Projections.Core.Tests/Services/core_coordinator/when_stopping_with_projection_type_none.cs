@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using EventStore.Common.Options;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Management;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_coordinator;

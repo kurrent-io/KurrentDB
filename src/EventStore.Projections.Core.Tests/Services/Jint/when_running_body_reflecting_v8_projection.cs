@@ -3,8 +3,9 @@
 
 using System;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.Jint;
@@ -13,10 +14,10 @@ namespace EventStore.Projections.Core.Tests.Services.Jint;
 public class when_running_body_reflecting_v8_projection : TestFixtureWithInterpretedProjection {
 	protected override void Given() {
 		_projection = @"
-                fromAll().when({$any: 
+                fromAll().when({$any:
                     function(state, event) {
-                        if (event.body) 
-                            return event.body; 
+                        if (event.body)
+                            return event.body;
                             else return {};
                     }
                 });

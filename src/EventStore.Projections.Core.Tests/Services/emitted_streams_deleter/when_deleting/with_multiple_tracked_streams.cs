@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Common.Utils;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.emitted_streams_deleter.when_deleting;

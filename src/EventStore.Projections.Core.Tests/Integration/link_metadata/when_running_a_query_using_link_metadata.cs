@@ -4,8 +4,8 @@
 using System.Linq;
 using EventStore.Core.Services;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Integration.link_metadata;
@@ -26,12 +26,12 @@ public class when_running_a_query_using_link_metadata<TLogFormat, TStreamId> : s
 	protected override string GivenQuery() {
 		return @"
 fromStream('stream').when({
-    $any: function(s, e) { 
+    $any: function(s, e) {
         // test
         if (JSON.stringify(e.body) != JSON.stringify(e.linkMetadata))
             throw 'invalid link metadata ' + JSON.stringify(e.linkMetadata) + ' expected is ' + JSON.stringify(e.body);
-        
-        return e.linkMetadata; 
+
+        return e.linkMetadata;
     }
 }).outputState()
 ";

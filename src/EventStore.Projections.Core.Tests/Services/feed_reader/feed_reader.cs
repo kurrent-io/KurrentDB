@@ -11,13 +11,14 @@ using EventStore.Core.Services.TimerService;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Bus.Helpers;
-using EventStore.Projections.Core.EventReaders.Feeds;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Messages.EventReaders.Feeds;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages.EventReaders.Feeds;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.EventReaders.Feeds;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services.feed_reader {
 	namespace feed_reader {

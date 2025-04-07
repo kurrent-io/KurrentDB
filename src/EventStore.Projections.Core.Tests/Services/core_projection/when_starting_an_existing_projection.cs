@@ -4,8 +4,9 @@
 using System;
 using System.Linq;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection;

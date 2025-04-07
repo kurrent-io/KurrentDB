@@ -7,6 +7,6 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\EventStore.Projections.Core.Tests\EventStore.Projections.Core.Tests.csproj" />
-		<ProjectReference Include="..\EventStore.Projections.Core\EventStore.Projections.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
 	</ItemGroup>
 </Project>

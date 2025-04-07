@@ -14,7 +14,8 @@ using EventStore.Common.Options;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Util;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core;
+using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 using ResolvedEvent = EventStore.ClientAPI.ResolvedEvent;
 

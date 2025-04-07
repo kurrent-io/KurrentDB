@@ -8,12 +8,13 @@ using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.Replication;
 using EventStore.Core.Util;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.MultiStream;
 using EventStore.Projections.Core.XUnit.Tests.TestHelpers;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.MultiStream;
 using Xunit;
 using ExistingEvent = EventStore.Projections.Core.XUnit.Tests.TestHelpers.ExistingStreamsHelper.ExistingEvent;
 
@@ -100,7 +101,7 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 
 		// Publish completed message
 		var completeMessage = _publisher.Messages
-			.OfType<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>()
+			.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>()
 			.SingleOrDefault();
 		Assert.NotNull(completeMessage);
 	}

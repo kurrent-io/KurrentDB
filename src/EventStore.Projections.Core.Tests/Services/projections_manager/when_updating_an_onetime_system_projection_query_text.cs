@@ -5,9 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;
@@ -28,7 +29,7 @@ public class when_updating_an_onetime_system_projection_query_text<TLogFormat, T
 		yield return
 			(new ProjectionManagementMessage.Command.Post(
 				_bus, ProjectionMode.Transient, _projectionName,
-				ProjectionManagementMessage.RunAs.Anonymous, "native:EventStore.Projections.Core.Standard.ByCorrelationId", "{\"correlationIdProperty\":\"$myCorrelationId\"}",
+				ProjectionManagementMessage.RunAs.Anonymous, "native:KurrentDB.Projections.Core.Standard.ByCorrelationId", "{\"correlationIdProperty\":\"$myCorrelationId\"}",
 				enabled: true, checkpointsEnabled: false, emitEnabled: false, trackEmittedStreams: true));
 		// when
 		_newProjectionSource = "{\"correlationIdProperty\":\"$updateCorrelationId\"}";

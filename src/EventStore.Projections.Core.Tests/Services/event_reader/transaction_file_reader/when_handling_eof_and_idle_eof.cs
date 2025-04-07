@@ -9,9 +9,9 @@ using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing.AllStream;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Tests.Services.core_projection;
+using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reader.transaction_file_reader;

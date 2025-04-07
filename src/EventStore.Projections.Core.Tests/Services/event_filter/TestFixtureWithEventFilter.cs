@@ -3,8 +3,8 @@
 
 using System;
 using EventStore.Core.Services.TimerService;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.Strategies;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.event_filter;

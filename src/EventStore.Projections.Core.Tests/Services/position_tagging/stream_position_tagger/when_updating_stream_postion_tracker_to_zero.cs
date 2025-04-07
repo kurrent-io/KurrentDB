@@ -1,8 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.SingleStream;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.SingleStream;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.position_tagging.stream_position_tagger;
@@ -16,7 +16,7 @@ public class when_updating_stream_postion_tracker_to_zero {
 	public void When() {
 		_tagger = new StreamPositionTagger(0, "stream1");
 		_positionTracker = new PositionTracker(_tagger);
-		// when 
+		// when
 
 		_positionTracker.UpdateByCheckpointTagInitial(_tagger.MakeZeroCheckpointTag());
 	}

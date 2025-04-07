@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 

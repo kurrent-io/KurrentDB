@@ -6,12 +6,12 @@ using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.AllStream;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using EventStore.Projections.Core.Tests.Services.core_projection;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.emitted_stream;
@@ -51,6 +51,6 @@ public class when_checkpoint_requested_with_all_writes_already_completed<TLogFor
 	[Test]
 	public void publishes_ready_for_checkpoint() {
 		Assert.IsTrue(
-			_readyHandler.HandledMessages.ContainsSingle<CoreProjectionProcessingMessage.ReadyForCheckpoint>());
+			_readyHandler.HandledMessages.ContainsSingle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint>());
 	}
 }

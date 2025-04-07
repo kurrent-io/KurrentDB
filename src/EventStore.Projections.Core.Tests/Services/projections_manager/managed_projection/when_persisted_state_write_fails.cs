@@ -11,10 +11,11 @@ using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.Util;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Management;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager.managed_projection;

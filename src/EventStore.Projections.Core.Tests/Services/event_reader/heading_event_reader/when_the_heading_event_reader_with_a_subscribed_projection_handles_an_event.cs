@@ -6,10 +6,10 @@ using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing.AllStream;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
-using HeadingEventReader = EventStore.Projections.Core.Services.Processing.TransactionFile.HeadingEventReader;
+using HeadingEventReader = KurrentDB.Projections.Core.Services.Processing.TransactionFile.HeadingEventReader;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reader.heading_event_reader;
 

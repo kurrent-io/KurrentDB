@@ -5,9 +5,9 @@ using System;
 using System.Threading;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Management;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Subsystem;

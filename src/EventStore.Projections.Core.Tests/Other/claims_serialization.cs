@@ -3,8 +3,8 @@
 
 using System.Security.Claims;
 using EventStore.Core.Services.UserManagement;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Other;

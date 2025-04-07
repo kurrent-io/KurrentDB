@@ -6,9 +6,9 @@ using System.Linq;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection;
 

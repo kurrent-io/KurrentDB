@@ -5,8 +5,9 @@ using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services;
 using Xunit;
 
 namespace EventStore.Projections.Core.Javascript.Tests.Integration;

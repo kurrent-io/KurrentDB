@@ -8,7 +8,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\EventStore.Core.Tests\EventStore.Core.Tests.csproj" />
-      <ProjectReference Include="..\EventStore.Projections.Core\EventStore.Projections.Core.csproj" />
+      <ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -10,11 +10,12 @@ using EventStore.Core.Messages;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Util;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Metrics;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Management;
-using EventStore.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Metrics;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;

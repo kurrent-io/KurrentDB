@@ -4,9 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
 using EventStore.Projections.Core.Tests.Services.projections_manager;
+using KurrentDB.Projections.Core.Services;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_system;
 

@@ -5,10 +5,10 @@ using System;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Strategies;
-using EventStore.Projections.Core.Services.Processing.Subscriptions;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Strategies;
+using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projection_subscription;

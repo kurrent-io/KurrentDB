@@ -6,11 +6,11 @@ using System.Linq;
 using EventStore.Core.Bus;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Partitioning;
-using EventStore.Projections.Core.Services.Processing.Phases;
 using EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager;
 using EventStore.Projections.Core.Tests.Services.core_projection.multi_phase;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Partitioning;
+using KurrentDB.Projections.Core.Services.Processing.Phases;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.write_query_result_phase {

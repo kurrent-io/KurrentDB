@@ -10,16 +10,16 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using EventStore.Core.Data;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Interpreted;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Interpreted;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Xunit;
 using Xunit.Abstractions;
-using ResolvedEvent = EventStore.Projections.Core.Services.Processing.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Javascript.Tests;
 
@@ -228,7 +228,7 @@ public class SpecRunner {
 						flags |= PrepareFlags.TransactionEnd;
 
 					/*Sequence:
-					Get partition if bycustom partition or by stream 
+					Get partition if bycustom partition or by stream
 						if the partition is null or an empty string skip this event (NB: need to indicate that an event should be skipped)
 					load the state if it doesn't exist or tell the projection to init state
 					init shared if it doesn't exist
@@ -236,7 +236,7 @@ public class SpecRunner {
 					if processing a delete, call partition deleted (NB: bistate partitions do not support deletes)
 					process the event
 					save any shared state if it isn't null
-					save any state 
+					save any state
 					save emitted events to verify later
 					*/
 					var @event = sequence.Events[j];

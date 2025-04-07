@@ -4,10 +4,10 @@
 using System;
 using System.Linq;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Subscriptions;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Tests.Services.event_reader.heading_event_reader;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_service;

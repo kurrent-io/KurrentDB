@@ -5,12 +5,12 @@ using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.AllStream;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using EventStore.Projections.Core.Tests.Services.core_projection;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.emitted_stream;
@@ -63,7 +63,7 @@ public class
 
 	[Test]
 	public void does_not_publish_not_yet_published_events_if_expected_tag_is_before_last_event_tag() {
-		//TODO: is it corrupted dB case? 
+		//TODO: is it corrupted dB case?
 		_stream.EmitEvents(
 			new[] {
 				new EmittedDataEvent(

@@ -5,10 +5,10 @@ using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing;
-using EventStore.Projections.Core.Services.Processing.AllStream;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services.Processing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
+using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.projection_checkpoint;
@@ -59,6 +59,6 @@ public class when_requesting_checkpoint_after_all_writes_completed<TLogFormat, T
 	[Test]
 	public void ready_for_checkpoint_immediately() {
 		Assert.AreEqual(
-			1, _readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+			1, _readyHandler.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 }

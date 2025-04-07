@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.core_projection.checkpoint_manager;
@@ -28,7 +28,7 @@ public class when_a_checkpoint_has_been_completed_and_requesting_checkpoint_to_s
 		try {
 			_checkpointReader.BeginLoadState();
 			var checkpointLoaded =
-				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+				_consumer.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>().First();
 			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 

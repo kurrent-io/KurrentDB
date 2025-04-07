@@ -9,9 +9,9 @@ using EventStore.Core.Messages;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing.SingleStream;
+using KurrentDB.Projections.Core.Messages;
 using EventStore.Projections.Core.Tests.Services.core_projection;
+using KurrentDB.Projections.Core.Services.Processing.SingleStream;
 using NUnit.Framework;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 

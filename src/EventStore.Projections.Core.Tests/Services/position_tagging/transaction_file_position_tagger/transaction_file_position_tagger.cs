@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing.AllStream;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.position_tagging.transaction_file_position_tagger;

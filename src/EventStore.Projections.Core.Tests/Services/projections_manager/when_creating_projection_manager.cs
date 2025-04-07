@@ -11,8 +11,8 @@ using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.Util;
-using EventStore.Projections.Core.Metrics;
-using EventStore.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Metrics;
+using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.projections_manager;

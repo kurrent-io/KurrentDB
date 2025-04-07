@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Projections.Core.Services.Processing.Checkpointing;
+using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.checkpoint_tag;

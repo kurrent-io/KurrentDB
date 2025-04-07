@@ -8,8 +8,8 @@ using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing.EventByType;
+using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Services.Processing.EventByType;
 using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.Services.event_reader.event_by_type_index_event_reader;

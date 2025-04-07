@@ -2,9 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
-using EventStore.Projections.Core.Metrics;
 using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.Services.Management;
+using KurrentDB.Projections.Core.Metrics;
+using KurrentDB.Projections.Core.Services;
+using KurrentDB.Projections.Core.Services.Management;
 using Xunit;
 
 namespace EventStore.Projections.Core.XUnit.Tests.Metrics;
