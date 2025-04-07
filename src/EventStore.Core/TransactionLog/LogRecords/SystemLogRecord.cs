@@ -98,30 +98,35 @@ public sealed class SystemLogRecord : LogRecord, IEquatable<SystemLogRecord>, IS
 	}
 
 	public override int GetSizeWithLengthPrefixAndSuffix() {
-		return sizeof(int) * 2	/* Length prefix & suffix */
-		       + sizeof(long)	/* TimeStamp */
-		       + sizeof(byte)	/* SystemRecordType */
-		       + sizeof(byte)	/* SystemRecordSerialization */
-		       + sizeof(long)	/* Reserved */
-		       + sizeof(int)	/* Data.Length */
-		       + Data.Length	/* Data */
-		       + BaseSize;
+		return sizeof(int) * 2  /* Length prefix & suffix */
+			   + sizeof(long)   /* TimeStamp */
+			   + sizeof(byte)   /* SystemRecordType */
+			   + sizeof(byte)   /* SystemRecordSerialization */
+			   + sizeof(long)   /* Reserved */
+			   + sizeof(int)    /* Data.Length */
+			   + Data.Length    /* Data */
+			   + BaseSize;
 	}
 
 	public bool Equals(SystemLogRecord other) {
-		if (ReferenceEquals(null, other)) return false;
-		if (ReferenceEquals(this, other)) return true;
+		if (ReferenceEquals(null, other))
+			return false;
+		if (ReferenceEquals(this, other))
+			return true;
 		return other.LogPosition == LogPosition
-		       && other.TimeStamp.Equals(TimeStamp)
-		       && other.SystemRecordType == SystemRecordType
-		       && other.SystemRecordSerialization == SystemRecordSerialization
-		       && other.Reserved == Reserved;
+			   && other.TimeStamp.Equals(TimeStamp)
+			   && other.SystemRecordType == SystemRecordType
+			   && other.SystemRecordSerialization == SystemRecordSerialization
+			   && other.Reserved == Reserved;
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != typeof(SystemRecordType)) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != typeof(SystemRecordType))
+			return false;
 		return Equals((SystemLogRecord)obj);
 	}
 
@@ -146,10 +151,10 @@ public sealed class SystemLogRecord : LogRecord, IEquatable<SystemLogRecord>, IS
 
 	public override string ToString() {
 		return string.Format("LogPosition: {0}, "
-		                     + "TimeStamp: {1}, "
-		                     + "SystemRecordType: {2}, "
-		                     + "SystemRecordSerialization: {3}, "
-		                     + "Reserved: {4}",
+							 + "TimeStamp: {1}, "
+							 + "SystemRecordType: {2}, "
+							 + "SystemRecordSerialization: {3}, "
+							 + "Reserved: {4}",
 			LogPosition,
 			TimeStamp,
 			SystemRecordType,

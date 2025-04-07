@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using EventStore.Core.Data;
-using EventStore.Core.Messages;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;
 
@@ -38,28 +37,28 @@ public static class EventFilter {
 
 	public static IEventFilter Get(bool isAllStream, Client.Messages.Filter filter) {
 		if (filter == null || filter.Data.Count == 0) {
-			return isAllStream ? (IEventFilter) new DefaultAllFilterStrategy() : new DefaultStreamFilterStrategy();
+			return isAllStream ? (IEventFilter)new DefaultAllFilterStrategy() : new DefaultStreamFilterStrategy();
 		}
 
 		return filter.Context switch {
 			Client.Messages.Filter.Types.FilterContext.EventType when filter.Type ==
-			                                                          Client.Messages.Filter.Types.FilterType.Prefix =>
+																	  Client.Messages.Filter.Types.FilterType.Prefix =>
 			EventType.Prefixes(isAllStream, filter.Data.ToArray()),
 			Client.Messages.Filter.Types.FilterContext.EventType when filter.Type ==
-			                                                          Client.Messages.Filter.Types.FilterType.Regex =>
+																	  Client.Messages.Filter.Types.FilterType.Regex =>
 			EventType.Regex(isAllStream, filter.Data[0]),
 			Client.Messages.Filter.Types.FilterContext.StreamId when filter.Type ==
-			                                                         Client.Messages.Filter.Types.FilterType.Prefix =>
+																	 Client.Messages.Filter.Types.FilterType.Prefix =>
 			StreamName.Prefixes(isAllStream, filter.Data.ToArray()),
 			Client.Messages.Filter.Types.FilterContext.StreamId when filter.Type ==
-			                                                         Client.Messages.Filter.Types.FilterType.Regex =>
+																	 Client.Messages.Filter.Types.FilterType.Regex =>
 			StreamName.Regex(isAllStream, filter.Data[0]),
 			_ => throw new Exception() // Invalid filter
 		};
 	}
 
 	private sealed class DefaultStreamFilterStrategy : IEventFilter {
-		[MethodImpl(MethodImplOptions.AggressiveInlining|MethodImplOptions.AggressiveOptimization)]
+		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 		public bool IsEventAllowed(EventRecord eventRecord) => true;
 	}
 
@@ -76,7 +75,7 @@ public static class EventFilter {
 			(new OrdinalStreamIdPrefixAndSuffixStrategy("$persistentsubscription-$all::","-parked"), false)
 		};
 
-		[MethodImpl(MethodImplOptions.AggressiveInlining|MethodImplOptions.AggressiveOptimization)]
+		[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 		public bool IsEventAllowed(EventRecord eventRecord) {
 			var filters = _allFilters.AsSpan();
 			Debug.Assert(filters.Length > 0);
@@ -93,7 +92,7 @@ public static class EventFilter {
 		public override string ToString() => nameof(DefaultAllFilterStrategy);
 
 		private class NonSystemStreamStrategy : IEventFilter {
-			[MethodImpl(MethodImplOptions.AggressiveInlining|MethodImplOptions.AggressiveOptimization)]
+			[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 			public bool IsEventAllowed(EventRecord eventRecord) =>
 				eventRecord.EventStreamId[0] != '$';
 
@@ -125,7 +124,7 @@ public static class EventFilter {
 				_minLength = _prefix.Length + _suffix.Length;
 			}
 
-			[MethodImpl(MethodImplOptions.AggressiveInlining|MethodImplOptions.AggressiveOptimization)]
+			[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
 			public bool IsEventAllowed(EventRecord eventRecord) =>
 				eventRecord.EventStreamId.Length >= _minLength
 				&& eventRecord.EventStreamId.StartsWith(_prefix, StringComparison.Ordinal)
@@ -285,12 +284,12 @@ public static class EventFilter {
 		}
 
 		if (parsedType == Client.Messages.Filter.Types.FilterType.Regex) {
-			filter = Get(isAllStream, new Client.Messages.Filter(parsedContext, parsedType, new[] {data}));
+			filter = Get(isAllStream, new Client.Messages.Filter(parsedContext, parsedType, new[] { data }));
 			return (true, null);
 		}
 
 		filter = Get(isAllStream, new Client.Messages.Filter(parsedContext, parsedType,
-			data.Split(new[] {","}, StringSplitOptions.RemoveEmptyEntries)));
+			data.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries)));
 		return (true, null);
 	}
 }

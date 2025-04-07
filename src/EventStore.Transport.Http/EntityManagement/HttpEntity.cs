@@ -2,11 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Net;
+using System.Linq;
 using System.Security.Claims;
 using EventStore.Common.Utils;
 using EventStore.Transport.Http.Codecs;
-using System.Linq;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 

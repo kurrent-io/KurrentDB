@@ -122,7 +122,7 @@ internal class ProjectionWrongTagCheck : ProjectionsKillScenario {
 			return success;
 		});
 
-		return Task.Factory.ContinueWhenAll(new[] {writeTask, successTask}, tasks => {
+		return Task.Factory.ContinueWhenAll(new[] { writeTask, successTask }, tasks => {
 			Log.Information("Iteration {iteration} tasks completed", GetIterationCode());
 			Task.WaitAll(tasks);
 			Log.Information("Iteration {iteration} successful", GetIterationCode());

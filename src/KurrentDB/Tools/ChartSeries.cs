@@ -29,6 +29,6 @@ public class ChartSeriesValues : TimeSeriesChartSeries {
 	}
 
 	public void AddData(double value) {
-		Data = [..Data.Skip(1), new(DateTime.Now, value)];
+		Data = [.. Data.Skip(1), new(DateTime.Now, value)];
 	}
 }

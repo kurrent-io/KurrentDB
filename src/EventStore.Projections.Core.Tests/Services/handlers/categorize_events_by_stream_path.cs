@@ -4,9 +4,7 @@
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Data;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using EventStore.Projections.Core.Standard;
 using NUnit.Framework;
@@ -130,7 +128,7 @@ public static class categorize_events_by_stream_path {
 		}
 	}
 
-[TestFixture]
+	[TestFixture]
 	public class when_handling_soft_deleted_stream_metadata_event {
 		private CategorizeEventsByStreamPath _handler;
 		private string _state;
@@ -146,7 +144,7 @@ public static class categorize_events_by_stream_path {
 				"", CheckpointTag.FromPosition(0, 200, 150), null,
 				new ResolvedEvent(
 					"$$cat4-stream4", 20, "$$cat4-stream4", 20, true, new TFPos(200, 150), Guid.NewGuid(),
-					"$metadata", true, "{ \"$tb\": "+long.MaxValue+" }", "{}"), out _state, out sharedState, out _emittedEvents);
+					"$metadata", true, "{ \"$tb\": " + long.MaxValue + " }", "{}"), out _state, out sharedState, out _emittedEvents);
 		}
 
 		[Test]
@@ -167,8 +165,8 @@ public static class categorize_events_by_stream_path {
 			Assert.AreEqual("$>", @event.EventType);
 			Assert.AreEqual("$ce-cat4", @event.StreamId);
 			Assert.AreEqual("20@$$cat4-stream4", @event.Data);
-			var metadata = new Dictionary<string,string>();
-			foreach(var kvp in @event.ExtraMetaData()){
+			var metadata = new Dictionary<string, string>();
+			foreach (var kvp in @event.ExtraMetaData()) {
 				metadata[kvp.Key] = kvp.Value;
 			}
 			Assert.NotNull(metadata["$o"]);
@@ -178,7 +176,7 @@ public static class categorize_events_by_stream_path {
 		}
 	}
 
-[TestFixture]
+	[TestFixture]
 	public class when_handling_hard_deleted_stream_event {
 		private CategorizeEventsByStreamPath _handler;
 		private string _state;
@@ -216,8 +214,8 @@ public static class categorize_events_by_stream_path {
 			Assert.AreEqual("$ce-cat5", @event.StreamId);
 			Assert.AreEqual("20@cat5-stream5", @event.Data);
 
-			var metadata = new Dictionary<string,string>();
-			foreach(var kvp in @event.ExtraMetaData()){
+			var metadata = new Dictionary<string, string>();
+			foreach (var kvp in @event.ExtraMetaData()) {
 				metadata[kvp.Key] = kvp.Value;
 			}
 			Assert.NotNull(metadata["$o"]);

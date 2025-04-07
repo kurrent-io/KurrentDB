@@ -35,8 +35,7 @@ public sealed class TelemetryService :
 	IHandle<ElectionMessage.ElectionsDone>,
 	IHandle<SystemMessage.ReplicaStateMessage>,
 	IHandle<LeaderDiscoveryMessage.LeaderFound>,
-	IAsyncDisposable
-{
+	IAsyncDisposable {
 	private static readonly ILogger Logger = Log.ForContext<TelemetryService>();
 
 	private static readonly TimeSpan InitialInterval = TimeSpan.FromHours(1);
@@ -231,8 +230,7 @@ public sealed class TelemetryService :
 					var payload = JsonSerializer.SerializeToNode(
 						evt.Data.ToDictionary(kvp => LowerFirstLetter(kvp.Key), kvp => kvp.Value));
 					message.Envelope.ReplyWith(new TelemetryMessage.Response(LowerFirstLetter(evt.Source), payload));
-				}
-				catch (Exception ex) {
+				} catch (Exception ex) {
 					Logger.Warning(ex, "Failed to collect telemetry from pluggable component {Source}", evt.Source);
 				}
 			});

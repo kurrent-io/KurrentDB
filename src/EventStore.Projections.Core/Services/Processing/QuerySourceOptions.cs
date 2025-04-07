@@ -29,18 +29,21 @@ public class QuerySourceOptions {
 
 	protected bool Equals(QuerySourceOptions other) {
 		return string.Equals(ResultStreamName, other.ResultStreamName)
-		       && string.Equals(PartitionResultStreamNamePattern, other.PartitionResultStreamNamePattern)
-		       && ReorderEvents.Equals(other.ReorderEvents) && ProcessingLag == other.ProcessingLag
-		       && IsBiState.Equals(other.IsBiState) && DefinesStateTransform.Equals(other.DefinesStateTransform)
-		       && ProducesResults.Equals(other.ProducesResults) && DefinesFold.Equals(other.DefinesFold)
-		       && HandlesDeletedNotifications.Equals(other.HandlesDeletedNotifications)
-		       && IncludeLinks.Equals(other.IncludeLinks);
+			   && string.Equals(PartitionResultStreamNamePattern, other.PartitionResultStreamNamePattern)
+			   && ReorderEvents.Equals(other.ReorderEvents) && ProcessingLag == other.ProcessingLag
+			   && IsBiState.Equals(other.IsBiState) && DefinesStateTransform.Equals(other.DefinesStateTransform)
+			   && ProducesResults.Equals(other.ProducesResults) && DefinesFold.Equals(other.DefinesFold)
+			   && HandlesDeletedNotifications.Equals(other.HandlesDeletedNotifications)
+			   && IncludeLinks.Equals(other.IncludeLinks);
 	}
 
 	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj)) return false;
-		if (ReferenceEquals(this, obj)) return true;
-		if (obj.GetType() != this.GetType()) return false;
+		if (ReferenceEquals(null, obj))
+			return false;
+		if (ReferenceEquals(this, obj))
+			return true;
+		if (obj.GetType() != this.GetType())
+			return false;
 		return Equals((QuerySourceOptions)obj);
 	}
 

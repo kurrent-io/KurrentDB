@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -712,7 +711,8 @@ public partial class PTable {
 
 	private static int GetDepth(long indexEntriesFileSize, int minDepth) {
 		minDepth = Math.Max(0, Math.Min(minDepth, 28));
-		if ((2L << 28) * 4096L < indexEntriesFileSize) return 28;
+		if ((2L << 28) * 4096L < indexEntriesFileSize)
+			return 28;
 		for (int i = 27; i >= minDepth; i--) {
 			if ((2L << i) * 4096L < indexEntriesFileSize) {
 				return i + 1;
@@ -723,8 +723,10 @@ public partial class PTable {
 	}
 
 	private static int GetRequiredMidpointCount(long numIndexEntries, byte version, int minDepth) {
-		if (numIndexEntries == 0) return 0;
-		if (numIndexEntries == 1) return 2;
+		if (numIndexEntries == 0)
+			return 0;
+		if (numIndexEntries == 1)
+			return 2;
 
 		int indexEntrySize = GetIndexEntrySize(version);
 		var depth = GetDepth(numIndexEntries * indexEntrySize, minDepth);

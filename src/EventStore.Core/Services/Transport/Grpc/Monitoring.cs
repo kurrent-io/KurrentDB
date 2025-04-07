@@ -15,7 +15,7 @@ namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Monitoring : EventStore.Client.Monitoring.Monitoring.MonitoringBase {
 	private readonly IPublisher _publisher;
-	
+
 	public override Task Stats(StatsReq request, IServerStreamWriter<StatsResp> responseStream, ServerCallContext context) {
 		var channel = Channel.CreateBounded<StatsResp>(new BoundedChannelOptions(1) {
 			SingleReader = true,
@@ -26,7 +26,7 @@ internal partial class Monitoring : EventStore.Client.Monitoring.Monitoring.Moni
 
 		return channel.Reader.ReadAllAsync(context.CancellationToken)
 			.ForEachAwaitAsync(responseStream.WriteAsync, context.CancellationToken);
-		
+
 		async Task Receive() {
 			var delay = TimeSpan.FromMilliseconds(request.RefreshTimePeriodInMs);
 			var envelope = new CallbackEnvelope(message => {

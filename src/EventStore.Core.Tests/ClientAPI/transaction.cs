@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Exceptions;
@@ -11,7 +11,6 @@ using EventStore.Common.Utils;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
 using NUnit.Framework;
-using System.Linq;
 
 namespace EventStore.Core.Tests.ClientAPI;
 

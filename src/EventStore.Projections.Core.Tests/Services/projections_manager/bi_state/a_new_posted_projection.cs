@@ -8,7 +8,6 @@ using System.Text;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services;
@@ -57,7 +56,8 @@ public static class a_new_posted_projection {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class when_get_state<TLogFormat, TStreamId> : Base<TLogFormat, TStreamId> {
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 			yield return (
 				new ProjectionManagementMessage.Command.GetState(_bus, _projectionName, ""));
 		}
@@ -80,7 +80,8 @@ public static class a_new_posted_projection {
 		private Guid _reader;
 
 		protected override IEnumerable<WhenStep> When() {
-			foreach (var m in base.When()) yield return m;
+			foreach (var m in base.When())
+				yield return m;
 
 			var readerAssignedMessage =
 				_consumer.HandledMessages.OfType<EventReaderSubscriptionMessage.ReaderAssignedReader>()

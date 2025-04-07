@@ -32,7 +32,7 @@ public class when_5_node_cluster_receives_3_write_notifications : with_clustered
 	}
 	[Test]
 	public void replication_checkpoint_should_advance() {
-		Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());		
-		Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());		
-	}	
+		Assert.AreEqual(_logPosition, ReplicationCheckpoint.Read());
+		Assert.AreEqual(_logPosition, ReplicationCheckpoint.ReadNonFlushed());
+	}
 }

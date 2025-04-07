@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
 using System.Text;
 using System.Text.Unicode;
 using EventStore.LogCommon;
@@ -34,7 +33,7 @@ public static class RecordCreator {
 	private static LogRecordType Type(this ref Raw.ContentTypeHeader _) => LogRecordType.ContentType;
 	private static LogRecordType Type(this ref Raw.TransactionStartHeader _) => LogRecordType.TransactionStart;
 	private static LogRecordType Type(this ref Raw.TransactionEndHeader _) => LogRecordType.TransactionEnd;
-	
+
 	// todo: limit of 100 bytes when we know a good way to report the error to the client.
 	// throwing here will crash the writer.
 	const int MaxStringBytes = int.MaxValue;
@@ -102,7 +101,7 @@ public static class RecordCreator {
 
 		return StringPayloadRecord.Create(record);
 	}
-	
+
 	public static StringPayloadRecord<Raw.PartitionTypeHeader> CreatePartitionTypeRecord(
 		DateTime timeStamp,
 		long logPosition,
@@ -179,7 +178,7 @@ public static class RecordCreator {
 
 		return StringPayloadRecord.Create(record);
 	}
-	
+
 	public static StringPayloadRecord<Raw.EventTypeHeader> CreateEventTypeRecord(
 		DateTime timeStamp,
 		long logPosition,
@@ -209,7 +208,7 @@ public static class RecordCreator {
 
 		return StringPayloadRecord.Create(record);
 	}
-	
+
 	public static StringPayloadRecord<Raw.ContentTypeHeader> CreateContentTypeRecord(
 		DateTime timeStamp,
 		long logPosition,
@@ -366,7 +365,7 @@ public static class RecordCreator {
 		var record = MutableRecordView<Raw.TransactionStartHeader>.Create(payloadLength: 0);
 		ref var header = ref record.Header;
 		ref var subHeader = ref record.SubHeader;
-		
+
 		header.Type = subHeader.Type();
 		header.Version = subHeader.CurrentVersion();
 		header.TimeStamp = timeStamp;
@@ -379,7 +378,7 @@ public static class RecordCreator {
 
 		return record;
 	}
-	
+
 	public static RecordView<Raw.TransactionEndHeader> CreateTransactionEndRecord(
 		DateTime timeStamp,
 		long logPosition,
@@ -395,7 +394,7 @@ public static class RecordCreator {
 		header.TimeStamp = timeStamp;
 		header.RecordId = transactionId;
 		header.LogPosition = logPosition;
-		
+
 		subHeader.RecordCount = recordCount;
 
 		return record;

@@ -27,6 +27,6 @@ public class AdHocIndexScavengerInterceptor : IIndexScavenger {
 		IIndexScavengerLog log,
 		CancellationToken cancellationToken) {
 
-		return _wrapped.ScavengeIndex(scavengePoint,_f(shouldKeep), log, cancellationToken);
+		return _wrapped.ScavengeIndex(scavengePoint, _f(shouldKeep), log, cancellationToken);
 	}
 }

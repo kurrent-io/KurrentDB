@@ -85,7 +85,7 @@ public class ResolvedEvent {
 					tag = positionEvent.Metadata.ParseCheckpointTagJson();
 					var parsedPosition = tag.Position;
 					if (parsedPosition == new TFPos(long.MinValue, long.MinValue) &&
-					    @event.Metadata.IsValidUtf8Json()) {
+						@event.Metadata.IsValidUtf8Json()) {
 						tag = @event.Metadata.ParseCheckpointTagJson();
 						if (tag != null) {
 							parsedPosition = tag.Position;
@@ -104,9 +104,9 @@ public class ResolvedEvent {
 
 			JToken deletedValue;
 			IsLinkToDeletedStreamTombstone = extraMetadata != null
-			                                 && extraMetadata.TryGetValue("$deleted", out deletedValue);
+											 && extraMetadata.TryGetValue("$deleted", out deletedValue);
 			if (resolvedEvent.ResolveResult == ReadEventResult.NoStream
-			    || resolvedEvent.ResolveResult == ReadEventResult.StreamDeleted || IsLinkToDeletedStreamTombstone) {
+				|| resolvedEvent.ResolveResult == ReadEventResult.StreamDeleted || IsLinkToDeletedStreamTombstone) {
 				IsLinkToDeletedStream = true;
 				var streamId = SystemEventTypes.StreamReferenceEventToStreamId(
 					SystemEventTypes.LinkTo, resolvedEvent.Link.Data);

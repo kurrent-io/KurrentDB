@@ -32,18 +32,18 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
+using Serilog;
+using AuthenticationMiddleware = EventStore.Core.Services.Transport.Http.AuthenticationMiddleware;
+using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
+using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
+using HttpMethod = EventStore.Transport.Http.HttpMethod;
 using MidFunc = System.Func<
 	Microsoft.AspNetCore.Http.HttpContext,
 	System.Func<System.Threading.Tasks.Task>,
 	System.Threading.Tasks.Task
 >;
 using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
-using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
-using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
 using ServerFeatures = EventStore.Core.Services.Transport.Grpc.ServerFeatures;
-using Serilog;
-using AuthenticationMiddleware = EventStore.Core.Services.Transport.Http.AuthenticationMiddleware;
-using HttpMethod = EventStore.Transport.Http.HttpMethod;
 
 #nullable enable
 namespace EventStore.Core;
@@ -340,7 +340,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		private MidFunc Live => (context, next) => {
 			if (_startup._ready) {
 				if (context.Request.Query.TryGetValue("liveCode", out var expected) &&
-				    int.TryParse(expected, out var statusCode)) {
+					int.TryParse(expected, out var statusCode)) {
 					context.Response.StatusCode = statusCode;
 				} else {
 					context.Response.StatusCode = _livecode;

@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Diagnostics;
 using DotNext.Runtime;

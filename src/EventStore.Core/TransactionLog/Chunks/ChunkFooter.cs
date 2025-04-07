@@ -2,18 +2,17 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
-using EventStore.Common.Utils;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using DotNext.Buffers;
-using DotNext.Buffers.Binary;
-using DotNext.IO;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using DotNext.Buffers;
+using DotNext.Buffers.Binary;
+using DotNext.IO;
+using EventStore.Common.Utils;
+using EventStore.Core.TransactionLog.Chunks.TFChunk;
 
 namespace EventStore.Core.TransactionLog.Chunks;
 

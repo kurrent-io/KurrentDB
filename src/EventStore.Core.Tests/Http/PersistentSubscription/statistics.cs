@@ -5,15 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using EventStore.ClientAPI;
-using EventStore.Transport.Http;
-using Newtonsoft.Json.Linq;
-using NUnit.Framework;
-using System.Xml.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using EventStore.ClientAPI;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Http.Users.users;
+using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription;
@@ -76,8 +76,7 @@ class when_getting_statistics_for_subscription_with_parked_events(string content
 			credentials: _admin);
 
 		Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
-		Assert.DoesNotThrow(() =>
-		{
+		Assert.DoesNotThrow(() => {
 			var _entries = json != null ? json["entries"].ToList() : new List<JToken>();
 			_nackLink = _entries[0]["links"][3]["uri"] + "?action=park";
 		});

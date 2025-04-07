@@ -178,7 +178,7 @@ internal abstract class ScenarioBase : IScenario {
 	}
 
 	protected T[][] Split<T>(IEnumerable<T> sequence, int parts) {
-		return sequence.Select((x, i) => new {GroupNum = i % parts, Item = x})
+		return sequence.Select((x, i) => new { GroupNum = i % parts, Item = x })
 			.GroupBy(x => x.GroupNum, y => y.Item)
 			.Select(x => x.ToArray())
 			.ToArray();
@@ -297,7 +297,7 @@ internal abstract class ScenarioBase : IScenario {
 		var clientFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 		//../../KurrentDB/net471/KurrentDB.exe
 		var clusterNodeFolder = System.IO.Directory.GetParent(System.IO.Directory.GetParent(clientFolder).FullName)
-		                        + "/KurrentDB/net471/";
+								+ "/KurrentDB/net471/";
 		string fileName;
 		string argumentsHead;
 
@@ -452,7 +452,7 @@ internal abstract class ScenarioBase : IScenario {
 
 			var writeTask = store.AppendToStreamAsync(stream,
 				eventVersion - 1,
-				new[] {createEvent(eventVersion)});
+				new[] { createEvent(eventVersion) });
 
 			eventVersion += 1;
 

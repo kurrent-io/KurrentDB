@@ -50,16 +50,14 @@ public class GetStreamLastEventNumber_KnownCollisions_Randomized : ReadIndexTest
 		var streamLast = ExpectedVersion.NoStream;
 		var collidingStreamLast = ExpectedVersion.NoStream;
 
-		foreach (var @event in _events)
-		{
+		foreach (var @event in _events) {
 			Assert.AreEqual(streamLast,
 				await ReadIndex.GetStreamLastEventNumber_KnownCollisions(Stream, @event.LogPosition, CancellationToken.None));
 
 			Assert.AreEqual(collidingStreamLast,
 				await ReadIndex.GetStreamLastEventNumber_KnownCollisions(CollidingStream, @event.LogPosition, CancellationToken.None));
 
-			switch (@event.EventStreamId)
-			{
+			switch (@event.EventStreamId) {
 				case Stream:
 					streamLast = @event.EventNumber;
 					break;

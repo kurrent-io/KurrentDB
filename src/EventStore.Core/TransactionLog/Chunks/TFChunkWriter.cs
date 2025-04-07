@@ -23,8 +23,8 @@ public class TFChunkWriter : ITransactionFileWriter {
 	}
 
 	public bool NeedsNewChunk => CurrentChunk is
-		null or					// new database
-		{ IsReadOnly: true };	// database is at a chunk boundary
+		null or                 // new database
+		{ IsReadOnly: true };   // database is at a chunk boundary
 
 	private readonly TFChunkDb _db;
 	private readonly ICheckpoint _writerCheckpoint;
@@ -151,17 +151,15 @@ public class TFChunkWriter : ITransactionFileWriter {
 	}
 
 	private static void VerifyChunkNumberLimits(int chunkNumber) {
-		switch (chunkNumber)
-		{
+		switch (chunkNumber) {
 			case >= MaxChunkNumber:
 				throw new Exception($"Max chunk number limit reached: {MaxChunkNumber:N0}. Shutting down.");
 			case < MaxChunkNumberWarning:
 				break;
-			default:
-			{
+			default: {
 				var level = chunkNumber >= MaxChunkNumberError ? LogEventLevel.Error : LogEventLevel.Warning;
 				Log.Write(level, "You are approaching the max chunk number limit: {chunkNumber:N0} / {maxChunkNumber:N0}. " +
-				                 "The server will shut down when the limit is reached!", chunkNumber, MaxChunkNumber);
+								 "The server will shut down when the limit is reached!", chunkNumber, MaxChunkNumber);
 				break;
 			}
 		}
@@ -171,7 +169,7 @@ public class TFChunkWriter : ITransactionFileWriter {
 
 	public async ValueTask Flush(CancellationToken token) {
 		Debug.Assert(HasOpenTransaction() is false);
-		
+
 		if (_currentChunk is null) // the last chunk allocation failed
 			return;
 

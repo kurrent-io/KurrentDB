@@ -3,9 +3,6 @@
 
 using System;
 using System.Net;
-using EventStore.Common.Utils;
-using EventStore.Core.Cluster.Settings;
-using EventStore.Core.Data;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 

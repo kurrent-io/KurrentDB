@@ -223,17 +223,17 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 		switch (message.State) {
 			case VNodeState.Leader: {
-					_indexWriter.Reset();
-					_streamNameIndex.CancelReservations();
-					_eventTypeIndex.CancelReservations();
-					break;
-				}
+				_indexWriter.Reset();
+				_streamNameIndex.CancelReservations();
+				_eventTypeIndex.CancelReservations();
+				break;
+			}
 			case VNodeState.ShuttingDown: {
-					await Writer.Flush(token);
-					BlockWriter = true;
-					_writerQueue.Stop().GetAwaiter().OnCompleted(Bus.PublishStorageWriterShutdown);
-					break;
-				}
+				await Writer.Flush(token);
+				BlockWriter = true;
+				_writerQueue.Stop().GetAwaiter().OnCompleted(Bus.PublishStorageWriterShutdown);
+				break;
+			}
 		}
 	}
 
@@ -251,8 +251,8 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 	async ValueTask IAsyncHandle<SystemMessage.WaitForChaserToCatchUp>.HandleAsync(SystemMessage.WaitForChaserToCatchUp message, CancellationToken token) {
 		// if we are in states, that doesn't need to wait for chaser, ignore
 		if (_vnodeState is not VNodeState.PreLeader
-		    and not VNodeState.PreReplica
-		    and not VNodeState.PreReadOnlyReplica)
+			and not VNodeState.PreReplica
+			and not VNodeState.PreReadOnlyReplica)
 			throw new Exception(string.Format("{0} appeared in {1} state.", message.GetType().Name, _vnodeState));
 
 		if (Writer.HasOpenTransaction())
@@ -364,8 +364,8 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			}
 
 			bool softUndeleteMetastream = _systemStreams.IsMetaStream(streamId)
-			                              && await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(streamId),
-				                              token);
+										  && await _indexWriter.IsSoftDeleted(_systemStreams.OriginalStreamOf(streamId),
+											  token);
 
 			// note: the stream & event type records are indexed separately and must not be pre-committed to the main index
 			_indexWriter.PreCommit(CollectionsMarshal.AsSpan(prepares)[^msg.Events.Length..]);
@@ -395,8 +395,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 	private async ValueTask<(TStreamId, long)> GetOrWriteEventType(string eventType, long logPosition, CancellationToken token) {
 		GetOrReserveEventType(eventType, logPosition, out var eventTypeId, out var eventTypeRecord);
 
-		if (eventTypeRecord is not null)
-		{
+		if (eventTypeRecord is not null) {
 			var result = await WritePrepareWithRetry(eventTypeRecord, token);
 			logPosition = result.NewPos;
 		}
@@ -752,7 +751,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 		foreach (var prepare in prepares) {
 			long newWriterPos = await Writer.WriteToTransaction(prepare, CancellationToken.None)
-			                    ?? throw new InvalidOperationException("The transaction does not fit in the current chunk.");
+								?? throw new InvalidOperationException("The transaction does not fit in the current chunk.");
 			if (newWriterPos - writerPos != prepare.GetSizeWithLengthPrefixAndSuffix())
 				throw new Exception($"Expected writer position to be at: {writerPos + prepare.GetSizeWithLengthPrefixAndSuffix()} but it was at {newWriterPos}");
 

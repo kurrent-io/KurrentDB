@@ -30,7 +30,7 @@ public static class StorageData {
 			_storageType = storageType;
 		}
 
-		public sealed override IEnumerable<object[]> GetData(MethodInfo testMethod) => [[_storageType, .._extraArgs]];
+		public sealed override IEnumerable<object[]> GetData(MethodInfo testMethod) => [[_storageType, .. _extraArgs]];
 
 		protected delegate void PrerequisiteChecker(ref bool symbolSet);
 	}

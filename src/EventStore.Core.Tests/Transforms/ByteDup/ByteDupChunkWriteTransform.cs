@@ -34,7 +34,8 @@ public class ByteDupChunkWriteTransform : IChunkWriteTransform {
 	}
 
 	private static int GetAlignedSize(int size, int alignmentSize) {
-		if (size % alignmentSize == 0) return size;
+		if (size % alignmentSize == 0)
+			return size;
 		return (size / alignmentSize + 1) * alignmentSize;
 	}
 }

@@ -7,7 +7,6 @@ using System.Threading;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
 namespace EventStore.Projections.Core.Tests.Services.emitted_streams_deleter.when_deleting;
 

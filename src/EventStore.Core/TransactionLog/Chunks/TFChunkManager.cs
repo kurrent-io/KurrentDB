@@ -77,7 +77,7 @@ public sealed class TFChunkManager : IChunkRegistry<TFChunk.TFChunk>, IThreadPoo
 
 			Interlocked.Exchange(ref _backgroundRunning, 0);
 		} while (Interlocked.CompareExchange(ref _backgroundPassesRemaining, 0, 0) > 0
-		         && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
+				 && Interlocked.CompareExchange(ref _backgroundRunning, 1, 0) == 0);
 	}
 
 	private async ValueTask CacheUncacheReadOnlyChunks(CancellationToken token) {

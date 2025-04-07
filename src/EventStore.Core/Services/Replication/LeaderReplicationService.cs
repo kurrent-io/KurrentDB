@@ -7,10 +7,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotNext.Runtime.CompilerServices;
 using DotNext.Threading;
 using EventStore.Common.Utils;
 using EventStore.Core.Bus;
@@ -368,7 +366,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 		CancellationToken token) {
 
 		const int maxRetryCount = 10;
-		for(var trial = 0;;){
+		for (var trial = 0; ;) {
 			try {
 				var chunk = _db.Manager.GetChunkFor(logPosition);
 				Debug.Assert(chunk != null, string.Format(
@@ -416,7 +414,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 							sub.LogPosition));
 
 					if (logPosition == chunk.ChunkHeader.ChunkStartPosition &&
-					    sub.Version >= ReplicationSubscriptionVersions.V2) {
+						sub.Version >= ReplicationSubscriptionVersions.V2) {
 
 						sub.SendMessage(new ReplicationMessage.CreateChunk(_instanceId,
 							sub.SubscriptionId,
@@ -525,7 +523,8 @@ public class LeaderReplicationService : IMonitoredQueue,
 				ReplicaSendWindow)
 				continue;
 
-			if (subscription.BulkReader == null) throw new Exception("BulkReader is null for subscription.");
+			if (subscription.BulkReader == null)
+				throw new Exception("BulkReader is null for subscription.");
 
 			try {
 				var leaderCheckpoint = _db.Config.WriterCheckpoint.Read();
@@ -728,7 +727,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 	public void Handle(ReplicationTrackingMessage.ReplicatedTo message) {
 		//TODO(clc): if the node is busy and misses an update it might be a long time till the next update do we need check if they get too stale?
 		foreach (var subscription in _subscriptions.Values) {
-			if (subscription.IsConnectionClosed ||subscription.SendQueueSize >= MaxQueueSize) { continue;}
+			if (subscription.IsConnectionClosed || subscription.SendQueueSize >= MaxQueueSize) { continue; }
 			subscription.SendMessage(message);
 		}
 	}

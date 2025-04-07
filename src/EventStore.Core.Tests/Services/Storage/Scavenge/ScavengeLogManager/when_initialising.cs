@@ -123,7 +123,7 @@ public class when_previous_scavenge_was_interrupted_but_scavenge_stream_not_writ
 
 		_bus.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(m => {
 			if (m.EventStreamId == _scavengeStreamId
-			    && m.Events[0].EventType == SystemEventTypes.ScavengeCompleted) {
+				&& m.Events[0].EventType == SystemEventTypes.ScavengeCompleted) {
 				_eventWritten.SetResult(m);
 			}
 		}));
@@ -165,7 +165,7 @@ public class when_previous_scavenge_was_interrupted_and_some_data_was_scavenged<
 
 		_bus.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(m => {
 			if (m.EventStreamId == _scavengeStreamId
-			    && m.Events[0].EventType == SystemEventTypes.ScavengeCompleted) {
+				&& m.Events[0].EventType == SystemEventTypes.ScavengeCompleted) {
 				_eventWritten.SetResult(m);
 			}
 		}));

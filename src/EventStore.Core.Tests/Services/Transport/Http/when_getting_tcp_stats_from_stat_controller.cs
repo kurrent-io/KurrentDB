@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Common.Utils;
 using EventStore.Core.Messages;
+using EventStore.Core.Tests.ClientAPI;
 using EventStore.Transport.Http.Codecs;
 using NUnit.Framework;
-using EventStore.Core.Tests.ClientAPI;
 using HttpMethod = System.Net.Http.HttpMethod;
 using HttpStatusCode = System.Net.HttpStatusCode;
 

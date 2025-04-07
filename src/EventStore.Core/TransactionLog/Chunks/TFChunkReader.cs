@@ -83,7 +83,7 @@ public class TFChunkReader : ITransactionFileReader {
 	}
 
 	private async ValueTask<SeqReadResult> TryReadPrevInternal(int retries, CancellationToken token) {
-		for (;;token.ThrowIfCancellationRequested()) {
+		for (; ; token.ThrowIfCancellationRequested()) {
 			var pos = _curPos;
 			var writerChk = _writerCheckpoint.Read();
 			// we allow == writerChk, that means read the very last record
@@ -97,7 +97,7 @@ public class TFChunkReader : ITransactionFileReader {
 			bool readLast = false;
 
 			if (!_db.Manager.TryGetChunkFor(pos, out var chunk) ||
-			    pos == chunk.ChunkHeader.ChunkStartPosition) {
+				pos == chunk.ChunkHeader.ChunkStartPosition) {
 				// we are exactly at the boundary of physical chunks
 				// so we switch to previous chunk and request TryReadLast
 				readLast = true;

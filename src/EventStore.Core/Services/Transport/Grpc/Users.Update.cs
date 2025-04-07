@@ -3,9 +3,9 @@
 
 using System.Linq;
 using System.Threading.Tasks;
+using EventStore.Client.Users;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
-using EventStore.Client.Users;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 
@@ -13,7 +13,7 @@ namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Users {
 	private static readonly Operation UpdateOperation = new Operation(Plugins.Authorization.Operations.Users.Update);
-	
+
 	public override async Task<UpdateResp> Update(UpdateReq request, ServerCallContext context) {
 		var options = request.Options;
 
@@ -33,7 +33,8 @@ internal partial class Users {
 		return new UpdateResp();
 
 		void OnMessage(Message message) {
-			if (HandleErrors(options.LoginName, message, updateSource)) return;
+			if (HandleErrors(options.LoginName, message, updateSource))
+				return;
 
 			updateSource.TrySetResult(true);
 		}

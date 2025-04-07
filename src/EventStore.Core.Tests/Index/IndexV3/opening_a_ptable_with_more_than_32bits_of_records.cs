@@ -1,14 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
-using System.Security.Cryptography;
-using System.Diagnostics;
-using System.IO;
-using NUnit.Framework;
 using EventStore.Core.Index;
-using EventStore.Common.Utils;
-using EventStore.Common.Options;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV3;
 

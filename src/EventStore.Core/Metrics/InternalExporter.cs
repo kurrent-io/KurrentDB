@@ -12,7 +12,8 @@ public class InternalExporter : BaseExporter<Metric>, IPullMetricExporter {
 	public readonly MetersSnapshot Snapshot = new();
 
 	public override ExportResult Export(in Batch<Metric> batch) {
-		if (DateTime.Now.Subtract(_lastCollected).TotalMilliseconds < 1000) return ExportResult.Success;
+		if (DateTime.Now.Subtract(_lastCollected).TotalMilliseconds < 1000)
+			return ExportResult.Success;
 
 		_lastCollected = DateTime.Now;
 		foreach (var metric in batch) {
@@ -40,7 +41,8 @@ public class InternalExporter : BaseExporter<Metric>, IPullMetricExporter {
 				var current = enumerator.Current;
 				var te = current.Tags.GetEnumerator();
 				while (te.MoveNext()) {
-					if (te.Current.Key != "activity") continue;
+					if (te.Current.Key != "activity")
+						continue;
 					switch ((string)te.Current.Value) {
 						case "read":
 							val1 = current.GetSumLong();
@@ -79,7 +81,8 @@ public class InternalExporter : BaseExporter<Metric>, IPullMetricExporter {
 			var current = enumerator.Current;
 			var te = current.Tags.GetEnumerator();
 			te.MoveNext();
-			if (te.Current.Key != "name" || (string)te.Current.Value != "writer") continue;
+			if (te.Current.Key != "name" || (string)te.Current.Value != "writer")
+				continue;
 
 			// Calculate the writer checkpoint delta and return
 			var sum = current.GetSumLong();

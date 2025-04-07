@@ -71,7 +71,7 @@ public class QueryProcessingStrategy : DefaultProjectionProcessingStrategy {
 				checkpointManager2,
 				firstPhase.EmittedStreamsTracker);
 
-		return new[] {firstPhase, writeResultsPhase};
+		return new[] { firstPhase, writeResultsPhase };
 	}
 
 	protected override IResultEventEmitter CreateFirstPhaseResultEmitter(ProjectionNamesBuilder namingBuilder) {

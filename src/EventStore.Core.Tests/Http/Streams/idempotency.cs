@@ -2,16 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Text;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using EventStore.Core.Services;
 using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
 using EventStore.Core.Tests.Http.Users.users;
 using EventStore.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams {
@@ -93,7 +93,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		}
 
 		[TestFixture]
-		class when_posting_to_idempotent_guid_id_twice : HttpBehaviorSpecificationOfSuccessfulCreateEvent  {
+		class when_posting_to_idempotent_guid_id_twice : HttpBehaviorSpecificationOfSuccessfulCreateEvent {
 			private Guid _eventId;
 
 			protected override Task Given() {
@@ -120,7 +120,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		}
 
 		[TestFixture]
-		class when_posting_to_idempotent_guid_id_three_times : HttpBehaviorSpecificationOfSuccessfulCreateEvent  {
+		class when_posting_to_idempotent_guid_id_three_times : HttpBehaviorSpecificationOfSuccessfulCreateEvent {
 			private Guid _eventId;
 
 			protected override async Task Given() {
@@ -150,7 +150,7 @@ namespace EventStore.Core.Tests.Http.Streams {
 		[Category("LongRunning")]
 		[TestFixture(ContentType.EventsJson)]
 		[TestFixture(ContentType.LegacyEventsJson)]
-		class when_posting_an_event_once_raw_once_with_array(string contentType) : HttpBehaviorSpecificationOfSuccessfulCreateEvent  {
+		class when_posting_an_event_once_raw_once_with_array(string contentType) : HttpBehaviorSpecificationOfSuccessfulCreateEvent {
 			private Guid _eventId;
 
 			protected override Task Given() {

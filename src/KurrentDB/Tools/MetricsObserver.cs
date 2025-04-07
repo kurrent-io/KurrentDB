@@ -28,7 +28,8 @@ public sealed class MetricsObserver : IDisposable {
 		T measurement,
 		ReadOnlySpan<KeyValuePair<string, object>> tags,
 		object state) {
-		if (measurement is not long value) return;
+		if (measurement is not long value)
+			return;
 		if (instrument.Name == "kestrel.active_connections") {
 			Interlocked.Add(ref _nrActiveConnections, value);
 			DataUpdated?.Invoke(null, EventArgs.Empty);

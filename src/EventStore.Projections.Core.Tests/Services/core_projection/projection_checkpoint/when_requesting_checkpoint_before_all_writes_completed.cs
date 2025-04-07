@@ -5,12 +5,9 @@ using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
-using EventStore.Core.Tests.Bus.Helpers;
-using EventStore.Projections.Core.Messages;
 using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.AllStream;
 using EventStore.Projections.Core.Services.Processing.Checkpointing;
-using EventStore.Projections.Core.Services.Processing.Emitting;
 using EventStore.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using NUnit.Framework;
 

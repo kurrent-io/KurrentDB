@@ -46,8 +46,8 @@ internal class FakeArchiveStorage : IArchiveStorage {
 
 	private ChunkHeader CreateChunkHeader(int chunkStartNumber, int chunkEndNumber) {
 		return new ChunkHeader(
-			version: (int) TFChunk.ChunkVersions.Transformed,
-			minCompatibleVersion: (int) TFChunk.ChunkVersions.Transformed,
+			version: (int)TFChunk.ChunkVersions.Transformed,
+			minCompatibleVersion: (int)TFChunk.ChunkVersions.Transformed,
 			chunkSize: _chunkSize,
 			chunkStartNumber,
 			chunkEndNumber,

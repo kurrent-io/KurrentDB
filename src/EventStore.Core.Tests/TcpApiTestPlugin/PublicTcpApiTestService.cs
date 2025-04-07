@@ -36,9 +36,9 @@ public class PublicTcpApiTestService : IHostedService {
 	}
 
 	public static PublicTcpApiTestService Insecure(
-		TcpApiTestOptions options, 
+		TcpApiTestOptions options,
 		IAuthenticationProvider authProvider,
-		AuthorizationGateway authGateway, 
+		AuthorizationGateway authGateway,
 		StandardComponents components
 	) {
 		var endpoint = new IPEndPoint(IPAddress.Loopback, options.NodeTcpPort);
@@ -64,10 +64,10 @@ public class PublicTcpApiTestService : IHostedService {
 	}
 
 	public static PublicTcpApiTestService Secure(
-		TcpApiTestOptions options, 
-		IAuthenticationProvider authProvider, 
-		AuthorizationGateway authGateway, 
-		StandardComponents components, 
+		TcpApiTestOptions options,
+		IAuthenticationProvider authProvider,
+		AuthorizationGateway authGateway,
+		StandardComponents components,
 		CertificateProvider? certificateProvider
 	) {
 		var endpoint = new IPEndPoint(IPAddress.Loopback, options.NodeTcpPort);

@@ -243,7 +243,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 		} else {
 			if (statusCode >= 300 && statusCode < 400) {
 				//Redirects are always allowed because authorization is done on the canonical url
-				Assert.GreaterOrEqual(statusCode,300);
+				Assert.GreaterOrEqual(statusCode, 300);
 				Assert.LessOrEqual(statusCode, 307);
 			} else {
 				if (userAuthorizationLevel == "None") {

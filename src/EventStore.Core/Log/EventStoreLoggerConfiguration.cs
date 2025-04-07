@@ -86,16 +86,17 @@ public class EventStoreLoggerConfiguration {
 
 	public static bool AdjustMinimumLogLevel(LogLevel logLevel) {
 		lock (_defaultLogLevelSwitchLock) {
-			#if !DEBUG
+#if !DEBUG
 			if (_defaultLogLevelSwitch == null) {
 				throw new InvalidOperationException("The logger configuration has not yet been initialized.");
 			}
-			#endif
+#endif
 			if (!Enum.TryParse<LogEventLevel>(logLevel.ToString(), out var serilogLogLevel)) {
 				throw new ArgumentException($"'{logLevel}' is not a valid log level.");
 			}
 
-			if (serilogLogLevel == _defaultLogLevelSwitch.MinimumLevel) return false;
+			if (serilogLogLevel == _defaultLogLevelSwitch.MinimumLevel)
+				return false;
 			_defaultLogLevelSwitch.MinimumLevel = serilogLogLevel;
 			return true;
 		}

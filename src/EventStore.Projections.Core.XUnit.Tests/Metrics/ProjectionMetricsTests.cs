@@ -61,7 +61,8 @@ public class ProjectionMetricsTests {
 
 		actualMeasurement => {
 			Assert.Equal(expectedValue, actualMeasurement.Value);
-			if (actualMeasurement.Tags == null) return;
+			if (actualMeasurement.Tags == null)
+				return;
 
 			Assert.Equal(
 				tags,

@@ -33,7 +33,7 @@ public class when_stopping_the_projection_core_service_with_no_running_projectio
 
 [TestFixture]
 public class when_stopping_the_projection_core_service_with_running_projections
-	: TestFixtureWithProjectionCoreService  {
+	: TestFixtureWithProjectionCoreService {
 	private readonly Guid _projectionId = Guid.NewGuid();
 	private readonly Guid _stopCorrelationId = Guid.NewGuid();
 
@@ -68,7 +68,7 @@ public class when_stopping_the_projection_core_service_with_running_projections
 
 [TestFixture]
 public class when_stopping_the_projection_core_service_times_out_suspending_projections
-	: TestFixtureWithProjectionCoreService  {
+	: TestFixtureWithProjectionCoreService {
 	private readonly Guid _projectionId = Guid.NewGuid();
 	private readonly Guid _stopCorrelationId = Guid.NewGuid();
 
@@ -97,7 +97,7 @@ public class when_stopping_the_projection_core_service_times_out_suspending_proj
 
 [TestFixture]
 public class when_stopping_the_projection_core_service_and_timeout_for_wrong_correlation_received
-	: TestFixtureWithProjectionCoreService  {
+	: TestFixtureWithProjectionCoreService {
 	private readonly Guid _projectionId = Guid.NewGuid();
 	private readonly Guid _stopCorrelationId = Guid.NewGuid();
 

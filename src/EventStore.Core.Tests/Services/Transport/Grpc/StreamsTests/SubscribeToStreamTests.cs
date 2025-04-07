@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using EventStore.Core.Services.Transport.Grpc;
@@ -55,7 +54,7 @@ public class SubscribeToStreamTests {
 				var response = call.ResponseStream.Current;
 				if (response.ContentCase == ReadResp.ContentOneofCase.Event &&
 					_positionOfLastWrite == response.Event.Event.StreamRevision) {
-						break;
+					break;
 				}
 
 				_responses.Add(response);

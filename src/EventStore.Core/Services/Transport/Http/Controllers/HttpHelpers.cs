@@ -18,7 +18,7 @@ public static class HttpHelpers {
 				fromUrl,
 				HttpMethod.Get,
 				Codec.NoCodecs,
-				new ICodec[] {Codec.ManualEncoding},
+				new ICodec[] { Codec.ManualEncoding },
 				new Operation(Operations.Node.Redirect)),
 			(http, match) => http.ReplyTextContent(
 				"Moved", 302, "Found", ContentType.PlainText,

@@ -18,7 +18,7 @@ public static class StreamDeletedHelper {
 			deletedPartitionStreamId = null;
 			return false;
 		}
-		
+
 		if (resolvedEvent.IsLinkToDeletedStreamTombstone) {
 			isDeletedStreamEvent = true;
 			deletedPartitionStreamId = resolvedEvent.EventStreamId;

@@ -45,7 +45,7 @@ public class NodeCertificateAuthenticationProvider : IHttpAuthenticationProvider
 		var connectionItems = context.Features.Get<IConnectionItemsFeature>()?.Items;
 		const string connectionItemsKey = "NodeCertificateAuthenticationStatus";
 		if (TryGetDictionaryValue(connectionItems, connectionItemsKey, out var wasAuthenticated)) {
-			authenticated = (bool) wasAuthenticated;
+			authenticated = (bool)wasAuthenticated;
 		} else {
 			authenticated = AuthenticateUncached(context, clientCertificate);
 			TrySetDictionaryValue(connectionItems, connectionItemsKey, authenticated);

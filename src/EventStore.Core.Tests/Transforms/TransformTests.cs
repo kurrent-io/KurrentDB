@@ -23,7 +23,7 @@ namespace EventStore.Core.Tests.Transforms;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class TransformTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPerTestFixture {
+public class TransformTests<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private const int NumEvents = 1000;
 	private const int BatchSize = 50;
 
@@ -62,9 +62,9 @@ public class TransformTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPe
 		}
 	}
 
-	private async ValueTask VerifyChecksums(MiniNode<TLogFormat,TStreamId> node, CancellationToken token = default) {
+	private async ValueTask VerifyChecksums(MiniNode<TLogFormat, TStreamId> node, CancellationToken token = default) {
 		var completedChunks = new List<TFChunk>();
-		for (var i = 0 ; ; i++) {
+		for (var i = 0; ; i++) {
 			try {
 				var chunk = node.Db.Manager.GetChunk(i);
 				if (chunk.IsReadOnly)
@@ -74,11 +74,11 @@ public class TransformTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPe
 			}
 		}
 
-		foreach(var chunk in completedChunks)
+		foreach (var chunk in completedChunks)
 			await chunk.VerifyFileHash(token);
 	}
 
-	private async Task<(MiniNode<TLogFormat,TStreamId>, IEventStoreConnection)> CreateNode(string dbPath, string transform, bool memDb) {
+	private async Task<(MiniNode<TLogFormat, TStreamId>, IEventStoreConnection)> CreateNode(string dbPath, string transform, bool memDb) {
 		IDbTransform dbTransform = transform switch {
 			"identity" => new IdentityDbTransform(),
 			"bitflip" => new BitFlipDbTransform(),

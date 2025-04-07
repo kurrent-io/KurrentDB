@@ -5,8 +5,7 @@ using EventStore.Projections.Core.Services.Processing.Checkpointing;
 
 namespace EventStore.Projections.Core.Services.Processing.MultiStream;
 
-public partial class MultiStreamMultiOutputCheckpointManager
-{
+public partial class MultiStreamMultiOutputCheckpointManager {
 	private class Item {
 		internal EventStore.Core.Data.ResolvedEvent? _result;
 		private readonly CheckpointTag _tag;

@@ -2,11 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using EventStore.Cluster;
 using EventStore.Common.Utils;
 using EventStore.Core.Messages;

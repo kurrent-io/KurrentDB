@@ -4,8 +4,6 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Net;
-using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
@@ -125,7 +123,7 @@ public class ReplicaService : IHandle<SystemMessage.StateChangeMessage>,
 			case VNodeState.CatchingUp:
 			case VNodeState.Clone:
 			case VNodeState.Follower:
-			case VNodeState.ReadOnlyReplica:  {
+			case VNodeState.ReadOnlyReplica: {
 				// nothing changed, essentially
 				break;
 			}
@@ -180,7 +178,7 @@ public class ReplicaService : IHandle<SystemMessage.StateChangeMessage>,
 				_sslServerCertValidator,
 				() => {
 					var cert = _sslClientCertificateSelector();
-					return new X509CertificateCollection{cert};
+					return new X509CertificateCollection { cert };
 				},
 				_networkSendQueue,
 				_authProvider,
@@ -243,8 +241,10 @@ public class ReplicaService : IHandle<SystemMessage.StateChangeMessage>,
 	}
 
 	public void Handle(ReplicationMessage.AckLogPosition message) {
-		if (!_state.IsReplica()) throw new Exception("!_state.IsReplica()");
-		if (_connection == null) throw new Exception("_connection == null");
+		if (!_state.IsReplica())
+			throw new Exception("!_state.IsReplica()");
+		if (_connection == null)
+			throw new Exception("_connection == null");
 		SendTcpMessage(_connection, message);
 	}
 
@@ -263,7 +263,7 @@ public class ReplicaService : IHandle<SystemMessage.StateChangeMessage>,
 			case VNodeState.CatchingUp:
 			case VNodeState.Clone:
 			case VNodeState.Follower:
-			case VNodeState.ReadOnlyReplica:  {
+			case VNodeState.ReadOnlyReplica: {
 				Debug.Assert(_connection != null, "Connection manager is null in follower/clone/catching up state");
 				SendTcpMessage(_connection, message.Message);
 				break;

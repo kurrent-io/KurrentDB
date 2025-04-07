@@ -16,7 +16,7 @@ using Xunit;
 using static EventStore.Core.TransactionLog.Chunks.TFChunk.TFChunk;
 
 namespace EventStore.Core.XUnit.Tests.TransactionLog.Chunks;
-public  class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests>{
+public class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests> {
 	private readonly TFChunkManager _sut;
 	private readonly ILocatorCodec _locatorCodec;
 	private readonly List<Data.ChunkInfo> _onSwitched = [];

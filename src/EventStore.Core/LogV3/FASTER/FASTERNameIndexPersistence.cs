@@ -15,8 +15,8 @@ using EventStore.Core.LogAbstraction;
 using EventStore.Core.LogAbstraction.Common;
 using FASTER.core;
 using Serilog;
-using Value = System.UInt32;
 using static System.Threading.Timeout;
+using Value = System.UInt32;
 
 namespace EventStore.Core.LogV3.FASTER;
 
@@ -404,16 +404,20 @@ public class FASTERNameIndexPersistence :
 			userContext: context);
 
 		switch (status) {
-			case Status.OK: return true;
-			case Status.NOTFOUND: return false;
+			case Status.OK:
+				return true;
+			case Status.NOTFOUND:
+				return false;
 			case Status.PENDING:
 				session.CompletePending(wait: true);
 				switch (context.Status) {
 					case Status.OK:
 						value = context.Value;
 						return true;
-					case Status.NOTFOUND: return false;
-					default: throw new Exception($"{_indexName} Unexpected status {context.Status} completing read for \"{name}\"");
+					case Status.NOTFOUND:
+						return false;
+					default:
+						throw new Exception($"{_indexName} Unexpected status {context.Status} completing read for \"{name}\"");
 				}
 			case Status.ERROR:
 			default:

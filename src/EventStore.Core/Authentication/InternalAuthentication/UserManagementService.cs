@@ -234,7 +234,8 @@ public class UserManagementService :
 
 	void NotifyInitialized() {
 		var remainingUsers = Interlocked.Decrement(ref _numberOfStandardUsersToBeCreated);
-		if (remainingUsers == 0) _tcs.TrySetResult(true);
+		if (remainingUsers == 0)
+			_tcs.TrySetResult(true);
 	}
 
 	UserData CreateUserData(UserManagementMessage.Create message) =>
@@ -337,7 +338,7 @@ public class UserManagementService :
 	}
 
 	static Event CreatePasswordChangedEvent(string loginName) =>
-		new(Guid.NewGuid(), PasswordChanged, true, new {LoginName = loginName}.ToJsonBytes(), null);
+		new(Guid.NewGuid(), PasswordChanged, true, new { LoginName = loginName }.ToJsonBytes(), null);
 
 	void ReadUpdateCheckAnd(UserManagementMessage.UserManagementRequestMessage message,
 		Action<ClientMessage.ReadStreamEventsBackwardCompleted, UserData> action) {

@@ -15,8 +15,10 @@ internal partial class Users : EventStore.Client.Users.Users.UsersBase {
 	private IAuthorizationProvider _authorizationProvider;
 
 	public Users(IPublisher publisher, IAuthorizationProvider authorizationProvider) {
-		if (publisher == null) throw new ArgumentNullException(nameof(publisher));
-		if (authorizationProvider == null) throw new ArgumentNullException(nameof(authorizationProvider));
+		if (publisher == null)
+			throw new ArgumentNullException(nameof(publisher));
+		if (authorizationProvider == null)
+			throw new ArgumentNullException(nameof(authorizationProvider));
 		_publisher = publisher;
 		_authorizationProvider = authorizationProvider;
 	}
@@ -28,7 +30,8 @@ internal partial class Users : EventStore.Client.Users.Users.UsersBase {
 			return true;
 		}
 
-		if (response.Success) return false;
+		if (response.Success)
+			return false;
 		source.TrySetException(response.Error switch {
 			Error.Unauthorized => RpcExceptions.AccessDenied(),
 			Error.NotFound => RpcExceptions.LoginNotFound(loginName),

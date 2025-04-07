@@ -5,12 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using NUnit.Framework;
-using Newtonsoft.Json.Linq;
-using EventStore.ClientAPI;
 using EventStore.ClientAPI.Projections;
 using EventStore.Common.Utils;
 using EventStore.Core.Tests;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 
 namespace EventStore.Projections.Core.Tests.ClientAPI.projectionsManager;
 

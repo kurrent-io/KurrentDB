@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.IO;
 using DotNext.Buffers;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.TransactionLog.LogRecords;
@@ -122,7 +121,7 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 		var emptyEventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		Assert.DoesNotThrow(() =>
 			LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
-				PrepareFlags.None, emptyEventTypeId, new byte[0], null,  DateTime.UtcNow));
+				PrepareFlags.None, emptyEventTypeId, new byte[0], null, DateTime.UtcNow));
 	}
 
 	[Test]
@@ -135,7 +134,7 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 
 		var prepare = LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
-			PrepareFlags.IsRedacted, eventTypeId, new byte[100], null,  DateTime.UtcNow);
+			PrepareFlags.IsRedacted, eventTypeId, new byte[100], null, DateTime.UtcNow);
 		Assert.AreEqual(0, prepare.Data.Length);
 	}
 
@@ -151,7 +150,7 @@ public class prepare_log_record_should<TLogFormat, TStreamId> {
 		const int dataSize = 10000;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		var prepare = LogRecord.Prepare(_recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamId, 0,
-			PrepareFlags.IsRedacted, eventTypeId, new byte[dataSize], null,  DateTime.UtcNow);
+			PrepareFlags.IsRedacted, eventTypeId, new byte[dataSize], null, DateTime.UtcNow);
 
 		prepare.WriteTo(ref binaryWriter);
 		Assert.True(binaryWriter.WrittenCount >= dataSize);

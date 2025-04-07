@@ -25,7 +25,8 @@ abstract class GetDataWorkItemBase : WorkItem {
 		IProjectionPhaseStateManager projection,
 		string partition)
 		: base(null) {
-		if (partition == null) throw new ArgumentNullException("partition");
+		if (partition == null)
+			throw new ArgumentNullException("partition");
 		_publisher = publisher;
 		_partition = partition;
 		_correlationId = correlationId;

@@ -23,7 +23,7 @@ public class PartitionManager : IPartitionManager {
 	private const string RootPartitionTypeName = "Root";
 
 	public Guid? RootId { get; private set; }
-	public Guid? RootTypeId  { get; private set; }
+	public Guid? RootTypeId { get; private set; }
 
 	public PartitionManager(
 		ITransactionFileReader reader, ITransactionFileWriter writer, LogV3RecordFactory recordFactory) {
@@ -91,7 +91,7 @@ public class PartitionManager : IPartitionManager {
 			var rec = result.LogRecord;
 			switch (rec.RecordType) {
 				case LogRecordType.PartitionType:
-					var r = ((PartitionTypeLogRecord) rec).Record;
+					var r = ((PartitionTypeLogRecord)rec).Record;
 					if (r.StringPayload == RootPartitionTypeName && r.SubHeader.PartitionId == Guid.Empty) {
 						RootTypeId = r.Header.RecordId;
 
@@ -104,9 +104,9 @@ public class PartitionManager : IPartitionManager {
 						"Unexpected partition type encountered while trying to read the root partition type.");
 
 				case LogRecordType.Partition:
-					var p = ((PartitionLogRecord) rec).Record;
+					var p = ((PartitionLogRecord)rec).Record;
 					if (p.StringPayload == RootPartitionName && p.SubHeader.PartitionTypeId == RootTypeId
-					                                         && p.SubHeader.ParentPartitionId == Guid.Empty) {
+															 && p.SubHeader.ParentPartitionId == Guid.Empty) {
 						RootId = p.Header.RecordId;
 						_recordFactory.SetRootPartitionId(RootId.Value);
 

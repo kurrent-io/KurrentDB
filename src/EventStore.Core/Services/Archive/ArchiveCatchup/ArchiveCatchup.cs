@@ -75,8 +75,8 @@ public class ArchiveCatchup : IClusterVNodeStartupTask {
 	// returns true if the catchup is done
 	// returns false if it needs to be invoked again to continue the catchup
 	private async Task<bool> CatchUpWithArchive(long writerChk, long archiveChk, CancellationToken ct) {
-		var logicalChunkStartNumber = (int) (writerChk / _chunkSize);
-		var logicalChunkEndNumber = (int) (archiveChk / _chunkSize);
+		var logicalChunkStartNumber = (int)(writerChk / _chunkSize);
+		var logicalChunkEndNumber = (int)(archiveChk / _chunkSize);
 
 		for (var logicalChunkNumber = logicalChunkStartNumber; logicalChunkNumber < logicalChunkEndNumber; logicalChunkNumber++)
 			if (!await FetchAndCommitChunk(logicalChunkNumber, ct))

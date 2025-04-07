@@ -8,7 +8,6 @@ using EventStore.Core.Messages;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Projections.Core.Messages;
-using EventStore.Projections.Core.Services.Processing;
 using EventStore.Projections.Core.Services.Processing.AllStream;
 using NUnit.Framework;
 using HeadingEventReader = EventStore.Projections.Core.Services.Processing.TransactionFile.HeadingEventReader;

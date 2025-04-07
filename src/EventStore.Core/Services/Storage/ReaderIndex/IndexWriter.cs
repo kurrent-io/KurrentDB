@@ -133,10 +133,10 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			try {
 				if (await GetPrepare(reader, transactionPosition, token) is not { } prepare) {
 					Log.Error("Could not read first prepare of to-be-committed transaction. "
-					          + "Transaction pos: {transactionPosition}, commit pos: {commitPosition}.",
+							  + "Transaction pos: {transactionPosition}, commit pos: {commitPosition}.",
 						transactionPosition, commitPosition);
 					var message = String.Format("Could not read first prepare of to-be-committed transaction. "
-					                            + "Transaction pos: {0}, commit pos: {1}.",
+												+ "Transaction pos: {0}, commit pos: {1}.",
 						transactionPosition, commitPosition);
 					throw new InvalidOperationException(message);
 				}
@@ -215,9 +215,9 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				first = false;
 			}
 
-			if(first) /*no data in transaction*/
+			if (first) /*no data in transaction*/
 				return new CommitCheckResult<TStreamId>(CommitDecision.Ok, streamId, curVersion, -1, -1, await IsSoftDeleted(streamId, token));
-			else{
+			else {
 				var isReplicated = await _indexReader.GetStreamLastEventNumber(streamId, token) >= endEventNumber;
 				//TODO(clc): the new index should hold the log positions removing this read
 				//n.b. the index will never have the event in the case of NotReady as it only committed records are indexed
@@ -225,7 +225,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				var idempotentEvent = await _indexReader.ReadEvent(IndexReader.UnspecifiedStreamName, streamId, endEventNumber, token);
 				var logPos = idempotentEvent.Result == ReadEventResult.Success
 					? idempotentEvent.Record.LogPosition : -1;
-				if(isReplicated)
+				if (isReplicated)
 					return new CommitCheckResult<TStreamId>(CommitDecision.Idempotent, streamId, curVersion, startEventNumber, endEventNumber, false, logPos);
 				else
 					return new CommitCheckResult<TStreamId>(CommitDecision.IdempotentNotReady, streamId, curVersion, startEventNumber, endEventNumber, false, logPos);
@@ -238,8 +238,8 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				eventNumber += 1;
 
 				if (_committedEvents.TryGetRecord(eventId, out var prepInfo)
-				    && StreamIdComparer.Equals(prepInfo.StreamId, streamId)
-				    && prepInfo.EventNumber == eventNumber)
+					&& StreamIdComparer.Equals(prepInfo.StreamId, streamId)
+					&& prepInfo.EventNumber == eventNumber)
 					continue;
 
 				if (await _indexReader.ReadPrepare(streamId, eventNumber, token) is { } res && res.EventId == eventId)
@@ -397,8 +397,10 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			_streamVersions.Put(
 				commitInfo.StreamId,
 				x => {
-					if (!Debugger.IsAttached) Debugger.Launch();
-					else Debugger.Break();
+					if (!Debugger.IsAttached)
+						Debugger.Launch();
+					else
+						Debugger.Break();
 					throw new Exception(string.Format("CommitInfo for stream '{0}' is not present!", x));
 				},
 				(streamId, oldVersion) => oldVersion,
@@ -407,8 +409,10 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 				_streamRawMetas.Put(
 					_systemStreams.OriginalStreamOf(commitInfo.StreamId),
 					x => {
-						if (!Debugger.IsAttached) Debugger.Launch();
-						else Debugger.Break();
+						if (!Debugger.IsAttached)
+							Debugger.Launch();
+						else
+							Debugger.Break();
 						throw new Exception(string.Format(
 							"Original stream CommitInfo for meta-stream '{0}' is not present!",
 							_systemStreams.MetaStreamOf(x)));
