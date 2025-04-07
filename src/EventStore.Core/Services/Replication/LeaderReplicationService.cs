@@ -22,7 +22,7 @@ using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 using Epoch = EventStore.Core.Data.Epoch;
 using ILogger = Serilog.ILogger;
 

@@ -11,7 +11,7 @@ using EventStore.Common.Utils;
 using KurrentDB.BufferManagement;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Transport.Tcp;
+namespace KurrentDB.Transport.Tcp;
 
 public class TcpConnection : TcpConnectionBase, ITcpConnection {
 	internal const int MaxSendPacketSize = 65535 /*Max IP packet size*/ - 20 /*IP packet header size*/ - 32 /*TCP min header size*/;

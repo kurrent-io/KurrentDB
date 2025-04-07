@@ -10,7 +10,7 @@ using EventStore.Client.Messages;
 using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 using OperationResult = EventStore.Client.Messages.OperationResult;
 
 namespace KurrentDB.TestClient.Commands.DvuBasic;

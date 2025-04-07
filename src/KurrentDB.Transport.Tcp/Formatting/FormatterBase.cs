@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using KurrentDB.BufferManagement;
 
-namespace EventStore.Transport.Tcp.Formatting;
+namespace KurrentDB.Transport.Tcp.Formatting;
 
 public abstract class FormatterBase<T> : IMessageFormatter<T> {
 	/// <summary>

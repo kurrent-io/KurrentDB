@@ -10,7 +10,7 @@ using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.Tests.Certificates;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp;

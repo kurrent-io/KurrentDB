@@ -4,7 +4,7 @@
 using System;
 using EventStore.Common.Utils;
 
-namespace EventStore.Transport.Tcp;
+namespace KurrentDB.Transport.Tcp;
 
 internal static class Helper {
 	public static void EatException(Action action) {

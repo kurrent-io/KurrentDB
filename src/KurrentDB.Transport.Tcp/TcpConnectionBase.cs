@@ -7,7 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using EventStore.Common.Utils;
 
-namespace EventStore.Transport.Tcp;
+namespace KurrentDB.Transport.Tcp;
 
 public class TcpConnectionBase : IMonitoredTcpConnection {
 	public IPEndPoint RemoteEndPoint {

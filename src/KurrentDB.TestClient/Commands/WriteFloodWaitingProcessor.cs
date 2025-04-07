@@ -8,7 +8,7 @@ using System.Threading;
 using EventStore.Client.Messages;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 
 namespace KurrentDB.TestClient.Commands;
 

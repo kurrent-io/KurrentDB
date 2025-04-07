@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Transport.Tcp;
+namespace KurrentDB.Transport.Tcp;
 
 public class TcpConnectionSsl : TcpConnectionBase, ITcpConnection {
 	private static readonly ILogger Log = Serilog.Log.ForContext<TcpConnectionSsl>();

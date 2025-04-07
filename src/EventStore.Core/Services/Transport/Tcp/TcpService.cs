@@ -9,7 +9,7 @@ using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Plugins.Authentication;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Tcp;

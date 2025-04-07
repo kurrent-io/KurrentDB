@@ -11,7 +11,7 @@ using EventStore.Core.Bus;
 using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.Services.Monitoring.Utils;
 using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Monitoring;

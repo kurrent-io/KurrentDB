@@ -6,7 +6,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Transport.Tcp;
+namespace KurrentDB.Transport.Tcp;
 
 public class TcpConnectionMonitor {
 	public static readonly TcpConnectionMonitor Default = new TcpConnectionMonitor();

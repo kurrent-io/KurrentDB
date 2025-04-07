@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using EventStore.Common.Utils;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Transport.Tcp.Framing;
+namespace KurrentDB.Transport.Tcp.Framing;
 
 /// <summary>
 /// Uses length-prefixed framing to encode outgoing messages and decode
@@ -70,7 +70,7 @@ public class LengthPrefixMessageFramer : IMessageFramer<ArraySegment<byte>> {
 				++_headerBytes;
 				if (_headerBytes == HeaderLength) {
 					if (_packageLength <= 0 || _packageLength > _maxPackageSize) {
-						Log.Error("FRAMING ERROR! Data:\n {data}", Common.Utils.Helper.FormatBinaryDump(bytes));
+						Log.Error("FRAMING ERROR! Data:\n {data}", EventStore.Common.Utils.Helper.FormatBinaryDump(bytes));
 						throw new PackageFramingException(string.Format(
 							"Package size is out of bounds: {0} (max: {1}).",
 							_packageLength, _maxPackageSize));

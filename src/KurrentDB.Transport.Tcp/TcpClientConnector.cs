@@ -10,7 +10,7 @@ using System.Threading;
 using EventStore.Common.Utils;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Transport.Tcp;
+namespace KurrentDB.Transport.Tcp;
 
 public class TcpClientConnector {
 	private const int CheckPeriodMs = 200;

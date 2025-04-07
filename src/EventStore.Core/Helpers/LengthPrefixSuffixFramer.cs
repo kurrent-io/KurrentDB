@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Transport.Tcp.Framing;
+using KurrentDB.Transport.Tcp.Framing;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Helpers;

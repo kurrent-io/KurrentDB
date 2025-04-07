@@ -5,7 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 
-namespace EventStore.Transport.Tcp;
+namespace KurrentDB.Transport.Tcp;
 
 internal class SocketArgsPool {
 	public readonly string Name;

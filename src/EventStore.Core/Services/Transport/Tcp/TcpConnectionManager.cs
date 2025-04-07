@@ -15,8 +15,8 @@ using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Settings;
 using EventStore.Plugins.Authentication;
-using EventStore.Transport.Tcp;
-using EventStore.Transport.Tcp.Framing;
+using KurrentDB.Transport.Tcp;
+using KurrentDB.Transport.Tcp.Framing;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Tcp;

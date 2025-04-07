@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Transport.Http",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Core", "EventStore.Core\EventStore.Core.csproj", "{9957CA10-8A8A-419F-92BD-7A8BE3014345}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Transport.Tcp", "EventStore.Transport.Tcp\EventStore.Transport.Tcp.csproj", "{DCAD0184-4AFE-49EA-BE31-5D68CA4B59CA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Transport.Tcp", "KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj", "{DCAD0184-4AFE-49EA-BE31-5D68CA4B59CA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB", "KurrentDB\KurrentDB.csproj", "{FDFCE363-84A4-4A6F-B97C-D9F57D8D124F}"
 EndProject

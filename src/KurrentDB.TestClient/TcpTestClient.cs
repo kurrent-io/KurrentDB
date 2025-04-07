@@ -8,11 +8,11 @@ using System.Net.Sockets;
 using System.Threading;
 using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Tcp;
-using EventStore.Transport.Tcp;
-using EventStore.Transport.Tcp.Formatting;
-using EventStore.Transport.Tcp.Framing;
 using KurrentDB.BufferManagement;
-using Connection = EventStore.Transport.Tcp.TcpTypedConnection<byte[]>;
+using KurrentDB.Transport.Tcp;
+using KurrentDB.Transport.Tcp.Formatting;
+using KurrentDB.Transport.Tcp.Framing;
+using Connection = KurrentDB.Transport.Tcp.TcpTypedConnection<byte[]>;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.TestClient;

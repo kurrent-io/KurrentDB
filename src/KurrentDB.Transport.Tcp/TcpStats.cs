@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.Transport.Tcp;
+namespace KurrentDB.Transport.Tcp;
 
 public class TcpStats {
 	///<summary>

@@ -20,7 +20,7 @@ using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Plugins.Authentication;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 using EndPoint = System.Net.EndPoint;
 using ILogger = Serilog.ILogger;
 

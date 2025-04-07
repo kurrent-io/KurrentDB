@@ -5,11 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using EventStore.Transport.Tcp.Formatting;
-using EventStore.Transport.Tcp.Framing;
+using KurrentDB.Transport.Tcp.Formatting;
+using KurrentDB.Transport.Tcp.Framing;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Transport.Tcp;
+namespace KurrentDB.Transport.Tcp;
 
 public class TcpTypedConnection<T> {
 	private static readonly ILogger Log =

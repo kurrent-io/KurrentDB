@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
 using EventStore.Core.Tests.Integration;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp;

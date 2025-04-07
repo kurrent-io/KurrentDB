@@ -19,7 +19,7 @@ using EventStore.Core.Settings;
 using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 using EventRecord = EventStore.Core.Data.EventRecord;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;

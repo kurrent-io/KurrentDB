@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.Transport.Tcp.Framing;
+namespace KurrentDB.Transport.Tcp.Framing;
 
 public interface IMessageFramer {
 	bool HasData { get; }

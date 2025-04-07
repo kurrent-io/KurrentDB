@@ -8,7 +8,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Utils;
-using EventStore.Transport.Tcp;
+using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp;
