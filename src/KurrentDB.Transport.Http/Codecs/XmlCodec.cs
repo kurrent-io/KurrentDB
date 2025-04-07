@@ -6,7 +6,7 @@ using System.IO;
 using System.Text;
 using System.Xml;
 using System.Xml.Serialization;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Transport.Http.Codecs;

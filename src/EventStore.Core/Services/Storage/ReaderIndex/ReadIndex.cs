@@ -4,7 +4,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
@@ -15,7 +14,8 @@ using EventStore.Core.Metrics;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
-using static EventStore.Common.Configuration.MetricsConfiguration;
+using KurrentDB.Common.Utils;
+using static KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;
 

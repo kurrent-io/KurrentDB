@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Common.Utils;
 using JetBrains.Annotations;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.Monitoring.Stats;
 

@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
@@ -16,6 +15,7 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage;

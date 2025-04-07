@@ -3,14 +3,14 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Transport.Tcp.Framing;
 
 /// <summary>
 /// Uses length-prefixed framing to encode outgoing messages and decode
-/// incoming messages, using internal state and raising a callback once 
+/// incoming messages, using internal state and raising a callback once
 /// full message arrives.
 /// </summary>
 public class LengthPrefixMessageFramer : IMessageFramer<ArraySegment<byte>> {
@@ -57,7 +57,7 @@ public class LengthPrefixMessageFramer : IMessageFramer<ArraySegment<byte>> {
 	}
 
 	/// <summary>
-	/// Parses a stream chunking based on length-prefixed framing. 
+	/// Parses a stream chunking based on length-prefixed framing.
 	/// Calls are re-entrant and hold state internally. Once full message arrives,
 	/// callback is raised (it is registered via <see cref="RegisterMessageArrivedCallback"/>
 	/// </summary>
@@ -70,7 +70,7 @@ public class LengthPrefixMessageFramer : IMessageFramer<ArraySegment<byte>> {
 				++_headerBytes;
 				if (_headerBytes == HeaderLength) {
 					if (_packageLength <= 0 || _packageLength > _maxPackageSize) {
-						Log.Error("FRAMING ERROR! Data:\n {data}", EventStore.Common.Utils.Helper.FormatBinaryDump(bytes));
+						Log.Error("FRAMING ERROR! Data:\n {data}", Common.Utils.Helper.FormatBinaryDump(bytes));
 						throw new PackageFramingException(string.Format(
 							"Package size is out of bounds: {0} (max: {1}).",
 							_packageLength, _maxPackageSize));

@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.ClientAPI;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.TestClient.Commands.RunTestScenarios;
 
@@ -19,7 +19,7 @@ internal class TestEvent {
 
 	public static void VerifyIfMatched(RecordedEvent evnt) {
 		if (evnt.EventType.StartsWith("TestEvent")) {
-			var data = EventStore.Common.Utils.Helper.UTF8NoBom.GetString(evnt.Data);
+			var data = Helper.UTF8NoBom.GetString(evnt.Data);
 			var atoms = data.Split('-');
 			if (atoms.Length != 3)
 				throw new ApplicationException(string.Format("Invalid TestEvent object: currupted data format: {0}",
@@ -38,7 +38,7 @@ internal class TestEvent {
 	}
 
 	private static string RecordDetailsString(RecordedEvent evnt) {
-		var data = EventStore.Common.Utils.Helper.UTF8NoBom.GetString(evnt.Data);
+		var data = Helper.UTF8NoBom.GetString(evnt.Data);
 		return string.Format("[stream:{0}; eventNumber:{1}; type:{2}; data:{3}]",
 			evnt.EventStreamId,
 			evnt.EventNumber,

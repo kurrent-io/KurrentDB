@@ -3,8 +3,8 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.TransactionLog.Chunks;
 

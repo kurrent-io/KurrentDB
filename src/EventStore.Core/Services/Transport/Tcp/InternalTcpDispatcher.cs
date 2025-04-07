@@ -5,10 +5,10 @@ using System;
 using System.Linq;
 using System.Net;
 using EventStore.Cluster;
-using EventStore.Common.Utils;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.Transport.Tcp;
 

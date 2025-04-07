@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Exceptions;
+using KurrentDB.Common.Exceptions;
 
 namespace EventStore.Core.Services.Archive;
 

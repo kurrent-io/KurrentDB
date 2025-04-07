@@ -8,8 +8,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Index;
 

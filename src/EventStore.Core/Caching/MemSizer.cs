@@ -4,7 +4,7 @@
 using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Caching;
 

@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.PersistentSubscription;
 

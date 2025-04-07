@@ -5,11 +5,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.LogV2;
 

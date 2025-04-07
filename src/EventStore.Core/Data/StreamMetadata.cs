@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using EventStore.Common.Utils;
 using EventStore.Core.Caching;
 using EventStore.Core.Services;
 using EventStore.LogCommon;
+using KurrentDB.Common.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

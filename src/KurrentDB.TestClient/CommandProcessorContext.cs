@@ -57,7 +57,7 @@ public class CommandProcessorContext {
 		OutputCsv = outputCsv;
 	}
 
-	public void Completed(int exitCode = (int)EventStore.Common.Utils.ExitCode.Success, Exception error = null,
+	public void Completed(int exitCode = (int)Common.Utils.ExitCode.Success, Exception error = null,
 		string reason = null) {
 
 		if (Interlocked.CompareExchange(ref _completed, 1, 0) == 0) {
@@ -71,7 +71,7 @@ public class CommandProcessorContext {
 	}
 
 	public void Fail(Exception exc = null, string reason = null) {
-		Completed((int)EventStore.Common.Utils.ExitCode.Error, exc, reason);
+		Completed((int)Common.Utils.ExitCode.Error, exc, reason);
 	}
 
 	public void Success() {

@@ -9,9 +9,9 @@ using DotNext.Buffers;
 using DotNext.Buffers.Binary;
 using DotNext.IO;
 using DotNext.Text;
-using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.LogCommon;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.TransactionLog.LogRecords;
 

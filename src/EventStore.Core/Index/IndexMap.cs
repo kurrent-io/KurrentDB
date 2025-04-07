@@ -8,11 +8,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Settings;
 using EventStore.Core.Util;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Index;

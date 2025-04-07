@@ -7,13 +7,13 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Exceptions;
 using EventStore.Core.Bus;
 using EventStore.Core.Services;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.Transport.Common;
 using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Core.Services.UserManagement;
+using KurrentDB.Common.Exceptions;
 using Serilog;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 

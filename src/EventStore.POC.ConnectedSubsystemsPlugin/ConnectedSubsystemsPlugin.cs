@@ -3,10 +3,10 @@
 
 using System.Collections.Generic;
 using System.IO;
-using EventStore.Common.Utils;
 using KurrentDB.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Common.Utils;
 using KurrentDB.POC.IO.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

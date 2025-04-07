@@ -4,7 +4,6 @@
 using System;
 using System.Linq;
 using System.Net;
-using EventStore.Common.Utils;
 using EventStore.Core.Cluster;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -16,6 +15,7 @@ using EventStore.Core.Tests.Services.ElectionsService;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.TransactionLog.Checkpoint;
 using FluentAssertions;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 using MemberInfo = EventStore.Core.Cluster.MemberInfo;
 

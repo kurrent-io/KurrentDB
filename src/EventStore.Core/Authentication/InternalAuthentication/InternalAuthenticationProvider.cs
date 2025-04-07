@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
@@ -14,6 +13,7 @@ using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Authentication.InternalAuthentication;

@@ -17,7 +17,6 @@ using DotNext.Collections.Concurrent;
 using DotNext.Diagnostics;
 using DotNext.IO;
 using DotNext.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Exceptions;
 using EventStore.Core.TransactionLog.LogRecords;
@@ -26,6 +25,7 @@ using EventStore.Core.Transforms;
 using EventStore.Core.Transforms.Identity;
 using EventStore.Core.Util;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Common.Utils;
 using static System.Threading.Timeout;
 using ILogger = Serilog.ILogger;
 

@@ -3,7 +3,7 @@
 
 using System;
 using System.Text;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;

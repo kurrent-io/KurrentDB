@@ -10,9 +10,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime;
 using System.Text;
-using EventStore.Common.Configuration;
 using EventStore.Core.Configuration;
 using EventStore.Core.Configuration.Sources;
+using KurrentDB.Common.Configuration;
 using Microsoft.Extensions.Configuration;
 
 #nullable enable

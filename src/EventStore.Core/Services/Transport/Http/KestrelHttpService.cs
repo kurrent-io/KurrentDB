@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Http.Messages;
 using EventStore.Core.Settings;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http.EntityManagement;
 
 namespace EventStore.Core.Services.Transport.Http;

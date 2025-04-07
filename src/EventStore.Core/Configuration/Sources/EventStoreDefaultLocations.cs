@@ -5,8 +5,8 @@
 
 using System.Collections.Generic;
 using System.IO.Abstractions;
-using EventStore.Common.Utils;
 using EventStore.Core.Util;
+using KurrentDB.Common.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Memory;
 

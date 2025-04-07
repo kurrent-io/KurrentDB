@@ -7,7 +7,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
@@ -19,6 +18,7 @@ using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage.EpochManager;

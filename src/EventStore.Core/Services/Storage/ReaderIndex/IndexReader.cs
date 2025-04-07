@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Index;
 using EventStore.Core.LogAbstraction;
@@ -14,6 +13,7 @@ using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 // ReSharper disable InvertIf

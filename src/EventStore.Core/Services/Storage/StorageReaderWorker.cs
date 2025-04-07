@@ -7,7 +7,6 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Exceptions;
@@ -19,6 +18,7 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 

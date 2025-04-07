@@ -3,7 +3,6 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Index;
 using EventStore.Core.LogAbstraction;
@@ -15,6 +14,7 @@ using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.Util;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage;

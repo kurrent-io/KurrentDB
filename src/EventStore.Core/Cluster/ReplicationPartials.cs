@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Utils;
 using Google.Protobuf;
+using KurrentDB.Common.Utils;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Cluster;

@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using EventStore.Common.Utils;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Services.UserManagement;
+using KurrentDB.Common.Utils;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;

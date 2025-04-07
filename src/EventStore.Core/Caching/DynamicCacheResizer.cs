@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.Caching;

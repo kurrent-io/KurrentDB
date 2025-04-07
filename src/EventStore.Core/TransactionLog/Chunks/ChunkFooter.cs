@@ -11,8 +11,8 @@ using System.Threading.Tasks;
 using DotNext.Buffers;
 using DotNext.Buffers.Binary;
 using DotNext.IO;
-using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.TransactionLog.Chunks;
 

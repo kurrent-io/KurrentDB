@@ -8,8 +8,8 @@
 using System.ComponentModel;
 using System.Net;
 using System.Reflection;
-using EventStore.Common.Configuration;
 using EventStore.Core.Configuration.Sources;
+using KurrentDB.Common.Configuration;
 using Newtonsoft.Json.Linq;
 
 namespace EventStore.Core;

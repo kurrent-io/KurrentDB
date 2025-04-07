@@ -9,7 +9,7 @@ using DotNext.Runtime.CompilerServices;
 using EventStore.Core.Metrics;
 using Xunit;
 
-using static EventStore.Common.Configuration.MetricsConfiguration;
+using static KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;
 

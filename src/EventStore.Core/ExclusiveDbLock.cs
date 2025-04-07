@@ -4,8 +4,8 @@
 using System;
 using System.IO;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Util;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core;

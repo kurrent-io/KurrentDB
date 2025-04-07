@@ -4,7 +4,7 @@
 using System;
 using System.Linq;
 using System.Security.Claims;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http.Codecs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;

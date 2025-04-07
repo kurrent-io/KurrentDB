@@ -4,8 +4,8 @@
 using System;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Monitoring;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Settings;
 

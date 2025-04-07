@@ -4,7 +4,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Options;
 using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Services.TimerService;
@@ -12,6 +11,7 @@ using EventStore.Core.Services.Transport.Http;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.Util;
+using KurrentDB.Common.Options;
 using KurrentDB.Projections.Core;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;

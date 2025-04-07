@@ -6,7 +6,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data.Redaction;
 using EventStore.Core.Exceptions;
@@ -17,6 +16,7 @@ using EventStore.Core.Synchronization;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.Services;

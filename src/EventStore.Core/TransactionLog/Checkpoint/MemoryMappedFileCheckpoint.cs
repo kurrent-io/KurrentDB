@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.TransactionLog.Checkpoint;
 

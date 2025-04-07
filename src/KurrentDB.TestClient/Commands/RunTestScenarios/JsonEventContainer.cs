@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using EventStore.ClientAPI;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http.Codecs;
 
 namespace KurrentDB.TestClient.Commands.RunTestScenarios;

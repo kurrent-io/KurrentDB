@@ -9,6 +9,7 @@ using System.Threading;
 using EventStore.Client.Messages;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;
+using KurrentDB.Common.Utils;
 using KurrentDB.TestClient.Statistics;
 using KurrentDB.Transport.Tcp;
 
@@ -155,9 +156,9 @@ internal class WriteFloodProcessor : ICmdProcessor {
 						events[q] = new NewEvent(Guid.NewGuid().ToByteArray(),
 							"TakeSomeSpaceEvent",
 							1, 0,
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes(
+							Helper.UTF8NoBom.GetBytes(
 								"{ \"DATA\" : \"" + new string('*', size) + "\"}"),
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes(
+							Helper.UTF8NoBom.GetBytes(
 								"{ \"METADATA\" : \"" + new string('$', 100) + "\"}"));
 					}
 

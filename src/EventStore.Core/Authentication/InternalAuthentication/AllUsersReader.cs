@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.UserManagement;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Authentication.InternalAuthentication;
 

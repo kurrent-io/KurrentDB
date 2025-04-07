@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
 using EventStore.Core.Data;
@@ -14,6 +13,7 @@ using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 

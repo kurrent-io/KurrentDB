@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using Newtonsoft.Json;
 
 namespace KurrentDB.Transport.Http.Atom;

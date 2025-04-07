@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
-using static EventStore.Common.Configuration.MetricsConfiguration;
+using static KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Metrics;
 

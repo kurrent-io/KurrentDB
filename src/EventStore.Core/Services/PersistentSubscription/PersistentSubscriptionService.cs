@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
@@ -19,6 +18,7 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Telemetry;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 

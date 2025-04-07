@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Runtime.CompilerServices;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.TransactionLog.Scavenging;
 

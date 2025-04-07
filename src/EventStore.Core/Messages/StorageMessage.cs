@@ -5,11 +5,11 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messaging;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Messages;
 

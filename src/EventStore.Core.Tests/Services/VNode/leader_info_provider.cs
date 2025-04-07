@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using EventStore.Common.Utils;
 using EventStore.Core.Cluster;
 using EventStore.Core.Data;
 using EventStore.Core.Services.VNode;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.VNode;

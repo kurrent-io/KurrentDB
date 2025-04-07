@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -14,6 +13,7 @@ using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Tests.Bus.Helpers;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 

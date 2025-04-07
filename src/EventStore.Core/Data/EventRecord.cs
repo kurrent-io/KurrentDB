@@ -3,8 +3,8 @@
 
 using System;
 using System.Text;
-using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Data;
 

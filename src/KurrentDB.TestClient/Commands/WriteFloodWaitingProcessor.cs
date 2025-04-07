@@ -8,6 +8,7 @@ using System.Threading;
 using EventStore.Client.Messages;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Tcp;
 
 namespace KurrentDB.TestClient.Commands;
@@ -96,8 +97,8 @@ internal class WriteFloodWaitingProcessor : ICmdProcessor {
 							new NewEvent(Guid.NewGuid().ToByteArray(),
 								"TakeSomeSpaceEvent",
 								0, 0,
-								EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes("DATA" + new string('*', dataSize)),
-								EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', metadataSize)))
+								Helper.UTF8NoBom.GetBytes("DATA" + new string('*', dataSize)),
+								Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', metadataSize)))
 						},
 						false);
 					var package = new TcpPackage(TcpCommand.WriteEvents, Guid.NewGuid(), write.Serialize());

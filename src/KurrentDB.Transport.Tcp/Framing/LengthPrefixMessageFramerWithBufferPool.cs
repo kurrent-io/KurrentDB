@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Common.Utils;
 using KurrentDB.BufferManagement;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Transport.Tcp.Framing;
@@ -65,7 +65,7 @@ public class LengthPrefixMessageFramerWithBufferPool {
 				i += 1;
 				if (_headerBytes == PrefixLength) {
 					if (_packageLength <= 0 || _packageLength > _maxPackageSize) {
-						Log.Error("FRAMING ERROR! Data:\n {data}", EventStore.Common.Utils.Helper.FormatBinaryDump(bytes));
+						Log.Error("FRAMING ERROR! Data:\n {data}", Common.Utils.Helper.FormatBinaryDump(bytes));
 						throw new PackageFramingException(string.Format(
 							"Package size is out of bounds: {0} (max: {1}).",
 							_packageLength, _maxPackageSize));

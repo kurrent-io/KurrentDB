@@ -2,11 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Configuration;
 using EventStore.Core.Bus;
 using EventStore.Core.Metrics;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Common.Configuration;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 

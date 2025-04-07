@@ -4,11 +4,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Services;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.DeletingStream;

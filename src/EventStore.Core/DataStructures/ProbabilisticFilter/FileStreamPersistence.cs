@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.DataStructures.ProbabilisticFilter;

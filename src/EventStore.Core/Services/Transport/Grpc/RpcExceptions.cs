@@ -3,10 +3,10 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using EventStore.Common.Utils;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 

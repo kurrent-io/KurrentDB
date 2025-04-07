@@ -4,7 +4,7 @@
 using System;
 using System.Globalization;
 using System.Text;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Transport.Http;
 

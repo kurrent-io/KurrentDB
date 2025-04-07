@@ -3,7 +3,7 @@
 
 using System;
 using System.Threading;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.DataStructures;

@@ -23,7 +23,7 @@
 		<ProjectReference Include="..\EventStore.Auth.StreamPolicyPlugin\EventStore.Auth.StreamPolicyPlugin.csproj" />
 		<ProjectReference Include="..\EventStore.Auth.UserCertificates\EventStore.Auth.UserCertificates.csproj" />
 		<ProjectReference Include="..\KurrentDB.ClusterNode.Web\KurrentDB.ClusterNode.Web.csproj" />
-		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
 		<ProjectReference Include="..\EventStore.Diagnostics.LogsEndpointPlugin\EventStore.Diagnostics.LogsEndpointPlugin.csproj" />
 		<ProjectReference Include="..\EventStore.OtlpExporterPlugin\EventStore.OtlpExporterPlugin.csproj" />
@@ -36,10 +36,6 @@
 		<ProjectReference Include="..\KurrentDB.UI\KurrentDB.UI.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Include="..\EventStore.Common\Utils\version.properties">
-			<Link>version.properties</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 		<None Update="..\..\LICENSE.md">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
@@ -56,6 +52,10 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 		<None Update="logconfig.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Include="..\KurrentDB.Common\Utils\version.properties">
+		  <Link>version.properties</Link>
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>

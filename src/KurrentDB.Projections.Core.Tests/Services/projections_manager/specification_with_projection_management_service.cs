@@ -3,13 +3,13 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Common.Options;
 using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Util;
+using KurrentDB.Common.Options;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services;

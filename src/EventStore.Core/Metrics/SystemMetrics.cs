@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Runtime;
 using EventStore.Core.Util;
-using static EventStore.Common.Configuration.MetricsConfiguration;
+using static KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Metrics;
 

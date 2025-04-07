@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 using KurrentDB.Transport.Http.EntityManagement;

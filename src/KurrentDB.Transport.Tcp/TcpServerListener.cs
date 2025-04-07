@@ -4,7 +4,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Transport.Tcp;

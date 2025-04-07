@@ -9,8 +9,8 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core;
 

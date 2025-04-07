@@ -5,7 +5,6 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -13,6 +12,7 @@ using EventStore.Core.Messaging;
 using EventStore.Core.Synchronization;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Scavenging.Interfaces;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.Services.Storage;

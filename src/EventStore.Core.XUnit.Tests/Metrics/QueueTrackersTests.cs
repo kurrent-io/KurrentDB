@@ -4,7 +4,7 @@
 using EventStore.Core.Metrics;
 using EventStore.Core.Time;
 using Xunit;
-using Conf = EventStore.Common.Configuration.MetricsConfiguration;
+using Conf = KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;
 

@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using Newtonsoft.Json;
 
 namespace EventStore.Core.TransactionLog.Scavenging;

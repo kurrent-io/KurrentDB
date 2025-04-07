@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using static EventStore.Common.Configuration.MetricsConfiguration;
+using static KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Metrics;
 

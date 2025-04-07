@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 using System.Linq;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.FileProviders;

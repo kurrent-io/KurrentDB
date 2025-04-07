@@ -7,7 +7,7 @@ using System.Diagnostics.Tracing;
 using System.Linq;
 using EventStore.Core.Metrics;
 using Xunit;
-using Conf = EventStore.Common.Configuration.MetricsConfiguration;
+using Conf = KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;
 

@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.ClientAPI;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Tests.ClientAPI.Helpers;
 

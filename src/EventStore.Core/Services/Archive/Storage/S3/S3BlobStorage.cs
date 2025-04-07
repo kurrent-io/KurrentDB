@@ -10,9 +10,9 @@ using Amazon.Runtime.Internal;
 using Amazon.S3;
 using Amazon.S3.Model;
 using DotNext.Buffers;
-using EventStore.Common.Exceptions;
 using FluentStorage;
 using FluentStorage.AWS.Blobs;
+using KurrentDB.Common.Exceptions;
 using Serilog.Events;
 
 namespace EventStore.Core.Services.Archive.Storage.S3;

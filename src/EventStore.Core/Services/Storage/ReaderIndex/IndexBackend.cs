@@ -3,10 +3,10 @@
 
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.TransactionLog;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;
 

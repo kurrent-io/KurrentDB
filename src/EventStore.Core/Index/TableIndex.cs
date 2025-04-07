@@ -9,12 +9,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Diagnostics;
-using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Index.Hashes;
 using EventStore.Core.Settings;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.Util;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Index;

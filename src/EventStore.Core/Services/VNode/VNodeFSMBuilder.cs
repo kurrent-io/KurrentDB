@@ -8,9 +8,9 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Runtime;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messaging;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.VNode;
 

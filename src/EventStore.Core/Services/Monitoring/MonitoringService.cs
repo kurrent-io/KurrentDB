@@ -10,13 +10,13 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Runtime.CompilerServices;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.Services.UserManagement;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Tcp;
 using ILogger = Serilog.ILogger;
 

@@ -3,9 +3,9 @@
 
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Common.Utils;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
 

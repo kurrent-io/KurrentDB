@@ -6,10 +6,10 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.Tests.Certificates;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 

@@ -4,13 +4,13 @@
 using System.Net;
 using System.Threading.Tasks;
 using EventStore.Cluster;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Metrics;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using Empty = EventStore.Client.Empty;
 
 // ReSharper disable once CheckNamespace

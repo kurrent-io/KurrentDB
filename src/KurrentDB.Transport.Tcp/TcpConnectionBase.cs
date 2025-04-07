@@ -5,7 +5,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Transport.Tcp;
 

@@ -3,8 +3,8 @@
 
 using System;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.DataStructures;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.TimerService;
 

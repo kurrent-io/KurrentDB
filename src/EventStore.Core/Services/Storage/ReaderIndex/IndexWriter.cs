@@ -8,7 +8,6 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.LogAbstraction;
@@ -16,6 +15,7 @@ using EventStore.Core.Settings;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.LogCommon;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;

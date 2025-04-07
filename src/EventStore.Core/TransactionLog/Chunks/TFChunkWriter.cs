@@ -5,9 +5,9 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using Serilog;
 using Serilog.Events;
 

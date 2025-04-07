@@ -3,7 +3,7 @@
 
 using System;
 using System.Net.Http;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Transport.Http.Client;
 

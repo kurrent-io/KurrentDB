@@ -7,8 +7,8 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Tests.Integration;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 using ContentType = KurrentDB.Transport.Http.ContentType;
 

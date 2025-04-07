@@ -4,11 +4,11 @@
 using System;
 using System.Net;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Metrics;
 using EventStore.Core.Services.Transport.Http.NodeHttpClientFactory;
 using Grpc.Net.Client;
+using KurrentDB.Common.Utils;
 using Serilog.Extensions.Logging;
 
 namespace EventStore.Core.Cluster;

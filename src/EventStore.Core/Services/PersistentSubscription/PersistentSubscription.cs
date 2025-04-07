@@ -6,11 +6,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.PersistentSubscription;

@@ -30,7 +30,7 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 		<ProjectReference Include="..\EventStore.Core.Tests\EventStore.Core.Tests.csproj" />
 		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />

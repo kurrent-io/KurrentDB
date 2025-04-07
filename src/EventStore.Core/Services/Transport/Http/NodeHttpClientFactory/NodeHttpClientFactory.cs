@@ -4,8 +4,8 @@
 using System;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Common.Utils;
 using EventStore.Core.Settings;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.Services.Transport.Http.NodeHttpClientFactory;

@@ -7,7 +7,7 @@ using System.Diagnostics.Metrics;
 using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Threading;
-using static EventStore.Common.Configuration.MetricsConfiguration;
+using static KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Metrics;
 

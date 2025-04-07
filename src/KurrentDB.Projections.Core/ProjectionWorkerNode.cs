@@ -2,14 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Options;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Common.Options;
+using KurrentDB.Common.Utils;
 using KurrentDB.Projections.Core.EventReaders.Feeds;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;

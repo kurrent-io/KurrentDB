@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using EventStore.Common.Options;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
@@ -13,6 +12,7 @@ using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Bus.Helpers;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.Util;
+using KurrentDB.Common.Options;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;

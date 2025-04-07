@@ -6,9 +6,9 @@
 using System;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Common.Exceptions;
-using EventStore.Common.Utils;
 using EventStore.Plugins;
+using KurrentDB.Common.Exceptions;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core;

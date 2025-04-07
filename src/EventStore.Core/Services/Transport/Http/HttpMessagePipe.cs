@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Net;
-using EventStore.Common.Utils;
 using EventStore.Core.Messaging;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.Transport.Http;
 

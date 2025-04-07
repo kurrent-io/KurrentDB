@@ -3,8 +3,8 @@
 
 using System;
 using System.Security.Cryptography;
-using EventStore.Common.Utils;
 using EventStore.Plugins.MD5;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Hashing;
 

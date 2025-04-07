@@ -4,12 +4,12 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Metrics;
 using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.Time;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.Services.TimerService;

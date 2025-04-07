@@ -26,7 +26,7 @@
 
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
 		<ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
@@ -38,6 +38,10 @@
 		<EmbeddedResource Remove="FakePlugin\**" />
 	</ItemGroup>
 	<ItemGroup>
+		<None Include="..\KurrentDB.Common\Utils\version.properties">
+		  <Link>version.properties</Link>
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Include="TestConfigs\*.yaml">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
@@ -55,12 +59,6 @@
 	<ItemGroup>
 		<None Include="swagger.yaml">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-	<ItemGroup>
-		<None Include="..\EventStore.Common\Utils\version.properties">
-			<Link>version.properties</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 	<ItemGroup>

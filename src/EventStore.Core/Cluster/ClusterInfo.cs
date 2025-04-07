@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Grpc;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Cluster;
 

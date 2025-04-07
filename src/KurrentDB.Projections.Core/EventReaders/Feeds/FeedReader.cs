@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.TimerService;
+using KurrentDB.Common.Utils;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Messages.EventReaders.Feeds;
 using KurrentDB.Projections.Core.Services;

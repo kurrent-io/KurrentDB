@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -13,6 +12,7 @@ using EventStore.Core.Services;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Services.TimerService;
+using KurrentDB.Common.Utils;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Helpers;

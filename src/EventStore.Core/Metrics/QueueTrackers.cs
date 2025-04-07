@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Serilog;
-using Conf = EventStore.Common.Configuration.MetricsConfiguration;
+using Conf = KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Metrics;
 

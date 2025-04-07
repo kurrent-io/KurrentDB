@@ -12,7 +12,7 @@ using System.Reflection;
 using System.Threading;
 using EventStore.Core.Util;
 
-using static EventStore.Common.Configuration.MetricsConfiguration;
+using static KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.Metrics;
 

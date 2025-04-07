@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Metrics;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Util;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.Caching;

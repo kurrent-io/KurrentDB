@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using EventStore.ClientAPI;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using ExpectedVersion = EventStore.Core.Data.ExpectedVersion;
 
 namespace KurrentDB.TestClient.Commands;
@@ -85,8 +85,8 @@ internal class WriteFloodClientApiProcessor : ICmdProcessor {
 						new EventData(Guid.NewGuid(),
 							"TakeSomeSpaceEvent",
 							false,
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes("DATA" + new string('*', size)),
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', 100))));
+							Helper.UTF8NoBom.GetBytes("DATA" + new string('*', size)),
+							Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', 100))));
 					task.ContinueWith(x => {
 						if (x.IsFaulted) {
 							context.Fail(x.Exception.InnerException, "Error on writing operation.");

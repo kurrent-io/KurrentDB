@@ -5,9 +5,9 @@
 
 using System;
 using System.Collections;
-using EventStore.Common.Configuration;
 using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Util;
+using KurrentDB.Common.Configuration;
 using Microsoft.Extensions.Configuration;
 
 namespace EventStore.Core.Configuration;

@@ -3,10 +3,10 @@
 
 #nullable enable
 using System;
-using EventStore.Common.Utils;
 using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.UserManagement;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.PersistentSubscription;
 

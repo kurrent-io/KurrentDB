@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.Scavenging.Interfaces;
+using KurrentDB.Common.Utils;
 using Microsoft.Data.Sqlite;
 using Serilog;
 

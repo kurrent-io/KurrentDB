@@ -5,10 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Common.Options;
 using EventStore.Core.Configuration;
 using EventStore.Core.Configuration.Sources;
 using FluentAssertions;
+using KurrentDB.Common.Options;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 

@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.EventByType;
 using NUnit.Framework;

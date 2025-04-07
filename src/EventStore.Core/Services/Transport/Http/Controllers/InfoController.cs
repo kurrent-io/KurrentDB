@@ -4,12 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 using KurrentDB.Transport.Http.EntityManagement;

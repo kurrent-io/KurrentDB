@@ -6,11 +6,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Services.Monitoring.Stats;
 using EventStore.Core.Services.Monitoring.Utils;
 using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Tcp;
 using ILogger = Serilog.ILogger;
 

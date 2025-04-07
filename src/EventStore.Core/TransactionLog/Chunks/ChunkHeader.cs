@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 using DotNext.Buffers;
 using DotNext.Buffers.Binary;
 using DotNext.IO;
-using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Index;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Common.Utils;
 using ChunkVersions = EventStore.Core.TransactionLog.Chunks.TFChunk.TFChunk.ChunkVersions;
 
 namespace EventStore.Core.TransactionLog.Chunks;

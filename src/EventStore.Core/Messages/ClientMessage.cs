@@ -6,13 +6,12 @@ using System.Collections.Generic;
 using System.Net;
 using System.Security.Claims;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Settings;
-
+using KurrentDB.Common.Utils;
 using FilteredReadAllResult = EventStore.Core.Data.FilteredReadAllResult;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 

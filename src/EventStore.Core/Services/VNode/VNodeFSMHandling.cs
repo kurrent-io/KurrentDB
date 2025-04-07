@@ -5,9 +5,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messaging;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.VNode;
 

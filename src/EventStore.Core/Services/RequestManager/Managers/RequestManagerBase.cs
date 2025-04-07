@@ -5,11 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.RequestManager.Managers;

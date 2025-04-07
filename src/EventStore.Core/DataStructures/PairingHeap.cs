@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.DataStructures;
 

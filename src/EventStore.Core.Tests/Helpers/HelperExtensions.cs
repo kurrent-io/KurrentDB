@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 

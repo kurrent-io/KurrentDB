@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Transport.Http.EntityManagement;
 

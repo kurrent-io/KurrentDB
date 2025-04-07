@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Common.Utils;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.PersistentSubscription;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Messages;
 

@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using EventStore.Common.Utils;
 using EventStore.Core.Messaging;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.VNode;
 

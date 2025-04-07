@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.PersistentSubscription;
 
@@ -144,7 +144,7 @@ public abstract class PersistentSubscriptionParamsBuilder {
 
 	/// <summary>
 	/// If set the subscription will prefer if possible to dispatch only to a single of the connected
-	/// clients. If however the buffer limits are reached on that client it will begin sending to other 
+	/// clients. If however the buffer limits are reached on that client it will begin sending to other
 	/// clients.
 	/// </summary>
 	/// <returns>A new <see cref="PersistentSubscriptionParamsBuilder"></see></returns>
@@ -242,7 +242,7 @@ public abstract class PersistentSubscriptionParamsBuilder {
 	}
 
 	/// <summary>
-	/// Sets the size of the live buffer for the subscription. This is the buffer used 
+	/// Sets the size of the live buffer for the subscription. This is the buffer used
 	/// to cache messages while sending messages as they happen. The count is
 	/// in terms of the number of messages to cache.
 	/// </summary>

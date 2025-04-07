@@ -6,13 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Services;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge.ScavengeLogManager;

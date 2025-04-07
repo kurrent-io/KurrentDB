@@ -34,10 +34,6 @@
 		<None Update="xunit.runner.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Include="..\EventStore.Common\Utils\version.properties">
-			<Link>version.properties</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 		<None Update="Configuration\test.kurrentdb.conf">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
@@ -45,6 +41,10 @@
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="Configuration\test.kurrentdb.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Include="..\KurrentDB.Common\Utils\version.properties">
+		  <Link>version.properties</Link>
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>

@@ -4,8 +4,8 @@
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Messages;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Metrics;
 

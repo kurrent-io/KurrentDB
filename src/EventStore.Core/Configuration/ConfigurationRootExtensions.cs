@@ -8,9 +8,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using EventStore.Common.Configuration;
-using EventStore.Common.Exceptions;
 using EventStore.Core.Configuration.Sources;
+using KurrentDB.Common.Configuration;
+using KurrentDB.Common.Exceptions;
 using Microsoft.Extensions.Configuration;
 
 namespace EventStore.Core.Configuration;

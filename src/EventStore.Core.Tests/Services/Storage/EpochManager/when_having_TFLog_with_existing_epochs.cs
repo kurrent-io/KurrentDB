@@ -7,7 +7,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.LogV3;
@@ -18,6 +17,7 @@ using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 using NUnit.Framework.Internal;
 

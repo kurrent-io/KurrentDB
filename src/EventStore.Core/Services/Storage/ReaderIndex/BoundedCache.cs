@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.Storage.ReaderIndex;
 

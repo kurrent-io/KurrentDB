@@ -41,7 +41,7 @@
 		<PackageReference Include="Scrutor" Version="5.0.2" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 		<ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
 		<ProjectReference Include="..\EventStore.LogV3\EventStore.LogV3.csproj" />
 		<ProjectReference Include="..\EventStore.Native\EventStore.Native.csproj" />

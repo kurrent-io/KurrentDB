@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using DotNext;
 using DotNext.Diagnostics;
 using DotNext.Runtime.CompilerServices;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.DataStructures;
 using EventStore.Core.Exceptions;
@@ -23,6 +22,7 @@ using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.TransactionLog.Scavenging;
 using EventStore.LogCommon;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.TransactionLog.Chunks;

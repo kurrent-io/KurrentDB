@@ -3,7 +3,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.DataStructures.ProbabilisticFilter;
@@ -15,7 +15,7 @@ namespace EventStore.Core.DataStructures.ProbabilisticFilter;
 // First cache line(64 bytes) contains the header and nothing else
 // Subsequent cachelines contain 60 bytes of bloom filter bits then a 4 byte hash of those bits.
 //
-// The hashes are as granular as they are so that the hash can be 
+// The hashes are as granular as they are so that the hash can be
 // cheaply calculated inline with the write (since we loaded the cacheline into
 // memory anyway) which guarantees, since there is a writer lock, that
 // the cacheline at any time only has at most one bit set that isn't hashed, which was

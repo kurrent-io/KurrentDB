@@ -3,8 +3,8 @@
 
 using System;
 using System.Net;
-using EventStore.Common.Utils;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 

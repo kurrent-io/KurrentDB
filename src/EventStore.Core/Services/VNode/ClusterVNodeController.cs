@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
 using EventStore.Core.Data;
@@ -17,6 +16,7 @@ using EventStore.Core.Services.Storage;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 using OperationResult = EventStore.Core.Messages.OperationResult;
 

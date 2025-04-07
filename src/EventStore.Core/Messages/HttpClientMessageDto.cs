@@ -3,8 +3,8 @@
 
 using System;
 using System.Xml.Serialization;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Messages;
 

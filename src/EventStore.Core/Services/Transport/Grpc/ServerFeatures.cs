@@ -8,7 +8,7 @@ using EventStore.Client.ServerFeatures;
 using Grpc.AspNetCore.Server;
 using Grpc.Core;
 using Microsoft.AspNetCore.Routing;
-using VersionInfo = EventStore.Common.Utils.VersionInfo;
+using VersionInfo = KurrentDB.Common.Utils.VersionInfo;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 

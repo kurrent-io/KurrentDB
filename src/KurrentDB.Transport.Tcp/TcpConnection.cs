@@ -7,8 +7,8 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using EventStore.Common.Utils;
 using KurrentDB.BufferManagement;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Transport.Tcp;

@@ -7,8 +7,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.IO;
-using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Tcp.Framing;
 
 namespace EventStore.Core.Services.Replication;

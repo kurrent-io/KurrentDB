@@ -3,8 +3,8 @@
 
 using System;
 using System.Runtime.InteropServices;
-using EventStore.Common.Utils;
 using EventStore.Core.Index.Hashes;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.DataStructures.ProbabilisticFilter;

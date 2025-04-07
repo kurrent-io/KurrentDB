@@ -3,7 +3,6 @@
 
 using System;
 using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
@@ -11,6 +10,7 @@ using EventStore.Core.Messaging;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
 using EventStore.Core.Util;
+using KurrentDB.Common.Utils;
 using KurrentDB.Projections.Core.Common;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;

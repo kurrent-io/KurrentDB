@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
@@ -13,6 +12,7 @@ using EventStore.Core.Metrics;
 using EventStore.Core.Services.Storage.InMemory;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Storage;

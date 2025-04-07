@@ -3,7 +3,7 @@
 
 using System.IO;
 using System.Runtime;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Util;
 

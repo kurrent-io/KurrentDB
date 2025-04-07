@@ -4,9 +4,9 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Cluster;
-using EventStore.Common.Utils;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Grpc;
+using KurrentDB.Common.Utils;
 using EndPoint = System.Net.EndPoint;
 using GossipEndPoint = EventStore.Cluster.EndPoint;
 

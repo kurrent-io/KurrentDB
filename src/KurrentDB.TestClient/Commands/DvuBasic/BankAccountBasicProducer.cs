@@ -3,8 +3,8 @@
 
 using System;
 using System.Globalization;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http.Codecs;
 using ILogger = Serilog.ILogger;
 #pragma warning disable 1591

@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Common.Options;
 using EventStore.Core;
 using EventStore.Core.Bus;
 using EventStore.Core.Helpers;
@@ -12,6 +11,7 @@ using EventStore.Core.Messaging;
 using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Services.TimerService;
 using EventStore.Core.Telemetry;
+using KurrentDB.Common.Options;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Messaging;
 using KurrentDB.Projections.Core.Metrics;

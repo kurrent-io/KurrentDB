@@ -6,12 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using EventStore.Client;
 using EventStore.Client.ServerFeatures;
 using EventStore.Core.Tests.Integration;
 using Google.Protobuf.Reflection;
 using Grpc.Net.Client;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
+using Empty = EventStore.Client.Empty;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.ServerFeaturesTests;
 
@@ -49,7 +50,7 @@ public class ServerFeaturesTest {
 			_expectedEndPoints.AddRange(GetEndPoints(Kurrent.Client.Redaction.Redaction.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(ServerFeatures.Descriptor));
 
-			var versionParts = EventStore.Common.Utils.VersionInfo.Version.Split('.');
+			var versionParts = VersionInfo.Version.Split('.');
 			_expectedServerVersion = string.Join('.', versionParts.Take(3));
 
 			var node = GetLeader();

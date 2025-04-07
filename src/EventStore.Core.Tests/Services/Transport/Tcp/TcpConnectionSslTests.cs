@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 

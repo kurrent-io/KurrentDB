@@ -3,8 +3,8 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using EventStore.Common.Utils;
 using EventStore.Core.Caching;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Data;
 

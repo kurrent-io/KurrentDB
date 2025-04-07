@@ -3,9 +3,9 @@
 
 using System;
 using System.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Http;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 using NUnit.Framework;

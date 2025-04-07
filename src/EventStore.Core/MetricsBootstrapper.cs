@@ -13,7 +13,7 @@ using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Scavenging;
-using Conf = EventStore.Common.Configuration.MetricsConfiguration;
+using Conf = KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core;
 

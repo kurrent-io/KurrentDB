@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Utils;
 using EventStore.Core.Index.Hashes;
 using EventStore.Core.LogAbstraction.Common;
 using EventStore.Core.LogV2;
@@ -12,6 +11,7 @@ using EventStore.Core.Settings;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using LogV3StreamId = System.UInt32;
 
 namespace EventStore.Core.LogAbstraction;

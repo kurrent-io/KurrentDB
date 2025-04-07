@@ -4,9 +4,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
 using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.TransactionLog.Chunks;

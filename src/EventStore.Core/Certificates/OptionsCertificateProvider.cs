@@ -4,7 +4,7 @@
 using System;
 using System.Runtime;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.Certificates;

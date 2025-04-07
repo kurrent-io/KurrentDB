@@ -2,11 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Utils;
 using EventStore.Core.Cluster;
 using EventStore.Core.Data;
 using EventStore.Core.Messaging;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using EndPoint = System.Net.EndPoint;
 
 namespace EventStore.Core.Messages;

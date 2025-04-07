@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Caching;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.DataStructures;

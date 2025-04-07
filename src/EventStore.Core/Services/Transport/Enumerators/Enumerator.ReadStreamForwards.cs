@@ -7,11 +7,11 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Transport.Common;
+using KurrentDB.Common.Utils;
 using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
 
 namespace EventStore.Core.Services.Transport.Enumerators;

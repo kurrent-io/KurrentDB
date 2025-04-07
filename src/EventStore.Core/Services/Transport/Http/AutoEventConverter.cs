@@ -4,10 +4,10 @@
 using System;
 using System.Linq;
 using System.Xml.Linq;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 using Newtonsoft.Json;

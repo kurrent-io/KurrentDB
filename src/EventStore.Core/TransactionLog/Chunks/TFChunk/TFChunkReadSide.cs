@@ -10,10 +10,10 @@ using System.Threading.Tasks;
 using DotNext.Buffers;
 using DotNext.IO;
 using DotNext.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Exceptions;
 using EventStore.Core.Time;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using Serilog;
 using Range = EventStore.Core.Data.Range;
 

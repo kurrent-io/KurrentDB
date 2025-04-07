@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Services.Transport.Http;

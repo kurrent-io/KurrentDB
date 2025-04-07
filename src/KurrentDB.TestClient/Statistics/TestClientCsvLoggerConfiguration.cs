@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 using System.Threading;
-using EventStore.Common.Exceptions;
+using KurrentDB.Common.Exceptions;
 using Serilog;
 
 namespace KurrentDB.TestClient.Statistics;

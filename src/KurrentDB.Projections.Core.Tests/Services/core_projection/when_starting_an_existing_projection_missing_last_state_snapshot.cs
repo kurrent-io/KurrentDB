@@ -2,9 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Utils;
 using EventStore.Core.Data;
 using EventStore.Core.Tests;
+using KurrentDB.Common.Utils;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;

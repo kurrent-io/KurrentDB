@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http.EntityManagement;
 
 namespace EventStore.Core.Services.Transport.Http;

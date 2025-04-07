@@ -4,9 +4,9 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Messaging;
 using EventStore.Core.Services.Monitoring.Stats;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Bus;
 

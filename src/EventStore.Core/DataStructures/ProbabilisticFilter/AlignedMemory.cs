@@ -3,7 +3,7 @@
 
 using System;
 using System.Runtime.InteropServices;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.DataStructures.ProbabilisticFilter;
 

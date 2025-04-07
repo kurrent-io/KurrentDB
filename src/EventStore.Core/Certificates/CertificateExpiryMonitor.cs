@@ -3,10 +3,10 @@
 
 using System;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.TimerService;
+using KurrentDB.Common.Utils;
 using Serilog;
 
 namespace EventStore.Core.Certificates;

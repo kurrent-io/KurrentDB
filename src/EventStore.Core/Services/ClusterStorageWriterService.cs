@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Bus;
 using EventStore.Core.Data;
 using EventStore.Core.Helpers;
@@ -20,6 +19,7 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services;

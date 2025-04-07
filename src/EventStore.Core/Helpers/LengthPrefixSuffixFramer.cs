@@ -8,8 +8,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Tcp.Framing;
 using ILogger = Serilog.ILogger;
 

@@ -7,9 +7,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Exceptions;
-using EventStore.Common.Utils;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI;

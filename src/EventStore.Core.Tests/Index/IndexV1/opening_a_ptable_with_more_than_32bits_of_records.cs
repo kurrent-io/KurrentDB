@@ -6,8 +6,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Index;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 using MD5 = EventStore.Core.Hashing.MD5;
 

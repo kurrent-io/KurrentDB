@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.DataStructures;
 
@@ -102,7 +102,7 @@ public class ObjectPool<T> : IDisposable {
 			throw new ObjectPoolDisposingException(ObjectPoolName);
 		}
 
-		// if we get here, then it is safe to return newly created item to user, object pool won't be disposed 
+		// if we get here, then it is safe to return newly created item to user, object pool won't be disposed
 		// until that item is returned to pool
 		return _factory();
 	}
@@ -125,7 +125,7 @@ public class ObjectPool<T> : IDisposable {
 
 		if (count < 0)
 			throw new Exception("Somehow we managed to decrease count of pool items below zero.");
-		if (count == 0) // we are the last who should "turn the light off" 
+		if (count == 0) // we are the last who should "turn the light off"
 			OnPoolDisposed();
 	}
 

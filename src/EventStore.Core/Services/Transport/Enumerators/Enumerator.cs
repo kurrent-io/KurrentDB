@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Channels;
-using EventStore.Common.Utils;
 using EventStore.Core.Messages;
+using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.Services.Transport.Enumerators;
 
