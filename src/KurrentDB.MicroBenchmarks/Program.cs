@@ -11,7 +11,7 @@ using Jint;
 using Jint.Native;
 using Jint.Native.Json;
 
-namespace EventStore.MicroBenchmarks;
+namespace KurrentDB.MicroBenchmarks;
 
 internal class Program {
 	static void Main(string[] args) {
