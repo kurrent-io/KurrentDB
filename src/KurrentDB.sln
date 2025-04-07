@@ -39,7 +39,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\qodana.yaml = ..\qodana.yaml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.NETCore.Compatibility", "EventStore.NETCore.Compatibility\EventStore.NETCore.Compatibility.csproj", "{066B6514-86A0-41D8-BB6A-D9B05141D026}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.NETCore.Compatibility", "KurrentDB.NETCore.Compatibility\KurrentDB.NETCore.Compatibility.csproj", "{066B6514-86A0-41D8-BB6A-D9B05141D026}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.LogV3", "EventStore.LogV3\EventStore.LogV3.csproj", "{0A8829D0-0A6F-43A5-ACD4-970690296C52}"
 EndProject
