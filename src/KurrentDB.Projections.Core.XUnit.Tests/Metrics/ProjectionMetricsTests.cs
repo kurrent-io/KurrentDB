@@ -2,13 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.Metrics;
-using EventStore.Projections.Core.Services;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using Xunit;
 
-namespace EventStore.Projections.Core.XUnit.Tests.Metrics;
+namespace KurrentDB.Projections.Core.XUnit.Tests.Metrics;
 
 public class ProjectionMetricsTests {
 	readonly ProjectionTracker _sut = new();

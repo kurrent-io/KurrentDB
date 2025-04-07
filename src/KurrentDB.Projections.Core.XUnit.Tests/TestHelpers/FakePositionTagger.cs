@@ -4,7 +4,7 @@
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
-namespace EventStore.Projections.Core.XUnit.Tests.TestHelpers;
+namespace KurrentDB.Projections.Core.XUnit.Tests.TestHelpers;
 
 // TODO: Flesh out this helper as more tests need it
 public class FakePositionTagger : PositionTagger {

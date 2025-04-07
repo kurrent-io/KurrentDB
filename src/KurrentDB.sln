@@ -63,7 +63,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.PluginHosting", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.SystemRuntime", "KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj", "{8A023103-C4C8-4ECA-A78C-2D1BCF7A7BDB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Projections.Core.XUnit.Tests", "EventStore.Projections.Core.XUnit.Tests\EventStore.Projections.Core.XUnit.Tests.csproj", "{41EEB66F-D77B-4FF3-BF68-DA3748C80BB5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Projections.Core.XUnit.Tests", "KurrentDB.Projections.Core.XUnit.Tests\KurrentDB.Projections.Core.XUnit.Tests.csproj", "{41EEB66F-D77B-4FF3-BF68-DA3748C80BB5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Licensing", "KurrentDB.Licensing\KurrentDB.Licensing.csproj", "{6178EDA1-DBC7-4A15-86E7-BF2B8F6681D2}"
 EndProject

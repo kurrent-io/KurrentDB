@@ -9,16 +9,15 @@ using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.Replication;
 using EventStore.Core.Util;
 using KurrentDB.Projections.Core.Messages;
-using EventStore.Projections.Core.Services;
-using EventStore.Projections.Core.XUnit.Tests.TestHelpers;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.MultiStream;
+using KurrentDB.Projections.Core.XUnit.Tests.TestHelpers;
 using Xunit;
-using ExistingEvent = EventStore.Projections.Core.XUnit.Tests.TestHelpers.ExistingStreamsHelper.ExistingEvent;
+using ExistingEvent = KurrentDB.Projections.Core.XUnit.Tests.TestHelpers.ExistingStreamsHelper.ExistingEvent;
 
-namespace EventStore.Projections.Core.XUnit.Tests.CheckpointManagers;
+namespace KurrentDB.Projections.Core.XUnit.Tests.CheckpointManagers;
 
 /// More tests for MultiStreamMultiOutputCheckpointManager exist in the NUnit tests,
 /// and derive from <see cref="Core.Tests.Services.core_projection.checkpoint_manager.multi_stream.TestFixtureWithMultiStreamCheckpointManager"/>

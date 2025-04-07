@@ -6,7 +6,7 @@ using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.TransactionLog.LogRecords;
 
-namespace EventStore.Projections.Core.XUnit.Tests.TestHelpers;
+namespace KurrentDB.Projections.Core.XUnit.Tests.TestHelpers;
 
 // TODO: Flesh out this helper as more tests need it
 public class ExistingStreamsHelper {
