@@ -11,7 +11,7 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.LogCommon\EventStore.LogCommon.csproj" />
+		<ProjectReference Include="..\KurrentDB.LogCommon\KurrentDB.LogCommon.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<Protobuf Include="**/*.proto" />

@@ -3,7 +3,7 @@
 
 using System;
 using DotNext.Buffers;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 using EventStore.LogV3;
 
 namespace EventStore.Core.TransactionLog.LogRecords;

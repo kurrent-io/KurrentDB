@@ -7,7 +7,7 @@ using System.Threading;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.TransactionLog.Scavenging.Interfaces;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 
 namespace EventStore.Core.TransactionLog.Scavenging.DbAccess;
 

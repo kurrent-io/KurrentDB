@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext.Buffers;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 
 namespace EventStore.Core.TransactionLog.LogRecords;
 

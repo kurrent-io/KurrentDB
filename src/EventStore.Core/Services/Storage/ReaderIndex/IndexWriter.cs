@@ -14,7 +14,7 @@ using EventStore.Core.LogAbstraction;
 using EventStore.Core.Settings;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 

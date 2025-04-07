@@ -45,7 +45,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.LogV3", "EventSt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.LogV3.Tests", "EventStore.LogV3.Tests\EventStore.LogV3.Tests.csproj", "{97EDD08B-0E2F-4445-A4CA-36285954BBDC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.LogCommon", "EventStore.LogCommon\EventStore.LogCommon.csproj", "{B1185D46-45AE-49DD-99BF-602B9359BACF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.LogCommon", "KurrentDB.LogCommon\KurrentDB.LogCommon.csproj", "{B1185D46-45AE-49DD-99BF-602B9359BACF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Core.XUnit.Tests", "EventStore.Core.XUnit.Tests\EventStore.Core.XUnit.Tests.csproj", "{101DD668-2140-4183-8C97-F641173AF736}"
 EndProject

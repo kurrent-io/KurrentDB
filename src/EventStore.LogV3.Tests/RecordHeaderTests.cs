@@ -3,6 +3,7 @@
 
 using System;
 using Xunit;
+using LogCommon = KurrentDB.LogCommon;
 
 namespace EventStore.LogV3.Tests;
 

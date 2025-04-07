@@ -21,7 +21,7 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.TransactionLog.Scavenging;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 

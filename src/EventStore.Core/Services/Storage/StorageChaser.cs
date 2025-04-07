@@ -14,7 +14,7 @@ using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.TransactionLog;
 using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 using KurrentDB.Common.Utils;
 using static System.Threading.Timeout;
 using ILogger = Serilog.ILogger;

@@ -12,7 +12,7 @@ using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.TransactionLog.Scavenging.Interfaces;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 
 namespace EventStore.Core.TransactionLog.Scavenging.DbAccess;
 

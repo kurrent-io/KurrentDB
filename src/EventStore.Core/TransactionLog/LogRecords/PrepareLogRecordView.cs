@@ -4,7 +4,7 @@
 using System;
 using System.Text;
 using EventStore.Core.TransactionLog.Chunks;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 
 namespace EventStore.Core.TransactionLog.LogRecords;
 

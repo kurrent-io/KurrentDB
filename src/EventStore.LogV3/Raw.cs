@@ -3,7 +3,7 @@
 
 using System;
 using System.Runtime.InteropServices;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 
 namespace EventStore.LogV3;
 

@@ -5,7 +5,7 @@ using System;
 using DotNext.Buffers;
 using DotNext.Buffers.Binary;
 using DotNext.IO;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 using KurrentDB.Common.Utils;
 
 namespace EventStore.Core.TransactionLog.LogRecords;

@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.Core.LogV3;
-using EventStore.LogCommon;
+using KurrentDB.LogCommon;
 using EventStore.LogV3;
 using KurrentDB.Common.Utils;
 using StreamId = System.UInt32;
