@@ -12,7 +12,7 @@ using EventStore.Core;
 using EventStore.Core.Authorization.AuthorizationPolicies;
 using EventStore.Core.Bus;
 using EventStore.Core.Configuration.Sources;
-using EventStore.PluginHosting;
+using KurrentDB.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using Microsoft.Extensions.Configuration;

@@ -28,7 +28,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
 		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
-		<ProjectReference Include="..\EventStore.PluginHosting\EventStore.PluginHosting.csproj" />
+		<ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj" />
 	</ItemGroup>

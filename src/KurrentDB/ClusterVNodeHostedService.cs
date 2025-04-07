@@ -31,7 +31,7 @@ using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
 using EventStore.Core.Services.Transport.Http.Controllers;
 using EventStore.Diagnostics.LogsEndpointPlugin;
 using EventStore.OtlpExporterPlugin;
-using EventStore.PluginHosting;
+using KurrentDB.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;

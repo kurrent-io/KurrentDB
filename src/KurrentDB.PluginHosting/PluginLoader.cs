@@ -8,7 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 
-namespace EventStore.PluginHosting;
+namespace KurrentDB.PluginHosting;
 
 public sealed class PluginLoader : IDisposable {
 	private readonly DirectoryInfo _rootPluginDirectory;

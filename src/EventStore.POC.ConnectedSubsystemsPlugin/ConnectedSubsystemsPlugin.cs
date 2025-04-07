@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.IO;
 using EventStore.Common.Utils;
-using EventStore.PluginHosting;
+using KurrentDB.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.POC.IO.Core;
