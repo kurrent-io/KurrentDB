@@ -21,7 +21,7 @@ using Xunit;
 using Xunit.Abstractions;
 using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 
-namespace EventStore.Projections.Core.Javascript.Tests;
+namespace KurrentDB.Projections.Core.Javascript.Tests;
 
 public class SpecRunner {
 	private readonly ITestOutputHelper _output;

@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Data;
 
-namespace EventStore.Projections.Core.Javascript.Tests.Integration;
+namespace KurrentDB.Projections.Core.Javascript.Tests.Integration;
 
 public static class TestPollyFills {
 	public static async Task WaitAsync(this Task toWaitFor, CancellationToken cancellationToken) {

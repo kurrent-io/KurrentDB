@@ -49,7 +49,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.LogCommon", "Eve
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Core.XUnit.Tests", "EventStore.Core.XUnit.Tests\EventStore.Core.XUnit.Tests.csproj", "{101DD668-2140-4183-8C97-F641173AF736}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Projections.Core.Javascript.Tests", "EventStore.Projections.Core.Javascript.Tests\EventStore.Projections.Core.Javascript.Tests.csproj", "{1826D544-16E6-460F-A8F2-1D56B5041AE7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Projections.Core.Javascript.Tests", "KurrentDB.Projections.Core.Javascript.Tests\KurrentDB.Projections.Core.Javascript.Tests.csproj", "{1826D544-16E6-460F-A8F2-1D56B5041AE7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.MicroBenchmarks", "KurrentDB.MicroBenchmarks\KurrentDB.MicroBenchmarks.csproj", "{87F81751-192B-4263-A658-6DFC51EA557C}"
 EndProject

@@ -22,7 +22,7 @@ using EventStore.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
 using Xunit;
 
-namespace EventStore.Projections.Core.Javascript.Tests.Integration;
+namespace KurrentDB.Projections.Core.Javascript.Tests.Integration;
 
 public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 	private readonly Func<ValueTask> _stop;

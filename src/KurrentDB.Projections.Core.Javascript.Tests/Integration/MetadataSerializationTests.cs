@@ -10,7 +10,7 @@ using EventStore.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services;
 using Xunit;
 
-namespace EventStore.Projections.Core.Javascript.Tests.Integration;
+namespace KurrentDB.Projections.Core.Javascript.Tests.Integration;
 
 public class MetadataSerializationTests : ProjectionRuntimeScenario {
 	[Fact]

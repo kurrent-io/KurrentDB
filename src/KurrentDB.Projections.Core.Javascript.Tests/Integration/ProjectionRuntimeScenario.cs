@@ -17,7 +17,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace EventStore.Projections.Core.Javascript.Tests.Integration;
+namespace KurrentDB.Projections.Core.Javascript.Tests.Integration;
 
 public abstract class ProjectionRuntimeScenario : SubsystemScenario {
 	static readonly IConfiguration EmptyConfiguration = new ConfigurationBuilder().AddInMemoryCollection().Build();
