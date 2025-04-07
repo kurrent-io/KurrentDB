@@ -3,7 +3,7 @@
 
 using System;
 using System.IO;
-using EventStore.Core.TransactionLog.Unbuffered;
+using KurrentDB.Core.TransactionLog.Unbuffered;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Unbuffered;
@@ -182,7 +182,7 @@ public class UnbufferedTests : SpecificationWithDirectory {
 
 		Assert.AreEqual(initialFileSize, stream.Position); //verify position
 		stream.SetLength(initialFileSize - 4097); //truncate file by 4KB + 1
-		Assert.AreEqual(initialFileSize - 4096, stream.Position); //position should decrease by 4KB 
+		Assert.AreEqual(initialFileSize - 4096, stream.Position); //position should decrease by 4KB
 
 		stream.Close();
 

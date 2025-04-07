@@ -6,7 +6,9 @@ using Microsoft.Win32.SafeHandles;
 using Mono.Unix;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
-namespace EventStore.Core.TransactionLog.Unbuffered;
+// Resharper disable CheckNamespace
+
+namespace KurrentDB.Core.TransactionLog.Unbuffered;
 
 internal static class MacCaching {
 	// ReSharper disable once InconsistentNaming

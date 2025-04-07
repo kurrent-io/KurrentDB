@@ -27,7 +27,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Transport.Tcp", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB", "KurrentDB\KurrentDB.csproj", "{FDFCE363-84A4-4A6F-B97C-D9F57D8D124F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Native", "EventStore.Native\EventStore.Native.csproj", "{03FA0763-6D41-44C0-911D-662AE2B10084}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Native", "KurrentDB.Native\KurrentDB.Native.csproj", "{03FA0763-6D41-44C0-911D-662AE2B10084}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A19631BB-65CF-4726-8732-4EFD977E9B32}"
 	ProjectSection(SolutionItems) = preProject

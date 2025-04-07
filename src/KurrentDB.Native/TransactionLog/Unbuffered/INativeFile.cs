@@ -4,7 +4,9 @@
 using System.IO;
 using Microsoft.Win32.SafeHandles;
 
-namespace EventStore.Core.TransactionLog.Unbuffered;
+// Resharper disable CheckNamespace
+
+namespace KurrentDB.Core.TransactionLog.Unbuffered;
 
 public interface INativeFile {
 	uint GetDriveSectorSize(string path);

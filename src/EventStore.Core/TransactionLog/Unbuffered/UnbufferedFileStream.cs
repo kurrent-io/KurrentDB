@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
-namespace EventStore.Core.TransactionLog.Unbuffered;
+namespace KurrentDB.Core.TransactionLog.Unbuffered;
 
 //NOTE THIS DOES NOT SUPPORT ALL STREAM OPERATIONS AS YOU MIGHT EXPECT IT SUPPORTS WHAT WE USE!
 public unsafe class UnbufferedFileStream : Stream {

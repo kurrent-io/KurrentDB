@@ -3,7 +3,9 @@
 
 using System;
 
-namespace EventStore.Core.TransactionLog.Unbuffered;
+// Resharper disable CheckNamespace
+
+namespace KurrentDB.Core.TransactionLog.Unbuffered;
 
 [Flags]
 public enum ExtendedFileOptions {

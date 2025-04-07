@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using EventStore.Core.DataStructures;
 using EventStore.Core.DataStructures.ProbabilisticFilter;
 using EventStore.Core.Exceptions;
-using EventStore.Core.TransactionLog.Unbuffered;
+using KurrentDB.Core.TransactionLog.Unbuffered;
 using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 using MD5 = EventStore.Core.Hashing.MD5;

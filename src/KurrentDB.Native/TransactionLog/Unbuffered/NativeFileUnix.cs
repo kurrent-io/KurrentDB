@@ -9,7 +9,9 @@ using Microsoft.Win32.SafeHandles;
 using Mono.Unix;
 using Mono.Unix.Native;
 
-namespace EventStore.Core.TransactionLog.Unbuffered;
+// Resharper disable CheckNamespace
+
+namespace KurrentDB.Core.TransactionLog.Unbuffered;
 
 public unsafe class NativeFileUnix : INativeFile {
 	public uint GetDriveSectorSize(string path) {

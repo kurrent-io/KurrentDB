@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime;
 using System.Text;
-using EventStore.Core.TransactionLog.Unbuffered;
+using KurrentDB.Core.TransactionLog.Unbuffered;
 using Xunit;
 
 namespace KurrentDB.SystemRuntime.Tests;
