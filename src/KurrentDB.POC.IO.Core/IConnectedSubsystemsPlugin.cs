@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using EventStore.Plugins.Subsystems;
 
-namespace EventStore.POC.IO.Core;
+namespace KurrentDB.POC.IO.Core;
 
 // Necessary for now because of how PluginLoader works.
 // Later it may be possible to remove this interface entirely.

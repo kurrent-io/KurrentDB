@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using EventStore.AutoScavenge.Converters;
 using EventStore.AutoScavenge.Domain;
-using EventStore.POC.IO.Core.Serialization;
+using KurrentDB.POC.IO.Core.Serialization;
 using NCrontab;
 using Serilog;
 

@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.POC.IO.Core;
+namespace KurrentDB.POC.IO.Core;
 
 //qq move, rename? and does this want to be events or records
 //qq we probably want to reuse these, and we may want part of the pipline to transform them

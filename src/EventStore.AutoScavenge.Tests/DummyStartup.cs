@@ -8,7 +8,7 @@ using EventStore.Core.Services.Transport.Http.NodeHttpClientFactory;
 using EventStore.Plugins;
 using EventStore.Plugins.Licensing;
 using EventStore.POC.ConnectedSubsystemsPlugin;
-using EventStore.POC.IO.Core;
+using KurrentDB.POC.IO.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;

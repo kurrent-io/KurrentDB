@@ -7,7 +7,7 @@ using EventStore.Common.Utils;
 using EventStore.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
-using EventStore.POC.IO.Core;
+using KurrentDB.POC.IO.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;

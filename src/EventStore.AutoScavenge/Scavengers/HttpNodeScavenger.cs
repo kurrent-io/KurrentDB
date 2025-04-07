@@ -4,8 +4,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using EventStore.POC.IO.Core;
-using EventStore.POC.IO.Core.Serialization;
+using KurrentDB.POC.IO.Core;
+using KurrentDB.POC.IO.Core.Serialization;
 using Serilog;
 
 namespace EventStore.AutoScavenge.Scavengers;

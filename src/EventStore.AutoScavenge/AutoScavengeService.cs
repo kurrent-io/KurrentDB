@@ -8,7 +8,7 @@ using EventStore.AutoScavenge.Converters;
 using EventStore.AutoScavenge.Domain;
 using EventStore.AutoScavenge.Scavengers;
 using EventStore.AutoScavenge.Sources;
-using EventStore.POC.IO.Core;
+using KurrentDB.POC.IO.Core;
 using TimeProvider = EventStore.AutoScavenge.TimeProviders.TimeProvider;
 
 namespace EventStore.AutoScavenge;

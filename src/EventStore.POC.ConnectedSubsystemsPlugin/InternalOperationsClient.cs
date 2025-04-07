@@ -3,7 +3,7 @@
 
 using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.POC.IO.Core;
+using KurrentDB.POC.IO.Core;
 
 namespace EventStore.POC.ConnectedSubsystemsPlugin;
 

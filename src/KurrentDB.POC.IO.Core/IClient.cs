@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.POC.IO.Core;
+namespace KurrentDB.POC.IO.Core;
 
 public readonly record struct Position(ulong CommitPosition, ulong PreparePosition) {
 	public static readonly Position Start = new(0, 0);

@@ -17,9 +17,11 @@ using EventStore.Core.Services.Transport.Common;
 using EventStore.Core.Services.Transport.Enumerators;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.POC.IO.Core;
+using KurrentDB.POC.IO.Core;
 using Serilog;
 using CommonPosition = EventStore.Core.Services.Transport.Common.Position;
+using Event = KurrentDB.POC.IO.Core.Event;
+using Position = KurrentDB.POC.IO.Core.Position;
 
 namespace EventStore.POC.ConnectedSubsystemsPlugin;
 
@@ -134,10 +136,10 @@ public class InternalClient : IClient {
 			return Convert(start.Position!.Value);
 	}
 
-	private static CommonPosition Convert(IO.Core.Position position) =>
+	private static CommonPosition Convert(Position position) =>
 		new(position.CommitPosition, position.PreparePosition);
 
-	public IAsyncEnumerable<IO.Core.Event> SubscribeToAll(FromAll start, CancellationToken token) =>
+	public IAsyncEnumerable<Event> SubscribeToAll(FromAll start, CancellationToken token) =>
 		//qq consider all these options
 		Create(
 			"SUBSCRIPTION TO $all",
@@ -150,7 +152,7 @@ public class InternalClient : IClient {
 				requiresLeader: _requiresLeader,
 				cancellationToken: token));
 
-	public IAsyncEnumerable<IO.Core.Event> SubscribeToStream(string stream, CancellationToken token) =>
+	public IAsyncEnumerable<Event> SubscribeToStream(string stream, CancellationToken token) =>
 		Create(
 			$"SUBSCRIPTION TO {stream}",
 			() => new Enumerator.StreamSubscription<string>(
@@ -163,7 +165,7 @@ public class InternalClient : IClient {
 				requiresLeader: _requiresLeader,
 				cancellationToken: token));
 
-	public IAsyncEnumerable<IO.Core.Event> ReadStreamBackwards(string stream, long maxCount, CancellationToken token) =>
+	public IAsyncEnumerable<Event> ReadStreamBackwards(string stream, long maxCount, CancellationToken token) =>
 		Create(
 			$"Reading stream {stream} backwards for max {maxCount} events",
 			() => new Enumerator.ReadStreamBackwards(
@@ -178,7 +180,7 @@ public class InternalClient : IClient {
 				cancellationToken: token,
 				compatibility: 1));
 
-	public IAsyncEnumerable<IO.Core.Event> ReadAllBackwardsAsync(IO.Core.Position position, long maxCount, CancellationToken token) =>
+	public IAsyncEnumerable<Event> ReadAllBackwardsAsync(Position position, long maxCount, CancellationToken token) =>
 		Create($"Reading from $all Backwards", () =>
 			new Enumerator.ReadAllBackwards(
 				bus: _publisher,
@@ -191,7 +193,7 @@ public class InternalClient : IClient {
 				cancellationToken: token
 			));
 
-	public IAsyncEnumerable<IO.Core.Event> ReadStreamForwards(string stream, long maxCount, CancellationToken token) =>
+	public IAsyncEnumerable<Event> ReadStreamForwards(string stream, long maxCount, CancellationToken token) =>
 		Create(
 			$"Reading stream {stream} forwards for max {maxCount} events",
 			() => new Enumerator.ReadStreamForwards(
@@ -270,9 +272,9 @@ public class InternalClient : IClient {
 		}
 	}
 
-	private static IO.Core.Event ConvertEvent(ref ResolvedEvent evt) {
+	private static Event ConvertEvent(ref ResolvedEvent evt) {
 		var e = evt.OriginalEvent;
-		return new IO.Core.Event(
+		return new Event(
 			eventId: e.EventId,
 			created: e.TimeStamp,
 			stream: e.EventStreamId,
@@ -286,7 +288,7 @@ public class InternalClient : IClient {
 			metadata: e.Metadata);
 	}
 
-	private static IAsyncEnumerable<IO.Core.Event> Create(
+	private static IAsyncEnumerable<Event> Create(
 		string message,
 		Func<IAsyncEnumerator<ReadResponse>> enumeratorFactory) {
 

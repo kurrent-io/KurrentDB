@@ -4,7 +4,7 @@
 using EventStore.AutoScavenge.Scavengers;
 using EventStore.AutoScavenge.Sources;
 using EventStore.AutoScavenge.TimeProviders;
-using EventStore.POC.IO.Core;
+using KurrentDB.POC.IO.Core;
 using NCrontab;
 using Serilog.Events;
 

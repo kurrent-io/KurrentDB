@@ -5,7 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.POC.IO.Core;
+namespace KurrentDB.POC.IO.Core;
 
 public interface ISink {
 

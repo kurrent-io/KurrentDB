@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Runtime.CompilerServices;
-using EventStore.POC.IO.Core;
+using KurrentDB.POC.IO.Core;
 
 namespace EventStore.AutoScavenge.Tests;
 

@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.POC.IO.Core;
+namespace KurrentDB.POC.IO.Core;
 
 public class EventToWrite {
 	public Guid EventId { get; init; }

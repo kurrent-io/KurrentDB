@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.POC.IO.Core;
+namespace KurrentDB.POC.IO.Core;
 
 public abstract class ResponseException : Exception {
 	protected ResponseException() : base() { }

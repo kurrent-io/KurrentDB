@@ -4,7 +4,7 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using EventStore.AutoScavenge.Converters;
-using EventStore.POC.IO.Core;
+using KurrentDB.POC.IO.Core;
 
 namespace EventStore.AutoScavenge.Sources;
 
