@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.BufferManagement.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Projections.Core.Tests", "EventStore.Projections.Core.Tests\EventStore.Projections.Core.Tests.csproj", "{96FC74C3-8E5D-4090-B4C7-2B7ED46AE187}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.ClusterNode.Web", "EventStore.ClusterNode.Web\EventStore.ClusterNode.Web.csproj", "{401862D3-E12F-470C-9137-B9DE10591AC6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.ClusterNode.Web", "KurrentDB.ClusterNode.Web\KurrentDB.ClusterNode.Web.csproj", "{401862D3-E12F-470C-9137-B9DE10591AC6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Common", "EventStore.Common\EventStore.Common.csproj", "{3F955137-DC23-4AC1-B7F8-6D0857234CCB}"
 EndProject

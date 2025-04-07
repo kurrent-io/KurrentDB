@@ -22,7 +22,7 @@
 		<ProjectReference Include="..\EventStore.Auth.OAuth\EventStore.Auth.OAuth.csproj" />
 		<ProjectReference Include="..\EventStore.Auth.StreamPolicyPlugin\EventStore.Auth.StreamPolicyPlugin.csproj" />
 		<ProjectReference Include="..\EventStore.Auth.UserCertificates\EventStore.Auth.UserCertificates.csproj" />
-		<ProjectReference Include="..\EventStore.ClusterNode.Web\EventStore.ClusterNode.Web.csproj" />
+		<ProjectReference Include="..\KurrentDB.ClusterNode.Web\KurrentDB.ClusterNode.Web.csproj" />
 		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
 		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
 		<ProjectReference Include="..\EventStore.Diagnostics.LogsEndpointPlugin\EventStore.Diagnostics.LogsEndpointPlugin.csproj" />
