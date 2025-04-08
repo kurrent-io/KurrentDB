@@ -122,7 +122,7 @@ public class ssl_connections {
 	}
 
 	private static X509Certificate2 GetCertificate(string name, bool loadKey = true) {
-		const string resourcePath = "KurrentDB.Core.Tests.Services.Transport.Tcp.test_certificates";
+		const string resourcePath = "EventStore.Core.Tests.Services.Transport.Tcp.test_certificates";
 
 		var certBytes = LoadResource($"{resourcePath}.{name}.{name}.crt");
 		var certificate = X509Certificate2.CreateFromPem(Encoding.UTF8.GetString(certBytes));
