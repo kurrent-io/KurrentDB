@@ -98,13 +98,13 @@ public static class AutoEventConverter {
 
 	private static Event[] LoadRaw(byte[] data, Guid includedId, string includedType) {
 		var ret = new Event[1];
-		ret[0] = new Event(includedId, includedType, false, data, null);
+		ret[0] = new Event(includedId, includedType, false, data, null, SchemaInfo.None, SchemaInfo.None);
 		return ret;
 	}
 
 	private static Event[] LoadRaw(string data, bool isJson, Guid includedId, string includedType) {
 		var ret = new Event[1];
-		ret[0] = new Event(includedId, includedType, isJson, data, null);
+		ret[0] = new Event(includedId, includedType, isJson, data, null, SchemaInfo.None, SchemaInfo.None);
 		return ret;
 	}
 
@@ -141,7 +141,7 @@ public static class AutoEventConverter {
 			var textEvent = dynamicEvents[i];
 			var data = AsBytes(textEvent.data, out var dataIsJson);
 			var metadata = AsBytes(textEvent.metadata, out var metadataIsJson);
-			events[i] = new Event(textEvent.eventId, textEvent.eventType, dataIsJson || metadataIsJson, data, metadata);
+			events[i] = new Event(textEvent.eventId, textEvent.eventType, dataIsJson || metadataIsJson, data, metadata, SchemaInfo.None, SchemaInfo.None);
 		}
 
 		return events.ToArray();

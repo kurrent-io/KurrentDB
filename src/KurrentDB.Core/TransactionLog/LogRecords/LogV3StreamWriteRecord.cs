@@ -30,7 +30,9 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 		PrepareFlags flags,
 		uint eventType,
 		ReadOnlySpan<byte> data,
-		ReadOnlySpan<byte> metadata) {
+		ReadOnlySpan<byte> metadata,
+        SchemaInfo dataSchemaInfo,
+        SchemaInfo metadataSchemaInfo) {
 
 		Ensure.Nonnegative(logPosition, "logPosition");
 		Ensure.NotEmptyGuid(correlationId, "correlationId");
@@ -86,7 +88,9 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 			flags: Flags,
 			eventType: EventType,
 			data: Data.Span,
-			metadata: Metadata.Span);
+			metadata: Metadata.Span,
+            dataSchemaInfo: SchemaInfo.None,
+            metadataSchemaInfo: SchemaInfo.None);
 	}
 
 	public bool Equals(LogV3StreamWriteRecord other) {

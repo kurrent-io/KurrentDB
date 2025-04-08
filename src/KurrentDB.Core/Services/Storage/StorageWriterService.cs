@@ -321,7 +321,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 					var prepare = LogRecord.Prepare(
 						_recordFactory, logPosition, msg.CorrelationId, evnt.EventId,
 						transactionPosition, i, streamId,
-						expectedVersion, flags, eventTypes[i], evnt.Data, evnt.Metadata);
+						expectedVersion, flags, eventTypes[i], evnt.Data, evnt.Metadata, evnt.DataSchemaInfo, evnt.MetadataSchemaInfo);
 					prepares.Add(prepare);
 
 					logPosition += prepare.GetSizeWithLengthPrefixAndSuffix();

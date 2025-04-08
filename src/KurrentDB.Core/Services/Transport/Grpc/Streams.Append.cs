@@ -59,6 +59,20 @@ internal partial class Streams<TStreamId> {
 				var data = proposedMessage.Data.ToByteArray();
 				var metadata = proposedMessage.CustomMetadata.ToByteArray();
 
+                //TODO SS: schema registry integration
+                // here we are using the new schema info
+                // event type => schema name
+                // content type => schema format
+                // schema version id
+
+                if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersionId)) {
+
+                }
+                else
+                {
+                    // normal existing code.
+                }
+
 				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.Type, out var eventType)) {
 					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.Type);
 				}
@@ -79,11 +93,14 @@ internal partial class Streams<TStreamId> {
 				}
 
 				events.Add(new Event(
-					Uuid.FromDto(proposedMessage.Id).ToGuid(),
-					eventType,
-					contentType == Constants.Metadata.ContentTypes.ApplicationJson,
-					data,
-					metadata));
+					eventId: Uuid.FromDto(proposedMessage.Id).ToGuid(),
+					eventType: eventType,
+					isJson: contentType == Constants.Metadata.ContentTypes.ApplicationJson,
+					data: data,
+					metadata: metadata,
+                    dataSchemaInfo: SchemaInfo.None,
+                    metadataSchemaInfo: SchemaInfo.None)
+                );
 			}
 
 			var appendResponseSource = new TaskCompletionSource<AppendResp>(TaskCreationOptions.RunContinuationsAsynchronously);

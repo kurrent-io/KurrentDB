@@ -10,8 +10,10 @@ using DotNext.Buffers.Binary;
 using DotNext.IO;
 using DotNext.Text;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.LogCommon;
+using JetBrains.Annotations;
 
 namespace KurrentDB.Core.TransactionLog.LogRecords;
 
@@ -64,7 +66,10 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	private int? _eventTypeSize;
 	public ReadOnlyMemory<byte> Data => Flags.HasFlag(PrepareFlags.IsRedacted) ? NoData : _dataOnDisk;
 	private readonly ReadOnlyMemory<byte> _dataOnDisk;
-	public ReadOnlyMemory<byte> Metadata { get; }
+
+    public ReadOnlyMemory<byte> Metadata { get; }
+
+    public string ContentType { get; set; }
 
 	private int? _sizeOnDisk;
 
@@ -86,6 +91,9 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 				   + IntPtr.Size + Metadata.Length;
 		}
 	}
+
+    [CanBeNull] public readonly SchemaInfo _dataSchemaInfo;
+    [CanBeNull] public readonly SchemaInfo _metadataSchemaInfo;
 
 	// including length and suffix
 	private int ComputeSizeOnDisk() {
@@ -131,7 +139,11 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		int? eventTypeSize,
 		ReadOnlyMemory<byte> data,
 		ReadOnlyMemory<byte> metadata,
-		byte prepareRecordVersion = PrepareRecordVersion)
+        SchemaInfo dataSchemaInfo,
+        SchemaInfo metadataSchemaInfo,
+		byte prepareRecordVersion = PrepareRecordVersion
+   )
+
 		: base(LogRecordType.Prepare, prepareRecordVersion, logPosition) {
 		Ensure.NotEmptyGuid(correlationId, "correlationId");
 		Ensure.NotEmptyGuid(eventId, "eventId");
@@ -155,7 +167,9 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		EventType = eventType ?? string.Empty;
 		_eventTypeSize = eventTypeSize;
 		_dataOnDisk = data;
-		Metadata = metadata;
+        _dataSchemaInfo = dataSchemaInfo;
+        _metadataSchemaInfo = metadataSchemaInfo;
+        Metadata = metadata;
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
 			throw new Exception("Record too large.");
 	}
@@ -178,9 +192,14 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		CorrelationId = reader.Read<Blittable<Guid>>().Value;
 		TimeStamp = new(reader.ReadLittleEndian<long>());
 		EventType = ReadString(ref reader, in context);
-		_dataOnDisk = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
+
+
+        //TODO SS: unwrap the schema info
+
+        _dataOnDisk = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
 			? reader.Read(dataCount).ToArray()
 			: NoData;
+
 		Metadata = reader.ReadLittleEndian<int>() is var metadataCount && metadataCount > 0
 			? reader.Read(metadataCount).ToArray()
 			: NoData;
@@ -212,7 +231,10 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			eventType: EventType,
 			eventTypeSize: _eventTypeSize,
 			data: _dataOnDisk,
-			metadata: Metadata);
+			metadata: Metadata,
+            dataSchemaInfo: _dataSchemaInfo,
+            metadataSchemaInfo: _metadataSchemaInfo
+        );
 	}
 
 	public override void WriteTo(ref BufferWriterSlim<byte> writer) {
@@ -250,6 +272,11 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		writer.WriteLeb128((uint)_eventTypeSize.GetValueOrDefault());
 		buffer = writer.GetSpan(_eventTypeSize.GetValueOrDefault());
 		writer.Advance(Encoding.UTF8.GetBytes(EventType, buffer));
+
+
+        //TODO SS: wrap the schema info
+        // if I have schema info I need to wrap that info into the data
+        // and metadata by prepending 0 + the schema stuff
 
 		writer.Write(_dataOnDisk.Span, LengthFormat.LittleEndian);
 		writer.Write(Metadata.Span, LengthFormat.LittleEndian);
