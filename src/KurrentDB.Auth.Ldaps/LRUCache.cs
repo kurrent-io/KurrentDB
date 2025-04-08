@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EventStore.Auth.Ldaps;
+namespace KurrentDB.Auth.Ldaps;
 
 public class LRUCache<TKey, TValue> {
 	private class LRUItem {

@@ -17,7 +17,7 @@
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.0" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Auth.Ldaps\EventStore.Auth.Ldaps.csproj" />
+		<ProjectReference Include="..\KurrentDB.Auth.Ldaps\KurrentDB.Auth.Ldaps.csproj" />
 		<ProjectReference Include="..\EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />
 		<ProjectReference Include="..\EventStore.Auth.OAuth\EventStore.Auth.OAuth.csproj" />
 		<ProjectReference Include="..\EventStore.Auth.StreamPolicyPlugin\EventStore.Auth.StreamPolicyPlugin.csproj" />

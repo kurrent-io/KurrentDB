@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 
-namespace EventStore.Auth.Ldaps;
+namespace KurrentDB.Auth.Ldaps;
 
 public class LdapsSettings {
 	public string Host { get; set; }

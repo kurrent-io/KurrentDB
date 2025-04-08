@@ -4,7 +4,7 @@
 using System;
 using System.Security.Claims;
 
-namespace EventStore.Auth.Ldaps;
+namespace KurrentDB.Auth.Ldaps;
 
 internal class CachedPrincipalWithTimeout {
 	public readonly string Password;

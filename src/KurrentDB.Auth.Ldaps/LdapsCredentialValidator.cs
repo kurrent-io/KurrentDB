@@ -10,7 +10,7 @@ using System.Text;
 using Novell.Directory.Ldap;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Auth.Ldaps;
+namespace KurrentDB.Auth.Ldaps;
 
 /// <summary>
 /// A <see cref="LdapsCredentialValidator"/> can be used to validate user credentials with

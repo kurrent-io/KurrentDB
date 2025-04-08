@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Authorization.Policy;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Auth.Ldaps;
+namespace KurrentDB.Auth.Ldaps;
 
 internal class LdapsAuthenticationProvider : AuthenticationProviderBase {
 	private static readonly ILogger Logger = Log.ForContext<PolicyEvaluator>();

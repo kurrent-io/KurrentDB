@@ -9,7 +9,7 @@ using Ductus.FluentDocker.Services;
 using Ductus.FluentDocker.Services.Extensions;
 using Xunit.Abstractions;
 
-namespace EventStore.Auth.Ldaps.Tests;
+namespace KurrentDB.Auth.Ldaps.Tests;
 
 public class LdapsFixture : IDisposable {
 

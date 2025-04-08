@@ -3,10 +3,8 @@
 
 using System;
 
-namespace EventStore.Auth.Ldaps;
+namespace KurrentDB.Auth.Ldaps;
 
-public class LdapsConfigurationException : Exception {
-	public LdapsConfigurationException(string message)
-		: base(message) {
-	}
+public interface ILdapsCredentialValidator : IDisposable {
+	bool TryValidateCredentials(string username, string password, out LdapInfo ldapUser);
 }

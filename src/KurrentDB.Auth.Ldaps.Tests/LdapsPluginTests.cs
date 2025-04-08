@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace EventStore.Auth.Ldaps.Tests;
+namespace KurrentDB.Auth.Ldaps.Tests;
 
 public class LdapsPluginTests {
 

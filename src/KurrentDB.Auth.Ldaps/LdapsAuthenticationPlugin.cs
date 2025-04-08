@@ -4,7 +4,7 @@
 using System.ComponentModel.Composition;
 using EventStore.Plugins.Authentication;
 
-namespace EventStore.Auth.Ldaps;
+namespace KurrentDB.Auth.Ldaps;
 
 [Export(typeof(IAuthenticationPlugin))]
 public class LdapsAuthenticationPlugin : IAuthenticationPlugin {

@@ -4,7 +4,7 @@
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 
-namespace EventStore.Auth.Ldaps;
+namespace KurrentDB.Auth.Ldaps;
 
 internal class LdapsAuthenticationProviderFactory : IAuthenticationProviderFactory {
 	public const int CachedPrincipalCount = 1000;

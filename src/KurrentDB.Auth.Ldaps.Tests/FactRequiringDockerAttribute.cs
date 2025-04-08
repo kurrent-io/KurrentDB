@@ -4,7 +4,7 @@
 using System;
 using Xunit;
 
-namespace EventStore.Auth.Ldaps.Tests;
+namespace KurrentDB.Auth.Ldaps.Tests;
 
 public sealed class FactRequiringDockerAttribute : FactAttribute {
 	public FactRequiringDockerAttribute() {

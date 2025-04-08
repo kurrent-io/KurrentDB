@@ -10,7 +10,7 @@ using System.Linq;
 using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Auth.Ldaps;
+using KurrentDB.Auth.Ldaps;
 using EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
 using EventStore.Auth.OAuth;
 using EventStore.Auth.UserCertificates;

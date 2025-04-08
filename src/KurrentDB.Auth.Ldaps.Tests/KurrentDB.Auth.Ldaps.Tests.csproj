@@ -30,7 +30,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\EventStore.Auth.Ldaps\EventStore.Auth.Ldaps.csproj" />
+      <ProjectReference Include="..\KurrentDB.Auth.Ldaps\KurrentDB.Auth.Ldaps.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -3,7 +3,7 @@
 
 using System.Linq;
 
-namespace EventStore.Auth.Ldaps;
+namespace KurrentDB.Auth.Ldaps;
 
 /// <summary>
 /// Represents the distinguished name of an object and an array of the distinguished names

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using EventStore.Plugins.Authentication;
 
-namespace EventStore.Auth.Ldaps.Tests;
+namespace KurrentDB.Auth.Ldaps.Tests;
 
 public class TestAuthenticationRequest : AuthenticationRequest {
 	private Action<ClaimsPrincipal> _onAuthenticated;
