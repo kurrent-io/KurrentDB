@@ -8,7 +8,7 @@ using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
 using Serilog;
 
-namespace EventStore.OtlpExporterPlugin;
+namespace KurrentDB.OtlpExporterPlugin;
 
 public class OtlpExporterPlugin : SubsystemsPlugin {
 	public const string KurrentConfigurationPrefix = "KurrentDB";

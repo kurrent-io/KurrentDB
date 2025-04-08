@@ -15,10 +15,8 @@ using KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
 using KurrentDB.Auth.OAuth;
 using KurrentDB.Auth.UserCertificates;
 using KurrentDB.AutoScavenge;
-using EventStore.Core;
 using EventStore.Core.LogAbstraction;
 using KurrentDB.Diagnostics.LogsEndpointPlugin;
-using EventStore.OtlpExporterPlugin;
 using KurrentDB.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
@@ -26,7 +24,6 @@ using EventStore.Plugins.Authorization;
 using EventStore.Plugins.MD5;
 using EventStore.Plugins.Subsystems;
 using EventStore.POC.ConnectedSubsystemsPlugin;
-using EventStore.Projections.Core;
 using EventStore.Security.EncryptionAtRest;
 using EventStore.TcpPlugin;
 using KurrentDB.Common.Exceptions;
@@ -276,7 +273,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 		static ClusterVNodeOptions LoadSubsystemsPlugins(PluginLoader pluginLoader, ClusterVNodeOptions options) {
 			var plugins = pluginLoader.Load<ISubsystemsPlugin>().ToList();
-			plugins.Add(new OtlpExporterPlugin());
+			plugins.Add(new OtlpExporterPlugin.OtlpExporterPlugin());
 			plugins.Add(new UserCertificatesPlugin());
 			plugins.Add(new LogsEndpointPlugin());
 			plugins.Add(new EncryptionAtRestPlugin());

@@ -27,7 +27,7 @@ public class OtlpExporterTests {
 	[Fact]
 	public void has_parameterless_constructor() {
 		// needed for all plugins
-		using var _ = Activator.CreateInstance<EventStore.OtlpExporterPlugin.OtlpExporterPlugin>();
+		using var _ = Activator.CreateInstance<KurrentDB.OtlpExporterPlugin.OtlpExporterPlugin>();
 	}
 
 	[Fact]
@@ -123,7 +123,7 @@ public class OtlpExporterTests {
 					.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("eventstore"))
 					.AddMeter("EventStore.TestMeter"));
 
-		var sut = new EventStore.OtlpExporterPlugin.OtlpExporterPlugin(_logger);
+		var sut = new KurrentDB.OtlpExporterPlugin.OtlpExporterPlugin(_logger);
 		((IPlugableComponent)sut).ConfigureServices(builder.Services, builder.Configuration);
 
 		var app = builder.Build();

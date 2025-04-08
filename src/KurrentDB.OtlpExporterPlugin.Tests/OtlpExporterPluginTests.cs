@@ -20,7 +20,7 @@ public class OtlpExporterPluginTests {
 	[InlineData(false)]
 	public void can_collect_telemetry(bool enabled) {
 		// given
-		using var sut = new EventStore.OtlpExporterPlugin.OtlpExporterPlugin();
+		using var sut = new OtlpExporterPlugin();
 		using var collector = PluginDiagnosticsDataCollector.Start(sut.DiagnosticsName);
 
 		IConfigurationBuilder configBuilder = new ConfigurationBuilder();
@@ -59,7 +59,7 @@ public class OtlpExporterPluginTests {
 	[InlineData(false, false, "NONE", false)]
 	public void respects_license(bool enabled, bool licensePresent, string entitlement, bool expectedException) {
 		// given
-		using var sut = new EventStore.OtlpExporterPlugin.OtlpExporterPlugin();
+		using var sut = new OtlpExporterPlugin();
 
 		IConfigurationBuilder configBuilder = new ConfigurationBuilder();
 

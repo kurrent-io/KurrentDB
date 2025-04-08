@@ -75,7 +75,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CB56B2BD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.OtlpExporterPlugin.Tests", "KurrentDB.OtlpExporterPlugin.Tests\KurrentDB.OtlpExporterPlugin.Tests.csproj", "{8E183DF4-F8E5-4421-AECC-B54CBA7BF138}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.OtlpExporterPlugin", "EventStore.OtlpExporterPlugin\EventStore.OtlpExporterPlugin.csproj", "{D180755E-8D2A-462F-9E67-55ED985D2465}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.OtlpExporterPlugin", "KurrentDB.OtlpExporterPlugin\KurrentDB.OtlpExporterPlugin.csproj", "{D180755E-8D2A-462F-9E67-55ED985D2465}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Plugins.TestHelpers", "KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj", "{A93A3CAF-C3ED-4CC8-84E3-7F2641405837}"
 EndProject
