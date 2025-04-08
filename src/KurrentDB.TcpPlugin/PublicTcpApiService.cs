@@ -12,7 +12,7 @@ using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Services;
 using Microsoft.Extensions.Hosting;
 
-namespace EventStore.TcpPlugin;
+namespace KurrentDB.TcpPlugin;
 
 public class PublicTcpApiService : IHostedService {
 	public PublicTcpApiService(

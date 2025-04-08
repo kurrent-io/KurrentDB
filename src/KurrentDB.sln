@@ -115,9 +115,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Auth.StreamPolicy
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Auth.StreamPolicyPlugin.Tests", "KurrentDB.Auth.StreamPolicyPlugin.Tests\KurrentDB.Auth.StreamPolicyPlugin.Tests.csproj", "{E130C6E8-7CDE-4D60-AA33-A366D5D63C5C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.TcpPlugin", "EventStore.TcpPlugin\EventStore.TcpPlugin.csproj", "{C548296F-C21A-413B-9CBC-1877F50940DC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.TcpPlugin", "KurrentDB.TcpPlugin\KurrentDB.TcpPlugin.csproj", "{C548296F-C21A-413B-9CBC-1877F50940DC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.TcpPlugin.Tests", "EventStore.TcpPlugin.Tests\EventStore.TcpPlugin.Tests.csproj", "{7D9F393E-3E64-450D-9DA5-6C61CDC508F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.TcpPlugin.Tests", "KurrentDB.TcpPlugin.Tests\KurrentDB.TcpPlugin.Tests.csproj", "{7D9F393E-3E64-450D-9DA5-6C61CDC508F0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{C60E0774-AB19-49D0-AAB4-D804E5EF1C3F}"
 EndProject

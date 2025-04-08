@@ -6,7 +6,7 @@ using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace EventStore.TcpPlugin;
+namespace KurrentDB.TcpPlugin;
 
 public class TcpApiPlugin : SubsystemsPlugin {
 	public TcpApiPlugin() : base(requiredEntitlements: ["TCP_CLIENT_PLUGIN"]) {

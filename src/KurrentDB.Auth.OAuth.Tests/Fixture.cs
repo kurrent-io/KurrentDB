@@ -120,7 +120,7 @@ internal class Fixture : IDisposable {
 			.Run("mv /opt/kurrentdb/plugins /opt/kurrentdb/all-plugins")
 			// reinstate the tcp plugin
 			.Run("mkdir -p /opt/kurrentdb/plugins")
-			.Run("cp -r /opt/kurrentdb/all-plugins/EventStore.TcpPlugin /opt/kurrentdb/plugins/EventStore.TcpPlugin")
+			.Run("cp -r /opt/kurrentdb/all-plugins/KurrentDB.TcpPlugin /opt/kurrentdb/plugins/KurrentDB.TcpPlugin")
 			.Build();
 
 		_eventStore = new Builder()

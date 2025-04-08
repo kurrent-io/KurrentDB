@@ -10,7 +10,7 @@ using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 
-namespace EventStore.TcpPlugin.Tests;
+namespace KurrentDB.TcpPlugin.Tests;
 
 public class EventStoreOptionsTests {
 	static EventStoreOptionsTests() {

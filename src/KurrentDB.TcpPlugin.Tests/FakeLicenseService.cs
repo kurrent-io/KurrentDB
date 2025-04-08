@@ -5,7 +5,7 @@ using System;
 using System.Reactive.Subjects;
 using EventStore.Plugins.Licensing;
 
-namespace EventStore.TcpPlugin.Tests;
+namespace KurrentDB.TcpPlugin.Tests;
 
 class FakeLicenseService : ILicenseService {
 	public FakeLicenseService(string token) {

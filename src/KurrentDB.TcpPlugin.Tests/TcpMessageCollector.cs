@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
 
-namespace EventStore.TcpPlugin.Tests;
+namespace KurrentDB.TcpPlugin.Tests;
 
 public class TcpMessageCollector : IHandle<ClientMessage.ReadEvent> {
 	private TaskCompletionSource<ClientMessage.ReadEvent> _source = new();

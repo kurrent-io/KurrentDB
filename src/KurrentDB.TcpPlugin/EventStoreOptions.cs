@@ -3,7 +3,7 @@
 
 using System.Net;
 
-namespace EventStore.TcpPlugin;
+namespace KurrentDB.TcpPlugin;
 
 public class EventStoreOptions {
 	public int ConnectionPendingSendBytesThreshold { get; init; } = 10 * 1_024 * 1_024;
