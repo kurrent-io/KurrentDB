@@ -4,8 +4,8 @@
 using System;
 using System.Text;
 using System.Text.Unicode;
-using KurrentDB.LogCommon;
 using Google.Protobuf;
+using KurrentDB.LogCommon;
 
 namespace EventStore.LogV3;
 

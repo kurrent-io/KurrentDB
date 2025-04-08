@@ -123,11 +123,11 @@ public class ProjectionWorkerNode {
 			coreInputBus.Subscribe<IODispatcherDelayedMessage>(_ioDispatcher.Awaker);
 			coreInputBus.Subscribe<IODispatcherDelayedMessage>(_ioDispatcher);
 			coreInputBus.Subscribe<ClientMessage.NotHandled>(_ioDispatcher);
-			coreInputBus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted>(_projectionCoreService);
-			coreInputBus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>(_projectionCoreService);
-			coreInputBus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(_projectionCoreService);
-			coreInputBus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested>(_projectionCoreService);
-			coreInputBus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed>(_projectionCoreService);
+			coreInputBus.Subscribe<CoreProjectionProcessingMessage.CheckpointCompleted>(_projectionCoreService);
+			coreInputBus.Subscribe<CoreProjectionProcessingMessage.CheckpointLoaded>(_projectionCoreService);
+			coreInputBus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(_projectionCoreService);
+			coreInputBus.Subscribe<CoreProjectionProcessingMessage.RestartRequested>(_projectionCoreService);
+			coreInputBus.Subscribe<CoreProjectionProcessingMessage.Failed>(_projectionCoreService);
 			coreInputBus.Subscribe<CoreProjectionStatusMessage.Suspended>(_projectionCoreService);
 			//NOTE: message forwarding is set up outside (for Read/Write events)
 

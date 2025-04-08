@@ -58,7 +58,7 @@ public class when_starting_with_prerecorded_events_in_past_epoch<TLogFormat, TSt
 		base.When();
 		_checkpointReader.BeginLoadState();
 		var checkpointLoaded =
-			_consumer.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+			_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
 		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
 		_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 	}

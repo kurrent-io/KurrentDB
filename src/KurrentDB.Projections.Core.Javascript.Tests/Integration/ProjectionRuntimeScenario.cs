@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Options;
@@ -21,7 +22,7 @@ namespace KurrentDB.Projections.Core.Javascript.Tests.Integration;
 public abstract class ProjectionRuntimeScenario : SubsystemScenario {
 	static readonly IConfiguration EmptyConfiguration = new ConfigurationBuilder().AddInMemoryCollection().Build();
 
-	protected ProjectionRuntimeScenario() : base(CreateRuntime, "$et", new CancellationTokenSource(System.Diagnostics.Debugger.IsAttached ? 5 * 60 * 1000 : 5 * 1000).Token) {
+	protected ProjectionRuntimeScenario() : base(CreateRuntime, "$et", new CancellationTokenSource(Debugger.IsAttached ? 5 * 60 * 1000 : 5 * 1000).Token) {
 
 	}
 

@@ -6,6 +6,7 @@ using System.Diagnostics.Metrics;
 using System.Net;
 using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
+using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Metrics;
@@ -19,7 +20,7 @@ public class ElectionsCounterTrackerTests : IDisposable {
 
 	public ElectionsCounterTrackerTests() {
 		var endPoint = new DnsEndPoint("127.0.0.1", 1113);
-		var memberInfo = EventStore.Core.Cluster.MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
+		var memberInfo = MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
 			VNodeState.Unknown, true,
 			endPoint, endPoint, endPoint, endPoint, endPoint,
 			null, 0, 0, 0, false);

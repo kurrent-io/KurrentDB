@@ -4,12 +4,14 @@
 using System;
 using System.Diagnostics;
 using Amazon.Runtime.Internal.Util;
+using Serilog.Core;
 using Serilog.Events;
+using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services.Archive.Storage.S3;
 
 public class AmazonTraceSerilogger(Func<LogEventLevel, Exception, LogEventLevel> adjustLevel) : TraceListener {
-	private static readonly Serilog.ILogger Logger = Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "Amazon");
+	private static readonly ILogger Logger = Serilog.Log.ForContext(Constants.SourceContextPropertyName, "Amazon");
 
 	public override void TraceData(TraceEventCache eventCache, string source, TraceEventType eventType, int id,
 		object data) {

@@ -6,6 +6,7 @@ using System.Net;
 using EventStore.Core.Tests.Helpers;
 using KurrentDB.Common.Utils;
 using NUnit.Framework;
+using Serilog;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 namespace EventStore.Core.Tests;
@@ -19,7 +20,7 @@ public class TestsInitFixture {
 	}
 
 	private void LogEnvironmentInfo() {
-		var log = Serilog.Log.ForContext<TestsInitFixture>();
+		var log = Log.ForContext<TestsInitFixture>();
 
 		log.Information("\n{0,-25} {1} ({2}/{3}, {4})\n"
 				 + "{5,-25} {6} ({7})\n"

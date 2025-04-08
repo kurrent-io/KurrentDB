@@ -7,7 +7,6 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using EventStore.Core;
 using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Core.Services.Transport.Grpc.Cluster;

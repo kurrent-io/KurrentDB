@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
 
@@ -36,7 +37,7 @@ public class GossipListenerService :
 		var payload = new {
 			NodeId = _nodeId,
 			Members = message.ClusterInfo.Members.Select(static x =>
-				new EventStore.Core.Cluster.ClientClusterInfo.ClientMemberInfo(x)),
+				new ClientClusterInfo.ClientMemberInfo(x)),
 		};
 
 		var data = JsonSerializer.SerializeToUtf8Bytes(payload, _options);

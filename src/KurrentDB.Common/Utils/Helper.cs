@@ -34,7 +34,7 @@ public static class Helper {
 	}
 
 	public static string GetDefaultLogsDir() {
-		return Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "es-logs");
+		return Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location), "es-logs");
 	}
 
 	public static string FormatBinaryDump(byte[] logBulk) {

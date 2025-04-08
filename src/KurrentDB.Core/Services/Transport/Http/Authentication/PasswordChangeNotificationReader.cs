@@ -10,6 +10,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Services.UserManagement;
 using Newtonsoft.Json;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services.Transport.Http.Authentication;
@@ -18,7 +19,7 @@ public class PasswordChangeNotificationReader :
 	IHandle<SystemMessage.SystemStart>,
 	IHandle<SystemMessage.BecomeShutdown> {
 
-	private readonly ILogger _log = Serilog.Log.ForContext<UserManagementService>();
+	private readonly ILogger _log = Log.ForContext<UserManagementService>();
 	private readonly IPublisher _publisher;
 	private readonly IODispatcher _ioDispatcher;
 	private bool _stopped;

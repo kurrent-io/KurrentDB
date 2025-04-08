@@ -81,7 +81,7 @@ internal class WriteProcessor : ICmdProcessor {
 				}
 
 				var dto = pkg.Data.Deserialize<WriteEventsCompleted>();
-				if (dto.Result == EventStore.Client.Messages.OperationResult.Success) {
+				if (dto.Result == OperationResult.Success) {
 					context.Log.Information("Successfully written.");
 					PerfUtils.LogTeamCityGraphData(string.Format("{0}-latency-ms", Keyword),
 						(int)Math.Round(sw.Elapsed.TotalMilliseconds));

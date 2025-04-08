@@ -15,7 +15,7 @@ using Serilog;
 
 namespace KurrentDB.Core.Services.Transport.Http.Authentication;
 
-public class NodeCertificateAuthenticationProvider(Func<string> getCertificateReservedNodeCommonName) : IHttpAuthenticationProvider {
+public class NodeCertificateAuthenticationProvider(System.Func<string> getCertificateReservedNodeCommonName) : IHttpAuthenticationProvider {
 	public string Name => "node-certificate";
 
 	static readonly ILogger Log = Serilog.Log.ForContext<NodeCertificateAuthenticationProvider>();

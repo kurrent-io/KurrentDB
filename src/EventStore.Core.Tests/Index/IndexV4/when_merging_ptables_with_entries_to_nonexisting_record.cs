@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using EventStore.Core.Tests.Index.IndexV1;
 using KurrentDB.Core.Index;
 using NUnit.Framework;
 
@@ -9,8 +10,7 @@ namespace EventStore.Core.Tests.Index.IndexV4;
 [TestFixture(PTableVersions.IndexV4, false)]
 [TestFixture(PTableVersions.IndexV4, true)]
 public class
-	when_merging_ptables_with_entries_to_nonexisting_record : IndexV1.
-		when_merging_ptables_with_entries_to_nonexisting_record_in_newer_index_versions {
+	when_merging_ptables_with_entries_to_nonexisting_record : when_merging_ptables_with_entries_to_nonexisting_record_in_newer_index_versions {
 	public when_merging_ptables_with_entries_to_nonexisting_record(byte version, bool skipIndexVerify) : base(
 		version, skipIndexVerify) {
 	}

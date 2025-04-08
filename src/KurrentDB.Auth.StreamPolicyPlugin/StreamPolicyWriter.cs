@@ -27,7 +27,7 @@ public class StreamPolicyWriter : IPolicyWriter {
 	public const string DefaultStreamPolicyEventId = "ff8b943c-60f5-49af-845c-ab7150be91d0";
 
 	public StreamPolicyWriter(
-		IPublisher bus, string policyStream, string policyEventType, Func<Schema.Policy, byte[]> serializePolicy) {
+		IPublisher bus, string policyStream, string policyEventType, Func<Policy, byte[]> serializePolicy) {
 		_bus = bus;
 		_policyStream = policyStream;
 		_policyEventType = policyEventType;

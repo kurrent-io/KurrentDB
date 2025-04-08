@@ -9,6 +9,7 @@ using EventStore.Core.Tests;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
@@ -45,7 +46,7 @@ public class when_prerecording_event_order<TLogFormat, TStreamId> : TestFixtureW
 		_manager.Initialize();
 		_checkpointReader.BeginLoadState();
 		var checkpointLoaded =
-			_consumer.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+			_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
 		_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
 		_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 

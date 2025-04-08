@@ -7,7 +7,7 @@ using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 namespace KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 
 public partial class HeadingEventReader {
-	private class CommittedEventItem : HeadingEventReader.Item {
+	private class CommittedEventItem : Item {
 		public readonly ReaderSubscriptionMessage.CommittedEventDistributed Message;
 
 		public CommittedEventItem(ReaderSubscriptionMessage.CommittedEventDistributed message)

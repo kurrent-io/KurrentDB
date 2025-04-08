@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Net;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Services.Transport.Http;
 

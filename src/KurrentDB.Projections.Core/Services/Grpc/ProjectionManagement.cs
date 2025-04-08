@@ -4,12 +4,12 @@
 using System;
 using System.Linq;
 using System.Text.Json;
-using KurrentDB.Core.Messaging;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Plugins.Authorization;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 
 
 // ReSharper disable CheckNamespace
@@ -22,7 +22,7 @@ namespace EventStore.Client.Projections {
 }
 
 namespace EventStore.Projections.Core.Services.Grpc {
-	internal partial class ProjectionManagement : EventStore.Client.Projections.Projections.ProjectionsBase {
+	internal partial class ProjectionManagement : Client.Projections.Projections.ProjectionsBase {
 		private readonly IPublisher _publisher;
 		private readonly IAuthorizationProvider _authorizationProvider;
 

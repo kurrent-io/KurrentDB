@@ -2,21 +2,22 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Net;
 using System.Threading;
+using EventStore.Cluster;
 using Grpc.Net.Client;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 using Serilog.Extensions.Logging;
+using EndPoint = System.Net.EndPoint;
 
 namespace EventStore.Core.Cluster;
 
 
 public partial class EventStoreClusterClient : IDisposable {
-	private readonly EventStore.Cluster.Gossip.GossipClient _gossipClient;
-	private readonly EventStore.Cluster.Elections.ElectionsClient _electionsClient;
+	private readonly Gossip.GossipClient _gossipClient;
+	private readonly Elections.ElectionsClient _electionsClient;
 
 	private readonly GrpcChannel _channel;
 	private readonly IPublisher _bus;
@@ -47,8 +48,8 @@ public partial class EventStoreClusterClient : IDisposable {
 			LoggerFactory = new SerilogLoggerFactory()
 		});
 		var callInvoker = _channel.CreateCallInvoker();
-		_gossipClient = new EventStore.Cluster.Gossip.GossipClient(callInvoker);
-		_electionsClient = new EventStore.Cluster.Elections.ElectionsClient(callInvoker);
+		_gossipClient = new Gossip.GossipClient(callInvoker);
+		_electionsClient = new Elections.ElectionsClient(callInvoker);
 		_bus = bus;
 		_gossipSendTracker = gossipSendTracker;
 		_gossipGetTracker = gossipGetTracker;

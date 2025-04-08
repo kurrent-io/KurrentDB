@@ -35,7 +35,7 @@ public class when_writing_and_deposed_as_leader : RequestManagerServiceSpecifica
 	private static MemberInfo FakeMemberInfo() {
 		var ipAddress = "127.0.0.1";
 		var port = 1113;
-		return EventStore.Core.Cluster.MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
+		return MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
 			VNodeState.Unknown, true,
 			new IPEndPoint(IPAddress.Parse(ipAddress), port),
 			new IPEndPoint(IPAddress.Parse(ipAddress), port),

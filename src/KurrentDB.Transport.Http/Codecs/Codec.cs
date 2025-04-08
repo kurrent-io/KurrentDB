@@ -36,13 +36,13 @@ public static class Codec {
 		new CustomCodec(Json, ContentType.LegacyEventsJson, Helper.UTF8NoBom, true, true);
 
 	public static readonly ICodec EventStoreXmlCodec =
-		Codec.CreateCustom(Codec.Xml, ContentType.Atom, Helper.UTF8NoBom, false, false);
+		CreateCustom(Xml, ContentType.Atom, Helper.UTF8NoBom, false, false);
 
 	public static readonly ICodec KurrentJsonCodec =
-		Codec.CreateCustom(Codec.Json, ContentType.AtomJson, Helper.UTF8NoBom, false, false);
+		CreateCustom(Json, ContentType.AtomJson, Helper.UTF8NoBom, false, false);
 
 	public static readonly ICodec LegacyEventStoreJsonCodec =
-		Codec.CreateCustom(Codec.Json, ContentType.LegacyAtomJson, Helper.UTF8NoBom, false, false);
+		CreateCustom(Json, ContentType.LegacyAtomJson, Helper.UTF8NoBom, false, false);
 
 	public static readonly CustomCodec DescriptionJson =
 		new CustomCodec(Json, ContentType.DescriptionDocJson, Helper.UTF8NoBom, true, true);

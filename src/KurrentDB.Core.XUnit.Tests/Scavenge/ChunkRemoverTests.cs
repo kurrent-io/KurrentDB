@@ -13,6 +13,7 @@ using KurrentDB.Core.TransactionLog.Scavenging.Data;
 using KurrentDB.Core.TransactionLog.Scavenging.InMemory;
 using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
 using KurrentDB.Core.TransactionLog.Scavenging.Stages;
+using Serilog;
 using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.Scavenge;
@@ -37,7 +38,7 @@ public class ChunkRemoverTests {
 		Func<long> readArchiveCheckpoint) {
 
 		var sut = new ChunkRemover<string, ILogRecord>(
-			logger: Serilog.Log.Logger,
+			logger: Log.Logger,
 			archiveCheckpoint: new AdvancingCheckpoint(_ => new(readArchiveCheckpoint())),
 			chunkManager: _chunkManager,
 			locatorCodec: new PrefixingLocatorCodec(),

@@ -4,13 +4,12 @@
 @page "/ui/logs"
 @rendermode InteractiveServer
 @attribute [Authorize]
+@inject LogObserver LogObserver
+@inherits KurrentDB.Components.Licensed.LicensedPage
 @using System.ComponentModel
 @using KurrentDB.Tools
 @using Microsoft.AspNetCore.Authorization
 @using Serilog.Events
-@using KurrentDB.Components.Licensed
-@inject LogObserver LogObserver
-@inherits LicensedPage
 @implements IDisposable
 
 <MudDataGrid @ref="_dataGrid" Items="@LogObserver.Items" Dense="@true" Filterable="true">

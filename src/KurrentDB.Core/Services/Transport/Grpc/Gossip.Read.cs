@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Gossip;
+using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
@@ -39,7 +40,7 @@ partial class Gossip {
 		}
 	}
 
-	private static ClusterInfo ToGrpcClusterInfo(Core.Cluster.ClientClusterInfo cluster) {
+	private static ClusterInfo ToGrpcClusterInfo(ClientClusterInfo cluster) {
 		var members = Array.ConvertAll(cluster.Members, x => new MemberInfo {
 			InstanceId = Uuid.FromGuid(x.InstanceId).ToDto(),
 			TimeStamp = x.TimeStamp.ToTicksSinceEpoch(),

@@ -7,10 +7,11 @@ using System.Threading;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_manager.multi_stream;
 
@@ -18,15 +19,15 @@ namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_m
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_starting_and_read_prerecorded_events_times_out<TLogFormat, TStreamId> : with_multi_stream_checkpoint_manager<TLogFormat, TStreamId>,
 	IHandle<TimerMessage.Schedule>,
-	IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {
+	IHandle<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {
 	private bool _hasTimedOut;
 	private Guid _timeoutCorrelationId;
 	private ManualResetEventSlim _mre = new ManualResetEventSlim();
-	private KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded _eventsLoadedMessage;
+	private CoreProjectionProcessingMessage.PrerecordedEventsLoaded _eventsLoadedMessage;
 
 	public override void When() {
 		_bus.Subscribe<TimerMessage.Schedule>(this);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(this);
+		_bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(this);
 
 		_checkpointManager.Initialize();
 		var positions = new Dictionary<string, long> { { "a", 1 }, { "b", 1 }, { "c", 1 } };
@@ -54,7 +55,7 @@ public class when_starting_and_read_prerecorded_events_times_out<TLogFormat, TSt
 		}
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 		_eventsLoadedMessage = message;
 		_mre.Set();
 	}

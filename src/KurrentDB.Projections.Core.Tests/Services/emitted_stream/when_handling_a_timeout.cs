@@ -6,6 +6,7 @@ using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
@@ -80,7 +81,7 @@ public class when_handling_a_timeout<TLogFormat, TStreamId> : TestFixtureWithExi
 		}
 
 		Assert.AreEqual(1,
-			_readyHandler.HandledFailedMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed>().Count(),
+			_readyHandler.HandledFailedMessages.OfType<CoreProjectionProcessingMessage.Failed>().Count(),
 			"Should fail the projection after exhausting all the write retries");
 	}
 }

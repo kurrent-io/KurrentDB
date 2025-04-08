@@ -100,7 +100,7 @@ public class MultiStreamMultiOutputCheckpointManagerTests {
 
 		// Publish completed message
 		var completeMessage = _publisher.Messages
-			.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>()
+			.OfType<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>()
 			.SingleOrDefault();
 		Assert.NotNull(completeMessage);
 	}

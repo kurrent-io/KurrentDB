@@ -30,7 +30,7 @@ public readonly record struct Position(ulong CommitPosition, ulong PreparePositi
 public readonly record struct FromAll(Position? Position) {
 	public static readonly FromAll Start = new(null);
 
-	public static readonly FromAll End = new(IO.Core.Position.End);
+	public static readonly FromAll End = new(Core.Position.End);
 
 	public static FromAll After(Position position) => new(position);
 }
@@ -81,35 +81,35 @@ public interface IClient {
 
 	class None : IClient {
 		public IAsyncEnumerable<Event> SubscribeToAll(FromAll start, CancellationToken cancellationToken) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
 		public IAsyncEnumerable<Event> SubscribeToStream(string stream, CancellationToken cancellationToken) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
 		public IAsyncEnumerable<Event> ReadStreamForwards(string stream, long maxCount, CancellationToken cancellationToken) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
 		public IAsyncEnumerable<Event> ReadStreamBackwards(string stream, long maxCount, CancellationToken cancellationToken) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
 		public IAsyncEnumerable<Event> ReadAllBackwardsAsync(Position position, long maxCount, CancellationToken cancellationToken) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
 		public Task DeleteStreamAsync(string stream, long expectedVersion, CancellationToken cancellationToken) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
 		public Task WriteMetaDataMaxCountAsync(string stream, CancellationToken cancellationToken) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 
 		public Task<long> WriteAsync(string stream, EventToWrite[] events, long expectedVersion, CancellationToken cancellationToken) {
-			throw new System.NotImplementedException();
+			throw new NotImplementedException();
 		}
 	}
 }

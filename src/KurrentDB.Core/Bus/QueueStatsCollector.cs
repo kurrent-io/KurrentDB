@@ -4,8 +4,8 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Monitoring.Stats;
 
 namespace KurrentDB.Core.Bus;

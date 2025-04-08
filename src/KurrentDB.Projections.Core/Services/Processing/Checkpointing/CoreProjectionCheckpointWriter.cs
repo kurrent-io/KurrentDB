@@ -38,7 +38,7 @@ public class CoreProjectionCheckpointWriter {
 		string projectionCheckpointStreamId, IODispatcher ioDispatcher, ProjectionVersion projectionVersion,
 		string name) {
 		_projectionCheckpointStreamId = projectionCheckpointStreamId;
-		_logger = Serilog.Log.ForContext<CoreProjectionCheckpointWriter>();
+		_logger = Log.ForContext<CoreProjectionCheckpointWriter>();
 		_ioDispatcher = ioDispatcher;
 		_projectionVersion = projectionVersion;
 		_name = name;
@@ -81,7 +81,7 @@ public class CoreProjectionCheckpointWriter {
 
 			switch (operationResult) {
 				case OperationResult.WrongExpectedVersion:
-					_envelope.ReplyWith(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed(Guid.Empty,
+					_envelope.ReplyWith(new CoreProjectionProcessingMessage.Failed(Guid.Empty,
 						$"Checkpoint stream `{eventStreamId}` has been written to from the outside"
 					));
 					break;
@@ -90,7 +90,7 @@ public class CoreProjectionCheckpointWriter {
 				case OperationResult.CommitTimeout:
 					if (_inCheckpointWriteAttempt >= MaxNumberOfRetries) {
 						//The first parameter is not needed in this case as the CoreProjectionCheckpointManager takes care of filling in the projection id when it reconstructs the message
-						_envelope.ReplyWith(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed(Guid.Empty,
+						_envelope.ReplyWith(new CoreProjectionProcessingMessage.Failed(Guid.Empty,
 							string.Format(
 								"After retrying {0} times, we failed to write the checkpoint for {1} to {2} due to a {3}",
 								MaxNumberOfRetries, _name, eventStreamId,

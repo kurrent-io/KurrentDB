@@ -9,11 +9,11 @@ using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Settings;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Services.Processing.EventByType;
 
@@ -340,7 +340,7 @@ public partial class EventByTypeIndexEventReader {
 
 			var readEventsForward = new ClientMessage.ReadStreamEventsForward(
 				corrId, corrId, new SendToThisEnvelope(this), stream,
-				_reader._fromPositions[stream], EventByTypeIndexEventReader.MaxReadCount, _reader._resolveLinkTos,
+				_reader._fromPositions[stream], MaxReadCount, _reader._resolveLinkTos,
 				false, null,
 				_readAs,
 				replyOnExpired: false);

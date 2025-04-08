@@ -2,11 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Tests.Infrastructure;
 
@@ -44,7 +45,7 @@ public class RandomTestRunner {
 	}
 
 	public void Enqueue(EndPoint endPoint, Message message, IPublisher bus, int timeDelay = 1) {
-		System.Diagnostics.Debug.Assert(timeDelay >= 1);
+		Debug.Assert(timeDelay >= 1);
 		_queue.Add(new RandTestQueueItem(_curLogicalTime + timeDelay, _globalMsgId++, endPoint, message, bus));
 	}
 

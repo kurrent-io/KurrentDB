@@ -72,11 +72,11 @@ public abstract class TestFixtureWithCoreProjectionCheckpointManager<TLogFormat,
 		_projectionCheckpointStreamId = "$projections-projection-checkpoint";
 		_projectionCorrelationId = Guid.NewGuid();
 		_projection = new FakeCoreProjection();
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted>(_projection);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>(_projection);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(_projection);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested>(_projection);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed>(_projection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.CheckpointCompleted>(_projection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.CheckpointLoaded>(_projection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(_projection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.RestartRequested>(_projection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.Failed>(_projection);
 		_bus.Subscribe<EventReaderSubscriptionMessage.ReaderAssignedReader>(_projection);
 
 		_bus.Subscribe(_subscriptionDispatcher

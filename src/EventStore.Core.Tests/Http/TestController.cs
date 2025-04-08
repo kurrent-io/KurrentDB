@@ -3,6 +3,7 @@
 
 using System;
 using System.Security.Claims;
+using System.Threading;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
@@ -82,7 +83,7 @@ public class TestController : CommunicationController {
 
 	private void TestTimeoutHandler(HttpEntityManager http, UriTemplateMatch match) {
 		var sleepFor = int.Parse(match.BoundVariables["sleepfor"]);
-		System.Threading.Thread.Sleep(sleepFor);
+		Thread.Sleep(sleepFor);
 		http.Reply("OK", 200, "OK", "text/plain");
 	}
 }

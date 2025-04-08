@@ -11,10 +11,10 @@ using EventStore.Core.Tests.Helpers;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.PersistentSubscription;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
-using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;
 

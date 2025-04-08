@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 using EventStore.Client.Users;
 using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
-using KurrentDB.Core.Messaging;
 using Grpc.Core;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 

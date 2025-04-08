@@ -16,6 +16,7 @@ using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Core.Util;
 using NUnit.Framework;
+using Serilog;
 
 namespace EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 
@@ -93,7 +94,7 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 		await readIndex.IndexCommitter.Init(_dbResult.Db.Config.WriterCheckpoint.Read(), CancellationToken.None);
 		ReadIndex = readIndex;
 
-		var scavenger = new TFChunkScavenger<TStreamId>(Serilog.Log.Logger, _dbResult.Db, new FakeTFScavengerLog(), tableIndex, ReadIndex,
+		var scavenger = new TFChunkScavenger<TStreamId>(Log.Logger, _dbResult.Db, new FakeTFScavengerLog(), tableIndex, ReadIndex,
 			_logFormat.Metastreams,
 			unsafeIgnoreHardDeletes: UnsafeIgnoreHardDelete());
 		await scavenger.Scavenge(alwaysKeepScavenged: true, mergeChunks: false);

@@ -4,6 +4,7 @@
 // ReSharper disable CheckNamespace
 
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using Serilog;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
@@ -14,7 +15,7 @@ public static class WindowsProcessUtil {
 	[StructLayout(LayoutKind.Sequential)]
 	struct RM_UNIQUE_PROCESS {
 		public int dwProcessId;
-		public System.Runtime.InteropServices.ComTypes.FILETIME ProcessStartTime;
+		public FILETIME ProcessStartTime;
 	}
 
 	const int RmRebootReasonNone = 0;

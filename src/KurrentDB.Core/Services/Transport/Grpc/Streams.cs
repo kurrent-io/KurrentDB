@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using EventStore.Client.Streams;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core;
@@ -11,7 +12,7 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
-internal partial class Streams<TStreamId> : EventStore.Client.Streams.Streams.StreamsBase {
+internal partial class Streams<TStreamId> : Streams.StreamsBase {
 	private readonly IPublisher _publisher;
 	private readonly int _maxAppendSize;
 	private readonly int _maxAppendEventSize;

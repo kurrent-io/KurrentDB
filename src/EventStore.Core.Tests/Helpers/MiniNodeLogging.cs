@@ -27,7 +27,7 @@ public static class MiniNodeLogging {
 		"MiniNode: [{ProcessId,5},{ThreadId,2},{Timestamp:HH:mm:ss.fff},{Level:u3}] {Message}{NewLine}{Exception}";
 
 	public static void Setup() {
-		Serilog.Log.Logger = _logger;
+		Log.Logger = _logger;
 	}
 
 	public static void WriteLogs() {
@@ -48,7 +48,7 @@ public static class MiniNodeLogging {
 	}
 
 	public static void Clear() {
-		Serilog.Log.Logger = Logger.None;
+		Log.Logger = Logger.None;
 		InMemorySink.Instance.Dispose();
 	}
 }

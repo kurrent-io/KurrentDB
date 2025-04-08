@@ -4,8 +4,8 @@
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
 using KurrentDB.Core.Services.TimerService;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 

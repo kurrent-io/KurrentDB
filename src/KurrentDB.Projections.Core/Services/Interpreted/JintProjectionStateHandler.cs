@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using Jint;
 using Jint.Native;
@@ -1020,7 +1021,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 				new JsonWriterOptions {
 					Indented = false,
 					SkipValidation = true,
-					Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+					Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 				});
 			_knownPropertyNames = new Dictionary<string, JsonEncodedText>();
 		}

@@ -12,7 +12,7 @@ namespace KurrentDB.Projections.Core.Services.Processing.Phases;
 public interface IProjectionProcessingPhase : IDisposable,
 	IHandle<CoreProjectionManagementMessage.GetState>,
 	IHandle<CoreProjectionManagementMessage.GetResult>,
-	IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {
+	IHandle<CoreProjectionProcessingMessage.PrerecordedEventsLoaded> {
 	CheckpointTag AdjustTag(CheckpointTag tag);
 
 	void InitializeFromCheckpoint(CheckpointTag checkpointTag);

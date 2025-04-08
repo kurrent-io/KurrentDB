@@ -8,6 +8,7 @@ using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Settings;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -15,7 +16,6 @@ using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using KurrentDB.Projections.Core.Tests.Services.event_reader.heading_event_reader;
 using NUnit.Framework;
 using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader;
 

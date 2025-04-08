@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
@@ -20,7 +21,7 @@ partial class KeygenSimulator {
 
 		var s = await request.Content!.ReadAsStringAsync();
 		var r = JsonSerializer.Deserialize<Models.ValidateLicenseRequest>(s, _serializerOptions)
-			?? throw new System.Exception("Could not deserialize request");
+			?? throw new Exception("Could not deserialize request");
 
 		Assert.Equal("the-key", r.Meta.Key);
 		Assert.Equal(_fingerprint, r.Meta.Scope.Fingerprint);

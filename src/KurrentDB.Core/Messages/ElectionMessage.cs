@@ -4,8 +4,8 @@
 using System;
 using System.Net;
 using EventStore.Core.Cluster;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Messages;
 

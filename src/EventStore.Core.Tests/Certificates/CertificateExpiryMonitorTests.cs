@@ -8,8 +8,8 @@ using System.Security.Cryptography.X509Certificates;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Fakes;
 using KurrentDB.Core.Certificates;
-using NUnit.Framework;
 using KurrentDB.Core.Services.TimerService;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Certificates;
 

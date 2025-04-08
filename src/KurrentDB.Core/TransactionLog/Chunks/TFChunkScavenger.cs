@@ -559,7 +559,7 @@ public class TFChunkScavenger<TStreamId> : TFChunkScavenger {
 			} else {
 				logger.Error("Failed to delete the temp chunk. Retry limit of {maxRetryCount} reached. Reason: {e}",
 					MaxRetryCount, ex);
-				if (ex is System.IO.IOException)
+				if (ex is IOException)
 					WindowsProcessUtil.PrintWhoIsLocking(tmpChunkPath, logger);
 				throw;
 			}

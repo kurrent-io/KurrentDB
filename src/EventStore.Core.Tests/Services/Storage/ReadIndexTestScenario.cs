@@ -8,7 +8,6 @@ using EventStore.Core.LogAbstraction;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
-using KurrentDB.LogCommon;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.DataStructures;
@@ -22,7 +21,9 @@ using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Core.Util;
+using KurrentDB.LogCommon;
 using NUnit.Framework;
+using Serilog;
 
 namespace EventStore.Core.Tests.Services.Storage;
 
@@ -155,7 +156,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 			if (_completeLastChunkOnScavenge)
 				await (await Db.Manager.GetInitializedChunk(Db.Manager.ChunksCount - 1, CancellationToken.None))
 					.Complete(CancellationToken.None);
-			_scavenger = new TFChunkScavenger<TStreamId>(Serilog.Log.Logger, Db, new FakeTFScavengerLog(), TableIndex,
+			_scavenger = new TFChunkScavenger<TStreamId>(Log.Logger, Db, new FakeTFScavengerLog(), TableIndex,
 				ReadIndex, _logFormat.Metastreams);
 			await _scavenger.Scavenge(alwaysKeepScavenged: true, mergeChunks: _mergeChunks,
 				scavengeIndex: _scavengeIndex);

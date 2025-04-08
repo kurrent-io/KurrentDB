@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Cluster;
-using KurrentDB.Core.Messaging;
 using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using EndPoint = System.Net.EndPoint;
@@ -470,9 +470,9 @@ public static partial class ReplicationMessage {
 
 	[DerivedMessage(CoreMessage.Replication)]
 	public partial class GetReplicationStatsCompleted : Message {
-		public List<ReplicationMessage.ReplicationStats> ReplicationStats;
+		public List<ReplicationStats> ReplicationStats;
 
-		public GetReplicationStatsCompleted(List<ReplicationMessage.ReplicationStats> replicationStats) {
+		public GetReplicationStatsCompleted(List<ReplicationStats> replicationStats) {
 			ReplicationStats = replicationStats;
 		}
 	}

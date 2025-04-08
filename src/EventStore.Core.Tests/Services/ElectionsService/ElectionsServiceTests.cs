@@ -12,9 +12,9 @@ using FluentAssertions;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
-using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 

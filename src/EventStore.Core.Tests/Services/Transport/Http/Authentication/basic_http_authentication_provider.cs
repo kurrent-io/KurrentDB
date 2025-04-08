@@ -2,15 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.Authentication;
 using EventStore.Plugins.Authentication;
 using KurrentDB.Core.Services.Transport.Http.Authentication;
 using KurrentDB.Core.Tests.Authentication;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Primitives;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {

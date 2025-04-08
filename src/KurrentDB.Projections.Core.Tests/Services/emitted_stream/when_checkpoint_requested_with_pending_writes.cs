@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
@@ -50,7 +51,7 @@ public class when_checkpoint_requested_with_pending_writes<TLogFormat, TStreamId
 	[Test]
 	public void does_not_publish_ready_for_checkpoint_immediately() {
 		Assert.AreEqual(
-			0, _consumer.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+			0, _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 
 	[Test]
@@ -58,6 +59,6 @@ public class when_checkpoint_requested_with_pending_writes<TLogFormat, TStreamId
 		var msg = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().First();
 		_bus.Publish(new ClientMessage.WriteEventsCompleted(msg.CorrelationId, 0, 0, -1, -1));
 		Assert.AreEqual(
-			1, _readyHandler.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+			1, _readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 }

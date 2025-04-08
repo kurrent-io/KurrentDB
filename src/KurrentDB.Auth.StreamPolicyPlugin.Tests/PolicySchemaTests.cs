@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Json;
+using KurrentDB.Auth.StreamPolicyPlugin.Schema;
 using Xunit;
 
 namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;
@@ -15,21 +16,21 @@ public class PolicySchemaTests {
 	[MemberData(nameof(InvalidPolicies))]
 	public void when_deserializing_invalid_policies(string data) {
 		Assert.Throws<ArgumentNullException>(() =>
-			JsonSerializer.Deserialize<Schema.Policy>(data, SerializeOptions));
+			JsonSerializer.Deserialize<Policy>(data, SerializeOptions));
 	}
 
 	[Theory]
 	[MemberData(nameof(InvalidStreamRules))]
 	public void when_deserializing_invalid_stream_rules(string data) {
 		Assert.Throws<ArgumentNullException>(() =>
-			JsonSerializer.Deserialize<Schema.StreamRule>(data, SerializeOptions));
+			JsonSerializer.Deserialize<StreamRule>(data, SerializeOptions));
 	}
 
 	[Theory]
 	[MemberData(nameof(InvalidDefaultStreamRules))]
 	public void when_deserializing_invalid_default_stream_rules(string data) {
 		Assert.Throws<ArgumentNullException>(() =>
-			JsonSerializer.Deserialize<Schema.DefaultStreamRules>(data, SerializeOptions));
+			JsonSerializer.Deserialize<DefaultStreamRules>(data, SerializeOptions));
 	}
 
 	[Theory]

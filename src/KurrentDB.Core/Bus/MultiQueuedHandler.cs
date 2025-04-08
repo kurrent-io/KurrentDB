@@ -5,8 +5,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Messages;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Bus;
 

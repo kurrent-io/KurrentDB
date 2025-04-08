@@ -12,6 +12,7 @@ using KurrentDB.Core.TransactionLog.Scavenging;
 using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
 using KurrentDB.Core.TransactionLog.Scavenging.Sqlite;
 using Microsoft.Data.Sqlite;
+using Serilog;
 
 namespace KurrentDB.Core.XUnit.Tests.Scavenge.Infrastructure;
 
@@ -81,7 +82,7 @@ public class ScavengeStateBuilder<TStreamId> {
 			maxCount: TFChunkScavenger.MaxThreadCount + 1,
 			factory: () => {
 				var connection = _connectionPool.Get();
-				var sqlite = new SqliteScavengeBackend<TStreamId>(Serilog.Log.Logger);
+				var sqlite = new SqliteScavengeBackend<TStreamId>(Log.Logger);
 				sqlite.Initialize(connection);
 
 				var backend = new AdHocScavengeBackendInterceptor<TStreamId>(sqlite);
@@ -117,7 +118,7 @@ public class ScavengeStateBuilder<TStreamId> {
 			dispose: backend => _connectionPool.Return(map[backend]));
 
 		var scavengeState = new ScavengeState<TStreamId>(
-			Serilog.Log.Logger,
+			Log.Logger,
 			_hasher,
 			_metastreamLookup,
 			backendPool,

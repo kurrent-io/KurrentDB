@@ -22,7 +22,7 @@ using Serilog;
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting;
 
 public partial class EmittedStream : IDisposable,
-	IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted> {
+	IHandle<CoreProjectionProcessingMessage.EmittedStreamWriteCompleted> {
 	private readonly IODispatcher _ioDispatcher;
 	private readonly IPublisher _publisher;
 
@@ -202,11 +202,11 @@ public partial class EmittedStream : IDisposable,
 	}
 
 	private void RequestRestart(string reason) {
-		_readyHandler.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested(Guid.Empty, reason));
+		_readyHandler.Handle(new CoreProjectionProcessingMessage.RestartRequested(Guid.Empty, reason));
 	}
 
 	private void Failed(string reason) {
-		_readyHandler.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed(Guid.Empty, reason));
+		_readyHandler.Handle(new CoreProjectionProcessingMessage.Failed(Guid.Empty, reason));
 	}
 
 	private void ReadStreamEventsBackwardCompleted(ClientMessage.ReadStreamEventsBackwardCompleted message,
@@ -454,7 +454,7 @@ public partial class EmittedStream : IDisposable,
 			var e = _pendingWrites.Peek();
 			if (!e.IsReady()) {
 				_readyHandler.Handle(
-					new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamAwaiting(
+					new CoreProjectionProcessingMessage.EmittedStreamAwaiting(
 						_streamId, new SendToThisEnvelope(this)));
 				_awaitingReady = true;
 				break;
@@ -584,14 +584,14 @@ public partial class EmittedStream : IDisposable,
 	}
 
 	private void NotifyWriteCompleted() {
-		_readyHandler.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted(_streamId));
+		_readyHandler.Handle(new CoreProjectionProcessingMessage.EmittedStreamWriteCompleted(_streamId));
 	}
 
 	private void ProcessRequestedCheckpoint() {
 		if (_checkpointRequested && !_awaitingWriteCompleted && !_awaitingMetadataWriteCompleted
 			&& _pendingWrites.Count == 0) {
 			EnsureCheckpointsEnabled();
-			_readyHandler.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint(this));
+			_readyHandler.Handle(new CoreProjectionProcessingMessage.ReadyForCheckpoint(this));
 		}
 	}
 
@@ -724,7 +724,7 @@ public partial class EmittedStream : IDisposable,
 		_disposed = true;
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted message) {
+	public void Handle(CoreProjectionProcessingMessage.EmittedStreamWriteCompleted message) {
 		if (!_awaitingReady)
 			throw new InvalidOperationException("AwaitingReady state required");
 		ProcessWrites();

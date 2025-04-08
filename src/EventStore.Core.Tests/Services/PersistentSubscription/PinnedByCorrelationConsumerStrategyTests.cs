@@ -1,18 +1,16 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
+using System.Text;
+using EventStore.Core.Tests.Services.Replication;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.PersistentSubscription;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;
-
-using System;
-using System.Text;
-using Core.Services;
-using NUnit.Framework;
-using Replication;
 
 [TestFixture]
 public class PinnedByCorrelationConsumerStrategyTests {

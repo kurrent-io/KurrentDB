@@ -4,6 +4,7 @@
 #pragma warning disable CS8601 // Possible null reference assignment.
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
@@ -29,7 +30,6 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Serilog;
 
-#nullable enable
 namespace KurrentDB.Auth.OAuth;
 
 [Export(typeof(IAuthenticationPlugin))]

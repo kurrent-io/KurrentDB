@@ -13,7 +13,7 @@ using KurrentDB.Core.Messaging;
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Redaction {
-	private static readonly Operation SwitchChunkOperation = new(EventStore.Plugins.Authorization.Operations.Node.Redaction.SwitchChunk);
+	private static readonly Operation SwitchChunkOperation = new(Plugins.Authorization.Operations.Node.Redaction.SwitchChunk);
 
 	public override async Task SwitchChunks(
 		IAsyncStreamReader<SwitchChunkReq> requestStream,

@@ -6,10 +6,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using EventStore.Client.Gossip;
+using EventStore.Client.Operations;
+using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.ServerFeatures;
+using EventStore.Client.Streams;
+using EventStore.Client.Users;
 using EventStore.Core.Tests.Integration;
 using Google.Protobuf.Reflection;
 using Grpc.Net.Client;
+using Kurrent.Client.Redaction;
 using KurrentDB.Common.Utils;
 using NUnit.Framework;
 using Empty = EventStore.Client.Empty;
@@ -28,7 +34,7 @@ public class ServerFeaturesTest {
 		private string _serverVersion;
 
 		protected override async Task Given() {
-			var streamEndPoints = GetEndPoints(Client.Streams.Streams.Descriptor);
+			var streamEndPoints = GetEndPoints(Streams.Descriptor);
 			foreach (var ep in streamEndPoints) {
 				if (ep.MethodName.Contains("read"))
 					ep.Features.AddRange(new[] { "position", "events" });
@@ -36,18 +42,18 @@ public class ServerFeaturesTest {
 					ep.Features.Add("deadline_duration");
 			}
 
-			var psubEndPoints = GetEndPoints(Client.PersistentSubscriptions.PersistentSubscriptions.Descriptor);
+			var psubEndPoints = GetEndPoints(PersistentSubscriptions.Descriptor);
 			foreach (var ep in psubEndPoints) {
 				ep.Features.AddRange(new[] { "stream", "all" });
 			}
 
 			_expectedEndPoints.AddRange(streamEndPoints);
 			_expectedEndPoints.AddRange(psubEndPoints);
-			_expectedEndPoints.AddRange(GetEndPoints(Client.Operations.Operations.Descriptor));
-			_expectedEndPoints.AddRange(GetEndPoints(Client.Users.Users.Descriptor));
-			_expectedEndPoints.AddRange(GetEndPoints(Client.Gossip.Gossip.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(Operations.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(Users.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(Gossip.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(Client.Monitoring.Monitoring.Descriptor));
-			_expectedEndPoints.AddRange(GetEndPoints(Kurrent.Client.Redaction.Redaction.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(Redaction.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(ServerFeatures.Descriptor));
 
 			var versionParts = VersionInfo.Version.Split('.');

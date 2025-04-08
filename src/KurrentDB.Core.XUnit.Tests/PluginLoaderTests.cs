@@ -5,7 +5,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using EventStore.Core.XUnit.Tests;
 using KurrentDB.Core.XUnit.Tests;
 using Xunit;
 

@@ -11,9 +11,9 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.TimerService;
 using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Core.Helpers;
 

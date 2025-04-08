@@ -3,11 +3,11 @@
 
 using System;
 using System.Collections.Concurrent;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Settings;
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Services;
 

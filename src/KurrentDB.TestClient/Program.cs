@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+#nullable enable
 using System;
 using System.IO;
 using System.Threading;
@@ -13,8 +14,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Core;
 
-#nullable enable
 namespace KurrentDB.TestClient;
 
 internal enum StatsFormat {
@@ -55,7 +56,7 @@ internal static class Program {
 				1024 * 1024 * 1024, RollingInterval.Day, 31, false);
 			var statsLog = statsFormat == StatsFormat.Csv
 				? TestClientCsvLoggerConfiguration.Initialize(logsDirectory, "client")
-				: Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "REGULAR-STATS-LOGGER");
+				: Log.ForContext(Constants.SourceContextPropertyName, "REGULAR-STATS-LOGGER");
 
 			var options = new ClientOptions {
 				Timeout = timeout,

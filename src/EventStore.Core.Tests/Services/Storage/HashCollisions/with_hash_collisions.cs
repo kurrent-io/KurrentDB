@@ -76,7 +76,7 @@ public class HashCollisionTestFixture : SpecificationWithDirectoryPerTestFixture
 
 		when();
 		//wait for the mem table to be dumped
-		System.Threading.Thread.Sleep(500);
+		Thread.Sleep(500);
 	}
 
 	public override Task TestFixtureTearDown() {
@@ -313,7 +313,7 @@ public class
 		_tableIndex.Add(1, streamId, 0, 2);
 		_tableIndex.Add(1, streamId, 1, 4);
 		_tableIndex.Add(1, streamId, 2, 6);
-		System.Threading.Thread.Sleep(500);
+		Thread.Sleep(500);
 		_tableIndex.Close(false);
 		_tableIndex = new TableIndex<string>(_indexDir, _lowHasher, _highHasher, "",
 			() => new HashListMemTable(PTableVersions.IndexV2, maxSize: _maxMemTableSize),

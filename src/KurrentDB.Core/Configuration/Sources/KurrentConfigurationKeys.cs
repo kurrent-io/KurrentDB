@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using EventStore.Core;
 using Microsoft.Extensions.Configuration;
 using static System.String;
 using static System.StringComparison;

@@ -5,8 +5,8 @@ using System;
 using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
-using KurrentDB.Core.Services.VNode;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Services.VNode;
 
 namespace KurrentDB.Core.Services;
 

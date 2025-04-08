@@ -14,12 +14,13 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Services.UserManagement;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Authentication.InternalAuthentication;
 
 public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandle<InternalAuthenticationProviderMessages.ResetPasswordCache> {
-	static readonly ILogger Logger = Serilog.Log.ForContext<InternalAuthenticationProvider>();
+	static readonly ILogger Logger = Log.ForContext<InternalAuthenticationProvider>();
 
 	readonly IODispatcher _ioDispatcher;
 	readonly bool _logFailedAuthenticationAttempts;

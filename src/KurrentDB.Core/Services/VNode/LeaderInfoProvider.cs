@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Net;
+using EventStore.Core.Cluster;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using EndPoint = System.Net.EndPoint;
@@ -11,9 +12,9 @@ namespace KurrentDB.Core.Services.VNode;
 
 public class LeaderInfoProvider {
 	private readonly GossipAdvertiseInfo _gossipInfo;
-	private readonly EventStore.Core.Cluster.MemberInfo _leaderInfo;
+	private readonly MemberInfo _leaderInfo;
 
-	public LeaderInfoProvider(GossipAdvertiseInfo gossipInfo, EventStore.Core.Cluster.MemberInfo leaderInfo) {
+	public LeaderInfoProvider(GossipAdvertiseInfo gossipInfo, MemberInfo leaderInfo) {
 		Ensure.NotNull(gossipInfo, "gossipInfo");
 
 		_gossipInfo = gossipInfo;

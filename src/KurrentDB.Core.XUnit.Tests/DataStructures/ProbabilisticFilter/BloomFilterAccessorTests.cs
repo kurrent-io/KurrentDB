@@ -3,6 +3,7 @@
 
 using System;
 using KurrentDB.Core.DataStructures.ProbabilisticFilter;
+using Serilog;
 using Xunit;
 
 #pragma warning disable xUnit1026 // Theory methods should use all of their parameters
@@ -16,7 +17,7 @@ public unsafe class BloomFilterAccessorTests {
 			hashSize: BloomFilterIntegrity.HashSize,
 			pageSize: BloomFilterIntegrity.PageSize,
 			onPageDirty: onPageDirty ?? (pageNumber => { }),
-			log: Serilog.Log.Logger);
+			log: Log.Logger);
 	}
 
 	[Fact]

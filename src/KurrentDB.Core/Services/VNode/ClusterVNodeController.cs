@@ -14,11 +14,11 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog.Chunks;
 using ILogger = Serilog.ILogger;
 using OperationResult = EventStore.Core.Messages.OperationResult;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Core.Services.VNode;
 

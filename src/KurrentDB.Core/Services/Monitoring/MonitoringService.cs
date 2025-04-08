@@ -18,6 +18,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Monitoring.Stats;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Transport.Tcp;
+using Serilog.Core;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services.Monitoring;
@@ -37,7 +38,7 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 	IHandle<ClientMessage.WriteEventsCompleted>,
 	IAsyncHandle<MonitoringMessage.GetFreshStats>,
 	IHandle<MonitoringMessage.GetFreshTcpConnectionStats> {
-	private static readonly ILogger RegularLog = Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "REGULAR-STATS-LOGGER");
+	private static readonly ILogger RegularLog = Serilog.Log.ForContext(Constants.SourceContextPropertyName, "REGULAR-STATS-LOGGER");
 	private static readonly ILogger Log = Serilog.Log.ForContext<MonitoringService>();
 
 	private static readonly string StreamMetadata = $"{{\"$maxAge\":{(int)TimeSpan.FromDays(10).TotalSeconds}}}";

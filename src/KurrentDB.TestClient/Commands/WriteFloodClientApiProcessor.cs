@@ -3,12 +3,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using EventStore.ClientAPI;
 using KurrentDB.Common.Utils;
 using ExpectedVersion = KurrentDB.Core.Data.ExpectedVersion;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace KurrentDB.TestClient.Commands;
 

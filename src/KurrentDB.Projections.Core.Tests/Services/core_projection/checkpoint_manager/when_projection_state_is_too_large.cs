@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using EventStore.Core.Tests;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Partitioning;
@@ -29,7 +30,7 @@ public class when_projection_state_is_too_large<TLogFormat, TStreamId> :
 		try {
 			_checkpointReader.BeginLoadState();
 			var checkpointLoaded =
-				_consumer.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
 			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
@@ -64,7 +65,7 @@ public class when_projection_state_is_too_large<TLogFormat, TStreamId> :
 
 	[Test]
 	public void publishes_projection_failed_message() {
-		var failedMessages = _consumer.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed>().ToArray();
+		var failedMessages = _consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.Failed>().ToArray();
 		Assert.AreEqual(1, failedMessages.Length);
 		Assert.True(failedMessages[0].Reason.Contains("exceeds the configured MaxProjectionStateSize"));
 	}

@@ -5,10 +5,10 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.Messages;

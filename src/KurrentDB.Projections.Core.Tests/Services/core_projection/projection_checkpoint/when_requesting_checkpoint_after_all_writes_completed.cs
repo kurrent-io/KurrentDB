@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
@@ -59,6 +60,6 @@ public class when_requesting_checkpoint_after_all_writes_completed<TLogFormat, T
 	[Test]
 	public void ready_for_checkpoint_immediately() {
 		Assert.AreEqual(
-			1, _readyHandler.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
+			1, _readyHandler.HandledMessages.OfType<CoreProjectionProcessingMessage.ReadyForCheckpoint>().Count());
 	}
 }

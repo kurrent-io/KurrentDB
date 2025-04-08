@@ -13,12 +13,13 @@ using KurrentDB.Transport.Http.Codecs;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Serilog;
+using Serilog.Core;
 using Formatting = Newtonsoft.Json.Formatting;
 
 namespace KurrentDB.Core.Services.Transport.Http;
 
 public static class AutoEventConverter {
-	private static readonly ILogger Log = Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "AutoEventConverter");
+	private static readonly ILogger Log = Serilog.Log.ForContext(Constants.SourceContextPropertyName, "AutoEventConverter");
 
 	public static object SmartFormat(ResolvedEvent evnt, ICodec targetCodec) {
 		var dto = CreateDataDto(evnt);

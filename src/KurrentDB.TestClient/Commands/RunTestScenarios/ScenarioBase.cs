@@ -14,6 +14,7 @@ using EventStore.ClientAPI;
 using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.SystemData;
 using KurrentDB.Core.Services;
+using Serilog.Core;
 using ConsoleLogger = EventStore.ClientAPI.Common.Log.ConsoleLogger;
 using ILogger = Serilog.ILogger;
 using TcpCommand = EventStore.Core.Services.Transport.Tcp.TcpCommand;
@@ -25,7 +26,7 @@ internal abstract class ScenarioBase : IScenario {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<ScenarioBase>();
 
 	protected static readonly EventStore.ClientAPI.ILogger ApiLogger =
-		new ClientApiLoggerBridge(Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName,
+		new ClientApiLoggerBridge(Serilog.Log.ForContext(Constants.SourceContextPropertyName,
 			"client-api"));
 
 	protected readonly UserCredentials AdminCredentials =
@@ -296,7 +297,7 @@ internal abstract class ScenarioBase : IScenario {
 	private int StartNewNode() {
 		var clientFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 		//../../KurrentDB/net471/KurrentDB.exe
-		var clusterNodeFolder = System.IO.Directory.GetParent(System.IO.Directory.GetParent(clientFolder).FullName)
+		var clusterNodeFolder = Directory.GetParent(Directory.GetParent(clientFolder).FullName)
 								+ "/KurrentDB/net471/";
 		string fileName;
 		string argumentsHead;

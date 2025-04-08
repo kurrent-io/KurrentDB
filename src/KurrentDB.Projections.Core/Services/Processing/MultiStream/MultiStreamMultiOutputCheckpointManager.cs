@@ -218,13 +218,13 @@ public partial class MultiStreamMultiOutputCheckpointManager : DefaultCheckpoint
 		CheckAllEventsLoaded();
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamAwaiting message) {
+	public void Handle(CoreProjectionProcessingMessage.EmittedStreamAwaiting message) {
 		if (_stopped)
 			return;
 		throw new NotImplementedException();
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted message) {
+	public void Handle(CoreProjectionProcessingMessage.EmittedStreamWriteCompleted message) {
 		if (_stopped)
 			return;
 	}

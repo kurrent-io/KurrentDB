@@ -30,8 +30,8 @@ public class append_to_stream_with_event_numbers_greater_than_2_billion<TLogForm
 	public override async Task Given() {
 		_store = BuildConnection(Node);
 		await _store.ConnectAsync();
-		await _store.SetStreamMetadataAsync(StreamName, EventStore.ClientAPI.ExpectedVersion.Any,
-			EventStore.ClientAPI.StreamMetadata.Create(truncateBefore: intMaxValue + 1));
+		await _store.SetStreamMetadataAsync(StreamName, ExpectedVersion.Any,
+			StreamMetadata.Create(truncateBefore: intMaxValue + 1));
 	}
 
 	[Test]

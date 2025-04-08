@@ -29,11 +29,11 @@ public class ProjectionCoreService
 		IHandle<CoreProjectionManagementMessage.Kill>,
 		IHandle<CoreProjectionManagementMessage.GetState>,
 		IHandle<CoreProjectionManagementMessage.GetResult>,
-		IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted>,
-		IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>,
-		IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>,
-		IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested>,
-		IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed>,
+		IHandle<CoreProjectionProcessingMessage.CheckpointCompleted>,
+		IHandle<CoreProjectionProcessingMessage.CheckpointLoaded>,
+		IHandle<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>,
+		IHandle<CoreProjectionProcessingMessage.RestartRequested>,
+		IHandle<CoreProjectionProcessingMessage.Failed>,
 		IHandle<ProjectionCoreServiceMessage.StopCoreTimeout>,
 		IHandle<CoreProjectionStatusMessage.Suspended> {
 	public const string SubComponentName = "ProjectionCoreService";
@@ -268,31 +268,31 @@ public class ProjectionCoreService
 			projection.Handle(message);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted message) {
+	public void Handle(CoreProjectionProcessingMessage.CheckpointCompleted message) {
 		CoreProjection projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded message) {
+	public void Handle(CoreProjectionProcessingMessage.CheckpointLoaded message) {
 		CoreProjection projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 		CoreProjection projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested message) {
+	public void Handle(CoreProjectionProcessingMessage.RestartRequested message) {
 		CoreProjection projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed message) {
+	public void Handle(CoreProjectionProcessingMessage.Failed message) {
 		CoreProjection projection;
 		if (_projections.TryGetValue(message.ProjectionId, out projection))
 			projection.Handle(message);

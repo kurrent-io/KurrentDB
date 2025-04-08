@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
-using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.RequestManager.Managers;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr;

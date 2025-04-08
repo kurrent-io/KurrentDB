@@ -32,8 +32,7 @@ public class TracingCalculator<TStreamId> : ICalculator<TStreamId> {
 		}
 	}
 
-	public async ValueTask Calculate(
-		ScavengeCheckpoint.Calculating<TStreamId> checkpoint,
+	public async ValueTask Calculate(ScavengeCheckpoint.Calculating<TStreamId> checkpoint,
 		IScavengeStateForCalculator<TStreamId> source,
 		CancellationToken cancellationToken) {
 

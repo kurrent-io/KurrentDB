@@ -94,7 +94,7 @@ public abstract class WriteQueryResultProjectionProcessingPhaseBase : IProjectio
 				position: null));
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 		throw new NotImplementedException();
 	}
 

@@ -3,16 +3,17 @@
 
 using System;
 using System.Collections.Generic;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
+using Serilog;
 using HeadingEventReader = KurrentDB.Projections.Core.Services.Processing.TransactionFile.HeadingEventReader;
 using ILogger = Serilog.ILogger;
 
@@ -38,7 +39,7 @@ public class EventReaderCoreService :
 
 	private readonly IPublisher _publisher;
 	private readonly IODispatcher _ioDispatcher;
-	private readonly ILogger _logger = Serilog.Log.ForContext<ProjectionCoreService>();
+	private readonly ILogger _logger = Log.ForContext<ProjectionCoreService>();
 	private bool _stopped = true;
 
 	private readonly Dictionary<Guid, IReaderSubscription> _subscriptions =

@@ -55,11 +55,11 @@ public abstract class TestFixtureWithCoreProjection<TLogFormat, TStreamId> : Tes
 		_projectionConfig = GivenProjectionConfig();
 		var projectionProcessingStrategy = GivenProjectionProcessingStrategy();
 		_coreProjection = GivenCoreProjection(projectionProcessingStrategy);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted>(_coreProjection);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>(_coreProjection);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(_coreProjection);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested>(_coreProjection);
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed>(_coreProjection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.CheckpointCompleted>(_coreProjection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.CheckpointLoaded>(_coreProjection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(_coreProjection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.RestartRequested>(_coreProjection);
+		_bus.Subscribe<CoreProjectionProcessingMessage.Failed>(_coreProjection);
 		_bus.Subscribe(new AdHocHandler<ProjectionCoreServiceMessage.CoreTick>(tick => tick.Action()));
 		PreWhen();
 		When();

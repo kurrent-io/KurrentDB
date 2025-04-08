@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using EventStore.Core.Messages;
@@ -383,7 +384,7 @@ public static class Convert {
 	private static string FormatJson(string unformattedjson) {
 		if (string.IsNullOrEmpty(unformattedjson))
 			return unformattedjson;
-		JsonReader reader = new JsonTextReader(new System.IO.StringReader(unformattedjson));
+		JsonReader reader = new JsonTextReader(new StringReader(unformattedjson));
 		reader.DateParseHandling = DateParseHandling.None;
 		var jo = JObject.Load(reader);
 		var json = JsonConvert.SerializeObject(jo, Formatting.Indented);

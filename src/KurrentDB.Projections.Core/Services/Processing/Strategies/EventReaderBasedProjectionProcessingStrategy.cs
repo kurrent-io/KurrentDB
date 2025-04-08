@@ -11,6 +11,7 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting;
 using KurrentDB.Projections.Core.Services.Processing.MultiStream;
 using KurrentDB.Projections.Core.Services.Processing.Partitioning;
 using KurrentDB.Projections.Core.Services.Processing.Phases;
+using Serilog;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
@@ -23,7 +24,7 @@ public abstract class EventReaderBasedProjectionProcessingStrategy : ProjectionP
 
 	protected EventReaderBasedProjectionProcessingStrategy(
 		string name, ProjectionVersion projectionVersion, ProjectionConfig projectionConfig,
-		IQuerySources sourceDefinition, Serilog.ILogger logger, ReaderSubscriptionDispatcher subscriptionDispatcher,
+		IQuerySources sourceDefinition, ILogger logger, ReaderSubscriptionDispatcher subscriptionDispatcher,
 		bool enableContentTypeValidation, int maxProjectionStateSize)
 		: base(name, projectionVersion, logger, maxProjectionStateSize) {
 		_projectionConfig = projectionConfig;

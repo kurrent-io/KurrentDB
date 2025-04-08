@@ -6,14 +6,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using EventStore.Core.Cluster;
-using KurrentDB.Core.Messaging;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.TimeService;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 

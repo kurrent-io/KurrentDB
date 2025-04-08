@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
+
 using System;
 using System.IO;
 using KurrentDB.Common.Exceptions;

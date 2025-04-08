@@ -14,7 +14,7 @@ public partial class HeadingEventReader {
 	private IEventReader _headEventReader;
 	private TFPos _subscribeFromPosition = new TFPos(long.MaxValue, long.MaxValue);
 
-	private readonly Queue<HeadingEventReader.Item> _lastMessages = new Queue<HeadingEventReader.Item>();
+	private readonly Queue<Item> _lastMessages = new Queue<Item>();
 
 	private readonly int _eventCacheSize;
 
@@ -139,7 +139,7 @@ public partial class HeadingEventReader {
 				try {
 					m.Handle(subscription);
 				} catch (Exception ex) {
-					var item = m as HeadingEventReader.CommittedEventItem;
+					var item = m as CommittedEventItem;
 					string message;
 					if (item != null) {
 						message = string.Format(
@@ -186,12 +186,12 @@ public partial class HeadingEventReader {
 	}
 
 	private void CacheRecentMessage(ReaderSubscriptionMessage.CommittedEventDistributed message) {
-		_lastMessages.Enqueue(new HeadingEventReader.CommittedEventItem(message));
+		_lastMessages.Enqueue(new CommittedEventItem(message));
 		CleanUpCache();
 	}
 
 	private void CacheRecentMessage(ReaderSubscriptionMessage.EventReaderPartitionDeleted message) {
-		_lastMessages.Enqueue(new HeadingEventReader.PartitionDeletedItem(message));
+		_lastMessages.Enqueue(new PartitionDeletedItem(message));
 		CleanUpCache();
 	}
 

@@ -9,6 +9,8 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Projections.Core.Messages;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -19,7 +21,7 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 	private readonly IODispatcher _ioDispatcher;
 	private readonly string _projectionCheckpointStreamId;
 	private readonly bool _useCheckpoints;
-	private readonly ILogger _logger = Serilog.Log.ForContext<CoreProjectionCheckpointReader>();
+	private readonly ILogger _logger = Log.ForContext<CoreProjectionCheckpointReader>();
 
 	private bool _stateRequested;
 
@@ -116,7 +118,7 @@ public class CoreProjectionCheckpointReader : ICoreProjectionCheckpointReader {
 		}
 
 		_publisher.Publish(
-			new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded(
+			new CoreProjectionProcessingMessage.CheckpointLoaded(
 				_projectionCorrelationId, checkpointTag, checkpointData, _lastWrittenCheckpointEventNumber));
 	}
 }

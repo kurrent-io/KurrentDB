@@ -9,6 +9,7 @@ using System.Linq;
 using KurrentDB.Common.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
+using Serilog;
 
 namespace KurrentDB.Core.Configuration;
 
@@ -30,7 +31,7 @@ public static class ConfigurationBuilderExtensions {
 				UseActivePolling = reloadOnChange,
 				UsePollingFileWatcher = reloadOnChange
 			};
-			config.OnLoadException = context => Serilog.Log.Error(context.Exception, "err");
+			config.OnLoadException = context => Log.Error(context.Exception, "err");
 			config.Path = fileName;
 			config.ReloadOnChange = reloadOnChange;
 		});

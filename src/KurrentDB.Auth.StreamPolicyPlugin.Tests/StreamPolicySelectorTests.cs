@@ -3,16 +3,17 @@
 
 using System.Security.Claims;
 using DotNext.Threading;
-using KurrentDB.Auth.StreamPolicyPlugin.Schema;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Auth.StreamPolicyPlugin.Schema;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
+using Policy = KurrentDB.Auth.StreamPolicyPlugin.Schema.Policy;
 
 namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;
 
@@ -103,15 +104,15 @@ public class StreamPolicySelectorTests {
 		string username = _customUser;
 		string role = _customRole;
 		var tcs = new TaskCompletionSource();
-		var existingPolicy = new Schema.Policy {
+		var existingPolicy = new Policy {
 			StreamPolicies = new Dictionary<string, Schema.AccessPolicy>{
 				{ "systemDefault", new Schema.AccessPolicy{ Readers = [], Writers = [], Deleters = [], MetadataWriters = [], MetadataReaders = []}},
 				{ "userDefault", new Schema.AccessPolicy{ Readers = [role], Writers = [role], Deleters = [role], MetadataWriters = [], MetadataReaders = []}},
 				{ "customOne", new Schema.AccessPolicy{ Readers = [role], Writers = [], Deleters = [], MetadataWriters = [], MetadataReaders = [] }},
 				{ "customTwo", new Schema.AccessPolicy{ Readers = [role], Writers = [role], Deleters = [], MetadataWriters = [], MetadataReaders = [] }},
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "systemDefault", UserStreams = "userDefault" },
-			StreamRules = new Schema.StreamRule[] {
+			DefaultStreamRules = new DefaultStreamRules { SystemStreams = "systemDefault", UserStreams = "userDefault" },
+			StreamRules = new StreamRule[] {
 				new StreamRule{ Policy = "customOne", StartsWith = "account-"},
 				new StreamRule {Policy = "customTwo", StartsWith = "account"}
 			}
@@ -217,13 +218,13 @@ public class StreamPolicySelectorTests {
 		var stream = _systemStream;
 
 		var policy1 = StreamPolicySelector.DefaultPolicy;
-		var policy2 = new Schema.Policy {
+		var policy2 = new Policy {
 			StreamPolicies = new Dictionary<string, Schema.AccessPolicy> {
 				{ "NewPolicy", PolicyTestHelpers.CreateAccessPolicyDtoForAction(allowedAction, SystemUsers.Operations) },
 				{ "DefaultPolicy", AdminOnly }
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
-			StreamRules = [new Schema.StreamRule { Policy = "NewPolicy", StartsWith = stream }]
+			DefaultStreamRules = new DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
+			StreamRules = [new StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
 		_bus.Subscribe(new AdHocHandler<ClientMessage.ReadStreamEventsBackward>(
@@ -254,13 +255,13 @@ public class StreamPolicySelectorTests {
 		var stream = _systemStream;
 
 		var policy1 = StreamPolicySelector.DefaultPolicy;
-		var policy2 = new Schema.Policy {
+		var policy2 = new Policy {
 			StreamPolicies = new Dictionary<string, Schema.AccessPolicy> {
 				{ "NewPolicy", PolicyTestHelpers.CreateAccessPolicyDtoForAction(allowedAction, SystemUsers.Operations) },
 				{ "DefaultPolicy", AdminOnly }
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
-			StreamRules = [new Schema.StreamRule { Policy = "NewPolicy", StartsWith = stream }]
+			DefaultStreamRules = new DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
+			StreamRules = [new StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
 		_bus.Subscribe(new AdHocHandler<ClientMessage.ReadStreamEventsBackward>(
@@ -290,13 +291,13 @@ public class StreamPolicySelectorTests {
 		var stream = _systemStream;
 
 		var policy1 = StreamPolicySelector.DefaultPolicy;
-		var policy2 = new Schema.Policy {
+		var policy2 = new Policy {
 			StreamPolicies = new Dictionary<string, Schema.AccessPolicy> {
 				{ "NewPolicy", PolicyTestHelpers.CreateAccessPolicyDtoForAction(allowedAction, SystemUsers.Operations)},
 				{ "DefaultPolicy", AdminOnly }
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
-			StreamRules = [new Schema.StreamRule { Policy = "NewPolicy", StartsWith = stream }]
+			DefaultStreamRules = new DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
+			StreamRules = [new StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
 		var subscribeSource = new TaskCompletionSource<ClientMessage.SubscribeToStream>();
@@ -339,13 +340,13 @@ public class StreamPolicySelectorTests {
 		var user = PolicyTestHelpers.CreateUser(SystemUsers.Operations, [SystemRoles.Operations]);
 		var stream = _systemStream;
 
-		var policy1 = new Schema.Policy {
+		var policy1 = new Policy {
 			StreamPolicies = new Dictionary<string, Schema.AccessPolicy> {
 				{ "NewPolicy", PolicyTestHelpers.CreateAccessPolicyDtoForAction(allowedAction, SystemUsers.Operations)},
 				{ "DefaultPolicy", AdminOnly }
 			},
-			DefaultStreamRules = new Schema.DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
-			StreamRules = [new Schema.StreamRule { Policy = "NewPolicy", StartsWith = stream }]
+			DefaultStreamRules = new DefaultStreamRules { SystemStreams = "DefaultPolicy", UserStreams = "DefaultPolicy" },
+			StreamRules = [new StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
 		var subscribeSource = new TaskCompletionSource<ClientMessage.SubscribeToStream>();
@@ -457,7 +458,7 @@ public class StreamPolicySelectorTests {
 			ReadStreamResult.NoStream, [], StreamMetadata.Empty, true, "",
 			msg.FromEventNumber, msg.FromEventNumber, true, 0L);
 
-	private ResolvedEvent CreateResolvedEventForPolicy(Schema.Policy policy, long eventNumber) {
+	private ResolvedEvent CreateResolvedEventForPolicy(Policy policy, long eventNumber) {
 		var data = PolicyTestHelpers.SerializePolicy(policy);
 		return CreateResolvedEvent(StreamPolicySelector.PolicyEventType, data, eventNumber);
 	}

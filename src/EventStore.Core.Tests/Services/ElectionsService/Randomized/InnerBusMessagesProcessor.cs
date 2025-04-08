@@ -3,9 +3,9 @@
 
 using System;
 using System.Net;
-using KurrentDB.Core.Messaging;
 using EventStore.Core.Tests.Infrastructure;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Services.ElectionsService.Randomized;

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
@@ -13,9 +14,9 @@ internal static class SystemProjections {
 	public static Task Created(ISubscriber bus) {
 		var systemProjectionsReady =
 			typeof(ProjectionNamesBuilder.StandardProjections).GetFields(
-					System.Reflection.BindingFlags.Public |
-					System.Reflection.BindingFlags.Static |
-					System.Reflection.BindingFlags.FlattenHierarchy)
+					BindingFlags.Public |
+					BindingFlags.Static |
+					BindingFlags.FlattenHierarchy)
 				.Where(x => x.IsLiteral && !x.IsInitOnly)
 				.Select(x => x.GetRawConstantValue().ToString())
 				.ToDictionary(x => x, _ => new TaskCompletionSource<bool>());

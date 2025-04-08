@@ -16,11 +16,11 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using ILogger = Serilog.ILogger;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Core.Services.PersistentSubscription;
 
@@ -323,8 +323,7 @@ public class PersistentSubscriptionService<TStreamId> :
 		if (string.IsNullOrEmpty(message.EventStreamId)) {
 			message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-					.CreatePersistentSubscriptionToStreamResult.Fail,
+				ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail,
 				"Bad stream name."));
 			return;
 		}
@@ -332,8 +331,7 @@ public class PersistentSubscriptionService<TStreamId> :
 		if (message.EventStreamId == SystemStreams.AllStream) {
 			message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-					.CreatePersistentSubscriptionToStreamResult.Fail,
+				ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail,
 				"Persistent subscriptions to $all are only supported over gRPC through gRPC clients"));
 			return;
 		}
@@ -359,29 +357,25 @@ public class PersistentSubscriptionService<TStreamId> :
 					message.Envelope.ReplyWith(
 						new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 							message.CorrelationId,
-							ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-								.CreatePersistentSubscriptionToStreamResult.Success,
+							ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Success,
 							msg));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 						message.CorrelationId,
-						ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-							.CreatePersistentSubscriptionToStreamResult.Fail,
+						ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail,
 						error));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 						message.CorrelationId,
-						ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-							.CreatePersistentSubscriptionToStreamResult.AlreadyExists,
+						ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.AlreadyExists,
 						error));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 						message.CorrelationId,
-						ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-							.CreatePersistentSubscriptionToStreamResult.AccessDenied,
+						ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.AccessDenied,
 						error));
 				},
 				message.User?.Identity?.Name
@@ -389,8 +383,7 @@ public class PersistentSubscriptionService<TStreamId> :
 		} catch (Exception ex) {
 			message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-					.CreatePersistentSubscriptionToStreamResult.Fail,
+				ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail,
 				ex.Message));
 		}
 	}
@@ -418,29 +411,25 @@ public class PersistentSubscriptionService<TStreamId> :
 					message.Envelope.ReplyWith(
 						new ClientMessage.CreatePersistentSubscriptionToAllCompleted(
 							message.CorrelationId,
-							ClientMessage.CreatePersistentSubscriptionToAllCompleted
-								.CreatePersistentSubscriptionToAllResult.Success,
+							ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult.Success,
 							msg));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToAllCompleted(
 						message.CorrelationId,
-						ClientMessage.CreatePersistentSubscriptionToAllCompleted
-							.CreatePersistentSubscriptionToAllResult.Fail,
+						ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult.Fail,
 						error));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToAllCompleted(
 						message.CorrelationId,
-						ClientMessage.CreatePersistentSubscriptionToAllCompleted
-							.CreatePersistentSubscriptionToAllResult.AlreadyExists,
+						ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult.AlreadyExists,
 						error));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.CreatePersistentSubscriptionToAllCompleted(
 						message.CorrelationId,
-						ClientMessage.CreatePersistentSubscriptionToAllCompleted
-							.CreatePersistentSubscriptionToAllResult.AccessDenied,
+						ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult.AccessDenied,
 						error));
 				},
 				message.User?.Identity?.Name
@@ -555,8 +544,7 @@ public class PersistentSubscriptionService<TStreamId> :
 		if (string.IsNullOrEmpty(message.EventStreamId)) {
 			message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted
-					.UpdatePersistentSubscriptionToStreamResult.Fail,
+				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail,
 				"Bad stream name."));
 			return;
 		}
@@ -564,8 +552,7 @@ public class PersistentSubscriptionService<TStreamId> :
 		if (message.EventStreamId == SystemStreams.AllStream) {
 			message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted
-					.UpdatePersistentSubscriptionToStreamResult.Fail,
+				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail,
 				"Persistent subscriptions to $all are only supported over gRPC through gRPC clients"));
 			return;
 		}
@@ -592,29 +579,25 @@ public class PersistentSubscriptionService<TStreamId> :
 					message.Envelope.ReplyWith(
 						new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 							message.CorrelationId,
-							ClientMessage.UpdatePersistentSubscriptionToStreamCompleted
-								.UpdatePersistentSubscriptionToStreamResult.Success,
+							ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Success,
 							msg));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 						message.CorrelationId,
-						ClientMessage.UpdatePersistentSubscriptionToStreamCompleted
-							.UpdatePersistentSubscriptionToStreamResult.Fail,
+						ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail,
 						error));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 						message.CorrelationId,
-						ClientMessage.UpdatePersistentSubscriptionToStreamCompleted
-							.UpdatePersistentSubscriptionToStreamResult.DoesNotExist,
+						ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.DoesNotExist,
 						error));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 						message.CorrelationId,
-						ClientMessage.UpdatePersistentSubscriptionToStreamCompleted
-							.UpdatePersistentSubscriptionToStreamResult.AccessDenied,
+						ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.AccessDenied,
 						error));
 				},
 				message.User?.Identity?.Name
@@ -622,8 +605,7 @@ public class PersistentSubscriptionService<TStreamId> :
 		} catch (Exception ex) {
 			message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted
-					.UpdatePersistentSubscriptionToStreamResult.Fail,
+				ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail,
 				ex.Message));
 		}
 	}
@@ -652,29 +634,25 @@ public class PersistentSubscriptionService<TStreamId> :
 					message.Envelope.ReplyWith(
 						new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
 							message.CorrelationId,
-							ClientMessage.UpdatePersistentSubscriptionToAllCompleted
-								.UpdatePersistentSubscriptionToAllResult.Success,
+							ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Success,
 							msg));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
 						message.CorrelationId,
-						ClientMessage.UpdatePersistentSubscriptionToAllCompleted
-							.UpdatePersistentSubscriptionToAllResult.Fail,
+						ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Fail,
 						error));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
 						message.CorrelationId,
-						ClientMessage.UpdatePersistentSubscriptionToAllCompleted
-							.UpdatePersistentSubscriptionToAllResult.DoesNotExist,
+						ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.DoesNotExist,
 						error));
 				},
 				(error) => {
 					message.Envelope.ReplyWith(new ClientMessage.UpdatePersistentSubscriptionToAllCompleted(
 						message.CorrelationId,
-						ClientMessage.UpdatePersistentSubscriptionToAllCompleted
-							.UpdatePersistentSubscriptionToAllResult.AccessDenied,
+						ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.AccessDenied,
 						error));
 				},
 				message.User?.Identity?.Name
@@ -774,8 +752,7 @@ public class PersistentSubscriptionService<TStreamId> :
 		if (string.IsNullOrEmpty(message.EventStreamId)) {
 			message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.DeletePersistentSubscriptionToStreamCompleted
-					.DeletePersistentSubscriptionToStreamResult.Fail,
+				ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Fail,
 				"Bad stream name."));
 			return;
 		}
@@ -783,8 +760,7 @@ public class PersistentSubscriptionService<TStreamId> :
 		if (message.EventStreamId == SystemStreams.AllStream) {
 			message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 				message.CorrelationId,
-				ClientMessage.DeletePersistentSubscriptionToStreamCompleted
-					.DeletePersistentSubscriptionToStreamResult.Fail,
+				ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Fail,
 				"Persistent subscriptions to $all are only supported over gRPC through gRPC clients"));
 			return;
 		}
@@ -795,28 +771,24 @@ public class PersistentSubscriptionService<TStreamId> :
 			(msg) => {
 				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.DeletePersistentSubscriptionToStreamCompleted
-						.DeletePersistentSubscriptionToStreamResult.Success, msg));
+					ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Success, msg));
 			},
 			(error) => {
 				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.DeletePersistentSubscriptionToStreamCompleted
-						.DeletePersistentSubscriptionToStreamResult.Fail,
+					ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.Fail,
 					error));
 			},
 			(error) => {
 				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.DeletePersistentSubscriptionToStreamCompleted
-						.DeletePersistentSubscriptionToStreamResult.DoesNotExist,
+					ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.DoesNotExist,
 					error));
 			},
 			(error) => {
 				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToStreamCompleted(
 					message.CorrelationId,
-					ClientMessage.DeletePersistentSubscriptionToStreamCompleted
-						.DeletePersistentSubscriptionToStreamResult.AccessDenied,
+					ClientMessage.DeletePersistentSubscriptionToStreamCompleted.DeletePersistentSubscriptionToStreamResult.AccessDenied,
 					error));
 			},
 			message.User?.Identity?.Name
@@ -830,8 +802,7 @@ public class PersistentSubscriptionService<TStreamId> :
 			(msg) => {
 				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(
 					message.CorrelationId,
-					ClientMessage.DeletePersistentSubscriptionToAllCompleted
-						.DeletePersistentSubscriptionToAllResult.Success, msg));
+					ClientMessage.DeletePersistentSubscriptionToAllCompleted.DeletePersistentSubscriptionToAllResult.Success, msg));
 			},
 			(error) => {
 				message.Envelope.ReplyWith(new ClientMessage.DeletePersistentSubscriptionToAllCompleted(

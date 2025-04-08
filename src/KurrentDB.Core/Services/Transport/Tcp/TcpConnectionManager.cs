@@ -14,12 +14,12 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.Settings;
 using KurrentDB.Transport.Tcp;
 using KurrentDB.Transport.Tcp.Framing;
 using ILogger = Serilog.ILogger;
-using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Services.Transport.Tcp;
 

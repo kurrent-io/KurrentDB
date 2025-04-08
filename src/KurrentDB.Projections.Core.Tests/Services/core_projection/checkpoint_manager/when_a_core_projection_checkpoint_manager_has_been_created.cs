@@ -4,6 +4,7 @@
 using System;
 using EventStore.Core.Tests;
 using KurrentDB.Core.Data;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
@@ -41,7 +42,7 @@ public class
 	[Test]
 	public void ready_for_checkpoint_throws_invalid_operation_exception() {
 		Assert.Throws<InvalidOperationException>(() => {
-			_manager.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint(null));
+			_manager.Handle(new CoreProjectionProcessingMessage.ReadyForCheckpoint(null));
 		});
 	}
 

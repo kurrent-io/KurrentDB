@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Core;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using KurrentDB.Core;

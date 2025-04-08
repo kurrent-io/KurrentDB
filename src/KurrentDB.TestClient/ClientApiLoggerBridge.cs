@@ -3,16 +3,18 @@
 
 using System;
 using KurrentDB.Common.Utils;
+using Serilog;
+using Serilog.Core;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.TestClient;
 
 internal class ClientApiLoggerBridge : EventStore.ClientAPI.ILogger {
 	public static readonly ClientApiLoggerBridge Default =
-		new ClientApiLoggerBridge(Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName,
+		new ClientApiLoggerBridge(Log.ForContext(Constants.SourceContextPropertyName,
 			"client-api"));
 
-	private readonly Serilog.ILogger _log;
+	private readonly ILogger _log;
 
 	public ClientApiLoggerBridge(ILogger log) {
 		Ensure.NotNull(log, "log");

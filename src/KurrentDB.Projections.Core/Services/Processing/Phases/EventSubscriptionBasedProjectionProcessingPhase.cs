@@ -4,8 +4,9 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
@@ -15,7 +16,6 @@ using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using KurrentDB.Projections.Core.Services.Processing.WorkItems;
 using ILogger = Serilog.ILogger;
-using KurrentDB.Core.Services.TimerService;
 using UnwrapEnvelopeMessage = KurrentDB.Projections.Core.Messaging.UnwrapEnvelopeMessage;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Phases;
@@ -40,7 +40,7 @@ public abstract partial class EventSubscriptionBasedProjectionProcessingPhase : 
 	protected readonly IProgressResultWriter _progressResultWriter;
 	protected readonly ProjectionConfig _projectionConfig;
 	protected readonly string _projectionName;
-	protected readonly Serilog.ILogger _logger;
+	protected readonly ILogger _logger;
 	protected readonly CheckpointTag _zeroCheckpointTag;
 	protected readonly CoreProjectionQueue _processingQueue;
 	protected readonly PartitionStateCache _partitionStateCache;
@@ -342,7 +342,7 @@ public abstract partial class EventSubscriptionBasedProjectionProcessingPhase : 
 			SubscribeReaders(@from);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 		UnsubscribeFromPreRecordedOrderEvents();
 		SubscribeReaders(message.CheckpointTag);
 	}

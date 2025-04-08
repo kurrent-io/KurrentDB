@@ -10,9 +10,9 @@ using EventStore.Core.Messages;
 using EventStore.Core.Tests.Fakes;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 using NUnit.Framework;
-using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Cluster;
 

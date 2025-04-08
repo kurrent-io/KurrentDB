@@ -7,7 +7,6 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core;
 using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
 using EventStore.Plugins.Subsystems;
@@ -24,6 +23,7 @@ using KurrentDB.Projections.Core.Metrics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 using ILogger = Serilog.ILogger;
 
@@ -49,7 +49,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	IHandle<ProjectionSubsystemMessage.ComponentStopped>,
 	IHandle<ProjectionSubsystemMessage.IODispatcherDrained> {
 
-	static readonly ILogger Logger = Serilog.Log.ForContext<ProjectionsSubsystem>();
+	static readonly ILogger Logger = Log.ForContext<ProjectionsSubsystem>();
 
 	public const int VERSION = 4;
 	public const int CONTENT_TYPE_VALIDATION_VERSION = 4;

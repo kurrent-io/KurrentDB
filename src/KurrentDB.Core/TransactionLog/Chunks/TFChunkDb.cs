@@ -11,6 +11,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Exceptions;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 using KurrentDB.Core.Transforms;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.TransactionLog.Chunks;
@@ -30,7 +31,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 		ILogger log = null,
 		IChunkFileSystem fileSystem = null,
 		DbTransformManager transformManager = null,
-		Action<KurrentDB.Core.Data.ChunkInfo> onChunkSwitched = null) {
+		Action<Data.ChunkInfo> onChunkSwitched = null) {
 		Ensure.NotNull(config, "config");
 
 		Config = config;
@@ -42,7 +43,7 @@ public sealed class TFChunkDb : IAsyncDisposable {
 			OnChunkSwitched = onChunkSwitched,
 		};
 
-		_log = log ?? Serilog.Log.ForContext<TFChunkDb>();
+		_log = log ?? Log.ForContext<TFChunkDb>();
 	}
 
 	struct ChunkInfo {

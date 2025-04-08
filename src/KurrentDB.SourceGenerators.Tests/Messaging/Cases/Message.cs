@@ -1,34 +1,34 @@
 using System;
 
-namespace KurrentDB.SourceGenerators.Tests.Messaging {
-	[AttributeUsage(AttributeTargets.Class)]
-	public class BaseMessageAttribute : Attribute {
-		public BaseMessageAttribute() {
-		}
+namespace KurrentDB.SourceGenerators.Tests.Messaging;
+
+[AttributeUsage(AttributeTargets.Class)]
+public class BaseMessageAttribute : Attribute {
+	public BaseMessageAttribute() {
+	}
+}
+
+[AttributeUsage(AttributeTargets.Class)]
+public class DerivedMessageAttribute : Attribute {
+	public DerivedMessageAttribute() {
 	}
 
-	[AttributeUsage(AttributeTargets.Class)]
-	public class DerivedMessageAttribute : Attribute {
-		public DerivedMessageAttribute() {
-		}
-
-		public DerivedMessageAttribute(object messageGroup) {
-		}
+	public DerivedMessageAttribute(object messageGroup) {
 	}
+}
 
-	[BaseMessage]
-	public abstract partial class Message {
-	}
+[BaseMessage]
+public abstract partial class Message {
+}
 
-	enum TestMessageGroup {
-		None,
-		Abstract,
-		AbstractWithGroup,
-		FileScopedNamespace,
-		Impartial,
-		ImpartialNested,
-		Nested,
-		NestedDerived,
-		Simple,
-	}
+enum TestMessageGroup {
+	None,
+	Abstract,
+	AbstractWithGroup,
+	FileScopedNamespace,
+	Impartial,
+	ImpartialNested,
+	Nested,
+	NestedDerived,
+	Simple,
 }

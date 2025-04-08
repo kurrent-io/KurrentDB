@@ -123,7 +123,7 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 			throw new NotImplementedException();
 		}
 
-		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+		public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 			throw new NotImplementedException();
 		}
 
@@ -234,7 +234,7 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 		public void Stopping() {
 			_stopping = true;
 			_publisher.Publish(
-				new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted(_projectionCorrelationId, _lastEvent));
+				new CoreProjectionProcessingMessage.CheckpointCompleted(_projectionCorrelationId, _lastEvent));
 		}
 
 		public void Stopped() {
@@ -274,13 +274,13 @@ abstract class specification_with_multi_phase_core_projection<TLogFormat, TStrea
 
 		public void BeginLoadState() {
 			_publisher.Publish(
-				new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded(
+				new CoreProjectionProcessingMessage.CheckpointLoaded(
 					_projectionCorrelationId, CheckpointTag.FromPosition(0, 0, -1), "", 0));
 		}
 
 		public void BeginLoadPrerecordedEvents(CheckpointTag checkpointTag) {
 			_publisher.Publish(
-				new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded(_projectionCorrelationId,
+				new CoreProjectionProcessingMessage.PrerecordedEventsLoaded(_projectionCorrelationId,
 					checkpointTag));
 		}
 

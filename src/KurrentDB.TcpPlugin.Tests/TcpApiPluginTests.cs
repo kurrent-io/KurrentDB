@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using DotNext.Collections.Generic;
 using DotNext.Net.Http;
 using EventStore.ClientAPI;
 using EventStore.Core.Messages;

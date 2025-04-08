@@ -26,8 +26,7 @@ public interface ICalculator<TStreamId> {
 		IScavengeStateForCalculator<TStreamId> source,
 		CancellationToken cancellationToken);
 
-	ValueTask Calculate(
-		ScavengeCheckpoint.Calculating<TStreamId> checkpoint,
+	ValueTask Calculate(ScavengeCheckpoint.Calculating<TStreamId> checkpoint,
 		IScavengeStateForCalculator<TStreamId> source,
 		CancellationToken cancellationToken);
 }

@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using KurrentDB.Core.Messaging;
 using EventStore.Core.Tests.Helpers;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
 using NUnit.Framework;
 

@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.PersistentSubscription;
 
 namespace EventStore.Core.Messages;

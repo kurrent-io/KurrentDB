@@ -14,6 +14,7 @@ using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
+using Serilog;
 
 namespace EventStore.Core.Tests.TransactionLog;
 
@@ -86,7 +87,7 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 		_db.Config.ChaserCheckpoint.Write(chunk.ChunkHeader.ChunkEndPosition);
 		_db.Config.ChaserCheckpoint.Flush();
 
-		var scavenger = new TFChunkScavenger<TStreamId>(Serilog.Log.Logger, _db, new FakeTFScavengerLog(), new FakeTableIndex<TStreamId>(),
+		var scavenger = new TFChunkScavenger<TStreamId>(Log.Logger, _db, new FakeTFScavengerLog(), new FakeTableIndex<TStreamId>(),
 			new FakeReadIndex<TLogFormat, TStreamId>(x => EqualityComparer<TStreamId>.Default.Equals(x, streamId), _logFormat.Metastreams),
 			_logFormat.Metastreams);
 		await scavenger.Scavenge(alwaysKeepScavenged: true, mergeChunks: false);

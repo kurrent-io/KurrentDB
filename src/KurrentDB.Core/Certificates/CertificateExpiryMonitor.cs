@@ -6,8 +6,8 @@ using System.Security.Cryptography.X509Certificates;
 using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
-using Serilog;
 using KurrentDB.Core.Services.TimerService;
+using Serilog;
 
 namespace KurrentDB.Core.Certificates;
 

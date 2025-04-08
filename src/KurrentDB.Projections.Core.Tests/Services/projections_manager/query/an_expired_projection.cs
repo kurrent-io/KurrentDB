@@ -7,9 +7,9 @@ using System.Linq;
 using EventStore.Core.Tests;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;
 using NUnit.Framework;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.query;
 

@@ -9,6 +9,9 @@ using EventStore.ClientAPI;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Tests;
 using NUnit.Framework;
+using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
+using ResolvedEvent = EventStore.ClientAPI.ResolvedEvent;
+using StreamMetadata = EventStore.ClientAPI.StreamMetadata;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 
@@ -31,14 +34,14 @@ public class catchup_subscription_to_all_with_event_numbers_greater_than_2_billi
 	public override async Task Given() {
 		_store = BuildConnection(Node);
 		await _store.ConnectAsync();
-		await _store.SetStreamMetadataAsync(_streamId, EventStore.ClientAPI.ExpectedVersion.Any,
-			EventStore.ClientAPI.StreamMetadata.Create(truncateBefore: intMaxValue + 1));
+		await _store.SetStreamMetadataAsync(_streamId, ExpectedVersion.Any,
+			StreamMetadata.Create(truncateBefore: intMaxValue + 1));
 	}
 
 	[Test]
 	public async Task should_be_able_to_subscribe_to_all_with_catchup_subscription() {
 		var evnt = new EventData(Guid.NewGuid(), "EventType", false, new byte[10], new byte[15]);
-		List<EventStore.ClientAPI.ResolvedEvent> receivedEvents = new List<EventStore.ClientAPI.ResolvedEvent>();
+		List<ResolvedEvent> receivedEvents = new List<ResolvedEvent>();
 
 		var countdown = new CountdownEvent(3);
 

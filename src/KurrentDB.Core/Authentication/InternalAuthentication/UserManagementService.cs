@@ -14,6 +14,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.UserManagement;
+using Serilog;
 using ILogger = Serilog.ILogger;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
@@ -33,7 +34,7 @@ public class UserManagementService :
 	IHandle<SystemMessage.BecomeLeader>,
 	IHandle<SystemMessage.BecomeFollower>,
 	IHandle<SystemMessage.BecomeReadOnlyReplica> {
-	static readonly ILogger Logger = Serilog.Log.ForContext<UserManagementService>();
+	static readonly ILogger Logger = Log.ForContext<UserManagementService>();
 
 	public const string UserUpdated = "$UserUpdated";
 	public const string PasswordChanged = "$PasswordChanged";

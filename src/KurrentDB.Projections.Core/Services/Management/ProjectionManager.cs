@@ -19,6 +19,7 @@ using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Standard;
+using Serilog;
 using ILogger = Serilog.ILogger;
 using OperationResult = EventStore.Core.Messages.OperationResult;
 using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
@@ -62,7 +63,7 @@ public class ProjectionManager
 	public const int ProjectionCreationRetryCount = 1;
 	public const string ServiceName = "ProjectionManager";
 
-	private readonly ILogger _logger = Serilog.Log.ForContext<ProjectionManager>();
+	private readonly ILogger _logger = Log.ForContext<ProjectionManager>();
 
 	private readonly IPublisher _inputQueue;
 	private readonly IPublisher _publisher;

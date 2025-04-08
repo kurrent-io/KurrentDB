@@ -6,6 +6,7 @@ using KurrentDB.AutoScavenge.Sources;
 using KurrentDB.AutoScavenge.TimeProviders;
 using KurrentDB.POC.IO.Core;
 using NCrontab;
+using Serilog;
 using Serilog.Events;
 
 namespace KurrentDB.AutoScavenge.Domain;
@@ -21,7 +22,7 @@ namespace KurrentDB.AutoScavenge.Domain;
 /// Accesses the configuration and events related to the auto scavenge process.
 /// </param>
 public class AutoScavengeProcessManager {
-	private static readonly Serilog.ILogger Log = Serilog.Log.ForContext<AutoScavengeProcessManager>();
+	private static readonly ILogger Log = Serilog.Log.ForContext<AutoScavengeProcessManager>();
 
 	readonly ITimeProvider _timeProvider;
 	readonly ISource _source;

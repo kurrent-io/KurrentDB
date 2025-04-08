@@ -7,13 +7,14 @@ using System.Net;
 using System.Net.Sockets;
 using KurrentDB.Transport.Tcp.Formatting;
 using KurrentDB.Transport.Tcp.Framing;
+using Serilog.Core;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Transport.Tcp;
 
 public class TcpTypedConnection<T> {
 	private static readonly ILogger Log =
-		Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "TcpTypedConnection");
+		Serilog.Log.ForContext(Constants.SourceContextPropertyName, "TcpTypedConnection");
 
 	public event Action<TcpTypedConnection<T>, SocketError> ConnectionClosed;
 

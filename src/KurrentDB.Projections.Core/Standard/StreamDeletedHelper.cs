@@ -23,7 +23,7 @@ public static class StreamDeletedHelper {
 			isDeletedStreamEvent = true;
 			deletedPartitionStreamId = resolvedEvent.EventStreamId;
 		} else {
-			isDeletedStreamEvent = StreamDeletedHelper.IsStreamDeletedEvent(
+			isDeletedStreamEvent = IsStreamDeletedEvent(
 				resolvedEvent.EventStreamId, resolvedEvent.EventType, resolvedEvent.Data,
 				out deletedPartitionStreamId);
 		}

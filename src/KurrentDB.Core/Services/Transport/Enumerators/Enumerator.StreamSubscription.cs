@@ -37,7 +37,7 @@ static partial class Enumerator {
 		private readonly bool _requiresLeader;
 		private readonly CancellationTokenSource _cts;
 		private readonly Channel<ReadResponse> _channel;
-		private readonly Channel<(ulong SequenceNumber, KurrentDB.Core.Data.ResolvedEvent ResolvedEvent)> _liveEvents;
+		private readonly Channel<(ulong SequenceNumber, ResolvedEvent ResolvedEvent)> _liveEvents;
 
 		private ReadResponse _current;
 		private bool _disposed;

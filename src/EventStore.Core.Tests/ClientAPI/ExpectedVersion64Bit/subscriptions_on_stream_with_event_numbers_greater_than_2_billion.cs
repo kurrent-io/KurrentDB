@@ -10,6 +10,9 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Tests;
 using NUnit.Framework;
+using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
+using ResolvedEvent = EventStore.ClientAPI.ResolvedEvent;
+using StreamMetadata = EventStore.ClientAPI.StreamMetadata;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 
@@ -40,18 +43,18 @@ public class subscriptions_on_stream_with_event_numbers_greater_than_2_billion<T
 	public override async Task Given() {
 		_store = BuildConnection(Node);
 		await _store.ConnectAsync();
-		await _store.SetStreamMetadataAsync(_volatileStreamOne, EventStore.ClientAPI.ExpectedVersion.Any,
-			EventStore.ClientAPI.StreamMetadata.Create(truncateBefore: intMaxValue + 1));
-		await _store.SetStreamMetadataAsync(_volatileStreamTwo, EventStore.ClientAPI.ExpectedVersion.Any,
-			EventStore.ClientAPI.StreamMetadata.Create(truncateBefore: intMaxValue + 1));
-		await _store.SetStreamMetadataAsync(_catchupStreamOne, EventStore.ClientAPI.ExpectedVersion.Any,
-			EventStore.ClientAPI.StreamMetadata.Create(truncateBefore: intMaxValue + 1));
+		await _store.SetStreamMetadataAsync(_volatileStreamOne, ExpectedVersion.Any,
+			StreamMetadata.Create(truncateBefore: intMaxValue + 1));
+		await _store.SetStreamMetadataAsync(_volatileStreamTwo, ExpectedVersion.Any,
+			StreamMetadata.Create(truncateBefore: intMaxValue + 1));
+		await _store.SetStreamMetadataAsync(_catchupStreamOne, ExpectedVersion.Any,
+			StreamMetadata.Create(truncateBefore: intMaxValue + 1));
 	}
 
 	[Test]
 	public async Task should_be_able_to_subscribe_to_stream_with_volatile_subscription() {
 		var evnt = new EventData(Guid.NewGuid(), "EventType", false, new byte[10], new byte[15]);
-		EventStore.ClientAPI.ResolvedEvent receivedEvent = new EventStore.ClientAPI.ResolvedEvent();
+		ResolvedEvent receivedEvent = new ResolvedEvent();
 		var mre = new ManualResetEvent(false);
 		await _store.SubscribeToStreamAsync(_volatileStreamOne, true, (s, e) => {
 			receivedEvent = e;
@@ -68,7 +71,7 @@ public class subscriptions_on_stream_with_event_numbers_greater_than_2_billion<T
 	[Test]
 	public async Task should_be_able_to_subscribe_to_all_with_volatile_subscription() {
 		var evnt = new EventData(Guid.NewGuid(), "EventType", false, new byte[10], new byte[15]);
-		EventStore.ClientAPI.ResolvedEvent receivedEvent = new EventStore.ClientAPI.ResolvedEvent();
+		ResolvedEvent receivedEvent = new ResolvedEvent();
 		var mre = new ManualResetEvent(false);
 		await _store.SubscribeToAllAsync(true, (s, e) => {
 			if (SystemStreams.IsSystemStream(e.OriginalStreamId))
@@ -88,7 +91,7 @@ public class subscriptions_on_stream_with_event_numbers_greater_than_2_billion<T
 	[Test]
 	public async Task should_be_able_to_subscribe_to_stream_with_catchup_subscription() {
 		var evnt = new EventData(Guid.NewGuid(), "EventType", false, new byte[10], new byte[15]);
-		List<EventStore.ClientAPI.ResolvedEvent> receivedEvents = new List<EventStore.ClientAPI.ResolvedEvent>();
+		List<ResolvedEvent> receivedEvents = new List<ResolvedEvent>();
 
 		var countdown = new CountdownEvent(3);
 		_store.SubscribeToStreamFrom(_catchupStreamOne, 0, CatchUpSubscriptionSettings.Default, (s, e) => {

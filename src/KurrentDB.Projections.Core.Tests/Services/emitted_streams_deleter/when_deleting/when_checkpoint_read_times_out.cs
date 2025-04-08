@@ -7,9 +7,9 @@ using System.Threading;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.TimerService;
 using NUnit.Framework;
 using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_streams_deleter.when_deleting;
 

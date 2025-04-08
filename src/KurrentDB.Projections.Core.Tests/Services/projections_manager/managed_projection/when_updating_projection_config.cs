@@ -3,7 +3,6 @@
 
 using System;
 using System.Linq;
-using EventStore.Core;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;

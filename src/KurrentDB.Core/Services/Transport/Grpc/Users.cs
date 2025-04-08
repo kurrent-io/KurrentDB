@@ -3,14 +3,14 @@
 
 using System.Threading.Tasks;
 using EventStore.Plugins.Authorization;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using static EventStore.Core.Messages.UserManagementMessage;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
-internal partial class Users : EventStore.Client.Users.Users.UsersBase {
+internal partial class Users : Client.Users.Users.UsersBase {
 	private readonly IPublisher _publisher;
 	private readonly IAuthorizationProvider _authorizationProvider;
 

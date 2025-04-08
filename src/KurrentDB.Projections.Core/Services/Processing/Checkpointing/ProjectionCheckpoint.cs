@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Common;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
@@ -18,7 +18,7 @@ namespace KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEventWriter {
 	private readonly int _maxWriteBatchLength;
-	private readonly Serilog.ILogger _logger;
+	private readonly ILogger _logger;
 
 	private readonly Dictionary<string, EmittedStream> _emittedStreams = new Dictionary<string, EmittedStream>();
 	private readonly ClaimsPrincipal _runAs;
@@ -166,14 +166,14 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 		stream.EmitEvents(emittedEvents.Select(v => v.Event).ToArray());
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint message) {
+	public void Handle(CoreProjectionProcessingMessage.ReadyForCheckpoint message) {
 		_requestedCheckpoints--;
 		OnCheckpointCompleted();
 	}
 
 	private void OnCheckpointCompleted() {
 		if (_requestedCheckpoints == 0) {
-			_readyHandler.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint(this));
+			_readyHandler.Handle(new CoreProjectionProcessingMessage.ReadyForCheckpoint(this));
 		}
 	}
 
@@ -189,11 +189,11 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 		return _emittedStreams.Values.Sum(v => v.GetReadsInProgress());
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested message) {
+	public void Handle(CoreProjectionProcessingMessage.RestartRequested message) {
 		_readyHandler.Handle(message);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed message) {
+	public void Handle(CoreProjectionProcessingMessage.Failed message) {
 		_readyHandler.Handle(message);
 	}
 
@@ -203,13 +203,13 @@ public class ProjectionCheckpoint : IDisposable, IEmittedStreamContainer, IEvent
 				stream.Dispose();
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamAwaiting message) {
+	public void Handle(CoreProjectionProcessingMessage.EmittedStreamAwaiting message) {
 		if (_awaitingStreams == null)
 			_awaitingStreams = new List<IEnvelope>();
 		_awaitingStreams.Add(message.Envelope);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted message) {
+	public void Handle(CoreProjectionProcessingMessage.EmittedStreamWriteCompleted message) {
 		var awaitingStreams = _awaitingStreams;
 		_awaitingStreams = null; // still awaiting will re-register
 		if (awaitingStreams != null)

@@ -7,9 +7,9 @@ using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
-using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests.ReadEventsTests;
 

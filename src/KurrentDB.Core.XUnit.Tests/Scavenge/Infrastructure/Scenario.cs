@@ -32,6 +32,7 @@ using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
 using KurrentDB.Core.TransactionLog.Scavenging.Stages;
 using KurrentDB.Core.Transforms;
 using KurrentDB.Core.Util;
+using Serilog;
 using Xunit;
 using static KurrentDB.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
 using ScavengeResult = KurrentDB.Core.TransactionLog.Chunks.ScavengeResult;
@@ -440,7 +441,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			// add tracing
 			chunkReader = new TracingChunkReaderForAccumulator<TStreamId>(chunkReader, Tracer.Trace);
 
-			var logger = Serilog.Log.Logger;
+			var logger = Log.Logger;
 
 			var throttle = new Throttle(
 				logger,

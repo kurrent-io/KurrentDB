@@ -12,6 +12,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.TransactionLog.Checkpoint;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services.Replication;
@@ -26,7 +27,7 @@ public class ReplicationTrackingService :
 	IHandle<SystemMessage.VNodeConnectionLost>,
 	IHandle<ReplicationMessage.ReplicaSubscribed> {
 
-	private readonly ILogger _log = Serilog.Log.ForContext<ReplicationTrackingService>();
+	private readonly ILogger _log = Log.ForContext<ReplicationTrackingService>();
 	private readonly IPublisher _publisher;
 	private readonly ICheckpoint _replicationCheckpoint;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;

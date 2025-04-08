@@ -2,10 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.RequestManager;
 using NUnit.Framework;
+
 // ReSharper disable ObjectCreationAsStatement
 
 namespace EventStore.Core.Tests.Services.RequestManagement;

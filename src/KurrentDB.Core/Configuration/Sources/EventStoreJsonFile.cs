@@ -8,6 +8,7 @@ using KurrentDB.Common.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using Microsoft.Extensions.FileProviders;
+using Serilog;
 using static System.StringComparer;
 
 namespace KurrentDB.Core.Configuration.Sources;
@@ -51,7 +52,7 @@ public static class EventStoreJsonFileConfigurationExtensions {
 				UseActivePolling = reloadOnChange,
 				UsePollingFileWatcher = reloadOnChange
 			};
-			config.OnLoadException = context => Serilog.Log.Error(context.Exception, "err");
+			config.OnLoadException = context => Log.Error(context.Exception, "err");
 			config.Path = fileName;
 			config.ReloadOnChange = reloadOnChange;
 		});

@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI.Projections;
 using EventStore.Core.Tests;
@@ -103,7 +104,7 @@ public class when_creating_continuous_projection<TLogFormat, TStreamId> : Specif
 	public async Task should_have_turn_on_emit_to_stream() {
 		var events = await _connection
 			.ReadEventAsync(string.Format("$projections-{0}", _projectionId), 0, true, _credentials);
-		var data = System.Text.Encoding.UTF8.GetString(events.Event.Value.Event.Data);
+		var data = Encoding.UTF8.GetString(events.Event.Value.Event.Data);
 		var eventData = data.ParseJson<JObject>();
 		Assert.IsTrue((bool)eventData["emitEnabled"]);
 	}
@@ -145,7 +146,7 @@ public class
 	public async Task should_enable_track_emitted_streams() {
 		var events = await _connection
 			.ReadEventAsync(string.Format("$projections-{0}", _projectionId), 0, true, _credentials);
-		var data = System.Text.Encoding.UTF8.GetString(events.Event.Value.Event.Data);
+		var data = Encoding.UTF8.GetString(events.Event.Value.Event.Data);
 		var eventData = data.ParseJson<JObject>();
 		Assert.IsTrue((bool)eventData["trackEmittedStreams"]);
 	}

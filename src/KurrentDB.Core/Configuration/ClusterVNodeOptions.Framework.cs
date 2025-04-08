@@ -3,6 +3,7 @@
 
 // ReSharper disable CheckNamespace
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,12 +11,12 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime;
 using System.Text;
+using System.Text.RegularExpressions;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 
-#nullable enable
 namespace KurrentDB.Core;
 
 public partial record ClusterVNodeOptions {
@@ -253,7 +254,7 @@ public partial record ClusterVNodeOptions {
 	}
 
 	static string CombineByPascalCase(string name, string token = " ") {
-		var regex = new System.Text.RegularExpressions.Regex(
+		var regex = new Regex(
 			@"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z])|(?<=[A-Za-z])(?=[^A-Za-z])");
 		return regex.Replace(name, token);
 	}

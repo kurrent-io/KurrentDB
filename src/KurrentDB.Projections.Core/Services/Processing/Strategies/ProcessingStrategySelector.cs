@@ -2,12 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Projections.Core.Messages;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Strategies;
 
 public class ProcessingStrategySelector {
-	private readonly ILogger _logger = Serilog.Log.ForContext<ProcessingStrategySelector>();
+	private readonly ILogger _logger = Log.ForContext<ProcessingStrategySelector>();
 	private readonly ReaderSubscriptionDispatcher _subscriptionDispatcher;
 	private readonly int _maxProjectionStateSize;
 

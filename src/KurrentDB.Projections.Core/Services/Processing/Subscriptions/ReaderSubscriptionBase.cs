@@ -76,7 +76,7 @@ public class ReaderSubscriptionBase {
 		_positionTracker.UpdateByCheckpointTagInitial(@from);
 		_lastCheckpointTag = _positionTracker.LastTag;
 		_enableContentTypeValidation = enableContentTypeValidation;
-		_logger = Serilog.Log.ForContext<ReaderSubscriptionBase>();
+		_logger = Log.ForContext<ReaderSubscriptionBase>();
 	}
 
 	public string Tag {

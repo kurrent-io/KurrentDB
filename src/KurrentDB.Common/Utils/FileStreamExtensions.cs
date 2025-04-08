@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
+using Serilog.Core;
 using ILogger = Serilog.ILogger;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
@@ -12,7 +13,7 @@ namespace KurrentDB.Common.Utils;
 
 public static class FileStreamExtensions {
 	private static readonly ILogger Log =
-		Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "FileStreamExtensions");
+		Serilog.Log.ForContext(Constants.SourceContextPropertyName, "FileStreamExtensions");
 	private static Action<FileStream> FlushSafe;
 
 	[DllImport("kernel32.dll", SetLastError = true)]

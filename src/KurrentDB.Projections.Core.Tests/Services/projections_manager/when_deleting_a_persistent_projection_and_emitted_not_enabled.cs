@@ -7,6 +7,7 @@ using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using KurrentDB.Common.Utils;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
 
@@ -24,19 +25,19 @@ public class WhenDeletingAPersistentProjectionAndEmittedNotEnabled<TLogFormat, T
 	}
 
 	protected override IEnumerable<WhenStep> When() {
-		yield return new KurrentDB.Projections.Core.Messages.ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
+		yield return new ProjectionSubsystemMessage.StartComponents(Guid.NewGuid());
 		yield return
-			new KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.Command.Post(
+			new ProjectionManagementMessage.Command.Post(
 														 _bus, ProjectionMode.Continuous, _projectionName,
-														 KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
+														 ProjectionManagementMessage.RunAs.System, "JS", @"fromAll().when({$any:function(s,e){return s;}});",
 														 enabled: true, checkpointsEnabled: true, emitEnabled: false, trackEmittedStreams: false);
 		yield return
-			new KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.Command.Disable(
-															_bus, _projectionName, KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.RunAs.System);
+			new ProjectionManagementMessage.Command.Disable(
+															_bus, _projectionName, ProjectionManagementMessage.RunAs.System);
 		yield return
-			new KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.Command.Delete(
+			new ProjectionManagementMessage.Command.Delete(
 														   _bus, _projectionName,
-														   KurrentDB.Projections.Core.Messages.ProjectionManagementMessage.RunAs.System, true, true, true);
+														   ProjectionManagementMessage.RunAs.System, true, true, true);
 	}
 
 	[Test, Category("v8")]

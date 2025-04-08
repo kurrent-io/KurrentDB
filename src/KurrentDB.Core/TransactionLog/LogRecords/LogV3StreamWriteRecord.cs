@@ -40,7 +40,7 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 			throw new ArgumentOutOfRangeException("transactionOffset");
 		if (eventStreamId < LogV3SystemStreams.FirstVirtualStream)
 			throw new ArgumentOutOfRangeException("eventStreamId", eventStreamId, null);
-		if (expectedVersion < KurrentDB.Core.Data.ExpectedVersion.Any)
+		if (expectedVersion < Core.Data.ExpectedVersion.Any)
 			throw new ArgumentOutOfRangeException("expectedVersion");
 
 		Record = RecordCreator.CreateStreamWriteRecordForSingleEvent(

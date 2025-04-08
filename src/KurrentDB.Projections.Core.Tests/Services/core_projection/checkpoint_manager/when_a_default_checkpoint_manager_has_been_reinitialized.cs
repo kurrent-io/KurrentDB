@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using EventStore.Core.Tests;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 
@@ -27,7 +28,7 @@ public class when_a_default_checkpoint_manager_has_been_reinitialized<TLogFormat
 		try {
 			_checkpointReader.BeginLoadState();
 			var checkpointLoaded =
-				_consumer.HandledMessages.OfType<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>().First();
+				_consumer.HandledMessages.OfType<CoreProjectionProcessingMessage.CheckpointLoaded>().First();
 			_checkpointWriter.StartFrom(checkpointLoaded.CheckpointTag, checkpointLoaded.CheckpointEventNumber);
 			_manager.BeginLoadPrerecordedEvents(checkpointLoaded.CheckpointTag);
 
@@ -72,7 +73,7 @@ public class when_a_default_checkpoint_manager_has_been_reinitialized<TLogFormat
 	[Test]
 	public void ready_for_checkpoint_throws_invalid_operation_exception() {
 		Assert.Throws<InvalidOperationException>(() => {
-			_manager.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint(null));
+			_manager.Handle(new CoreProjectionProcessingMessage.ReadyForCheckpoint(null));
 		});
 	}
 

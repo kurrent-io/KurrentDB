@@ -3,16 +3,17 @@
 
 using System;
 using System.Collections.Generic;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Messages;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Management;
 
 public class ProjectionManagerMessageDispatcher
 	: IHandle<CoreProjectionManagementControlMessage> {
-	private readonly ILogger _logger = Serilog.Log.ForContext<ProjectionManager>();
+	private readonly ILogger _logger = Log.ForContext<ProjectionManager>();
 	private readonly IDictionary<Guid, IPublisher> _queueMap;
 
 	public ProjectionManagerMessageDispatcher(IDictionary<Guid, IPublisher> queueMap) {

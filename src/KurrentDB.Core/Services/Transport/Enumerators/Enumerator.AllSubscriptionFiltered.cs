@@ -34,7 +34,7 @@ partial class Enumerator {
 		private readonly uint _checkpointInterval;
 		private readonly CancellationTokenSource _cts;
 		private readonly Channel<ReadResponse> _channel;
-		private readonly Channel<(ulong SequenceNumber, KurrentDB.Core.Data.ResolvedEvent? ResolvedEvent, TFPos? Checkpoint)> _liveEvents;
+		private readonly Channel<(ulong SequenceNumber, ResolvedEvent? ResolvedEvent, TFPos? Checkpoint)> _liveEvents;
 
 		private ReadResponse _current;
 		private bool _disposed;

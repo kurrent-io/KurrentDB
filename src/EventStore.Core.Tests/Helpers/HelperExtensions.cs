@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -91,9 +92,9 @@ public static class HelperExtensions {
 
 	public static string GetFilePathFromAssembly(string filePath) {
 		var baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-		System.Console.WriteLine("Base dir: {0}", baseDir);
+		Console.WriteLine("Base dir: {0}", baseDir);
 		var result = Path.Combine(baseDir, filePath);
-		System.Console.WriteLine("Result: {0}", result);
+		Console.WriteLine("Result: {0}", result);
 		return result;
 	}
 }

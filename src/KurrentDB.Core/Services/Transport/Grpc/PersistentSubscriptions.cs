@@ -7,7 +7,7 @@ using KurrentDB.Core.Bus;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
-internal partial class PersistentSubscriptions : EventStore.Client.PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsBase {
+internal partial class PersistentSubscriptions : Client.PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsBase {
 	private readonly IPublisher _publisher;
 	private readonly IAuthorizationProvider _authorizationProvider;
 

@@ -335,7 +335,7 @@ public class PersistentSubscriptionController : CommunicationController {
 			ids.Add(id);
 		}
 
-		var cmd = new ClientMessage.PersistentSubscriptionNackEvents(
+		var cmd = new ClientMessages(
 			Guid.NewGuid(),
 			Guid.NewGuid(),
 			envelope,
@@ -396,7 +396,7 @@ public class PersistentSubscriptionController : CommunicationController {
 			return;
 		}
 
-		var cmd = new ClientMessage.PersistentSubscriptionNackEvents(
+		var cmd = new ClientMessages(
 			Guid.NewGuid(),
 			Guid.NewGuid(),
 			envelope,
@@ -477,23 +477,19 @@ public class PersistentSubscriptionController : CommunicationController {
 				if (m == null)
 					throw new Exception("unexpected message " + message);
 				switch (m.Result) {
-					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-						.CreatePersistentSubscriptionToStreamResult
+					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
 						.Success:
 						code = HttpStatusCode.Created;
 						break;
-					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-						.CreatePersistentSubscriptionToStreamResult
+					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
 						.AlreadyExists:
 						code = HttpStatusCode.Conflict;
 						break;
-					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-						.CreatePersistentSubscriptionToStreamResult
+					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult
 						.AccessDenied:
 						code = HttpStatusCode.Unauthorized;
 						break;
-					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-						.CreatePersistentSubscriptionToStreamResult.Fail:
+					case ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail:
 						code = HttpStatusCode.BadRequest;
 						break;
 					default:

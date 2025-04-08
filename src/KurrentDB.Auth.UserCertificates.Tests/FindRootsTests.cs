@@ -161,7 +161,7 @@ public class FindRootsTests {
 
 		var root = CreateCertificate(
 			ca: true,
-			subject: TestUtils.GenerateSubject(),
+			subject: GenerateSubject(),
 			keyPair: rootRsa,
 			parentInfo: (leafRsa, new X500DistinguishedName(leafSubject)),
 			expired: false);
@@ -181,7 +181,7 @@ public class FindRootsTests {
 
 		var root = CreateCertificate(
 			ca: true,
-			subject: TestUtils.GenerateSubject(),
+			subject: GenerateSubject(),
 			keyPair: rootRsa,
 			parentInfo: (intermediateRsa, new X500DistinguishedName(intermediateSubject)),
 			expired: false);

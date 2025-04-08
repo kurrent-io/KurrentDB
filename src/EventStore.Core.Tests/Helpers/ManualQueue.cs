@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Helpers;

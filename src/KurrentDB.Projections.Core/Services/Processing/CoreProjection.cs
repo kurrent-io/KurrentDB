@@ -13,6 +13,7 @@ using KurrentDB.Projections.Core.Services.Processing.Phases;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using KurrentDB.Projections.Core.Services.Processing.WorkItems;
 using KurrentDB.Projections.Core.Utils;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing;
@@ -51,7 +52,7 @@ public class CoreProjection : IDisposable,
 	private readonly IPublisher _inputQueue;
 	private readonly ClaimsPrincipal _runAs;
 
-	private readonly Serilog.ILogger _logger;
+	private readonly ILogger _logger;
 
 	private State _state;
 
@@ -108,7 +109,7 @@ public class CoreProjection : IDisposable,
 		_name = effectiveProjectionName;
 		_version = version;
 		_stopOnEof = projectionProcessingStrategy.GetStopOnEof();
-		_logger = logger ?? Serilog.Log.ForContext<CoreProjection>();
+		_logger = logger ?? Log.ForContext<CoreProjection>();
 		_publisher = publisher;
 		_ioDispatcher = ioDispatcher;
 		_partitionStateCache = partitionStateCache;
@@ -271,11 +272,11 @@ public class CoreProjection : IDisposable,
 		_projectionProcessingPhase.Handle(message);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted message) {
+	public void Handle(CoreProjectionProcessingMessage.CheckpointCompleted message) {
 		CheckpointCompleted(message.CheckpointTag);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded message) {
+	public void Handle(CoreProjectionProcessingMessage.CheckpointLoaded message) {
 		EnsureState(State.LoadStateRequested);
 		try {
 			var checkpointTag = message.CheckpointTag;
@@ -306,7 +307,7 @@ public class CoreProjection : IDisposable,
 		}
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+	public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 		EnsureState(State.StateLoaded);
 		try {
 			_projectionProcessingPhase.Handle(message);
@@ -315,7 +316,7 @@ public class CoreProjection : IDisposable,
 		}
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested message) {
+	public void Handle(CoreProjectionProcessingMessage.RestartRequested message) {
 		_logger.Information(
 			"Projection '{projection}'({projectionCorrelationId}) restart has been requested due to: '{reason}'",
 			_name, _projectionCorrelationId,
@@ -334,7 +335,7 @@ public class CoreProjection : IDisposable,
 		Start();
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed message) {
+	public void Handle(CoreProjectionProcessingMessage.Failed message) {
 		SetFaulted(message.Reason);
 	}
 

@@ -9,6 +9,7 @@ using KurrentDB.Core.Index;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
+
 // ReSharper disable ObjectCreationAsStatement
 
 namespace EventStore.Core.Tests.Services.IndexCommitter;

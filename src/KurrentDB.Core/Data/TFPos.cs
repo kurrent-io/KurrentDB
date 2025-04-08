@@ -3,6 +3,7 @@
 
 using System;
 using System.Diagnostics.Contracts;
+using System.Globalization;
 
 namespace KurrentDB.Core.Data;
 
@@ -31,9 +32,9 @@ public struct TFPos : IEquatable<TFPos>, IComparable<TFPos> {
 
 		long commitPos;
 		long preparePos;
-		if (!long.TryParse(s.Substring(0, 16), System.Globalization.NumberStyles.HexNumber, null, out commitPos))
+		if (!long.TryParse(s.Substring(0, 16), NumberStyles.HexNumber, null, out commitPos))
 			return false;
-		if (!long.TryParse(s.Substring(16, 16), System.Globalization.NumberStyles.HexNumber, null, out preparePos))
+		if (!long.TryParse(s.Substring(16, 16), NumberStyles.HexNumber, null, out preparePos))
 			return false;
 		pos = new TFPos(commitPos, preparePos);
 		return true;

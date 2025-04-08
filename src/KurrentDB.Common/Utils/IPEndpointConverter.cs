@@ -3,6 +3,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Net;
 
 namespace KurrentDB.Common.Utils;
@@ -12,7 +13,7 @@ public class IPEndPointConverter : TypeConverter {
 		return sourceType == typeof(string) || base.CanConvertFrom(context, sourceType);
 	}
 
-	public override object ConvertFrom(ITypeDescriptorContext context, System.Globalization.CultureInfo culture,
+	public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture,
 		object value) {
 		var valueAsString = value as string;
 		if (valueAsString != null) {

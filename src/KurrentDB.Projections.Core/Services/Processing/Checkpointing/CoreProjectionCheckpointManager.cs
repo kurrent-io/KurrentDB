@@ -7,6 +7,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using KurrentDB.Projections.Core.Services.Processing.Partitioning;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -72,7 +73,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		_publisher = publisher;
 		_projectionCorrelationId = projectionCorrelationId;
 		_projectionConfig = projectionConfig;
-		_logger = Serilog.Log.ForContext<CoreProjectionCheckpointManager>();
+		_logger = Log.ForContext<CoreProjectionCheckpointManager>();
 		_namingBuilder = namingBuilder;
 		_usePersistentCheckpoints = usePersistentCheckpoints;
 		_requestedCheckpointState = new PartitionState("", null, _zeroTag);
@@ -270,7 +271,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 	}
 
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.ReadyForCheckpoint message) {
+	public void Handle(CoreProjectionProcessingMessage.ReadyForCheckpoint message) {
 		// ignore any messages - typically when faulted
 		if (_stopped)
 			return;
@@ -285,13 +286,13 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 			CheckpointWritten(_requestedCheckpointPosition);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested message) {
+	public void Handle(CoreProjectionProcessingMessage.RestartRequested message) {
 		if (_stopped)
 			return;
 		RequestRestart(message.Reason);
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed message) {
+	public void Handle(CoreProjectionProcessingMessage.Failed message) {
 		if (_stopped)
 			return;
 		Failed(message.Reason);
@@ -299,7 +300,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 
 	protected void PrerecordedEventsLoaded(CheckpointTag checkpointTag) {
 		_publisher.Publish(
-			new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded(_projectionCorrelationId, checkpointTag));
+			new CoreProjectionProcessingMessage.PrerecordedEventsLoaded(_projectionCorrelationId, checkpointTag));
 	}
 
 	private void RequestCheckpointToStop() {
@@ -318,7 +319,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		}
 
 		_publisher.Publish(
-			new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted(
+			new CoreProjectionProcessingMessage.CheckpointCompleted(
 				_projectionCorrelationId, _lastCompletedCheckpointPosition));
 	}
 
@@ -374,12 +375,12 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 
 	protected void RequestRestart(string reason) {
 		_stopped = true; // ignore messages
-		_publisher.Publish(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested(_projectionCorrelationId, reason));
+		_publisher.Publish(new CoreProjectionProcessingMessage.RestartRequested(_projectionCorrelationId, reason));
 	}
 
 	private void Failed(string reason) {
 		_stopped = true; // ignore messages
-		_publisher.Publish(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed(_projectionCorrelationId, reason));
+		_publisher.Publish(new CoreProjectionProcessingMessage.Failed(_projectionCorrelationId, reason));
 	}
 
 	protected void CheckpointWritten(CheckpointTag lastCompletedCheckpointPosition) {
@@ -394,7 +395,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 
 		//NOTE: the next checkpoint will start by completing checkpoint work item
 		_publisher.Publish(
-			new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted(
+			new CoreProjectionProcessingMessage.CheckpointCompleted(
 				_projectionCorrelationId, _lastCompletedCheckpointPosition));
 	}
 

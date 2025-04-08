@@ -8,8 +8,8 @@ using EventStore.Core.Messages;
 using EventStore.Core.Tests.Bus.Helpers;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
-using NUnit.Framework;
 using KurrentDB.Core.Services.TimerService;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.VNode;
 

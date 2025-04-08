@@ -3,6 +3,7 @@
 
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.Replication;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
@@ -26,23 +27,23 @@ public class when_handling_stream_awaiting_message<TLogFormat, TStreamId> : Test
 
 		_fakeEnvelope = new FakeEnvelope();
 		_checkpoint.Handle(
-			new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamAwaiting("awaiting_stream", _fakeEnvelope));
+			new CoreProjectionProcessingMessage.EmittedStreamAwaiting("awaiting_stream", _fakeEnvelope));
 	}
 
 	[Test]
 	public void broadcasts_write_completed_to_awaiting_streams() {
-		_checkpoint.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("completed_stream"));
+		_checkpoint.Handle(new CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("completed_stream"));
 		Assert.AreEqual(1, _fakeEnvelope.Replies.Count);
-		Assert.IsInstanceOf<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted>(_fakeEnvelope.Replies[0]);
+		Assert.IsInstanceOf<CoreProjectionProcessingMessage.EmittedStreamWriteCompleted>(_fakeEnvelope.Replies[0]);
 	}
 
 	[Test]
 	public void does_not_broadcast_second_write_completed_to_awaiting_streams() {
-		_checkpoint.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("completed_stream1"));
-		_checkpoint.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("completed_stream2"));
+		_checkpoint.Handle(new CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("completed_stream1"));
+		_checkpoint.Handle(new CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("completed_stream2"));
 		Assert.AreEqual(1, _fakeEnvelope.Replies.Count);
-		Assert.IsInstanceOf<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted>(_fakeEnvelope.Replies[0]);
+		Assert.IsInstanceOf<CoreProjectionProcessingMessage.EmittedStreamWriteCompleted>(_fakeEnvelope.Replies[0]);
 		Assert.AreEqual("completed_stream1",
-			((KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted)_fakeEnvelope.Replies[0]).StreamId);
+			((CoreProjectionProcessingMessage.EmittedStreamWriteCompleted)_fakeEnvelope.Replies[0]).StreamId);
 	}
 }

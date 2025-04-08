@@ -15,9 +15,9 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using ILogger = Serilog.ILogger;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Core.Services;
 

@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using EventStore.ClientAPI.SystemData;
 using EventStore.Core.Tests;
 using KurrentDB.Common.Utils;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -21,10 +22,10 @@ public class with_multiple_tracked_streams<TLogFormat, TStreamId> : Specificatio
 	protected CountdownEvent _eventAppeared;
 	private int _numberOfTrackedEvents = 200;
 	private string _testStreamFormat = "test_stream_{0}";
-	private EventStore.ClientAPI.SystemData.UserCredentials _credentials;
+	private UserCredentials _credentials;
 
 	protected override async Task Given() {
-		_credentials = new EventStore.ClientAPI.SystemData.UserCredentials("admin", "changeit");
+		_credentials = new UserCredentials("admin", "changeit");
 		_eventAppeared = new CountdownEvent(_numberOfTrackedEvents);
 		_onDeleteStreamCompleted = () => { _resetEvent.Set(); };
 		await base.Given();
@@ -68,7 +69,7 @@ public class with_multiple_tracked_streams<TLogFormat, TStreamId> : Specificatio
 	public async Task should_have_deleted_the_tracked_emitted_streams() {
 		for (int i = 0; i < _numberOfTrackedEvents; i++) {
 			var result = await _conn.ReadStreamEventsForwardAsync(String.Format(_testStreamFormat, i), 0, 1, false,
-				new EventStore.ClientAPI.SystemData.UserCredentials("admin", "changeit"));
+				new UserCredentials("admin", "changeit"));
 			Assert.AreEqual(SliceReadStatus.StreamNotFound, result.Status);
 		}
 	}
@@ -77,14 +78,14 @@ public class with_multiple_tracked_streams<TLogFormat, TStreamId> : Specificatio
 	[Test]
 	public async Task should_have_deleted_the_checkpoint_stream() {
 		var result = await _conn.ReadStreamEventsForwardAsync(_projectionNamesBuilder.GetEmittedStreamsCheckpointName(),
-			0, 1, false, new EventStore.ClientAPI.SystemData.UserCredentials("admin", "changeit"));
+			0, 1, false, new UserCredentials("admin", "changeit"));
 		Assert.AreEqual(SliceReadStatus.StreamNotFound, result.Status);
 	}
 
 	[Test]
 	public async Task should_have_deleted_the_emitted_streams_stream() {
 		var result = await _conn.ReadStreamEventsForwardAsync(_projectionNamesBuilder.GetEmittedStreamsName(), 0, 1,
-			false, new EventStore.ClientAPI.SystemData.UserCredentials("admin", "changeit"));
+			false, new UserCredentials("admin", "changeit"));
 		Assert.AreEqual(SliceReadStatus.StreamNotFound, result.Status);
 	}
 }

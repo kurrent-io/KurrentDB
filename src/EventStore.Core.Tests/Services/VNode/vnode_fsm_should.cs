@@ -3,8 +3,8 @@
 
 using System.Threading.Tasks;
 using DotNext.Runtime;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.VNode;
 using NUnit.Framework;
 

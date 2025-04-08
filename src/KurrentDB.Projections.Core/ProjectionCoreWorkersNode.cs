@@ -10,13 +10,13 @@ using KurrentDB.Common.Options;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Messages.EventReaders.Feeds;
 using KurrentDB.Projections.Core.Messaging;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core;
 

@@ -289,18 +289,18 @@ public partial class PTable {
 
 	public static int GetIndexEntrySize(byte version) {
 		if (version == PTableVersions.IndexV1) {
-			return PTable.IndexEntryV1Size;
+			return IndexEntryV1Size;
 		}
 
 		if (version == PTableVersions.IndexV2) {
-			return PTable.IndexEntryV2Size;
+			return IndexEntryV2Size;
 		}
 
 		if (version == PTableVersions.IndexV3) {
-			return PTable.IndexEntryV3Size;
+			return IndexEntryV3Size;
 		}
 
-		return PTable.IndexEntryV4Size;
+		return IndexEntryV4Size;
 	}
 
 	private static PTable MergeTo2(IList<PTable> tables, long numIndexEntries, int indexEntrySize,

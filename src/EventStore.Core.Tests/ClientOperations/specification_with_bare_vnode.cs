@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using KurrentDB.Core.Messaging;
 using EventStore.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Core;
 using KurrentDB.Core.Authentication;
@@ -15,6 +14,7 @@ using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Tests;
 using Microsoft.AspNetCore.Builder;
 

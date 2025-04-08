@@ -3,8 +3,8 @@
 
 using System;
 using System.Net.Sockets;
-using KurrentDB.Core.Messaging;
 using EventStore.Core.Services.Transport.Tcp;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Messages;
 

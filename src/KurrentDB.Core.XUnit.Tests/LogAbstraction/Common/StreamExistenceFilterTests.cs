@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.LogAbstraction;
@@ -42,7 +43,7 @@ public class StreamExistenceFilterTests :
 	protected override INameExistenceFilter Sut { get; set; }
 
 	private StreamExistenceFilter GenSut(
-		[System.Runtime.CompilerServices.CallerMemberName] string name = "",
+		[CallerMemberName] string name = "",
 		TimeSpan? checkpointInterval = null,
 		long size = 10_000,
 		bool useHasher = true) {

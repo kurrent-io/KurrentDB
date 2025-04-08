@@ -14,7 +14,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Common.Log;
-using EventStore.Core;
 using EventStore.Core.Cluster;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;

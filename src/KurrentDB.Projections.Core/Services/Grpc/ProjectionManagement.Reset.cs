@@ -3,11 +3,11 @@
 
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
-using KurrentDB.Core.Messaging;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Plugins.Authorization;
-using KurrentDB.Projections.Core.Messages;
 using Grpc.Core;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Projections.Core.Messages;
 
 // ReSharper disable CheckNamespace
 

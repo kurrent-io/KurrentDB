@@ -215,7 +215,7 @@ partial class ReadEvent {
 }
 
 partial class ReadEventCompleted {
-	public ReadEventCompleted(ReadEventCompleted.Types.ReadEventResult result, ResolvedIndexedEvent @event, string error) {
+	public ReadEventCompleted(Types.ReadEventResult result, ResolvedIndexedEvent @event, string error) {
 		Result = result;
 		if (@event != null)
 			Event = @event;
@@ -235,7 +235,7 @@ partial class ReadStreamEvents {
 }
 
 partial class ReadStreamEventsCompleted {
-	public ReadStreamEventsCompleted(ResolvedIndexedEvent[] events, ReadStreamEventsCompleted.Types.ReadStreamResult result, long nextEventNumber, long lastEventNumber, bool isEndOfStream, long lastCommitPosition, string error) {
+	public ReadStreamEventsCompleted(ResolvedIndexedEvent[] events, Types.ReadStreamResult result, long nextEventNumber, long lastEventNumber, bool isEndOfStream, long lastCommitPosition, string error) {
 		Events.AddRange(events);
 		Result = result;
 		NextEventNumber = nextEventNumber;
@@ -258,7 +258,7 @@ partial class ReadAllEvents {
 }
 
 partial class ReadAllEventsCompleted {
-	public ReadAllEventsCompleted(long commitPosition, long preparePosition, ResolvedEvent[] events, long nextCommitPosition, long nextPreparePosition, ReadAllEventsCompleted.Types.ReadAllResult result, string error) {
+	public ReadAllEventsCompleted(long commitPosition, long preparePosition, ResolvedEvent[] events, long nextCommitPosition, long nextPreparePosition, Types.ReadAllResult result, string error) {
 		CommitPosition = commitPosition;
 		PreparePosition = preparePosition;
 		Events.AddRange(events);
@@ -271,7 +271,7 @@ partial class ReadAllEventsCompleted {
 }
 
 partial class Filter {
-	public Filter(Filter.Types.FilterContext context, Filter.Types.FilterType type, string[] data) {
+	public Filter(Types.FilterContext context, Types.FilterType type, string[] data) {
 		Context = context;
 		Type = type;
 		Data.AddRange(data);
@@ -291,7 +291,7 @@ partial class FilteredReadAllEvents {
 }
 
 partial class FilteredReadAllEventsCompleted {
-	public FilteredReadAllEventsCompleted(long commitPosition, long preparePosition, ResolvedEvent[] events, long nextCommitPosition, long nextPreparePosition, bool isEndOfStream, FilteredReadAllEventsCompleted.Types.FilteredReadAllResult result, string error) {
+	public FilteredReadAllEventsCompleted(long commitPosition, long preparePosition, ResolvedEvent[] events, long nextCommitPosition, long nextPreparePosition, bool isEndOfStream, Types.FilteredReadAllResult result, string error) {
 		CommitPosition = commitPosition;
 		PreparePosition = preparePosition;
 		Events.AddRange(events);
@@ -326,7 +326,7 @@ partial class CreatePersistentSubscription {
 }
 
 partial class CreatePersistentSubscriptionCompleted {
-	public CreatePersistentSubscriptionCompleted(CreatePersistentSubscriptionCompleted.Types.CreatePersistentSubscriptionResult result, string reason) {
+	public CreatePersistentSubscriptionCompleted(Types.CreatePersistentSubscriptionResult result, string reason) {
 		Result = result;
 		if (reason != null)
 			Reason = reason;
@@ -369,7 +369,7 @@ partial class UpdatePersistentSubscription {
 }
 
 partial class UpdatePersistentSubscriptionCompleted {
-	public UpdatePersistentSubscriptionCompleted(UpdatePersistentSubscriptionCompleted.Types.UpdatePersistentSubscriptionResult result, string reason) {
+	public UpdatePersistentSubscriptionCompleted(Types.UpdatePersistentSubscriptionResult result, string reason) {
 		Result = result;
 		if (reason != null)
 			Reason = reason;
@@ -402,7 +402,7 @@ partial class PersistentSubscriptionAckEvents {
 }
 
 partial class PersistentSubscriptionNakEvents {
-	public PersistentSubscriptionNakEvents(string subscriptionId, byte[][] processedEventIds, string message, PersistentSubscriptionNakEvents.Types.NakAction action) {
+	public PersistentSubscriptionNakEvents(string subscriptionId, byte[][] processedEventIds, string message, Types.NakAction action) {
 		SubscriptionId = subscriptionId;
 		for (int i = 0; i < processedEventIds.Length; i++) {
 			ProcessedEventIds.Add(ByteString.CopyFrom(processedEventIds[i]));
@@ -458,7 +458,7 @@ partial class StreamEventAppeared {
 }
 
 partial class SubscriptionDropped {
-	public SubscriptionDropped(SubscriptionDropped.Types.SubscriptionDropReason reason) {
+	public SubscriptionDropped(Types.SubscriptionDropReason reason) {
 		Reason = reason;
 	}
 }
@@ -504,7 +504,7 @@ partial class NotHandled {
 }
 
 partial class ScavengeDatabaseResponse {
-	public ScavengeDatabaseResponse(ScavengeDatabaseResponse.Types.ScavengeResult result, string scavengeId) {
+	public ScavengeDatabaseResponse(Types.ScavengeResult result, string scavengeId) {
 		Result = result;
 		ScavengeId = scavengeId;
 	}

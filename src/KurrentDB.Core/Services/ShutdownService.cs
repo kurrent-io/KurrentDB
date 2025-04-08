@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using Serilog;
 using KurrentDB.Core.Services.TimerService;
+using Serilog;
 
 namespace KurrentDB.Core.Services;
 

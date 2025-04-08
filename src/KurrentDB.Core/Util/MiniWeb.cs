@@ -11,6 +11,7 @@ using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 using KurrentDB.Transport.Http.EntityManagement;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Util;
@@ -18,7 +19,7 @@ namespace KurrentDB.Core.Util;
 public class MiniWeb {
 	private readonly string _localWebRootPath;
 	private readonly string _fileSystemRoot;
-	private static readonly ILogger Logger = Serilog.Log.ForContext<MiniWeb>();
+	private static readonly ILogger Logger = Log.ForContext<MiniWeb>();
 
 	public MiniWeb(string localWebRootPath) : this(localWebRootPath, GetWebRootFileSystemDirectory()) {
 	}

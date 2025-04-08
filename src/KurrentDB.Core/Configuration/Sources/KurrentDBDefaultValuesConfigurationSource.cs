@@ -4,7 +4,6 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Memory;
 using static System.StringComparer;

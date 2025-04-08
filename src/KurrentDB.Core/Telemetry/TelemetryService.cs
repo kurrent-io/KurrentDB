@@ -19,13 +19,13 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using static EventStore.Plugins.Diagnostics.PluginDiagnosticsDataCollectionMode;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Core.Telemetry;
 

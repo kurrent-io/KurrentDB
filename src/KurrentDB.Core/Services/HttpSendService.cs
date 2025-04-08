@@ -14,6 +14,7 @@ using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.Settings;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.EntityManagement;
+using HttpMethod = System.Net.Http.HttpMethod;
 using HttpStatusCode = KurrentDB.Transport.Http.HttpStatusCode;
 using ILogger = Serilog.ILogger;
 
@@ -138,7 +139,7 @@ public class HttpSendService : IHttpForwarder,
 		var srcReq = manager.HttpEntity.Request;
 		var request = new HttpRequestMessage();
 		request.RequestUri = forwardUri;
-		request.Method = new System.Net.Http.HttpMethod(srcReq.HttpMethod);
+		request.Method = new HttpMethod(srcReq.HttpMethod);
 
 		var hasContentLength = false;
 		// Copy unrestricted headers (including cookies, if any)

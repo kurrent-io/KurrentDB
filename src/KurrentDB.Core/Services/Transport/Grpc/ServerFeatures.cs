@@ -12,7 +12,7 @@ using VersionInfo = KurrentDB.Common.Utils.VersionInfo;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
-class ServerFeatures(EndpointDataSource endpointDataSource) : EventStore.Client.ServerFeatures.ServerFeatures.ServerFeaturesBase {
+class ServerFeatures(EndpointDataSource endpointDataSource) : Client.ServerFeatures.ServerFeatures.ServerFeaturesBase {
 	public const int ApiVersion = 1;
 	private readonly Task<SupportedMethods> _supportedMethods = GetSupportedMethods(endpointDataSource);
 

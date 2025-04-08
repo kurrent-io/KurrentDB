@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Reactive.Subjects;
-using KurrentDB.Core.Messaging;
 using EventStore.Plugins;
 using EventStore.Plugins.Licensing;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 using KurrentDB.POC.ConnectedSubsystemsPlugin;
 using KurrentDB.POC.IO.Core;

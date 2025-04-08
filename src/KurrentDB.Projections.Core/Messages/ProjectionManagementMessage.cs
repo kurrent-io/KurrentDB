@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Projections.Core.Services;

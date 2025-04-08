@@ -139,7 +139,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		if (transactionOffset < -1)
 			throw new ArgumentOutOfRangeException("transactionOffset");
 		Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
-		if (expectedVersion < KurrentDB.Core.Data.ExpectedVersion.Any)
+		if (expectedVersion < Core.Data.ExpectedVersion.Any)
 			throw new ArgumentOutOfRangeException("expectedVersion");
 
 		Flags = flags;

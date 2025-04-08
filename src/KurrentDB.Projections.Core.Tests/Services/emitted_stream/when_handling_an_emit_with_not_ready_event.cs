@@ -6,6 +6,7 @@ using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using KurrentDB.Core.Services;
+using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
@@ -57,7 +58,7 @@ public class when_handling_an_emit_with_not_ready_event<TLogFormat, TStreamId> :
 			"test_stream", Guid.NewGuid(), "other_stream", CheckpointTag.FromPosition(0, 1100, 1000), null);
 		_stream.EmitEvents(new[] { linkTo });
 		linkTo.SetTargetEventNumber(1);
-		_stream.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("other_stream"));
+		_stream.Handle(new CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("other_stream"));
 
 		Assert.AreEqual(1, _readyHandler.HandledStreamAwaitingMessage.Count);
 		Assert.AreEqual(
@@ -72,7 +73,7 @@ public class when_handling_an_emit_with_not_ready_event<TLogFormat, TStreamId> :
 		var linkTo = new EmittedLinkTo(
 			"test_stream", Guid.NewGuid(), "other_stream", CheckpointTag.FromPosition(0, 1100, 1000), null);
 		_stream.EmitEvents(new[] { linkTo });
-		_stream.Handle(new KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("one_more_stream"));
+		_stream.Handle(new CoreProjectionProcessingMessage.EmittedStreamWriteCompleted("one_more_stream"));
 
 		Assert.AreEqual(2, _readyHandler.HandledStreamAwaitingMessage.Count);
 		Assert.AreEqual("test_stream", _readyHandler.HandledStreamAwaitingMessage[0].StreamId);

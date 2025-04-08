@@ -7,9 +7,10 @@ using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.TransactionLog.Checkpoint;
-using ILogger = Serilog.ILogger;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using Serilog;
+using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services.VNode;
 
@@ -22,7 +23,7 @@ public class InaugurationManager :
 	IHandle<ReplicationTrackingMessage.ReplicatedTo>,
 	IHandle<ReplicationTrackingMessage.IndexedTo> {
 
-	private readonly ILogger _log = Serilog.Log.ForContext<InaugurationManager>();
+	private readonly ILogger _log = Log.ForContext<InaugurationManager>();
 	private readonly IPublisher _publisher;
 	private readonly IReadOnlyCheckpoint _replicationCheckpoint;
 	private readonly IReadOnlyCheckpoint _indexCheckpoint;

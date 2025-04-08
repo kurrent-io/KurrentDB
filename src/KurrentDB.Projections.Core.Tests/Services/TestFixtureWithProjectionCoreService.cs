@@ -4,12 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using KurrentDB.Core.Messaging;
 using EventStore.Core.Tests.Bus.Helpers;
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.Util;
@@ -52,24 +52,24 @@ public class TestFixtureWithProjectionCoreService {
 		public List<EventReaderSubscriptionMessage.CommittedEventReceived> HandledMessages =
 			new List<EventReaderSubscriptionMessage.CommittedEventReceived>();
 
-		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted message) {
+		public void Handle(CoreProjectionProcessingMessage.CheckpointCompleted message) {
 			throw new NotImplementedException();
 		}
 
-		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded message) {
+		public void Handle(CoreProjectionProcessingMessage.CheckpointLoaded message) {
 			throw new NotImplementedException();
 		}
 
 
-		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested message) {
+		public void Handle(CoreProjectionProcessingMessage.RestartRequested message) {
 			throw new NotImplementedException();
 		}
 
-		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed message) {
+		public void Handle(CoreProjectionProcessingMessage.Failed message) {
 			throw new NotImplementedException();
 		}
 
-		public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
+		public void Handle(CoreProjectionProcessingMessage.PrerecordedEventsLoaded message) {
 			throw new NotImplementedException();
 		}
 	}

@@ -139,7 +139,7 @@ public partial class EventByTypeIndexEventReader {
 				_pendingRequestCorrelationId, _pendingRequestCorrelationId, new SendToThisEnvelope(this),
 				_fromTfPosition.CommitPosition,
 				_fromTfPosition.PreparePosition == -1 ? 0 : _fromTfPosition.PreparePosition,
-				EventByTypeIndexEventReader.MaxReadCount,
+				MaxReadCount,
 				true, false, null, _readAs, replyOnExpired: false);
 
 			var timeoutMessage = TimerMessage.Schedule.Create(

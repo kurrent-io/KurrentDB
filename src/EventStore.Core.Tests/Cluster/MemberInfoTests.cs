@@ -3,6 +3,7 @@
 
 using System;
 using System.Net;
+using EventStore.Core.Cluster;
 using KurrentDB.Core.Data;
 using NUnit.Framework;
 
@@ -14,7 +15,7 @@ public class MemberInfoTests {
 	public void member_with_dns_endpoint_should_equal() {
 		var ipAddress = "127.0.0.1";
 		var port = 1113;
-		var memberWithDnsEndPoint = EventStore.Core.Cluster.MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
+		var memberWithDnsEndPoint = MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
 			VNodeState.Unknown, true,
 			new DnsEndPoint(ipAddress, port),
 			new DnsEndPoint(ipAddress, port),
@@ -35,7 +36,7 @@ public class MemberInfoTests {
 	public void member_with_ip_endpoint_should_equal() {
 		var ipAddress = "127.0.0.1";
 		var port = 1113;
-		var memberWithDnsEndPoint = EventStore.Core.Cluster.MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
+		var memberWithDnsEndPoint = MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
 			VNodeState.Unknown, true,
 			new IPEndPoint(IPAddress.Parse(ipAddress), port),
 			new IPEndPoint(IPAddress.Parse(ipAddress), port),

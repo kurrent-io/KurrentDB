@@ -35,6 +35,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using Serilog;
 using Serilog.Events;
+using _Imports = KurrentDB.UI._Imports;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 var optionsWithLegacyDefaults = LocationOptionWithLegacyDefault.SupportedLegacyLocations;
@@ -268,7 +269,7 @@ try {
 				.DisableAntiforgery()
 				.AddInteractiveServerRenderMode()
 				.AddInteractiveWebAssemblyRenderMode()
-				.AddAdditionalAssemblies(typeof(KurrentDB.UI._Imports).Assembly);
+				.AddAdditionalAssemblies(typeof(_Imports).Assembly);
 			await app.RunAsync(token);
 
 			exitCodeSource.TrySetResult(0);

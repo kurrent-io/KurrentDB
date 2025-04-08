@@ -70,7 +70,7 @@ public class InternalClient : IClient {
 			stream,
 			expectedVersion,
 			events.Select(evt =>
-				new KurrentDB.Core.Data.Event(
+				new Core.Data.Event(
 					evt.EventId, evt.EventType, isJson: evt.ContentType == "application/json",
 					evt.Data.ToArray(),
 					evt.Metadata.ToArray())).ToArray(),

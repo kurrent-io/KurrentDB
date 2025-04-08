@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
@@ -120,9 +121,9 @@ public abstract class SpecificationWithNodeAndProjectionsManager<TLogFormat, TSt
 
 	private List<string> _systemProjections =>
 		typeof(ProjectionNamesBuilder.StandardProjections).GetFields(
-				System.Reflection.BindingFlags.Public |
-				System.Reflection.BindingFlags.Static |
-				System.Reflection.BindingFlags.FlattenHierarchy)
+				BindingFlags.Public |
+				BindingFlags.Static |
+				BindingFlags.FlattenHierarchy)
 			.Where(x => x.IsLiteral && !x.IsInitOnly)
 			.Select(x => x.GetRawConstantValue().ToString())
 			.ToList();

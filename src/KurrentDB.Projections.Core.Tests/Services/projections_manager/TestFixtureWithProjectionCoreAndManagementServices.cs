@@ -205,11 +205,11 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 		bus.Subscribe<CoreProjectionManagementMessage.Kill>(coreService);
 		bus.Subscribe<CoreProjectionManagementMessage.GetState>(coreService);
 		bus.Subscribe<CoreProjectionManagementMessage.GetResult>(coreService);
-		bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointCompleted>(coreService);
-		bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>(coreService);
-		bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(coreService);
-		bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.RestartRequested>(coreService);
-		bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.Failed>(coreService);
+		bus.Subscribe<CoreProjectionProcessingMessage.CheckpointCompleted>(coreService);
+		bus.Subscribe<CoreProjectionProcessingMessage.CheckpointLoaded>(coreService);
+		bus.Subscribe<CoreProjectionProcessingMessage.PrerecordedEventsLoaded>(coreService);
+		bus.Subscribe<CoreProjectionProcessingMessage.RestartRequested>(coreService);
+		bus.Subscribe<CoreProjectionProcessingMessage.Failed>(coreService);
 		bus.Subscribe<ClientMessage.ReadStreamEventsForwardCompleted>(ioDispatcher.ForwardReader);
 		bus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(ioDispatcher.BackwardReader);
 		bus.Subscribe<ClientMessage.NotHandled>(ioDispatcher.BackwardReader);

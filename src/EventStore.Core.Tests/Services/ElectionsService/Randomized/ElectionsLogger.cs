@@ -4,8 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using KurrentDB.Core.Messaging;
+using EventStore.Core.Messages;
 using EventStore.Core.Tests.Infrastructure;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Tests.Services.ElectionsService.Randomized;
 
@@ -30,14 +31,14 @@ internal class ElectionsLogger : IRandTestItemProcessor {
 		foreach (var it in ProcessedItems) {
 			Console.WriteLine(it);
 
-			var gossip = it.Message as Messages.GossipMessage.GossipUpdated;
+			var gossip = it.Message as GossipMessage.GossipUpdated;
 			if (gossip != null) {
 				Console.WriteLine("=== gsp on {0}", it.EndPoint);
 				Console.WriteLine(gossip.ClusterInfo.ToString().Replace("; ", Environment.NewLine));
 				Console.WriteLine("===");
 			}
 
-			var done = it.Message as Messages.ElectionMessage.ElectionsDone;
+			var done = it.Message as ElectionMessage.ElectionsDone;
 			if (done != null) {
 				Console.WriteLine("=== leader on {0}: {1}", it.EndPoint, done.Leader);
 			}

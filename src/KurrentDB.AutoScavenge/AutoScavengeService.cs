@@ -9,14 +9,15 @@ using KurrentDB.AutoScavenge.Domain;
 using KurrentDB.AutoScavenge.Scavengers;
 using KurrentDB.AutoScavenge.Sources;
 using KurrentDB.POC.IO.Core;
+using Serilog;
 using TimeProvider = KurrentDB.AutoScavenge.TimeProviders.TimeProvider;
 
 namespace KurrentDB.AutoScavenge;
 
-using TimeProvider = TimeProviders.TimeProvider;
+using TimeProvider = TimeProvider;
 
 internal class AutoScavengeService : IDisposable {
-	private static readonly Serilog.ILogger Log = Serilog.Log.ForContext<AutoScavengeService>();
+	private static readonly ILogger Log = Serilog.Log.ForContext<AutoScavengeService>();
 
 	private static readonly JsonSerializerOptions JsonSerializerOptions = new() {
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,

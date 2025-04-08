@@ -4,6 +4,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Auth.StreamPolicyPlugin.Schema;
 
 namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;
 
@@ -32,7 +33,7 @@ internal static class PolicyTestHelpers {
 		});
 	}
 
-	public static byte[] SerializePolicy(Schema.Policy policy) =>
+	public static byte[] SerializePolicy(Policy policy) =>
 		JsonSerializer.SerializeToUtf8Bytes(policy, new JsonSerializerOptions {
 			PropertyNamingPolicy = JsonNamingPolicy.CamelCase
 		});

@@ -20,6 +20,7 @@ using KurrentDB.Projections.Core.Services.Management.ManagedProjectionStates;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
 using KurrentDB.Projections.Core.Utils;
+using Serilog;
 using ILogger = Serilog.ILogger;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
@@ -102,7 +103,7 @@ public class ManagedProjection : IDisposable {
 		_getResultDispatcher;
 
 
-	private readonly Serilog.ILogger _logger;
+	private readonly ILogger _logger;
 	private readonly ITimeProvider _timeProvider;
 	private readonly Guid _workerId;
 	private readonly Guid _id;
@@ -169,7 +170,7 @@ public class ManagedProjection : IDisposable {
 		_projectionId = projectionId;
 		_name = name;
 		_enabledToRun = enabledToRun;
-		_logger = logger ?? Serilog.Log.ForContext<ManagedProjection>();
+		_logger = logger ?? Log.ForContext<ManagedProjection>();
 		_streamDispatcher = streamDispatcher;
 		_writeDispatcher = writeDispatcher;
 		_readDispatcher = readDispatcher;

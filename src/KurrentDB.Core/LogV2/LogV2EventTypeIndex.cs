@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,5 +53,5 @@ public class LogV2EventTypeIndex :
 		=> token.IsCancellationRequested ? ValueTask.FromCanceled<string>(token) : ValueTask.FromResult(eventTypeId);
 
 	public ValueTask<Optional<string>> TryGetLastValue(CancellationToken token)
-		=> ValueTask.FromException<Optional<string>>(new System.NotImplementedException());
+		=> ValueTask.FromException<Optional<string>>(new NotImplementedException());
 }

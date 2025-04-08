@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
@@ -272,7 +273,7 @@ public unsafe class UnbufferedFileStream : Stream {
 		MemCopy(_writeBuffer, alignedbuffer, _writeBuffer, 0, left);
 	}
 
-	[System.Diagnostics.Conditional("DEBUG")]
+	[Conditional("DEBUG")]
 	private void CheckDisposed() {
 		//only check in debug
 		if (_handle == null)

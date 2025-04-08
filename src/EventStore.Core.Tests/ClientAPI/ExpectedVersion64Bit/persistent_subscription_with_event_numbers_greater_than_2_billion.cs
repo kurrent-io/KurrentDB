@@ -9,6 +9,9 @@ using EventStore.ClientAPI;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Tests;
 using NUnit.Framework;
+using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
+using ResolvedEvent = EventStore.ClientAPI.ResolvedEvent;
+using StreamMetadata = EventStore.ClientAPI.StreamMetadata;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 
@@ -31,8 +34,8 @@ public class persistent_subscription_with_event_numbers_greater_than_2_billion<T
 	public override async Task Given() {
 		_store = BuildConnection(Node);
 		await _store.ConnectAsync();
-		await _store.SetStreamMetadataAsync(_streamId, EventStore.ClientAPI.ExpectedVersion.Any,
-			EventStore.ClientAPI.StreamMetadata.Create(truncateBefore: intMaxValue + 1));
+		await _store.SetStreamMetadataAsync(_streamId, ExpectedVersion.Any,
+			StreamMetadata.Create(truncateBefore: intMaxValue + 1));
 	}
 
 	[Test]
@@ -59,7 +62,7 @@ public class persistent_subscription_with_event_numbers_greater_than_2_billion<T
 		await _store.CreatePersistentSubscriptionAsync(_streamId, groupId, settings, DefaultData.AdminCredentials);
 
 		var evnt = new EventData(Guid.NewGuid(), "EventType", false, new byte[10], new byte[15]);
-		List<EventStore.ClientAPI.ResolvedEvent> receivedEvents = new List<EventStore.ClientAPI.ResolvedEvent>();
+		List<ResolvedEvent> receivedEvents = new List<ResolvedEvent>();
 		var countdown = new CountdownEvent(3);
 		await _store.ConnectToPersistentSubscriptionAsync(_streamId, groupId, (s, e) => {
 			receivedEvents.Add(e);

@@ -8,7 +8,7 @@ using ILogger = Serilog.ILogger;
 namespace KurrentDB.TestClient.Commands.DvuBasic;
 
 public class Status {
-	private readonly Serilog.ILogger _log;
+	private readonly ILogger _log;
 
 	public int ThreadId { get; private set; }
 	public bool Success { get; private set; }

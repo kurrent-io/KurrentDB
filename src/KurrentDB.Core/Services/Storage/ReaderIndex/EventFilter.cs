@@ -6,8 +6,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using KurrentDB.Core.Data;
+using EventStore.Client.Messages;
 using static EventStore.Client.Messages.Filter.Types;
+using EventRecord = KurrentDB.Core.Data.EventRecord;
 
 namespace KurrentDB.Core.Services.Storage.ReaderIndex;
 
@@ -36,7 +37,7 @@ public static class EventFilter {
 			=> new EventTypeRegexStrategy(isAllStream, regex);
 	}
 
-	public static IEventFilter Get(bool isAllStream, EventStore.Client.Messages.Filter filter) {
+	public static IEventFilter Get(bool isAllStream, Filter filter) {
 		if (filter == null || filter.Data.Count == 0) {
 			return isAllStream ? new DefaultAllFilterStrategy() : new DefaultStreamFilterStrategy();
 		}

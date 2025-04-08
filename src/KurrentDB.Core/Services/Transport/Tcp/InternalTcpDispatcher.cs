@@ -9,6 +9,7 @@ using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.Chunks;
+using Epoch = KurrentDB.Core.Data.Epoch;
 
 namespace EventStore.Core.Services.Transport.Tcp;
 
@@ -53,7 +54,7 @@ public class InternalTcpDispatcher : ClientWriteTcpDispatcher {
 	private static ReplicationMessage.ReplicaSubscriptionRequest UnwrapReplicaSubscriptionRequest(TcpPackage package, IEnvelope envelope, TcpConnectionManager connection) {
 		var dto = package.Data.Deserialize<SubscribeReplica>();
 		var vnodeTcpEndPoint = new DnsEndPoint(Helper.UTF8NoBom.GetString(dto.Ip.Span), dto.Port);
-		var lastEpochs = dto.LastEpochs.Safe().Select(x => new KurrentDB.Core.Data.Epoch(x.EpochPosition, x.EpochNumber, new Guid(x.EpochId.Span))).ToArray();
+		var lastEpochs = dto.LastEpochs.Safe().Select(x => new Epoch(x.EpochPosition, x.EpochNumber, new Guid(x.EpochId.Span))).ToArray();
 		return new(package.CorrelationId,
 			envelope,
 			connection,
@@ -68,7 +69,7 @@ public class InternalTcpDispatcher : ClientWriteTcpDispatcher {
 	}
 
 	private static TcpPackage WrapSubscribeReplica(ReplicationMessage.SubscribeReplica msg) {
-		var epochs = msg.LastEpochs.Select(x => new Epoch(x.EpochPosition, x.EpochNumber, x.EpochId.ToByteArray())).ToArray();
+		var epochs = msg.LastEpochs.Select(x => new EventStore.Cluster.Epoch(x.EpochPosition, x.EpochNumber, x.EpochId.ToByteArray())).ToArray();
 		var dto = new SubscribeReplica(msg.LogPosition,
 			msg.ChunkId.ToByteArray(),
 			epochs,

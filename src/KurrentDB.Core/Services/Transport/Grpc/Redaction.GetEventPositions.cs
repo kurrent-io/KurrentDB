@@ -9,6 +9,8 @@ using Kurrent.Client.Redaction;
 using KurrentDB.Core.Data.Redaction;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Common;
+using ChunkInfo = Kurrent.Client.Redaction.ChunkInfo;
+using EventPosition = Kurrent.Client.Redaction.EventPosition;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 
@@ -45,9 +47,9 @@ internal partial class Redaction {
 			var response = new GetEventPositionResp();
 			foreach (var eventPosition in eventPositions) {
 				var pos = Position.FromInt64(eventPosition.LogPosition, eventPosition.LogPosition);
-				response.EventPositions.Add(new Kurrent.Client.Redaction.EventPosition {
+				response.EventPositions.Add(new EventPosition {
 					LogPosition = pos.PreparePosition,
-					ChunkInfo = new Kurrent.Client.Redaction.ChunkInfo {
+					ChunkInfo = new ChunkInfo {
 						FileName = eventPosition.ChunkInfo.FileName,
 						Version = eventPosition.ChunkInfo.Version,
 						IsComplete = eventPosition.ChunkInfo.IsComplete,

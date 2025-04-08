@@ -3,9 +3,9 @@
 
 using System;
 using EventStore.Core.Cluster;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using EndPoint = System.Net.EndPoint;
 

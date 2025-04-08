@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.Transport.Http.Messages;
 using Microsoft.AspNetCore.Http;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Core.Services.Transport.Http;
 

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Primitives;
 using Serilog;
 using Serilog.Configuration;
 using Serilog.Core;
+using Serilog.Debugging;
 using Serilog.Events;
 using Serilog.Filters;
 using Serilog.Templates;
@@ -71,7 +72,7 @@ public class EventStoreLoggerConfiguration {
 			.AddKurrentConfigFile(logConfig, reloadOnChange: true)
 			.Build();
 
-		Serilog.Debugging.SelfLog.Enable(ConsoleLog.Information);
+		SelfLog.Enable(ConsoleLog.Information);
 
 		Serilog.Log.Logger = (configurationRoot.GetSection("Serilog").Exists()
 				? new LoggerConfiguration()
@@ -81,7 +82,7 @@ public class EventStoreLoggerConfiguration {
 					logFileSize, logFileRetentionCount, disableLogFile))
 			.CreateLogger();
 
-		Serilog.Debugging.SelfLog.Disable();
+		SelfLog.Disable();
 	}
 
 	public static bool AdjustMinimumLogLevel(LogLevel logLevel) {

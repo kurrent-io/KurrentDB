@@ -6,8 +6,8 @@ using System.Net;
 using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
-using Microsoft.Extensions.Caching.Memory;
 using KurrentDB.Core.Services.TimerService;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace EventStore.Core.Cluster;
 

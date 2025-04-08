@@ -11,6 +11,7 @@ using EventStore.ClientAPI.ClientOperations;
 using EventStore.ClientAPI.Common;
 using EventStore.ClientAPI.Common.Utils;
 using EventStore.ClientAPI.Exceptions;
+using EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 using KurrentDB.Core.Tests;
 using NUnit.Framework;
 
@@ -689,7 +690,7 @@ public class
 [Category("LongRunning")]
 public class
 	connect_to_persistent_subscription_with_link_to_event_with_event_number_greater_than_int_maxvalue<TLogFormat, TStreamId> :
-		ExpectedVersion64Bit.MiniNodeWithExistingRecords<TLogFormat, TStreamId> {
+		MiniNodeWithExistingRecords<TLogFormat, TStreamId> {
 	private const string StreamName =
 		"connect_to_persistent_subscription_with_link_to_event_with_event_number_greater_than_int_maxvalue";
 

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Integration;
 using KurrentDB.Common.Utils;
@@ -34,8 +35,8 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 		if (!string.IsNullOrEmpty(username)) {
 			client.DefaultRequestHeaders.Authorization =
 				new AuthenticationHeaderValue(
-					"Basic", System.Convert.ToBase64String(
-						System.Text.Encoding.ASCII.GetBytes(
+					"Basic", Convert.ToBase64String(
+						Encoding.ASCII.GetBytes(
 							$"{username}:{password}")));
 		}
 

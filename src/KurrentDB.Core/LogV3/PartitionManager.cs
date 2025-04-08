@@ -9,12 +9,13 @@ using EventStore.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.LogV3;
 
 public class PartitionManager : IPartitionManager {
-	private static readonly ILogger _log = Serilog.Log.ForContext<PartitionManager>();
+	private static readonly ILogger _log = Log.ForContext<PartitionManager>();
 	private readonly ITransactionFileReader _reader;
 	private readonly ITransactionFileWriter _writer;
 	private readonly LogV3RecordFactory _recordFactory;

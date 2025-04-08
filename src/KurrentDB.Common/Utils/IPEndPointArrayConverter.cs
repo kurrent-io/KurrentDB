@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 
@@ -16,7 +17,7 @@ public class IPEndPointArrayConverter : ArrayConverter {
 			   base.CanConvertFrom(context, sourceType);
 	}
 
-	public override object ConvertFrom(ITypeDescriptorContext context, System.Globalization.CultureInfo culture,
+	public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture,
 		object value) {
 		if (value.GetType() == typeof(string)) {
 			var valueAsString = value as string;

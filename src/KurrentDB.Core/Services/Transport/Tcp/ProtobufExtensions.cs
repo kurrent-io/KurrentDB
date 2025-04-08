@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 using Google.Protobuf;
+using Serilog.Core;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Services.Transport.Tcp;
@@ -21,7 +22,7 @@ public static class ProtobufExtensions {
 	}
 
 	private static readonly ILogger Log =
-		Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "ProtobufExtensions");
+		Serilog.Log.ForContext(Constants.SourceContextPropertyName, "ProtobufExtensions");
 
 	static MemoryStream AcquireStream() {
 		for (var i = 0; i < 1000; i++) {

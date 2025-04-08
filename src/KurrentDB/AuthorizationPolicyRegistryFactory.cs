@@ -6,15 +6,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using KurrentDB.Auth.StreamPolicyPlugin;
-using KurrentDB.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Auth.StreamPolicyPlugin;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Core;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.PluginHosting;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 

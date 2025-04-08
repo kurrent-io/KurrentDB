@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using EventStore.Core.Messages;
 using EventStore.Core.Tests.Helpers.IODispatcherTests;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -16,7 +17,7 @@ public class PersistentSubscriptionCheckpointReaderTests {
 	public void can_read_checkpoints(string checkpointEventType) {
 		var bus = new SynchronousScheduler("persistent subscription test bus");
 
-		bus.Subscribe(new AdHocHandler<Messages.ClientMessage.ReadStreamEventsBackward>(msg => {
+		bus.Subscribe(new AdHocHandler<ClientMessage.ReadStreamEventsBackward>(msg => {
 			var lastEventNumber = msg.FromEventNumber + 1;
 			var nextEventNumber = lastEventNumber + 1;
 
@@ -25,7 +26,7 @@ public class PersistentSubscriptionCheckpointReaderTests {
 				eventType: checkpointEventType,
 				data: "\"the checkpoint data\"");
 
-			msg.Envelope.ReplyWith(new Messages.ClientMessage.ReadStreamEventsBackwardCompleted(
+			msg.Envelope.ReplyWith(new ClientMessage.ReadStreamEventsBackwardCompleted(
 				correlationId: msg.CorrelationId,
 				eventStreamId: msg.EventStreamId,
 				fromEventNumber: msg.FromEventNumber,

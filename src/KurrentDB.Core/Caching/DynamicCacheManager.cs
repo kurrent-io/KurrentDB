@@ -10,9 +10,9 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Util;
 using Serilog;
-using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Core.Caching;
 

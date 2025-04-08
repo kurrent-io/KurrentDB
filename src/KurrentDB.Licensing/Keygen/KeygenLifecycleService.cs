@@ -2,12 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.CodeAnalysis;
-using System.Reactive.Linq;
+using System.Net;
 using System.Reactive.Subjects;
 using Microsoft.Extensions.Hosting;
 using RestSharp;
 using Serilog;
-using static KurrentDB.Licensing.Keygen.Models;
 
 namespace KurrentDB.Licensing.Keygen;
 
@@ -152,7 +151,7 @@ public sealed class KeygenLifecycleService : IHostedService, IDisposable {
 		async Task<LicenseInfo> Deactivate() {
 			var restResponse = await _client.DeactivateMachine(_fingerprint, cancellationToken);
 
-			if (restResponse.StatusCode != System.Net.HttpStatusCode.NoContent) {
+			if (restResponse.StatusCode != HttpStatusCode.NoContent) {
 				Log.Information("License machine deactivation failed");
 				return LicenseInfo.Inconclusive.Instance;
 			}

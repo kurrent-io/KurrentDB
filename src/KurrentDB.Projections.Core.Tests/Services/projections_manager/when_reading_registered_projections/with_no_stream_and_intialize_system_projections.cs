@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using KurrentDB.Common.Utils;
@@ -57,9 +58,9 @@ public class with_no_stream_and_intialize_system_projections<TLogFormat, TStream
 public class SystemProjectionNames : IEnumerable {
 	public IEnumerator GetEnumerator() {
 		foreach (var projection in typeof(ProjectionNamesBuilder.StandardProjections).GetFields(
-				System.Reflection.BindingFlags.Public |
-				System.Reflection.BindingFlags.Static |
-				System.Reflection.BindingFlags.FlattenHierarchy)
+				BindingFlags.Public |
+				BindingFlags.Static |
+				BindingFlags.FlattenHierarchy)
 			.Where(x => x.IsLiteral && !x.IsInitOnly)
 			.Select(x => x.GetRawConstantValue())) {
 			yield return new[] { typeof(LogFormat.V2), typeof(string), projection };
