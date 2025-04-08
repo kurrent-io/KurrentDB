@@ -7,7 +7,7 @@ using Ductus.FluentDocker.Services;
 using Ductus.FluentDocker.Services.Extensions;
 using Xunit.Abstractions;
 
-namespace EventStore.Auth.OAuth.Tests;
+namespace KurrentDB.Auth.OAuth.Tests;
 
 internal static class ContainerExtensions {
 	public static void ShipContainerLogs(this IContainerService container, ITestOutputHelper testOutputHelper) =>

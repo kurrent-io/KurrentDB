@@ -26,7 +26,7 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Auth.OAuth\EventStore.Auth.OAuth.csproj" />
+		<ProjectReference Include="..\KurrentDB.Auth.OAuth\KurrentDB.Auth.OAuth.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<Content Include="conf\idsrv4.conf.json">

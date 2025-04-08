@@ -18,7 +18,7 @@ using Ductus.FluentDocker.Services;
 using Polly;
 using Xunit.Abstractions;
 
-namespace EventStore.Auth.OAuth.Tests;
+namespace KurrentDB.Auth.OAuth.Tests;
 
 internal class Fixture : IDisposable {
 	private const string PluginConfigurationPath = "/etc/kurrentdb/oauth.conf";
@@ -37,7 +37,7 @@ internal class Fixture : IDisposable {
 	private static string PluginSourceDirectory {
 		get {
 			// x64 has different number of levels than AnyCPU
-			var target = "EventStore.Auth.OAuth";
+			var target = "KurrentDB.Auth.OAuth";
 			var i = BuildDirectory.LastIndexOf(target) + target.Length;
 			return BuildDirectory[0..i];
 		}

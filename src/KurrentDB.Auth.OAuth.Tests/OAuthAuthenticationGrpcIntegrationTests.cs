@@ -8,7 +8,7 @@ using EventStore.Client;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace EventStore.Auth.OAuth.Tests;
+namespace KurrentDB.Auth.OAuth.Tests;
 
 public class OAuthAuthenticationGrpcIntegrationTests {
 	private readonly ITestOutputHelper _output;

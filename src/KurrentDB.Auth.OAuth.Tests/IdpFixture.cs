@@ -13,7 +13,7 @@ using IdentityModel.Client;
 using Polly;
 using Xunit.Abstractions;
 
-namespace EventStore.Auth.OAuth.Tests;
+namespace KurrentDB.Auth.OAuth.Tests;
 
 internal class IdpFixture : IDisposable {
 	private const int IdpPort = 5001;
@@ -23,7 +23,7 @@ internal class IdpFixture : IDisposable {
 	private static string SourceDirectory =>
 		Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "../../../../src"));
 
-	private static string TestSourceDirectory => Path.Combine(SourceDirectory, "EventStore.Auth.OAuth.Tests");
+	private static string TestSourceDirectory => Path.Combine(SourceDirectory, "KurrentDB.Auth.OAuth.Tests");
 
 	private static string IdentityServerSourceDirectory => Path.Combine(SourceDirectory, "IdentityServer");
 

@@ -10,7 +10,7 @@ using EventStore.ClientAPI.SystemData;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace EventStore.Auth.OAuth.Tests;
+namespace KurrentDB.Auth.OAuth.Tests;
 
 public class OAuthAuthenticationTcpIntegrationTests {
 	private static readonly string[] EnableTcp = {

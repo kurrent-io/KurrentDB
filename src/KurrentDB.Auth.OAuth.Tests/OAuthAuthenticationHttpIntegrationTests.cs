@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace EventStore.Auth.OAuth.Tests;
+namespace KurrentDB.Auth.OAuth.Tests;
 
 public class OAuthAuthenticationHttpIntegrationTests {
 	private static readonly string[] EnableAtomPub = {

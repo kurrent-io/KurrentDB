@@ -5,7 +5,7 @@ using System;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace EventStore.Auth.OAuth.Tests;
+namespace KurrentDB.Auth.OAuth.Tests;
 
 internal class XUnitLoggerFactory : ILoggerFactory {
 	private readonly ITestOutputHelper _output;

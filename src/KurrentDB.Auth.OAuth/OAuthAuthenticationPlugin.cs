@@ -30,7 +30,7 @@ using Newtonsoft.Json;
 using Serilog;
 
 #nullable enable
-namespace EventStore.Auth.OAuth;
+namespace KurrentDB.Auth.OAuth;
 
 [Export(typeof(IAuthenticationPlugin))]
 public class OAuthAuthenticationPlugin : IAuthenticationPlugin {
