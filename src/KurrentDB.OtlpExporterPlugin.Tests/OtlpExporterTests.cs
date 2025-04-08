@@ -17,7 +17,7 @@ using OpenTelemetry.Proto.Collector.Metrics.V1;
 using OpenTelemetry.Resources;
 using Xunit;
 
-namespace EventStore.OtlpExporterPlugin.Tests;
+namespace KurrentDB.OtlpExporterPlugin.Tests;
 
 [Collection("OtlpSequentialTests")] // so that the PluginDiagnosticsDataCollectors do not conflict
 public class OtlpExporterTests {
@@ -27,7 +27,7 @@ public class OtlpExporterTests {
 	[Fact]
 	public void has_parameterless_constructor() {
 		// needed for all plugins
-		using var _ = Activator.CreateInstance<OtlpExporterPlugin>();
+		using var _ = Activator.CreateInstance<EventStore.OtlpExporterPlugin.OtlpExporterPlugin>();
 	}
 
 	[Fact]
@@ -123,7 +123,7 @@ public class OtlpExporterTests {
 					.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("eventstore"))
 					.AddMeter("EventStore.TestMeter"));
 
-		var sut = new OtlpExporterPlugin(_logger);
+		var sut = new EventStore.OtlpExporterPlugin.OtlpExporterPlugin(_logger);
 		((IPlugableComponent)sut).ConfigureServices(builder.Services, builder.Configuration);
 
 		var app = builder.Build();

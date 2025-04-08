@@ -4,7 +4,7 @@
 using Grpc.Core;
 using OpenTelemetry.Proto.Collector.Metrics.V1;
 
-namespace EventStore.OtlpExporterPlugin.Tests;
+namespace KurrentDB.OtlpExporterPlugin.Tests;
 
 public class FakeCollector(TaskCompletionSource<ExportMetricsServiceRequest> tcs) : MetricsService.MetricsServiceBase {
 	public override Task<ExportMetricsServiceResponse> Export(ExportMetricsServiceRequest request, ServerCallContext context) {
