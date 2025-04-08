@@ -24,7 +24,7 @@ using EventStore.Plugins.Authorization;
 using EventStore.Plugins.MD5;
 using EventStore.Plugins.Subsystems;
 using EventStore.POC.ConnectedSubsystemsPlugin;
-using EventStore.Security.EncryptionAtRest;
+using KurrentDB.Security.EncryptionAtRest;
 using EventStore.TcpPlugin;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Options;

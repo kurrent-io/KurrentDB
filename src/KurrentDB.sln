@@ -99,9 +99,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Diagnostics.LogsE
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Diagnostics.LogsEndpointPlugin.Tests", "KurrentDB.Diagnostics.LogsEndpointPlugin.Tests\KurrentDB.Diagnostics.LogsEndpointPlugin.Tests.csproj", "{075374EB-BAE0-4068-A4A8-DAA3E8B21D2F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Security.EncryptionAtRest", "EventStore.Security.EncryptionAtRest\EventStore.Security.EncryptionAtRest.csproj", "{AD062E9D-BA0E-4811-B58D-1BAFC86A023D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Security.EncryptionAtRest", "KurrentDB.Security.EncryptionAtRest\KurrentDB.Security.EncryptionAtRest.csproj", "{AD062E9D-BA0E-4811-B58D-1BAFC86A023D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Security.EncryptionAtRest.Tests", "EventStore.Security.EncryptionAtRest.Tests\EventStore.Security.EncryptionAtRest.Tests.csproj", "{B5129263-F7A0-4E1F-A916-20B1B93FA707}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Security.EncryptionAtRest.Tests", "KurrentDB.Security.EncryptionAtRest.Tests\KurrentDB.Security.EncryptionAtRest.Tests.csproj", "{B5129263-F7A0-4E1F-A916-20B1B93FA707}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.POC.IO.Core", "KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj", "{0D5FE925-39F2-4E59-AE15-C0C15DE907B4}"
 EndProject
