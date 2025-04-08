@@ -5,7 +5,7 @@ using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.POC.IO.Core;
 
-namespace EventStore.POC.ConnectedSubsystemsPlugin;
+namespace KurrentDB.POC.ConnectedSubsystemsPlugin;
 
 public class InternalOperationsClient : IOperationsClient {
 	readonly IPublisher _publisher;

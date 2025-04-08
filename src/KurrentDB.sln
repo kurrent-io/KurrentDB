@@ -105,7 +105,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Security.Encrypti
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.POC.IO.Core", "KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj", "{0D5FE925-39F2-4E59-AE15-C0C15DE907B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.POC.ConnectedSubsystemsPlugin", "EventStore.POC.ConnectedSubsystemsPlugin\EventStore.POC.ConnectedSubsystemsPlugin.csproj", "{F6093B93-A18B-42DA-9D37-D54BDBCB31B4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.POC.ConnectedSubsystemsPlugin", "KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj", "{F6093B93-A18B-42DA-9D37-D54BDBCB31B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.AutoScavenge", "KurrentDB.AutoScavenge\KurrentDB.AutoScavenge.csproj", "{84A20321-B8F9-4568-B3B5-8E4895BC6E6C}"
 EndProject

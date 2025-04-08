@@ -23,7 +23,7 @@ using CommonPosition = KurrentDB.Core.Services.Transport.Common.Position;
 using Event = KurrentDB.POC.IO.Core.Event;
 using Position = KurrentDB.POC.IO.Core.Position;
 
-namespace EventStore.POC.ConnectedSubsystemsPlugin;
+namespace KurrentDB.POC.ConnectedSubsystemsPlugin;
 
 // this provides a client interface
 public class InternalClient : IClient {
