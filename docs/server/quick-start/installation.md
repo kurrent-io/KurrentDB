@@ -51,7 +51,7 @@ For most features that require a license, EventStoreDB will not start if the fea
 EventStoreDB has pre-built packages available on Cloudsmith for RedHat or Debian-based distributions.
 The name of the EventStoreDB package is `eventstoredb-ee`.
 
-### Debian packages
+### Ubuntu/Debian packages
 
 #### Distribution setup
 To install packages, you can quickly set up the repository automatically (recommended):
