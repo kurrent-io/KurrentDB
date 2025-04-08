@@ -4,7 +4,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.LogAbstraction;
+using KurrentDB.Core.LogAbstraction;
 
 namespace EventStore.Core.LogV3;
 

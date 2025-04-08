@@ -4,7 +4,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;

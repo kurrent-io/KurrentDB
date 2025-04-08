@@ -7,7 +7,7 @@ using FluentAssertions;
 using KurrentDB.Core.Configuration.Sources;
 using Xunit;
 
-namespace EventStore.Core.XUnit.Tests.Configuration;
+namespace KurrentDB.Core.XUnit.Tests.Configuration;
 
 public class KurrentConfigurationKeysTests {
 	[Theory]

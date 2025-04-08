@@ -5,7 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.Core.LogAbstraction;
+namespace KurrentDB.Core.LogAbstraction;
 
 public interface IPartitionManager {
 

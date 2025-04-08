@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.LogAbstraction;
+using KurrentDB.Core.LogAbstraction;
 using StreamId = System.UInt32;
 
 namespace KurrentDB.Core.XUnit.Tests.LogV3;

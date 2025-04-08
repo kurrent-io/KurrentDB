@@ -3,7 +3,7 @@
 
 using System;
 using System.Text;
-using EventStore.Core.LogAbstraction;
+using KurrentDB.Core.LogAbstraction;
 
 namespace KurrentDB.Core.LogV2;
 

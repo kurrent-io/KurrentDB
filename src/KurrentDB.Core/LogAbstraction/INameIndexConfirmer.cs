@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
-namespace EventStore.Core.LogAbstraction;
+namespace KurrentDB.Core.LogAbstraction;
 
 public interface INameIndexConfirmer<TValue> : IDisposable {
 	ValueTask InitializeWithConfirmed(INameLookup<TValue> source, CancellationToken token);

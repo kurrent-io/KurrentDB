@@ -5,7 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.Core.LogAbstraction.Common;
+namespace KurrentDB.Core.LogAbstraction.Common;
 
 /// Executes the func after each interval, but only if it has been triggered during the interval.
 /// The func should handle its own exceptions.

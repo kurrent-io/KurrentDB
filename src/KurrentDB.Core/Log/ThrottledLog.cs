@@ -4,8 +4,9 @@
 using System;
 using Serilog;
 
-namespace EventStore.Common.Log;
+// ReSharper disable once CheckNamespace
 
+namespace KurrentDB.Common.Log;
 
 public class ThrottledLog<T> {
 

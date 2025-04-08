@@ -4,7 +4,7 @@
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 
-namespace EventStore.Core.LogAbstraction;
+namespace KurrentDB.Core.LogAbstraction;
 
 // certain abstraction points cant be provided until we have access to the index reader.
 // hopefully when some other pieces have fallen into place we can replace this with a nicer mechanism.

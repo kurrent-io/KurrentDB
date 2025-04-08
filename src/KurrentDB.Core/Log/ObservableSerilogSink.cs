@@ -7,7 +7,8 @@ using Serilog.Core;
 using Serilog.Events;
 
 // ReSharper disable once CheckNamespace
-namespace EventStore.Common.Log;
+
+namespace KurrentDB.Common.Log;
 
 public class ObservableSerilogSink : ILogEventSink, IObservable<LogEvent> {
 	public static readonly ObservableSerilogSink Instance = new();

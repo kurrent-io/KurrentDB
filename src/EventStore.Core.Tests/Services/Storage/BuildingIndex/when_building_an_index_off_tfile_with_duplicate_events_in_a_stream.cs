@@ -4,7 +4,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.TransactionLog;
 using KurrentDB.Common.Utils;
@@ -13,6 +12,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Index;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog;

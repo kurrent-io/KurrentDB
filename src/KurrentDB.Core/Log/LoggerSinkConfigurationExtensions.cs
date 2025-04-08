@@ -6,7 +6,9 @@ using Serilog;
 using Serilog.Configuration;
 using Serilog.Formatting;
 
-namespace EventStore.Common.Log;
+// Resharper disable CheckNamespace
+
+namespace KurrentDB.Common.Log;
 
 internal static class LoggerSinkConfigurationExtensions {
 	public static LoggerConfiguration RollingFile(this LoggerSinkConfiguration configuration, string logFileName,

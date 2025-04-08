@@ -3,7 +3,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Services;
 
 namespace KurrentDB.Core.LogV2;

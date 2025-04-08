@@ -4,12 +4,12 @@
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.TransactionLog;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.PersistentSubscription;

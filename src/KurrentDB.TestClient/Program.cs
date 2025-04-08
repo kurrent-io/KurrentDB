@@ -6,7 +6,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Log;
+using KurrentDB.Common.Log;
 using KurrentDB.Common.Options;
 using KurrentDB.Common.Utils;
 using KurrentDB.TestClient.Statistics;

@@ -5,7 +5,7 @@ using System;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 
-namespace EventStore.Core.LogAbstraction;
+namespace KurrentDB.Core.LogAbstraction;
 
 // mechanism to delay construction of StreamNames and SystemStreams until the IndexReader is available
 public class AdHocStreamNamesProvider<TStreamId> : IStreamNamesProvider<TStreamId> {

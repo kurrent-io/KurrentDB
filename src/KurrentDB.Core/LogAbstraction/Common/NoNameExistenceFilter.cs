@@ -4,7 +4,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.Core.LogAbstraction.Common;
+namespace KurrentDB.Core.LogAbstraction.Common;
 
 public class NoNameExistenceFilter : INameExistenceFilter {
 	public ValueTask Initialize(INameExistenceFilterInitializer source, long truncateToPosition,

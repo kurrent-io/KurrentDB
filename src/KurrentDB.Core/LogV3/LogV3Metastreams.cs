@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.LogAbstraction;
+using KurrentDB.Core.LogAbstraction;
 using StreamId = System.UInt32;
 
 namespace EventStore.Core.LogV3;
@@ -18,7 +18,7 @@ public class LogV3Metastreams : IMetastreamLookup<StreamId> {
 		return streamId + 1;
 	}
 
-	// in v2 this drops the first two characters, 
+	// in v2 this drops the first two characters,
 	public StreamId OriginalStreamOf(StreamId streamId) {
 		if (!IsMetaStream(streamId))
 			throw new ArgumentException($"{streamId} is not a metastream", nameof(streamId));

@@ -5,7 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.Scavenging.Data;
 using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
 using Serilog;

@@ -4,7 +4,6 @@
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.Transport.Tcp;
 using EventStore.Plugins.Transforms;
@@ -13,6 +12,7 @@ using KurrentDB.Core.Authentication.InternalAuthentication;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using KurrentDB.Core.Certificates;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.Transforms.Identity;
 using NUnit.Framework;

@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using EventStore.Core.LogAbstraction;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.Scavenging;
 using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;

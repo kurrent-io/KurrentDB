@@ -19,7 +19,9 @@ using Serilog.Filters;
 using Serilog.Templates;
 using Serilog.Templates.Themes;
 
-namespace EventStore.Common.Log;
+// Resharper disable CheckNamespace
+
+namespace KurrentDB.Common.Log;
 
 public class EventStoreLoggerConfiguration {
 	static readonly ExpressionTemplate ConsoleOutputExpressionTemplate = new(

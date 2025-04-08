@@ -3,7 +3,7 @@
 
 using KurrentDB.Core.Index.Hashes;
 
-namespace EventStore.Core.LogAbstraction;
+namespace KurrentDB.Core.LogAbstraction;
 
 // if the streams are only 32 bit, neednt have 64 bits in the index
 public class IdentityHighHasher : IHasher<uint> {

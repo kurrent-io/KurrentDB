@@ -6,9 +6,9 @@ using System.Buffers;
 using DotNext.Buffers;
 using DotNext.Buffers.Binary;
 using DotNext.IO;
-using EventStore.Core.LogAbstraction;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.LogCommon;
 
 namespace KurrentDB.Core.TransactionLog.LogRecords;

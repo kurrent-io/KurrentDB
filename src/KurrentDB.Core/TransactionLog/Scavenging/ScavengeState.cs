@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.LogAbstraction;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.Scavenging.CollisionManagement;
 using KurrentDB.Core.TransactionLog.Scavenging.Data;
 using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;

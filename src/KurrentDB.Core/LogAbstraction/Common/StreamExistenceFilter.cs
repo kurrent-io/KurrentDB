@@ -10,7 +10,7 @@ using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using Serilog;
 
-namespace EventStore.Core.LogAbstraction.Common;
+namespace KurrentDB.Core.LogAbstraction.Common;
 
 // This connects a bloom filter datastructure to the rest of the system by
 // adding catchup and checkpointing.

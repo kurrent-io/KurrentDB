@@ -4,7 +4,7 @@
 using System;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
-namespace EventStore.Core.LogAbstraction;
+namespace KurrentDB.Core.LogAbstraction;
 
 public static class INameIndexExtensions {
 	// todo: rename to GetOrReserveStream when we generalise to EventTypes too.

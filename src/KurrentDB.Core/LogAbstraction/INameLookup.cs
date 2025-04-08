@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
 
-namespace EventStore.Core.LogAbstraction;
+namespace KurrentDB.Core.LogAbstraction;
 
 /// Looks up a name given a value
 public interface INameLookup<TValue> {

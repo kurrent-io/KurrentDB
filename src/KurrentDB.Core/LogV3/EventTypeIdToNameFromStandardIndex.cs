@@ -5,8 +5,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.LogAbstraction;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.LogRecords;
 

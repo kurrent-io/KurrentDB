@@ -6,7 +6,9 @@ using System.Diagnostics.Tracing;
 using System.Linq;
 using Serilog.Events;
 
-namespace EventStore.Common.Log;
+// ReSharper disable once CheckNamespace
+
+namespace KurrentDB.Common.Log;
 
 public class SerilogEventListener : EventListener {
 	private readonly Dictionary<string, LogEventLevel> _eventSources = new() {

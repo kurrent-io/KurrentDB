@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.Core.LogAbstraction;
+namespace KurrentDB.Core.LogAbstraction;
 
 public interface IStreamIdConverter<TStreamId> {
 	TStreamId ToStreamId(ReadOnlySpan<byte> bytes);

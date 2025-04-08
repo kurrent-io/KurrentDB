@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using EventStore.Common.Log;
 using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
+using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 
