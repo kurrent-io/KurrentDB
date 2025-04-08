@@ -14,7 +14,7 @@ using KurrentDB.Auth.Ldaps;
 using KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
 using KurrentDB.Auth.OAuth;
 using KurrentDB.Auth.UserCertificates;
-using EventStore.AutoScavenge;
+using KurrentDB.AutoScavenge;
 using EventStore.Core;
 using EventStore.Core.LogAbstraction;
 using EventStore.Diagnostics.LogsEndpointPlugin;
