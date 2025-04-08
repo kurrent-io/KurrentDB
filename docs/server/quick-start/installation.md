@@ -59,7 +59,7 @@ Packages for KurrentDB are hosted on [Cloudsmith](https://cloudsmith.io/~eventst
 KurrentDB has pre-built packages available on Cloudsmith for RedHat or Debian-based distributions.
 The name of the KurrentDB package is `kurrentdb`.
 
-### Debian packages
+### Ubuntu/Debian packages
 
 Debian packages can be found in the following repositories:
 
