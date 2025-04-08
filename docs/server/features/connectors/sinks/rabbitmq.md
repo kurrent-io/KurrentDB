@@ -116,3 +116,6 @@ to RabbitMQ is confirmed by the broker before the publish operation is considere
 Disabling broker acknowledgment can significantly increase throughput by allowing the producer to continue sending
 messages without waiting for confirmation from the broker. This is ideal for high-throughput scenarios where performance
 is prioritized over delivery guarantees, despite a slight increase in the risk of message loss or duplication.
+
+## Tutorial
+[Learn how to set up and use a RabbitMQ Sink connector in KurrentDB through a tutorial.](/tutorials/RabbitMQ_Sink.md)
