@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Integration;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Replication.ReadStream;
@@ -35,10 +35,10 @@ public class when_subscribed_to_stream_on_leader_and_event_is_replicated_to_foll
 
 	private void Handle(SystemMessage.StateChangeMessage msg) {
 		switch (msg.State) {
-			case Data.VNodeState.Leader:
+			case VNodeState.Leader:
 				_expectedNumberOfRoleAssignments.Signal();
 				break;
-			case Data.VNodeState.Follower:
+			case VNodeState.Follower:
 				_expectedNumberOfRoleAssignments.Signal();
 				break;
 		}

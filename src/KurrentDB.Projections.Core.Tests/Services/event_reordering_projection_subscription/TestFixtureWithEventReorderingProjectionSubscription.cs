@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using KurrentDB.Projections.Core.Tests.Services.projection_subscription;

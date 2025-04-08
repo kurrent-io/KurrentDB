@@ -7,19 +7,20 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.Transforms;
 using EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.Transforms;
 using Xunit;
-using static EventStore.Core.TransactionLog.Chunks.TFChunk.TFChunk;
+using static KurrentDB.Core.TransactionLog.Chunks.TFChunk.TFChunk;
 
 namespace EventStore.Core.XUnit.Tests.TransactionLog.Chunks;
 public class TFChunkManagerTests : DirectoryPerTest<TFChunkManagerTests> {
 	private readonly TFChunkManager _sut;
 	private readonly ILocatorCodec _locatorCodec;
-	private readonly List<Data.ChunkInfo> _onSwitched = [];
+	private readonly List<ChunkInfo> _onSwitched = [];
 
 	public TFChunkManagerTests() {
 		var dbConfig = TFChunkHelper.CreateDbConfig(pathName: Fixture.Directory, writerCheckpointPosition: 0);

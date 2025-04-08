@@ -7,6 +7,7 @@ using EventStore.Core.Tests;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
+using KurrentDB.Core.TransactionLog.Chunks;
 using Xunit;
 using static EventStore.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
 
@@ -428,7 +429,7 @@ public class MiscellaneousTests : SqliteDbPerTest<MiscellaneousTests> {
 			.RunAsync();
 
 		Assert.True(logger.Completed);
-		Assert.Equal(EventStore.Core.TransactionLog.Chunks.ScavengeResult.Errored, logger.Result);
+		Assert.Equal(ScavengeResult.Errored, logger.Result);
 		Assert.Equal("Error while scavenging DB: Found metadata in transaction in stream $$ab-1.", logger.Error);
 	}
 

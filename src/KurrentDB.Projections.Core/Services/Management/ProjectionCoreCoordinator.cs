@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Bus;
 using KurrentDB.Common.Options;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using Serilog;

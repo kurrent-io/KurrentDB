@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.Core.Tests;
-using EventStore.Core.Util;
+using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.SingleStream;

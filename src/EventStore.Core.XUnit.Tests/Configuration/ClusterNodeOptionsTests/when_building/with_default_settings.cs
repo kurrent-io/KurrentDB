@@ -2,12 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Net;
-using EventStore.Core.Authentication.DelegatedAuthentication;
-using EventStore.Core.Services.Monitoring;
 using EventStore.Core.Tests;
-using EventStore.Core.TransactionLog.Chunks;
 using KurrentDB.Common.Options;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core;
+using KurrentDB.Core.Authentication.DelegatedAuthentication;
+using KurrentDB.Core.Services.Monitoring;
+using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
 
 namespace EventStore.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests.when_building;

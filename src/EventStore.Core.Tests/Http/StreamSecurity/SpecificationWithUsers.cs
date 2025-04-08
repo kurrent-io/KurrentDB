@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Tests;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 

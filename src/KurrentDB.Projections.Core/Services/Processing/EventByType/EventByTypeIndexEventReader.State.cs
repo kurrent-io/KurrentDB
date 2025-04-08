@@ -3,7 +3,7 @@
 
 using System;
 using System.Security.Claims;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Standard;
 
@@ -24,7 +24,7 @@ public partial class EventByTypeIndexEventReader {
 		}
 
 		protected void DeliverEvent(float progress, ResolvedEvent resolvedEvent, TFPos position,
-			EventStore.Core.Data.ResolvedEvent pair) {
+			KurrentDB.Core.Data.ResolvedEvent pair) {
 			if (resolvedEvent.EventOrLinkTargetPosition <= _reader._lastEventPosition)
 				return;
 			_reader._lastEventPosition = resolvedEvent.EventOrLinkTargetPosition;

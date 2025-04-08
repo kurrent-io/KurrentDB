@@ -2,9 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.AwakeService;
@@ -12,7 +12,7 @@ namespace EventStore.Core.Tests.AwakeService;
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_handling_comitted_event<TLogFormat, TStreamId> {
-	private Core.Services.AwakeReaderService.AwakeService _it;
+	private KurrentDB.Core.Services.AwakeReaderService.AwakeService _it;
 	private EventRecord _eventRecord;
 	private StorageMessage.EventCommitted _eventCommitted;
 	private Exception _exception;
@@ -25,7 +25,7 @@ public class when_handling_comitted_event<TLogFormat, TStreamId> {
 	}
 
 	private void Given() {
-		_it = new Core.Services.AwakeReaderService.AwakeService();
+		_it = new KurrentDB.Core.Services.AwakeReaderService.AwakeService();
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;

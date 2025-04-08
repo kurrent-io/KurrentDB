@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using System.Numerics;
-using EventStore.Core.Index;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 using ILogger = Serilog.ILogger;
 

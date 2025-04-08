@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Messaging;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Messages.ClientMessageTests;

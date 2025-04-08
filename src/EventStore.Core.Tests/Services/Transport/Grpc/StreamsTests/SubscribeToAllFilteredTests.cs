@@ -15,7 +15,7 @@ using Grpc.Core;
 using NUnit.Framework;
 using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
 using LogV3StreamId = System.UInt32;
-using Position = EventStore.Core.Services.Transport.Common.Position;
+using Position = KurrentDB.Core.Services.Transport.Common.Position;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests;
 

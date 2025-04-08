@@ -3,9 +3,9 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.Metastreams;

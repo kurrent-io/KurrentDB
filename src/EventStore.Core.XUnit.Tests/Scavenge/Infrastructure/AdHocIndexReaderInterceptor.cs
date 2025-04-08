@@ -4,9 +4,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.Scavenging;
-using EventStore.Core.TransactionLog.Scavenging.Interfaces;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.Scavenging.Data;
+using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 

@@ -3,9 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Data.Redaction;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Data.Redaction;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RedactionService;

@@ -3,15 +3,15 @@
 
 using System;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Settings;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Settings;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Standard;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 
 namespace KurrentDB.Projections.Core.Services.Processing.SingleStream;
 
@@ -209,7 +209,7 @@ public class StreamEventReader : EventReader,
 				EventReaderCorrelationId, null, safeJoinPosition, 100.0f, source: this.GetType()));
 	}
 
-	private void DeliverEvent(EventStore.Core.Data.ResolvedEvent pair, float progress, ref long sequenceNumber) {
+	private void DeliverEvent(KurrentDB.Core.Data.ResolvedEvent pair, float progress, ref long sequenceNumber) {
 		EventRecord positionEvent = pair.OriginalEvent;
 		if (positionEvent.EventNumber != sequenceNumber) {
 			// This can happen when the original stream has $maxAge/$maxCount set

@@ -3,11 +3,11 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.UserManagement;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Services.UserManagement;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting;

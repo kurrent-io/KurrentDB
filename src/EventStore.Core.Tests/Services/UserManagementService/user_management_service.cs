@@ -7,10 +7,11 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using EventStore.ClientAPI.Common.Utils;
 using EventStore.Core.Messages;
-using EventStore.Core.Services;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Tests;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
@@ -18,7 +19,7 @@ namespace EventStore.Core.Tests.Services.UserManagementService;
 
 public static class user_management_service {
 	public abstract class TestFixtureWithUserManagementService<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
-		protected Core.Authentication.InternalAuthentication.UserManagementService _users;
+		protected KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService _users;
 		protected readonly ClaimsPrincipal _ordinaryUser = new ClaimsPrincipal(new ClaimsIdentity(
 				new[] {
 					new Claim(ClaimTypes.Name,"user1"),
@@ -34,7 +35,7 @@ public static class user_management_service {
 			NoOtherStreams();
 			AllWritesSucceed();
 
-			_users = new Core.Authentication.InternalAuthentication.UserManagementService(
+			_users = new KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService(
 				_ioDispatcher, new StubPasswordHashAlgorithm(), skipInitializeStandardUsersCheck: true,
 				new TaskCompletionSource<bool>(), DefaultData.DefaultUserOptions);
 
@@ -73,7 +74,7 @@ public static class user_management_service {
 				.Where(
 					v =>
 						v.EventStreamId
-						== Core.Authentication.InternalAuthentication.UserManagementService
+						== KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService
 							.UserPasswordNotificationsStreamId).ToArray();
 		}
 
@@ -84,7 +85,7 @@ public static class user_management_service {
 						v =>
 							v.EventStreamId
 							== SystemStreams.MetastreamOf(
-								Core.Authentication.InternalAuthentication.UserManagementService
+								KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService
 									.UserPasswordNotificationsStreamId))
 					.ToArray();
 		}

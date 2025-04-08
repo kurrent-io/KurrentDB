@@ -7,14 +7,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Auth.StreamPolicyPlugin;
-using EventStore.Core;
-using EventStore.Core.Authorization.AuthorizationPolicies;
-using EventStore.Core.Bus;
-using EventStore.Core.Configuration.Sources;
 using KurrentDB.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Exceptions;
+using KurrentDB.Core;
+using KurrentDB.Core.Authorization.AuthorizationPolicies;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 

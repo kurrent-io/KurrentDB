@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.MultiStream;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
@@ -54,12 +54,12 @@ public class when_handling_read_completed_for_all_streams_after_pause_requested<
 			new ClientMessage.ReadStreamEventsForwardCompleted(
 				correlationId, "a", 100, 100, ReadStreamResult.Success,
 				new[] {
-					EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(
+					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							1, 50, Guid.NewGuid(), _firstEventId, 50, 0, "a", ExpectedVersion.Any, DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 							"event_type1", new byte[] {1}, new byte[] {2})),
-					EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(
+					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							2, 150, Guid.NewGuid(), _secondEventId, 150, 0, "a", ExpectedVersion.Any,
 							DateTime.UtcNow,
@@ -72,13 +72,13 @@ public class when_handling_read_completed_for_all_streams_after_pause_requested<
 			new ClientMessage.ReadStreamEventsForwardCompleted(
 				correlationId, "b", 100, 100, ReadStreamResult.Success,
 				new[] {
-					EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(
+					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							2, 100, Guid.NewGuid(), _thirdEventId, 100, 0, "b", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 							"event_type1", new byte[] {1}, new byte[] {2})),
-					EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(
+					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							3, 200, Guid.NewGuid(), _fourthEventId, 200, 0, "b", ExpectedVersion.Any,
 							DateTime.UtcNow,
@@ -112,7 +112,7 @@ public class when_handling_read_completed_for_all_streams_after_pause_requested<
 				new ClientMessage.ReadStreamEventsForwardCompleted(
 					correlationId, "a", 100, 100, ReadStreamResult.Success,
 					new[] {
-						EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(
+						ResolvedEvent.ForUnresolvedEvent(
 							new EventRecord(
 								3, 250, Guid.NewGuid(), Guid.NewGuid(), 250, 0, "a", ExpectedVersion.Any,
 								DateTime.UtcNow,

@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.Projections.Core.Utils;
 using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;
 

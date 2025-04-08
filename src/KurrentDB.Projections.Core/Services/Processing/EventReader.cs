@@ -3,9 +3,9 @@
 
 using System;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 

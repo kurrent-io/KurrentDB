@@ -3,10 +3,10 @@
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Transport.Http;
-using EventStore.Core.Services.Transport.Http.Authentication;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Core.Services.Transport.Http.Authentication;
+using KurrentDB.Core.Services.UserManagement;
 using Microsoft.AspNetCore.Connections.Features;
 using Microsoft.AspNetCore.Http;
 using NUnit.Framework;

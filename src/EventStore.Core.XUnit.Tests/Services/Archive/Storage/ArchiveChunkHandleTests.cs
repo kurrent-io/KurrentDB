@@ -4,8 +4,8 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Archive;
-using EventStore.Core.Services.Archive.Storage;
+using KurrentDB.Core.Services.Archive;
+using KurrentDB.Core.Services.Archive.Storage;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Services.Archive.Storage;

@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 

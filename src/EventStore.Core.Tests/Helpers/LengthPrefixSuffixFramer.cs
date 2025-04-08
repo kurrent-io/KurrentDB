@@ -6,7 +6,7 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Helpers;
+using KurrentDB.Core.Helpers;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Helpers;

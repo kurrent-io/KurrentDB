@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.TimerService;
+using KurrentDB.Core.Messaging;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.Util;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;

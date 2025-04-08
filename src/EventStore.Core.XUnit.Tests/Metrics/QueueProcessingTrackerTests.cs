@@ -4,8 +4,8 @@
 using System;
 using System.Diagnostics.Metrics;
 using System.Threading.Tasks;
-using EventStore.Core.Metrics;
-using EventStore.Core.Time;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Time;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;

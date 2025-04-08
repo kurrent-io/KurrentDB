@@ -6,14 +6,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DotNext;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Metrics;
 using EventStore.Core.Tests.Bus.Helpers;
 using EventStore.Core.Tests.Services.TimeService;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
 using NUnit.Framework;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
 
 namespace EventStore.Core.Tests.Helpers;
 

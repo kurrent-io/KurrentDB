@@ -4,17 +4,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.MultiStream;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.multi_stream_reader;
 

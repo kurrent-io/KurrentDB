@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading;
-using EventStore.Core.Bus;
 using EventStore.Core.Tests;
+using KurrentDB.Core.Bus;
 using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_checkpoint_reader;

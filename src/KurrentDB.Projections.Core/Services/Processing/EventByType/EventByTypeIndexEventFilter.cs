@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Services;
+using KurrentDB.Core.Services;
 
 namespace KurrentDB.Projections.Core.Services.Processing.EventByType;
 

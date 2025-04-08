@@ -4,7 +4,7 @@
 using System;
 using System.Linq;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;

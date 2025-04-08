@@ -3,12 +3,12 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Data;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.LogV2;
 using EventStore.Core.Tests.Index.Hashers;
-using EventStore.Core.TransactionLog.Scavenging;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.LogV2;
+using KurrentDB.Core.TransactionLog.Scavenging.Data;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;

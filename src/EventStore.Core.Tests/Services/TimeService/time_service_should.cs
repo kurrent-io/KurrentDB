@@ -3,10 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.TimerService;
+using KurrentDB.Core.Messaging;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.TimerService;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.TimeService;

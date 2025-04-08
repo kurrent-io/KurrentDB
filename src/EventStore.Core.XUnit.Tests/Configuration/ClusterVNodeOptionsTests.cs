@@ -7,11 +7,12 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Net;
-using EventStore.Core.Configuration;
-using EventStore.Core.Configuration.Sources;
 using FluentAssertions;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Options;
+using KurrentDB.Core;
+using KurrentDB.Core.Configuration;
+using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 

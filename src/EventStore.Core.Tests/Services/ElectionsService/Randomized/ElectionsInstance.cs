@@ -3,7 +3,7 @@
 
 using System;
 using System.Net;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 
 namespace EventStore.Core.Tests.Services.ElectionsService.Randomized;
 

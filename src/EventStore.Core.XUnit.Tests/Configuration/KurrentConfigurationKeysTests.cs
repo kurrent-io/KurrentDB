@@ -3,8 +3,8 @@
 
 // ReSharper disable CheckNamespace
 
-using EventStore.Core.Configuration.Sources;
 using FluentAssertions;
+using KurrentDB.Core.Configuration.Sources;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Configuration;

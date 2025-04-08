@@ -3,7 +3,7 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;

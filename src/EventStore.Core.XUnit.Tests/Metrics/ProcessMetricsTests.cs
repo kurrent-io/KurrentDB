@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Threading;
-using EventStore.Core.Metrics;
 using KurrentDB.Common.Configuration;
+using KurrentDB.Core.Metrics;
 using Xunit;
 using Xunit.Sdk;
 

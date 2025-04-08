@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Security.Claims;
-using EventStore.Core.Services.UserManagement;
+using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;

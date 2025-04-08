@@ -13,7 +13,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.TestClient.Commands;
 using KurrentDB.TestClient.Statistics;
 using EventData = EventStore.ClientAPI.EventData;
-using ExpectedVersion = EventStore.Core.Data.ExpectedVersion;
+using ExpectedVersion = KurrentDB.Core.Data.ExpectedVersion;
 using StreamDeletedException = EventStore.ClientAPI.Exceptions.StreamDeletedException;
 using WrongExpectedVersionException = EventStore.ClientAPI.Exceptions.WrongExpectedVersionException;
 

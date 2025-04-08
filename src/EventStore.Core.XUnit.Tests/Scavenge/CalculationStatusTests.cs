@@ -4,12 +4,12 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
-using EventStore.Core.TransactionLog.Scavenging;
 using EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.Scavenging.Data;
 using Xunit;
 using static EventStore.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
 

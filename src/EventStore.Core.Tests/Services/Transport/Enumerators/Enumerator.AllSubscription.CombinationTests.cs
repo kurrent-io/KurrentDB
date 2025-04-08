@@ -7,12 +7,12 @@ using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Transport.Enumerators;
-using EventStore.Core.Services.UserManagement;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
-using Position = EventStore.Core.Services.Transport.Common.Position;
+using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using ResolvedEvent = EventStore.ClientAPI.ResolvedEvent;
 
 namespace EventStore.Core.Tests.Services.Transport.Enumerators;
@@ -166,7 +166,7 @@ public partial class EnumeratorTests {
 			await NodeConnection.AppendToStreamAsync(stream, ExpectedVersion.Any, eventData);
 		}
 		private Task WriteEvent() => WriteEvent(_streamPrefix + _streamSuffix++, "type", "{}", null);
-		private Task RevokeAccessWithStreamAcl() => WriteEvent(SystemStreams.MetastreamOf(Core.Services.SystemStreams.AllStream), "$metadata", @"{ ""$acl"": { ""$r"": [] } }", null);
+		private Task RevokeAccessWithStreamAcl() => WriteEvent(SystemStreams.MetastreamOf(KurrentDB.Core.Services.SystemStreams.AllStream), "$metadata", @"{ ""$acl"": { ""$r"": [] } }", null);
 		private Task RevokeAccessWithDefaultAcl() => WriteEvent(SystemStreams.SettingsStream, "update-default-acl", @"{ ""$systemStreamAcl"" : { ""$r"" : [] } }", null);
 
 		private async Task<(int numEventsAdded, bool accessRevoked, bool fallBehindThenCatchup)> ApplyLiveProperties() {

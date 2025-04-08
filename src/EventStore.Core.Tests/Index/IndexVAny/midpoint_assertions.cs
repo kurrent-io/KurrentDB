@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections;
-using EventStore.Core.Index;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexVAny;

@@ -4,8 +4,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Archive.Storage;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.Services.Archive.Storage;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 using Polly;
 using Xunit;
 

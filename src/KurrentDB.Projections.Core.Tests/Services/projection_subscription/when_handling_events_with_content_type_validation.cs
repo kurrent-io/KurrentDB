@@ -3,7 +3,7 @@
 
 using System;
 using System.Text;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using NUnit.Framework;

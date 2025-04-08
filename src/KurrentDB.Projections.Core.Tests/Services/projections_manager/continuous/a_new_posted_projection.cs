@@ -4,14 +4,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;
+using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager.continuous;
 

@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Helpers;
+using KurrentDB.Core.Helpers;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Helpers;

@@ -8,9 +8,9 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.TransactionLog.Scavenging.DbAccess;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog.Scavenging.DbAccess;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;

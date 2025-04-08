@@ -7,13 +7,13 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Archive;
-using EventStore.Core.Services.Archive.Naming;
-using EventStore.Core.Services.Archive.Storage;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.Services.Archive;
+using KurrentDB.Core.Services.Archive.Naming;
+using KurrentDB.Core.Services.Archive.Storage;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.FileNamingStrategy;
 
 namespace EventStore.Core.XUnit.Tests.Services.Archive.Storage;
 

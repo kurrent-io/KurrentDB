@@ -3,9 +3,9 @@
 
 using System;
 using System.Reflection;
-using EventStore.Core.Messaging;
-using EventStore.Core.Metrics;
 using KurrentDB.Common.Configuration;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;

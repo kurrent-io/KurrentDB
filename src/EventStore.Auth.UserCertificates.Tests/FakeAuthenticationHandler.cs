@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace EventStore.Auth.UserCertificates.Tests;
 
 // authenticates according to the httpAuthenticationProviders
-// similar to EventStore.Core.Services.Transport.Http.AuthenticationMiddleware
+// similar to KurrentDB.Core.Services.Transport.Http.AuthenticationMiddleware
 public class FakeAuthenticationHandler(
 	IOptionsMonitor<AuthenticationSchemeOptions> options,
 	IReadOnlyList<IHttpAuthenticationProvider> httpAuthenticationProviders,

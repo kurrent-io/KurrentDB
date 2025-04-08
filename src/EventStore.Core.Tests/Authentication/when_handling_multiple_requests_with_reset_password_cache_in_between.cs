@@ -4,6 +4,7 @@
 using System.Linq;
 using System.Security.Claims;
 using EventStore.Core.Messages;
+using KurrentDB.Core.Tests.Authentication;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Authentication;

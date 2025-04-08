@@ -3,9 +3,9 @@
 
 using System.Net;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Services;
+using KurrentDB.Core.Services;
 
-namespace EventStore.Core.Tests;
+namespace KurrentDB.Core.Tests;
 
 public class DefaultData {
 	public static string AdminUsername = SystemUsers.Admin;

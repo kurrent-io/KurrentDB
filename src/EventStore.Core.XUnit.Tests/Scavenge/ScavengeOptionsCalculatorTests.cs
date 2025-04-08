@@ -6,12 +6,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Archive;
-using EventStore.Core.Services.UserManagement;
-using EventStore.Core.TransactionLog.Scavenging;
+using KurrentDB.Core;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Archive;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.TransactionLog.Scavenging;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 

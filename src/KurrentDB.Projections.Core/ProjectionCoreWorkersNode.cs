@@ -5,18 +5,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Services.TimerService;
 using KurrentDB.Common.Options;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Messages.EventReaders.Feeds;
 using KurrentDB.Projections.Core.Messaging;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
+using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core;
 

@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using DotNext;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;

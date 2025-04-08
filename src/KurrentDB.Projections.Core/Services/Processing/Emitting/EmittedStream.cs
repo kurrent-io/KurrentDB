@@ -5,14 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.UserManagement;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
@@ -323,7 +323,7 @@ public partial class EmittedStream : IDisposable,
 		return stop || message.IsEndOfStream;
 	}
 
-	private static bool IsV1StreamCreatedEvent(EventStore.Core.Data.ResolvedEvent e) {
+	private static bool IsV1StreamCreatedEvent(KurrentDB.Core.Data.ResolvedEvent e) {
 		return e.Link == null && e.OriginalEventNumber == 0
 							  && (e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreatedImplicit__
 								  || e.OriginalEvent.EventType == SystemEventTypes.V1__StreamCreated__);

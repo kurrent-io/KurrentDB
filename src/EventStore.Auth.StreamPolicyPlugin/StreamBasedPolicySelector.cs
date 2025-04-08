@@ -2,13 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Security.Claims;
-using EventStore.Core.Authorization;
-using EventStore.Core.Authorization.AuthorizationPolicies;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Services.Transport.Common;
-using EventStore.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Authorization.AuthorizationPolicies;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Enumerators;
 using Serilog;
 
 namespace EventStore.Auth.StreamPolicyPlugin;

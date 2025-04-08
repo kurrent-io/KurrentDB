@@ -6,14 +6,14 @@
 @attribute [Authorize]
 @attribute [ExcludeFromInteractiveRouting]
 @rendermode InteractiveServer
-@using EventStore.Core.Bus
-@using EventStore.Core.Metrics
 @using KurrentDB.Common.Utils
 @using KurrentDB.Services
 @using KurrentDB.Components.Cluster.Monitoring
 @using KurrentDB.Tools
 @using Microsoft.AspNetCore.Authorization
 @using KurrentDB.Components.Licensed
+@using KurrentDB.Core.Bus
+@using KurrentDB.Core.Metrics
 @inject IPublisher Publisher
 @inject MonitoringService MonitoringService
 @inject InternalExporter InternalExporter

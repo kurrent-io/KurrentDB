@@ -6,13 +6,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Caching;
 using EventStore.Core.Messages;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.Replication;
+using KurrentDB.Core.Caching;
+using KurrentDB.Core.Metrics;
 using NUnit.Framework;
+using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Caching;
 

@@ -3,9 +3,9 @@
 
 using System;
 using System.Security.Claims;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting;
 

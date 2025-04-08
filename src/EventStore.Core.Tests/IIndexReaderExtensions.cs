@@ -3,7 +3,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Tests;
 

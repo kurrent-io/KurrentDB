@@ -9,18 +9,18 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DotNext.Threading;
-using EventStore.Core.Authorization;
-using EventStore.Core.Authorization.AuthorizationPolicies;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.TransactionLog.LogRecords;
 using KurrentDB.Common.Exceptions;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Authorization.AuthorizationPolicies;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
-using EventRecord = EventStore.Core.Data.EventRecord;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using EventRecord = KurrentDB.Core.Data.EventRecord;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace EventStore.Core.XUnit.Tests.Authorization;
 

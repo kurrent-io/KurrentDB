@@ -6,8 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using EventStore.Core.Transforms.Identity;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.Transforms.Identity;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Transforms.Identity;

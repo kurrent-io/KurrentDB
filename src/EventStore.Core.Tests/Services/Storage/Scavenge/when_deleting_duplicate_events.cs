@@ -4,7 +4,8 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge;
@@ -22,7 +23,7 @@ public class when_deleting_duplicate_events<TLogFormat, TStreamId> : ReadIndexTe
 	private EventRecord _event8;
 
 	public when_deleting_duplicate_events() : base(
-		indexBitnessVersion: EventStore.Core.Index.PTableVersions.IndexV1, performAdditionalChecks: false) {
+		indexBitnessVersion: PTableVersions.IndexV1, performAdditionalChecks: false) {
 	}
 
 	protected override async ValueTask WriteTestScenario(CancellationToken token) {

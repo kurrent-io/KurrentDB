@@ -3,7 +3,7 @@
 
 using System;
 using System.Security.Claims;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 

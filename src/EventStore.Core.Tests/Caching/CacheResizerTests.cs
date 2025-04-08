@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Caching;
+using KurrentDB.Core.Caching;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Caching;

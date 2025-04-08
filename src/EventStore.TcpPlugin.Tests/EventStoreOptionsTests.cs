@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
-using EventStore.Core.Configuration;
-using EventStore.Core.Configuration.Sources;
+using KurrentDB.Core.Configuration;
+using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 

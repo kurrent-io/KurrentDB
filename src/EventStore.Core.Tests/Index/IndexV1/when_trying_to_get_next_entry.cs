@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Core.Index;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV1;

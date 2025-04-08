@@ -3,9 +3,9 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.UserManagement;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests.QueueWriteEventsTests;

@@ -5,8 +5,8 @@ using System;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using EventStore.Core.Messages;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.PersistentSubscription;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.PersistentSubscription;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;

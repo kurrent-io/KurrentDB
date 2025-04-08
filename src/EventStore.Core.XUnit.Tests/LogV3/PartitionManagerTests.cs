@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.LogV3;
 using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
 using Xunit;
 

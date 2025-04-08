@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
-using EventStore.Core.Caching;
-using EventStore.Core.Data;
-using EventStore.Core.DataStructures;
+using KurrentDB.Core.Caching;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.DataStructures;
 using NUnit.Framework;
-using MetadataCached = EventStore.Core.Services.Storage.ReaderIndex.IndexBackend<string>.MetadataCached;
+using MetadataCached = KurrentDB.Core.Services.Storage.ReaderIndex.IndexBackend<string>.MetadataCached;
 
 namespace EventStore.Core.Tests.Caching;
 

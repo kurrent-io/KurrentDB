@@ -4,12 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Replication.ReadStream;

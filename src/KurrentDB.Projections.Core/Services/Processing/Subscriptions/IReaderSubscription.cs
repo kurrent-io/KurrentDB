@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
 using KurrentDB.Projections.Core.Messages;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Subscriptions;

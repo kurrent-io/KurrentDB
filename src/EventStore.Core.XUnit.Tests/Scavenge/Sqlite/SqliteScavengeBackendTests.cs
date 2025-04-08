@@ -4,8 +4,8 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using EventStore.Core.TransactionLog.Scavenging;
-using EventStore.Core.TransactionLog.Scavenging.Sqlite;
+using KurrentDB.Core.TransactionLog.Scavenging.Data;
+using KurrentDB.Core.TransactionLog.Scavenging.Sqlite;
 using Xunit;
 using Xunit.Abstractions;
 

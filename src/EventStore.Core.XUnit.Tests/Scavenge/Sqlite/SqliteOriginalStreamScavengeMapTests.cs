@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Data;
-using EventStore.Core.TransactionLog.Scavenging;
-using EventStore.Core.TransactionLog.Scavenging.Sqlite;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.Scavenging.Data;
+using KurrentDB.Core.TransactionLog.Scavenging.Sqlite;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite;

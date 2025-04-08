@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.TestClient", "Kur
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Transport.Http", "KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj", "{EB8587FE-7805-4306-AD50-EBE45AB0A189}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.Core", "EventStore.Core\EventStore.Core.csproj", "{9957CA10-8A8A-419F-92BD-7A8BE3014345}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Core", "KurrentDB.Core\KurrentDB.Core.csproj", "{9957CA10-8A8A-419F-92BD-7A8BE3014345}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.Transport.Tcp", "KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj", "{DCAD0184-4AFE-49EA-BE31-5D68CA4B59CA}"
 EndProject

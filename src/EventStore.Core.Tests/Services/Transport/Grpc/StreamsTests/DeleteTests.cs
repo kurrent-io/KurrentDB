@@ -6,13 +6,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using EventStore.ClientAPI;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Transport.Common;
 using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Transport.Common;
 using NUnit.Framework;
-using ExpectedVersion = EventStore.Core.Data.ExpectedVersion;
+using ExpectedVersion = KurrentDB.Core.Data.ExpectedVersion;
 using Metadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests;
 

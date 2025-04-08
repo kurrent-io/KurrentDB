@@ -3,8 +3,8 @@
 
 using System.Collections.Generic;
 using System.IO;
-using EventStore.Core.Exceptions;
-using EventStore.Core.Index;
+using KurrentDB.Core.Exceptions;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV1;

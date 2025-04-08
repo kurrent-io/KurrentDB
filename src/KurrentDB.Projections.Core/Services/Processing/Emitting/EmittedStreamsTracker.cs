@@ -2,13 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Services.UserManagement;
-using EventStore.Core.Settings;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Settings;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using ILogger = Serilog.ILogger;
 

@@ -13,10 +13,10 @@ using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Transforms.BitFlip;
 using EventStore.Core.Tests.Transforms.ByteDup;
 using EventStore.Core.Tests.Transforms.WithHeader;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.Transforms.Identity;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.Transforms.Identity;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Transforms;

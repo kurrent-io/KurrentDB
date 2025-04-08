@@ -3,7 +3,7 @@
 
 using System;
 using System.Diagnostics.Metrics;
-using EventStore.Core.Metrics;
+using KurrentDB.Core.Metrics;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;

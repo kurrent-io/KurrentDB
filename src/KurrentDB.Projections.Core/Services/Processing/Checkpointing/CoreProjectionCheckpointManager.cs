@@ -3,7 +3,7 @@
 
 using System;
 using System.Diagnostics.Contracts;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using KurrentDB.Projections.Core.Services.Processing.Partitioning;
@@ -361,7 +361,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 	}
 
 	protected void SendPrerecordedEvent(
-		EventStore.Core.Data.ResolvedEvent pair, CheckpointTag positionTag,
+		KurrentDB.Core.Data.ResolvedEvent pair, CheckpointTag positionTag,
 		long prerecordedEventMessageSequenceNumber) {
 		var committedEvent = new ReaderSubscriptionMessage.CommittedEventDistributed(
 			Guid.Empty, new ResolvedEvent(pair, null), null, -1, source: this.GetType());

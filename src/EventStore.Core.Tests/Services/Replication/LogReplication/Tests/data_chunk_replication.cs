@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Replication;
+using KurrentDB.Core.Services.Replication;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication.Tests;

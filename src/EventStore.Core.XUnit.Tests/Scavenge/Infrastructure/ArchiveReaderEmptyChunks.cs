@@ -6,10 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
 using DotNext.Buffers;
-using EventStore.Core.Services.Archive.Storage;
-using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Plugins.Transforms;
-using static EventStore.Core.TransactionLog.Chunks.TFChunk.TFChunk;
+using KurrentDB.Core.Services.Archive.Storage;
+using KurrentDB.Core.TransactionLog.Chunks;
+using static KurrentDB.Core.TransactionLog.Chunks.TFChunk.TFChunk;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 

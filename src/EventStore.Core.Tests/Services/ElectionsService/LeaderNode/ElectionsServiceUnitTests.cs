@@ -6,17 +6,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
-using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Gossip;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Gossip;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
-using SUT = EventStore.Core.Services.ElectionsService;
+using SUT = KurrentDB.Core.Services.ElectionsService;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 
@@ -51,7 +51,7 @@ public class ElectionsServiceUnitTests {
 			var proposalCheckpoint = new InMemoryCheckpoint(-1);
 			var epochManager = new FakeEpochManager();
 			Func<long> lastCommitPosition = () => -1;
-			var electionsService = new Core.Services.ElectionsService(outputBus,
+			var electionsService = new SUT(outputBus,
 				memberInfo,
 				3,
 				writerCheckpoint,

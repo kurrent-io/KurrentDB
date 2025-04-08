@@ -3,17 +3,17 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.transaction_file_reader;
 

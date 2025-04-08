@@ -2,18 +2,19 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.TransactionLog.Chunks;
 using KurrentDB.Common.Options;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Projections.Core.EventReaders.Feeds;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
 
 namespace KurrentDB.Projections.Core;
 

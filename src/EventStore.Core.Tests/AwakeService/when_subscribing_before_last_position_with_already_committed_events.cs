@@ -3,21 +3,21 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Tests.Bus.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 
 namespace EventStore.Core.Tests.AwakeService;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_subscribing_before_last_position_with_already_committed_events<TLogFormat, TStreamId> {
-	private Core.Services.AwakeReaderService.AwakeService _it;
+	private KurrentDB.Core.Services.AwakeReaderService.AwakeService _it;
 	private EventRecord _eventRecord;
 	private StorageMessage.EventCommitted _eventCommitted;
 	private Exception _exception;
@@ -36,7 +36,7 @@ public class when_subscribing_before_last_position_with_already_committed_events
 	}
 
 	private void Given() {
-		_it = new Core.Services.AwakeReaderService.AwakeService();
+		_it = new KurrentDB.Core.Services.AwakeReaderService.AwakeService();
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;

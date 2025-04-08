@@ -5,10 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using EventStore.Core.Tests.Index.Hashers;
-using EventStore.Core.TransactionLog.Scavenging;
-using EventStore.Core.TransactionLog.Scavenging.CollisionManagement;
-using EventStore.Core.TransactionLog.Scavenging.Sqlite;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
+using KurrentDB.Core.TransactionLog.Scavenging;
+using KurrentDB.Core.TransactionLog.Scavenging.CollisionManagement;
+using KurrentDB.Core.TransactionLog.Scavenging.Data;
+using KurrentDB.Core.TransactionLog.Scavenging.Sqlite;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;
@@ -68,7 +69,7 @@ public class CollisionDetectorTests : SqliteDbPerTest<CollisionDetectorTests> {
 			("a-stream1", CollisionResult.OldCollision, "", none), // 1b
 			("a-stream2", CollisionResult.OldCollision, "", none)); // 1a
 
-		object[] Case(string name, params (string, CollisionResult, string oldUser, string[])[] data) {
+		object[] Case(string name, params (string, KurrentDB.Core.TransactionLog.Scavenging.Data.CollisionResult, string oldUser, string[])[] data) {
 			return new object[] {
 				name, data
 			};
@@ -79,7 +80,7 @@ public class CollisionDetectorTests : SqliteDbPerTest<CollisionDetectorTests> {
 	[MemberData(nameof(TheCases))]
 	public void Works(
 		string caseName,
-		(string StreamName, CollisionResult CollisionResult, string ExpectedOldUser, string[] NewCollisions)[] data) {
+		(string StreamName, KurrentDB.Core.TransactionLog.Scavenging.Data.CollisionResult CollisionResult, string ExpectedOldUser, string[] NewCollisions)[] data) {
 
 		Assert.NotNull(caseName);
 

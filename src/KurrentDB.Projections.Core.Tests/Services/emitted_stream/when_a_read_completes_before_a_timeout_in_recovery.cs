@@ -4,10 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
@@ -15,6 +14,7 @@ using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
+using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_stream;
 

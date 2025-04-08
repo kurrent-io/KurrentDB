@@ -4,7 +4,7 @@
 using System;
 using System.Text;
 using DotNext.Buffers;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.TransactionLog.LogRecords;

@@ -5,15 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Settings;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Settings;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
+using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Services.Processing.EventByType;
 
@@ -185,7 +185,7 @@ public partial class EventByTypeIndexEventReader {
 		}
 
 		private void ReadIndexCheckpointStreamCompleted(
-			ReadStreamResult result, IReadOnlyList<EventStore.Core.Data.ResolvedEvent> events) {
+			ReadStreamResult result, IReadOnlyList<KurrentDB.Core.Data.ResolvedEvent> events) {
 			if (_disposed)
 				return;
 
@@ -353,7 +353,7 @@ public partial class EventByTypeIndexEventReader {
 			_reader.PublishIORequest(delay, readEventsForward, timeoutMessage, corrId);
 		}
 
-		private void DeliverEventRetrievedByIndex(EventStore.Core.Data.ResolvedEvent pair, float progress,
+		private void DeliverEventRetrievedByIndex(KurrentDB.Core.Data.ResolvedEvent pair, float progress,
 			TFPos position) {
 			//TODO: add event sequence validation for inside the index stream
 			var resolvedEvent = new ResolvedEvent(pair, null);

@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.Net;
 using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Gossip;
 using FluentAssertions;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Gossip;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.GossipService;

@@ -3,20 +3,21 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Bus.Helpers;
-using EventStore.Core.Util;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
+using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 

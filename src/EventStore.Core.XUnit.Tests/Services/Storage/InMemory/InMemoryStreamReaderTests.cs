@@ -5,11 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Channels;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Storage.InMemory;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Storage.InMemory;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Services.Storage.InMemory;

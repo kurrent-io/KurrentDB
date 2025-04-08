@@ -2,9 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Security.Claims;
-using EventStore.Core.Authorization;
-using EventStore.Core.Services;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Services;
 
 namespace EventStore.Auth.StreamPolicyPlugin;
 

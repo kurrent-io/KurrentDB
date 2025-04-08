@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;

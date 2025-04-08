@@ -4,10 +4,10 @@
 using System;
 using System.Linq;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.PeriodicLogs;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
+using KurrentDB.Core.Services.PeriodicLogs;
 using NUnit.Framework;
+using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Services.PeriodicLogs;
 

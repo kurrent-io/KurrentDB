@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Infrastructure;
+using KurrentDB.Core.Bus;
 
 namespace EventStore.Core.Tests.Services.ElectionsService.Randomized;
 

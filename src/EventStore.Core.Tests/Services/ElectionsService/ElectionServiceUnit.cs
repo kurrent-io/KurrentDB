@@ -5,15 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
-using EventStore.Core.Data;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.TimerService;
+using KurrentDB.Core.Messaging;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.TransactionLog.Checkpoint;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 
@@ -30,7 +30,7 @@ public class ElectionsServiceUnit {
 		get { return InitialClusterSettings.Self.NodeInfo.HttpEndPoint; }
 	}
 
-	protected Core.Services.ElectionsService ElectionsService;
+	protected KurrentDB.Core.Services.ElectionsService ElectionsService;
 
 	public readonly FakePublisher Publisher;
 	public readonly List<Message> InputMessages;
@@ -53,7 +53,7 @@ public class ElectionsServiceUnit {
 			clusterSettings.Self.NodeInfo.HttpEndPoint, null, 0, 0,
 			clusterSettings.Self.NodePriority,
 			clusterSettings.Self.ReadOnlyReplica);
-		ElectionsService = new Core.Services.ElectionsService(Publisher,
+		ElectionsService = new KurrentDB.Core.Services.ElectionsService(Publisher,
 			memberInfo,
 			clusterSettings.ClusterNodesCount,
 			new InMemoryCheckpoint(WriterCheckpoint),

@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Chunks;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.TransactionLog.Chunks;

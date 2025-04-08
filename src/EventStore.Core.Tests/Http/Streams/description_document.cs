@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Http.Users.users;
+using KurrentDB.Core.Tests;
 using KurrentDB.Transport.Http;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;

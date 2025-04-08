@@ -3,10 +3,10 @@
 
 using System;
 using System.Collections.Concurrent;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Replication;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Replication;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking;

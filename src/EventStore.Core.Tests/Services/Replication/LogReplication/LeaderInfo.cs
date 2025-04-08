@@ -1,12 +1,12 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
-using EventStore.Core.Services.Replication;
-using EventStore.Core.Services.Storage;
-using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Replication;
+using KurrentDB.Core.Services.Storage;
+using KurrentDB.Core.Services.Storage.EpochManager;
+using KurrentDB.Core.TransactionLog.Chunks;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication;
 

@@ -4,7 +4,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.AllReader;
@@ -30,7 +31,7 @@ public class
 			Rec.Prepare(3, "single_write_stream_id_3", prepareFlags: PrepareFlags.SingleWrite | PrepareFlags.IsCommitted)
 			]);
 
-		var firstRead = await ReadIndex.ReadAllEventsForward(new Data.TFPos(0, 0), 10, CancellationToken.None);
+		var firstRead = await ReadIndex.ReadAllEventsForward(new TFPos(0, 0), 10, CancellationToken.None);
 
 		Assert.AreEqual(3, firstRead.Records.Count);
 		Assert.AreEqual("single_write_stream_id_1", firstRead.Records[0].Event.EventStreamId);

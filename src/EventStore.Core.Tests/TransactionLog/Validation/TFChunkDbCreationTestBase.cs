@@ -3,9 +3,9 @@
 
 using System;
 using System.IO;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 
 namespace EventStore.Core.Tests.TransactionLog.Validation;
 

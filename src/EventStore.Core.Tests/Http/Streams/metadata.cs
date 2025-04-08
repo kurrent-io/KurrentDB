@@ -4,11 +4,12 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using EventStore.Core.Services;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Http.Streams.basic;
 using EventStore.Core.Tests.Http.Users.users;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using ContentType = KurrentDB.Transport.Http.ContentType;

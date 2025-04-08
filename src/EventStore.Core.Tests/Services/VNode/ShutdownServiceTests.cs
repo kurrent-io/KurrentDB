@@ -4,12 +4,12 @@
 using System;
 using System.Net;
 using DotNext.Net.Http;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Bus.Helpers;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using NUnit.Framework;
+using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Services.VNode;
 

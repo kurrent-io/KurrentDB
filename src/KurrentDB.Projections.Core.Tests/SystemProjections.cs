@@ -3,7 +3,7 @@
 
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 

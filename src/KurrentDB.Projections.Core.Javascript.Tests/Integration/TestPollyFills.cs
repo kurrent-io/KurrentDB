@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 
 namespace KurrentDB.Projections.Core.Javascript.Tests.Integration;
 

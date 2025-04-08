@@ -4,15 +4,16 @@
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.PersistentSubscription;
-using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
 using EventStore.Core.Tests.TransactionLog;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.PersistentSubscription;
+using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;

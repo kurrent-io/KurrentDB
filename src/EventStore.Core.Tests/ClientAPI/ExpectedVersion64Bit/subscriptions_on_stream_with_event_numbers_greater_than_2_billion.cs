@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;

@@ -10,6 +10,7 @@ using System.Threading;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.Tests.Helpers;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core;
 using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 using Serilog;

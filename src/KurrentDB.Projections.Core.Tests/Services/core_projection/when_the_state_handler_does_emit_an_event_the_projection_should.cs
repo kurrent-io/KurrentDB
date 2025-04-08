@@ -3,9 +3,9 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;

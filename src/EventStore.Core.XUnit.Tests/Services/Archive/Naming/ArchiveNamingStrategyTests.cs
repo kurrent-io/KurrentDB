@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Services.Archive.Naming;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
+using KurrentDB.Core.Services.Archive.Naming;
+using KurrentDB.Core.TransactionLog.FileNamingStrategy;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Services.Archive.Naming;

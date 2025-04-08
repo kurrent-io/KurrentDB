@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Security.Claims;
-using EventStore.Core.Authorization;
-using EventStore.Core.Services;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.UserManagement;
 using Xunit;
 
 namespace EventStore.Auth.StreamPolicyPlugin.Tests;

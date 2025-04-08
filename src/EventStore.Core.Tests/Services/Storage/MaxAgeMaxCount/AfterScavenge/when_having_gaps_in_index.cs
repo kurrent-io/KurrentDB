@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Index;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.MaxAgeMaxCount.AfterScavenge;

@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 

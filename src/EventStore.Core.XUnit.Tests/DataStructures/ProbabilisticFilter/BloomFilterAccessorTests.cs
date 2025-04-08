@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.DataStructures.ProbabilisticFilter;
+using KurrentDB.Core.DataStructures.ProbabilisticFilter;
 using Xunit;
 
 #pragma warning disable xUnit1026 // Theory methods should use all of their parameters

@@ -32,7 +32,7 @@
 	<ItemGroup>
 		<PackageReference Include="Jint" Version="4.0.3" />
 		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
-		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
 		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>

@@ -2,10 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using EventStore.Core.Configuration.Sources;
-using EventStore.Core.Services.Archive;
 using EventStore.Plugins;
 using EventStore.Plugins.Licensing;
+using KurrentDB.Core;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.Archive;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

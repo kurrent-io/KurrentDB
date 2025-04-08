@@ -3,19 +3,21 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Util;
 using KurrentDB.Common.Options;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Services.AwakeReaderService;
+using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 

@@ -3,8 +3,8 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.TransactionLog.Scavenging.Interfaces;
-using EventStore.Core.TransactionLog.Scavenging.Stages;
+using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
+using KurrentDB.Core.TransactionLog.Scavenging.Stages;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;

@@ -5,11 +5,11 @@ using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Core.Certificates;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
+using KurrentDB.Core.Certificates;
 using NUnit.Framework;
+using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Certificates;
 

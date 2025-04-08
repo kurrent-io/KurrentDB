@@ -4,7 +4,7 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;

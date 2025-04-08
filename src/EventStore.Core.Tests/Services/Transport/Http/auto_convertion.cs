@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Transport.Http;
-using EventStore.Core.TransactionLog.LogRecords;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Transport.Http.Codecs;
 using Newtonsoft.Json;
 using NUnit.Framework;

@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Services.Processing.MultiStream;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;

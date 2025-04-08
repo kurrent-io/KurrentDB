@@ -3,7 +3,7 @@
 
 using System.Threading.Tasks;
 using EventStore.ClientAPI.Exceptions;
-using EventStore.Core.Services;
+using KurrentDB.Core.Services;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI.Security;

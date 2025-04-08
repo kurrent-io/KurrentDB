@@ -4,9 +4,9 @@
 using System;
 using System.Diagnostics;
 using EventStore.Client.Messages;
-using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 
 namespace KurrentDB.TestClient.Commands;
 

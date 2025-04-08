@@ -7,9 +7,9 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Transport.Http.Authentication;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Core.Services.Transport.Http.Authentication;
+using KurrentDB.Core.Services.UserManagement;
 using Microsoft.AspNetCore.Http;
 using NUnit.Framework;
 

@@ -3,13 +3,13 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Services.UserManagement;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;

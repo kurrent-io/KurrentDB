@@ -7,8 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.LogAbstraction.Common;
-using EventStore.Core.TransactionLog.Checkpoint;
 using EventStore.Core.XUnit.Tests.Helpers;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.LogAbstraction.Common;

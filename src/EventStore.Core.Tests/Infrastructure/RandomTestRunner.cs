@@ -3,10 +3,10 @@
 
 using System.Collections.Generic;
 using System.Net;
-using EventStore.Core.Bus;
-using EventStore.Core.DataStructures;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.DataStructures;
 
 namespace EventStore.Core.Tests.Infrastructure;
 

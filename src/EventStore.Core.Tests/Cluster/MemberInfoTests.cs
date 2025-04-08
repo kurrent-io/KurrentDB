@@ -3,7 +3,7 @@
 
 using System;
 using System.Net;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Cluster;

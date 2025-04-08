@@ -4,9 +4,9 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
+using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.HashCollisions;
 

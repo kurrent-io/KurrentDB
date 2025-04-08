@@ -2,16 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Helpers.IODispatcherTests;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_streams_deleter.when_deleting;
 

@@ -2,11 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.Tests.Index.Hashers;
-using EventStore.Core.TransactionLog.Scavenging;
-using EventStore.Core.TransactionLog.Scavenging.CollisionManagement;
-using EventStore.Core.TransactionLog.Scavenging.Interfaces;
-using EventStore.Core.TransactionLog.Scavenging.Sqlite;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
+using KurrentDB.Core.TransactionLog.Scavenging.CollisionManagement;
+using KurrentDB.Core.TransactionLog.Scavenging.Data;
+using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
+using KurrentDB.Core.TransactionLog.Scavenging.Sqlite;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;

@@ -4,8 +4,8 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Exceptions;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Exceptions;
+using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Validation;

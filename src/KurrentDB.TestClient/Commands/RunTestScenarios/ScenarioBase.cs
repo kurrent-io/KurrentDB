@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Services;
+using KurrentDB.Core.Services;
 using ConsoleLogger = EventStore.ClientAPI.Common.Log.ConsoleLogger;
 using ILogger = Serilog.ILogger;
 using TcpCommand = EventStore.Core.Services.Transport.Tcp.TcpCommand;

@@ -5,14 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Telemetry;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.Util;
 using KurrentDB.Common.Options;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services;
@@ -20,6 +19,7 @@ using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
+using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.projections_manager;
 

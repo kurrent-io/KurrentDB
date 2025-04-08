@@ -7,19 +7,19 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Services.Transport.Common;
-using EventStore.Core.Services.Transport.Enumerators;
-using EventStore.Core.Services.UserManagement;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.POC.IO.Core;
 using Serilog;
-using CommonPosition = EventStore.Core.Services.Transport.Common.Position;
+using CommonPosition = KurrentDB.Core.Services.Transport.Common.Position;
 using Event = KurrentDB.POC.IO.Core.Event;
 using Position = KurrentDB.POC.IO.Core.Position;
 
@@ -70,7 +70,7 @@ public class InternalClient : IClient {
 			stream,
 			expectedVersion,
 			events.Select(evt =>
-				new Core.Data.Event(
+				new KurrentDB.Core.Data.Event(
 					evt.EventId, evt.EventType, isJson: evt.ContentType == "application/json",
 					evt.Data.ToArray(),
 					evt.Metadata.ToArray())).ToArray(),

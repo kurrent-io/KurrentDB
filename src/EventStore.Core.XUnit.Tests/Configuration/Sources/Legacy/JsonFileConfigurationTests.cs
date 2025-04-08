@@ -3,8 +3,8 @@
 
 using System;
 using System.IO;
-using EventStore.Core.Configuration.Sources;
 using FluentAssertions;
+using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.FileProviders;
 using Xunit;

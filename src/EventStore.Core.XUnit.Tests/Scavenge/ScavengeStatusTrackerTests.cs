@@ -4,9 +4,9 @@
 using System;
 using System.Diagnostics.Metrics;
 using System.Linq;
-using EventStore.Core.Metrics;
-using EventStore.Core.TransactionLog.Scavenging;
 using EventStore.Core.XUnit.Tests.Metrics;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.TransactionLog.Scavenging;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;

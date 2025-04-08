@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using EventStore.Core.DataStructures.ProbabilisticFilter;
-using EventStore.Core.Index.Hashes;
+using KurrentDB.Core.DataStructures.ProbabilisticFilter;
+using KurrentDB.Core.Index.Hashes;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.DataStructures;

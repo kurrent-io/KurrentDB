@@ -4,12 +4,12 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.VNode;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.VNode;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication;
 

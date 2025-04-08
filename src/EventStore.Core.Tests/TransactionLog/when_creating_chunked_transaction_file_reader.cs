@@ -3,8 +3,8 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;

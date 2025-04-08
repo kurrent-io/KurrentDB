@@ -3,9 +3,9 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Bus;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Partitioning;
 using KurrentDB.Projections.Core.Services.Processing.Phases;

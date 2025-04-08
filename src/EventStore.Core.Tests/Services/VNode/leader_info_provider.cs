@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using EventStore.Core.Cluster;
-using EventStore.Core.Data;
-using EventStore.Core.Services.VNode;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.VNode;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.VNode;

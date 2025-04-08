@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Storage;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Services.Storage;
+using KurrentDB.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.Tests.Services.Storage;
 

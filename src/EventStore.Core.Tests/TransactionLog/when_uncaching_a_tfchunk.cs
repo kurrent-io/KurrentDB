@@ -5,11 +5,11 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Transforms;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Transforms;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;

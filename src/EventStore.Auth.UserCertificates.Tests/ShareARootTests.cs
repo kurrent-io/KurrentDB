@@ -4,7 +4,6 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Xunit;
-
 using static EventStore.Auth.UserCertificates.Tests.TestUtils;
 
 namespace EventStore.Auth.UserCertificates.Tests;

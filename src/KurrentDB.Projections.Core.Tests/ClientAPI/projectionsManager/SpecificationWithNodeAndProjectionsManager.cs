@@ -10,12 +10,12 @@ using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common.Log;
 using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Services;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Util;
 using KurrentDB.Common.Options;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
 

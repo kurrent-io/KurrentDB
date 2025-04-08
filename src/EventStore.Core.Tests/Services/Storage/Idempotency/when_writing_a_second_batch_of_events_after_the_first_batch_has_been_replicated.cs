@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.Idempotency;

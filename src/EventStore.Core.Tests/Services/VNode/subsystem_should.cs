@@ -3,10 +3,10 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Plugins;
+using KurrentDB.Core.Bus;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.VNode;

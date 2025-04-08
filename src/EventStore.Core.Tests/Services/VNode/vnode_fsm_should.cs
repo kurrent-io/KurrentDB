@@ -3,9 +3,9 @@
 
 using System.Threading.Tasks;
 using DotNext.Runtime;
-using EventStore.Core.Data;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.VNode;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.VNode;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.VNode;

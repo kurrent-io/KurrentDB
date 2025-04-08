@@ -4,9 +4,10 @@
 using System;
 using System.Diagnostics.Metrics;
 using System.Linq;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.VNode;
 using EventStore.Core.XUnit.Tests.Metrics;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.VNode;
 using Xunit;
 
 namespace EventStore.Core.TransactionLog.Services.VNode;
@@ -37,11 +38,11 @@ public class NodeStatusTrackerTests : IDisposable {
 		_clock.SecondsSinceEpoch = 500;
 		AssertMeasurements("Initializing", 500);
 
-		_sut.OnStateChange(Data.VNodeState.PreReplica);
+		_sut.OnStateChange(VNodeState.PreReplica);
 		_clock.SecondsSinceEpoch = 501;
 		AssertMeasurements("PreReplica", 501);
 
-		_sut.OnStateChange(Data.VNodeState.Follower);
+		_sut.OnStateChange(VNodeState.Follower);
 		_clock.SecondsSinceEpoch = 502;
 		AssertMeasurements("Follower", 502);
 	}
@@ -49,7 +50,7 @@ public class NodeStatusTrackerTests : IDisposable {
 	[Fact]
 	public void can_observe_initial() {
 		_clock.SecondsSinceEpoch = 500;
-		_sut.OnStateChange(Data.VNodeState.PreLeader);
+		_sut.OnStateChange(VNodeState.PreLeader);
 		_sut.OnStateChange(InaugurationManager.ManagerState.BecomingLeader);
 		AssertMeasurements("PreLeader - BecomingLeader", 500);
 
@@ -61,7 +62,7 @@ public class NodeStatusTrackerTests : IDisposable {
 	[Fact]
 	public void can_observe_waiting_for_chaser() {
 		_clock.SecondsSinceEpoch = 500;
-		_sut.OnStateChange(Data.VNodeState.PreLeader);
+		_sut.OnStateChange(VNodeState.PreLeader);
 		AssertMeasurements("PreLeader", 500);
 
 		_clock.SecondsSinceEpoch = 502;
@@ -72,7 +73,7 @@ public class NodeStatusTrackerTests : IDisposable {
 	[Fact]
 	public void can_observe_writing_epoch() {
 		_clock.SecondsSinceEpoch = 500;
-		_sut.OnStateChange(Data.VNodeState.PreLeader);
+		_sut.OnStateChange(VNodeState.PreLeader);
 		AssertMeasurements("PreLeader", 500);
 
 		_clock.SecondsSinceEpoch = 502;
@@ -83,7 +84,7 @@ public class NodeStatusTrackerTests : IDisposable {
 	[Fact]
 	public void can_observe_waiting_for_conditions() {
 		_clock.SecondsSinceEpoch = 500;
-		_sut.OnStateChange(Data.VNodeState.PreLeader);
+		_sut.OnStateChange(VNodeState.PreLeader);
 		AssertMeasurements("PreLeader", 500);
 
 		_clock.SecondsSinceEpoch = 502;
@@ -94,7 +95,7 @@ public class NodeStatusTrackerTests : IDisposable {
 	[Fact]
 	public void can_observe_becoming_leader() {
 		_clock.SecondsSinceEpoch = 500;
-		_sut.OnStateChange(Data.VNodeState.PreLeader);
+		_sut.OnStateChange(VNodeState.PreLeader);
 		AssertMeasurements("PreLeader", 500);
 
 		_clock.SecondsSinceEpoch = 502;

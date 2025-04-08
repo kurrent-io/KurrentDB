@@ -4,8 +4,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.Scavenging.Interfaces;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 

@@ -3,9 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Bus;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Bus.Helpers;

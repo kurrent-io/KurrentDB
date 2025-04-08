@@ -6,9 +6,8 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
-using EventStore.Core.Metrics;
+using KurrentDB.Core.Metrics;
 using Xunit;
-
 using static KurrentDB.Common.Configuration.MetricsConfiguration;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;

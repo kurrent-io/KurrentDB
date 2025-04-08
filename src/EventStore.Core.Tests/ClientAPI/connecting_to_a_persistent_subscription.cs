@@ -11,6 +11,7 @@ using EventStore.ClientAPI.ClientOperations;
 using EventStore.ClientAPI.Common;
 using EventStore.ClientAPI.Common.Utils;
 using EventStore.ClientAPI.Exceptions;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI;

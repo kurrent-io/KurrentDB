@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common.Utils;
-using EventStore.Core.Services;
+using KurrentDB.Core.Services;
 using NUnit.Framework;
 using ResolvedEvent = EventStore.ClientAPI.ResolvedEvent;
 

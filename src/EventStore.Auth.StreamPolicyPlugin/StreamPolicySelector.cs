@@ -3,13 +3,13 @@
 
 using System.Text.Json;
 using EventStore.Auth.StreamPolicyPlugin.Schema;
-using EventStore.Core.Authorization;
-using EventStore.Core.Bus;
-using EventStore.Core.Services;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.UserManagement;
 using Serilog;
-using Policy = EventStore.Core.Authorization.Policy;
+using Policy = KurrentDB.Core.Authorization.Policy;
 
 namespace EventStore.Auth.StreamPolicyPlugin;
 

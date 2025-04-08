@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Runtime;
-using EventStore.Core.Metrics;
 using FluentAssertions;
 using KurrentDB.Common.Configuration;
+using KurrentDB.Core.Metrics;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Xunit;
 

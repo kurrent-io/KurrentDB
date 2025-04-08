@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using EventStore.Core.Services.Monitoring.Stats;
+using KurrentDB.Core.Services.Monitoring.Stats;
 using Serilog;
 
 namespace KurrentDB.TestClient.Statistics;

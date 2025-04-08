@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests;
 

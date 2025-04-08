@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.TransactionLog.Scavenging.Sqlite;
+using KurrentDB.Core.TransactionLog.Scavenging.Sqlite;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge.Sqlite;

@@ -4,7 +4,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
 using NUnit.Framework;
 

@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Bus;
-using EventStore.Core.Services.TimerService;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;

@@ -4,13 +4,15 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using EventStore.Core.Authentication.InternalAuthentication;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
+using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Core.Authentication.InternalAuthentication;
+using KurrentDB.Core.Helpers;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
 
-namespace EventStore.Core.Tests.Authentication;
+namespace KurrentDB.Core.Tests.Authentication;
 
 public abstract class with_internal_authentication_provider<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	protected new IODispatcher _ioDispatcher;

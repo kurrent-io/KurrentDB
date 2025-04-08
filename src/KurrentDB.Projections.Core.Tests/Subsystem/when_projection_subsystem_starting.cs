@@ -3,8 +3,8 @@
 
 using System;
 using System.Threading;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;

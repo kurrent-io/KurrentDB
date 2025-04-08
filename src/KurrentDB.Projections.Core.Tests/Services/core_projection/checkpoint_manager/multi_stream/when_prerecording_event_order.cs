@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services;
 using EventStore.Core.Tests;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;
 using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;

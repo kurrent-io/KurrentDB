@@ -3,11 +3,11 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
@@ -41,13 +41,13 @@ public class when_read_completes_before_timeout<TLogFormat, TStreamId> : TestFix
 			new ClientMessage.ReadAllEventsForwardCompleted(
 				correlationId, ReadAllResult.Success, null,
 				new[] {
-					EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(
+					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "a", ExpectedVersion.Any,
 							_fakeTimeProvider.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 							"event_type1", new byte[] {1}, new byte[] {2}), 100),
-					EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(
+					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							2, 150, Guid.NewGuid(), Guid.NewGuid(), 150, 0, "b", ExpectedVersion.Any,
 							_fakeTimeProvider.UtcNow,

@@ -3,15 +3,15 @@
 
 using System;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Settings;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Settings;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Standard;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 
 namespace KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 
@@ -165,7 +165,7 @@ public class TransactionFileEventReader : EventReader,
 	}
 
 	private void DeliverEvent(
-		EventStore.Core.Data.ResolvedEvent @event, long lastCommitPosition, TFPos currentFrom) {
+		KurrentDB.Core.Data.ResolvedEvent @event, long lastCommitPosition, TFPos currentFrom) {
 		EventRecord linkEvent = @event.Link;
 		EventRecord targetEvent = @event.Event ?? linkEvent;
 		EventRecord positionEvent = (linkEvent ?? targetEvent);

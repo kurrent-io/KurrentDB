@@ -3,18 +3,18 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.AwakeReaderService;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.SingleStream;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
+using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.stream_reader;
 

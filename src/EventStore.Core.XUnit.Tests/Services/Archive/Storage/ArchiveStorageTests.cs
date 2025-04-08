@@ -5,8 +5,8 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Buffers;
-using EventStore.Core.Services.Archive;
-using EventStore.Core.Services.Archive.Storage.Exceptions;
+using KurrentDB.Core.Services.Archive;
+using KurrentDB.Core.Services.Archive.Storage.Exceptions;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Services.Archive.Storage;

@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using ILogger = Serilog.ILogger;
 

@@ -3,11 +3,12 @@
 
 using System;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
 using NUnit.Framework;
+
 
 // ReSharper disable InconsistentNaming
 

@@ -8,8 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Interpreted;
 using KurrentDB.Projections.Core.Services.Processing;
@@ -249,7 +249,7 @@ public class SpecRunner {
 						revision[sequence.Stream], logPosition, Guid.NewGuid(), @event.EventId, i, j,
 						sequence.Stream, i, DateTime.Now, flags, @event.EventType,
 						Utf8NoBom.GetBytes(body), metadata);
-					var e = new ResolvedEvent(EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(er, logPosition), Array.Empty<byte>());
+					var e = new ResolvedEvent(KurrentDB.Core.Data.ResolvedEvent.ForUnresolvedEvent(er, logPosition), Array.Empty<byte>());
 					if (@event.Skip) {
 						yield return For($"{projection} skips {er.EventNumber}@{sequence.Stream}",
 							() => Assert.Null(runner.GetStatePartition(CheckpointTag.Empty, "", e)));

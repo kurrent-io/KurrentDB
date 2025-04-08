@@ -3,8 +3,8 @@
 
 using System.Security.Claims;
 using System.Threading.Tasks;
-using EventStore.Core.Authorization;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Core.Authorization;
 
 namespace EventStore.Core.XUnit.Tests.Authorization;
 

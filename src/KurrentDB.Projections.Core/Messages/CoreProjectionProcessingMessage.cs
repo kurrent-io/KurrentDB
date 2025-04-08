@@ -2,14 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Messaging;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 
 namespace KurrentDB.Projections.Core.Messages;
 
 public static partial class CoreProjectionProcessingMessage {
 	[DerivedMessage]
-	public abstract partial class Message : EventStore.Core.Messaging.Message {
+	public abstract partial class Message : KurrentDB.Core.Messaging.Message {
 		private readonly Guid _projectionId;
 
 		protected Message(Guid projectionId) {
@@ -105,7 +105,7 @@ public static partial class CoreProjectionProcessingMessage {
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class ReadyForCheckpoint : EventStore.Core.Messaging.Message {
+	public partial class ReadyForCheckpoint : KurrentDB.Core.Messaging.Message {
 		private readonly object _sender;
 
 		public ReadyForCheckpoint(object sender) {
@@ -118,7 +118,7 @@ public static partial class CoreProjectionProcessingMessage {
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class EmittedStreamAwaiting : EventStore.Core.Messaging.Message {
+	public partial class EmittedStreamAwaiting : KurrentDB.Core.Messaging.Message {
 		private readonly IEnvelope _envelope;
 		private readonly string _streamId;
 
@@ -137,7 +137,7 @@ public static partial class CoreProjectionProcessingMessage {
 	}
 
 	[DerivedMessage(ProjectionMessage.CoreProcessing)]
-	public partial class EmittedStreamWriteCompleted : EventStore.Core.Messaging.Message {
+	public partial class EmittedStreamWriteCompleted : KurrentDB.Core.Messaging.Message {
 		private readonly string _streamId;
 
 		public EmittedStreamWriteCompleted(string streamId) {

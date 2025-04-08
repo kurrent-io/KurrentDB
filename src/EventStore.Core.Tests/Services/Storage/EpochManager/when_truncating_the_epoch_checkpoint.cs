@@ -5,12 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
 using EventStore.Core.LogAbstraction;
-using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Storage.EpochManager;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.EpochManager;

@@ -4,9 +4,9 @@
 using System;
 using System.Diagnostics.Metrics;
 using System.Linq;
-using EventStore.Core.Index;
-using EventStore.Core.Metrics;
 using EventStore.Core.XUnit.Tests.Metrics;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Metrics;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Index;

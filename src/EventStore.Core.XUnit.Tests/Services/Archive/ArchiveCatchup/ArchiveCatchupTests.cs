@@ -7,15 +7,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Archive.Naming;
-using EventStore.Core.Services.Archive.Storage.Exceptions;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
+using KurrentDB.Core.Services.Archive.Naming;
+using KurrentDB.Core.Services.Archive.Storage.Exceptions;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.FileNamingStrategy;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Services.Archive.ArchiveCatchup;
 
-using ArchiveCatchup = Core.Services.Archive.ArchiveCatchup.ArchiveCatchup;
+using ArchiveCatchup = KurrentDB.Core.Services.Archive.ArchiveCatchup.ArchiveCatchup;
 
 public class ArchiveCatchupTests : DirectoryPerTest<ArchiveCatchupTests> {
 	private const int ChunkSize = 1000;

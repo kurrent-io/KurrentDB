@@ -7,32 +7,35 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.DataStructures;
-using EventStore.Core.Index;
-using EventStore.Core.Index.Hashes;
 using EventStore.Core.LogAbstraction;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.Archive.Storage;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Settings;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Index.Hashers;
 using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.TransactionLog.Scavenging;
-using EventStore.Core.TransactionLog.Scavenging.DbAccess;
-using EventStore.Core.TransactionLog.Scavenging.Interfaces;
-using EventStore.Core.TransactionLog.Scavenging.Stages;
-using EventStore.Core.Transforms;
-using EventStore.Core.Util;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.Archive.Storage;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Settings;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog.Scavenging;
+using KurrentDB.Core.TransactionLog.Scavenging.Data;
+using KurrentDB.Core.TransactionLog.Scavenging.DbAccess;
+using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
+using KurrentDB.Core.TransactionLog.Scavenging.Stages;
+using KurrentDB.Core.Transforms;
+using KurrentDB.Core.Util;
 using Xunit;
 using static EventStore.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
+using ScavengeResult = KurrentDB.Core.TransactionLog.Chunks.ScavengeResult;
 using Type = System.Type;
 
 #pragma warning disable CS0162 // Unreachable code detected
@@ -544,7 +547,7 @@ public class Scenario<TLogFormat, TStreamId> : Scenario {
 			if (_logger == null) {
 				Assert.True(successLogger.Completed);
 				Assert.True(
-					successLogger.Result == Core.TransactionLog.Chunks.ScavengeResult.Success,
+					successLogger.Result == ScavengeResult.Success,
 					$"Status: {successLogger.Result}. Error: {successLogger.Error}");
 			}
 

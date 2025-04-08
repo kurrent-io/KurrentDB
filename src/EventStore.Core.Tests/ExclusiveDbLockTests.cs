@@ -3,6 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
+using KurrentDB.Core;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests;

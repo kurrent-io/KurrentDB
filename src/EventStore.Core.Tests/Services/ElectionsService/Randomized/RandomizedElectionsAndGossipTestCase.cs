@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Net;
 using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Infrastructure;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Tests.Services.ElectionsService.Randomized;
 

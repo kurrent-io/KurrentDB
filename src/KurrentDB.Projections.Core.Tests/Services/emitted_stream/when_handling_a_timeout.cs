@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
@@ -63,9 +64,9 @@ public class when_handling_a_timeout<TLogFormat, TStreamId> : TestFixtureWithExi
 	public void should_retry_the_write_with_the_same_events() {
 		var current = _consumer.HandledMessages.OfType<ClientMessage.WriteEvents>().Last();
 		while (_consumer.HandledMessages.Last().GetType() ==
-			   typeof(EventStore.Core.Services.TimerService.TimerMessage.Schedule)) {
+			   typeof(TimerMessage.Schedule)) {
 			var message =
-				_consumer.HandledMessages.Last() as EventStore.Core.Services.TimerService.TimerMessage.Schedule;
+				_consumer.HandledMessages.Last() as TimerMessage.Schedule;
 			message.Envelope.ReplyWith(message.ReplyMessage);
 
 			CompleteWriteWithResult(OperationResult.CommitTimeout);

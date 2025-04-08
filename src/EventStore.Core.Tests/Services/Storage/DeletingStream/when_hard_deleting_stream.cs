@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
 using NUnit.Framework;
 

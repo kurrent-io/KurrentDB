@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Projections.Core.Messages;
 

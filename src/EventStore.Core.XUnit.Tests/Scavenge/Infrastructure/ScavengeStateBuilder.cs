@@ -4,14 +4,14 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using EventStore.Core.DataStructures;
-using EventStore.Core.Index.Hashes;
 using EventStore.Core.LogAbstraction;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Scavenging;
-using EventStore.Core.TransactionLog.Scavenging.Interfaces;
-using EventStore.Core.TransactionLog.Scavenging.Sqlite;
 using EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
+using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Scavenging;
+using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
+using KurrentDB.Core.TransactionLog.Scavenging.Sqlite;
 using Microsoft.Data.Sqlite;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;

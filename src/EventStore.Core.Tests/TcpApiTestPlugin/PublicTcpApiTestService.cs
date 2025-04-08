@@ -9,12 +9,13 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core;
-using EventStore.Core.Bus;
-using EventStore.Core.Certificates;
 using EventStore.Core.Messages;
-using EventStore.Core.Services;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 

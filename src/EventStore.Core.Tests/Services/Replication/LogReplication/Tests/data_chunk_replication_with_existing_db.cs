@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication.Tests;

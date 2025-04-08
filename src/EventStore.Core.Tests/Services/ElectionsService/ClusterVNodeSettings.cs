@@ -3,8 +3,8 @@
 
 using System;
 using System.Net;
-using EventStore.Core.Data;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 

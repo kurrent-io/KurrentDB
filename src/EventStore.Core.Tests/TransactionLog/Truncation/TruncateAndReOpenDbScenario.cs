@@ -3,14 +3,14 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.DataStructures;
-using EventStore.Core.Index;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.Util;
+using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Util;
 
 namespace EventStore.Core.Tests.TransactionLog.Truncation;
 

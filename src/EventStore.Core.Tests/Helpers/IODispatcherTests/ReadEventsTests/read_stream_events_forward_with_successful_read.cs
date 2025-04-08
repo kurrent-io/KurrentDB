@@ -3,8 +3,8 @@
 
 using System;
 using System.Threading;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
+using KurrentDB.Core.Helpers;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests.ReadEventsTests;

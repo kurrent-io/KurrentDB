@@ -21,6 +21,6 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" />
-		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>
 </Project>

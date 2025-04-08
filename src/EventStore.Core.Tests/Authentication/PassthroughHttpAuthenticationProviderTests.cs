@@ -3,10 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Authentication.DelegatedAuthentication;
-using EventStore.Core.Authentication.PassthroughAuthentication;
-using EventStore.Core.Services.Transport.Http.Authentication;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Core.Authentication.DelegatedAuthentication;
+using KurrentDB.Core.Authentication.PassthroughAuthentication;
+using KurrentDB.Core.Services.Transport.Http.Authentication;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Authentication;

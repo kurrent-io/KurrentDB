@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Common.Exceptions;
+using KurrentDB.Core;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Configuration;

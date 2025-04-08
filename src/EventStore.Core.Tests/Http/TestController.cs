@@ -3,11 +3,11 @@
 
 using System;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Transport.Http;
-using EventStore.Core.Services.Transport.Http.Controllers;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Core.Services.Transport.Http.Controllers;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 using KurrentDB.Transport.Http.EntityManagement;

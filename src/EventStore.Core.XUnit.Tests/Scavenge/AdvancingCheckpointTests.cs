@@ -3,7 +3,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.Scavenging;
+using KurrentDB.Core.TransactionLog.Scavenging;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;

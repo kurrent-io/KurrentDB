@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DotNext.Threading;
-using EventStore.Core.TransactionLog.Scavenging;
+using KurrentDB.Core.TransactionLog.Scavenging;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge;

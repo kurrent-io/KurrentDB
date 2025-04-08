@@ -3,9 +3,9 @@
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Monitoring.Stats;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Monitoring.Stats;
 
 namespace EventStore.Core.Tests.Bus.Helpers;
 

@@ -6,10 +6,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
-using EventStore.Core.Index;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
-using MD5 = EventStore.Core.Hashing.MD5;
+using MD5 = KurrentDB.Core.Hashing.MD5;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
 

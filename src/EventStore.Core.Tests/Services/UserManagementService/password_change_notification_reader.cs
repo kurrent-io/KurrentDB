@@ -3,8 +3,8 @@
 
 using System.Collections.Generic;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Transport.Http.Authentication;
-using EventStore.Core.Services.UserManagement;
+using KurrentDB.Core.Services.Transport.Http.Authentication;
+using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.UserManagementService {

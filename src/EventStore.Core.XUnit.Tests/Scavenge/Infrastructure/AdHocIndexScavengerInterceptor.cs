@@ -4,8 +4,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Index;
-using EventStore.Core.TransactionLog.Scavenging.Interfaces;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
 
 namespace EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 

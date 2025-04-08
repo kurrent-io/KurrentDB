@@ -3,7 +3,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services;
+using KurrentDB.Core.Services;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.BuildingIndex;

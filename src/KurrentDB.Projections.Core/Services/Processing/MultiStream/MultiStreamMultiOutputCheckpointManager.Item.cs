@@ -7,7 +7,7 @@ namespace KurrentDB.Projections.Core.Services.Processing.MultiStream;
 
 public partial class MultiStreamMultiOutputCheckpointManager {
 	private class Item {
-		internal EventStore.Core.Data.ResolvedEvent? _result;
+		internal KurrentDB.Core.Data.ResolvedEvent? _result;
 		private readonly CheckpointTag _tag;
 
 		public Item(CheckpointTag tag) {
@@ -18,7 +18,7 @@ public partial class MultiStreamMultiOutputCheckpointManager {
 			get { return _tag; }
 		}
 
-		public void SetLoadedEvent(EventStore.Core.Data.ResolvedEvent eventLinkPair) {
+		public void SetLoadedEvent(KurrentDB.Core.Data.ResolvedEvent eventLinkPair) {
 			_result = eventLinkPair;
 		}
 	}

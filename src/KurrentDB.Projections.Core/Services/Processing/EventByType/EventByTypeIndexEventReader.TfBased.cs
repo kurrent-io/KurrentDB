@@ -5,12 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Settings;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Settings;
 using KurrentDB.Projections.Core.Messages;
 
 namespace KurrentDB.Projections.Core.Services.Processing.EventByType;
@@ -89,7 +89,7 @@ public partial class EventByTypeIndexEventReader {
 								_reader.UpdateNextStreamPosition(link.EventStreamId, link.EventNumber + 1);
 								// recover unresolved link event
 								var unresolvedLinkEvent =
-									EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(link,
+									KurrentDB.Core.Data.ResolvedEvent.ForUnresolvedEvent(link,
 										originalTfPosition.CommitPosition);
 								DeliverEventRetrievedFromTf(
 									unresolvedLinkEvent, 100.0f * link.LogPosition / message.TfLastCommitPosition,
@@ -160,7 +160,7 @@ public partial class EventByTypeIndexEventReader {
 			//TODO: check was is passed here
 		}
 
-		private void DeliverEventRetrievedFromTf(EventStore.Core.Data.ResolvedEvent pair, float progress,
+		private void DeliverEventRetrievedFromTf(KurrentDB.Core.Data.ResolvedEvent pair, float progress,
 			TFPos position) {
 			var resolvedEvent = new ResolvedEvent(pair, null);
 

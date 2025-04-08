@@ -2,14 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.AwakeReaderService;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.AwakeReaderService;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Messaging;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 

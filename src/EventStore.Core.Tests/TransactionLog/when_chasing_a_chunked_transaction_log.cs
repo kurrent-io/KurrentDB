@@ -6,11 +6,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Buffers;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;

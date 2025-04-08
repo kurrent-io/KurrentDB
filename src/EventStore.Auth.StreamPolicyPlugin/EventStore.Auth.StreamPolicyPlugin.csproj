@@ -6,7 +6,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

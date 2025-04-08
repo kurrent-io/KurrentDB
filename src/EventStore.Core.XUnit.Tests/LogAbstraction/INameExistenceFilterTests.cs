@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Index.Hashes;
 using EventStore.Core.LogAbstraction;
+using KurrentDB.Core.Index.Hashes;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.LogAbstraction;

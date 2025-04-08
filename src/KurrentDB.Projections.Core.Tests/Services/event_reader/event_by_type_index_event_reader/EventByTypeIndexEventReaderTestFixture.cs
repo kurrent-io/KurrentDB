@@ -3,11 +3,12 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.event_by_type_index_event_reader;
 
@@ -45,7 +46,7 @@ public abstract class EventByTypeIndexEventReaderTestFixture<TLogFormat, TStream
 
 	public Guid TimeoutRead(string streamId, Guid corrId) {
 		var timeoutMessage = _consumer.HandledMessages
-			.OfType<EventStore.Core.Services.TimerService.TimerMessage.Schedule>().Last(x =>
+			.OfType<TimerMessage.Schedule>().Last(x =>
 				((ProjectionManagementMessage.Internal.ReadTimeout)x.ReplyMessage).StreamId == streamId);
 		var correlationId = ((ProjectionManagementMessage.Internal.ReadTimeout)timeoutMessage.ReplyMessage)
 			.CorrelationId;

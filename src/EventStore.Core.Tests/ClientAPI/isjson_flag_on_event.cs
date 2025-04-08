@@ -7,12 +7,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
+using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
 
 namespace EventStore.Core.Tests.ClientAPI;
 
@@ -77,7 +79,7 @@ public class isjson_flag_on_event<TLogFormat, TStreamId> : SpecificationWithDire
 				Guid.NewGuid(), Guid.NewGuid(), new CallbackEnvelope(message => {
 					Assert.IsInstanceOf<ClientMessage.ReadStreamEventsForwardCompleted>(message);
 					var msg = (ClientMessage.ReadStreamEventsForwardCompleted)message;
-					Assert.AreEqual(Data.ReadStreamResult.Success, msg.Result);
+					Assert.AreEqual(ReadStreamResult.Success, msg.Result);
 					Assert.AreEqual(expectedEvents, msg.Events.Count);
 					Assert.IsTrue(msg.Events.All(x => (x.OriginalEvent.Flags & PrepareFlags.IsJson) != 0));
 

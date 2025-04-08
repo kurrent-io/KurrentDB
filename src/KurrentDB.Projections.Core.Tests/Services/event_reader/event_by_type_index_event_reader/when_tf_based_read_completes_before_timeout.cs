@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.EventByType;
 using NUnit.Framework;
@@ -47,13 +47,13 @@ public class when_tf_based_read_completes_before_timeout<TLogFormat, TStreamId> 
 		CompleteBackwardStreamRead("$et", Guid.Empty);
 
 		var correlationId = CompleteForwardAllStreamRead(Guid.Empty, new[] {
-			EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(
+			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "test_stream", ExpectedVersion.Any,
 					_fakeTimeProvider.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 					"eventTypeOne", new byte[] {1}, new byte[] {2}), 100),
-			EventStore.Core.Data.ResolvedEvent.ForUnresolvedEvent(
+			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					2, 150, Guid.NewGuid(), Guid.NewGuid(), 150, 0, "test_stream", ExpectedVersion.Any,
 					_fakeTimeProvider.UtcNow,

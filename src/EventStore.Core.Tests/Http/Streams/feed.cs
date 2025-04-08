@@ -14,11 +14,12 @@ using EventStore.ClientAPI.Common;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Http.Users.users;
+using KurrentDB.Core.Tests;
 using KurrentDB.Transport.Http;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;
-using SystemHeaders = EventStore.Core.Services.SystemHeaders;
+using SystemHeaders = KurrentDB.Core.Services.SystemHeaders;
 
 namespace EventStore.Core.Tests.Http.Streams {
 	namespace feed {

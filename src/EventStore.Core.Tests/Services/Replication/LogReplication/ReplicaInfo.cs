@@ -3,11 +3,11 @@
 
 using System;
 using System.Threading;
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Replication;
-using EventStore.Core.Services.Storage;
-using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Replication;
+using KurrentDB.Core.Services.Storage;
+using KurrentDB.Core.Services.Storage.EpochManager;
+using KurrentDB.Core.TransactionLog.Chunks;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication;
 

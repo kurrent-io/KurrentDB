@@ -3,7 +3,7 @@
 
 using EventStore.Core.Tests.Helpers;
 
-namespace EventStore.Core.Tests;
+namespace KurrentDB.Core.Tests;
 
 
 public static class ClusterVNodeOptionsExtensions {

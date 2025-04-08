@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
+using KurrentDB.Core.Bus;
 
 namespace EventStore.TcpPlugin.Tests;
 

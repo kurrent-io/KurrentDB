@@ -5,11 +5,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
-using EventStore.Core.Certificates;
-using EventStore.Core.Configuration.Sources;
-using EventStore.Core.Services;
 using EventStore.Core.Tests;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 

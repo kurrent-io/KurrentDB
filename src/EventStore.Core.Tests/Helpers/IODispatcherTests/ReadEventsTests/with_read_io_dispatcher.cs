@@ -3,13 +3,13 @@
 
 using System;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Services.UserManagement;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
+using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests.ReadEventsTests;
 

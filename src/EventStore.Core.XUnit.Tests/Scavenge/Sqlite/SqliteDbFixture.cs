@@ -3,8 +3,8 @@
 
 using System.IO;
 using System.Threading.Tasks;
-using EventStore.Core.DataStructures;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.TransactionLog.Chunks;
 using Microsoft.Data.Sqlite;
 using Xunit;
 

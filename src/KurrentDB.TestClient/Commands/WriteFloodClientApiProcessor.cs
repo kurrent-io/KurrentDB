@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading;
 using EventStore.ClientAPI;
 using KurrentDB.Common.Utils;
-using ExpectedVersion = EventStore.Core.Data.ExpectedVersion;
+using ExpectedVersion = KurrentDB.Core.Data.ExpectedVersion;
 
 namespace KurrentDB.TestClient.Commands;
 

@@ -3,8 +3,8 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.CheckCommitStartingAt;

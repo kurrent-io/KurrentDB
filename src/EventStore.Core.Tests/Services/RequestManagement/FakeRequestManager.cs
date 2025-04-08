@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.RequestManager;
-using EventStore.Core.Services.RequestManager.Managers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.RequestManager;
+using KurrentDB.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement;
 

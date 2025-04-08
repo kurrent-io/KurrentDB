@@ -10,9 +10,10 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Storage.InMemory;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Storage.InMemory;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Services.Storage.InMemory;
@@ -44,7 +45,7 @@ public class GossipListenerServiceTests {
 		var member = MemberInfo.ForVNode(
 				instanceId: Guid.NewGuid(),
 				timeStamp: DateTime.Now,
-				state: Data.VNodeState.DiscoverLeader,
+				state: VNodeState.DiscoverLeader,
 				isAlive: true,
 				internalTcpEndPoint: default,
 				internalSecureTcpEndPoint: new DnsEndPoint("myhost", random()),

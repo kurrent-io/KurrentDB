@@ -2,12 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Reactive.Subjects;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Transport.Http.NodeHttpClientFactory;
+using KurrentDB.Core.Messaging;
 using EventStore.Plugins;
 using EventStore.Plugins.Licensing;
 using EventStore.POC.ConnectedSubsystemsPlugin;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 using KurrentDB.POC.IO.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;

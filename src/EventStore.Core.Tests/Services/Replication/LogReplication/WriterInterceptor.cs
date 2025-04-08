@@ -3,9 +3,9 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication;
 

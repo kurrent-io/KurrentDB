@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using EventStore.Core.Caching;
-using EventStore.Core.DataStructures;
+using KurrentDB.Core.Caching;
+using KurrentDB.Core.DataStructures;
 using NUnit.Framework;
-using EventNumberCached = EventStore.Core.Services.Storage.ReaderIndex.IndexBackend<string>.EventNumberCached;
+using EventNumberCached = KurrentDB.Core.Services.Storage.ReaderIndex.IndexBackend<string>.EventNumberCached;
 
 namespace EventStore.Core.Tests.Caching;
 

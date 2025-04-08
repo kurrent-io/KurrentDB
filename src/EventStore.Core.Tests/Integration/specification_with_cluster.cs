@@ -8,9 +8,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Data;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Core.Data;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Integration;
@@ -120,7 +120,7 @@ public abstract class specification_with_cluster<TLogFormat, TStreamId> : Specif
 		}
 
 		// wait for cluster to be fully operational, tests depend on leader and followers
-		AssertEx.IsOrBecomesTrue(() => _nodes.Any(x => x.NodeState == Data.VNodeState.Leader),
+		AssertEx.IsOrBecomesTrue(() => _nodes.Any(x => x.NodeState == VNodeState.Leader),
 			timeout: TimeSpan.FromSeconds(30),
 			onFail: MiniNodeLogging.WriteLogs,
 			msg: "Waiting for leader timed out!");
@@ -171,14 +171,14 @@ public abstract class specification_with_cluster<TLogFormat, TStreamId> : Specif
 	}
 
 	protected MiniClusterNode<TLogFormat, TStreamId> GetLeader() {
-		var leader = _nodes.First(x => x.NodeState == Data.VNodeState.Leader);
+		var leader = _nodes.First(x => x.NodeState == VNodeState.Leader);
 		Assert.NotNull(leader, "Cluster doesn't have a leader available!");
 
 		return leader;
 	}
 
 	protected MiniClusterNode<TLogFormat, TStreamId>[] GetFollowers() {
-		var followers = _nodes.Where(x => x.NodeState == Data.VNodeState.Follower).ToArray();
+		var followers = _nodes.Where(x => x.NodeState == VNodeState.Follower).ToArray();
 		Assert.IsNotEmpty(followers, "Cluster doesn't have followers available!");
 
 		return followers;

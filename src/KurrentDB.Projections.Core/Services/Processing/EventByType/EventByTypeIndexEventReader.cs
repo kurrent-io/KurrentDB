@@ -5,11 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Services.TimerService;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.TimerService;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 
 namespace KurrentDB.Projections.Core.Services.Processing.EventByType;
 

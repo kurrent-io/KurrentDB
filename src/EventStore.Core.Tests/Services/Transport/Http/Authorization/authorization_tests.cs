@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Integration;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 using NUnit.Framework;
 using ContentType = KurrentDB.Transport.Http.ContentType;
 
@@ -119,7 +120,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 
 		//find the leader node
 		for (int i = 0; i < _nodes.Length; i++) {
-			if (_nodes[i].NodeState == Data.VNodeState.Leader) {
+			if (_nodes[i].NodeState == VNodeState.Leader) {
 				_leaderId = i;
 				break;
 			}

@@ -3,9 +3,9 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Messages;
 using NUnit.Framework;
 using ResolvedEvent = KurrentDB.Projections.Core.Services.Processing.ResolvedEvent;

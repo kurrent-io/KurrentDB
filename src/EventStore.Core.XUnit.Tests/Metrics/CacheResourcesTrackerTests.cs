@@ -6,7 +6,8 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
-using EventStore.Core.Metrics;
+using KurrentDB.Core.Caching;
+using KurrentDB.Core.Metrics;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Metrics;
@@ -36,13 +37,13 @@ public sealed class CacheResourcesTrackerTests : IDisposable {
 	public void observes_all_caches() {
 		var (sut, listener) = GenSut();
 
-		sut.Register("cacheA", Caching.ResizerUnit.Entries, () => new("", "",
+		sut.Register("cacheA", ResizerUnit.Entries, () => new("", "",
 			capacity: 1,
 			size: 2,
 			count: 3,
 			numChildren: 0));
 
-		sut.Register("cacheB", Caching.ResizerUnit.Bytes, () => new("", "",
+		sut.Register("cacheB", ResizerUnit.Bytes, () => new("", "",
 			capacity: 4,
 			size: 5,
 			count: 6,

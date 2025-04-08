@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Infrastructure;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 
 namespace EventStore.Core.Tests.Services.ElectionsService.Randomized;
 
@@ -78,7 +78,7 @@ internal class RandomizedElectionsTestCase {
 
 			sendOverHttpHandler.RegisterEndPoint(endPoint, inputBus);
 
-			var electionsService = new Core.Services.ElectionsService(outputBus,
+			var electionsService = new KurrentDB.Core.Services.ElectionsService(outputBus,
 				memberInfo,
 				InstancesCnt,
 				new InMemoryCheckpoint(),

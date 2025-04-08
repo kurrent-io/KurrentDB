@@ -4,7 +4,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;

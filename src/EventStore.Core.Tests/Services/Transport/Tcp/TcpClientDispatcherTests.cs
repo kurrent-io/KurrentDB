@@ -5,21 +5,23 @@ using System;
 using System.Linq;
 using System.Text;
 using EventStore.Client.Messages;
-using EventStore.Core.Authentication.InternalAuthentication;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.LogV2;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Util;
+using KurrentDB.Core.Authentication.InternalAuthentication;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.LogV2;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Util;
 using NUnit.Framework;
-using EventRecord = EventStore.Core.Data.EventRecord;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using EventRecord = KurrentDB.Core.Data.EventRecord;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp;
 
@@ -38,7 +40,7 @@ public class TcpClientDispatcherTests {
 		_connection = new TcpConnectionManager(
 			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(), new InternalAuthenticationProvider(
-				InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),
+				InMemoryBus.CreateTest(), new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },

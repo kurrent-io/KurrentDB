@@ -4,9 +4,8 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.TimerService;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;
@@ -16,6 +15,7 @@ using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using KurrentDB.Projections.Core.Services.Processing.Subscriptions;
 using KurrentDB.Projections.Core.Services.Processing.WorkItems;
 using ILogger = Serilog.ILogger;
+using KurrentDB.Core.Services.TimerService;
 using UnwrapEnvelopeMessage = KurrentDB.Projections.Core.Messaging.UnwrapEnvelopeMessage;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Phases;

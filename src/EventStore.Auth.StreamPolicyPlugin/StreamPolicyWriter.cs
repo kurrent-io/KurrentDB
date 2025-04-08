@@ -2,11 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Auth.StreamPolicyPlugin.Schema;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.UserManagement;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.UserManagement;
 using Serilog;
 
 namespace EventStore.Auth.StreamPolicyPlugin;

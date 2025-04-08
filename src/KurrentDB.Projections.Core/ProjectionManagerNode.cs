@@ -3,21 +3,22 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Telemetry;
 using KurrentDB.Common.Options;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Messaging;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Http;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
+using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
 
 namespace KurrentDB.Projections.Core;
 

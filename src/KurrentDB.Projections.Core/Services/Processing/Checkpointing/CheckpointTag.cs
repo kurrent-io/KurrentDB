@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using EventStore.Core.Data;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 

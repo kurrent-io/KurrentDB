@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using EventStore.Core.Services.Archive;
+using KurrentDB.Core.Services.Archive;
 using Xunit.Sdk;
 
 namespace EventStore.Core.XUnit.Tests.Services.Archive.Storage;

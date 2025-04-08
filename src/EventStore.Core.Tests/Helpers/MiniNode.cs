@@ -11,26 +11,28 @@ using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Authentication;
-using EventStore.Core.Authentication.InternalAuthentication;
-using EventStore.Core.Authorization;
-using EventStore.Core.Authorization.AuthorizationPolicies;
-using EventStore.Core.Bus;
-using EventStore.Core.Certificates;
-using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Monitoring;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Http;
 using EventStore.Core.Tests.Index.Hashers;
 using EventStore.Core.Tests.Services.Transport.Tcp;
-using EventStore.Core.TransactionLog.Chunks;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
 using EventStore.Plugins.Subsystems;
 using EventStore.Plugins.Transforms;
 using EventStore.TcpUnitTestPlugin;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core;
+using KurrentDB.Core.Authentication;
+using KurrentDB.Core.Authentication.InternalAuthentication;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Authorization.AuthorizationPolicies;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.Monitoring;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Util;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -81,8 +83,8 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		int memTableSize = 1000,
 		bool inMemDb = true, bool disableFlushToDisk = false,
 		string advertisedExtHostAddress = null, int advertisedHttpPort = 0,
-		int hashCollisionReadLimit = Util.Opts.HashCollisionReadLimitDefault,
-		byte indexBitnessVersion = Util.Opts.IndexBitnessVersionDefault,
+		int hashCollisionReadLimit = Opts.HashCollisionReadLimitDefault,
+		byte indexBitnessVersion = Opts.IndexBitnessVersionDefault,
 		bool hash32bit = false,
 		string dbPath = "", bool isReadOnlyReplica = false,
 		long streamExistenceFilterSize = 10_000,

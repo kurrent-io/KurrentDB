@@ -4,9 +4,9 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Transport.Http;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Integration;
+using KurrentDB.Core.Services.Transport.Http;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;

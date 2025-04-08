@@ -3,10 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
-using EventStore.Core.TransactionLog.LogRecords;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Standard;
 using Newtonsoft.Json.Linq;
@@ -39,7 +39,7 @@ public class ResolvedEvent {
 	public readonly bool IsLinkToDeletedStream;
 	public readonly bool IsLinkToDeletedStreamTombstone;
 
-	public ResolvedEvent(EventStore.Core.Data.ResolvedEvent resolvedEvent, byte[] streamMetadata) {
+	public ResolvedEvent(KurrentDB.Core.Data.ResolvedEvent resolvedEvent, byte[] streamMetadata) {
 		var positionEvent = resolvedEvent.Link ?? resolvedEvent.Event;
 		_linkOrEventPosition = resolvedEvent.OriginalPosition.GetValueOrDefault();
 		var @event = resolvedEvent.Event;

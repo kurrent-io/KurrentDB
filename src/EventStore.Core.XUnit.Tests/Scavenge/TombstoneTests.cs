@@ -4,9 +4,10 @@
 using System.Threading.Tasks;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.XUnit.Tests.Scavenge.Infrastructure;
 using EventStore.Core.XUnit.Tests.Scavenge.Sqlite;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
 using static EventStore.Core.XUnit.Tests.Scavenge.Infrastructure.StreamMetadatas;
 
@@ -113,7 +114,7 @@ public class TombstoneTests : SqliteDbPerTest<TombstoneTests> {
 			.RunAsync();
 
 		Assert.True(logger.Completed);
-		Assert.Equal(EventStore.Core.TransactionLog.Chunks.ScavengeResult.Errored, logger.Result);
+		Assert.Equal(ScavengeResult.Errored, logger.Result);
 		Assert.Equal("Error while scavenging DB: Found Tombstone in metadata stream $$ab-1.", logger.Error);
 	}
 
@@ -136,7 +137,7 @@ public class TombstoneTests : SqliteDbPerTest<TombstoneTests> {
 			.RunAsync();
 
 		Assert.True(logger.Completed);
-		Assert.Equal(EventStore.Core.TransactionLog.Chunks.ScavengeResult.Errored, logger.Result);
+		Assert.Equal(ScavengeResult.Errored, logger.Result);
 		Assert.Equal("Error while scavenging DB: Found Tombstone in transaction in stream ab-1.", logger.Error);
 	}
 

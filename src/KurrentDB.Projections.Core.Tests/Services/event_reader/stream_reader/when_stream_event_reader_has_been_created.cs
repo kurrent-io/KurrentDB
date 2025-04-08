@@ -3,13 +3,13 @@
 
 using System;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
+using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Services.Processing.SingleStream;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Data.ReadStreamResult;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.event_reader.stream_reader;
 

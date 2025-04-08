@@ -3,11 +3,11 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Bus.Helpers;
-using EventStore.Core.Util;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;

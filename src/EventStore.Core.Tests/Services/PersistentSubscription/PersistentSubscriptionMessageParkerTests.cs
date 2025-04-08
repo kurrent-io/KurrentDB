@@ -6,15 +6,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.PersistentSubscription;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.PersistentSubscription;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
+using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;
 

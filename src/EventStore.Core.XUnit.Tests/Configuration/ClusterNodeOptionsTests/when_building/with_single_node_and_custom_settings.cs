@@ -3,10 +3,11 @@
 
 #nullable enable
 using System.Net;
-using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Tests;
-using EventStore.Core.TransactionLog.Chunks;
 using FluentAssertions;
+using KurrentDB.Core;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.TransactionLog.Chunks;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 

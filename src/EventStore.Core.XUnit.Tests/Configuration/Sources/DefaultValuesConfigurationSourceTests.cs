@@ -2,8 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Linq;
-using EventStore.Core.Configuration.Sources;
 using FluentAssertions;
+using KurrentDB.Core;
+using KurrentDB.Core.Configuration.Sources;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 

@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
-using EventStore.Core.Metrics;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Core.XUnit.Tests.Metrics;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
-using static EventStore.Core.TransactionLog.ITransactionFileTracker;
+using static KurrentDB.Core.TransactionLog.ITransactionFileTracker;
 
 namespace EventStore.Core.XUnit.Tests.TransactionLog.Chunks;
 

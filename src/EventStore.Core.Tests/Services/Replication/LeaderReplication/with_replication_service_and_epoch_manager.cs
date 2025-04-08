@@ -8,23 +8,25 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.Authentication.InternalAuthentication;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Replication;
-using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Services.Transport.Tcp;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Authentication.InternalAuthentication;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Replication;
+using KurrentDB.Core.Services.Storage.EpochManager;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Replication.LeaderReplication;
@@ -120,7 +122,7 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 			"Test Subscription Connection manager", TcpServiceType.External, new ClientTcpDispatcher(2_000),
 			new SynchronousScheduler(), tcpConn, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
-				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),
+				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },

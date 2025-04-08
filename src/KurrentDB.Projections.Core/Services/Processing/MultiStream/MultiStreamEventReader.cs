@@ -6,16 +6,16 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.AwakeReaderService;
-using EventStore.Core.Services.TimerService;
-using EventStore.Core.Settings;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Settings;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 using UnwrapEnvelopeMessage = KurrentDB.Projections.Core.Messaging.UnwrapEnvelopeMessage;
 
 namespace KurrentDB.Projections.Core.Services.Processing.MultiStream;
@@ -33,8 +33,8 @@ public class MultiStreamEventReader : EventReader,
 
 	// event, link, progress
 	// null element in a queue means stream deleted
-	private readonly Dictionary<string, Queue<Tuple<EventStore.Core.Data.ResolvedEvent, float>>> _buffers =
-		new Dictionary<string, Queue<Tuple<EventStore.Core.Data.ResolvedEvent, float>>>();
+	private readonly Dictionary<string, Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>>> _buffers =
+		new Dictionary<string, Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>>>();
 
 	private const int _maxReadCount = 111;
 	private long? _safePositionToJoin;
@@ -147,7 +147,7 @@ public class MultiStreamEventReader : EventReader,
 						EventRecord positionEvent = (link ?? @event);
 						UpdateSafePositionToJoin(
 							positionEvent.EventStreamId, EventPairToPosition(message.Events[index]));
-						Tuple<EventStore.Core.Data.ResolvedEvent, float> itemToEnqueue = Tuple.Create(
+						Tuple<KurrentDB.Core.Data.ResolvedEvent, float> itemToEnqueue = Tuple.Create(
 							message.Events[index],
 							100.0f * (link ?? @event).EventNumber / message.LastEventNumber);
 						EnqueueItem(itemToEnqueue, positionEvent.EventStreamId);
@@ -179,10 +179,10 @@ public class MultiStreamEventReader : EventReader,
 		PauseOrContinueProcessing();
 	}
 
-	private void EnqueueItem(Tuple<EventStore.Core.Data.ResolvedEvent, float> itemToEnqueue, string streamId) {
-		Queue<Tuple<EventStore.Core.Data.ResolvedEvent, float>> queue;
+	private void EnqueueItem(Tuple<KurrentDB.Core.Data.ResolvedEvent, float> itemToEnqueue, string streamId) {
+		Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>> queue;
 		if (!_buffers.TryGetValue(streamId, out queue)) {
-			queue = new Queue<Tuple<EventStore.Core.Data.ResolvedEvent, float>>();
+			queue = new Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>>();
 			_buffers.Add(streamId, queue);
 		}
 
@@ -268,7 +268,7 @@ public class MultiStreamEventReader : EventReader,
 
 		if (_eventsRequested.Contains(stream))
 			return;
-		Queue<Tuple<EventStore.Core.Data.ResolvedEvent, float>> queue;
+		Queue<Tuple<KurrentDB.Core.Data.ResolvedEvent, float>> queue;
 		if (_buffers.TryGetValue(stream, out queue) && queue.Count > 0)
 			return;
 		_eventsRequested.Add(stream);
@@ -323,7 +323,7 @@ public class MultiStreamEventReader : EventReader,
 			_safePositionToJoin = _preparePositions.Min(v => v.Value.GetValueOrDefault());
 	}
 
-	private void DeliverEvent(EventStore.Core.Data.ResolvedEvent pair, float progress) {
+	private void DeliverEvent(KurrentDB.Core.Data.ResolvedEvent pair, float progress) {
 		_deliveredEvents++;
 		var positionEvent = pair.OriginalEvent;
 		string streamId = positionEvent.EventStreamId;
@@ -350,7 +350,7 @@ public class MultiStreamEventReader : EventReader,
 				_stopOnEof ? (long?)null : positionEvent.LogPosition, progress, source: this.GetType()));
 	}
 
-	private long? EventPairToPosition(EventStore.Core.Data.ResolvedEvent resolvedEvent) {
+	private long? EventPairToPosition(KurrentDB.Core.Data.ResolvedEvent resolvedEvent) {
 		return resolvedEvent.OriginalEvent.LogPosition;
 	}
 
@@ -358,7 +358,7 @@ public class MultiStreamEventReader : EventReader,
 		return GetLastCommitPositionFrom(message);
 	}
 
-	private long GetItemPosition(Tuple<EventStore.Core.Data.ResolvedEvent, float> head) {
+	private long GetItemPosition(Tuple<KurrentDB.Core.Data.ResolvedEvent, float> head) {
 		return head.Item1.OriginalEvent.LogPosition;
 	}
 

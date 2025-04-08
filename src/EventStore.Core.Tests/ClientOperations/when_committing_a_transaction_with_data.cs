@@ -5,10 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using EventStore.ClientAPI.Common.Utils;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientOperations;

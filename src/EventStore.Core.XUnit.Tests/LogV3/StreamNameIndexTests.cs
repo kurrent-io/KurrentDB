@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using EventStore.Core.LogAbstraction.Common;
 using EventStore.Core.LogV3;
 using EventStore.Core.LogV3.FASTER;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
 using StreamId = System.UInt32;
 

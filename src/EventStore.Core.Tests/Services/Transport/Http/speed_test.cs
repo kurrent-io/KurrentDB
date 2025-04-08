@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using EventStore.Core.Services.Transport.Http;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 

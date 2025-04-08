@@ -7,9 +7,9 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Collections.Generic;
-using EventStore.Core.Authorization;
-using EventStore.Core.Authorization.AuthorizationPolicies;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.Authorization;

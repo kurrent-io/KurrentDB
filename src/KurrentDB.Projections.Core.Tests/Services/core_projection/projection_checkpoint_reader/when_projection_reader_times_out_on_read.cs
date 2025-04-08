@@ -3,30 +3,30 @@
 
 using System;
 using System.Threading;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers.IODispatcherTests;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
+using KurrentDB.Core.Services.TimerService;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.projection_checkpoint_reader;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_projection_reader_times_out_on_read<TLogFormat, TStreamId> : with_projection_checkpoint_reader<TLogFormat, TStreamId>,
-	IHandle<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>,
+	IHandle<Messages.CoreProjectionProcessingMessage.CheckpointLoaded>,
 	IHandle<TimerMessage.Schedule> {
 	private ManualResetEventSlim _mre = new ManualResetEventSlim();
-	private KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded _checkpointLoaded;
+	private Messages.CoreProjectionProcessingMessage.CheckpointLoaded _checkpointLoaded;
 	private bool _hasTimedOut;
 	private Guid _timeoutCorrelationId;
 
 	public override void When() {
-		_bus.Subscribe<KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded>(this);
+		_bus.Subscribe<Messages.CoreProjectionProcessingMessage.CheckpointLoaded>(this);
 		_bus.Subscribe<TimerMessage.Schedule>(this);
 
 		_reader.Initialize();
@@ -63,7 +63,7 @@ public class when_projection_reader_times_out_on_read<TLogFormat, TStreamId> : w
 		}
 	}
 
-	public void Handle(KurrentDB.Projections.Core.Messages.CoreProjectionProcessingMessage.CheckpointLoaded message) {
+	public void Handle(Messages.CoreProjectionProcessingMessage.CheckpointLoaded message) {
 		_checkpointLoaded = message;
 		_mre.Set();
 	}

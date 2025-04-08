@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using EventStore.Core.Services.PersistentSubscription;
-using EventStore.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.PersistentSubscription;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services;

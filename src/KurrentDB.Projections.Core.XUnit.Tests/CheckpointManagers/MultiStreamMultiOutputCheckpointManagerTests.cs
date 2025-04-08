@@ -1,13 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Services;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.Replication;
-using EventStore.Core.Util;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Core.Tests.Http.Users.users;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription;

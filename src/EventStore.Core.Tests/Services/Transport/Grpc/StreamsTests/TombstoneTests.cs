@@ -5,11 +5,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Transport.Common;
 using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Common;
 using NUnit.Framework;
 using GrpcConstants = EventStore.Core.Services.Transport.Grpc.Constants;
 

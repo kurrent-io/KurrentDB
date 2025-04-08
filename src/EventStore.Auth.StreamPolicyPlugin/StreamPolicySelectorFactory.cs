@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.ComponentModel.Composition;
-using EventStore.Core.Authorization.AuthorizationPolicies;
-using EventStore.Core.Bus;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Core.Authorization.AuthorizationPolicies;
+using KurrentDB.Core.Bus;
 using Serilog;
 using ILogger = Serilog.ILogger;
 

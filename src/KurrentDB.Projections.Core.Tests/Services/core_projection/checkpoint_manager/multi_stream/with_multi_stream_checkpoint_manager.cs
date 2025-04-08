@@ -3,19 +3,19 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Helpers.IODispatcherTests;
-using EventStore.Core.Util;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.MultiStream;
 using NUnit.Framework;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection.checkpoint_manager.multi_stream;
 

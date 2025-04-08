@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
+using KurrentDB.Core.Bus;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Integration;

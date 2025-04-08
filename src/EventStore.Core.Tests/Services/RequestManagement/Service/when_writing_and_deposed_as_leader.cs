@@ -4,9 +4,9 @@
 using System;
 using System.Net;
 using EventStore.Core.Cluster;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.Service;

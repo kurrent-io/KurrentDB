@@ -4,10 +4,10 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data.Redaction;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Data.Redaction;
+using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
-using MD5 = EventStore.Core.Hashing.MD5;
+using MD5 = KurrentDB.Core.Hashing.MD5;
 
 // successful chunk switching tests have individual classes as they modify the database and thus the test fixture cannot be reused
 

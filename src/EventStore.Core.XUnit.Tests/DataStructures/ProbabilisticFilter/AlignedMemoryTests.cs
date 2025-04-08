@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.DataStructures.ProbabilisticFilter;
+using KurrentDB.Core.DataStructures.ProbabilisticFilter;
 using Xunit;
 
 namespace EventStore.Core.XUnit.Tests.DataStructures.ProbabilisticFilter;
