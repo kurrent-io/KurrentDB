@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Xunit;
 
-namespace EventStore.Diagnostics.LogsEndpointPlugin.Tests;
+namespace KurrentDB.Diagnostics.LogsEndpointPlugin.Tests;
 
 public class JsonDirectoryFormatterTests {
 	[Fact]

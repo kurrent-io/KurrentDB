@@ -19,7 +19,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Diagnostics.LogsEndpointPlugin;
+namespace KurrentDB.Diagnostics.LogsEndpointPlugin;
 
 // TODO: use SubsystemPlugin now that it is more flexible about licence requirements and what to do when they fail
 public class LogsEndpointPlugin : ISubsystemsPlugin, ISubsystem {

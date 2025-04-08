@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.FileProviders;
 
-namespace EventStore.Diagnostics.LogsEndpointPlugin;
+namespace KurrentDB.Diagnostics.LogsEndpointPlugin;
 
 public class JsonDirectoryFormatter : IDirectoryFormatter {
 	// Implementation based on: https://github.com/dotnet/aspnetcore/blob/main/src/Middleware/StaticFiles/src/HtmlDirectoryFormatter.cs

@@ -17,7 +17,7 @@ using KurrentDB.Auth.UserCertificates;
 using KurrentDB.AutoScavenge;
 using EventStore.Core;
 using EventStore.Core.LogAbstraction;
-using EventStore.Diagnostics.LogsEndpointPlugin;
+using KurrentDB.Diagnostics.LogsEndpointPlugin;
 using EventStore.OtlpExporterPlugin;
 using KurrentDB.PluginHosting;
 using EventStore.Plugins;

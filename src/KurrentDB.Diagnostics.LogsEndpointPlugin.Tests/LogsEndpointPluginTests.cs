@@ -17,7 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace EventStore.Diagnostics.LogsEndpointPlugin.Tests;
+namespace KurrentDB.Diagnostics.LogsEndpointPlugin.Tests;
 
 public class LogsEndpointPluginTests :
 	IClassFixture<LicensedFixture>,
