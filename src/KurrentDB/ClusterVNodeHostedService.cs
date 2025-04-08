@@ -11,7 +11,7 @@ using System.Runtime;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Auth.Ldaps;
-using EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
+using KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
 using EventStore.Auth.OAuth;
 using EventStore.Auth.UserCertificates;
 using EventStore.AutoScavenge;

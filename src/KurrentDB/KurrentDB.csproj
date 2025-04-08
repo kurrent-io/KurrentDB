@@ -18,7 +18,7 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Auth.Ldaps\KurrentDB.Auth.Ldaps.csproj" />
-		<ProjectReference Include="..\EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />
+		<ProjectReference Include="..\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />
 		<ProjectReference Include="..\EventStore.Auth.OAuth\EventStore.Auth.OAuth.csproj" />
 		<ProjectReference Include="..\EventStore.Auth.StreamPolicyPlugin\EventStore.Auth.StreamPolicyPlugin.csproj" />
 		<ProjectReference Include="..\EventStore.Auth.UserCertificates\EventStore.Auth.UserCertificates.csproj" />
