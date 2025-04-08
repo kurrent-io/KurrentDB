@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
@@ -54,7 +55,9 @@ public class LogV2RecordFactory : IRecordFactory<string> {
 		PrepareFlags flags,
 		string eventType,
 		ReadOnlyMemory<byte> data,
-		ReadOnlyMemory<byte> metadata) {
+		ReadOnlyMemory<byte> metadata,
+        SchemaInfo dataSchemaInfo,
+        SchemaInfo metadataSchemaInfo){
 
 		var result = new PrepareLogRecord(
 			logPosition: logPosition,
@@ -70,7 +73,9 @@ public class LogV2RecordFactory : IRecordFactory<string> {
 			eventType: eventType,
 			eventTypeSize: null,
 			data: data,
-			metadata: metadata);
+			metadata: metadata,
+            dataSchemaInfo,
+            metadataSchemaInfo);
 		return result;
 	}
 }

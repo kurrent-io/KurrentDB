@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogV3;
@@ -87,7 +88,9 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 		PrepareFlags flags,
 		StreamId eventType,
 		ReadOnlyMemory<byte> data,
-		ReadOnlyMemory<byte> metadata) {
+		ReadOnlyMemory<byte> metadata,
+        SchemaInfo dataSchemaInfo,
+        SchemaInfo metadataSchemaInfo) {
 
 		var result = new LogV3StreamWriteRecord(
 			logPosition: logPosition,
@@ -101,7 +104,9 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 			flags: flags,
 			eventType: eventType,
 			data: data.Span,
-			metadata: metadata.Span);
+			metadata: metadata.Span,
+            dataSchemaInfo,
+            metadataSchemaInfo);
 		return result;
 	}
 

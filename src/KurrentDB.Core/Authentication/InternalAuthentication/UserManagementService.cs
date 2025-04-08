@@ -339,7 +339,7 @@ public class UserManagementService :
 	}
 
 	static Event CreatePasswordChangedEvent(string loginName) =>
-		new(Guid.NewGuid(), PasswordChanged, true, new { LoginName = loginName }.ToJsonBytes(), null);
+		new(Guid.NewGuid(), PasswordChanged, true, new { LoginName = loginName }.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
 
 	void ReadUpdateCheckAnd(UserManagementMessage.UserManagementRequestMessage message,
 		Action<ClientMessage.ReadStreamEventsBackwardCompleted, UserData> action) {
@@ -402,7 +402,7 @@ public class UserManagementService :
 	}
 
 	void WriteUsersStreamEvent(string loginName, Action<ClientMessage.WriteEventsCompleted> onCompleted) {
-		var userCreatedEvent = new Event(Guid.NewGuid(), UsersStreamType, false, loginName, null);
+		var userCreatedEvent = new Event(Guid.NewGuid(), UsersStreamType, false, loginName, null, SchemaInfo.None, SchemaInfo.None);
 		_ioDispatcher.WriteEvents("$users", ExpectedVersion.Any, [userCreatedEvent], SystemAccounts.System, onCompleted);
 	}
 
