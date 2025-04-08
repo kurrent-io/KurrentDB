@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 
-namespace EventStore.Auth.UserCertificates.Tests;
+namespace KurrentDB.Auth.UserCertificates.Tests;
 
 public class UserCertificateAuthenticationProviderTests {
 	private readonly X509Certificate2 _root, _intermediate, _node;

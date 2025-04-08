@@ -25,7 +25,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Auth.UserCertificates\EventStore.Auth.UserCertificates.csproj" />
+		<ProjectReference Include="..\KurrentDB.Auth.UserCertificates\KurrentDB.Auth.UserCertificates.csproj" />
 	</ItemGroup>
 
 </Project>

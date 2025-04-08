@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
-namespace EventStore.Auth.UserCertificates.Tests;
+namespace KurrentDB.Auth.UserCertificates.Tests;
 
 public static class TestUtils {
 	private static readonly Random Random = new();

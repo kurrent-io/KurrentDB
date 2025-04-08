@@ -5,7 +5,7 @@ using System.Security.Claims;
 using EventStore.Plugins.Authentication;
 using Microsoft.AspNetCore.Http;
 
-namespace EventStore.Auth.UserCertificates.Tests;
+namespace KurrentDB.Auth.UserCertificates.Tests;
 
 // grants anonymous claims to anyone
 internal class FakeAnonymousHttpAuthenticationProvider : IHttpAuthenticationProvider {

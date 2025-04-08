@@ -4,9 +4,9 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Xunit;
-using static EventStore.Auth.UserCertificates.Tests.TestUtils;
+using static KurrentDB.Auth.UserCertificates.Tests.TestUtils;
 
-namespace EventStore.Auth.UserCertificates.Tests;
+namespace KurrentDB.Auth.UserCertificates.Tests;
 
 public class FindRootsTests {
 	private static string[] FindRoots(X509Certificate2 leaf, X509Certificate2[]? intermediates, X509Certificate2[]? roots) {

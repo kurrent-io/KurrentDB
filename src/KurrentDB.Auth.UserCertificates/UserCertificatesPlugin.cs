@@ -10,7 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
-namespace EventStore.Auth.UserCertificates;
+namespace KurrentDB.Auth.UserCertificates;
 
 public class UserCertificatesPlugin : SubsystemsPlugin {
 	public const string KurrentConfigurationPrefix = "KurrentDB";

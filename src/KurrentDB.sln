@@ -91,9 +91,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Auth.OAuth", "Kur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Auth.OAuth.Tests", "KurrentDB.Auth.OAuth.Tests\KurrentDB.Auth.OAuth.Tests.csproj", "{E75E364B-C6F4-4EA1-AB70-F16D44CA2C43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Auth.UserCertificates", "EventStore.Auth.UserCertificates\EventStore.Auth.UserCertificates.csproj", "{5C9FA440-04EC-42AB-935D-77B635156CAB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Auth.UserCertificates", "KurrentDB.Auth.UserCertificates\KurrentDB.Auth.UserCertificates.csproj", "{5C9FA440-04EC-42AB-935D-77B635156CAB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Auth.UserCertificates.Tests", "EventStore.Auth.UserCertificates.Tests\EventStore.Auth.UserCertificates.Tests.csproj", "{3D693070-6D3D-4703-8998-662D81D154F4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Auth.UserCertificates.Tests", "KurrentDB.Auth.UserCertificates.Tests\KurrentDB.Auth.UserCertificates.Tests.csproj", "{3D693070-6D3D-4703-8998-662D81D154F4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Diagnostics.LogsEndpointPlugin", "EventStore.Diagnostics.LogsEndpointPlugin\EventStore.Diagnostics.LogsEndpointPlugin.csproj", "{5934B795-F37F-4AF1-B8AE-4995880902C8}"
 EndProject

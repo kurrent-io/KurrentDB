@@ -17,7 +17,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace EventStore.Auth.UserCertificates.Tests;
+namespace KurrentDB.Auth.UserCertificates.Tests;
 
 public class UserCertificatesPluginTests {
 	private readonly FakeLogger _logger = new();

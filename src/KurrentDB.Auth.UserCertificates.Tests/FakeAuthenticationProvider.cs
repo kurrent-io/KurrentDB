@@ -4,7 +4,7 @@
 using System.Security.Claims;
 using EventStore.Plugins.Authentication;
 
-namespace EventStore.Auth.UserCertificates.Tests;
+namespace KurrentDB.Auth.UserCertificates.Tests;
 
 // pretends any user that the valid certificate names is in the database
 internal class FakeAuthenticationProvider(string scheme) : AuthenticationProviderBase(name: "fake") {

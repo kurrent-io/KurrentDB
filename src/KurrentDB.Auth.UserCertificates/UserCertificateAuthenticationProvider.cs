@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
-namespace EventStore.Auth.UserCertificates;
+namespace KurrentDB.Auth.UserCertificates;
 
 public class UserCertificateAuthenticationProvider(
 	IAuthenticationProvider authenticationProvider,

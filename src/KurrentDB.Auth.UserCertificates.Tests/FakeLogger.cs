@@ -4,7 +4,7 @@
 using Serilog;
 using Serilog.Events;
 
-namespace EventStore.Auth.UserCertificates.Tests;
+namespace KurrentDB.Auth.UserCertificates.Tests;
 
 public class FakeLogger : ILogger {
 	public List<LogEvent> LogMessages { get; } = new();

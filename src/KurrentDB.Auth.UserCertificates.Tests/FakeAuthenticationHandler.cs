@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace EventStore.Auth.UserCertificates.Tests;
+namespace KurrentDB.Auth.UserCertificates.Tests;
 
 // authenticates according to the httpAuthenticationProviders
 // similar to KurrentDB.Core.Services.Transport.Http.AuthenticationMiddleware

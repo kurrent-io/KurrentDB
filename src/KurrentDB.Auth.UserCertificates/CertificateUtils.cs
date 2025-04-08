@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 
-namespace EventStore.Auth.UserCertificates;
+namespace KurrentDB.Auth.UserCertificates;
 
 public static class CertificateUtils {
 	// returns true iff there exists a root in `roots` that begins a valid chain of

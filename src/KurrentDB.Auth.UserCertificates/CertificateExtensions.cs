@@ -6,7 +6,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
-namespace EventStore.Auth.UserCertificates;
+namespace KurrentDB.Auth.UserCertificates;
 
 public static class CertificateExtensions {
 	private static bool TryGetKeyUsages(
