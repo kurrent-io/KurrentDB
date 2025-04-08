@@ -11,7 +11,7 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using Serilog;
 
-namespace EventStore.Auth.StreamPolicyPlugin;
+namespace KurrentDB.Auth.StreamPolicyPlugin;
 
 public delegate bool TryParsePolicy(string eventType, ReadOnlySpan<byte> eventData, out ReadOnlyPolicy policy);
 

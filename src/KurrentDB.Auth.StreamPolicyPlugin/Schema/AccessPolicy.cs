@@ -3,7 +3,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace EventStore.Auth.StreamPolicyPlugin.Schema;
+namespace KurrentDB.Auth.StreamPolicyPlugin.Schema;
 
 public class AccessPolicy : IJsonOnDeserialized {
 	[JsonRequired]

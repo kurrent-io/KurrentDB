@@ -17,7 +17,7 @@
 
 <ItemGroup>
 	<ProjectReference Include="..\EventStore.Core.Tests\EventStore.Core.Tests.csproj" />
-	<ProjectReference Include="..\EventStore.Auth.StreamPolicyPlugin\EventStore.Auth.StreamPolicyPlugin.csproj" />
+	<ProjectReference Include="..\KurrentDB.Auth.StreamPolicyPlugin\KurrentDB.Auth.StreamPolicyPlugin.csproj" />
 </ItemGroup>
 
 </Project>

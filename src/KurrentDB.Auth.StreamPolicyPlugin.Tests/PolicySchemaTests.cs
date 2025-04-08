@@ -4,7 +4,7 @@
 using System.Text.Json;
 using Xunit;
 
-namespace EventStore.Auth.StreamPolicyPlugin.Tests;
+namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;
 
 public class PolicySchemaTests {
 	private static readonly JsonSerializerOptions SerializeOptions = new() {

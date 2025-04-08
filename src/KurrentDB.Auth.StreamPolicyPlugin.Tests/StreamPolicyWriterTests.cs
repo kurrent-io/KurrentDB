@@ -8,7 +8,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using Xunit;
 
-namespace EventStore.Auth.StreamPolicyPlugin.Tests;
+namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;
 
 public class StreamPolicyWriterTests {
 	private readonly SynchronousScheduler _bus = new("testBus");

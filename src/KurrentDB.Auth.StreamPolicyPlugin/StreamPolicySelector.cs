@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text.Json;
-using EventStore.Auth.StreamPolicyPlugin.Schema;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Auth.StreamPolicyPlugin.Schema;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Services;
@@ -11,7 +11,7 @@ using KurrentDB.Core.Services.UserManagement;
 using Serilog;
 using Policy = KurrentDB.Core.Authorization.Policy;
 
-namespace EventStore.Auth.StreamPolicyPlugin;
+namespace KurrentDB.Auth.StreamPolicyPlugin;
 
 public sealed class StreamPolicySelector : StreamBasedPolicySelector {
 	public const string PolicyName = "custom-stream-policy";

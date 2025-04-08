@@ -111,9 +111,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.AutoScavenge", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.AutoScavenge.Tests", "EventStore.AutoScavenge.Tests\EventStore.AutoScavenge.Tests.csproj", "{A3CCCE65-38B3-4987-999D-1ADD6EB0FA36}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Auth.StreamPolicyPlugin", "EventStore.Auth.StreamPolicyPlugin\EventStore.Auth.StreamPolicyPlugin.csproj", "{2D48AB5B-5C16-4E8F-9F7B-A35D034DCA8E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Auth.StreamPolicyPlugin", "KurrentDB.Auth.StreamPolicyPlugin\KurrentDB.Auth.StreamPolicyPlugin.csproj", "{2D48AB5B-5C16-4E8F-9F7B-A35D034DCA8E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Auth.StreamPolicyPlugin.Tests", "EventStore.Auth.StreamPolicyPlugin.Tests\EventStore.Auth.StreamPolicyPlugin.Tests.csproj", "{E130C6E8-7CDE-4D60-AA33-A366D5D63C5C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Auth.StreamPolicyPlugin.Tests", "KurrentDB.Auth.StreamPolicyPlugin.Tests\KurrentDB.Auth.StreamPolicyPlugin.Tests.csproj", "{E130C6E8-7CDE-4D60-AA33-A366D5D63C5C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.TcpPlugin", "EventStore.TcpPlugin\EventStore.TcpPlugin.csproj", "{C548296F-C21A-413B-9CBC-1877F50940DC}"
 EndProject

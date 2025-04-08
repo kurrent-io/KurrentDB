@@ -8,7 +8,7 @@ using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.UserManagement;
 using Xunit;
 
-namespace EventStore.Auth.StreamPolicyPlugin.Tests;
+namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;
 
 public class StreamPolicyAssertionTests {
 	private readonly PolicyInformation _policyInfo = new("fake", 1, DateTimeOffset.MinValue);

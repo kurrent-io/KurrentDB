@@ -3,7 +3,7 @@
 
 using KurrentDB.Core.Services;
 
-namespace EventStore.Auth.StreamPolicyPlugin.Tests;
+namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;
 
 public class FakePolicyProvider {
 	private readonly Dictionary<string, AccessPolicy> _streamRules = new();

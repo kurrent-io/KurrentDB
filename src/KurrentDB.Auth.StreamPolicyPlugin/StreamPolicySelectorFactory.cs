@@ -9,7 +9,7 @@ using KurrentDB.Core.Bus;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Auth.StreamPolicyPlugin;
+namespace KurrentDB.Auth.StreamPolicyPlugin;
 
 [Export(typeof(IPolicySelectorFactory))]
 public class StreamPolicySelectorFactory : Plugin, IPolicySelectorFactory, ISubsystem {

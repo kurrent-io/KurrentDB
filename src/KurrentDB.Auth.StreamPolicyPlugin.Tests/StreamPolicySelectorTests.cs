@@ -3,7 +3,7 @@
 
 using System.Security.Claims;
 using DotNext.Threading;
-using EventStore.Auth.StreamPolicyPlugin.Schema;
+using KurrentDB.Auth.StreamPolicyPlugin.Schema;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests;
 using EventStore.Plugins.Authorization;
@@ -14,7 +14,7 @@ using KurrentDB.Core.Services;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
 
-namespace EventStore.Auth.StreamPolicyPlugin.Tests;
+namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;
 
 public class StreamPolicySelectorTests {
 	private readonly SynchronousScheduler _bus = new("testBus");

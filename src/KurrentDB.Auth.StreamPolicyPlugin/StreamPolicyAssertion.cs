@@ -6,7 +6,7 @@ using EventStore.Plugins.Authorization;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Services;
 
-namespace EventStore.Auth.StreamPolicyPlugin;
+namespace KurrentDB.Auth.StreamPolicyPlugin;
 
 public class StreamPolicyAssertion(Func<string, AccessPolicy> getAccessPolicyForStream) : IStreamPermissionAssertion {
 	public Grant Grant { get; } = Grant.Unknown;

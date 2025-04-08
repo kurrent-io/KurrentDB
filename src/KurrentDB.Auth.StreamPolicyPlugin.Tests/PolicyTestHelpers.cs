@@ -5,7 +5,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using EventStore.Plugins.Authorization;
 
-namespace EventStore.Auth.StreamPolicyPlugin.Tests;
+namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;
 
 internal static class PolicyTestHelpers {
 	public static readonly string[] ValidActions = ["read", "write", "delete", "metadataRead", "metadataWrite"];
