@@ -9,7 +9,7 @@ namespace EventStore.Core.Services.Transport.Enumerators;
 
 public static partial class Enumerator {
 	private const int MaxLiveEventBufferCount = 32;
-	private const int ReadBatchSize = 32; // TODO  JPB make this configurable
+	public const int ReadBatchSize = 32; // TODO  JPB make this configurable
 
 	private static readonly BoundedChannelOptions BoundedChannelOptions =
 		new(MaxLiveEventBufferCount) {
