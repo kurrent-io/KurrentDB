@@ -134,3 +134,7 @@ For an event with schema subject "TestEvent", this would result in the URL:
 ```
 https://api.example.com/TestEvent
 ```
+
+### Tutorial
+
+[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](/tutorials/http.md)
