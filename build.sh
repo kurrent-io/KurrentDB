@@ -121,7 +121,7 @@ function patchVersionInfo {
 function buildEventStore {
     patchVersionInfo
     rm -rf bin/
-    dotnet build -c $CONFIGURATION /p:Platform=x64 /p:Version=$VERSIONSTRING --framework=$NET_FRAMEWORK src/EventStore.sln || err
+    dotnet build -c $CONFIGURATION /p:Platform=x64 /p:Version=$VERSIONSTRING --framework=$NET_FRAMEWORK src/KurrentDB.sln || err
     revertVersionInfo
 }
 

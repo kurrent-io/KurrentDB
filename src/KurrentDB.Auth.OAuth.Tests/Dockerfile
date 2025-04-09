@@ -13,11 +13,11 @@ RUN dotnet restore --runtime=${RUNTIME}
 COPY ./src .
 
 RUN dotnet build --configuration=Release --runtime=${RUNTIME} --no-restore --framework=net8.0 && \
-	rm /build/bin/Release/EventStore.Auth.OAuth/net8.0/EventStore.Plugins.*
+	rm /build/bin/Release/KurrentDB.Auth.OAuth/net8.0/EventStore.Plugins.*
 
 FROM ${DB_IMAGE} as kurrentdb
 
 RUN mkdir -p /opt/kurrentdb/plugins
 
-COPY --from=build /build/bin/Release/EventStore.Auth.OAuth/net8.0 /opt/kurrentdb/plugins/oauth
+COPY --from=build /build/bin/Release/KurrentDB.Auth.OAuth/net8.0 /opt/kurrentdb/plugins/oauth
 

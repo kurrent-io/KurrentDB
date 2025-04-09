@@ -3,7 +3,7 @@ version: "1.0"
 linter: jetbrains/qodana-dotnet:2024.1
 
 dotnet:
-  solution: src/EventStore.sln
+  solution: src/KurrentDB.sln
 
 exclude:
   - name: RedundantTypeArgumentsOfMethod
@@ -19,7 +19,7 @@ licenseRules:
       - "Kurrent-1.0"
 
 customDependencies:
-  # System.UriTemplate (source copied under src/EventStore.NETCore.Compatibility from .NET 4.8 with some modifications)
+  # System.UriTemplate (source copied under src/KurrentDB.NETCore.Compatibility from .NET 4.8 with some modifications)
   - name: "System.UriTemplate"
     version: ""
     licenses:
