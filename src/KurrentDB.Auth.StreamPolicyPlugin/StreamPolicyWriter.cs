@@ -40,7 +40,7 @@ public class StreamPolicyWriter : IPolicyWriter {
 	}
 
 	private async Task WritePolicyWithRetry(Policy policy, Guid eventId, long expectedVersion, CancellationToken ct) {
-		var policyEvent = new Event(eventId, _policyEventType, isJson: true, _serializePolicy(policy), []);
+		var policyEvent = new Event(eventId, _policyEventType, isJson: true, _serializePolicy(policy), [], SchemaInfo.None, SchemaInfo.None);
 		var attempt = 0;
 		while (true) {
 			try {

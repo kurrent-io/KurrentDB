@@ -373,7 +373,7 @@ public partial class EmittedStream : IDisposable,
 			truncateBefore: _retrievedNextEventNumber == 0 ? (long?)null : _retrievedNextEventNumber);
 
 		_submittedWriteMetaStreamEvent = new Event(
-			Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, streamMetadata.ToJsonBytes(), null);
+			Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, streamMetadata.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
 
 		_awaitingMetadataWriteCompleted = true;
 
@@ -478,7 +478,7 @@ public partial class EmittedStream : IDisposable,
 				events.Add(
 					new Event(
 						e.EventId, e.EventType, e.IsJson, e.Data != null ? Helper.UTF8NoBom.GetBytes(e.Data) : null,
-						e.CausedByTag.ToJsonBytes(_projectionVersion, MetadataWithCausedByAndCorrelationId(e))));
+						e.CausedByTag.ToJsonBytes(_projectionVersion, MetadataWithCausedByAndCorrelationId(e)), SchemaInfo.None, SchemaInfo.None));
 			} catch (ArgumentException ex) {
 				Failed(string.Format("Failed to write the event: {0} to stream: {1} failed. Reason: {2}.", e,
 					_streamId, ex.Message));

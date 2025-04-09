@@ -82,7 +82,7 @@ public class TFChunkScavengerLogManager : ITFChunkScavengerLogManager {
 
 				var metadata = new StreamMetadata(maxAge: _scavengeHistoryMaxAge, acl: acl);
 				var metaStreamEvent = new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, isJson: true,
-					data: metadata.ToJsonBytes(), metadata: null);
+					data: metadata.ToJsonBytes(), metadata: null, SchemaInfo.None, SchemaInfo.None);
 				_ioDispatcher.WriteEvent(metaStreamId, ExpectedVersion.Any, metaStreamEvent,
 					SystemAccounts.System, m => {
 						if (m.Result != OperationResult.Success) {
@@ -172,7 +172,7 @@ public class TFChunkScavengerLogManager : ITFChunkScavengerLogManager {
 			var metaStreamId = SystemStreams.MetastreamOf(scavengeIdStream);
 			var metadata = new StreamMetadata(maxAge: _scavengeHistoryMaxAge, acl: acl);
 			var metaStreamEvent = new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, isJson: true,
-				data: metadata.ToJsonBytes(), metadata: null);
+				data: metadata.ToJsonBytes(), metadata: null, SchemaInfo.None, SchemaInfo.None);
 			_ioDispatcher.WriteEvent(metaStreamId, ExpectedVersion.Any, metaStreamEvent,
 				SystemAccounts.System, m => {
 					if (m.Result != OperationResult.Success) {
