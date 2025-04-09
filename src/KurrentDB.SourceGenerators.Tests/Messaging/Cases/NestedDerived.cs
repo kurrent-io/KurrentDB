@@ -1,8 +1,8 @@
-namespace KurrentDB.SourceGenerators.Tests.Messaging.NestedDerived;
-
-[DerivedMessage(TestMessageGroup.NestedDerived)]
-partial class B : Message {
+namespace KurrentDB.SourceGenerators.Tests.Messaging.NestedDerived {
 	[DerivedMessage(TestMessageGroup.NestedDerived)]
-	private partial class A : B {
+	partial class B : Message {
+		[DerivedMessage(TestMessageGroup.NestedDerived)]
+		private partial class A : B {
+		}
 	}
 }
