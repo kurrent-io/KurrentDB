@@ -383,7 +383,7 @@ public class UserManagementService :
 	}
 
 	void WriteUserEvent(UserData userData, string eventType, long expectedVersion, Action<ClientMessage.WriteEventsCompleted> onCompleted) {
-		var userCreatedEvent = new Event(Guid.NewGuid(), eventType, true, userData.ToJsonBytes(), null);
+		var userCreatedEvent = new Event(Guid.NewGuid(), eventType, true, userData.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
 		_ioDispatcher.WriteEvents($"$user-{userData.LoginName}", expectedVersion, [userCreatedEvent], SystemAccounts.System, onCompleted);
 	}
 

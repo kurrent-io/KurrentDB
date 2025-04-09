@@ -149,7 +149,7 @@ public class EmittedStreamsDeleter : IEmittedStreamsDeleter {
 
 	private void TryMarkCheckpoint(long eventNumber) {
 		_ioDispatcher.WriteEvent(_emittedStreamsCheckpointStreamId, ExpectedVersion.Any,
-			new Event(Guid.NewGuid(), ProjectionEventTypes.PartitionCheckpoint, true, eventNumber.ToJson(), null),
+			new Event(Guid.NewGuid(), ProjectionEventTypes.PartitionCheckpoint, true, eventNumber.ToJson(), null, SchemaInfo.None, SchemaInfo.None),
 			SystemAccounts.System, x => {
 				if (x.Result == OperationResult.Success) {
 					Log.Debug("PROJECTIONS: Emitted Stream Deletion Checkpoint written at {eventNumber}",

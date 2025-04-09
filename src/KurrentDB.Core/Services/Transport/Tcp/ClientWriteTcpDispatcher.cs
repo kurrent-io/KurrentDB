@@ -62,7 +62,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 			// ReSharper disable PossibleNullReferenceException
 			var e = dto.Events[i];
 			// ReSharper restore PossibleNullReferenceException
-			events[i] = new Event(new Guid(e.EventId.ToByteArray()), e.EventType, e.DataContentType == 1, e.Data.ToByteArray(), e.Metadata.ToByteArray());
+			events[i] = new Event(new Guid(e.EventId.ToByteArray()), e.EventType, e.DataContentType == 1, e.Data.ToByteArray(), e.Metadata.ToByteArray(), SchemaInfo.None, SchemaInfo.None);
 		}
 
 		var cts = new CancellationTokenSource();
@@ -179,7 +179,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 			// ReSharper disable PossibleNullReferenceException
 			var e = dto.Events[i];
 			// ReSharper restore PossibleNullReferenceException
-			events[i] = new Event(new Guid(e.EventId.ToByteArray()), e.EventType, e.DataContentType == 1, e.Data.ToByteArray(), e.Metadata.ToByteArray());
+			events[i] = new Event(new Guid(e.EventId.ToByteArray()), e.EventType, e.DataContentType == 1, e.Data.ToByteArray(), e.Metadata.ToByteArray(), SchemaInfo.None, SchemaInfo.None);
 		}
 
 		return new(Guid.NewGuid(), package.CorrelationId, envelope, dto.RequireLeader, dto.TransactionId, events, user, package.Tokens);

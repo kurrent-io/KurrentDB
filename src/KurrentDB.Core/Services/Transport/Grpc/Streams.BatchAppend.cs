@@ -309,7 +309,7 @@ partial class Streams<TStreamId> {
 					proposedMessage.Metadata[Constants.Metadata.Type],
 					proposedMessage.Metadata[Constants.Metadata.ContentType] ==
 					Constants.Metadata.ContentTypes.ApplicationJson, proposedMessage.Data.ToByteArray(),
-					proposedMessage.CustomMetadata.ToByteArray());
+					proposedMessage.CustomMetadata.ToByteArray(), SchemaInfo.None, SchemaInfo.None);
 
 			static ClientMessage.WriteEvents ToInternalMessage(ClientWriteRequest request, IEnvelope envelope,
 				bool requiresLeader, ClaimsPrincipal user, CancellationToken token) =>
