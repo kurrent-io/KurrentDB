@@ -296,17 +296,27 @@ ReadLoop:
 								checkpoint = eventPosition;
 							}
 
+							if (checkpoint < completed.CurrentPos && completed.CurrentPos < completed.NextPos) {
+								// note: when completed.CurrentPos == completed.NextPos, we can't use completed.CurrentPos
+								// as checkpoint as we haven't yet processed the record at that position
+								checkpoint = completed.CurrentPos;
+							}
+
 							checkpointIntervalCounter += completed.ConsideredEventsCount;
 							Log.Verbose(
 								"Subscription {subscriptionId} to $all:{eventFilter} considered {consideredEventsCount} catch-up events (interval: {checkpointInterval}, counter: {checkpointIntervalCounter})",
 								_subscriptionId, _eventFilter, completed.ConsideredEventsCount, _checkpointInterval, checkpointIntervalCounter);
 
 							if (completed.IsEndOfStream) {
+								if (checkpoint < TFPos.FirstRecordOfTf && TFPos.FirstRecordOfTf < completed.NextPos) {
+									// we've reached the end of the log but didn't have any checkpoint updates.
+									// this can happen when we've read a single page from the transaction log.
+									// we set a trivial checkpoint to preserve the checkpoint interval semantics.
+									checkpoint = TFPos.FirstRecordOfTf;
+								}
+
 								// issue a checkpoint when going live to make sure that at least
 								// one checkpoint is issued within the checkpoint interval
-								if (checkpoint < completed.CurrentPos)
-									checkpoint = completed.CurrentPos;
-
 								await SendCheckpointToSubscription(checkpoint, ct);
 
 								catchupCompletionTcs.TrySetResult(checkpoint);
@@ -315,9 +325,6 @@ ReadLoop:
 
 							if (checkpointIntervalCounter >= _checkpointInterval) {
 								checkpointIntervalCounter %= _checkpointInterval;
-
-								if (checkpoint < completed.CurrentPos)
-									checkpoint = completed.CurrentPos;
 
 								Log.Verbose(
 									"Subscription {subscriptionId} to $all:{eventFilter} reached checkpoint at {position} during catch-up (interval: {checkpointInterval}, counter: {checkpointIntervalCounter})",
