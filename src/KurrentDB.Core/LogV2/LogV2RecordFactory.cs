@@ -5,6 +5,7 @@ using System;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using JetBrains.Annotations;
 
 namespace KurrentDB.Core.LogV2;
 
@@ -56,8 +57,8 @@ public class LogV2RecordFactory : IRecordFactory<string> {
 		string eventType,
 		ReadOnlyMemory<byte> data,
 		ReadOnlyMemory<byte> metadata,
-        SchemaInfo dataSchemaInfo,
-        SchemaInfo metadataSchemaInfo){
+        [CanBeNull] SchemaInfo dataSchemaInfo = null,
+        [CanBeNull] SchemaInfo metadataSchemaInfo = null){
 
 		var result = new PrepareLogRecord(
 			logPosition: logPosition,
@@ -74,8 +75,8 @@ public class LogV2RecordFactory : IRecordFactory<string> {
 			eventTypeSize: null,
 			data: data,
 			metadata: metadata,
-            dataSchemaInfo,
-            metadataSchemaInfo);
+            dataSchemaInfo ?? SchemaInfo.None,
+            metadataSchemaInfo ?? SchemaInfo.None);
 		return result;
 	}
 }

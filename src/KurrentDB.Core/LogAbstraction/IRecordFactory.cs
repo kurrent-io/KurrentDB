@@ -46,4 +46,21 @@ public interface IRecordFactory<TStreamId> : IRecordFactory {
 		ReadOnlyMemory<byte> metadata,
         SchemaInfo dataSchemaInfo,
         SchemaInfo metadataSchemaInfo);
+
+	IPrepareLogRecord<TStreamId> CreatePrepare(
+		long logPosition,
+		Guid correlationId,
+		Guid eventId,
+		long transactionPosition,
+		int transactionOffset,
+		TStreamId eventStreamId,
+		long expectedVersion,
+		DateTime timeStamp,
+		PrepareFlags flags,
+		TStreamId eventType,
+		ReadOnlyMemory<byte> data,
+		ReadOnlyMemory<byte> metadata) {
+		return CreatePrepare(logPosition, correlationId, eventId, transactionPosition, transactionOffset, eventStreamId,
+			expectedVersion, timeStamp, flags, eventType, data, metadata, SchemaInfo.None, SchemaInfo.None);
+	}
 }

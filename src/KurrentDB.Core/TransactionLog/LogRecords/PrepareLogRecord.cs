@@ -174,6 +174,39 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			throw new Exception("Record too large.");
 	}
 
+	public PrepareLogRecord(long logPosition,
+		Guid correlationId,
+		Guid eventId,
+		long transactionPosition,
+		int transactionOffset,
+		string eventStreamId,
+		int? eventStreamIdSize,
+		long expectedVersion,
+		DateTime timeStamp,
+		PrepareFlags flags,
+		string eventType,
+		int? eventTypeSize,
+		ReadOnlyMemory<byte> data,
+		ReadOnlyMemory<byte> metadata,
+		byte prepareRecordVersion = PrepareRecordVersion
+	) : this(logPosition,
+		correlationId,
+		eventId,
+		transactionPosition,
+		transactionOffset,
+		eventStreamId,
+		eventStreamIdSize,
+		expectedVersion,
+		timeStamp,
+		flags,
+		eventType,
+		eventTypeSize,
+		data,
+		metadata,
+		SchemaInfo.None,
+		SchemaInfo.None,
+		prepareRecordVersion) { }
+
 	internal PrepareLogRecord(ref SequenceReader reader, byte version, long logPosition)
 		: base(LogRecordType.Prepare, version, logPosition) {
 		if (version is not LogRecordVersion.LogRecordV0 and not LogRecordVersion.LogRecordV1)
