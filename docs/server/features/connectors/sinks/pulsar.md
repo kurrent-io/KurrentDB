@@ -26,7 +26,7 @@ Follow these steps to create and start the Pulsar Sink connector.
 ::: tabs
 @tab Powershell
 
-Create your configuration file in JSON format:
+1. Create the JSON Configuration:
 
 ```powershell
 $JSON = @"
@@ -43,7 +43,7 @@ $JSON = @"
 "@ `
 ```
 
-Send a POST request to create the sink connector:
+2. Send a POST request to create the sink connector:
 
 ```powershell
 curl.exe -X POST `
@@ -54,7 +54,7 @@ curl.exe -X POST `
 
 @tab Bash
 
-Create your configuration file in JSON format:
+1. Create the JSON Configuration:
 
 ```bash
 JSON='{
@@ -69,7 +69,7 @@ JSON='{
 }'
 ```
 
-Send a POST request to create the sink connector:
+2. Send a POST request to create the sink connector:
 
 ```bash
 curl -X POST \
@@ -81,14 +81,14 @@ curl -X POST \
 :::
 
 ::: tip
-On the cURL command, replace the URL with your KurrentDB URL. Default is `http:localhost:2113`.
+Replace the URL with your KurrentDB URL. The default value is `http:localhost:2113`.
 :::
 
 After running the command, verify the connector status by checking the management API or connector logs. See [Management API Reference](../manage.md).
 
 ## Settings
 
-The connector settings control how it interacts with Pulsar, manages message partitioning, and ensures resilience in message handling. Fields marked required must be provided.
+The connector settings control how it interacts with Pulsar, manages message partitioning, and ensures resilience in message handling. 
 
 ::: tip
 The Pulsar sink inherits a set of common settings that are used to configure the connector. The settings can be found in
@@ -106,7 +106,7 @@ the [Sink Options](../settings.md#sink-options) page.
 
 ### Partitioning
 
-Partitioning options determine how the connector assigns partition keys, which affect message routing and topic compaction.
+Partitioning options determine how the connector assigns partition keys, which affect message routing and topic compaction. 
 
 | Name                                | Details                                                                                                                                                                           |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
