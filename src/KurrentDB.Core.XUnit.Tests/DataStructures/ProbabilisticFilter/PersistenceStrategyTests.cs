@@ -27,7 +27,7 @@ public abstract class PersistenceStrategyTests {
 
 	[Fact]
 	public void AfterInitializationIsFilledWithZeroes() {
-		using (var sut = CreateSut(10_000)) {
+		using (var sut = CreateSut(10_000, "filledWithZeroesFilter")) {
 			for (var bitPosition = 0; bitPosition < 10_000 * 8; bitPosition++) {
 				Assert.False(sut.DataAccessor.IsBitSet(bitPosition));
 			}
@@ -36,7 +36,7 @@ public abstract class PersistenceStrategyTests {
 		}
 
 		// and after reopening
-		using (var sut = OpenSut(10_000)) {
+		using (var sut = OpenSut(10_000, "filledWithZeroesFilter")) {
 			for (var bitPosition = 0; bitPosition < 10_000 * 8; bitPosition++) {
 				Assert.False(sut.DataAccessor.IsBitSet(bitPosition));
 			}

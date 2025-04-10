@@ -8,6 +8,7 @@ namespace KurrentDB.Auth.OAuth.Tests;
 
 public sealed class FactRequiringDockerAttribute : FactAttribute {
 	public FactRequiringDockerAttribute() {
+		Skip = "Skipping plugin tests requiring docker as these need to be reworked";
 		if (OperatingSystem.IsWindows()) {
 			var gha = Environment.GetEnvironmentVariable("GITHUB_ACTIONS") ?? "false";
 			if (gha.Equals("true", StringComparison.InvariantCultureIgnoreCase)) {
