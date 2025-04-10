@@ -33,6 +33,8 @@ public enum PrepareFlags : ushort {
 
 	IsJson = 0x100, // indicates data & metadata are valid json
 	IsRedacted = 0x200,
+	HasDataSchema = 0x300,
+	HasMetadataSchema = 0x400,
 
 	// aggregate flag set
 	// unused and easily confused with StreamDelete:  DeleteTombstone = TransactionBegin | TransactionEnd | StreamDelete,
@@ -96,9 +98,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	}
 
 	private static readonly int SchemaInfoSize =
-		1 // magic number
-	+ 16 // schema version id
-	+ 1; // schema format
+		16 // schema version id
+		+ 1; // schema format
 
     [CanBeNull] public readonly SchemaInfo _dataSchemaInfo;
     [CanBeNull] public readonly SchemaInfo _metadataSchemaInfo;
@@ -175,10 +176,10 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		TimeStamp = timeStamp;
 		EventType = eventType ?? string.Empty;
 		_eventTypeSize = eventTypeSize;
-		_dataOnDisk = WrapSchemaInfo(dataSchemaInfo, data);
+		_dataOnDisk = data;
         _dataSchemaInfo = dataSchemaInfo;
         _metadataSchemaInfo = metadataSchemaInfo;
-        Metadata = WrapSchemaInfo(metadataSchemaInfo, metadata);
+        Metadata = metadata;
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
 			throw new Exception("Record too large.");
 	}
@@ -236,8 +237,6 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		EventType = ReadString(ref reader, in context);
 
 
-        //TODO SS: unwrap the schema info
-
         _dataOnDisk = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
 			? reader.Read(dataCount).ToArray()
 			: NoData;
@@ -246,24 +245,14 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			? reader.Read(metadataCount).ToArray()
 			: NoData;
 
-		if (dataCount > 0) {
-			if (_dataOnDisk.Span[0] == 0) {
-				_dataOnDisk = _dataOnDisk[1..];
-				_dataSchemaInfo = SchemaInfo.None;
-			} else {
-				_dataSchemaInfo = ReadSchemaInfo(_dataOnDisk[..SchemaInfoSize]);
-				_dataOnDisk = _dataOnDisk[SchemaInfoSize..];
-			}
+		if (dataCount > 0 && Flags.HasFlag(PrepareFlags.HasDataSchema)) {
+			_dataSchemaInfo = ReadSchemaInfo(_dataOnDisk[..SchemaInfoSize]);
+			_dataOnDisk = _dataOnDisk[SchemaInfoSize..];
 		}
 
-		if (metadataCount > 0) {
-			if (Metadata.Span[0] == 0) {
-				Metadata = Metadata[1..];
-				_metadataSchemaInfo = SchemaInfo.None;
-			} else {
-				_metadataSchemaInfo = ReadSchemaInfo(Metadata[..SchemaInfoSize]);
-				Metadata = _dataOnDisk[SchemaInfoSize..];
-			}
+		if (metadataCount > 0 && Flags.HasFlag(PrepareFlags.HasMetadataSchema)) {
+			_metadataSchemaInfo = ReadSchemaInfo(Metadata[..SchemaInfoSize]);
+			Metadata = Metadata[SchemaInfoSize..];
 		}
 
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
@@ -302,7 +291,14 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	public override void WriteTo(ref BufferWriterSlim<byte> writer) {
 		base.WriteTo(ref writer);
 
-		writer.WriteLittleEndian((ushort)Flags);
+		var finalFlags = Flags;
+		if (_dataSchemaInfo != SchemaInfo.None)
+			finalFlags |= PrepareFlags.HasDataSchema;
+
+		if (_metadataSchemaInfo != SchemaInfo.None)
+			finalFlags |= PrepareFlags.HasMetadataSchema;
+
+		writer.WriteLittleEndian((ushort)finalFlags);
 		writer.WriteLittleEndian(TransactionPosition);
 		writer.WriteLittleEndian(TransactionOffset);
 		if (Version is LogRecordVersion.LogRecordV0) {
@@ -340,8 +336,11 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
         // if I have schema info I need to wrap that info into the data
         // and metadata by prepending 0 + the schema stuff
 
-		writer.Write(_dataOnDisk.Span, LengthFormat.LittleEndian);
-		writer.Write(Metadata.Span, LengthFormat.LittleEndian);
+        var finalDataOnDisk = WrapSchemaInfo(_dataSchemaInfo, _dataOnDisk);
+        var finalMetadata = WrapSchemaInfo(_metadataSchemaInfo, Metadata);
+
+		writer.Write(finalDataOnDisk.Span, LengthFormat.LittleEndian);
+		writer.Write(finalMetadata.Span, LengthFormat.LittleEndian);
 	}
 
 	public override int GetSizeWithLengthPrefixAndSuffix()
@@ -430,26 +429,23 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	}
 
 	private static ReadOnlyMemory<byte> WrapSchemaInfo(SchemaInfo schema, ReadOnlyMemory<byte> payload) {
-		var hasSchema = schema != SchemaInfo.None;
-		var capacity = hasSchema ? SchemaInfoSize : 1;
-		capacity += payload.Length;
+		if (schema == SchemaInfo.None)
+			return payload;
+
+		var capacity = SchemaInfoSize + payload.Length;
 
 		var buffer = new byte[capacity];
 		using var writer = new BinaryWriter(new MemoryStream(buffer));
-		writer.Write((byte) (hasSchema ? 1 : 0));
 
-		if (hasSchema) {
-			writer.Write(schema.SchemaVersionId.ToByteArray());
-			writer.Write((byte)schema.SchemaFormat);
-		}
-
+		writer.Write(schema.SchemaVersionId.ToByteArray());
+		writer.Write((byte)schema.SchemaFormat);
 		writer.Write(payload.Span);
 		return buffer;
 	}
 
 	private static SchemaInfo ReadSchemaInfo(ReadOnlyMemory<byte> bytes) {
 		var span = bytes.Span;
-		var id = new Guid(span.Slice(1, 16));
+		var id = new Guid(span[..16]);
 		var format = (SchemaInfo.SchemaDataFormat)span[17];
 
 		return new SchemaInfo(format, id);
