@@ -4,9 +4,12 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using DotNext.Buffers;
 using DotNext.Buffers.Binary;
+using DotNext.Collections.Generic;
 using DotNext.IO;
 using DotNext.Text;
 using KurrentDB.Common.Utils;
@@ -92,6 +95,11 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		}
 	}
 
+	private static readonly int SchemaInfoSize =
+		1 // magic number
+	+ 16 // schema version id
+	+ 1; // schema format
+
     [CanBeNull] public readonly SchemaInfo _dataSchemaInfo;
     [CanBeNull] public readonly SchemaInfo _metadataSchemaInfo;
 
@@ -124,6 +132,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			return stringSize is 0 ? 1 : stringSize + int.Log2(stringSize) / 7 + 1;
 		}
 	}
+
 
 	public PrepareLogRecord(long logPosition,
 		Guid correlationId,
@@ -166,10 +175,10 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		TimeStamp = timeStamp;
 		EventType = eventType ?? string.Empty;
 		_eventTypeSize = eventTypeSize;
-		_dataOnDisk = data;
+		_dataOnDisk = WrapSchemaInfo(dataSchemaInfo, data);
         _dataSchemaInfo = dataSchemaInfo;
         _metadataSchemaInfo = metadataSchemaInfo;
-        Metadata = metadata;
+        Metadata = WrapSchemaInfo(metadataSchemaInfo, metadata);
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
 			throw new Exception("Record too large.");
 	}
@@ -236,6 +245,26 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		Metadata = reader.ReadLittleEndian<int>() is var metadataCount && metadataCount > 0
 			? reader.Read(metadataCount).ToArray()
 			: NoData;
+
+		if (dataCount > 0) {
+			if (_dataOnDisk.Span[0] == 0) {
+				_dataOnDisk = _dataOnDisk[1..];
+				_dataSchemaInfo = SchemaInfo.None;
+			} else {
+				_dataSchemaInfo = ReadSchemaInfo(_dataOnDisk[..SchemaInfoSize]);
+				_dataOnDisk = _dataOnDisk[SchemaInfoSize..];
+			}
+		}
+
+		if (metadataCount > 0) {
+			if (Metadata.Span[0] == 0) {
+				Metadata = Metadata[1..];
+				_metadataSchemaInfo = SchemaInfo.None;
+			} else {
+				_metadataSchemaInfo = ReadSchemaInfo(Metadata[..SchemaInfoSize]);
+				Metadata = _dataOnDisk[SchemaInfoSize..];
+			}
+		}
 
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
 			throw new Exception("Record too large.");
@@ -398,5 +427,31 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			TimeStamp,
 			EventType,
 			InMemorySize);
+	}
+
+	private static ReadOnlyMemory<byte> WrapSchemaInfo(SchemaInfo schema, ReadOnlyMemory<byte> payload) {
+		var hasSchema = schema != SchemaInfo.None;
+		var capacity = hasSchema ? SchemaInfoSize : 1;
+		capacity += payload.Length;
+
+		var buffer = new byte[capacity];
+		using var writer = new BinaryWriter(new MemoryStream(buffer));
+		writer.Write((byte) (hasSchema ? 1 : 0));
+
+		if (hasSchema) {
+			writer.Write(schema.SchemaVersionId.ToByteArray());
+			writer.Write((byte)schema.SchemaFormat);
+		}
+
+		writer.Write(payload.Span);
+		return buffer;
+	}
+
+	private static SchemaInfo ReadSchemaInfo(ReadOnlyMemory<byte> bytes) {
+		var span = bytes.Span;
+		var id = new Guid(span.Slice(1, 16));
+		var format = (SchemaInfo.SchemaDataFormat)span[17];
+
+		return new SchemaInfo(format, id);
 	}
 }
