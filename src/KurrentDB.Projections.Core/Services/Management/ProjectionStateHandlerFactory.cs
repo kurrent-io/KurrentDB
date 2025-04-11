@@ -42,9 +42,11 @@ public class ProjectionStateHandlerFactory {
 					_javascriptCompilationTimeout, executionTimeout);
 				break;
 			case "native":
+				// Allow loading native projections from previous versions
+				rest = rest?.Replace("EventStore", "KurrentDB");
+
 				var type = Type.GetType(rest);
 				if (type == null) {
-					//TODO: explicitly list all the assemblies to look for handlers
 					type =
 						AppDomain.CurrentDomain.GetAssemblies()
 							.Select(v => v.GetType(rest))
