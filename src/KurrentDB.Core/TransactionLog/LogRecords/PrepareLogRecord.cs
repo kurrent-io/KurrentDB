@@ -97,12 +97,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		}
 	}
 
-	private static readonly int SchemaInfoSize =
-		16 // schema version id
-		+ 1; // schema format
-
-    [CanBeNull] public readonly SchemaInfo _dataSchemaInfo;
-    [CanBeNull] public readonly SchemaInfo _metadataSchemaInfo;
+    private readonly SchemaInfo _dataSchemaInfo;
+    private readonly SchemaInfo _metadataSchemaInfo;
 
 	// including length and suffix
 	private int ComputeSizeOnDisk() {
@@ -122,8 +118,10 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			+ sizeof(long) /* TimeStamp */
 			+ StringSizeWithLengthPrefix(eventTypeSize) /* EventType */
 			+ sizeof(int) /* Data length */
+			+ (_dataSchemaInfo != SchemaInfo.None ? SchemaInfo.ByteSize : 0)
 			+ _dataOnDisk.Length /* Data */
 			+ sizeof(int) /* Metadata length */
+			+ (_metadataSchemaInfo != SchemaInfo.None ? SchemaInfo.ByteSize : 0)
 			+ Metadata.Length; /* Metadata */
 
 		// when written to disk, a string is prefixed with its length which is written as ULEB128
@@ -177,8 +175,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		EventType = eventType ?? string.Empty;
 		_eventTypeSize = eventTypeSize;
 		_dataOnDisk = data;
-        _dataSchemaInfo = dataSchemaInfo;
-        _metadataSchemaInfo = metadataSchemaInfo;
+        _dataSchemaInfo = dataSchemaInfo ?? SchemaInfo.None;
+        _metadataSchemaInfo = metadataSchemaInfo ?? SchemaInfo.None;
         Metadata = metadata;
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
 			throw new Exception("Record too large.");
@@ -223,6 +221,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			throw new ArgumentException(
 				$"PrepareRecord version {version} is incorrect. Supported version: {PrepareRecordVersion}.");
 
+		_dataSchemaInfo = SchemaInfo.None;
+		_metadataSchemaInfo = SchemaInfo.None;
 		var context = new DecodingContext(Encoding.UTF8, reuseDecoder: true);
 		Flags = (PrepareFlags)reader.ReadLittleEndian<ushort>();
 		TransactionPosition = reader.ReadLittleEndian<long>();
@@ -238,22 +238,12 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 
 
         _dataOnDisk = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
-			? reader.Read(dataCount).ToArray()
+			? ReadDataContent(ref reader, dataCount, Flags.HasFlag(PrepareFlags.HasDataSchema), out _dataSchemaInfo).ToArray()
 			: NoData;
 
 		Metadata = reader.ReadLittleEndian<int>() is var metadataCount && metadataCount > 0
-			? reader.Read(metadataCount).ToArray()
+			? ReadDataContent(ref reader, metadataCount, Flags.HasFlag(PrepareFlags.HasMetadataSchema), out _metadataSchemaInfo).ToArray()
 			: NoData;
-
-		if (dataCount > 0 && Flags.HasFlag(PrepareFlags.HasDataSchema)) {
-			_dataSchemaInfo = ReadSchemaInfo(_dataOnDisk[..SchemaInfoSize]);
-			_dataOnDisk = _dataOnDisk[SchemaInfoSize..];
-		}
-
-		if (metadataCount > 0 && Flags.HasFlag(PrepareFlags.HasMetadataSchema)) {
-			_metadataSchemaInfo = ReadSchemaInfo(Metadata[..SchemaInfoSize]);
-			Metadata = Metadata[SchemaInfoSize..];
-		}
 
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
 			throw new Exception("Record too large.");
@@ -331,10 +321,6 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		buffer = writer.GetSpan(_eventTypeSize.GetValueOrDefault());
 		writer.Advance(Encoding.UTF8.GetBytes(EventType, buffer));
 
-
-        //TODO SS: wrap the schema info
-        // if I have schema info I need to wrap that info into the data
-        // and metadata by prepending 0 + the schema stuff
 
         var finalDataOnDisk = WrapSchemaInfo(_dataSchemaInfo, _dataOnDisk);
         var finalMetadata = WrapSchemaInfo(_metadataSchemaInfo, Metadata);
@@ -428,26 +414,30 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			InMemorySize);
 	}
 
-	private static ReadOnlyMemory<byte> WrapSchemaInfo(SchemaInfo schema, ReadOnlyMemory<byte> payload) {
+	public static ReadOnlyMemory<byte> WrapSchemaInfo(SchemaInfo schema, ReadOnlyMemory<byte> payload) {
 		if (schema == SchemaInfo.None)
 			return payload;
 
-		var capacity = SchemaInfoSize + payload.Length;
+		var buffer = new byte[SchemaInfo.ByteSize + payload.Length];
+		schema.Write(0, buffer);
 
-		var buffer = new byte[capacity];
-		using var writer = new BinaryWriter(new MemoryStream(buffer));
+		Memory<byte> mem = buffer;
+		payload.Span.CopyTo(mem.Span[SchemaInfo.ByteSize..]);
 
-		writer.Write(schema.SchemaVersionId.ToByteArray());
-		writer.Write((byte)schema.SchemaFormat);
-		writer.Write(payload.Span);
-		return buffer;
+		return mem;
 	}
 
-	private static SchemaInfo ReadSchemaInfo(ReadOnlyMemory<byte> bytes) {
-		var span = bytes.Span;
-		var id = new Guid(span[..16]);
-		var format = (SchemaInfo.SchemaDataFormat)span[17];
+	private static ReadOnlyMemory<byte> ReadDataContent(ref SequenceReader reader, int count, bool parseSchema, out SchemaInfo info) {
+		info = SchemaInfo.None;
+		var content = reader.Read(count);
 
-		return new SchemaInfo(format, id);
+		if (!parseSchema)
+			return content.ToArray();
+
+		var local = new SequenceReader(content);
+		info = SchemaInfo.Read(ref local);
+
+		return local.RemainingSequence.ToArray();
 	}
+
 }
