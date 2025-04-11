@@ -37,6 +37,16 @@ public record SchemaInfo(SchemaInfo.SchemaDataFormat SchemaFormat, Guid SchemaVe
         Avro      = 3,
         Bytes     = 4
     }
+
+    public static SchemaDataFormat FormatFromString(string format) {
+	    return format switch {
+		    "application/json" => SchemaDataFormat.Json,
+		    "application/protobuf" => SchemaDataFormat.Protobuf,
+		    "application/avro" => SchemaDataFormat.Avro,
+		    "application/octet-stream" => SchemaDataFormat.Bytes,
+		    _ => SchemaDataFormat.Undefined
+	    };
+    }
 }
 
 public class Event {

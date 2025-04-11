@@ -92,8 +92,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 				   + 16
 				   + 8
 				   + IntPtr.Size + EventType.Length * 2
-				   + IntPtr.Size + _dataOnDisk.Length
-				   + IntPtr.Size + Metadata.Length;
+				   + IntPtr.Size + _dataOnDisk.Length + SchemaInfo.ByteSize
+				   + IntPtr.Size + Metadata.Length + SchemaInfo.ByteSize;
 		}
 	}
 

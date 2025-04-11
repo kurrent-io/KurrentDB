@@ -65,20 +65,17 @@ internal partial class Streams<TStreamId> {
                 // content type => schema format
                 // schema version id
 
-                if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersionId)) {
-
-                }
-                else
-                {
-                    // normal existing code.
-                }
-
 				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.Type, out var eventType)) {
 					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.Type);
 				}
 
 				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.ContentType, out var contentType)) {
 					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.ContentType);
+				}
+
+				var dataSchemaInfo = SchemaInfo.None;
+				if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersion)) {
+					dataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(contentType), new Guid(schemaVersion));
 				}
 
 				var eventSize = Event.SizeOnDisk(eventType, data, metadata);
@@ -98,7 +95,7 @@ internal partial class Streams<TStreamId> {
 					isJson: contentType == Constants.Metadata.ContentTypes.ApplicationJson,
 					data: data,
 					metadata: metadata,
-                    dataSchemaInfo: SchemaInfo.None,
+                    dataSchemaInfo: dataSchemaInfo,
                     metadataSchemaInfo: SchemaInfo.None)
                 );
 			}
