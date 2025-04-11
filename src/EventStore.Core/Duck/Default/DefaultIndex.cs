@@ -25,12 +25,22 @@ public class DefaultIndex<TStreamId> {
 
 	public ulong? GetLastPosition() {
 		const string query = "select max(log_position) from idx_all";
-		return _db.Connection.Query<ulong?>(query).FirstOrDefault();
+		var connection = _db.GetOrOpenConnection();
+		try {
+			return connection.Query<ulong?>(query).FirstOrDefault();
+		} finally {
+			_db.ReturnConnection(connection);
+		}
 	}
 
 	public ulong? GetLastSequence() {
 		const string query = "select max(seq) from idx_all";
-		return _db.Connection.Query<ulong?>(query).FirstOrDefault();
+		var connection = _db.GetOrOpenConnection();
+		try {
+			return connection.Query<ulong?>(query).FirstOrDefault();
+		} finally {
+			_db.ReturnConnection(connection);
+		}
 	}
 
 	internal StreamIndex StreamIndex;

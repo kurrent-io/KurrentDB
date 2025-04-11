@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Dapper;
 using EventStore.Core.Metrics;
 using EventStore.Core.Services.Storage.ReaderIndex;
 using Serilog;
@@ -32,8 +33,14 @@ class DefaultIndexReader<TStreamId>(DuckDb db, DefaultIndexHandler<TStreamId> ha
 	List<AllRecord> QueryAll(long fromEventNumber, long toEventNumber) {
 		const string query = "select seq, log_position, event_number from idx_all where seq>=$start and seq<=$end";
 
-		using var duration = TempIndexMetrics.MeasureIndex("duck_get_all_range");
-		var result = db.Connection.QueryWithRetry<AllRecord>(query, new { start = fromEventNumber, end = toEventNumber }).ToList();
-		return result;
+		var duration = TempIndexMetrics.MeasureIndex("duck_get_all_range");
+		var connection = db.GetOrOpenConnection();
+		try {
+			return connection
+				.Query<AllRecord>(query, new { start = fromEventNumber, end = toEventNumber }).ToList();
+		} finally {
+			duration.Dispose();
+			db.ReturnConnection(connection);
+		}
 	}
 }

@@ -14,16 +14,29 @@ class CategoryIndex(DuckDb db) {
 	readonly Dictionary<long, long> CategorySizes = new();
 
 	public void Init() {
-		var ids = db.Connection.Query<ReferenceRecord>("select * from category").ToList();
+		var connection = db.GetOrOpenConnection();
+		List<ReferenceRecord> ids;
+		try {
+			ids = connection.Query<ReferenceRecord>("select * from category").ToList();
+		} finally {
+			db.ReturnConnection(connection);
+		}
+
 		Categories = ids.ToDictionary(x => x.name, x => x.id);
 		foreach (var id in ids) {
 			CategorySizes[id.id] = -1;
 		}
 
 		const string query = "select category, max(category_seq) from idx_all group by category";
-		var sequences = db.Connection.Query<(long Id, long Sequence)>(query);
-		foreach (var sequence in sequences) {
-			CategorySizes[sequence.Id] = sequence.Sequence;
+
+		connection = db.GetOrOpenConnection();
+		try {
+			var sequences = connection.Query<(long Id, long Sequence)>(query);
+			foreach (var sequence in sequences) {
+				CategorySizes[sequence.Id] = sequence.Sequence;
+			}
+		} finally {
+			db.ReturnConnection(connection);
 		}
 
 		Seq = Categories.Count > 0 ? Categories.Values.Max() : 0;
@@ -42,15 +55,29 @@ class CategoryIndex(DuckDb db) {
 		                     from idx_all where category=$cat and category_seq>=$start and category_seq<=$end
 		                     """;
 
-		using var duration = TempIndexMetrics.MeasureIndex("duck_get_cat_range");
-		var result = db.Connection.QueryWithRetry<CategoryRecord>(query, new { cat = id, start = fromEventNumber, end = toEventNumber }).ToList();
-		return result;
+		var duration = TempIndexMetrics.MeasureIndex("duck_get_cat_range");
+		var connection = db.GetOrOpenConnection();
+		try {
+			return connection
+				.Query<CategoryRecord>(query, new { cat = id, start = fromEventNumber, end = toEventNumber })
+				.ToList();
+		} finally {
+			duration.Dispose();
+			db.ReturnConnection(connection);
+		}
 	}
 
 	public long GetLastEventNumber(long categoryId) => CategorySizes.TryGetValue(categoryId, out var size) ? size : ExpectedVersion.NoStream;
 
 	long GetCategoryLastEventNumber(long categoryId) {
-		return db.Connection.QueryWithRetry<long>("select max(seq) from idx_all where category=$cat", new { cat = categoryId }).SingleOrDefault();
+		var connection = db.GetOrOpenConnection();
+		try {
+			return connection
+				.Query<long>("select max(seq) from idx_all where category=$cat", new { cat = categoryId })
+				.SingleOrDefault();
+		} finally {
+			db.ReturnConnection(connection);
+		}
 	}
 
 	static string GetStreamCategory(string streamName) {
@@ -73,7 +100,14 @@ class CategoryIndex(DuckDb db) {
 		}
 
 		var id = ++Seq;
-		db.Connection.ExecuteWithRetry(CatSql, new { id, name = categoryName });
+
+		var connection = db.GetOrOpenConnection();
+		try {
+			connection.Execute(CatSql, new { id, name = categoryName });
+		} finally {
+			db.ReturnConnection(connection);
+		}
+
 		Categories[categoryName] = id;
 		CategorySizes[id] = 0;
 		return new(id, 0);

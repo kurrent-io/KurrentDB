@@ -24,8 +24,6 @@ class DuckDbIndexBuilder<TStreamId> : IAsyncHandle<SystemReady>, IAsyncHandle<Be
 
 	internal DefaultIndex<TStreamId> DefaultIndex { get; }
 
-	public DuckDBConnection Connection => _db.Connection;
-
 	[Experimental("DuckDBNET001")]
 	public DuckDbIndexBuilder(TFChunkDbConfig dbConfig, IPublisher publisher, IReadIndex<TStreamId> index) {
 		_publisher = publisher;

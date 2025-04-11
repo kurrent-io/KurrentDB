@@ -37,9 +37,15 @@ public class InlineFunctions<TStreamId>(DuckDb db, IPublisher publisher) {
 
 	[Experimental("DuckDBNET001")]
 	public void Run() {
-		db.Connection.RegisterTableFunction<long, long>("kdb_all", ReadAllResultCallback, ReadMapperCallback);
-		db.Connection.RegisterTableFunction<string, long>("kdb_stream", ReadStreamResultCallback, ReadMapperCallback);
-		db.Connection.RegisterScalarFunction<ulong, string>("kdb_get", GetEvent);
+		var connection = db.GetOrOpenConnection();
+		try {
+			connection.RegisterTableFunction<long, long>("kdb_all", ReadAllResultCallback, ReadMapperCallback);
+			connection.RegisterTableFunction<string, long>("kdb_stream", ReadStreamResultCallback,
+				ReadMapperCallback);
+			connection.RegisterScalarFunction<ulong, string>("kdb_get", GetEvent);
+		} finally {
+			db.ReturnConnection(connection);
+		}
 	}
 
 	TableFunction ReadStreamResultCallback(IReadOnlyList<IDuckDBValueReader> parameters) {

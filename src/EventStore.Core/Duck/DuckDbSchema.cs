@@ -10,26 +10,26 @@ public static class DuckDbSchema {
 
 	public static void CreateSchema(DuckDBConnection connection) {
 		var names = Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".sql")).OrderBy(x => x);
-		var transaction = connection.BeginTransaction();
+		using var transaction = connection.BeginTransaction();
+		var cmd = connection.CreateCommand();
+		cmd.Transaction = transaction;
 
 		try {
 			foreach (var name in names) {
 				using var stream = Assembly.GetManifestResourceStream(name);
 				using var reader = new StreamReader(stream!);
-
 				var script = reader.ReadToEnd();
 
-				using var cmd = connection.CreateCommand();
 				cmd.CommandText = script;
-				cmd.Transaction = transaction;
-
 				cmd.ExecuteNonQuery();
 			}
 		} catch {
 			transaction.Rollback();
 			throw;
+		} finally {
+			cmd.Dispose();
 		}
 
-		transaction.CommitAsync();
+		transaction.Commit();
 	}
 }

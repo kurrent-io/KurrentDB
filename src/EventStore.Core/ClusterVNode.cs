@@ -1422,11 +1422,11 @@ public class ClusterVNode<TStreamId> : ClusterVNode,
 				.AddSingleton<IReadOnlyList<IDbTransform>>(new List<IDbTransform> { new IdentityDbTransform() })
 				.AddSingleton<IReadOnlyList<IClusterVNodeStartupTask>>(new List<IClusterVNodeStartupTask>())
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>(httpAuthenticationProviders)
-				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates, X509Certificate2Collection Roots)>>
+				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates,
+						X509Certificate2Collection Roots)>>
 					(() => (_certificateSelector(), _intermediateCertsSelector(), _trustedRootCertsSelector()))
 				.AddSingleton(_nodeHttpClientFactory)
-				.AddSingleton(_fileNamingStrategy)
-				.AddSingleton(indexBuilder.Connection);
+				.AddSingleton(_fileNamingStrategy);
 
 			services.AddSingleton(new KestrelToInternalBridgeMiddleware(Router, options.Application.LogHttpRequests, advertiseAsHost, advertiseAsPort));
 

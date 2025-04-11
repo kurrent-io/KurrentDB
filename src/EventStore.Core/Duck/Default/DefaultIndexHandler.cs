@@ -23,7 +23,9 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 
 	public DefaultIndexHandler(DuckDb db, DefaultIndex<TStreamId> defaultIndex) {
 		_defaultIndex = defaultIndex;
-		_connection = db.Connection;
+
+		// separate connection for this component
+		_connection = db.OpenConnection();
 		_appender = _connection.CreateAppender("idx_all");
 		var last = defaultIndex.GetLastSequence();
 		Logger.Information("Last known global sequence: {Seq}", last);
@@ -71,6 +73,7 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 		Commit(false);
 		_semaphore.Dispose();
 		_disposed = true;
+		_connection.Dispose();
 	}
 
 	public bool NeedsCommitting => _page > 0;
@@ -78,7 +81,6 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 	public void Commit(bool reopen = true) {
 		if (_appenderDisposed || _page == 0) return;
 		_semaphore.Wait();
-		_appender.CloseWithRetry("Default");
 		_appender.Dispose();
 		_appenderDisposed = true;
 		Logger.Debug("Committed {Count} records to index at sequence {Seq}", _page, _seq);

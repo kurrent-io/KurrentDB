@@ -14,6 +14,7 @@ namespace EventStore.Core.Duck.Default;
 
 class StreamIndex {
 	readonly DuckDb _db;
+	private readonly DuckDBConnection _connection;
 	long _seq;
 	readonly MemoryCache _streamCache = new(new MemoryCacheOptions());
 	readonly MemoryCache _streamIdCache = new(new MemoryCacheOptions());
@@ -21,8 +22,10 @@ class StreamIndex {
 
 	public StreamIndex(DuckDb db) {
 		const string sql = "select max(id) from streams";
-		_seq = db.Connection.Query<long?>(sql).SingleOrDefault() ?? 0;
-		_appender = db.Connection.CreateAppender("streams");
+
+		_connection = db.OpenConnection();
+		_seq = _connection.Query<long?>(sql).SingleOrDefault() ?? 0;
+		_appender = _connection.CreateAppender("streams");
 		_db = db;
 	}
 
@@ -58,9 +61,8 @@ class StreamIndex {
 
 	public void Commit() {
 		_semaphore.Wait();
-		_appender.CloseWithRetry("Streams");
 		_appender.Dispose();
-		_appender = _db.Connection.CreateAppender("streams");
+		_appender = _connection.CreateAppender("streams");
 		_semaphore.Release();
 	}
 
@@ -81,19 +83,27 @@ class StreamIndex {
 		[MethodImpl(MethodImplOptions.Synchronized)]
 		Dictionary<long, string> QueryStreams() {
 			while (true) {
-				using var duration = TempIndexMetrics.MeasureIndex("duck_get_streams");
+				var duration = TempIndexMetrics.MeasureIndex("duck_get_streams");
 				try {
 					const string sql = "select * from streams where id in $ids";
-					var records = _db.Connection.Query<ReferenceRecord>(sql, new { ids = uncached });
-					foreach (var record in records) {
-						_streamCache.Set(record.id, record.name, _options);
-						result.Add(record.id, record.name);
+
+					var connection = _db.GetOrOpenConnection();
+					try {
+						var records = connection.Query<ReferenceRecord>(sql, new { ids = uncached });
+						foreach (var record in records) {
+							_streamCache.Set(record.id, record.name, _options);
+							result.Add(record.id, record.name);
+						}
+					} finally {
+						_db.ReturnConnection(connection);
 					}
 
 					return result;
 				} catch (Exception e) {
 					Log.Warning("Error while querying category events: {Message}", e.Message);
 					duration.SetException(e);
+				} finally {
+					duration.Dispose();
 				}
 			}
 		}
@@ -111,7 +121,13 @@ class StreamIndex {
 
 	long? GetStreamIdFromDb(string streamName) {
 		const string sql = "select id from streams where name=$name";
-		return _db.Connection.QueryWithRetry<long?>(sql, new { name = streamName }).SingleOrDefault();
+
+		var connection = _db.GetOrOpenConnection();
+		try {
+			return connection.Query<long?>(sql, new { name = streamName }).SingleOrDefault();
+		} finally {
+			_db.ReturnConnection(connection);
+		}
 	}
 
 	static readonly string StreamSql = Sql.AppendIndexSql.Replace("{table}", "streams");
