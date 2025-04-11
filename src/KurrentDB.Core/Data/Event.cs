@@ -2,9 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using DotNext.IO;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.TransactionLog.Chunks;
-using JetBrains.Annotations;
 
 namespace KurrentDB.Core.Data;
 
@@ -12,14 +12,22 @@ namespace KurrentDB.Core.Data;
 /// Represents schema information that includes the schema format, and version identifier.
 /// </summary>
 public record SchemaInfo(SchemaInfo.SchemaDataFormat SchemaFormat, Guid SchemaVersionId) {
+	public static readonly int ByteSize =
+		16 // schema version id
+		+ 1; // schema format
+
     public static readonly SchemaInfo None = new(0, Guid.Empty);
 
-    public byte[] ToByteArray() {
-        var result = new byte[18];
-        // BitConverter.TryWriteBytes(result.AsSpan(0, 1), 0);
-        // BitConverter.TryWriteBytes(result.AsSpan(0, sizeof(ushort)), SchemaFormat);
-        // BitConverter.TryWriteBytes(result.AsSpan(sizeof(ushort)), SchemaVersionId.ToByteArray());
-        return result;
+    public void Write(int destinationIndex, byte[] buffer) {
+        Array.Copy(SchemaVersionId.ToByteArray(), 0, buffer, destinationIndex, 16);
+        buffer[destinationIndex + 16] = (byte)SchemaFormat;
+    }
+
+    public static SchemaInfo Read(ref SequenceReader reader) {
+	    var version = reader.Read(16);
+	    var format = (SchemaDataFormat)reader.ReadByte();
+
+	    return new SchemaInfo(format, new Guid(version.FirstSpan));
     }
 
     public enum SchemaDataFormat {
