@@ -4,7 +4,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
-using DuckDB.NET.Data;
 using EventStore.Core.Bus;
 using EventStore.Core.Duck.Default;
 using EventStore.Core.Duck.Infrastructure;
@@ -47,6 +46,7 @@ class DuckDbIndexBuilder<TStreamId> : IAsyncHandle<SystemReady>, IAsyncHandle<Be
 	public async ValueTask HandleAsync(BecomeShuttingDown message, CancellationToken token) {
 		DefaultIndex.Handler.Commit(false);
 		await Task.Delay(100, token);
+		DefaultIndex.Dispose();
 		_db.Close();
 		// await _subscription.Unsubscribe(id => Log.Information("Index subscription {Subscription} unsubscribed", id), token);
 	}

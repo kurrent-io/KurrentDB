@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Dapper;
+using DotNext;
 using DuckDB.NET.Data;
 using EventStore.Core.Metrics;
 using Eventuous.Subscriptions.Context;
@@ -12,7 +13,7 @@ using Serilog;
 
 namespace EventStore.Core.Duck.Default;
 
-class StreamIndex {
+class StreamIndex : Disposable {
 	readonly DuckDb _db;
 	private readonly DuckDBConnection _connection;
 	long _seq;
@@ -131,4 +132,12 @@ class StreamIndex {
 	}
 
 	static readonly string StreamSql = Sql.AppendIndexSql.Replace("{table}", "streams");
+
+	protected override void Dispose(bool disposing) {
+		if (disposing) {
+			_connection.Dispose();
+		}
+
+		base.Dispose(disposing);
+	}
 }

@@ -1,10 +1,11 @@
 using System.Linq;
 using Dapper;
+using DotNext;
 using EventStore.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Duck.Default;
 
-public class DefaultIndex<TStreamId> {
+public class DefaultIndex<TStreamId> : Disposable {
 	readonly DuckDb _db;
 
 	public DefaultIndex(DuckDb db, IReadIndex<TStreamId> index) {
@@ -52,6 +53,14 @@ public class DefaultIndex<TStreamId> {
 	internal DefaultIndexReader<TStreamId> DefaultIndexReader;
 
 	internal DefaultIndexHandler<TStreamId> Handler;
+
+	protected override void Dispose(bool disposing) {
+		if (disposing) {
+			StreamIndex.Dispose();
+		}
+
+		base.Dispose(disposing);
+	}
 }
 
 public record struct SequenceRecord(long Id, long Sequence);

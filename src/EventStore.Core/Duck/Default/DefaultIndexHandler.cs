@@ -6,7 +6,6 @@ using EventStore.Common.Log;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
 using Serilog;
-using Serilog.Core;
 
 namespace EventStore.Core.Duck.Default;
 
@@ -74,6 +73,7 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 		_semaphore.Dispose();
 		_disposed = true;
 		_connection.Dispose();
+		_defaultIndex.Dispose();
 	}
 
 	public bool NeedsCommitting => _page > 0;
