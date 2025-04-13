@@ -304,12 +304,26 @@ partial class Streams<TStreamId> {
 						}, cancellationToken)
 						: new ValueTask(Task.CompletedTask), cancellationToken);
 
-			static Event FromProposedMessage(ProposedMessage proposedMessage) =>
-				new(Uuid.FromDto(proposedMessage.Id).ToGuid(),
-					proposedMessage.Metadata[Constants.Metadata.Type],
-					proposedMessage.Metadata[Constants.Metadata.ContentType] ==
+			static Event FromProposedMessage(ProposedMessage proposedMessage) {
+				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.Type, out var eventType)) {
+					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.Type);
+				}
+
+				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.ContentType, out var contentType)) {
+					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.ContentType);
+				}
+
+				var dataSchemaInfo = SchemaInfo.None;
+				if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersion)) {
+					dataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(contentType), new Guid(schemaVersion));
+				}
+
+				return new(Uuid.FromDto(proposedMessage.Id).ToGuid(),
+					eventType,
+					contentType ==
 					Constants.Metadata.ContentTypes.ApplicationJson, proposedMessage.Data.ToByteArray(),
-					proposedMessage.CustomMetadata.ToByteArray(), SchemaInfo.None, SchemaInfo.None);
+					proposedMessage.CustomMetadata.ToByteArray(), dataSchemaInfo, SchemaInfo.None);
+			}
 
 			static ClientMessage.WriteEvents ToInternalMessage(ClientWriteRequest request, IEnvelope envelope,
 				bool requiresLeader, ClaimsPrincipal user, CancellationToken token) =>
