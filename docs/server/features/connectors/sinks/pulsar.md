@@ -102,7 +102,7 @@ the [Sink Options](../settings.md#sink-options) page.
 | `topic`                | _Required_<br><br>**Description:** The Pulsar topic where records are published. to.                                                                                                                                |
 | `url`                  | <br><br>**Description:** The service URL for the Pulsar cluster.<br><br>**Default**: `"pulsar://localhost:6650"`                                                                        |
 | `defaultHeaders`       | **Description**: Default headers to include in all outgoing messages along with KurrentDB system headers. Prefix header names with `defaultHeaders:` followed by the header key name.<br><br>**Example**: `"defaultHeaders:AppName": "Kurrent"` <br><br>**Default**: None |
-| `authentication:token` | <br><br>**Description:** A JSON web token for authenticating the connector with Pulsar. |
+| `authentication:token` | **Description:** A JSON web token for authenticating the connector with Pulsar. |
 
 ### Partitioning
 
