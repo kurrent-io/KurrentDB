@@ -6,17 +6,27 @@ title: 'Pulsar Sink'
 
 ## Overview
 
-The Apache Pulsar sink connector enables writing events to a specified topic. It
-supports extracting partition keys from records using various sources, such as
-the stream ID, headers, or record key. Additionally, it provides support for
-basic authentication to ensure secure communication.
+The Apache Pulsar Sink connector writes events from your service to a specified Pulsar topic. It supports:
+- **Partitioning:** Extract partition keys from various sources (e.g., stream ID, headers, record key).
+- **Security:** Offers token-based authentication for secure communication.
+- **Resilience:** Leverages Apache Pulsar’s built-in resilience for robust message handling.
+
+## Pre-requisites
+
+Before setting up the Pulsar Sink connector, ensure that:
+- **Apache Pulsar Cluster:** Your Pulsar cluster is up and running.
+- **Network Access:** The service URL is accessible (adjust firewall settings as needed).
+- **Security Tokens:** If using authentication, have your JSON web token ready.
+- **Basic Knowledge:** Familiarity with JSON and command line operations.
 
 ## Quickstart
 
-You can create the Pulsar Sink connector as follows:
+Follow these steps to create and start the Pulsar Sink connector.
 
 ::: tabs
 @tab Powershell
+
+1. Create the JSON Configuration:
 
 ```powershell
 $JSON = @"
@@ -31,7 +41,11 @@ $JSON = @"
   }
 }
 "@ `
+```
 
+2. Send a POST request to create the sink connector:
+
+```powershell
 curl.exe -X POST `
   -H "Content-Type: application/json" `
   -d $JSON `
@@ -39,6 +53,8 @@ curl.exe -X POST `
 ```
 
 @tab Bash
+
+1. Create the JSON Configuration:
 
 ```bash
 JSON='{
@@ -51,7 +67,11 @@ JSON='{
     "subscription:filter:expression": "example-stream"
   }
 }'
+```
 
+2. Send a POST request to create the sink connector:
+
+```bash
 curl -X POST \
   -H "Content-Type: application/json" \
   -d "$JSON" \
@@ -60,69 +80,56 @@ curl -X POST \
 
 :::
 
-After creating and starting the Pulsar sink connector, every time an event is
-appended to the `example-stream`, the Pulsar sink connector will send the record
-to the specified topic. You can find a list of available management API
-endpoints in the [API Reference](../manage.md).
+::: tip
+Replace the URL with your KurrentDB URL. The default value is `http:localhost:2113`.
+:::
+
+After running the command, verify the connector status by checking the management API or connector logs. See [Management API Reference](../manage.md).
 
 ## Settings
 
-Adjust these settings to specify the behavior and interaction of your Pulsar
-sink connector with KurrentDB, ensuring it operates according to your
-requirements and preferences.
+The connector settings control how it interacts with Pulsar, manages message partitioning, and ensures resilience in message handling. 
 
 ::: tip
 The Pulsar sink inherits a set of common settings that are used to configure the connector. The settings can be found in
 the [Sink Options](../settings.md#sink-options) page.
 :::
 
-The Pulsar sink can be configured with the following options:
+### General settings 
 
 | Name                   | Details                                                                                                                                                                                                                    |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `topic`                | _required_<br><br>**Type**: string<br><br>**Description:** The topic to produce records to.                                                                                                                                |
-| `url`                  | _protected_<br><br>**Type**: string<br><br>**Description:** The service URL for the Pulsar cluster.<br><br>**Default**: `"pulsar://localhost:6650"`                                                                        |
-| `defaultHeaders`       | **Description**: Headers to include in all messages in addition to KurrentDB system headers. Specify by using `defaultHeaders:` prefix followed by the header key name.<br><br>**Example**: `"defaultHeaders:AppName": "Kurrent"` <br><br>**Default**: None |
-| `authentication:token` | _protected_<br><br>**Type**: string<br><br>**Description:** The security token used for JSON web token based authentication.                                                                                               |
+| `topic`                | _Required_<br><br>**Description:** The Pulsar topic where records are published. to.                                                                                                                                |
+| `url`                  | <br><br>**Description:** The service URL for the Pulsar cluster.<br><br>**Default**: `"pulsar://localhost:6650"`                                                                        |
+| `defaultHeaders`       | **Description**: Default headers to include in all outgoing messages along with KurrentDB system headers. Prefix header names with `defaultHeaders:` followed by the header key name.<br><br>**Example**: `"defaultHeaders:AppName": "Kurrent"` <br><br>**Default**: None |
+| `authentication:token` | **Description:** A JSON web token for authenticating the connector with Pulsar. |
 
 ### Partitioning
+
+Partitioning options determine how the connector assigns partition keys, which affect message routing and topic compaction. 
 
 | Name                                | Details                                                                                                                                                                           |
 | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `partitionKeyExtraction:enabled`    | **Type**: boolean<br><br>**Description:** Enables partition key extraction.<br><br>**Default**: false                                                                             |
-| `partitionKeyExtraction:source`     | **Type**: Enum<br><br>**Description:** Source for extracting the partition key.<br><br>**Accepted Values:**`stream`, `streamSuffix`, `headers`<br><br>**Default**: `PartitionKey` |
-| `partitionKeyExtraction:expression` | **Type**: string<br><br>**Description:** Regular expression for extracting the partition key.                                                                                     |
-
-See the [Partitioning](#partitioning-1) section for examples.
+| `partitionKeyExtraction:enabled`    | **Description:** Enables partition key extraction.<br><br>**Default**: false                                                                             |
+| `partitionKeyExtraction:source`     | **Description:** The source for extracting the partition key.<br><br>**Accepted Values:**`stream`, `streamSuffix`, `headers`<br><br>**Default**: `PartitionKey` |
+| `partitionKeyExtraction:expression` | **Description:** A regex (for `stream` source) or a comma-separated list of header keys (for `headers` source) used to extract or combine values for the partition key. When using headers, values are concatenated with a hyphen (for example, `value1-value2`).                                                                                     |
 
 ### Resilience
 
-The Pulsar sink connector uses the resilience configuration and behavior provided by Apache Pulsar. The settings can be configured as follows:
+These settings customize the connector’s behavior in handling message failures and retries provided by Apache Pulsar.
 
 | Name                       | Details                                                                                                                  |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `resilience:enabled`       | **Type**: boolean<br><br>**Description:** Enables resilience features for message handling.<br><br>**Default**: `"true"` |
-| `resilience:retryInterval` | Retry interval in seconds (format: `"seconds"` or `"HH:MM:SS"`, must be greater than 0, default: `"00:00:03"`)           |
+| `resilience:enabled`       | **Description:** Enables resilience features for message handling.<br><br>**Default**: `"true"` |
+| `resilience:retryInterval` | **Description:** Retry interval in seconds. Must be greater than 0.<br><br>**Format:** seconds or `"HH:MM:SS"`.<br><br> **Default:** `"00:00:03"`           |
 
 ## Examples
 
-### Partitioning
+These examples demonstrate how to configure partitioning, security, and other practical scenarios.
 
-The Pulsar sink connector supports parsing and using partition keys, which are
-short identifiers for messages. These keys are useful for features like topic
-compaction and partitioning.
+### Partition using Stream ID
 
-Pulsar partition keys can be generated from various sources. These sources
-include the event stream, stream suffix, headers, or other record fields.
-
-By default, it will use the `PartitionKey` and grab this value from the KurrentDB record.
-
-**Partition using Stream ID**
-
-You can extract part of the stream name using a regular expression (regex) to
-define the partition key. The expression is optional and can be customized based
-on your naming convention. In this example, the expression captures the stream
-name up to `_data`.
+Extract part of a stream name using a regex. In this example, the regex captures everything up to `_data`.
 
 ```json
 {
@@ -147,11 +154,9 @@ The `streamSuffix` source is useful when stream names follow a structured
 format, and you want to use only the trailing part as the partition key. For
 example, if the stream is named `user-123`, the partition key would be `123`.
 
-**Partition using header values**
+### Partition using header values
 
-You can generate the partition key by concatenating values from specific event
-headers. In this case, two header values (`key1` and `key2`) are combined to
-form the ID.
+Combine multiple header values to form the partition key. This example concatenates header values `key1` and `key2` using a hyphen.
 
 ```json
 {
