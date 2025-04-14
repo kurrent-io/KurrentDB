@@ -81,7 +81,7 @@ curl -X POST \
 :::
 
 ::: tip
-Replace the URL with your KurrentDB URL. The default value is `http:localhost:2113`.
+Replace the URL with your KurrentDB URL. The default value is `http://localhost:2113`.
 :::
 
 After running the command, verify the connector status by checking the management API or connector logs. See [Management API Reference](../manage.md).
