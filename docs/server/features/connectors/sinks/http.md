@@ -1,6 +1,5 @@
 ---
 title: "HTTP Sink"
-order: 4
 ---
 
 ## Overview
