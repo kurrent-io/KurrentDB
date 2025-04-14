@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
@@ -58,7 +59,7 @@ public partial class EnumeratorTests {
 		private const int NumEventsToFallBehind = 3 * 32;
 		private const int CheckpointInterval = 16;
 
-		public static object[] TestCases = {
+		public static object[] TestCases = [
 			// STREAM PREFIX FILTER
 			CreateTestData(
 				"subscribe to $all with stream prefix filter from start",
@@ -334,6 +335,13 @@ public partial class EnumeratorTests {
 				new SubscriptionProperties(CheckpointType.Start, EventFilterType.StreamPrefix),
 				new LiveProperties()
 			),
+			.. Enumerable.Range(0, Enumerator.ReadBatchSize).Select(i => CreateTestData(
+				$"subscription to filtered $all receives checkpoints during catch-up (6-{i})",
+				new StreamProperties(NumEvents: i),
+				new SubscriptionProperties(CheckpointType.Start, EventFilterType.StreamPrefix),
+				new LiveProperties(NumEventsToAdd: 5)
+			)),
+
 			// CHECKPOINTS WHEN LIVE
 			CreateTestData(
 				"subscription to filtered $all receives checkpoints when live (1)",
@@ -365,7 +373,7 @@ public partial class EnumeratorTests {
 				new SubscriptionProperties(CheckpointType.End, EventFilterType.StreamPrefix),
 				new LiveProperties(CheckpointInterval * 2 + 1)
 			),
-		};
+		];
 
 		private readonly TestData _testData;
 		private StreamProperties StreamProps => _testData.StreamProperties;
@@ -512,7 +520,7 @@ public partial class EnumeratorTests {
 				user: SystemAccounts.Anonymous);
 		}
 
-		private async Task<int> ReadExpectedEvents(EnumeratorWrapper sub, int nextEventIndex, int lastEventIndex, bool catchingUp, bool shouldFallBehindThenCatchUp = false) {
+		private async Task<(Position?, int)> ReadExpectedEvents(EnumeratorWrapper sub, Position? checkpointPosition, int nextEventIndex, int lastEventIndex, bool catchingUp, bool shouldFallBehindThenCatchUp = false) {
 			var fellBehind = false;
 			var caughtUp = false;
 			var lastEventOrCheckpointPos = new TFPos(-1, -1);
@@ -531,6 +539,19 @@ public partial class EnumeratorTests {
 						lastEventOrCheckpointPos = evtTfPos;
 						numEventsSinceLastCheckpoint++;
 						Assert.AreEqual(evtTfPos, evt.EventPosition!.Value);
+
+						// The event received must strictly advance the checkpoint (otherwise it was not a valid checkpoint)
+						var newCheckpointPosition = Position.FromInt64(evtTfPos.CommitPosition, evtTfPos.PreparePosition);
+
+						Assert.True(!checkpointPosition.HasValue || checkpointPosition.Value < newCheckpointPosition,
+							$"event at pos {newCheckpointPosition} should have advanced the checkpoint {checkpointPosition} but did not");
+
+						// Since there are no explicit transactions here the event should also strictly advance the commit position of the checkpoint
+						// in case any user knows that their system contains no explicit transactions and are only storing the commit position.
+						Assert.True(!checkpointPosition.HasValue || checkpointPosition.Value.CommitPosition < newCheckpointPosition.CommitPosition,
+							$"event at pos {newCheckpointPosition} should have advanced the commit position of checkpoint {checkpointPosition} but did not");
+
+						checkpointPosition = newCheckpointPosition;
 						break;
 					case FellBehind:
 						if (!shouldFallBehindThenCatchUp)
@@ -552,7 +573,11 @@ public partial class EnumeratorTests {
 						// not always straightforward to calculate how many checkpoints we will receive.
 						numResponsesExpected++;
 
+						// checkpoint must not move backwards
+						Assert.True(checkpoint.CheckpointPosition >= checkpointPosition);
 						Assert.True(checkpoint.CheckpointPosition < Position.End);
+
+						checkpointPosition = checkpoint.CheckpointPosition;
 						var checkpointPos = checkpoint.CheckpointPosition.ToInt64();
 						var checkpointTfPos = new TFPos(checkpointPos.commitPosition, checkpointPos.preparePosition);
 
@@ -596,7 +621,7 @@ public partial class EnumeratorTests {
 					Assert.Fail("Subscription fell behind but did not catch up.");
 			}
 
-			return nextEventIndex;
+			return (checkpointPosition, nextEventIndex);
 		}
 
 		[SetUp]
@@ -617,13 +642,19 @@ public partial class EnumeratorTests {
 				return;
 			}
 
-			_nextEventIndex = await ReadExpectedEvents(sub, _nextEventIndex, _events.Count - 1, catchingUp: true);
+			(var checkpoint, _nextEventIndex) = await ReadExpectedEvents(sub, checkpointPosition: null, _nextEventIndex, _events.Count - 1, catchingUp: true);
 
-			Assert.True(await sub.GetNext() is CaughtUp);
+			// Should be caught up. There may be a checkpoint first.
+			var m = await sub.GetNext();
+			if (m is Checkpoint c) {
+				checkpoint = c.CheckpointPosition;
+				m = await sub.GetNext();
+			}
+			Assert.IsInstanceOf<CaughtUp>(m);
 
 			var (numEventsAdded, accessRevoked, shouldFallBehindThenCatchup) = await ApplyLiveProperties();
 
-			_nextEventIndex = await ReadExpectedEvents(sub, _nextEventIndex, _nextEventIndex + numEventsAdded - 1, catchingUp: false, shouldFallBehindThenCatchup);
+			(checkpoint, _nextEventIndex) = await ReadExpectedEvents(sub, checkpoint, _nextEventIndex, _nextEventIndex + numEventsAdded - 1, catchingUp: false, shouldFallBehindThenCatchup);
 
 			if (accessRevoked) {
 				Assert.ThrowsAsync<ReadResponseException.AccessDenied>(async () => await sub.GetNext());
