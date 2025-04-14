@@ -3,9 +3,9 @@
 
 using System;
 using EventStore.Core.LogV3;
-using EventStore.LogV3;
 using KurrentDB.Common.Utils;
 using KurrentDB.LogCommon;
+using KurrentDB.LogV3;
 using StreamId = System.UInt32;
 
 namespace KurrentDB.Core.TransactionLog.LogRecords;

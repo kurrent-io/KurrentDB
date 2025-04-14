@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 public struct SlicedRecord {
 	// todo: measure tradeoff between splitting these out on construction as we are

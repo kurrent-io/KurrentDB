@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 public struct ReadOnlyMemorySlicer<T> {
 	public ReadOnlyMemory<T> Remaining { get; private set; }

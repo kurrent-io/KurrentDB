@@ -4,9 +4,10 @@
 using System;
 using System.Runtime.InteropServices;
 using KurrentDB.LogCommon;
+using KurrentDB.LogV3;
 using Xunit;
 
-namespace EventStore.LogV3.Tests;
+namespace KurrentDB.LogV3.Tests;
 
 public class RecordCreatorTests {
 	readonly Guid _guid1 = Guid.Parse("00000000-0000-0000-0000-000000000001");

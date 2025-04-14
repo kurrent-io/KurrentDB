@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 public interface IRecordView {
 	ReadOnlyMemory<byte> Bytes { get; }

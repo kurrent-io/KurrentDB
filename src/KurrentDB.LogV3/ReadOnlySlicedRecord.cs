@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 public struct ReadOnlySlicedRecord {
 	public ReadOnlyMemory<byte> Bytes { get; init; }

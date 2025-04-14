@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 // This class slices bytes up according to the headers in the desired record
 // It exists to keep the logic between the readonly/normal versions in the same place.

@@ -5,7 +5,7 @@ using System;
 using System.Runtime.InteropServices;
 using KurrentDB.LogCommon;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 public static class Raw {
 	public const long SixMostSignificantBytes = unchecked((long)0xFF_FF_FF_FF_FF_FF_00_00);

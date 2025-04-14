@@ -4,7 +4,7 @@
 using System;
 using System.Text;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 // Several records have a payload which is a dynamically sized string
 public struct StringPayloadRecord {

@@ -5,7 +5,7 @@ using System;
 using System.Buffers;
 using System.Runtime.InteropServices;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 // View of a stream write record
 // interprets the payload

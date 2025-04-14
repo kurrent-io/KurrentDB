@@ -43,7 +43,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
 		<ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
-		<ProjectReference Include="..\EventStore.LogV3\EventStore.LogV3.csproj" />
+		<ProjectReference Include="..\KurrentDB.LogV3\KurrentDB.LogV3.csproj" />
 		<ProjectReference Include="..\KurrentDB.Native\KurrentDB.Native.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj" />

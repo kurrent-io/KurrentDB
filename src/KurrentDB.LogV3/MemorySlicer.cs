@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 public static class MemoryExtensions {
 	public static MemorySlicer<T> Slicer<T>(this Memory<T> memory) =>

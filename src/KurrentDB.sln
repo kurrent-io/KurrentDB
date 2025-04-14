@@ -41,9 +41,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.NETCore.Compatibility", "KurrentDB.NETCore.Compatibility\KurrentDB.NETCore.Compatibility.csproj", "{066B6514-86A0-41D8-BB6A-D9B05141D026}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.LogV3", "EventStore.LogV3\EventStore.LogV3.csproj", "{0A8829D0-0A6F-43A5-ACD4-970690296C52}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.LogV3", "KurrentDB.LogV3\KurrentDB.LogV3.csproj", "{0A8829D0-0A6F-43A5-ACD4-970690296C52}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EventStore.LogV3.Tests", "EventStore.LogV3.Tests\EventStore.LogV3.Tests.csproj", "{97EDD08B-0E2F-4445-A4CA-36285954BBDC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.LogV3.Tests", "KurrentDB.LogV3.Tests\KurrentDB.LogV3.Tests.csproj", "{97EDD08B-0E2F-4445-A4CA-36285954BBDC}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KurrentDB.LogCommon", "KurrentDB.LogCommon\KurrentDB.LogCommon.csproj", "{B1185D46-45AE-49DD-99BF-602B9359BACF}"
 EndProject

@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 public static class SlicerExtensions {
 	public static ref T SliceAs<T>(this ref MemorySlicer<byte> slicer) where T : unmanaged =>

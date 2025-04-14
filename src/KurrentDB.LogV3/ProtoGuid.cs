@@ -4,7 +4,7 @@
 using System;
 using Google.Protobuf;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 // System.Guid.ToByteArray roundtrips with the ctor that takes byte[] as the argument
 // if changing this be careful not to break changing between endianness

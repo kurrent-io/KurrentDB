@@ -7,7 +7,7 @@ using System.Text.Unicode;
 using Google.Protobuf;
 using KurrentDB.LogCommon;
 
-namespace EventStore.LogV3;
+namespace KurrentDB.LogV3;
 
 // Nice-to-use wrappers for creating and populating the raw structures.
 public static class RecordCreator {

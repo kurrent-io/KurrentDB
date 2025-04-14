@@ -3,10 +3,11 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using KurrentDB.LogV3;
 using ObjectLayoutInspector;
 using Xunit;
 
-namespace EventStore.LogV3.Tests;
+namespace KurrentDB.LogV3.Tests;
 
 public class RecordLayoutTests {
 	void AssertSize<T>(int expectedSize, bool allowOverlap = false) {

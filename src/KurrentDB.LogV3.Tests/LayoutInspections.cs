@@ -2,11 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using KurrentDB.LogV3;
 using ObjectLayoutInspector;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace EventStore.LogV3.Tests;
+namespace KurrentDB.LogV3.Tests;
 
 // For easily inspecting the layout of the structs
 public class LayoutInspections {

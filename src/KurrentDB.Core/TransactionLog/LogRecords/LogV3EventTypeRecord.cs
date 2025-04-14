@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.Core.LogV3;
-using EventStore.LogV3;
+using KurrentDB.LogV3;
 
 namespace KurrentDB.Core.TransactionLog.LogRecords;
 
