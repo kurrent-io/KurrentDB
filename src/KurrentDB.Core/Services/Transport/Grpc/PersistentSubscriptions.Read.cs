@@ -126,7 +126,7 @@ internal partial class PersistentSubscriptions {
 			if (e == null)
 				return null;
 			var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
-			return new() {
+			var @event = new ReadResp.Types.ReadEvent.Types.RecordedEvent {
 				Id = uuidOptionsCase switch {
 					ReadReq.Types.Options.Types.UUIDOption.ContentOneofCase.String => new UUID {
 						String = e.EventId.ToString()
@@ -137,16 +137,13 @@ internal partial class PersistentSubscriptions {
 				StreamRevision = StreamRevision.FromInt64(e.EventNumber),
 				CommitPosition = position.CommitPosition,
 				PreparePosition = position.PreparePosition,
-				Metadata = {
-					[Constants.Metadata.Type] = e.EventType,
-					[Constants.Metadata.Created] = e.TimeStamp.ToTicksSinceEpoch().ToString(),
-					[Constants.Metadata.ContentType] = e.IsJson
-						? Constants.Metadata.ContentTypes.ApplicationJson
-						: Constants.Metadata.ContentTypes.ApplicationOctetStream
-				},
 				Data = ByteString.CopyFrom(e.Data.Span),
 				CustomMetadata = ByteString.CopyFrom(e.Metadata.Span)
 			};
+
+			@event.Metadata.Add(e.GetMetadataDictionary());
+
+			return @event;
 		}
 
 		ReadResp.Types.ReadEvent ConvertToReadEvent((ResolvedEvent, int) _) {
