@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Data;
 using EventStore.Core.LogV3;
+using KurrentDB.Core.Data;
 using KurrentDB.LogV3;
 
 namespace KurrentDB.Core.TransactionLog.LogRecords;
