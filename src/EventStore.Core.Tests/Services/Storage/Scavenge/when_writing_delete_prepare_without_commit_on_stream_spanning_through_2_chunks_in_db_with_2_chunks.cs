@@ -5,11 +5,11 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
+using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge;
 

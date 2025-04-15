@@ -5,8 +5,9 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
+using KurrentDB.Core.Tests;
 using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Http.Users {
 	namespace users {

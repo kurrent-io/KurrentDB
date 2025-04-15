@@ -5,8 +5,11 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
-using EventStore.Core.Data;
+using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
+using StreamMetadata = EventStore.ClientAPI.StreamMetadata;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 
@@ -31,8 +34,8 @@ public class transactions_on_stream_with_event_numbers_greater_than_2_billion<TL
 	public override async Task Given() {
 		_store = BuildConnection(Node);
 		await _store.ConnectAsync();
-		await _store.SetStreamMetadataAsync(StreamName, EventStore.ClientAPI.ExpectedVersion.Any,
-			EventStore.ClientAPI.StreamMetadata.Create(truncateBefore: intMaxValue + 1));
+		await _store.SetStreamMetadataAsync(StreamName, ExpectedVersion.Any,
+			StreamMetadata.Create(truncateBefore: intMaxValue + 1));
 	}
 
 	[Test]

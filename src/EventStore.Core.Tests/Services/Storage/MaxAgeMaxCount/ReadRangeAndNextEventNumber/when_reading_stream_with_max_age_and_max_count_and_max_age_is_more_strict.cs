@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
+using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.MaxAgeMaxCount.ReadRangeAndNextEventNumber;
 
@@ -249,7 +249,8 @@ public class
 			}
 
 			from = backwards.NextEventNumber;
-			if (backwards.IsEndOfStream) break;
+			if (backwards.IsEndOfStream)
+				break;
 		}
 
 		from = 0;
@@ -260,7 +261,8 @@ public class
 			}
 
 			from = forwards.NextEventNumber;
-			if (forwards.IsEndOfStream) break;
+			if (forwards.IsEndOfStream)
+				break;
 		}
 
 		Assert.AreEqual(forwardsCollected.Count, backwardsCollected.Count);

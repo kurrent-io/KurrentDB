@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.Index;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.Scavenge;

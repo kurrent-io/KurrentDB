@@ -1,18 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.LogCommon;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.LogCommon;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge;
 
@@ -59,7 +56,7 @@ public class when_scavenging_tfchunk_with_deleted_records<TLogFormat, TStreamId>
 
 	[Test]
 	public async Task should_have_updated_deleted_stream_event_number() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
 		while (result.Success) {
@@ -70,7 +67,7 @@ public class when_scavenging_tfchunk_with_deleted_records<TLogFormat, TStreamId>
 		var id = _logFormat.StreamIds.LookupValue(_deletedEventStreamId);
 		var deletedRecord = (IPrepareLogRecord<TStreamId>)chunkRecords.First(
 			x => x.RecordType == LogRecordType.Prepare
-			     && EqualityComparer<TStreamId>.Default.Equals(((IPrepareLogRecord<TStreamId>)x).EventStreamId, id));
+				 && EqualityComparer<TStreamId>.Default.Equals(((IPrepareLogRecord<TStreamId>)x).EventStreamId, id));
 
 		Assert.AreEqual(EventNumber.DeletedStream - 1, deletedRecord.ExpectedVersion);
 	}

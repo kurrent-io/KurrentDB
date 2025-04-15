@@ -6,11 +6,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.IO;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -42,7 +42,7 @@ public class
 			bytes = new byte[3994]; // this gives exactly 4097 size of record, with 3993 (rec size 4096) everything works fine!
 		Random.Shared.NextBytes(bytes);
 		var writer = new TFChunkWriter(db);
-		writer.Open();
+		await writer.Open(CancellationToken.None);
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -61,7 +61,7 @@ public class
 			flags: PrepareFlags.SingleWrite,
 			eventType: eventTypeId,
 			data: bytes,
-			metadata: new byte[] {0x07, 0x17});
+			metadata: new byte[] { 0x07, 0x17 });
 
 		Assert.IsTrue(await writer.Write(record, CancellationToken.None) is (true, _));
 		await writer.DisposeAsync();
@@ -69,8 +69,7 @@ public class
 
 		Assert.AreEqual(record.GetSizeWithLengthPrefixAndSuffix() + 137, _checkpoint.Read());
 		await using var filestream = File.Open(filename,
-			new FileStreamOptions
-				{ Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
+			new FileStreamOptions { Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
 		filestream.Seek(ChunkHeader.Size + 137 + sizeof(int), SeekOrigin.Begin);
 
 		var recordLength = filestream.Length - filestream.Position;

@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Index.Hashers;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.ReadIndex;
@@ -118,7 +118,7 @@ public abstract class ReadEventInfoForward_NoCollisions : ReadIndexTestScenario<
 				if (fromEventNumber > 3)
 					Assert.True(result.IsEndOfStream);
 				else
-					Assert.AreEqual((long) fromEventNumber + int.MaxValue, result.NextEventNumber);
+					Assert.AreEqual((long)fromEventNumber + int.MaxValue, result.NextEventNumber);
 			}
 		}
 
@@ -151,7 +151,7 @@ public abstract class ReadEventInfoForward_NoCollisions : ReadIndexTestScenario<
 					CancellationToken.None);
 
 				CheckResult(_events.Skip(fromEventNumber).Take(1).ToArray(), result);
-				Assert.AreEqual((long) fromEventNumber + int.MaxValue, result.NextEventNumber);
+				Assert.AreEqual((long)fromEventNumber + int.MaxValue, result.NextEventNumber);
 			}
 		}
 	}
@@ -257,7 +257,7 @@ public abstract class ReadEventInfoForward_NoCollisions : ReadIndexTestScenario<
 				CancellationToken.None);
 
 			CheckResult(_events.Skip(1).ToArray(), result);
-			Assert.AreEqual((long ) 3 + int.MaxValue, result.NextEventNumber);
+			Assert.AreEqual((long)3 + int.MaxValue, result.NextEventNumber);
 
 			result = await ReadIndex.ReadEventInfoForward_NoCollisions(
 				Hash,

@@ -2,21 +2,20 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using EventStore.Common.Utils;
 using EventStore.Core.Cluster;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Gossip;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.ElectionsService;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.TransactionLog.Checkpoint;
 using FluentAssertions;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Gossip;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
 using MemberInfo = EventStore.Core.Cluster.MemberInfo;
 
@@ -361,7 +360,7 @@ public class if_gossip_reply_includes_es_version : NodeGossipServiceTestFixture 
 
 	protected override Message When() =>
 		new GossipMessage.GossipReceived(new CallbackEnvelope(CaptureGossipReply), new ClusterInfo(
-				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber:  1, esVersion: "1.1.1.2"),
+				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.2"),
 				MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3")),
 			_nodeTwo.HttpEndPoint);
 
@@ -415,7 +414,7 @@ public class if_client_gossip_reply_includes_es_version : NodeGossipServiceTestF
 	private Message _capturedMessage;
 	protected override Message[] Given() =>
 		GivenSystemInitializedWithKnownGossipSeedSources(new GossipMessage.GossipReceived(new NoopEnvelope(), new ClusterInfo(
-				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber:  1, esVersion: "1.1.1.2"),
+				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.2"),
 				MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3")),
 			_nodeTwo.HttpEndPoint));
 
@@ -905,7 +904,7 @@ public class when_elections_are_done : NodeGossipServiceTestFixture {
 		);
 
 	protected override Message When() =>
-		new ElectionMessage.ElectionsDone(0,0,
+		new ElectionMessage.ElectionsDone(0, 0,
 			MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, nodeState: VNodeState.Leader));
 
 	[Test]

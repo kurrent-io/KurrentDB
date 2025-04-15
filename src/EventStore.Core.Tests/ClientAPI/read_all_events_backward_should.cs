@@ -6,8 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Services;
 using EventStore.Core.Tests.ClientAPI.Helpers;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI;

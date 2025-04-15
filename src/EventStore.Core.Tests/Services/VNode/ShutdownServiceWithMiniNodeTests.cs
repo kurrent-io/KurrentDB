@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.UserManagement;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +21,7 @@ namespace EventStore.Core.Tests.Services.VNode;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class ShutdownServiceWithMiniNodeTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPerTestFixture {
+public class ShutdownServiceWithMiniNodeTests<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private readonly CancellationTokenSource _cts = new();
 	private readonly TaskCompletionSource _tcs = new();
 	private MiniNode<TLogFormat, TStreamId> _node;

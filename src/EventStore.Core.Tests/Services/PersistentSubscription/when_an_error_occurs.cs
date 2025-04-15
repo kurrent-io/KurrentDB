@@ -4,15 +4,16 @@
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.PersistentSubscription;
-using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
 using EventStore.Core.Tests.TransactionLog;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.PersistentSubscription;
+using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;
@@ -77,8 +78,7 @@ public class PersistentSubscriptionServiceErrorTests {
 		ClientMessage.CreatePersistentSubscriptionToStream,
 		ClientMessage.CreatePersistentSubscriptionToStreamCompleted,
 		ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult> {
-		public create_stream() : base(ClientMessage.CreatePersistentSubscriptionToStreamCompleted
-			.CreatePersistentSubscriptionToStreamResult.Fail) {
+		public create_stream() : base(ClientMessage.CreatePersistentSubscriptionToStreamCompleted.CreatePersistentSubscriptionToStreamResult.Fail) {
 		}
 
 		protected override ClientMessage.CreatePersistentSubscriptionToStream CreateMessage(IEnvelope envelope) =>
@@ -98,8 +98,7 @@ public class PersistentSubscriptionServiceErrorTests {
 		ClientMessage.CreatePersistentSubscriptionToAll,
 		ClientMessage.CreatePersistentSubscriptionToAllCompleted,
 		ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult> {
-		public create_all() : base(ClientMessage.CreatePersistentSubscriptionToAllCompleted
-			.CreatePersistentSubscriptionToAllResult.Fail) {
+		public create_all() : base(ClientMessage.CreatePersistentSubscriptionToAllCompleted.CreatePersistentSubscriptionToAllResult.Fail) {
 		}
 
 		protected override ClientMessage.CreatePersistentSubscriptionToAll CreateMessage(IEnvelope envelope) => new(
@@ -117,8 +116,7 @@ public class PersistentSubscriptionServiceErrorTests {
 		ClientMessage.UpdatePersistentSubscriptionToStream,
 		ClientMessage.UpdatePersistentSubscriptionToStreamCompleted,
 		ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult> {
-		public update_stream() : base(ClientMessage.UpdatePersistentSubscriptionToStreamCompleted
-			.UpdatePersistentSubscriptionToStreamResult.Fail) {
+		public update_stream() : base(ClientMessage.UpdatePersistentSubscriptionToStreamCompleted.UpdatePersistentSubscriptionToStreamResult.Fail) {
 		}
 
 		protected override ClientMessage.UpdatePersistentSubscriptionToStream CreateMessage(IEnvelope envelope) =>
@@ -138,8 +136,7 @@ public class PersistentSubscriptionServiceErrorTests {
 		ClientMessage.UpdatePersistentSubscriptionToAll,
 		ClientMessage.UpdatePersistentSubscriptionToAllCompleted,
 		ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult> {
-		public update_all() : base(ClientMessage.UpdatePersistentSubscriptionToAllCompleted
-			.UpdatePersistentSubscriptionToAllResult.Fail) {
+		public update_all() : base(ClientMessage.UpdatePersistentSubscriptionToAllCompleted.UpdatePersistentSubscriptionToAllResult.Fail) {
 		}
 
 		protected override ClientMessage.UpdatePersistentSubscriptionToAll CreateMessage(IEnvelope envelope) => new(

@@ -1,29 +1,30 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Transport.Tcp;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using EventStore.Transport.Tcp;
-using System.Net.Sockets;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Authentication;
-using EventStore.Core.TransactionLog.LogRecords;
 using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Messages;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using EventStore.Client.Messages;
-using EventStore.Core.Authentication.InternalAuthentication;
-using EventStore.Core.Services;
-using EventStore.Core.Settings;
+using EventStore.Core.Messages;
+using EventStore.Core.Services.Transport.Tcp;
+using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
-using EventStore.Core.Util;
-using EventRecord = EventStore.Core.Data.EventRecord;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using KurrentDB.Core.Authentication.InternalAuthentication;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Settings;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Transport.Tcp;
+using NUnit.Framework;
+using EventRecord = KurrentDB.Core.Data.EventRecord;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp;
 
@@ -43,7 +44,7 @@ public class TcpConnectionManagerTests {
 			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(
-				InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),
+				InMemoryBus.CreateTest(), new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
@@ -84,7 +85,7 @@ public class TcpConnectionManagerTests {
 		var tcpConnectionManager = new TcpConnectionManager(
 			Guid.NewGuid().ToString(), TcpServiceType.Internal, new ClientTcpDispatcher(2000),
 			publisher, dummyConnection, publisher,
-			new InternalAuthenticationProvider(publisher, new Core.Helpers.IODispatcher(publisher, new NoopEnvelope()),
+			new InternalAuthenticationProvider(publisher, new IODispatcher(publisher, new NoopEnvelope()),
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
@@ -120,7 +121,7 @@ public class TcpConnectionManagerTests {
 			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(
-				InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(new SynchronousScheduler(),
+				InMemoryBus.CreateTest(), new IODispatcher(new SynchronousScheduler(),
 					new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
@@ -150,7 +151,7 @@ public class TcpConnectionManagerTests {
 			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
-				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
+				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
 			_connectionPendingSendBytesThreshold, _connectionQueueSizeThreshold);
@@ -183,7 +184,7 @@ public class TcpConnectionManagerTests {
 			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
-				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
+				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
 			ESConsts.UnrestrictedPendingSendBytes, ESConsts.MaxConnectionQueueSize);
@@ -216,7 +217,7 @@ public class TcpConnectionManagerTests {
 			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
-				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
+				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
 			ESConsts.UnrestrictedPendingSendBytes, ESConsts.MaxConnectionQueueSize);
@@ -249,7 +250,7 @@ public class TcpConnectionManagerTests {
 			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
-				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
+				new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { mre.Set(); },
 			ESConsts.UnrestrictedPendingSendBytes, ESConsts.MaxConnectionQueueSize);

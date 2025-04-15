@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
-using EventStore.Core.Exceptions;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.Transforms;
+using KurrentDB.Core.Exceptions;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.Transforms;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;

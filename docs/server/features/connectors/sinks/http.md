@@ -1,6 +1,5 @@
 ---
 title: "HTTP Sink"
-order: 4
 ---
 
 ## Overview
@@ -137,4 +136,4 @@ https://api.example.com/TestEvent
 
 ### Tutorial
 
-[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](https://docs.kurrent.io/tutorials/HTTP_Connector.html)
+[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](/tutorials/http.md)

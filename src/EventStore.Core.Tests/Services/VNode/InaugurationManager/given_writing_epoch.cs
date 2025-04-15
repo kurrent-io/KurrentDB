@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.TimerService;
+using KurrentDB.Core.Services.TimerService;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.VNode.InaugurationManagement;

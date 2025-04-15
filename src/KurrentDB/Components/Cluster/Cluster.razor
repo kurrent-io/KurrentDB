@@ -2,18 +2,18 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @page "/ui/cluster"
+@using KurrentDB.Common.Utils
+@using KurrentDB.Components.Cluster.Monitoring
+@using KurrentDB.Components.Licensed
+@using KurrentDB.Core.Bus
+@using KurrentDB.Core.Metrics
+@using KurrentDB.Services
+@using KurrentDB.Tools
+@using Microsoft.AspNetCore.Authorization
 @inherits KurrentDB.Components.Licensed.WithLicense
 @attribute [Authorize]
 @attribute [ExcludeFromInteractiveRouting]
 @rendermode InteractiveServer
-@using EventStore.Common.Utils
-@using EventStore.Core.Bus
-@using EventStore.Core.Metrics
-@using KurrentDB.Services
-@using KurrentDB.Components.Cluster.Monitoring
-@using KurrentDB.Tools
-@using Microsoft.AspNetCore.Authorization
-@using KurrentDB.Components.Licensed
 @inject IPublisher Publisher
 @inject MonitoringService MonitoringService
 @inject InternalExporter InternalExporter

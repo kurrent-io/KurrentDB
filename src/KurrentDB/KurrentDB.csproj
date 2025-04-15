@@ -17,30 +17,26 @@
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.0" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Auth.Ldaps\EventStore.Auth.Ldaps.csproj" />
-		<ProjectReference Include="..\EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />
-		<ProjectReference Include="..\EventStore.Auth.OAuth\EventStore.Auth.OAuth.csproj" />
-		<ProjectReference Include="..\EventStore.Auth.StreamPolicyPlugin\EventStore.Auth.StreamPolicyPlugin.csproj" />
-		<ProjectReference Include="..\EventStore.Auth.UserCertificates\EventStore.Auth.UserCertificates.csproj" />
-		<ProjectReference Include="..\EventStore.ClusterNode.Web\EventStore.ClusterNode.Web.csproj" />
-		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
-		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
-		<ProjectReference Include="..\EventStore.Diagnostics.LogsEndpointPlugin\EventStore.Diagnostics.LogsEndpointPlugin.csproj" />
-		<ProjectReference Include="..\EventStore.OtlpExporterPlugin\EventStore.OtlpExporterPlugin.csproj" />
-		<ProjectReference Include="..\EventStore.PluginHosting\EventStore.PluginHosting.csproj" />
 		<ProjectReference Include="..\EventStore.Plugins.Connectors\EventStore.Plugins.Connectors.csproj" />
-		<ProjectReference Include="..\EventStore.POC.ConnectedSubsystemsPlugin\EventStore.POC.ConnectedSubsystemsPlugin.csproj" />
-		<ProjectReference Include="..\EventStore.Projections.Core\EventStore.Projections.Core.csproj" />
-		<ProjectReference Include="..\EventStore.Security.EncryptionAtRest\EventStore.Security.EncryptionAtRest.csproj" />
-		<ProjectReference Include="..\EventStore.AutoScavenge\EventStore.AutoScavenge.csproj" />
-		<ProjectReference Include="..\EventStore.TcpPlugin\EventStore.TcpPlugin.csproj" />
+		<ProjectReference Include="..\KurrentDB.Auth.Ldaps\KurrentDB.Auth.Ldaps.csproj" />
+		<ProjectReference Include="..\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />
+		<ProjectReference Include="..\KurrentDB.Auth.OAuth\KurrentDB.Auth.OAuth.csproj" />
+		<ProjectReference Include="..\KurrentDB.Auth.StreamPolicyPlugin\KurrentDB.Auth.StreamPolicyPlugin.csproj" />
+		<ProjectReference Include="..\KurrentDB.Auth.UserCertificates\KurrentDB.Auth.UserCertificates.csproj" />
+		<ProjectReference Include="..\KurrentDB.ClusterNode.Web\KurrentDB.ClusterNode.Web.csproj" />
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Diagnostics.LogsEndpointPlugin\KurrentDB.Diagnostics.LogsEndpointPlugin.csproj" />
+		<ProjectReference Include="..\KurrentDB.OtlpExporterPlugin\KurrentDB.OtlpExporterPlugin.csproj" />
+		<ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
+		<ProjectReference Include="..\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Security.EncryptionAtRest\KurrentDB.Security.EncryptionAtRest.csproj" />
+		<ProjectReference Include="..\KurrentDB.AutoScavenge\KurrentDB.AutoScavenge.csproj" />
+		<ProjectReference Include="..\KurrentDB.TcpPlugin\KurrentDB.TcpPlugin.csproj" />
 		<ProjectReference Include="..\KurrentDB.UI\KurrentDB.UI.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<None Include="..\EventStore.Common\Utils\version.properties">
-			<Link>version.properties</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
 		<None Update="..\..\LICENSE.md">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
@@ -57,6 +53,10 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 		<None Update="logconfig.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Include="..\KurrentDB.Common\Utils\version.properties">
+		  <Link>version.properties</Link>
 		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>

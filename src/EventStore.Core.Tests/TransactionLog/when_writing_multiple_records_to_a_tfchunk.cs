@@ -4,8 +4,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -100,7 +100,7 @@ public class when_writing_multiple_records_to_a_tfchunk<TLogFormat, TStreamId> :
 		var res = await _chunk.TryReadClosestForward(_prepare1.GetSizeWithLengthPrefixAndSuffix(), CancellationToken.None);
 		Assert.IsTrue(res.Success);
 		Assert.AreEqual(_prepare1.GetSizeWithLengthPrefixAndSuffix()
-		                + _prepare2.GetSizeWithLengthPrefixAndSuffix(), res.NextPosition);
+						+ _prepare2.GetSizeWithLengthPrefixAndSuffix(), res.NextPosition);
 		Assert.IsTrue(res.LogRecord is IPrepareLogRecord<TStreamId>);
 		Assert.AreEqual(_prepare2, res.LogRecord);
 	}
@@ -108,7 +108,7 @@ public class when_writing_multiple_records_to_a_tfchunk<TLogFormat, TStreamId> :
 	[Test]
 	public async Task cannot_read_past_second_record_with_closest_forward_method() {
 		var res = await _chunk.TryReadClosestForward(_prepare1.GetSizeWithLengthPrefixAndSuffix()
-		                                       + _prepare2.GetSizeWithLengthPrefixAndSuffix(), CancellationToken.None);
+											   + _prepare2.GetSizeWithLengthPrefixAndSuffix(), CancellationToken.None);
 		Assert.IsFalse(res.Success);
 	}
 

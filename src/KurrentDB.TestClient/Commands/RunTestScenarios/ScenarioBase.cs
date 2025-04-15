@@ -13,7 +13,8 @@ using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Services;
+using KurrentDB.Core.Services;
+using Serilog.Core;
 using ConsoleLogger = EventStore.ClientAPI.Common.Log.ConsoleLogger;
 using ILogger = Serilog.ILogger;
 using TcpCommand = EventStore.Core.Services.Transport.Tcp.TcpCommand;
@@ -25,7 +26,7 @@ internal abstract class ScenarioBase : IScenario {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<ScenarioBase>();
 
 	protected static readonly EventStore.ClientAPI.ILogger ApiLogger =
-		new ClientApiLoggerBridge(Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName,
+		new ClientApiLoggerBridge(Serilog.Log.ForContext(Constants.SourceContextPropertyName,
 			"client-api"));
 
 	protected readonly UserCredentials AdminCredentials =
@@ -178,7 +179,7 @@ internal abstract class ScenarioBase : IScenario {
 	}
 
 	protected T[][] Split<T>(IEnumerable<T> sequence, int parts) {
-		return sequence.Select((x, i) => new {GroupNum = i % parts, Item = x})
+		return sequence.Select((x, i) => new { GroupNum = i % parts, Item = x })
 			.GroupBy(x => x.GroupNum, y => y.Item)
 			.Select(x => x.ToArray())
 			.ToArray();
@@ -296,8 +297,8 @@ internal abstract class ScenarioBase : IScenario {
 	private int StartNewNode() {
 		var clientFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 		//../../KurrentDB/net471/KurrentDB.exe
-		var clusterNodeFolder = System.IO.Directory.GetParent(System.IO.Directory.GetParent(clientFolder).FullName)
-		                        + "/KurrentDB/net471/";
+		var clusterNodeFolder = Directory.GetParent(Directory.GetParent(clientFolder).FullName)
+								+ "/KurrentDB/net471/";
 		string fileName;
 		string argumentsHead;
 
@@ -452,7 +453,7 @@ internal abstract class ScenarioBase : IScenario {
 
 			var writeTask = store.AppendToStreamAsync(stream,
 				eventVersion - 1,
-				new[] {createEvent(eventVersion)});
+				new[] { createEvent(eventVersion) });
 
 			eventVersion += 1;
 

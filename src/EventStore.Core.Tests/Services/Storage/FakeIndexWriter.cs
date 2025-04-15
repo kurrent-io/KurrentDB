@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.Tests.Services.Storage;
 
@@ -18,11 +18,11 @@ public class FakeIndexWriter<TStreamId> : IIndexWriter<TStreamId> {
 
 	private TStreamId GetFakeStreamId() {
 		if (typeof(TStreamId) == typeof(long)) {
-			return (TStreamId) (object) 0L;
+			return (TStreamId)(object)0L;
 		}
 
 		if (typeof(TStreamId) == typeof(string)) {
-			return (TStreamId) (object) string.Empty;
+			return (TStreamId)(object)string.Empty;
 		}
 
 		throw new NotSupportedException();

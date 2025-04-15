@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Tests;
 
@@ -47,6 +47,6 @@ public static class IReadIndexExtensions {
 	public static List<CommitEventRecord> EventRecords(this IndexReadAllResult result) {
 		return result.Records
 			.Where(r => r.Event.EventStreamId != SystemStreams.StreamsCreatedStream
-			            && r.Event.EventStreamId != SystemStreams.EventTypesStream).ToList();
+						&& r.Event.EventStreamId != SystemStreams.EventTypesStream).ToList();
 	}
 }

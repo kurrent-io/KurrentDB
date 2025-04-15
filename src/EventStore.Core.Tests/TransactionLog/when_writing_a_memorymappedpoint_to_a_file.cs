@@ -3,7 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 

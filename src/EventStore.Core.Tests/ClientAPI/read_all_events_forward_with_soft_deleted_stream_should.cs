@@ -1,14 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
 using EventStore.Core.Tests.ClientAPI.Helpers;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
 using StreamMetadata = EventStore.ClientAPI.StreamMetadata;

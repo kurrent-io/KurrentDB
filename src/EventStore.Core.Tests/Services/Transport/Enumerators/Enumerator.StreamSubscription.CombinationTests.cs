@@ -5,11 +5,11 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Transport.Common;
-using EventStore.Core.Services.Transport.Enumerators;
-using EventStore.Core.Services.UserManagement;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
 
@@ -659,8 +659,8 @@ public partial class EnumeratorTests {
 			await NodeConnection.AppendToStreamAsync(stream, ExpectedVersion.Any, eventData);
 		}
 		private Task WriteEvent() => WriteEvent(_stream, "type", "{}", null);
-		private async Task SoftDelete() => await NodeConnection.DeleteStreamAsync(_stream, Data.ExpectedVersion.Any, hardDelete: false);
-		private async Task Tombstone() => await NodeConnection.DeleteStreamAsync(_stream, Data.ExpectedVersion.Any, hardDelete: true);
+		private async Task SoftDelete() => await NodeConnection.DeleteStreamAsync(_stream, KurrentDB.Core.Data.ExpectedVersion.Any, hardDelete: false);
+		private async Task Tombstone() => await NodeConnection.DeleteStreamAsync(_stream, KurrentDB.Core.Data.ExpectedVersion.Any, hardDelete: true);
 		private async Task RevokeAccessWithStreamAcl() => await WriteEvent(SystemStreams.MetastreamOf(_stream), "$metadata", @"{ ""$acl"": { ""$r"": [] } }", null);
 		private async Task RevokeAccessWithDefaultAcl() => await WriteEvent(SystemStreams.SettingsStream, "update-default-acl", @"{ ""$userStreamAcl"" : { ""$r"" : [] } }", null);
 
@@ -818,7 +818,7 @@ public partial class EnumeratorTests {
 						break;
 					default:
 						Assert.Fail($"Unexpected response: {response}");
-						break ;
+						break;
 				}
 			}
 

@@ -2,11 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Linq;
 using System.Net;
-using EventStore.Common.Utils;
-using EventStore.Core.Data;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 

@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -47,7 +47,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 
 			var result = await chunk.TryAppend(CreateRecord(chunk.ChunkHeader.GetGlobalLogPosition(logicalPos), _random.Next(10, 100)), CancellationToken.None);
 			Assert.True(result.Success);
-			actualPos = (int) result.NewPosition;
+			actualPos = (int)result.NewPosition;
 		}
 
 		await chunk.Flush(token);
@@ -75,7 +75,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 			posMap);
 
 		Assert.AreEqual(numEvents, logPositions.Count);
-		foreach(var logPos in logPositions)
+		foreach (var logPos in logPositions)
 			Assert.AreEqual(ChunkHeader.Size + logPos, await chunk.GetActualRawPosition(logPos, CancellationToken.None));
 		Assert.IsEmpty(posMap);
 	}
@@ -95,7 +95,7 @@ public class tfchunk_get_actual_raw_position_should<TLogFormat, TStreamId> : Spe
 			posMap);
 
 		Assert.AreEqual(numEvents, logPositions.Count);
-		foreach(var logPos in logPositions)
+		foreach (var logPos in logPositions)
 			Assert.AreEqual(ChunkHeader.Size + logPos, await chunk.GetActualRawPosition(logPos, CancellationToken.None));
 		Assert.IsEmpty(posMap);
 	}

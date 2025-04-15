@@ -2,16 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Data;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.AwakeReaderService;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
+using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServiceMessage;
 
 namespace EventStore.Core.Tests.AwakeService;
 
 [TestFixture]
 public class when_handling_subscribe_awake {
-	private Core.Services.AwakeReaderService.AwakeService _it;
+	private KurrentDB.Core.Services.AwakeReaderService.AwakeService _it;
 	private Exception _exception;
 	private IEnvelope _envelope;
 
@@ -23,7 +23,7 @@ public class when_handling_subscribe_awake {
 	}
 
 	private void Given() {
-		_it = new Core.Services.AwakeReaderService.AwakeService();
+		_it = new KurrentDB.Core.Services.AwakeReaderService.AwakeService();
 
 		_envelope = new NoopEnvelope();
 	}

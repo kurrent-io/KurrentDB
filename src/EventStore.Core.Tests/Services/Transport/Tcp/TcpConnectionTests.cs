@@ -1,14 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using EventStore.Transport.Tcp;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Transport.Tcp;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp;
 
@@ -33,7 +33,7 @@ public class TcpConnectionTests {
 			bool closed = false;
 			bool dataReceivedAfterClose = false;
 			var listeningSocket = CreateListeningSocket();
-			TaskCompletionSource<SocketError> connectionResult = new (TaskCreationOptions.RunContinuationsAsynchronously);
+			TaskCompletionSource<SocketError> connectionResult = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 			var clientTcpConnection = TcpConnection.CreateConnectingTcpConnection(
 				Guid.NewGuid(),
@@ -99,8 +99,8 @@ public class TcpConnectionTests {
 				(IPEndPoint)listeningSocket.LocalEndPoint,
 				new TcpClientConnector(),
 				TimeSpan.FromSeconds(5),
-				(conn) => {},
-				(conn, error) => {},
+				(conn) => { },
+				(conn, error) => { },
 				false);
 
 				clientTcpConnection.ConnectionClosed += (conn, error) => {

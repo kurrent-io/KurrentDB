@@ -3,11 +3,11 @@
 
 using System.Collections.Generic;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.RequestManager.Managers;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr;
@@ -19,7 +19,7 @@ public class when_transaction_multiple_write_completes_successfully : RequestMan
 	private long _event1Position = 1500;
 	private long _event2Position = 2000;
 	private long _event3Position = 2500;
-	
+
 	protected override TransactionWrite OnManager(FakePublisher publisher) {
 		return new TransactionWrite(
 		 	publisher,
@@ -28,7 +28,7 @@ public class when_transaction_multiple_write_completes_successfully : RequestMan
 			InternalCorrId,
 			ClientCorrId,
 			new[] { DummyEvent(), DummyEvent(), DummyEvent() },
-		    _transactionId,
+			_transactionId,
 			CommitSource);
 	}
 

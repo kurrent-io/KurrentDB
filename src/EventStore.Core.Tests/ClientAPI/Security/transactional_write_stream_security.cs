@@ -43,7 +43,7 @@ public class transactional_write_stream_security<TLogFormat, TStreamId> : Authen
 		var t1 = await TransStart("write-stream", "user1", "pa$$1");
 		await t1.WriteAsync(CreateEvents());
 		var t2 = Connection.ContinueTransaction(t1.TransactionId, new UserCredentials("badlogin", "badpass"));
-		
+
 		await AssertEx.ThrowsAsync<NotAuthenticatedException>(() => t2.CommitAsync());
 	}
 

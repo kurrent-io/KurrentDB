@@ -4,7 +4,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Index;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
@@ -39,7 +39,7 @@ public class
 		_mergeFile = GetTempFilePath();
 		_filename = GetTempFilePath();
 
-		_map = IndexMapTestFactory.FromFile(_filename, maxTablesPerLevel: 4, maxAutoMergeLevel:_maxAutoMergeIndexLevel);
+		_map = IndexMapTestFactory.FromFile(_filename, maxTablesPerLevel: 4, maxAutoMergeLevel: _maxAutoMergeIndexLevel);
 		var memtable = new HashListMemTable(_ptableVersion, maxSize: 10);
 		memtable.Add(0, 1, 0);
 

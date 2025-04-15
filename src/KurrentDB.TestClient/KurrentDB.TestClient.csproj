@@ -19,11 +19,11 @@
 		<PackageReference Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.BufferManagement\EventStore.BufferManagement.csproj" />
-		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
-		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
-		<ProjectReference Include="..\EventStore.Transport.Http\EventStore.Transport.Http.csproj" />
-		<ProjectReference Include="..\EventStore.Transport.Tcp\EventStore.Transport.Tcp.csproj" />
+		<ProjectReference Include="..\KurrentDB.BufferManagement\KurrentDB.BufferManagement.csproj" />
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
+		<ProjectReference Include="..\KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\KurrentDB\logconfig.json">

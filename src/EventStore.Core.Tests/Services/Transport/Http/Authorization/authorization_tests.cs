@@ -6,11 +6,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
 using EventStore.Core.Tests.Integration;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 using NUnit.Framework;
-using ContentType = EventStore.Transport.Http.ContentType;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
 
@@ -33,8 +35,8 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 		if (!string.IsNullOrEmpty(username)) {
 			client.DefaultRequestHeaders.Authorization =
 				new AuthenticationHeaderValue(
-					"Basic", System.Convert.ToBase64String(
-						System.Text.Encoding.ASCII.GetBytes(
+					"Basic", Convert.ToBase64String(
+						Encoding.ASCII.GetBytes(
 							$"{username}:{password}")));
 		}
 
@@ -119,7 +121,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 
 		//find the leader node
 		for (int i = 0; i < _nodes.Length; i++) {
-			if (_nodes[i].NodeState == Data.VNodeState.Leader) {
+			if (_nodes[i].NodeState == VNodeState.Leader) {
 				_leaderId = i;
 				break;
 			}
@@ -243,7 +245,7 @@ public class Authorization<TLogFormat, TStreamId> : specification_with_cluster<T
 		} else {
 			if (statusCode >= 300 && statusCode < 400) {
 				//Redirects are always allowed because authorization is done on the canonical url
-				Assert.GreaterOrEqual(statusCode,300);
+				Assert.GreaterOrEqual(statusCode, 300);
 				Assert.LessOrEqual(statusCode, 307);
 			} else {
 				if (userAuthorizationLevel == "None") {

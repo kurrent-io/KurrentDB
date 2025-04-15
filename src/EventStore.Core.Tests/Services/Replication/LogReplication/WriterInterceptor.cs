@@ -3,13 +3,13 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication;
 
-internal class WriterInterceptor:
+internal class WriterInterceptor :
 	IHandle<SystemMessage.SystemInit>,
 	IHandle<SystemMessage.StateChangeMessage>,
 	IHandle<SystemMessage.WriteEpoch>,
@@ -77,7 +77,7 @@ internal class WriterInterceptor:
 	public void Handle(MonitoringMessage.InternalStatsRequest message) => Process(message);
 	public void Handle(ReplicationMessage.ReplicaSubscribed message) => Process(message);
 	public void Handle(ReplicationMessage.CreateChunk message) => Process(message);
-	public void Handle(ReplicationMessage.RawChunkBulk message)  => Process(message);
+	public void Handle(ReplicationMessage.RawChunkBulk message) => Process(message);
 	public void Handle(ReplicationMessage.DataChunkBulk message) => Process(message);
 
 	protected virtual void Process(Message message) {

@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.RequestManager.Managers;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr;
 

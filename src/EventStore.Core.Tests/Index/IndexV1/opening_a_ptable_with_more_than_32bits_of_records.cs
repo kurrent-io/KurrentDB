@@ -6,11 +6,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
-using EventStore.Core.Index;
-using EventStore.Common.Utils;
-using EventStore.Common.Options;
-using MD5 = EventStore.Core.Hashing.MD5;
+using MD5 = KurrentDB.Core.Hashing.MD5;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
 
@@ -85,12 +84,12 @@ public class opening_a_ptable_with_more_than_32bits_of_records : SpecificationWi
 		base.TestFixtureTearDown();
 	}
 
-	[Test, Explicit,Ignore("Long running, unsafe")]
+	[Test, Explicit, Ignore("Long running, unsafe")]
 	public void count_should_be_right() {
 		Assert.AreEqual(_ptableCount, _ptable.Count);
 	}
 
-	[Test, Explicit,Ignore("Long running, unsafe")]
+	[Test, Explicit, Ignore("Long running, unsafe")]
 	public void filename_is_correct() {
 		Assert.AreEqual(Filename, _ptable.Filename);
 	}

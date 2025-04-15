@@ -3,18 +3,18 @@
 
 using System.Collections.Generic;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.RequestManager.Managers;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr;
 
 [TestFixture]
 public class when_transaction_start_completes_successfully : RequestManagerSpecification<TransactionStart> {
-	private long _commitPosition =3000;
+	private long _commitPosition = 3000;
 	private long _transactionPosition = 1564;
 	protected override TransactionStart OnManager(FakePublisher publisher) {
 		return new TransactionStart(
@@ -26,7 +26,7 @@ public class when_transaction_start_completes_successfully : RequestManagerSpeci
 			$"testStream-{nameof(when_transaction_commit_completes_successfully)}",
 			0,
 			CommitSource);
-		}
+	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
 		yield return new StorageMessage.PrepareAck(InternalCorrId, _transactionPosition, PrepareFlags.TransactionBegin);
@@ -45,8 +45,8 @@ public class when_transaction_start_completes_successfully : RequestManagerSpeci
 	[Test]
 	public void the_envelope_is_replied_to_with_success() {
 		Assert.That(Envelope.Replies.ContainsSingle<ClientMessage.TransactionStartCompleted>(
-			x => 
-				x.CorrelationId == ClientCorrId && 
+			x =>
+				x.CorrelationId == ClientCorrId &&
 				x.Result == OperationResult.Success &&
 				x.TransactionId == _transactionPosition));
 	}

@@ -4,9 +4,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.Transactions;
@@ -137,7 +137,7 @@ public class
 
 	[Test]
 	public async Task all_records_can_be_read_sequentially_page_by_page_in_forward_pass() {
-		var recs = new[] {_p2, _p4, _p1, _p3, _p5}; // in committed order
+		var recs = new[] { _p2, _p4, _p1, _p3, _p5 }; // in committed order
 
 		int count = 0;
 		var pos = new TFPos(0, 0);
@@ -154,7 +154,7 @@ public class
 
 	[Test]
 	public async Task all_records_can_be_read_sequentially_page_by_page_in_backward_pass() {
-		var recs = new[] {_p5, _p3, _p1, _p4, _p2}; // in reverse committed order
+		var recs = new[] { _p5, _p3, _p1, _p4, _p2 }; // in reverse committed order
 
 		int count = 0;
 		var pos = GetBackwardReadPos();
@@ -171,7 +171,7 @@ public class
 
 	[Test]
 	public async Task position_returned_for_prev_page_when_traversing_forward_allow_to_traverse_backward_correctly() {
-		var recs = new[] {_p2, _p4, _p1, _p3, _p5}; // in committed order
+		var recs = new[] { _p2, _p4, _p1, _p3, _p5 }; // in committed order
 
 		int count = 0;
 		var pos = new TFPos(0, 0);
@@ -199,7 +199,7 @@ public class
 
 	[Test]
 	public async Task position_returned_for_prev_page_when_traversing_backward_allow_to_traverse_forward_correctly() {
-		var recs = new[] {_p5, _p3, _p1, _p4, _p2}; // in reverse committed order
+		var recs = new[] { _p5, _p3, _p1, _p4, _p2 }; // in reverse committed order
 
 		int count = 0;
 		var pos = GetBackwardReadPos();
@@ -236,7 +236,7 @@ public class
 		IndexReadAllResult result;
 		TFPos pos = res1.PrevPos;
 		while ((result = await ReadIndex.ReadAllEventsBackward(pos, 1, CancellationToken.None)).Records.Count !=
-		       0) {
+			   0) {
 			Assert.AreEqual(1, result.Records.Count);
 			Assert.AreEqual(recs[count], result.Records[0].Event);
 			pos = result.NextPos;
@@ -251,7 +251,7 @@ public class
 		var res1 = await ReadIndex.ReadAllEventsForward(new TFPos(Db.Config.WriterCheckpoint.Read(), 0), 100, CancellationToken.None);
 		Assert.AreEqual(0, res1.Records.Count);
 
-		var recs = new[] {_p5, _p3, _p1, _p4, _p2}; // in reverse committed order
+		var recs = new[] { _p5, _p3, _p1, _p4, _p2 }; // in reverse committed order
 		int count = 0;
 		IndexReadAllResult result;
 		TFPos pos = res1.PrevPos;
@@ -271,7 +271,7 @@ public class
 		var res1 = await ReadIndex.ReadAllEventsBackward(new TFPos(_t2CommitPos, int.MaxValue), 100, CancellationToken.None);
 		Assert.AreEqual(0, res1.Records.Count);
 
-		var recs = new[] {_p2, _p4, _p1, _p3, _p5};
+		var recs = new[] { _p2, _p4, _p1, _p3, _p5 };
 		int count = 0;
 		IndexReadAllResult result;
 		TFPos pos = res1.PrevPos;
@@ -290,7 +290,7 @@ public class
 		var res1 = await ReadIndex.ReadAllEventsBackward(new TFPos(0, int.MaxValue), 100, CancellationToken.None);
 		Assert.AreEqual(0, res1.Records.Count);
 
-		var recs = new[] {_p2, _p4, _p1, _p3, _p5};
+		var recs = new[] { _p2, _p4, _p1, _p3, _p5 };
 		int count = 0;
 		IndexReadAllResult result;
 		TFPos pos = res1.PrevPos;

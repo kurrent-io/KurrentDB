@@ -1,8 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Common.Utils;
-using EventStore.Transport.Http;
+using KurrentDB.Common.Utils;
+using KurrentDB.Transport.Http;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;

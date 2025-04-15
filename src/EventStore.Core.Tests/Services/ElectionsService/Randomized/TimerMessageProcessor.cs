@@ -3,9 +3,9 @@
 
 using System;
 using System.Net;
-using EventStore.Core.Bus;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Infrastructure;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.TimerService;
 
 namespace EventStore.Core.Tests.Services.ElectionsService.Randomized;
 
@@ -23,12 +23,18 @@ internal class TimerMessageProcessor : IHandle<TimerMessage.Schedule> {
 		IPublisher bus,
 		int delayMin,
 		int delayMax) {
-		if (rnd == null) throw new ArgumentNullException("rnd");
-		if (runner == null) throw new ArgumentNullException("runner");
-		if (endPoint == null) throw new ArgumentNullException("endPoint");
-		if (bus == null) throw new ArgumentNullException("bus");
-		if (delayMin <= 0) throw new ArgumentOutOfRangeException("delayMin");
-		if (delayMin >= delayMax) throw new ArgumentException("DelayMin should be strictly less than DelayMax.");
+		if (rnd == null)
+			throw new ArgumentNullException("rnd");
+		if (runner == null)
+			throw new ArgumentNullException("runner");
+		if (endPoint == null)
+			throw new ArgumentNullException("endPoint");
+		if (bus == null)
+			throw new ArgumentNullException("bus");
+		if (delayMin <= 0)
+			throw new ArgumentOutOfRangeException("delayMin");
+		if (delayMin >= delayMax)
+			throw new ArgumentException("DelayMin should be strictly less than DelayMax.");
 
 		_rnd = rnd;
 		_runner = runner;

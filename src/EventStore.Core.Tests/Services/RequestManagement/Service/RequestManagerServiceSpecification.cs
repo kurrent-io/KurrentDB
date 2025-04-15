@@ -4,20 +4,20 @@
 using System;
 using System.Collections.Generic;
 using EventStore.ClientAPI.Common.Utils;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.RequestManager;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.Replication;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.RequestManager;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.Service;
 
-public abstract class RequestManagerServiceSpecification:
+public abstract class RequestManagerServiceSpecification :
 	IHandle<StorageMessage.WritePrepares>,
 	IHandle<StorageMessage.RequestCompleted> {
 	protected readonly TimeSpan PrepareTimeout = TimeSpan.FromMinutes(5);
@@ -32,7 +32,7 @@ public abstract class RequestManagerServiceSpecification:
 	protected FakeEnvelope Envelope = new();
 	protected SynchronousScheduler Dispatcher = new(nameof(RequestManagerServiceSpecification));
 	protected RequestManagementService Service;
-	protected bool GrantAccess =true;
+	protected bool GrantAccess = true;
 	protected long LogPosition = 100;
 	protected PrepareFlags PrepareFlags = PrepareFlags.Data;
 	protected string StreamId = $"{nameof(RequestManagerServiceSpecification)}-{Guid.NewGuid()}";

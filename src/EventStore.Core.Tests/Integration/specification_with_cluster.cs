@@ -2,16 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Net;
-using EventStore.ClientAPI;
-using EventStore.Core.Tests.Helpers;
-using NUnit.Framework;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
+using EventStore.ClientAPI;
+using EventStore.Core.Tests.Helpers;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Core.Data;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Integration;
 
@@ -113,14 +113,14 @@ public abstract class specification_with_cluster<TLogFormat, TStreamId> : Specif
 		try {
 			await Task.WhenAll(_nodes.Select(x => x.Started)).WithTimeout(TimeSpan.FromSeconds(60));
 		} catch (TimeoutException ex) {
-			if (_nodes.Select(x => x.Started).Count() < 2){
+			if (_nodes.Select(x => x.Started).Count() < 2) {
 				MiniNodeLogging.WriteLogs();
 				throw new TimeoutException($"Cluster nodes did not start. Statuses: {_nodes[0].NodeState}/{_nodes[1].NodeState}/{_nodes[2].NodeState}", ex);
 			}
 		}
 
 		// wait for cluster to be fully operational, tests depend on leader and followers
-		AssertEx.IsOrBecomesTrue(() => _nodes.Any(x => x.NodeState == Data.VNodeState.Leader),
+		AssertEx.IsOrBecomesTrue(() => _nodes.Any(x => x.NodeState == VNodeState.Leader),
 			timeout: TimeSpan.FromSeconds(30),
 			onFail: MiniNodeLogging.WriteLogs,
 			msg: "Waiting for leader timed out!");
@@ -171,14 +171,14 @@ public abstract class specification_with_cluster<TLogFormat, TStreamId> : Specif
 	}
 
 	protected MiniClusterNode<TLogFormat, TStreamId> GetLeader() {
-		var leader = _nodes.First(x => x.NodeState == Data.VNodeState.Leader);
+		var leader = _nodes.First(x => x.NodeState == VNodeState.Leader);
 		Assert.NotNull(leader, "Cluster doesn't have a leader available!");
 
 		return leader;
 	}
 
 	protected MiniClusterNode<TLogFormat, TStreamId>[] GetFollowers() {
-		var followers = _nodes.Where(x => x.NodeState == Data.VNodeState.Follower).ToArray();
+		var followers = _nodes.Where(x => x.NodeState == VNodeState.Follower).ToArray();
 		Assert.IsNotEmpty(followers, "Cluster doesn't have followers available!");
 
 		return followers;

@@ -5,16 +5,17 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.ClientAPI.Helpers;
-using EventStore.Core.Services;
-using EventStore.Core.Services.UserManagement;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using EventStore.Core.Messages;
+using EventStore.Core.Tests.ClientAPI.Helpers;
+using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 using ILogger = Serilog.ILogger;
-using System.Threading.Tasks;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge;
 

@@ -2,20 +2,21 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using System.Net.Http;
+using Serilog.Core;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.TestClient;
 
 internal static class PortsHelper {
 	private static readonly ILogger Log =
-		Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName, "PortsHelper");
+		Serilog.Log.ForContext(Constants.SourceContextPropertyName, "PortsHelper");
 
 	public const int PortStart = 45000;
 	public const int PortCount = 200;
@@ -53,7 +54,7 @@ internal static class PortsHelper {
 				var listenTask = Task.Factory.StartNew(() => {
 					try {
 						var context = httpListener.GetContext();
-						context.Response.Close(new byte[] {1, 2, 3}, true);
+						context.Response.Close(new byte[] { 1, 2, 3 }, true);
 					} catch (Exception exc) {
 						httpListenerError = exc;
 					}
@@ -94,19 +95,19 @@ internal static class PortsHelper {
 			if (!AvailablePorts.TryDequeue(out port))
 				throw new Exception("Couldn't get free TCP port for MiniNode.");
 
-/*
-                try
-                {
-                    var listener = new TcpListener(ip, port);
-                    listener.Start();
-                    listener.Stop();
-                }
-                catch (Exception)
-                {
-                    AvailablePorts.Enqueue(port);
-                    continue;
-                }
-*/
+			/*
+							try
+							{
+								var listener = new TcpListener(ip, port);
+								listener.Start();
+								listener.Stop();
+							}
+							catch (Exception)
+							{
+								AvailablePorts.Enqueue(port);
+								continue;
+							}
+			*/
 
 			try {
 				var httpListener = new HttpListener();
@@ -116,8 +117,8 @@ internal static class PortsHelper {
 			} catch (Exception) {
 				AvailablePorts.Enqueue(port);
 				continue;
-//                    throw new Exception(
-//                        string.Format("HttpListener couldn't listen on port {0}, but TcpListener was OK.\nError: {1}", port, exc), exc);
+				//                    throw new Exception(
+				//                        string.Format("HttpListener couldn't listen on port {0}, but TcpListener was OK.\nError: {1}", port, exc), exc);
 			}
 
 			return port;
@@ -130,23 +131,23 @@ internal static class PortsHelper {
 		AvailablePorts.Enqueue(port);
 	}
 
-/*
-        private static int[] GetRandomPorts(int from, int portCount)
-        {
-            var res = new int[portCount];
-            var rnd = new Random(Math.Abs(Guid.NewGuid().GetHashCode()));
-            for (int i = 0; i < portCount; ++i)
-            {
-                res[i] = from + i;
-            }
-            for (int i = 0; i < portCount; ++i)
-            {
-                int index = rnd.Next(portCount - i);
-                int tmp = res[i];
-                res[i] = res[i + index];
-                res[i + index] = tmp;
-            }
-            return res;
-        }
-*/
+	/*
+			private static int[] GetRandomPorts(int from, int portCount)
+			{
+				var res = new int[portCount];
+				var rnd = new Random(Math.Abs(Guid.NewGuid().GetHashCode()));
+				for (int i = 0; i < portCount; ++i)
+				{
+					res[i] = from + i;
+				}
+				for (int i = 0; i < portCount; ++i)
+				{
+					int index = rnd.Next(portCount - i);
+					int tmp = res[i];
+					res[i] = res[i + index];
+					res[i + index] = tmp;
+				}
+				return res;
+			}
+	*/
 }

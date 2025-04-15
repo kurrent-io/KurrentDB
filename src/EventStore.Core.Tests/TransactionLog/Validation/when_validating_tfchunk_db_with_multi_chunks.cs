@@ -2,11 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Exceptions;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
+using KurrentDB.Core.Exceptions;
+using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Validation;
@@ -115,7 +114,7 @@ public class when_validating_tfchunk_db_with_multi_chunks : SpecificationWithDir
 			DbUtil.CreateMultiChunk(config, 0, 1, GetFilePathFor("chunk-000000.000001"));
 
 			Assert.DoesNotThrowAsync(async () => await db.Open(verifyHash: false));
-			Assert.IsNotNull(db.Manager.GetChunk(2));
+			Assert.IsNotNull(await db.Manager.GetInitializedChunk(2, CancellationToken.None));
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000001")));
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000002.000000")));
@@ -131,7 +130,7 @@ public class when_validating_tfchunk_db_with_multi_chunks : SpecificationWithDir
 			DbUtil.CreateOngoingChunk(config, 2, GetFilePathFor("chunk-000002.000001"));
 
 			Assert.DoesNotThrowAsync(async () => await db.Open(verifyHash: false));
-			Assert.IsNotNull(db.Manager.GetChunk(2));
+			Assert.IsNotNull(await db.Manager.GetInitializedChunk(2, CancellationToken.None));
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000002")));
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000002.000001")));
@@ -148,7 +147,7 @@ public class when_validating_tfchunk_db_with_multi_chunks : SpecificationWithDir
 				logicalSize: 150);
 
 			Assert.DoesNotThrowAsync(async () => await db.Open(verifyHash: false));
-			Assert.IsNotNull(db.Manager.GetChunk(2));
+			Assert.IsNotNull(await db.Manager.GetInitializedChunk(2, CancellationToken.None));
 
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000000.000000")));
 			Assert.IsTrue(File.Exists(GetFilePathFor("chunk-000001.000001")));

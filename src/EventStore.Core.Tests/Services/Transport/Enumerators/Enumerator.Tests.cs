@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Transport.Common;
-using EventStore.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Enumerators;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Enumerators;

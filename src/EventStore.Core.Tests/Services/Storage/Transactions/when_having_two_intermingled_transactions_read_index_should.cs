@@ -3,11 +3,11 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
+using ReadStreamResult = KurrentDB.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.Transactions;
 
@@ -239,7 +239,7 @@ public class when_having_two_intermingled_transactions_read_index_should<TLogFor
 
 	[Test]
 	public async Task all_records_can_be_read_sequentially_page_by_page_in_forward_pass() {
-		var recs = new[] {_p2, _p4, _p1, _p3, _p5}; // in committed order
+		var recs = new[] { _p2, _p4, _p1, _p3, _p5 }; // in committed order
 
 		int count = 0;
 		var pos = new TFPos(0, 0);
@@ -256,7 +256,7 @@ public class when_having_two_intermingled_transactions_read_index_should<TLogFor
 
 	[Test]
 	public async Task all_records_can_be_read_sequentially_page_by_page_in_backward_pass() {
-		var recs = new[] {_p5, _p3, _p1, _p4, _p2}; // in reverse committed order
+		var recs = new[] { _p5, _p3, _p1, _p4, _p2 }; // in reverse committed order
 
 		int count = 0;
 		var pos = GetBackwardReadPos();
@@ -273,7 +273,7 @@ public class when_having_two_intermingled_transactions_read_index_should<TLogFor
 
 	[Test]
 	public async Task position_returned_for_prev_page_when_traversing_forward_allow_to_traverse_backward_correctly() {
-		var recs = new[] {_p2, _p4, _p1, _p3, _p5}; // in committed order
+		var recs = new[] { _p2, _p4, _p1, _p3, _p5 }; // in committed order
 
 		int count = 0;
 		var pos = new TFPos(0, 0);
@@ -301,7 +301,7 @@ public class when_having_two_intermingled_transactions_read_index_should<TLogFor
 
 	[Test]
 	public async Task position_returned_for_prev_page_when_traversing_backward_allow_to_traverse_forward_correctly() {
-		var recs = new[] {_p5, _p3, _p1, _p4, _p2}; // in reverse committed order
+		var recs = new[] { _p5, _p3, _p1, _p4, _p2 }; // in reverse committed order
 
 		int count = 0;
 		var pos = GetBackwardReadPos();

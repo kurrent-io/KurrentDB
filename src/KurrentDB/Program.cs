@@ -10,17 +10,17 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.DevCertificates;
-using EventStore.Common.Exceptions;
-using EventStore.Common.Log;
-using EventStore.Common.Utils;
-using EventStore.Core;
-using EventStore.Core.Certificates;
-using EventStore.Core.Configuration;
-using EventStore.Core.Configuration.Sources;
-using EventStore.Core.Services.Transport.Http;
 using KurrentDB;
+using KurrentDB.Common.DevCertificates;
+using KurrentDB.Common.Exceptions;
+using KurrentDB.Common.Log;
+using KurrentDB.Common.Utils;
 using KurrentDB.Components;
+using KurrentDB.Core;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Services;
 using KurrentDB.Tools;
 using KurrentDB.UI.Services;
@@ -35,6 +35,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using Serilog;
 using Serilog.Events;
+using _Imports = KurrentDB.UI._Imports;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 var optionsWithLegacyDefaults = LocationOptionWithLegacyDefault.SupportedLegacyLocations;
@@ -139,7 +140,7 @@ try {
 			manager.TrustCertificate(certs[0]);
 		} else {
 			Log.Warning("Automatically trusting dev certs is only supported on Windows.\n" +
-			            "Please trust certificate {cert} if it's not trusted already.", certs[0]);
+						"Please trust certificate {cert} if it's not trusted already.", certs[0]);
 		}
 
 		Log.Information("Running in dev mode using certificate '{cert}'", certs[0]);
@@ -268,7 +269,7 @@ try {
 				.DisableAntiforgery()
 				.AddInteractiveServerRenderMode()
 				.AddInteractiveWebAssemblyRenderMode()
-				.AddAdditionalAssemblies(typeof(KurrentDB.UI._Imports).Assembly);
+				.AddAdditionalAssemblies(typeof(_Imports).Assembly);
 			await app.RunAsync(token);
 
 			exitCodeSource.TrySetResult(0);

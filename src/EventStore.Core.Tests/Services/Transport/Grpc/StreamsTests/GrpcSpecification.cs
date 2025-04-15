@@ -14,12 +14,12 @@ using EventStore.Core.Tests.Helpers;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
 using Convert = System.Convert;
-using Streams = EventStore.Client.Streams.Streams;
 using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.Chunks;
+using Streams = EventStore.Client.Streams.Streams;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.StreamsTests;
 

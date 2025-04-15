@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Services.Storage.EpochManager;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
-using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.Tests.Services.Storage.EpochManager;
 
@@ -52,7 +52,7 @@ public abstract class
 		_db = new TFChunkDb(TFChunkHelper.CreateDbConfig(PathName, 0));
 		await _db.Open();
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 		_epochManager = new EpochManager<TStreamId>(_mainBus,
 			CachedEpochCount,
 			_db.Config.EpochCheckpoint,

@@ -2,12 +2,12 @@
 @* Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md). *@
 
 @page "/ui/license"
-@inherits KurrentDB.Components.ServerSide.ServerSideBase
-@attribute [Authorize]
-@using EventStore.Licensing
 @using EventStore.Plugins.Licensing
 @using JetBrains.Annotations
+@using KurrentDB.Licensing
 @using Microsoft.AspNetCore.Authorization
+@inherits KurrentDB.Components.ServerSide.ServerSideBase
+@attribute [Authorize]
 
 <PageTitle>KurrentDB: License</PageTitle>
 

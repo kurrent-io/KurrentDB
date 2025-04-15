@@ -2,27 +2,25 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.TransactionLog;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Util;
 using NUnit.Framework;
-using EventStore.Common.Utils;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
-using EventStore.Core.Index;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Util;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
 
 namespace EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;
 
@@ -77,7 +75,7 @@ public abstract class MiniNodeWithExistingRecords<TLogFormat, TStreamId> : Speci
 
 		// create DB
 		Writer = new TFChunkWriter(Db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 
 		var pm = _logFormatFactory.CreatePartitionManager(
 			reader: new TFChunkReader(Db, WriterCheckpoint),

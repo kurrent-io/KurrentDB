@@ -8,11 +8,11 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Common.Utils;
 using EventStore.Core.Messages;
-using EventStore.Transport.Http.Codecs;
-using NUnit.Framework;
 using EventStore.Core.Tests.ClientAPI;
+using KurrentDB.Common.Utils;
+using KurrentDB.Transport.Http.Codecs;
+using NUnit.Framework;
 using HttpMethod = System.Net.Http.HttpMethod;
 using HttpStatusCode = System.Net.HttpStatusCode;
 

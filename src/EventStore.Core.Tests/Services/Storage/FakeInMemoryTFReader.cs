@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.Tests.Services.Storage;
 
@@ -17,11 +17,11 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 
 	public int NumReads { get; private set; }
 
-	public FakeInMemoryTfReader(int recordOffset){
+	public FakeInMemoryTfReader(int recordOffset) {
 		_recordOffset = recordOffset;
 	}
 
-	public void AddRecord(ILogRecord record, long position){
+	public void AddRecord(ILogRecord record, long position) {
 		_records.Add(position, record);
 	}
 
@@ -33,11 +33,11 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 		NumReads++;
 
 		SeqReadResult result;
-		if (_records.ContainsKey(_curPosition)){
+		if (_records.ContainsKey(_curPosition)) {
 			var pos = _curPosition;
 			_curPosition += _recordOffset;
 			result = new(true, false, _records[pos], _recordOffset, pos, pos + _recordOffset);
-		} else{
+		} else {
 			result = new(false, false, null, 0, 0, 0);
 		}
 
@@ -51,9 +51,9 @@ public class FakeInMemoryTfReader : ITransactionFileReader {
 		NumReads++;
 
 		RecordReadResult result;
-		if (_records.ContainsKey(position)){
+		if (_records.ContainsKey(position)) {
 			result = new RecordReadResult(true, 0, _records[position], 0);
-		} else{
+		} else {
 			result = new RecordReadResult(false, 0, _records[position], 0);
 		}
 

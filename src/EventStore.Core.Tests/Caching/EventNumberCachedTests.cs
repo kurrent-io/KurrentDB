@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using EventStore.Core.Caching;
-using EventStore.Core.DataStructures;
+using KurrentDB.Core.Caching;
+using KurrentDB.Core.DataStructures;
 using NUnit.Framework;
-using EventNumberCached = EventStore.Core.Services.Storage.ReaderIndex.IndexBackend<string>.EventNumberCached;
+using EventNumberCached = KurrentDB.Core.Services.Storage.ReaderIndex.IndexBackend<string>.EventNumberCached;
 
 namespace EventStore.Core.Tests.Caching;
 
@@ -22,7 +22,7 @@ public class EventNumberCachedTests {
 
 	[Test]
 	public void size_in_lru_cache_is_measured_correctly_with_string_key() {
-		var lruCache = new LRUCache<string, EventNumberCached>(string.Empty, 1, (_,_) => 0);
+		var lruCache = new LRUCache<string, EventNumberCached>(string.Empty, 1, (_, _) => 0);
 
 		// initialize any underlying data structures (the dictionary in this case)
 		lruCache.Put("test", new EventNumberCached(0, 0));
@@ -41,7 +41,7 @@ public class EventNumberCachedTests {
 
 	[Test]
 	public void size_in_lru_cache_is_measured_correctly_with_long_key() {
-		var lruCache = new LRUCache<long, EventNumberCached>(string.Empty, 1, (_,_) => 0);
+		var lruCache = new LRUCache<long, EventNumberCached>(string.Empty, 1, (_, _) => 0);
 
 		// initialize any underlying data structures (the dictionary in this case)
 		lruCache.Put(123, new EventNumberCached(0, 0));

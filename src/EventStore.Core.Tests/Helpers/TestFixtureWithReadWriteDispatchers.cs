@@ -4,16 +4,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
+using System.Linq;
+using DotNext;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Bus.Helpers;
 using EventStore.Core.Tests.Services.TimeService;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
 using NUnit.Framework;
-using System.Linq;
-using EventStore.Core.Metrics;
-using DotNext;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
 
 namespace EventStore.Core.Tests.Helpers;
 
@@ -185,7 +186,8 @@ public abstract class TestFixtureWithReadWriteDispatchers {
 			else if (Messages != null)
 				foreach (var message in Messages)
 					yield return message;
-			else yield return null;
+			else
+				yield return null;
 		}
 
 		IEnumerator IEnumerable.GetEnumerator() {

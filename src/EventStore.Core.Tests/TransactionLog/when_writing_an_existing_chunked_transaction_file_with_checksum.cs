@@ -6,11 +6,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.IO;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -41,7 +41,7 @@ public class when_writing_an_existing_chunked_transaction_file_with_checksum<TLo
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 
 		var tf = new TFChunkWriter(db);
-		tf.Open();
+		await tf.Open(CancellationToken.None);
 		var record = LogRecord.Prepare(
 			factory: recordFactory,
 			logPosition: _checkpoint.Read(),
@@ -63,8 +63,7 @@ public class when_writing_an_existing_chunked_transaction_file_with_checksum<TLo
 
 		Assert.AreEqual(record.GetSizeWithLengthPrefixAndSuffix() + 137,
 			_checkpoint.Read()); //137 is fluff assigned to beginning of checkpoint
-		await using var filestream = File.Open(filename, new FileStreamOptions
-			{ Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
+		await using var filestream = File.Open(filename, new FileStreamOptions { Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
 		filestream.Seek(ChunkHeader.Size + 137 + sizeof(int), SeekOrigin.Begin);
 		var recordLength = filestream.Length - filestream.Position;
 

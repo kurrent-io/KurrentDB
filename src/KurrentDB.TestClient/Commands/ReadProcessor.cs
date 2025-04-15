@@ -4,8 +4,8 @@
 using System;
 using System.Diagnostics;
 using EventStore.Client.Messages;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Tcp;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.TestClient.Commands;
 
@@ -60,12 +60,12 @@ internal class ReadProcessor : ICmdProcessor {
 
 				var dto = pkg.Data.Deserialize<ReadEventCompleted>();
 				context.Log.Information("READ events from <{stream}>:\n\n"
-				                 + "\tEventStreamId: {stream}\n"
-				                 + "\tEventNumber:   {eventNumber}\n"
-				                 + "\tReadResult:    {readResult}\n"
-				                 + "\tEventType:     {eventType}\n"
-				                 + "\tData:          {data}\n"
-				                 + "\tMetadata:      {metadata}\n",
+								 + "\tEventStreamId: {stream}\n"
+								 + "\tEventNumber:   {eventNumber}\n"
+								 + "\tReadResult:    {readResult}\n"
+								 + "\tEventType:     {eventType}\n"
+								 + "\tData:          {data}\n"
+								 + "\tMetadata:      {metadata}\n",
 					eventStreamId,
 					eventStreamId,
 					dto.Event.Event.EventNumber,

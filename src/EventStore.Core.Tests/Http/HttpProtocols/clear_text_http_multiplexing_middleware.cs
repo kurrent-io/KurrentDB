@@ -6,7 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Transport.Http;
+using KurrentDB.Core.Services.Transport.Http;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server.Features;
@@ -18,7 +18,7 @@ using NUnit.Framework;
 namespace EventStore.Core.Tests.Http.HttpProtocols;
 
 
-public class Startup : IStartup{
+public class Startup : IStartup {
 	public IServiceProvider ConfigureServices(IServiceCollection services) {
 		return services.AddRouting().BuildServiceProvider();
 	}
@@ -63,7 +63,7 @@ public class clear_text_http_multiplexing_middleware {
 		using var client = new HttpClient();
 		var request = new HttpRequestMessage(HttpMethod.Get, _endpoint + "/test");
 		var result = await client.SendAsync(request);
-		Assert.AreEqual(new Version(1,1), result.Version);
+		Assert.AreEqual(new Version(1, 1), result.Version);
 		Assert.AreEqual("hello", await result.Content.ReadAsStringAsync());
 	}
 
@@ -76,7 +76,7 @@ public class clear_text_http_multiplexing_middleware {
 		};
 
 		var result = await client.SendAsync(request);
-		Assert.AreEqual(new Version(2,0), result.Version);
+		Assert.AreEqual(new Version(2, 0), result.Version);
 		Assert.AreEqual("hello", await result.Content.ReadAsStringAsync());
 	}
 

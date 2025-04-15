@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication;
 

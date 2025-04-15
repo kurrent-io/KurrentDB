@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="BenchmarkDotNet" Version="0.13.10" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Projections.Core.Tests\KurrentDB.Projections.Core.Tests.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
+	</ItemGroup>
+</Project>

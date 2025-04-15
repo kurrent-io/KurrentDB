@@ -6,12 +6,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using EventStore.Client;
+using EventStore.Client.Gossip;
+using EventStore.Client.Operations;
+using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.ServerFeatures;
+using EventStore.Client.Streams;
+using EventStore.Client.Users;
 using EventStore.Core.Tests.Integration;
 using Google.Protobuf.Reflection;
 using Grpc.Net.Client;
+using Kurrent.Client.Redaction;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
+using Empty = EventStore.Client.Empty;
 
 namespace EventStore.Core.Tests.Services.Transport.Grpc.ServerFeaturesTests;
 
@@ -21,33 +28,35 @@ public class ServerFeaturesTest {
 	public class
 		when_getting_supported_methods<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 
-		private List<SupportedMethod> _supportedEndPoints = new ();
-		private List<SupportedMethod> _expectedEndPoints = new ();
+		private List<SupportedMethod> _supportedEndPoints = new();
+		private List<SupportedMethod> _expectedEndPoints = new();
 		private string _expectedServerVersion;
 		private string _serverVersion;
 
 		protected override async Task Given() {
-			var streamEndPoints = GetEndPoints(Client.Streams.Streams.Descriptor);
+			var streamEndPoints = GetEndPoints(Streams.Descriptor);
 			foreach (var ep in streamEndPoints) {
-				if (ep.MethodName.Contains("read")) ep.Features.AddRange(new[] {"position", "events"});
-				else if (ep.MethodName.Contains("batchappend")) ep.Features.Add("deadline_duration");
+				if (ep.MethodName.Contains("read"))
+					ep.Features.AddRange(new[] { "position", "events" });
+				else if (ep.MethodName.Contains("batchappend"))
+					ep.Features.Add("deadline_duration");
 			}
 
-			var psubEndPoints = GetEndPoints(Client.PersistentSubscriptions.PersistentSubscriptions.Descriptor);
+			var psubEndPoints = GetEndPoints(PersistentSubscriptions.Descriptor);
 			foreach (var ep in psubEndPoints) {
-				ep.Features.AddRange(new[] {"stream", "all"});
+				ep.Features.AddRange(new[] { "stream", "all" });
 			}
 
 			_expectedEndPoints.AddRange(streamEndPoints);
 			_expectedEndPoints.AddRange(psubEndPoints);
-			_expectedEndPoints.AddRange(GetEndPoints(Client.Operations.Operations.Descriptor));
-			_expectedEndPoints.AddRange(GetEndPoints(Client.Users.Users.Descriptor));
-			_expectedEndPoints.AddRange(GetEndPoints(Client.Gossip.Gossip.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(Operations.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(Users.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(Gossip.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(Client.Monitoring.Monitoring.Descriptor));
-			_expectedEndPoints.AddRange(GetEndPoints(Kurrent.Client.Redaction.Redaction.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(Redaction.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(ServerFeatures.Descriptor));
 
-			var versionParts = EventStore.Common.Utils.VersionInfo.Version.Split('.');
+			var versionParts = VersionInfo.Version.Split('.');
 			_expectedServerVersion = string.Join('.', versionParts.Take(3));
 
 			var node = GetLeader();

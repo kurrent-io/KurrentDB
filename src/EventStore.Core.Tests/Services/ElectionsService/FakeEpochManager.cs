@@ -9,8 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Collections.Generic;
 using DotNext.Threading;
-using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Services.Storage.EpochManager;
+using KurrentDB.Core.TransactionLog.LogRecords;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
 
@@ -63,8 +63,8 @@ internal class FakeEpochManager : IEpochManager {
 		ValueTask<bool> task;
 		try {
 			task = new(_epochs.FirstOrDefault(e => e.EpochNumber == epochNumber) is { } epoch
-			           && epoch.EpochNumber == epochNumber
-			           && epoch.EpochId == epochId);
+					   && epoch.EpochNumber == epochNumber
+					   && epoch.EpochId == epochId);
 		} catch (Exception e) {
 			task = ValueTask.FromException<bool>(e);
 		}

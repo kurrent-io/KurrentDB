@@ -2,14 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Specialized;
 using System.IO;
 using System.IO.Compression;
-using EventStore.Transport.Http.EntityManagement;
-using NUnit.Framework;
-using System.Net;
 using System.Text;
-using EventStore.Transport.Http;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.EntityManagement;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
 
@@ -37,7 +35,8 @@ class compress_response_should {
 	[Test]
 	public void with_gzip_compression_algo_and_string_larger_than_50kb_data_is_gzipped() {
 		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < 60 * 1024; i++) sb.Append("A");
+		for (int i = 0; i < 60 * 1024; i++)
+			sb.Append("A");
 		String testString = sb.ToString();
 
 		var response =
@@ -75,7 +74,8 @@ class compress_response_should {
 	[Test]
 	public void with_deflate_compression_algo_and_string_larger_than_50kb_data_is_deflated() {
 		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < 60 * 1024; i++) sb.Append("A");
+		for (int i = 0; i < 60 * 1024; i++)
+			sb.Append("A");
 		String testString = sb.ToString();
 
 		var response =

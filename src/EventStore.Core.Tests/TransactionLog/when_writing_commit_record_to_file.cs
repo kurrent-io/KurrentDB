@@ -4,13 +4,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.LogCommon;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.LogCommon;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -30,7 +28,7 @@ public class when_writing_commit_record_to_file : SpecificationWithDirectoryPerT
 			1024));
 		await _db.Open();
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 		_record = new CommitLogRecord(logPosition: 0,
 			correlationId: _eventId,
 			transactionPosition: 4321,

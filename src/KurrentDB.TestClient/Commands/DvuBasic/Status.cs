@@ -1,14 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 #pragma warning disable 1591
 
 namespace KurrentDB.TestClient.Commands.DvuBasic;
 
 public class Status {
-	private readonly Serilog.ILogger _log;
+	private readonly ILogger _log;
 
 	public int ThreadId { get; private set; }
 	public bool Success { get; private set; }

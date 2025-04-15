@@ -2,15 +2,15 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using NUnit.Framework;
-using EventStore.Core.Tests.Integration;
 using EventStore.Core.Messages;
-using EventStore.Core.Data;
+using EventStore.Core.Tests.Integration;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Replication.ReadStream;
 
@@ -35,10 +35,10 @@ public class when_subscribed_to_stream_on_leader_and_event_is_replicated_to_foll
 
 	private void Handle(SystemMessage.StateChangeMessage msg) {
 		switch (msg.State) {
-			case Data.VNodeState.Leader:
+			case VNodeState.Leader:
 				_expectedNumberOfRoleAssignments.Signal();
 				break;
-			case Data.VNodeState.Follower:
+			case VNodeState.Follower:
 				_expectedNumberOfRoleAssignments.Signal();
 				break;
 		}
@@ -79,10 +79,10 @@ public class when_subscribed_to_stream_on_leader_and_event_is_replicated_to_foll
 			() => {
 				var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
 				return replicas[0].Db.Config.IndexCheckpoint.Read() == leaderIndex &&
-				       replicas[1].Db.Config.IndexCheckpoint.Read() == leaderIndex;
+					   replicas[1].Db.Config.IndexCheckpoint.Read() == leaderIndex;
 
 			},
-			timeout:TimeSpan.FromSeconds(2));
+			timeout: TimeSpan.FromSeconds(2));
 	}
 
 	[Test]

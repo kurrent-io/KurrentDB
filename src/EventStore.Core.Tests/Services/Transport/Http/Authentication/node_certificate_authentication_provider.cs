@@ -7,9 +7,9 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Transport.Http.Authentication;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Core.Services.Transport.Http.Authentication;
+using KurrentDB.Core.Services.UserManagement;
 using Microsoft.AspNetCore.Http;
 using NUnit.Framework;
 
@@ -94,8 +94,7 @@ public class
 		_context = new DefaultHttpContext();
 		X509Certificate2 certificate;
 
-		using (RSA rsa = RSA.Create())
-		{
+		using (RSA rsa = RSA.Create()) {
 			var certReq = new CertificateRequest("CN=hello", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 			var sanBuilder = new SubjectAlternativeNameBuilder();
 			sanBuilder.AddIpAddress(IPAddress.Loopback);
@@ -137,8 +136,7 @@ public class
 		_context = new DefaultHttpContext();
 		X509Certificate2 certificate;
 
-		using (RSA rsa = RSA.Create())
-		{
+		using (RSA rsa = RSA.Create()) {
 			var certReq = new CertificateRequest("CN=eventstoredb-node", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
 			var sanBuilder = new SubjectAlternativeNameBuilder();
@@ -194,8 +192,7 @@ public class
 		_context = new DefaultHttpContext();
 		X509Certificate2 certificate;
 
-		using (RSA rsa = RSA.Create())
-		{
+		using (RSA rsa = RSA.Create()) {
 			var certReq = new CertificateRequest("C=UK, O=Event Store Ltd, CN=eventstoredb-node", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
 			var sanBuilder = new SubjectAlternativeNameBuilder();
@@ -252,8 +249,7 @@ public class
 		_context = new DefaultHttpContext();
 		X509Certificate2 certificate;
 
-		using (RSA rsa = RSA.Create())
-		{
+		using (RSA rsa = RSA.Create()) {
 			var certReq = new CertificateRequest("CN=hello", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 			var sanBuilder = new SubjectAlternativeNameBuilder();
 			sanBuilder.AddDnsName("localhost");
@@ -295,8 +291,7 @@ public class
 		_context = new DefaultHttpContext();
 		X509Certificate2 certificate;
 
-		using (RSA rsa = RSA.Create())
-		{
+		using (RSA rsa = RSA.Create()) {
 			var certReq = new CertificateRequest("CN=eventstoredb-node", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 
 			var sanBuilder = new SubjectAlternativeNameBuilder();
@@ -352,8 +347,7 @@ public class
 		_context = new DefaultHttpContext();
 		X509Certificate2 certificate;
 
-		using (RSA rsa = RSA.Create())
-		{
+		using (RSA rsa = RSA.Create()) {
 			var certReq = new CertificateRequest("CN=eventstoredb-node", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
 			var sanBuilder = new SubjectAlternativeNameBuilder();
 			sanBuilder.AddEmailAddress("hello@hello.org");

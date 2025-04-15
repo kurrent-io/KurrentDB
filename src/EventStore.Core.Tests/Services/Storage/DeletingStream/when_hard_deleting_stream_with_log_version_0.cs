@@ -1,16 +1,16 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using NUnit.Framework;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Services;
 using System;
-using EventStore.Core.TransactionLog;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.LogCommon;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.LogCommon;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.DeletingStream;
 
@@ -44,7 +44,7 @@ public class when_hard_deleting_stream_with_log_version_0<TLogFormat, TStreamId>
 
 	[Test]
 	public async Task should_change_expected_version_to_deleted_event_number_when_reading() {
-		var chunk = Db.Manager.GetChunk(0);
+		var chunk = await Db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		var chunkRecords = new List<ILogRecord>();
 		RecordReadResult result = await chunk.TryReadFirst(CancellationToken.None);
 		while (result.Success) {

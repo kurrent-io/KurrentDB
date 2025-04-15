@@ -3,9 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Data.Redaction;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Data.Redaction;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RedactionService;
@@ -13,7 +13,7 @@ namespace EventStore.Core.Tests.Services.RedactionService;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class LockTests<TLogFormat, TStreamId> : RedactionServiceTestFixture<TLogFormat,TStreamId> {
+public class LockTests<TLogFormat, TStreamId> : RedactionServiceTestFixture<TLogFormat, TStreamId> {
 	private async Task<RedactionMessage.AcquireChunksLockCompleted> TryLock() {
 		var e = new TcsEnvelope<RedactionMessage.AcquireChunksLockCompleted>();
 		RedactionService.Handle(new RedactionMessage.AcquireChunksLock(e));

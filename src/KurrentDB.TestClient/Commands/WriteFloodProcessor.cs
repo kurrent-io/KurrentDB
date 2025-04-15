@@ -7,10 +7,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using EventStore.Client.Messages;
-using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;
-using EventStore.Transport.Tcp;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 using KurrentDB.TestClient.Statistics;
+using KurrentDB.Transport.Tcp;
 
 namespace KurrentDB.TestClient.Commands;
 
@@ -130,7 +131,7 @@ internal class WriteFloodProcessor : ICmdProcessor {
 					var localAll = Interlocked.Add(ref stats.All, batchSize);
 					if (localAll % 100000 == 0) {
 						stats.Elapsed = sw2.Elapsed;
-						stats.Rate =  1000.0 * 100000 / stats.Elapsed.TotalMilliseconds;
+						stats.Rate = 1000.0 * 100000 / stats.Elapsed.TotalMilliseconds;
 						sw2.Restart();
 						context.Log.Debug(
 							"\nDONE TOTAL {writes} WRITES IN {elapsed} ({rate:0.0}/s) [S:{success}, F:{failures} (WEV:{wrongExpectedVersion}, " +
@@ -155,9 +156,9 @@ internal class WriteFloodProcessor : ICmdProcessor {
 						events[q] = new NewEvent(Guid.NewGuid().ToByteArray(),
 							"TakeSomeSpaceEvent",
 							1, 0,
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes(
+							Helper.UTF8NoBom.GetBytes(
 								"{ \"DATA\" : \"" + new string('*', size) + "\"}"),
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes(
+							Helper.UTF8NoBom.GetBytes(
 								"{ \"METADATA\" : \"" + new string('$', 100) + "\"}"));
 					}
 
@@ -173,11 +174,11 @@ internal class WriteFloodProcessor : ICmdProcessor {
 
 					var localSent = Interlocked.Increment(ref sent);
 					while (localSent - Interlocked.Read(ref received) >
-					       context._tcpTestClient.Options.WriteWindow / clientsCnt) {
+						   context._tcpTestClient.Options.WriteWindow / clientsCnt) {
 						Thread.Sleep(1);
 					}
 				}
-			}) {IsBackground = true});
+			}) { IsBackground = true });
 		}
 
 		var sw = Stopwatch.StartNew();

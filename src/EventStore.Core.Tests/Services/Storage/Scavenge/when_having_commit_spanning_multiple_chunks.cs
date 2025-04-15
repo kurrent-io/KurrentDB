@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge;
@@ -69,13 +69,12 @@ public class when_having_commit_spanning_multiple_chunks<TLogFormat, TStreamId> 
 	[Test]
 	public async Task all_chunks_are_merged_and_scavenged() {
 		foreach (var rec in _scavenged) {
-			var chunk = Db.Manager.GetChunkFor(rec.LogPosition);
-			Assert.IsTrue(await chunk.TryReadAt(rec.LogPosition, couldBeScavenged: true, CancellationToken.None) is
-				{ Success: false });
+			var chunk = await Db.Manager.GetInitializedChunkFor(rec.LogPosition, CancellationToken.None);
+			Assert.IsTrue(await chunk.TryReadAt(rec.LogPosition, couldBeScavenged: true, CancellationToken.None) is { Success: false });
 		}
 
 		foreach (var rec in _survivors) {
-			var chunk = Db.Manager.GetChunkFor(rec.LogPosition);
+			var chunk = await Db.Manager.GetInitializedChunkFor(rec.LogPosition, CancellationToken.None);
 			var res = await chunk.TryReadAt(rec.LogPosition, couldBeScavenged: false, CancellationToken.None);
 			Assert.IsTrue(res.Success);
 			Assert.AreEqual(rec, res.LogRecord);

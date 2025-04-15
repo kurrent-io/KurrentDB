@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	</PropertyGroup>
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="Microsoft.Net.Http.Headers" Version="8.0.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.BufferManagement\KurrentDB.BufferManagement.csproj" />
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+	</ItemGroup>
+</Project>

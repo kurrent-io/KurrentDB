@@ -10,10 +10,10 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Transport.Tcp;
+using KurrentDB.Common.Utils;
+using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 using ILogger = Serilog.ILogger;
 
@@ -30,7 +30,7 @@ public class ssl_connections {
 		_ip = IPAddress.Loopback;
 		_port = PortsHelper.GetAvailablePort(_ip);
 	}
-	
+
 	[Test]
 	public void should_connect_to_each_other_and_send_data() {
 		var serverEndPoint = new IPEndPoint(_ip, _port);

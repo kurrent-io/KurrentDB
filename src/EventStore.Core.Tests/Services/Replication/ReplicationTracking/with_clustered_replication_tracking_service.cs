@@ -3,17 +3,15 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Net;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Replication;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Replication;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Replication.ReplicationTracking;
 
-public abstract class with_clustered_replication_tracking_service:
+public abstract class with_clustered_replication_tracking_service :
 	IHandle<ReplicationTrackingMessage.ReplicatedTo> {
 	protected string EventStreamId = "test_stream";
 	protected SynchronousScheduler Publisher = new("publisher");
@@ -28,7 +26,7 @@ public abstract class with_clustered_replication_tracking_service:
 	public virtual void TestFixtureSetUp() {
 		Publisher.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(this);
 
-		Service = new ReplicationTrackingService(Publisher, ClusterSize,ReplicationCheckpoint, WriterCheckpoint);
+		Service = new ReplicationTrackingService(Publisher, ClusterSize, ReplicationCheckpoint, WriterCheckpoint);
 		Service.Start();
 		When();
 	}

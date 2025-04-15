@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
+		<ProjectReference Include="..\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj" />
+	</ItemGroup>
+</Project>

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net;
@@ -11,14 +12,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using EventStore.ClientAPI;
-using EventStore.Common.Utils;
+using EventStore.ClientAPI.Transport.Http;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Common.Utils;
 using Newtonsoft.Json;
-using EventStore.ClientAPI.Transport.Http;
-using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json.Converters;
-using ContentTypeConstant = EventStore.Transport.Http.ContentType;
+using Newtonsoft.Json.Serialization;
+using ContentTypeConstant = KurrentDB.Transport.Http.ContentType;
+using HttpMethod = System.Net.Http.HttpMethod;
 
 namespace EventStore.Core.Tests.Http;
 
@@ -32,8 +34,8 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 	protected byte[] _lastResponseBytes;
 	protected JsonException _lastJsonException;
 
-	private readonly System.Collections.Generic.List<HttpResponseMessage> _allResponses =
-		new System.Collections.Generic.List<HttpResponseMessage>();
+	private readonly List<HttpResponseMessage> _allResponses =
+		new List<HttpResponseMessage>();
 
 	private string _tag = default;
 	private NetworkCredential _defaultCredentials;
@@ -91,7 +93,7 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 		NameValueCollection headers = null) {
 		credentials ??= _defaultCredentials;
 		var uri = MakeUrl(path, extra);
-		var httpWebRequest = new HttpRequestMessage(new System.Net.Http.HttpMethod(method), uri);
+		var httpWebRequest = new HttpRequestMessage(new HttpMethod(method), uri);
 		if (headers != null) {
 			foreach (var key in headers.AllKeys) {
 				httpWebRequest.Headers.Add(key, headers.GetValues(key));
@@ -244,7 +246,7 @@ public abstract class HttpBehaviorSpecification<TLogFormat, TStreamId> : Specifi
 	};
 
 	protected byte[] ToJsonBytes(object source) {
-		string instring = JsonConvert.SerializeObject(source, Newtonsoft.Json.Formatting.Indented, TestJsonSettings);
+		string instring = JsonConvert.SerializeObject(source, Formatting.Indented, TestJsonSettings);
 		return Helper.UTF8NoBom.GetBytes(instring);
 	}
 

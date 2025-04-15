@@ -2,14 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EventStore.Core.Exceptions;
-using EventStore.Core.Index;
-using EventStore.Core.Util;
+using KurrentDB.Core.Exceptions;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Util;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexVAny;

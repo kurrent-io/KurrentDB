@@ -6,14 +6,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
-using EventStore.Core.Data;
-using EventStore.Core.LogAbstraction;
-using EventStore.Core.Services;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.LogCommon;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.LogCommon;
 
 namespace EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 
@@ -128,7 +128,9 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 		// convert the Recs into LogRecords and write them to the database.
 		// for each chunk i
 		for (int i = 0; i < _chunkRecs.Count; ++i) {
-			var chunk = i == 0 ? _db.Manager.GetChunk(0) : await _db.Manager.AddNewChunk(token);
+			var chunk = await (i is 0
+				? _db.Manager.GetInitializedChunk(0, token)
+				: _db.Manager.AddNewChunk(token));
 			logPos = i * (long)_db.Config.ChunkSize;
 
 			var completedChunk = false;
@@ -160,9 +162,9 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 				}
 
 				if (streamVersion == -1
-				    && rec.Type != Rec.RecType.TransStart
-				    && rec.Type != Rec.RecType.Prepare
-				    && rec.Type != Rec.RecType.Delete) {
+					&& rec.Type != Rec.RecType.TransStart
+					&& rec.Type != Rec.RecType.Prepare
+					&& rec.Type != Rec.RecType.Delete) {
 					throw new Exception(string.Format("Stream {0} is empty.", rec.StreamId));
 				}
 
@@ -182,9 +184,9 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 					? ExpectedVersion.Any // V2 transaction writes have expected version: -2, event number: -1
 					: ExpectedVersion.NoStream; // V3 doesn't have transactions so cant have a negative event number
 
-				  var expectedVersion =
-					(rec.EventNumber - 1) ??
-					(transInfo.FirstPrepareId == rec.Id ? streamVersion : logFormatDefaultExpectedVersion);
+				var expectedVersion =
+				  (rec.EventNumber - 1) ??
+				  (transInfo.FirstPrepareId == rec.Id ? streamVersion : logFormatDefaultExpectedVersion);
 
 				switch (rec.Type) {
 					case Rec.RecType.Prepare: {
@@ -486,8 +488,8 @@ public class Rec {
 
 	// commit all writes except incomplete implicit transactions
 	public bool CommitWrite => !(Type == RecType.Prepare &&
-	                             PrepareFlags.HasFlag(PrepareFlags.IsCommitted) &&
-	                             !PrepareFlags.HasFlag(PrepareFlags.TransactionEnd));
+								 PrepareFlags.HasFlag(PrepareFlags.IsCommitted) &&
+								 !PrepareFlags.HasFlag(PrepareFlags.TransactionEnd));
 
 	public Rec(RecType type, int transaction, string streamId, string eventType, DateTime? timestamp, byte version,
 		long? eventNumber = null,

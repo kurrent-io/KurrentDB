@@ -1,18 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
-using EventStore.Transport.Tcp;
 using System.Net.Sockets;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
+using KurrentDB.Transport.Tcp;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp;
 
@@ -113,8 +110,8 @@ public class TcpConnectionSslTests {
 					null,
 					new TcpClientConnector(),
 					TimeSpan.FromSeconds(5),
-					(conn) => {},
-					(conn, error) => {},
+					(conn) => { },
+					(conn, error) => { },
 					false);
 
 				clientTcpConnection.ConnectionClosed += (conn, error) => {

@@ -3,8 +3,8 @@
 
 using System;
 using System.IO;
-using EventStore.Core.Hashing;
-using EventStore.Core.Util;
+using KurrentDB.Core.Hashing;
+using KurrentDB.Core.Util;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Hashes;

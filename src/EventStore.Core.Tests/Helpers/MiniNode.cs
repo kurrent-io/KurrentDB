@@ -9,38 +9,40 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Common.Utils;
-using EventStore.Core.Services.Monitoring;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Tests.Http;
-using EventStore.Core.Tests.Services.Transport.Tcp;
-using EventStore.Core.TransactionLog.Chunks;
+using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Authentication;
-using EventStore.Core.Authentication.InternalAuthentication;
-using EventStore.Core.Authorization;
-using EventStore.Core.Authorization.AuthorizationPolicies;
-using EventStore.Core.Bus;
-using EventStore.Core.Certificates;
-using EventStore.Core.Configuration.Sources;
 using EventStore.Core.Messages;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using ILogger = Serilog.ILogger;
-using EventStore.Plugins.Subsystems;
-using EventStore.TcpUnitTestPlugin;
-using Microsoft.AspNetCore.Server.Kestrel.Https;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.Configuration;
+using EventStore.Core.Tests.Http;
+using EventStore.Core.Tests.Index.Hashers;
+using EventStore.Core.Tests.Services.Transport.Tcp;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
+using EventStore.Plugins.Subsystems;
 using EventStore.Plugins.Transforms;
+using EventStore.TcpUnitTestPlugin;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core;
+using KurrentDB.Core.Authentication;
+using KurrentDB.Core.Authentication.InternalAuthentication;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Authorization.AuthorizationPolicies;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.Monitoring;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Util;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using RuntimeInformation = System.Runtime.RuntimeInformation;
-using EventStore.Core.Tests.Index.Hashers;
-using System.Threading;
 using Serilog;
+using ILogger = Serilog.ILogger;
+using RuntimeInformation = System.Runtime.RuntimeInformation;
 
 namespace EventStore.Core.Tests.Helpers;
 
@@ -81,8 +83,8 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		int memTableSize = 1000,
 		bool inMemDb = true, bool disableFlushToDisk = false,
 		string advertisedExtHostAddress = null, int advertisedHttpPort = 0,
-		int hashCollisionReadLimit = Util.Opts.HashCollisionReadLimitDefault,
-		byte indexBitnessVersion = Util.Opts.IndexBitnessVersionDefault,
+		int hashCollisionReadLimit = Opts.HashCollisionReadLimitDefault,
+		byte indexBitnessVersion = Opts.IndexBitnessVersionDefault,
 		bool hash32bit = false,
 		string dbPath = "", bool isReadOnlyReplica = false,
 		long streamExistenceFilterSize = 10_000,
@@ -119,50 +121,50 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		HttpEndPoint = new IPEndPoint(ip, httpEndPointPort);
 
 		subsystems ??= [];
-		subsystems = [..subsystems, new TcpApiTestPlugin()];
+		subsystems = [.. subsystems, new TcpApiTestPlugin()];
 
 		var options = new ClusterVNodeOptions {
-				IndexBitnessVersion = indexBitnessVersion,
-				Application = new() {
-					AllowAnonymousEndpointAccess = true,
-					AllowAnonymousStreamAccess = true,
-					StatsPeriodSec = 60 * 60,
-					WorkerThreads = 1,
-					MaxAppendEventSize = maxAppendEventSize
-				},
-				Interface = new() {
-					ReplicationHeartbeatInterval = 10_000,
-					ReplicationHeartbeatTimeout = 10_000,
-					EnableTrustedAuth = enableTrustedAuth,
-					EnableAtomPubOverHttp = true
-				},
-				Cluster = new() {
-					DiscoverViaDns = false,
-					ReadOnlyReplica = isReadOnlyReplica,
-					Archiver = false,
-					StreamInfoCacheCapacity = 10_000
-				},
-				Database = new() {
-					ChunkSize = chunkSize,
-					ChunksCacheSize = cachedChunkSize,
-					SkipDbVerify = true,
-					StatsStorage = StatsStorage.None,
-					MaxMemTableSize = memTableSize,
-					DisableScavengeMerging = true,
-					HashCollisionReadLimit = hashCollisionReadLimit,
-					CommitTimeoutMs = 10_000,
-					PrepareTimeoutMs = 10_000,
-					UnsafeDisableFlushToDisk = disableFlushToDisk,
-					StreamExistenceFilterSize = streamExistenceFilterSize,
-					Transform = transform
-				},
-				PlugableComponents = subsystems,
-				// limitation: the LoadedOptions here will only reflect the defaults and not the rest
-				// of the config specified above. however we only use it for /info/options
-				LoadedOptions = ClusterVNodeOptions.GetLoadedOptions(new ConfigurationBuilder()
+			IndexBitnessVersion = indexBitnessVersion,
+			Application = new() {
+				AllowAnonymousEndpointAccess = true,
+				AllowAnonymousStreamAccess = true,
+				StatsPeriodSec = 60 * 60,
+				WorkerThreads = 1,
+				MaxAppendEventSize = maxAppendEventSize
+			},
+			Interface = new() {
+				ReplicationHeartbeatInterval = 10_000,
+				ReplicationHeartbeatTimeout = 10_000,
+				EnableTrustedAuth = enableTrustedAuth,
+				EnableAtomPubOverHttp = true
+			},
+			Cluster = new() {
+				DiscoverViaDns = false,
+				ReadOnlyReplica = isReadOnlyReplica,
+				Archiver = false,
+				StreamInfoCacheCapacity = 10_000
+			},
+			Database = new() {
+				ChunkSize = chunkSize,
+				ChunksCacheSize = cachedChunkSize,
+				SkipDbVerify = true,
+				StatsStorage = StatsStorage.None,
+				MaxMemTableSize = memTableSize,
+				DisableScavengeMerging = true,
+				HashCollisionReadLimit = hashCollisionReadLimit,
+				CommitTimeoutMs = 10_000,
+				PrepareTimeoutMs = 10_000,
+				UnsafeDisableFlushToDisk = disableFlushToDisk,
+				StreamExistenceFilterSize = streamExistenceFilterSize,
+				Transform = transform
+			},
+			PlugableComponents = subsystems,
+			// limitation: the LoadedOptions here will only reflect the defaults and not the rest
+			// of the config specified above. however we only use it for /info/options
+			LoadedOptions = ClusterVNodeOptions.GetLoadedOptions(new ConfigurationBuilder()
 					.AddKurrentDefaultValues()
 					.Build()),
-			}.Secure(new X509Certificate2Collection(ssl_connections.GetRootCertificate()),
+		}.Secure(new X509Certificate2Collection(ssl_connections.GetRootCertificate()),
 				ssl_connections.GetServerCertificate())
 			.WithReplicationEndpointOn(IntTcpEndPoint)
 			.WithExternalTcpOn(TcpEndPoint)

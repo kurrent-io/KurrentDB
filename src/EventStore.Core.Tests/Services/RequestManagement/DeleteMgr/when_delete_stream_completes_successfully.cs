@@ -3,13 +3,13 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.RequestManager.Managers;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr;
 

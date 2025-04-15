@@ -4,16 +4,16 @@
 using System;
 using System.Net;
 using EventStore.Core.Cluster;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.Service;
 
 [TestFixture]
 public class when_writing_and_deposed_as_leader_and_replica_moves_forward : RequestManagerServiceSpecification {
-	
+
 	protected override void Given() {
 		Dispatcher.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 		Dispatcher.Publish(new ClientMessage.WriteEvents(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new[] { DummyEvent() }, null));
@@ -32,7 +32,7 @@ public class when_writing_and_deposed_as_leader_and_replica_moves_forward : Requ
 	private static MemberInfo FakeMemberInfo() {
 		var ipAddress = "127.0.0.1";
 		var port = 1113;
-		return EventStore.Core.Cluster.MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
+		return MemberInfo.Initial(Guid.Empty, DateTime.UtcNow,
 			VNodeState.Unknown, true,
 			new IPEndPoint(IPAddress.Parse(ipAddress), port),
 			new IPEndPoint(IPAddress.Parse(ipAddress), port),

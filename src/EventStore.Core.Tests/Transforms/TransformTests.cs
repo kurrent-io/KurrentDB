@@ -13,17 +13,17 @@ using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Transforms.BitFlip;
 using EventStore.Core.Tests.Transforms.ByteDup;
 using EventStore.Core.Tests.Transforms.WithHeader;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.Transforms.Identity;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.Transforms.Identity;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Transforms;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class TransformTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPerTestFixture {
+public class TransformTests<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private const int NumEvents = 1000;
 	private const int BatchSize = 50;
 
@@ -62,11 +62,11 @@ public class TransformTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPe
 		}
 	}
 
-	private async ValueTask VerifyChecksums(MiniNode<TLogFormat,TStreamId> node, CancellationToken token = default) {
+	private async ValueTask VerifyChecksums(MiniNode<TLogFormat, TStreamId> node, CancellationToken token = default) {
 		var completedChunks = new List<TFChunk>();
-		for (var i = 0 ; ; i++) {
+		for (var i = 0; ; i++) {
 			try {
-				var chunk = node.Db.Manager.GetChunk(i);
+				var chunk = await node.Db.Manager.GetInitializedChunk(i, CancellationToken.None);
 				if (chunk.IsReadOnly)
 					completedChunks.Add(chunk);
 			} catch (ArgumentOutOfRangeException) {
@@ -74,11 +74,11 @@ public class TransformTests<TLogFormat, TStreamId>: SpecificationWithDirectoryPe
 			}
 		}
 
-		foreach(var chunk in completedChunks)
+		foreach (var chunk in completedChunks)
 			await chunk.VerifyFileHash(token);
 	}
 
-	private async Task<(MiniNode<TLogFormat,TStreamId>, IEventStoreConnection)> CreateNode(string dbPath, string transform, bool memDb) {
+	private async Task<(MiniNode<TLogFormat, TStreamId>, IEventStoreConnection)> CreateNode(string dbPath, string transform, bool memDb) {
 		IDbTransform dbTransform = transform switch {
 			"identity" => new IdentityDbTransform(),
 			"bitflip" => new BitFlipDbTransform(),

@@ -1,9 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication;
 
@@ -40,17 +40,16 @@ internal class ReplicationInterceptor : WriterInterceptor {
 		if (Paused)
 			return;
 
-		switch (message)
-		{
+		switch (message) {
 			case ReplicationMessage.DataChunkBulk dataChunkBulk:
 				if (dataChunkBulk.SubscriptionPosition + dataChunkBulk.DataBytes.Length + bytesToAdd >
-				    _dataInfo.MaxLogPosition)
+					_dataInfo.MaxLogPosition)
 					Pause();
 				break;
 			case ReplicationMessage.RawChunkBulk rawChunkBulk:
 				if (rawChunkBulk.ChunkStartNumber == _rawInfo.ChunkStartNumber &&
-				    rawChunkBulk.ChunkEndNumber == _rawInfo.ChunkEndNumber &&
-				    rawChunkBulk.RawPosition + rawChunkBulk.RawBytes.Length + bytesToAdd > _rawInfo.MaxRawPosition)
+					rawChunkBulk.ChunkEndNumber == _rawInfo.ChunkEndNumber &&
+					rawChunkBulk.RawPosition + rawChunkBulk.RawBytes.Length + bytesToAdd > _rawInfo.MaxRawPosition)
 					Pause();
 				break;
 		}

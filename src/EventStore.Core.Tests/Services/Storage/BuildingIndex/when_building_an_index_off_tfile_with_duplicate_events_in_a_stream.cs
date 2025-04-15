@@ -1,31 +1,26 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Common.Utils;
-using EventStore.Core.Bus;
-using EventStore.Core.DataStructures;
-using EventStore.Core.Helpers;
-using EventStore.Core.Index;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
-using EventStore.Core.Util;
-using EventStore.Core.Index.Hashes;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Caching;
-using EventStore.Core.Data;
-using EventStore.Core.LogAbstraction;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.LogRecords;
+using EventStore.Core.Tests.Fakes;
+using EventStore.Core.Tests.TransactionLog;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Util;
 using NUnit.Framework;
-using ReadStreamResult = EventStore.Core.Services.Storage.ReaderIndex.ReadStreamResult;
 
 namespace EventStore.Core.Tests.Services.Storage.BuildingIndex;
 
@@ -131,7 +126,7 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 		await _db.Open();
 		// create db
 		Writer = new TFChunkWriter(_db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 		await SetupDB(CancellationToken.None);
 		await Writer.DisposeAsync();
 		Writer = null;
@@ -185,7 +180,7 @@ public abstract class DuplicateReadIndexTestScenario<TLogFormat, TStreamId> : Sp
 		_tableIndex.Close(false);
 
 		Writer = new TFChunkWriter(_db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 		await Given(CancellationToken.None);
 		await Writer.DisposeAsync();
 		Writer = null;

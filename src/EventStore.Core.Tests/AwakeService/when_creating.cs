@@ -9,7 +9,7 @@ namespace EventStore.Core.Tests.AwakeService;
 public class when_creating {
 	[Test]
 	public void it_can_ce_created() {
-		var it = new Core.Services.AwakeReaderService.AwakeService();
+		var it = new KurrentDB.Core.Services.AwakeReaderService.AwakeService();
 		Assert.NotNull(it);
 	}
 }

@@ -4,17 +4,17 @@
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.RequestManager.Managers;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.TransactionMgr;
 
 [TestFixture]
 public class when_transaction_commit_gets_prepare_timeout_before_prepares : RequestManagerSpecification<TransactionCommit> {
-	
+
 	private int transactionId = 2341;
 	protected override TransactionCommit OnManager(FakePublisher publisher) {
 		return new TransactionCommit(

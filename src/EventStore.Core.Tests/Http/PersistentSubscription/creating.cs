@@ -1,15 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Tests.Http.Users.users;
-using NUnit.Framework;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using HttpStatusCode = System.Net.HttpStatusCode;
-using HttpResponseMessage = System.Net.Http.HttpResponseMessage;
+using EventStore.Core.Tests.Http.Users.users;
+using KurrentDB.Transport.Http;
 using Newtonsoft.Json.Linq;
-using EventStore.Transport.Http;
+using NUnit.Framework;
+using HttpResponseMessage = System.Net.Http.HttpResponseMessage;
+using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription;
 

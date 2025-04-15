@@ -3,9 +3,9 @@
 
 using System;
 using System.IO;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 
 namespace EventStore.Core.Tests.TransactionLog.Validation;
 
@@ -13,7 +13,7 @@ public static class DbUtil {
 	public static void CreateSingleChunk(TFChunkDbConfig config, int chunkNum, string filename,
 		int? actualDataSize = null, bool isScavenged = false, byte[] contents = null) {
 		var chunkHeader = new ChunkHeader(TFChunk.CurrentChunkVersion, TFChunk.CurrentChunkVersion,
-			config.ChunkSize,chunkNum, chunkNum, isScavenged, Guid.NewGuid(), TransformType.Identity);
+			config.ChunkSize, chunkNum, chunkNum, isScavenged, Guid.NewGuid(), TransformType.Identity);
 		var chunkBytes = chunkHeader.AsByteArray();
 		var dataSize = actualDataSize ?? config.ChunkSize;
 		var buf = new byte[ChunkHeader.Size + dataSize + ChunkFooter.Size];
@@ -33,7 +33,8 @@ public static class DbUtil {
 
 	public static void CreateMultiChunk(TFChunkDbConfig config, int chunkStartNum, int chunkEndNum, string filename,
 		int? physicalSize = null, long? logicalSize = null) {
-		if (chunkStartNum > chunkEndNum) throw new ArgumentException("chunkStartNum");
+		if (chunkStartNum > chunkEndNum)
+			throw new ArgumentException("chunkStartNum");
 
 		var chunkHeader = new ChunkHeader(TFChunk.CurrentChunkVersion, TFChunk.CurrentChunkVersion,
 			config.ChunkSize, chunkStartNum, chunkEndNum, true, Guid.NewGuid(), TransformType.Identity);

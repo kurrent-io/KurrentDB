@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientOperations;
@@ -27,7 +27,7 @@ public class when_starting_a_transaction_expecting_version_any<TLogFormat, TStre
 
 	[Test]
 	public void successful_request_message_is_published() {
-		AssertEx.IsOrBecomesTrue(()=> Interlocked.Read(ref CompletionMessageCount) == 1);
+		AssertEx.IsOrBecomesTrue(() => Interlocked.Read(ref CompletionMessageCount) == 1);
 		Assert.AreEqual(InternalCorrId, CompletionMessage.CorrelationId);
 		Assert.True(CompletionMessage.Success);
 	}

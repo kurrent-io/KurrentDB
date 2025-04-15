@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using EventStore.Core.DataStructures.ProbabilisticFilter;
-using EventStore.Core.Index.Hashes;
+using KurrentDB.Core.DataStructures.ProbabilisticFilter;
+using KurrentDB.Core.Index.Hashes;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.DataStructures;
@@ -41,7 +41,7 @@ public class persistent_stream_bloom_filter : SpecificationWithDirectoryPerTestF
 					hasher: hasher),
 
 			_ => throw new ArgumentOutOfRangeException(),
-	};
+		};
 
 	private static string GenerateCharset() {
 		var charset = "";
@@ -136,8 +136,8 @@ public class persistent_stream_bloom_filter : SpecificationWithDirectoryPerTestF
 			binaryReader.ReadByte();
 			var corruptionRebuildCount = binaryReader.ReadInt32();
 			var numBits = binaryReader.ReadInt64();
-			Assert.AreEqual( 0x01, version);
-			Assert.AreEqual( 0, corruptionRebuildCount);
+			Assert.AreEqual(0x01, version);
+			Assert.AreEqual(0, corruptionRebuildCount);
 			Assert.AreEqual(BloomFilterAccessor.MinSizeKB * 1000 * 8, numBits);
 		}
 
@@ -155,11 +155,11 @@ public class persistent_stream_bloom_filter : SpecificationWithDirectoryPerTestF
 
 	[Test, Combinatorial]
 	public void has_false_positives_with_probability_p(
-		[Values(BloomFilterAccessor.MinSizeKB*1000,2* BloomFilterAccessor.MinSizeKB*1000)] long size,
-		[Values(0.001,0.02,0.05,0.1,0.2)] double p
+		[Values(BloomFilterAccessor.MinSizeKB * 1000, 2 * BloomFilterAccessor.MinSizeKB * 1000)] long size,
+		[Values(0.001, 0.02, 0.05, 0.1, 0.2)] double p
 	) {
 		using var filter = GenSut(GetTempFilePath(), create: true, size, hasher: null);
-		var n = (int) filter.CalculateOptimalNumItems(p);
+		var n = (int)filter.CalculateOptimalNumItems(p);
 
 		var random = new Random(123);
 		var charset = GenerateCharset();
@@ -172,7 +172,8 @@ public class persistent_stream_bloom_filter : SpecificationWithDirectoryPerTestF
 			while (true) {
 				var length = 1 + random.Next() % 10;
 				var s = GenerateRandomString(length, charset, random);
-				if (selected.Contains(s)) continue;
+				if (selected.Contains(s))
+					continue;
 				list.Add(s);
 				selected.Add(s);
 				break;
@@ -189,7 +190,7 @@ public class persistent_stream_bloom_filter : SpecificationWithDirectoryPerTestF
 
 		//the second n distinct items should not exist but there may be some false positives
 		var falsePositives = 0;
-		for (var i = n ; i < 2*n; i ++) {
+		for (var i = n; i < 2 * n; i++) {
 			if (filter.MightContain(list[i])) {
 				falsePositives++;
 			}

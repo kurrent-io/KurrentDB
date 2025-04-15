@@ -3,10 +3,9 @@
 
 using System.IO;
 using System.Linq;
-using EventStore.Core.Index;
-using NUnit.Framework;
-using System;
 using System.Threading.Tasks;
+using KurrentDB.Core.Index;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
 

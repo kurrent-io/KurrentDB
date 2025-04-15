@@ -6,10 +6,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using EventStore.Client.Messages;
-using EventStore.Common.Utils;
-using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;
-using EventStore.Transport.Tcp;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Transport.Tcp;
 
 namespace KurrentDB.TestClient.Commands;
 

@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Remove="Services\checkpoint_strategy\**" />
+		<EmbeddedResource Remove="Services\checkpoint_strategy\**" />
+		<None Remove="Services\checkpoint_strategy\**" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Playground\Launchpad.cs" />
+		<Compile Remove="Playground\Launchpad2.cs" />
+		<Compile Remove="Playground\Launchpad3.cs" />
+		<Compile Remove="Playground\LaunchpadBase.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Remove="Services\Jint\Serialization\big_state.json" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+		<PackageReference Include="NUnit" Version="3.14.0" />
+		<PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+		<PackageReference Include="Serilog.Sinks.TextWriter" Version="3.0.0" />
+		<PackageReference Include="Google.Protobuf" Version="3.27.2" />
+		<PackageReference Include="Grpc.Tools" Version="2.65.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+		<ProjectReference Include="..\EventStore.Core.Tests\EventStore.Core.Tests.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Protobuf Include="..\Protos\Grpc\projections.proto" Link="Protos\projections.proto" GrpcServices="Client" ProtoRoot="../Protos/Grpc" Access="Internal" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="Queries\1Query.js">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Services\Jint\Serialization\big_state.json" />
+	</ItemGroup>
+	<!-- TODO(jen20): Decide what is correct here -->
+	<PropertyGroup>
+		<IsMac>false</IsMac>
+		<IsMac Condition="'$(OS)' == 'Unix' And Exists ('/Library/Frameworks')">true</IsMac>
+	</PropertyGroup>
+</Project>

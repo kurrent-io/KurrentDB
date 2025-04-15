@@ -9,42 +9,44 @@ using System.IO;
 using System.Linq;
 using System.Runtime;
 using System.Threading;
-using EventStore.Common.Exceptions;
-using EventStore.Common.Options;
-using EventStore.Common.Utils;
-using EventStore.Core;
-using EventStore.Core.Authentication;
-using EventStore.Core.Services.Transport.Http.Controllers;
 using System.Threading.Tasks;
-using EventStore.Auth.Ldaps;
-using EventStore.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
-using EventStore.Auth.OAuth;
-using EventStore.Auth.UserCertificates;
-using EventStore.AutoScavenge;
-using EventStore.Core.Authentication.InternalAuthentication;
-using EventStore.Core.Authentication.PassthroughAuthentication;
-using EventStore.Core.Authorization;
-using EventStore.Core.Certificates;
-using EventStore.Core.Hashing;
-using EventStore.Core.PluginModel;
-using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
-using EventStore.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
 using EventStore.Plugins.MD5;
 using EventStore.Plugins.Subsystems;
-using EventStore.Projections.Core;
-using Microsoft.Extensions.Hosting;
+using KurrentDB.Auth.Ldaps;
+using KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled;
+using KurrentDB.Auth.OAuth;
+using KurrentDB.Auth.UserCertificates;
+using KurrentDB.AutoScavenge;
+using KurrentDB.Common.Exceptions;
+using KurrentDB.Common.Options;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core;
+using KurrentDB.Core.Authentication;
+using KurrentDB.Core.Authentication.InternalAuthentication;
+using KurrentDB.Core.Authentication.PassthroughAuthentication;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Hashing;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.PluginModel;
+using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Core.Services.Transport.Http.Controllers;
+using KurrentDB.Diagnostics.LogsEndpointPlugin;
+using KurrentDB.PluginHosting;
+using KurrentDB.POC.ConnectedSubsystemsPlugin;
+using KurrentDB.Projections.Core;
+using KurrentDB.Security.EncryptionAtRest;
+using KurrentDB.TcpPlugin;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Serilog;
-using EventStore.Core.LogAbstraction;
-using EventStore.Diagnostics.LogsEndpointPlugin;
-using EventStore.OtlpExporterPlugin;
+using KurrentDB.OtlpExporterPlugin;
 using EventStore.Plugins.Connectors;
-using EventStore.POC.ConnectedSubsystemsPlugin;
-using EventStore.Security.EncryptionAtRest;
-using EventStore.TcpPlugin;
+using KurrentDB.POC.ConnectedSubsystemsPlugin;
+using KurrentDB.Security.EncryptionAtRest;
 
 namespace KurrentDB;
 
@@ -62,7 +64,8 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		CertificateProvider certificateProvider,
 		IConfiguration configuration) {
 
-		if (options == null) throw new ArgumentNullException(nameof(options));
+		if (options == null)
+			throw new ArgumentNullException(nameof(options));
 
 		// two plugin mechanisms; pluginLoader is the new one
 		var pluginLoader = new PluginLoader(new DirectoryInfo(Locations.PluginsDirectory));
@@ -136,7 +139,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		}
 
 		var enabledNodeSubsystems = projectionMode >= ProjectionType.System
-			? new[] {NodeSubsystems.Projections}
+			? new[] { NodeSubsystems.Projections }
 			: Array.Empty<NodeSubsystems>();
 
 		RegisterWebControllers(enabledNodeSubsystems);
@@ -274,7 +277,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 		static ClusterVNodeOptions LoadSubsystemsPlugins(PluginLoader pluginLoader, ClusterVNodeOptions options) {
 			var plugins = pluginLoader.Load<ISubsystemsPlugin>().ToList();
-			plugins.Add(new OtlpExporterPlugin());
+			plugins.Add(new OtlpExporterPlugin.OtlpExporterPlugin());
 			plugins.Add(new UserCertificatesPlugin());
 			plugins.Add(new LogsEndpointPlugin());
 			plugins.Add(new EncryptionAtRestPlugin());
@@ -345,7 +348,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		Node.StopAsync(cancellationToken: cancellationToken);
 
 	public void Dispose() {
-		if (_dbLock is not {IsAcquired: true}) {
+		if (_dbLock is not { IsAcquired: true }) {
 			return;
 		}
 		using (_dbLock) {

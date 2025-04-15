@@ -5,16 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Services.Replication;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientOperations;
 
 public abstract class specification_with_request_manager_integration<TLogFormat, TStreamId> : specification_with_bare_vnode<TLogFormat, TStreamId> {
-	
+
 	protected long CompletionMessageCount;
 	protected StorageMessage.RequestCompleted CompletionMessage;
 

@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Truncation;

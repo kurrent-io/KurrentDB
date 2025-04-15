@@ -1,23 +1,16 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Caching;
-using EventStore.Core.DataStructures;
-using EventStore.Core.Index;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Services.Storage;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
-using EventStore.Core.Util;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.Metrics;
-using EventStore.Core.Tests.Services;
+using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Util;
 
 namespace EventStore.Core.Tests.TransactionLog.Truncation;
 

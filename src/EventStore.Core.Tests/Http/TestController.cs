@@ -3,14 +3,15 @@
 
 using System;
 using System.Security.Claims;
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Transport.Http;
-using EventStore.Core.Services.Transport.Http.Controllers;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
-using EventStore.Transport.Http.EntityManagement;
-using EventStore.Common.Utils;
+using System.Threading;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Core.Services.Transport.Http.Controllers;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
+using KurrentDB.Transport.Http.EntityManagement;
 
 namespace EventStore.Core.Tests.Http;
 
@@ -42,7 +43,7 @@ public class TestController : CommunicationController {
 	private void Register(
 		IHttpService service, string uriTemplate, Action<HttpEntityManager, UriTemplateMatch> handler,
 		string httpMethod = HttpMethod.Get) {
-		Register(service, uriTemplate, httpMethod, handler, Codec.NoCodecs, new ICodec[] {Codec.ManualEncoding}, new Operation(Operations.Node.StaticContent));
+		Register(service, uriTemplate, httpMethod, handler, Codec.NoCodecs, new ICodec[] { Codec.ManualEncoding }, new Operation(Operations.Node.StaticContent));
 	}
 
 	private void Test1Handler(HttpEntityManager http, UriTemplateMatch match) {
@@ -63,7 +64,7 @@ public class TestController : CommunicationController {
 		var a = match.BoundVariables["a"];
 		var b = match.BoundVariables["b"];
 
-		http.Reply(new {a = a, b = b, rawSegment = http.RequestedUrl.Segments[2]}.ToJson(), 200, "OK",
+		http.Reply(new { a = a, b = b, rawSegment = http.RequestedUrl.Segments[2] }.ToJson(), 200, "OK",
 			ContentType.Json);
 	}
 
@@ -82,7 +83,7 @@ public class TestController : CommunicationController {
 
 	private void TestTimeoutHandler(HttpEntityManager http, UriTemplateMatch match) {
 		var sleepFor = int.Parse(match.BoundVariables["sleepfor"]);
-		System.Threading.Thread.Sleep(sleepFor);
+		Thread.Sleep(sleepFor);
 		http.Reply("OK", 200, "OK", "text/plain");
 	}
 }

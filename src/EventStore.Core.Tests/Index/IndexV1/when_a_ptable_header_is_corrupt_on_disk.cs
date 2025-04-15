@@ -1,10 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
 using System.IO;
-using EventStore.Core.Exceptions;
-using EventStore.Core.Index;
+using KurrentDB.Core.Exceptions;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV1;

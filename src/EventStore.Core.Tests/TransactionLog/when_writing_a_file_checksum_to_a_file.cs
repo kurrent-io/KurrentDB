@@ -3,9 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.Checkpoint;
-using NUnit.Framework;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
 

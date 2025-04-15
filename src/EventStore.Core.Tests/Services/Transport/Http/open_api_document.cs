@@ -4,9 +4,10 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Services.Transport.Http;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Integration;
+using KurrentDB.Core.Services.Transport.Http;
+using Microsoft.OpenApi.Readers;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
@@ -16,7 +17,7 @@ public class open_api_document<TLogFormat, TStreamId> : specification_with_a_sin
 
 	[Test]
 	public async Task should_document_the_actions_of_all_controllers() {
-		var skipActionPaths = new [] {
+		var skipActionPaths = new[] {
 			"/admin/login",
 			"/users/$current",
 			// handled by: /stats/{statPath}
@@ -39,7 +40,7 @@ public class open_api_document<TLogFormat, TStreamId> : specification_with_a_sin
 
 		var absoluteSwaggerPath = HelperExtensions.GetFilePathFromAssembly("swagger.yaml");
 
-		var openApiReader = new Microsoft.OpenApi.Readers.OpenApiTextReaderReader();
+		var openApiReader = new OpenApiTextReaderReader();
 		var openApiDoc = File.OpenText(absoluteSwaggerPath);
 		var result = await openApiReader.ReadAsync(openApiDoc);
 

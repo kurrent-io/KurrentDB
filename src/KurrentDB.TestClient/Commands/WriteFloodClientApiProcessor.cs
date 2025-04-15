@@ -3,12 +3,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using EventStore.ClientAPI;
-using EventStore.Common.Utils;
-using ExpectedVersion = EventStore.Core.Data.ExpectedVersion;
+using KurrentDB.Common.Utils;
+using ExpectedVersion = KurrentDB.Core.Data.ExpectedVersion;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace KurrentDB.TestClient.Commands;
 
@@ -85,8 +85,8 @@ internal class WriteFloodClientApiProcessor : ICmdProcessor {
 						new EventData(Guid.NewGuid(),
 							"TakeSomeSpaceEvent",
 							false,
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes("DATA" + new string('*', size)),
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', 100))));
+							Helper.UTF8NoBom.GetBytes("DATA" + new string('*', size)),
+							Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', 100))));
 					task.ContinueWith(x => {
 						if (x.IsFaulted) {
 							context.Fail(x.Exception.InnerException, "Error on writing operation.");
@@ -94,7 +94,8 @@ internal class WriteFloodClientApiProcessor : ICmdProcessor {
 						}
 
 						var localAll = Interlocked.Increment(ref succ);
-						if (localAll % 1000 == 0) Console.Write('.');
+						if (localAll % 1000 == 0)
+							Console.Write('.');
 						if (localAll % 100000 == 0) {
 							var elapsed = sw2.Elapsed;
 							sw2.Restart();
@@ -110,7 +111,7 @@ internal class WriteFloodClientApiProcessor : ICmdProcessor {
 						}
 					});
 				}
-			}) {IsBackground = true});
+			}) { IsBackground = true });
 		}
 
 		var sw = Stopwatch.StartNew();

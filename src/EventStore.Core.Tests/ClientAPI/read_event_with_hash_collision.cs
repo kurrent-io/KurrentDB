@@ -4,9 +4,9 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Tests;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.HashCollisions;
@@ -28,7 +28,7 @@ public class read_event_with_hash_collision<TLogFormat, TStreamId> : Specificati
 			inMemDb: false,
 			memTableSize: 20,
 			hashCollisionReadLimit: 1,
-			indexBitnessVersion: EventStore.Core.Index.PTableVersions.IndexV4,
+			indexBitnessVersion: PTableVersions.IndexV4,
 			hash32bit: true,
 			streamExistenceFilterSize: 0);
 		await _node.Start();
@@ -67,7 +67,7 @@ public class read_event_with_hash_collision<TLogFormat, TStreamId> : Specificati
 			tcpPort, httpPort, inMemDb: false,
 			memTableSize: 20,
 			hashCollisionReadLimit: 1,
-			indexBitnessVersion: EventStore.Core.Index.PTableVersions.IndexV4,
+			indexBitnessVersion: PTableVersions.IndexV4,
 			hash32bit: true,
 			streamExistenceFilterSize: 0);
 		await _node.Start();

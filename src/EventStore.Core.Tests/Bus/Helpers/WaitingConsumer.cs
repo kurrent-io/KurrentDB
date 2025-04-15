@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Tests.Bus.Helpers;
 

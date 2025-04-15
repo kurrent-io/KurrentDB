@@ -9,10 +9,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Exceptions;
+using KurrentDB.Common.Utils;
 using KurrentDB.TestClient.Commands;
 using KurrentDB.TestClient.Statistics;
 using EventData = EventStore.ClientAPI.EventData;
-using ExpectedVersion = EventStore.Core.Data.ExpectedVersion;
+using ExpectedVersion = KurrentDB.Core.Data.ExpectedVersion;
 using StreamDeletedException = EventStore.ClientAPI.Exceptions.StreamDeletedException;
 using WrongExpectedVersionException = EventStore.ClientAPI.Exceptions.WrongExpectedVersionException;
 
@@ -103,9 +104,9 @@ internal class WriteFloodProcessor : ICmdProcessor {
 				for (int q = 0; q < batchSize; q++) {
 					events[q] = new EventData(Guid.NewGuid(),
 						"TakeSomeSpaceEvent", false,
-						EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes(
+						Helper.UTF8NoBom.GetBytes(
 							"{ \"DATA\" : \"" + new string('*', size) + "\"}"),
-						EventStore.Common.Utils.Helper.UTF8NoBom.GetBytes(
+						Helper.UTF8NoBom.GetBytes(
 							"{ \"METADATA\" : \"" + new string('$', 100) + "\"}"));
 				}
 
@@ -115,7 +116,8 @@ internal class WriteFloodProcessor : ICmdProcessor {
 				pending.Add(client.AppendToStreamAsync(streams[rnd.Next(streamsCnt)], ExpectedVersion.Any, events)
 					.ContinueWith(t => {
 						monitor.EndOperation(corrid);
-						if (t.IsCompletedSuccessfully) Interlocked.Add(ref stats.Succ, batchSize);
+						if (t.IsCompletedSuccessfully)
+							Interlocked.Add(ref stats.Succ, batchSize);
 						else {
 							if (Interlocked.Increment(ref stats.Fail) % 1000 == 0) {
 								Console.Write("#");
@@ -174,7 +176,8 @@ internal class WriteFloodProcessor : ICmdProcessor {
 				}
 			}
 
-			if (pending.Count > 0) await Task.WhenAll(pending);
+			if (pending.Count > 0)
+				await Task.WhenAll(pending);
 		}
 
 		var sw = Stopwatch.StartNew();

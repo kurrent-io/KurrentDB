@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,17 +10,17 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
-using EventStore.Common.Utils;
-using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Plugins.Subsystems;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
+using KurrentDB.Core.Data;
+using NUnit.Framework;
 using Empty = EventStore.Client.Empty;
-using RecordedEvent = EventStore.Client.Streams.ReadResp.Types.ReadEvent.Types.RecordedEvent;
 using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
+using RecordedEvent = EventStore.Client.Streams.ReadResp.Types.ReadEvent.Types.RecordedEvent;
 
 namespace EventStore.Core.Tests.Integration;
 
@@ -85,7 +84,7 @@ public class when_node_becomes_leader_with_unindexed_data<TLogFormat, TStreamId>
 				optionsAppendReq.Options.NoStream = new Empty();
 				break;
 			default:
-				optionsAppendReq.Options.Revision = (ulong) expectedVersion;
+				optionsAppendReq.Options.Revision = (ulong)expectedVersion;
 				break;
 		}
 
@@ -106,15 +105,13 @@ public class when_node_becomes_leader_with_unindexed_data<TLogFormat, TStreamId>
 		await call.RequestStream.CompleteAsync();
 		try {
 			var appendResp = await call.ResponseAsync;
-			switch (appendResp.ResultCase)
-			{
+			switch (appendResp.ResultCase) {
 				case AppendResp.ResultOneofCase.Success:
 					return;
 				case AppendResp.ResultOneofCase.WrongExpectedVersion:
 					throw new WrongExpectedVersionException();
 			}
-		}
-		catch (RpcException ex) when (ex.Status.StatusCode == StatusCode.DeadlineExceeded) {
+		} catch (RpcException ex) when (ex.Status.StatusCode == StatusCode.DeadlineExceeded) {
 			throw new CommitTimeoutException();
 		}
 	}
@@ -151,7 +148,7 @@ public class when_node_becomes_leader_with_unindexed_data<TLogFormat, TStreamId>
 		await _nodes[i].Start();
 	}
 
-	private async Task<HttpStatusCode> GetLiveStatus(IPEndPoint httpEndPoint){
+	private async Task<HttpStatusCode> GetLiveStatus(IPEndPoint httpEndPoint) {
 		var response = await _httpClient.GetAsync($"https://{httpEndPoint}/health/live");
 		return response.StatusCode;
 	}
@@ -177,14 +174,17 @@ public class when_node_becomes_leader_with_unindexed_data<TLogFormat, TStreamId>
 				var writer = _nodes[i].Db.Config.WriterCheckpoint.ReadNonFlushed();
 				var chaser = _nodes[i].Db.Config.ChaserCheckpoint.ReadNonFlushed();
 
-				if (prevWriter == long.MinValue) prevWriter = writer;
-				if (prevChaser == long.MinValue) prevChaser = chaser;
+				if (prevWriter == long.MinValue)
+					prevWriter = writer;
+				if (prevChaser == long.MinValue)
+					prevChaser = chaser;
 				if (chaser != writer || writer != prevWriter) {
 					caughtUp = false;
 				}
 			}
 
-			if (caughtUp) break;
+			if (caughtUp)
+				break;
 			await Task.Delay(100);
 		}
 	}

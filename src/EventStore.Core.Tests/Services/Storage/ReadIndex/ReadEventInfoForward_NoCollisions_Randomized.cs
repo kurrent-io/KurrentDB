@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Index.Hashers;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.ReadIndex;
@@ -78,7 +78,8 @@ public class ReadEventInfoForward_NoCollisions_Randomized : ReadIndexTestScenari
 		var curEvents = new List<EventRecord>();
 
 		foreach (var @event in _events) {
-			if (@event.EventStreamId != Stream) continue;
+			if (@event.EventStreamId != Stream)
+				continue;
 			curEvents.Add(@event);
 
 			int maxCount = Math.Min((int)@event.EventNumber + 1, _random.Next(10, 100));

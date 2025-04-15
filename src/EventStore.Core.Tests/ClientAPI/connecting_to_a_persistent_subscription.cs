@@ -5,13 +5,15 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.ClientOperations;
-using EventStore.ClientAPI.Exceptions;
-using NUnit.Framework;
 using EventStore.ClientAPI.Common;
 using EventStore.ClientAPI.Common.Utils;
-using System.Threading.Tasks;
+using EventStore.ClientAPI.Exceptions;
+using EventStore.Core.Tests.ClientAPI.ExpectedVersion64Bit;
+using KurrentDB.Core.Tests;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI;
 
@@ -688,7 +690,7 @@ public class
 [Category("LongRunning")]
 public class
 	connect_to_persistent_subscription_with_link_to_event_with_event_number_greater_than_int_maxvalue<TLogFormat, TStreamId> :
-		ExpectedVersion64Bit.MiniNodeWithExistingRecords<TLogFormat, TStreamId> {
+		MiniNodeWithExistingRecords<TLogFormat, TStreamId> {
 	private const string StreamName =
 		"connect_to_persistent_subscription_with_link_to_event_with_event_number_greater_than_int_maxvalue";
 

@@ -1,7 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Services.Transport.Http.Authentication;
+using KurrentDB.Core.Services.Transport.Http.Authentication;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
@@ -58,7 +58,7 @@ namespace EventStore.Core.Tests.Services.Transport.Http.Authentication {
 				Assert.That(_hash1 != _hash2);
 			}
 		}
-		
+
 		[TestFixture]
 		public class when_upgrading_the_hashes {
 			private Rfc2898PasswordHashAlgorithm _algorithm;

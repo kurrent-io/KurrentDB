@@ -21,7 +21,7 @@ public static class PortsHelper {
 
 	public static IPEndPoint GetLoopback() {
 		var ip = IPAddress.Loopback;
-		int port = PortsHelper.GetAvailablePort(ip);
+		int port = GetAvailablePort(ip);
 		return new IPEndPoint(ip, port);
 	}
 }

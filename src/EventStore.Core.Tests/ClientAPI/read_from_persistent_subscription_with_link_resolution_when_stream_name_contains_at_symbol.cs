@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.Core.Tests.ClientAPI.Helpers;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
 

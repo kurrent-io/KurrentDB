@@ -4,7 +4,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;

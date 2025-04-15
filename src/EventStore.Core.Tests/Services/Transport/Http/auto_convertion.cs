@@ -4,14 +4,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Common.Utils;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Transport.Http;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Transport.Http.Codecs;
-using NUnit.Framework;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Transport.Http.Codecs;
 using Newtonsoft.Json;
-using ContentType = EventStore.Transport.Http.ContentType;
+using NUnit.Framework;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
 
@@ -58,7 +58,7 @@ internal static class FakeRequest {
 	}
 
 	public static string GetJsonWrite(string data, string metadata) {
-		return GetJsonWrite(new[] {Tuple.Create(data, metadata)});
+		return GetJsonWrite(new[] { Tuple.Create(data, metadata) });
 	}
 
 	public static string GetJsonWrite(params Tuple<string, string>[] events) {
@@ -86,7 +86,7 @@ internal static class FakeRequest {
 	}
 
 	public static string GetXmlWrite(string data, string metadata) {
-		return GetXmlWrite(new[] {Tuple.Create(data, metadata)});
+		return GetXmlWrite(new[] { Tuple.Create(data, metadata) });
 	}
 
 	public static string GetXmlWrite(params Tuple<string, string>[] events) {

@@ -7,28 +7,31 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading;
-using EventStore.ClientAPI.Common;
-using EventStore.Core.Data;
-using EventStore.Core.Messages;
-using EventStore.Core.Services.PersistentSubscription;
-using EventStore.Core.Tests.Services.Replication;
-using EventStore.Core.TransactionLog.LogRecords;
-using NUnit.Framework;
-using ExpectedVersion = EventStore.Core.Data.ExpectedVersion;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
-using EventStore.Core.Tests.ClientAPI;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Bus;
-using EventStore.Core.Helpers;
-using EventStore.Core.LogAbstraction;
-using EventStore.Core.Messaging;
-using EventStore.Core.Metrics;
-using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
-using EventStore.Core.Services.Storage.ReaderIndex;
+using EventStore.ClientAPI.Common;
+using EventStore.Core.Messages;
+using EventStore.Core.Tests.ClientAPI;
+using EventStore.Core.Tests.Services.Replication;
 using EventStore.Core.Tests.TransactionLog;
-using EventFilter = EventStore.Core.Services.Storage.ReaderIndex.EventFilter;
-using StreamMetadata = EventStore.Core.Data.StreamMetadata;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.PersistentSubscription;
+using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using NUnit.Framework;
+using EventFilter = KurrentDB.Core.Services.Storage.ReaderIndex.EventFilter;
+using ExpectedVersion = KurrentDB.Core.Data.ExpectedVersion;
+using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
+using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;
 
@@ -42,7 +45,7 @@ public enum EventSource {
 [TestFixture(EventSource.AllStream)]
 [TestFixture(EventSource.FilteredAllStream)]
 public class when_creating_persistent_subscription {
-	private Core.Services.PersistentSubscription.PersistentSubscription _sub;
+	private KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription _sub;
 	private readonly EventSource _eventSource;
 	private readonly string _streamName;
 
@@ -58,7 +61,7 @@ public class when_creating_persistent_subscription {
 
 	[OneTimeSetUp]
 	public void Setup() {
-		_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		_sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 				Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 					.WithEventLoader(new FakeStreamReader())
 					.WithCheckpointReader(new FakeCheckpointReader())
@@ -90,7 +93,7 @@ public class when_creating_persistent_subscription {
 	[Test]
 	public void null_checkpoint_reader_throws_argument_null() {
 		Assert.Throws<ArgumentNullException>(() => {
-			_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+			_sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 				Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 					.WithEventLoader(new FakeStreamReader())
 					.WithCheckpointReader(null)
@@ -102,7 +105,7 @@ public class when_creating_persistent_subscription {
 	[Test]
 	public void null_checkpoint_writer_throws_argument_null() {
 		Assert.Throws<ArgumentNullException>(() => {
-			_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+			_sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 				Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 					.WithEventLoader(new FakeStreamReader())
 					.WithCheckpointReader(new FakeCheckpointReader())
@@ -115,7 +118,7 @@ public class when_creating_persistent_subscription {
 	[Test]
 	public void null_event_reader_throws_argument_null() {
 		Assert.Throws<ArgumentNullException>(() => {
-			_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+			_sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 				Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 					.WithEventLoader(null)
 					.WithCheckpointReader(new FakeCheckpointReader())
@@ -131,7 +134,7 @@ public class when_creating_persistent_subscription {
 		}
 
 		Assert.Throws<ArgumentNullException>(() => {
-			_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+			_sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 				PersistentSubscriptionToStreamParamsBuilder.CreateFor(null, "groupName")
 					.WithEventLoader(new FakeStreamReader())
 					.WithCheckpointReader(new FakeCheckpointReader())
@@ -142,11 +145,10 @@ public class when_creating_persistent_subscription {
 
 	[Test]
 	public void null_groupname_throws_argument_null() {
-		switch (_eventSource)
-		{
+		switch (_eventSource) {
 			case EventSource.SingleStream:
 				Assert.Throws<ArgumentNullException>(() => {
-					_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+					_sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 						PersistentSubscriptionToStreamParamsBuilder.CreateFor("streamName", null)
 							.WithEventLoader(new FakeStreamReader())
 							.WithCheckpointReader(new FakeCheckpointReader())
@@ -156,7 +158,7 @@ public class when_creating_persistent_subscription {
 				break;
 			case EventSource.AllStream:
 				Assert.Throws<ArgumentNullException>(() => {
-					_sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+					_sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 						PersistentSubscriptionToAllParamsBuilder.CreateFor(null)
 							.WithEventLoader(new FakeStreamReader())
 							.WithCheckpointReader(new FakeCheckpointReader())
@@ -191,7 +193,7 @@ public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStre
 
 		_sut = new PersistentSubscriptionService<TStreamId>(
 			new QueuedHandlerThreadPool(bus, "test", new QueueStatsManager(), new QueueTrackers()),
-			new FakeReadIndex<TLogFormat,TStreamId>(_ => false, new MetaStreamLookup()),
+			new FakeReadIndex<TLogFormat, TStreamId>(_ => false, new MetaStreamLookup()),
 			ioDispatcher, bus,
 			new PersistentSubscriptionConsumerStrategyRegistry(bus, bus,
 				Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>()), trackers.PersistentSubscriptionTracker);
@@ -292,11 +294,11 @@ public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStre
 		}
 
 		public void Handle(ClientMessage.ReadStreamEventsBackward msg) {
-			Data.ReadStreamResult result = Data.ReadStreamResult.NoStream;
+			ReadStreamResult result = ReadStreamResult.NoStream;
 			List<ResolvedEvent> resolvedEvents = new();
 
 			if (_streams.TryGetValue(msg.EventStreamId, out var events)) {
-				result = Data.ReadStreamResult.Success;
+				result = ReadStreamResult.Success;
 
 				foreach (var ev in events) {
 					var prepareLogRecord = new PrepareLogRecord(
@@ -389,7 +391,7 @@ public class LiveTests {
 	public void live_subscription_pushes_events_to_client() {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -407,7 +409,7 @@ public class LiveTests {
 		var envelope1 = new FakeEnvelope();
 		var envelope2 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -429,7 +431,7 @@ public class LiveTests {
 		var envelope1 = new FakeEnvelope();
 		var envelope2 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -450,7 +452,7 @@ public class LiveTests {
 	public void subscription_with_pull_sends_data_to_client() {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -459,7 +461,7 @@ public class LiveTests {
 				.StartFromBeginning());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope1, 10, "foo", "bar");
-		sub.HandleReadCompleted(new[] {Helper.GetFakeEventFor(0, _eventSource)}, Helper.GetStreamPositionFor(1, _eventSource), false);
+		sub.HandleReadCompleted(new[] { Helper.GetFakeEventFor(0, _eventSource) }, Helper.GetStreamPositionFor(1, _eventSource), false);
 		Assert.AreEqual(1, envelope1.Replies.Count);
 	}
 
@@ -467,7 +469,7 @@ public class LiveTests {
 	public void subscription_with_pull_does_not_crash_if_not_ready_yet() {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -476,7 +478,7 @@ public class LiveTests {
 				.StartFromBeginning());
 		Assert.DoesNotThrow(() => {
 			sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope1, 10, "foo", "bar");
-			sub.HandleReadCompleted(new[] {Helper.GetFakeEventFor( 0, _eventSource)}, Helper.GetStreamPositionFor(1, _eventSource),
+			sub.HandleReadCompleted(new[] { Helper.GetFakeEventFor(0, _eventSource) }, Helper.GetStreamPositionFor(1, _eventSource),
 				false);
 		});
 	}
@@ -485,7 +487,7 @@ public class LiveTests {
 	public void subscription_with_live_data_does_not_crash_if_not_ready_yet() {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -504,7 +506,7 @@ public class LiveTests {
 		var envelope1 = new FakeEnvelope();
 		var envelope2 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -529,7 +531,7 @@ public class LiveTests {
 		var envelope1 = new FakeEnvelope();
 		var envelope2 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -553,7 +555,7 @@ public class LiveTests {
 		var eventsFoundSource = new TaskCompletionSource<bool>();
 		var envelope = new FakeEnvelope();
 		var checkpointReader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader(
 					(stream, startEventNumber, countToLoad, batchSize, maxWindowSize, resolveLinkTos, skipFirstEvent, onEventsFound) => {
@@ -618,7 +620,7 @@ public class FilteredAllTests {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var streamFilter = EventFilter.StreamName.Prefixes(true, "test");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", streamFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -627,11 +629,11 @@ public class FilteredAllTests {
 				.StartFromCurrent());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, streamPrefix:"test"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, streamPrefix:"something"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, streamPrefix:"test"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, streamPrefix:"foo"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, streamPrefix:"bar"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, streamPrefix: "test"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, streamPrefix: "something"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, streamPrefix: "test"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, streamPrefix: "foo"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, streamPrefix: "bar"));
 		Assert.AreEqual(2, envelope.Replies.Count);
 	}
 
@@ -640,7 +642,7 @@ public class FilteredAllTests {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var streamFilter = EventFilter.StreamName.Regex(true, "^te");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", streamFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -649,11 +651,11 @@ public class FilteredAllTests {
 				.StartFromCurrent());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, streamPrefix:"test"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, streamPrefix:"ttest"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, streamPrefix:"team"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, streamPrefix:"tteam"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, streamPrefix:"bar"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, streamPrefix: "test"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, streamPrefix: "ttest"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, streamPrefix: "team"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, streamPrefix: "tteam"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, streamPrefix: "bar"));
 		Assert.AreEqual(2, envelope.Replies.Count);
 	}
 
@@ -662,7 +664,7 @@ public class FilteredAllTests {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.EventType.Prefixes(true, "test");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -671,11 +673,11 @@ public class FilteredAllTests {
 				.StartFromCurrent());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, eventType:"test"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, eventType:"something"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, eventType:"test"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, eventType:"foo"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, eventType:"bar"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, eventType: "test"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, eventType: "something"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, eventType: "test"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, eventType: "foo"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, eventType: "bar"));
 		Assert.AreEqual(2, envelope.Replies.Count);
 	}
 
@@ -684,7 +686,7 @@ public class FilteredAllTests {
 		var envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.EventType.Regex(true, "^te");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -693,11 +695,11 @@ public class FilteredAllTests {
 				.StartFromCurrent());
 		reader.Load(null);
 		sub.AddClient(Guid.NewGuid(), Guid.NewGuid(), "connection-1", envelope, 10, "foo", "bar");
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, eventType:"test"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, eventType:"ttest"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, eventType:"team"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, eventType:"tteam"));
-		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, eventType:"bar"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(0, _eventSource, eventType: "test"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(1, _eventSource, eventType: "ttest"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(2, _eventSource, eventType: "team"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(3, _eventSource, eventType: "tteam"));
+		sub.NotifyLiveSubscriptionMessage(Helper.GetFakeEventFor(4, _eventSource, eventType: "bar"));
 		Assert.AreEqual(2, envelope.Replies.Count);
 	}
 
@@ -707,7 +709,7 @@ public class FilteredAllTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "stream");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -733,7 +735,7 @@ public class FilteredAllTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "stream");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -759,7 +761,7 @@ public class FilteredAllTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "stream");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -793,7 +795,7 @@ public class FilteredAllTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "stream");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -823,7 +825,7 @@ public class FilteredAllTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "foo");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -854,7 +856,7 @@ public class FilteredAllTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "foo");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -883,7 +885,7 @@ public class FilteredAllTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "foo");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -919,7 +921,7 @@ public class FilteredAllTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var eventFilter = EventFilter.StreamName.Prefixes(true, "foo");
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToAllParamsBuilder.CreateFor("groupName", eventFilter)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -959,7 +961,7 @@ public class DeleteTests {
 	public void subscription_deletes_checkpoint_when_deleted() {
 		var reader = new FakeCheckpointReader();
 		var deleted = false;
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -975,7 +977,7 @@ public class DeleteTests {
 	public void subscription_deletes_parked_messages_when_deleted() {
 		var reader = new FakeCheckpointReader();
 		var deleted = false;
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1000,7 +1002,7 @@ public class SynchronousReadingClient {
 	[Test]
 	public void subscription_with_less_than_n_events_returns_less_events_to_the_client() {
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1021,7 +1023,7 @@ public class SynchronousReadingClient {
 	[Test]
 	public void subscription_with_n_events_returns_n_events_to_the_client() {
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1042,7 +1044,7 @@ public class SynchronousReadingClient {
 	[Test]
 	public void subscription_with_more_than_n_events_returns_n_events_to_the_client() {
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1066,7 +1068,7 @@ public class SynchronousReadingClient {
 	[Test]
 	public void subscription_with_no_events_returns_no_events_to_the_client() {
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1093,7 +1095,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1120,7 +1122,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1147,7 +1149,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1177,7 +1179,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1208,7 +1210,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1239,7 +1241,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1268,7 +1270,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1303,7 +1305,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1334,7 +1336,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1366,7 +1368,7 @@ public class Checkpointing {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1397,7 +1399,7 @@ public class Checkpointing {
 	public void subscription_does_write_checkpoint_for_disconnected_clients_on_time_when_min_is_hit() {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1426,7 +1428,7 @@ public class Checkpointing {
 		subscription_writes_correct_checkpoint_when_outstanding_messages_is_empty_and_retry_buffer_is_non_empty() {
 		IPersistentSubscriptionStreamPosition cp = null;
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1481,7 +1483,7 @@ public class Checkpointing {
 		var reader = new FakeCheckpointReader();
 		var messageParker = new FakeMessageParker();
 
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1557,10 +1559,9 @@ public class LoadCheckpointTests {
 		bool skip = false;
 		var reader = new FakeCheckpointReader();
 		var streamReader = new FakeStreamReader(
-			(stream, startPosition, countToLoad, batchSize, maxWindowSize, resolveLinkTos, skipFirstEvent, onEventsFound) =>
-			{ skip = skipFirstEvent; }
+			(stream, startPosition, countToLoad, batchSize, maxWindowSize, resolveLinkTos, skipFirstEvent, onEventsFound) => { skip = skipFirstEvent; }
 		);
-		new Core.Services.PersistentSubscription.PersistentSubscription(
+		new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(streamReader)
 				.WithCheckpointReader(reader)
@@ -1569,8 +1570,7 @@ public class LoadCheckpointTests {
 				.PreferDispatchToSingle()
 				.StartFromBeginning()
 				.MaximumToCheckPoint(1));
-		switch (_eventSource)
-		{
+		switch (_eventSource) {
 			case EventSource.SingleStream:
 				reader.Load("1");
 				break;
@@ -1586,7 +1586,7 @@ public class LoadCheckpointTests {
 	public void loading_subscription_from_checkpoint_should_set_the_last_known_event_number() {
 		var reader = new FakeCheckpointReader();
 		var streamReader = new FakeStreamReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(streamReader)
 				.WithCheckpointReader(reader)
@@ -1596,8 +1596,7 @@ public class LoadCheckpointTests {
 				.StartFromBeginning()
 				.MaximumToCheckPoint(1));
 		string checkpoint = "";
-		switch (_eventSource)
-		{
+		switch (_eventSource) {
 			case EventSource.SingleStream:
 				checkpoint = "1";
 				reader.Load(checkpoint);
@@ -1621,7 +1620,7 @@ public class LoadCheckpointTests {
 			(stream, startPosition, countToLoad, batchSize, maxWindowSize, resolveLinkTos, skipFirstEvent, onEventsFound) => {
 				actualStart = startPosition;
 			});
-		new Core.Services.PersistentSubscription.PersistentSubscription(
+		new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(streamReader)
 				.WithCheckpointReader(reader)
@@ -1632,8 +1631,7 @@ public class LoadCheckpointTests {
 				.MaximumToCheckPoint(1));
 		reader.Load(null);
 
-		switch (_eventSource)
-		{
+		switch (_eventSource) {
 			case EventSource.SingleStream:
 				Assert.AreEqual(new PersistentSubscriptionSingleStreamPosition(0L), actualStart);
 				break;
@@ -1660,7 +1658,7 @@ public class LoadCheckpointTests {
 			_ => null
 		};
 
-		new Core.Services.PersistentSubscription.PersistentSubscription(
+		new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(streamReader)
 				.WithCheckpointReader(reader)
@@ -1689,7 +1687,7 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1715,7 +1713,7 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1737,8 +1735,8 @@ public class TimeoutTests {
 		envelope1.Replies.Clear();
 		sub.NotifyClockTick(DateTime.UtcNow.AddSeconds(3));
 		Assert.AreEqual(2, envelope1.Replies.Count);
-		var msg1 = (Messages.ClientMessage.PersistentSubscriptionStreamEventAppeared)envelope1.Replies[0];
-		var msg2 = (Messages.ClientMessage.PersistentSubscriptionStreamEventAppeared)envelope1.Replies[1];
+		var msg1 = (ClientMessage.PersistentSubscriptionStreamEventAppeared)envelope1.Replies[0];
+		var msg2 = (ClientMessage.PersistentSubscriptionStreamEventAppeared)envelope1.Replies[1];
 		Assert.IsTrue(id1 == msg1.Event.OriginalEvent.EventId || id1 == msg2.Event.OriginalEvent.EventId);
 		Assert.IsTrue(id2 == msg1.Event.OriginalEvent.EventId || id2 == msg2.Event.OriginalEvent.EventId);
 		Assert.AreEqual(0, parker.ParkedEvents.Count);
@@ -1748,7 +1746,7 @@ public class TimeoutTests {
 	public void messages_get_timed_out_on_synchronous_reads() {
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1774,7 +1772,7 @@ public class TimeoutTests {
 	public void messages_dont_get_retried_when_acked_on_synchronous_reads() {
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1804,7 +1802,7 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1831,7 +1829,7 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1866,7 +1864,7 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1905,7 +1903,7 @@ public class TimeoutTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1943,7 +1941,7 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1971,7 +1969,7 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -1995,7 +1993,7 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -2019,7 +2017,7 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -2045,7 +2043,7 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -2059,7 +2057,7 @@ public class NAKTests {
 		var ev = Helper.GetFakeEventFor(0, _eventSource);
 		sub.HandleReadCompleted(new[] {
 			ev,
-		},Helper.GetStreamPositionFor(1, _eventSource), false);
+		}, Helper.GetStreamPositionFor(1, _eventSource), false);
 
 		for (int i = 1; i < 11; i++) {
 			sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) }, NakAction.Retry, "a reason from client.");
@@ -2079,7 +2077,7 @@ public class NAKTests {
 		var envelope1 = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -2102,7 +2100,7 @@ public class NAKTests {
 
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(0) }, NakAction.Park, "a reason from client.");
 		Assert.AreEqual(2, envelope1.Replies.Count);
-		Assert.That(parker.ParkedEvents, Has.Exactly(1).Matches<ResolvedEvent>(_ => _.Event.EventId == Helper.GetEventIdFor(0) ));
+		Assert.That(parker.ParkedEvents, Has.Exactly(1).Matches<ResolvedEvent>(_ => _.Event.EventId == Helper.GetEventIdFor(0)));
 
 		sub.NotAcknowledgeMessagesProcessed(corrid, new[] { Helper.GetEventIdFor(1) }, NakAction.Park, "a reason from client.");
 		Assert.That(parker.ParkedEvents, Has.Exactly(1).Matches<ResolvedEvent>(_ => _.Event.EventId == Helper.GetEventIdFor(1)));
@@ -2121,7 +2119,7 @@ public class AddingClientTests {
 
 	[Test]
 	public void adding_a_client_adds_the_client() {
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(new FakeCheckpointReader())
@@ -2149,7 +2147,7 @@ public class RemoveClientTests {
 		var client2Envelope = new FakeEnvelope();
 
 		var fakeCheckpointReader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(fakeCheckpointReader)
@@ -2192,7 +2190,7 @@ public class RemoveClientTests {
 		var client2Envelope = new FakeEnvelope();
 
 		var fakeCheckpointReader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(fakeCheckpointReader)
@@ -2232,7 +2230,7 @@ public class RemoveClientTests {
 	[Test]
 	public void disconnecting_a_client_with_no_persistent_subscription() {
 		var fakeCheckpointReader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(fakeCheckpointReader)
@@ -2263,7 +2261,7 @@ public class ParkTests {
 		//setup the persistent subscription
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -2292,7 +2290,7 @@ public class ParkTests {
 		//setup the persistent subscription
 		var reader = new FakeCheckpointReader();
 		var parker = new FakeMessageParker();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -2318,7 +2316,7 @@ public class ParkTests {
 
 		List<int> loadCount = new List<int>();
 
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader((stream, startEventNumber, countToLoad, batchSize,
 					maxWindowSize, resolveLinkTos, skipFirstEvent, onEventsFound) => loadCount.Add(countToLoad)))
@@ -2365,7 +2363,7 @@ public class ParkTests {
 
 		List<int> loadCount = new List<int>();
 
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			Helper.CreatePersistentSubscriptionBuilderFor(_eventSource)
 				.WithEventLoader(new FakeStreamReader((stream, startEventNumber, countToLoad, batchSize, maxWindowSize, resolveLinkTos, skipFirstEvent, onEventsFound) => loadCount.Add(countToLoad)))
 				.WithCheckpointReader(reader)
@@ -2520,18 +2518,18 @@ public static class Helper {
 		};
 	}
 
-	public static ResolvedEvent BuildFakeEvent(Guid id, string type, string stream, long version, long commitPosition=1234567, long preparePosition=1234567) {
+	public static ResolvedEvent BuildFakeEvent(Guid id, string type, string stream, long version, long commitPosition = 1234567, long preparePosition = 1234567) {
 		return BuildFakeEventWithMetadata(id, type, stream, version, new byte[0], commitPosition, preparePosition);
 	}
 
-	public static ResolvedEvent BuildFakeEventWithMetadata(Guid id, string type, string stream, long version, byte[] metaData, long commitPosition=1234567, long preparePosition=1234567) {
+	public static ResolvedEvent BuildFakeEventWithMetadata(Guid id, string type, string stream, long version, byte[] metaData, long commitPosition = 1234567, long preparePosition = 1234567) {
 		return
 			ResolvedEvent.ForUnresolvedEvent(new EventRecord(version, preparePosition, Guid.NewGuid(), id, commitPosition, 1234,
 				stream, version,
 				DateTime.UtcNow, PrepareFlags.SingleWrite, type, new byte[0], metaData), commitPosition);
 	}
 
-	public static ResolvedEvent BuildLinkEvent(Guid id, string stream, long version, ResolvedEvent ev, bool resolved = true, long commitPosition=1234567, long preparePosition=1234567) {
+	public static ResolvedEvent BuildLinkEvent(Guid id, string stream, long version, ResolvedEvent ev, bool resolved = true, long commitPosition = 1234567, long preparePosition = 1234567) {
 		var link = new EventRecord(version, preparePosition, Guid.NewGuid(), id, commitPosition, 1234, stream, version,
 			DateTime.UtcNow, PrepareFlags.SingleWrite, SystemEventTypes.LinkTo,
 			Encoding.UTF8.GetBytes(string.Format("{0}@{1}", ev.OriginalEventNumber, ev.OriginalStreamId)),

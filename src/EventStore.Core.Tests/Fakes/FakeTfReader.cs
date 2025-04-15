@@ -4,7 +4,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog;
 
 namespace EventStore.Core.Tests.Fakes;
 

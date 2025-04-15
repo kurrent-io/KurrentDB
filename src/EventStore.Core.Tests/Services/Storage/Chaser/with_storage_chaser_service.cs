@@ -5,13 +5,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Services.Storage;
-using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.Tests.Services.ElectionsService;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Storage;
+using KurrentDB.Core.Services.Storage.EpochManager;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.Chaser;
@@ -45,7 +45,7 @@ public abstract class with_storage_chaser_service<TLogFormat, TStreamId> : Speci
 		Chaser = new TFChunkChaser(Db, _writerChk, _chaserChk);
 		Chaser.Open();
 		Writer = new TFChunkWriter(Db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 
 		IndexCommitter = new FakeIndexCommitterService<TStreamId>();
 		EpochManager = new FakeEpochManager();

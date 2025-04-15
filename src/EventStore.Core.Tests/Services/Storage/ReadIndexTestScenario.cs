@@ -4,28 +4,26 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
-using EventStore.Core.Caching;
-using EventStore.Core.Data;
-using EventStore.Core.DataStructures;
-using EventStore.Core.Index;
-using EventStore.Core.LogAbstraction;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.LogRecords;
-using NUnit.Framework;
-using EventStore.Core.Util;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.LogV3;
-using EventStore.Core.Metrics;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
-using EventStore.LogCommon;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Util;
+using KurrentDB.LogCommon;
+using NUnit.Framework;
+using Serilog;
 
 namespace EventStore.Core.Tests.Services.Storage;
 
@@ -102,7 +100,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		await Db.Open();
 		// create db
 		Writer = new TFChunkWriter(Db);
-		Writer.Open();
+		await Writer.Open(CancellationToken.None);
 		await WriteTestScenario(CancellationToken.None);
 		await Writer.DisposeAsync();
 		Writer = null;
@@ -156,8 +154,10 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		// scavenge must run after readIndex is built
 		if (_scavenge) {
 			if (_completeLastChunkOnScavenge)
-				await Db.Manager.GetChunk(Db.Manager.ChunksCount - 1).Complete(CancellationToken.None);
-			_scavenger = new TFChunkScavenger<TStreamId>(Serilog.Log.Logger, Db, new FakeTFScavengerLog(), TableIndex, ReadIndex, _logFormat.Metastreams);
+				await (await Db.Manager.GetInitializedChunk(Db.Manager.ChunksCount - 1, CancellationToken.None))
+					.Complete(CancellationToken.None);
+			_scavenger = new TFChunkScavenger<TStreamId>(Log.Logger, Db, new FakeTFScavengerLog(), TableIndex,
+				ReadIndex, _logFormat.Metastreams);
 			await _scavenger.Scavenge(alwaysKeepScavenged: true, mergeChunks: _mergeChunks,
 				scavengeIndex: _scavengeIndex);
 		}
@@ -270,7 +270,7 @@ public abstract class ReadIndexTestScenario<TLogFormat, TStreamId> : Specificati
 		DateTime? timestamp = null,
 		CancellationToken token = default) {
 		var (eventStreamId, _) = await GetOrReserve(SystemStreams.MetastreamOf(eventStreamName), token);
-		var ( eventTypeId, pos) = await GetOrReserveEventType(SystemEventTypes.StreamMetadata, token);
+		var (eventTypeId, pos) = await GetOrReserveEventType(SystemEventTypes.StreamMetadata, token);
 		var prepare = LogRecord.SingleWrite(_recordFactory, pos,
 			Guid.NewGuid(),
 			Guid.NewGuid(),

@@ -3,12 +3,13 @@
 
 using System;
 using System.Text;
-using EventStore.Core.Data;
-using EventStore.Core.Helpers;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.TransactionLog.LogRecords;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace EventStore.Core.Tests.Helpers.IODispatcherTests;
 

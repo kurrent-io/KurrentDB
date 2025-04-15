@@ -5,11 +5,11 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Integration;
 using EventStore.Core.Tests.Services.Replication;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;

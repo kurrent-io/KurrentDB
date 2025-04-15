@@ -3,9 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
 using EventStore.Core.Tests.Bus.Helpers;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Bus;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Bus;
@@ -40,8 +40,8 @@ public class when_publishing_into_memory_bus {
 		await _bus.DispatchAsync(new TestMessage3());
 
 		Assert.That(handler1.HandledMessages.Count == 0
-		            && handler2.HandledMessages.Count == 0
-		            && handler3.HandledMessages.Count == 0);
+					&& handler2.HandledMessages.Count == 0
+					&& handler3.HandledMessages.Count == 0);
 	}
 
 	[Test]
@@ -120,7 +120,7 @@ public class when_publishing_into_memory_bus {
 		await _bus.DispatchAsync(new GrandChildTestMessage());
 
 		Assert.That(parentHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
-		            childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
+					childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
 	}
 
 	[Test]
@@ -137,7 +137,7 @@ public class when_publishing_into_memory_bus {
 		await _bus.DispatchAsync(new GrandChildTestMessage());
 
 		Assert.That(parentHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
-		            childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
-		            grandChildHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
+					childHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>() &&
+					grandChildHandler.HandledMessages.ContainsSingle<GrandChildTestMessage>());
 	}
 }

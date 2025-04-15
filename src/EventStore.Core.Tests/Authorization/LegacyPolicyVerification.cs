@@ -7,15 +7,15 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Authorization;
-using EventStore.Core.Authorization.AuthorizationPolicies;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Core.Authorization;
+using KurrentDB.Core.Authorization.AuthorizationPolicies;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Authorization;
@@ -74,7 +74,7 @@ public class LegacyPolicyVerification {
 		public override string TestName => $"{User.Identity?.Name ?? "Anonymous (empty)"} {(IsAuthorized ? "is" : "is not")} authorized to perform operation {Operation}";
 
 		public StaticPolicyVerificationParameters(ClaimsPrincipal user, Operation operation, string stream, StorageMessage.EffectiveAcl streamAcl, bool isAuthorized, bool shouldRequestAcl) :
-		base (user, operation, stream, streamAcl){
+		base(user, operation, stream, streamAcl) {
 			IsAuthorized = isAuthorized;
 			ShouldRequestAcl = shouldRequestAcl;
 		}
@@ -86,7 +86,7 @@ public class LegacyPolicyVerification {
 		public override string TestName => $"Verify if Anonymous user is authorized to perform operation {Operation}";
 
 		public ConfigurablePolicyVerificationParameters(ClaimsPrincipal user, Operation operation, string stream, StorageMessage.EffectiveAcl streamAcl, Func<bool, bool, bool> authorizationCheck, Func<bool, bool> aclCheck)
-		: base(user, operation, stream, streamAcl){
+		: base(user, operation, stream, streamAcl) {
 			AuthorizationCheck = authorizationCheck;
 			AclCheck = aclCheck;
 		}
@@ -132,11 +132,11 @@ public class LegacyPolicyVerification {
 		ClaimsPrincipal user2 = CreatePrincipal("test2");
 		ClaimsPrincipal userSystem = SystemAccounts.System;
 
-		var admins = new[] {admin, userAdmin};
-		var operations = new[] {ops, userOps};
-		var users = new[] {user1, user2};
-		var system = new[] {userSystem};
-		var anonymous = new[]{new ClaimsPrincipal(), new ClaimsPrincipal(new ClaimsIdentity(new Claim[]{new Claim(ClaimTypes.Anonymous, ""), })), };
+		var admins = new[] { admin, userAdmin };
+		var operations = new[] { ops, userOps };
+		var users = new[] { user1, user2 };
+		var system = new[] { userSystem };
+		var anonymous = new[] { new ClaimsPrincipal(), new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim(ClaimTypes.Anonymous, ""), })), };
 		foreach (var user in system) {
 			foreach (var operation in SystemOperations()) {
 				yield return new StaticPolicyVerificationParameters(user,
@@ -469,18 +469,18 @@ public class LegacyPolicyVerification {
 		}
 
 		(Operation, string, StorageMessage.EffectiveAcl) CreateOperation(OperationDefinition def) {
-			return (new Operation(def),null, null);
+			return (new Operation(def), null, null);
 		}
 
 		ClaimsPrincipal CreatePrincipal(string name, params string[] roles) {
 			var claims =
-				(new[] {new Claim(ClaimTypes.Name, name)}).Concat(roles.Select(x => new Claim(ClaimTypes.Role, x)));
+				(new[] { new Claim(ClaimTypes.Name, name) }).Concat(roles.Select(x => new Claim(ClaimTypes.Role, x)));
 			return new ClaimsPrincipal(new ClaimsIdentity(claims));
 		}
 	}
 
 	[Test]
-	public async Task VerifyPolicy([ValueSource(nameof(PolicyTests))]PolicyVerificationParameters pvp) {
+	public async Task VerifyPolicy([ValueSource(nameof(PolicyTests))] PolicyVerificationParameters pvp) {
 		_aclResponder.ExpectedAcl(pvp.Stream, pvp.StreamAcl);
 		var result =
 				await _authorizationProvider.CheckAccessAsync(pvp.User, pvp.Operation, CancellationToken.None);
@@ -530,7 +530,8 @@ public class LegacyPolicyVerification {
 
 		public void ExpectedAcl(string stream, StorageMessage.EffectiveAcl acl) {
 			MessageReceived = false;
-			if (stream == null) return;
+			if (stream == null)
+				return;
 			_expectedStream = SystemStreams.IsMetastream(stream) ? SystemStreams.OriginalStreamOf(stream) : stream;
 			_acl = acl;
 		}

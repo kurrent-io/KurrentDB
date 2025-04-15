@@ -8,12 +8,13 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
 using EventStore.Core.Tests.Helpers;
 using EventStore.Core.Tests.Integration;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
-using ContentType = EventStore.Transport.Http.ContentType;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 
 namespace EventStore.Core.Tests.Http.Cluster;
 
@@ -38,7 +39,7 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 		await leader.AdminUserCreated;
 		// Wait for the admin user created event to be replicated before starting our tests
 		var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
-		AssertEx.IsOrBecomesTrue(()=> follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex,
+		AssertEx.IsOrBecomesTrue(() => follower.Db.Config.IndexCheckpoint.Read() >= leaderIndex,
 			timeout: TimeSpan.FromSeconds(10),
 			msg: $"Waiting for follower to reach index checkpoint timed out! (LeaderIndex={leaderIndex},FollowerState={follower.NodeState})");
 
@@ -47,8 +48,7 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 	}
 
 	private async Task AddStreamAndWait(MiniClusterNode<TLogFormat, TStreamId> leader,
-		MiniClusterNode<TLogFormat, TStreamId> follower, string streamName)
-	{
+		MiniClusterNode<TLogFormat, TStreamId> follower, string streamName) {
 		var leaderIndex = leader.Db.Config.IndexCheckpoint.Read();
 
 		var response = await PostEvent(_followerEndPoint, $"streams/{streamName}", requireLeader: false);
@@ -222,7 +222,7 @@ public class when_requesting_from_follower<TLogFormat, TStreamId> : specificatio
 		var request = new HttpRequestMessage(method, uri);
 		request.Headers.Add(requireLeaderHeader, requireLeader ? "True" : "False");
 		request.Headers.Authorization = new AuthenticationHeaderValue("Basic",
-            					GetAuthorizationHeader(DefaultData.AdminNetworkCredentials));
+								GetAuthorizationHeader(DefaultData.AdminNetworkCredentials));
 		return request;
 	}
 

@@ -4,9 +4,9 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Tests.Services.Storage;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;

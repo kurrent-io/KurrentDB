@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.TransactionLog.Chunks;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge.ScavengeLogManager;
 

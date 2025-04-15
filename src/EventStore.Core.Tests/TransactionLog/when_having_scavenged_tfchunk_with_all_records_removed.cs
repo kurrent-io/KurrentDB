@@ -5,15 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.LogAbstraction;
 using EventStore.Core.Tests.Services.Storage;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
+using Serilog;
 
 namespace EventStore.Core.Tests.TransactionLog;
 
@@ -39,7 +40,7 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 		_db = new TFChunkDb(TFChunkHelper.CreateSizedDbConfig(PathName, 0, chunkSize: 16 * 1024));
 		await _db.Open();
 
-		var chunk = _db.Manager.GetChunkFor(0);
+		var chunk = await _db.Manager.GetInitializedChunkFor(0, CancellationToken.None);
 		var streamName = "es-to-scavenge";
 		var pos = 0L;
 		_logFormat.StreamNameIndex.GetOrReserve(_logFormat.RecordFactory, streamName, 0, out var streamId, out var streamRecord);
@@ -86,12 +87,12 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 		_db.Config.ChaserCheckpoint.Write(chunk.ChunkHeader.ChunkEndPosition);
 		_db.Config.ChaserCheckpoint.Flush();
 
-		var scavenger = new TFChunkScavenger<TStreamId>(Serilog.Log.Logger, _db, new FakeTFScavengerLog(), new FakeTableIndex<TStreamId>(),
+		var scavenger = new TFChunkScavenger<TStreamId>(Log.Logger, _db, new FakeTFScavengerLog(), new FakeTableIndex<TStreamId>(),
 			new FakeReadIndex<TLogFormat, TStreamId>(x => EqualityComparer<TStreamId>.Default.Equals(x, streamId), _logFormat.Metastreams),
 			_logFormat.Metastreams);
 		await scavenger.Scavenge(alwaysKeepScavenged: true, mergeChunks: false);
 
-		_scavengedChunk = _db.Manager.GetChunk(0);
+		_scavengedChunk = await _db.Manager.GetInitializedChunk(0, CancellationToken.None);
 	}
 
 	public override async Task TestFixtureTearDown() {
@@ -166,8 +167,7 @@ public class when_having_scavenged_tfchunk_with_all_records_removed<TLogFormat, 
 
 		if (LogFormatHelper<TLogFormat, TStreamId>.IsV2) {
 			Assert.AreEqual(0, records.Count);
-		}
-		else {
+		} else {
 			Assert.AreEqual(2, records.Count);
 		}
 	}

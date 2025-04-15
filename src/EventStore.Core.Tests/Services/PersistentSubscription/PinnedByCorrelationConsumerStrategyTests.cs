@@ -1,16 +1,16 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-namespace EventStore.Core.Tests.Services.PersistentSubscription;
-
 using System;
 using System.Text;
-using Core.Index.Hashes;
-using Core.Services;
-using Core.Services.PersistentSubscription;
-using Core.Services.PersistentSubscription.ConsumerStrategy;
+using EventStore.Core.Tests.Services.Replication;
+using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.PersistentSubscription;
+using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using NUnit.Framework;
-using Replication;
+
+namespace EventStore.Core.Tests.Services.PersistentSubscription;
 
 [TestFixture]
 public class PinnedByCorrelationConsumerStrategyTests {
@@ -35,20 +35,19 @@ public class PinnedByCorrelationConsumerStrategyTests {
 		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata(Encoding.UTF8.GetBytes(@"{ ""x"": ""x"" }"));
 	}
 
-	
+
 	[Test]
 	public void live_subscription_with_pinned_by_correlation_pushes_events_with_metadata_with_invalid_correlation_to_same_client_for_stream_id() {
 		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata(Encoding.UTF8.GetBytes(@"{ ""$correlationId"": 0 }"));
 	}
 
 	private static void
-		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata(byte[] metaData)
-	{
+		live_subscription_with_pinned_by_correlation_pushes_events_to_same_client_for_stream_id_for_metadata(byte[] metaData) {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 
-		var sub = new PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -92,12 +91,12 @@ public class PinnedByCorrelationConsumerStrategyTests {
 
 	[Test]
 	public void live_subscription_with_pinned_by_correlation_pushes_events_with_metadata_with_valid_correlation_to_same_client_for_correlation_id() {
-		
+
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 
-		var sub = new PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)

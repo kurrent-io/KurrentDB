@@ -5,11 +5,11 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -46,7 +46,7 @@ public class when_closing_the_database<TLogFormat, TStreamId> : SpecificationWit
 			flags: PrepareFlags.SingleWrite,
 			eventType: eventTypeId,
 			data: new byte[123],
-			metadata: new byte[] {0x13, 0x37});
+			metadata: new byte[] { 0x13, 0x37 });
 	}
 
 	private static ICheckpoint OpenCheckpoint(string path) =>
@@ -73,11 +73,11 @@ public class when_closing_the_database<TLogFormat, TStreamId> : SpecificationWit
 	public async Task checkpoints_should_be_flushed_only_when_chunks_are_properly_closed(bool chunksClosed) {
 		if (!chunksClosed) {
 			// acquire a reader to prevent the chunk from being properly closed
-			await _db.Manager.GetChunk(0).AcquireDataReader(CancellationToken.None);
+			await (await _db.Manager.GetInitializedChunk(0, CancellationToken.None)).AcquireDataReader(CancellationToken.None);
 		}
 
 		var writer = new TFChunkWriter(_db);
-		writer.Open();
+		await writer.Open(CancellationToken.None);
 		Assert.IsTrue(await writer.Write(CreateRecord(), CancellationToken.None) is (true, _));
 
 		_db.Config.ChaserCheckpoint.Write(1); // any non-zero value just to test if the checkpoint is flushed

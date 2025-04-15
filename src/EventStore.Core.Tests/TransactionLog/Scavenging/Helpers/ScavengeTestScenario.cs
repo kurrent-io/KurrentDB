@@ -3,23 +3,20 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Caching;
-using EventStore.Core.DataStructures;
-using EventStore.Core.Index;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Services;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Util;
 using NUnit.Framework;
-using EventStore.Core.Util;
-using EventStore.Core.LogAbstraction;
-using EventStore.Core.Metrics;
+using Serilog;
 
 namespace EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 
@@ -90,14 +87,14 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 			new LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>("StreamMetadata", 100),
 			true, _metastreamMaxCount,
 			Opts.HashCollisionReadLimitDefault, Opts.SkipIndexScanOnReadsDefault,
-			_dbResult.Db.Config.ReplicationCheckpoint,_dbResult.Db.Config.IndexCheckpoint,
+			_dbResult.Db.Config.ReplicationCheckpoint, _dbResult.Db.Config.IndexCheckpoint,
 			new IndexStatusTracker.NoOp(),
 			new IndexTracker.NoOp(),
 			new CacheHitsMissesTracker.NoOp());
 		await readIndex.IndexCommitter.Init(_dbResult.Db.Config.WriterCheckpoint.Read(), CancellationToken.None);
 		ReadIndex = readIndex;
 
-		var scavenger = new TFChunkScavenger<TStreamId>(Serilog.Log.Logger, _dbResult.Db, new FakeTFScavengerLog(), tableIndex, ReadIndex,
+		var scavenger = new TFChunkScavenger<TStreamId>(Log.Logger, _dbResult.Db, new FakeTFScavengerLog(), tableIndex, ReadIndex,
 			_logFormat.Metastreams,
 			unsafeIgnoreHardDeletes: UnsafeIgnoreHardDelete());
 		await scavenger.Scavenge(alwaysKeepScavenged: true, mergeChunks: false);
@@ -123,7 +120,7 @@ public abstract class ScavengeTestScenario<TLogFormat, TStreamId> : Specificatio
 		Assert.AreEqual(_keptRecords.Length, _dbResult.Db.Manager.ChunksCount, "Wrong chunks count.");
 
 		for (int i = 0; i < _keptRecords.Length; ++i) {
-			var chunk = _dbResult.Db.Manager.GetChunk(i);
+			var chunk = await _dbResult.Db.Manager.GetInitializedChunk(i, token);
 
 			var chunkRecords = new List<ILogRecord>();
 			RecordReadResult result = await chunk.TryReadFirst(token);

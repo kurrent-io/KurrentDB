@@ -6,15 +6,15 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.Bus;
-using EventStore.Core.Data.Redaction;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data.Redaction;
+using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RedactionService;
 
-public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionServiceTestFixture<TLogFormat,TStreamId> {
+public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionServiceTestFixture<TLogFormat, TStreamId> {
 	private const string StreamId = nameof(SwitchChunkTests<TLogFormat, TStreamId>);
 	protected const string FakeChunk = "fake_chunk.tmp";
 	private Guid _lockId;
@@ -32,7 +32,7 @@ public abstract class SwitchChunkTests<TLogFormat, TStreamId> : RedactionService
 		await WriteSingleEvent(StreamId, 8, new string('8', 50), retryOnFail: true, token: token);
 
 		var writerPos = Writer.Position;
-		var chunk = Path.GetFileName(Db.Manager.GetChunkFor(writerPos).LocalFileName);
+		var chunk = Path.GetFileName((await Db.Manager.GetInitializedChunkFor(writerPos, token)).LocalFileName);
 		var chunkNum = Db.Manager.FileSystem.LocalNamingStrategy.GetIndexFor(chunk);
 		Assert.AreEqual(2, chunkNum);
 

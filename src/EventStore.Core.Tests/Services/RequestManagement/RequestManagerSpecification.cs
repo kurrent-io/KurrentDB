@@ -3,14 +3,14 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.RequestManager;
-using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.Replication;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.RequestManager;
+using KurrentDB.Core.Services.RequestManager.Managers;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement;
@@ -33,7 +33,7 @@ public abstract class RequestManagerSpecification<TManager>
 
 	protected abstract TManager OnManager(FakePublisher publisher);
 	protected abstract IEnumerable<Message> WithInitialMessages();
-	protected virtual void Given(){ }
+	protected virtual void Given() { }
 	protected abstract Message When();
 
 	protected Event DummyEvent() {

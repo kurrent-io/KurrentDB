@@ -3,11 +3,11 @@
 
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Index;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Core.TransactionLog;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.TransactionLog;
 using NUnit.Framework;
-using EventStore.Core.Index.Hashes;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
 

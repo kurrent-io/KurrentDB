@@ -6,9 +6,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Core.Tests.Http.Users.users;
+using KurrentDB.Core.Tests;
+using KurrentDB.Transport.Http;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
-using EventStore.Transport.Http;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.Streams;
@@ -247,7 +248,7 @@ public class Filtered {
 			var feed = await GetJson<JObject>(AllFilteredStream,
 				contentType,
 				DefaultData.AdminNetworkCredentials,
-				extra: "exclude-system-events=true" );
+				extra: "exclude-system-events=true");
 			_eventTypes = GetEventTypes(feed);
 		}
 
@@ -315,7 +316,7 @@ public class Filtered {
 			_feed = await GetJson<JObject>(AllFilteredStreamForward,
 				contentType,
 				DefaultData.AdminNetworkCredentials,
-				extra: "context=eventtype&type=prefix&data=event1-" );
+				extra: "context=eventtype&type=prefix&data=event1-");
 
 		[Test]
 		public void returns_ok_status_code() =>

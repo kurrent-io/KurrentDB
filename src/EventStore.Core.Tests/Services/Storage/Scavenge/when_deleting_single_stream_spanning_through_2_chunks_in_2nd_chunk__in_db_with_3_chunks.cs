@@ -1,12 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.Scavenge;
@@ -101,7 +99,7 @@ public class
 	public async Task last_physical_record_from_scavenged_stream_should_remain() {
 		// cannot use readIndex here as it doesn't return deleteTombstone
 
-		var chunk = Db.Manager.GetChunk(1);
+		var chunk = await Db.Manager.GetInitializedChunk(1, CancellationToken.None);
 		var chunkPos = (int)(_event7.LogPosition % Db.Config.ChunkSize);
 		var res = await chunk.TryReadAt(chunkPos, couldBeScavenged: false, CancellationToken.None);
 

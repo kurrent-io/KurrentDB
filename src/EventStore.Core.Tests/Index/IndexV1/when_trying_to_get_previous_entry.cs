@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Core.Index;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
@@ -63,7 +63,7 @@ public class when_trying_to_get_previous_entry : SpecificationWithFile {
 		base.TearDown();
 	}
 
-	private ISearchTable GetTable(bool memTableOrPTable) => memTableOrPTable ? (ISearchTable) _memTable : _pTable;
+	private ISearchTable GetTable(bool memTableOrPTable) => memTableOrPTable ? (ISearchTable)_memTable : _pTable;
 
 	[TestCase(true)]
 	[TestCase(false)]

@@ -2,9 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Monitoring.Stats;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Monitoring.Stats;
 
 namespace EventStore.Core.Tests.Bus;
 

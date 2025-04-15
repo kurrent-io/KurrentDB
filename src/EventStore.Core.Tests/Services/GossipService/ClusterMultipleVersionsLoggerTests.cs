@@ -3,18 +3,18 @@
 
 using System.Collections.Generic;
 using System.Net;
-using EventStore.Common.Utils;
 using EventStore.Core.Cluster;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.Gossip;
 using FluentAssertions;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Gossip;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.GossipService;
 
 public abstract class ClusterMultipleVersionsLoggerTests {
-	
+
 	public class if_gossip_received_has_alive_nodes_on_old_version : NodeGossipServiceTestFixture {
 		protected override Message[] Given() => GivenSystemInitializedWithKnownGossipSeedSources();
 
@@ -56,7 +56,7 @@ public abstract class ClusterMultipleVersionsLoggerTests {
 				ClusterMultipleVersionsLogger.GetIPAddressVsVersion(GetExpectedClusterInfo(),
 					out int numDistinctKnownVersions);
 			ipAddressVsVersion.Should().BeEquivalentTo(GetExpectedEndPointVsVersion());
-			
+
 			Assert.AreEqual(2, numDistinctKnownVersions);
 		}
 
@@ -238,7 +238,7 @@ public abstract class ClusterMultipleVersionsLoggerTests {
 			new GossipMessage.GetGossipReceived(new ClusterInfo(
 					MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1,
 						esVersion: VersionInfo.DefaultVersion),
-					// nodeThree is dead	
+					// nodeThree is dead
 					MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3",
 						isAlive: false),
 					MemberInfoForVNode(_nodeFour, _timeProvider.UtcNow, epochNumber: 1,
@@ -283,7 +283,7 @@ public abstract class ClusterMultipleVersionsLoggerTests {
 			new GossipMessage.GetGossipReceived(new ClusterInfo(
 					MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1,
 						esVersion: VersionInfo.DefaultVersion),
-					// nodeThree is dead	
+					// nodeThree is dead
 					MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3",
 						isAlive: false),
 					MemberInfoForVNode(_nodeFour, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.4")),
@@ -327,7 +327,7 @@ public abstract class ClusterMultipleVersionsLoggerTests {
 			new GossipMessage.GetGossipReceived(new ClusterInfo(
 				MemberInfoForVNode(_nodeTwo, _timeProvider.UtcNow, epochNumber: 1,
 					esVersion: VersionInfo.DefaultVersion),
-				// nodeThree is dead	
+				// nodeThree is dead
 				MemberInfoForVNode(_nodeThree, _timeProvider.UtcNow, epochNumber: 1, esVersion: "1.1.1.3",
 					isAlive: false),
 				MemberInfoForVNode(_nodeFour, _timeProvider.UtcNow, epochNumber: 1,

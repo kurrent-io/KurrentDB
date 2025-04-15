@@ -4,7 +4,8 @@
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Tests;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 

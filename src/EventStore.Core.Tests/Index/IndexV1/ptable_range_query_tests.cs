@@ -3,7 +3,7 @@
 
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Index;
+using KurrentDB.Core.Index;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Index.IndexV1;

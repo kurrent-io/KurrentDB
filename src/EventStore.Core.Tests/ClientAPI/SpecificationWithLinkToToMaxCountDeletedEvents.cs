@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common;
-using EventStore.ClientAPI.SystemData;
+using KurrentDB.Core.Tests;
 
 namespace EventStore.Core.Tests.ClientAPI;
 

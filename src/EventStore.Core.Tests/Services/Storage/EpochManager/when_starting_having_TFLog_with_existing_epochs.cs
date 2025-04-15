@@ -3,25 +3,18 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.LogV2;
-using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using NUnit.Framework;
-using NUnit.Framework.Internal;
-using EventStore.Core.Services.Storage.EpochManager;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.TransactionLog.LogRecords;
 using System.Threading;
-using EventStore.Core.LogAbstraction;
-using FluentAssertions;
+using System.Threading.Tasks;
+using EventStore.Core.Messages;
+using EventStore.Core.Tests.TransactionLog;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Storage.EpochManager;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage;
 
@@ -88,7 +81,7 @@ public sealed class when_starting_having_TFLog_with_existing_epochs<TLogFormat, 
 		await _db.Open();
 		_reader = new TFChunkReader(_db, _db.Config.WriterCheckpoint);
 		_writer = new TFChunkWriter(_db);
-		_writer.Open();
+		await _writer.Open(CancellationToken.None);
 		_epochs = new List<EpochRecord>();
 		var lastPos = 0L;
 		for (int i = 0; i < 30; i++) {

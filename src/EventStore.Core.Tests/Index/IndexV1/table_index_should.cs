@@ -4,9 +4,9 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Index;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Index.Hashes;
 using NUnit.Framework;
-using EventStore.Core.Index.Hashes;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
 

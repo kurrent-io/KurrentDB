@@ -5,8 +5,8 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Authorization;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Core.Authorization;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Authorization;
@@ -17,7 +17,7 @@ public class MultiClaimMatchTests {
 	public async Task NoneMatchingHasMatches() {
 		var assertion = new MultipleClaimMatchAssertion(Grant.Deny, MultipleMatchMode.None,
 			new Claim("test1", "value1"), new Claim("test2", "value2"));
-		var cp = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] {new Claim("test1", "value1")}));
+		var cp = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim("test1", "value1") }));
 		var context = new EvaluationContext(new Operation("test", "test"), CancellationToken.None);
 		Assert.False(await assertion.Evaluate(cp, new Operation("test", "test"),
 			new PolicyInformation("test", 1, DateTimeOffset.MaxValue), context));
@@ -28,7 +28,7 @@ public class MultiClaimMatchTests {
 	public async Task NonMatchingHasNoMatches() {
 		var assertion = new MultipleClaimMatchAssertion(Grant.Deny, MultipleMatchMode.None,
 			new Claim("test1", "value1"), new Claim("test2", "value2"));
-		var cp = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] {new Claim("test3", "value3")}));
+		var cp = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim("test3", "value3") }));
 		var context = new EvaluationContext(new Operation("test", "test"), CancellationToken.None);
 		Assert.True(await assertion.Evaluate(cp, new Operation("test", "test"),
 			new PolicyInformation("test", 1, DateTimeOffset.MaxValue), context));

@@ -2,11 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.Services.PersistentSubscription;
-using EventStore.Core.Services.PersistentSubscription.ConsumerStrategy;
 using EventStore.Core.Tests.Services.Replication;
 using EventStore.Core.Tests.Services.Storage;
+using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.Services.PersistentSubscription;
+using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;
@@ -19,7 +19,7 @@ public class PinnedConsumerStrategyTests {
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -59,7 +59,7 @@ public class PinnedConsumerStrategyTests {
 		var client1Envelope = new FakeEnvelope();
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor("$ce-streamName", "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -98,7 +98,7 @@ public class PinnedConsumerStrategyTests {
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		const string subsctiptionStream = "$ce-streamName";
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -141,7 +141,7 @@ public class PinnedConsumerStrategyTests {
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		const string subsctiptionStream = "$ce-streamName";
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -184,7 +184,7 @@ public class PinnedConsumerStrategyTests {
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		const string subsctiptionStream = "$ce-streamName";
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -219,7 +219,7 @@ public class PinnedConsumerStrategyTests {
 		var client3Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		const string subsctiptionStream = "$ce-streamName";
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -261,7 +261,7 @@ public class PinnedConsumerStrategyTests {
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		const string subsctiptionStream = "$ce-streamName";
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -297,7 +297,7 @@ public class PinnedConsumerStrategyTests {
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		const string subsctiptionStream = "$ce-streamName";
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)
@@ -340,7 +340,7 @@ public class PinnedConsumerStrategyTests {
 			.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 			.StartFromCurrent();
 		var consumerStrategy = (PinnedPersistentSubscriptionConsumerStrategy)settings.ConsumerStrategy;
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(settings);
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(settings);
 		reader.Load(null);
 		var client1Id = Guid.NewGuid();
 		sub.AddClient(Guid.NewGuid(), client1Id, "connection-1", client1Envelope, 14, "foo", "bar");
@@ -376,7 +376,7 @@ public class PinnedConsumerStrategyTests {
 			.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 			.StartFromCurrent();
 		var consumerStrategy = (PinnedPersistentSubscriptionConsumerStrategy)settings.ConsumerStrategy;
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(settings);
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(settings);
 		reader.Load(null);
 		var client1Id = Guid.NewGuid();
 		sub.AddClient(Guid.NewGuid(), client1Id, "connection-1", client1Envelope, 14, "foo", "bar");
@@ -421,7 +421,7 @@ public class PinnedConsumerStrategyTests {
 			.CustomConsumerStrategy(new PinnedPersistentSubscriptionConsumerStrategy(new XXHashUnsafe()))
 			.StartFromCurrent();
 		var consumerStrategy = (PinnedPersistentSubscriptionConsumerStrategy)settings.ConsumerStrategy;
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(settings);
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(settings);
 		reader.Load(null);
 		var correlationId1 = Guid.NewGuid();
 		sub.AddClient(correlationId1, Guid.NewGuid(), "connection-1", client1Envelope, 14, "foo", "bar");
@@ -459,7 +459,7 @@ public class PinnedConsumerStrategyTests {
 		var client2Envelope = new FakeEnvelope();
 		var reader = new FakeCheckpointReader();
 		const string subsctiptionStream = "$ce-streamName";
-		var sub = new Core.Services.PersistentSubscription.PersistentSubscription(
+		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(
 			PersistentSubscriptionToStreamParamsBuilder.CreateFor(subsctiptionStream, "groupName")
 				.WithEventLoader(new FakeStreamReader())
 				.WithCheckpointReader(reader)

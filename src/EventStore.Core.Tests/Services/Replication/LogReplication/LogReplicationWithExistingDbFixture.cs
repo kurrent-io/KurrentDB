@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogAbstraction;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Transforms;
-using EventStore.Core.Transforms.Identity;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Transforms;
+using KurrentDB.Core.Transforms.Identity;
 
 namespace EventStore.Core.Tests.Services.Replication.LogReplication;
 
@@ -77,8 +77,8 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 			// move the (intercepted) writer checkpoint to the expected positions so that they can be compared with the
 			// replica's writer checkpoints during tests
 			if (!raw &&
-			    (logRecord.IsTransactionBoundary() /* complete transaction */
-			     || i == logRecords.Length - 1)) /* incomplete transaction at the end of a chunk - commit for backwards compatibility */
+				(logRecord.IsTransactionBoundary() /* complete transaction */
+				 || i == logRecords.Length - 1)) /* incomplete transaction at the end of a chunk - commit for backwards compatibility */
 				db.Config.WriterCheckpoint.Write(writerPos);
 
 			posMaps.Add(new PosMap(logicalPos, actualPos));
@@ -132,8 +132,10 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 
 			for (var i = 0; i < txSize; i++) {
 				var flags = PrepareFlags.Data | PrepareFlags.IsCommitted;
-				if (i == 0) flags |= PrepareFlags.TransactionBegin;
-				if (!incomplete && i == txSize - 1) flags |= PrepareFlags.TransactionEnd;
+				if (i == 0)
+					flags |= PrepareFlags.TransactionBegin;
+				if (!incomplete && i == txSize - 1)
+					flags |= PrepareFlags.TransactionEnd;
 				var logRecord = CreatePrepare(logPosition, flags);
 				logPosition += logRecord.GetSizeWithLengthPrefixAndSuffix();
 				logRecords.Add(logRecord);

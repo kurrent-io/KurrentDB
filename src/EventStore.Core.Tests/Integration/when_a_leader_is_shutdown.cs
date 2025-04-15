@@ -1,14 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Bus;
-using EventStore.Core.Messages;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EventStore.Core.Messages;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Integration;
 
@@ -34,7 +35,7 @@ public class when_a_leader_is_shutdown<TLogFormat, TStreamId> : specification_wi
 
 	protected override async Task Given() {
 		_expectedNumberOfEvents.Wait(5000);
-		var leader = _nodes.First(x => x.NodeState == Data.VNodeState.Leader);
+		var leader = _nodes.First(x => x.NodeState == VNodeState.Leader);
 		await ShutdownNode(leader.DebugIndex);
 		_expectedNumberOfEvents = new CountdownEvent(2 /*role assignments*/ + 1 /*epoch write*/);
 		_expectedNumberOfEvents.Wait(5000);

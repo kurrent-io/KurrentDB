@@ -4,21 +4,21 @@
 using System.Threading.Tasks;
 using EventStore.Core.Messages;
 using EventStore.Core.Tests.Helpers;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
 
 [TestFixture, Category("LongRunning")]
 public class ping_controller_should : SpecificationWithDirectory {
-	private MiniNode<LogFormat.V2,string> _node;
+	private MiniNode<LogFormat.V2, string> _node;
 
 	[OneTimeSetUp]
 	public override async Task SetUp() {
 		await base.SetUp();
 
-		_node = new MiniNode<LogFormat.V2,string>(PathName);
+		_node = new MiniNode<LogFormat.V2, string>(PathName);
 		await _node.Start();
 	}
 

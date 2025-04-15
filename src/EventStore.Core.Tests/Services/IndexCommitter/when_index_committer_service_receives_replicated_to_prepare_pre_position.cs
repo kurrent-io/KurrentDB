@@ -4,7 +4,7 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Core.Messages;
-using EventStore.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.IndexCommitter;

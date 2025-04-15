@@ -5,11 +5,11 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Core.Exceptions;
-using EventStore.Core.Index;
-using EventStore.Core.Util;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Exceptions;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Util;
 using NUnit.Framework;
-using EventStore.Common.Utils;
 
 namespace EventStore.Core.Tests.Index.IndexV1;
 

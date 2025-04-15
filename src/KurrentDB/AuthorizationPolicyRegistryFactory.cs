@@ -6,21 +6,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using EventStore.Auth.StreamPolicyPlugin;
-using EventStore.Common.Exceptions;
-using EventStore.Core;
-using EventStore.Core.Authorization.AuthorizationPolicies;
-using EventStore.Core.Bus;
-using EventStore.Core.Configuration.Sources;
-using EventStore.PluginHosting;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Auth.StreamPolicyPlugin;
+using KurrentDB.Common.Exceptions;
+using KurrentDB.Core;
+using KurrentDB.Core.Authorization.AuthorizationPolicies;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.PluginHosting;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
 namespace KurrentDB;
 
-public class AuthorizationPolicyRegistryFactory: SubsystemsPlugin {
+public class AuthorizationPolicyRegistryFactory : SubsystemsPlugin {
 	private readonly ILogger _logger = Log.ForContext<AuthorizationPolicyRegistryFactory>();
 	private readonly IPolicySelectorFactory[] _pluginSelectorFactories = [];
 	private readonly Func<IPublisher, IAuthorizationPolicyRegistry> _createRegistry;

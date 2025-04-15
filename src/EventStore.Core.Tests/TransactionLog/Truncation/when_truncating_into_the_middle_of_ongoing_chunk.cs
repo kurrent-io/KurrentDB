@@ -6,13 +6,10 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.TransactionLog;
 using EventStore.Core.Tests.TransactionLog.Validation;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
-using EventStore.Core.Transforms.Identity;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.Transforms.Identity;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog.Truncation;

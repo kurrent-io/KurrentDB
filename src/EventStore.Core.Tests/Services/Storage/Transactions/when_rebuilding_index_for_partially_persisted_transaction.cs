@@ -4,20 +4,18 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Common.Utils;
-using EventStore.Core.Caching;
-using EventStore.Core.Data;
-using EventStore.Core.DataStructures;
-using EventStore.Core.Index;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.Fakes;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Index;
+using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Util;
 using NUnit.Framework;
-using EventStore.Core.Util;
-using EventStore.Core.Index.Hashes;
-using EventStore.Core.Metrics;
 
 namespace EventStore.Core.Tests.Services.Storage.Transactions;
 

@@ -3,14 +3,15 @@
 
 using System;
 using System.Collections.Concurrent;
-using NUnit.Framework;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
 using System.Linq;
-using EventStore.Transport.Http;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
 using EventStore.Core.Messages;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Tests;
+using KurrentDB.Transport.Http;
+using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;
 
 namespace EventStore.Core.Tests.Http.PersistentSubscription;
@@ -35,8 +36,8 @@ class when_parking_a_message(string contentType) : with_subscription_having_even
 		Assert.AreEqual(HttpStatusCode.OK, _lastResponse.StatusCode);
 		Assert.DoesNotThrow(() => {
 			_entries = json != null ? json["entries"].ToList() : new List<JToken>();
-            _nackLink = _entries[0]["links"][3]["uri"].ToString() + "?action=park";
-            _eventIdToPark = Guid.Parse(_entries[0]["eventId"].ToString());
+			_nackLink = _entries[0]["links"][3]["uri"].ToString() + "?action=park";
+			_eventIdToPark = Guid.Parse(_entries[0]["eventId"].ToString());
 		});
 	}
 
@@ -44,10 +45,10 @@ class when_parking_a_message(string contentType) : with_subscription_having_even
 		var parkedStreamId = String.Format("$persistentsubscription-{0}::{1}-parked", TestStreamName, GroupName);
 
 		await _connection.SubscribeToStreamAsync(parkedStreamId, true, (x, y) => {
-				_parkedEventId = y.Event.EventId;
-				_eventParked.TrySetResult(true);
-				return Task.CompletedTask;
-			},
+			_parkedEventId = y.Event.EventId;
+			_eventParked.TrySetResult(true);
+			return Task.CompletedTask;
+		},
 			(x, y, z) => { },
 			DefaultData.AdminCredentials);
 

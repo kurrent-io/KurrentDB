@@ -2,12 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Core;
-using EventStore.Core.Certificates;
-using EventStore.Core.Configuration.Sources;
-using EventStore.Core.Services;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Core;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;

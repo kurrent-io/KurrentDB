@@ -2,17 +2,18 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
+using Serilog;
 using ILogger = Serilog.ILogger;
 
 namespace EventStore.Core.Tests.Helpers;
 
 public class ClientApiLoggerBridge : EventStore.ClientAPI.ILogger {
 	public static readonly ClientApiLoggerBridge Default =
-		new ClientApiLoggerBridge(Serilog.Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName,
+		new ClientApiLoggerBridge(Log.ForContext(Serilog.Core.Constants.SourceContextPropertyName,
 			"client-api"));
 
-	private readonly Serilog.ILogger _log;
+	private readonly ILogger _log;
 
 	public ClientApiLoggerBridge(ILogger log) {
 		Ensure.NotNull(log, "log");

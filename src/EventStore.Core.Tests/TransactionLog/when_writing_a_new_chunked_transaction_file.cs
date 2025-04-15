@@ -6,9 +6,9 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.IO;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -26,7 +26,7 @@ public class when_writing_a_new_chunked_transaction_file<TLogFormat, TStreamId> 
 		var db = new TFChunkDb(TFChunkHelper.CreateDbConfig(PathName, _checkpoint, new InMemoryCheckpoint()));
 		await db.Open();
 		var tf = new TFChunkWriter(db);
-		tf.Open();
+		await tf.Open(CancellationToken.None);
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -44,8 +44,8 @@ public class when_writing_a_new_chunked_transaction_file<TLogFormat, TStreamId> 
 			timeStamp: new DateTime(2012, 12, 21),
 			flags: PrepareFlags.None,
 			eventType: eventTypeId,
-			data: new byte[] {1, 2, 3, 4, 5},
-			metadata: new byte[] {7, 17});
+			data: new byte[] { 1, 2, 3, 4, 5 },
+			metadata: new byte[] { 7, 17 });
 
 		await tf.Write(record, CancellationToken.None);
 		await tf.DisposeAsync();

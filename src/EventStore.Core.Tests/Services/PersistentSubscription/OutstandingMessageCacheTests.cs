@@ -3,7 +3,7 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Services.PersistentSubscription;
+using KurrentDB.Core.Services.PersistentSubscription;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.PersistentSubscription;

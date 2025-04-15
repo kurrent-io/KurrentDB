@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Threading.Tasks;
 using EventStore.ClientAPI.SystemData;
 using EventStore.ClientAPI.UserManagement;
 using NUnit.Framework;
@@ -50,7 +51,7 @@ public class creating_a_user<TLogFormat, TStreamId> : TestWithNode<TLogFormat, T
 	}
 
 	[Test]
-	public async System.Threading.Tasks.Task creating_a_user_with_parameters_can_be_readAsync() {
+	public async Task creating_a_user_with_parameters_can_be_readAsync() {
 		UserDetails d = null;
 		await _manager.CreateUserAsync("ouro", "ourofull", new[] { "foo", "bar" }, "ouro",
 			new UserCredentials("admin", "changeit"));
@@ -63,7 +64,7 @@ public class creating_a_user<TLogFormat, TStreamId> : TestWithNode<TLogFormat, T
 	}
 
 	[Test]
-	public async System.Threading.Tasks.Task creating_a_user_with_unicode_chars_can_be_readAsync() {
+	public async Task creating_a_user_with_unicode_chars_can_be_readAsync() {
 		UserDetails d = null;
 		await _manager.CreateUserAsync("码ou£ro码", "ourofull", new[] { "foo", "bar" }, "ou码码ro",
 			new UserCredentials("admin", "changeit"));

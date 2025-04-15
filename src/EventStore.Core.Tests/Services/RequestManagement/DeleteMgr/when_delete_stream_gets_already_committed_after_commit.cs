@@ -3,12 +3,12 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
 using EventStore.Core.Tests.Fakes;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.RequestManager.Managers;
 using NUnit.Framework;
-using EventStore.Core.Services.RequestManager.Managers;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr;
 
@@ -17,8 +17,8 @@ public class when_delete_stream_gets_already_committed_after_commit : RequestMan
 	private long commitPosition = 1000;
 	protected override DeleteStream OnManager(FakePublisher publisher) {
 		return new DeleteStream(
-			publisher, 
-			CommitTimeout, 
+			publisher,
+			CommitTimeout,
 			Envelope,
 			InternalCorrId,
 			ClientCorrId,
@@ -30,10 +30,10 @@ public class when_delete_stream_gets_already_committed_after_commit : RequestMan
 
 	protected override IEnumerable<Message> WithInitialMessages() {
 		yield return new StorageMessage.CommitIndexed(InternalCorrId, commitPosition, 2, 3, 3);
-		yield return new ReplicationTrackingMessage.ReplicatedTo(commitPosition);		
+		yield return new ReplicationTrackingMessage.ReplicatedTo(commitPosition);
 	}
 
-	protected override Message When() {			
+	protected override Message When() {
 		return new StorageMessage.AlreadyCommitted(InternalCorrId, "test123", 0, 1, commitPosition);
 	}
 

@@ -42,7 +42,7 @@ Function Start-Build{
     $baseDirectory = $PSScriptRoot
     $srcDirectory = Join-Path $baseDirectory "src"
     $binDirectory = Join-Path $baseDirectory "bin"
-    $eventStoreSolution = Join-Path $srcDirectory "EventStore.sln"
+    $eventStoreSolution = Join-Path $srcDirectory "KurrentDB.sln"
 
     Write-Info "Build Configuration"
     Write-Info "-------------------"

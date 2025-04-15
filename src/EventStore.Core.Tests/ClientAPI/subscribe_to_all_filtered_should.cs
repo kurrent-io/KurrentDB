@@ -6,13 +6,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Services;
 using EventStore.Core.Tests.ClientAPI.Helpers;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Services;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.ClientAPI;
@@ -94,7 +93,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 			using (await store.FilteredSubscribeToAllAsync(false, filter, (s, e) => {
 				if (e.OriginalStreamId == SystemStreams.EventTypesStream)
 					return Task.CompletedTask;
-				
+
 				foundEvents.Add(e);
 				if (foundEvents.Count == 5) {
 					appeared.TrySetResult(true);
@@ -235,7 +234,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 					return Task.CompletedTask;
 				},
 				checkpointInterval: 2)) {
-				
+
 				await _conn.AppendToStreamAsync("stream-a", ExpectedVersion.NoStream, _testEvents);
 
 				await appeared.Task.WithTimeout(Timeout);

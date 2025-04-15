@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Security.Cryptography.X509Certificates;
+using KurrentDB.Core.Certificates;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Certificates;
@@ -93,7 +94,7 @@ public class with_untrusted_root : with_certificate_chain_of_length_3 {
 	public void builds_with_untrusted_root() {
 		var chainStatus = CertificateUtils.BuildChain(
 			_leaf,
-			new X509Certificate2Collection(new []{_intermediate, _root}),
+			new X509Certificate2Collection(new[] { _intermediate, _root }),
 			new X509Certificate2Collection(), out _);
 		Assert.True(chainStatus == X509ChainStatusFlags.UntrustedRoot);
 	}

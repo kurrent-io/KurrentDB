@@ -3,9 +3,9 @@
 
 using System;
 using System.Globalization;
-using EventStore.Common.Utils;
-using EventStore.Core.Data;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Transport.Http.Codecs;
 using ILogger = Serilog.ILogger;
 #pragma warning disable 1591
 
@@ -83,8 +83,8 @@ internal class BankAccountBasicProducer : IBasicProducer {
 
 	private static void LogExpected(object generated, object actual, string reason) {
 		Log.Information("Expected: {expected}\n" +
-		         "  Actual: {actual}\n" +
-		         " Details: {reason}",
+				 "  Actual: {actual}\n" +
+				 " Details: {reason}",
 			generated.ToString(),
 			(actual == null ? "<null>" : actual.ToString()),
 			reason

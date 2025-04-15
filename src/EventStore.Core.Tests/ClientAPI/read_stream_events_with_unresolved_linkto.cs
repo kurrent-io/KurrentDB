@@ -7,12 +7,12 @@ using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Data;
-using EventStore.Core.Services;
 using EventStore.Core.Tests.ClientAPI.Helpers;
+using KurrentDB.Core.Services;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
 using StreamMetadata = EventStore.ClientAPI.StreamMetadata;
+using SystemEventTypes = EventStore.ClientAPI.Common.SystemEventTypes;
 
 namespace EventStore.Core.Tests.ClientAPI;
 
@@ -32,7 +32,7 @@ public class read_stream_events_with_unresolved_linkto<TLogFormat, TStreamId> : 
 		await _conn.AppendToStreamAsync(
 				"links", ExpectedVersion.NoStream,
 				new EventData(
-					Guid.NewGuid(), EventStore.ClientAPI.Common.SystemEventTypes.LinkTo, false,
+					Guid.NewGuid(), SystemEventTypes.LinkTo, false,
 					Encoding.UTF8.GetBytes("0@stream"), null));
 		await _conn.DeleteStreamAsync("stream", ExpectedVersion.Any);
 	}

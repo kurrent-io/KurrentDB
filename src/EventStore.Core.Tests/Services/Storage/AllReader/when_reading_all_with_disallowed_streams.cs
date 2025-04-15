@@ -6,10 +6,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client.Messages;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using NUnit.Framework;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
-
 
 namespace EventStore.Core.Tests.Services.Storage.AllReader;
 
@@ -54,7 +53,7 @@ public class when_reading_all_with_disallowed_streams<TLogFormat, TStreamId> : R
 	public async Task should_filter_out_disallowed_streams_when_reading_events_forward_with_event_type_prefix() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.EventType,
-			Filter.Types.FilterType.Prefix, new[] {"event-type"});
+			Filter.Types.FilterType.Prefix, new[] { "event-type" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsForwardFiltered(_forwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -68,7 +67,7 @@ public class when_reading_all_with_disallowed_streams<TLogFormat, TStreamId> : R
 	public async Task should_filter_out_disallowed_streams_when_reading_events_forward_with_event_type_regex() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.EventType,
-			Filter.Types.FilterType.Regex, new[] {@"^.*event-type-.*$"});
+			Filter.Types.FilterType.Regex, new[] { @"^.*event-type-.*$" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsForwardFiltered(_forwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -82,7 +81,7 @@ public class when_reading_all_with_disallowed_streams<TLogFormat, TStreamId> : R
 	public async Task should_filter_out_disallowed_streams_when_reading_events_forward_with_stream_id_prefix() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.StreamId,
-			Filter.Types.FilterType.Prefix, new[] {"$persistentsubscripti"});
+			Filter.Types.FilterType.Prefix, new[] { "$persistentsubscripti" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsForwardFiltered(_forwardReadPos, 10, 10, eventFilter, CancellationToken.None);
@@ -95,7 +94,7 @@ public class when_reading_all_with_disallowed_streams<TLogFormat, TStreamId> : R
 	public async Task should_filter_out_disallowed_streams_when_reading_events_forward_with_stream_id_regex() {
 		var filter = new Filter(
 			Filter.Types.FilterContext.StreamId,
-			Filter.Types.FilterType.Regex, new[] {@"^.*istentsubsc.*$"});
+			Filter.Types.FilterType.Regex, new[] { @"^.*istentsubsc.*$" });
 		var eventFilter = EventFilter.Get(true, filter);
 
 		var result = await ReadIndex.ReadAllEventsForwardFiltered(_forwardReadPos, 10, 10, eventFilter, CancellationToken.None);

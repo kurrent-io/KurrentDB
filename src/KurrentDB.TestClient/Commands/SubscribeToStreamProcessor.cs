@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using EventStore.Client.Messages;
 using EventStore.Core.Services.Transport.Tcp;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.TestClient.Commands;
 
@@ -38,16 +39,16 @@ internal class SubscribeToStreamProcessor : ICmdProcessor {
 					case TcpCommand.StreamEventAppeared: {
 						var dto = pkg.Data.Deserialize<StreamEventAppeared>();
 						context.Log.Information("NEW EVENT:\n\n"
-						                 + "\tEventStreamId: {stream}\n"
-						                 + "\tEventNumber:   {eventNumber}\n"
-						                 + "\tEventType:     {eventType}\n"
-						                 + "\tData:          {data}\n"
-						                 + "\tMetadata:      {metadata}\n",
+										 + "\tEventStreamId: {stream}\n"
+										 + "\tEventNumber:   {eventNumber}\n"
+										 + "\tEventType:     {eventType}\n"
+										 + "\tData:          {data}\n"
+										 + "\tMetadata:      {metadata}\n",
 							dto.Event.Event.EventStreamId,
 							dto.Event.Event.EventNumber,
 							dto.Event.Event.EventType,
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetString(dto.Event.Event.Data.ToByteArray()),
-							EventStore.Common.Utils.Helper.UTF8NoBom.GetString(dto.Event.Event.Metadata.ToByteArray()));
+							Helper.UTF8NoBom.GetString(dto.Event.Event.Data.ToByteArray()),
+							Helper.UTF8NoBom.GetString(dto.Event.Event.Metadata.ToByteArray()));
 						break;
 					}
 					case TcpCommand.SubscriptionDropped: {

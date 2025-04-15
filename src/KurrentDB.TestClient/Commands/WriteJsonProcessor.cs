@@ -5,10 +5,10 @@ using System;
 using System.Diagnostics;
 using System.Net.Sockets;
 using EventStore.Client.Messages;
-using EventStore.Common.Utils;
-using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Tcp;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using KurrentDB.Transport.Http.Codecs;
 
 namespace KurrentDB.TestClient.Commands;
 

@@ -1,27 +1,27 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Transport.Tcp;
-using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Authentication;
 using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Messages;
 using System.Text;
 using EventStore.Client.Messages;
-using EventStore.Core.Authentication.InternalAuthentication;
-using EventStore.Core.LogV2;
-using EventStore.Core.Services.UserManagement;
-using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Services;
+using EventStore.Core.Messages;
+using EventStore.Core.Services.Transport.Tcp;
+using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
-using EventStore.Core.Util;
-using EventRecord = EventStore.Core.Data.EventRecord;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using KurrentDB.Core.Authentication.InternalAuthentication;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Helpers;
+using KurrentDB.Core.LogV2;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Util;
+using NUnit.Framework;
+using EventRecord = KurrentDB.Core.Data.EventRecord;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp;
 
@@ -40,7 +40,7 @@ public class TcpClientDispatcherTests {
 		_connection = new TcpConnectionManager(
 			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(), new InternalAuthenticationProvider(
-				InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),
+				InMemoryBus.CreateTest(), new IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
 			new AuthorizationGateway(new TestAuthorizationProvider()),
 			TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
@@ -260,7 +260,7 @@ public class TcpClientDispatcherTests {
 	public void
 		when_wrapping_scavenge_inprogress_response_should_return_result_and_scavengeId_for_v2_clients() {
 		var scavengeId = Guid.NewGuid().ToString();
-		var msg = new ClientMessage.ScavengeDatabaseInProgressResponse(Guid.NewGuid(), scavengeId, reason:"In Progress");
+		var msg = new ClientMessage.ScavengeDatabaseInProgressResponse(Guid.NewGuid(), scavengeId, reason: "In Progress");
 
 		var package = _dispatcher.WrapMessage(msg, (byte)ClientVersion.V2);
 		Assert.IsNotNull(package, "Package is null");
@@ -276,7 +276,7 @@ public class TcpClientDispatcherTests {
 	public void
 		when_wrapping_scavenge_unauthorized_response_should_return_result_and_scavengeId_for_v2_clients() {
 		var scavengeId = Guid.NewGuid().ToString();
-		var msg = new ClientMessage.ScavengeDatabaseUnauthorizedResponse(Guid.NewGuid(), scavengeId,"Unauthorized" );
+		var msg = new ClientMessage.ScavengeDatabaseUnauthorizedResponse(Guid.NewGuid(), scavengeId, "Unauthorized");
 
 		var package = _dispatcher.WrapMessage(msg, (byte)ClientVersion.V2);
 		Assert.IsNotNull(package, "Package is null");

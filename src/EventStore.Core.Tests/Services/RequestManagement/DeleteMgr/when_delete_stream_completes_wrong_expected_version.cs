@@ -3,12 +3,11 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.RequestManager.Managers;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.RequestManager.Managers;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.RequestManagement.DeleteMgr;
@@ -49,7 +48,7 @@ public class when_delete_stream_completes_wrong_expected_version : RequestManage
 	public void the_envelope_is_replied_to_with_wrong_expected_version() {
 		Assert.That(Envelope.Replies.ContainsSingle<ClientMessage.DeleteStreamCompleted>(
 			x => x.CorrelationId == ClientCorrId &&
-			     x.Result == OperationResult.WrongExpectedVersion &&
-			     x.CurrentVersion == 3));
+				 x.Result == OperationResult.WrongExpectedVersion &&
+				 x.CurrentVersion == 3));
 	}
 }

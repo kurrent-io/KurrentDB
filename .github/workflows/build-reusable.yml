@@ -52,7 +52,7 @@ jobs:
     - name: Compile
       shell: bash
       run: |
-        dotnet build --configuration ${{ matrix.configuration }} -p:Platform=${{ inputs.arch }} src/EventStore.sln
+        dotnet build --configuration ${{ matrix.configuration }} -p:Platform=${{ inputs.arch }} src/KurrentDB.sln
     - name: Verify Build
       shell: bash
       run: |
@@ -72,7 +72,7 @@ jobs:
         --logger:trx
         --logger:"console;verbosity=normal"
         --results-directory=$(pwd)/test-results
-        src/EventStore.sln
+        src/KurrentDB.sln
     - name: Collect Test Results
       shell: bash
       if: always()

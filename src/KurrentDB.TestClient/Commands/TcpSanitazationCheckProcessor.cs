@@ -6,8 +6,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using EventStore.Common.Utils;
 using EventStore.Core.Services.Transport.Tcp;
+using KurrentDB.Common.Utils;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.TestClient.Commands;
@@ -42,7 +42,7 @@ internal class TcpSanitazationCheckProcessor : ICmdProcessor {
 		};
 
 		var packages = commandsToCheck.Select(c =>
-				new TcpPackage((TcpCommand)c, Guid.NewGuid(), new byte[] {0, 1, 0, 1}).AsByteArray())
+				new TcpPackage((TcpCommand)c, Guid.NewGuid(), new byte[] { 0, 1, 0, 1 }).AsByteArray())
 			.Union(new[] {
 				BitConverter.GetBytes(int.MaxValue).Union(new byte[] {1, 2, 3, 4}).ToArray(),
 				BitConverter.GetBytes(int.MinValue).Union(new byte[] {1, 2, 3, 4}).ToArray(),

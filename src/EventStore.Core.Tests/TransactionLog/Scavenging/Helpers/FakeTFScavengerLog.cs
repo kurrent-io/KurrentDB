@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks;
 
 namespace EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 

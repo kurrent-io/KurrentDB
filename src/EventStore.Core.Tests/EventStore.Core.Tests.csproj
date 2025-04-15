@@ -26,11 +26,11 @@
 
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" />
-		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" />
-		<ProjectReference Include="..\EventStore.PluginHosting\EventStore.PluginHosting.csproj" />
-		<ProjectReference Include="..\EventStore.Transport.Http\EventStore.Transport.Http.csproj" />
-		<ProjectReference Include="..\EventStore.Transport.Tcp\EventStore.Transport.Tcp.csproj" />
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+		<ProjectReference Include="..\KurrentDB.PluginHosting\KurrentDB.PluginHosting.csproj" />
+		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
+		<ProjectReference Include="..\KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<EmbeddedResource Include="Services\Transport\Tcp\test_certificates\**\*.crt" />
@@ -38,6 +38,10 @@
 		<EmbeddedResource Remove="FakePlugin\**" />
 	</ItemGroup>
 	<ItemGroup>
+		<None Include="..\KurrentDB.Common\Utils\version.properties">
+		  <Link>version.properties</Link>
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Include="TestConfigs\*.yaml">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
@@ -55,12 +59,6 @@
 	<ItemGroup>
 		<None Include="swagger.yaml">
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-	<ItemGroup>
-		<None Include="..\EventStore.Common\Utils\version.properties">
-			<Link>version.properties</Link>
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 	<ItemGroup>

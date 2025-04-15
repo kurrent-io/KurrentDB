@@ -4,13 +4,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.LogV2;
-using EventStore.Core.TransactionLog;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.FileNamingStrategy;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.TransactionLog;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -29,7 +26,7 @@ public class when_reading_a_single_record<TLogFormat, TStreamId> : Specification
 		_db = new TFChunkDb(TFChunkHelper.CreateSizedDbConfig(PathName, 0, chunkSize: 4096));
 		await _db.Open();
 
-		var chunk = _db.Manager.GetChunk(0);
+		var chunk = await _db.Manager.GetInitializedChunk(0, CancellationToken.None);
 		_records = new ILogRecord[RecordsCount];
 		_results = new RecordWriteResult[RecordsCount];
 

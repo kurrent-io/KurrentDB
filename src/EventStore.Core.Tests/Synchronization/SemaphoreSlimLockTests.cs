@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Synchronization;
+using KurrentDB.Core.Synchronization;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Synchronization;

@@ -5,11 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using EventStore.Common.Utils;
-using EventStore.Core.Services.Transport.Http;
 using EventStore.Plugins.Authorization;
-using EventStore.Transport.Http;
-using EventStore.Transport.Http.Codecs;
+using KurrentDB.Common.Utils;
+using KurrentDB.Core.Services.Transport.Http;
+using KurrentDB.Transport.Http;
+using KurrentDB.Transport.Http.Codecs;
 
 namespace EventStore.Core.Tests.Services.Transport.Http;
 

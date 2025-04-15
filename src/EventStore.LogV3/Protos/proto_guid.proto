@@ -1,6 +1,0 @@
-syntax = "proto3";
-package EventStore.LogV3;
-
-message ProtoGuid {
-	bytes bytes = 1;
-}

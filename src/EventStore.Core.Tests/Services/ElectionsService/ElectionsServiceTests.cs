@@ -4,16 +4,16 @@
 using System;
 using System.Linq;
 using System.Net;
-using EventStore.Core.Bus;
 using EventStore.Core.Cluster;
-using EventStore.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services.TimerService;
 using EventStore.Core.Tests.Fakes;
 using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.TransactionLog.Checkpoint;
 using FluentAssertions;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.ElectionsService;
@@ -23,7 +23,7 @@ public abstract class ElectionsFixture {
 	protected readonly VNodeInfo _nodeTwo;
 	protected readonly VNodeInfo _nodeThree;
 	protected FakeTimeProvider _timeProvider;
-	protected Core.Services.ElectionsService _sut;
+	protected KurrentDB.Core.Services.ElectionsService _sut;
 	private ISubscriber _bus;
 	protected FakePublisher _publisher;
 	protected Guid _epochId;
@@ -55,7 +55,7 @@ public abstract class ElectionsFixture {
 		_node = node;
 		_nodeTwo = nodeTwo;
 		_nodeThree = nodeThree;
-		_sut = new Core.Services.ElectionsService(_publisher,
+		_sut = new KurrentDB.Core.Services.ElectionsService(_publisher,
 			MemberInfoFromVNode(_node, _timeProvider.UtcNow, VNodeState.Unknown, true, 0, _epochId, 0), 3,
 			new InMemoryCheckpoint(0),
 			new InMemoryCheckpoint(0),
@@ -106,7 +106,7 @@ public class when_system_init : ElectionsFixture {
 	public void should_start_view_change_proof_timer() {
 		var expected = new Message[] {
 			TimerMessage.Schedule.Create(
-				Core.Services.ElectionsService.SendViewChangeProofInterval,
+				KurrentDB.Core.Services.ElectionsService.SendViewChangeProofInterval,
 				_publisher,
 				new ElectionMessage.SendViewChangeProof()),
 		};
@@ -258,7 +258,7 @@ public class when_view_change_proof_is_triggered_and_the_first_election_has_not_
 
 		var expected = new Message[] {
 			TimerMessage.Schedule.Create(
-				Core.Services.ElectionsService.SendViewChangeProofInterval,
+				KurrentDB.Core.Services.ElectionsService.SendViewChangeProofInterval,
 				_publisher,
 				new ElectionMessage.SendViewChangeProof()),
 		};
@@ -298,7 +298,7 @@ public class when_view_change_proof_is_triggered_and_the_first_election_has_comp
 				new ElectionMessage.ViewChangeProof(_node.InstanceId, _node.HttpEndPoint, 0),
 				_timeProvider.LocalTime.Add(LeaderElectionProgressTimeout)),
 			TimerMessage.Schedule.Create(
-				Core.Services.ElectionsService.SendViewChangeProofInterval,
+				KurrentDB.Core.Services.ElectionsService.SendViewChangeProofInterval,
 				_publisher,
 				new ElectionMessage.SendViewChangeProof()),
 		};
@@ -1227,7 +1227,7 @@ public class when_the_elections_service_is_initialized_as_read_only_replica {
 			true);
 
 		Assert.Throws<ArgumentException>(() => {
-			new Core.Services.ElectionsService(new FakePublisher(), nodeInfo, 3,
+			new KurrentDB.Core.Services.ElectionsService(new FakePublisher(), nodeInfo, 3,
 				new InMemoryCheckpoint(0),
 				new InMemoryCheckpoint(0),
 				new InMemoryCheckpoint(-1),
@@ -1404,7 +1404,7 @@ public class when_electing_a_leader_and_prepare_ok_is_not_received_from_previous
 			_sut.Handle(new ElectionMessage.PrepareOk(0, _nodeTwo.InstanceId, _nodeTwo.HttpEndPoint, 10, 0,
 				_epochId, _nodeThree.InstanceId, 0, 0, 0, 0,
 				new ClusterInfo(
-					MemberInfoFromVNode(_nodeThree, _timeProvider.UtcNow, VNodeState.Unknown, true, 9, _otherEpochId , 0)
+					MemberInfoFromVNode(_nodeThree, _timeProvider.UtcNow, VNodeState.Unknown, true, 9, _otherEpochId, 0)
 				)));
 
 			_publisher.Messages.Clear();

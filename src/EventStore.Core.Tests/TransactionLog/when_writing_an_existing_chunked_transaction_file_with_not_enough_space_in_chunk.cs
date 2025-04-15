@@ -6,11 +6,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.IO;
-using EventStore.Core.TransactionLog.Checkpoint;
-using EventStore.Core.TransactionLog.Chunks;
-using EventStore.Core.TransactionLog.Chunks.TFChunk;
-using EventStore.Core.TransactionLog.LogRecords;
 using EventStore.Plugins.Transforms;
+using KurrentDB.Core.TransactionLog.Checkpoint;
+using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.TransactionLog;
@@ -38,7 +38,7 @@ public class
 		var db = new TFChunkDb(TFChunkHelper.CreateDbConfig(PathName, _checkpoint, new InMemoryCheckpoint()));
 		await db.Open();
 		var tf = new TFChunkWriter(db);
-		tf.Open();
+		await tf.Open(CancellationToken.None);
 
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
@@ -101,8 +101,7 @@ public class
 		await db.DisposeAsync();
 
 		Assert.AreEqual(record3.GetSizeWithLengthPrefixAndSuffix() + 10000, _checkpoint.Read());
-		await using var filestream = File.Open(filename2, new FileStreamOptions
-			{ Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
+		await using var filestream = File.Open(filename2, new FileStreamOptions { Mode = FileMode.Open, Access = FileAccess.Read, Options = FileOptions.Asynchronous });
 		filestream.Seek(ChunkHeader.Size + sizeof(int), SeekOrigin.Begin);
 
 		var recordLength = filestream.Length - filestream.Position;

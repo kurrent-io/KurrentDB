@@ -5,7 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
+
 #pragma warning disable 1591
 
 namespace KurrentDB.TestClient;

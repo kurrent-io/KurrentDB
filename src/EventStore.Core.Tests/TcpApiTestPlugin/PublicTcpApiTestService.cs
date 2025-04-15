@@ -8,13 +8,13 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core;
-using EventStore.Core.Bus;
-using EventStore.Core.Certificates;
 using EventStore.Core.Messages;
-using EventStore.Core.Services;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Plugins.Authentication;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Services;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 
@@ -36,9 +36,9 @@ public class PublicTcpApiTestService : IHostedService {
 	}
 
 	public static PublicTcpApiTestService Insecure(
-		TcpApiTestOptions options, 
+		TcpApiTestOptions options,
 		IAuthenticationProvider authProvider,
-		AuthorizationGateway authGateway, 
+		AuthorizationGateway authGateway,
 		StandardComponents components
 	) {
 		var endpoint = new IPEndPoint(IPAddress.Loopback, options.NodeTcpPort);
@@ -64,10 +64,10 @@ public class PublicTcpApiTestService : IHostedService {
 	}
 
 	public static PublicTcpApiTestService Secure(
-		TcpApiTestOptions options, 
-		IAuthenticationProvider authProvider, 
-		AuthorizationGateway authGateway, 
-		StandardComponents components, 
+		TcpApiTestOptions options,
+		IAuthenticationProvider authProvider,
+		AuthorizationGateway authGateway,
+		StandardComponents components,
 		CertificateProvider? certificateProvider
 	) {
 		var endpoint = new IPEndPoint(IPAddress.Loopback, options.NodeTcpPort);

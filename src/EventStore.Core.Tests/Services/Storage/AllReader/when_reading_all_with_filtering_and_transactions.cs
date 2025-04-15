@@ -3,9 +3,9 @@
 
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
 using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Storage.AllReader;
@@ -44,7 +44,7 @@ public class when_reading_all_with_filtering_and_transactions<TLogFormat, TStrea
 		]);
 
 		var read = await ReadIndex.ReadAllEventsForwardFiltered(
-			pos: new Data.TFPos(0, 0),
+			pos: new TFPos(0, 0),
 			maxCount: 10,
 			maxSearchWindow: int.MaxValue,
 			eventFilter: EventFilter.StreamName.Prefixes(false, "included"),

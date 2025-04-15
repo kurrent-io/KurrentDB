@@ -6,12 +6,12 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Services.Transport.Common;
-using EventStore.Core.Services.Transport.Enumerators;
-using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests.Helpers;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
 
 namespace EventStore.Core.Tests.Services.Transport.Enumerators;
