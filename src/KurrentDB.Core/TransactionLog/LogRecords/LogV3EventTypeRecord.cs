@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using EventStore.Core.Data;
 using EventStore.Core.LogV3;
 using KurrentDB.LogV3;
 
@@ -21,6 +22,8 @@ public class LogV3EventTypeRecord : LogV3Record<StringPayloadRecord<Raw.EventTyp
 	// so we can see the event type in the webui if we want
 	public ReadOnlyMemory<byte> Data => Record.Payload;
 	public ReadOnlyMemory<byte> Metadata => ReadOnlyMemory<byte>.Empty;
+	public SchemaInfo DataSchemaInfo => SchemaInfo.None;
+	public SchemaInfo MetadataSchemaInfo => SchemaInfo.None;
 
 	public string EventTypeName => Record.StringPayload;
 	public uint EventTypeNumber => Record.SubHeader.ReferenceNumber;

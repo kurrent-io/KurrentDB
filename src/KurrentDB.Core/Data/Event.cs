@@ -47,6 +47,16 @@ public record SchemaInfo(SchemaInfo.SchemaDataFormat SchemaFormat, Guid SchemaVe
 		    _ => SchemaDataFormat.Undefined
 	    };
     }
+
+    public static string FormatToString(SchemaDataFormat format) {
+	    return format switch {
+		    SchemaDataFormat.Json => "application/json",
+		    SchemaDataFormat.Protobuf => "application/protobuf",
+		    SchemaDataFormat.Avro => "application/avro",
+		    SchemaDataFormat.Bytes => "application/octet-stream",
+		    _ => "application/octet-stream",
+	    };
+    }
 }
 
 public class Event {

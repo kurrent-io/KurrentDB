@@ -76,6 +76,13 @@ internal partial class Streams<TStreamId> {
 					dataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(contentType), new Guid(schemaVersion));
 				}
 
+				var metadataSchemaInfo = SchemaInfo.None;
+				if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.MetadataSchemaVersionId, out var metadataSchemaVersion)) {
+					if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.MetadataContentType, out var metadataContentType)) {
+						metadataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(metadataContentType), new Guid(metadataSchemaVersion));
+					}
+				}
+
 				var eventSize = Event.SizeOnDisk(eventType, data, metadata);
 				if (eventSize > _maxAppendEventSize) {
 					throw RpcExceptions.MaxAppendEventSizeExceeded(proposedMessage.Id.ToString(), eventSize, _maxAppendEventSize);
@@ -94,7 +101,7 @@ internal partial class Streams<TStreamId> {
 					data: data,
 					metadata: metadata,
                     dataSchemaInfo: dataSchemaInfo,
-                    metadataSchemaInfo: SchemaInfo.None)
+                    metadataSchemaInfo: metadataSchemaInfo)
                 );
 			}
 

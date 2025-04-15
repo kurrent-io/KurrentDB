@@ -73,6 +73,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	private readonly ReadOnlyMemory<byte> _dataOnDisk;
 
     public ReadOnlyMemory<byte> Metadata { get; }
+    public SchemaInfo DataSchemaInfo => _dataSchemaInfo;
+    public SchemaInfo MetadataSchemaInfo => _metadataSchemaInfo;
 
     public string ContentType { get; set; }
 
