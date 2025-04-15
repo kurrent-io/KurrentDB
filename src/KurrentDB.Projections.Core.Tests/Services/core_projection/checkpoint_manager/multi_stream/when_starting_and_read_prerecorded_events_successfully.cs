@@ -3,7 +3,7 @@
 
 using System.Collections.Generic;
 using System.Threading;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;

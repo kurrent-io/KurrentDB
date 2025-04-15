@@ -4,13 +4,13 @@
 using System.Security.Claims;
 using DotNext.Threading;
 using EventStore.Core.Messages;
-using EventStore.Core.Tests;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Auth.StreamPolicyPlugin.Schema;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
 using Policy = KurrentDB.Auth.StreamPolicyPlugin.Schema.Policy;

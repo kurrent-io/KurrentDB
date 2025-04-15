@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Core.Services;
 using NUnit.Framework;
 

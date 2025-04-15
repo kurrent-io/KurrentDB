@@ -2,11 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using EventStore.Core.Messages;
-using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Services.Replication;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Tests.Fakes;
+using KurrentDB.Core.Tests.Services.Replication;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;

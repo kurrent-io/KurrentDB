@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Tests.Bus.Helpers;
+using KurrentDB.Core.Tests.Bus.Helpers;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;

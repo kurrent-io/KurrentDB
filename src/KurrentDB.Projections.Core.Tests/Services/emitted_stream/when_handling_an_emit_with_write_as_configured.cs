@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using EventStore.Core.Messages;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;

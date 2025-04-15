@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI.Projections;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Common.Utils;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;

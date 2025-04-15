@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Services.TimeService;
+using KurrentDB.Core.Tests.Fakes;
+using KurrentDB.Core.Tests.Services.TimeService;
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;

@@ -4,7 +4,7 @@
 using System;
 using System.Linq;
 using System.Text;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;

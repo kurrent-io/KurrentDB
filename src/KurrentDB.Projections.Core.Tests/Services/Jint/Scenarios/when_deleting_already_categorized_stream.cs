@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Messages;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Core.Data;
 using NUnit.Framework;
 

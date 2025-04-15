@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Projections;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using Grpc.Core;
 using Grpc.Net.Client;
 using KurrentDB.Projections.Core.Tests.ClientAPI.projectionsManager;

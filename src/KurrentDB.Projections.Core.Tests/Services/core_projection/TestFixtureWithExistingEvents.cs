@@ -14,7 +14,7 @@ using AwakeServiceMessage = KurrentDB.Core.Services.AwakeReaderService.AwakeServ
 
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
-public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : EventStore.Core.Tests.Helpers.TestFixtureWithExistingEvents<TLogFormat, TStreamId>,
+public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : KurrentDB.Core.Tests.Helpers.TestFixtureWithExistingEvents<TLogFormat, TStreamId>,
 	IHandle<ProjectionCoreServiceMessage.CoreTick> {
 	protected ReaderSubscriptionDispatcher _subscriptionDispatcher;
 

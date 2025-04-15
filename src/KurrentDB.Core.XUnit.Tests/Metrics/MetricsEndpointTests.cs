@@ -4,10 +4,10 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.Helpers;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Helpers;
 using Microsoft.Extensions.Configuration;
 using Xunit;
 

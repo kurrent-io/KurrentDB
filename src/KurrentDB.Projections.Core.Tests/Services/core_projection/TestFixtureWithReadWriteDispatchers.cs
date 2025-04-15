@@ -8,7 +8,7 @@ using NUnit.Framework;
 namespace KurrentDB.Projections.Core.Tests.Services.core_projection;
 
 public abstract class TestFixtureWithReadWriteDispatchers :
-	EventStore.Core.Tests.Helpers.TestFixtureWithReadWriteDispatchers {
+	KurrentDB.Core.Tests.Helpers.TestFixtureWithReadWriteDispatchers {
 	protected ReaderSubscriptionDispatcher _subscriptionDispatcher;
 
 	[SetUp]

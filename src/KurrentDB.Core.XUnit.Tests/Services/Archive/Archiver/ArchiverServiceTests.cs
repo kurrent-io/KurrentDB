@@ -7,13 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
 using EventStore.Core.Messages;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.TransactionLog;
-using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Archive.Archiver;
 using KurrentDB.Core.Services.Archive.Storage;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TransactionLog;
+using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 using Xunit;
 

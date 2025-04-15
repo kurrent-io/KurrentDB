@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Tests.Index.Hashers;
+using KurrentDB.Core.Tests.Index.Hashers;
 using KurrentDB.Core.TransactionLog.Scavenging;
 using KurrentDB.Core.TransactionLog.Scavenging.CollisionManagement;
 using KurrentDB.Core.TransactionLog.Scavenging.Data;

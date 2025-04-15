@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.Core.Messages;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Services.Processing.SingleStream;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;

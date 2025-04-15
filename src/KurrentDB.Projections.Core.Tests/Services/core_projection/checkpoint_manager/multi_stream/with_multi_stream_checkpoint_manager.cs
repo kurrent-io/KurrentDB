@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using EventStore.Core.Messages;
-using EventStore.Core.Tests.Helpers.IODispatcherTests;
+using KurrentDB.Core.Tests.Helpers.IODispatcherTests;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;

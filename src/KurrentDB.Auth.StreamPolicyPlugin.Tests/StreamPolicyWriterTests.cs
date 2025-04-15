@@ -3,9 +3,9 @@
 
 using DotNext.Threading;
 using EventStore.Core.Messages;
-using EventStore.Core.Tests;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Tests;
 using Xunit;
 
 namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;

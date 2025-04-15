@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using EventStore.Core.Messages;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;

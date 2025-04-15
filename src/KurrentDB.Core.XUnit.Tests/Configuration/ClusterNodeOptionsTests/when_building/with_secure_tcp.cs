@@ -5,11 +5,10 @@ using System;
 using System.IO;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Services.Transport.Tcp;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests.when_building;

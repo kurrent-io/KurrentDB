@@ -3,9 +3,9 @@
 
 #nullable enable
 using System.Net;
-using EventStore.Core.Tests;
 using FluentAssertions;
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.Chunks;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;

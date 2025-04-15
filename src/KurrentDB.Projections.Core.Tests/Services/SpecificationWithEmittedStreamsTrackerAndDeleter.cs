@@ -3,7 +3,7 @@
 
 using System.Threading.Tasks;
 using EventStore.Core.Messages;
-using EventStore.Core.Tests.ClientAPI;
+using KurrentDB.Core.Tests.ClientAPI;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;

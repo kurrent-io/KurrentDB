@@ -8,7 +8,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Projections.Core.Tests.ClientAPI.Cluster;

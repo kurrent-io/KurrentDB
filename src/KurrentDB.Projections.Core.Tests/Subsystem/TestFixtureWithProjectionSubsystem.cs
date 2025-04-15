@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.TransactionLog;
+using KurrentDB.Core.Tests.TransactionLog;
 using KurrentDB.Common.Options;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
