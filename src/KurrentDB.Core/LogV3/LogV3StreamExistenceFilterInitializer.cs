@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.LogAbstraction;
 using StreamId = System.UInt32;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 /// Populates a stream existence filter by iterating through the names
 /// In V3 the the bloom filter checkpoint is the last processed stream number.

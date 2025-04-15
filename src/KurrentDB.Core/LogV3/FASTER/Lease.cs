@@ -4,7 +4,7 @@
 using System;
 using KurrentDB.Core.DataStructures;
 
-namespace EventStore.Core.LogV3.FASTER;
+namespace KurrentDB.Core.LogV3.FASTER;
 
 public struct Lease<T> : IDisposable {
 	private readonly ObjectPool<T> _pool;

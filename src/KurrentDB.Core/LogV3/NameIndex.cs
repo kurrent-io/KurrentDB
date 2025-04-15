@@ -14,7 +14,7 @@ using KurrentDB.LogCommon;
 using Serilog;
 using Value = System.UInt32;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 // There are two components injected NameIndex. The existenceFilter and the persistence.
 //

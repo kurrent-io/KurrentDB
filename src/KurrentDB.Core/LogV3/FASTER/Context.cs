@@ -3,7 +3,7 @@
 
 using FASTER.core;
 
-namespace EventStore.Core.LogV3.FASTER;
+namespace KurrentDB.Core.LogV3.FASTER;
 
 public class Context<TValue> {
 	public Status Status { get; set; }

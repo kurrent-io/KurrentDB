@@ -4,7 +4,7 @@
 using KurrentDB.Common.Utils;
 using StreamId = System.UInt32;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 public class LogV3StreamIdValidator : IValidator<StreamId> {
 	public LogV3StreamIdValidator() {

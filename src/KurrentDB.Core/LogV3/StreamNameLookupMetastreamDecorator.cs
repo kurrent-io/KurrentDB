@@ -8,7 +8,7 @@ using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Services;
 using StreamId = System.UInt32;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 // Decorates a StreamNameLookup, intercepting Metastream (and VirtualStream) calls
 public class StreamNameLookupMetastreamDecorator : INameLookup<StreamId> {

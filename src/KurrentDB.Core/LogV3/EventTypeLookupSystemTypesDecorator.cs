@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using DotNext;
 using KurrentDB.Core.LogAbstraction;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 public class EventTypeLookupSystemTypesDecorator : INameLookup<uint> {
 	private readonly INameLookup<uint> _wrapped;

@@ -4,7 +4,7 @@
 using KurrentDB.Core.Services;
 using EventTypeId = System.UInt32;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 public class LogV3SystemEventTypes {
 

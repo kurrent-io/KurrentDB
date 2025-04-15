@@ -4,7 +4,7 @@
 using System;
 using StreamId = System.UInt32;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 /// Converts between StreamIds and their event number in the streams stream.
 public static class StreamIdConverter {
