@@ -2,9 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Text;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using JetBrains.Annotations;
 
 namespace KurrentDB.Core.Data;
 
@@ -28,6 +31,8 @@ public class EventRecord : IEquatable<EventRecord> {
 	public readonly string EventType;
 	public readonly ReadOnlyMemory<byte> Data;
 	public readonly ReadOnlyMemory<byte> Metadata;
+	public readonly SchemaInfo DataSchemaInfo;
+	public readonly SchemaInfo MetadataSchemaInfo;
 
 	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string eventType) {
 		Ensure.Nonnegative(eventNumber, "eventNumber");
@@ -47,6 +52,8 @@ public class EventRecord : IEquatable<EventRecord> {
 		EventType = eventType ?? string.Empty;
 		Data = prepare.Data;
 		Metadata = prepare.Metadata;
+		DataSchemaInfo = prepare.DataSchemaInfo;
+		MetadataSchemaInfo = prepare.MetadataSchemaInfo;
 	}
 
 	// called from tests only
@@ -62,7 +69,9 @@ public class EventRecord : IEquatable<EventRecord> {
 		PrepareFlags flags,
 		string eventType,
 		byte[] data,
-		byte[] metadata) {
+		byte[] metadata,
+		[CanBeNull] SchemaInfo dataSchemaInfo = null,
+		[CanBeNull] SchemaInfo metadataSchemaInfo = null) {
 		Ensure.Nonnegative(logPosition, "logPosition");
 		Ensure.Nonnegative(transactionPosition, "transactionPosition");
 		if (transactionOffset < -1)
@@ -85,6 +94,40 @@ public class EventRecord : IEquatable<EventRecord> {
 		EventType = eventType ?? string.Empty;
 		Data = data ?? Empty.ByteArray;
 		Metadata = metadata ?? Empty.ByteArray;
+		DataSchemaInfo = dataSchemaInfo ?? SchemaInfo.None;
+		MetadataSchemaInfo = metadataSchemaInfo ?? SchemaInfo.None;
+	}
+
+	public Dictionary<string, string> GetMetadataDictionary() {
+		var dict = new Dictionary<string, string>();
+
+		dict.Add(Constants.Metadata.Type, EventType);
+		dict.Add(Constants.Metadata.Created, TimeStamp.ToTicksSinceEpoch().ToString());
+
+		string contentType;
+		if (DataSchemaInfo != SchemaInfo.None) {
+			contentType = SchemaInfo.FormatToString(DataSchemaInfo.SchemaFormat);
+			dict.Add(Constants.Metadata.SchemaVersionId, DataSchemaInfo.SchemaVersionId.ToString());
+		} else {
+			contentType = IsJson
+				? Constants.Metadata.ContentTypes.ApplicationJson
+				: Constants.Metadata.ContentTypes.ApplicationOctetStream;
+		}
+
+		string metadataContentType;
+		if (MetadataSchemaInfo != SchemaInfo.None) {
+			metadataContentType = SchemaInfo.FormatToString(MetadataSchemaInfo.SchemaFormat);
+			dict.Add(Constants.Metadata.MetadataSchemaVersionId, MetadataSchemaInfo.SchemaVersionId.ToString());
+		} else {
+			metadataContentType = IsJson
+				? Constants.Metadata.ContentTypes.ApplicationJson
+				: Constants.Metadata.ContentTypes.ApplicationOctetStream;
+		}
+
+		dict.Add(Constants.Metadata.ContentType, contentType);
+		dict.Add(Constants.Metadata.MetadataContentType, metadataContentType);
+
+		return dict;
 	}
 
 	public bool Equals(EventRecord other) {
@@ -104,7 +147,9 @@ public class EventRecord : IEquatable<EventRecord> {
 			   && Flags.Equals(other.Flags)
 			   && string.Equals(EventType, other.EventType)
 			   && Data.Span.SequenceEqual(other.Data.Span)
-			   && Metadata.Span.SequenceEqual(other.Metadata.Span);
+			   && Metadata.Span.SequenceEqual(other.Metadata.Span)
+			   && DataSchemaInfo.Equals(other.DataSchemaInfo)
+			   && MetadataSchemaInfo.Equals(other.MetadataSchemaInfo);
 	}
 
 	public override bool Equals(object obj) {
@@ -132,6 +177,8 @@ public class EventRecord : IEquatable<EventRecord> {
 			hashCode = (hashCode * 397) ^ EventType.GetHashCode();
 			hashCode = (hashCode * 397) ^ Data.GetHashCode();
 			hashCode = (hashCode * 397) ^ Metadata.GetHashCode();
+			hashCode = (hashCode * 397) ^ DataSchemaInfo.GetHashCode();
+			hashCode = (hashCode * 397) ^ MetadataSchemaInfo.GetHashCode();
 			return hashCode;
 		}
 	}

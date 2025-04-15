@@ -53,6 +53,7 @@ public static class Constants {
 		public const string Type = "type";
 		public const string Created = "created";
 		public const string ContentType = "content-type";
+		public const string MetadataContentType = "metadata-content-type";
 		public static readonly string[] RequiredMetadata = { Type, ContentType };
 
 		public static class ContentTypes {
@@ -61,6 +62,7 @@ public static class Constants {
 		}
 
         public const string SchemaVersionId = "schema-version-id";
+        public const string MetadataSchemaVersionId = "metadata-schema-version-id";
 	}
 
 	public static class Headers {

@@ -318,11 +318,18 @@ partial class Streams<TStreamId> {
 					dataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(contentType), new Guid(schemaVersion));
 				}
 
+				var metadataSchemaInfo = SchemaInfo.None;
+				if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.MetadataSchemaVersionId, out var metadataSchemaVersion)) {
+					if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.MetadataContentType, out var metadataContentType)) {
+						metadataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(metadataContentType), new Guid(metadataSchemaVersion));
+					}
+				}
+
 				return new(Uuid.FromDto(proposedMessage.Id).ToGuid(),
 					eventType,
 					contentType ==
 					Constants.Metadata.ContentTypes.ApplicationJson, proposedMessage.Data.ToByteArray(),
-					proposedMessage.CustomMetadata.ToByteArray(), dataSchemaInfo, SchemaInfo.None);
+					proposedMessage.CustomMetadata.ToByteArray(), dataSchemaInfo, metadataSchemaInfo);
 			}
 
 			static ClientMessage.WriteEvents ToInternalMessage(ClientWriteRequest request, IEnvelope envelope,

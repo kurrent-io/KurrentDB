@@ -74,6 +74,8 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 	public uint EventType => Record.Event.Header.EventTypeNumber;
 	public ReadOnlyMemory<byte> Data => Record.Event.Data;
 	public ReadOnlyMemory<byte> Metadata => Record.Event.Metadata;
+	public SchemaInfo DataSchemaInfo => SchemaInfo.None;
+	public SchemaInfo MetadataSchemaInfo => SchemaInfo.None;
 
 	public IPrepareLogRecord<StreamId> CopyForRetry(long logPosition, long transactionPosition) {
 		return new LogV3StreamWriteRecord(
