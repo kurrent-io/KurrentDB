@@ -48,7 +48,7 @@ class CategoryIndex(DuckDb db) {
 		return indexPrepares;
 	}
 
-	[MethodImpl(MethodImplOptions.Synchronized)]
+	// [MethodImpl(MethodImplOptions.Synchronized)]
 	List<CategoryRecord> QueryCategory(long id, long fromEventNumber, long toEventNumber) {
 		const string query = """
 		                     select category_seq, log_position, event_number

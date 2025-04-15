@@ -8,7 +8,6 @@ using EventStore.Core.Bus;
 using EventStore.Core.Duck.Default;
 using EventStore.Core.Duck.Infrastructure;
 using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.TransactionLog.Chunks;
 using Serilog;
 using static EventStore.Core.Messages.SystemMessage;
 
@@ -24,10 +23,9 @@ class DuckDbIndexBuilder<TStreamId> : IAsyncHandle<SystemReady>, IAsyncHandle<Be
 	internal DefaultIndex<TStreamId> DefaultIndex { get; }
 
 	[Experimental("DuckDBNET001")]
-	public DuckDbIndexBuilder(TFChunkDbConfig dbConfig, IPublisher publisher, IReadIndex<TStreamId> index) {
+	public DuckDbIndexBuilder(DuckDb db, IPublisher publisher, IReadIndex<TStreamId> index) {
 		_publisher = publisher;
-		_db = new(dbConfig);
-		_db.InitDb();
+		_db = db;
 		DefaultIndex = new(_db, index);
 		new InlineFunctions<TStreamId>(_db, publisher).Run();
 		_checkpointStore = new(DefaultIndex, DefaultIndex.Handler);

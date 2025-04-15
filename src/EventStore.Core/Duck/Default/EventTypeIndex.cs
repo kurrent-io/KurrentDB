@@ -73,7 +73,7 @@ public class EventTypeIndex(DuckDb db) {
 		return indexPrepares;
 	}
 
-	[MethodImpl(MethodImplOptions.Synchronized)]
+	// [MethodImpl(MethodImplOptions.Synchronized)]
 	List<EventTypeRecord> QueryEventType(long eventTypeId, long fromEventNumber, long toEventNumber) {
 		const string query = """
 		                     select event_type_seq, log_position, event_number
@@ -84,8 +84,7 @@ public class EventTypeIndex(DuckDb db) {
 		var connection = db.GetOrOpenConnection();
 
 		try {
-			return connection.Query<EventTypeRecord>(query,
-				new { et = eventTypeId, start = fromEventNumber, end = toEventNumber }).ToList();
+			return connection.Query<EventTypeRecord>(query, new { et = eventTypeId, start = fromEventNumber, end = toEventNumber }).ToList();
 		} finally {
 			duration.Dispose();
 			db.ReturnConnection(connection);

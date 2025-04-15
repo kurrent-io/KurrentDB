@@ -683,7 +683,9 @@ public class ClusterVNode<TStreamId> : ClusterVNode,
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(nodeStatusListener);
 
 #pragma warning disable DuckDBNET001
-		var indexBuilder = new DuckDbIndexBuilder<TStreamId>(dbConfig, _mainQueue, readIndex);
+		var duckDb = new DuckDb(dbConfig);
+		duckDb.InitDb();
+		var indexBuilder = new DuckDbIndexBuilder<TStreamId>(duckDb, _mainQueue, readIndex);
 #pragma warning restore DuckDBNET001
 		_mainBus.Subscribe<SystemMessage.SystemReady>(indexBuilder);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(indexBuilder);
@@ -862,7 +864,6 @@ public class ClusterVNode<TStreamId> : ClusterVNode,
 			bus.Subscribe<TcpMessage.TcpSend>(tcpSendService);
 			// ReSharper restore RedundantTypeArgumentsOfMethod
 		});
-
 
 		var httpAuthenticationProviders = new List<IHttpAuthenticationProvider>();
 
@@ -1422,11 +1423,11 @@ public class ClusterVNode<TStreamId> : ClusterVNode,
 				.AddSingleton<IReadOnlyList<IDbTransform>>(new List<IDbTransform> { new IdentityDbTransform() })
 				.AddSingleton<IReadOnlyList<IClusterVNodeStartupTask>>(new List<IClusterVNodeStartupTask>())
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>(httpAuthenticationProviders)
-				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates,
-						X509Certificate2Collection Roots)>>
+				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates, X509Certificate2Collection Roots)>>
 					(() => (_certificateSelector(), _intermediateCertsSelector(), _trustedRootCertsSelector()))
 				.AddSingleton(_nodeHttpClientFactory)
-				.AddSingleton(_fileNamingStrategy);
+				.AddSingleton(_fileNamingStrategy)
+				.AddSingleton(duckDb);
 
 			services.AddSingleton(new KestrelToInternalBridgeMiddleware(Router, options.Application.LogHttpRequests, advertiseAsHost, advertiseAsPort));
 

@@ -5,8 +5,9 @@
 @using EventStore.ClusterNode.Components.Dialogs
 @using EventStore.ClusterNode.Services
 @using EventStore.ClusterNode.Components.Tools
+@using EventStore.Core.Duck
 @using Serilog
-@inject DuckDBConnection Connection
+@inject DuckDb DuckDb
 @inject Preferences Preferences
 @inject IDialogService DialogService
 @implements IDisposable
@@ -101,8 +102,9 @@
 		var watch = new Stopwatch();
 		watch.Start();
 
+		var connection = DuckDb.GetOrOpenConnection();
 		try {
-			_items = (IEnumerable<IDictionary<string, object>>)Connection.Query(sql);
+			_items = (IEnumerable<IDictionary<string, object>>)connection.Query(sql);
 			watch.Stop();
 			_message = $"Query executed in {watch}";
 		}
@@ -111,6 +113,7 @@
 		}
 		finally {
 			_showProgress = false;
+			DuckDb.ReturnConnection(connection);
 		}
 	}
 

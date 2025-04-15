@@ -29,7 +29,7 @@ class DefaultIndexReader<TStreamId>(DuckDb db, DefaultIndexHandler<TStreamId> ha
 
 	public override bool OwnStream(string streamId) => streamId == "$everything";
 
-	[MethodImpl(MethodImplOptions.Synchronized)]
+	// [MethodImpl(MethodImplOptions.Synchronized)]
 	List<AllRecord> QueryAll(long fromEventNumber, long toEventNumber) {
 		const string query = "select seq, log_position, event_number from idx_all where seq>=$start and seq<=$end";
 
