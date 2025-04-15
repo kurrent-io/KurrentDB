@@ -1,6 +1,5 @@
 ---
 title: "Kafka Sink"
-order: 2
 ---
 
 <Badge type="info" vertical="middle" text="License Required"/>
@@ -64,14 +63,14 @@ JSON='{
 curl -X POST \
   -H "Content-Type: application/json" \
   -d "$JSON" \
-  http://localhost:2113/connectors/mongo-sink-connector
+  http://localhost:2113/connectors/kafka-sink-connector
 ```
 
 :::
 
 After creating and starting the Kafka sink connector, every time an event is
 appended to the `example-stream`, the Kafka sink connector will send the record
-to the specified Kafka topic.You can find a list of available management API
+to the specified Kafka topic. You can find a list of available management API
 endpoints in the [API Reference](../manage.md).
 
 ## Settings
@@ -83,7 +82,7 @@ The Kafka sink inherits a set of common settings that are used to configure the 
 the [Sink Options](../settings.md#sink-options) page.
 :::
 
-The kafka sink can be configured with the following options:
+The Kafka sink can be configured with the following options:
 
 | Name                              | Details                                                                                                                                                                                                                                                       |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -92,7 +91,7 @@ The kafka sink can be configured with the following options:
 | `defaultHeaders`                  | **Type**: dict<string,string><br><br>**Description:** Headers included in all produced messages.<br><br>**Default**: None                                                                                                                                     |
 | `authentication:securityProtocol` | **Type**: [SecurityProtocol](https://docs.confluent.io/platform/current/clients/confluent-kafka-dotnet/_site/api/Confluent.Kafka.SecurityProtocol.html)<br><br>**Description:** Protocol used for Kafka broker communication.<br><br>**Default**: `Plaintext` |
 | `authentication:username`         | **Type**: string<br><br>**Description:** Username for authentication.                                                                                                                                                                                         |
-| `authentication:password`         | _protected_<br><br>**Type**: string<br><br>**Description:** Password for authentication.                                                                                                                                                                                         |
+| `authentication:password`         | **Type**: string<br><br>**Description:** Password for authentication.                                                                                                                                                                                         |
 
 ### Partitioning
 
@@ -183,15 +182,11 @@ official [Kafka .NET client documentation](https://docs.confluent.io/platform/cu
 
 ### Partitioning
 
-The Kafka sink connector writes events to Kafka topics, and it allows the
-customization of partition keys. Kafka's partitioning strategy is essential for
-ensuring that related messages are sent to the same partition, which helps
-maintain message ordering and effective load distribution. Read more about
-[Kafka Partitions](https://docs.confluent.io/kafka/introduction.html#partitions).
+The Kafka sink connector allows customizing the partition keys that are sent
+with the message. 
 
-Kafka partition keys can be generated from various sources, similar to how
-document IDs are generated in the MongoDB connector. These sources include the
-event stream, stream suffix, headers, or other record fields.
+Kafka partition keys can be generated from various sources. These sources
+include the event stream, stream suffix, headers, or other record fields.
 
 By default, it will use the `PartitionKey` and grab this value from the KurrentDB record.
 
@@ -222,14 +217,14 @@ doesn't require an expression since it automatically extracts the suffix.
 ```
 
 The `streamSuffix` source is useful when stream names follow a structured
-format, and you want to use only the trailing part as the document ID. For
+format, and you want to use only the trailing part as the partition key. For
 example, if the stream is named `user-123`, the partition key would be `123`.
 
 **Partition using header values**
 
-You can generate the document ID by concatenating values from specific event
+You can generate the partition key by concatenating values from specific event
 headers. In this case, two header values (`key1` and `key2`) are combined to
-form the ID.
+form the key.
 
 ```json
 {
@@ -241,9 +236,7 @@ form the ID.
 
 The `Headers` source allows you to pull values from the event's metadata. The
 `documentId:expression` field lists the header keys (in this case, `key1` and
-`key2`), and their values are concatenated to generate the document ID. This is
-useful when headers hold important metadata that should define the document's
-unique identifier, such as region, user ID, or other identifiers.
+`key2`), and their values are concatenated to generate the partition key. 
 
 ::: details Click here to see an example
 

@@ -1,6 +1,5 @@
 ---
 title: 'Serilog Sink'
-order: 7
 ---
 
 ## Overview
