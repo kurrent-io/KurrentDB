@@ -3,6 +3,7 @@
 
 using System;
 using KurrentDB.Core.LogV3;
+using KurrentDB.Core.Data;
 using KurrentDB.LogV3;
 using StreamId = System.UInt32;
 

@@ -4,6 +4,7 @@
 using System;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.LogV3;
+using KurrentDB.Core.Data;
 using KurrentDB.LogCommon;
 using KurrentDB.LogV3;
 using StreamId = System.UInt32;

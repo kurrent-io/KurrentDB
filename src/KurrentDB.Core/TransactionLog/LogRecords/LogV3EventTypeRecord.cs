@@ -3,6 +3,7 @@
 
 using System;
 using KurrentDB.Core.LogV3;
+using KurrentDB.Core.Data;
 using KurrentDB.LogV3;
 
 namespace KurrentDB.Core.TransactionLog.LogRecords;

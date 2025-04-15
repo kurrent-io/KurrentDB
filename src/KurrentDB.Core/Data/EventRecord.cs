@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using EventStore.Core.Services.Transport.Grpc;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using JetBrains.Annotations;
 
