@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using KurrentDB.Common.Utils;
 
-namespace EventStore.Core.Services.Transport.Tcp;
+namespace KurrentDB.Core.Services.Transport.Tcp;
 
 [Flags]
 public enum TcpFlags : byte {

@@ -7,8 +7,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Messages;
-using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Tcp;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 

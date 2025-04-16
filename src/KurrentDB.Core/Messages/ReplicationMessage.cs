@@ -3,11 +3,11 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Transport.Tcp;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using EndPoint = System.Net.EndPoint;

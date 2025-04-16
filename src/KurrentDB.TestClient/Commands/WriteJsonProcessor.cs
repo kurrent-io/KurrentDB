@@ -5,9 +5,9 @@ using System;
 using System.Diagnostics;
 using System.Net.Sockets;
 using EventStore.Client.Messages;
-using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Tcp;
 using KurrentDB.Transport.Http.Codecs;
 
 namespace KurrentDB.TestClient.Commands;

@@ -9,11 +9,11 @@ using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Messages;
-using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Plugins.Authentication;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Transport.Tcp;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 

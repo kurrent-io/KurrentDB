@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using EventStore.Core.Services.Transport.Tcp;
+using KurrentDB.Core.Services.Transport.Tcp;
 using KurrentDB.TestClient.Commands.RunTestScenarios;
 using KurrentDB.Transport.Tcp;
 using ILogger = Serilog.ILogger;

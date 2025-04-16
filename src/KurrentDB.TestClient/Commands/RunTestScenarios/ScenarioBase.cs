@@ -17,8 +17,8 @@ using KurrentDB.Core.Services;
 using Serilog.Core;
 using ConsoleLogger = EventStore.ClientAPI.Common.Log.ConsoleLogger;
 using ILogger = Serilog.ILogger;
-using TcpCommand = EventStore.Core.Services.Transport.Tcp.TcpCommand;
-using TcpPackage = EventStore.Core.Services.Transport.Tcp.TcpPackage;
+using TcpCommand = KurrentDB.Core.Services.Transport.Tcp.TcpCommand;
+using TcpPackage = KurrentDB.Core.Services.Transport.Tcp.TcpPackage;
 
 namespace KurrentDB.TestClient.Commands.RunTestScenarios;
 

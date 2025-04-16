@@ -5,15 +5,15 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using EventStore.Client.Messages;
-using KurrentDB.Core.Messages;
 using Google.Protobuf;
 using KurrentDB.Core.Authentication.DelegatedAuthentication;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.UserManagement;
 using OperationResult = KurrentDB.Core.Messages.OperationResult;
 
-namespace EventStore.Core.Services.Transport.Tcp;
+namespace KurrentDB.Core.Services.Transport.Tcp;
 
 public enum ClientVersion : byte {
 	V1 = 0,
@@ -127,13 +127,13 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		var dto = package.Data.Deserialize<WriteEventsCompleted>();
 		if (dto == null)
 			return null;
-		return dto.Result == Client.Messages.OperationResult.Success
+		return dto.Result == EventStore.Client.Messages.OperationResult.Success
 			? new(package.CorrelationId, dto.FirstEventNumber, dto.LastEventNumber, dto.PreparePosition, dto.CommitPosition)
 			: new(package.CorrelationId, (OperationResult)dto.Result, dto.Message, dto.CurrentVersion);
 	}
 
 	private static TcpPackage WrapWriteEventsCompleted(ClientMessage.WriteEventsCompleted msg) {
-		var dto = new WriteEventsCompleted((Client.Messages.OperationResult)msg.Result,
+		var dto = new WriteEventsCompleted((EventStore.Client.Messages.OperationResult)msg.Result,
 			msg.Message,
 			msg.FirstEventNumber,
 			msg.LastEventNumber,
@@ -165,7 +165,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 	}
 
 	private static TcpPackage WrapTransactionStartCompleted(ClientMessage.TransactionStartCompleted msg) {
-		var dto = new TransactionStartCompleted(msg.TransactionId, (Client.Messages.OperationResult)msg.Result, msg.Message);
+		var dto = new TransactionStartCompleted(msg.TransactionId, (EventStore.Client.Messages.OperationResult)msg.Result, msg.Message);
 		return new(TcpCommand.TransactionStartCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
@@ -205,7 +205,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 	}
 
 	private static TcpPackage WrapTransactionWriteCompleted(ClientMessage.TransactionWriteCompleted msg) {
-		var dto = new TransactionWriteCompleted(msg.TransactionId, (Client.Messages.OperationResult)msg.Result, msg.Message);
+		var dto = new TransactionWriteCompleted(msg.TransactionId, (EventStore.Client.Messages.OperationResult)msg.Result, msg.Message);
 		return new(TcpCommand.TransactionWriteCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
@@ -225,7 +225,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		var dto = package.Data.Deserialize<TransactionCommitCompleted>();
 		if (dto == null)
 			return null;
-		return dto.Result == Client.Messages.OperationResult.Success
+		return dto.Result == EventStore.Client.Messages.OperationResult.Success
 			? new(package.CorrelationId, dto.TransactionId, dto.FirstEventNumber, dto.LastEventNumber, dto.PreparePosition, dto.CommitPosition)
 			: new(package.CorrelationId, dto.TransactionId, (OperationResult)dto.Result, dto.Message);
 	}
@@ -233,7 +233,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 	private static TcpPackage WrapTransactionCommitCompleted(ClientMessage.TransactionCommitCompleted msg) {
 		var dto = new TransactionCommitCompleted(
 			msg.TransactionId,
-			(Client.Messages.OperationResult)msg.Result,
+			(EventStore.Client.Messages.OperationResult)msg.Result,
 			msg.Message, msg.FirstEventNumber,
 			msg.LastEventNumber,
 			msg.PreparePosition,
@@ -272,7 +272,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 	}
 
 	private static TcpPackage WrapDeleteStreamCompleted(ClientMessage.DeleteStreamCompleted msg) {
-		var dto = new DeleteStreamCompleted((Client.Messages.OperationResult)msg.Result, msg.Message, msg.CurrentVersion, msg.PreparePosition, msg.CommitPosition);
+		var dto = new DeleteStreamCompleted((EventStore.Client.Messages.OperationResult)msg.Result, msg.Message, msg.CurrentVersion, msg.PreparePosition, msg.CommitPosition);
 		return new(TcpCommand.DeleteStreamCompleted, msg.CorrelationId, dto.Serialize());
 	}
 }

@@ -7,10 +7,9 @@ using System.Linq;
 using System.Net;
 using System.Security.Claims;
 using EventStore.Client.Messages;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using static KurrentDB.Core.Messages.ClientMessage;
 using CheckpointReached = EventStore.Client.Messages.CheckpointReached;
@@ -30,7 +29,7 @@ using SubscriptionConfirmation = EventStore.Client.Messages.SubscriptionConfirma
 using SubscriptionDropped = EventStore.Client.Messages.SubscriptionDropped;
 using UnsubscribeFromStream = EventStore.Client.Messages.UnsubscribeFromStream;
 
-namespace EventStore.Core.Services.Transport.Tcp;
+namespace KurrentDB.Core.Services.Transport.Tcp;
 
 public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 	public ClientTcpDispatcher(int writeTimeoutMs)
@@ -238,8 +237,8 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(TcpCommand.FilteredReadAllEventsForwardCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
-	private static Client.Messages.ResolvedEvent[] ConvertToResolvedEvents(IReadOnlyList<ResolvedEvent> events) {
-		var result = new Client.Messages.ResolvedEvent[events.Count];
+	private static EventStore.Client.Messages.ResolvedEvent[] ConvertToResolvedEvents(IReadOnlyList<ResolvedEvent> events) {
+		var result = new EventStore.Client.Messages.ResolvedEvent[events.Count];
 		for (int i = 0; i < events.Count; ++i) {
 			result[i] = new(events[i]);
 		}
@@ -415,7 +414,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 	}
 
 	private static TcpPackage WrapStreamEventAppeared(ClientMessage.StreamEventAppeared msg) {
-		var dto = new StreamEventAppeared(new Client.Messages.ResolvedEvent(msg.Event));
+		var dto = new StreamEventAppeared(new EventStore.Client.Messages.ResolvedEvent(msg.Event));
 		return new(TcpCommand.StreamEventAppeared, msg.CorrelationId, dto.Serialize());
 	}
 

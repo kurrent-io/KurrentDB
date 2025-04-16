@@ -5,15 +5,14 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authentication;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
-using KurrentDB.Core.Services;
+using KurrentDB.Core.Messages;
 using KurrentDB.Transport.Tcp;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Core.Services.Transport.Tcp;
+namespace KurrentDB.Core.Services.Transport.Tcp;
 
 public enum TcpServiceType {
 	Internal,
