@@ -1,7 +1,7 @@
 using EventStore.Connect.Producers;
 using EventStore.Connect.Readers;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Transport.Enumerators;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Producers;
@@ -9,7 +9,7 @@ using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema;
 using Kurrent.Toolkit;
 using Eventuous;
-using StreamMetadata = EventStore.Core.Data.StreamMetadata;
+using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
 namespace EventStore.Connectors.Eventuous;
 

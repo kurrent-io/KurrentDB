@@ -1,11 +1,11 @@
 using EventStore.Connectors.Management.Queries;
 using EventStore.Connectors.System;
 using EventStore.Core;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using StreamMetadata = EventStore.Core.Data.StreamMetadata;
+using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
 namespace EventStore.Connectors.Management.Projectors;
 

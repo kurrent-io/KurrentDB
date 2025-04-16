@@ -3,7 +3,7 @@
 using System.Text.RegularExpressions;
 using EventStore.Connect.Consumers;
 using EventStore.Core;
-using EventStore.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.Transport.Enumerators;
 using EventStore.Toolkit.Testing;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;

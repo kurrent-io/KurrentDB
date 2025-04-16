@@ -1,4 +1,4 @@
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EventStore.Connectors.System;

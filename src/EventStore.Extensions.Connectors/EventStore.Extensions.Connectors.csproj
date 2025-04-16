@@ -9,9 +9,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\EventStore.Common\EventStore.Common.csproj" ExcludeAssets="all" Private="false" />
-		<ProjectReference Include="..\EventStore.Core\EventStore.Core.csproj" ExcludeAssets="all" Private="false" />
-		<ProjectReference Include="..\EventStore.SystemRuntime\EventStore.SystemRuntime.csproj" ExcludeAssets="all" Private="false"/>
+		<ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" ExcludeAssets="all" Private="false" />
+		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" ExcludeAssets="all" Private="false" />
+		<ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" ExcludeAssets="all" Private="false"/>
 		<ProjectReference Include="..\EventStore.Extensions.Connectors.Contracts\EventStore.Extensions.Connectors.Contracts.csproj" />
 
 		<!-- Easier & faster way to debug -->

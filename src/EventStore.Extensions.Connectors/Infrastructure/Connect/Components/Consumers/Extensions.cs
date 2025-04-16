@@ -1,9 +1,9 @@
 // ReSharper disable CheckNamespace
 
-using EventStore.Core.Data;
-using EventStore.Core.Services.Storage.ReaderIndex;
-using EventStore.Core.Services.Transport.Common;
-using EventStore.Core.TransactionLog.LogRecords;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.TransactionLog.LogRecords;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Schema;

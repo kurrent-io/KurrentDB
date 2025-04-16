@@ -2,11 +2,11 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using EventStore.Core;
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Transport.Enumerators;
 using Kurrent.Surge;
 using Kurrent.Toolkit;
-using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
+using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 using StreamMetadata = Kurrent.Surge.StreamMetadata;
 using StreamRevision = Kurrent.Surge.StreamRevision;
 
@@ -20,7 +20,7 @@ public class SystemManager : IManager {
     public async ValueTask<bool> StreamExists(StreamId stream, CancellationToken cancellationToken) {
         try {
             var read = Client.ReadStreamBackwards(stream: stream,
-                    startRevision: Core.Services.Transport.Common.StreamRevision.End,
+                    startRevision: KurrentDB.Core.Services.Transport.Common.StreamRevision.End,
                     maxCount: 1,
                     cancellationToken: cancellationToken)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);
@@ -85,13 +85,13 @@ public class SystemManager : IManager {
     async ValueTask<(StreamMetadata Metadata, StreamRevision Revision)> SetStreamMetadata(
         StreamId stream, StreamMetadata metadata, StreamRevision expectedRevision, CancellationToken cancellationToken = default
     ) {
-        var meta = new EventStore.Core.Data.StreamMetadata(
+        var meta = new KurrentDB.Core.Data.StreamMetadata(
             maxCount: metadata.MaxCount is not null ? (int)metadata.MaxCount.Value : null, // so in the DB its a long but in the client its an int?!?
             maxAge: metadata.MaxAge,
             truncateBefore: metadata.TruncateBefore, // this should be a log position apparently
             cacheControl: metadata.CacheControl,
             acl: metadata.Acl is not null
-                ? new Core.Data.StreamAcl(readRoles: metadata.Acl.ReadRoles,
+                ? new KurrentDB.Core.Data.StreamAcl(readRoles: metadata.Acl.ReadRoles,
                     writeRoles: metadata.Acl.WriteRoles,
                     deleteRoles: metadata.Acl.DeleteRoles,
                     metaReadRoles: metadata.Acl.MetaReadRoles,
@@ -148,8 +148,8 @@ public class SystemManager : IManager {
 
     public async ValueTask<GetStreamInfoResult> GetStreamInfo(LogPosition position, CancellationToken cancellationToken = default) {
         var kdbPosition = position == LogPosition.Earliest
-            ? Core.Services.Transport.Common.Position.Start
-            : new EventStore.Core.Services.Transport.Common.Position(position.CommitPosition.GetValueOrDefault(),
+            ? KurrentDB.Core.Services.Transport.Common.Position.Start
+            : new KurrentDB.Core.Services.Transport.Common.Position(position.CommitPosition.GetValueOrDefault(),
                 position.PreparePosition.GetValueOrDefault());
 
         ResolvedEvent? re = await Client

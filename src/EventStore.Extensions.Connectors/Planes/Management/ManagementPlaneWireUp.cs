@@ -17,7 +17,7 @@ using EventStore.Connectors.Management.Data;
 using EventStore.Connectors.Management.Projectors;
 using EventStore.Connectors.Management.Queries;
 using EventStore.Connectors.System;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using EventStore.Plugins.Licensing;
 using Kurrent.Toolkit;
 using FluentValidation;

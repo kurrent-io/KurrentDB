@@ -3,7 +3,7 @@
 
 using System.Net;
 using EventStore.Connectors.System;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 using EventStore.Core.Messages;
 using EventStore.Extensions.Connectors.Tests;
 using EventStore.Toolkit.Testing.Xunit;

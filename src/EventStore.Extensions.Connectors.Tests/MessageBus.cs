@@ -1,5 +1,6 @@
 using EventStore.Core.Bus;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Connectors.Tests;
 

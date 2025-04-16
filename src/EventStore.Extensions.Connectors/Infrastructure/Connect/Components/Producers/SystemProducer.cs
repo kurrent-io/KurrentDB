@@ -3,8 +3,8 @@
 using DotNext;
 using EventStore.Connect.Producers.Configuration;
 using EventStore.Core;
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using Kurrent.Surge;
 using Kurrent.Surge.Interceptors;
 using Kurrent.Surge.Producers;

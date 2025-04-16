@@ -3,7 +3,7 @@ using EventStore.Connect.Consumers.Configuration;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.System;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Kurrent.Surge;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;

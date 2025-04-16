@@ -1,4 +1,4 @@
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using EventStore.Core.Messages;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

@@ -1,13 +1,13 @@
 // ReSharper disable CheckNamespace
 
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using EventStore.Core.Messages;
-using EventStore.Core.Messaging;
-using EventStore.Core.Services;
-using EventStore.Core.Services.Transport.Common;
-using EventStore.Core.Services.Transport.Enumerators;
-using EventStore.Core.Services.UserManagement;
+using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services;
+using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.UserManagement;
 
 namespace EventStore.Core;
 

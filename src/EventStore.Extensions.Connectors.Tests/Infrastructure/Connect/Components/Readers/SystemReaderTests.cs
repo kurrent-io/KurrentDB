@@ -8,8 +8,8 @@ using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Readers;
 using EventStore.Toolkit.Testing.Xunit;
 using Shouldly;
-using EventStoreCore = EventStore.Core.Services.Transport.Common;
-using StreamMetadata = EventStore.Core.Data.StreamMetadata;
+using EventStoreCore = KurrentDB.Core.Services.Transport.Common;
+using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
 namespace EventStore.Extensions.Connectors.Tests.Connect.Readers;
 

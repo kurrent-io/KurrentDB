@@ -1,5 +1,5 @@
-using EventStore.Core.Bus;
-using EventStore.Core.Data;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using EventStore.Core.Messages;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;

@@ -3,7 +3,7 @@ using EventStore.Connect.Schema;
 using EventStore.Connectors.Infrastructure.Connect.Components.Connectors;
 using EventStore.Connectors.Management;
 using EventStore.Connectors.System;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Humanizer;
 using Kurrent.Surge.Leases;
 using Kurrent.Toolkit;

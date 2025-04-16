@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using EventStore.Connect.Consumers;
 using EventStore.Connect.Producers;
 using EventStore.Connect.Readers;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Kurrent.Surge.Configuration;
 using Kurrent.Surge.Leases;
 using Kurrent.Surge.Processors;

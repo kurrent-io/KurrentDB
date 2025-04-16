@@ -1,6 +1,6 @@
 using System.Net;
 using EventStore.Core.Cluster;
-using EventStore.Core.Data;
+using KurrentDB.Core.Data;
 
 namespace EventStore.Connectors.System;
 

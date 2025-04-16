@@ -2,9 +2,9 @@ using System.ComponentModel;
 using System.Net;
 using DotNext.Collections.Generic;
 using KurrentDB;
-using EventStore.Core;
-using EventStore.Core.Certificates;
-using EventStore.Core.Configuration;
+using KurrentDB.Core;
+using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Configuration;
 using EventStore.Toolkit.Testing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -21,7 +21,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
         { "EventStore:Application:Insecure", "true" },
         { "EventStore:Database:MemDb", "true" },
         // super hack to ignore esdb's absurd logging config
-        { "EventStore:Logging:LogLevel", Common.Options.LogLevel.Default.ToString() },
+        { "EventStore:Logging:LogLevel", KurrentDB.Common.Options.LogLevel.Default.ToString() },
         { "EventStore:Logging:DisableLogFile", "true" },
         { "EventStore:Interface:DisableAdminUi", "true" },
         { "EventStore:DevMode:Dev", "true" }

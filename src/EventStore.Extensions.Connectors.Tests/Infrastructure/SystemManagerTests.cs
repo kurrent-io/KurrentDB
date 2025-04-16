@@ -4,7 +4,7 @@
 using EventStore.Core;
 using Kurrent.Surge;
 using Exception = System.Exception;
-using StreamMetadata = EventStore.Core.Data.StreamMetadata;
+using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
 namespace EventStore.Extensions.Connectors.Tests;
 

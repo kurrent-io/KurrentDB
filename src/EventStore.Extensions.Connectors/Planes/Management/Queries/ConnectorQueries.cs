@@ -1,4 +1,4 @@
-using EventStore.Common.Utils;
+using KurrentDB.Common.Utils;
 using EventStore.Connect.Readers;
 using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Connect.Components.Connectors;

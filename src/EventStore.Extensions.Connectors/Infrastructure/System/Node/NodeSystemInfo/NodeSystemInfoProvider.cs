@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using EventStore.Core;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using EventStore.Core.Cluster;
-using EventStore.Core.Services;
+using KurrentDB.Core.Services;
 using Kurrent.Toolkit;
 using static System.Text.Json.JsonSerializer;
 

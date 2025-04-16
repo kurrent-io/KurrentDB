@@ -1,12 +1,12 @@
 using EventStore.Core;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Kurrent.Surge;
 using Kurrent.Surge.DataProtection;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
 using static EventStore.Connectors.ConnectorsFeatureConventions.Streams;
 
-using StreamMetadata = EventStore.Core.Data.StreamMetadata;
+using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
 namespace EventStore.Connectors.Management;
 

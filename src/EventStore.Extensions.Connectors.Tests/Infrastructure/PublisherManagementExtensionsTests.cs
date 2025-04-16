@@ -1,8 +1,8 @@
 // ReSharper disable ExplicitCallerInfoArgument
 
 using EventStore.Core;
-using EventStore.Core.Data;
-using EventStore.Core.Services.Transport.Common;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Common;
 
 namespace EventStore.Extensions.Connectors.Tests;
 

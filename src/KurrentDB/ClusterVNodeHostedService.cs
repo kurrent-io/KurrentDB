@@ -45,8 +45,6 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using KurrentDB.OtlpExporterPlugin;
 using EventStore.Plugins.Connectors;
-using KurrentDB.POC.ConnectedSubsystemsPlugin;
-using KurrentDB.Security.EncryptionAtRest;
 
 namespace KurrentDB;
 

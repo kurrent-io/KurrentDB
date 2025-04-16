@@ -2,7 +2,7 @@ using EventStore.Connectors.Infrastructure;
 using EventStore.Connectors.Management.Contracts;
 using EventStore.Connectors.Management.Contracts.Events;
 using EventStore.Connectors.Management.Contracts.Queries;
-using EventStore.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.Transport.Enumerators;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Toolkit;

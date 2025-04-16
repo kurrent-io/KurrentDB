@@ -1,5 +1,5 @@
-using EventStore.Core;
-using EventStore.Core.Bus;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
 using EventStore.Core.Messages;
 using EventStore.Toolkit.Testing;
 using Serilog;

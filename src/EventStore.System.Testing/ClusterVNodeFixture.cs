@@ -2,8 +2,8 @@
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using EventStore.Core;
-using EventStore.Core.Bus;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
 using EventStore.Toolkit.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

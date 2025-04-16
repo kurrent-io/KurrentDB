@@ -1,6 +1,6 @@
 // ReSharper disable CheckNamespace
 
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Kurrent.Surge.Consumers.Configuration;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;

@@ -1,5 +1,5 @@
 using DotNext.Threading;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Microsoft.Extensions.Logging;
 
 namespace EventStore.Connectors.System;

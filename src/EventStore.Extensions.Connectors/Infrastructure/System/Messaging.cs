@@ -4,7 +4,8 @@
 // ReSharper disable CheckNamespace
 
 using DotNext.Collections.Generic;
-using EventStore.Core.Messaging;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messaging;
 
 namespace EventStore.Core.Bus;
 

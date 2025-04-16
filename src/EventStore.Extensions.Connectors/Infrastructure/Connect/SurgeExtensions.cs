@@ -12,7 +12,7 @@ using EventStore.Connect.Readers.Configuration;
 using EventStore.Connect.Schema;
 using EventStore.Connectors.Connect.Components.Producers;
 using EventStore.Connectors.Infrastructure;
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.DataProtection;

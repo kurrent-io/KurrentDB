@@ -1,4 +1,4 @@
-using EventStore.Core.Bus;
+using KurrentDB.Core.Bus;
 using Kurrent.Surge.Processors;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
