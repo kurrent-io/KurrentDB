@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
@@ -20,7 +20,7 @@ using KurrentDB.Core.Tests.Services.TimeService;
 using KurrentDB.Core.Tests.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
-using OperationStatus = EventStore.Core.Messages.MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus;
+using OperationStatus = KurrentDB.Core.Messages.MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus;
 
 namespace KurrentDB.Core.XUnit.Tests.Services.PersistentSubscriptions;
 

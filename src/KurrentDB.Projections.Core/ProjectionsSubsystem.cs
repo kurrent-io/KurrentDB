@@ -7,7 +7,7 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authorization;
 using EventStore.Plugins.Subsystems;
 using EventStore.Projections.Core.Services.Grpc;

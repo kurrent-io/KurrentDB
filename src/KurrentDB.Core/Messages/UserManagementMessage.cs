@@ -8,7 +8,7 @@ using System.Security.Claims;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Http.Controllers;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class UserManagementMessage {
 	[DerivedMessage(CoreMessage.UserManagement)]

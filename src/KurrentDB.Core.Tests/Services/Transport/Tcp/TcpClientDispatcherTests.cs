@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Text;
 using EventStore.Client.Messages;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Core.Authentication.InternalAuthentication;
 using KurrentDB.Core.Bus;

@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Archive;

@@ -5,7 +5,7 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authentication;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;

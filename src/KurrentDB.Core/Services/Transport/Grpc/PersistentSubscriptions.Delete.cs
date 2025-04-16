@@ -4,13 +4,13 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
-using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToAllCompleted;
-using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
+using static KurrentDB.Core.Messages.ClientMessage.DeletePersistentSubscriptionToAllCompleted;
+using static KurrentDB.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
 using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.DeleteReq.Types.Options.StreamOptionOneofCase;
 

@@ -6,7 +6,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Core.Authentication.InternalAuthentication;
 using KurrentDB.Core.Bus;

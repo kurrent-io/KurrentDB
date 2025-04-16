@@ -3,7 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests.Helpers;
 using NUnit.Framework;
 using HttpStatusCode = System.Net.HttpStatusCode;

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using FluentAssertions;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data.Redaction;

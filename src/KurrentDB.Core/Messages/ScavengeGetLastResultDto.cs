@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public class ScavengeGetLastResultDto {
 	public string ScavengeId { get; set; } = Guid.Empty.ToString();

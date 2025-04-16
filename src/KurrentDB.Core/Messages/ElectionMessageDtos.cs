@@ -5,7 +5,7 @@ using System;
 using EventStore.Core.Cluster;
 using KurrentDB.Common.Utils;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static class ElectionMessageDto {
 	public class ViewChangeDto {

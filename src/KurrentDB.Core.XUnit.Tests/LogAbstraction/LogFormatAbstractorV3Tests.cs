@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.LogV3;

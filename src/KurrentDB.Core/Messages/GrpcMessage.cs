@@ -5,7 +5,7 @@ using System;
 using System.Net;
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class GrpcMessage {
 	[DerivedMessage(CoreMessage.Grpc)]

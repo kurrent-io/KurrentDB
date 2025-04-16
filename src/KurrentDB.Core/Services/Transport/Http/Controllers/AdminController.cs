@@ -7,7 +7,7 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;

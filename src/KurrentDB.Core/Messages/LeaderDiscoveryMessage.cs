@@ -5,7 +5,7 @@ using EventStore.Core.Cluster;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class LeaderDiscoveryMessage {
 	[DerivedMessage(CoreMessage.LeaderDiscovery)]

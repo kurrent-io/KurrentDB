@@ -9,7 +9,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using DotNext.Threading;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;

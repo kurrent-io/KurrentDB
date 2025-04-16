@@ -7,7 +7,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;

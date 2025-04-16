@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using EventStore.Client.Messages;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;

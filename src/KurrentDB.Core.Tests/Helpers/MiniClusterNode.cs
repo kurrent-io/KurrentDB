@@ -10,7 +10,7 @@ using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Options;
 using KurrentDB.Common.Utils;

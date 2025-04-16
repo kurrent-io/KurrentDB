@@ -3,7 +3,7 @@
 
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class AuthenticationMessage {
 	[DerivedMessage(CoreMessage.Authentication)]

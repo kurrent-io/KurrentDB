@@ -6,7 +6,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data.Redaction;
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class RedactionMessage {
 	[DerivedMessage(CoreMessage.Redaction)]

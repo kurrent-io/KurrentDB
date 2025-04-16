@@ -3,7 +3,7 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.Services;
 using KurrentDB.Projections.Core.Messages;

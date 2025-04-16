@@ -10,7 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Cluster;
 using EventStore.Core.Cluster.Settings;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Plugins.Authentication;
 using KurrentDB.Common.Utils;

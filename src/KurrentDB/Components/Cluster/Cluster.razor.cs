@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Components.Licensed;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Tools;

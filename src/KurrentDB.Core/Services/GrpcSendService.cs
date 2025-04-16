@@ -3,7 +3,7 @@
 
 using System;
 using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using Serilog;
 

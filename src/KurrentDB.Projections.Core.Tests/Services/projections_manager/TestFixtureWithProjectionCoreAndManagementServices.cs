@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Bus;

@@ -6,7 +6,7 @@ using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
-using static EventStore.Core.Messages.UserManagementMessage;
+using static KurrentDB.Core.Messages.UserManagementMessage;
 
 namespace EventStore.Core.Services.Transport.Grpc;
 

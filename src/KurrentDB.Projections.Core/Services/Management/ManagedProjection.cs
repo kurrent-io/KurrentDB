@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using FastSerialization;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;

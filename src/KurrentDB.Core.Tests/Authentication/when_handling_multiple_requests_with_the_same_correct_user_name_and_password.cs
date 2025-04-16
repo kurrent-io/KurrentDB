@@ -3,7 +3,7 @@
 
 using System.Linq;
 using System.Security.Claims;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Authentication;

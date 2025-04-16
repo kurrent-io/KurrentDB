@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Net;
 using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using FluentAssertions;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;

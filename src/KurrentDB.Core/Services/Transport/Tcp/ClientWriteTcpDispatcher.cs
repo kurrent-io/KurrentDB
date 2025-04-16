@@ -5,13 +5,13 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using EventStore.Client.Messages;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using Google.Protobuf;
 using KurrentDB.Core.Authentication.DelegatedAuthentication;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.UserManagement;
-using OperationResult = EventStore.Core.Messages.OperationResult;
+using OperationResult = KurrentDB.Core.Messages.OperationResult;
 
 namespace EventStore.Core.Services.Transport.Tcp;
 

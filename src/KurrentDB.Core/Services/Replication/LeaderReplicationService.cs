@@ -10,7 +10,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Threading;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;

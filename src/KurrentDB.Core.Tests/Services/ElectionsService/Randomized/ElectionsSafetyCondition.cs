@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests.Infrastructure;
 
 namespace KurrentDB.Core.Tests.Services.ElectionsService.Randomized;

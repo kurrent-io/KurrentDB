@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Common.Options;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
@@ -21,7 +21,7 @@ using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Standard;
 using Serilog;
 using ILogger = Serilog.ILogger;
-using OperationResult = EventStore.Core.Messages.OperationResult;
+using OperationResult = KurrentDB.Core.Messages.OperationResult;
 using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
 
 namespace KurrentDB.Projections.Core.Services.Management;

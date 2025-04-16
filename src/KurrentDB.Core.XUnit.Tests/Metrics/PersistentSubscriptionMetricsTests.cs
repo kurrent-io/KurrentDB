@@ -4,7 +4,7 @@
 using System;
 using System.Diagnostics.Metrics;
 using System.Linq;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.PersistentSubscription;
 using Xunit;

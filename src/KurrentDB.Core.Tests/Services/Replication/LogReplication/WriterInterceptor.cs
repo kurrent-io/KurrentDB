@@ -3,7 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 

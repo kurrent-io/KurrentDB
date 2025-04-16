@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using EventStore.ClientAPI.Common.Utils;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Tests.Helpers;

@@ -4,7 +4,7 @@
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.LogAbstraction;

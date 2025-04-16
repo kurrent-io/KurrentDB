@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.PersistentSubscription;
 

@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authentication;
 using KurrentDB.Core.Authentication.InternalAuthentication;
 using KurrentDB.Core.Helpers;

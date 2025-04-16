@@ -9,7 +9,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using EndPoint = System.Net.EndPoint;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class SystemMessage {
 	[DerivedMessage(CoreMessage.System)]

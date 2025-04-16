@@ -11,7 +11,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class StorageMessage {
 	public interface IPreconditionedWriteMessage {

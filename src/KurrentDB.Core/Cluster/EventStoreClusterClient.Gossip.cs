@@ -4,7 +4,7 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using Empty = EventStore.Client.Empty;

@@ -9,7 +9,7 @@ using System.Net;
 using System.Threading.Tasks;
 using DotNext.Net.Http;
 using EventStore.ClientAPI;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Licensing;

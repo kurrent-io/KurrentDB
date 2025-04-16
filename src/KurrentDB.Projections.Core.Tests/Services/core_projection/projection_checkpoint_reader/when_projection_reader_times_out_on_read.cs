@@ -3,7 +3,7 @@
 
 using System;
 using System.Threading;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.Tests.Helpers.IODispatcherTests;
 using KurrentDB.Core.Bus;

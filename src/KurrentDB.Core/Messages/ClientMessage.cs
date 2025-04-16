@@ -15,7 +15,7 @@ using KurrentDB.Core.Settings;
 using FilteredReadAllResult = KurrentDB.Core.Data.FilteredReadAllResult;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public enum OperationResult {
 	Success = 0,

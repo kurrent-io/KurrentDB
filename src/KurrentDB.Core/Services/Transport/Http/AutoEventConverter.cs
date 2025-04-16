@@ -4,7 +4,7 @@
 using System;
 using System.Linq;
 using System.Xml.Linq;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.TransactionLog.LogRecords;

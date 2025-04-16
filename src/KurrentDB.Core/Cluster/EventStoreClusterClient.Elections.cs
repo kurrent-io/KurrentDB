@@ -4,7 +4,7 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Core.Services.Transport.Grpc;
 using KurrentDB.Common.Utils;
 using EndPoint = System.Net.EndPoint;

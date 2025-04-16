@@ -6,7 +6,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using JetBrains.Annotations;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;

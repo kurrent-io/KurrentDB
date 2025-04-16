@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;

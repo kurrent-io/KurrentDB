@@ -5,7 +5,7 @@ using System;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class SubscriptionMessage {
 	[DerivedMessage(CoreMessage.Subscription)]

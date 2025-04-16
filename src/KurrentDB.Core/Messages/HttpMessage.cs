@@ -6,7 +6,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Transport.Http.EntityManagement;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public enum DenialReason {
 	ServerTooBusy

@@ -3,7 +3,7 @@
 
 using System.Threading.Tasks;
 using EventStore.Client.Users;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core.Messaging;

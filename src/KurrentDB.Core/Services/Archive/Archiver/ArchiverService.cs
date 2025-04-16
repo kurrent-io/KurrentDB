@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Runtime.CompilerServices;
 using DotNext.Threading;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;

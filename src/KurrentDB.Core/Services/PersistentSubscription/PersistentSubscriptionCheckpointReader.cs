@@ -3,7 +3,7 @@
 
 #nullable enable
 using System;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Services.UserManagement;

@@ -3,7 +3,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using Grpc.Core;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;

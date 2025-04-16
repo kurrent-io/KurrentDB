@@ -4,7 +4,7 @@
 using System;
 using System.Net;
 using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.VNode;
 using KurrentDB.Core.Tests.Fakes;

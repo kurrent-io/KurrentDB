@@ -4,7 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Utils;

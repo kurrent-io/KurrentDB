@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -18,7 +18,7 @@ using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog.Chunks;
 using ILogger = Serilog.ILogger;
-using OperationResult = EventStore.Core.Messages.OperationResult;
+using OperationResult = KurrentDB.Core.Messages.OperationResult;
 
 namespace KurrentDB.Core.Services.VNode;
 

@@ -7,7 +7,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
 using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Metrics;
 using Xunit;

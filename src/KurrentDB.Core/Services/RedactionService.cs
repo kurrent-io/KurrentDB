@@ -6,7 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Transforms;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;

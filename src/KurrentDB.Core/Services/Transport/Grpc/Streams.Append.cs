@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using Grpc.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;

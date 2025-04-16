@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Client.Monitoring;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using Grpc.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;

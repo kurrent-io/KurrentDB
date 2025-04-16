@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Net;
 using EventStore.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.Chunks;

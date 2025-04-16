@@ -3,7 +3,7 @@
 
 using System;
 using System.Net;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using Google.Protobuf;
 using KurrentDB.Common.Utils;
 

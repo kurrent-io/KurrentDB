@@ -6,7 +6,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using EventStore.ClientAPI.Common.Utils;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.Tests.Authentication;

@@ -6,7 +6,7 @@ using EventStore.Core.Cluster;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public class MemberInfoDto {
 	public Guid InstanceId { get; set; }

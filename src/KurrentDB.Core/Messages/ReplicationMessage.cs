@@ -12,7 +12,7 @@ using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using EndPoint = System.Net.EndPoint;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class ReplicationMessage {
 	[DerivedMessage(CoreMessage.Replication)]

@@ -4,7 +4,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using EventStore.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Common.Utils;

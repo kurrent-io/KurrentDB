@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext.Runtime.CompilerServices;
 using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Core.Authentication.PassthroughAuthentication;
 using KurrentDB.Core.Authorization;

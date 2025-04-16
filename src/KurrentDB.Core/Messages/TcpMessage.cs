@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class TcpMessage {
 	[DerivedMessage(CoreMessage.Tcp)]

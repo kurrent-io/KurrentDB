@@ -6,7 +6,7 @@ using System.Net;
 using EventStore.Core.Cluster;
 using KurrentDB.Common.Utils;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public class ClusterInfoDto {
 	public MemberInfoDto[] Members { get; set; }

@@ -12,7 +12,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using DotNext.Collections.Generic;
 using DotNext.Runtime.CompilerServices;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Plugins.Diagnostics;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
