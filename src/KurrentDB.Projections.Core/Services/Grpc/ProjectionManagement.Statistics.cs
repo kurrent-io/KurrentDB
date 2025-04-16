@@ -4,7 +4,6 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
-using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core.Messaging;
