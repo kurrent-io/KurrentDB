@@ -3,13 +3,14 @@
 
 using System;
 using System.Net;
-using KurrentDB.Core.Messages;
+using EventStore.Core.Cluster;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace EventStore.Core.Cluster;
+namespace KurrentDB.Core.Cluster;
 
 public class EventStoreClusterClientCache :
 	IHandle<ClusterClientMessage.CleanCache>,

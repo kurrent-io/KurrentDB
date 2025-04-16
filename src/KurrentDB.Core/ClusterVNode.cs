@@ -32,6 +32,7 @@ using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Caching;
 using KurrentDB.Core.Certificates;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.DataStructures;

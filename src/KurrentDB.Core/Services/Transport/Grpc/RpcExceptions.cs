@@ -3,12 +3,12 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using KurrentDB.Core.Messages;
 using Grpc.Core;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Services.Transport.Grpc;
+namespace KurrentDB.Core.Services.Transport.Grpc;
 
 public static class RpcExceptions {
 	public static Exception Timeout(string message) => new RpcException(new Status(StatusCode.Aborted, $"Operation timed out: {message}"));

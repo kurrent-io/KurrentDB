@@ -10,16 +10,16 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
-using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Plugins.Subsystems;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Tests.Helpers;
 using NUnit.Framework;
 using Empty = EventStore.Client.Empty;
-using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
+using GrpcMetadata = KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata;
 using RecordedEvent = EventStore.Client.Streams.ReadResp.Types.ReadEvent.Types.RecordedEvent;
 
 namespace KurrentDB.Core.Tests.Integration;

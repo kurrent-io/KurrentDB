@@ -5,7 +5,7 @@ using System;
 using EventStore.Client;
 using HashCode = KurrentDB.Core.Services.Transport.Common.HashCode;
 
-namespace EventStore.Core.Services.Transport.Grpc;
+namespace KurrentDB.Core.Services.Transport.Grpc;
 
 public readonly struct Uuid : IEquatable<Uuid> {
 	public static readonly Uuid Empty = new(Guid.Empty);

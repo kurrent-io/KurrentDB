@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Services.Transport.Grpc;
+using KurrentDB.Core.Services.Transport.Grpc;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Services.Transport.Grpc;

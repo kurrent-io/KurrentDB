@@ -21,12 +21,14 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Grpc;
 using Serilog;
 using static KurrentDB.Core.Messages.ClientMessage.PersistentSubscriptionNackEvents;
 using static EventStore.Plugins.Authorization.Operations.Subscriptions;
 using Empty = EventStore.Client.Empty;
 using UUID = EventStore.Client.UUID;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {

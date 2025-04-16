@@ -4,10 +4,10 @@
 using System;
 using System.Linq;
 using System.Net;
-using EventStore.Core.Cluster;
 using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;

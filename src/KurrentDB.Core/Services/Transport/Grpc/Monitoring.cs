@@ -6,14 +6,14 @@ using System.Linq;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Client.Monitoring;
-using KurrentDB.Core.Messages;
 using Grpc.Core;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Services.Transport.Grpc;
+namespace KurrentDB.Core.Services.Transport.Grpc;
 
-internal class Monitoring(IPublisher publisher) : Client.Monitoring.Monitoring.MonitoringBase {
+internal class Monitoring(IPublisher publisher) : EventStore.Client.Monitoring.Monitoring.MonitoringBase {
 	public override Task Stats(StatsReq request, IServerStreamWriter<StatsResp> responseStream, ServerCallContext context) {
 		var channel = Channel.CreateBounded<StatsResp>(new BoundedChannelOptions(1) {
 			SingleReader = true,

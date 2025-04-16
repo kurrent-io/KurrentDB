@@ -5,13 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using KurrentDB.Core.Messages;
-using EventStore.Core.Services.Transport.Grpc;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
+using KurrentDB.Core.Services.Transport.Grpc;
 
-namespace EventStore.Core.Cluster;
+namespace KurrentDB.Core.Cluster;
 
 public class ClusterInfo {
 	private static readonly EndPointComparer Comparer = new EndPointComparer();

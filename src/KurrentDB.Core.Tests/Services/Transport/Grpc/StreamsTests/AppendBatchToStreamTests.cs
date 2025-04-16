@@ -5,10 +5,10 @@ using System;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
-using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Google.Rpc;
+using KurrentDB.Core.Services.Transport.Grpc;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;

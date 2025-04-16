@@ -6,6 +6,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Metrics;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 partial class Gossip : Client.Gossip.Gossip.GossipBase {

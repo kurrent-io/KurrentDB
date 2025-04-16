@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using EventStore.Core.Cluster;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;

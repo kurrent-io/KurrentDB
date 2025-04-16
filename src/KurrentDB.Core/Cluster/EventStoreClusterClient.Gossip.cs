@@ -7,11 +7,13 @@ using EventStore.Cluster;
 using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
+using ClusterInfo = KurrentDB.Core.Cluster.ClusterInfo;
 using Empty = EventStore.Client.Empty;
 using EndPoint = System.Net.EndPoint;
 using GossipEndPoint = EventStore.Cluster.EndPoint;
 using ILogger = Serilog.ILogger;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Cluster;
 
 public partial class EventStoreClusterClient {

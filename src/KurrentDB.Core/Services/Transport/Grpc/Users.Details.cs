@@ -8,8 +8,10 @@ using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Transport.Grpc;
 using static EventStore.Plugins.Authorization.Operations.Users;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Users {

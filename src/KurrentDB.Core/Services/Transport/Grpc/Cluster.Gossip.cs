@@ -11,6 +11,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.Transport.Grpc;
 using Empty = EventStore.Client.Empty;
 
 // ReSharper disable once CheckNamespace
@@ -45,7 +46,7 @@ partial class Gossip {
 			throw RpcExceptions.AccessDenied();
 		}
 
-		var clusterInfo = Core.Cluster.ClusterInfo.FromGrpcClusterInfo(request.Info, _clusterDns);
+		var clusterInfo = KurrentDB.Core.Cluster.ClusterInfo.FromGrpcClusterInfo(request.Info, _clusterDns);
 		var tcs = new TaskCompletionSource<ClusterInfo>();
 		var duration = _updateTracker.Start();
 		_bus.Publish(new GossipMessage.GossipReceived(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration)),
@@ -67,7 +68,7 @@ partial class Gossip {
 
 	private static void GossipResponse(Message msg, TaskCompletionSource<ClusterInfo> tcs, Duration duration) {
 		if (msg is GossipMessage.SendGossip received) {
-			tcs.TrySetResult(Core.Cluster.ClusterInfo.ToGrpcClusterInfo(received.ClusterInfo));
+			tcs.TrySetResult(KurrentDB.Core.Cluster.ClusterInfo.ToGrpcClusterInfo(received.ClusterInfo));
 			duration.Dispose();
 		}
 	}

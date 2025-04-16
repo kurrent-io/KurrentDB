@@ -9,16 +9,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
-using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
 using Convert = System.Convert;
-using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
+using GrpcMetadata = KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata;
 using Streams = EventStore.Client.Streams.Streams;
 
 namespace KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;

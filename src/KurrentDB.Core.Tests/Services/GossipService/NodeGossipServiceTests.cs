@@ -4,10 +4,10 @@
 using System;
 using System.Linq;
 using System.Net;
-using EventStore.Core.Cluster;
 using KurrentDB.Core.Messages;
 using FluentAssertions;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Gossip;
@@ -17,7 +17,7 @@ using KurrentDB.Core.Tests.Services.ElectionsService;
 using KurrentDB.Core.Tests.Services.TimeService;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;
-using MemberInfo = EventStore.Core.Cluster.MemberInfo;
+using MemberInfo = KurrentDB.Core.Cluster.MemberInfo;
 
 namespace KurrentDB.Core.Tests.Services.GossipService;
 

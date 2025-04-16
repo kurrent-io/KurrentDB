@@ -6,7 +6,7 @@ using System.Linq;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 
-namespace EventStore.Core.Cluster;
+namespace KurrentDB.Core.Cluster;
 
 public class ClientClusterInfo {
 	public ClientMemberInfo[] Members { get; set; }

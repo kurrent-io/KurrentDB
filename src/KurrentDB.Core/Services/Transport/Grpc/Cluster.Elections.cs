@@ -9,7 +9,8 @@ using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
-using ClusterInfo = EventStore.Core.Cluster.ClusterInfo;
+using KurrentDB.Core.Services.Transport.Grpc;
+using ClusterInfo = KurrentDB.Core.Cluster.ClusterInfo;
 using Empty = EventStore.Client.Empty;
 
 // ReSharper disable once CheckNamespace

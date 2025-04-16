@@ -18,6 +18,7 @@ using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.Transport.Grpc;
 using static EventStore.Client.Streams.ReadResp.Types;
 using static EventStore.Plugins.Authorization.Operations.Streams;
 using CountOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.CountOptionOneofCase;
@@ -25,6 +26,7 @@ using FilterOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.Fi
 using ReadDirection = EventStore.Client.Streams.ReadReq.Types.Options.Types.ReadDirection;
 using StreamOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.StreamOptionOneofCase;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Streams<TStreamId> {

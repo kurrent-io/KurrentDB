@@ -16,11 +16,12 @@ using KurrentDB.Core.Services.Transport.Common;
 using static EventStore.Client.PersistentSubscriptions.CreateReq.Types.Settings;
 using static KurrentDB.Core.Messages.ClientMessage.CreatePersistentSubscriptionToAllCompleted;
 using static KurrentDB.Core.Messages.ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
-using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
+using static KurrentDB.Core.Services.Transport.Grpc.RpcExceptions;
 using AllOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.AllOptions.AllOptionOneofCase;
 using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.StreamOptions.RevisionOptionOneofCase;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.Options.StreamOptionOneofCase;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {

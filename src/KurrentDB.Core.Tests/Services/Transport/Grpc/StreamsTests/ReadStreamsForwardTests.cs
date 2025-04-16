@@ -7,11 +7,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using EventStore.ClientAPI;
-using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Core.Services.Transport.Grpc;
 using NUnit.Framework;
-using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
+using GrpcMetadata = KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata;
 
 namespace KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;
 

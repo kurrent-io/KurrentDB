@@ -3,7 +3,7 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Services.Transport.Grpc;
+using KurrentDB.Core.Services.Transport.Grpc;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Services.Transport.Grpc;

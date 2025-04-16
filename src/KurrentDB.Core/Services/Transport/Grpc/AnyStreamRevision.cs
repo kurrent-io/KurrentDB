@@ -4,7 +4,7 @@
 using System;
 using HashCode = KurrentDB.Core.Services.Transport.Common.HashCode;
 
-namespace EventStore.Core.Services.Transport.Grpc;
+namespace KurrentDB.Core.Services.Transport.Grpc;
 
 public readonly struct AnyStreamRevision : IEquatable<AnyStreamRevision> {
 	public static readonly AnyStreamRevision NoStream = new(Constants.NoStream);

@@ -3,8 +3,8 @@
 
 using System.Linq;
 using System.Net;
-using EventStore.Core.Cluster;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Cluster;
 
 namespace KurrentDB.Core.Messages;
 

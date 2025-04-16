@@ -11,9 +11,10 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using static KurrentDB.Core.Messages.ClientMessage.DeletePersistentSubscriptionToAllCompleted;
 using static KurrentDB.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
-using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
+using static KurrentDB.Core.Services.Transport.Grpc.RpcExceptions;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.DeleteReq.Types.Options.StreamOptionOneofCase;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {

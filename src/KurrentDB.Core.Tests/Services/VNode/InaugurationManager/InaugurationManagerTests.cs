@@ -3,7 +3,7 @@
 
 using System;
 using System.Net;
-using EventStore.Core.Cluster;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.VNode;

@@ -11,6 +11,7 @@ using EventStore.Client.Streams;
 using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Tests.Services.Transport.Grpc.StreamsTests;
 using NUnit.Framework;
 using ReadReq = EventStore.Client.PersistentSubscriptions.ReadReq;

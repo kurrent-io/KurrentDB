@@ -23,6 +23,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Grpc;
 using Serilog;
 using static EventStore.Client.Streams.BatchAppendReq.Types;
 using static EventStore.Client.Streams.BatchAppendReq.Types.Options;
@@ -31,6 +32,7 @@ using Empty = Google.Protobuf.WellKnownTypes.Empty;
 using OperationResult = KurrentDB.Core.Messages.OperationResult;
 using Status = Google.Rpc.Status;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 partial class Streams<TStreamId> {

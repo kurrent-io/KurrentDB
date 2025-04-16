@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Cluster;
 using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.EpochManager;
 using KurrentDB.Core.Services.TimerService;

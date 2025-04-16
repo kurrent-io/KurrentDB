@@ -4,6 +4,7 @@
 using EventStore.Plugins.Authorization;
 using KurrentDB.Core.Bus;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Redaction : Kurrent.Client.Redaction.Redaction.RedactionBase {

@@ -9,9 +9,11 @@ using Kurrent.Client.Redaction;
 using KurrentDB.Core.Data.Redaction;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Grpc;
 using ChunkInfo = Kurrent.Client.Redaction.ChunkInfo;
 using EventPosition = Kurrent.Client.Redaction.EventPosition;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Redaction {

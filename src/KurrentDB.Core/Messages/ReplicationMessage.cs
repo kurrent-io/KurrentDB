@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Cluster;
 using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.Chunks;

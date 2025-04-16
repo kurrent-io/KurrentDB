@@ -9,11 +9,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
-using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Core.Services.Transport.Grpc;
 using NUnit.Framework;
-using GrpcMetadata = EventStore.Core.Services.Transport.Grpc.Constants.Metadata;
+using GrpcMetadata = KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata;
 using LogV3StreamId = System.UInt32;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
 
