@@ -102,10 +102,38 @@ message ReadResp {
 		CaughtUp caught_up = 8;
 		FellBehind fell_behind = 9;
 	}
-	
-	message CaughtUp {}
 
-	message FellBehind {}
+	// The $all or stream subscription has caught up and become live.
+	message CaughtUp {
+		// Current time in the server when the subscription caught up
+		google.protobuf.Timestamp timestamp = 1;
+
+		// Checkpoint for resuming a stream subscription.
+		// For stream subscriptions it is populated unless the stream is empty.
+		// For $all subscriptions it is not populated.
+		optional int64 stream_revision = 2;
+
+		// Checkpoint for resuming a $all subscription.
+		// For stream subscriptions it is not populated.
+		// For $all subscriptions it is populated unless the database is empty.
+		optional Position position = 3;
+	}
+
+	// The $all or stream subscription has fallen back into catchup mode and is no longer live.
+	message FellBehind {
+		// Current time in the server when the subscription fell behind
+		google.protobuf.Timestamp timestamp = 1;
+
+		// Checkpoint for resuming a stream subscription.
+		// For stream subscriptions it is populated unless the stream is empty.
+		// For $all subscriptions it is not populated.
+		optional int64 stream_revision = 2;
+
+		// Checkpoint for resuming a $all subscription.
+		// For stream subscriptions it is not populated.
+		// For $all subscriptions it is populated unless the database is empty.
+		optional Position position = 3;
+	}
 
 	message ReadEvent {
 		RecordedEvent event = 1;
@@ -132,7 +160,16 @@ message ReadResp {
 	message Checkpoint {
 		uint64 commit_position = 1;
 		uint64 prepare_position = 2;
+
+		// Current time in the server when the checkpoint was reached
+		google.protobuf.Timestamp timestamp = 3;
 	}
+
+	message Position {
+		uint64 commit_position = 1;
+		uint64 prepare_position = 2;
+	}
+
 	message StreamNotFound {
 		event_store.client.StreamIdentifier stream_identifier = 1;
 	}
