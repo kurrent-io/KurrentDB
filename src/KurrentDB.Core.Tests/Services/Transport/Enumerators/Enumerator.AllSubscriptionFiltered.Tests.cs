@@ -13,6 +13,7 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.Tests.Helpers;
+using KurrentDB.Core.Tests.Services.VNode;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Services.Transport.Enumerators;
@@ -60,9 +61,15 @@ public partial class EnumeratorTests {
 
 			Assert.True(await sub.GetNext() is SubscriptionConfirmation);
 			Assert.AreEqual(_eventIds[0], ((Event)await sub.GetNext()).Id);
-			var c = AssertEx.IsType<Checkpoint>(await sub.GetNext());
-			Assert.True(c.CheckpointPosition < Position.End);
-			Assert.True(await sub.GetNext() is CaughtUp);
+
+			var checkpoint = AssertEx.IsType<Checkpoint>(await sub.GetNext());
+			Assert.True(checkpoint.CheckpointPosition < Position.End);
+			Assert.True(DateTime.UtcNow - checkpoint.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.AreEqual(new TFPos(150, 100), caughtUp.Wrapped.AllCheckpoint);
+			Assert.Null(caughtUp.Wrapped.StreamCheckpoint);
 		}
 
 		[Test]
@@ -71,9 +78,15 @@ public partial class EnumeratorTests {
 				_publisher, null, EventFilter.EventType.Prefixes(false, "match-nothing"));
 
 			Assert.True(await sub.GetNext() is SubscriptionConfirmation);
+
 			var checkpoint = AssertEx.IsType<Checkpoint>(await sub.GetNext());
 			Assert.True(checkpoint.CheckpointPosition < Position.End);
-			Assert.True(await sub.GetNext() is CaughtUp);
+			Assert.True(DateTime.UtcNow - checkpoint.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.AreEqual(new TFPos(0, 0), caughtUp.Wrapped.AllCheckpoint);
+			Assert.Null(caughtUp.Wrapped.StreamCheckpoint);
 		}
 	}
 
@@ -93,7 +106,10 @@ public partial class EnumeratorTests {
 				_publisher, Position.End, EventFilter.EventType.Prefixes(false, "type1"));
 
 			Assert.True(await sub.GetNext() is SubscriptionConfirmation);
-			Assert.True(await sub.GetNext() is CaughtUp);
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.AreEqual(new TFPos(400, 400), caughtUp.Wrapped.AllCheckpoint);
+			Assert.Null(caughtUp.Wrapped.StreamCheckpoint);
 		}
 	}
 
@@ -122,9 +138,15 @@ public partial class EnumeratorTests {
 
 			Assert.True(await sub.GetNext() is SubscriptionConfirmation);
 			Assert.AreEqual(_eventIds[0], ((Event)await sub.GetNext()).Id);
-			var c = AssertEx.IsType<Checkpoint>(await sub.GetNext());
-			Assert.True(c.CheckpointPosition < Position.End);
-			Assert.True(await sub.GetNext() is CaughtUp);
+
+			var checkpoint = AssertEx.IsType<Checkpoint>(await sub.GetNext());
+			Assert.True(checkpoint.CheckpointPosition < Position.End);
+			Assert.True(DateTime.UtcNow - checkpoint.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.AreEqual(new TFPos(450, 400), caughtUp.Wrapped.AllCheckpoint);
+			Assert.Null(caughtUp.Wrapped.StreamCheckpoint);
 		}
 
 		[Test]
@@ -135,9 +157,15 @@ public partial class EnumeratorTests {
 				EventFilter.EventType.Prefixes(false, "match-nothing"));
 
 			Assert.True(await sub.GetNext() is SubscriptionConfirmation);
+
 			var checkpoint = AssertEx.IsType<Checkpoint>(await sub.GetNext());
 			Assert.True(checkpoint.CheckpointPosition < Position.End);
-			Assert.True(await sub.GetNext() is CaughtUp);
+			Assert.True(DateTime.UtcNow - checkpoint.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.AreEqual(new TFPos(350, 300), caughtUp.Wrapped.AllCheckpoint);
+			Assert.Null(caughtUp.Wrapped.StreamCheckpoint);
 		}
 	}
 }

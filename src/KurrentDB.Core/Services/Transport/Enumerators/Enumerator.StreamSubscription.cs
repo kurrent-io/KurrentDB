@@ -27,7 +27,7 @@ static partial class Enumerator {
 		public abstract ReadResponse Current { get; }
 	}
 
-	public class StreamSubscription<TStreamId> : StreamSubscription {
+	public sealed class StreamSubscription<TStreamId> : StreamSubscription {
 		private readonly IExpiryStrategy _expiryStrategy;
 		private readonly Guid _subscriptionId;
 		private readonly IPublisher _bus;
@@ -171,13 +171,21 @@ ReadLoop:
 		private async Task NotifyCaughtUp(long checkpoint, CancellationToken ct) {
 			Log.Debug("Subscription {subscriptionId} to {streamName} caught up at checkpoint {streamRevision:N0}.", _subscriptionId, _streamName, checkpoint);
 
-			await _channel.Writer.WriteAsync(new ReadResponse.SubscriptionCaughtUp(), ct);
+			await _channel.Writer.WriteAsync(
+				new ReadResponse.SubscriptionCaughtUp(
+					timestamp: DateTime.UtcNow,
+					streamCheckpoint: checkpoint),
+				ct);
 		}
 
 		private async Task NotifyFellBehind(long checkpoint, CancellationToken ct) {
 			Log.Debug("Subscription {subscriptionId} to {streamName} fell behind at checkpoint {streamRevision:N0}.", _subscriptionId, _streamName, checkpoint);
 
-			await _channel.Writer.WriteAsync(new ReadResponse.SubscriptionFellBehind(), ct);
+			await _channel.Writer.WriteAsync(
+				new ReadResponse.SubscriptionFellBehind(
+					timestamp: DateTime.UtcNow,
+					streamCheckpoint: checkpoint),
+				ct);
 		}
 
 		private async ValueTask<(long, ulong)> GoLive(long checkpoint, ulong sequenceNumber, CancellationToken ct) {
