@@ -56,7 +56,7 @@ internal sealed class WriterWorkItem : Disposable {
 	public Memory<byte> TryGetDirectBuffer(int length) {
 		Memory<byte> buffer;
 		if (_cachedWriter is PoolingBufferedStream { HasBufferedDataToRead: false }
-		    && (buffer = _cachedWriter.Buffer).Length >= length) {
+			&& (buffer = _cachedWriter.Buffer).Length >= length) {
 			buffer = buffer.Slice(0, length);
 		} else {
 			buffer = Memory<byte>.Empty;

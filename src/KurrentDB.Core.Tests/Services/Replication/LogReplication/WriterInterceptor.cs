@@ -3,8 +3,8 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Tests.Services.Replication.LogReplication;

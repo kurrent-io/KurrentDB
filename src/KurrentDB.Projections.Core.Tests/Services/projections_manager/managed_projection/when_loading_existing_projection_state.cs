@@ -2,11 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using KurrentDB.Core.Tests;
-using KurrentDB.Core.Tests.Services.TimeService;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Services.TimeService;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;

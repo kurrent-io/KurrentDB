@@ -3,8 +3,8 @@
 
 using System;
 using System.Linq;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;
 

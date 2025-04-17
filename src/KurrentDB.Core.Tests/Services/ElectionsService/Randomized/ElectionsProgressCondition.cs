@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests.Infrastructure;
 
 namespace KurrentDB.Core.Tests.Services.ElectionsService.Randomized;

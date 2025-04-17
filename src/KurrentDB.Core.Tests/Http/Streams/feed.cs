@@ -42,9 +42,9 @@ public abstract class SpecificationWithLongFeed : with_admin_user {
 
 	protected string GetLink(JObject feed, string relation) {
 		var rel = (from JObject link in feed["links"]
-			from JProperty attr in link
-			where attr.Name == "relation" && (string)attr.Value == relation
-			select link).SingleOrDefault();
+				   from JProperty attr in link
+				   where attr.Name == "relation" && (string)attr.Value == relation
+				   select link).SingleOrDefault();
 		return (rel == null) ? (string)null : (string)rel["uri"];
 	}
 }
@@ -786,18 +786,18 @@ public class when_running_the_node_advertising_a_different_ip_as {
 
 		protected string GetLink(JObject feed, string relation) {
 			var rel = (from JObject link in feed["links"]
-				from JProperty attr in link
-				where attr.Name == "relation" && (string)attr.Value == relation
-				select link).SingleOrDefault();
+					   from JProperty attr in link
+					   where attr.Name == "relation" && (string)attr.Value == relation
+					   select link).SingleOrDefault();
 			return (rel == null) ? (string)null : (string)rel["uri"];
 		}
 
 		protected string GetFirstEntryLink(JObject feed) {
 			var rel = (from JObject entry in feed["entries"]
-				from JObject link in entry["links"]
-				from JProperty attr in link
-				where attr.Name == "relation" && (string)attr.Value == "edit"
-				select link).FirstOrDefault();
+					   from JObject link in entry["links"]
+					   from JProperty attr in link
+					   where attr.Name == "relation" && (string)attr.Value == "edit"
+					   select link).FirstOrDefault();
 			return (rel == null) ? (string)null : (string)rel["uri"];
 		}
 

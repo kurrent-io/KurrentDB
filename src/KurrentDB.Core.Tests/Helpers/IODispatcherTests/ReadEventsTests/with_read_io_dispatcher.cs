@@ -3,10 +3,10 @@
 
 using System;
 using System.Security.Claims;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using NUnit.Framework;

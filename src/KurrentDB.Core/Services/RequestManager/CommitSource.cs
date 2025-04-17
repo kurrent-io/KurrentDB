@@ -6,8 +6,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.RequestManager;
 

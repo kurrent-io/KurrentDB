@@ -4,13 +4,13 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using KurrentDB.Core.Tests.Bus.Helpers;
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Tests.Bus.Helpers;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;

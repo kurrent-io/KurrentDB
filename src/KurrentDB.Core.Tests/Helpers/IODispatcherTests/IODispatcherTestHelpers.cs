@@ -3,10 +3,10 @@
 
 using System;
 using System.Text;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;

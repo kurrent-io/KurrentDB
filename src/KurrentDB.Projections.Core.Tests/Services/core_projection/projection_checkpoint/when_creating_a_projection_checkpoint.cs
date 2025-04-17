@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;

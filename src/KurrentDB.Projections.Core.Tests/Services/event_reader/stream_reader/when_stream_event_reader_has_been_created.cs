@@ -3,8 +3,8 @@
 
 using System;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Tests;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Services.Processing.SingleStream;
 using KurrentDB.Projections.Core.Tests.Services.core_projection;
 using NUnit.Framework;

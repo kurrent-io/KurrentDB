@@ -4,8 +4,8 @@
 using System;
 using System.Net;
 using DotNext.Net.Http;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Tests.Bus.Helpers;

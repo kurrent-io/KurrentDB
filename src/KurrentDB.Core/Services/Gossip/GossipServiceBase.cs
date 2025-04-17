@@ -4,11 +4,11 @@
 using System;
 using System.Linq;
 using System.Net;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
 using ILogger = Serilog.ILogger;

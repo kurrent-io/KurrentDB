@@ -3,8 +3,8 @@
 
 using System;
 using System.Threading;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Services.RequestManager.Managers;

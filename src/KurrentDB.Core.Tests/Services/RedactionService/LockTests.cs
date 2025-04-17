@@ -3,8 +3,8 @@
 
 using System;
 using System.Threading.Tasks;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data.Redaction;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 

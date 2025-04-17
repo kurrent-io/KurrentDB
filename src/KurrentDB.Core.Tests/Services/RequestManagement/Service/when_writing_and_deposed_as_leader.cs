@@ -4,8 +4,8 @@
 using System;
 using System.Net;
 using KurrentDB.Core.Cluster;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 

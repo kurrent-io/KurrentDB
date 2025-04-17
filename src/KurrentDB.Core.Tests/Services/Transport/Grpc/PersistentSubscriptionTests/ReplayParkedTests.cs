@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.Streams;
-using EventStore.Core.Services.Transport.Grpc;
 using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Core.Services.Transport.Grpc;

@@ -3,8 +3,8 @@
 
 using System;
 using System.Security.Claims;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Projections.Core.Services.Processing.Emitting;
 

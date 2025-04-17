@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using KurrentDB.Core.Messages;
 using FluentAssertions;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data.Redaction;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 

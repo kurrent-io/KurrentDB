@@ -3,12 +3,12 @@
 
 using System;
 using System.Collections.Generic;
-using KurrentDB.Core.Messages;
-using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.AwakeReaderService;
+using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Metrics;

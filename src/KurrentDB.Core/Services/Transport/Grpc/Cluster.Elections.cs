@@ -4,11 +4,11 @@
 using System.Net;
 using System.Threading.Tasks;
 using EventStore.Cluster;
-using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Transport.Grpc;
 using ClusterInfo = KurrentDB.Core.Cluster.ClusterInfo;
 using Empty = EventStore.Client.Empty;

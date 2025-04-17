@@ -5,9 +5,9 @@ using System;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Operations;
-using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
 

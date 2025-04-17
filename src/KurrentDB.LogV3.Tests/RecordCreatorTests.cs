@@ -4,7 +4,6 @@
 using System;
 using System.Runtime.InteropServices;
 using KurrentDB.LogCommon;
-using KurrentDB.LogV3;
 using Xunit;
 
 namespace KurrentDB.LogV3.Tests;

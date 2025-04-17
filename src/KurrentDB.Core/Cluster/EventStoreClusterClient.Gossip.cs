@@ -4,8 +4,8 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Cluster;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using ClusterInfo = KurrentDB.Core.Cluster.ClusterInfo;
 using Empty = EventStore.Client.Empty;

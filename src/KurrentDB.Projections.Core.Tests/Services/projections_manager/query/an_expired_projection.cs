@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using KurrentDB.Core.Tests;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Messages;
 using NUnit.Framework;
 

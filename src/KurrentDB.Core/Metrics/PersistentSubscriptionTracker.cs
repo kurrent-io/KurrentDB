@@ -4,8 +4,8 @@
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Metrics;
 

@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.UserManagement;

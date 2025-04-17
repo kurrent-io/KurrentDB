@@ -3,9 +3,9 @@
 
 #nullable enable
 using System;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.UserManagement;
 
 namespace KurrentDB.Core.Services.PersistentSubscription;

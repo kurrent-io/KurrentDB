@@ -7,8 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using KurrentDB.Core.Cluster;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Tests.Infrastructure;
 

@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Channels;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.Transport.Enumerators;
 

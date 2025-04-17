@@ -1023,12 +1023,11 @@ public partial class TFChunk : IChunkBlob {
 		if (workItem.WorkingStream.Position + length > ChunkHeader.Size + _chunkHeader.ChunkSize)
 			return RecordWriteResult.Failed(oldPosition);
 
-		if (workItem.TryGetDirectBuffer(length) is {IsEmpty:false} directBuf) {
+		if (workItem.TryGetDirectBuffer(length) is { IsEmpty: false } directBuf) {
 			var bytesWritten = SerializeLogRecordDirectly(record, directBuf.Span);
 			Debug.Assert(bytesWritten == length);
 			workItem.AppendData(bytesWritten);
-		} else
-		{
+		} else {
 			using var dataOnDisk = SerializeLogRecord(record, length);
 			await workItem.AppendData(dataOnDisk.Memory, token);
 		}

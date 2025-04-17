@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests;
-using KurrentDB.Core.Data;
 using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.Services.Jint.Scenarios;

@@ -2,9 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
+using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests.ClientAPI;
-using KurrentDB.Core.Helpers;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;

@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using KurrentDB.Core.Messages;
-using KurrentDB.Core.Tests;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMessage;
 

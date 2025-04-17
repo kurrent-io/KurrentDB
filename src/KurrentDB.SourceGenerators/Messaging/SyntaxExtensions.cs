@@ -17,8 +17,8 @@ static class SyntaxExtensions {
 			foreach (var candidate in attributeList.Attributes) {
 				var actualArgCount = candidate.ArgumentList?.Arguments.Count ?? 0;
 				if (candidate.Name.ToString() == attributeName &&
-				    actualArgCount >= minArgCount &&
-				    actualArgCount <= maxArgCount) {
+					actualArgCount >= minArgCount &&
+					actualArgCount <= maxArgCount) {
 
 					attributeSyntax = candidate;
 					return true;

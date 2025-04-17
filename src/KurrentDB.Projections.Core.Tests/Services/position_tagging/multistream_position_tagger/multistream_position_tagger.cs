@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.MultiStream;

@@ -2,9 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.DataStructures;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Transport.Http.Messages;
 using KurrentDB.Transport.Http.EntityManagement;
 using HttpStatusCode = KurrentDB.Transport.Http.HttpStatusCode;

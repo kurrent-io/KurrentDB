@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Concurrent;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Replication;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using NUnit.Framework;

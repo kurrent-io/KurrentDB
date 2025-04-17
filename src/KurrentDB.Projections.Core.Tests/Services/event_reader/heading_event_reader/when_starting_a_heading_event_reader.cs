@@ -3,10 +3,10 @@
 
 using System;
 using System.Linq;
-using KurrentDB.Core.Messages;
-using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.TransactionFile;
 using NUnit.Framework;

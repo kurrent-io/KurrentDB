@@ -3,12 +3,12 @@
 
 using System;
 using System.Collections.Generic;
-using KurrentDB.Core.Messages;
-using KurrentDB.Core.Tests.Helpers.IODispatcherTests;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Tests.Helpers.IODispatcherTests;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;

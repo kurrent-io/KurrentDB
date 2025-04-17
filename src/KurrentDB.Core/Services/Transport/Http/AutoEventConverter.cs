@@ -4,9 +4,9 @@
 using System;
 using System.Linq;
 using System.Xml.Linq;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;

@@ -6,9 +6,9 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data.Redaction;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using NUnit.Framework;
 

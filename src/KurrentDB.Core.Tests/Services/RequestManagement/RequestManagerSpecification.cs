@@ -3,9 +3,9 @@
 
 using System;
 using System.Collections.Generic;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.RequestManager;
 using KurrentDB.Core.Services.RequestManager.Managers;

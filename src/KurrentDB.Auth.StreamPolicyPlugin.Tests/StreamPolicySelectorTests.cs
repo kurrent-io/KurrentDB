@@ -3,12 +3,12 @@
 
 using System.Security.Claims;
 using DotNext.Threading;
-using KurrentDB.Core.Messages;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Auth.StreamPolicyPlugin.Schema;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;

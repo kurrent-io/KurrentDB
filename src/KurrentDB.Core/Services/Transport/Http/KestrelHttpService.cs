@@ -4,9 +4,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using KurrentDB.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Transport.Http.Messages;
 using KurrentDB.Core.Settings;
 using KurrentDB.Transport.Http.EntityManagement;
