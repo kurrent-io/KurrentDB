@@ -73,7 +73,7 @@ public class InternalClient : IClient {
 				new Core.Data.Event(
 					evt.EventId, evt.EventType, isJson: evt.ContentType == "application/json",
 					evt.Data.ToArray(),
-					evt.Metadata.ToArray())).ToArray(),
+					evt.Metadata.ToArray(), SchemaInfo.None, SchemaInfo.None)).ToArray(),
 			SystemAccounts.System,
 			cancellationToken: cancellationToken));
 

@@ -923,7 +923,7 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		WriteEvents(
 			SystemStreams.MetastreamOf(streamId),
 			expectedVersion,
-			new[] { new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata.ToJsonBytes(), null) },
+			new[] { new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None) },
 			principal,
 			completed);
 	}

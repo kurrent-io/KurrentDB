@@ -4,14 +4,19 @@
 using System;
 using System.Buffers;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using DotNext.Buffers;
 using DotNext.Buffers.Binary;
+using DotNext.Collections.Generic;
 using DotNext.IO;
 using DotNext.Text;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.LogCommon;
+using JetBrains.Annotations;
 
 namespace KurrentDB.Core.TransactionLog.LogRecords;
 
@@ -28,6 +33,8 @@ public enum PrepareFlags : ushort {
 
 	IsJson = 0x100, // indicates data & metadata are valid json
 	IsRedacted = 0x200,
+	HasDataSchema = 0x400,
+	HasMetadataSchema = 0x800,
 
 	// aggregate flag set
 	// unused and easily confused with StreamDelete:  DeleteTombstone = TransactionBegin | TransactionEnd | StreamDelete,
@@ -64,7 +71,12 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	private int? _eventTypeSize;
 	public ReadOnlyMemory<byte> Data => Flags.HasFlag(PrepareFlags.IsRedacted) ? NoData : _dataOnDisk;
 	private readonly ReadOnlyMemory<byte> _dataOnDisk;
-	public ReadOnlyMemory<byte> Metadata { get; }
+
+    public ReadOnlyMemory<byte> Metadata { get; }
+    public SchemaInfo DataSchemaInfo => _dataSchemaInfo;
+    public SchemaInfo MetadataSchemaInfo => _metadataSchemaInfo;
+
+    public string ContentType { get; set; }
 
 	private int? _sizeOnDisk;
 
@@ -82,10 +94,13 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 				   + 16
 				   + 8
 				   + IntPtr.Size + EventType.Length * 2
-				   + IntPtr.Size + _dataOnDisk.Length
-				   + IntPtr.Size + Metadata.Length;
+				   + IntPtr.Size + _dataOnDisk.Length + SchemaInfo.ByteSize
+				   + IntPtr.Size + Metadata.Length + SchemaInfo.ByteSize;
 		}
 	}
+
+    private readonly SchemaInfo _dataSchemaInfo;
+    private readonly SchemaInfo _metadataSchemaInfo;
 
 	// including length and suffix
 	private int ComputeSizeOnDisk() {
@@ -105,8 +120,10 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			+ sizeof(long) /* TimeStamp */
 			+ StringSizeWithLengthPrefix(eventTypeSize) /* EventType */
 			+ sizeof(int) /* Data length */
+			+ (_dataSchemaInfo != SchemaInfo.None ? SchemaInfo.ByteSize : 0)
 			+ _dataOnDisk.Length /* Data */
 			+ sizeof(int) /* Metadata length */
+			+ (_metadataSchemaInfo != SchemaInfo.None ? SchemaInfo.ByteSize : 0)
 			+ Metadata.Length; /* Metadata */
 
 		// when written to disk, a string is prefixed with its length which is written as ULEB128
@@ -116,6 +133,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			return stringSize is 0 ? 1 : stringSize + int.Log2(stringSize) / 7 + 1;
 		}
 	}
+
 
 	public PrepareLogRecord(long logPosition,
 		Guid correlationId,
@@ -131,7 +149,11 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		int? eventTypeSize,
 		ReadOnlyMemory<byte> data,
 		ReadOnlyMemory<byte> metadata,
-		byte prepareRecordVersion = PrepareRecordVersion)
+        SchemaInfo dataSchemaInfo,
+        SchemaInfo metadataSchemaInfo,
+		byte prepareRecordVersion = PrepareRecordVersion
+   )
+
 		: base(LogRecordType.Prepare, prepareRecordVersion, logPosition) {
 		Ensure.NotEmptyGuid(correlationId, "correlationId");
 		Ensure.NotEmptyGuid(eventId, "eventId");
@@ -155,10 +177,45 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		EventType = eventType ?? string.Empty;
 		_eventTypeSize = eventTypeSize;
 		_dataOnDisk = data;
-		Metadata = metadata;
+        _dataSchemaInfo = dataSchemaInfo ?? SchemaInfo.None;
+        _metadataSchemaInfo = metadataSchemaInfo ?? SchemaInfo.None;
+        Metadata = metadata;
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
 			throw new Exception("Record too large.");
 	}
+
+	public PrepareLogRecord(long logPosition,
+		Guid correlationId,
+		Guid eventId,
+		long transactionPosition,
+		int transactionOffset,
+		string eventStreamId,
+		int? eventStreamIdSize,
+		long expectedVersion,
+		DateTime timeStamp,
+		PrepareFlags flags,
+		string eventType,
+		int? eventTypeSize,
+		ReadOnlyMemory<byte> data,
+		ReadOnlyMemory<byte> metadata,
+		byte prepareRecordVersion = PrepareRecordVersion
+	) : this(logPosition,
+		correlationId,
+		eventId,
+		transactionPosition,
+		transactionOffset,
+		eventStreamId,
+		eventStreamIdSize,
+		expectedVersion,
+		timeStamp,
+		flags,
+		eventType,
+		eventTypeSize,
+		data,
+		metadata,
+		SchemaInfo.None,
+		SchemaInfo.None,
+		prepareRecordVersion) { }
 
 	internal PrepareLogRecord(ref SequenceReader reader, byte version, long logPosition)
 		: base(LogRecordType.Prepare, version, logPosition) {
@@ -166,6 +223,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			throw new ArgumentException(
 				$"PrepareRecord version {version} is incorrect. Supported version: {PrepareRecordVersion}.");
 
+		_dataSchemaInfo = SchemaInfo.None;
+		_metadataSchemaInfo = SchemaInfo.None;
 		var context = new DecodingContext(Encoding.UTF8, reuseDecoder: true);
 		Flags = (PrepareFlags)reader.ReadLittleEndian<ushort>();
 		TransactionPosition = reader.ReadLittleEndian<long>();
@@ -178,11 +237,14 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		CorrelationId = reader.Read<Blittable<Guid>>().Value;
 		TimeStamp = new(reader.ReadLittleEndian<long>());
 		EventType = ReadString(ref reader, in context);
-		_dataOnDisk = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
-			? reader.Read(dataCount).ToArray()
+
+
+        _dataOnDisk = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
+			? ReadDataContent(ref reader, dataCount, Flags.HasFlag(PrepareFlags.HasDataSchema), out _dataSchemaInfo)
 			: NoData;
+
 		Metadata = reader.ReadLittleEndian<int>() is var metadataCount && metadataCount > 0
-			? reader.Read(metadataCount).ToArray()
+			? ReadDataContent(ref reader, metadataCount, Flags.HasFlag(PrepareFlags.HasMetadataSchema), out _metadataSchemaInfo)
 			: NoData;
 
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
@@ -212,13 +274,23 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			eventType: EventType,
 			eventTypeSize: _eventTypeSize,
 			data: _dataOnDisk,
-			metadata: Metadata);
+			metadata: Metadata,
+            dataSchemaInfo: _dataSchemaInfo,
+            metadataSchemaInfo: _metadataSchemaInfo
+        );
 	}
 
 	public override void WriteTo(ref BufferWriterSlim<byte> writer) {
 		base.WriteTo(ref writer);
 
-		writer.WriteLittleEndian((ushort)Flags);
+		var finalFlags = Flags;
+		if (_dataSchemaInfo != SchemaInfo.None)
+			finalFlags |= PrepareFlags.HasDataSchema;
+
+		if (_metadataSchemaInfo != SchemaInfo.None)
+			finalFlags |= PrepareFlags.HasMetadataSchema;
+
+		writer.WriteLittleEndian((ushort)finalFlags);
 		writer.WriteLittleEndian(TransactionPosition);
 		writer.WriteLittleEndian(TransactionOffset);
 		if (Version is LogRecordVersion.LogRecordV0) {
@@ -251,8 +323,12 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		buffer = writer.GetSpan(_eventTypeSize.GetValueOrDefault());
 		writer.Advance(Encoding.UTF8.GetBytes(EventType, buffer));
 
-		writer.Write(_dataOnDisk.Span, LengthFormat.LittleEndian);
-		writer.Write(Metadata.Span, LengthFormat.LittleEndian);
+
+        var finalDataOnDisk = WrapSchemaInfo(_dataSchemaInfo, _dataOnDisk);
+        var finalMetadata = WrapSchemaInfo(_metadataSchemaInfo, Metadata);
+
+		writer.Write(finalDataOnDisk.Span, LengthFormat.LittleEndian);
+		writer.Write(finalMetadata.Span, LengthFormat.LittleEndian);
 	}
 
 	public override int GetSizeWithLengthPrefixAndSuffix()
@@ -339,4 +415,31 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			EventType,
 			InMemorySize);
 	}
+
+	public static ReadOnlyMemory<byte> WrapSchemaInfo(SchemaInfo schema, ReadOnlyMemory<byte> payload) {
+		if (schema == SchemaInfo.None)
+			return payload;
+
+		var buffer = new byte[SchemaInfo.ByteSize + payload.Length];
+		schema.Write(0, buffer);
+
+		Memory<byte> mem = buffer;
+		payload.Span.CopyTo(mem.Span[SchemaInfo.ByteSize..]);
+
+		return mem;
+	}
+
+	private static byte[] ReadDataContent(ref SequenceReader reader, int count, bool parseSchema, out SchemaInfo info) {
+		info = SchemaInfo.None;
+		var content = reader.Read(count);
+
+		if (!parseSchema)
+			return content.ToArray();
+
+		var local = new SequenceReader(content);
+		info = SchemaInfo.Read(ref local);
+
+		return local.RemainingSequence.ToArray();
+	}
+
 }

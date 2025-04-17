@@ -284,7 +284,7 @@ public static class IODispatcherAsync {
 						expectedVersion,
 						new[] {
 							new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata.ToJsonBytes(),
-								null)
+								null, SchemaInfo.None, SchemaInfo.None)
 						},
 						principal,
 						response => {

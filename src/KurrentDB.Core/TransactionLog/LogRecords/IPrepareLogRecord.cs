@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using KurrentDB.Core.Data;
 
 namespace KurrentDB.Core.TransactionLog.LogRecords;
 
@@ -18,6 +19,8 @@ public interface IPrepareLogRecord : ILogRecord {
 	DateTime TimeStamp { get; }
 	ReadOnlyMemory<byte> Data { get; }
 	ReadOnlyMemory<byte> Metadata { get; }
+	SchemaInfo DataSchemaInfo { get; }
+	SchemaInfo MetadataSchemaInfo { get; }
 }
 
 public interface IPrepareLogRecord<TStreamId> : IPrepareLogRecord {

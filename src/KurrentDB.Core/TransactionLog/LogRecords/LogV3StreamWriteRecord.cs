@@ -2,8 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.LogV3;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Data;
+using EventStore.Core.LogV3;
 using KurrentDB.LogCommon;
 using KurrentDB.LogV3;
 using StreamId = System.UInt32;
@@ -30,7 +31,9 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 		PrepareFlags flags,
 		uint eventType,
 		ReadOnlySpan<byte> data,
-		ReadOnlySpan<byte> metadata) {
+		ReadOnlySpan<byte> metadata,
+        SchemaInfo dataSchemaInfo,
+        SchemaInfo metadataSchemaInfo) {
 
 		Ensure.Nonnegative(logPosition, "logPosition");
 		Ensure.NotEmptyGuid(correlationId, "correlationId");
@@ -72,6 +75,8 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 	public uint EventType => Record.Event.Header.EventTypeNumber;
 	public ReadOnlyMemory<byte> Data => Record.Event.Data;
 	public ReadOnlyMemory<byte> Metadata => Record.Event.Metadata;
+	public SchemaInfo DataSchemaInfo => SchemaInfo.None;
+	public SchemaInfo MetadataSchemaInfo => SchemaInfo.None;
 
 	public IPrepareLogRecord<StreamId> CopyForRetry(long logPosition, long transactionPosition) {
 		return new LogV3StreamWriteRecord(
@@ -86,7 +91,9 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 			flags: Flags,
 			eventType: EventType,
 			data: Data.Span,
-			metadata: Metadata.Span);
+			metadata: Metadata.Span,
+            dataSchemaInfo: SchemaInfo.None,
+            metadataSchemaInfo: SchemaInfo.None);
 	}
 
 	public bool Equals(LogV3StreamWriteRecord other) {

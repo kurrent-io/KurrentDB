@@ -736,7 +736,7 @@ public class ManagedProjection : IDisposable {
 		return new ClientMessage.WriteEvents(
 			correlationId, correlationId, _writeDispatcher.Envelope, true, eventStreamId, ExpectedVersion.Any,
 			new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionUpdated, true, persistedState.ToJsonBytes(),
-				Empty.ByteArray),
+				Empty.ByteArray, SchemaInfo.None, SchemaInfo.None),
 			SystemAccounts.System);
 	}
 

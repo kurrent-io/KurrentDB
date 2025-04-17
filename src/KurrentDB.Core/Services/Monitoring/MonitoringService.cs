@@ -165,7 +165,7 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 
 	private void SaveStatsToStream(Dictionary<string, object> rawStats) {
 		var data = rawStats.ToJsonBytes();
-		var evnt = new Event(Guid.NewGuid(), SystemEventTypes.StatsCollection, true, data, null);
+		var evnt = new Event(Guid.NewGuid(), SystemEventTypes.StatsCollection, true, data, null, SchemaInfo.None, SchemaInfo.None);
 		var corrId = Guid.NewGuid();
 		var msg = new ClientMessage.WriteEvents(corrId, corrId, NoopEnvelope, false, _nodeStatsStream, ExpectedVersion.Any, [evnt], SystemAccounts.System);
 		_mainQueue.Publish(msg);
@@ -213,7 +213,7 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 			new ClientMessage.WriteEvents(
 				_streamMetadataWriteCorrId, _streamMetadataWriteCorrId, _monitoringQueue,
 				false, SystemStreams.MetastreamOf(_nodeStatsStream), ExpectedVersion.NoStream,
-				[new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata, null)],
+				[new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata, null, SchemaInfo.None, SchemaInfo.None)],
 				SystemAccounts.System));
 	}
 

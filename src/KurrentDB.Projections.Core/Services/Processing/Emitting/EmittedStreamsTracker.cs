@@ -66,7 +66,7 @@ public class EmittedStreamsTracker : IEmittedStreamsTracker {
 			string streamId;
 			if (!_streamIdCache.TryGetRecord(emittedEvent.StreamId, out streamId)) {
 				var trackEvent = new Event(Guid.NewGuid(), ProjectionEventTypes.StreamTracked, false,
-					Helper.UTF8NoBom.GetBytes(emittedEvent.StreamId), null);
+					Helper.UTF8NoBom.GetBytes(emittedEvent.StreamId), null, SchemaInfo.None, SchemaInfo.None);
 				lock (_locker) {
 					_streamIdCache.PutRecord(emittedEvent.StreamId, emittedEvent.StreamId, false);
 				}
