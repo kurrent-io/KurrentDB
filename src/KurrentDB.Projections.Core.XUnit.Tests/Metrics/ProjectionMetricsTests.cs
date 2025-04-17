@@ -5,7 +5,6 @@ using System.Diagnostics.Metrics;
 using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
-using KurrentDB.Projections.Core.Services.Processing;
 using Xunit;
 
 namespace KurrentDB.Projections.Core.XUnit.Tests.Metrics;
@@ -14,28 +13,28 @@ public class ProjectionMetricsTests {
 	private readonly ProjectionTracker _sut = new();
 
 	public ProjectionMetricsTests() {
-		_sut.OnNewStats([Stat("TestProjection", ProjectionMode.Continuous, CoreProjection.State.Running)]);
+		_sut.OnNewStats([Stat("TestProjection", ProjectionMode.Continuous, ManagedProjectionState.Running)]);
 	}
 
 	[Fact]
 	public void ObserveEventsProcessed() {
 		var measurements = _sut.ObserveEventsProcessed();
 		var measurement = Assert.Single(measurements);
-		AssertMeasurement(50L, ("projection", "TestProjection"))(measurement);
+		AssertMeasurement(50L, new KeyValuePair<string, object>("projection", "TestProjection"))(measurement);
 	}
 
 	[Fact]
 	public void ObserveRunning() {
 		var measurements = _sut.ObserveRunning();
 		var measurement = Assert.Single(measurements);
-		AssertMeasurement(1L, ("projection", "TestProjection"))(measurement);
+		AssertMeasurement(1L, new KeyValuePair<string, object>("projection", "TestProjection"))(measurement);
 	}
 
 	[Fact]
 	public void ObserveProgress() {
 		var measurements = _sut.ObserveProgress();
 		var measurement = Assert.Single(measurements);
-		AssertMeasurement(0.75f, ("projection", "TestProjection"))(measurement);
+		AssertMeasurement(0.75f, new KeyValuePair<string, object>("projection", "TestProjection"))(measurement);
 	}
 
 
@@ -44,61 +43,69 @@ public class ProjectionMetricsTests {
 	public void ObservedStatuses(StatusCombination combo) {
 		_sut.OnNewStats([Stat(combo.Projection, ProjectionMode.Continuous, combo.WhenObservedStateIs)]);
 		var measurements = _sut.ObserveStatus();
+		var prj = new KeyValuePair<string, object>("projection", combo.Projection);
 		Assert.Collection(measurements,
-			AssertMeasurement(combo.ThenRunningIs, ("projection", combo.Projection), ("status", "Running")),
-			AssertMeasurement(combo.ThenFaultedIs, ("projection", combo.Projection), ("status", "Faulted")),
-			AssertMeasurement(combo.ThenStoppedIs, ("projection", combo.Projection), ("status", "Stopped"))
+			AssertMeasurement(combo.ThenRunningIs, prj, ProjectionTracker.StatusRunning),
+			AssertMeasurement(combo.ThenFaultedIs, prj, ProjectionTracker.StatusFaulted),
+			AssertMeasurement(combo.ThenStoppedIs, prj, ProjectionTracker.StatusStopped)
 		);
 	}
 
 
 
-	static Action<Measurement<T>> AssertMeasurement<T>(
-		T expectedValue, params (string, string?)[] tags) where T : struct =>
+	static Action<Measurement<T>> AssertMeasurement<T>(T expectedValue, params KeyValuePair<string, object>[] tags)
+		where T : struct =>
 
 		actualMeasurement => {
 			Assert.Equal(expectedValue, actualMeasurement.Value);
 			if (actualMeasurement.Tags == null) return;
-			Assert.Equal(
-				tags,
-				actualMeasurement.Tags.ToArray().Select(tag => (tag.Key, tag.Value as string)));
+			var actualTags = actualMeasurement.Tags.ToArray();
+			Assert.Equal(tags, actualTags!, (a, b) => a.Key == b.Key && a.Value.Equals(b.Value));
 		};
 
 
-	public record StatusCombination (string Projection, CoreProjection.State WhenObservedStateIs, long ThenRunningIs, long ThenFaultedIs, long ThenStoppedIs);
+	public record StatusCombination(
+		string Projection,
+		ManagedProjectionState WhenObservedStateIs,
+		long ThenRunningIs,
+		long ThenFaultedIs,
+		long ThenStoppedIs);
 
 	public static IEnumerable<object[]> AllStatuses() {
 
-		foreach (var state in Enum.GetValues<CoreProjection.State>()) {
+		foreach (var state in Enum.GetValues<ManagedProjectionState>()) {
 			var projectionName = $"Test-{state}";
 			switch (state) {
-				case CoreProjection.State.Running:
-					yield return [new StatusCombination(projectionName,state, 1, 0, 0)];
-					continue;
-				case CoreProjection.State.Faulted:
-					yield return [new StatusCombination(projectionName,state, 0, 1, 0)];
-					continue;
-				case CoreProjection.State.Stopped:
-					yield return [new StatusCombination(projectionName, state, 0, 0, 1)];
-					continue;
-
-				case CoreProjection.State.Initial:
-				case CoreProjection.State.LoadStateRequested:
-				case CoreProjection.State.StateLoaded:
-				case CoreProjection.State.Subscribed:
-				case CoreProjection.State.Stopping:
-				case CoreProjection.State.FaultedStopping:
-				case CoreProjection.State.CompletingPhase:
-				case CoreProjection.State.PhaseCompleted:
-				case CoreProjection.State.Suspended:
-				default:
+				case ManagedProjectionState.Creating:
+				case ManagedProjectionState.Loading:
+				case ManagedProjectionState.Loaded:
+				case ManagedProjectionState.Preparing:
+				case ManagedProjectionState.Prepared:
+				case ManagedProjectionState.Starting:
+				case ManagedProjectionState.LoadingStopped:
+				case ManagedProjectionState.Stopping:
+				case ManagedProjectionState.Completed:
+				case ManagedProjectionState.Aborted:
+				case ManagedProjectionState.Deleting:
+				case ManagedProjectionState.Aborting:
 					yield return [new StatusCombination(projectionName, state, 0, 0, 0)];
 					break;
+				case ManagedProjectionState.Running:
+					yield return [new StatusCombination(projectionName, state, 1, 0, 0)];
+					break;
+				case ManagedProjectionState.Stopped:
+					yield return [new StatusCombination(projectionName, state, 0, 0, 1)];
+					break;
+				case ManagedProjectionState.Faulted:
+					yield return [new StatusCombination(projectionName, state, 0, 1, 0)];
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
 			}
 		}
 	}
 
-	static ProjectionStatistics Stat(string name, ProjectionMode mode, CoreProjection.State state) =>
+	private static ProjectionStatistics Stat(string name, ProjectionMode mode, ManagedProjectionState state) =>
 		new() {
 			Name = name,
 			ProjectionId = 1234,
@@ -109,5 +116,4 @@ public class ProjectionMetricsTests {
 			Progress = 75,
 			EventsProcessedAfterRestart = 50,
 		};
-
 }

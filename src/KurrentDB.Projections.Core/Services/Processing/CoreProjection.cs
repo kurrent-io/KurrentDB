@@ -25,7 +25,7 @@ public class CoreProjection : IDisposable,
 	IHandle<CoreProjectionManagementMessage.GetState>,
 	IHandle<CoreProjectionManagementMessage.GetResult> {
 	[Flags]
-	public enum State : uint {
+	private enum State : uint {
 		Initial = 0x80000000,
 		LoadStateRequested = 0x2,
 		StateLoaded = 0x4,
