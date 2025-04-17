@@ -9,6 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Cherry Pick PR for label
-        uses: EventStore/Automations/cherry-pick-pr-for-label@master
+        uses: kurrent-io/Automations/cherry-pick-pr-for-label@master
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

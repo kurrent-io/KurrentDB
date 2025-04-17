@@ -1,5 +1,5 @@
 {
-  "EventStore": {
+  "KurrentDB": {
     "TcpPlugin": {
       "EnableExternalTcp": true,
       "NodeTcpPort": 1113,

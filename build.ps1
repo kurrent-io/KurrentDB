@@ -42,7 +42,7 @@ Function Start-Build{
     $baseDirectory = $PSScriptRoot
     $srcDirectory = Join-Path $baseDirectory "src"
     $binDirectory = Join-Path $baseDirectory "bin"
-    $eventStoreSolution = Join-Path $srcDirectory "KurrentDB.sln"
+    $kurrentDbSolution = Join-Path $srcDirectory "KurrentDB.sln"
 
     Write-Info "Build Configuration"
     Write-Info "-------------------"
@@ -52,12 +52,12 @@ Function Start-Build{
     Write-Info "Configuration: $Configuration"
     Write-Info "Run Tests: $RunTests"
 
-    #Build Event Store (Patch AssemblyInfo, Build, Revert AssemblyInfo)
+    #Build KurrentDB (Patch AssemblyInfo, Build, Revert AssemblyInfo)
     Remove-Item -Force -Recurse $binDirectory -ErrorAction SilentlyContinue > $null
 
-    $versionInfoFile = Resolve-Path (Join-Path $srcDirectory (Join-Path "EventStore.Common" (Join-Path "Utils" "VersionInfo.cs"))) -Relative
+    $versionInfoFile = Resolve-Path (Join-Path $srcDirectory (Join-Path "KurrentDB.Common" (Join-Path "Utils" "VersionInfo.cs"))) -Relative
     try {
-        Exec { dotnet build -c $configuration /p:Version=$Version /p:Platform=x64 $eventStoreSolution }
+        Exec { dotnet build -c $configuration /p:Version=$Version /p:Platform=x64 $kurrentDbSolution }
     } finally {
         Write-Info "Reverting $versionInfoFile to original state."
         & { git checkout --quiet $versionInfoFile }

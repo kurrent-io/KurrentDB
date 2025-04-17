@@ -55,20 +55,20 @@ jobs:
       with:
         context: .
         load: true
-        tags: eventstore
+        tags: kurrentdb
         build-args: |
           CONTAINER_RUNTIME=${{ inputs.container-runtime }}
           RUNTIME=${{ steps.variables.outputs.runtime }}
     - name: Verify Build
       run: |
-        docker run --rm eventstore --insecure --what-if
+        docker run --rm kurrentdb --insecure --what-if
     - name: Build Test Container
       uses: docker/build-push-action@v4
       with:
         context: .
         load: true
         target: test
-        tags: eventstore-test
+        tags: kurrentdb-test
         build-args: |
           CONTAINER_RUNTIME=${{ inputs.container-runtime }}
           RUNTIME=${{ steps.variables.outputs.runtime }}
@@ -84,7 +84,7 @@ jobs:
         --env GITHUB_REPOSITORY=${{ github.repository }}
         --env GITHUB_WORKSPACE=${{ github.workspace }}
         --env GITHUB_SHA=${{ github.sha }}
-        eventstore-test
+        kurrentdb-test
     - name: Publish Test Results (HTML)
       uses: actions/upload-artifact@v4
       if: always()
