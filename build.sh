@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 BASE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PRODUCTNAME="Event Store Open Source"
-COMPANYNAME="Event Store Ltd"
-COPYRIGHT="Copyright 2021 Event Store Ltd. All rights reserved."
+PRODUCTNAME="KurrentDB"
+COMPANYNAME="Kurrent, Inc"
+COPYRIGHT="Copyright 2025 Kurrent, Inc. All rights reserved."
 
 
 # ------------ End of configuration -------------
@@ -16,7 +16,7 @@ cat <<EOF
 Usage:
   $0 [<version=0.0.0.0>] [<configuration=Debug|Release>]
 
-version: EventStore build version. Versions must be complete four part identifiers valid for use on a .NET assembly.
+version: KurrentDB build version. Versions must be complete four part identifiers valid for use on a .NET assembly.
 
 configuration: Build configuration. Valid configurations are: Debug, Release
 
@@ -118,7 +118,7 @@ function patchVersionInfo {
     done
 }
 
-function buildEventStore {
+function buildKurrentDB {
     patchVersionInfo
     rm -rf bin/
     dotnet build -c $CONFIGURATION /p:Platform=x64 /p:Version=$VERSIONSTRING --framework=$NET_FRAMEWORK src/KurrentDB.sln || err
@@ -134,4 +134,4 @@ detectOS
 checkParams "$1" "$2"
 
 echo "Running from base directory: $BASE_DIR"
-buildEventStore
+buildKurrentDB

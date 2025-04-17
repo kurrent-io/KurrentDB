@@ -15,4 +15,4 @@ echo Usage:
 echo build.cmd ^[-Version=0.0.0.0^] ^[-Configuration=Debug^|Release^]
 echo.
 echo Prerequisites:
-echo Building EventStore database requires .NET Core SDK 8.0
+echo Building KurrentDB database requires .NET Core SDK 8.0
