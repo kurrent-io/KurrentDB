@@ -3,13 +3,13 @@
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
 		<DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
-		<Authors>Event Store Ltd</Authors>
+		<Authors>Kurrent, Inc</Authors>
 		<PackageIconUrl>ouro.png</PackageIconUrl>
 		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-		<PackageProjectUrl>https://eventstore.com</PackageProjectUrl>
+		<PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
 		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<Copyright>Copyright 2012-2024 Event Store Ltd</Copyright>
-		<PackageReleaseNotes>https://eventstore.com/blog/</PackageReleaseNotes>
+		<Copyright>Copyright 2012-2025 Kurrent, Inc</Copyright>
+		<PackageReleaseNotes>https://docs.kurrent.io/server/latest/release-schedule/release-notes</PackageReleaseNotes>
 		<TargetFramework>net8.0</TargetFramework>
 		<LangVersion>12.0</LangVersion>
 		<Platforms>AnyCPU;x64;ARM64</Platforms>
