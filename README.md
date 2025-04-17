@@ -130,7 +130,7 @@ The build scripts: `build.sh` and `build.ps1` are also available for Linux and W
 To start a single node, you can then run:
 
 ```
-dotnet ./src/KurrentDB/bin/x64/Release/net8.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log
+dotnet ./src/KurrentDB/bin/Release/net8.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log
 ```
 
 ### Running the tests
