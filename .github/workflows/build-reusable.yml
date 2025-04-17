@@ -26,7 +26,7 @@ jobs:
     - name: Login to Cloudsmith
       uses: docker/login-action@v3
       with:
-        registry: docker.eventstore.com
+        registry: docker.kurrent.io
         username: ${{ secrets.CLOUDSMITH_CICD_USER }}
         password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
     - name: Install netcoreapp3.1
