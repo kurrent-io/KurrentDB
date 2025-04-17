@@ -553,18 +553,26 @@ public partial class EnumeratorTests {
 
 						checkpointPosition = newCheckpointPosition;
 						break;
-					case FellBehind:
+					case FellBehind x:
 						if (!shouldFallBehindThenCatchUp)
 							Assert.Fail("Subscription fell behind.");
 
+						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+						Assert.NotNull(x.Wrapped.AllCheckpoint);
+						Assert.Null(x.Wrapped.StreamCheckpoint);
+
 						fellBehind = true;
 						break;
-					case CaughtUp:
+					case CaughtUp x:
 						if (!fellBehind)
 							Assert.Fail("Subscription caught up before falling behind");
 
 						if (!shouldFallBehindThenCatchUp)
 							Assert.Fail("Subscription fell behind then caught up.");
+
+						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+						Assert.NotNull(x.Wrapped.AllCheckpoint);
+						Assert.Null(x.Wrapped.StreamCheckpoint);
 
 						caughtUp = true;
 						break;
@@ -572,6 +580,8 @@ public partial class EnumeratorTests {
 						// we don't count checkpoints as part of the number of expected responses as it's
 						// not always straightforward to calculate how many checkpoints we will receive.
 						numResponsesExpected++;
+
+						Assert.True(DateTime.UtcNow - checkpoint.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
 
 						// checkpoint must not move backwards
 						Assert.True(checkpoint.CheckpointPosition >= checkpointPosition);
