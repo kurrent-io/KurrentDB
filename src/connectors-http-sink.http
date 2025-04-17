@@ -1,0 +1,67 @@
+### Create HTTP Sink Connector
+POST localhost:2113/connectors/create
+Content-Type: application/json
+
+{
+  "connectorId": "demo-http-sink",
+  "name": "Demo HTTP Sink",
+  "settings": {
+    "InstanceTypeName": "EventStore.Connectors.Http.HttpSink",
+    "Url": "http://localhost:8080/sink",
+    "Subscription:Filter:Scope": "Stream",
+    "Subscription:Filter:Expression": "^\\$connectors\\/[^\\/]+\\/leases"
+  }
+}
+
+### Create HTTP Sink Connector with Transformation
+
+# function transform(transformRecord) {
+#     let { Value } = transformRecord;
+#     return {
+#         ...transformRecord,
+#         Value: {
+#             ...Value,
+#             TransformedProperty: "I've been transformed!"
+#         }
+#     };
+# }
+
+POST localhost:2113/connectors/create
+Content-Type: application/json
+
+{
+  "connectorId": "demo-http-sink",
+  "name": "Demo HTTP Sink",
+  "settings": {
+    "InstanceTypeName": "EventStore.Connectors.Http.HttpSink",
+    "Url": "http://localhost:8080/sink",
+    "Transformer:Enabled": "true",
+    "Transformer:Function": "ZnVuY3Rpb24gdHJhbnNmb3JtKHIpe2xldHtWYWx1ZTplfT1yO3JldHVybnsuLi5yLFZhbHVlOnsuLi5lLFRyYW5zZm9ybWVkUHJvcGVydHk6IkkndmUgYmVlbiB0cmFuc2Zvcm1lZCEifX19",
+    "Subscription:Filter:Scope": "Stream",
+    "Subscription:Filter:Expression": "^\\$connectors\\/[^\\/]+\\/leases"
+  }
+}
+
+### Start HTTP Sink Connector
+POST localhost:2113/connectors/start
+Content-Type: application/json
+
+{
+  "connectorId": "demo-http-sink"
+}
+
+### Stop HTTP Sink Connector
+POST localhost:2113/connectors/stop
+Content-Type: application/json
+
+{
+  "connectorId": "demo-http-sink"
+}
+
+### Delete HTTP Sink Connector
+POST localhost:2113/connectors/delete
+Content-Type: application/json
+
+{
+  "connectorId": "demo-http-sink"
+}

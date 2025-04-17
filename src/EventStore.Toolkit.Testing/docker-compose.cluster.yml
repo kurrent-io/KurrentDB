@@ -1,0 +1,173 @@
+services:
+  volumes-provisioner:
+    image: hasnat/volumes-provisioner
+    container_name: volumes-provisioner
+    environment:
+      PROVISION_DIRECTORIES: "1000:1000:0755:/tmp/certs"
+    volumes:
+      - "certs:/tmp/certs"
+    network_mode: none
+
+  cert-gen:
+    image: eventstore/es-gencert-cli:1.0.2
+    container_name: cert-gen
+    user: "1000:1000"
+    entrypoint: [ "/bin/sh","-c" ]
+    #    rm -rf /tmp/certs/**
+    command:
+      - |
+        es-gencert-cli create-ca -out /tmp/certs/ca
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node1 -ip-addresses 127.0.0.1,172.30.240.11 -dns-names localhost
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node2 -ip-addresses 127.0.0.1,172.30.240.12 -dns-names localhost
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node3 -ip-addresses 127.0.0.1,172.30.240.13 -dns-names localhost
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node4 -ip-addresses 127.0.0.1,172.30.240.14 -dns-names localhost
+    volumes:
+      - "certs:/tmp/certs"
+    depends_on:
+      - volumes-provisioner
+
+#  seq:
+#    image: datalust/seq:latest
+#    container_name: seq
+#    environment:
+#      ACCEPT_EULA: Y
+#    ports:
+#      - "80:80"
+#      - "5341:5341"
+
+  esdb-node1:
+    image: ${CI_EVENTSTORE_DOCKER_IMAGE}
+    container_name: esdb-node1
+    env_file:
+      - shared.env
+    environment:
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.12:2113,172.30.240.13:2113
+      - EVENTSTORE_INT_IP=172.30.240.11
+      - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node1/node.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node1/node.key
+#      - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=${CI_EVENTSTORE_CLUSTER_NODE1_PORT:-2111}
+    ports:
+      - "${CI_EVENTSTORE_CLUSTER_NODE1_PORT:-2111}:2113"
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.11
+    volumes:
+      - certs:/etc/eventstore/certs
+      - type: volume
+        source: eventstore-volume-data1
+        target: /var/lib/eventstore
+      - type: volume
+        source: eventstore-volume-logs1
+        target: /var/log/eventstore
+    restart: unless-stopped
+    depends_on:
+      - cert-gen
+
+  esdb-node2:
+    image: ${CI_EVENTSTORE_DOCKER_IMAGE}
+    container_name: esdb-node2
+    env_file:
+      - shared.env
+    environment:
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.13:2113
+      - EVENTSTORE_INT_IP=172.30.240.12
+      - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node2/node.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node2/node.key
+#      - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=${CI_EVENTSTORE_CLUSTER_NODE2_PORT:-2112}
+    ports:
+      - "${CI_EVENTSTORE_CLUSTER_NODE2_PORT:-2112}:2113"
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.12
+    volumes:
+      - certs:/etc/eventstore/certs
+      - type: volume
+        source: eventstore-volume-data2
+        target: /var/lib/eventstore
+      - type: volume
+        source: eventstore-volume-logs2
+        target: /var/log/eventstore
+    restart: unless-stopped
+    depends_on:
+      - cert-gen
+
+  esdb-node3:
+    image: ${CI_EVENTSTORE_DOCKER_IMAGE}
+    container_name: esdb-node3
+    env_file:
+      - shared.env
+    environment:
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.12:2113
+      - EVENTSTORE_INT_IP=172.30.240.13
+      - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node3/node.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node3/node.key
+#      - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=${CI_EVENTSTORE_CLUSTER_NODE3_PORT:-2113}
+    ports:
+      - "${CI_EVENTSTORE_CLUSTER_NODE3_PORT:-2113}:2113"
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.13
+    volumes:
+      - certs:/etc/eventstore/certs
+      - type: volume
+        source: eventstore-volume-data3
+        target: /var/lib/eventstore
+      - type: volume
+        source: eventstore-volume-logs3
+        target: /var/log/eventstore
+    restart: unless-stopped
+    depends_on:
+      - cert-gen
+
+  esdb-node4:
+    image: ${CI_EVENTSTORE_DOCKER_IMAGE}
+    container_name: esdb-node4
+    env_file:
+      - shared.env
+    environment:
+      - EVENTSTORE_READ_ONLY_REPLICA=true
+      - EVENTSTORE_GOSSIP_SEED=172.30.240.11:2113,172.30.240.12:2113,172.30.240.13:2113
+      - EVENTSTORE_INT_IP=172.30.240.14
+      - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node4/node.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node4/node.key
+#      - EVENTSTORE_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
+      - EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS=${CI_EVENTSTORE_CLUSTER_ROR_PORT:-2114}
+    ports:
+      - "${CI_EVENTSTORE_CLUSTER_ROR_PORT:-2114}:2113"
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.14
+    volumes:
+      - certs:/etc/eventstore/certs
+      - type: volume
+        source: eventstore-volume-data4
+        target: /var/lib/eventstore
+      - type: volume
+        source: eventstore-volume-logs4
+        target: /var/log/eventstore
+    restart: unless-stopped
+    depends_on:
+      - cert-gen
+
+networks:
+  clusternetwork:
+    name: eventstoredb.local
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.240.0/24
+
+volumes:
+    certs:
+    eventstore-volume-data1:
+    eventstore-volume-logs1:
+    eventstore-volume-data2:
+    eventstore-volume-logs2:
+    eventstore-volume-data3:
+    eventstore-volume-logs3:
+    eventstore-volume-data4:
+    eventstore-volume-logs4:

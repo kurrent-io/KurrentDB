@@ -7,6 +7,10 @@ on:
         required: true
         type: string
 
+env:
+  NuGetPackageSourceCredentials_EventStore: Username=${{ vars.ORG_GH_BOT_USERNAME }};Password=${{ secrets.ORG_GH_BOT_AUTOMATION }}
+  NuGetPackageSourceCredentials_KurrentDB: Username=${{ vars.ORG_GH_BOT_USERNAME }};Password=${{ secrets.ORG_GH_BOT_AUTOMATION }}
+
 jobs:
   build-container:
     strategy:
@@ -59,6 +63,8 @@ jobs:
         build-args: |
           CONTAINER_RUNTIME=${{ inputs.container-runtime }}
           RUNTIME=${{ steps.variables.outputs.runtime }}
+          NUGET_CREDS_EVENTSTORE=${{ env.NuGetPackageSourceCredentials_EventStore }}
+          NUGET_CREDS_KURRENTDB=${{ env.NuGetPackageSourceCredentials_KurrentDB }}
     - name: Verify Build
       run: |
         docker run --rm eventstore --insecure --what-if
@@ -72,6 +78,8 @@ jobs:
         build-args: |
           CONTAINER_RUNTIME=${{ inputs.container-runtime }}
           RUNTIME=${{ steps.variables.outputs.runtime }}
+          NUGET_CREDS_EVENTSTORE=${{ env.NuGetPackageSourceCredentials_EventStore }}
+          NUGET_CREDS_KURRENTDB=${{ env.NuGetPackageSourceCredentials_KurrentDB }}
     # pass env vars so that GitHubActionsTestLogger can populate GitHub job summary 
     - name: Run Tests
       run: >

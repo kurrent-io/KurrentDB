@@ -18,6 +18,10 @@ on:
       - "samples/**"
       - "**.md"
 
+env:
+  NuGetPackageSourceCredentials_EventStore: Username=${{ vars.ORG_GH_BOT_USERNAME }};Password=${{ secrets.ORG_GH_BOT_AUTOMATION }}
+  NuGetPackageSourceCredentials_KurrentDB: Username=${{ vars.ORG_GH_BOT_USERNAME }};Password=${{ secrets.ORG_GH_BOT_AUTOMATION }}
+
 jobs:
   vulnerability-scan:
     runs-on: ubuntu-latest
@@ -59,7 +63,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
     - name: Docker Compose Smoke Test
       run: |
-        RUNTIME=linux-amd64 docker compose build
+        NUGET_CREDS_EVENTSTORE="${{ env.NuGetPackageSourceCredentials_EventStore }}" NUGET_CREDS_KURRENTDB="${{ env.NuGetPackageSourceCredentials_KurrentDB }}" RUNTIME=linux-amd64 docker compose build
         docker compose up --detach
         printf 'Waiting for cluster'
         timeout 60 bash -c -- 'until $(curl --output /dev/null --silent --insecure --fail https://localhost:2113/health/live); do printf '.'; sleep 2; done'

@@ -1,0 +1,6 @@
+[submodule "submodules/EventStore"]
+	path = submodules/EventStore
+	url = https://github.com/EventStore/EventStore
+[submodule "submodules/Surge"]
+	path = submodules/Surge
+	url = git@github.com:EventStore/Surge.git
