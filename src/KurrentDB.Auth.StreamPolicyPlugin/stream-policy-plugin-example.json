@@ -1,5 +1,5 @@
 {
-  "EventStore": {
+  "KurrentDB": {
     "Authorization": {
       "PolicyType": "streampolicy"
     }
