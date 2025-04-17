@@ -33,8 +33,8 @@ public enum PrepareFlags : ushort {
 
 	IsJson = 0x100, // indicates data & metadata are valid json
 	IsRedacted = 0x200,
-	HasDataSchema = 0x300,
-	HasMetadataSchema = 0x400,
+	HasDataSchema = 0x400,
+	HasMetadataSchema = 0x800,
 
 	// aggregate flag set
 	// unused and easily confused with StreamDelete:  DeleteTombstone = TransactionBegin | TransactionEnd | StreamDelete,
@@ -240,11 +240,11 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 
 
         _dataOnDisk = reader.ReadLittleEndian<int>() is var dataCount && dataCount > 0
-			? ReadDataContent(ref reader, dataCount, Flags.HasFlag(PrepareFlags.HasDataSchema), out _dataSchemaInfo).ToArray()
+			? ReadDataContent(ref reader, dataCount, Flags.HasFlag(PrepareFlags.HasDataSchema), out _dataSchemaInfo)
 			: NoData;
 
 		Metadata = reader.ReadLittleEndian<int>() is var metadataCount && metadataCount > 0
-			? ReadDataContent(ref reader, metadataCount, Flags.HasFlag(PrepareFlags.HasMetadataSchema), out _metadataSchemaInfo).ToArray()
+			? ReadDataContent(ref reader, metadataCount, Flags.HasFlag(PrepareFlags.HasMetadataSchema), out _metadataSchemaInfo)
 			: NoData;
 
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
@@ -429,7 +429,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		return mem;
 	}
 
-	private static ReadOnlyMemory<byte> ReadDataContent(ref SequenceReader reader, int count, bool parseSchema, out SchemaInfo info) {
+	private static byte[] ReadDataContent(ref SequenceReader reader, int count, bool parseSchema, out SchemaInfo info) {
 		info = SchemaInfo.None;
 		var content = reader.Read(count);
 
