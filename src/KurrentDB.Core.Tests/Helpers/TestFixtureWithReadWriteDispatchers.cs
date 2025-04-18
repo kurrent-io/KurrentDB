@@ -60,6 +60,11 @@ public abstract class TestFixtureWithReadWriteDispatchers {
 			new QueueTrackers(), watchSlowMsg: false);
 		_publisher.Start();
 		_consumer = new TestHandler<Message>();
+		_consumer.AddConverter(typeof(ClientMessage.WriteEvents), msg => {
+			var writeEvents = msg as ClientMessage.WriteEvents;
+			return new TestAdapters.ClientMessage.WriteEvents(writeEvents);
+		});
+
 		_bus.Subscribe(_consumer);
 		_queue = GiveInputQueue();
 		_otherQueues = null;

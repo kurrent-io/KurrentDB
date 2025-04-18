@@ -166,8 +166,8 @@ public partial class EmittedStream : IDisposable,
 			return;
 		_awaitingWriteCompleted = false;
 		if (message.Result == OperationResult.Success) {
-			_lastKnownEventNumber = message.FirstEventNumber + _submittedToWriteEvents.Length - 1;
-			NotifyEventsCommitted(_submittedToWriteEmittedEvents, message.FirstEventNumber);
+			_lastKnownEventNumber = message.FirstEventNumbers.Span[0] + _submittedToWriteEvents.Length - 1;
+			NotifyEventsCommitted(_submittedToWriteEmittedEvents, message.FirstEventNumbers.Span[0]);
 			OnWriteCompleted();
 			return;
 		}
@@ -182,7 +182,7 @@ public partial class EmittedStream : IDisposable,
 			case OperationResult.WrongExpectedVersion:
 				RequestRestart(string.Format(
 					"The '{0}' stream has been written to from the outside. Expected Version: {1}, Current Version: {2}. Checkpoint: {3}.",
-					_streamId, _lastKnownEventNumber, message.CurrentVersion, _fromCheckpointPosition));
+					_streamId, _lastKnownEventNumber, message.FailureCurrentVersions.Span[0], _fromCheckpointPosition));
 				break;
 			case OperationResult.PrepareTimeout:
 			case OperationResult.ForwardTimeout:

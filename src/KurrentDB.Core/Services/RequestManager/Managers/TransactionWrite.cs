@@ -30,7 +30,6 @@ public class TransactionWrite : RequestManagerBase {
 				 clientResponseEnvelope,
 				 internalCorrId,
 				 clientCorrId,
-				 expectedVersion: -1,
 				 commitSource,
 				 prepareCount: events.Length,
 				 transactionId) {

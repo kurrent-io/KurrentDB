@@ -368,9 +368,10 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 		publisher.Publish(new StorageMessage.WritePrepares(
 			correlationId: Guid.NewGuid(),
 			envelope: new FakeEnvelope(),
-			eventStreamId: streamId,
-			expectedVersion: -1,
+			streamIds: new[] { streamId },
 			events: events,
+			expectedVersions: new[] { -1L },
+			eventStreamIndexes: new int[events.Length],
 			cancellationToken: CancellationToken.None));
 
 		long[] newWriterChks = null;

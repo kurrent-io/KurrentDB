@@ -18,7 +18,7 @@ public class when_write_stream_gets_already_committed : RequestManagerSpecificat
 	private long _prepareLogPosition = 100;
 	private long _commitLogPosition = 100;
 	protected override WriteEvents OnManager(FakePublisher publisher) {
-		return new WriteEvents(
+		return WriteEvents.ForSingleStream(
 			publisher,
 			CommitTimeout,
 			Envelope,
@@ -35,7 +35,7 @@ public class when_write_stream_gets_already_committed : RequestManagerSpecificat
 	}
 
 	protected override Message When() {
-		return new StorageMessage.AlreadyCommitted(InternalCorrId, "test123", 0, 1, _commitLogPosition);
+		return StorageMessage.AlreadyCommitted.ForSingleStream(InternalCorrId, "test123", 0, 1, _commitLogPosition);
 	}
 
 	[Test]

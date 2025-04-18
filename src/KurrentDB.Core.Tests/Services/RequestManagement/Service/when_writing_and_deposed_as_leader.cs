@@ -16,7 +16,7 @@ public class when_writing_and_deposed_as_leader : RequestManagerServiceSpecifica
 
 	protected override void Given() {
 		Dispatcher.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
-		Dispatcher.Publish(new ClientMessage.WriteEvents(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new[] { DummyEvent() }, null));
+		Dispatcher.Publish(ClientMessage.WriteEvents.ForSingleStream(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new[] { DummyEvent() }, null));
 	}
 
 	protected override Message When() {

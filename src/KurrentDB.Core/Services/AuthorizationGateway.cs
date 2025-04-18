@@ -257,8 +257,18 @@ public sealed class AuthorizationGateway {
 	}
 
 	private void Authorize(ClientMessage.WriteEvents msg, IPublisher destination) {
-		Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
-			msg.Envelope, destination, msg, WriteEventsDenied);
+		if (msg.EventStreamIds.Length == 1) {
+			Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamIds.Span[0])),
+				msg.Envelope, destination, msg, WriteEventsDenied);
+			return;
+		}
+
+		var operations = new Operation[msg.EventStreamIds.Length];
+		for (var i = 0; i < msg.EventStreamIds.Length; i++) {
+			operations[i] =
+				WriteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamIds.Span[i]));
+		}
+		AuthorizeAsync(msg.User, operations, msg.Envelope, destination, msg, WriteEventsDenied);
 	}
 
 	private void Authorize(ClientMessage.ReplayParkedMessages msg, IPublisher destination) {
@@ -346,8 +356,8 @@ public sealed class AuthorizationGateway {
 
 
 	void Authorize<TRequest>(ClaimsPrincipal user, Operation operation, IEnvelope replyTo,
-			IPublisher destination, TRequest request, Func<TRequest, Message> createAccessDenied)
-			where TRequest : Message {
+		IPublisher destination, TRequest request, Func<TRequest, Message> createAccessDenied)
+		where TRequest : Message {
 		var accessCheck = _authorizationProvider.CheckAccessAsync(user, operation, CancellationToken.None);
 		if (!accessCheck.IsCompleted)
 			AuthorizeAsync(accessCheck, replyTo, destination, request, createAccessDenied);
@@ -367,5 +377,25 @@ public sealed class AuthorizationGateway {
 		} else {
 			replyTo.ReplyWith(createAccessDenied(request));
 		}
+	}
+
+	async void AuthorizeAsync<TRequest>(ClaimsPrincipal user, ReadOnlyMemory<Operation> operations, IEnvelope replyTo,
+		IPublisher destination, TRequest request, Func<TRequest, Message> createAccessDenied)
+		where TRequest : Message {
+
+		bool authorizationFailed = false;
+
+		await Parallel.ForAsync(0, operations.Length, async (i, token) => {
+			var operation = operations.Span[i];
+			if (!await _authorizationProvider.CheckAccessAsync(user, operation, token))
+				Volatile.Write(ref authorizationFailed, true);
+		});
+
+		var success = !Volatile.Read(ref authorizationFailed);
+
+		if (success)
+			destination.Publish(request);
+		else
+			replyTo.ReplyWith(createAccessDenied(request));
 	}
 }

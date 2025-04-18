@@ -1003,7 +1003,7 @@ public class AtomController : CommunicationController {
 					Format.WriteEventsCompleted,
 					ConfigureResponse);
 				var corrId = Guid.NewGuid();
-				var msg = new ClientMessage.WriteEvents(corrId, corrId, envelope, requireLeader, stream,
+				var msg = ClientMessage.WriteEvents.ForSingleStream(corrId, corrId, envelope, requireLeader, stream,
 					expectedVersion, events, manager.User,
 					cancellationToken: manager.HttpEntity.Context.RequestAborted);
 				cts.CancelAfter(_writeTimeout);

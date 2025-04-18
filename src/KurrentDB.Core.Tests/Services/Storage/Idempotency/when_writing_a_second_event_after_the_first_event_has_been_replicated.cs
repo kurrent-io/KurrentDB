@@ -37,26 +37,26 @@ public class when_writing_a_second_event_after_the_first_event_has_been_replicat
 	[Test]
 	public async Task check_commit_with_same_expectedversion_should_return_idempotent_decision() {
 		/*Second, idempotent write*/
-		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, -1, [_eventId], streamMightExist: true, CancellationToken.None);
+		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, -1, new[] { _eventId }, streamMightExist: true, CancellationToken.None);
 		Assert.AreEqual(CommitDecision.Idempotent, commitCheckResult.Decision);
 	}
 
 	[Test]
 	public async Task check_commit_with_expectedversion_any_should_return_idempotent_decision() {
 		/*Second, idempotent write*/
-		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, ExpectedVersion.Any, [_eventId], streamMightExist: true, CancellationToken.None);
+		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, ExpectedVersion.Any, new[] { _eventId }, streamMightExist: true, CancellationToken.None);
 		Assert.AreEqual(CommitDecision.Idempotent, commitCheckResult.Decision);
 	}
 
 	[Test]
 	public async Task check_commit_with_next_expectedversion_should_return_ok_decision() {
-		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, 0, [_eventId], streamMightExist: true, CancellationToken.None);
+		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, 0, new[] { _eventId }, streamMightExist: true, CancellationToken.None);
 		Assert.AreEqual(CommitDecision.Ok, commitCheckResult.Decision);
 	}
 
 	[Test]
 	public async Task check_commit_with_incorrect_expectedversion_should_return_wrongexpectedversion_decision() {
-		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, 1, [_eventId], streamMightExist: true, CancellationToken.None);
+		var commitCheckResult = await _indexWriter.CheckCommit(_streamId, 1, new[] { _eventId }, streamMightExist: true, CancellationToken.None);
 		Assert.AreEqual(CommitDecision.WrongExpectedVersion, commitCheckResult.Decision);
 	}
 }
