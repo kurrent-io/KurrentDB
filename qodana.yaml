@@ -1,6 +1,6 @@
 version: "1.0"
 
-linter: jetbrains/qodana-dotnet:2024.1
+linter: jetbrains/qodana-dotnet:2024.3
 
 dotnet:
   solution: src/EventStore.sln
