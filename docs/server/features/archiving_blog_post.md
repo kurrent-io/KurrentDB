@@ -136,7 +136,7 @@ Environment="AWS_PROFILE=kurrentdb-archive"
 
 Save the file & exit.
 
-Finally, reload the system configuration by running:
+Finally, reload the _systemd_ configuration by running:
 ```
 $ sudo systemctl daemon-reload
 ```
@@ -189,7 +189,7 @@ For example, `chunk-000000.000000` is stored as `chunk-000000.000001`, which loo
 The other strange thing you'll see is that if you have a _scavenged_ and _merged_ chunk that contains multiple logical chunks, it'll be stored as several chunk files in the archive.
 For example, _scavenged_ chunk `chunk-000012.000003`, which contains chunks 12, 13, and 14, will be _unmerged_ and stored in the archive as `chunk-000012.000001`, `chunk-000013.000001`, and `chunk-000014.000001`.
 
-This mechanism allows data to be read from the archive quickly. A constant suffix (`.000001`) and one chunk file per logical chunk allow any node to promptly find the chunk file containing a specific _log position_ in the archive.
+This mechanism allows data to be read from the archive quickly. A constant suffix (`.000001`) and one chunk file per logical chunk allow any node to quickly locate the chunk file containing a specific _log position_ in the archive.
 This has some (minor) implications: When you use _Archiving_, you cannot easily tell from a directory listing of the archive:
 
 - whether a chunk was scavenged or not
@@ -234,7 +234,7 @@ chunk-000005.000001  epoch.chk              truncate.chk
 Notice that we configured the archiving settings to keep only 500MB of data, which should be roughly equivalent to two chunks, but four chunks are left.
 That's because running a scavenge (two times) had closed chunks 5 and 6 with a _scavenge point_, and they were thus not full of data.
 
-You should read some streams from a client or the web UI. Notice that reads that go to the archive are handled transparently!
+If you now read some streams from a client or the web UI, you'll notice that reads that go to the archive are handled transparently!
 
 ## Conclusion
 
