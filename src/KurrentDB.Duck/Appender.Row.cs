@@ -18,35 +18,35 @@ public partial struct Appender {
 	/// Prepares a fresh row for insertion.
 	/// </summary>
 	/// <returns></returns>
-	public Row CreateRow() => new(appender);
+	public Row CreateRow() => new(_appender);
 
 	[StructLayout(LayoutKind.Auto)]
 	public readonly struct Row : IDisposable {
-		private readonly nint appender;
+		private readonly nint _appender;
 
-		internal Row(nint appender) => this.appender = appender;
+		internal Row(nint appender) => this._appender = appender;
 
 		public void Append(int value)
-			=> VerifyState(Appender.Append(appender, value) is DuckDBState.Error);
+			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
 
 		public void Append(uint value)
-			=> VerifyState(Appender.Append(appender, value) is DuckDBState.Error);
+			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
 
 		public void Append(long value)
-			=> VerifyState(Appender.Append(appender, value) is DuckDBState.Error);
+			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
 
 		public void Append(ulong value)
-			=> VerifyState(Appender.Append(appender, value) is DuckDBState.Error);
+			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
 
 		public void AppendNull()
-			=> VerifyState(Appender.AppendNull(appender) is DuckDBState.Error);
+			=> VerifyState(Appender.AppendNull(_appender) is DuckDBState.Error);
 
 		public void AppendDefault()
-			=> VerifyState(Appender.AppendDefault(appender) is DuckDBState.Error);
+			=> VerifyState(Appender.AppendDefault(_appender) is DuckDBState.Error);
 
 		public void Append(DateTime value) {
 			var timestamp = NativeMethods.DateTimeHelpers.DuckDBToTimestamp(DuckDBTimestamp.FromDateTime(value));
-			VerifyState(AppendTimestamp(appender, timestamp.Micros) is DuckDBState.Error);
+			VerifyState(AppendTimestamp(_appender, timestamp.Micros) is DuckDBState.Error);
 		}
 
 		[SkipLocalsInit]
@@ -59,21 +59,21 @@ public partial struct Appender {
 			if (Utf8.FromUtf16(chars, buffer.Span, out _, out var bytesWritten, replaceInvalidSequences: false) is
 			    OperationStatus.Done) {
 				VerifyState(
-					AppendVarChar(appender, in buffer.GetPinnableReference(), bytesWritten) is DuckDBState.Error);
+					AppendVarChar(_appender, in buffer.GetPinnableReference(), bytesWritten) is DuckDBState.Error);
 			} else {
 				throw Interop.CreateException($"Unable to convert string {chars} to UTF-8");
 			}
 		}
 
 		public void Append(ReadOnlySpan<byte> bytes) {
-			VerifyState(AppendBlob(appender, in bytes.GetPinnableReference(), bytes.Length) is DuckDBState.Error);
+			VerifyState(AppendBlob(_appender, in bytes.GetPinnableReference(), bytes.Length) is DuckDBState.Error);
 		}
 
 		[StackTraceHidden]
 		private void VerifyState([DoesNotReturnIf(true)] bool isError)
-			=> Appender.VerifyState(isError, appender);
+			=> Appender.VerifyState(isError, _appender);
 
 		public void Dispose()
-			=> VerifyState(EndRow(appender) is DuckDBState.Error);
+			=> VerifyState(EndRow(_appender) is DuckDBState.Error);
 	}
 }
