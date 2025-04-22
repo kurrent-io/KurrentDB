@@ -58,9 +58,9 @@ public partial struct Appender {
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_varchar_length")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState AppendVarChar(nint appender, ReadOnlySpan<byte> utf8String, int length);
+	private static partial DuckDBState AppendVarChar(nint appender, in byte utf8String, int length);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_blob")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState AppendBlob(nint appender, ReadOnlySpan<byte> bytes, int length);
+	private static partial DuckDBState AppendBlob(nint appender, in byte bytes, int length);
 }

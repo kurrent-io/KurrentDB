@@ -59,14 +59,14 @@ public partial struct Appender {
 			if (Utf8.FromUtf16(chars, buffer.Span, out _, out var bytesWritten, replaceInvalidSequences: false) is
 			    OperationStatus.Done) {
 				VerifyState(
-					AppendVarChar(appender, buffer.Span.Slice(0, bytesWritten), bytesWritten) is DuckDBState.Error);
+					AppendVarChar(appender, in buffer.GetPinnableReference(), bytesWritten) is DuckDBState.Error);
 			} else {
 				throw Interop.CreateException($"Unable to convert string {chars} to UTF-8");
 			}
 		}
 
 		public void Append(ReadOnlySpan<byte> bytes) {
-			VerifyState(AppendBlob(appender, bytes, bytes.Length) is DuckDBState.Error);
+			VerifyState(AppendBlob(appender, in bytes.GetPinnableReference(), bytes.Length) is DuckDBState.Error);
 		}
 
 		[StackTraceHidden]
