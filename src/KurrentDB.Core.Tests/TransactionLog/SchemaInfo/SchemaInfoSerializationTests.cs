@@ -7,7 +7,7 @@ using DotNext.IO;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 
-namespace EventStore.Core.Tests.TransactionLog.SchemaInfo;
+namespace KurrentDB.Core.Tests.TransactionLog.SchemaInfo;
 
 public class SchemaInfoSerializationTests {
 	[Test]

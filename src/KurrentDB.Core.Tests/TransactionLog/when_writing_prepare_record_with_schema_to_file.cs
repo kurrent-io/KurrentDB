@@ -11,7 +11,7 @@ using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
 using NUnit.Framework;
 
-namespace EventStore.Core.Tests.TransactionLog;
+namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
