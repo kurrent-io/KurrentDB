@@ -10,6 +10,7 @@ public class AuthenticationProviderFactory {
 	private readonly Func<AuthenticationProviderFactoryComponents, IAuthenticationProviderFactory>
 		_authenticationProviderFactory;
 
+
 	public AuthenticationProviderFactory(
 		Func<AuthenticationProviderFactoryComponents, IAuthenticationProviderFactory>
 			authenticationProviderFactory) {
