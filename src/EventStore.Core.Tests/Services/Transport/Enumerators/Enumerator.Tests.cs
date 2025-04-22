@@ -16,9 +16,9 @@ public partial class EnumeratorTests {
 	public record SubscriptionResponse { }
 	public record Event(Guid Id, long EventNumber, TFPos? EventPosition) : SubscriptionResponse { }
 	public record SubscriptionConfirmation() : SubscriptionResponse { }
-	public record CaughtUp : SubscriptionResponse { }
-	public record FellBehind : SubscriptionResponse { }
-	public record Checkpoint(Position CheckpointPosition) : SubscriptionResponse { }
+	public record CaughtUp(ReadResponse.SubscriptionCaughtUp Wrapped) : SubscriptionResponse { }
+	public record FellBehind(ReadResponse.SubscriptionFellBehind Wrapped) : SubscriptionResponse { }
+	public record Checkpoint(ReadResponse.CheckpointReceived Wrapped, Position CheckpointPosition) : SubscriptionResponse { }
 
 	public class EnumeratorWrapper : IAsyncDisposable {
 		private readonly IAsyncEnumerator<ReadResponse> _enumerator;
@@ -39,9 +39,9 @@ public partial class EnumeratorTests {
 			return resp switch {
 				ReadResponse.EventReceived eventReceived => new Event(eventReceived.Event.Event.EventId, eventReceived.Event.OriginalEventNumber, eventReceived.Event.OriginalPosition),
 				ReadResponse.SubscriptionConfirmed => new SubscriptionConfirmation(),
-				ReadResponse.SubscriptionCaughtUp => new CaughtUp(),
-				ReadResponse.SubscriptionFellBehind => new FellBehind(),
-				ReadResponse.CheckpointReceived checkpointReceived => new Checkpoint(new Position(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition)),
+				ReadResponse.SubscriptionCaughtUp x => new CaughtUp(x),
+				ReadResponse.SubscriptionFellBehind x => new FellBehind(x),
+				ReadResponse.CheckpointReceived checkpointReceived => new Checkpoint(checkpointReceived, new Position(checkpointReceived.CommitPosition, checkpointReceived.PreparePosition)),
 				_ => throw new ArgumentOutOfRangeException(nameof(resp), resp, null),
 			};
 		}

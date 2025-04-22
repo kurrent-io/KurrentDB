@@ -54,7 +54,26 @@ public partial class EnumeratorTests {
 
 			Assert.True(await sub.GetNext() is SubscriptionConfirmation);
 			Assert.AreEqual(_eventIds[0], ((Event)await sub.GetNext()).Id);
-			Assert.True(await sub.GetNext() is CaughtUp);
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.Null(caughtUp.Wrapped.AllCheckpoint);
+			Assert.AreEqual(0, caughtUp.Wrapped.StreamCheckpoint);
+		}
+	}
+
+	[TestFixture(typeof(LogFormat.V2), typeof(string))]
+	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
+	public class subscribe_empty_stream_from_start<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
+		[Test]
+		public async Task caught_up_checkpoint_is_negative1_when_stream_is_empty() {
+			await using var sub = CreateStreamSubscription<TStreamId>(
+				_publisher, streamName: "no-stream");
+
+			Assert.True(await sub.GetNext() is SubscriptionConfirmation);
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.Null(caughtUp.Wrapped.AllCheckpoint);
+			Assert.AreEqual(-1, caughtUp.Wrapped.StreamCheckpoint);
 		}
 	}
 
@@ -76,7 +95,10 @@ public partial class EnumeratorTests {
 				_publisher, streamName: "test-stream1", StreamRevision.End);
 
 			Assert.True(await enumerator.GetNext() is SubscriptionConfirmation);
-			Assert.True(await enumerator.GetNext() is CaughtUp);
+			var caughtUp = AssertEx.IsType<CaughtUp>(await enumerator.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.Null(caughtUp.Wrapped.AllCheckpoint);
+			Assert.AreEqual(0, caughtUp.Wrapped.StreamCheckpoint);
 		}
 	}
 }

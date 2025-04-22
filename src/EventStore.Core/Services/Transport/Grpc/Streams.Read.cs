@@ -18,6 +18,7 @@ using Google.Protobuf;
 using Grpc.Core;
 using CountOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.CountOptionOneofCase;
 using FilterOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.FilterOptionOneofCase;
+using Position = EventStore.Core.Services.Transport.Common.Position;
 using ReadDirection = EventStore.Client.Streams.ReadReq.Types.Options.Types.ReadDirection;
 using StreamOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.StreamOptionOneofCase;
 
@@ -78,13 +79,13 @@ internal partial class Streams<TStreamId> {
 				await using (enumerator) {
 					await using (context.CancellationToken.Register(DisposeEnumerator)) {
 						while (await enumerator.MoveNextAsync()) {
-							if (TryConvertReadResponse(enumerator.Current, uuidOption, out var readResponse))
+							if (ResponseConverter.TryConvertReadResponse(enumerator.Current, uuidOption, out var readResponse))
 								await responseStream.WriteAsync(readResponse);
 						}
 					}
 				}
 			} catch (ReadResponseException ex) {
-				ConvertReadResponseException(ex);
+				ResponseConverter.ConvertReadResponseException(ex);
 			}
 		} catch (Exception ex) {
 			duration.SetException(ex);
@@ -253,8 +254,10 @@ internal partial class Streams<TStreamId> {
 					: EventFilter.StreamName.Regex(isAllStream, filter.StreamIdentifier.Regex)),
 			_ => throw RpcExceptions.InvalidArgument(filter)
 		};
+}
 
-	private static bool TryConvertReadResponse(ReadResponse readResponse, ReadReq.Types.Options.Types.UUIDOption uuidOption, out ReadResp readResp) {
+public static class ResponseConverter {
+	public static bool TryConvertReadResponse(ReadResponse readResponse, ReadReq.Types.Options.Types.UUIDOption uuidOption, out ReadResp readResp) {
 		readResp = readResponse switch {
 			ReadResponse.EventReceived eventReceived => new ReadResp {
 				Event = ConvertToReadEvent(uuidOption, eventReceived.Event)
@@ -266,6 +269,7 @@ internal partial class Streams<TStreamId> {
 			},
 			ReadResponse.CheckpointReceived checkpointReceived => new ReadResp {
 				Checkpoint = new ReadResp.Types.Checkpoint {
+					Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(checkpointReceived.Timestamp),
 					CommitPosition = checkpointReceived.CommitPosition,
 					PreparePosition = checkpointReceived.PreparePosition
 				}
@@ -275,9 +279,7 @@ internal partial class Streams<TStreamId> {
 					StreamIdentifier = streamNotFound.StreamName
 				}
 			},
-			ReadResponse.SubscriptionCaughtUp => new ReadResp {
-				CaughtUp = new ReadResp.Types.CaughtUp()
-			},
+			ReadResponse.SubscriptionCaughtUp caughtUp => Convert(caughtUp),
 			ReadResponse.SubscriptionFellBehind => null, // currently not sent to clients
 			ReadResponse.LastStreamPositionReceived lastStreamPositionReceived => new ReadResp {
 				LastStreamPosition = lastStreamPositionReceived.LastStreamPosition
@@ -291,7 +293,29 @@ internal partial class Streams<TStreamId> {
 		return readResp != null;
 	}
 
-	private static void ConvertReadResponseException(ReadResponseException readResponseEx) {
+	private static ReadResp Convert(ReadResponse.SubscriptionCaughtUp caughtUp) {
+		var response = new ReadResp {
+			CaughtUp = new ReadResp.Types.CaughtUp {
+				Timestamp = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(caughtUp.Timestamp),
+			},
+		};
+
+		if (caughtUp.StreamCheckpoint is { } streamCheckpoint && streamCheckpoint >= 0) {
+			response.CaughtUp.StreamRevision = streamCheckpoint;
+		}
+
+		if (caughtUp.AllCheckpoint is { } allCheckpoint && allCheckpoint != TFPos.HeadOfTf) {
+			var unsignedPosition = Position.FromInt64(allCheckpoint.CommitPosition, allCheckpoint.PreparePosition);
+			response.CaughtUp.Position = new() {
+				CommitPosition = unsignedPosition.CommitPosition,
+				PreparePosition = unsignedPosition.PreparePosition,
+			};
+		}
+
+		return response;
+	}
+
+	public static void ConvertReadResponseException(ReadResponseException readResponseEx) {
 		switch (readResponseEx) {
 			case ReadResponseException.NotHandled.ServerNotReady:
 				throw RpcExceptions.ServerNotReady();
