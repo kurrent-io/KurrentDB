@@ -2,22 +2,31 @@
 order: 1
 headerDepth: 3
 dir:
-  text: "Quick Start"
+  text: "Get Started"
   expanded: true
   order: 1
 ---
 
-# Introduction
+# Quickstart
 
-Welcome to the KurrentDB documentation.
+KurrentDB is an event‑native database for modern applications and event‑driven architectures. It combines simple data modeling with a built-in streaming engine to guarantee consistency. Available both as self-hosted, as well as cloud offered. 
 
-KurrentDB is a database that's engineered for modern software applications and event-driven architectures. Its event-native design simplifies data modeling and preserves data integrity while the integrated streaming engine solves distributed messaging challenges and ensures data consistency.
+KurrentDB uses the [Kurrent License v1 (KLv1)](https://github.com/kurrent-io/KurrentDB/blob/master/LICENSE.md). It is freely accessible and usable, but enterprise features require a valid license key.
 
-KurrentDB is licensed under [Kurrent License v1 (KLv1)](https://github.com/EventStore/EventStore/blob/master/LICENSE.md), meaning that anyone can access and use it, but enterprise features are only enabled with a valid [license key](./installation.md#license-keys).
+## Enterprise features
 
-::: note
-Although the source code for KurrentDB is available to view, the [KLv1 license](https://github.com/EventStore/EventStore/blob/master/LICENSE.md) is not an OSI-approved Open Source License.
-:::
+* [Auto-scavenge](../operations/auto-scavenge.md) - Fully automated scheduling and execution of scavenging across cluster nodes, which removes operational complexity by handling configuration, scheduling, and preventing simultaneous node scavenging.
+* Connectors - Licensed connectors:
+- [Apache Kafka](../features/connectors/sinks/kafka.md)
+- [Elasticsearch](../features/connectors/sinks/elasticsearch.md)
+- [MongoDB](../features/connectors/sinks/mongo.md)
+- [RabbitMQ ](../features/connectors/sinks/rabbitmq.md)
+* [Stream Policy Authorization](../security/user-authorization.md#stream-policy-authorization) - Replaces ACLs with category-wide policies, enabling immediate policy updates and easier data segregation by tenant/microservice Kurrent enterprise platform.
+* [Encryption-at-rest](../security/README.md#encryption-at-rest) - Provides additional data protection against unauthorized access.
+* Advanced authentication - [LDAPS](../security/user-authentication.md#ldap-authentication), and [OAuth](../security/user-authentication.md#oauth-authentication) authentication.
+* Advanced Monitoring - [Logs](../diagnostics/logs.md#logs-download), and [OpenTelemetry](../diagnostics/integrations.md#opentelemetry-exporter) endpoints.
+* Visualize tab - Allows visualization of event correlations.
+
 
 ## What's new
 
