@@ -7,7 +7,7 @@ using EventStore.Connect.Readers.Configuration;
 using EventStore.Connectors.Control;
 using EventStore.Extensions.Connectors.Tests;
 using Microsoft.Extensions.DependencyInjection;
-using MemberInfo = EventStore.Core.Cluster.MemberInfo;
+using MemberInfo = KurrentDB.Core.Cluster.MemberInfo;
 
 namespace EventStore.Connectors.Tests.Control;
 

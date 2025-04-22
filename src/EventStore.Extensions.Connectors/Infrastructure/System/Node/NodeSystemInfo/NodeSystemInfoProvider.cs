@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using EventStore.Core;
 using KurrentDB.Core.Bus;
-using EventStore.Core.Cluster;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Services;
 using Kurrent.Toolkit;
 using static System.Text.Json.JsonSerializer;

@@ -2,7 +2,7 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
-using EventStore.Core.Services.Transport.Grpc;
+using KurrentDB.Core.Services.Transport.Grpc;
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Schema;

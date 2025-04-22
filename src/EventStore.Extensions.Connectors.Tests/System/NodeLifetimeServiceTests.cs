@@ -4,12 +4,12 @@
 using System.Net;
 using EventStore.Connectors.System;
 using KurrentDB.Core.Data;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using EventStore.Extensions.Connectors.Tests;
 using EventStore.Toolkit.Testing.Xunit;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
-using MemberInfo = EventStore.Core.Cluster.MemberInfo;
+using MemberInfo = KurrentDB.Core.Cluster.MemberInfo;
 
 namespace EventStore.Connectors.Tests.System;
 

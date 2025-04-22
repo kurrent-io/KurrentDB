@@ -1,6 +1,6 @@
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

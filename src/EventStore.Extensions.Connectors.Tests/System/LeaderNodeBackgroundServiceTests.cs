@@ -3,13 +3,13 @@
 
 using System.Net;
 using EventStore.Connectors.System;
-using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Cluster;
+using KurrentDB.Core.Messages;
 using EventStore.Extensions.Connectors.Tests;
 using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
 using Shouldly;
-using MemberInfo = EventStore.Core.Cluster.MemberInfo;
+using MemberInfo = KurrentDB.Core.Cluster.MemberInfo;
 
 namespace EventStore.Connectors.Tests.System;
 

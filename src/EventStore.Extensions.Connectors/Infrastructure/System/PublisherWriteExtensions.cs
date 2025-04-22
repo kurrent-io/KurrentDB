@@ -2,7 +2,7 @@
 
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
