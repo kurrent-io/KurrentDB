@@ -145,3 +145,7 @@ Check that
 - The server is not running in `dev` mode.
 - The server is not running in `mem-db` (i.e. with an in-memory database).
 - A schedule has been set via the HTTP endpoint.
+
+### Tutorial
+
+[Learn how to schedule and manage Auto-Scavenge in KurrentDB through a tutorial.](/tutorials/Auto-Scavenge.md)
