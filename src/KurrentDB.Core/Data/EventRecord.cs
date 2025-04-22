@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using EventStore.Core.Services.Transport.Grpc;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using JetBrains.Annotations;
+using KurrentDB.Core.Services.Transport.Grpc;
 
 namespace KurrentDB.Core.Data;
 
