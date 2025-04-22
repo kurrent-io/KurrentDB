@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext.Threading;
-using EventStore.Core.Messages;
-using EventStore.Core.Tests;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
+using KurrentDB.Core.Tests;
 using Xunit;
 
 namespace KurrentDB.Auth.StreamPolicyPlugin.Tests;

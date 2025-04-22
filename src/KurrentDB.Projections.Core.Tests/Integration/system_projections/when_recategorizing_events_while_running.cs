@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using EventStore.Core.Tests;
 using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.Integration.system_projections;

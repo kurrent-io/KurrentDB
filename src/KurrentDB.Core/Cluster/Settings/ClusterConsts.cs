@@ -3,7 +3,7 @@
 
 using System;
 
-namespace EventStore.Core.Cluster.Settings;
+namespace KurrentDB.Core.Cluster.Settings;
 
 public static class ClusterConsts {
 	public const int SubscriptionLastEpochCount = 20;

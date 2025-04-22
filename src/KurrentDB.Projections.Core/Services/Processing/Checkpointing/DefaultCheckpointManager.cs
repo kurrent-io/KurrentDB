@@ -4,11 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Projections.Core.Messages;

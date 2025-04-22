@@ -5,7 +5,7 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;

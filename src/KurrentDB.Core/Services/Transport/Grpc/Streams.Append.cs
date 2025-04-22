@@ -5,14 +5,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
-using EventStore.Core.Messages;
 using Grpc.Core;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Grpc;
 using static EventStore.Client.Streams.AppendReq.Types.Options;
 using Empty = EventStore.Client.Empty;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Streams<TStreamId> {

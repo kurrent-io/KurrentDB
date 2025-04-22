@@ -2,14 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Cluster;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using EndPoint = System.Net.EndPoint;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class SystemMessage {
 	[DerivedMessage(CoreMessage.System)]

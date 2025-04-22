@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using EventStore.Core.Messages;
-using EventStore.Core.Tests;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using NUnit.Framework;

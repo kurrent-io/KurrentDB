@@ -18,7 +18,7 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\EventStore.Core.Tests\EventStore.Core.Tests.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
 	  <ProjectReference Include="..\KurrentDB.TcpPlugin\KurrentDB.TcpPlugin.csproj" />
 	</ItemGroup>
 </Project>

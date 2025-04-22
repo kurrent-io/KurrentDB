@@ -4,10 +4,10 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
-using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using static EventStore.Client.Projections.StatisticsReq.Types.Options;

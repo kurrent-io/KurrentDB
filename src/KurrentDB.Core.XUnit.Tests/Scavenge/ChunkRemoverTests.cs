@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.Index.Hashers;
+using KurrentDB.Core.Tests.Index.Hashers;
 using KurrentDB.Core.TransactionLog.Chunks.TFChunk;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Core.TransactionLog.Scavenging;

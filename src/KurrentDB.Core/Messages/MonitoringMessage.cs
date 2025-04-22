@@ -7,7 +7,7 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.PersistentSubscription;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class MonitoringMessage {
 	[DerivedMessage(CoreMessage.Monitoring)]

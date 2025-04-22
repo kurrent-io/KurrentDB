@@ -24,7 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace EventStore.Core.Services.Transport.Grpc;
+namespace KurrentDB.Core.Services.Transport.Grpc;
 
 /// <summary>
 /// Extension methods that simplify work with gRPC streaming calls.

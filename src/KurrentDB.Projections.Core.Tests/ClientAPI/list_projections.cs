@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.ClientAPI.SystemData;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.ClientAPI;

@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using EventStore.Core.Messages;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Messages;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.Services.emitted_streams_deleter.when_deleting;

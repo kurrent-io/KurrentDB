@@ -3,13 +3,13 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Messages;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.Services.TimeService;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Services.TimeService;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Common;
 using KurrentDB.Projections.Core.Messages;

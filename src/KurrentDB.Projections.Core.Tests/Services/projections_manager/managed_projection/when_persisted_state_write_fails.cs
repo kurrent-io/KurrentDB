@@ -4,12 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Messages;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.Helpers;
-using EventStore.Core.Tests.Services.TimeService;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Helpers;
+using KurrentDB.Core.Tests.Services.TimeService;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;

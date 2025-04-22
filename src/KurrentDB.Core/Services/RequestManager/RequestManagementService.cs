@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.RequestManager.Managers;
 using KurrentDB.Core.Services.TimerService;

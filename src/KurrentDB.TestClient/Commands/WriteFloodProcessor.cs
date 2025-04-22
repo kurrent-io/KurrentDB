@@ -7,9 +7,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using EventStore.Client.Messages;
-using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Tcp;
 using KurrentDB.TestClient.Statistics;
 using KurrentDB.Transport.Tcp;
 

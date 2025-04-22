@@ -4,7 +4,7 @@
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.LogAbstraction;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 public class EventTypeIndexSystemTypesDecorator : INameIndex<uint> {
 	private readonly INameIndex<uint> _wrapped;

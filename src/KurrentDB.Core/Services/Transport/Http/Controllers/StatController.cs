@@ -3,10 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Transport.Http;
 using KurrentDB.Transport.Http.Codecs;
 using KurrentDB.Transport.Http.EntityManagement;

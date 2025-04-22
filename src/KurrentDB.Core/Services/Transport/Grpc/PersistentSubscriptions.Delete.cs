@@ -4,16 +4,17 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
-using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
-using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToAllCompleted;
-using static EventStore.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
-using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
+using static KurrentDB.Core.Messages.ClientMessage.DeletePersistentSubscriptionToAllCompleted;
+using static KurrentDB.Core.Messages.ClientMessage.DeletePersistentSubscriptionToStreamCompleted;
+using static KurrentDB.Core.Services.Transport.Grpc.RpcExceptions;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.DeleteReq.Types.Options.StreamOptionOneofCase;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {

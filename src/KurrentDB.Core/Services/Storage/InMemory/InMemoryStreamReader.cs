@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Messages;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.Storage.InMemory;
 

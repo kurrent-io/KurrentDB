@@ -1,0 +1,40 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using EventStore.Plugins.Transforms;
+
+namespace KurrentDB.Core.Tests.Transforms.BitFlip;
+
+public class BitFlipChunkWriteTransform : IChunkWriteTransform {
+	private BitFlipChunkWriteStream _transformedStream;
+
+	public ChunkDataWriteStream TransformData(ChunkDataWriteStream dataStream) {
+		_transformedStream = new BitFlipChunkWriteStream(dataStream);
+		return _transformedStream;
+	}
+
+	public ValueTask CompleteData(int footerSize, int alignmentSize, CancellationToken token = default) {
+		var chunkHeaderAndDataSize = (int)_transformedStream.ChunkFileStream.Position;
+		var alignedSize = GetAlignedSize(chunkHeaderAndDataSize + footerSize, alignmentSize);
+		var paddingSize = alignedSize - chunkHeaderAndDataSize - footerSize;
+
+		return paddingSize > 0
+			? _transformedStream.WriteAsync(new byte[paddingSize], token)
+			: ValueTask.CompletedTask;
+	}
+
+	public async ValueTask<int> WriteFooter(ReadOnlyMemory<byte> footer, CancellationToken token) {
+		await _transformedStream.ChunkFileStream.WriteAsync(footer, token);
+		await _transformedStream.ChunkFileStream.FlushAsync(token);
+		return (int)_transformedStream.Position;
+	}
+
+	private static int GetAlignedSize(int size, int alignmentSize) {
+		if (size % alignmentSize == 0)
+			return size;
+		return (size / alignmentSize + 1) * alignmentSize;
+	}
+}

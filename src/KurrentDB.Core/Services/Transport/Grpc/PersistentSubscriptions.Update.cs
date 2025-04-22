@@ -4,18 +4,19 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
-using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Transport.Common;
-using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
+using static KurrentDB.Core.Services.Transport.Grpc.RpcExceptions;
 using AllOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.AllOptions.AllOptionOneofCase;
 using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.StreamOptions.RevisionOptionOneofCase;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.UpdateReq.Types.Options.StreamOptionOneofCase;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {

@@ -4,6 +4,7 @@
 using System.Linq;
 using EventStore.Core.Services.Transport.Grpc;
 using Grpc.Core;
+using KurrentDB.Core.Services.Transport.Grpc;
 
 namespace EventStore.Cluster {
 	partial class Gossip {

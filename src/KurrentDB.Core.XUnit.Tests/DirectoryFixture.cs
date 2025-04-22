@@ -4,7 +4,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests;

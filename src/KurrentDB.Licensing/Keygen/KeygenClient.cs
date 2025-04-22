@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using RestSharp;
 using Serilog;
-using static KurrentDB.Licensing.Keygen.Models;
 
 namespace KurrentDB.Licensing.Keygen;
 

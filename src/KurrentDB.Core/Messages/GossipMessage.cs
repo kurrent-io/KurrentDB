@@ -3,10 +3,10 @@
 
 using System;
 using System.Net;
-using EventStore.Core.Cluster;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class GossipMessage {
 	[DerivedMessage(CoreMessage.Gossip)]

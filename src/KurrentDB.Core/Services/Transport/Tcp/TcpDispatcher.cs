@@ -7,7 +7,7 @@ using System.Security.Claims;
 using KurrentDB.Core.Messaging;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Core.Services.Transport.Tcp;
+namespace KurrentDB.Core.Services.Transport.Tcp;
 
 public abstract class TcpDispatcher : ITcpDispatcher {
 	private static readonly ILogger Log = Serilog.Log.ForContext<TcpDispatcher>();

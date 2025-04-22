@@ -5,7 +5,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Net;
-using EventStore.Core.Tests;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration.Sources;

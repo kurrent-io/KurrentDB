@@ -4,8 +4,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.Storage.ReaderIndex;
 

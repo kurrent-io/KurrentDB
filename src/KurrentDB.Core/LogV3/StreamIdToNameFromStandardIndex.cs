@@ -11,7 +11,7 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using StreamId = System.UInt32;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 public class StreamIdToNameFromStandardIndex : INameLookup<StreamId> {
 	private readonly IIndexReader<StreamId> _indexReader;

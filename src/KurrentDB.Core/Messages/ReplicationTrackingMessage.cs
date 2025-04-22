@@ -5,7 +5,7 @@ using System;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static partial class ReplicationTrackingMessage {
 	[DerivedMessage(CoreMessage.ReplicationTracking)]

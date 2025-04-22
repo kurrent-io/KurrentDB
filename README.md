@@ -45,7 +45,7 @@ For more details visit [the website](https://kurrent.io/kurrent-cloud).
 
 ## Licensing
 
-View [KurrentDB's licensing information](https://github.com/EventStore/EventStore/blob/master/LICENSE.md).
+View [KurrentDB's licensing information](https://github.com/kurrent-io/KurrentDB/blob/master/LICENSE.md).
 
 ## Docs
 
@@ -68,11 +68,11 @@ KurrentDB supports the gRPC protocol.
 ### KurrentDB supported clients
 
 - Python: [pyeventsourcing/esdbclient](https://pypi.org/project/esdbclient/)
-- Node.js (javascript/typescript): [EventStore/EventStore-Client-NodeJS](https://github.com/EventStore/EventStore-Client-NodeJS)
-- Java: [(EventStore/EventStoreDB-Client-Java](https://github.com/EventStore/EventStoreDB-Client-Java)
-- .NET: [EventStore/EventStore-Client-Dotnet](https://github.com/EventStore/EventStore-Client-Dotnet)
-- Go: [EventStore/EventStore-Client-Go](https://github.com/EventStore/EventStore-Client-Go)
-- Rust: [EventStore/EventStoreDB-Client-Rust](https://github.com/EventStore/EventStoreDB-Client-Rust)
+- Node.js (javascript/typescript): [kurrent-io/KurrentDB-Client-NodeJS](https://github.com/kurrent-io/KurrentDB-Client-NodeJS)
+- Java: [(kurrent-io/KurrentDB-Client-Java](https://github.com/kurrent-io/KurrentDB-Client-Java)
+- .NET: [kurrent-io/EventStore-Client-Dotnet](https://github.com/kurrent-io/EventStore-Client-Dotnet)
+- Go: [kurrent-io/KurrentDB-Client-Go](https://github.com/kurrent-io/KurrentDB-Client-Go)
+- Rust: [kurrent-io/KurrentDB-Client-Rust](https://github.com/kurrent-io/KurrentDB-Client-Rust)
 - Read more in the [gRPC clients documentation](https://docs.kurrent.io/clients/grpc)
 
 ### Community supported clients
@@ -84,7 +84,7 @@ Read more in the [documentation](https://docs.kurrent.io/server/latest/quick-sta
 
 ### Legacy clients (support ends with EventStoreDB v23.10 LTS)
 
-- .NET: [EventStoreDB-Client-Dotnet-Legacy](https://github.com/EventStore/EventStoreDB-Client-Dotnet-Legacy)
+- .NET: [EventStoreDB-Client-Dotnet-Legacy](https://github.com/kurrent-io/EventStoreDB-Client-Dotnet-Legacy)
 
 ## Deployment
 
@@ -95,21 +95,21 @@ Read more in the [documentation](https://docs.kurrent.io/server/latest/quick-sta
 
 [Join our global community](https://www.kurrent.io/community) of developers.
 
-- [Discuss](https://discuss.eventstore.com/)
-- [Discord (Event Store)](https://discord.gg/Phn9pmCw3t)
+- [Discuss](https://discuss.kurrent.io/)
+- [Discord (Kurrent)](https://discord.gg/Phn9pmCw3t)
 - [Discord (ddd-cqrs-es)](https://discord.com/invite/sEZGSHNNbH)
 
 ## Contributing
 
 Development is done on the `master` branch.
-We attempt to do our best to ensure that the history remains clean and to do so, we generally ask contributors to squash their commits into a set or single logical commit.
+We attempt to do our best to ensure that the history remains clean and to do so, commits are automatically squashed into a single logical commit when pull requests are merged.
 
 If you want to switch to a particular release, you can check out the release branch for that particular release. For example:
-`git checkout release/oss-v22.10`
+`git checkout release/v25.0`
 
-- [Create an issue](https://github.com/EventStore/EventStore/issues)
+- [Create an issue](https://github.com/kurrent-io/KurrentDB/issues)
 - [Documentation](https://docs.kurrent.io/)
-- [Contributing guide](https://github.com/EventStore/EventStore/blob/master/CONTRIBUTING.md)
+- [Contributing guide](CONTRIBUTING.md)
 
 ## Building KurrentDB
 
@@ -130,7 +130,7 @@ The build scripts: `build.sh` and `build.ps1` are also available for Linux and W
 To start a single node, you can then run:
 
 ```
-dotnet ./src/KurrentDB/bin/x64/Release/net8.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log
+dotnet ./src/KurrentDB/bin/Release/net8.0/KurrentDB.dll --dev --db ./tmp/data --index ./tmp/index --log ./tmp/log
 ```
 
 ### Running the tests
@@ -192,7 +192,7 @@ docker run --rm mykurrentdb --insecure --what-if
 
 ## More resources
 
-- [Release notes](https://kurrent.io/blog/release-notes)
+- [Release notes](https://docs.kurrent.io/server/latest/release-schedule/release-notes.html)
 - [Beginners Guide to Event Sourcing](https://kurrent.io/event-sourcing)
 - [Articles](https://kurrent.io/blog)
 - [Webinars](https://kurrent.io/webinars)

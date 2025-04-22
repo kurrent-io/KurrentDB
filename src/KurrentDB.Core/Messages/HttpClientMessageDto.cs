@@ -6,7 +6,7 @@ using System.Xml.Serialization;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static class HttpClientMessageDto {
 	public class ClientEventDynamic {

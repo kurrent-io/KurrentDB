@@ -3,10 +3,10 @@
 
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Tests.Index.Hashers;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.LogV2;
+using KurrentDB.Core.Tests.Index.Hashers;
 using KurrentDB.Core.TransactionLog.Scavenging.Data;
 using KurrentDB.Core.XUnit.Tests.Scavenge.Infrastructure;
 using KurrentDB.Core.XUnit.Tests.Scavenge.Sqlite;

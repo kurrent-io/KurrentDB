@@ -151,8 +151,8 @@ using System.Threading;
 
 		public void OnVisitSyntaxNode(SyntaxNode syntaxNode) {
 			if (syntaxNode is ClassDeclarationSyntax classDeclarationSyntax &&
-			    (classDeclarationSyntax.TryGetDerivedMessageAttribute(out _) ||
-			     classDeclarationSyntax.TryGetBaseMessageAttribute(out _))) {
+				(classDeclarationSyntax.TryGetDerivedMessageAttribute(out _) ||
+				 classDeclarationSyntax.TryGetBaseMessageAttribute(out _))) {
 
 				Candidates.Add(classDeclarationSyntax);
 			}

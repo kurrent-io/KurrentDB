@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Services;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 public class StreamExistenceFilterValidator : INameExistenceFilter {
 	private readonly INameExistenceFilter _wrapped;

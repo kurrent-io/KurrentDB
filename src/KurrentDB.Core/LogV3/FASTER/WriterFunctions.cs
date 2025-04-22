@@ -4,7 +4,7 @@
 using System;
 using FASTER.core;
 
-namespace EventStore.Core.LogV3.FASTER;
+namespace KurrentDB.Core.LogV3.FASTER;
 
 public struct WriterFunctions<TValue> : IFunctions<SpanByte, TValue> {
 	public bool SupportsLocking => false;

@@ -7,9 +7,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.ServerFeatures;
-using EventStore.Core.Tests;
 using Google.Protobuf.Reflection;
 using Grpc.Net.Client;
+using KurrentDB.Core.Tests;
 using KurrentDB.Projections.Core.Tests.ClientAPI.projectionsManager;
 using NUnit.Framework;
 

@@ -2,10 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Cluster;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Cluster;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public static class ElectionMessageDto {
 	public class ViewChangeDto {

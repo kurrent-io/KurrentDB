@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text;
-using EventStore.Core.Messages;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
 namespace KurrentDB.Projections.Core.XUnit.Tests.TestHelpers;

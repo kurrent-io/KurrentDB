@@ -3,7 +3,7 @@
 
 #nullable enable
 
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Archive;
 
 namespace KurrentDB.Core.TransactionLog.Scavenging;

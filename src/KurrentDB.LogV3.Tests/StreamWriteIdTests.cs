@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using KurrentDB.LogV3;
 using Xunit;
 
 namespace KurrentDB.LogV3.Tests;

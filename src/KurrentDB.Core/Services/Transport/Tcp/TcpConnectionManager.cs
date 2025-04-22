@@ -8,12 +8,11 @@ using System.Net.Sockets;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
-using EventStore.Core.Messages;
 using EventStore.Plugins.Authentication;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.Settings;
@@ -21,7 +20,7 @@ using KurrentDB.Transport.Tcp;
 using KurrentDB.Transport.Tcp.Framing;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Core.Services.Transport.Tcp;
+namespace KurrentDB.Core.Services.Transport.Tcp;
 
 /// <summary>
 /// Manager for individual TCP connection. It handles connection lifecycle,

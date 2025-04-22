@@ -10,7 +10,7 @@ using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 public class EventTypeIdToNameFromStandardIndex : INameLookup<uint> {
 	private readonly IIndexReader<uint> _indexReader;

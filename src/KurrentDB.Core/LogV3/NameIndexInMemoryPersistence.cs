@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.LogAbstraction;
 using StreamId = System.UInt32;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 public class NameIndexInMemoryPersistence :
 	INameIndexPersistence<StreamId> {

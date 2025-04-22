@@ -3,8 +3,8 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Core.Services.Transport.Http.Messages;

@@ -4,9 +4,9 @@
 using System;
 using System.IO;
 using System.Threading;
-using EventStore.Core.LogV3;
-using EventStore.Core.LogV3.FASTER;
 using KurrentDB.Core.LogAbstraction.Common;
+using KurrentDB.Core.LogV3;
+using KurrentDB.Core.LogV3.FASTER;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
 

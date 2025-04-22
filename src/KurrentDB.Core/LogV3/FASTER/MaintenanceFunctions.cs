@@ -4,7 +4,7 @@
 using System;
 using FASTER.core;
 
-namespace EventStore.Core.LogV3.FASTER;
+namespace KurrentDB.Core.LogV3.FASTER;
 
 // for deleting and checkpointing
 public struct MaintenanceFunctions<TValue> : IFunctions<SpanByte, TValue> {

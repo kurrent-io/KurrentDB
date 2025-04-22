@@ -3,7 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Tests;
+using KurrentDB.Core.Tests;
 using NUnit.Framework;
 
 namespace KurrentDB.Projections.Core.Tests.ClientAPI.when_executing_query.with_long_from_all_query;

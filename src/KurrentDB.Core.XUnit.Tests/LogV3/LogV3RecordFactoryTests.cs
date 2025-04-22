@@ -3,7 +3,7 @@
 
 using System;
 using System.Runtime.InteropServices;
-using EventStore.Core.LogV3;
+using KurrentDB.Core.LogV3;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
 using Xunit;

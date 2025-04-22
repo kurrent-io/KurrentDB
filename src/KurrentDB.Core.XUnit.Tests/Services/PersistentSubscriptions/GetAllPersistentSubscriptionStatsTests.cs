@@ -4,23 +4,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using EventStore.Core.Messages;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.Fakes;
-using EventStore.Core.Tests.Services.Replication;
-using EventStore.Core.Tests.Services.TimeService;
-using EventStore.Core.Tests.TransactionLog;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.LogV2;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.PersistentSubscription;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Fakes;
+using KurrentDB.Core.Tests.Services.Replication;
+using KurrentDB.Core.Tests.Services.TimeService;
+using KurrentDB.Core.Tests.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
-using OperationStatus = EventStore.Core.Messages.MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus;
+using OperationStatus = KurrentDB.Core.Messages.MonitoringMessage.GetPersistentSubscriptionStatsCompleted.OperationStatus;
 
 namespace KurrentDB.Core.XUnit.Tests.Services.PersistentSubscriptions;
 

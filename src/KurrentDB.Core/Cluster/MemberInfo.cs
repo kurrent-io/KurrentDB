@@ -3,12 +3,12 @@
 
 using System;
 using System.Net;
-using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
-namespace EventStore.Core.Cluster;
+namespace KurrentDB.Core.Cluster;
 
 public class MemberInfo : IEquatable<MemberInfo> {
 	public readonly Guid InstanceId;

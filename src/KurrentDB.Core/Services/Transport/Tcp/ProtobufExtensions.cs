@@ -9,7 +9,7 @@ using Google.Protobuf;
 using Serilog.Core;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Core.Services.Transport.Tcp;
+namespace KurrentDB.Core.Services.Transport.Tcp;
 
 public static class ProtobufExtensions {
 	private static readonly ConcurrentStack<MemoryStream> _streams;

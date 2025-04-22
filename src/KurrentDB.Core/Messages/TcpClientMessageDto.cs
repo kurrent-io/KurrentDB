@@ -3,9 +3,9 @@
 
 using System;
 using System.Net;
-using EventStore.Core.Messages;
 using Google.Protobuf;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Client.Messages;

@@ -5,22 +5,23 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
-using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using static EventStore.Client.PersistentSubscriptions.CreateReq.Types.Settings;
-using static EventStore.Core.Messages.ClientMessage.CreatePersistentSubscriptionToAllCompleted;
-using static EventStore.Core.Messages.ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
-using static EventStore.Core.Services.Transport.Grpc.RpcExceptions;
+using static KurrentDB.Core.Messages.ClientMessage.CreatePersistentSubscriptionToAllCompleted;
+using static KurrentDB.Core.Messages.ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
+using static KurrentDB.Core.Services.Transport.Grpc.RpcExceptions;
 using AllOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.AllOptions.AllOptionOneofCase;
 using RevisionOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.StreamOptions.RevisionOptionOneofCase;
 using StreamOptionOneofCase = EventStore.Client.PersistentSubscriptions.CreateReq.Types.Options.StreamOptionOneofCase;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class PersistentSubscriptions {

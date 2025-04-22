@@ -4,10 +4,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Tests.Services.Storage;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.LogV2;
+using KurrentDB.Core.Tests.Services.Storage;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;

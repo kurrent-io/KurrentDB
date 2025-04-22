@@ -12,7 +12,7 @@ using KurrentDB.LogCommon;
 using Serilog;
 using ILogger = Serilog.ILogger;
 
-namespace EventStore.Core.LogV3;
+namespace KurrentDB.Core.LogV3;
 
 public class PartitionManager : IPartitionManager {
 	private static readonly ILogger _log = Log.ForContext<PartitionManager>();

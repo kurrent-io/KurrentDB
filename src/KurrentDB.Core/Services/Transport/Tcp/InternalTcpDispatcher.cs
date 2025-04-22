@@ -5,13 +5,13 @@ using System;
 using System.Linq;
 using System.Net;
 using EventStore.Cluster;
-using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.TransactionLog.Chunks;
 using Epoch = KurrentDB.Core.Data.Epoch;
 
-namespace EventStore.Core.Services.Transport.Tcp;
+namespace KurrentDB.Core.Services.Transport.Tcp;
 
 public class InternalTcpDispatcher : ClientWriteTcpDispatcher {
 	public InternalTcpDispatcher(TimeSpan writeTimeout) : base(writeTimeout) {

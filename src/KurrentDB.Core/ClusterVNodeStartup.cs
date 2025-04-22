@@ -7,7 +7,6 @@ using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
 using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Core.Services.Transport.Grpc.Cluster;
 using EventStore.Plugins;
@@ -16,8 +15,10 @@ using EventStore.Plugins.Authorization;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Chunks;
 using Microsoft.AspNetCore.Authentication;
@@ -38,7 +39,7 @@ using ClientGossip = EventStore.Core.Services.Transport.Grpc.Gossip;
 using ClusterGossip = EventStore.Core.Services.Transport.Grpc.Cluster.Gossip;
 using HttpMethod = KurrentDB.Transport.Http.HttpMethod;
 using Operations = EventStore.Core.Services.Transport.Grpc.Operations;
-using ServerFeatures = EventStore.Core.Services.Transport.Grpc.ServerFeatures;
+using ServerFeatures = KurrentDB.Core.Services.Transport.Grpc.ServerFeatures;
 
 #nullable enable
 namespace KurrentDB.Core;

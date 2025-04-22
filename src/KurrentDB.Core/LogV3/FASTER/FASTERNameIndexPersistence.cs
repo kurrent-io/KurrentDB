@@ -18,7 +18,7 @@ using Serilog;
 using static System.Threading.Timeout;
 using Value = System.UInt32;
 
-namespace EventStore.Core.LogV3.FASTER;
+namespace KurrentDB.Core.LogV3.FASTER;
 
 public class NameIndexPersistence {
 	protected static readonly ILogger Log = Serilog.Log.ForContext<NameIndexPersistence>();

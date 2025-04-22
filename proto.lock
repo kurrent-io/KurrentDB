@@ -5326,10 +5326,44 @@
             ],
             "messages": [
               {
-                "name": "CaughtUp"
+                "name": "CaughtUp",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "timestamp",
+                    "type": "google.protobuf.Timestamp"
+                  },
+                  {
+                    "id": 2,
+                    "name": "stream_revision",
+                    "type": "int64"
+                  },
+                  {
+                    "id": 3,
+                    "name": "position",
+                    "type": "Position"
+                  }
+                ]
               },
               {
-                "name": "FellBehind"
+                "name": "FellBehind",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "timestamp",
+                    "type": "google.protobuf.Timestamp"
+                  },
+                  {
+                    "id": 2,
+                    "name": "stream_revision",
+                    "type": "int64"
+                  },
+                  {
+                    "id": 3,
+                    "name": "position",
+                    "type": "Position"
+                  }
+                ]
               },
               {
                 "name": "ReadEvent",
@@ -5420,6 +5454,26 @@
               },
               {
                 "name": "Checkpoint",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "commit_position",
+                    "type": "uint64"
+                  },
+                  {
+                    "id": 2,
+                    "name": "prepare_position",
+                    "type": "uint64"
+                  },
+                  {
+                    "id": 3,
+                    "name": "timestamp",
+                    "type": "google.protobuf.Timestamp"
+                  }
+                ]
+              },
+              {
+                "name": "Position",
                 "fields": [
                   {
                     "id": 1,

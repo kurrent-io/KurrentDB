@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using EventStore.Client.Messages;
-using EventStore.Core.Services.Transport.Tcp;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Services.Transport.Tcp;
 
 namespace KurrentDB.TestClient.Commands;
 

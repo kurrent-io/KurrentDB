@@ -2,12 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.LogV3;
-using EventStore.Core.LogV3.FASTER;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.LogAbstraction.Common;
 using KurrentDB.Core.LogV2;
+using KurrentDB.Core.LogV3;
+using KurrentDB.Core.LogV3.FASTER;
 using KurrentDB.Core.Settings;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;

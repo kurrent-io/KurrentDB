@@ -4,7 +4,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.LogV3;
+using KurrentDB.Core.LogV3;
 using Xunit;
 using StreamId = System.UInt32;
 

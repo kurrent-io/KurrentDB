@@ -5,11 +5,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
 using KurrentDB.Common.Log;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Cluster;
+using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.Gossip;
 

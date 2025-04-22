@@ -2,12 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Authentication.InternalAuthentication;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.UserManagement;
 using Newtonsoft.Json;
 using Serilog;

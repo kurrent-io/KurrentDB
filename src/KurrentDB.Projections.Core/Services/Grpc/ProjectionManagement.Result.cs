@@ -4,11 +4,11 @@
 using System.Text.Json;
 using System.Threading.Tasks;
 using EventStore.Client.Projections;
-using EventStore.Core.Services.Transport.Grpc;
 using EventStore.Plugins.Authorization;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Projections.Core.Messages;
 
 // ReSharper disable CheckNamespace

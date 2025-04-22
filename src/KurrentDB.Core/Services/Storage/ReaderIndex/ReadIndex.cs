@@ -4,13 +4,13 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Index;
 using KurrentDB.Core.LogAbstraction;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;

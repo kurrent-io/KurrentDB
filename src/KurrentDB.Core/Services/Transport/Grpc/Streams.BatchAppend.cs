@@ -12,7 +12,6 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
-using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -20,17 +19,20 @@ using Grpc.Core;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Transport.Common;
+using KurrentDB.Core.Services.Transport.Grpc;
 using Serilog;
 using static EventStore.Client.Streams.BatchAppendReq.Types;
 using static EventStore.Client.Streams.BatchAppendReq.Types.Options;
-using static EventStore.Core.Messages.OperationResult;
+using static KurrentDB.Core.Messages.OperationResult;
 using Empty = Google.Protobuf.WellKnownTypes.Empty;
-using OperationResult = EventStore.Core.Messages.OperationResult;
+using OperationResult = KurrentDB.Core.Messages.OperationResult;
 using Status = Google.Rpc.Status;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 partial class Streams<TStreamId> {

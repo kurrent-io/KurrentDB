@@ -3,12 +3,12 @@
 
 using System;
 using System.Threading;
-using EventStore.Core.Messages;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.Helpers.IODispatcherTests;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.TimerService;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Helpers.IODispatcherTests;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using NUnit.Framework;

@@ -3,8 +3,8 @@
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using EventStore.Core.Messages;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.Storage.InMemory;
 

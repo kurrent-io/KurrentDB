@@ -3,7 +3,6 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using KurrentDB.LogV3;
 using ObjectLayoutInspector;
 using Xunit;
 

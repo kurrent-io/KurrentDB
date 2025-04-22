@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using KurrentDB.Core.Messaging;
 
-namespace EventStore.Core.Services.Transport.Tcp;
+namespace KurrentDB.Core.Services.Transport.Tcp;
 
 public interface ITcpDispatcher {
 	TcpPackage? WrapMessage(Message message, byte version);

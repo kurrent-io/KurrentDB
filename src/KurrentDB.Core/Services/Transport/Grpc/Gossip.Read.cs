@@ -6,16 +6,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Gossip;
-using EventStore.Core.Cluster;
-using EventStore.Core.Messages;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
 using KurrentDB.Core;
+using KurrentDB.Core.Cluster;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
+using KurrentDB.Core.Services.Transport.Grpc;
 using ClusterInfo = EventStore.Client.Gossip.ClusterInfo;
 using MemberInfo = EventStore.Client.Gossip.MemberInfo;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 partial class Gossip {

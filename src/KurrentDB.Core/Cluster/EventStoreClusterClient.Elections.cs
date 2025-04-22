@@ -4,12 +4,14 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.Cluster;
-using EventStore.Core.Messages;
-using EventStore.Core.Services.Transport.Grpc;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
+using KurrentDB.Core.Services.Transport.Grpc;
+using ClusterInfo = KurrentDB.Core.Cluster.ClusterInfo;
 using EndPoint = System.Net.EndPoint;
 using GossipEndPoint = EventStore.Cluster.EndPoint;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Cluster;
 
 public partial class EventStoreClusterClient {

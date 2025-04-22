@@ -3,9 +3,9 @@
 
 using System;
 using System.Threading.Tasks;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Core.XUnit.Tests.Scavenge.Infrastructure;
 using KurrentDB.Core.XUnit.Tests.Scavenge.Sqlite;

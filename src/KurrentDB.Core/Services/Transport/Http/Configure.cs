@@ -4,15 +4,15 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using EventStore.Core.Messages;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Monitoring;
 using KurrentDB.Core.Services.Transport.Http.Controllers;
 using ContentType = KurrentDB.Transport.Http.ContentType;
 using HttpStatusCode = KurrentDB.Transport.Http.HttpStatusCode;
-using OperationResult = EventStore.Core.Messages.OperationResult;
+using OperationResult = KurrentDB.Core.Messages.OperationResult;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
 namespace KurrentDB.Core.Services.Transport.Http;

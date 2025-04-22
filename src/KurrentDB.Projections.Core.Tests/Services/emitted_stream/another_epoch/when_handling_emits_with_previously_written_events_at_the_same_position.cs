@@ -3,11 +3,11 @@
 
 using System;
 using System.Linq;
-using EventStore.Core.Messages;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.Helpers;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting;

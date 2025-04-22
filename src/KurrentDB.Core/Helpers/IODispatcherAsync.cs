@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using EventStore.Core.Messages;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services;
 
 namespace KurrentDB.Core.Helpers;

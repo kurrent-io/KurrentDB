@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotNext;
 using DotNext.Diagnostics;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using ILogger = Serilog.ILogger;
 

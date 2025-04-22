@@ -4,7 +4,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Core.Messages;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.Scavenging.Interfaces;
 using Serilog;

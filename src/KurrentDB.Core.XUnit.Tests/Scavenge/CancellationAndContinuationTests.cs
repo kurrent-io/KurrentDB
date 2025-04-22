@@ -2,8 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Threading.Tasks;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.Scavenging.Data;
 using KurrentDB.Core.XUnit.Tests.Scavenge.Infrastructure;

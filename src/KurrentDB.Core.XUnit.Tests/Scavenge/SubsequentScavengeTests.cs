@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using EventStore.Core.Tests;
-using EventStore.Core.Tests.TransactionLog.Scavenging.Helpers;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TransactionLog.Scavenging.Helpers;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.Scavenging;
 using KurrentDB.Core.TransactionLog.Scavenging.Data;

@@ -10,6 +10,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
 
 internal partial class Streams<TStreamId> : Streams.StreamsBase {

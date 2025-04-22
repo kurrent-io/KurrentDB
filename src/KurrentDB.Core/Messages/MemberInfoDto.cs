@@ -2,11 +2,11 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using EventStore.Core.Cluster;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Data;
 
-namespace EventStore.Core.Messages;
+namespace KurrentDB.Core.Messages;
 
 public class MemberInfoDto {
 	public Guid InstanceId { get; set; }

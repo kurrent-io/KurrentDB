@@ -12,6 +12,7 @@ using KurrentDB.Core.Services.Transport.Http.NodeHttpClientFactory;
 using Serilog.Extensions.Logging;
 using EndPoint = System.Net.EndPoint;
 
+// ReSharper disable once CheckNamespace
 namespace EventStore.Core.Cluster;
 
 
