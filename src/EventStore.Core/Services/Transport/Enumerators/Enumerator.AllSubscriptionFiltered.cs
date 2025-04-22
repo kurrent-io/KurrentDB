@@ -18,7 +18,7 @@ using Serilog;
 namespace EventStore.Core.Services.Transport.Enumerators;
 
 partial class Enumerator {
-	public class AllSubscriptionFiltered : IAsyncEnumerator<ReadResponse> {
+	public sealed class AllSubscriptionFiltered : IAsyncEnumerator<ReadResponse> {
 		private static readonly ILogger Log = Serilog.Log.ForContext<AllSubscriptionFiltered>();
 
 		private readonly IExpiryStrategy _expiryStrategy;
@@ -192,7 +192,11 @@ ReadLoop:
 				"Subscription {subscriptionId} to $all:{eventFilter} caught up at checkpoint {position}.",
 				_subscriptionId, _eventFilter, checkpoint);
 
-			await _channel.Writer.WriteAsync(new ReadResponse.SubscriptionCaughtUp(), ct);
+			await _channel.Writer.WriteAsync(
+				new ReadResponse.SubscriptionCaughtUp(
+					timestamp: DateTime.UtcNow,
+					allCheckpoint: checkpoint),
+				ct);
 		}
 
 		private async Task NotifyFellBehind(TFPos checkpoint, CancellationToken ct) {
@@ -200,7 +204,11 @@ ReadLoop:
 				"Subscription {subscriptionId} to $all:{eventFilter} fell behind at checkpoint {position}.",
 				_subscriptionId, _eventFilter, checkpoint);
 
-			await _channel.Writer.WriteAsync(new ReadResponse.SubscriptionFellBehind(), ct);
+			await _channel.Writer.WriteAsync(
+				new ReadResponse.SubscriptionFellBehind(
+					timestamp: DateTime.UtcNow,
+					allCheckpoint: checkpoint),
+				ct);
 		}
 
 		private async ValueTask<(TFPos, ulong)> GoLive(TFPos checkpoint, ulong sequenceNumber, CancellationToken ct) {
@@ -362,6 +370,7 @@ ReadLoop:
 			}
 			var checkpointPos = Position.FromInt64(checkpoint.CommitPosition, checkpoint.PreparePosition);
 			await _channel.Writer.WriteAsync(new ReadResponse.CheckpointReceived(
+				timestamp: DateTime.UtcNow,
 				commitPosition: checkpointPos.CommitPosition,
 				preparePosition: checkpointPos.PreparePosition), ct);
 		}

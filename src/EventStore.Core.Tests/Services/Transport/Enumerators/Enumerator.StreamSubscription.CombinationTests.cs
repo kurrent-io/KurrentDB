@@ -801,18 +801,26 @@ public partial class EnumeratorTests {
 					case Event evt:
 						Assert.AreEqual(nextEventNumber++, evt.EventNumber);
 						break;
-					case FellBehind:
+					case FellBehind x:
 						if (!shouldFallBehindThenCatchUp)
 							Assert.Fail("Subscription fell behind.");
 
+						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+						Assert.Null(x.Wrapped.AllCheckpoint);
+						Assert.NotNull(x.Wrapped.StreamCheckpoint);
+
 						fellBehind = true;
 						break;
-					case CaughtUp:
+					case CaughtUp x:
 						if (!fellBehind)
 							Assert.Fail("Subscription caught up before falling behind");
 
 						if (!shouldFallBehindThenCatchUp)
 							Assert.Fail("Subscription fell behind then caught up.");
+
+						Assert.True(DateTime.UtcNow - x.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+						Assert.Null(x.Wrapped.AllCheckpoint);
+						Assert.NotNull(x.Wrapped.StreamCheckpoint);
 
 						caughtUp = true;
 						break;
