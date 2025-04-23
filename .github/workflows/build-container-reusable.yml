@@ -72,7 +72,7 @@ jobs:
         build-args: |
           CONTAINER_RUNTIME=${{ inputs.container-runtime }}
           RUNTIME=${{ steps.variables.outputs.runtime }}
-    # pass env vars so that GitHubActionsTestLogger can populate GitHub job summary
+    # pass env vars so that GitHubActionsTestLogger can populate GitHub job summary 
     - name: Run Tests
       run: >
         docker run
