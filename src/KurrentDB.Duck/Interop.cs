@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Unicode;
 using DuckDB.NET.Data;
+using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
 
@@ -18,8 +19,9 @@ internal static class Interop {
 	}
 
 	[UnsafeAccessor(UnsafeAccessorKind.Constructor)]
-	public static extern DuckDBException CreateException(string message);
+	public static extern DuckDBException CreateException(string message, DuckDBErrorType errorType = DuckDBErrorType.UnknownType);
 
-	public static DuckDBException CreateException(nint unmanagedUtf8String)
-		=> CreateException(FromUnmanagedUtf8String(unmanagedUtf8String));
+	public static DuckDBException CreateException(nint unmanagedUtf8String,
+		DuckDBErrorType errorType = DuckDBErrorType.UnknownType)
+		=> CreateException(FromUnmanagedUtf8String(unmanagedUtf8String), errorType);
 }

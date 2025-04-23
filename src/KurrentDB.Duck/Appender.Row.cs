@@ -38,8 +38,11 @@ public partial struct Appender {
 		public void Append(ulong value)
 			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
 
-		public void AppendNull()
-			=> VerifyState(Appender.AppendNull(_appender) is DuckDBState.Error);
+		public void Append(DBNull value) {
+			ArgumentNullException.ThrowIfNull(value);
+			
+			VerifyState(AppendNull(_appender) is DuckDBState.Error);
+		}
 
 		public void AppendDefault()
 			=> VerifyState(Appender.AppendDefault(_appender) is DuckDBState.Error);
@@ -71,7 +74,7 @@ public partial struct Appender {
 
 		[StackTraceHidden]
 		private void VerifyState([DoesNotReturnIf(true)] bool isError)
-			=> Appender.VerifyState(isError, _appender);
+			=> INativeWrapper<Appender>.VerifyState(isError, _appender);
 
 		public void Dispose()
 			=> VerifyState(EndRow(_appender) is DuckDBState.Error);

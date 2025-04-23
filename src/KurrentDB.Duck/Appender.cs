@@ -14,7 +14,7 @@ namespace KurrentDB.Duck;
 /// Represents reusable appender.
 /// </summary>
 [StructLayout(LayoutKind.Auto)]
-public readonly partial struct Appender : IDisposable {
+public readonly partial struct Appender : INativeWrapper<Appender> {
 	private readonly nint _appender;
 
 	public Appender(DuckDBNativeConnection connection, ReadOnlySpan<byte> tableNameUtf8) {
@@ -37,13 +37,7 @@ public readonly partial struct Appender : IDisposable {
 
 	[StackTraceHidden]
 	private void VerifyState([DoesNotReturnIf(true)] bool isError)
-		=> VerifyState(isError, _appender);
-
-	[StackTraceHidden]
-	private static void VerifyState([DoesNotReturnIf(true)] bool isError, nint appender) {
-		if (isError)
-			throw Interop.CreateException(GetErrorString(appender));
-	}
+		=> INativeWrapper<Appender>.VerifyState(isError, _appender);
 
 	public void Dispose() {
 		if (_appender is not 0 && Destroy(in _appender) is DuckDBState.Error)

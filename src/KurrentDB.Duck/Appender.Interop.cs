@@ -16,6 +16,8 @@ public partial struct Appender {
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial nint GetErrorString(nint appender);
 
+	static nint INativeWrapper<Appender>.GetErrorString(nint appender) => GetErrorString(appender);
+
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_appender_destroy")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial DuckDBState Destroy(in nint appender);
@@ -58,9 +60,9 @@ public partial struct Appender {
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_varchar_length")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState AppendVarChar(nint appender, in byte utf8String, int length);
+	private static partial DuckDBState AppendVarChar(nint appender, in byte utf8String, long length);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_blob")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState AppendBlob(nint appender, in byte bytes, int length);
+	private static partial DuckDBState AppendBlob(nint appender, in byte bytes, long length);
 }

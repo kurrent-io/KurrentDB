@@ -5,9 +5,7 @@ using Xunit;
 
 namespace KurrentDB.Duck.Tests;
 
-public class AppenderTests : DirectoryPerTest<AppenderTests> {
-	private string ConnectionString => $"Data Source={Fixture.GetFilePathFor("test.db")};";
-
+public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 	[Fact]
 	public void AppendDataTypes() {
 		using var connection = new DuckDBConnection(ConnectionString);
