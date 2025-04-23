@@ -8,7 +8,6 @@ WORKDIR /build
 COPY ./LICENSE.md .
 COPY ./LICENSE_CONTRIBUTIONS.md .
 COPY ./NOTICE.html .
-
 COPY ./docker ./scripts
 
 WORKDIR /build/ci
