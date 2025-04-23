@@ -2,7 +2,6 @@ using KurrentDB.Connectors.Planes.Control.Assignment;
 using KurrentDB.Connectors.Planes.Control.Assignment.Assignors;
 using KurrentDB.Connectors.Planes.Control.Model;
 using KurrentDB.Toolkit.Testing.Fixtures;
-using MassTransit;
 
 namespace KurrentDB.Connectors.Tests.Planes.Control.Assignment;
 
@@ -12,16 +11,16 @@ public class RoundRobinConnectorAssignmentStrategyTests(ITestOutputHelper output
 	[Fact]
 	public void assigns_directly() {
         var topology = ClusterTopology.From(
-            new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-            new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-            new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica)
+            new(Guid.NewGuid(), ClusterNodeState.Leader),
+            new(Guid.NewGuid(), ClusterNodeState.Follower),
+            new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica)
         );
 
         ConnectorResource[] connectors = [
-            new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-            new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-            new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica),
-            new(NewId.Next().ToGuid(), ClusterNodeState.Unmapped)
+            new(Guid.NewGuid(), ClusterNodeState.Leader),
+            new(Guid.NewGuid(), ClusterNodeState.Follower),
+            new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica),
+            new(Guid.NewGuid(), ClusterNodeState.Unmapped)
         ];
 
         var expectedResult = new ClusterConnectorsAssignment(Guid.NewGuid(), new() {

@@ -1,3 +1,0 @@
-is_global = true
-
-roslynator_compiler_diagnostic_fix.RCS1194.enabled = false

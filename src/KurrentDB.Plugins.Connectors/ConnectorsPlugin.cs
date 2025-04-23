@@ -1,6 +1,4 @@
 using KurrentDB.Connect;
-using KurrentDB.Connectors.Control;
-using KurrentDB.Connectors.Management;
 using EventStore.Plugins;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Connectors.Planes.Control;

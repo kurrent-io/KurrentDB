@@ -1,5 +1,3 @@
-// ReSharper disable CheckNamespace
-
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core;
@@ -12,7 +10,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace EventStore.System.Testing.Fixtures;
+namespace KurrentDB.System.Testing;
 
 [PublicAPI]
 [SuppressMessage("Performance", "CA1822:Mark members as static")]

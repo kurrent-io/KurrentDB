@@ -3,7 +3,6 @@ using KurrentDB.Connectors.Planes.Control.Assignment;
 using KurrentDB.Connectors.Planes.Control.Assignment.Assignors;
 using KurrentDB.Connectors.Planes.Control.Model;
 using KurrentDB.Toolkit.Testing.Fixtures;
-using MassTransit;
 
 namespace KurrentDB.Connectors.Tests.Planes.Control.Assignment;
 
@@ -14,15 +13,15 @@ public class StickyConnectorAssignmentStrategyTests(ITestOutputHelper output, Fa
     [Fact]
     public void assigns_directly() {
         var topology = ClusterTopology.From(
-            new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-            new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-            new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica)
+            new(Guid.NewGuid(), ClusterNodeState.Leader),
+            new(Guid.NewGuid(), ClusterNodeState.Follower),
+            new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica)
         );
 
         ConnectorResource[] connectors = [
-            new(NewId.Next().ToGuid(), ClusterNodeState.Leader), new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-            new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica),
-            new(NewId.Next().ToGuid(), ClusterNodeState.Unmapped)
+            new(Guid.NewGuid(), ClusterNodeState.Leader), new(Guid.NewGuid(), ClusterNodeState.Follower),
+            new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica),
+            new(Guid.NewGuid(), ClusterNodeState.Unmapped)
         ];
 
         var expectedResult = new ClusterConnectorsAssignment(
@@ -44,16 +43,16 @@ public class StickyConnectorAssignmentStrategyTests(ITestOutputHelper output, Fa
     [Fact]
     public void assigns_to_single_leader() {
         var topology = ClusterTopology.From(
-            new(NewId.Next().ToGuid(), ClusterNodeState.Unmapped),
-            new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-            new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-            new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica)
+            new(Guid.NewGuid(), ClusterNodeState.Unmapped),
+            new(Guid.NewGuid(), ClusterNodeState.Leader),
+            new(Guid.NewGuid(), ClusterNodeState.Follower),
+            new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica)
         );
 
         var connectors = new[] {
-            new ConnectorResource(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-            new ConnectorResource(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-            new ConnectorResource(NewId.Next().ToGuid(), ClusterNodeState.Leader)
+            new ConnectorResource(Guid.NewGuid(), ClusterNodeState.Leader),
+            new ConnectorResource(Guid.NewGuid(), ClusterNodeState.Leader),
+            new ConnectorResource(Guid.NewGuid(), ClusterNodeState.Leader)
         };
 
         var expectedResult = new ClusterConnectorsAssignment(
@@ -80,7 +79,7 @@ public class StickyConnectorAssignmentStrategyTests(ITestOutputHelper output, Fa
         var nodesThatDoNotMatchAffinity = Enumerable.Range(1, numberOfNodes - numberOfNodesWithAffinity)
             .Select(
                 _ => new global::KurrentDB.Connectors.Planes.Control.Model.ClusterNode(
-                    NewId.Next().ToGuid(),
+                    Guid.NewGuid(),
                     ClusterNodeState.Follower
                 )
             )
@@ -89,13 +88,13 @@ public class StickyConnectorAssignmentStrategyTests(ITestOutputHelper output, Fa
         var topology = ClusterTopology.From(
             nodesThatDoNotMatchAffinity.Concat(
                 Enumerable.Range(1, numberOfNodesWithAffinity)
-                    .Select(_ => new global::KurrentDB.Connectors.Planes.Control.Model.ClusterNode(NewId.Next().ToGuid(), affinity))
+                    .Select(_ => new global::KurrentDB.Connectors.Planes.Control.Model.ClusterNode(Guid.NewGuid(), affinity))
                     .ToArray()
             )
         );
 
         var connectors = Enumerable.Range(1, numberOfConnectors)
-            .Select(_ => new ConnectorResource(NewId.Next().ToGuid(), affinity))
+            .Select(_ => new ConnectorResource(Guid.NewGuid(), affinity))
             .ToArray();
 
         var expectedNodeAssignments = connectors

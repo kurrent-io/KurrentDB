@@ -20,7 +20,7 @@ public readonly struct TFPos : IEquatable<TFPos>, IComparable<TFPos> {
 		PreparePosition = preparePosition;
 	}
 
-	[Pure]
+	[System.Diagnostics.Contracts.Pure]
 	public string AsString() {
 		return string.Format("{0:X16}{1:X16}", CommitPosition, PreparePosition);
 	}

@@ -114,7 +114,8 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
                 .ToArrayAsync(cancellationToken);
         }
         catch (Exception ex) {
-            if (ex is ReadResponseException.StreamNotFound) throw new StreamNotFound(stream); //eventuous ffs
+            // because Eventuous has a different exception for this
+            if (ex is ReadResponseException.StreamNotFound) throw new StreamNotFound(stream);
 
             // TODO SS: must validate what exceptions are actually thrown when reading events
             StreamingError error = ex switch {

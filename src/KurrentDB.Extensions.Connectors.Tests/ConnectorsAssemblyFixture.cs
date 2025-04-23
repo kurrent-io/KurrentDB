@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using EventStore.System.Testing.Fixtures;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.DataProtection;
@@ -21,6 +20,7 @@ using KurrentDB.Connectors.Infrastructure;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Connectors.Tests;
+using KurrentDB.System.Testing;
 using KurrentDB.Toolkit.Testing.Xunit.Extensions.AssemblyFixture;
 using Microsoft.Extensions.DependencyInjection;
 using FakeTimeProvider = Microsoft.Extensions.Time.Testing.FakeTimeProvider;

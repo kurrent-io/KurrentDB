@@ -1,6 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<RootNamespace>KurrentDB.Connectors</RootNamespace>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>true</ImplicitUsings>
+		<LangVersion>preview</LangVersion>
+		<IsPackable>false</IsPackable>
+		<Deterministic>true</Deterministic>
+		<InvariantGlobalization>true</InvariantGlobalization>
 		<OutputType>library</OutputType>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
@@ -13,17 +19,6 @@
 		<ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" ExcludeAssets="all" Private="false" />
 		<ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" ExcludeAssets="all" Private="false"/>
 		<ProjectReference Include="..\KurrentDB.Extensions.Connectors.Contracts\KurrentDB.Extensions.Connectors.Contracts.csproj" />
-
-		<!-- Easier & faster way to debug -->
-<!--    <ProjectReference Include="..\..\submodules\Surge\src\Framework\src\Kurrent.Surge.Core\Kurrent.Surge.Core.csproj"/>-->
-<!--    <ProjectReference Include="..\..\submodules\Surge\src\DataProtection\src\Kurrent.Surge.DataProtection\Kurrent.Surge.DataProtection.csproj"/>-->
-<!--    <ProjectReference Include="..\..\submodules\Surge\src\Toolkit\src\Kurrent.Toolkit\Kurrent.Toolkit.csproj"/>-->
-<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.KurrentDB\Kurrent.Connectors.KurrentDB.csproj"/>-->
-<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.Http\Kurrent.Connectors.Http.csproj"/>-->
-<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.Kafka\Kurrent.Connectors.Kafka.csproj"/>-->
-<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.MongoDB\Kurrent.Connectors.MongoDB.csproj"/>-->
-<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.RabbitMQ\Kurrent.Connectors.RabbitMQ.csproj"/>-->
-<!--    <ProjectReference Include="..\..\submodules\Surge\src\Connectors\src\Kurrent.Connectors.Elasticsearch\Kurrent.Connectors.Elasticsearch.csproj"/>-->
   </ItemGroup>
 
 	<!-- Required packages -->
@@ -73,29 +68,5 @@
 
 	<ItemGroup>
 		<None Remove="KurrentDB.Extensions.Connectors.csproj.DotSettings" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Infrastructure\Security\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Compile Remove="Infrastructure\Security\DataProtection.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
-		<PackageReference Include="Roslynator.Analyzers" Version="4.12.9">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.12.9">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
-
-	<ItemGroup>
-		<Using Include="JetBrains.Annotations" />
 	</ItemGroup>
 </Project>

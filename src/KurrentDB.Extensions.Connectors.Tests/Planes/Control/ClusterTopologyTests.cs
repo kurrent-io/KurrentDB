@@ -2,7 +2,6 @@ using KurrentDB.Connectors.Planes.Control.Model;
 using KurrentDB.Toolkit.Testing.Extensions;
 using KurrentDB.Toolkit.Testing.Fixtures;
 using KurrentDB.Toolkit.Testing.Xunit;
-using MassTransit;
 
 namespace KurrentDB.Connectors.Tests.Planes.Control;
 
@@ -11,14 +10,14 @@ public class ClusterTopologyTests(ITestOutputHelper output, FastFixture fixture)
 	[Fact]
 	public void cluster_members_are_always_in_order() {
 		List<global::KurrentDB.Connectors.Planes.Control.Model.ClusterNode> ordered = [
-			new(NewId.Next().ToGuid(), ClusterNodeState.Unmapped),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Unmapped),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-			new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica),
-			new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica)
+			new(Guid.NewGuid(), ClusterNodeState.Unmapped),
+			new(Guid.NewGuid(), ClusterNodeState.Unmapped),
+			new(Guid.NewGuid(), ClusterNodeState.Leader),
+			new(Guid.NewGuid(), ClusterNodeState.Leader),
+			new(Guid.NewGuid(), ClusterNodeState.Follower),
+			new(Guid.NewGuid(), ClusterNodeState.Follower),
+			new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica),
+			new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica)
 		];
 
 		var fromOrdered  = ClusterTopology.From(ordered);
@@ -110,7 +109,7 @@ public class ClusterTopologyTests(ITestOutputHelper output, FastFixture fixture)
 
 	[Theory, FallbackTestCases]
 	public void cluster_members_falls_back_when_affinity_not_matched(ClusterNodeState affinity, ClusterNodeState expected, ClusterNodeState[] activeStates) {
-		var ordered  = activeStates.Select(x => new global::KurrentDB.Connectors.Planes.Control.Model.ClusterNode(NewId.Next().ToGuid(), x));
+		var ordered  = activeStates.Select(x => new global::KurrentDB.Connectors.Planes.Control.Model.ClusterNode(Guid.NewGuid(), x));
 		var topology = ClusterTopology.From(ordered);
 
 		var result = topology.GetNodesByAffinity(affinity);

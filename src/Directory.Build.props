@@ -1,21 +1,4 @@
 <Project>
-
-	<PropertyGroup>
-		<ConnectorTestProjects>KurrentDB.Toolkit.Testing;KurrentDB.Toolkit.Testing.Http;KurrentDB.System.Testing;KurrentDB.Extensions.Connectors.Tests;KurrentDB.Extensions.Connectors.Management.TestServer</ConnectorTestProjects>
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<IsConnectorTestProject>false</IsConnectorTestProject>
-		<IsConnectorTestProject Condition="$(ConnectorTestProjects.Contains('$(MSBuildProjectName);'))">true</IsConnectorTestProject>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(IsConnectorTestProject)' == 'true'">
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Deterministic>true</Deterministic>
-		<NoWarn>xUnit1041</NoWarn>
-	</PropertyGroup>
-
 	<PropertyGroup>
 		<Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
 		<DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
@@ -35,6 +18,7 @@
 		<VersionSuffix>prerelease</VersionSuffix>
 		<IsTestProject>false</IsTestProject>
 	</PropertyGroup>
+
 	<ItemGroup>
 		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
 		<None Include="..\..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
@@ -42,33 +26,12 @@
 		<None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(IsTestProject)' == 'true'">
+	<ItemGroup Condition="'$(IsPluginsTestProject)' == 'true'">
 		<ProjectReference Include="..\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(IsConnectorTestProject)' == 'true'">
-		<PackageReference Include="Bogus" Version="35.6.2" />
-		<PackageReference Include="DotNext" Version="5.18.0" />
-		<PackageReference Include="FluentAssertions" Version="6.12.2" />
-		<PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
-		<PackageReference Include="Humanizer.Core" Version="2.14.1" />
+	<ItemGroup Label="Default Packages">
 		<PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
-		<PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.2.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-		<PackageReference Include="xunit" Version="2.9.3" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
-
-	<ItemGroup Condition="'$(IsConnectorTestProject)' == 'true'">
-		<Using Include="Bogus" />
-		<Using Include="Humanizer" />
 		<Using Include="JetBrains.Annotations" />
-		<Using Include="FluentAssertions" />
-		<Using Include="Microsoft.Extensions.Time.Testing" />
-		<Using Include="Xunit" />
-		<Using Include="Xunit.Abstractions" />
 	</ItemGroup>
 </Project>

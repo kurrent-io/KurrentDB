@@ -1,11 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<LangVersion>preview</LangVersion>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Deterministic>true</Deterministic>
+		<NoWarn>xUnit1041</NoWarn>
 		<IsTestProject>false</IsTestProject>
-		<RootNamespace>EventStore.System.Testing</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Toolkit.Testing\KurrentDB.Toolkit.Testing.csproj" />
 		<ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Bogus" />
+		<Using Include="Humanizer" />
+		<Using Include="FluentAssertions" />
+		<Using Include="Microsoft.Extensions.Time.Testing" />
+		<Using Include="Xunit" />
+		<Using Include="Xunit.Abstractions" />
 	</ItemGroup>
 </Project>

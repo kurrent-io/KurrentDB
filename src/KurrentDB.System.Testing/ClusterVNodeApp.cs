@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Net;
 using DotNext.Collections.Generic;
-using KurrentDB;
+using EventStore.System.Testing;
 using KurrentDB.Core;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
@@ -13,18 +13,18 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace EventStore.System.Testing;
+namespace KurrentDB.System.Testing;
 
 public class ClusterVNodeApp : IAsyncDisposable {
     static readonly Dictionary<string, string?> DefaultSettings = new() {
-        { "EventStore:Application:TelemetryOptout", "true" },
-        { "EventStore:Application:Insecure", "true" },
-        { "EventStore:Database:MemDb", "true" },
-        // super hack to ignore esdb's absurd logging config
-        { "EventStore:Logging:LogLevel", KurrentDB.Common.Options.LogLevel.Default.ToString() },
-        { "EventStore:Logging:DisableLogFile", "true" },
-        { "EventStore:Interface:DisableAdminUi", "true" },
-        { "EventStore:DevMode:Dev", "true" }
+        { "KurrentDB:Application:TelemetryOptout", "true" },
+        { "KurrentDB:Application:Insecure", "true" },
+        { "KurrentDB:Database:MemDb", "true" },
+        // super hack to ignore the db's absurd logging config
+        { "KurrentDB:Logging:LogLevel", "Default" },
+        { "KurrentDB:Logging:DisableLogFile", "true" },
+        { "KurrentDB:Interface:DisableAdminUi", "true" },
+        { "KurrentDB:DevMode:Dev", "true" }
     };
 
     WebApplication? App { get; set; }

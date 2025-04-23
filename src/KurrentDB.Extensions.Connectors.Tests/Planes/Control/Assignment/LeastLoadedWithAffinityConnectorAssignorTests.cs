@@ -1,28 +1,29 @@
+using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Connectors.Planes.Control.Assignment;
 using KurrentDB.Connectors.Planes.Control.Assignment.Assignors;
 using KurrentDB.Connectors.Planes.Control.Model;
 using KurrentDB.Toolkit.Testing.Fixtures;
 using KurrentDB.Toolkit.Testing.Xunit;
-using MassTransit;
 
 namespace KurrentDB.Connectors.Tests.Planes.Control.Assignment;
 
 [Trait("Category", "Assignment")]
 [Trait("Category", "ControlPlane")]
+[SuppressMessage("Usage", "xUnit1003:Theory methods must have test data")]
 public class LeastLoadedWithAffinityConnectorAssignorTests(ITestOutputHelper output, FastFixture fixture) : FastTests(output, fixture) {
 	[Fact]
 	public void assigns_directly() {
 		var topology  = ClusterTopology.From(
-			new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-			new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica)
+			new(Guid.NewGuid(), ClusterNodeState.Leader),
+			new(Guid.NewGuid(), ClusterNodeState.Follower),
+			new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica)
 		);
 
         ConnectorResource[] connectors = [
-            new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-			new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Unmapped)
+            new(Guid.NewGuid(), ClusterNodeState.Leader),
+			new(Guid.NewGuid(), ClusterNodeState.Follower),
+			new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica),
+			new(Guid.NewGuid(), ClusterNodeState.Unmapped)
         ];
 
 		var expectedResult = new ClusterConnectorsAssignment(Guid.NewGuid(), new() {
@@ -41,16 +42,16 @@ public class LeastLoadedWithAffinityConnectorAssignorTests(ITestOutputHelper out
 	[Fact]
 	public void assigns_to_single_leader() {
         var topology = ClusterTopology.From(
-            new(NewId.Next().ToGuid(), ClusterNodeState.Unmapped),
-            new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-            new(NewId.Next().ToGuid(), ClusterNodeState.Follower),
-            new(NewId.Next().ToGuid(), ClusterNodeState.ReadOnlyReplica)
+            new(Guid.NewGuid(), ClusterNodeState.Unmapped),
+            new(Guid.NewGuid(), ClusterNodeState.Leader),
+            new(Guid.NewGuid(), ClusterNodeState.Follower),
+            new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica)
         );
 
         ConnectorResource[] connectors = [
-            new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Leader),
-			new(NewId.Next().ToGuid(), ClusterNodeState.Leader)
+            new(Guid.NewGuid(), ClusterNodeState.Leader),
+			new(Guid.NewGuid(), ClusterNodeState.Leader),
+			new(Guid.NewGuid(), ClusterNodeState.Leader)
         ];
 
         var expectedResult = new ClusterConnectorsAssignment(Guid.NewGuid(), new() {
@@ -74,13 +75,15 @@ public class LeastLoadedWithAffinityConnectorAssignorTests(ITestOutputHelper out
         protected override IEnumerable<object[]> Data() {
             // cluster with 3 nodes, 1 Leader with affinity
             yield return [
-                new Case(ClusterNodeState.Leader,
-                ClusterTopology.From(
-                    new(Guid.NewGuid(), ClusterNodeState.Leader),
-                    new(Guid.NewGuid(), ClusterNodeState.Follower),
-                    new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica)
-                ),
-                1)
+                new Case(
+                    ClusterNodeState.Leader,
+                    ClusterTopology.From(
+                        new(Guid.NewGuid(), ClusterNodeState.Leader),
+                        new(Guid.NewGuid(), ClusterNodeState.Follower),
+                        new(Guid.NewGuid(), ClusterNodeState.ReadOnlyReplica)
+                    ),
+                    1
+                )
             ];
 
             // // cluster with 3 nodes, 1 Follower with affinity
@@ -153,8 +156,8 @@ public class LeastLoadedWithAffinityConnectorAssignorTests(ITestOutputHelper out
     }
 
     [Theory, AssignsWithAffinityTestCases]
-	public void assigns_with_affinity(AssignsWithAffinityTestCases.Case testCase) {
-		var connectors = Enumerable.Range(1, testCase.NumberOfConnectors)
+    public void assigns_with_affinity(AssignsWithAffinityTestCases.Case testCase) {
+        var connectors = Enumerable.Range(1, testCase.NumberOfConnectors)
             .Select(_ => new ConnectorResource(Guid.NewGuid(), testCase.ExpectedAffinity))
             .ToArray();
 

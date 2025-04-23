@@ -1,8 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>true</ImplicitUsings>
+		<LangVersion>preview</LangVersion>
+		<Deterministic>true</Deterministic>
+		<NoWarn>xUnit1041</NoWarn>
 		<IsTestProject>false</IsTestProject>
-		<RootNamespace>EventStore.Toolkit.Testing.Http</RootNamespace>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -13,4 +16,12 @@
 		<ProjectReference Include="..\KurrentDB.Toolkit.Testing\KurrentDB.Toolkit.Testing.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<Using Include="Bogus" />
+		<Using Include="Humanizer" />
+		<Using Include="FluentAssertions" />
+		<Using Include="Microsoft.Extensions.Time.Testing" />
+		<Using Include="Xunit" />
+		<Using Include="Xunit.Abstractions" />
+	</ItemGroup>
 </Project>
