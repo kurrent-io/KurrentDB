@@ -14,7 +14,6 @@ for test in $tests; do
 
     dotnet publish \
       --runtime="$RUNTIME" \
-      --no-self-contained \
       --configuration Release \
       --output "$output_directory/$(basename "$test")" \
       "$test"
