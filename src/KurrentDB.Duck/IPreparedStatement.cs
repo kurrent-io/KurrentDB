@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 namespace KurrentDB.Duck;
 
 /// <summary>
-/// Represents prepared statement.
+/// Represents the prepared statement.
 /// </summary>
 public interface IPreparedStatement {
 	/// <summary>
@@ -18,7 +18,7 @@ public interface IPreparedStatement {
 }
 
 /// <summary>
-/// Represents prepared statement.
+/// Represents the prepared statement.
 /// </summary>
 /// <typeparam name="TArgs">The tuple that represents parameters.</typeparam>
 public interface IPreparedStatement<TArgs> : IPreparedStatement
@@ -33,6 +33,9 @@ public interface IPreparedStatement<TArgs> : IPreparedStatement
 	static abstract BindingContext Bind(ref TArgs args, BindingSource source);
 }
 
+/// <summary>
+/// Represents the prepared statement without formal parameters.
+/// </summary>
 public interface IParameterlessStatement : IPreparedStatement<ValueTuple> {
 	static BindingContext IPreparedStatement<ValueTuple>.Bind(ref ValueTuple args, BindingSource source)
 		=> new(source);
