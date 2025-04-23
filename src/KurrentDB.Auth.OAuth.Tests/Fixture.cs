@@ -2,12 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -23,52 +21,11 @@ namespace KurrentDB.Auth.OAuth.Tests;
 internal class Fixture : IDisposable {
 	private const string PluginConfigurationPath = "/etc/kurrentdb/oauth.conf";
 
-	private const string BuildConfiguration =
-#if DEBUG
-		"Debug";
-#else
-			"Release";
-#endif
-
 	private static string CertificateDirectory => Path.Join(BuildDirectory, "testcerts");
 
 	private static string BuildDirectory => Environment.CurrentDirectory;
 
-	private static string PluginSourceDirectory {
-		get {
-			// x64 has different number of levels than AnyCPU
-			var target = "KurrentDB.Auth.OAuth";
-			var i = BuildDirectory.LastIndexOf(target) + target.Length;
-			return BuildDirectory[0..i];
-		}
-	}
-
-	private static string PluginPublishDirectory =>
-		Path.Combine(BuildDirectory, "oauth");
-
-	private static string ESImage {
-		get {
-			var imageWithTag = Environment.GetEnvironmentVariable("DB_IMAGE");
-			if (!string.IsNullOrWhiteSpace(imageWithTag))
-				return imageWithTag;
-
-			var version = Assembly.GetAssembly(typeof(OAuthAuthenticationPlugin)).GetName().Version;
-
-			var tag = (version.Major, version.Minor) switch {
-				(24, 4) => TagForMajorMinor(version),
-				(24, 6) => TagForMajorMinor(version),
-				_ => "ci"
-			};
-
-			var image = "docker.eventstore.com/eventstore-staging-ee/eventstoredb-ee";
-			return image + ":" + tag;
-		}
-	}
-
-	private static string TagForMajorMinor(Version version) =>
-		$"{version.Major}.{version.Minor}.0-nightly-x64-8.0-bookworm-slim";
-
-	private IContainerService _eventStore;
+	private IContainerService _kurrentdb;
 	private readonly ITestOutputHelper _output;
 	private readonly FileInfo _pluginConfiguration;
 	private readonly string[] _containerEnv;
@@ -76,10 +33,10 @@ internal class Fixture : IDisposable {
 
 	private Fixture(ITestOutputHelper output, params string[] env) {
 		var defaultEnv = new[] {
+			$"KURRENTDB_CONFIG={PluginConfigurationPath}",
 			"KURRENTDB_CERTIFICATE_FILE=/opt/kurrentdb/certs/test.crt",
 			"KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE=/opt/kurrentdb/certs/test.key",
 			"KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH=/opt/kurrentdb/certs/",
-			$"KURRENTDB_AUTHENTICATION_CONFIG={PluginConfigurationPath}",
 			"KURRENTDB_AUTHENTICATION_TYPE=oauth",
 			"KURRENTDB_LOG_FAILED_AUTHENTICATION_ATTEMPTS=true",
 			"KURRENTDB_LOG_HTTP_REQUESTS=true",
@@ -103,40 +60,23 @@ internal class Fixture : IDisposable {
 
 	private async ValueTask Start() {
 		await IdentityServer.Start();
-		await PublishPlugin(PluginSourceDirectory);
 		await WritePluginConfiguration();
 		await GenerateSelfSignedCertificateKeyPair(CertificateDirectory);
 		await Task.Delay(TimeSpan.FromSeconds(2));
 
-		var imageName = "kurrentdb-for-oauth-plugins-unit-tests";
-
-		using var x = new Builder()
-			.DefineImage(imageName)
-			// start with enterprise edition
-			.From(ESImage)
-			// remove all the plugins. if the EventStore.Plugins reference has changed the server in
-			// the nightly cannot necessarily even load the commercial HA plugins yet
-			// (these tests need to pass in order to update the commercial HA plugins)
-			.Run("mv /opt/kurrentdb/plugins /opt/kurrentdb/all-plugins")
-			// reinstate the tcp plugin
-			.Run("mkdir -p /opt/kurrentdb/plugins")
-			.Run("cp -r /opt/kurrentdb/all-plugins/KurrentDB.TcpPlugin /opt/kurrentdb/plugins/KurrentDB.TcpPlugin")
-			.Build();
-
-		_eventStore = new Builder()
-			.UseContainer()
-			.UseImage(imageName)
+		var dbImage = Environment.GetEnvironmentVariable("DB_IMAGE");
+		var imageWithTag = dbImage ?? "docker.kurrent.io/kurrent-staging/kurrentdb:ci";
+		_kurrentdb = new Builder().UseContainer()
+			.UseImage(imageWithTag)
 			.WithEnvironment(_containerEnv)
-			.WithName("es-oauth-tests")
-			.Mount(PluginPublishDirectory, "/opt/kurrentdb/plugins/oauth", MountType.ReadOnly)
+			.WithName("kurrentdb-oauth-tests")
 			.Mount(CertificateDirectory, "/opt/kurrentdb/certs", MountType.ReadOnly)
 			.Mount(_pluginConfiguration.FullName, PluginConfigurationPath, MountType.ReadOnly)
 			.ExposePort(1113, 1113)
 			.ExposePort(2113, 2113)
 			.Build();
-
-		_eventStore.Start();
-		_eventStore.ShipContainerLogs(_output);
+		_kurrentdb.Start();
+		_kurrentdb.ShipContainerLogs(_output);
 
 		try {
 			await Policy.Handle<Exception>()
@@ -147,13 +87,13 @@ internal class Fixture : IDisposable {
 							RemoteCertificateValidationCallback = delegate { return true; }
 						}
 					});
-					using var response = await client.GetAsync("https://localhost:2113/");
+					using var response = await client.GetAsync("https://localhost:2113/health/live");
 					if (response.StatusCode >= HttpStatusCode.BadRequest) {
 						throw new Exception($"Health check failed with status code {response.StatusCode}");
 					}
 				});
 		} catch (Exception) {
-			_eventStore.Dispose();
+			_kurrentdb.Dispose();
 			IdentityServer.Dispose();
 			throw;
 		}
@@ -163,11 +103,15 @@ internal class Fixture : IDisposable {
 		await using (var stream = _pluginConfiguration.Create()) {
 			await using var writer = new StreamWriter(stream);
 			await writer.WriteAsync($@"---
+NodeIp: 0.0.0.0
+ReplicationIp: 0.0.0.0
 OAuth:
   Issuer: {IdentityServer.Issuer}
-  Audience: eventstore
+  Audience: kurrentdb
   Insecure: true
-  DisableIssuerValidation: true");
+  DisableIssuerValidation: true
+  ClientId: kurrentdb-client
+  ClientSecret: K7gNU3sdo+OL0wNhqoVWhr3g6s1xYv72ol/pe/Unols=");
 		}
 
 		if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
@@ -215,34 +159,8 @@ OAuth:
 		}
 	}
 
-	private static async Task PublishPlugin(string pluginDirectory) {
-		var tcs = new TaskCompletionSource<bool>();
-		using var process = new Process {
-			StartInfo = new ProcessStartInfo {
-				FileName = "dotnet",
-				Arguments = $"publish --configuration {BuildConfiguration} --framework=net8.0 --output {PluginPublishDirectory}",
-				WorkingDirectory = pluginDirectory,
-				UseShellExecute = false,
-				RedirectStandardError = true,
-				RedirectStandardOutput = true
-			},
-			EnableRaisingEvents = true
-		};
-		process.Exited += (_, e) => tcs.SetResult(default);
-		process.Start();
-
-		var stdout = process.StandardOutput.ReadToEndAsync();
-		var stderr = process.StandardError.ReadToEndAsync();
-
-		await Task.WhenAll(tcs.Task, stdout, stderr);
-
-		if (process.ExitCode != 0) {
-			throw new Exception(stdout.Result);
-		}
-	}
-
 	public void Dispose() {
-		_eventStore?.Dispose();
+		_kurrentdb?.Dispose();
 		IdentityServer?.Dispose();
 		_pluginConfiguration?.Delete();
 		if (Directory.Exists(CertificateDirectory)) {
