@@ -195,7 +195,7 @@ This has some (minor) implications: When you use _Archiving_, you cannot easily 
 - whether a chunk was scavenged or not
 - the number of times a chunk was scavenged (this information is local to a node anyway)
 
-After some time, all the chunks will eventually be uploaded to the archive.
+After some time, all the completed chunks will have been uploaded to the archive.
 Great, let's jump to the other nodes to see what's going on!
 
 ## Deleting archived data locally
