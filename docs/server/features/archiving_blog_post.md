@@ -159,7 +159,7 @@ You'll notice this line saying that the archive has a checkpoint of 0 (`0x0` in 
 
 The _archive checkpoint_ represents the point in the KurrentDB transaction log before which everything has already been archived.
 Therefore, chunks _before_ the _archive checkpoint_ can safely be deleted from all nodes.
-The checkpoint is measured in _bytes_. For example, a checkpoint of `0x10000000` means `268435456` bytes in decimal, which is exactly 256MiB (1 chunk)
+The checkpoint is measured in _bytes_. For example, a checkpoint of `0x10000000` means `268435456` bytes in decimal, which is exactly 256 MiB (1 chunk)
 It is stored as a file named `archive.chk` in the S3 archive.
 
 You'll also notice lines like this:
