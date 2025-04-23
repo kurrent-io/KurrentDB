@@ -125,21 +125,21 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Auth", "Auth", "{830D29DF-0
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.UI", "KurrentDB.UI\KurrentDB.UI.csproj", "{B375CE7A-AF32-4A62-9443-B21100C1227B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Plugins.Connectors", "EventStore.Plugins.Connectors\EventStore.Plugins.Connectors.csproj", "{6E459A1C-0345-4456-835B-DADFDECD10DB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Plugins.Connectors", "KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj", "{6E459A1C-0345-4456-835B-DADFDECD10DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors", "EventStore.Extensions.Connectors\EventStore.Extensions.Connectors.csproj", "{2EB0BCFB-C9F0-4665-AE00-16678B3FC52F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Extensions.Connectors", "KurrentDB.Extensions.Connectors\KurrentDB.Extensions.Connectors.csproj", "{2EB0BCFB-C9F0-4665-AE00-16678B3FC52F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors.Contracts", "EventStore.Extensions.Connectors.Contracts\EventStore.Extensions.Connectors.Contracts.csproj", "{7475E1E4-54E1-47E4-A978-3839D2C55435}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Extensions.Connectors.Contracts", "KurrentDB.Extensions.Connectors.Contracts\KurrentDB.Extensions.Connectors.Contracts.csproj", "{7475E1E4-54E1-47E4-A978-3839D2C55435}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors.Tests", "EventStore.Extensions.Connectors.Tests\EventStore.Extensions.Connectors.Tests.csproj", "{E126481D-AEF6-4DDC-BE19-EA5FAE700AEF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Extensions.Connectors.Tests", "KurrentDB.Extensions.Connectors.Tests\KurrentDB.Extensions.Connectors.Tests.csproj", "{E126481D-AEF6-4DDC-BE19-EA5FAE700AEF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Extensions.Connectors.Management.TestServer", "EventStore.Extensions.Connectors.Management.TestServer\EventStore.Extensions.Connectors.Management.TestServer.csproj", "{E86CAF64-E043-41E1-9239-262D3E14933E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Extensions.Connectors.Management.TestServer", "KurrentDB.Extensions.Connectors.Management.TestServer\KurrentDB.Extensions.Connectors.Management.TestServer.csproj", "{E86CAF64-E043-41E1-9239-262D3E14933E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.System.Testing", "EventStore.System.Testing\EventStore.System.Testing.csproj", "{02298AB8-F623-42BA-A268-8DF67CD77E83}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.System.Testing", "KurrentDB.System.Testing\KurrentDB.System.Testing.csproj", "{02298AB8-F623-42BA-A268-8DF67CD77E83}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Toolkit.Testing", "EventStore.Toolkit.Testing\EventStore.Toolkit.Testing.csproj", "{B082EFBD-CFD0-411E-9151-FC14F9835D78}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Toolkit.Testing", "KurrentDB.Toolkit.Testing\KurrentDB.Toolkit.Testing.csproj", "{B082EFBD-CFD0-411E-9151-FC14F9835D78}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventStore.Toolkit.Testing.Http", "EventStore.Toolkit.Testing.Http\EventStore.Toolkit.Testing.Http.csproj", "{971AE494-6476-4AEA-8A41-81254755DD41}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Toolkit.Testing.Http", "KurrentDB.Toolkit.Testing.Http\KurrentDB.Toolkit.Testing.Http.csproj", "{971AE494-6476-4AEA-8A41-81254755DD41}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Connectors", "Connectors", "{10D69000-82BA-4C61-A4BD-ED8EB5D7B0A7}"
 EndProject

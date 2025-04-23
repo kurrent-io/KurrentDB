@@ -1,7 +1,7 @@
 <Project>
 
 	<PropertyGroup>
-		<ConnectorTestProjects>EventStore.Toolkit.Testing;EventStore.Toolkit.Testing.Http;EventStore.System.Testing;EventStore.Extensions.Connectors.Tests;EventStore.Extensions.Connectors.Management.TestServer</ConnectorTestProjects>
+		<ConnectorTestProjects>KurrentDB.Toolkit.Testing;KurrentDB.Toolkit.Testing.Http;KurrentDB.System.Testing;KurrentDB.Extensions.Connectors.Tests;KurrentDB.Extensions.Connectors.Management.TestServer</ConnectorTestProjects>
 	</PropertyGroup>
 
 	<PropertyGroup>

@@ -1,0 +1,20 @@
+// ReSharper disable CheckNamespace
+
+using KurrentDB.Core.Bus;
+using Kurrent.Surge.Configuration;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Consumers.Configuration;
+
+namespace KurrentDB.Connect.Consumers.Configuration;
+
+public record SystemConsumerOptions : ConsumerOptions {
+    public SystemConsumerOptions() {
+        Logging = new LoggingOptions {
+            LogName = "Kurrent.Surge.SystemConsumer"
+        };
+
+        Filter = ConsumeFilter.ExcludeSystemEvents();
+    }
+
+    public IPublisher Publisher { get; init; }
+}

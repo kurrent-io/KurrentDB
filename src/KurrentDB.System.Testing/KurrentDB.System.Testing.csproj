@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<IsTestProject>false</IsTestProject>
+		<RootNamespace>EventStore.System.Testing</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\KurrentDB.Toolkit.Testing\KurrentDB.Toolkit.Testing.csproj" />
+		<ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
+	</ItemGroup>
+</Project>

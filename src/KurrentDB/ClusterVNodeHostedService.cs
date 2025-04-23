@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using EventStore.Plugins;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
-using EventStore.Plugins.Connectors;
 using EventStore.Plugins.MD5;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Auth.Ldaps;
@@ -44,6 +43,8 @@ using KurrentDB.TcpPlugin;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using KurrentDB.OtlpExporterPlugin;
+using KurrentDB.Plugins.Connectors;
 
 namespace KurrentDB;
 
