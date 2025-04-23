@@ -11,9 +11,9 @@ public sealed class DuckDbAdancedConnectionTests : DuckDbTests<DuckDbAdancedConn
 		using var connection = new DuckDbAdvancedConnection { ConnectionString = ConnectionString };
 		connection.Open();
 
-		connection.ExecuteNonQuery<TableDefinitionStatement>();
-		connection.ExecuteNonQuery<(uint, string), InsertStatement>((0U, "A"));
-		connection.ExecuteNonQuery<(uint, string), InsertStatement>((1U, "B"));
+		Assert.Equal(0L, connection.ExecuteNonQuery<TableDefinitionStatement>());
+		Assert.Equal(1L, connection.ExecuteNonQuery<(uint, string), InsertStatement>((0U, "A")));
+		Assert.Equal(1L, connection.ExecuteNonQuery<(uint, string), InsertStatement>((1U, "B")));
 
 		using (var command = connection.CreateCommand()) {
 			command.CommandText = "SELECT * FROM test_table;";
