@@ -24,7 +24,7 @@ public partial struct Appender {
 	public readonly struct Row : IDisposable {
 		private readonly nint _appender;
 
-		internal Row(nint appender) => this._appender = appender;
+		internal Row(nint appender) => _appender = appender;
 
 		public void Append(int value)
 			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
