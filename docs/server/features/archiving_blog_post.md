@@ -24,7 +24,7 @@ What if we could separate the _cold_ data from the _hot_ data by making the _col
 In KurrentDB, the tail of the transaction log, i.e., the latest chunk files, often naturally represent most of the _hot_ data, while old chunk files often represent most of the _cold_ data.
 Thus, the basic idea is to keep the latest X chunks on the local disk while older chunks are stored in the archive based on a user-defined retention policy.
 
-The user-defined retention policy is simple: Keep X _days_ or Y _bytes_ of chunk data locally, whichever is larger.
+The user-defined retention policy is simple: Keep at least X _days_ and at least Y _bytes_ of chunk data locally.
 To determine proper values for X & Y, there are some built-in metrics in KurrentDB.
 
 You may also observe that there could be some _hot_ data present in the old chunks.
