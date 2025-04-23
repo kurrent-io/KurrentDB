@@ -28,15 +28,15 @@
 
 	<!-- Required packages -->
 	<ItemGroup>
-		<PackageReference Include="Kurrent.Surge.Core" Version="1.0.0-alpha.359" />
-		<PackageReference Include="Kurrent.Surge.DataProtection" Version="1.0.0-alpha.365" />
-		<PackageReference Include="Kurrent.Toolkit" Version="1.0.0-alpha.359" />
-		<PackageReference Include="Kurrent.Connectors.Elasticsearch" Version="1.0.0-alpha.362" />
-		<PackageReference Include="Kurrent.Connectors.Http" Version="1.0.0-alpha.364" />
-		<PackageReference Include="Kurrent.Connectors.Kafka" Version="1.0.0-alpha.363" />
-		<PackageReference Include="Kurrent.Connectors.KurrentDB" Version="1.0.0-alpha.364" />
-		<PackageReference Include="Kurrent.Connectors.MongoDB" Version="1.0.0-alpha.362" />
-		<PackageReference Include="Kurrent.Connectors.RabbitMQ" Version="1.0.0-alpha.364" />
+		<PackageReference Include="Kurrent.Surge.Core" Version="1.0.0-alpha.367" />
+		<PackageReference Include="Kurrent.Surge.DataProtection" Version="1.0.0-alpha.377" />
+		<PackageReference Include="Kurrent.Toolkit" Version="1.0.0-alpha.366" />
+		<PackageReference Include="Kurrent.Connectors.Elasticsearch" Version="1.0.0-alpha.375" />
+		<PackageReference Include="Kurrent.Connectors.Http" Version="1.0.0-alpha.376" />
+		<PackageReference Include="Kurrent.Connectors.Kafka" Version="1.0.0-alpha.375" />
+		<PackageReference Include="Kurrent.Connectors.KurrentDB" Version="1.0.0-alpha.376" />
+		<PackageReference Include="Kurrent.Connectors.MongoDB" Version="1.0.0-alpha.375" />
+		<PackageReference Include="Kurrent.Connectors.RabbitMQ" Version="1.0.0-alpha.376" />
 		<PackageReference Include="Eventuous.Application" Version="0.15.0" />
 		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
 		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />

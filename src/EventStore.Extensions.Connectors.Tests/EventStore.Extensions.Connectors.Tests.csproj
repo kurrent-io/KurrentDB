@@ -6,7 +6,7 @@
 
 	<ItemGroup>
 		<!-- Some packages that are configured with PrivateAssets in the plugin need to be referenced here -->
-		 <PackageReference Include="Kurrent.Surge" Version="1.0.0-alpha.359" />
+		 <PackageReference Include="Kurrent.Surge" Version="1.0.0-alpha.367" />
 
 		<PackageReference Include="Eventuous.Testing" Version="0.15.0" />
 		<PackageReference Include="NewId" Version="4.0.1" />

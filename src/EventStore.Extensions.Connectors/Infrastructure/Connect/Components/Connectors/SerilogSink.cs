@@ -30,7 +30,7 @@ public class SerilogSink : ISink {
                 Version  = Environment.OSVersion.VersionString,
                 Platform = RuntimeInformation.OsPlatform
             }, true)
-            .Enrich.WithProperty("EventStoreDB", new {
+            .Enrich.WithProperty("KurrentDB", new {
                 VersionInfo.Version,
                 VersionInfo.CommitSha,
                 VersionInfo.Timestamp

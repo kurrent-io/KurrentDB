@@ -28,13 +28,9 @@ services:
       context: .
       args:
         RUNTIME: ${RUNTIME}
-        NUGET_CREDS_EVENTSTORE: ${NUGET_CREDS_EVENTSTORE}
-        NUGET_CREDS_KURRENTDB: ${NUGET_CREDS_KURRENTDB}
     env_file:
       - shared.env
     environment:
-      - NuGetPackageSourceCredentials_EventStore=${NUGET_CREDS_EVENTSTORE}
-      - NuGetPackageSourceCredentials_KurrentDB=${NUGET_CREDS_KURRENTDB}
       - KURRENTDB_GOSSIP_SEED=172.30.240.12:2113,172.30.240.13:2113
       - KURRENTDB_REPLICATION_IP=172.30.240.11
       - KURRENTDB_CERTIFICATE_FILE=/etc/kurrentdb/certs/node1/node.crt
@@ -57,13 +53,9 @@ services:
       context: .
       args:
         RUNTIME: ${RUNTIME}
-        NUGET_CREDS_EVENTSTORE: ${NUGET_CREDS_EVENTSTORE}
-        NUGET_CREDS_KURRENTDB: ${NUGET_CREDS_KURRENTDB}
     env_file:
       - shared.env
     environment:
-      - NuGetPackageSourceCredentials_EventStore=${NUGET_CREDS_EVENTSTORE}
-      - NuGetPackageSourceCredentials_KurrentDB=${NUGET_CREDS_KURRENTDB}
       - KURRENTDB_GOSSIP_SEED=172.30.240.11:2113,172.30.240.13:2113
       - KURRENTDB_REPLICATION_IP=172.30.240.12
       - KURRENTDB_CERTIFICATE_FILE=/etc/kurrentdb/certs/node2/node.crt
@@ -86,13 +78,9 @@ services:
       context: .
       args:
         RUNTIME: ${RUNTIME}
-        NUGET_CREDS_EVENTSTORE: ${NUGET_CREDS_EVENTSTORE}
-        NUGET_CREDS_KURRENTDB: ${NUGET_CREDS_KURRENTDB}
     env_file:
       - shared.env
     environment:
-      - NuGetPackageSourceCredentials_EventStore=${NUGET_CREDS_EVENTSTORE}
-      - NuGetPackageSourceCredentials_KurrentDB=${NUGET_CREDS_KURRENTDB}
       - KURRENTDB_GOSSIP_SEED=172.30.240.11:2113,172.30.240.12:2113
       - KURRENTDB_REPLICATION_IP=172.30.240.13
       - KURRENTDB_CERTIFICATE_FILE=/etc/kurrentdb/certs/node3/node.crt
