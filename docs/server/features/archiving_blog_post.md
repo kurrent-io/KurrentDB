@@ -31,7 +31,7 @@ You may also observe that there could be some _hot_ data present in the old chun
 This is handled through caching mechanisms to avoid hitting the archive frequently (work is in progress to improve this area).
 
 ## The _Archiver_ node
-Using _Archiving_ requires adding a new node, called the _Archiver_ node, to the cluster. This node is solely responsible for uploading chunks to the archive.
+Using _Archiving_ requires adding a new node, called the _Archiver_ node, to the cluster. This node is responsible for uploading chunks to the archive.
 
 An archiver node is like a normal database node, except that it is designated as a read-only replica and as an archiver:
 ```
