@@ -25,8 +25,6 @@ KurrentDB uses the [Kurrent License v1 (KLv1)](https://github.com/kurrent-io/Kur
 * [Encryption-at-rest](../security/README.md#encryption-at-rest) - Provides additional data protection against unauthorized access.
 * Advanced authentication - [LDAPS](../security/user-authentication.md#ldap-authentication), and [OAuth](../security/user-authentication.md#oauth-authentication) authentication.
 * Advanced Monitoring - [Logs](../diagnostics/logs.md#logs-download), and [OpenTelemetry](../diagnostics/integrations.md#opentelemetry-exporter) endpoints.
-* Visualize tab - Allows visualization of event correlations.
-
 
 ## What's new
 
