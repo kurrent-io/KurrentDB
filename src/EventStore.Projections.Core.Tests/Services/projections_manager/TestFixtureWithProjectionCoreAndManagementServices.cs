@@ -60,6 +60,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 	private bool _initializeSystemProjections;
 	protected Tuple<SynchronousScheduler, IPublisher, SynchronousScheduler, Guid>[] _processingQueues;
 	private ProjectionCoreCoordinator _coordinator;
+	protected readonly ProjectionTracker _projectionMetricTracker= new();
 
 	protected override void Given1() {
 		base.Given1();
@@ -86,6 +87,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 		_processingQueues = GivenProcessingQueues();
 		var queues = _processingQueues.ToDictionary(v => v.Item4, v => v.Item1.As<IPublisher>());
 		_managerMessageDispatcher = new ProjectionManagerMessageDispatcher(queues);
+
 		_manager = new ProjectionManager(
 			GetInputQueue(),
 			GetInputQueue(),
@@ -94,7 +96,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 			ProjectionType.All,
 			_ioDispatcher,
 			TimeSpan.FromMinutes(Opts.ProjectionsQueryExpiryDefault),
-			IProjectionTracker.NoOp,
+			_projectionMetricTracker,
 			_initializeSystemProjections);
 
 		_coordinator = new ProjectionCoreCoordinator(
