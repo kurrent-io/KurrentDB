@@ -14,12 +14,14 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services;
 using Polly;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace KurrentDB.Auth.OAuth.Tests;
 
 internal class Fixture : IDisposable {
 	private const string PluginConfigurationPath = "/etc/kurrentdb/oauth.conf";
+	private const string DbImageVariableName = "DB_IMAGE";
 
 	private static string CertificateDirectory => Path.Join(BuildDirectory, "testcerts");
 
@@ -29,9 +31,15 @@ internal class Fixture : IDisposable {
 	private readonly ITestOutputHelper _output;
 	private readonly FileInfo _pluginConfiguration;
 	private readonly string[] _containerEnv;
+	private readonly string _dbImage;
 	public IdpFixture IdentityServer { get; }
 
 	private Fixture(ITestOutputHelper output, params string[] env) {
+		_dbImage = Environment.GetEnvironmentVariable(DbImageVariableName);
+		if (string.IsNullOrEmpty(_dbImage)) {
+			Assert.Fail($"The '{DbImageVariableName}' environment variable must be specified with the tag of the docker container to test." +
+						$"A test container can be built using the Dockerfile at the repository root.");
+		}
 		var defaultEnv = new[] {
 			$"KURRENTDB_CONFIG={PluginConfigurationPath}",
 			"KURRENTDB_CERTIFICATE_FILE=/opt/kurrentdb/certs/test.crt",
@@ -64,9 +72,8 @@ internal class Fixture : IDisposable {
 		await GenerateSelfSignedCertificateKeyPair(CertificateDirectory);
 		await Task.Delay(TimeSpan.FromSeconds(2));
 
-		var imageWithTag = Environment.GetEnvironmentVariable("DB_IMAGE");
 		_kurrentdb = new Builder().UseContainer()
-			.UseImage(imageWithTag)
+			.UseImage(_dbImage)
 			.WithEnvironment(_containerEnv)
 			.WithName("kurrentdb-oauth-tests")
 			.Mount(CertificateDirectory, "/opt/kurrentdb/certs", MountType.ReadOnly)
