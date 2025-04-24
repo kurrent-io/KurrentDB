@@ -138,7 +138,7 @@ public class SubscriptionsService<TStreamId> :
 		}
 
 		var lastIndexedPos = isVirtualStream
-			? _virtualStreamReader.GetLastIndexedPosition()
+			? _virtualStreamReader.GetLastIndexedPosition(msg.EventStreamId)
 			: _readIndex.LastIndexedPosition;
 
 		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.EventStreamId,
@@ -161,7 +161,7 @@ public class SubscriptionsService<TStreamId> :
 		}
 
 		var lastIndexedPos = isVirtualStream ?
-			_virtualStreamReader.GetLastIndexedPosition()
+			_virtualStreamReader.GetLastIndexedPosition(msg.EventStreamId)
 			: _readIndex.LastIndexedPosition;
 
 		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.EventStreamId,
