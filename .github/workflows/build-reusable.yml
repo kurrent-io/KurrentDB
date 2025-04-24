@@ -26,6 +26,7 @@ jobs:
       with:
         fetch-depth: 0
     - name: Set up Docker Buildx
+      if: inputs.os != 'windows-2019'
       uses: docker/setup-buildx-action@v2
     - name: Install netcoreapp3.1
       uses: actions/setup-dotnet@v3
