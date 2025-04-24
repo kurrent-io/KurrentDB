@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Channels;
 using KurrentDB.Core.Data;
@@ -14,18 +13,16 @@ using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.Services.Storage.InMemory;
 
-public class InMemoryStreamReaderTests {
-	private readonly InMemoryStreamReader _sut;
+public class VirtualStreamReaderTests {
+	private readonly VirtualStreamReader _sut;
 	private readonly NodeStateListenerService _listener;
 
-	public InMemoryStreamReaderTests() {
+	public VirtualStreamReaderTests() {
 		var channel = Channel.CreateUnbounded<Message>();
 		_listener = new NodeStateListenerService(
 			new EnvelopePublisher(new ChannelEnvelope(channel)),
 			new InMemoryLog());
-		_sut = new InMemoryStreamReader(new Dictionary<string, IInMemoryStreamReader> {
-			[SystemStreams.NodeStateStream] = _listener,
-		});
+		_sut = new VirtualStreamReader([_listener.Stream]);
 	}
 
 	private static ClientMessage.ReadStreamEventsBackward GenReadBackwards(Guid correlation, long fromEventNumber, int maxCount) {
@@ -57,7 +54,7 @@ public class InMemoryStreamReaderTests {
 			replyOnExpired: true);
 	}
 
-	public class ReadForwardEmptyTests : InMemoryStreamReaderTests {
+	public class ReadForwardEmptyTests : VirtualStreamReaderTests {
 		[Fact]
 		public void read_forwards_empty() {
 			var correlation = Guid.NewGuid();
@@ -76,7 +73,7 @@ public class InMemoryStreamReaderTests {
 		}
 	}
 
-	public class ReadForwardTests : InMemoryStreamReaderTests {
+	public class ReadForwardTests : VirtualStreamReaderTests {
 		[Fact]
 		public void read_forwards() {
 			_listener.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));
@@ -173,7 +170,7 @@ public class InMemoryStreamReaderTests {
 		}
 	}
 
-	public class ReadBackwardsEmptyTests : InMemoryStreamReaderTests {
+	public class ReadBackwardsEmptyTests : VirtualStreamReaderTests {
 		[Fact]
 		public void read_backwards_empty() {
 			var correlation = Guid.NewGuid();
@@ -192,7 +189,7 @@ public class InMemoryStreamReaderTests {
 		}
 	}
 
-	public class ReadBackwardsTests : InMemoryStreamReaderTests {
+	public class ReadBackwardsTests : VirtualStreamReaderTests {
 		[Fact]
 		public void read_backwards() {
 			_listener.Handle(new SystemMessage.BecomeLeader(Guid.NewGuid()));

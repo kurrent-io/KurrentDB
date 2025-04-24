@@ -2,16 +2,19 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services.Storage.InMemory;
 
 // threading: we expect to handle one Write at a time, but Reads can happen concurrently
 // with the write and with other reads.
-public class SingleEventInMemoryStream : IInMemoryStreamReader {
+public class SingleEventInMemoryStream : IVirtualStreamReader {
 	private readonly IPublisher _publisher;
 	private readonly InMemoryLog _memLog;
 	private readonly string _streamName;
@@ -26,9 +29,7 @@ public class SingleEventInMemoryStream : IInMemoryStreamReader {
 		_streamName = streamName;
 	}
 
-	public ClientMessage.ReadStreamEventsForwardCompleted ReadForwards(
-		ClientMessage.ReadStreamEventsForward msg) {
-
+	public ValueTask<ReadStreamEventsForwardCompleted> ReadForwards(ReadStreamEventsForward msg, CancellationToken token) {
 		ReadStreamResult result;
 		ResolvedEvent[] events;
 		long nextEventNumber, lastEventNumber;
@@ -54,7 +55,7 @@ public class SingleEventInMemoryStream : IInMemoryStreamReader {
 			}
 		}
 
-		return new ClientMessage.ReadStreamEventsForwardCompleted(
+		return ValueTask.FromResult(new ReadStreamEventsForwardCompleted(
 			msg.CorrelationId,
 			msg.EventStreamId,
 			msg.FromEventNumber,
@@ -67,12 +68,10 @@ public class SingleEventInMemoryStream : IInMemoryStreamReader {
 			nextEventNumber: nextEventNumber,
 			lastEventNumber: lastEventNumber,
 			isEndOfStream: true,
-			tfLastCommitPosition: _memLog.GetLastCommitPosition());
+			tfLastCommitPosition: _memLog.GetLastCommitPosition()));
 	}
 
-	public ClientMessage.ReadStreamEventsBackwardCompleted ReadBackwards(
-		ClientMessage.ReadStreamEventsBackward msg) {
-
+	public ValueTask<ReadStreamEventsBackwardCompleted> ReadBackwards(ReadStreamEventsBackward msg, CancellationToken token) {
 		ReadStreamResult result;
 		ResolvedEvent[] events;
 		long adjustedFromEventNumber, lastEventNumber;
@@ -100,7 +99,7 @@ public class SingleEventInMemoryStream : IInMemoryStreamReader {
 			}
 		}
 
-		return new ClientMessage.ReadStreamEventsBackwardCompleted(
+		return ValueTask.FromResult(new ReadStreamEventsBackwardCompleted(
 			correlationId: msg.CorrelationId,
 			eventStreamId: msg.EventStreamId,
 			fromEventNumber: adjustedFromEventNumber,
@@ -113,8 +112,14 @@ public class SingleEventInMemoryStream : IInMemoryStreamReader {
 			nextEventNumber: -1,
 			lastEventNumber: lastEventNumber,
 			isEndOfStream: true,
-			tfLastCommitPosition: _memLog.GetLastCommitPosition());
+			tfLastCommitPosition: _memLog.GetLastCommitPosition()));
 	}
+
+	public long GetLastEventNumber(string streamId) => _lastEvent?.EventNumber ?? -1;
+
+	public long GetLastIndexedPosition(string streamId) => -1;
+
+	public bool OwnStream(string streamId) => streamId == _streamName;
 
 	public void Write(string eventType, ReadOnlyMemory<byte> data) {
 		var commitPosition = _memLog.GetNextCommitPosition();

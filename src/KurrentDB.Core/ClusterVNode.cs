@@ -779,1231 +779,1231 @@ public class ClusterVNode<TStreamId> :
 		var nodeStatusListener = new NodeStateListenerService(_mainQueue, memLog);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(nodeStatusListener);
 
-		var inMemReader = new InMemoryStreamReader(new Dictionary<string, IInMemoryStreamReader> {
-			[SystemStreams.GossipStream] = gossipListener,
-			[SystemStreams.NodeStateStream] = nodeStatusListener,
-		});
+		var inMemReader = new VirtualStreamReader([
+			 gossipListener.Stream,
+			 nodeStatusListener.Stream,
+		]);
 
-		// Storage Reader
-		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
-			logFormat.SystemStreams,
-			readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(), inMemReader, _queueStatsManager,
-			trackers.QueueTrackers);
+	// Storage Reader
+	var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
+		logFormat.SystemStreams,
+		readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(), inMemReader, _queueStatsManager,
+		trackers.QueueTrackers);
 
-		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
-		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageReader);
-		_mainBus.Subscribe<SystemMessage.BecomeShutdown>(storageReader);
-		monitoringRequestBus.Subscribe<MonitoringMessage.InternalStatsRequest>(storageReader);
+	_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
+	_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageReader);
+	_mainBus.Subscribe<SystemMessage.BecomeShutdown>(storageReader);
+	monitoringRequestBus.Subscribe<MonitoringMessage.InternalStatsRequest>(storageReader);
 
-		// PRE-LEADER -> LEADER TRANSITION MANAGEMENT
-		var inaugurationManager = new InaugurationManager(
-			publisher: _mainQueue,
-			replicationCheckpoint: Db.Config.ReplicationCheckpoint,
-			indexCheckpoint: Db.Config.IndexCheckpoint,
-			statusTracker: trackers.InaugurationStatusTracker);
-		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(inaugurationManager);
-		_mainBus.Subscribe<SystemMessage.ChaserCaughtUp>(inaugurationManager);
-		_mainBus.Subscribe<SystemMessage.EpochWritten>(inaugurationManager);
-		_mainBus.Subscribe<SystemMessage.CheckInaugurationConditions>(inaugurationManager);
-		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(inaugurationManager);
-		_mainBus.Subscribe<ReplicationTrackingMessage.IndexedTo>(inaugurationManager);
-		_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(inaugurationManager);
+	// PRE-LEADER -> LEADER TRANSITION MANAGEMENT
+	var inaugurationManager = new InaugurationManager(
+		publisher: _mainQueue,
+		replicationCheckpoint: Db.Config.ReplicationCheckpoint,
+		indexCheckpoint: Db.Config.IndexCheckpoint,
+		statusTracker: trackers.InaugurationStatusTracker);
+	_mainBus.Subscribe<SystemMessage.StateChangeMessage>(inaugurationManager);
+	_mainBus.Subscribe<SystemMessage.ChaserCaughtUp>(inaugurationManager);
+	_mainBus.Subscribe<SystemMessage.EpochWritten>(inaugurationManager);
+	_mainBus.Subscribe<SystemMessage.CheckInaugurationConditions>(inaugurationManager);
+	_mainBus.Subscribe<ElectionMessage.ElectionsDone>(inaugurationManager);
+	_mainBus.Subscribe<ReplicationTrackingMessage.IndexedTo>(inaugurationManager);
+	_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(inaugurationManager);
 
-		// REPLICATION TRACKING
-		var replicationTracker = new ReplicationTrackingService(
-			_mainQueue,
-			options.Cluster.ClusterSize,
-			Db.Config.ReplicationCheckpoint,
-			Db.Config.WriterCheckpoint.AsReadOnly());
-		AddTask(replicationTracker.Task);
-		_mainBus.Subscribe<SystemMessage.SystemInit>(replicationTracker);
-		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(replicationTracker);
-		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(replicationTracker);
-		_mainBus.Subscribe<ReplicationTrackingMessage.ReplicaWriteAck>(replicationTracker);
-		_mainBus.Subscribe<ReplicationTrackingMessage.WriterCheckpointFlushed>(replicationTracker);
-		_mainBus.Subscribe<ReplicationTrackingMessage.LeaderReplicatedTo>(replicationTracker);
-		_mainBus.Subscribe<SystemMessage.VNodeConnectionLost>(replicationTracker);
-		_mainBus.Subscribe<ReplicationMessage.ReplicaSubscribed>(replicationTracker);
-		var indexCommitterService = new IndexCommitterService<TStreamId>(readIndex.IndexCommitter, _mainQueue,
-			Db.Config.WriterCheckpoint.AsReadOnly(),
-			Db.Config.ReplicationCheckpoint.AsReadOnly(),
-			tableIndex, _queueStatsManager);
+	// REPLICATION TRACKING
+	var replicationTracker = new ReplicationTrackingService(
+		_mainQueue,
+		options.Cluster.ClusterSize,
+		Db.Config.ReplicationCheckpoint,
+		Db.Config.WriterCheckpoint.AsReadOnly());
+	AddTask(replicationTracker.Task);
+	_mainBus.Subscribe<SystemMessage.SystemInit>(replicationTracker);
+	_mainBus.Subscribe<SystemMessage.StateChangeMessage>(replicationTracker);
+	_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(replicationTracker);
+	_mainBus.Subscribe<ReplicationTrackingMessage.ReplicaWriteAck>(replicationTracker);
+	_mainBus.Subscribe<ReplicationTrackingMessage.WriterCheckpointFlushed>(replicationTracker);
+	_mainBus.Subscribe<ReplicationTrackingMessage.LeaderReplicatedTo>(replicationTracker);
+	_mainBus.Subscribe<SystemMessage.VNodeConnectionLost>(replicationTracker);
+	_mainBus.Subscribe<ReplicationMessage.ReplicaSubscribed>(replicationTracker);
+	var indexCommitterService = new IndexCommitterService<TStreamId>(readIndex.IndexCommitter, _mainQueue,
+		Db.Config.WriterCheckpoint.AsReadOnly(),
+		Db.Config.ReplicationCheckpoint.AsReadOnly(),
+		tableIndex, _queueStatsManager);
 
-		AddTask(indexCommitterService.Task);
+	AddTask(indexCommitterService.Task);
 
-		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(indexCommitterService);
-		_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(indexCommitterService);
-		_mainBus.Subscribe<StorageMessage.CommitAck>(indexCommitterService);
-		_mainBus.Subscribe<ClientMessage.MergeIndexes>(indexCommitterService);
+	_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(indexCommitterService);
+	_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(indexCommitterService);
+	_mainBus.Subscribe<StorageMessage.CommitAck>(indexCommitterService);
+	_mainBus.Subscribe<ClientMessage.MergeIndexes>(indexCommitterService);
 
-		var chaser = new TFChunkChaser(
-			Db,
-			Db.Config.WriterCheckpoint.AsReadOnly(),
-			Db.Config.ChaserCheckpoint);
+	var chaser = new TFChunkChaser(
+		Db,
+		Db.Config.WriterCheckpoint.AsReadOnly(),
+		Db.Config.ChaserCheckpoint);
 
-		var storageChaser = new StorageChaser<TStreamId>(
-			_mainQueue,
-			Db.Config.WriterCheckpoint.AsReadOnly(),
-			chaser,
-			indexCommitterService,
-			epochManager,
-			_queueStatsManager);
-		AddTask(storageChaser.Task);
+	var storageChaser = new StorageChaser<TStreamId>(
+		_mainQueue,
+		Db.Config.WriterCheckpoint.AsReadOnly(),
+		chaser,
+		indexCommitterService,
+		epochManager,
+		_queueStatsManager);
+	AddTask(storageChaser.Task);
 
 #if DEBUG
-		_queueStatsManager.InitializeCheckpoints(
-			Db.Config.WriterCheckpoint.AsReadOnly(),
-			Db.Config.ChaserCheckpoint.AsReadOnly());
+	_queueStatsManager.InitializeCheckpoints(
+	Db.Config.WriterCheckpoint.AsReadOnly(),
+	Db.Config.ChaserCheckpoint.AsReadOnly());
 #endif
-		_mainBus.Subscribe<SystemMessage.SystemInit>(storageChaser);
-		_mainBus.Subscribe<SystemMessage.SystemStart>(storageChaser);
-		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageChaser);
-		// REPLICATION TRACKING END
+	_mainBus.Subscribe<SystemMessage.SystemInit>(storageChaser);
+	_mainBus.Subscribe<SystemMessage.SystemStart>(storageChaser);
+	_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(storageChaser);
+	// REPLICATION TRACKING END
 
-		var httpPipe = new HttpMessagePipe();
-		var httpSendService = new HttpSendService(httpPipe, true, _externalServerCertificateValidator);
-		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(httpSendService);
-		SubscribeWorkers(bus => bus.Subscribe<HttpMessage.HttpSend>(httpSendService));
+	var httpPipe = new HttpMessagePipe();
+	var httpSendService = new HttpSendService(httpPipe, true, _externalServerCertificateValidator);
+	_mainBus.Subscribe<SystemMessage.StateChangeMessage>(httpSendService);
+	SubscribeWorkers(bus => bus.Subscribe<HttpMessage.HttpSend>(httpSendService));
 
-		var grpcSendService = new GrpcSendService(_eventStoreClusterClientCache);
-		_mainBus.Subscribe<GrpcMessage.SendOverGrpc>(_workersHandler);
-		SubscribeWorkers(bus => {
-			bus.Subscribe<GrpcMessage.SendOverGrpc>(grpcSendService);
-		});
+	var grpcSendService = new GrpcSendService(_eventStoreClusterClientCache);
+	_mainBus.Subscribe<GrpcMessage.SendOverGrpc>(_workersHandler);
+	SubscribeWorkers(bus => {
+		bus.Subscribe<GrpcMessage.SendOverGrpc>(grpcSendService);
+	});
 
-		GossipAdvertiseInfo = GetGossipAdvertiseInfo();
-		GossipAdvertiseInfo GetGossipAdvertiseInfo() {
-			IPAddress intIpAddress = options.Interface.ReplicationIp;
+GossipAdvertiseInfo = GetGossipAdvertiseInfo();
+GossipAdvertiseInfo GetGossipAdvertiseInfo() {
+	IPAddress intIpAddress = options.Interface.ReplicationIp;
 
-			IPAddress extIpAddress = options.Interface.NodeIp;
+	IPAddress extIpAddress = options.Interface.NodeIp;
 
-			var intHostToAdvertise = options.Interface.ReplicationHostAdvertiseAs ?? intIpAddress.ToString();
-			var extHostToAdvertise = options.Interface.NodeHostAdvertiseAs ?? extIpAddress.ToString();
+	var intHostToAdvertise = options.Interface.ReplicationHostAdvertiseAs ?? intIpAddress.ToString();
+	var extHostToAdvertise = options.Interface.NodeHostAdvertiseAs ?? extIpAddress.ToString();
 
-			if (intIpAddress.Equals(IPAddress.Any) || extIpAddress.Equals(IPAddress.Any)) {
-				IPAddress nonLoopbackAddress = IPFinder.GetNonLoopbackAddress();
-				IPAddress addressToAdvertise = options.Cluster.ClusterSize > 1 ? nonLoopbackAddress : IPAddress.Loopback;
+	if (intIpAddress.Equals(IPAddress.Any) || extIpAddress.Equals(IPAddress.Any)) {
+		IPAddress nonLoopbackAddress = IPFinder.GetNonLoopbackAddress();
+		IPAddress addressToAdvertise = options.Cluster.ClusterSize > 1 ? nonLoopbackAddress : IPAddress.Loopback;
 
-				if (intIpAddress.Equals(IPAddress.Any) && options.Interface.ReplicationHostAdvertiseAs == null) {
-					intHostToAdvertise = addressToAdvertise.ToString();
-				}
-
-				if (extIpAddress.Equals(IPAddress.Any) && options.Interface.NodeHostAdvertiseAs == null) {
-					extHostToAdvertise = addressToAdvertise.ToString();
-				}
-			}
-
-			var intTcpEndPoint = NodeInfo.InternalTcp == null
-				? null
-				: new DnsEndPoint(intHostToAdvertise, intTcpPortAdvertiseAs > 0
-					? (options.Interface.ReplicationTcpPortAdvertiseAs)
-					: NodeInfo.InternalTcp.Port);
-
-			var intSecureTcpEndPoint = NodeInfo.InternalSecureTcp == null
-				? null
-				: new DnsEndPoint(intHostToAdvertise, intSecTcpPortAdvertiseAs > 0
-					? intSecTcpPortAdvertiseAs
-					: NodeInfo.InternalSecureTcp.Port);
-
-			var extTcpEndPoint = NodeInfo.ExternalTcp == null
-				? null
-				: new DnsEndPoint(extHostToAdvertise, extTcpPortAdvertiseAs > 0
-					? extTcpPortAdvertiseAs
-					: NodeInfo.ExternalTcp.Port);
-
-			var extSecureTcpEndPoint = NodeInfo.ExternalSecureTcp == null
-				? null
-				: new DnsEndPoint(extHostToAdvertise, extSecTcpPortAdvertiseAs > 0
-					? extSecTcpPortAdvertiseAs
-					: NodeInfo.ExternalSecureTcp.Port);
-
-			var httpEndPoint = new DnsEndPoint(extHostToAdvertise,
-				options.Interface.NodePortAdvertiseAs > 0
-					? options.Interface.NodePortAdvertiseAs
-					: NodeInfo.HttpEndPoint.GetPort());
-
-			return new GossipAdvertiseInfo(intTcpEndPoint, intSecureTcpEndPoint, extTcpEndPoint,
-				extSecureTcpEndPoint, httpEndPoint, options.Interface.ReplicationHostAdvertiseAs,
-				options.Interface.NodeHostAdvertiseAs, options.Interface.NodePortAdvertiseAs,
-				options.Interface.AdvertiseHostToClientAs, options.Interface.AdvertiseNodePortToClientAs,
-				nodeTcpOptions?.NodeTcpPortAdvertiseAs ?? 0);
+		if (intIpAddress.Equals(IPAddress.Any) && options.Interface.ReplicationHostAdvertiseAs == null) {
+			intHostToAdvertise = addressToAdvertise.ToString();
 		}
 
-		_httpService = new KestrelHttpService(ServiceAccessibility.Public, _mainQueue, new TrieUriRouter(), options.Application.LogHttpRequests,
-			string.IsNullOrEmpty(GossipAdvertiseInfo.AdvertiseHostToClientAs) ? GossipAdvertiseInfo.AdvertiseExternalHostAs : GossipAdvertiseInfo.AdvertiseHostToClientAs,
-			GossipAdvertiseInfo.AdvertiseHttpPortToClientAs == 0 ? GossipAdvertiseInfo.AdvertiseHttpPortAs : GossipAdvertiseInfo.AdvertiseHttpPortToClientAs,
-			NodeInfo.HttpEndPoint);
-
-		var components = new AuthenticationProviderFactoryComponents {
-			MainBus = _mainBus,
-			MainQueue = _mainQueue,
-			WorkerBuses = _workerBuses,
-			WorkersQueue = _workersHandler,
-			HttpSendService = httpSendService,
-			HttpService = _httpService,
-		};
-
-		// AUTHENTICATION INFRASTRUCTURE - delegate to plugins
-		authorizationProviderFactory ??= !options.Application.Insecure
-			? throw new InvalidConfigurationException($"An {nameof(AuthorizationProviderFactory)} is required when running securely.")
-			: new AuthorizationProviderFactory(_ => new PassthroughAuthorizationProviderFactory());
-		authenticationProviderFactory ??= !options.Application.Insecure
-			? throw new InvalidConfigurationException($"An {nameof(AuthenticationProviderFactory)} is required when running securely.")
-			: new AuthenticationProviderFactory(_ => new PassthroughAuthenticationProviderFactory());
-		additionalPersistentSubscriptionConsumerStrategyFactories ??=
-			Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>();
-
-		_authenticationProvider = new DelegatedAuthenticationProvider(
-			authenticationProviderFactory
-				.GetFactory(components)
-				.Build(options.Application.LogFailedAuthenticationAttempts)
-		);
-		Ensure.NotNull(_authenticationProvider, nameof(_authenticationProvider));
-
-		_authorizationProvider = authorizationProviderFactory
-			.GetFactory(new AuthorizationProviderFactoryComponents {
-				MainQueue = _mainQueue,
-				MainBus = _mainBus
-			}).Build();
-		Ensure.NotNull(_authorizationProvider, "authorizationProvider");
-
-		var modifiedOptions = options
-			.WithPlugableComponent(_authorizationProvider)
-			.WithPlugableComponent(_authenticationProvider)
-			.WithPlugableComponent(new ArchivePlugableComponent(options.Cluster.Archiver));
-
-		modifiedOptions = modifiedOptions.WithPlugableComponent(new LicensingPlugin(ex => {
-			Log.Warning("Shutting down due to licensing error: {Message}", ex.Message);
-			MainQueue.Publish(new ClientMessage.RequestShutdown(exitProcess: true, shutdownHttp: true));
-		}));
-
-		var authorizationGateway = new AuthorizationGateway(_authorizationProvider);
-		{
-			if (!isSingleNode) {
-				// INTERNAL TCP
-				if (NodeInfo.InternalTcp != null) {
-					var intTcpService = new TcpService(_mainQueue, NodeInfo.InternalTcp, _workersHandler,
-						TcpServiceType.Internal, TcpSecurityType.Normal,
-						new InternalTcpDispatcher(TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs)),
-						TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatInterval),
-						TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
-						_authenticationProvider, authorizationGateway, null, null, null, ESConsts.UnrestrictedPendingSendBytes,
-					ESConsts.MaxConnectionQueueSize);
-					_mainBus.Subscribe<SystemMessage.SystemInit>(intTcpService);
-					_mainBus.Subscribe<SystemMessage.SystemStart>(intTcpService);
-					_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(intTcpService);
-				}
-				// INTERNAL SECURE TCP
-				if (NodeInfo.InternalSecureTcp != null) {
-					var intSecTcpService = new TcpService(_mainQueue, NodeInfo.InternalSecureTcp, _workersHandler,
-						TcpServiceType.Internal, TcpSecurityType.Secure,
-						new InternalTcpDispatcher(TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs)),
-						TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatInterval),
-						TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
-						_authenticationProvider, authorizationGateway,
-						_certificateSelector, _intermediateCertsSelector, _internalClientCertificateValidator,
-						ESConsts.UnrestrictedPendingSendBytes,
-						ESConsts.MaxConnectionQueueSize);
-					_mainBus.Subscribe<SystemMessage.SystemInit>(intSecTcpService);
-					_mainBus.Subscribe<SystemMessage.SystemStart>(intSecTcpService);
-					_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(intSecTcpService);
-				}
-			}
+		if (extIpAddress.Equals(IPAddress.Any) && options.Interface.NodeHostAdvertiseAs == null) {
+			extHostToAdvertise = addressToAdvertise.ToString();
 		}
+	}
 
-		SubscribeWorkers(bus => {
-			var tcpSendService = new TcpSendService();
-			// ReSharper disable RedundantTypeArgumentsOfMethod
-			bus.Subscribe<TcpMessage.TcpSend>(tcpSendService);
-			// ReSharper restore RedundantTypeArgumentsOfMethod
-		});
+	var intTcpEndPoint = NodeInfo.InternalTcp == null
+		? null
+		: new DnsEndPoint(intHostToAdvertise, intTcpPortAdvertiseAs > 0
+			? (options.Interface.ReplicationTcpPortAdvertiseAs)
+			: NodeInfo.InternalTcp.Port);
 
+	var intSecureTcpEndPoint = NodeInfo.InternalSecureTcp == null
+		? null
+		: new DnsEndPoint(intHostToAdvertise, intSecTcpPortAdvertiseAs > 0
+			? intSecTcpPortAdvertiseAs
+			: NodeInfo.InternalSecureTcp.Port);
 
-		var httpAuthenticationProviders = new List<IHttpAuthenticationProvider>();
+	var extTcpEndPoint = NodeInfo.ExternalTcp == null
+		? null
+		: new DnsEndPoint(extHostToAdvertise, extTcpPortAdvertiseAs > 0
+			? extTcpPortAdvertiseAs
+			: NodeInfo.ExternalTcp.Port);
 
-		foreach (var authenticationScheme in _authenticationProvider.GetSupportedAuthenticationSchemes() ?? Enumerable.Empty<string>()) {
-			switch (authenticationScheme) {
-				case "Basic":
-					httpAuthenticationProviders.Add(new BasicHttpAuthenticationProvider(_authenticationProvider));
-					break;
-				case "Bearer":
-					httpAuthenticationProviders.Add(new BearerHttpAuthenticationProvider(_authenticationProvider));
-					break;
-				case "Insecure":
-					httpAuthenticationProviders.Add(new PassthroughHttpAuthenticationProvider(_authenticationProvider));
-					break;
-			}
-		}
+	var extSecureTcpEndPoint = NodeInfo.ExternalSecureTcp == null
+		? null
+		: new DnsEndPoint(extHostToAdvertise, extSecTcpPortAdvertiseAs > 0
+			? extSecTcpPortAdvertiseAs
+			: NodeInfo.ExternalSecureTcp.Port);
 
-		if (!httpAuthenticationProviders.Any()) {
-			throw new InvalidConfigurationException($"The server does not support any authentication scheme supported by the '{_authenticationProvider.Name}' authentication provider.");
-		}
+	var httpEndPoint = new DnsEndPoint(extHostToAdvertise,
+		options.Interface.NodePortAdvertiseAs > 0
+			? options.Interface.NodePortAdvertiseAs
+			: NodeInfo.HttpEndPoint.GetPort());
 
-		if (!options.Application.Insecure) {
-			//transport-level authentication providers
-			httpAuthenticationProviders.Add(
-				new NodeCertificateAuthenticationProvider(() => _certificateProvider.GetReservedNodeCommonName()));
+	return new GossipAdvertiseInfo(intTcpEndPoint, intSecureTcpEndPoint, extTcpEndPoint,
+		extSecureTcpEndPoint, httpEndPoint, options.Interface.ReplicationHostAdvertiseAs,
+		options.Interface.NodeHostAdvertiseAs, options.Interface.NodePortAdvertiseAs,
+		options.Interface.AdvertiseHostToClientAs, options.Interface.AdvertiseNodePortToClientAs,
+		nodeTcpOptions?.NodeTcpPortAdvertiseAs ?? 0);
+}
 
-			if (options.Interface.EnableTrustedAuth)
-				httpAuthenticationProviders.Add(new TrustedHttpAuthenticationProvider());
+_httpService = new KestrelHttpService(ServiceAccessibility.Public, _mainQueue, new TrieUriRouter(), options.Application.LogHttpRequests,
+	string.IsNullOrEmpty(GossipAdvertiseInfo.AdvertiseHostToClientAs) ? GossipAdvertiseInfo.AdvertiseExternalHostAs : GossipAdvertiseInfo.AdvertiseHostToClientAs,
+	GossipAdvertiseInfo.AdvertiseHttpPortToClientAs == 0 ? GossipAdvertiseInfo.AdvertiseHttpPortAs : GossipAdvertiseInfo.AdvertiseHttpPortToClientAs,
+	NodeInfo.HttpEndPoint);
 
-			if (EnableUnixSocket)
-				httpAuthenticationProviders.Add(new UnixSocketAuthenticationProvider());
-		}
+var components = new AuthenticationProviderFactoryComponents {
+	MainBus = _mainBus,
+	MainQueue = _mainQueue,
+	WorkerBuses = _workerBuses,
+	WorkersQueue = _workersHandler,
+	HttpSendService = httpSendService,
+	HttpService = _httpService,
+};
 
-		//default authentication provider
-		httpAuthenticationProviders.Add(new AnonymousHttpAuthenticationProvider());
+// AUTHENTICATION INFRASTRUCTURE - delegate to plugins
+authorizationProviderFactory ??= !options.Application.Insecure
+	? throw new InvalidConfigurationException($"An {nameof(AuthorizationProviderFactory)} is required when running securely.")
+	: new AuthorizationProviderFactory(_ => new PassthroughAuthorizationProviderFactory());
+authenticationProviderFactory ??= !options.Application.Insecure
+	? throw new InvalidConfigurationException($"An {nameof(AuthenticationProviderFactory)} is required when running securely.")
+	: new AuthenticationProviderFactory(_ => new PassthroughAuthenticationProviderFactory());
+additionalPersistentSubscriptionConsumerStrategyFactories ??=
+	Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>();
 
-		var adminController = new AdminController(_mainQueue, _workersHandler);
-		var pingController = new PingController();
-		var statController = new StatController(monitoringQueue, _workersHandler);
-		var metricsController = new MetricsController();
-		var atomController = new AtomController(_mainQueue, _workersHandler,
-			options.Application.DisableHttpCaching, options.Application.MaxAppendEventSize, TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs));
-		var gossipController = new GossipController(_mainQueue, _workersHandler,
-			trackers.GossipTrackers.ProcessingRequestFromHttpClient);
-		var persistentSubscriptionController =
-			new PersistentSubscriptionController(httpSendService, _mainQueue, _workersHandler);
+_authenticationProvider = new DelegatedAuthenticationProvider(
+	authenticationProviderFactory
+		.GetFactory(components)
+		.Build(options.Application.LogFailedAuthenticationAttempts)
+);
+Ensure.NotNull(_authenticationProvider, nameof(_authenticationProvider));
 
-		var infoController = new InfoController(
-			options,
-			new Dictionary<string, bool> {
-				["projections"] = options.Projection.RunProjections != ProjectionType.None || options.DevMode.Dev,
-				["userManagement"] = options.Auth.AuthenticationType == Opts.AuthenticationTypeDefault && !options.Application.Insecure,
-				["atomPub"] = options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev
-			},
-			_authenticationProvider
-		);
+_authorizationProvider = authorizationProviderFactory
+	.GetFactory(new AuthorizationProviderFactoryComponents {
+		MainQueue = _mainQueue,
+		MainBus = _mainBus
+	}).Build();
+Ensure.NotNull(_authorizationProvider, "authorizationProvider");
 
-		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(infoController);
+var modifiedOptions = options
+	.WithPlugableComponent(_authorizationProvider)
+	.WithPlugableComponent(_authenticationProvider)
+	.WithPlugableComponent(new ArchivePlugableComponent(options.Cluster.Archiver));
 
-		_httpService.SetupController(persistentSubscriptionController);
-		if (!options.Interface.DisableAdminUi)
-			_httpService.SetupController(adminController);
-		_httpService.SetupController(pingController);
-		_httpService.SetupController(infoController);
-		if (!options.Interface.DisableStatsOnHttp) {
-			_httpService.SetupController(statController);
-			_httpService.SetupController(metricsController);
-		}
-		if (options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev)
-			_httpService.SetupController(atomController);
-		if (!options.Interface.DisableGossipOnHttp)
-			_httpService.SetupController(gossipController);
+modifiedOptions = modifiedOptions.WithPlugableComponent(new LicensingPlugin(ex => {
+	Log.Warning("Shutting down due to licensing error: {Message}", ex.Message);
+	MainQueue.Publish(new ClientMessage.RequestShutdown(exitProcess: true, shutdownHttp: true));
+}));
 
-		_mainBus.Subscribe<SystemMessage.SystemInit>(_httpService);
-		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(_httpService);
-
-		SubscribeWorkers(KestrelHttpService.CreateAndSubscribePipeline);
-
-		// REQUEST FORWARDING
-		var forwardingService = new RequestForwardingService(_mainQueue, forwardingProxy, TimeSpan.FromSeconds(1));
-		_mainBus.Subscribe<SystemMessage.SystemStart>(forwardingService);
-		_mainBus.Subscribe<SystemMessage.RequestForwardingTimerTick>(forwardingService);
-		_mainBus.Subscribe<ClientMessage.NotHandled>(forwardingService);
-		_mainBus.Subscribe<ClientMessage.WriteEventsCompleted>(forwardingService);
-		_mainBus.Subscribe<ClientMessage.TransactionStartCompleted>(forwardingService);
-		_mainBus.Subscribe<ClientMessage.TransactionWriteCompleted>(forwardingService);
-		_mainBus.Subscribe<ClientMessage.TransactionCommitCompleted>(forwardingService);
-		_mainBus.Subscribe<ClientMessage.DeleteStreamCompleted>(forwardingService);
-
-		// REQUEST MANAGEMENT
-		var requestManagement = new RequestManagementService(
-			_mainQueue,
-			TimeSpan.FromMilliseconds(options.Database.PrepareTimeoutMs),
-			TimeSpan.FromMilliseconds(options.Database.CommitTimeoutMs),
-			logFormat.SupportsExplicitTransactions);
-
-		_mainBus.Subscribe<SystemMessage.SystemInit>(requestManagement);
-		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(requestManagement);
-
-		_mainBus.Subscribe<ClientMessage.WriteEvents>(requestManagement);
-		_mainBus.Subscribe<ClientMessage.TransactionStart>(requestManagement);
-		_mainBus.Subscribe<ClientMessage.TransactionWrite>(requestManagement);
-		_mainBus.Subscribe<ClientMessage.TransactionCommit>(requestManagement);
-		_mainBus.Subscribe<ClientMessage.DeleteStream>(requestManagement);
-
-		_mainBus.Subscribe<StorageMessage.AlreadyCommitted>(requestManagement);
-
-		_mainBus.Subscribe<StorageMessage.PrepareAck>(requestManagement);
-		_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(requestManagement);
-		_mainBus.Subscribe<ReplicationTrackingMessage.IndexedTo>(requestManagement);
-		_mainBus.Subscribe<StorageMessage.RequestCompleted>(requestManagement);
-		_mainBus.Subscribe<StorageMessage.CommitIndexed>(requestManagement);
-
-		_mainBus.Subscribe<StorageMessage.WrongExpectedVersion>(requestManagement);
-		_mainBus.Subscribe<StorageMessage.InvalidTransaction>(requestManagement);
-		_mainBus.Subscribe<StorageMessage.StreamDeleted>(requestManagement);
-
-		_mainBus.Subscribe<StorageMessage.RequestManagerTimerTick>(requestManagement);
-
-		// SUBSCRIPTIONS
-		var subscrBus = new InMemoryBus("SubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
-		var subscrQueue = new QueuedHandlerThreadPool(subscrBus, "Subscriptions", _queueStatsManager,
-			trackers.QueueTrackers, false);
-		_mainBus.Subscribe<SystemMessage.SystemStart>(subscrQueue);
-		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscrQueue);
-		_mainBus.Subscribe<TcpMessage.ConnectionClosed>(subscrQueue);
-		_mainBus.Subscribe<ClientMessage.SubscribeToStream>(subscrQueue);
-		_mainBus.Subscribe<ClientMessage.FilteredSubscribeToStream>(subscrQueue);
-		_mainBus.Subscribe<ClientMessage.UnsubscribeFromStream>(subscrQueue);
-		_mainBus.Subscribe<SubscriptionMessage.DropSubscription>(subscrQueue);
-		_mainBus.Subscribe<SubscriptionMessage.PollStream>(subscrQueue);
-		_mainBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscrQueue);
-		_mainBus.Subscribe<StorageMessage.EventCommitted>(subscrQueue);
-		_mainBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscrQueue);
-
-		var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, inMemReader);
-		subscrBus.Subscribe<SystemMessage.SystemStart>(subscription);
-		subscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscription);
-		subscrBus.Subscribe<TcpMessage.ConnectionClosed>(subscription);
-		subscrBus.Subscribe<ClientMessage.SubscribeToStream>(subscription);
-		subscrBus.Subscribe<ClientMessage.FilteredSubscribeToStream>(subscription);
-		subscrBus.Subscribe<ClientMessage.UnsubscribeFromStream>(subscription);
-		subscrBus.Subscribe<SubscriptionMessage.DropSubscription>(subscription);
-		subscrBus.Subscribe<SubscriptionMessage.PollStream>(subscription);
-		subscrBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscription);
-		subscrBus.Subscribe<StorageMessage.EventCommitted>(subscription);
-		subscrBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscription);
-
-		// PERSISTENT SUBSCRIPTIONS
-		// IO DISPATCHER
-		var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
-		var perSubscrQueue = new QueuedHandlerThreadPool(perSubscrBus, "PersistentSubscriptions", _queueStatsManager,
-			trackers.QueueTrackers, false);
-		var psubDispatcher = new IODispatcher(_mainQueue, perSubscrQueue);
-		perSubscrBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(psubDispatcher.BackwardReader);
-		perSubscrBus.Subscribe<ClientMessage.NotHandled>(psubDispatcher.BackwardReader);
-		perSubscrBus.Subscribe<ClientMessage.WriteEventsCompleted>(psubDispatcher.Writer);
-		perSubscrBus.Subscribe<ClientMessage.ReadStreamEventsForwardCompleted>(psubDispatcher.ForwardReader);
-		perSubscrBus.Subscribe<ClientMessage.ReadAllEventsForwardCompleted>(psubDispatcher.AllForwardReader);
-		perSubscrBus.Subscribe<ClientMessage.FilteredReadAllEventsForwardCompleted>(psubDispatcher.AllForwardFilteredReader);
-		perSubscrBus.Subscribe<ClientMessage.DeleteStreamCompleted>(psubDispatcher.StreamDeleter);
-		perSubscrBus.Subscribe<IODispatcherDelayedMessage>(psubDispatcher);
-		perSubscrBus.Subscribe<ClientMessage.NotHandled>(psubDispatcher);
-		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(perSubscrQueue);
-		_mainBus.Subscribe<TcpMessage.ConnectionClosed>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToStream>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToStream>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToStream>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToAll>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToAll>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToAll>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToStream>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToAll>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.UnsubscribeFromStream>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.PersistentSubscriptionAckEvents>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.PersistentSubscriptionNackEvents>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.ReplayParkedMessages>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.ReplayParkedMessage>(perSubscrQueue);
-		_mainBus.Subscribe<ClientMessage.ReadNextNPersistentMessages>(perSubscrQueue);
-		_mainBus.Subscribe<StorageMessage.EventCommitted>(perSubscrQueue);
-		_mainBus.Subscribe<TelemetryMessage.Request>(perSubscrQueue);
-		_mainBus.Subscribe<MonitoringMessage.GetAllPersistentSubscriptionStats>(perSubscrQueue);
-		_mainBus.Subscribe<MonitoringMessage.GetStreamPersistentSubscriptionStats>(perSubscrQueue);
-		_mainBus.Subscribe<MonitoringMessage.GetPersistentSubscriptionStats>(perSubscrQueue);
-		_mainBus.Subscribe<SubscriptionMessage.PersistentSubscriptionTimerTick>(perSubscrQueue);
-		_mainBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(perSubscrQueue);
-
-		//TODO CC can have multiple threads working on subscription if partition
-		var consumerStrategyRegistry = new PersistentSubscriptionConsumerStrategyRegistry(_mainQueue, _mainBus,
-			additionalPersistentSubscriptionConsumerStrategyFactories);
-		var persistentSubscription = new PersistentSubscriptionService<TStreamId>(perSubscrQueue, readIndex, psubDispatcher,
-			_mainQueue, consumerStrategyRegistry, trackers.PersistentSubscriptionTracker);
-		perSubscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(persistentSubscription);
-		perSubscrBus.Subscribe<SystemMessage.BecomeLeader>(persistentSubscription);
-		perSubscrBus.Subscribe<SystemMessage.StateChangeMessage>(persistentSubscription);
-		perSubscrBus.Subscribe<TcpMessage.ConnectionClosed>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToStream>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToAll>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.UnsubscribeFromStream>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionAckEvents>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionNackEvents>(persistentSubscription);
-		perSubscrBus.Subscribe<StorageMessage.EventCommitted>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToStream>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToStream>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToStream>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToAll>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToAll>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToAll>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.ReplayParkedMessages>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.ReplayParkedMessage>(persistentSubscription);
-		perSubscrBus.Subscribe<ClientMessage.ReadNextNPersistentMessages>(persistentSubscription);
-		perSubscrBus.Subscribe<MonitoringMessage.GetAllPersistentSubscriptionStats>(persistentSubscription);
-		perSubscrBus.Subscribe<MonitoringMessage.GetStreamPersistentSubscriptionStats>(persistentSubscription);
-		perSubscrBus.Subscribe<MonitoringMessage.GetPersistentSubscriptionStats>(persistentSubscription);
-		perSubscrBus.Subscribe<TelemetryMessage.Request>(persistentSubscription);
-		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionTimerTick>(persistentSubscription);
-		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(persistentSubscription);
-
-		// STORAGE SCAVENGER
-		ScavengerFactory scavengerFactory;
-		var scavengerDispatcher = new IODispatcher(_mainQueue, _mainQueue);
-		_mainBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(scavengerDispatcher.BackwardReader);
-		_mainBus.Subscribe<ClientMessage.NotHandled>(scavengerDispatcher.BackwardReader);
-		_mainBus.Subscribe<ClientMessage.WriteEventsCompleted>(scavengerDispatcher.Writer);
-		_mainBus.Subscribe<IODispatcherDelayedMessage>(scavengerDispatcher);
-		_mainBus.Subscribe<ClientMessage.NotHandled>(scavengerDispatcher);
-
-		// reuse the same buffer; it's quite big.
-		var calculatorBuffer = new Calculator<TStreamId>.Buffer(32_768);
-
-		scavengerFactory = new ScavengerFactory((message, scavengerLogger, logger) => {
-			// currently on the main queue
-			var optionsCalculator = new ScavengeOptionsCalculator(options, archiveOptions, message);
-
-			var throttle = new Throttle(
-				logger: logger,
-				minimumRest: TimeSpan.FromMilliseconds(1000),
-				restLoggingThreshold: TimeSpan.FromMilliseconds(10_000),
-				activePercent: message.ThrottlePercent ?? 100);
-
-			if (logFormat is not LogFormatAbstractor<string> logFormatV2)
-				throw new NotSupportedException("Scavenge is not yet supported on Log V3");
-
-			if (options.Database.MemDb)
-				throw new NotSupportedException("Scavenge is not supported on in-memory databases");
-
-			var cancellationCheckPeriod = 1024;
-
-			var longHasher = new CompositeHasher<TStreamId>(logFormat.LowHasher, logFormat.HighHasher);
-
-			// the backends (and therefore connections) are scoped to the run of the scavenge
-			// so that we don't keep hold of memory used for the page caches between scavenges
-			var backendPool = new ObjectPool<IScavengeStateBackend<TStreamId>>(
-				objectPoolName: "scavenge backend pool",
-				initialCount: 0, // so that factory is not called on the main queue
-				maxCount: TFChunkScavenger.MaxThreadCount + 1,
-				factory: () => {
-					// not on the main queue
-					var scavengeDirectory = Path.Combine(indexPath, "scavenging");
-					Directory.CreateDirectory(scavengeDirectory);
-					var dbPath = Path.Combine(scavengeDirectory, "scavenging.db");
-					var connectionStringBuilder = new SqliteConnectionStringBuilder {
-						DataSource = dbPath,
-						Pooling = false,
-					};
-					var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
-					connection.Open();
-					Log.Information("Opened scavenging database {scavengeDatabase} with version {version}",
-						dbPath, connection.ServerVersion);
-					var sqlite = new SqliteScavengeBackend<TStreamId>(
-						logger: logger,
-						pageSizeInBytes: options.Database.ScavengeBackendPageSize,
-						cacheSizeInBytes: options.Database.ScavengeBackendCacheSize);
-					sqlite.Initialize(connection);
-					return sqlite;
-				},
-				dispose: backend => backend.Dispose());
-
-			var state = new ScavengeState<TStreamId>(
-				logger,
-				longHasher,
-				logFormat.Metastreams,
-				backendPool,
-				options.Database.ScavengeHashUsersCacheCapacity);
-
-			var accumulator = new Accumulator<TStreamId>(
-				logger: logger,
-				chunkSize: options.Database.ChunkSize,
-				metastreamLookup: logFormat.Metastreams,
-				chunkReader: new ChunkReaderForAccumulator<TStreamId>(
-					Db.Manager,
-					logFormat.Metastreams,
-					logFormat.StreamIdConverter,
-					Db.Config.ReplicationCheckpoint.AsReadOnly(),
-					options.Database.ChunkSize),
-				index: new IndexReaderForAccumulator<TStreamId>(readIndex),
-				cancellationCheckPeriod: cancellationCheckPeriod,
-				throttle: throttle);
-
-			var calculator = new Calculator<TStreamId>(
-				logger: logger,
-				new IndexReaderForCalculator<TStreamId>(
-					readIndex,
-					() => new TFReaderLease(readerPool),
-					state.LookupUniqueHashUser),
-				chunkSize: options.Database.ChunkSize,
-				cancellationCheckPeriod: cancellationCheckPeriod,
-				buffer: calculatorBuffer,
-				throttle: throttle);
-
-			var chunkRemover = IChunkRemover<TStreamId, ILogRecord>.NoOp;
-			if (archiveOptions.Enabled) {
-				chunkRemover = new ChunkRemover<TStreamId, ILogRecord>(
-					logger: logger,
-					archiveCheckpoint: new AdvancingCheckpoint(archiveReader.GetCheckpoint),
-					chunkManager: new ChunkManagerForChunkRemover(Db.Manager),
-					locatorCodec: locatorCodec,
-					retainPeriod: TimeSpan.FromDays(archiveOptions.RetainAtLeast.Days),
-					retainBytes: archiveOptions.RetainAtLeast.LogicalBytes);
-			}
-
-			var chunkExecutor = new ChunkExecutor<TStreamId, ILogRecord>(
-				logger,
-				logFormat.Metastreams,
-				chunkRemover,
-				new ChunkManagerForExecutor<TStreamId>(logger, Db.Manager, Db.Config, Db.TransformManager),
-				chunkSize: Db.Config.ChunkSize,
-				unsafeIgnoreHardDeletes: options.Database.UnsafeIgnoreHardDelete,
-				cancellationCheckPeriod: cancellationCheckPeriod,
-				threads: message.Threads,
-				isArchiver: options.Cluster.Archiver,
-				throttle: throttle);
-
-			var chunkMerger = new ChunkMerger(
-				logger: logger,
-				mergeChunks: optionsCalculator.MergeChunks,
-				backend: new OldScavengeChunkMergerBackend(logger, db: Db),
-				throttle: throttle);
-
-			var indexExecutor = new IndexExecutor<TStreamId>(
-				logger,
-				new IndexScavenger(tableIndex),
-				new ChunkReaderForIndexExecutor<TStreamId>(() => new TFReaderLease(readerPool)),
-				unsafeIgnoreHardDeletes: options.Database.UnsafeIgnoreHardDelete,
-				restPeriod: 32_768,
-				throttle: throttle);
-
-			var cleaner = new Cleaner(
-				logger: logger,
-				unsafeIgnoreHardDeletes: options.Database.UnsafeIgnoreHardDelete);
-
-			var scavengePointSource = new ScavengePointSource(logger, scavengerDispatcher);
-
-			return new Scavenger<TStreamId>(
-				logger: logger,
-				checkPreconditions: () => {
-					tableIndex.Visit(table => {
-						if (table.Version <= PTableVersions.IndexV1)
-							throw new NotSupportedException(
-								$"PTable {table.Filename} has version {table.Version}. Scavenge requires V2 index files and above. Please rebuild the indexes to upgrade them.");
-					});
-				},
-				state: state,
-				accumulator: accumulator,
-				calculator: calculator,
-				chunkExecutor: chunkExecutor,
-				chunkMerger: chunkMerger,
-				indexExecutor: indexExecutor,
-				cleaner: cleaner,
-				scavengePointSource: scavengePointSource,
-				scavengerLogger: scavengerLogger,
-				statusTracker: trackers.ScavengeStatusTracker,
-				// threshold < 0: execute all chunks, even those with no weight
-				// threshold = 0: execute all chunks with weight greater than 0
-				// threshold > 0: execute all chunks above a certain weight
-				thresholdForNewScavenge: optionsCalculator.ChunkExecutionThreshold,
-				syncOnly: message.SyncOnly,
-				getThrottleStats: () => throttle.PrettyPrint());
-		});
-
-		var scavengerLogManager = new TFChunkScavengerLogManager(
-			nodeEndpoint: $"{GossipAdvertiseInfo.HttpEndPoint.Host}:{GossipAdvertiseInfo.HttpEndPoint.Port}",
-			scavengeHistoryMaxAge: TimeSpan.FromDays(options.Database.ScavengeHistoryMaxAge),
-			ioDispatcher: scavengerDispatcher);
-
-		var storageScavenger = new StorageScavenger(
-			logManager: scavengerLogManager,
-			scavengerFactory: scavengerFactory,
-			switchChunksLock: _switchChunksLock);
-
-		// ReSharper disable RedundantTypeArgumentsOfMethod
-		_mainBus.Subscribe<ClientMessage.ScavengeDatabase>(storageScavenger);
-		_mainBus.Subscribe<ClientMessage.StopDatabaseScavenge>(storageScavenger);
-		_mainBus.Subscribe<ClientMessage.GetCurrentDatabaseScavenge>(storageScavenger);
-		_mainBus.Subscribe<ClientMessage.GetLastDatabaseScavenge>(storageScavenger);
-		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(storageScavenger);
-		// ReSharper restore RedundantTypeArgumentsOfMethod
-
-		// REDACTION
-		var redactionBus = new InMemoryBus("RedactionBus", true, TimeSpan.FromSeconds(2));
-		var redactionQueue = new QueuedHandlerThreadPool(redactionBus, "Redaction", _queueStatsManager,
-			trackers.QueueTrackers, false);
-
-		_mainBus.Subscribe<RedactionMessage.GetEventPosition>(redactionQueue);
-		_mainBus.Subscribe<RedactionMessage.AcquireChunksLock>(redactionQueue);
-		_mainBus.Subscribe<RedactionMessage.SwitchChunk>(redactionQueue);
-		_mainBus.Subscribe<RedactionMessage.ReleaseChunksLock>(redactionQueue);
-		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(redactionQueue);
-
-		var redactionService = new RedactionService<TStreamId>(redactionQueue, Db, _readIndex, _switchChunksLock);
-		redactionBus.Subscribe<RedactionMessage.GetEventPosition>(redactionService);
-		redactionBus.Subscribe<RedactionMessage.AcquireChunksLock>(redactionService);
-		redactionBus.Subscribe<RedactionMessage.SwitchChunk>(redactionService);
-		redactionBus.Subscribe<RedactionMessage.ReleaseChunksLock>(redactionService);
-		redactionBus.Subscribe<SystemMessage.BecomeShuttingDown>(redactionService);
-
-		// TIMER
-		_timeProvider = new RealTimeProvider();
-		var threadBasedScheduler = new ThreadBasedScheduler(_queueStatsManager, trackers.QueueTrackers);
-		AddTask(threadBasedScheduler.Task);
-		_timerService = new TimerService(threadBasedScheduler);
-		_mainBus.Subscribe<SystemMessage.BecomeShutdown>(_timerService);
-		_mainBus.Subscribe<TimerMessage.Schedule>(_timerService);
-
-		var memberInfo = MemberInfo.Initial(NodeInfo.InstanceId, _timeProvider.UtcNow, VNodeState.Unknown, true,
-			GossipAdvertiseInfo.InternalTcp,
-			GossipAdvertiseInfo.InternalSecureTcp,
-			GossipAdvertiseInfo.ExternalTcp,
-			GossipAdvertiseInfo.ExternalSecureTcp,
-			GossipAdvertiseInfo.HttpEndPoint,
-			GossipAdvertiseInfo.AdvertiseHostToClientAs,
-			GossipAdvertiseInfo.AdvertiseHttpPortToClientAs,
-			GossipAdvertiseInfo.AdvertiseTcpPortToClientAs,
-			options.Cluster.NodePriority, options.Cluster.ReadOnlyReplica, VersionInfo.Version);
-
-		// ELECTIONS TRACKER
-		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(trackers.ElectionCounterTracker);
-
-		// TELEMETRY
-		var telemetryService = new TelemetryService(
-			Db.Manager,
-			modifiedOptions,
-			configuration,
-			_mainQueue,
-			new TelemetrySink(options.Application.TelemetryOptout),
-			Db.Config.WriterCheckpoint.AsReadOnly(),
-			memberInfo.InstanceId
-		);
-		if (modifiedOptions.Cluster.ReadOnlyReplica)
-			_mainBus.Subscribe<SystemMessage.ReplicaStateMessage>(telemetryService);
-		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(telemetryService);
-		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(telemetryService);
-		_mainBus.Subscribe<LeaderDiscoveryMessage.LeaderFound>(telemetryService);
-
-		// LEADER REPLICATION
-		var leaderReplicationService = new LeaderReplicationService(_mainQueue, NodeInfo.InstanceId, Db,
-			_workersHandler,
-			epochManager, options.Cluster.ClusterSize,
-			options.Cluster.UnsafeAllowSurplusNodes,
-			_queueStatsManager);
-		AddTask(leaderReplicationService.Task);
-
-		if (!isSingleNode) {
-			_mainBus.Subscribe<SystemMessage.SystemStart>(leaderReplicationService);
-			_mainBus.Subscribe<SystemMessage.StateChangeMessage>(leaderReplicationService);
-			_mainBus.Subscribe<SystemMessage.EnablePreLeaderReplication>(leaderReplicationService);
-			_mainBus.Subscribe<ReplicationMessage.ReplicaSubscriptionRequest>(leaderReplicationService);
-			_mainBus.Subscribe<ReplicationMessage.ReplicaLogPositionAck>(leaderReplicationService);
-			_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(leaderReplicationService);
-			monitoringInnerBus.Subscribe<ReplicationMessage.GetReplicationStats>(leaderReplicationService);
-
-			// REPLICA REPLICATION
-			var replicaService = new ReplicaService(_mainQueue, Db, epochManager, _workersHandler,
-				_authenticationProvider, authorizationGateway,
-				GossipAdvertiseInfo.InternalTcp ?? GossipAdvertiseInfo.InternalSecureTcp,
-				options.Cluster.ReadOnlyReplica,
-				!disableInternalTcpTls, _internalServerCertificateValidator,
-				_certificateSelector,
-				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
+var authorizationGateway = new AuthorizationGateway(_authorizationProvider);
+{
+	if (!isSingleNode) {
+		// INTERNAL TCP
+		if (NodeInfo.InternalTcp != null) {
+			var intTcpService = new TcpService(_mainQueue, NodeInfo.InternalTcp, _workersHandler,
+				TcpServiceType.Internal, TcpSecurityType.Normal,
+				new InternalTcpDispatcher(TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs)),
 				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatInterval),
-				TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs));
-			_mainBus.Subscribe<SystemMessage.StateChangeMessage>(replicaService);
-			_mainBus.Subscribe<ReplicationMessage.ReconnectToLeader>(replicaService);
-			_mainBus.Subscribe<ReplicationMessage.SubscribeToLeader>(replicaService);
-			_mainBus.Subscribe<ReplicationMessage.AckLogPosition>(replicaService);
-			_mainBus.Subscribe<ClientMessage.TcpForwardMessage>(replicaService);
-		} else {
-			//LeaderReplicationService only running on a single node to provide stats, hence not subscribed to the other message types like SystemStart and StateChangeMessage
-			monitoringInnerBus.Subscribe<ReplicationMessage.GetReplicationStats>(leaderReplicationService);
+				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
+				_authenticationProvider, authorizationGateway, null, null, null, ESConsts.UnrestrictedPendingSendBytes,
+				ESConsts.MaxConnectionQueueSize);
+			_mainBus.Subscribe<SystemMessage.SystemInit>(intTcpService);
+			_mainBus.Subscribe<SystemMessage.SystemStart>(intTcpService);
+			_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(intTcpService);
 		}
-
-		// ELECTIONS
-		if (!NodeInfo.IsReadOnlyReplica) {
-			var electionsService = new ElectionsService(
-				_mainQueue,
-				memberInfo,
-				options.Cluster.ClusterSize,
-				Db.Config.WriterCheckpoint.AsReadOnly(),
-				Db.Config.ChaserCheckpoint.AsReadOnly(),
-				Db.Config.ProposalCheckpoint,
-				epochManager,
-				() => readIndex.LastIndexedPosition,
-				options.Cluster.NodePriority,
-				_timeProvider,
-				TimeSpan.FromMilliseconds(options.Cluster.LeaderElectionTimeoutMs));
-			electionsService.SubscribeMessages(_mainBus);
+		// INTERNAL SECURE TCP
+		if (NodeInfo.InternalSecureTcp != null) {
+			var intSecTcpService = new TcpService(_mainQueue, NodeInfo.InternalSecureTcp, _workersHandler,
+				TcpServiceType.Internal, TcpSecurityType.Secure,
+				new InternalTcpDispatcher(TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs)),
+				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatInterval),
+				TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
+				_authenticationProvider, authorizationGateway,
+				_certificateSelector, _intermediateCertsSelector, _internalClientCertificateValidator,
+				ESConsts.UnrestrictedPendingSendBytes,
+				ESConsts.MaxConnectionQueueSize);
+			_mainBus.Subscribe<SystemMessage.SystemInit>(intSecTcpService);
+			_mainBus.Subscribe<SystemMessage.SystemStart>(intSecTcpService);
+			_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(intSecTcpService);
 		}
+	}
+}
 
-		// GOSSIP
+SubscribeWorkers(bus => {
+	var tcpSendService = new TcpSendService();
+	// ReSharper disable RedundantTypeArgumentsOfMethod
+	bus.Subscribe<TcpMessage.TcpSend>(tcpSendService);
+	// ReSharper restore RedundantTypeArgumentsOfMethod
+});
 
-		var gossipSeedSource = (
-			options.Cluster.DiscoverViaDns,
-			options.Cluster.ClusterSize > 1,
-			options.Cluster.GossipSeed is { Length: > 0 }) switch {
-				(true, true, _) => (IGossipSeedSource)new DnsGossipSeedSource(options.Cluster.ClusterDns,
-					options.Cluster.ClusterGossipPort),
-				(false, true, false) => throw new InvalidConfigurationException(
-					"DNS discovery is disabled, but no gossip seed endpoints have been specified. "
-					+ "Specify gossip seeds using the `GossipSeed` option."),
-				_ => new KnownEndpointGossipSeedSource(options.Cluster.GossipSeed)
+
+var httpAuthenticationProviders = new List<IHttpAuthenticationProvider>();
+
+foreach (var authenticationScheme in _authenticationProvider.GetSupportedAuthenticationSchemes() ?? Enumerable.Empty<string>()) {
+	switch (authenticationScheme) {
+		case "Basic":
+			httpAuthenticationProviders.Add(new BasicHttpAuthenticationProvider(_authenticationProvider));
+			break;
+		case "Bearer":
+			httpAuthenticationProviders.Add(new BearerHttpAuthenticationProvider(_authenticationProvider));
+			break;
+		case "Insecure":
+			httpAuthenticationProviders.Add(new PassthroughHttpAuthenticationProvider(_authenticationProvider));
+			break;
+	}
+}
+
+if (!httpAuthenticationProviders.Any()) {
+	throw new InvalidConfigurationException($"The server does not support any authentication scheme supported by the '{_authenticationProvider.Name}' authentication provider.");
+}
+
+if (!options.Application.Insecure) {
+	//transport-level authentication providers
+	httpAuthenticationProviders.Add(
+		new NodeCertificateAuthenticationProvider(() => _certificateProvider.GetReservedNodeCommonName()));
+
+	if (options.Interface.EnableTrustedAuth)
+		httpAuthenticationProviders.Add(new TrustedHttpAuthenticationProvider());
+
+	if (EnableUnixSocket)
+		httpAuthenticationProviders.Add(new UnixSocketAuthenticationProvider());
+}
+
+//default authentication provider
+httpAuthenticationProviders.Add(new AnonymousHttpAuthenticationProvider());
+
+var adminController = new AdminController(_mainQueue, _workersHandler);
+var pingController = new PingController();
+var statController = new StatController(monitoringQueue, _workersHandler);
+var metricsController = new MetricsController();
+var atomController = new AtomController(_mainQueue, _workersHandler,
+	options.Application.DisableHttpCaching, options.Application.MaxAppendEventSize, TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs));
+var gossipController = new GossipController(_mainQueue, _workersHandler,
+	trackers.GossipTrackers.ProcessingRequestFromHttpClient);
+var persistentSubscriptionController =
+	new PersistentSubscriptionController(httpSendService, _mainQueue, _workersHandler);
+
+var infoController = new InfoController(
+	options,
+	new Dictionary<string, bool> {
+		["projections"] = options.Projection.RunProjections != ProjectionType.None || options.DevMode.Dev,
+		["userManagement"] = options.Auth.AuthenticationType == Opts.AuthenticationTypeDefault && !options.Application.Insecure,
+		["atomPub"] = options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev
+	},
+	_authenticationProvider
+);
+
+_mainBus.Subscribe<SystemMessage.StateChangeMessage>(infoController);
+
+_httpService.SetupController(persistentSubscriptionController);
+if (!options.Interface.DisableAdminUi)
+	_httpService.SetupController(adminController);
+_httpService.SetupController(pingController);
+_httpService.SetupController(infoController);
+if (!options.Interface.DisableStatsOnHttp) {
+	_httpService.SetupController(statController);
+	_httpService.SetupController(metricsController);
+}
+if (options.Interface.EnableAtomPubOverHttp || options.DevMode.Dev)
+	_httpService.SetupController(atomController);
+if (!options.Interface.DisableGossipOnHttp)
+	_httpService.SetupController(gossipController);
+
+_mainBus.Subscribe<SystemMessage.SystemInit>(_httpService);
+_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(_httpService);
+
+SubscribeWorkers(KestrelHttpService.CreateAndSubscribePipeline);
+
+// REQUEST FORWARDING
+var forwardingService = new RequestForwardingService(_mainQueue, forwardingProxy, TimeSpan.FromSeconds(1));
+_mainBus.Subscribe<SystemMessage.SystemStart>(forwardingService);
+_mainBus.Subscribe<SystemMessage.RequestForwardingTimerTick>(forwardingService);
+_mainBus.Subscribe<ClientMessage.NotHandled>(forwardingService);
+_mainBus.Subscribe<ClientMessage.WriteEventsCompleted>(forwardingService);
+_mainBus.Subscribe<ClientMessage.TransactionStartCompleted>(forwardingService);
+_mainBus.Subscribe<ClientMessage.TransactionWriteCompleted>(forwardingService);
+_mainBus.Subscribe<ClientMessage.TransactionCommitCompleted>(forwardingService);
+_mainBus.Subscribe<ClientMessage.DeleteStreamCompleted>(forwardingService);
+
+// REQUEST MANAGEMENT
+var requestManagement = new RequestManagementService(
+	_mainQueue,
+	TimeSpan.FromMilliseconds(options.Database.PrepareTimeoutMs),
+	TimeSpan.FromMilliseconds(options.Database.CommitTimeoutMs),
+	logFormat.SupportsExplicitTransactions);
+
+_mainBus.Subscribe<SystemMessage.SystemInit>(requestManagement);
+_mainBus.Subscribe<SystemMessage.StateChangeMessage>(requestManagement);
+
+_mainBus.Subscribe<ClientMessage.WriteEvents>(requestManagement);
+_mainBus.Subscribe<ClientMessage.TransactionStart>(requestManagement);
+_mainBus.Subscribe<ClientMessage.TransactionWrite>(requestManagement);
+_mainBus.Subscribe<ClientMessage.TransactionCommit>(requestManagement);
+_mainBus.Subscribe<ClientMessage.DeleteStream>(requestManagement);
+
+_mainBus.Subscribe<StorageMessage.AlreadyCommitted>(requestManagement);
+
+_mainBus.Subscribe<StorageMessage.PrepareAck>(requestManagement);
+_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(requestManagement);
+_mainBus.Subscribe<ReplicationTrackingMessage.IndexedTo>(requestManagement);
+_mainBus.Subscribe<StorageMessage.RequestCompleted>(requestManagement);
+_mainBus.Subscribe<StorageMessage.CommitIndexed>(requestManagement);
+
+_mainBus.Subscribe<StorageMessage.WrongExpectedVersion>(requestManagement);
+_mainBus.Subscribe<StorageMessage.InvalidTransaction>(requestManagement);
+_mainBus.Subscribe<StorageMessage.StreamDeleted>(requestManagement);
+
+_mainBus.Subscribe<StorageMessage.RequestManagerTimerTick>(requestManagement);
+
+// SUBSCRIPTIONS
+var subscrBus = new InMemoryBus("SubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
+var subscrQueue = new QueuedHandlerThreadPool(subscrBus, "Subscriptions", _queueStatsManager,
+	trackers.QueueTrackers, false);
+_mainBus.Subscribe<SystemMessage.SystemStart>(subscrQueue);
+_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscrQueue);
+_mainBus.Subscribe<TcpMessage.ConnectionClosed>(subscrQueue);
+_mainBus.Subscribe<ClientMessage.SubscribeToStream>(subscrQueue);
+_mainBus.Subscribe<ClientMessage.FilteredSubscribeToStream>(subscrQueue);
+_mainBus.Subscribe<ClientMessage.UnsubscribeFromStream>(subscrQueue);
+_mainBus.Subscribe<SubscriptionMessage.DropSubscription>(subscrQueue);
+_mainBus.Subscribe<SubscriptionMessage.PollStream>(subscrQueue);
+_mainBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscrQueue);
+_mainBus.Subscribe<StorageMessage.EventCommitted>(subscrQueue);
+_mainBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscrQueue);
+
+var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, inMemReader);
+subscrBus.Subscribe<SystemMessage.SystemStart>(subscription);
+subscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscription);
+subscrBus.Subscribe<TcpMessage.ConnectionClosed>(subscription);
+subscrBus.Subscribe<ClientMessage.SubscribeToStream>(subscription);
+subscrBus.Subscribe<ClientMessage.FilteredSubscribeToStream>(subscription);
+subscrBus.Subscribe<ClientMessage.UnsubscribeFromStream>(subscription);
+subscrBus.Subscribe<SubscriptionMessage.DropSubscription>(subscription);
+subscrBus.Subscribe<SubscriptionMessage.PollStream>(subscription);
+subscrBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscription);
+subscrBus.Subscribe<StorageMessage.EventCommitted>(subscription);
+subscrBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscription);
+
+// PERSISTENT SUBSCRIPTIONS
+// IO DISPATCHER
+var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
+var perSubscrQueue = new QueuedHandlerThreadPool(perSubscrBus, "PersistentSubscriptions", _queueStatsManager,
+	trackers.QueueTrackers, false);
+var psubDispatcher = new IODispatcher(_mainQueue, perSubscrQueue);
+perSubscrBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(psubDispatcher.BackwardReader);
+perSubscrBus.Subscribe<ClientMessage.NotHandled>(psubDispatcher.BackwardReader);
+perSubscrBus.Subscribe<ClientMessage.WriteEventsCompleted>(psubDispatcher.Writer);
+perSubscrBus.Subscribe<ClientMessage.ReadStreamEventsForwardCompleted>(psubDispatcher.ForwardReader);
+perSubscrBus.Subscribe<ClientMessage.ReadAllEventsForwardCompleted>(psubDispatcher.AllForwardReader);
+perSubscrBus.Subscribe<ClientMessage.FilteredReadAllEventsForwardCompleted>(psubDispatcher.AllForwardFilteredReader);
+perSubscrBus.Subscribe<ClientMessage.DeleteStreamCompleted>(psubDispatcher.StreamDeleter);
+perSubscrBus.Subscribe<IODispatcherDelayedMessage>(psubDispatcher);
+perSubscrBus.Subscribe<ClientMessage.NotHandled>(psubDispatcher);
+_mainBus.Subscribe<SystemMessage.StateChangeMessage>(perSubscrQueue);
+_mainBus.Subscribe<TcpMessage.ConnectionClosed>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToStream>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToStream>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToStream>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToAll>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToAll>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToAll>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToStream>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToAll>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.UnsubscribeFromStream>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.PersistentSubscriptionAckEvents>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.PersistentSubscriptionNackEvents>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.ReplayParkedMessages>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.ReplayParkedMessage>(perSubscrQueue);
+_mainBus.Subscribe<ClientMessage.ReadNextNPersistentMessages>(perSubscrQueue);
+_mainBus.Subscribe<StorageMessage.EventCommitted>(perSubscrQueue);
+_mainBus.Subscribe<TelemetryMessage.Request>(perSubscrQueue);
+_mainBus.Subscribe<MonitoringMessage.GetAllPersistentSubscriptionStats>(perSubscrQueue);
+_mainBus.Subscribe<MonitoringMessage.GetStreamPersistentSubscriptionStats>(perSubscrQueue);
+_mainBus.Subscribe<MonitoringMessage.GetPersistentSubscriptionStats>(perSubscrQueue);
+_mainBus.Subscribe<SubscriptionMessage.PersistentSubscriptionTimerTick>(perSubscrQueue);
+_mainBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(perSubscrQueue);
+
+//TODO CC can have multiple threads working on subscription if partition
+var consumerStrategyRegistry = new PersistentSubscriptionConsumerStrategyRegistry(_mainQueue, _mainBus,
+	additionalPersistentSubscriptionConsumerStrategyFactories);
+var persistentSubscription = new PersistentSubscriptionService<TStreamId>(perSubscrQueue, readIndex, psubDispatcher,
+	_mainQueue, consumerStrategyRegistry, trackers.PersistentSubscriptionTracker);
+perSubscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(persistentSubscription);
+perSubscrBus.Subscribe<SystemMessage.BecomeLeader>(persistentSubscription);
+perSubscrBus.Subscribe<SystemMessage.StateChangeMessage>(persistentSubscription);
+perSubscrBus.Subscribe<TcpMessage.ConnectionClosed>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToStream>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.ConnectToPersistentSubscriptionToAll>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.UnsubscribeFromStream>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionAckEvents>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.PersistentSubscriptionNackEvents>(persistentSubscription);
+perSubscrBus.Subscribe<StorageMessage.EventCommitted>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToStream>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToStream>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToStream>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.CreatePersistentSubscriptionToAll>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.UpdatePersistentSubscriptionToAll>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.DeletePersistentSubscriptionToAll>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.ReplayParkedMessages>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.ReplayParkedMessage>(persistentSubscription);
+perSubscrBus.Subscribe<ClientMessage.ReadNextNPersistentMessages>(persistentSubscription);
+perSubscrBus.Subscribe<MonitoringMessage.GetAllPersistentSubscriptionStats>(persistentSubscription);
+perSubscrBus.Subscribe<MonitoringMessage.GetStreamPersistentSubscriptionStats>(persistentSubscription);
+perSubscrBus.Subscribe<MonitoringMessage.GetPersistentSubscriptionStats>(persistentSubscription);
+perSubscrBus.Subscribe<TelemetryMessage.Request>(persistentSubscription);
+perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionTimerTick>(persistentSubscription);
+perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(persistentSubscription);
+
+// STORAGE SCAVENGER
+ScavengerFactory scavengerFactory;
+var scavengerDispatcher = new IODispatcher(_mainQueue, _mainQueue);
+_mainBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(scavengerDispatcher.BackwardReader);
+_mainBus.Subscribe<ClientMessage.NotHandled>(scavengerDispatcher.BackwardReader);
+_mainBus.Subscribe<ClientMessage.WriteEventsCompleted>(scavengerDispatcher.Writer);
+_mainBus.Subscribe<IODispatcherDelayedMessage>(scavengerDispatcher);
+_mainBus.Subscribe<ClientMessage.NotHandled>(scavengerDispatcher);
+
+// reuse the same buffer; it's quite big.
+var calculatorBuffer = new Calculator<TStreamId>.Buffer(32_768);
+
+scavengerFactory = new ScavengerFactory((message, scavengerLogger, logger) => {
+	// currently on the main queue
+	var optionsCalculator = new ScavengeOptionsCalculator(options, archiveOptions, message);
+
+	var throttle = new Throttle(
+		logger: logger,
+		minimumRest: TimeSpan.FromMilliseconds(1000),
+		restLoggingThreshold: TimeSpan.FromMilliseconds(10_000),
+		activePercent: message.ThrottlePercent ?? 100);
+
+	if (logFormat is not LogFormatAbstractor<string> logFormatV2)
+		throw new NotSupportedException("Scavenge is not yet supported on Log V3");
+
+	if (options.Database.MemDb)
+		throw new NotSupportedException("Scavenge is not supported on in-memory databases");
+
+	var cancellationCheckPeriod = 1024;
+
+	var longHasher = new CompositeHasher<TStreamId>(logFormat.LowHasher, logFormat.HighHasher);
+
+	// the backends (and therefore connections) are scoped to the run of the scavenge
+	// so that we don't keep hold of memory used for the page caches between scavenges
+	var backendPool = new ObjectPool<IScavengeStateBackend<TStreamId>>(
+		objectPoolName: "scavenge backend pool",
+		initialCount: 0, // so that factory is not called on the main queue
+		maxCount: TFChunkScavenger.MaxThreadCount + 1,
+		factory: () => {
+			// not on the main queue
+			var scavengeDirectory = Path.Combine(indexPath, "scavenging");
+			Directory.CreateDirectory(scavengeDirectory);
+			var dbPath = Path.Combine(scavengeDirectory, "scavenging.db");
+			var connectionStringBuilder = new SqliteConnectionStringBuilder {
+				DataSource = dbPath,
+				Pooling = false,
 			};
+			var connection = new SqliteConnection(connectionStringBuilder.ConnectionString);
+			connection.Open();
+			Log.Information("Opened scavenging database {scavengeDatabase} with version {version}",
+				dbPath, connection.ServerVersion);
+			var sqlite = new SqliteScavengeBackend<TStreamId>(
+				logger: logger,
+				pageSizeInBytes: options.Database.ScavengeBackendPageSize,
+				cacheSizeInBytes: options.Database.ScavengeBackendCacheSize);
+			sqlite.Initialize(connection);
+			return sqlite;
+		},
+		dispose: backend => backend.Dispose());
 
-		var gossip = new NodeGossipService(
-			_mainQueue,
-			options.Cluster.ClusterSize,
-			gossipSeedSource,
-			memberInfo,
-			Db.Config.WriterCheckpoint.AsReadOnly(),
-			Db.Config.ChaserCheckpoint.AsReadOnly(),
-			epochManager, () => readIndex.LastIndexedPosition,
-			options.Cluster.NodePriority, TimeSpan.FromMilliseconds(options.Cluster.GossipIntervalMs),
-			TimeSpan.FromMilliseconds(options.Cluster.GossipAllowedDifferenceMs),
-			TimeSpan.FromMilliseconds(options.Cluster.GossipTimeoutMs),
-			TimeSpan.FromSeconds(options.Cluster.DeadMemberRemovalPeriodSec),
-			_timeProvider);
-		_mainBus.Subscribe<SystemMessage.SystemInit>(gossip);
-		_mainBus.Subscribe<GossipMessage.RetrieveGossipSeedSources>(gossip);
-		_mainBus.Subscribe<GossipMessage.GotGossipSeedSources>(gossip);
-		_mainBus.Subscribe<GossipMessage.Gossip>(gossip);
-		_mainBus.Subscribe<GossipMessage.GossipReceived>(gossip);
-		_mainBus.Subscribe<GossipMessage.ReadGossip>(gossip);
-		_mainBus.Subscribe<GossipMessage.ClientGossip>(gossip);
-		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(gossip);
-		_mainBus.Subscribe<GossipMessage.GossipSendFailed>(gossip);
-		_mainBus.Subscribe<GossipMessage.UpdateNodePriority>(gossip);
-		_mainBus.Subscribe<SystemMessage.VNodeConnectionEstablished>(gossip);
-		_mainBus.Subscribe<SystemMessage.VNodeConnectionLost>(gossip);
-		_mainBus.Subscribe<GossipMessage.GetGossipFailed>(gossip);
-		_mainBus.Subscribe<GossipMessage.GetGossipReceived>(gossip);
-		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(gossip);
+	var state = new ScavengeState<TStreamId>(
+		logger,
+		longHasher,
+		logFormat.Metastreams,
+		backendPool,
+		options.Database.ScavengeHashUsersCacheCapacity);
 
-		var clusterStateChangeListener = new ClusterMultipleVersionsLogger();
-		_mainBus.Subscribe<GossipMessage.GossipUpdated>(clusterStateChangeListener);
+	var accumulator = new Accumulator<TStreamId>(
+		logger: logger,
+		chunkSize: options.Database.ChunkSize,
+		metastreamLookup: logFormat.Metastreams,
+		chunkReader: new ChunkReaderForAccumulator<TStreamId>(
+			Db.Manager,
+			logFormat.Metastreams,
+			logFormat.StreamIdConverter,
+			Db.Config.ReplicationCheckpoint.AsReadOnly(),
+			options.Database.ChunkSize),
+		index: new IndexReaderForAccumulator<TStreamId>(readIndex),
+		cancellationCheckPeriod: cancellationCheckPeriod,
+		throttle: throttle);
 
-		_reloadConfigSignalRegistration = PosixSignalRegistration.Create(PosixSignal.SIGHUP, c => {
-			c.Cancel = true;
-			Log.Information("Reloading the node's configuration since {Signal} has been received.", c.Signal);
-			_mainQueue.Publish(new ClientMessage.ReloadConfig());
-		});
+	var calculator = new Calculator<TStreamId>(
+		logger: logger,
+		new IndexReaderForCalculator<TStreamId>(
+			readIndex,
+			() => new TFReaderLease(readerPool),
+			state.LookupUniqueHashUser),
+		chunkSize: options.Database.ChunkSize,
+		cancellationCheckPeriod: cancellationCheckPeriod,
+		buffer: calculatorBuffer,
+		throttle: throttle);
 
-		// subsystems
-		_subsystems = options.Subsystems;
+	var chunkRemover = IChunkRemover<TStreamId, ILogRecord>.NoOp;
+	if (archiveOptions.Enabled) {
+		chunkRemover = new ChunkRemover<TStreamId, ILogRecord>(
+			logger: logger,
+			archiveCheckpoint: new AdvancingCheckpoint(archiveReader.GetCheckpoint),
+			chunkManager: new ChunkManagerForChunkRemover(Db.Manager),
+			locatorCodec: locatorCodec,
+			retainPeriod: TimeSpan.FromDays(archiveOptions.RetainAtLeast.Days),
+			retainBytes: archiveOptions.RetainAtLeast.LogicalBytes);
+	}
 
-		var standardComponents = new StandardComponents(Db.Config, _mainQueue, _mainBus, _timerService, _timeProvider,
-			httpSendService, new IHttpService[] { _httpService }, _workersHandler, _queueStatsManager, trackers.QueueTrackers, metricsConfiguration);
+	var chunkExecutor = new ChunkExecutor<TStreamId, ILogRecord>(
+		logger,
+		logFormat.Metastreams,
+		chunkRemover,
+		new ChunkManagerForExecutor<TStreamId>(logger, Db.Manager, Db.Config, Db.TransformManager),
+		chunkSize: Db.Config.ChunkSize,
+		unsafeIgnoreHardDeletes: options.Database.UnsafeIgnoreHardDelete,
+		cancellationCheckPeriod: cancellationCheckPeriod,
+		threads: message.Threads,
+		isArchiver: options.Cluster.Archiver,
+		throttle: throttle);
 
-		IServiceCollection ConfigureNodeServices(IServiceCollection services) {
-			services
-				.AddSingleton(telemetryService) // for correct disposal
-				.AddSingleton(_readIndex)
-				.AddSingleton(standardComponents)
-				.AddSingleton(authorizationGateway)
-				.AddSingleton(certificateProvider)
-				.AddSingleton(_authenticationProvider)
-				.AddSingleton<IReadOnlyList<IDbTransform>>(new List<IDbTransform> { new IdentityDbTransform() })
-				.AddSingleton<IReadOnlyList<IClusterVNodeStartupTask>>(new List<IClusterVNodeStartupTask> { })
-				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>(httpAuthenticationProviders)
-				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates,
-						X509Certificate2Collection Roots)>>
-					(() => (_certificateSelector(), _intermediateCertsSelector(), _trustedRootCertsSelector()))
-				.AddSingleton(_nodeHttpClientFactory)
-				.AddSingleton<IChunkRegistry<IChunkBlob>>(Db.Manager)
-				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy);
+	var chunkMerger = new ChunkMerger(
+		logger: logger,
+		mergeChunks: optionsCalculator.MergeChunks,
+		backend: new OldScavengeChunkMergerBackend(logger, db: Db),
+		throttle: throttle);
 
-			configureAdditionalNodeServices?.Invoke(services);
-			return services;
-		}
+	var indexExecutor = new IndexExecutor<TStreamId>(
+		logger,
+		new IndexScavenger(tableIndex),
+		new ChunkReaderForIndexExecutor<TStreamId>(() => new TFReaderLease(readerPool)),
+		unsafeIgnoreHardDeletes: options.Database.UnsafeIgnoreHardDelete,
+		restPeriod: 32_768,
+		throttle: throttle);
 
-		IReadOnlyList<IClusterVNodeStartupTask> startupTasks = [];
+	var cleaner = new Cleaner(
+		logger: logger,
+		unsafeIgnoreHardDeletes: options.Database.UnsafeIgnoreHardDelete);
 
-		void ConfigureNode(IApplicationBuilder app) {
-			var dbTransforms = app.ApplicationServices.GetService<IReadOnlyList<IDbTransform>>();
-			Db.TransformManager.LoadTransforms(dbTransforms);
+	var scavengePointSource = new ScavengePointSource(logger, scavengerDispatcher);
 
-			if (!Db.TransformManager.TrySetActiveTransform(options.Database.Transform))
-				throw new InvalidConfigurationException(
-					$"Unknown {nameof(options.Database.Transform)} specified: {options.Database.Transform}");
+	return new Scavenger<TStreamId>(
+		logger: logger,
+		checkPreconditions: () => {
+			tableIndex.Visit(table => {
+				if (table.Version <= PTableVersions.IndexV1)
+					throw new NotSupportedException(
+						$"PTable {table.Filename} has version {table.Version}. Scavenge requires V2 index files and above. Please rebuild the indexes to upgrade them.");
+			});
+		},
+		state: state,
+		accumulator: accumulator,
+		calculator: calculator,
+		chunkExecutor: chunkExecutor,
+		chunkMerger: chunkMerger,
+		indexExecutor: indexExecutor,
+		cleaner: cleaner,
+		scavengePointSource: scavengePointSource,
+		scavengerLogger: scavengerLogger,
+		statusTracker: trackers.ScavengeStatusTracker,
+		// threshold < 0: execute all chunks, even those with no weight
+		// threshold = 0: execute all chunks with weight greater than 0
+		// threshold > 0: execute all chunks above a certain weight
+		thresholdForNewScavenge: optionsCalculator.ChunkExecutionThreshold,
+		syncOnly: message.SyncOnly,
+		getThrottleStats: () => throttle.PrettyPrint());
+});
 
-			startupTasks = app.ApplicationServices.GetRequiredService<IReadOnlyList<IClusterVNodeStartupTask>>();
-		}
+var scavengerLogManager = new TFChunkScavengerLogManager(
+	nodeEndpoint: $"{GossipAdvertiseInfo.HttpEndPoint.Host}:{GossipAdvertiseInfo.HttpEndPoint.Port}",
+	scavengeHistoryMaxAge: TimeSpan.FromDays(options.Database.ScavengeHistoryMaxAge),
+	ioDispatcher: scavengerDispatcher);
 
-		async ValueTask StartNode(CancellationToken token) {
-			// TRUNCATE IF NECESSARY
-			var truncPos = Db.Config.TruncateCheckpoint.Read();
-			if (truncPos != -1) {
-				Log.Information(
-					"Truncate checkpoint is present. Truncate: {truncatePosition} (0x{truncatePosition:X}), Writer: {writerCheckpoint} (0x{writerCheckpoint:X}), Chaser: {chaserCheckpoint} (0x{chaserCheckpoint:X}), Epoch: {epochCheckpoint} (0x{epochCheckpoint:X})",
-					truncPos, truncPos, writerCheckpoint, writerCheckpoint, chaserCheckpoint, chaserCheckpoint,
-					epochCheckpoint, epochCheckpoint);
-				var truncator = new TFChunkDbTruncator(Db.Config, Db.Manager.FileSystem, type => Db.TransformManager.GetFactoryForExistingChunk(type));
-				await truncator.TruncateDb(truncPos, CancellationToken.None);
+var storageScavenger = new StorageScavenger(
+	logManager: scavengerLogManager,
+	scavengerFactory: scavengerFactory,
+	switchChunksLock: _switchChunksLock);
 
-				// The truncator has moved the checkpoints but it is possible that other components in the startup have
-				// already read the old values. If we ensure all checkpoint reads are performed after the truncation
-				// then we can remove this extra restart
-				Log.Information("Truncation successful. Shutting down.");
-				var shutdownGuid = Guid.NewGuid();
-				using var linked = CancellationTokenSource.CreateLinkedTokenSource(token);
-				linked.CancelAfter(ShutdownTimeout);
+// ReSharper disable RedundantTypeArgumentsOfMethod
+_mainBus.Subscribe<ClientMessage.ScavengeDatabase>(storageScavenger);
+_mainBus.Subscribe<ClientMessage.StopDatabaseScavenge>(storageScavenger);
+_mainBus.Subscribe<ClientMessage.GetCurrentDatabaseScavenge>(storageScavenger);
+_mainBus.Subscribe<ClientMessage.GetLastDatabaseScavenge>(storageScavenger);
+_mainBus.Subscribe<SystemMessage.StateChangeMessage>(storageScavenger);
+// ReSharper restore RedundantTypeArgumentsOfMethod
 
-				await HandleAsync(
-						new SystemMessage.BecomeShuttingDown(shutdownGuid, exitProcess: true, shutdownHttp: true),
-						linked.Token);
+// REDACTION
+var redactionBus = new InMemoryBus("RedactionBus", true, TimeSpan.FromSeconds(2));
+var redactionQueue = new QueuedHandlerThreadPool(redactionBus, "Redaction", _queueStatsManager,
+	trackers.QueueTrackers, false);
 
-				Handle(new SystemMessage.BecomeShutdown(shutdownGuid));
-				Application.Exit(0, "Shutting down after successful truncation.");
-				return;
+_mainBus.Subscribe<RedactionMessage.GetEventPosition>(redactionQueue);
+_mainBus.Subscribe<RedactionMessage.AcquireChunksLock>(redactionQueue);
+_mainBus.Subscribe<RedactionMessage.SwitchChunk>(redactionQueue);
+_mainBus.Subscribe<RedactionMessage.ReleaseChunksLock>(redactionQueue);
+_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(redactionQueue);
+
+var redactionService = new RedactionService<TStreamId>(redactionQueue, Db, _readIndex, _switchChunksLock);
+redactionBus.Subscribe<RedactionMessage.GetEventPosition>(redactionService);
+redactionBus.Subscribe<RedactionMessage.AcquireChunksLock>(redactionService);
+redactionBus.Subscribe<RedactionMessage.SwitchChunk>(redactionService);
+redactionBus.Subscribe<RedactionMessage.ReleaseChunksLock>(redactionService);
+redactionBus.Subscribe<SystemMessage.BecomeShuttingDown>(redactionService);
+
+// TIMER
+_timeProvider = new RealTimeProvider();
+var threadBasedScheduler = new ThreadBasedScheduler(_queueStatsManager, trackers.QueueTrackers);
+AddTask(threadBasedScheduler.Task);
+_timerService = new TimerService(threadBasedScheduler);
+_mainBus.Subscribe<SystemMessage.BecomeShutdown>(_timerService);
+_mainBus.Subscribe<TimerMessage.Schedule>(_timerService);
+
+var memberInfo = MemberInfo.Initial(NodeInfo.InstanceId, _timeProvider.UtcNow, VNodeState.Unknown, true,
+	GossipAdvertiseInfo.InternalTcp,
+	GossipAdvertiseInfo.InternalSecureTcp,
+	GossipAdvertiseInfo.ExternalTcp,
+	GossipAdvertiseInfo.ExternalSecureTcp,
+	GossipAdvertiseInfo.HttpEndPoint,
+	GossipAdvertiseInfo.AdvertiseHostToClientAs,
+	GossipAdvertiseInfo.AdvertiseHttpPortToClientAs,
+	GossipAdvertiseInfo.AdvertiseTcpPortToClientAs,
+	options.Cluster.NodePriority, options.Cluster.ReadOnlyReplica, VersionInfo.Version);
+
+// ELECTIONS TRACKER
+_mainBus.Subscribe<ElectionMessage.ElectionsDone>(trackers.ElectionCounterTracker);
+
+// TELEMETRY
+var telemetryService = new TelemetryService(
+	Db.Manager,
+	modifiedOptions,
+	configuration,
+	_mainQueue,
+	new TelemetrySink(options.Application.TelemetryOptout),
+	Db.Config.WriterCheckpoint.AsReadOnly(),
+	memberInfo.InstanceId
+);
+if (modifiedOptions.Cluster.ReadOnlyReplica)
+	_mainBus.Subscribe<SystemMessage.ReplicaStateMessage>(telemetryService);
+_mainBus.Subscribe<SystemMessage.StateChangeMessage>(telemetryService);
+_mainBus.Subscribe<ElectionMessage.ElectionsDone>(telemetryService);
+_mainBus.Subscribe<LeaderDiscoveryMessage.LeaderFound>(telemetryService);
+
+// LEADER REPLICATION
+var leaderReplicationService = new LeaderReplicationService(_mainQueue, NodeInfo.InstanceId, Db,
+	_workersHandler,
+	epochManager, options.Cluster.ClusterSize,
+	options.Cluster.UnsafeAllowSurplusNodes,
+	_queueStatsManager);
+AddTask(leaderReplicationService.Task);
+
+if (!isSingleNode) {
+	_mainBus.Subscribe<SystemMessage.SystemStart>(leaderReplicationService);
+	_mainBus.Subscribe<SystemMessage.StateChangeMessage>(leaderReplicationService);
+	_mainBus.Subscribe<SystemMessage.EnablePreLeaderReplication>(leaderReplicationService);
+	_mainBus.Subscribe<ReplicationMessage.ReplicaSubscriptionRequest>(leaderReplicationService);
+	_mainBus.Subscribe<ReplicationMessage.ReplicaLogPositionAck>(leaderReplicationService);
+	_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(leaderReplicationService);
+	monitoringInnerBus.Subscribe<ReplicationMessage.GetReplicationStats>(leaderReplicationService);
+
+	// REPLICA REPLICATION
+	var replicaService = new ReplicaService(_mainQueue, Db, epochManager, _workersHandler,
+		_authenticationProvider, authorizationGateway,
+		GossipAdvertiseInfo.InternalTcp ?? GossipAdvertiseInfo.InternalSecureTcp,
+		options.Cluster.ReadOnlyReplica,
+		!disableInternalTcpTls, _internalServerCertificateValidator,
+		_certificateSelector,
+		TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatTimeout),
+		TimeSpan.FromMilliseconds(options.Interface.ReplicationHeartbeatInterval),
+		TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs));
+	_mainBus.Subscribe<SystemMessage.StateChangeMessage>(replicaService);
+	_mainBus.Subscribe<ReplicationMessage.ReconnectToLeader>(replicaService);
+	_mainBus.Subscribe<ReplicationMessage.SubscribeToLeader>(replicaService);
+	_mainBus.Subscribe<ReplicationMessage.AckLogPosition>(replicaService);
+	_mainBus.Subscribe<ClientMessage.TcpForwardMessage>(replicaService);
+} else {
+	//LeaderReplicationService only running on a single node to provide stats, hence not subscribed to the other message types like SystemStart and StateChangeMessage
+	monitoringInnerBus.Subscribe<ReplicationMessage.GetReplicationStats>(leaderReplicationService);
+}
+
+// ELECTIONS
+if (!NodeInfo.IsReadOnlyReplica) {
+	var electionsService = new ElectionsService(
+		_mainQueue,
+		memberInfo,
+		options.Cluster.ClusterSize,
+		Db.Config.WriterCheckpoint.AsReadOnly(),
+		Db.Config.ChaserCheckpoint.AsReadOnly(),
+		Db.Config.ProposalCheckpoint,
+		epochManager,
+		() => readIndex.LastIndexedPosition,
+		options.Cluster.NodePriority,
+		_timeProvider,
+		TimeSpan.FromMilliseconds(options.Cluster.LeaderElectionTimeoutMs));
+	electionsService.SubscribeMessages(_mainBus);
+}
+
+// GOSSIP
+
+var gossipSeedSource = (
+	options.Cluster.DiscoverViaDns,
+	options.Cluster.ClusterSize > 1,
+	options.Cluster.GossipSeed is { Length: > 0 }) switch {
+	(true, true, _) => (IGossipSeedSource)new DnsGossipSeedSource(options.Cluster.ClusterDns,
+		options.Cluster.ClusterGossipPort),
+	(false, true, false) => throw new InvalidConfigurationException(
+		"DNS discovery is disabled, but no gossip seed endpoints have been specified. "
+		+ "Specify gossip seeds using the `GossipSeed` option."),
+	_ => new KnownEndpointGossipSeedSource(options.Cluster.GossipSeed)
+};
+
+var gossip = new NodeGossipService(
+	_mainQueue,
+	options.Cluster.ClusterSize,
+	gossipSeedSource,
+	memberInfo,
+	Db.Config.WriterCheckpoint.AsReadOnly(),
+	Db.Config.ChaserCheckpoint.AsReadOnly(),
+	epochManager, () => readIndex.LastIndexedPosition,
+	options.Cluster.NodePriority, TimeSpan.FromMilliseconds(options.Cluster.GossipIntervalMs),
+	TimeSpan.FromMilliseconds(options.Cluster.GossipAllowedDifferenceMs),
+	TimeSpan.FromMilliseconds(options.Cluster.GossipTimeoutMs),
+	TimeSpan.FromSeconds(options.Cluster.DeadMemberRemovalPeriodSec),
+	_timeProvider);
+_mainBus.Subscribe<SystemMessage.SystemInit>(gossip);
+_mainBus.Subscribe<GossipMessage.RetrieveGossipSeedSources>(gossip);
+_mainBus.Subscribe<GossipMessage.GotGossipSeedSources>(gossip);
+_mainBus.Subscribe<GossipMessage.Gossip>(gossip);
+_mainBus.Subscribe<GossipMessage.GossipReceived>(gossip);
+_mainBus.Subscribe<GossipMessage.ReadGossip>(gossip);
+_mainBus.Subscribe<GossipMessage.ClientGossip>(gossip);
+_mainBus.Subscribe<SystemMessage.StateChangeMessage>(gossip);
+_mainBus.Subscribe<GossipMessage.GossipSendFailed>(gossip);
+_mainBus.Subscribe<GossipMessage.UpdateNodePriority>(gossip);
+_mainBus.Subscribe<SystemMessage.VNodeConnectionEstablished>(gossip);
+_mainBus.Subscribe<SystemMessage.VNodeConnectionLost>(gossip);
+_mainBus.Subscribe<GossipMessage.GetGossipFailed>(gossip);
+_mainBus.Subscribe<GossipMessage.GetGossipReceived>(gossip);
+_mainBus.Subscribe<ElectionMessage.ElectionsDone>(gossip);
+
+var clusterStateChangeListener = new ClusterMultipleVersionsLogger();
+_mainBus.Subscribe<GossipMessage.GossipUpdated>(clusterStateChangeListener);
+
+_reloadConfigSignalRegistration = PosixSignalRegistration.Create(PosixSignal.SIGHUP, c => {
+	c.Cancel = true;
+	Log.Information("Reloading the node's configuration since {Signal} has been received.", c.Signal);
+	_mainQueue.Publish(new ClientMessage.ReloadConfig());
+});
+
+// subsystems
+_subsystems = options.Subsystems;
+
+var standardComponents = new StandardComponents(Db.Config, _mainQueue, _mainBus, _timerService, _timeProvider,
+	httpSendService, new IHttpService[] { _httpService }, _workersHandler, _queueStatsManager, trackers.QueueTrackers, metricsConfiguration);
+
+IServiceCollection ConfigureNodeServices(IServiceCollection services) {
+	services
+		.AddSingleton(telemetryService) // for correct disposal
+		.AddSingleton(_readIndex)
+		.AddSingleton(standardComponents)
+		.AddSingleton(authorizationGateway)
+		.AddSingleton(certificateProvider)
+		.AddSingleton(_authenticationProvider)
+		.AddSingleton<IReadOnlyList<IDbTransform>>(new List<IDbTransform> { new IdentityDbTransform() })
+		.AddSingleton<IReadOnlyList<IClusterVNodeStartupTask>>(new List<IClusterVNodeStartupTask> { })
+		.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>(httpAuthenticationProviders)
+		.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates,
+				X509Certificate2Collection Roots)>>
+			(() => (_certificateSelector(), _intermediateCertsSelector(), _trustedRootCertsSelector()))
+		.AddSingleton(_nodeHttpClientFactory)
+		.AddSingleton<IChunkRegistry<IChunkBlob>>(Db.Manager)
+		.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy);
+
+	configureAdditionalNodeServices?.Invoke(services);
+	return services;
+}
+
+IReadOnlyList<IClusterVNodeStartupTask> startupTasks = [];
+
+void ConfigureNode(IApplicationBuilder app) {
+	var dbTransforms = app.ApplicationServices.GetService<IReadOnlyList<IDbTransform>>();
+	Db.TransformManager.LoadTransforms(dbTransforms);
+
+	if (!Db.TransformManager.TrySetActiveTransform(options.Database.Transform))
+		throw new InvalidConfigurationException(
+			$"Unknown {nameof(options.Database.Transform)} specified: {options.Database.Transform}");
+
+	startupTasks = app.ApplicationServices.GetRequiredService<IReadOnlyList<IClusterVNodeStartupTask>>();
+}
+
+async ValueTask StartNode(CancellationToken token) {
+	// TRUNCATE IF NECESSARY
+	var truncPos = Db.Config.TruncateCheckpoint.Read();
+	if (truncPos != -1) {
+		Log.Information(
+			"Truncate checkpoint is present. Truncate: {truncatePosition} (0x{truncatePosition:X}), Writer: {writerCheckpoint} (0x{writerCheckpoint:X}), Chaser: {chaserCheckpoint} (0x{chaserCheckpoint:X}), Epoch: {epochCheckpoint} (0x{epochCheckpoint:X})",
+			truncPos, truncPos, writerCheckpoint, writerCheckpoint, chaserCheckpoint, chaserCheckpoint,
+			epochCheckpoint, epochCheckpoint);
+		var truncator = new TFChunkDbTruncator(Db.Config, Db.Manager.FileSystem, type => Db.TransformManager.GetFactoryForExistingChunk(type));
+		await truncator.TruncateDb(truncPos, CancellationToken.None);
+
+		// The truncator has moved the checkpoints but it is possible that other components in the startup have
+		// already read the old values. If we ensure all checkpoint reads are performed after the truncation
+		// then we can remove this extra restart
+		Log.Information("Truncation successful. Shutting down.");
+		var shutdownGuid = Guid.NewGuid();
+		using var linked = CancellationTokenSource.CreateLinkedTokenSource(token);
+		linked.CancelAfter(ShutdownTimeout);
+
+		await HandleAsync(
+			new SystemMessage.BecomeShuttingDown(shutdownGuid, exitProcess: true, shutdownHttp: true),
+			linked.Token);
+
+		Handle(new SystemMessage.BecomeShutdown(shutdownGuid));
+		Application.Exit(0, "Shutting down after successful truncation.");
+		return;
+	}
+
+	foreach (var x in startupTasks) {
+		await x.Run(token);
+	}
+
+	// start the main queue as we publish messages to it while opening the db
+	_controller.Start();
+
+	await Db.Open(!options.Database.SkipDbVerify, threads: options.Database.InitializationThreads,
+		createNewChunks: false, token: token);
+
+	await epochManager.Init(token);
+
+	await storageWriter.Start(token);
+
+	_workersHandler.Start();
+	monitoringQueue.Start();
+	subscrQueue.Start();
+	perSubscrQueue.Start();
+	redactionQueue.Start();
+	dynamicCacheManager.Start();
+	_mainQueue.Publish(new SystemMessage.SystemInit());
+}
+_start = StartNode;
+
+_startup = new ClusterVNodeStartup<TStreamId>(
+	options,
+	modifiedOptions.PlugableComponents,
+	_mainQueue, monitoringQueue, _mainBus, _workersHandler,
+	_authenticationProvider, _authorizationProvider,
+	expiryStrategy ?? new DefaultExpiryStrategy(),
+	_httpService,
+	configuration,
+	trackers,
+	ConfigureNodeServices,
+	ConfigureNode);
+
+_mainBus.Subscribe<SystemMessage.SystemReady>(_startup);
+_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(_startup);
+
+var certificateExpiryMonitor = new CertificateExpiryMonitor(_mainQueue, _certificateSelector, Log);
+_mainBus.Subscribe<SystemMessage.SystemStart>(certificateExpiryMonitor);
+_mainBus.Subscribe<MonitoringMessage.CheckCertificateExpiry>(certificateExpiryMonitor);
+
+var periodicLogging = new PeriodicallyLoggingService(_mainQueue, VersionInfo.Version, Log);
+_mainBus.Subscribe<SystemMessage.SystemStart>(periodicLogging);
+_mainBus.Subscribe<MonitoringMessage.CheckEsVersion>(periodicLogging);
+}
+
+static int GetPTableMaxReaderCount(int readerThreadsCount) {
+	var ptableMaxReaderCount =
+		1 /* StorageWriter */
+		+ 1 /* StorageChaser */
+		+ 1 /* Projections */
+		+ TFChunkScavenger.MaxThreadCount /* Scavenging (1 per thread) */
+		+ 1 /* Redaction */
+		+ 1 /* Subscription LinkTos resolving */
+		+ readerThreadsCount
+		+ 5 /* just in case reserve :) */;
+	return Math.Max(ptableMaxReaderCount, ESConsts.PTableInitialReaderCount);
+}
+
+private static void CreateStaticStreamInfoCache(
+	int streamInfoCacheCapacity,
+	out ILRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached> streamLastEventNumberCache,
+	out ILRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached> streamMetadataCache,
+	out ICacheResizer streamInfoCacheResizer) {
+
+	streamLastEventNumberCache = new LRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached>(
+		"LastEventNumber", streamInfoCacheCapacity);
+
+	streamMetadataCache = new LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>(
+		"Metadata", streamInfoCacheCapacity);
+
+	streamInfoCacheResizer = new CompositeCacheResizer(
+		name: "StreamInfo",
+		weight: 100,
+		new StaticCacheResizer(ResizerUnit.Entries, streamInfoCacheCapacity, streamLastEventNumberCache),
+		new StaticCacheResizer(ResizerUnit.Entries, streamInfoCacheCapacity, streamMetadataCache));
+}
+
+private static void CreateDynamicStreamInfoCache(
+	ISizer<TStreamId> sizer,
+	long totalMem,
+	out ILRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached> streamLastEventNumberCache,
+	out ILRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached> streamMetadataCache,
+	out ICacheResizer streamInfoCacheResizer) {
+
+	int LastEventNumberCacheItemSize(TStreamId streamId, IndexBackend<TStreamId>.EventNumberCached eventNumberCached) =>
+		LRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached>.ApproximateItemSize(
+			keyRefsSize: sizer.GetSizeInBytes(streamId),
+			valueRefsSize: 0);
+
+	streamLastEventNumberCache = new LRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached>(
+		"LastEventNumber",
+		0,
+		LastEventNumberCacheItemSize,
+		(streamId, eventNumberCached, keyFreed, valueFreed, nodeFreed) => {
+			if (nodeFreed)
+				return LastEventNumberCacheItemSize(streamId, eventNumberCached);
+
+			return keyFreed ? sizer.GetSizeInBytes(streamId) : 0;
+		}, "bytes");
+
+
+	int MetadataCacheItemSize(TStreamId streamId, IndexBackend<TStreamId>.MetadataCached metadataCached) =>
+		LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>.ApproximateItemSize(
+			keyRefsSize: sizer.GetSizeInBytes(streamId),
+			valueRefsSize: metadataCached.ApproximateSize - Unsafe.SizeOf<IndexBackend<TStreamId>.MetadataCached>());
+
+	streamMetadataCache = new LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>(
+		"Metadata",
+		0,
+		MetadataCacheItemSize,
+		(streamId, metadataCached, keyFreed, valueFreed, nodeFreed) => {
+			if (nodeFreed)
+				return MetadataCacheItemSize(streamId, metadataCached);
+
+			return
+				(keyFreed ? sizer.GetSizeInBytes(streamId) : 0) +
+				(valueFreed ? metadataCached.ApproximateSize - Unsafe.SizeOf<IndexBackend<TStreamId>.MetadataCached>() : 0);
+		}, "bytes");
+
+
+	const long minCapacity = 100_000_000; // 100 MB
+
+	// beyond a certain point the added heap size costs more in GC than the extra cache is worth
+	// higher values than this can still be set manually
+	var staticMaxCapacity = 16_000_000_000; // 16GB
+	var dynamicMaxCapacity = (long)(0.4 * totalMem);
+	var maxCapacity = Math.Min(staticMaxCapacity, dynamicMaxCapacity);
+
+	var minCapacityPerCache = minCapacity / 2;
+	var maxCapacityPerCache = maxCapacity / 2;
+
+	streamInfoCacheResizer = new CompositeCacheResizer(
+		name: "StreamInfo",
+		weight: 100,
+		new DynamicCacheResizer(ResizerUnit.Bytes, minCapacityPerCache, maxCapacityPerCache, 60, streamLastEventNumberCache),
+		new DynamicCacheResizer(ResizerUnit.Bytes, minCapacityPerCache, maxCapacityPerCache, 40, streamMetadataCache));
+}
+
+private void SubscribeWorkers(Action<InMemoryBus> setup) {
+	foreach (var workerBus in _workerBuses) {
+		setup(workerBus);
+	}
+}
+
+public override async Task StopAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default) {
+	if (Interlocked.Exchange(ref _stopCalled, 1) == 1) {
+		Log.Warning("Stop was already called.");
+		return;
+	}
+
+	_mainQueue.Publish(new ClientMessage.RequestShutdown(false, true));
+
+	try {
+		await _shutdownSource.Task.WaitAsync(timeout ?? ShutdownTimeout, cancellationToken);
+	} catch (Exception) {
+		Log.Error("Graceful shutdown not complete. Forcing shutdown now.");
+		throw;
+	} finally {
+		_switchChunksLock?.Dispose();
+	}
+}
+
+public async ValueTask HandleAsync(SystemMessage.BecomeShuttingDown message, CancellationToken token) {
+	Log.Information("========== [{httpEndPoint}] IS SHUTTING DOWN SUBSYSTEMS...", NodeInfo.HttpEndPoint);
+
+	_reloadConfigSignalRegistration?.Dispose();
+	_reloadConfigSignalRegistration = null;
+
+	foreach (var subsystem in _subsystems ?? [])
+		await subsystem.Stop().WaitAsync(token);
+}
+
+public void Handle(SystemMessage.BecomeShutdown message) {
+	_shutdownSource.TrySetResult(true);
+}
+
+public void Handle(SystemMessage.SystemStart _) {
+	_authenticationProvider.Initialize().ContinueWith(t => {
+		Message msg = t.Exception is null
+			? new AuthenticationMessage.AuthenticationProviderInitialized()
+			: new AuthenticationMessage.AuthenticationProviderInitializationFailed();
+
+		_mainQueue.Publish(msg);
+	});
+}
+
+public void AddTasks(IEnumerable<Task> tasks) {
+#if DEBUG
+	foreach (var task in tasks) {
+		AddTask(task);
+	}
+#endif
+}
+
+public void AddTask(Task task) {
+#if DEBUG
+	lock (_taskAddLock) {
+		_tasks.Add(task);
+
+		//keep reference to old trigger task
+		var oldTrigger = _taskAddedTrigger;
+
+		//create and add new trigger task to list
+		_taskAddedTrigger = new TaskCompletionSource<bool>();
+		_tasks.Add(_taskAddedTrigger.Task);
+
+		//remove old trigger task from list
+		_tasks.Remove(oldTrigger.Task);
+
+		//trigger old trigger task
+		oldTrigger.SetResult(true);
+	}
+#endif
+}
+
+public override async Task<ClusterVNode> StartAsync(bool waitUntilReady, CancellationToken token) {
+	var tcs = new TaskCompletionSource<ClusterVNode>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+	if (waitUntilReady) {
+		_mainBus.Subscribe(new AdHocHandler<SystemMessage.SystemReady>(
+			_ => tcs.TrySetResult(this)));
+	} else {
+		tcs.TrySetResult(this);
+	}
+
+	await _start(token);
+
+	if (IsShutdown)
+		tcs.TrySetResult(this);
+
+	return await tcs.Task;
+}
+
+public static ValueTuple<bool, string> ValidateServerCertificate(X509Certificate certificate,
+	X509Chain chain, SslPolicyErrors sslPolicyErrors, Func<X509Certificate2Collection> intermediateCertsSelector,
+	Func<X509Certificate2Collection> trustedRootCertsSelector, string[] otherNames) {
+	using var _ = certificate.ConvertToCertificate2(out var certificate2);
+	return ValidateCertificate(certificate2, chain, sslPolicyErrors, intermediateCertsSelector, trustedRootCertsSelector, "server", otherNames);
+}
+
+public static ValueTuple<bool, string> ValidateClientCertificate(X509Certificate certificate,
+	X509Chain chain, SslPolicyErrors sslPolicyErrors, Func<X509Certificate2Collection> intermediateCertsSelector, Func<X509Certificate2Collection> trustedRootCertsSelector) {
+	using var _ = certificate.ConvertToCertificate2(out var certificate2);
+	return ValidateCertificate(certificate2, chain, sslPolicyErrors, intermediateCertsSelector, trustedRootCertsSelector, "client", null);
+}
+
+private static ValueTuple<bool, string> ValidateCertificate(X509Certificate2 certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors,
+	Func<X509Certificate2Collection> intermediateCertsSelector, Func<X509Certificate2Collection> trustedRootCertsSelector,
+	string certificateOrigin, string[] otherNames) {
+	if (certificate == null)
+		return (false, $"No certificate was provided by the {certificateOrigin}");
+
+	var intermediates = intermediateCertsSelector();
+
+	// add any intermediate certificates received from the origin
+	if (chain != null) {
+		foreach (var chainElement in chain.ChainElements) {
+			if (CertificateUtils.IsValidIntermediateCertificate(chainElement.Certificate, out _)) {
+				intermediates ??= new X509Certificate2Collection();
+				intermediates.Add(new X509Certificate2(chainElement.Certificate));
 			}
-
-			foreach (var x in startupTasks) {
-				await x.Run(token);
-			}
-
-			// start the main queue as we publish messages to it while opening the db
-			_controller.Start();
-
-			await Db.Open(!options.Database.SkipDbVerify, threads: options.Database.InitializationThreads,
-				createNewChunks: false, token: token);
-
-			await epochManager.Init(token);
-
-			await storageWriter.Start(token);
-
-			_workersHandler.Start();
-			monitoringQueue.Start();
-			subscrQueue.Start();
-			perSubscrQueue.Start();
-			redactionQueue.Start();
-			dynamicCacheManager.Start();
-			_mainQueue.Publish(new SystemMessage.SystemInit());
-		}
-		_start = StartNode;
-
-		_startup = new ClusterVNodeStartup<TStreamId>(
-			options,
-			modifiedOptions.PlugableComponents,
-			_mainQueue, monitoringQueue, _mainBus, _workersHandler,
-			_authenticationProvider, _authorizationProvider,
-			expiryStrategy ?? new DefaultExpiryStrategy(),
-			_httpService,
-			configuration,
-			trackers,
-			ConfigureNodeServices,
-			ConfigureNode);
-
-		_mainBus.Subscribe<SystemMessage.SystemReady>(_startup);
-		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(_startup);
-
-		var certificateExpiryMonitor = new CertificateExpiryMonitor(_mainQueue, _certificateSelector, Log);
-		_mainBus.Subscribe<SystemMessage.SystemStart>(certificateExpiryMonitor);
-		_mainBus.Subscribe<MonitoringMessage.CheckCertificateExpiry>(certificateExpiryMonitor);
-
-		var periodicLogging = new PeriodicallyLoggingService(_mainQueue, VersionInfo.Version, Log);
-		_mainBus.Subscribe<SystemMessage.SystemStart>(periodicLogging);
-		_mainBus.Subscribe<MonitoringMessage.CheckEsVersion>(periodicLogging);
-	}
-
-	static int GetPTableMaxReaderCount(int readerThreadsCount) {
-		var ptableMaxReaderCount =
-			1 /* StorageWriter */
-			+ 1 /* StorageChaser */
-			+ 1 /* Projections */
-			+ TFChunkScavenger.MaxThreadCount /* Scavenging (1 per thread) */
-			+ 1 /* Redaction */
-			+ 1 /* Subscription LinkTos resolving */
-			+ readerThreadsCount
-			+ 5 /* just in case reserve :) */;
-		return Math.Max(ptableMaxReaderCount, ESConsts.PTableInitialReaderCount);
-	}
-
-	private static void CreateStaticStreamInfoCache(
-		int streamInfoCacheCapacity,
-		out ILRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached> streamLastEventNumberCache,
-		out ILRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached> streamMetadataCache,
-		out ICacheResizer streamInfoCacheResizer) {
-
-		streamLastEventNumberCache = new LRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached>(
-			"LastEventNumber", streamInfoCacheCapacity);
-
-		streamMetadataCache = new LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>(
-			"Metadata", streamInfoCacheCapacity);
-
-		streamInfoCacheResizer = new CompositeCacheResizer(
-			name: "StreamInfo",
-			weight: 100,
-			new StaticCacheResizer(ResizerUnit.Entries, streamInfoCacheCapacity, streamLastEventNumberCache),
-			new StaticCacheResizer(ResizerUnit.Entries, streamInfoCacheCapacity, streamMetadataCache));
-	}
-
-	private static void CreateDynamicStreamInfoCache(
-		ISizer<TStreamId> sizer,
-		long totalMem,
-		out ILRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached> streamLastEventNumberCache,
-		out ILRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached> streamMetadataCache,
-		out ICacheResizer streamInfoCacheResizer) {
-
-		int LastEventNumberCacheItemSize(TStreamId streamId, IndexBackend<TStreamId>.EventNumberCached eventNumberCached) =>
-			LRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached>.ApproximateItemSize(
-				keyRefsSize: sizer.GetSizeInBytes(streamId),
-				valueRefsSize: 0);
-
-		streamLastEventNumberCache = new LRUCache<TStreamId, IndexBackend<TStreamId>.EventNumberCached>(
-			"LastEventNumber",
-			0,
-			LastEventNumberCacheItemSize,
-			(streamId, eventNumberCached, keyFreed, valueFreed, nodeFreed) => {
-				if (nodeFreed)
-					return LastEventNumberCacheItemSize(streamId, eventNumberCached);
-
-				return keyFreed ? sizer.GetSizeInBytes(streamId) : 0;
-			}, "bytes");
-
-
-		int MetadataCacheItemSize(TStreamId streamId, IndexBackend<TStreamId>.MetadataCached metadataCached) =>
-			LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>.ApproximateItemSize(
-				keyRefsSize: sizer.GetSizeInBytes(streamId),
-				valueRefsSize: metadataCached.ApproximateSize - Unsafe.SizeOf<IndexBackend<TStreamId>.MetadataCached>());
-
-		streamMetadataCache = new LRUCache<TStreamId, IndexBackend<TStreamId>.MetadataCached>(
-			"Metadata",
-			0,
-			MetadataCacheItemSize,
-			(streamId, metadataCached, keyFreed, valueFreed, nodeFreed) => {
-				if (nodeFreed)
-					return MetadataCacheItemSize(streamId, metadataCached);
-
-				return
-					(keyFreed ? sizer.GetSizeInBytes(streamId) : 0) +
-					(valueFreed ? metadataCached.ApproximateSize - Unsafe.SizeOf<IndexBackend<TStreamId>.MetadataCached>() : 0);
-			}, "bytes");
-
-
-		const long minCapacity = 100_000_000; // 100 MB
-
-		// beyond a certain point the added heap size costs more in GC than the extra cache is worth
-		// higher values than this can still be set manually
-		var staticMaxCapacity = 16_000_000_000; // 16GB
-		var dynamicMaxCapacity = (long)(0.4 * totalMem);
-		var maxCapacity = Math.Min(staticMaxCapacity, dynamicMaxCapacity);
-
-		var minCapacityPerCache = minCapacity / 2;
-		var maxCapacityPerCache = maxCapacity / 2;
-
-		streamInfoCacheResizer = new CompositeCacheResizer(
-			name: "StreamInfo",
-			weight: 100,
-			new DynamicCacheResizer(ResizerUnit.Bytes, minCapacityPerCache, maxCapacityPerCache, 60, streamLastEventNumberCache),
-			new DynamicCacheResizer(ResizerUnit.Bytes, minCapacityPerCache, maxCapacityPerCache, 40, streamMetadataCache));
-	}
-
-	private void SubscribeWorkers(Action<InMemoryBus> setup) {
-		foreach (var workerBus in _workerBuses) {
-			setup(workerBus);
 		}
 	}
 
-	public override async Task StopAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default) {
-		if (Interlocked.Exchange(ref _stopCalled, 1) == 1) {
-			Log.Warning("Stop was already called.");
-			return;
+	var chainStatus = CertificateUtils.BuildChain(certificate, intermediates, trustedRootCertsSelector(), out var chainStatusInformation);
+	if (chainStatus == X509ChainStatusFlags.NoError)
+		sslPolicyErrors &= ~SslPolicyErrors.RemoteCertificateChainErrors; //clear the RemoteCertificateChainErrors flag
+	else
+		sslPolicyErrors |= SslPolicyErrors.RemoteCertificateChainErrors; //set the RemoteCertificateChainErrors flag
+
+	if (otherNames != null && (sslPolicyErrors & SslPolicyErrors.RemoteCertificateNameMismatch) != 0) {
+		if (otherNames.Any(certificate.MatchesName)) { // if we have a match,
+			sslPolicyErrors &= ~SslPolicyErrors.RemoteCertificateNameMismatch; // clear the RemoteCertificateNameMismatch flag
 		}
+	}
 
-		_mainQueue.Publish(new ClientMessage.RequestShutdown(false, true));
+	if (sslPolicyErrors != SslPolicyErrors.None) {
+		foreach (var status in chainStatusInformation) {
+			Log.Error(status);
+		}
+		return (false, $"The certificate ({certificate.Subject}) provided by the {certificateOrigin} failed validation with the following error(s): {sslPolicyErrors.ToString()} ({chainStatus})");
+	}
 
+	return (true, null);
+}
+
+public void Handle(ClientMessage.ReloadConfig message) {
+	if (Interlocked.CompareExchange(ref _reloadingConfig, 1, 0) != 0) {
+		Log.Information("The node's configuration reload is already in progress");
+		return;
+	}
+
+	Task.Run(() => {
 		try {
-			await _shutdownSource.Task.WaitAsync(timeout ?? ShutdownTimeout, cancellationToken);
-		} catch (Exception) {
-			Log.Error("Graceful shutdown not complete. Forcing shutdown now.");
-			throw;
+			var options = _options.Reload();
+			ReloadLogOptions(options);
+			ReloadCertificates(options);
+			ReloadTransform(options);
+			Log.Information("The node's configuration was successfully reloaded");
+		} catch (Exception exc) {
+			Log.Error(exc, "An error has occurred while reloading the configuration");
 		} finally {
-			_switchChunksLock?.Dispose();
+			Interlocked.Exchange(ref _reloadingConfig, 0);
 		}
-	}
+	});
+}
 
-	public async ValueTask HandleAsync(SystemMessage.BecomeShuttingDown message, CancellationToken token) {
-		Log.Information("========== [{httpEndPoint}] IS SHUTTING DOWN SUBSYSTEMS...", NodeInfo.HttpEndPoint);
+private void ReloadTransform(ClusterVNodeOptions options) {
+	var transform = options.Database.Transform;
+	if (!Db.TransformManager.TrySetActiveTransform(transform))
+		Log.Error($"Unknown {nameof(options.Database.Transform)} specified: {options.Database.Transform}");
+}
 
-		_reloadConfigSignalRegistration?.Dispose();
-		_reloadConfigSignalRegistration = null;
+private void ReloadLogOptions(ClusterVNodeOptions options) {
+	if (options.Logging.LogLevel != LogLevel.Default) {
+		var changed = EventStoreLoggerConfiguration.AdjustMinimumLogLevel(options.Logging.LogLevel);
+		if (changed) {
+			Log.Information($"The log level was adjusted to: {options.Logging.LogLevel}");
 
-		foreach (var subsystem in _subsystems ?? [])
-			await subsystem.Stop().WaitAsync(token);
-	}
-
-	public void Handle(SystemMessage.BecomeShutdown message) {
-		_shutdownSource.TrySetResult(true);
-	}
-
-	public void Handle(SystemMessage.SystemStart _) {
-		_authenticationProvider.Initialize().ContinueWith(t => {
-			Message msg = t.Exception is null
-				? new AuthenticationMessage.AuthenticationProviderInitialized()
-				: new AuthenticationMessage.AuthenticationProviderInitializationFailed();
-
-			_mainQueue.Publish(msg);
-		});
-	}
-
-	public void AddTasks(IEnumerable<Task> tasks) {
-#if DEBUG
-		foreach (var task in tasks) {
-			AddTask(task);
-		}
-#endif
-	}
-
-	public void AddTask(Task task) {
-#if DEBUG
-		lock (_taskAddLock) {
-			_tasks.Add(task);
-
-			//keep reference to old trigger task
-			var oldTrigger = _taskAddedTrigger;
-
-			//create and add new trigger task to list
-			_taskAddedTrigger = new TaskCompletionSource<bool>();
-			_tasks.Add(_taskAddedTrigger.Task);
-
-			//remove old trigger task from list
-			_tasks.Remove(oldTrigger.Task);
-
-			//trigger old trigger task
-			oldTrigger.SetResult(true);
-		}
-#endif
-	}
-
-	public override async Task<ClusterVNode> StartAsync(bool waitUntilReady, CancellationToken token) {
-		var tcs = new TaskCompletionSource<ClusterVNode>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-		if (waitUntilReady) {
-			_mainBus.Subscribe(new AdHocHandler<SystemMessage.SystemReady>(
-				_ => tcs.TrySetResult(this)));
-		} else {
-			tcs.TrySetResult(this);
-		}
-
-		await _start(token);
-
-		if (IsShutdown)
-			tcs.TrySetResult(this);
-
-		return await tcs.Task;
-	}
-
-	public static ValueTuple<bool, string> ValidateServerCertificate(X509Certificate certificate,
-		X509Chain chain, SslPolicyErrors sslPolicyErrors, Func<X509Certificate2Collection> intermediateCertsSelector,
-		Func<X509Certificate2Collection> trustedRootCertsSelector, string[] otherNames) {
-		using var _ = certificate.ConvertToCertificate2(out var certificate2);
-		return ValidateCertificate(certificate2, chain, sslPolicyErrors, intermediateCertsSelector, trustedRootCertsSelector, "server", otherNames);
-	}
-
-	public static ValueTuple<bool, string> ValidateClientCertificate(X509Certificate certificate,
-		X509Chain chain, SslPolicyErrors sslPolicyErrors, Func<X509Certificate2Collection> intermediateCertsSelector, Func<X509Certificate2Collection> trustedRootCertsSelector) {
-		using var _ = certificate.ConvertToCertificate2(out var certificate2);
-		return ValidateCertificate(certificate2, chain, sslPolicyErrors, intermediateCertsSelector, trustedRootCertsSelector, "client", null);
-	}
-
-	private static ValueTuple<bool, string> ValidateCertificate(X509Certificate2 certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors,
-		Func<X509Certificate2Collection> intermediateCertsSelector, Func<X509Certificate2Collection> trustedRootCertsSelector,
-		string certificateOrigin, string[] otherNames) {
-		if (certificate == null)
-			return (false, $"No certificate was provided by the {certificateOrigin}");
-
-		var intermediates = intermediateCertsSelector();
-
-		// add any intermediate certificates received from the origin
-		if (chain != null) {
-			foreach (var chainElement in chain.ChainElements) {
-				if (CertificateUtils.IsValidIntermediateCertificate(chainElement.Certificate, out _)) {
-					intermediates ??= new X509Certificate2Collection();
-					intermediates.Add(new X509Certificate2(chainElement.Certificate));
-				}
-			}
-		}
-
-		var chainStatus = CertificateUtils.BuildChain(certificate, intermediates, trustedRootCertsSelector(), out var chainStatusInformation);
-		if (chainStatus == X509ChainStatusFlags.NoError)
-			sslPolicyErrors &= ~SslPolicyErrors.RemoteCertificateChainErrors; //clear the RemoteCertificateChainErrors flag
-		else
-			sslPolicyErrors |= SslPolicyErrors.RemoteCertificateChainErrors; //set the RemoteCertificateChainErrors flag
-
-		if (otherNames != null && (sslPolicyErrors & SslPolicyErrors.RemoteCertificateNameMismatch) != 0) {
-			if (otherNames.Any(certificate.MatchesName)) { // if we have a match,
-				sslPolicyErrors &= ~SslPolicyErrors.RemoteCertificateNameMismatch; // clear the RemoteCertificateNameMismatch flag
-			}
-		}
-
-		if (sslPolicyErrors != SslPolicyErrors.None) {
-			foreach (var status in chainStatusInformation) {
-				Log.Error(status);
-			}
-			return (false, $"The certificate ({certificate.Subject}) provided by the {certificateOrigin} failed validation with the following error(s): {sslPolicyErrors.ToString()} ({chainStatus})");
-		}
-
-		return (true, null);
-	}
-
-	public void Handle(ClientMessage.ReloadConfig message) {
-		if (Interlocked.CompareExchange(ref _reloadingConfig, 1, 0) != 0) {
-			Log.Information("The node's configuration reload is already in progress");
-			return;
-		}
-
-		Task.Run(() => {
-			try {
-				var options = _options.Reload();
-				ReloadLogOptions(options);
-				ReloadCertificates(options);
-				ReloadTransform(options);
-				Log.Information("The node's configuration was successfully reloaded");
-			} catch (Exception exc) {
-				Log.Error(exc, "An error has occurred while reloading the configuration");
-			} finally {
-				Interlocked.Exchange(ref _reloadingConfig, 0);
-			}
-		});
-	}
-
-	private void ReloadTransform(ClusterVNodeOptions options) {
-		var transform = options.Database.Transform;
-		if (!Db.TransformManager.TrySetActiveTransform(transform))
-			Log.Error($"Unknown {nameof(options.Database.Transform)} specified: {options.Database.Transform}");
-	}
-
-	private void ReloadLogOptions(ClusterVNodeOptions options) {
-		if (options.Logging.LogLevel != LogLevel.Default) {
-			var changed = EventStoreLoggerConfiguration.AdjustMinimumLogLevel(options.Logging.LogLevel);
-			if (changed) {
-				Log.Information($"The log level was adjusted to: {options.Logging.LogLevel}");
-
-				if (options.Logging.LogLevel > LogLevel.Information) {
-					Console.WriteLine($"The log level was adjusted to: {options.Logging.LogLevel}");
-				}
+			if (options.Logging.LogLevel > LogLevel.Information) {
+				Console.WriteLine($"The log level was adjusted to: {options.Logging.LogLevel}");
 			}
 		}
 	}
+}
 
-	private void ReloadCertificates(ClusterVNodeOptions options) {
-		if (options.Application.Insecure) {
-			Log.Information("Skipping reload of certificates since TLS is disabled.");
-			return;
-		}
-
-		if (_certificateProvider?.LoadCertificates(options) == LoadCertificateResult.VerificationFailed) {
-			throw new InvalidConfigurationException("Aborting certificate loading due to verification errors.");
-		}
+private void ReloadCertificates(ClusterVNodeOptions options) {
+	if (options.Application.Insecure) {
+		Log.Information("Skipping reload of certificates since TLS is disabled.");
+		return;
 	}
 
-	private static void LogPluginSubsectionWarnings(IConfiguration configuration) {
-		var pluginSubsectionOptions = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:Plugins").AsEnumerable().ToList();
-		if (pluginSubsectionOptions.Count <= 1)
-			return;
-
-		Log.Warning(
-			"The \"Plugins\" configuration subsection has been removed. " +
-			"The following settings will be ignored. " +
-			"Please move them out of the \"Plugins\" subsection and " +
-			$"directly into the \"{KurrentConfigurationKeys.Prefix}\" root.");
-
-		foreach (var kvp in pluginSubsectionOptions) {
-			if (kvp.Value is not null)
-				Log.Warning("Ignoring option nested in \"Plugins\" subsection: {IgnoredOption}", kvp.Key);
-		}
+	if (_certificateProvider?.LoadCertificates(options) == LoadCertificateResult.VerificationFailed) {
+		throw new InvalidConfigurationException("Aborting certificate loading due to verification errors.");
 	}
+}
 
-	public override string ToString() =>
-		$"[{NodeInfo.InstanceId:B}, {NodeInfo.InternalTcp}, {NodeInfo.ExternalTcp}, {NodeInfo.HttpEndPoint}]";
+private static void LogPluginSubsectionWarnings(IConfiguration configuration) {
+	var pluginSubsectionOptions = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:Plugins").AsEnumerable().ToList();
+	if (pluginSubsectionOptions.Count <= 1)
+		return;
+
+	Log.Warning(
+		"The \"Plugins\" configuration subsection has been removed. " +
+		"The following settings will be ignored. " +
+		"Please move them out of the \"Plugins\" subsection and " +
+		$"directly into the \"{KurrentConfigurationKeys.Prefix}\" root.");
+
+	foreach (var kvp in pluginSubsectionOptions) {
+		if (kvp.Value is not null)
+			Log.Warning("Ignoring option nested in \"Plugins\" subsection: {IgnoredOption}", kvp.Key);
+	}
+}
+
+public override string ToString() =>
+	$"[{NodeInfo.InstanceId:B}, {NodeInfo.InternalTcp}, {NodeInfo.ExternalTcp}, {NodeInfo.HttpEndPoint}]";
 }

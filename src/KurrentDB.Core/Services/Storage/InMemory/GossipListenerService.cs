@@ -11,12 +11,9 @@ using KurrentDB.Core.Messages;
 
 namespace KurrentDB.Core.Services.Storage.InMemory;
 
-public class GossipListenerService :
-	IInMemoryStreamReader,
-	IHandle<GossipMessage.GossipUpdated> {
-
-	private readonly SingleEventInMemoryStream _stream;
+public class GossipListenerService : IHandle<GossipMessage.GossipUpdated> {
 	private readonly Guid _nodeId;
+	public readonly SingleEventInMemoryStream Stream;
 	public const string EventType = "$GossipUpdated";
 
 	private readonly JsonSerializerOptions _options = new() {
@@ -26,7 +23,7 @@ public class GossipListenerService :
 	};
 
 	public GossipListenerService(Guid nodeId, IPublisher publisher, InMemoryLog memLog) {
-		_stream = new(publisher, memLog, SystemStreams.GossipStream);
+		Stream = new(publisher, memLog, SystemStreams.GossipStream);
 		_nodeId = nodeId;
 	}
 
@@ -41,12 +38,6 @@ public class GossipListenerService :
 		};
 
 		var data = JsonSerializer.SerializeToUtf8Bytes(payload, _options);
-		_stream.Write(EventType, data);
+		Stream.Write(EventType, data);
 	}
-
-	public ClientMessage.ReadStreamEventsForwardCompleted ReadForwards(
-		ClientMessage.ReadStreamEventsForward msg) => _stream.ReadForwards(msg);
-
-	public ClientMessage.ReadStreamEventsBackwardCompleted ReadBackwards(
-		ClientMessage.ReadStreamEventsBackward msg) => _stream.ReadBackwards(msg);
 }

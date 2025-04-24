@@ -37,7 +37,7 @@ public class StorageReaderService<TStreamId> : StorageReaderService, IHandle<Sys
 		ISystemStreamLookup<TStreamId> systemStreams,
 		int threadCount,
 		IReadOnlyCheckpoint writerCheckpoint,
-		IInMemoryStreamReader inMemReader,
+		IVirtualStreamReader inMemReader,
 		QueueStatsManager queueStatsManager,
 		QueueTrackers trackers) {
 		Ensure.NotNull(subscriber);
