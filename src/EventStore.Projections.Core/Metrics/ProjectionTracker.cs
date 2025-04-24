@@ -10,6 +10,13 @@ using EventStore.Projections.Core.Services;
 namespace EventStore.Projections.Core.Metrics;
 
 public class ProjectionTracker : IProjectionTracker {
+
+	public const string Projection = "projection";
+	public static KeyValuePair<string, object> StatusRunning = new("status", "Running");
+	public static KeyValuePair<string, object> StatusFaulted = new("status", "Faulted");
+	public static KeyValuePair<string, object> StatusStopped = new("status", "Stopped");
+
+
 	private ProjectionStatistics[] _currentStats = [];
 
 	public void OnNewStats(ProjectionStatistics[] newStats) {
@@ -34,7 +41,7 @@ public class ProjectionTracker : IProjectionTracker {
 
 	public IEnumerable<Measurement<long>> ObserveRunning() =>
 		_currentStats.Select(x => {
-			var projectionRunning = x.Status.Equals("running", StringComparison.CurrentCultureIgnoreCase)
+			var projectionRunning = x.Status.StartsWith("running", StringComparison.CurrentCultureIgnoreCase)
 				? 1
 				: 0;
 
@@ -45,36 +52,38 @@ public class ProjectionTracker : IProjectionTracker {
 		});
 
 	public IEnumerable<Measurement<long>> ObserveStatus() {
+
 		foreach (var statistics in _currentStats) {
 			var projectionRunning = 0;
 			var projectionFaulted = 0;
 			var projectionStopped = 0;
-
+			// the status in the statistics can be a compound string  passed e.g. "faulted (enabled)"
 			switch (statistics.Status.ToLower()) {
-				case "running":
+				case var s when s.StartsWith("running", StringComparison.CurrentCultureIgnoreCase):
 					projectionRunning = 1;
 					break;
-				case "stopped":
+				case var s when s.StartsWith("stopped", StringComparison.CurrentCultureIgnoreCase):
 					projectionStopped = 1;
 					break;
-				case "faulted":
+				case var s when s.StartsWith("faulted", StringComparison.CurrentCultureIgnoreCase):
 					projectionFaulted = 1;
 					break;
+
 			}
 
 			yield return new(projectionRunning, [
 				new("projection", statistics.Name),
-				new("status", "Running"),
+				StatusRunning
 			]);
 
 			yield return new(projectionFaulted, [
 				new("projection", statistics.Name),
-				new("status", "Faulted"),
+				StatusFaulted
 			]);
 
 			yield return new(projectionStopped, [
 				new("projection", statistics.Name),
-				new("status", "Stopped"),
+				StatusStopped
 			]);
 		}
 	}
