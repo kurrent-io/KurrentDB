@@ -64,8 +64,7 @@ internal class Fixture : IDisposable {
 		await GenerateSelfSignedCertificateKeyPair(CertificateDirectory);
 		await Task.Delay(TimeSpan.FromSeconds(2));
 
-		var dbImage = Environment.GetEnvironmentVariable("DB_IMAGE");
-		var imageWithTag = dbImage ?? "docker.kurrent.io/kurrent-staging/kurrentdb:ci";
+		var imageWithTag = Environment.GetEnvironmentVariable("DB_IMAGE");
 		_kurrentdb = new Builder().UseContainer()
 			.UseImage(imageWithTag)
 			.WithEnvironment(_containerEnv)
