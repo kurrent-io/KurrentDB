@@ -25,7 +25,7 @@ Find out [what's new](whatsnew.md) in this release to get details on new feature
 
 ## Getting started
 
-Check the [getting started guide](/getting-started/introduction.md) for an introduction to KurrentDB and its features, along with detailed instructions to quickly get started.
+Check the [getting started guide](/getting-started/quickstart/README.md) for an introduction to KurrentDB and its features, along with detailed instructions to quickly get started.
 
 ## Support
 
