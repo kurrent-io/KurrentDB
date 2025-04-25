@@ -17,7 +17,7 @@
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.6.0" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" />
+		<ProjectReference Include="..\Connectors\KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj" />
 		<ProjectReference Include="..\KurrentDB.Auth.Ldaps\KurrentDB.Auth.Ldaps.csproj" />
 		<ProjectReference Include="..\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled\KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.csproj" />
 		<ProjectReference Include="..\KurrentDB.Auth.OAuth\KurrentDB.Auth.OAuth.csproj" />

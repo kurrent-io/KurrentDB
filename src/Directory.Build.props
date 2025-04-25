@@ -20,10 +20,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
-		<None Include="..\..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
-		<None Include="..\..\NOTICE.html" Pack="true" PackagePath="\" />
-		<None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)..\LICENSE.md" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)..\NOTICE.html" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)..\ouro.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(IsPluginsTestProject)' == 'true'">

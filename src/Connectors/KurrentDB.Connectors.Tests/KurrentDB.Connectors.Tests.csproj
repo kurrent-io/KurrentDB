@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+<!--		<Deterministic>true</Deterministic>-->
+		<NoWarn>xUnit1041</NoWarn>
+		<IsTestProject>true</IsTestProject>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Some packages that are configured with PrivateAssets in the plugin need to be referenced here -->
+		<PackageReference Include="Kurrent.Surge" Version="1.0.0-alpha.368" />
+		<PackageReference Include="Eventuous.Testing" Version="0.15.0" />
+<!--		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.15" />-->
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\KurrentDB\KurrentDB.csproj" />
+		<ProjectReference Include="..\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
+<!--		<ProjectReference Include="..\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" />-->
+		<ProjectReference Include="..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Using Include="Bogus" />
+		<Using Include="Humanizer" />
+		<Using Include="FluentAssertions" />
+		<Using Include="Microsoft.Extensions.Time.Testing" />
+		<Using Include="Xunit" />
+		<Using Include="Xunit.Abstractions" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Planes\Management\ConnectorApplication\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Remove="Planes\Management\ConnectorApplication\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="Planes\Management\ConnectorApplication\**" />
+	</ItemGroup>
+</Project>
