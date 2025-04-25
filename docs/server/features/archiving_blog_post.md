@@ -23,6 +23,8 @@ When we keep the _hot_ and _cold_ data together on a fast, expensive disk, we're
 
 What if we could separate the _cold_ data from the _hot_ data by making the _cold_ data still accessible but at slower speeds on a cheaper disk? This is the primary motivation behind the _Archiving_ feature!
 
+In addition to reducing costs, _Archiving_ improves scalability. Previously, all cluster data had to be stored on the drive attached to each node. In environments with volume size limits — such as a few terabytes — large databases could quickly reach capacity. With _Archiving_, this limitation is eliminated.
+
 ## Defining what's _Hot_ and what's _Cold_
 In KurrentDB, the tail of the transaction log, i.e., the latest chunk files, often naturally represent most of the _hot_ data, while old chunk files often represent most of the _cold_ data.
 Thus, the basic idea is to keep the latest X chunks on the local disk based on a user-defined retention policy. For simplicity, instead of storing only old chunks in the archive, we actually store _all_ completed & committed chunks in the archive, regardless of the user-defined retention policy.
@@ -244,20 +246,20 @@ If you now read some streams from a client or the web UI, you'll notice that rea
 
 This initial release has several limitations that we intend to improve in future releases:
 
-### Completed, will be available in 25.1
+#### Completed, will be available in 25.1
 - The headers of archived chunks are read on startup, just as for local chunks. This will increase startup times significantly when there are a lot of chunks in the archive.
 
-### In Progress
+#### In Progress
 - Requests that read the archive can cause other reads to be queued behind them, resulting in higher read latency if the archive is being accessed frequently.
 
-### Planned
+#### Planned
 - Once uploaded to the archive, the chunks there are not scavenged any further.
 - Clients cannot yet opt out of their read reading from the archive.
 - Repeated reads of the same part of the archive are not cached locally.
 
-### Planned, according to interest
+#### Planned, according to interest
 - At the moment only S3 is supported. A local file-system based archive exists for development/testing purposes.
-- Redaction is not compatible with Archiving.
+- Redaction is not compatible with _Archiving_.
 
 ## Conclusion
 
