@@ -99,7 +99,7 @@ The above commands configure an AWS profile named _kurrentdb-archive_ in the _ku
 
 You must replace the asterisks with your actual Access Key ID / Secret Access Key. Note that these credentials must have read/write access to the S3 bucket. (More on this below).
 
-Note that instead of running the above commands, you can also use the `aws configure` command from `aws-cli`. However, please make sure that you copy the resulting aws configuration file to `/var/log/kurrentdb/.aws` and that you change the file's ownership to the _kurrent_ user.
+Note that instead of running the above commands, you can also use the `aws configure` command from `aws-cli`. However, please make sure that you copy the resulting aws configuration file to `/var/log/kurrentdb/.aws/` and that you change the file's ownership to the _kurrent_ user.
 
 ## S3 Authentication in Production
 AWS IAM user credentials (used above) are permanent credentials that do not expire and pose a security risk.
