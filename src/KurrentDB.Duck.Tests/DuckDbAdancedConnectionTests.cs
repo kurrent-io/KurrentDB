@@ -36,7 +36,7 @@ public sealed class DuckDbAdancedConnectionTests : DuckDbTests<DuckDbAdancedConn
 		connection.Open();
 
 		Assert.Equal(0L, connection.ExecuteNonQuery<NullableTableDefinition>());
-		Assert.Equal(1L, connection.ExecuteNonQuery<(uint, string?), InsertStatement>((0U, "A")));
+		Assert.Equal(1L, connection.ExecuteNonQuery<(uint Col0, string? Col1), InsertStatement>((Col0: 0U, Col1: "A")));
 		Assert.Equal(1L, connection.ExecuteNonQuery<(uint, string?), InsertStatement>((1U, null)));
 
 		using var enumerator = connection.ExecuteQuery<(uint, string?), NullableQueryStatement>().GetEnumerator();
