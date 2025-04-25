@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace EventStore.Toolkit.Testing.Http;
+namespace KurrentDB.Connectors.Tests.Infrastructure.Http;
 
 public static class TestConfiguration {
     // This async local is set in from tests, and it flows to main

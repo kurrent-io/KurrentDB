@@ -1,7 +1,7 @@
 using Serilog.Core;
 using Serilog.Events;
 
-namespace EventStore.Toolkit.Testing.Http;
+namespace KurrentDB.Connectors.Tests.Infrastructure.Http;
 
 public class TestIdEnricher : ILogEventEnricher {
     string? _testRunId;

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
-namespace EventStore.Toolkit.Testing.Http;
+namespace KurrentDB.Connectors.Tests.Infrastructure.Http;
 
 [PublicAPI]
 public class TestServerContext<TEntryPoint> : WebApplicationFactory<TEntryPoint> where TEntryPoint : class {

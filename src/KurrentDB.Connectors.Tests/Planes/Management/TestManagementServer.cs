@@ -1,7 +1,7 @@
 using EventStore.Plugins.Authorization;
-using EventStore.Toolkit.Testing.Http;
 using Eventuous;
 using Eventuous.Testing;
+using KurrentDB.Connectors.Tests.Infrastructure.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 

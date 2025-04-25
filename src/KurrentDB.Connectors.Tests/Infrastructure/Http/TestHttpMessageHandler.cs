@@ -1,6 +1,6 @@
 using static System.Threading.Tasks.TaskCreationOptions;
 
-namespace EventStore.Toolkit.Testing.Http;
+namespace KurrentDB.Connectors.Tests.Infrastructure.Http;
 
 public class TestHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>

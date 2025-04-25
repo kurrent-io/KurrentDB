@@ -12,13 +12,13 @@
 		<!-- Some packages that are configured with PrivateAssets in the plugin need to be referenced here -->
 		<PackageReference Include="Kurrent.Surge" Version="1.0.0-alpha.368" />
 		<PackageReference Include="Eventuous.Testing" Version="0.15.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.8" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
-		<ProjectReference Include="..\KurrentDB.Extensions.Connectors.Management.TestServer\KurrentDB.Extensions.Connectors.Management.TestServer.csproj" />
+		<ProjectReference Include="..\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" />
 		<ProjectReference Include="..\KurrentDB.System.Testing\KurrentDB.System.Testing.csproj" />
-		<ProjectReference Include="..\KurrentDB.Toolkit.Testing.Http\KurrentDB.Toolkit.Testing.Http.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

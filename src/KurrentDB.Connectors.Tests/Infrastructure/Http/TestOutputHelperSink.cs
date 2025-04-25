@@ -3,7 +3,7 @@ using Serilog.Events;
 using Serilog.Formatting.Display;
 using Serilog.Sinks.XUnit;
 
-namespace EventStore.Toolkit.Testing.Http;
+namespace KurrentDB.Connectors.Tests.Infrastructure.Http;
 
 public class TestOutputHelperSink : ILogEventSink {
     TestOutputSink? _inner;

@@ -1,4 +1,4 @@
-namespace EventStore.Toolkit.Testing.Http;
+namespace KurrentDB.Connectors.Tests.Infrastructure.Http;
 
 public enum TestServerStartMode {
     StartHost,
