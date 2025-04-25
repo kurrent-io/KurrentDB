@@ -10,9 +10,7 @@ using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
 using Google.Protobuf;
-using Google.Protobuf.Collections;
 using Grpc.Core;
-using KurrentDB.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services;
@@ -327,7 +325,7 @@ internal partial class Streams<TStreamId> {
 		if (e == null)
 			return null;
 		var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
-		var @event = new ReadEvent.Types.RecordedEvent {
+		return new ReadEvent.Types.RecordedEvent {
 			Id = uuidOption.ContentCase switch {
 				ReadReq.Types.Options.Types.UUIDOption.ContentOneofCase.String => new UUID {
 					String = e.EventId.ToString()
@@ -338,13 +336,10 @@ internal partial class Streams<TStreamId> {
 			StreamRevision = StreamRevision.FromInt64(e.EventNumber),
 			CommitPosition = position.CommitPosition,
 			PreparePosition = position.PreparePosition,
+			Metadata = { MetadataHelpers.GetGrpcMetadata(e) },
 			Data = ByteString.CopyFrom(e.Data.Span),
 			CustomMetadata = ByteString.CopyFrom(e.Metadata.Span)
 		};
-
-		@event.Metadata.Add(e.GetMetadataDictionary());
-
-		return @event;
 	}
 
 	private static ReadEvent ConvertToReadEvent(ReadReq.Types.Options.Types.UUIDOption uuidOption, ResolvedEvent e) {

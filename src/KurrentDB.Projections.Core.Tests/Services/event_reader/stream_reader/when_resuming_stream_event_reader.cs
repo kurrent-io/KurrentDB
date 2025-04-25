@@ -61,7 +61,7 @@ public class when_resuming_stream_event_reader<TLogFormat, TStreamId> : TestFixt
 						10, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "stream", ExpectedVersion.Any,
 						DateTime.UtcNow,
 						PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-						"event_type", new byte[0], new byte[0]), 0)
+						"event_type", new byte[0], new byte[0], new byte[0]), 0)
 				}, null, false, "", 11, 10, true, 100));
 	}
 }

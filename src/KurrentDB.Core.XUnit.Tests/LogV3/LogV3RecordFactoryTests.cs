@@ -71,7 +71,8 @@ public class LogV3RecordFactoryTests {
 			flags: _prepareflags,
 			eventType: _uint3000,
 			data: _bytes1,
-			metadata: _bytes2);
+			metadata: _bytes2,
+			properties: null);
 
 		Assert.Equal(_long1, prepare.LogPosition);
 		Assert.Equal(_guid1, prepare.CorrelationId);

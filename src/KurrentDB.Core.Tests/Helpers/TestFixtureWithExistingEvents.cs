@@ -474,7 +474,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 											eventNumber, tfPosition, correlationId, e.EventId, tfPosition, 0, streamId,
 											ExpectedVersion.Any, _timeProvider.UtcNow,
 											PrepareFlags.SingleWrite | (e.IsJson ? PrepareFlags.IsJson : PrepareFlags.None),
-											e.EventType, e.Data, e.Metadata)
+											e.EventType, e.Data, e.Metadata, e.Properties)
 								}); //NOTE: DO NOT MAKE ARRAY
 		foreach (var eventRecord in eventRecords) {
 			list.Add(eventRecord.record);

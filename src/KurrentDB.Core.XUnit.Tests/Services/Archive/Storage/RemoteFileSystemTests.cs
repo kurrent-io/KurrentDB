@@ -138,7 +138,8 @@ public sealed class RemoteFileSystemTests : ArchiveStorageTestsBase<RemoteFileSy
 				flags: PrepareFlags.SingleWrite,
 				eventType: "my-event-type",
 				data: Encoding.UTF8.GetBytes($"my-data-{i}"),
-				metadata: Encoding.UTF8.GetBytes($"my-metadata-{i}"));
+				metadata: Encoding.UTF8.GetBytes($"my-metadata-{i}"),
+				properties: Encoding.UTF8.GetBytes($"my-properties-{i}"));
 			var result = await chunk.TryAppend(record, token);
 			Assert.True(result.Success);
 			logPosition = result.NewPosition;

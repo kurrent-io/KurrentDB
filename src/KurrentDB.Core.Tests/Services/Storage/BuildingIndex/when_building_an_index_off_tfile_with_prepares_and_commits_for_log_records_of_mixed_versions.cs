@@ -26,13 +26,13 @@ public class
 		_id2 = Guid.NewGuid();
 		_id3 = Guid.NewGuid();
 		var (_, pos1) = await Writer.Write(new PrepareLogRecord(0, _id1, _id1, 0, 0, "test1", null, 0, DateTime.UtcNow,
-				PrepareFlags.SingleWrite, "type", null, new byte[0], new byte[0], LogRecordVersion.LogRecordV0),
+				PrepareFlags.SingleWrite, "type", null, new byte[0], new byte[0], new byte[0], LogRecordVersion.LogRecordV0),
 			token);
 		var (_, pos2) = await Writer.Write(new PrepareLogRecord(pos1, _id2, _id2, pos1, 0, "test2", null, 0, DateTime.UtcNow,
-				PrepareFlags.SingleWrite, "type", null, new byte[0], new byte[0], LogRecordVersion.LogRecordV0),
+				PrepareFlags.SingleWrite, "type", null, new byte[0], new byte[0], new byte[0], LogRecordVersion.LogRecordV0),
 			token);
 		var (_, pos3) = await Writer.Write(new PrepareLogRecord(pos2, _id3, _id3, pos2, 0, "test2", null, 1, DateTime.UtcNow,
-				PrepareFlags.SingleWrite, "type", null, new byte[0], new byte[0]),
+				PrepareFlags.SingleWrite, "type", null, new byte[0], new byte[0], new byte[0]),
 			token);
 		var (_, pos4) = await Writer.Write(new CommitLogRecord(pos3, _id1, 0, DateTime.UtcNow, 0, LogRecordVersion.LogRecordV0),
 			token);

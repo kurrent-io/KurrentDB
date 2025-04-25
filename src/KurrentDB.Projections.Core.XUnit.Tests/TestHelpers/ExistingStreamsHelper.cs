@@ -113,7 +113,7 @@ public class ExistingStreamsHelper {
 			new(EventNumber, PreparePosition, correlationId, Guid.NewGuid(), transactionPosition: 0,
 				transactionOffset: 0,
 				EventStreamId, EventNumber, DateTime.Now, PrepareFlags.IsCommitted, EventType,
-				Encoding.UTF8.GetBytes(Data), Encoding.UTF8.GetBytes(Metadata));
+				Encoding.UTF8.GetBytes(Data), Encoding.UTF8.GetBytes(Metadata), []);
 	}
 }
 

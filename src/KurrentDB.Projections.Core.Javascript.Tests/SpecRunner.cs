@@ -248,7 +248,7 @@ public class SpecRunner {
 					var er = new EventRecord(
 						revision[sequence.Stream], logPosition, Guid.NewGuid(), @event.EventId, i, j,
 						sequence.Stream, i, DateTime.Now, flags, @event.EventType,
-						Utf8NoBom.GetBytes(body), metadata);
+						Utf8NoBom.GetBytes(body), metadata, []);
 					var e = new ResolvedEvent(KurrentDB.Core.Data.ResolvedEvent.ForUnresolvedEvent(er, logPosition), Array.Empty<byte>());
 					if (@event.Skip) {
 						yield return For($"{projection} skips {er.EventNumber}@{sequence.Stream}",

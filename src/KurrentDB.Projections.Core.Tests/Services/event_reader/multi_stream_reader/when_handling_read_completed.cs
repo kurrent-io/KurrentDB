@@ -55,13 +55,13 @@ public class when_handling_read_completed<TLogFormat, TStreamId> : TestFixtureWi
 						new EventRecord(
 							1, 50, Guid.NewGuid(), _firstEventId, 50, 0, "a", ExpectedVersion.Any, DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", new byte[] {1}, new byte[] {2}, [])),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							2, 100, Guid.NewGuid(), _secondEventId, 100, 0, "a", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {3}, new byte[] {4}))
+							"event_type2", new byte[] {3}, new byte[] {4}, []))
 				}, null, false, "", 3, 4, false, 200));
 	}
 
@@ -107,7 +107,7 @@ public class when_handling_read_completed<TLogFormat, TStreamId> : TestFixtureWi
 								DateTime.UtcNow,
 								PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin |
 								PrepareFlags.TransactionEnd,
-								"event_type", new byte[0], new byte[0]))
+								"event_type", new byte[0], new byte[0], new byte[0]))
 					}, null, false, "", 3, 4, false, 100));
 		});
 	}

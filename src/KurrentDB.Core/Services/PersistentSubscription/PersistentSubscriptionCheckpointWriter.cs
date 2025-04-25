@@ -46,7 +46,7 @@ public class PersistentSubscriptionCheckpointWriter : IPersistentSubscriptionChe
 
 	private void PublishCheckpoint(IPersistentSubscriptionStreamPosition state) {
 		_outstandingWrite = true;
-		var evnt = new Event(Guid.NewGuid(), "$SubscriptionCheckpoint", true, state.ToString().ToJson(), null, SchemaInfo.None, SchemaInfo.None);
+		var evnt = new Event(Guid.NewGuid(), "$SubscriptionCheckpoint", true, state.ToString().ToJson(), null);
 		_ioDispatcher.WriteEvent(_subscriptionStateStream, _version, evnt, SystemAccounts.System,
 			WriteStateCompleted);
 	}
@@ -73,7 +73,7 @@ public class PersistentSubscriptionCheckpointWriter : IPersistentSubscriptionChe
 			metaWriteRole: SystemRoles.Admins);
 		var metadata = new StreamMetadata(maxCount: 2, maxAge: null, cacheControl: null, acl: acl);
 		var dataBytes = metadata.ToJsonBytes();
-		return new Event(eventId, SystemEventTypes.StreamMetadata, isJson: true, data: dataBytes, metadata: null, SchemaInfo.None, SchemaInfo.None);
+		return new Event(eventId, SystemEventTypes.StreamMetadata, isJson: true, data: dataBytes, metadata: null);
 	}
 
 	private void WriteStateCompleted(ClientMessage.WriteEventsCompleted msg) {

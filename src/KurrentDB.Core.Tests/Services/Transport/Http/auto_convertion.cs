@@ -501,7 +501,7 @@ internal class when_reading_events_and_accept_type_is_json(string contentType) :
 	private ResolvedEvent GenerateResolvedEvent(byte[] data, byte[] metadata) {
 		return ResolvedEvent.ForUnresolvedEvent(new EventRecord(0, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 			"stream", 0,
-			DateTime.MinValue, PrepareFlags.IsJson, "type", data, metadata));
+			DateTime.MinValue, PrepareFlags.IsJson, "type", data, metadata, new byte[0]));
 	}
 }
 
@@ -630,6 +630,6 @@ internal class when_reading_events_and_accept_type_is_xml : do_not_use_indentati
 	private ResolvedEvent GenerateResolvedEvent(byte[] data, byte[] metadata) {
 		return ResolvedEvent.ForUnresolvedEvent(new EventRecord(0, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 			"stream", 0,
-			DateTime.MinValue, PrepareFlags.IsJson, "type", data, metadata));
+			DateTime.MinValue, PrepareFlags.IsJson, "type", data, metadata, new byte[0]));
 	}
 }

@@ -59,7 +59,7 @@ public class when_handling_eof_for_all_streams_and_idle_eof<TLogFormat, TStreamI
 							1, 50, Guid.NewGuid(), _firstEventId, 50, 0, "a", ExpectedVersion.Any,
 							_fakeTimeProvider.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", new byte[] {1}, new byte[] {2}, [])),
 				}, null, false, "", 2, 1, true, 200));
 		correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
 			.Last(x => x.EventStreamId == "b").CorrelationId;
@@ -72,7 +72,7 @@ public class when_handling_eof_for_all_streams_and_idle_eof<TLogFormat, TStreamI
 							2, 100, Guid.NewGuid(), _secondEventId, 100, 0, "b", ExpectedVersion.Any,
 							_fakeTimeProvider.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", new byte[] {1}, new byte[] {2}, [])),
 				}, null, false, "", 3, 2, true, 200));
 		correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
 			.Last(x => x.EventStreamId == "a").CorrelationId;

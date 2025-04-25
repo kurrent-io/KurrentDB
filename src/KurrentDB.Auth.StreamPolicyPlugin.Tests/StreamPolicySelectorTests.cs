@@ -471,7 +471,7 @@ public class StreamPolicySelectorTests {
 			StreamPolicySelector.PolicyStream,
 			eventStreamIdSize: null,
 			expectedVersion: eventNumber, DateTime.Now, PrepareFlags.Data,
-			eventType, eventTypeSize: null, data, ReadOnlyMemory<byte>.Empty);
+			eventType, eventTypeSize: null, data, ReadOnlyMemory<byte>.Empty, ReadOnlyMemory<byte>.Empty);
 		var eventRecord = new EventRecord(eventNumber, prepare, StreamPolicySelector.PolicyStream, eventType);
 		return ResolvedEvent.ForUnresolvedEvent(eventRecord, logPosition);
 	}

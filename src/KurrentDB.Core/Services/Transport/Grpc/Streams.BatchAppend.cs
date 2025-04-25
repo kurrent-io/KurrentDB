@@ -309,27 +309,14 @@ partial class Streams<TStreamId> {
 					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.Type);
 				}
 
-				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.ContentType, out var contentType)) {
-					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.ContentType);
-				}
-
-				var dataSchemaInfo = SchemaInfo.None;
-				if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersion)) {
-					dataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(contentType), new Guid(schemaVersion));
-				}
-
-				var metadataSchemaInfo = SchemaInfo.None;
-				if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.MetadataSchemaVersionId, out var metadataSchemaVersion)) {
-					if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.MetadataContentType, out var metadataContentType)) {
-						metadataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(metadataContentType), new Guid(metadataSchemaVersion));
-					}
-				}
+				var (contentType, properties) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
 
 				return new(Uuid.FromDto(proposedMessage.Id).ToGuid(),
 					eventType,
-					contentType ==
-					Constants.Metadata.ContentTypes.ApplicationJson, proposedMessage.Data.ToByteArray(),
-					proposedMessage.CustomMetadata.ToByteArray(), dataSchemaInfo, metadataSchemaInfo);
+					contentType == Constants.Metadata.ContentTypes.ApplicationJson,
+					proposedMessage.Data.ToByteArray(),
+					proposedMessage.CustomMetadata.ToByteArray(),
+					properties);
 			}
 
 			static ClientMessage.WriteEvents ToInternalMessage(ClientWriteRequest request, IEnvelope envelope,

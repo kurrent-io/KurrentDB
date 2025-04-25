@@ -37,6 +37,7 @@ public class SizeOnDiskTests {
 				eventTypeSize: null,
 				data: new byte[] { 0xDE, 0XAD, 0xC0, 0XDE },
 				metadata: new byte[] { 0XC0, 0xDE },
+				properties: new byte[] { 0xDE, 0XAD },
 				prepareRecordVersion: 1);
 		}
 

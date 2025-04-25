@@ -2,11 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using KurrentDB.Core.Data;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogV3;
-using JetBrains.Annotations;
 using StreamId = System.UInt32;
 
 namespace KurrentDB.Core.LogV3;
@@ -90,8 +88,7 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 		StreamId eventType,
 		ReadOnlyMemory<byte> data,
 		ReadOnlyMemory<byte> metadata,
-        [CanBeNull] SchemaInfo dataSchemaInfo = null,
-        [CanBeNull] SchemaInfo metadataSchemaInfo = null) {
+		ReadOnlyMemory<byte> properties) {
 
 		var result = new LogV3StreamWriteRecord(
 			logPosition: logPosition,
@@ -106,8 +103,7 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 			eventType: eventType,
 			data: data.Span,
 			metadata: metadata.Span,
-            dataSchemaInfo ?? SchemaInfo.None,
-            metadataSchemaInfo ?? SchemaInfo.None);
+			properties: properties.Span);
 		return result;
 	}
 

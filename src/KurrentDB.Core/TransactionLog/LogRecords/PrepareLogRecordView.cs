@@ -25,6 +25,7 @@ public struct PrepareLogRecordView {
 	public ReadOnlySpan<byte> EventType => _record.AsSpan(_eventTypeOffset, _eventTypeSize);
 	public ReadOnlySpan<byte> Data => _record.AsSpan(_dataOffset, _dataSize);
 	public ReadOnlySpan<byte> Metadata => _record.AsSpan(_metadataOffset, _metadataSize);
+	public ReadOnlySpan<byte> Properties => _record.AsSpan(_propertiesOffset, _propertiesSize);
 
 	private readonly byte[] _record;
 	private readonly int _length;
@@ -40,6 +41,8 @@ public struct PrepareLogRecordView {
 	private readonly int _dataOffset;
 	private readonly int _metadataSize;
 	private readonly int _metadataOffset;
+	private readonly int _propertiesSize;
+	private readonly int _propertiesOffset;
 
 	public PrepareLogRecordView(byte[] record, int length) {
 		if (!BitConverter.IsLittleEndian)
@@ -91,6 +94,13 @@ public struct PrepareLogRecordView {
 		_metadataOffset = currentOffset;
 		currentOffset += _metadataSize;
 
+		if (Flags.HasFlag(PrepareFlags.HasProperties)) {
+			_propertiesSize = BitConverter.ToInt32(_record, currentOffset);
+			currentOffset += 4;
+			_propertiesOffset = currentOffset;
+			currentOffset += _propertiesSize;
+		}
+
 		if (currentOffset != _length) {
 			throw new ArgumentException($"Unexpected record length: {currentOffset}, expected: {_length}");
 		}
@@ -114,7 +124,8 @@ public struct PrepareLogRecordView {
 			   $"TimeStamp: {TimeStamp}, " +
 			   $"EventType: {Encoding.UTF8.GetString(EventType.ToArray())}, " +
 			   $"Data size: {Data.Length}, " +
-			   $"Metadata size: {Metadata.Length}";
+			   $"Metadata size: {Metadata.Length}, " +
+			   $"Properties size: {Properties.Length}";
 	}
 
 	// copied and adapted from https://github.com/microsoft/referencesource/blob/master/mscorlib/system/io/binaryreader.cs

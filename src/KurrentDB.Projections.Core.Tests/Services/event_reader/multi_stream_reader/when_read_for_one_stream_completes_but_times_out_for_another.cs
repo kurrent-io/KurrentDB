@@ -50,13 +50,13 @@ public class when_read_for_one_stream_completes_but_times_out_for_another<TLogFo
 							1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "a", ExpectedVersion.Any, DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd |
 							PrepareFlags.IsJson,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", new byte[] {1}, new byte[] {2}, [])),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							2, 150, Guid.NewGuid(), Guid.NewGuid(), 150, 0, "a", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {3}, new byte[] {4}))
+							"event_type2", new byte[] {3}, new byte[] {4}, []))
 				}, null, false, "", 3, 2, true, 200));
 		//timeout follows
 		_eventReader.Handle(
@@ -72,13 +72,13 @@ public class when_read_for_one_stream_completes_but_times_out_for_another<TLogFo
 							2, 100, Guid.NewGuid(), Guid.NewGuid(), 100, 0, "b", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", new byte[] {1}, new byte[] {2}, [])),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							3, 200, Guid.NewGuid(), Guid.NewGuid(), 200, 0, "b", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {3}, new byte[] {4}))
+							"event_type2", new byte[] {3}, new byte[] {4}, []))
 				}, null, false, "", 4, 3, true, 200));
 		//timeout follows
 		_eventReader.Handle(
@@ -99,13 +99,13 @@ public class when_read_for_one_stream_completes_but_times_out_for_another<TLogFo
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd |
 							PrepareFlags.IsJson,
-							"event_type1", new byte[] {4}, new byte[] {6})),
+							"event_type1", new byte[] {4}, new byte[] {6}, [])),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							4, 400, Guid.NewGuid(), Guid.NewGuid(), 400, 0, "a", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {6}, new byte[] {8}))
+							"event_type2", new byte[] {6}, new byte[] {8}, []))
 				}, null, false, "", 3, 2, true, 200));
 	}
 

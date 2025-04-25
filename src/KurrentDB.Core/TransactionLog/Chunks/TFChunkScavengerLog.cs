@@ -78,7 +78,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 		);
 		var metadata = new StreamMetadata(maxAge: _scavengeHistoryMaxAge, acl: acl);
 		var metaStreamEvent = new Event(metadataEventId, SystemEventTypes.StreamMetadata, isJson: true,
-			data: metadata.ToJsonBytes(), metadata: null, SchemaInfo.None, SchemaInfo.None);
+			data: metadata.ToJsonBytes(), metadata: null);
 		_ioDispatcher.WriteEvent(metaStreamId, ExpectedVersion.Any, metaStreamEvent, SystemAccounts.System, m => {
 			if (m.Result != OperationResult.Success) {
 				Log.Error(
@@ -88,7 +88,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 		});
 
 		var scavengeStartedEvent = new Event(Guid.NewGuid(), SystemEventTypes.ScavengeStarted, true,
-			payload.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
+			payload.ToJsonBytes(), null);
 		WriteScavengeDetailEvent(_streamName, scavengeStartedEvent, _retryAttempts);
 	}
 
@@ -105,7 +105,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 				{"timeTaken", elapsed},
 				{"spaceSaved", spaceSaved},
 				{"maxChunkScavenged", maxChunkScavenged}
-			}.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
+			}.ToJsonBytes(), null);
 		WriteScavengeDetailEvent(_streamName, scavengeCompletedEvent, _retryAttempts);
 	}
 
@@ -123,7 +123,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 				{"spaceSaved", spaceSaved},
 				{"nodeEndpoint", _nodeId},
 				{"errorMessage", ""}
-			}.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
+			}.ToJsonBytes(), null);
 
 		WriteScavengeChunkCompletedEvent(_streamName, evnt, _retryAttempts);
 	}
@@ -143,7 +143,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 				{"spaceSaved", 0},
 				{"nodeEndpoint", _nodeId},
 				{"errorMessage", errorMessage}
-			}.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
+			}.ToJsonBytes(), null);
 
 		WriteScavengeChunkCompletedEvent(_streamName, evnt, _retryAttempts);
 	}
@@ -160,7 +160,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 				{"wasMerged", true},
 				{"nodeEndpoint", _nodeId},
 				{"errorMessage", ""}
-			}.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
+			}.ToJsonBytes(), null);
 
 		WriteScavengeChunkCompletedEvent(_streamName, evnt, _retryAttempts);
 	}
@@ -176,7 +176,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 				{"wasMerged", false},
 				{"nodeEndpoint", _nodeId},
 				{"errorMessage", errorMessage}
-			}.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
+			}.ToJsonBytes(), null);
 
 		WriteScavengeChunkCompletedEvent(_streamName, evnt, _retryAttempts);
 	}
@@ -197,7 +197,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 				{"wasScavenged", true},
 				{"nodeEndpoint", _nodeId},
 				{"errorMessage", ""}
-			}.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
+			}.ToJsonBytes(), null);
 
 		WriteScavengeChunkCompletedEvent(_streamName, evnt, _retryAttempts);
 	}
@@ -216,7 +216,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 				{"wasScavenged", false},
 				{"nodeEndpoint", _nodeId},
 				{"errorMessage", errorMessage}
-			}.ToJsonBytes(), null, SchemaInfo.None, SchemaInfo.None);
+			}.ToJsonBytes(), null);
 
 		WriteScavengeChunkCompletedEvent(_streamName, evnt, _retryAttempts);
 	}
@@ -280,7 +280,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 			}
 		} else {
 			string eventLinkTo = string.Format("{0}@{1}", msg.FirstEventNumber, streamId);
-			var linkToIndexEvent = new Event(Guid.NewGuid(), SystemEventTypes.LinkTo, false, eventLinkTo, null, SchemaInfo.None, SchemaInfo.None);
+			var linkToIndexEvent = new Event(Guid.NewGuid(), SystemEventTypes.LinkTo, false, eventLinkTo, null);
 			WriteScavengeIndexEvent(linkToIndexEvent, _retryAttempts);
 		}
 	}

@@ -298,7 +298,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 
 				var record = new EventRecord(revision, position, message.CorrelationId,
 					current.EventId, _all.Count, i, message.EventStreamId, -1, DateTime.Now,
-					flags, current.EventType, current.Data, current.Metadata);
+					flags, current.EventType, current.Data, current.Metadata, []);
 				if (current.EventType == SystemEventTypes.LinkTo) {
 					var data = Encoding.UTF8.GetString(current.Data);
 					var parts = data.Split('@', 2);

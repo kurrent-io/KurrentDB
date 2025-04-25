@@ -61,8 +61,8 @@ public static class Constants {
 			public const string ApplicationOctetStream = "application/octet-stream";
 		}
 
-        public const string SchemaVersionId = "schema-version-id";
-        public const string MetadataSchemaVersionId = "metadata-schema-version-id";
+		public const string SchemaVersionId = "schema-version-id";
+		public const string MetadataSchemaVersionId = "metadata-schema-version-id";
 	}
 
 	public static class Headers {

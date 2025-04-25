@@ -409,6 +409,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 			null,
 			data,
 			null,
+			null,
 			LogRecordVersion.LogRecordV0);
 	}
 }

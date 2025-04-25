@@ -48,13 +48,13 @@ public class when_handling_read_completed_then_pause_then_eof<TLogFormat, TStrea
 							10, 50, Guid.NewGuid(), _firstEventId, 50, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", new byte[] {1}, new byte[] {2}, [])),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							11, 100, Guid.NewGuid(), _secondEventId, 100, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {3}, new byte[] {4}))
+							"event_type2", new byte[] {3}, new byte[] {4}, []))
 				}, null, false, "", 12, 11, true, 200));
 		_edp.Pause();
 		correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>().Last()

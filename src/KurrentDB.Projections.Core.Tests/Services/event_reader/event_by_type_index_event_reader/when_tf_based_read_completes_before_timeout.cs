@@ -52,13 +52,13 @@ public class when_tf_based_read_completes_before_timeout<TLogFormat, TStreamId> 
 					1, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "test_stream", ExpectedVersion.Any,
 					_fakeTimeProvider.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-					"eventTypeOne", new byte[] {1}, new byte[] {2}), 100),
+					"eventTypeOne", new byte[] {1}, new byte[] {2}, []), 100),
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					2, 150, Guid.NewGuid(), Guid.NewGuid(), 150, 0, "test_stream", ExpectedVersion.Any,
 					_fakeTimeProvider.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-					"eventTypeTwo", new byte[] {1}, new byte[] {2}), 200),
+					"eventTypeTwo", new byte[] {1}, new byte[] {2}, []), 200),
 		});
 
 		TimeoutRead("$all", correlationId);

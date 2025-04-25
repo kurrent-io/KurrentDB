@@ -51,13 +51,13 @@ public class when_handling_eof_and_idle_eof<TLogFormat, TStreamId> : TestFixture
 							1, 50, Guid.NewGuid(), _firstEventId, 50, 0, "a", ExpectedVersion.Any,
 							_fakeTimeProvider.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2}), 100),
+							"event_type1", new byte[] {1}, new byte[] {2}, []), 100),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							2, 150, Guid.NewGuid(), _secondEventId, 150, 0, "b", ExpectedVersion.Any,
 							_fakeTimeProvider.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2}), 200),
+							"event_type1", new byte[] {1}, new byte[] {2}, []), 200),
 				}, null, false, 100,
 				new TFPos(200, 150), new TFPos(500, -1), new TFPos(100, 50), 500));
 		correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadAllEventsForward>().Last().CorrelationId;

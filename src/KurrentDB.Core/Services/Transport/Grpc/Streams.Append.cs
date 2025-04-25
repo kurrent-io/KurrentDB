@@ -59,31 +59,11 @@ internal partial class Streams<TStreamId> {
 				var data = proposedMessage.Data.ToByteArray();
 				var metadata = proposedMessage.CustomMetadata.ToByteArray();
 
-                //TODO SS: schema registry integration
-                // here we are using the new schema info
-                // event type => schema name
-                // content type => schema format
-                // schema version id
-
 				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.Type, out var eventType)) {
 					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.Type);
 				}
 
-				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.ContentType, out var contentType)) {
-					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.ContentType);
-				}
-
-				var dataSchemaInfo = SchemaInfo.None;
-				if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersion)) {
-					dataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(contentType), new Guid(schemaVersion));
-				}
-
-				var metadataSchemaInfo = SchemaInfo.None;
-				if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.MetadataSchemaVersionId, out var metadataSchemaVersion)) {
-					if (proposedMessage.Metadata.TryGetValue(Constants.Metadata.MetadataContentType, out var metadataContentType)) {
-						metadataSchemaInfo = new SchemaInfo(SchemaInfo.FormatFromString(metadataContentType), new Guid(metadataSchemaVersion));
-					}
-				}
+				var (contentType, properties) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
 
 				var eventSize = Event.SizeOnDisk(eventType, data, metadata);
 				if (eventSize > _maxAppendEventSize) {
@@ -102,9 +82,8 @@ internal partial class Streams<TStreamId> {
 					isJson: contentType == Constants.Metadata.ContentTypes.ApplicationJson,
 					data: data,
 					metadata: metadata,
-                    dataSchemaInfo: dataSchemaInfo,
-                    metadataSchemaInfo: metadataSchemaInfo)
-                );
+					properties: properties)
+				);
 			}
 
 			var appendResponseSource = new TaskCompletionSource<AppendResp>(TaskCreationOptions.RunContinuationsAsynchronously);

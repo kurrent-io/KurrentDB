@@ -2,13 +2,16 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
+using KurrentDB.TransactionLog.LogRecordSerialization.Proto;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.TransactionLog;
@@ -22,14 +25,12 @@ public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStream
 	private readonly Guid _dataSchemaVersionId = Guid.NewGuid();
 	private readonly Guid _metadataSchemaVersionId = Guid.NewGuid();
 
-	private readonly KurrentDB.Core.Data.SchemaInfo.SchemaDataFormat _dataFormat =
-		KurrentDB.Core.Data.SchemaInfo.SchemaDataFormat.Json;
-
-	private readonly KurrentDB.Core.Data.SchemaInfo.SchemaDataFormat _metadataFormat =
-		KurrentDB.Core.Data.SchemaInfo.SchemaDataFormat.Avro;
+	private readonly string _dataFormat = "application/json";
+	private readonly string _metadataFormat = "application/avro";
 
 	private IPrepareLogRecord<TStreamId> _record;
 	private TFChunkDb _db;
+	private Properties _properties;
 
 	[OneTimeSetUp]
 	public async Task SetUp() {
@@ -43,6 +44,25 @@ public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStream
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
+		_properties = new Properties();
+		_properties.PropertiesValues.Add(new Dictionary<string, PropertyValue> {
+			{
+				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.ContentType,
+				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(_dataFormat) }
+			},
+			{
+				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.SchemaVersionId,
+				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(_dataSchemaVersionId.ToString()) }
+			},
+			{
+				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.MetadataContentType,
+				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(_metadataFormat) }
+			},
+			{
+				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.MetadataSchemaVersionId,
+				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(_metadataSchemaVersionId.ToString()) }
+			}
+		});
 
 		_record = LogRecord.Prepare(
 			factory: recordFactory,
@@ -58,8 +78,7 @@ public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStream
 			eventType: eventTypeId,
 			data: new byte[] { 1, 2, 3, 4, 5 },
 			metadata: new byte[] { 7, 17 },
-			dataSchemaInfo: new KurrentDB.Core.Data.SchemaInfo(_dataFormat, _dataSchemaVersionId),
-			metadataSchemaInfo: new KurrentDB.Core.Data.SchemaInfo(_metadataFormat, _metadataSchemaVersionId));
+			properties: _properties.ToByteArray());
 
 		await _writer.Write(_record, CancellationToken.None);
 		await _writer.Flush(CancellationToken.None);
@@ -96,14 +115,13 @@ public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStream
 		Assert.AreEqual(p.EventStreamId, streamId);
 		Assert.AreEqual(p.ExpectedVersion, 1234);
 		Assert.That(p.TimeStamp, Is.EqualTo(new DateTime(2012, 12, 21)).Within(7).Milliseconds);
-		Assert.AreEqual(p.Flags, PrepareFlags.SingleWrite | PrepareFlags.HasDataSchema | PrepareFlags.HasMetadataSchema);
+		Assert.AreEqual(p.Flags, PrepareFlags.SingleWrite | PrepareFlags.HasProperties);
 		Assert.AreEqual(p.EventType, eventTypeId);
 		Assert.AreEqual(p.Data.Length, 5);
 		Assert.AreEqual(p.Metadata.Length, 2);
-		Assert.AreEqual(_dataSchemaVersionId, p.DataSchemaInfo.SchemaVersionId);
-		Assert.AreEqual(_dataFormat, p.DataSchemaInfo.SchemaFormat);
-		Assert.AreEqual(_metadataSchemaVersionId, p.MetadataSchemaInfo.SchemaVersionId);
-		Assert.AreEqual(_metadataFormat, p.MetadataSchemaInfo.SchemaFormat);
+		Assert.AreEqual(p.Properties.Length, _properties.CalculateSize());
+		var actualProperties = Properties.Parser.ParseFrom(p.Properties.Span);
+		Assert.AreEqual(_properties, actualProperties);
 	}
 
 	[Test]

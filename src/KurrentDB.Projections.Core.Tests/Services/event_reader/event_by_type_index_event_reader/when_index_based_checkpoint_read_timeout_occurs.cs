@@ -57,14 +57,16 @@ public class when_index_based_checkpoint_read_timeout_occurs<TLogFormat, TStream
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd |
 					PrepareFlags.IsJson,
 					"$>", Helper.UTF8NoBom.GetBytes("0@test-stream"),
-					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(50, 50))))),
+					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(50, 50))),
+					properties: [])),
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					2, 150, Guid.NewGuid(), Guid.NewGuid(), 150, 0, "$et-eventTypeOne", ExpectedVersion.Any,
 					DateTime.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 					"$>", Helper.UTF8NoBom.GetBytes("1@test-stream"),
-					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(150, 150)))))
+					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(150, 150))),
+					properties: []))
 		});
 
 		CompleteForwardStreamRead("$et-eventTypeTwo", Guid.Empty, new[] {
@@ -75,14 +77,16 @@ public class when_index_based_checkpoint_read_timeout_occurs<TLogFormat, TStream
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd |
 					PrepareFlags.IsJson,
 					"$>", Helper.UTF8NoBom.GetBytes("2@test-stream"),
-					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(100, 100))))),
+					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(100, 100))),
+					properties: [])),
 			ResolvedEvent.ForUnresolvedEvent(
 				new EventRecord(
 					2, 200, Guid.NewGuid(), Guid.NewGuid(), 200, 0, "$et-eventTypeTwo", ExpectedVersion.Any,
 					DateTime.UtcNow,
 					PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 					"$>", Helper.UTF8NoBom.GetBytes("3@test-stream"),
-					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(200, 200)))))
+					Helper.UTF8NoBom.GetBytes(TFPosToMetadata(new TFPos(200, 200))),
+					properties: []))
 		});
 	}
 

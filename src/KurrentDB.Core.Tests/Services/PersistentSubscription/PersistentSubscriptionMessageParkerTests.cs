@@ -27,7 +27,7 @@ public class PersistentSubscriptionMessageParkerTests {
 		var record = new EventRecord(eventNumber, logPosition, Guid.NewGuid(), Guid.NewGuid(), 0,
 			0, "foo", ExpectedVersion.Any, DateTime.Now, PrepareFlags.IsCommitted, "test-event",
 			Encoding.UTF8.GetBytes("{\"foo\": \"bar\"}"),
-			new byte[] { });
+			new byte[0], new byte[0]);
 		return ResolvedEvent.ForResolvedLink(record, null, 0);
 	}
 

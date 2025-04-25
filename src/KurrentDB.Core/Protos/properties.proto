@@ -1,0 +1,19 @@
+syntax = "proto3";
+package KurrentDB.TransactionLog.LogRecordSerialization.Proto;
+
+message Properties {
+	map<string, PropertyValue> properties_values = 1;
+
+	// later we can introduce this if we have some kind of mapping (e.g. stored in a stream)
+	// it would be an implementation detail of how the data is stored and wouldn't change the
+	// representation sent/received on the gRPC API.
+	// map<uint32, PropertyValue> properties_values = 2;
+}
+
+message PropertyValue {
+	oneof kind {
+		sint64 integer_value = 1;
+		double double_value = 2;
+		bytes bytes_value = 3;
+	}
+}

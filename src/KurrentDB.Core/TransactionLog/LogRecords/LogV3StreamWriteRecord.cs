@@ -4,7 +4,6 @@
 using System;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.LogV3;
-using KurrentDB.Core.Data;
 using KurrentDB.LogCommon;
 using KurrentDB.LogV3;
 using StreamId = System.UInt32;
@@ -32,8 +31,7 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 		uint eventType,
 		ReadOnlySpan<byte> data,
 		ReadOnlySpan<byte> metadata,
-        SchemaInfo dataSchemaInfo,
-        SchemaInfo metadataSchemaInfo) {
+		ReadOnlySpan<byte> properties) {
 
 		Ensure.Nonnegative(logPosition, "logPosition");
 		Ensure.NotEmptyGuid(correlationId, "correlationId");
@@ -75,8 +73,7 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 	public uint EventType => Record.Event.Header.EventTypeNumber;
 	public ReadOnlyMemory<byte> Data => Record.Event.Data;
 	public ReadOnlyMemory<byte> Metadata => Record.Event.Metadata;
-	public SchemaInfo DataSchemaInfo => SchemaInfo.None;
-	public SchemaInfo MetadataSchemaInfo => SchemaInfo.None;
+	public ReadOnlyMemory<byte> Properties => ReadOnlyMemory<byte>.Empty;
 
 	public IPrepareLogRecord<StreamId> CopyForRetry(long logPosition, long transactionPosition) {
 		return new LogV3StreamWriteRecord(
@@ -92,8 +89,7 @@ public class LogV3StreamWriteRecord : LogV3Record<StreamWriteRecord>, IEquatable
 			eventType: EventType,
 			data: Data.Span,
 			metadata: Metadata.Span,
-            dataSchemaInfo: SchemaInfo.None,
-            metadataSchemaInfo: SchemaInfo.None);
+			properties: Properties.Span);
 	}
 
 	public bool Equals(LogV3StreamWriteRecord other) {

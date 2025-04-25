@@ -283,8 +283,7 @@ public static class IODispatcherAsync {
 						SystemStreams.MetastreamOf(streamId),
 						expectedVersion,
 						new[] {
-							new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata.ToJsonBytes(),
-								null, SchemaInfo.None, SchemaInfo.None)
+							new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata.ToJsonBytes(), null)
 						},
 						principal,
 						response => {

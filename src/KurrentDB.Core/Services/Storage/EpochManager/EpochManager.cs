@@ -374,20 +374,18 @@ public class EpochManager<TStreamId> : IEpochManager {
 		var originalLogPosition = _writer.Position;
 
 		var epochInformation = LogRecord.Prepare(
-				factory: _recordFactory,
-				logPosition: originalLogPosition,
-				correlationId: Guid.NewGuid(),
-				eventId: Guid.NewGuid(),
-				transactionPos: originalLogPosition,
-				transactionOffset: 0,
-				eventStreamId: GetEpochInformationStream(),
-				expectedVersion: expectedVersion,
-				flags: PrepareFlags.SingleWrite | PrepareFlags.IsCommitted | PrepareFlags.IsJson,
-				eventType: GetEpochInformationEventType(),
-				data: epoch.AsSerialized(),
-				metadata: Empty.ByteArray,
-                dataSchemaInfo: SchemaInfo.None,
-                metadataSchemaInfo: SchemaInfo.None);
+			factory: _recordFactory,
+			logPosition: originalLogPosition,
+			correlationId: Guid.NewGuid(),
+			eventId: Guid.NewGuid(),
+			transactionPos: originalLogPosition,
+			transactionOffset: 0,
+			eventStreamId: GetEpochInformationStream(),
+			expectedVersion: expectedVersion,
+			flags: PrepareFlags.SingleWrite | PrepareFlags.IsCommitted | PrepareFlags.IsJson,
+			eventType: GetEpochInformationEventType(),
+			data: epoch.AsSerialized(),
+			metadata: Empty.ByteArray);
 
 		var (written, retryLogPosition) = await _writer.Write(epochInformation, token);
 		if (written)

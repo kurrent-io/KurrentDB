@@ -45,7 +45,7 @@ public class IndexTrackerTests : IDisposable {
 
 	private static PrepareLogRecord CreatePrepare() {
 		return new PrepareLogRecord(42, Guid.NewGuid(), Guid.NewGuid(), 42, 42, "tests", null, 42, DateTime.Now,
-			PrepareFlags.Data, "type-test", null, Array.Empty<byte>(), Array.Empty<byte>());
+			PrepareFlags.Data, "type-test", null, Array.Empty<byte>(), Array.Empty<byte>(), Array.Empty<byte>());
 	}
 
 	private void AssertMeasurements(long expectedEventsWritten) {

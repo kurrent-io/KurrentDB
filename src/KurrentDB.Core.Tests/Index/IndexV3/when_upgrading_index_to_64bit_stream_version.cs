@@ -145,7 +145,7 @@ public class FakeIndexReader : ITransactionFileReader {
 	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token) {
 		var record = (LogRecord)new PrepareLogRecord(position, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 			position % 2 == 0 ? "testStream-2" : "testStream-1", null, -1, DateTime.UtcNow, PrepareFlags.None, "type",
-			null, new byte[0], null);
+			null, new byte[0], null, null);
 		return new(new RecordReadResult(true, position + 1, record, 1));
 	}
 

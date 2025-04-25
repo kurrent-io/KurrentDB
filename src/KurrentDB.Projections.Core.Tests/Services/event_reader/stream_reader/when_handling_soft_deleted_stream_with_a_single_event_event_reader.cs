@@ -50,14 +50,14 @@ public class when_handling_soft_deleted_stream_with_a_single_event_event_reader<
 							10, 50, Guid.NewGuid(), _firstEventId, 50, 0, _streamId, ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2})),
+							"event_type1", new byte[] {1}, new byte[] {2}, [])),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							11, 100, Guid.NewGuid(), _secondEventId, 100, 0, _streamId, ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd |
 							PrepareFlags.IsJson,
-							"event_type2", new byte[] {3}, new byte[] {4}))
+							"event_type2", new byte[] {3}, new byte[] {4}, []))
 				}, null, false, "", 12, 11, true, 200));
 	}
 

@@ -117,7 +117,8 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 			flags: flags,
 			eventType: eventTypeId,
 			data: data,
-			metadata: ReadOnlyMemory<byte>.Empty
+			metadata: ReadOnlyMemory<byte>.Empty,
+			properties: ReadOnlyMemory<byte>.Empty
 		);
 	}
 
