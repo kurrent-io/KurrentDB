@@ -45,14 +45,10 @@ public class DuckDbAdvancedConnection : DuckDBConnection {
 		}
 
 		// execute
-		var queryResult = default(QueryResult);
 		long rowsChanged;
 		try {
-			queryResult = statement.Execute();
-			rowsChanged = queryResult.RowsChanged;
+			rowsChanged = statement.ExecuteNonQuery();
 		} finally {
-			queryResult.Dispose();
-
 			// clear bindings
 			if (count > 0L)
 				statement.ClearBindings();

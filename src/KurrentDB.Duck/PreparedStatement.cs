@@ -93,7 +93,10 @@ public readonly partial struct PreparedStatement : INativeWrapper<PreparedStatem
 		}
 	}
 
-	internal QueryResult Execute() => new(_preparedStatement);
+	public long ExecuteNonQuery() {
+		using var query = new QueryResult(_preparedStatement);
+		return query.RowsChanged;
+	}
 
 	public void Dispose() {
 		if (_preparedStatement is not 0)
