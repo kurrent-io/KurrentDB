@@ -10,9 +10,11 @@ namespace KurrentDB.Duck;
 partial struct DataChunk {
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_data_chunk_get_column_count")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	[SuppressGCTransition]
 	private static partial long GetColumnCount(nint chunk);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_data_chunk_get_size")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	[SuppressGCTransition]
 	private static partial long GetRowsCount(nint chunk);
 }

@@ -10,13 +10,16 @@ partial struct Vector {
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_data_chunk_get_vector")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	[SuppressGCTransition]
 	private static partial nint GetVector(nint dataChunk, long columnIndex);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_vector_get_data")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	[SuppressGCTransition]
 	private static partial nint GetVectorData(nint vector);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_vector_get_validity")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	[SuppressGCTransition]
 	private static partial nint GetValidity(nint vector);
 }
