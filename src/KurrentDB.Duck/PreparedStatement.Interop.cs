@@ -7,7 +7,7 @@ using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
 
-public partial struct PreparedStatement {
+partial struct PreparedStatement {
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_prepare")]
 	private static partial DuckDBState Create(nint connection, in byte queryUtf8NullTerminated, out nint preparedStatement);
 

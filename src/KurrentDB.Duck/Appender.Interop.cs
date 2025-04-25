@@ -7,7 +7,7 @@ using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
 
-public partial struct Appender {
+partial struct Appender {
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_appender_create", StringMarshalling = StringMarshalling.Utf8)]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial DuckDBState Create(nint connection, nint schema, ReadOnlySpan<byte> table, out nint appender);

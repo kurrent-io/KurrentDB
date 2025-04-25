@@ -94,9 +94,19 @@ public readonly partial struct PreparedStatement : INativeWrapper<PreparedStatem
 	}
 
 	public long ExecuteNonQuery() {
-		using var query = new QueryResult(_preparedStatement);
-		return query.RowsChanged;
+		long count;
+		if (_preparedStatement is not 0) {
+			using var query = new QueryResult(_preparedStatement);
+			count = query.RowsChanged;
+		} else {
+			count = 0L;
+		}
+
+		return count;
 	}
+
+	public StreamQueryResult ExecuteQuery()
+		=> _preparedStatement is not 0 ? new(_preparedStatement) : default;
 
 	public void Dispose() {
 		if (_preparedStatement is not 0)

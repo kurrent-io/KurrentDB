@@ -30,16 +30,32 @@ public interface IPreparedStatement<TArgs> : IPreparedStatement
 	/// <param name="args">The arguments to be bounded.</param>
 	/// <param name="source">The binding source.</param>
 	/// <returns>The binding between formal parameters and actual arguments.</returns>
-	static abstract BindingContext Bind(ref TArgs args, BindingSource source);
+	static abstract BindingContext Bind(ref readonly TArgs args, BindingSource source);
 }
 
 /// <summary>
 /// Represents the prepared statement without formal parameters.
 /// </summary>
 public interface IParameterlessStatement : IPreparedStatement<ValueTuple> {
-	static BindingContext IPreparedStatement<ValueTuple>.Bind(ref ValueTuple args, BindingSource source)
+	static BindingContext IPreparedStatement<ValueTuple>.Bind(ref readonly ValueTuple args, BindingSource source)
 		=> new(source);
 }
+
+/// <summary>
+/// Represents the prepared query with formal parameters and the row schema.
+/// </summary>
+/// <typeparam name="TInput"></typeparam>
+/// <typeparam name="TOutput"></typeparam>
+public interface IQuery<TInput, out TOutput> : IPreparedStatement<TInput>, IRowParser<TOutput>
+	where TInput : struct, ITuple
+	where TOutput : struct, ITuple;
+
+/// <summary>
+/// Represents the prepared query without formal parameters and the row schema.
+/// </summary>
+/// <typeparam name="TOutput"></typeparam>
+public interface IQuery<out TOutput> : IParameterlessStatement, IQuery<ValueTuple, TOutput>
+	where TOutput : struct, ITuple;
 
 /// <summary>
 /// Represents the binding source.
@@ -69,6 +85,14 @@ public struct BindingContext(BindingSource source) : IEnumerable<object> {
 	public void Add(DateTime value) => source.Statement.Bind(index++, value);
 	public void Add(ReadOnlySpan<byte> buffer) => source.Statement.Bind(index++, buffer);
 	public void Add(ReadOnlySpan<char> chars) => source.Statement.Bind(index++, chars);
+
+	public void Add(string? str) {
+		if (str is not null) {
+			Add(str.AsSpan());
+		} else {
+			Add(DBNull.Value);
+		}
+	}
 
 	private static IEnumerator<object> GetEmptyEnumerator() => Enumerable.Empty<object>().GetEnumerator();
 

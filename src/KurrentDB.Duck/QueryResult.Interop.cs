@@ -7,22 +7,22 @@ using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
 
-internal partial struct QueryResult {
+partial struct QueryResult {
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_execute_prepared")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial DuckDBState ExecutePrepared(nint preparedStatement, out DuckDBResult result);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_result_error")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial nint GetErrorString(in DuckDBResult result);
+	internal static partial nint GetErrorString(in DuckDBResult result);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_result_error_type")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBErrorType GetErrorType(in DuckDBResult result);
+	internal static partial DuckDBErrorType GetErrorType(in DuckDBResult result);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_destroy_result")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial void Destroy(in DuckDBResult result);
+	internal static partial void Destroy(in DuckDBResult result);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_rows_changed")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]

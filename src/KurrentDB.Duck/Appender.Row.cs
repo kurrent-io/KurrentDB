@@ -13,7 +13,7 @@ using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
 
-public partial struct Appender {
+partial struct Appender {
 	/// <summary>
 	/// Prepares a fresh row for insertion.
 	/// </summary>
@@ -40,7 +40,7 @@ public partial struct Appender {
 
 		public void Append(DBNull value) {
 			ArgumentNullException.ThrowIfNull(value);
-			
+
 			VerifyState(AppendNull(_appender) is DuckDBState.Error);
 		}
 

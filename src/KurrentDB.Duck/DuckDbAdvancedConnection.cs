@@ -31,18 +31,10 @@ public class DuckDbAdvancedConnection : DuckDBConnection {
 		where TStatement : IParameterlessStatement
 		=> ExecuteNonQuery<ValueTuple, TStatement>(new());
 
-	public long ExecuteNonQuery<TArgs, TStatement>(TArgs args)
+	public long ExecuteNonQuery<TArgs, TStatement>(in TArgs args)
 		where TArgs : struct, ITuple
 		where TStatement : IPreparedStatement<TArgs> {
-
-		var statement = Prepare<TStatement>();
-		long count;
-		if (args is ValueTuple) {
-			count = 0L;
-		} else {
-			count = TStatement.Bind(ref args, new(statement)).Count;
-			Debug.Assert(count == statement.ParametersCount);
-		}
+		var statement = Bind<TArgs, TStatement>(in args, out var paramsCount);
 
 		// execute
 		long rowsChanged;
@@ -50,12 +42,57 @@ public class DuckDbAdvancedConnection : DuckDBConnection {
 			rowsChanged = statement.ExecuteNonQuery();
 		} finally {
 			// clear bindings
-			if (count > 0L)
+			if (paramsCount > 0L)
 				statement.ClearBindings();
 		}
 
 		return rowsChanged;
 	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining)]
+	private PreparedStatement Bind<TArgs, TStatement>(ref readonly TArgs args, out long paramsCount)
+		where TArgs : struct, ITuple
+		where TStatement : IPreparedStatement<TArgs> {
+		var statement = Prepare<TStatement>();
+		if (args is ValueTuple) {
+			paramsCount = 0L;
+		} else {
+			paramsCount = TStatement.Bind(in args, new(statement)).Count;
+			Debug.Assert(paramsCount == statement.ParametersCount);
+		}
+
+		return statement;
+	}
+
+	public StreamQueryResult ExecuteQuery<TStatement>()
+		where TStatement : IParameterlessStatement
+		=> ExecuteQuery<ValueTuple, TStatement>(new());
+
+	public StreamQueryResult ExecuteQuery<TArgs, TStatement>(in TArgs args)
+		where TArgs : struct, ITuple
+		where TStatement : IPreparedStatement<TArgs> {
+		var statement = Bind<TArgs, TStatement>(in args, out var paramsCount);
+
+		// execute
+		try {
+			return statement.ExecuteQuery();
+		} finally {
+			// clear bindings
+			if (paramsCount > 0L)
+				statement.ClearBindings();
+		}
+	}
+
+	public StreamQueryResult<TRow, TStatement> ExecuteQuery<TArgs, TRow, TStatement>(in TArgs args)
+		where TArgs : struct, ITuple
+		where TRow : struct, ITuple
+		where TStatement : IQuery<TArgs, TRow>
+		=> new(ExecuteQuery<TArgs, TStatement>(in args));
+
+	public StreamQueryResult<TRow, TStatement> ExecuteQuery<TRow, TStatement>()
+		where TRow : struct, ITuple
+		where TStatement : IQuery<TRow>
+		=> ExecuteQuery<ValueTuple, TRow, TStatement>(new ValueTuple());
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
