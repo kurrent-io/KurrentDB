@@ -52,18 +52,17 @@ partial struct DataChunk {
 		public uint ReadUInt32()
 			=> Read<uint>();
 
-		public ReadOnlySpan<byte> ReadBlob()
-			=> _chunk.Columns[_columnIndex++].ReadBitString(_chunk._rowIndex);
+		public Blob ReadBlob()
+			=> _chunk.Columns[_columnIndex++].ReadBlob(_chunk._rowIndex);
 
-		public bool TryReadBlob(out ReadOnlySpan<byte> buffer)
-			=> _chunk.Columns[_columnIndex++].ReadBitString(_chunk._rowIndex, out buffer);
-
-		[SkipLocalsInit]
-		public string ReadString() => Interop.ToUtf16String(ReadBlob());
+		public Blob? TryReadBlob()
+			=> _chunk.Columns[_columnIndex++].TryReadBlob(_chunk._rowIndex);
 
 		[SkipLocalsInit]
-		public string? TryReadString()
-			=> TryReadBlob(out var buffer) ? Interop.ToUtf16String(buffer) : null;
+		public string ReadString() => ReadBlob().ToString();
+
+		[SkipLocalsInit]
+		public string? TryReadString() => TryReadBlob()?.ToString();
 
 		public DateTime ReadDateTime()
 			=> NativeMethods.DateTimeHelpers.DuckDBFromTimestamp(Read<DuckDBTimestampStruct>()).ToDateTime();

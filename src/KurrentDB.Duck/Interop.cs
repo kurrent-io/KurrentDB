@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -27,16 +28,26 @@ internal static class Interop {
 		DuckDBErrorType errorType = DuckDBErrorType.UnknownType)
 		=> CreateException(FromUnmanagedUtf8String(unmanagedUtf8String), errorType);
 
-	public static string ToUtf16String(ReadOnlySpan<byte> utf8Chars) {
+	public static bool TryToUtf16String(ReadOnlySpan<byte> utf8Chars, [NotNullWhen(true)] out string? result) {
 		var maxChars = Encoding.UTF8.GetMaxCharCount(utf8Chars.Length);
 
-		using var buffer = maxChars <= SpanOwner<char>.StackallocThreshold
-			? stackalloc char[maxChars]
-			: new SpanOwner<char>(maxChars);
+		if (maxChars > 0) {
+			using var buffer = maxChars <= SpanOwner<char>.StackallocThreshold
+				? stackalloc char[maxChars]
+				: new SpanOwner<char>(maxChars);
 
-		return Utf8.ToUtf16(utf8Chars, buffer.Span, out _, out var charsWritten, replaceInvalidSequences: false) is
-			OperationStatus.Done
-			? new(buffer.Span.Slice(0, charsWritten))
-			: throw CreateException($"Unable to convert BLOB to UTF-16");
+			if (Utf8.ToUtf16(utf8Chars, buffer.Span, out _, out var charsWritten, replaceInvalidSequences: false) is
+			    OperationStatus.Done) {
+				result = new(buffer.Span.Slice(0, charsWritten));
+				return true;
+			}
+		}
+
+		result = null;
+		return false;
 	}
+
+	public static string ToUtf16String(ReadOnlySpan<byte> utf8Chars) => TryToUtf16String(utf8Chars, out var result)
+		? result
+		: throw CreateException($"Unable to convert BLOB to UTF-16");
 }

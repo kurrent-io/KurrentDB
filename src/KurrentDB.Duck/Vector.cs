@@ -1,7 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using DotNext.Runtime;
 using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
@@ -40,19 +42,15 @@ internal readonly partial struct Vector {
 
 	internal unsafe ref readonly T Read<T>(long rowIndex) where T : unmanaged => ref ((T*)_columnData)[rowIndex];
 
-	internal unsafe ReadOnlySpan<byte> ReadBitString(long rowIndex) {
-		ref readonly var str = ref Read<DuckDBString>(rowIndex);
-		return new(str.Data, str.Length);
+	internal Blob ReadBlob(long rowIndex) {
+		return new(Intrinsics.AddressOf(in Read<DuckDBString>(rowIndex)));
 	}
 
-	internal unsafe bool ReadBitString(long rowIndex, out ReadOnlySpan<byte> buffer) {
+	internal Blob? TryReadBlob(long rowIndex) {
 		if (IsNull(rowIndex)) {
-			buffer = default;
-			return false;
+			return null;
 		}
 
-		ref readonly var str = ref Read<DuckDBString>(rowIndex);
-		buffer = new(str.Data, str.Length);
-		return true;
+		return new(Intrinsics.AddressOf(in Read<DuckDBString>(rowIndex)));
 	}
 }
