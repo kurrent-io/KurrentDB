@@ -8,6 +8,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Extensions.Connectors\KurrentDB.Extensions.Connectors.csproj" />
+		<ProjectReference Include="..\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
 	</ItemGroup>
 </Project>

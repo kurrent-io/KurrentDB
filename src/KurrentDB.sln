@@ -127,11 +127,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.UI", "KurrentDB.U
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Plugins.Connectors", "KurrentDB.Plugins.Connectors\KurrentDB.Plugins.Connectors.csproj", "{6E459A1C-0345-4456-835B-DADFDECD10DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Extensions.Connectors", "KurrentDB.Extensions.Connectors\KurrentDB.Extensions.Connectors.csproj", "{2EB0BCFB-C9F0-4665-AE00-16678B3FC52F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Connectors", "KurrentDB.Connectors\KurrentDB.Connectors.csproj", "{2EB0BCFB-C9F0-4665-AE00-16678B3FC52F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Extensions.Connectors.Contracts", "KurrentDB.Extensions.Connectors.Contracts\KurrentDB.Extensions.Connectors.Contracts.csproj", "{7475E1E4-54E1-47E4-A978-3839D2C55435}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Connectors.Contracts", "KurrentDB.Connectors.Contracts\KurrentDB.Connectors.Contracts.csproj", "{7475E1E4-54E1-47E4-A978-3839D2C55435}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Extensions.Connectors.Tests", "KurrentDB.Extensions.Connectors.Tests\KurrentDB.Extensions.Connectors.Tests.csproj", "{E126481D-AEF6-4DDC-BE19-EA5FAE700AEF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Connectors.Tests", "KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj", "{E126481D-AEF6-4DDC-BE19-EA5FAE700AEF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Extensions.Connectors.Management.TestServer", "KurrentDB.Extensions.Connectors.Management.TestServer\KurrentDB.Extensions.Connectors.Management.TestServer.csproj", "{E86CAF64-E043-41E1-9239-262D3E14933E}"
 EndProject
