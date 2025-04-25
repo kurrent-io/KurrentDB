@@ -1,7 +1,10 @@
 # Archiving: Hands-on!
 
 In this blog post, we'll walk you through using _Archiving_, our latest cool feature, available from KurrentDB 25.0.
+
 _Archiving_ can save you a tremendous amount of disk space on your KurrentDB nodes by moving old chunk files from the local disk to an external archive such as S3.
+
+_Archiving_ is simple to configure and use! From a user's point of view, there is nothing special about the data in the archive, it reads like any other data, it's just a bit slower due to the latency of the underlying object store.
 
 ## _Hot_ & _Cold_
 
