@@ -28,7 +28,7 @@ The user-defined retention policy is simple: Keep at least X _days_ and at least
 To determine proper values for X & Y, there are some built-in metrics in KurrentDB.
 
 You may also observe that there could be some _hot_ data present in the old chunks.
-This is handled through caching mechanisms to avoid hitting the archive frequently (work is in progress to improve this area).
+In this case, the existing caching mechanisms in KurrentDB help to avoid hitting the archive too frequently but more work is in progress to improve this area.
 
 ## The _Archiver_ node
 Using _Archiving_ requires adding a new node, called the _Archiver_ node, to the cluster. This node is responsible for uploading chunks to the archive.
