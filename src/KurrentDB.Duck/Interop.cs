@@ -27,7 +27,7 @@ internal static class Interop {
 		DuckDBErrorType errorType = DuckDBErrorType.UnknownType)
 		=> CreateException(FromUnmanagedUtf8String(unmanagedUtf8String), errorType);
 
-	public static string FromUtf8(ReadOnlySpan<byte> utf8Chars) {
+	public static string ToUtf16String(ReadOnlySpan<byte> utf8Chars) {
 		var maxChars = Encoding.UTF8.GetMaxCharCount(utf8Chars.Length);
 
 		using var buffer = maxChars <= SpanOwner<char>.StackallocThreshold

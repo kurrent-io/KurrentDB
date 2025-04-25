@@ -6,6 +6,15 @@ using System.Runtime.InteropServices;
 
 namespace KurrentDB.Duck;
 
+/// <summary>
+/// Represents the typed result of the query.
+/// </summary>
+/// <remarks>
+/// The caller must call <see cref="GetEnumerator()"/> only once to release the unmanaged resources.
+/// </remarks>
+/// <param name="result"></param>
+/// <typeparam name="TRow"></typeparam>
+/// <typeparam name="TParser"></typeparam>
 [StructLayout(LayoutKind.Auto)]
 public readonly struct StreamQueryResult<TRow, TParser>(StreamQueryResult result)
 	where TRow : struct, ITuple

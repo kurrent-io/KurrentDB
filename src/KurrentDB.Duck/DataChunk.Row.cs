@@ -59,11 +59,11 @@ partial struct DataChunk {
 			=> _chunk.Columns[_columnIndex++].ReadBitString(_chunk._rowIndex, out buffer);
 
 		[SkipLocalsInit]
-		public string ReadString() => Interop.FromUtf8(ReadBlob());
+		public string ReadString() => Interop.ToUtf16String(ReadBlob());
 
 		[SkipLocalsInit]
 		public string? TryReadString()
-			=> TryReadBlob(out var buffer) ? Interop.FromUtf8(buffer) : null;
+			=> TryReadBlob(out var buffer) ? Interop.ToUtf16String(buffer) : null;
 
 		public DateTime ReadDateTime()
 			=> NativeMethods.DateTimeHelpers.DuckDBFromTimestamp(Read<DuckDBTimestampStruct>()).ToDateTime();
