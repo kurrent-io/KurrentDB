@@ -30,8 +30,7 @@ Thus, the basic idea is to keep the latest X chunks on the local disk based on a
 The user-defined retention policy is simple: Keep at least X _days_ and at least Y _bytes_ of chunk data locally.
 To determine proper values for X & Y, there are some built-in metrics in KurrentDB.
 
-You may also observe that there could be some _hot_ data present in the old chunks.
-In this case, the existing caching mechanisms in KurrentDB help to avoid hitting the archive too frequently but more work is planned to improve this area.
+You may also observe that there could be some _hot_ data present in the old chunks. In this initial release of _Archiving_ the hot data will be read repeatedly from the archive. Future releases may improve on this with a local cache.
 
 ## The _Archiver_ node
 Using _Archiving_ requires adding a new node, called the _Archiver_ node, to the cluster. This node is responsible for uploading chunks to the archive.
@@ -243,18 +242,20 @@ If you now read some streams from a client or the web UI, you'll notice that rea
 
 ## Limitations
 
-This initial release has several limitations that we intend to improve in future releases.
+This initial release has several limitations that we intend to improve in future releases:
 
-Work to improve the following limitations is in progress:
+### Completed, will be available in 25.1
 - The headers of archived chunks are read on startup, just as for local chunks. This will increase startup times significantly when there are a lot of chunks in the archive.
+
+### In Progress
 - Requests that read the archive can cause other reads to be queued behind them, resulting in higher read latency if the archive is being accessed frequently.
 
-Work to improve the following limitations is planned:
+### Planned
 - Once uploaded to the archive, the chunks there are not scavenged any further.
 - Clients cannot yet opt out of their read reading from the archive.
 - Repeated reads of the same part of the archive are not cached locally.
 
-Work on the following items may be added according to interest:
+### Planned, according to interest
 - At the moment only S3 is supported. A local file-system based archive exists for development/testing purposes.
 - Redaction is not compatible with Archiving.
 
