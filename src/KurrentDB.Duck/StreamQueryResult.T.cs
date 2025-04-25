@@ -18,7 +18,7 @@ namespace KurrentDB.Duck;
 [StructLayout(LayoutKind.Auto)]
 public readonly struct StreamQueryResult<TRow, TParser>(StreamQueryResult result)
 	where TRow : struct, ITuple
-	where TParser : IRowParser<TRow> {
+	where TParser : IDataRowParser<TRow> {
 
 	public Enumerator GetEnumerator() => new(result);
 

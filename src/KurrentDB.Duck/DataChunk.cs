@@ -54,7 +54,7 @@ public partial struct DataChunk : IResettable {
 
 	public bool TryRead<TRow, TParser>(out TRow row)
 		where TRow : struct, ITuple
-		where TParser : IRowParser<TRow> {
+		where TParser : IDataRowParser<TRow> {
 		if (TryRead(out Row internalRow)) {
 			row = TParser.Parse(ref internalRow);
 			return true;

@@ -10,7 +10,7 @@ namespace KurrentDB.Duck;
 /// </summary>
 /// <typeparam name="TInput"></typeparam>
 /// <typeparam name="TOutput"></typeparam>
-public interface IQuery<TInput, out TOutput> : IPreparedStatement<TInput>, IRowParser<TOutput>
+public interface IQuery<TInput, out TOutput> : IPreparedStatement<TInput>, IDataRowParser<TOutput>
 	where TInput : struct, ITuple
 	where TOutput : struct, ITuple;
 

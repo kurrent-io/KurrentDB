@@ -9,6 +9,6 @@ namespace KurrentDB.Duck;
 /// Represents structured row parser.
 /// </summary>
 /// <typeparam name="T">The type of the row.</typeparam>
-public interface IRowParser<out T> where T : struct, ITuple {
+public interface IDataRowParser<out T> where T : struct, ITuple {
 	static abstract T Parse(ref DataChunk.Row row);
 }
