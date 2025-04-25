@@ -12,5 +12,5 @@ public interface IVirtualStreamReader {
 	ValueTask<ReadStreamEventsBackwardCompleted> ReadBackwards(ReadStreamEventsBackward msg, CancellationToken token);
 	long GetLastEventNumber(string streamId);
 	long GetLastIndexedPosition(string streamId);
-	bool OwnStream(string streamId);
+	bool CanReadStream(string streamId);
 }

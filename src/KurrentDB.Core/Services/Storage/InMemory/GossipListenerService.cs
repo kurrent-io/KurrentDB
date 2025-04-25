@@ -13,8 +13,9 @@ namespace KurrentDB.Core.Services.Storage.InMemory;
 
 public class GossipListenerService : IHandle<GossipMessage.GossipUpdated> {
 	private readonly Guid _nodeId;
-	public readonly SingleEventInMemoryStream Stream;
 	public const string EventType = "$GossipUpdated";
+
+	public SingleEventInMemoryStream Stream { get; }
 
 	private readonly JsonSerializerOptions _options = new() {
 		Converters = {

@@ -50,7 +50,7 @@ public class StorageReaderWorker<TStreamId> :
 	private readonly ISystemStreamLookup<TStreamId> _systemStreams;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
-	private readonly IVirtualStreamReader _inMemReader;
+	private readonly IVirtualStreamReader _virtualStreamReader;
 	private readonly int _queueId;
 	private const int MaxPageSize = 4096;
 	private DateTime? _lastExpireTime;
@@ -62,14 +62,14 @@ public class StorageReaderWorker<TStreamId> :
 		IReadIndex<TStreamId> readIndex,
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
-		IVirtualStreamReader inMemReader,
+		IVirtualStreamReader virtualStreamReader,
 		int queueId) {
 
 		_publisher = publisher;
 		_readIndex = Ensure.NotNull(readIndex);
 		_systemStreams = Ensure.NotNull(systemStreams);
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
-		_inMemReader = inMemReader;
+		_virtualStreamReader = virtualStreamReader;
 		_queueId = queueId;
 	}
 
@@ -119,7 +119,7 @@ public class StorageReaderWorker<TStreamId> :
 		var cts = token.LinkTo(msg.CancellationToken);
 		try {
 			res = SystemStreams.IsVirtualStream(msg.EventStreamId)
-				? await _inMemReader.ReadForwards(msg, token)
+				? await _virtualStreamReader.ReadForwards(msg, token)
 				: await ReadStreamEventsForward(msg, token);
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
@@ -166,7 +166,7 @@ public class StorageReaderWorker<TStreamId> :
 		var cts = token.LinkTo(msg.CancellationToken);
 		try {
 			var res = SystemStreams.IsVirtualStream(msg.EventStreamId)
-				? await _inMemReader.ReadBackwards(msg, token)
+				? await _virtualStreamReader.ReadBackwards(msg, token)
 				: await ReadStreamEventsBackward(msg, token);
 
 			msg.Envelope.ReplyWith(res);

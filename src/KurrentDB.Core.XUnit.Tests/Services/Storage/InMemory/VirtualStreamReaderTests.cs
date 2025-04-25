@@ -447,6 +447,6 @@ public class VirtualStreamReaderTests {
 
 		public long GetLastIndexedPosition(string streamId) => 123;
 
-		public bool OwnStream(string streamId) => streamId == ownedStreamId;
+		public bool CanReadStream(string streamId) => streamId == ownedStreamId;
 	}
 }

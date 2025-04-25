@@ -16,8 +16,6 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.TimerService;
-using KurrentDB.Core.Services.UserManagement;
-using Microsoft.IO;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services;
@@ -160,8 +158,8 @@ public class SubscriptionsService<TStreamId> :
 			lastEventNumber = await _readIndex.GetStreamLastEventNumber(_readIndex.GetStreamId(msg.EventStreamId), token);
 		}
 
-		var lastIndexedPos = isVirtualStream ?
-			_virtualStreamReader.GetLastIndexedPosition(msg.EventStreamId)
+		var lastIndexedPos = isVirtualStream
+			? _virtualStreamReader.GetLastIndexedPosition(msg.EventStreamId)
 			: _readIndex.LastIndexedPosition;
 
 		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.EventStreamId,

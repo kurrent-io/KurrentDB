@@ -8,7 +8,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.TransactionLog.LogRecords;
-using static KurrentDB.Core.Messages.ClientMessage;
 
 namespace KurrentDB.Core.Services.Storage.InMemory;
 
@@ -29,7 +28,10 @@ public class SingleEventInMemoryStream : IVirtualStreamReader {
 		_streamName = streamName;
 	}
 
-	public ValueTask<ReadStreamEventsForwardCompleted> ReadForwards(ReadStreamEventsForward msg, CancellationToken token) {
+	public ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
+		ClientMessage.ReadStreamEventsForward msg,
+		CancellationToken token) {
+
 		ReadStreamResult result;
 		ResolvedEvent[] events;
 		long nextEventNumber, lastEventNumber;
@@ -55,7 +57,7 @@ public class SingleEventInMemoryStream : IVirtualStreamReader {
 			}
 		}
 
-		return ValueTask.FromResult(new ReadStreamEventsForwardCompleted(
+		return ValueTask.FromResult(new ClientMessage.ReadStreamEventsForwardCompleted(
 			msg.CorrelationId,
 			msg.EventStreamId,
 			msg.FromEventNumber,
@@ -71,7 +73,10 @@ public class SingleEventInMemoryStream : IVirtualStreamReader {
 			tfLastCommitPosition: _memLog.GetLastCommitPosition()));
 	}
 
-	public ValueTask<ReadStreamEventsBackwardCompleted> ReadBackwards(ReadStreamEventsBackward msg, CancellationToken token) {
+	public ValueTask<ClientMessage.ReadStreamEventsBackwardCompleted> ReadBackwards(
+		ClientMessage.ReadStreamEventsBackward msg,
+		CancellationToken token) {
+
 		ReadStreamResult result;
 		ResolvedEvent[] events;
 		long adjustedFromEventNumber, lastEventNumber;
@@ -99,7 +104,7 @@ public class SingleEventInMemoryStream : IVirtualStreamReader {
 			}
 		}
 
-		return ValueTask.FromResult(new ReadStreamEventsBackwardCompleted(
+		return ValueTask.FromResult(new ClientMessage.ReadStreamEventsBackwardCompleted(
 			correlationId: msg.CorrelationId,
 			eventStreamId: msg.EventStreamId,
 			fromEventNumber: adjustedFromEventNumber,
@@ -119,7 +124,7 @@ public class SingleEventInMemoryStream : IVirtualStreamReader {
 
 	public long GetLastIndexedPosition(string streamId) => -1;
 
-	public bool OwnStream(string streamId) => streamId == _streamName;
+	public bool CanReadStream(string streamId) => streamId == _streamName;
 
 	public void Write(string eventType, ReadOnlyMemory<byte> data) {
 		var commitPosition = _memLog.GetNextCommitPosition();

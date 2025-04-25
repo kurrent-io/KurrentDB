@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Data;
@@ -64,12 +63,13 @@ public class VirtualStreamReader : IVirtualStreamReader {
 		return TryGetReader(streamId, out var reader) ? reader.GetLastIndexedPosition(streamId) : -1;
 	}
 
-	public bool OwnStream(string streamId) => TryGetReader(streamId, out _);
+	public bool CanReadStream(string streamId) => TryGetReader(streamId, out _);
 
 	private bool TryGetReader(string streamId, out IVirtualStreamReader reader) {
-		foreach (var t in _readers)
-		{
-			if (!t.OwnStream(streamId)) continue;
+		foreach (var t in _readers) {
+			if (!t.CanReadStream(streamId)) {
+				continue;
+			}
 			reader = t;
 			return true;
 		}
