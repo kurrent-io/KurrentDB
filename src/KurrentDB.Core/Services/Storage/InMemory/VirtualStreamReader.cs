@@ -16,17 +16,6 @@ public class VirtualStreamReader : IVirtualStreamReader {
 		_readers = readers;
 	}
 
-	bool TryGetReader(string streamId, out IVirtualStreamReader reader) {
-		for (var i = 0; i < _readers.Length; i++) {
-			if (!_readers[i].OwnStream(streamId)) continue;
-			reader = _readers[i];
-			return true;
-		}
-
-		reader = null;
-		return false;
-	}
-
 	public ValueTask<ReadStreamEventsForwardCompleted> ReadForwards(ReadStreamEventsForward msg, CancellationToken token) {
 		if (TryGetReader(msg.EventStreamId, out var reader))
 			return reader.ReadForwards(msg, token);
@@ -76,4 +65,16 @@ public class VirtualStreamReader : IVirtualStreamReader {
 	}
 
 	public bool OwnStream(string streamId) => TryGetReader(streamId, out _);
+
+	private bool TryGetReader(string streamId, out IVirtualStreamReader reader) {
+		foreach (var t in _readers)
+		{
+			if (!t.OwnStream(streamId)) continue;
+			reader = t;
+			return true;
+		}
+
+		reader = null;
+		return false;
+	}
 }
