@@ -70,7 +70,7 @@ public static class SystemStreams {
 	}
 
 	public static bool IsVirtualStream(string streamId) {
-		return streamId.StartsWith(InMemoryStreamPrefix) || streamId.StartsWith(InMemoryStreamPrefix);
+		return streamId.StartsWith(InMemoryStreamPrefix) || streamId.StartsWith(IndexStreamPrefix);
 	}
 }
 
