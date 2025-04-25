@@ -84,6 +84,8 @@ We keep roughly two chunks of data or more depending on the data's age.
 
 ## S3 Authentication
 You may have noticed that we haven't specified any credentials to authenticate with S3.
+In a development environment, you can simply log into the `aws-cli` with the user that you're running KurrentDB as using the `aws configure` command.
+
 AWS supports many authentication methods, including IAM user credentials, single sign-on, and EC2 instance metadata.
 In KurrentDB, we internally use the _AWS SDK for .NET_, which, like the other AWS SDKs, searches for the credentials in a [specific order](https://docs.aws.amazon.com/sdk-for-net/v3/developer-guide/creds-assign.html) from environment variables or certain well-known file paths.
 
@@ -100,8 +102,6 @@ EOF
 The above commands configure an AWS profile named _kurrentdb-archive_ in the _kurrent_ user's home directory, located at `/var/log/kurrentdb`.
 
 You must replace the asterisks with your actual Access Key ID / Secret Access Key. Note that these credentials must have read/write access to the S3 bucket. (More on this below).
-
-Note that instead of running the above commands, you can also use the `aws configure` command from `aws-cli`. However, please make sure that you copy the resulting aws configuration file to `/var/log/kurrentdb/.aws/` and that you change the file's ownership to the _kurrent_ user.
 
 ## S3 Authentication in Production
 AWS IAM user credentials (used above) are permanent credentials that do not expire and pose a security risk.
