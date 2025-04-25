@@ -6,6 +6,8 @@ _Archiving_ can save you a tremendous amount of disk space on your KurrentDB nod
 
 _Archiving_ is simple to configure and use! From a user's point of view, there is nothing special about the data in the archive, it reads like any other data, it's just a bit slower due to the latency of the underlying object store.
 
+![Overview of Archiving](images/archiving/archiving_overview.png)
+
 ## _Hot_ & _Cold_
 
 It is not uncommon for KurrentDB databases that have been running for several years to have tens of thousands of chunk files, easily consuming several terabytes of disk space.
