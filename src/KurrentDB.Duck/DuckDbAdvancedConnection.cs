@@ -57,7 +57,7 @@ public class DuckDbAdvancedConnection : DuckDBConnection {
 		if (args is ValueTuple) {
 			paramsCount = 0L;
 		} else {
-			paramsCount = TStatement.Bind(in args, new(statement)).Count;
+			paramsCount = TStatement.Bind(in args, statement).Count;
 			Debug.Assert(paramsCount == statement.ParametersCount);
 		}
 

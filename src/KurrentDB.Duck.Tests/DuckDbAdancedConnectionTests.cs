@@ -69,7 +69,7 @@ public sealed class DuckDbAdancedConnectionTests : DuckDbTests<DuckDbAdancedConn
 	}
 
 	private struct InsertStatement: IPreparedStatement<(uint, string?)> {
-		public static BindingContext Bind(ref readonly (uint, string?) args, BindingSource source) => new(source) {
+		public static BindingContext Bind(ref readonly (uint, string?) args, PreparedStatement statement) => new(statement) {
 			args.Item1,
 			args.Item2
 		};
