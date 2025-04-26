@@ -5,7 +5,7 @@ using Xunit;
 
 namespace KurrentDB.Duck.Tests;
 
-public sealed class DuckDbAdancedConnectionTests : DuckDbTests<DuckDbAdancedConnectionTests> {
+public sealed class DuckDbAdvancedConnectionTests : DuckDbTests<DuckDbAdvancedConnectionTests> {
 	[Fact]
 	public void InsertValues() {
 		using var connection = new DuckDbAdvancedConnection { ConnectionString = ConnectionString };
