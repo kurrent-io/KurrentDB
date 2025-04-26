@@ -22,11 +22,11 @@ public readonly unsafe struct Blob {
 	internal Blob(DuckDBString* blobPointer) => _blobPointer = blobPointer;
 
 	public ReadOnlySpan<byte> Data => _blobPointer is not null
-		? new(_blobPointer->Data, _blobPointer->Length)
+		? _blobPointer[0].GetBitString()
 		: ReadOnlySpan<byte>.Empty;
 
 	public ReadOnlyMemory<byte> AsMemory()
-		=> UnmanagedMemory.AsMemory((byte*)_blobPointer->Data, _blobPointer->Length);
+		=> _blobPointer is not null ? _blobPointer[0].AsMemory() : ReadOnlyMemory<byte>.Empty;
 
 	public override string ToString()
 		=> Interop.TryToUtf16String(Data, out var result)
