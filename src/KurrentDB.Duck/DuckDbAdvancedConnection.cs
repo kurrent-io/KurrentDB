@@ -16,7 +16,7 @@ public class DuckDbAdvancedConnection : DuckDBConnection {
 	/// </summary>
 	/// <typeparam name="TStatement">The type of the prepared statement.</typeparam>
 	/// <returns>The prepared statement.</returns>
-	public PreparedStatement Prepare<TStatement>()
+	public PreparedStatement GetOrPrepare<TStatement>()
 		where TStatement : IPreparedStatement {
 
 		if (!_preparedStatements.TryGetValue<TStatement>(out var result)) {
@@ -53,7 +53,7 @@ public class DuckDbAdvancedConnection : DuckDBConnection {
 	private PreparedStatement Bind<TArgs, TStatement>(ref readonly TArgs args, out long paramsCount)
 		where TArgs : struct, ITuple
 		where TStatement : IPreparedStatement<TArgs> {
-		var statement = Prepare<TStatement>();
+		var statement = GetOrPrepare<TStatement>();
 		if (args is ValueTuple) {
 			paramsCount = 0L;
 		} else {
