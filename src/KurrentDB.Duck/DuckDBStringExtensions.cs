@@ -7,12 +7,12 @@ using DuckDB.NET.Native;
 namespace KurrentDB.Duck;
 
 public static unsafe class DuckDBStringExtensions {
-	public static ReadOnlySpan<byte> GetBitString(this in DuckDBString str)
+	public static ReadOnlySpan<byte> AsSpan(this in DuckDBString str)
 		=> new(str.Data, str.Length);
 
 	public static ReadOnlyMemory<byte> AsMemory(this in DuckDBString str)
 		=> UnmanagedMemory.AsMemory((byte*)str.Data, str.Length);
 
 	public static string ToUtf16String(this in DuckDBString str)
-		=> Interop.ToUtf16String(str.GetBitString());
+		=> Interop.ToUtf16String(str.AsSpan());
 }

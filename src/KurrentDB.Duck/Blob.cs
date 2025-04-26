@@ -22,7 +22,7 @@ public readonly unsafe struct Blob {
 	internal Blob(DuckDBString* blobPointer) => _blobPointer = blobPointer;
 
 	public ReadOnlySpan<byte> Data => _blobPointer is not null
-		? _blobPointer[0].GetBitString()
+		? _blobPointer[0].AsSpan()
 		: ReadOnlySpan<byte>.Empty;
 
 	public ReadOnlyMemory<byte> AsMemory()

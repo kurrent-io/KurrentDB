@@ -50,6 +50,30 @@ public sealed class DuckDbAdancedConnectionTests : DuckDbTests<DuckDbAdancedConn
 		Assert.False(enumerator.MoveNext());
 	}
 
+	[Fact]
+	public void DirectAccessToColumns() {
+		using var connection = new DuckDbAdvancedConnection { ConnectionString = ConnectionString };
+		connection.Open();
+
+		Assert.Equal(0L, connection.ExecuteNonQuery<NullableTableDefinition>());
+		Assert.Equal(1L, connection.ExecuteNonQuery<(uint Col0, string? Col1), InsertStatement>((Col0: 0U, Col1: "A")));
+		Assert.Equal(1L, connection.ExecuteNonQuery<(uint, string?), InsertStatement>((1U, null)));
+
+		using var result = connection.ExecuteQuery<NullableQueryStatement>();
+
+		Assert.True(result.TryFetch(out var chunk));
+		var col0 = chunk[0];
+		Assert.Equal([0U, 1U], col0.UInt32Data);
+
+		var col1 = chunk[1];
+		Assert.False(col1[0]);
+		Assert.Equal("A"u8, col1.BlobData[0].AsSpan());
+
+		Assert.True(col1[1]);
+
+		Assert.False(result.TryFetch(out chunk));
+	}
+
 	private struct NotNullTableDefinition : IParameterlessStatement {
 		public static ReadOnlySpan<byte> CommandText => """
 		                                                create table if not exists test_table (

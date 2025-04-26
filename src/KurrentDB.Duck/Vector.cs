@@ -30,9 +30,11 @@ internal readonly unsafe partial struct Vector {
 		return (validity[validityMaskEntryIndex] & validityBit) is 0UL;
 	}
 
+	internal bool IsNull(long rowIndex) => IsNull(_validity, rowIndex);
+
 	internal T? TryRead<T>(long rowIndex)
 		where T : unmanaged {
-		return IsNull(_validity, rowIndex)
+		return IsNull(rowIndex)
 			? null
 			: *Read<T>(rowIndex);
 	}
@@ -42,10 +44,12 @@ internal readonly unsafe partial struct Vector {
 	internal Blob ReadBlob(long rowIndex) => new(Read<DuckDBString>(rowIndex));
 
 	internal Blob? TryReadBlob(long rowIndex) {
-		if (IsNull(_validity, rowIndex)) {
+		if (IsNull(rowIndex)) {
 			return null;
 		}
 
 		return ReadBlob(rowIndex);
 	}
+
+	internal ReadOnlySpan<T> GetRows<T>(int length) where T : unmanaged => new(_columnData, length);
 }
