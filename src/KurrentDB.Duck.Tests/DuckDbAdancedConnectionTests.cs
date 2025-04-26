@@ -68,6 +68,7 @@ public sealed class DuckDbAdancedConnectionTests : DuckDbTests<DuckDbAdancedConn
 		var col1 = chunk[1];
 		Assert.False(col1[0]);
 		Assert.Equal("A"u8, col1.BlobData[0].AsSpan());
+		Assert.Equal("A", col1.BlobData[0].ToUtf16String());
 
 		Assert.True(col1[1]);
 

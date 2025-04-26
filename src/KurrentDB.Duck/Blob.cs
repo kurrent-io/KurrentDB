@@ -3,7 +3,6 @@
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using DotNext.Buffers;
 using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
@@ -21,15 +20,8 @@ public readonly unsafe struct Blob {
 
 	internal Blob(DuckDBString* blobPointer) => _blobPointer = blobPointer;
 
-	public ReadOnlySpan<byte> Data => _blobPointer is not null
-		? _blobPointer[0].AsSpan()
-		: ReadOnlySpan<byte>.Empty;
-
-	public ReadOnlyMemory<byte> AsMemory()
-		=> _blobPointer is not null ? _blobPointer[0].AsMemory() : ReadOnlyMemory<byte>.Empty;
-
-	public override string ToString()
-		=> Interop.TryToUtf16String(Data, out var result)
-			? result
-			: "STRING CANNOT BE DISPLAYED";
+	/// <summary>
+	/// Gets a reference to internal DuckDB structure that describes BLOB.
+	/// </summary>
+	public ref readonly DuckDBString Reference => ref _blobPointer[0];
 }
