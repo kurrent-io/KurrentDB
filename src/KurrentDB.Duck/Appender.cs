@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.Marshalling;
 using DuckDB.NET.Data;
 using DuckDB.NET.Native;
 

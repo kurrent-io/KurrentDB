@@ -1,6 +1,5 @@
 ﻿using DuckDB.NET.Data;
 using FluentStorage.Utils.Extensions;
-using KurrentDB.Core.XUnit.Tests;
 using Xunit;
 
 namespace KurrentDB.Duck.Tests;
