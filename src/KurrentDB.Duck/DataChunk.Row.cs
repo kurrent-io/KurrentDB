@@ -20,9 +20,9 @@ partial struct DataChunk {
 
 		internal Row(ref readonly DataChunk chunk) => _chunk = ref chunk;
 
-		private T Read<T>()
+		private unsafe T Read<T>()
 			where T : unmanaged
-			=> _chunk.Columns[_columnIndex++].Read<T>(_chunk._rowIndex);
+			=> *_chunk.Columns[_columnIndex++].Read<T>(_chunk._rowIndex);
 
 		private T? TryRead<T>()
 			where T : unmanaged

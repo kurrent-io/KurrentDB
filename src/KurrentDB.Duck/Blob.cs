@@ -19,7 +19,7 @@ namespace KurrentDB.Duck;
 public readonly unsafe struct Blob {
 	private readonly DuckDBString* _blobPointer;
 
-	internal Blob(nint blobPointer) => _blobPointer = (DuckDBString*)blobPointer;
+	internal Blob(DuckDBString* blobPointer) => _blobPointer = blobPointer;
 
 	public ReadOnlySpan<byte> Data => _blobPointer is not null
 		? new(_blobPointer->Data, _blobPointer->Length)
