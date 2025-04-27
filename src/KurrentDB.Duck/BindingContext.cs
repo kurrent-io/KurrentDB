@@ -13,7 +13,7 @@ namespace KurrentDB.Duck;
 /// <param name="statement">The binding source.</param>
 [StructLayout(LayoutKind.Auto)]
 public struct BindingContext(PreparedStatement statement) : IEnumerable<object> {
-	private int index = 1;
+	private int index = 1; // in DuckDB, the index of the first parameter is 1
 
 	internal readonly int Count => index - 1;
 
