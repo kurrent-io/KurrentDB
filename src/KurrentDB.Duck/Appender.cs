@@ -17,7 +17,8 @@ public readonly partial struct Appender : INativeWrapper<Appender> {
 	private readonly nint _appender;
 
 	public Appender(DuckDBNativeConnection connection, ReadOnlySpan<byte> tableNameUtf8) {
-		if (Create(connection.DangerousGetHandle(), 0, tableNameUtf8, out _appender) is DuckDBState.Error) {
+		if (Create(connection.DangerousGetHandle(), 0, in tableNameUtf8.GetPinnableReference(), out _appender) is
+		    DuckDBState.Error) {
 			var ex = Interop.CreateException(GetErrorString(_appender));
 			Destroy(in _appender);
 			_appender = 0;

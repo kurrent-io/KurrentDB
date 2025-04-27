@@ -7,17 +7,17 @@ namespace KurrentDB.Duck;
 
 partial struct Vector {
 
-	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true,
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl,
 		EntryPoint = "duckdb_data_chunk_get_vector")]
 	[SuppressGCTransition]
 	private static extern nint GetVector(nint dataChunk, long columnIndex);
 
-	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true,
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl,
 		EntryPoint = "duckdb_vector_get_data")]
 	[SuppressGCTransition]
 	private static extern unsafe void* GetVectorData(nint vector);
 
-	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true,
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl,
 		EntryPoint = "duckdb_vector_get_validity")]
 	[SuppressGCTransition]
 	private static extern unsafe ulong* GetValidity(nint vector);

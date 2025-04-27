@@ -8,9 +8,10 @@ using DuckDB.NET.Native;
 namespace KurrentDB.Duck;
 
 partial struct Appender {
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_appender_create", StringMarshalling = StringMarshalling.Utf8)]
+	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_appender_create")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState Create(nint connection, nint schema, ReadOnlySpan<byte> table, out nint appender);
+	private static partial DuckDBState Create(nint connection, nint schema, in byte tableNameUtf8NullTerminated,
+		out nint appender);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_appender_error")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
