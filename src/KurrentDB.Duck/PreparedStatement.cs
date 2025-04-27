@@ -4,10 +4,12 @@
 using System.Buffers;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Unicode;
 using DotNext.Buffers;
+using DotNext.Buffers.Binary;
 using DuckDB.NET.Data;
 using DuckDB.NET.Native;
 
@@ -77,6 +79,18 @@ public readonly partial struct PreparedStatement : INativeWrapper<PreparedStatem
 		BindBlob(_preparedStatement, ToNativeIndex(index), in buffer.GetPinnableReference(), buffer.Length) is
 			DuckDBState.Error);
 
+	[SkipLocalsInit]
+	public void Bind<T>(Index index, T value)
+		where T : struct, IBinaryFormattable<T> {
+		using var buffer = (uint)T.Size <= (uint)SpanOwner<byte>.StackallocThreshold
+			? stackalloc byte[T.Size]
+			: new SpanOwner<byte>(T.Size);
+
+		value.Format(buffer.Span);
+		Bind(index, buffer.Span);
+	}
+
+	[SkipLocalsInit]
 	public void Bind(Index index, ReadOnlySpan<char> chars) {
 		var byteCount = Encoding.UTF8.GetMaxByteCount(chars.Length);
 		using var buffer = (uint)byteCount <= (uint)SpanOwner<byte>.StackallocThreshold

@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using DotNext.Buffers.Binary;
 using Xunit;
 
 namespace KurrentDB.Duck.Tests;
@@ -75,6 +76,39 @@ public sealed class DuckDbAdvancedConnectionTests : DuckDbTests<DuckDbAdvancedCo
 		Assert.False(result.TryFetch(out chunk));
 	}
 
+	[Fact]
+	public void SerializeDeserializeBlittableTypes() {
+		using var connection = new DuckDbAdvancedConnection { ConnectionString = ConnectionString };
+		connection.Open();
+
+		using (var command = connection.CreateCommand()) {
+			command.CommandText = """
+			                      create table if not exists test_table (
+			                          col0 UINTEGER not null primary key,
+			                          col1 BLOB not null
+			                      );
+			                      """;
+
+			command.ExecuteNonQuery();
+		}
+
+		var guid0 = Guid.NewGuid();
+		connection.ExecuteNonQuery<(uint, Guid), InsertGuidStatement>((0U, guid0));
+
+		var guid1 = Guid.NewGuid();
+		connection.ExecuteNonQuery<(uint, Guid), InsertGuidStatement>((1U, guid1));
+
+		using var result = connection.ExecuteQuery<(uint, Guid), QueryWithGuidStatement>().GetEnumerator();
+
+		Assert.True(result.MoveNext());
+		Assert.Equal((0U, guid0), result.Current);
+
+		Assert.True(result.MoveNext());
+		Assert.Equal((1U, guid1), result.Current);
+
+		Assert.False(result.MoveNext());
+	}
+
 	private struct NotNullTableDefinition : IParameterlessStatement {
 		public static ReadOnlySpan<byte> CommandText => """
 		                                                create table if not exists test_table (
@@ -112,5 +146,21 @@ public sealed class DuckDbAdvancedConnectionTests : DuckDbTests<DuckDbAdvancedCo
 		public static ReadOnlySpan<byte> CommandText => "SELECT * FROM test_table;"u8;
 
 		public static (uint, string?) Parse(ref DataChunk.Row row) => (row.ReadUInt32(), row.TryReadString());
+	}
+
+	private struct QueryWithGuidStatement : IQuery<(uint, Guid)> {
+		public static ReadOnlySpan<byte> CommandText => "SELECT * FROM test_table;"u8;
+
+		public static (uint, Guid) Parse(ref DataChunk.Row row) =>
+			(row.ReadUInt32(), row.ReadBlob<Blittable<Guid>>().Value);
+	}
+
+	private struct InsertGuidStatement : IPreparedStatement<(uint, Guid)> {
+		public static BindingContext Bind(ref readonly (uint, Guid) args, PreparedStatement statement) => new(statement) {
+			args.Item1,
+			new Blittable<Guid> { Value = args.Item2 }
+		};
+
+		public static ReadOnlySpan<byte> CommandText => "INSERT INTO test_table VALUES ($1, $2);"u8;
 	}
 }

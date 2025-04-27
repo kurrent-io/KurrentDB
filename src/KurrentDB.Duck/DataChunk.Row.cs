@@ -1,9 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using DotNext.Buffers.Binary;
 using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
@@ -71,5 +71,14 @@ partial struct DataChunk {
 			=> TryRead<DuckDBTimestampStruct>() is { } ts
 				? NativeMethods.DateTimeHelpers.DuckDBFromTimestamp(ts).ToDateTime()
 				: null;
+
+		public T ReadBlob<T>()
+			where T : struct, IBinaryFormattable<T> {
+			return T.Parse(ReadBlob().Reference.AsSpan());
+		}
+
+		public T? TryReadBlob<T>()
+			where T : struct, IBinaryFormattable<T>
+			=> TryReadBlob() is { } blob ? T.Parse(blob.Reference.AsSpan()) : null;
 	}
 }

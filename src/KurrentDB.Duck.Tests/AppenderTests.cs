@@ -1,4 +1,5 @@
-﻿using DuckDB.NET.Data;
+﻿using DotNext.Buffers.Binary;
+using DuckDB.NET.Data;
 using FluentStorage.Utils.Extensions;
 using Xunit;
 
@@ -26,6 +27,7 @@ public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 		command.ExecuteNonQuery();
 
 		var dt = DateTime.UtcNow;
+		var guid = Guid.NewGuid();
 		using (var appender = new Appender(connection, "test_table"u8)) {
 			using (var row = appender.CreateRow()) {
 				row.Append((uint)42);
@@ -38,7 +40,7 @@ public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 			using (var row = appender.CreateRow()) {
 				row.Append((uint)43);
 				row.Append("Row 1");
-				row.Append([10, 30]);
+				row.Append(new Blittable<Guid> { Value = guid });
 				row.Append(43L);
 				row.Append(dt);
 			}
@@ -66,7 +68,7 @@ public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 			Assert.Equal("Row 1", reader.GetValue(1));
 
 			using (var unmanagedStream = (UnmanagedMemoryStream)reader.GetValue(2)) {
-				Assert.Equal<byte>([10, 30], unmanagedStream.ToByteArray().AsSpan());
+				Assert.Equal(guid.ToByteArray(), unmanagedStream.ToByteArray());
 			}
 
 			Assert.Equal(43L, reader.GetValue(3));

@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Unicode;
 using DotNext.Buffers;
+using DotNext.Buffers.Binary;
 using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
@@ -70,6 +71,17 @@ partial struct Appender {
 
 		public void Append(ReadOnlySpan<byte> bytes) {
 			VerifyState(AppendBlob(_appender, in bytes.GetPinnableReference(), bytes.Length) is DuckDBState.Error);
+		}
+
+		[SkipLocalsInit]
+		public void Append<T>(T value)
+			where T : struct, IBinaryFormattable<T> {
+			using var buffer = (uint)T.Size <= (uint)SpanOwner<byte>.StackallocThreshold
+				? stackalloc byte[T.Size]
+				: new SpanOwner<byte>(T.Size);
+
+			value.Format(buffer.Span);
+			Append(buffer.Span);
 		}
 
 		[StackTraceHidden]

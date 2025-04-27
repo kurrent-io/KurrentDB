@@ -3,6 +3,7 @@
 
 using System.Collections;
 using System.Runtime.InteropServices;
+using DotNext.Buffers.Binary;
 
 namespace KurrentDB.Duck;
 
@@ -24,6 +25,10 @@ public struct BindingContext(PreparedStatement statement) : IEnumerable<object> 
 	public void Add(DateTime value) => statement.Bind(index++, value);
 	public void Add(ReadOnlySpan<byte> buffer) => statement.Bind(index++, buffer);
 	public void Add(ReadOnlySpan<char> chars) => statement.Bind(index++, chars);
+
+	public void Add<T>(T value)
+		where T : struct, IBinaryFormattable<T>
+		=> statement.Bind(index++, value);
 
 	public void Add(string? str) {
 		if (str is not null) {
