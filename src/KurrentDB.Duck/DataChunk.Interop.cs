@@ -3,18 +3,17 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
 
 partial struct DataChunk {
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_data_chunk_get_column_count")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl,
+		EntryPoint = "duckdb_data_chunk_get_column_count")]
 	[SuppressGCTransition]
-	private static partial long GetColumnCount(nint chunk);
+	private static extern long GetColumnCount(nint chunk);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_data_chunk_get_size")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl,
+		EntryPoint = "duckdb_data_chunk_get_size")]
 	[SuppressGCTransition]
-	private static partial long GetRowsCount(nint chunk);
+	private static extern long GetRowsCount(nint chunk);
 }
