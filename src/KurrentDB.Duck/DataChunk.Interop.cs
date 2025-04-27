@@ -7,12 +7,12 @@ using System.Runtime.InteropServices;
 namespace KurrentDB.Duck;
 
 partial struct DataChunk {
-	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl,
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true,
 		EntryPoint = "duckdb_data_chunk_get_column_count")]
 	[SuppressGCTransition]
 	private static extern long GetColumnCount(nint chunk);
 
-	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl,
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true,
 		EntryPoint = "duckdb_data_chunk_get_size")]
 	[SuppressGCTransition]
 	private static extern long GetRowsCount(nint chunk);
