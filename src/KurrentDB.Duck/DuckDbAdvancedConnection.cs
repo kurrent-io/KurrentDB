@@ -86,12 +86,12 @@ public class DuckDbAdvancedConnection : DuckDBConnection {
 	public StreamQueryResult<TRow, TStatement> ExecuteQuery<TArgs, TRow, TStatement>(in TArgs args)
 		where TArgs : struct, ITuple
 		where TRow : struct, ITuple
-		where TStatement : IQuery<TArgs, TRow>
+		where TStatement : IPreparedStatement<TArgs>, IDataRowParser<TRow>
 		=> new(ExecuteQuery<TArgs, TStatement>(in args));
 
 	public StreamQueryResult<TRow, TStatement> ExecuteQuery<TRow, TStatement>()
 		where TRow : struct, ITuple
-		where TStatement : IQuery<TRow>
+		where TStatement : IParameterlessStatement, IDataRowParser<TRow>
 		=> ExecuteQuery<ValueTuple, TRow, TStatement>(new ValueTuple());
 
 	protected override void Dispose(bool disposing) {

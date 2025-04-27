@@ -136,19 +136,19 @@ public sealed class DuckDbAdvancedConnectionTests : DuckDbTests<DuckDbAdvancedCo
 		public static ReadOnlySpan<byte> CommandText => "INSERT INTO test_table VALUES ($1, $2);"u8;
 	}
 
-	private struct QueryStatement : IQuery<(uint, string)> {
+	private struct QueryStatement : IParameterlessStatement, IDataRowParser<(uint, string)> {
 		public static ReadOnlySpan<byte> CommandText => "SELECT * FROM test_table;"u8;
 
 		public static (uint, string) Parse(ref DataChunk.Row row) => (row.ReadUInt32(), row.ReadString());
 	}
 
-	private struct NullableQueryStatement : IQuery<(uint, string?)> {
+	private struct NullableQueryStatement : IParameterlessStatement, IDataRowParser<(uint, string?)> {
 		public static ReadOnlySpan<byte> CommandText => "SELECT * FROM test_table;"u8;
 
 		public static (uint, string?) Parse(ref DataChunk.Row row) => (row.ReadUInt32(), row.TryReadString());
 	}
 
-	private struct QueryWithGuidStatement : IQuery<(uint, Guid)> {
+	private struct QueryWithGuidStatement : IParameterlessStatement, IDataRowParser<(uint, Guid)> {
 		public static ReadOnlySpan<byte> CommandText => "SELECT * FROM test_table;"u8;
 
 		public static (uint, Guid) Parse(ref DataChunk.Row row) =>
