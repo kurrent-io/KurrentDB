@@ -3,7 +3,7 @@
 
 using KurrentDB.Core.XUnit.Tests;
 
-namespace KurrentDB.Duck.Tests;
+namespace KurrentDB.Duck;
 
 public abstract class DuckDbTests<T> : DirectoryPerTest<T>
 	where T : DuckDbTests<T>

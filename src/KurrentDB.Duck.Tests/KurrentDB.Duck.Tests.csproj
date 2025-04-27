@@ -4,6 +4,7 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<RootNamespace>KurrentDB.Duck</RootNamespace>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />

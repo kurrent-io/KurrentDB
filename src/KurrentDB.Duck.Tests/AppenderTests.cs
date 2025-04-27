@@ -3,7 +3,7 @@ using DuckDB.NET.Data;
 using FluentStorage.Utils.Extensions;
 using Xunit;
 
-namespace KurrentDB.Duck.Tests;
+namespace KurrentDB.Duck;
 
 public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 	[Fact]

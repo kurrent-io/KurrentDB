@@ -4,12 +4,12 @@
 using DotNext.Buffers.Binary;
 using Xunit;
 
-namespace KurrentDB.Duck.Tests;
+namespace KurrentDB.Duck;
 
-public sealed class DuckDbAdvancedConnectionTests : DuckDbTests<DuckDbAdvancedConnectionTests> {
+public sealed class DuckDBAdvancedConnectionTests : DuckDbTests<DuckDBAdvancedConnectionTests> {
 	[Fact]
 	public void InsertValues() {
-		using var connection = new DuckDbAdvancedConnection { ConnectionString = ConnectionString };
+		using var connection = new DuckDBAdvancedConnection { ConnectionString = ConnectionString };
 		connection.Open();
 
 		Assert.Equal(0L, connection.ExecuteNonQuery<NotNullTableDefinition>());
@@ -33,7 +33,7 @@ public sealed class DuckDbAdvancedConnectionTests : DuckDbTests<DuckDbAdvancedCo
 
 	[Fact]
 	public void InsertNullValues() {
-		using var connection = new DuckDbAdvancedConnection { ConnectionString = ConnectionString };
+		using var connection = new DuckDBAdvancedConnection { ConnectionString = ConnectionString };
 		connection.Open();
 
 		Assert.Equal(0L, connection.ExecuteNonQuery<NullableTableDefinition>());
@@ -53,7 +53,7 @@ public sealed class DuckDbAdvancedConnectionTests : DuckDbTests<DuckDbAdvancedCo
 
 	[Fact]
 	public void DirectAccessToColumns() {
-		using var connection = new DuckDbAdvancedConnection { ConnectionString = ConnectionString };
+		using var connection = new DuckDBAdvancedConnection { ConnectionString = ConnectionString };
 		connection.Open();
 
 		Assert.Equal(0L, connection.ExecuteNonQuery<NullableTableDefinition>());
@@ -78,7 +78,7 @@ public sealed class DuckDbAdvancedConnectionTests : DuckDbTests<DuckDbAdvancedCo
 
 	[Fact]
 	public void SerializeDeserializeBlittableTypes() {
-		using var connection = new DuckDbAdvancedConnection { ConnectionString = ConnectionString };
+		using var connection = new DuckDBAdvancedConnection { ConnectionString = ConnectionString };
 		connection.Open();
 
 		using (var command = connection.CreateCommand()) {

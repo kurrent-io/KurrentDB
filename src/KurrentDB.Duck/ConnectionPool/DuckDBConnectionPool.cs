@@ -11,18 +11,18 @@ namespace KurrentDB.Duck.ConnectionPool;
 /// Represents connection pool.
 /// </summary>
 /// <param name="connectionString">The connection string.</param>
-public class DuckDBConnectionPool(string connectionString) : Disposable, IConnectionPool {
+public partial class DuckDBConnectionPool(string connectionString) : Disposable {
 	private const int PoolSize = 32; // matches to IndexPool.Capacity
 
 	private ConnectionArray _array;
-	private IndexPool _pool = new(PoolSize - 1);
+	private IndexPool _indices = new(PoolSize - 1);
 
 	/// <summary>
 	/// Creates a connection that is not in the pool.
 	/// </summary>
 	/// <returns>An opened connection.</returns>
-	public DuckDbAdvancedConnection Open() {
-		var connection = new DuckDbAdvancedConnection { ConnectionString = connectionString };
+	public DuckDBAdvancedConnection Open() {
+		var connection = new DuckDBAdvancedConnection { ConnectionString = connectionString };
 		connection.Open();
 		return connection;
 	}
@@ -31,36 +31,33 @@ public class DuckDBConnectionPool(string connectionString) : Disposable, IConnec
 	/// Rents a new connection.
 	/// </summary>
 	/// <returns>An opened connection.</returns>
-	public DuckDbAdvancedConnection Rent() {
-		if (_pool.TryPeek(out var index)) {
-			ref var connection = ref _array[index];
-			if (connection is null) {
+	public Scope Rent(out DuckDBAdvancedConnection connection) {
+		Scope scope;
+		if (_indices.TryPeek(out var index)) {
+			ref var slot = ref _array[index];
+			if (slot is null) {
 				try {
-					connection = new DuckDbPoolingConnection { ConnectionString = connectionString };
-					connection.Open();
+					slot = new DuckDBAdvancedConnection { ConnectionString = connectionString };
+					slot.Open();
 				} catch {
-					_pool.Return(index);
+					_indices.Return(index);
 					throw;
 				}
 			}
 
-			connection.Bind(this, index);
-			return connection;
+			connection = slot;
+			scope = new(this, index);
+		} else {
+			connection = Open();
+			scope = default;
 		}
 
-		return Open();
-	}
-
-	void IConnectionPool.Return(DuckDbPoolingConnection connection, int index) {
-		_array[index] = connection;
-
-		// implicit barrier
-		_pool.Return(index);
+		return scope;
 	}
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			Dispose<DuckDbPoolingConnection?>(_array);
+			Dispose<DuckDBAdvancedConnection?>(_array);
 		}
 
 		base.Dispose(disposing);
@@ -68,6 +65,6 @@ public class DuckDBConnectionPool(string connectionString) : Disposable, IConnec
 
 	[InlineArray(PoolSize)]
 	private struct ConnectionArray {
-		private DuckDbPoolingConnection? _connection;
+		private DuckDBAdvancedConnection? _connection;
 	}
 }

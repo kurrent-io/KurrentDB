@@ -8,7 +8,7 @@ using DuckDB.NET.Data;
 
 namespace KurrentDB.Duck;
 
-public class DuckDbAdvancedConnection : DuckDBConnection {
+public class DuckDBAdvancedConnection : DuckDBConnection {
 	private readonly TypeMap<PreparedStatement> _preparedStatements = new();
 
 	/// <summary>
