@@ -58,10 +58,8 @@ partial struct DataChunk {
 		public Blob? TryReadBlob()
 			=> _chunk.Columns[_columnIndex++].TryReadBlob(_chunk._rowIndex);
 
-		[SkipLocalsInit]
 		public string ReadString() => ReadBlob().Reference.ToUtf16String();
 
-		[SkipLocalsInit]
 		public string? TryReadString() => TryReadBlob()?.Reference.ToUtf16String();
 
 		public DateTime ReadDateTime()
