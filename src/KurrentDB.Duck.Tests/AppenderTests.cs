@@ -39,7 +39,7 @@ public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 
 			using (var row = appender.CreateRow()) {
 				row.Append((uint)43);
-				row.Append("Row 1");
+				row.Append("Row 1"u8);
 				row.Append(new Blittable<Guid> { Value = guid });
 				row.Append(43L);
 				row.Append(dt);
