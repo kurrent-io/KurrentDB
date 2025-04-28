@@ -57,7 +57,7 @@ public class PreparedQueryBenchmark {
 		_connection.Dispose();
 	}
 
-	[Benchmark(Baseline = true)]
+	[Benchmark]
 	public void QueryWithoutPreparedStatement() {
 		using var command = _connection.CreateCommand();
 		command.CommandText = Query;
@@ -70,7 +70,7 @@ public class PreparedQueryBenchmark {
 		}
 	}
 
-	[Benchmark]
+	[Benchmark(Baseline = true)]
 	public void QueryWithPreparedStatement() {
 		using var result = _connection.ExecuteQuery<(int, int), PreparedQuery>().GetEnumerator();
 
