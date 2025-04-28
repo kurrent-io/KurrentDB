@@ -75,6 +75,8 @@ public class PreparedQueryBenchmark {
 		using var result = _connection.ExecuteQuery<(int, int), PreparedQuery>().GetEnumerator();
 
 		while (result.MoveNext()) {
+			// column reading is performed implicitly by MoveNext(), which calls IDataRowParser.Parse
+			// static abstract method
 		}
 	}
 
