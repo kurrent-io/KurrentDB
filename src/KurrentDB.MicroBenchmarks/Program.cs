@@ -16,8 +16,8 @@ namespace KurrentDB.MicroBenchmarks;
 
 internal class Program {
 	static void Main(string[] args) {
-		var config = Debugger.IsAttached ? new DebugBuildConfig() { } : DefaultConfig.Instance;
-		BenchmarkRunner.Run<ProjectionSerializationBenchmarks>(config, args);
+		var config = Debugger.IsAttached ? new DebugBuildConfig() : DefaultConfig.Instance;
+		BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
 	}
 }
 
