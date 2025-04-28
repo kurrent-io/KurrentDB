@@ -9,6 +9,7 @@ namespace KurrentDB.Duck;
 
 partial struct PreparedStatement {
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_prepare")]
+	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial DuckDBState Create(nint connection, in byte queryUtf8NullTerminated, out nint preparedStatement);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_prepare_error")]
