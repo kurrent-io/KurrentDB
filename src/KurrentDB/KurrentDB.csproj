@@ -34,6 +34,7 @@
 		<ProjectReference Include="..\KurrentDB.Security.EncryptionAtRest\KurrentDB.Security.EncryptionAtRest.csproj" />
 		<ProjectReference Include="..\KurrentDB.AutoScavenge\KurrentDB.AutoScavenge.csproj" />
 		<ProjectReference Include="..\KurrentDB.TcpPlugin\KurrentDB.TcpPlugin.csproj" />
+		<ProjectReference Include="..\KurrentDB.SecondLevelIndexing\KurrentDB.SecondLevelIndexing.csproj" />
 		<ProjectReference Include="..\KurrentDB.UI\KurrentDB.UI.csproj" />
 	</ItemGroup>
 	<ItemGroup>
