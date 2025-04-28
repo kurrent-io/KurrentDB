@@ -5,7 +5,7 @@ tests_directory=/build/published-tests
 settings=/build/ci/ci.runsettings
 output_directory=/build/test-results
 
-tests=$(find "$tests_directory" -maxdepth 1 -type d -name "*.Tests")
+tests=$(find "$tests_directory" -maxdepth 2 -type d -name "*.Tests")
 
 for test in $tests; do
     proj=$(basename "$test")
