@@ -785,6 +785,7 @@ public class ClusterVNode<TStreamId> :
 		var inMemReader = new VirtualStreamReader([
 			gossipListener.Stream,
 			nodeStatusListener.Stream,
+			..virtualStreamReaders
 		]);
 
 		// Storage Reader

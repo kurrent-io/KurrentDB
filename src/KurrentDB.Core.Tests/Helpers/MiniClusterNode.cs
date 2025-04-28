@@ -28,6 +28,7 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Http;
 using KurrentDB.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Core.TransactionLog.Chunks;
+using KurrentDB.SecondLevelIndexing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -192,7 +193,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 						options.Application.AllowAnonymousEndpointAccess,
 						options.Application.AllowAnonymousStreamAccess,
 						options.Application.OverrideAnonymousEndpointAccessForGossip).Create(components.MainQueue)]))),
-			[],
+			[new DummyVirtualStreamReader("idx-dummy")],
 			Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>(),
 			new OptionsCertificateProvider(),
 			configuration: inMemConf,
