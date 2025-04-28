@@ -7,6 +7,11 @@ using KurrentDB.Core.Services.Storage.InMemory;
 
 namespace KurrentDB.SecondLevelIndexing;
 
+/// <summary>
+/// This code is used for now only as an example to test pluggability
+/// TODO: Remove it when the real indexing reader is added
+/// </summary>
+/// <param name="streamName"></param>
 public class DummyVirtualStreamReader(string streamName) : IVirtualStreamReader {
 	public ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
 		ClientMessage.ReadStreamEventsForward msg,

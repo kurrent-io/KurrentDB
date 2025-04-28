@@ -3,12 +3,19 @@
 
 using EventStore.Plugins;
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.POC.IO.Core;
 using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.SecondLevelIndexing;
 
-public class SecondLevelIndexingPlugin() : SubsystemsPlugin(name: "second-level-indexing"), IConnectedSubsystemsPlugin {
+public interface ISecondLevelIndexingPlugin : IConnectedSubsystemsPlugin {
+	IEnumerable<IVirtualStreamReader> IndexingVirtualStreamReaders { get; }
+}
+
+public class SecondLevelIndexingPlugin() : SubsystemsPlugin(name: "second-level-indexing"), ISecondLevelIndexingPlugin {
+	public IEnumerable<IVirtualStreamReader> IndexingVirtualStreamReaders { get; } = [new DummyVirtualStreamReader("$idx-test")];
+
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
 		var enabledOption =
 			configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondLevelIndexing:Enabled");
