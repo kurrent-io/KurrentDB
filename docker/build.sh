@@ -6,7 +6,7 @@ set -x
 source_directory=$1
 output_directory=$2
 
-tests=$(find "$source_directory" -maxdepth 1 -type d -name "*.Tests")
+tests=$(find "$source_directory" -maxdepth 2 -type d -name "*.Tests")
 
 # Publish tests
 for test in $tests; do
