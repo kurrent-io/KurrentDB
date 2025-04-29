@@ -43,12 +43,4 @@ public class Event {
 		Metadata = metadata ?? [];
 		Properties = properties ?? [];
 	}
-
-	public Event(Guid eventId, string eventType, bool isJson, byte[] data, byte[] metadata)
-		: this(eventId, eventType, isJson, data, metadata, []) {
-	}
-
-	public Event(Guid eventId, string eventType, bool isJson, string data, string metadata)
-		: this(eventId, eventType, isJson, data, metadata, []) {
-	}
 }

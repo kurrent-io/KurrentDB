@@ -528,8 +528,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 		ProcessWrite<Message>(
 			null, message.CorrelationId, SystemStreams.MetastreamOf(message.EventStreamId), ExpectedVersion.Any,
 			new Event[] {
-				new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, CreateStreamDeletedEventJson(),
-					null)
+				new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, CreateStreamDeletedEventJson(), null, null)
 			},
 			null, null);
 

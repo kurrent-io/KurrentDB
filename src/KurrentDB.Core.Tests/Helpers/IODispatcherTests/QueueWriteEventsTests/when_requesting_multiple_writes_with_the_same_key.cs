@@ -18,13 +18,13 @@ public class when_requesting_multiple_writes_with_the_same_key<TLogFormat, TStre
 
 		var key = Guid.NewGuid();
 		_ioDispatcher.QueueWriteEvents(key, $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
+			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty, []) },
 			SystemAccounts.System, (msg) => { });
 		_ioDispatcher.QueueWriteEvents(key, $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
+			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty, []) },
 			SystemAccounts.System, (msg) => { });
 		_ioDispatcher.QueueWriteEvents(key, $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
+			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty, []) },
 			SystemAccounts.System, (msg) => { });
 	}
 

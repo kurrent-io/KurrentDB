@@ -53,7 +53,8 @@ public class CoreProjectionCheckpointWriter {
 		_checkpointEventToBePublished = new Event(
 			Guid.NewGuid(), ProjectionEventTypes.ProjectionCheckpoint, true,
 			requestedCheckpointState == null ? null : Helper.UTF8NoBom.GetBytes(requestedCheckpointState),
-			requestedCheckpointPosition.ToJsonBytes(projectionVersion: _projectionVersion));
+			requestedCheckpointPosition.ToJsonBytes(projectionVersion: _projectionVersion),
+			properties: null);
 		PublishWriteStreamMetadataAndCheckpointEventDelayed();
 	}
 
@@ -163,7 +164,7 @@ public class CoreProjectionCheckpointWriter {
 			metaWriteRole: SystemRoles.Admins);
 		var metadata = new StreamMetadata(maxCount: 2, maxAge: null, cacheControl: null, acl: acl);
 		var dataBytes = metadata.ToJsonBytes();
-		return new Event(eventId, SystemEventTypes.StreamMetadata, isJson: true, data: dataBytes, metadata: null);
+		return new Event(eventId, SystemEventTypes.StreamMetadata, isJson: true, data: dataBytes, metadata: null, properties: null);
 	}
 
 	private void PublishWriteCheckpointEvent() {

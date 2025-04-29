@@ -321,7 +321,7 @@ public abstract class LogReplicationFixture<TLogFormat, TStreamId> : Specificati
 	private Event[] CreateEvents(string streamId, string[] eventDatas) {
 		var events = new Event[eventDatas.Length];
 		for (var i = 0; i < events.Length; i++)
-			events[i] = new Event(Guid.NewGuid(), "type", false, eventDatas[i], null);
+			events[i] = new Event(Guid.NewGuid(), "type", false, eventDatas[i], null, null);
 
 		return events;
 	}

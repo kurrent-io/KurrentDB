@@ -62,7 +62,7 @@ public class TcpConnectionManagerTests {
 	public void when_handling_trusted_write_on_internal_service() {
 		ManualResetEvent waiter = new ManualResetEvent(false);
 		ClientMessage.WriteEvents publishedWrite = null;
-		var evnt = new Event(Guid.NewGuid(), "TestEventType", true, new byte[] { }, new byte[] { });
+		var evnt = new Event(Guid.NewGuid(), "TestEventType", true, new byte[] { }, [], []);
 		var write = new WriteEvents(
 			Guid.NewGuid().ToString(),
 			ExpectedVersion.Any,

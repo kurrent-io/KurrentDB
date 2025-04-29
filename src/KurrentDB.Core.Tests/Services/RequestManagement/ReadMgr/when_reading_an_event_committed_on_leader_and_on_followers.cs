@@ -53,7 +53,7 @@ public class when_reading_an_event_committed_on_leader_and_on_followers<TLogForm
 		// Set the checkpoint so the check is not skipped
 		leader.Db.Config.ReplicationCheckpoint.Write(0);
 
-		var events = new Event[] { new Event(Guid.NewGuid(), "test-type", false, new byte[10], new byte[0]) };
+		var events = new Event[] { new Event(Guid.NewGuid(), "test-type", false, new byte[10], [], []) };
 		var writeResult = ReplicationTestHelper.WriteEvent(leader, events, _streamId);
 		Assert.AreEqual(OperationResult.Success, writeResult.Result);
 		_commitPosition = writeResult.CommitPosition;

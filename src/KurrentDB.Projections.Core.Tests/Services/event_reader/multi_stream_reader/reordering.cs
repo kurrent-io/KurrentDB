@@ -111,19 +111,19 @@ namespace KurrentDB.Projections.Core.Tests.Services.event_reader.multi_stream_re
 				yield return
 					new ClientMessage.TransactionWrite(
 						Guid.NewGuid(), correlationId, GetInputQueue(), true, transactionId,
-						new[] { new Event(Guid.NewGuid(), "type1", true, "{Data: 3, Transacted=true}", "{}") }, null);
+						new[] { new Event(Guid.NewGuid(), "type1", true, "{Data: 3, Transacted=true}", "{}", []) }, null);
 
 				correlationId = Guid.NewGuid();
 				yield return
 					new ClientMessage.WriteEvents(
 						Guid.NewGuid(), correlationId, GetInputQueue(), true, "stream-b", 0,
-						new[] { new Event(Guid.NewGuid(), "type1", true, "{Data: 4}", "{}") }, null);
+						new[] { new Event(Guid.NewGuid(), "type1", true, "{Data: 4}", "{}", []) }, null);
 
 				correlationId = Guid.NewGuid();
 				yield return
 					new ClientMessage.TransactionWrite(
 						Guid.NewGuid(), correlationId, GetInputQueue(), true, transactionId,
-						new[] { new Event(Guid.NewGuid(), "type1", true, "{Data: 5, Transacted=true}", "{}") }, null);
+						new[] { new Event(Guid.NewGuid(), "type1", true, "{Data: 5, Transacted=true}", "{}", []) }, null);
 
 				correlationId = Guid.NewGuid();
 				yield return

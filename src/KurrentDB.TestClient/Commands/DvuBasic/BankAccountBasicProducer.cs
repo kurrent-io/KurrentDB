@@ -23,7 +23,7 @@ internal class BankAccountBasicProducer : IBasicProducer {
 
 		var serializedObject = Codec.Json.To(accountObject);
 		var @event = new Event(Guid.NewGuid(), accountObject.GetType().Name, true,
-			Helper.UTF8NoBom.GetBytes(serializedObject), new byte[0]);
+			Helper.UTF8NoBom.GetBytes(serializedObject), [], []);
 
 		return @event;
 	}

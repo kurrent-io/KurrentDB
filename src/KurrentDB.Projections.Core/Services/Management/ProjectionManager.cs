@@ -704,6 +704,7 @@ public class ProjectionManager
 					ProjectionEventTypes.ProjectionDeleted,
 					false,
 					Helper.UTF8NoBom.GetBytes(message.Name),
+					Empty.ByteArray,
 					Empty.ByteArray),
 				SystemAccounts.System);
 
@@ -872,6 +873,7 @@ public class ProjectionManager
 				ProjectionNamesBuilder.ProjectionsRegistrationStream,
 				ExpectedVersion.NoStream,
 				new Event(registrationEventId, ProjectionEventTypes.ProjectionsInitialized, false, Empty.ByteArray,
+					Empty.ByteArray,
 					Empty.ByteArray),
 				SystemAccounts.System),
 			completed => WriteProjectionsInitializedCompleted(completed, registrationEventId, action));
@@ -981,6 +983,7 @@ public class ProjectionManager
 					ProjectionEventTypes.ProjectionCreated,
 					false,
 					Helper.UTF8NoBom.GetBytes(projection.Name),
+					Empty.ByteArray,
 					Empty.ByteArray));
 			} else {
 				_logger.Warning("PROJECTIONS: Should not be processing transient projections here.");

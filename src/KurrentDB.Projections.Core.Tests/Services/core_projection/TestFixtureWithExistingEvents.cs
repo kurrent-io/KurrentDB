@@ -67,6 +67,6 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Kur
 		Guid? correlationId = null) {
 		return new ClientMessage.WriteEvents(
 			Guid.NewGuid(), correlationId ?? Guid.NewGuid(), GetInputQueue(), false, streamId,
-			ExpectedVersion.Any, new Event(Guid.NewGuid(), eventType, isJson, data, metadata), null);
+			ExpectedVersion.Any, new Event(Guid.NewGuid(), eventType, isJson, data, metadata, []), null);
 	}
 }

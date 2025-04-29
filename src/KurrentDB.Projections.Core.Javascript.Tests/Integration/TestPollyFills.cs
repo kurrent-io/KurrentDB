@@ -25,6 +25,6 @@ public static class TestPollyFills {
 
 	public static Event[] LikeBeforeTheyWereSaved(this IReadOnlyList<ResolvedEvent> events) {
 		return events.Select(x => new Event(x.Event.EventId, x.Event.EventType, x.Event.IsJson,
-			x.Event.Data.ToArray(), x.Event.Metadata.ToArray())).ToArray();
+			x.Event.Data.ToArray(), x.Event.Metadata.ToArray(), x.Event.Properties.ToArray())).ToArray();
 	}
 }

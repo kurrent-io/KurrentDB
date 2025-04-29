@@ -29,6 +29,7 @@ public abstract class RequestManagerServiceSpecification :
 	protected Guid ClientCorrId = Guid.NewGuid();
 	protected byte[] Metadata = Helper.UTF8NoBom.GetBytes("{Value:42}");
 	protected byte[] EventData = Helper.UTF8NoBom.GetBytes("{Value:43}");
+	protected byte[] Properties = Helper.UTF8NoBom.GetBytes("{Value:44}");
 	protected FakeEnvelope Envelope = new();
 	protected SynchronousScheduler Dispatcher = new(nameof(RequestManagerServiceSpecification));
 	protected RequestManagementService Service;
@@ -103,7 +104,7 @@ public abstract class RequestManagerServiceSpecification :
 	}
 
 	protected Event DummyEvent() {
-		return new Event(Guid.NewGuid(), "SomethingHappened", true, EventData, Metadata);
+		return new Event(Guid.NewGuid(), "SomethingHappened", true, EventData, Metadata, Properties);
 	}
 
 	public void Handle(StorageMessage.RequestCompleted message) {
