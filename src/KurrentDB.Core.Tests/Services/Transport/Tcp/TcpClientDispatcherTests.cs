@@ -292,8 +292,8 @@ public class TcpClientDispatcherTests {
 	[Test]
 	public void when_wrapping_write_events_with_properties_should_unwrap_with_properties() {
 		Event evnt = new Event(Guid.NewGuid(), "test-type", false, "test-data", "test-metadata", "test-properties"u8.ToArray());
-		var msg = new ClientMessage.WriteEvents(Guid.NewGuid(), Guid.NewGuid(), IEnvelope.NoOp, false, "test-stream",
-			42, [evnt], new ClaimsPrincipal());
+		var msg = ClientMessage.WriteEvents.ForSingleEvent(Guid.NewGuid(), Guid.NewGuid(), IEnvelope.NoOp, false, "test-stream",
+			42, evnt, new ClaimsPrincipal());
 
 		var package = _dispatcher.WrapMessage(msg, (byte)ClientVersion.V2);
 		Assert.IsNotNull(package, "Package is null");
@@ -307,7 +307,7 @@ public class TcpClientDispatcherTests {
 			new Dictionary<string, string>(), default, (byte)ClientVersion.V2);
 		Assert.IsNotNull(unwrapped, "Unwrapped message is null");
 		if (unwrapped is ClientMessage.WriteEvents writeEvents)
-			Assert.AreEqual(evnt.Properties, writeEvents.Events[0].Properties);
+			Assert.AreEqual(evnt.Properties, writeEvents.Events.Span[0].Properties);
 		else
 			Assert.Fail($"Unwrapped message is not {nameof(ClientMessage.WriteEvents)}");
 	}
