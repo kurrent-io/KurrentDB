@@ -32,34 +32,34 @@ partial struct DataChunk {
 		}
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<int> Int32Data => _vector.GetRows<int>(_rowCount);
+		public ReadOnlySpan<int> Int32Rows => _vector.GetRows<int>(_rowCount);
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<uint> UInt32Data => _vector.GetRows<uint>(_rowCount);
+		public ReadOnlySpan<uint> UInt32Rows => _vector.GetRows<uint>(_rowCount);
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<long> Int64Data => _vector.GetRows<long>(_rowCount);
+		public ReadOnlySpan<long> Int64Rows => _vector.GetRows<long>(_rowCount);
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<ulong> UInt64Data => _vector.GetRows<ulong>(_rowCount);
+		public ReadOnlySpan<ulong> UInt64Rows => _vector.GetRows<ulong>(_rowCount);
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<DuckDBString> BlobData => _vector.GetRows<DuckDBString>(_rowCount);
+		public ReadOnlySpan<DuckDBString> BlobRows => _vector.GetRows<DuckDBString>(_rowCount);
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<float> FloatData => _vector.GetRows<float>(_rowCount);
+		public ReadOnlySpan<float> FloatRows => _vector.GetRows<float>(_rowCount);
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<double> DoubleData => _vector.GetRows<double>(_rowCount);
+		public ReadOnlySpan<double> DoubleRows => _vector.GetRows<double>(_rowCount);
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<Int128> Int128Data => _vector.GetRows<Int128>(_rowCount);
+		public ReadOnlySpan<Int128> Int128Rows => _vector.GetRows<Int128>(_rowCount);
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<UInt128> UInt128Data => _vector.GetRows<UInt128>(_rowCount);
+		public ReadOnlySpan<UInt128> UInt128Rows => _vector.GetRows<UInt128>(_rowCount);
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public ReadOnlySpan<bool> BooleanData => _vector.GetRows<bool>(_rowCount);
+		public ReadOnlySpan<bool> BooleanRows => _vector.GetRows<bool>(_rowCount);
 	}
 
 	public Column this[int index] => new(Columns[index], int.CreateChecked(RowsCount));

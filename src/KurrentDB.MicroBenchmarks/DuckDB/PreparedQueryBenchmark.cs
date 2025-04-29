@@ -88,8 +88,8 @@ public class PreparedQueryBenchmark {
 		using var result = _connection.ExecuteQuery<PreparedQuery>();
 
 		while (result.TryFetch(out var chunk)) {
-			chunk[0].Int32Data.CopyTo(_buffer);
-			chunk[1].Int32Data.CopyTo(_buffer);
+			chunk[0].Int32Rows.CopyTo(_buffer);
+			chunk[1].Int32Rows.CopyTo(_buffer);
 		}
 	}
 

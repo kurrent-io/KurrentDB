@@ -67,14 +67,14 @@ public class DuckDBAdvancedConnection : DuckDBConnection {
 		return statement;
 	}
 
-	public StreamQueryResult ExecuteQuery<TStatement>()
-		where TStatement : IParameterlessStatement
-		=> ExecuteQuery<ValueTuple, TStatement>(new());
+	public StreamQueryResult ExecuteQuery<TQuery>()
+		where TQuery : IParameterlessStatement
+		=> ExecuteQuery<ValueTuple, TQuery>(new());
 
-	public StreamQueryResult ExecuteQuery<TArgs, TStatement>(in TArgs args)
+	public StreamQueryResult ExecuteQuery<TArgs, TQuery>(in TArgs args)
 		where TArgs : struct, ITuple
-		where TStatement : IPreparedStatement<TArgs> {
-		var statement = Bind<TArgs, TStatement>(in args, out var paramsCount);
+		where TQuery : IPreparedStatement<TArgs> {
+		var statement = Bind<TArgs, TQuery>(in args, out var paramsCount);
 
 		// execute
 		try {
@@ -86,16 +86,16 @@ public class DuckDBAdvancedConnection : DuckDBConnection {
 		}
 	}
 
-	public StreamQueryResult<TRow, TStatement> ExecuteQuery<TArgs, TRow, TStatement>(in TArgs args)
+	public StreamQueryResult<TRow, TQuery> ExecuteQuery<TArgs, TRow, TQuery>(in TArgs args)
 		where TArgs : struct, ITuple
 		where TRow : struct, ITuple
-		where TStatement : IPreparedStatement<TArgs>, IDataRowParser<TRow>
-		=> new(ExecuteQuery<TArgs, TStatement>(in args));
+		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow>
+		=> new(ExecuteQuery<TArgs, TQuery>(in args));
 
-	public StreamQueryResult<TRow, TStatement> ExecuteQuery<TRow, TStatement>()
+	public StreamQueryResult<TRow, TQuery> ExecuteQuery<TRow, TQuery>()
 		where TRow : struct, ITuple
-		where TStatement : IParameterlessStatement, IDataRowParser<TRow>
-		=> ExecuteQuery<ValueTuple, TRow, TStatement>(new ValueTuple());
+		where TQuery : IParameterlessStatement, IDataRowParser<TRow>
+		=> ExecuteQuery<ValueTuple, TRow, TQuery>(new ValueTuple());
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
