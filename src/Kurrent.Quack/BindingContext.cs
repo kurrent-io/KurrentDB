@@ -25,11 +25,11 @@ public struct BindingContext(PreparedStatement statement) : IEnumerable<object> 
 	public void Add(DateTime value) => statement.Bind(index++, value);
 	public void Add(ReadOnlySpan<byte> buffer) => statement.Bind(index++, buffer);
 	public void Add(ReadOnlySpan<char> chars) => statement.Bind(index++, chars);
-	public void Add(bool value) => statement.Bind(index, value);
-	public void Add(float value) => statement.Bind(index, value);
-	public void Add(double value) => statement.Bind(index, value);
-	public void Add(Int128 value) => statement.Bind(index, value);
-	public void Add(UInt128 value) => statement.Bind(index, value);
+	public void Add(bool value) => statement.Bind(index++, value);
+	public void Add(float value) => statement.Bind(index++, value);
+	public void Add(double value) => statement.Bind(index++, value);
+	public void Add(Int128 value) => statement.Bind(index++, value);
+	public void Add(UInt128 value) => statement.Bind(index++, value);
 
 	public void Add<T>(T value)
 		where T : struct, IBinaryFormattable<T>
