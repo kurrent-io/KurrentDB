@@ -21,6 +21,7 @@
 		<ProjectReference Include="..\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
 <!--		<ProjectReference Include="..\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" />-->
 		<ProjectReference Include="..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
+		<PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
 	</ItemGroup>
 
 	<ItemGroup>
