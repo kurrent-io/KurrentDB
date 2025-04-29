@@ -6,7 +6,7 @@ using System.IO;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Order;
-using KurrentDB.Duck;
+using Kurrent.Quack;
 
 namespace KurrentDB.MicroBenchmarks.DuckDB;
 

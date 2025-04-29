@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+				<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+				<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Kurrent.Quack</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+      <PackageReference Include="DotNext" Version="5.21.0" />
+      <PackageReference Include="DotNext.Threading" Version="5.21.0" />
+      <PackageReference Include="DotNext.Unsafe" Version="5.21.0" />
+      <PackageReference Include="DuckDB.NET.Data.Full" Version="1.2.1" />
+    </ItemGroup>
+
+</Project>

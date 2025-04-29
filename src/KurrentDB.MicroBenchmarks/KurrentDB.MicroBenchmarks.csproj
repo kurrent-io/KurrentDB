@@ -6,7 +6,7 @@
 		<PackageReference Include="BenchmarkDotNet" Version="0.13.10" />
 	</ItemGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\KurrentDB.Duck\KurrentDB.Duck.csproj" />
+		<ProjectReference Include="..\Kurrent.Quack\Kurrent.Quack.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.Core.Tests\KurrentDB.Projections.Core.Tests.csproj" />
 		<ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
 	</ItemGroup>

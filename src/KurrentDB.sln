@@ -125,9 +125,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Auth", "Auth", "{830D29DF-0
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.UI", "KurrentDB.UI\KurrentDB.UI.csproj", "{B375CE7A-AF32-4A62-9443-B21100C1227B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Duck", "KurrentDB.Duck\KurrentDB.Duck.csproj", "{EACA2908-622C-40F3-A0F6-19634C9274C3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Quack", "Kurrent.Quack\Kurrent.Quack.csproj", "{EACA2908-622C-40F3-A0F6-19634C9274C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Duck.Tests", "KurrentDB.Duck.Tests\KurrentDB.Duck.Tests.csproj", "{A8FA4BE3-C517-474F-B296-09E756417703}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Quack.Tests", "Kurrent.Quack.Tests\Kurrent.Quack.Tests.csproj", "{A8FA4BE3-C517-474F-B296-09E756417703}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
