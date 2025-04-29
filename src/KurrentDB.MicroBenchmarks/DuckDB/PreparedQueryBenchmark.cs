@@ -18,6 +18,7 @@ public class PreparedQueryBenchmark {
 	private static ReadOnlySpan<byte> QueryUtf8 => "SELECT * FROM test_table WHERE col0 > 990;"u8;
 
 	private DuckDBAdvancedConnection _connection;
+	private int[] _buffer;
 
 	[GlobalSetup]
 	public void SetupConnection() {
@@ -41,9 +42,11 @@ public class PreparedQueryBenchmark {
 		// compile the query
 		_connection.GetPreparedStatement<PreparedQuery>();
 
+		const int rowsCount = 1000;
+		_buffer = new int[rowsCount];
 		using var appender = new Appender(_connection, "test_table"u8);
 
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < rowsCount; i++) {
 			using var row = appender.CreateRow();
 			row.Append(i);
 			row.Append(i);
@@ -77,6 +80,16 @@ public class PreparedQueryBenchmark {
 		while (result.MoveNext()) {
 			// column reading is performed implicitly by MoveNext(), which calls IDataRowParser.Parse
 			// static abstract method
+		}
+	}
+
+	[Benchmark]
+	public void QueryWithPreparedStatementDirectAccess() {
+		using var result = _connection.ExecuteQuery<PreparedQuery>();
+
+		while (result.TryFetch(out var chunk)) {
+			chunk[0].Int32Data.CopyTo(_buffer);
+			chunk[1].Int32Data.CopyTo(_buffer);
 		}
 	}
 
