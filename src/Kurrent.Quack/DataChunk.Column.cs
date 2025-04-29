@@ -22,6 +22,10 @@ partial struct DataChunk {
 			_rowCount = rowCount;
 		}
 
+		/// <summary>
+		/// Determines whether the specified row in this column is null.
+		/// </summary>
+		/// <param name="rowIndex">Zero-based row index.</param>
 		public bool this[int rowIndex] {
 			get {
 				ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)rowIndex, (uint)_rowCount,
