@@ -1,4 +1,5 @@
-﻿using DotNext.Buffers.Binary;
+﻿using System.Numerics;
+using DotNext.Buffers.Binary;
 using DuckDB.NET.Data;
 using FluentStorage.Utils.Extensions;
 using Xunit;
@@ -18,7 +19,12 @@ public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 		                                   col1 VARCHAR,
 		                                   col2 BINARY,
 		                                   col3 LONG,
-		                                   col4 DATETIME
+		                                   col4 DATETIME,
+		                                   col5 BOOLEAN,
+		                                   col6 FLOAT,
+		                                   col7 DOUBLE,
+		                                   col8 HUGEINT,
+		                                   col9 UHUGEINT
 		                               );
 		                               """;
 
@@ -35,6 +41,11 @@ public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 				row.Append([10, 20]);
 				row.Append(42L);
 				row.Append(dt);
+				row.Append(true);
+				row.Append(float.Epsilon);
+				row.Append(double.Epsilon);
+				row.Append(Int128.MinValue);
+				row.Append(UInt128.MaxValue);
 			}
 
 			using (var row = appender.CreateRow()) {
@@ -43,6 +54,11 @@ public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 				row.Append(new Blittable<Guid> { Value = guid });
 				row.Append(43L);
 				row.Append(dt);
+				row.Append(false);
+				row.Append(0.0F);
+				row.Append(0.0D);
+				row.Append(Int128.MaxValue);
+				row.Append(UInt128.Zero);
 			}
 
 			appender.Flush();
@@ -61,6 +77,11 @@ public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 
 			Assert.Equal(42L, reader.GetValue(3));
 			Assert.Equal(dt.Date, ((DateTime)reader.GetValue(4)).Date);
+			Assert.True(reader.GetBoolean(5));
+			Assert.Equal(float.Epsilon, reader.GetFloat(6));
+			Assert.Equal(double.Epsilon, reader.GetDouble(7));
+			Assert.Equal((BigInteger)Int128.MinValue, reader.GetValue(8));
+			Assert.Equal((BigInteger)UInt128.MaxValue, reader.GetValue(9));
 
 			// row 1
 			Assert.True(reader.Read());
@@ -73,6 +94,11 @@ public sealed class AppenderTests : DuckDbTests<AppenderTests> {
 
 			Assert.Equal(43L, reader.GetValue(3));
 			Assert.Equal(dt.Date, ((DateTime)reader.GetValue(4)).Date);
+			Assert.False(reader.GetBoolean(5));
+			Assert.Equal(0.0F, reader.GetFloat(6));
+			Assert.Equal(0.0D, reader.GetDouble(7));
+			Assert.Equal((BigInteger)Int128.MaxValue, reader.GetValue(8));
+			Assert.Equal(BigInteger.Zero, reader.GetValue(9));
 		}
 	}
 }

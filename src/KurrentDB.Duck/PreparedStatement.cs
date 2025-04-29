@@ -107,6 +107,21 @@ public readonly partial struct PreparedStatement : INativeWrapper<PreparedStatem
 		}
 	}
 
+	public void Bind(Index index, bool value)
+		=> VerifyState(Bind(_preparedStatement, ToNativeIndex(index), value) is DuckDBState.Error);
+
+	public void Bind(Index index, float value)
+		=> VerifyState(Bind(_preparedStatement, ToNativeIndex(index), value) is DuckDBState.Error);
+
+	public void Bind(Index index, double value)
+		=> VerifyState(Bind(_preparedStatement, ToNativeIndex(index), value) is DuckDBState.Error);
+
+	public void Bind(Index index, Int128 value)
+		=> VerifyState(Bind(_preparedStatement, ToNativeIndex(index), value) is DuckDBState.Error);
+
+	public void Bind(Index index, UInt128 value)
+		=> VerifyState(Bind(_preparedStatement, ToNativeIndex(index), value) is DuckDBState.Error);
+
 	public long ExecuteNonQuery() {
 		long count;
 		if (_preparedStatement is not 0) {

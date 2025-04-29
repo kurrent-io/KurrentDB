@@ -14,7 +14,7 @@ namespace KurrentDB.Duck;
 /// </summary>
 [StructLayout(LayoutKind.Auto)]
 public partial struct DataChunk : IResettable {
-	private const int MaxColumnCount = 10;
+	private const int MaxColumnCount = 32; // 32 columns X 16 bytes per vector = 512 bytes on the stack
 
 	private readonly ColumnArray _columns;
 	private long _rowIndex;

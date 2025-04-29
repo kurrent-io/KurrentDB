@@ -84,6 +84,21 @@ partial struct Appender {
 			Append(buffer.Span);
 		}
 
+		public void Append(bool value)
+			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
+
+		public void Append(float value)
+			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
+
+		public void Append(double value)
+			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
+
+		public void Append(Int128 value)
+			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
+
+		public void Append(UInt128 value)
+			=> VerifyState(Appender.Append(_appender, value) is DuckDBState.Error);
+
 		[StackTraceHidden]
 		private void VerifyState([DoesNotReturnIf(true)] bool isError)
 			=> INativeWrapper<Appender>.VerifyState(isError, _appender);

@@ -3,9 +3,12 @@
 
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using DuckDB.NET.Native;
 
 namespace KurrentDB.Duck;
+
+using Marshallers;
 
 partial struct Appender {
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_appender_create")]
@@ -66,4 +69,24 @@ partial struct Appender {
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_blob")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial DuckDBState AppendBlob(nint appender, in byte bytes, long length);
+
+	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_float")]
+	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	private static partial DuckDBState Append(nint appender, float value);
+
+	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_double")]
+	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	private static partial DuckDBState Append(nint appender, double value);
+
+	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_hugeint")]
+	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	private static partial DuckDBState Append(nint appender, [MarshalUsing(typeof(HugeIntMarshaller))] Int128 value);
+
+	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_uhugeint")]
+	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	private static partial DuckDBState Append(nint appender, [MarshalUsing(typeof(HugeIntMarshaller))] UInt128 value);
+
+	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_bool")]
+	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+	private static partial DuckDBState Append(nint appender, [MarshalAs(UnmanagedType.Bool)] bool value);
 }

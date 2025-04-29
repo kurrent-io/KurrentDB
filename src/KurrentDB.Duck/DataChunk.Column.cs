@@ -45,6 +45,18 @@ partial struct DataChunk {
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		public ReadOnlySpan<DuckDBString> BlobData => _vector.GetRows<DuckDBString>(_rowCount);
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		public ReadOnlySpan<float> FloatData => _vector.GetRows<float>(_rowCount);
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		public ReadOnlySpan<double> DoubleData => _vector.GetRows<double>(_rowCount);
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		public ReadOnlySpan<Int128> Int128Data => _vector.GetRows<Int128>(_rowCount);
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		public ReadOnlySpan<UInt128> UInt128Data => _vector.GetRows<UInt128>(_rowCount);
 	}
 
 	public Column this[int index] => new(Columns[index], int.CreateChecked(RowsCount));
