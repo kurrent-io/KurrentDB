@@ -30,33 +30,33 @@ partial struct PreparedStatement {
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial DuckDBState ClearBindings(nint preparedStatement);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_nparams")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial long GetParametersCount(nint preparedStatement);
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "duckdb_nparams")]
+	[SuppressGCTransition]
+	private static extern long GetParametersCount(nint preparedStatement);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_null")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState BindNull(nint preparedStatement, long index);
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "duckdb_bind_null")]
+	[SuppressGCTransition]
+	private static extern DuckDBState BindNull(nint preparedStatement, long index);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_int32")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState Bind(nint preparedStatement, long index, int value);
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "duckdb_bind_int32")]
+	[SuppressGCTransition]
+	private static extern DuckDBState Bind(nint preparedStatement, long index, int value);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_uint32")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState Bind(nint preparedStatement, long index, uint value);
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "duckdb_bind_uint32")]
+	[SuppressGCTransition]
+	private static extern DuckDBState Bind(nint preparedStatement, long index, uint value);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_int64")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState Bind(nint preparedStatement, long index, long value);
+	[DllImport(Interop.LibraryName, EntryPoint = "duckdb_bind_int64")]
+	[SuppressGCTransition]
+	private static extern DuckDBState Bind(nint preparedStatement, long index, long value);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_uint64")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState Bind(nint preparedStatement, long index, ulong value);
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "duckdb_bind_uint64")]
+	[SuppressGCTransition]
+	private static extern DuckDBState Bind(nint preparedStatement, long index, ulong value);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_timestamp")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState BindTimestamp(nint preparedStatement, long index, long microseconds);
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "duckdb_bind_timestamp")]
+	[SuppressGCTransition]
+	private static extern DuckDBState BindTimestamp(nint preparedStatement, long index, long microseconds);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_blob")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
@@ -70,13 +70,13 @@ partial struct PreparedStatement {
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial DuckDBState Bind(nint preparedStatement, long index, [MarshalAs(UnmanagedType.Bool)] bool value);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_float")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState Bind(nint preparedStatement, long index, float value);
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "duckdb_bind_float")]
+	[SuppressGCTransition]
+	private static extern DuckDBState Bind(nint preparedStatement, long index, float value);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_double")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState Bind(nint preparedStatement, long index, double value);
+	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "duckdb_bind_double")]
+	[SuppressGCTransition]
+	private static extern DuckDBState Bind(nint preparedStatement, long index, double value);
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_hugeint")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
