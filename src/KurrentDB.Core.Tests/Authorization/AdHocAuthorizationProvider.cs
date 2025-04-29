@@ -1,0 +1,24 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+#nullable enable
+
+using System;
+using System.Security.Claims;
+using System.Threading;
+using System.Threading.Tasks;
+using EventStore.Plugins;
+using EventStore.Plugins.Authorization;
+
+namespace KurrentDB.Core.Tests.Authorization;
+
+public class AdHocAuthorizationProvider : Plugin, IAuthorizationProvider {
+	public Func<ClaimsPrincipal, Operation, bool> CheckAccess { get; set; } = (_, _) => false;
+
+	public ValueTask<bool> CheckAccessAsync(
+		ClaimsPrincipal principal,
+		Operation operation,
+		CancellationToken cancellationToken) =>
+
+		ValueTask.FromResult(CheckAccess(principal, operation));
+}

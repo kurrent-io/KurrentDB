@@ -302,6 +302,7 @@ public static partial class ClientMessage {
 		public readonly ReadOnlyMemory<int> FailureStreamIndexes;
 		public readonly ReadOnlyMemory<long> FailureCurrentVersions;
 
+		/// <summary>Success constructor</summary>
 		public WriteEventsCompleted(
 			Guid correlationId,
 			ReadOnlyMemory<long> firstEventNumbers,
@@ -331,6 +332,7 @@ public static partial class ClientMessage {
 			CommitPosition = commitPosition;
 		}
 
+		/// <summary>Failure constructor</summary>
 		public WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
 			ReadOnlyMemory<int> failureStreamIndexes = default, ReadOnlyMemory<long> failureCurrentVersions = default) {
 			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));

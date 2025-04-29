@@ -6087,6 +6087,329 @@
       }
     },
     {
+      "protopath": "Grpc:/:streams.v2.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ExpectedRevisionConstants",
+            "enum_fields": [
+              {
+                "name": "EXPECTED_REVISION_CONSTANTS_SINGLE_EVENT"
+              },
+              {
+                "name": "EXPECTED_REVISION_CONSTANTS_ANY",
+                "integer": -2
+              },
+              {
+                "name": "EXPECTED_REVISION_CONSTANTS_NO_STREAM",
+                "integer": -1
+              },
+              {
+                "name": "EXPECTED_REVISION_CONSTANTS_EXISTS",
+                "integer": -4
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "AppendRecord",
+            "fields": [
+              {
+                "id": 1,
+                "name": "record_id",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "data",
+                "type": "bytes"
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 2,
+                  "name": "properties",
+                  "type": "DynamicValue"
+                }
+              }
+            ]
+          },
+          {
+            "name": "AppendStreamRequest",
+            "fields": [
+              {
+                "id": 1,
+                "name": "stream",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "records",
+                "type": "AppendRecord",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "expected_revision",
+                "type": "sint64"
+              }
+            ]
+          },
+          {
+            "name": "AppendStreamSuccess",
+            "fields": [
+              {
+                "id": 1,
+                "name": "stream",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "position",
+                "type": "int64"
+              },
+              {
+                "id": 3,
+                "name": "stream_revision",
+                "type": "int64"
+              }
+            ]
+          },
+          {
+            "name": "AppendStreamFailure",
+            "fields": [
+              {
+                "id": 1,
+                "name": "stream",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "wrong_expected_revision",
+                "type": "ErrorDetails.WrongExpectedRevision"
+              },
+              {
+                "id": 3,
+                "name": "access_denied",
+                "type": "ErrorDetails.AccessDenied"
+              },
+              {
+                "id": 4,
+                "name": "stream_deleted",
+                "type": "ErrorDetails.StreamDeleted"
+              },
+              {
+                "id": 5,
+                "name": "transaction_max_size_exceeded",
+                "type": "ErrorDetails.TransactionMaxSizeExceeded"
+              }
+            ]
+          },
+          {
+            "name": "AppendStreamResponse",
+            "fields": [
+              {
+                "id": 1,
+                "name": "success",
+                "type": "AppendStreamSuccess"
+              },
+              {
+                "id": 2,
+                "name": "failure",
+                "type": "AppendStreamFailure"
+              }
+            ]
+          },
+          {
+            "name": "MultiStreamAppendRequest",
+            "fields": [
+              {
+                "id": 1,
+                "name": "input",
+                "type": "AppendStreamRequest",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "MultiStreamAppendResponse",
+            "fields": [
+              {
+                "id": 1,
+                "name": "success",
+                "type": "Success"
+              },
+              {
+                "id": 2,
+                "name": "failure",
+                "type": "Failure"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Success",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "output",
+                    "type": "AppendStreamSuccess",
+                    "is_repeated": true
+                  }
+                ]
+              },
+              {
+                "name": "Failure",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "output",
+                    "type": "AppendStreamFailure",
+                    "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "ErrorDetails",
+            "messages": [
+              {
+                "name": "AccessDenied",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "reason",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "StreamDeleted"
+              },
+              {
+                "name": "WrongExpectedRevision",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "stream_revision",
+                    "type": "int64"
+                  }
+                ]
+              },
+              {
+                "name": "TransactionMaxSizeExceeded",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "max_size",
+                    "type": "int32"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "DynamicValue",
+            "fields": [
+              {
+                "id": 1,
+                "name": "null_value",
+                "type": "google.protobuf.NullValue"
+              },
+              {
+                "id": 2,
+                "name": "int32_value",
+                "type": "sint32"
+              },
+              {
+                "id": 3,
+                "name": "int64_value",
+                "type": "sint64"
+              },
+              {
+                "id": 4,
+                "name": "bytes_value",
+                "type": "bytes"
+              },
+              {
+                "id": 5,
+                "name": "double_value",
+                "type": "double"
+              },
+              {
+                "id": 6,
+                "name": "float_value",
+                "type": "float"
+              },
+              {
+                "id": 7,
+                "name": "string_value",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "boolean_value",
+                "type": "bool"
+              },
+              {
+                "id": 9,
+                "name": "timestamp_value",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "duration_value",
+                "type": "google.protobuf.Duration"
+              }
+            ]
+          }
+        ],
+        "services": [
+          {
+            "name": "StreamsService",
+            "rpcs": [
+              {
+                "name": "MultiStreamAppend",
+                "in_type": "MultiStreamAppendRequest",
+                "out_type": "MultiStreamAppendResponse"
+              },
+              {
+                "name": "MultiStreamAppendSession",
+                "in_type": "AppendStreamRequest",
+                "out_type": "MultiStreamAppendResponse",
+                "in_streamed": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "kurrentdb.protocol.v2"
+        },
+        "options": [
+          {
+            "name": "csharp_namespace",
+            "value": "KurrentDB.Protocol.V2"
+          },
+          {
+            "name": "java_package",
+            "value": "io.kurrentdb.v2"
+          },
+          {
+            "name": "java_multiple_files",
+            "value": "true"
+          }
+        ]
+      }
+    },
+    {
       "protopath": "Grpc:/:users.proto",
       "def": {
         "messages": [
