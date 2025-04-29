@@ -302,6 +302,7 @@ public static partial class ClientMessage {
 		public readonly LowAllocReadOnlyMemory<int> FailureStreamIndexes;
 		public readonly LowAllocReadOnlyMemory<long> FailureCurrentVersions;
 
+		/// <summary>Success constructor</summary>
 		public WriteEventsCompleted(
 			Guid correlationId,
 			LowAllocReadOnlyMemory<long> firstEventNumbers,
@@ -331,6 +332,7 @@ public static partial class ClientMessage {
 			CommitPosition = commitPosition;
 		}
 
+		/// <summary>Failure constructor</summary>
 		public WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
 			LowAllocReadOnlyMemory<int> failureStreamIndexes = default, LowAllocReadOnlyMemory<long> failureCurrentVersions = default) {
 			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));

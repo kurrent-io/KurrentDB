@@ -1,0 +1,170 @@
+syntax = "proto3";
+
+//
+// This protocol is UNSTABLE in the sense of being subject to change.
+//
+
+package kurrentdb.protocol.v2;
+
+option csharp_namespace = "KurrentDB.Protocol.V2";
+option java_package = "io.kurrentdb.v2";
+option java_multiple_files = true;
+
+import "dynamic-value.proto";
+
+service StreamsService {
+	// Executes an atomic operation to append records to multiple streams.
+	// This transactional method ensures that all appends either succeed
+	// completely, or are entirely rolled back, thereby maintaining strict data
+	// consistency across all involved streams.
+	rpc MultiStreamAppend(MultiStreamAppendRequest) returns (MultiStreamAppendResponse);
+
+	// Streaming version of MultiStreamAppend that allows clients to send multiple
+	// append requests over a single connection. When the stream completes, all
+	// records are appended transactionally (all succeed or fail together).
+	// Provides improved efficiency for high-throughput scenarios while
+	// maintaining the same transactional guarantees.
+	rpc MultiStreamAppendSession(stream AppendStreamRequest) returns (MultiStreamAppendResponse);
+}
+
+// Record to be appended to a stream.
+message AppendRecord {
+	// Universally Unique identifier for the record. Must be a guid.
+	// If not provided, the server will generate a new one.
+	optional string record_id = 1;
+
+	// A collection of properties providing additional system information about the
+	// record.
+	map<string, kurrentdb.protobuf.DynamicValue> properties = 2;
+
+	// The actual data payload of the record, stored as bytes.
+	bytes data = 3;
+}
+
+// Constants that match the expected state of a stream during an
+// append operation. It can be used to specify whether the stream should exist,
+// not exist, or can be in any state.
+enum ExpectedRevisionConstants {
+	// The stream should exist and have a single event.
+	EXPECTED_REVISION_CONSTANTS_SINGLE_EVENT = 0;
+
+	// It is not important whether the stream exists or not.
+	EXPECTED_REVISION_CONSTANTS_ANY = -2;
+
+	// The stream should not exist. If it does, the append will fail.
+	EXPECTED_REVISION_CONSTANTS_NO_STREAM = -1;
+
+	// The stream should exist
+	EXPECTED_REVISION_CONSTANTS_EXISTS = -4;
+}
+
+// Represents the input for appending records to a specific stream.
+message AppendStreamRequest {
+	// The name of the stream to append records to.
+	string stream = 1;
+
+	// The records to append to the stream.
+	repeated AppendRecord records = 2;
+
+	// The expected revision of the stream. If the stream's current revision does
+	// not match, the append will fail.
+	// The expected revision can also be one of the special values
+	// from ExpectedRevisionConstants.
+	// missing value means no expectation: same as EXPECTED_REVISION_CONSTANTS_ANY
+	optional sint64 expected_revision = 3;
+}
+
+// Success represents the successful outcome of an append operation.
+message AppendStreamSuccess {
+	// The name of the stream to which records were appended.
+	string stream = 1;
+
+	// The position of the last appended record in the transaction.
+	int64 position = 2;
+
+	// The revision of the stream after the append operation.
+	int64 stream_revision = 3;
+}
+
+// Failure represents the detailed error information when an append operation fails.
+message AppendStreamFailure {
+	// The name of the stream to which records failed to append.
+	string stream = 1;
+
+	// The error details
+	oneof error {
+		// Failed because the actual stream revision didn't match the expected revision.
+		ErrorDetails.WrongExpectedRevision wrong_expected_revision = 2;
+
+		// Failed because the client lacks sufficient permissions.
+		ErrorDetails.AccessDenied access_denied = 3;
+
+		// Failed because the target stream has been deleted.
+		ErrorDetails.StreamDeleted stream_deleted = 4;
+
+		ErrorDetails.TransactionMaxSizeExceeded transaction_max_size_exceeded = 5;
+	}
+}
+
+// Represents the output of appending records to a specific stream.
+message AppendStreamResponse {
+	// The result of the append operation.
+	oneof result {
+		// Success represents the successful outcome of an append operation.
+		AppendStreamSuccess success = 1;
+
+		// Failure represents the details of a failed append operation.
+		AppendStreamFailure failure = 2;
+	}
+}
+
+// MultiStreamAppendRequest represents a request to append records to multiple streams.
+message MultiStreamAppendRequest {
+	// A list of AppendStreamInput messages, each representing a stream to which records should be appended.
+	repeated AppendStreamRequest input = 1;
+}
+
+// Response from the MultiStreamAppend operation.
+message MultiStreamAppendResponse {
+	oneof result {
+		// Success represents the successful outcome of a multi-stream append operation.
+		Success success = 1;
+
+		// Failure represents the details of a failed multi-stream append operation.
+		Failure failure = 2;
+	}
+
+	message Success {
+		repeated AppendStreamSuccess output = 1;
+	}
+
+	message Failure {
+		repeated AppendStreamFailure output = 1;
+	}
+}
+
+// ErrorDetails provides detailed information about specific error conditions.
+message ErrorDetails {
+	// When the user does not have sufficient permissions to perform the operation.
+	message AccessDenied {
+		// The reason for access denial.
+		string reason = 1;
+	}
+
+	// When the stream has been deleted.
+	message StreamDeleted {
+	}
+
+	// When the expected revision of the stream does not match the actual revision.
+	message WrongExpectedRevision {
+		// The actual revision of the stream.
+		int64 stream_revision = 1;
+	}
+
+	// When the transaction exceeds the maximum size allowed
+	// (it's bigger than the configured chunk size).
+	message TransactionMaxSizeExceeded {
+		// The maximum allowed size of the transaction.
+		int32 max_size = 1;
+	}
+}

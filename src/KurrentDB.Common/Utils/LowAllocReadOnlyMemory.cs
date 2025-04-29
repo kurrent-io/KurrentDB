@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -44,6 +45,8 @@ public readonly struct LowAllocReadOnlyMemory<T> {
 	public static implicit operator LowAllocReadOnlyMemory<T>(T[] array) => new(items: array);
 
 	public static implicit operator LowAllocReadOnlyMemory<T>(Memory<T> items) => new(items: items);
+
+	public static implicit operator LowAllocReadOnlyMemory<T>(ImmutableArray<T> array) => new(items: array.AsMemory());
 
 	public static LowAllocReadOnlyMemory<T> Empty => default;
 

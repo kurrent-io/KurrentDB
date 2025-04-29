@@ -95,6 +95,9 @@
 		<Protobuf Include="..\Protos\Server\properties.proto" ProtoRoot="../Protos">
 			<Link>Protos\Server\properties.proto</Link>
 		</Protobuf>
+		<Protobuf Include="..\Protos\Grpc\streams.v2.proto" GrpcServices="Both" ProtoRoot="../Protos">
+			<Link>Protos\Server\streams.v2.proto</Link>
+		</Protobuf>
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="Services\Transport\Tcp\protos\" />
