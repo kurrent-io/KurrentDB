@@ -19,39 +19,36 @@ internal readonly unsafe partial struct Vector {
 		_validity = GetValidity(vector);
 	}
 
-	private static bool IsNull(ulong* validity, long rowIndex) {
+	private static bool IsNotNull(ulong* validity, long rowIndex) {
 		if (validity is null)
-			return false;
+			return true;
 
 		var validityMaskEntryIndex = rowIndex / Int64BitSize;
 		var validityBitIndex = (int)(rowIndex % Int64BitSize);
 		var validityBit = 1UL << validityBitIndex;
 
-		return (validity[validityMaskEntryIndex] & validityBit) is 0UL;
+		return (validity[validityMaskEntryIndex] & validityBit) is not 0UL;
 	}
 
 	internal bool IsNullable => _validity is not null;
 
-	internal bool IsNull(long rowIndex) => IsNull(_validity, rowIndex);
+	internal bool IsNotNull(long rowIndex) => IsNotNull(_validity, rowIndex);
 
 	internal T? TryRead<T>(long rowIndex)
 		where T : unmanaged {
-		return IsNull(rowIndex)
-			? null
-			: *Read<T>(rowIndex);
+		return IsNotNull(rowIndex)
+			? *Read<T>(rowIndex)
+			: null;
 	}
 
 	internal T* Read<T>(long rowIndex) where T : unmanaged => &((T*)_columnData)[rowIndex];
 
 	internal Blob ReadBlob(long rowIndex) => new(Read<DuckDBString>(rowIndex));
 
-	internal Blob? TryReadBlob(long rowIndex) {
-		if (IsNull(rowIndex)) {
-			return null;
-		}
-
-		return ReadBlob(rowIndex);
-	}
+	internal Blob? TryReadBlob(long rowIndex)
+		=> IsNotNull(rowIndex)
+			? ReadBlob(rowIndex)
+			: null;
 
 	internal ReadOnlySpan<T> GetRows<T>(int length) where T : unmanaged => new(_columnData, length);
 }

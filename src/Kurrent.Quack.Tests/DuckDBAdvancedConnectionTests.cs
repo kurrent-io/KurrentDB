@@ -69,11 +69,11 @@ public sealed class DuckDBAdvancedConnectionTests : DuckDbTests<DuckDBAdvancedCo
 
 		var col1 = chunk[1];
 		Assert.True(col1.IsNullable);
-		Assert.False(col1[0]);
+		Assert.True(col1[0]);
 		Assert.Equal("A"u8, col1.BlobRows[0].AsSpan());
 		Assert.Equal("A", col1.BlobRows[0].ToUtf16String());
 
-		Assert.True(col1[1]);
+		Assert.False(col1[1]);
 
 		Assert.False(result.TryFetch(out chunk));
 	}

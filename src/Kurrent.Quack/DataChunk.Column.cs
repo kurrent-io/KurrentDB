@@ -28,7 +28,7 @@ partial struct DataChunk {
 		public bool IsNullable => _vector.IsNullable;
 
 		/// <summary>
-		/// Determines whether the specified row in this column is null.
+		/// Determines whether the specified row in this column is not null.
 		/// </summary>
 		/// <param name="rowIndex">Zero-based row index.</param>
 		public bool this[int rowIndex] {
@@ -36,7 +36,7 @@ partial struct DataChunk {
 				ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual((uint)rowIndex, (uint)_rowCount,
 					nameof(rowIndex));
 
-				return _vector.IsNull(rowIndex);
+				return _vector.IsNotNull(rowIndex);
 			}
 		}
 
