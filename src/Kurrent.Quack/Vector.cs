@@ -30,6 +30,8 @@ internal readonly unsafe partial struct Vector {
 		return (validity[validityMaskEntryIndex] & validityBit) is 0UL;
 	}
 
+	internal bool IsNullable => _validity is not null;
+
 	internal bool IsNull(long rowIndex) => IsNull(_validity, rowIndex);
 
 	internal T? TryRead<T>(long rowIndex)

@@ -23,6 +23,11 @@ partial struct DataChunk {
 		}
 
 		/// <summary>
+		/// Indicates that the column contains rows with null values.
+		/// </summary>
+		public bool IsNullable => _vector.IsNullable;
+
+		/// <summary>
 		/// Determines whether the specified row in this column is null.
 		/// </summary>
 		/// <param name="rowIndex">Zero-based row index.</param>
