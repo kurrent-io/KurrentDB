@@ -136,4 +136,4 @@ https://api.example.com/TestEvent
 
 ### Tutorial
 
-[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](/tutorials/http.md)
+[Learn how to configure and use a connector using the HTTP Sink in KurrentDB through a tutorial.](/tutorials/HTTP_Connector.md)
