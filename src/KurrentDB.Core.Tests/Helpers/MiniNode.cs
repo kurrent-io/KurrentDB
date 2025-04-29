@@ -25,6 +25,7 @@ using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
+using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Http;
 using KurrentDB.Core.Tests.Index.Hashers;
@@ -91,6 +92,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		int httpClientTimeoutSec = 60,
 		IAuthenticationProviderFactory authenticationProviderFactory = null,
 		IAuthorizationProviderFactory authorizationProviderFactory = null,
+		IEnumerable<IVirtualStreamReader> virtualStreamReaders = null,
 		IExpiryStrategy expiryStrategy = null,
 		string transform = "identity",
 		IConfiguration configuration = null,
@@ -226,6 +228,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 						options.Application.AllowAnonymousEndpointAccess,
 						options.Application.AllowAnonymousStreamAccess,
 						options.Application.OverrideAnonymousEndpointAccessForGossip).Create(c.MainQueue)]))),
+			virtualStreamReaders: virtualStreamReaders,
 			expiryStrategy: expiryStrategy,
 			certificateProvider: new OptionsCertificateProvider(),
 			configuration: inMemConf,

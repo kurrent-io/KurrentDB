@@ -24,6 +24,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Http;
 using KurrentDB.Core.Tests.Services.Transport.Tcp;
@@ -72,7 +73,8 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 	IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
 	bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
 	bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
-	string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
+	string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null,
+	IEnumerable<IVirtualStreamReader> virtualStreamReaders = null) {
 
 		if (RuntimeInformation.IsOSX) {
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport",
@@ -193,7 +195,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 						options.Application.AllowAnonymousEndpointAccess,
 						options.Application.AllowAnonymousStreamAccess,
 						options.Application.OverrideAnonymousEndpointAccessForGossip).Create(components.MainQueue)]))),
-			[new DummyVirtualStreamReader("idx-dummy")],
+			virtualStreamReaders ?? [],
 			Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>(),
 			new OptionsCertificateProvider(),
 			configuration: inMemConf,

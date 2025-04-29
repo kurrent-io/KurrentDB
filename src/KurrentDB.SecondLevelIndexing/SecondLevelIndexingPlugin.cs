@@ -13,8 +13,8 @@ public interface ISecondLevelIndexingPlugin : IConnectedSubsystemsPlugin {
 	IEnumerable<IVirtualStreamReader> IndexingVirtualStreamReaders { get; }
 }
 
-public class SecondLevelIndexingPlugin() : SubsystemsPlugin(name: "second-level-indexing"), ISecondLevelIndexingPlugin {
-	public IEnumerable<IVirtualStreamReader> IndexingVirtualStreamReaders { get; } = [new DummyVirtualStreamReader("$idx-test")];
+public class SecondLevelIndexingPlugin(IEnumerable<IVirtualStreamReader>? indexingVirtualStreamReaders = null) : SubsystemsPlugin(name: "second-level-indexing"), ISecondLevelIndexingPlugin {
+	public IEnumerable<IVirtualStreamReader> IndexingVirtualStreamReaders { get; } = indexingVirtualStreamReaders ?? [];
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
 		var enabledOption =
