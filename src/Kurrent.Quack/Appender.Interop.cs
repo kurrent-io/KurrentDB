@@ -88,5 +88,5 @@ partial struct Appender {
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_append_bool")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState Append(nint appender, [MarshalAs(UnmanagedType.Bool)] bool value);
+	private static partial DuckDBState Append(nint appender, [MarshalUsing(typeof(CppBooleanMarshaller))] bool value);
 }

@@ -77,5 +77,25 @@ partial struct DataChunk {
 		public T? TryReadBlob<T>()
 			where T : struct, IBinaryFormattable<T>
 			=> TryReadBlob() is { } blob ? T.Parse(blob.Reference.AsSpan()) : null;
+
+		public float ReadFloat() => Read<float>();
+
+		public float? TryReadFloat() => TryRead<float>();
+
+		public double ReadDouble() => Read<double>();
+
+		public double? TryReadDouble() => TryRead<double>();
+
+		public bool ReadBoolean() => Read<bool>();
+
+		public bool? TryReadBoolean() => TryRead<bool>();
+
+		public Int128 ReadInt128() => Read<Int128>();
+
+		public Int128? TryReadInt128() => TryRead<Int128>();
+
+		public UInt128 ReadUInt128() => Read<UInt128>();
+
+		public UInt128? TryReaUInt128() => TryRead<UInt128>();
 	}
 }

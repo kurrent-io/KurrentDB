@@ -68,7 +68,8 @@ partial struct PreparedStatement {
 
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_bind_boolean")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial DuckDBState Bind(nint preparedStatement, long index, [MarshalAs(UnmanagedType.Bool)] bool value);
+	private static partial DuckDBState Bind(nint preparedStatement, long index,
+		[MarshalUsing(typeof(CppBooleanMarshaller))] bool value);
 
 	[DllImport(Interop.LibraryName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "duckdb_bind_float")]
 	[SuppressGCTransition]

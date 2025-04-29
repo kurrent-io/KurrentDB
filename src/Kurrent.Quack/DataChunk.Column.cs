@@ -57,6 +57,9 @@ partial struct DataChunk {
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		public ReadOnlySpan<UInt128> UInt128Data => _vector.GetRows<UInt128>(_rowCount);
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		public ReadOnlySpan<bool> BooleanData => _vector.GetRows<bool>(_rowCount);
 	}
 
 	public Column this[int index] => new(Columns[index], int.CreateChecked(RowsCount));
