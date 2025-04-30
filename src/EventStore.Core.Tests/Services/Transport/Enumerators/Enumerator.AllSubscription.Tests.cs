@@ -54,7 +54,10 @@ public partial class EnumeratorTests {
 			Assert.AreEqual(_eventIds[0], ((Event)await sub.GetNext()).Id);
 			Assert.AreEqual(_eventIds[1], ((Event)await sub.GetNext()).Id);
 			Assert.AreEqual(_eventIds[2], ((Event)await sub.GetNext()).Id);
-			Assert.True(await sub.GetNext() is CaughtUp);
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.AreEqual(new TFPos(350, 300), caughtUp.Wrapped.AllCheckpoint);
+			Assert.Null(caughtUp.Wrapped.StreamCheckpoint);
 		}
 	}
 
@@ -73,7 +76,10 @@ public partial class EnumeratorTests {
 			await using var sub = CreateAllSubscription(_publisher, Position.End);
 
 			Assert.True(await sub.GetNext() is SubscriptionConfirmation);
-			Assert.True(await sub.GetNext() is CaughtUp);
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.AreEqual(new TFPos(350, 350), caughtUp.Wrapped.AllCheckpoint);
+			Assert.Null(caughtUp.Wrapped.StreamCheckpoint);
 		}
 	}
 
@@ -103,7 +109,10 @@ public partial class EnumeratorTests {
 			Assert.AreEqual(_eventIds[0], ((Event)await sub.GetNext()).Id);
 			Assert.AreEqual(_eventIds[1], ((Event)await sub.GetNext()).Id);
 			Assert.AreEqual(_eventIds[2], ((Event)await sub.GetNext()).Id);
-			Assert.True(await sub.GetNext() is CaughtUp);
+			var caughtUp = AssertEx.IsType<CaughtUp>(await sub.GetNext());
+			Assert.True(DateTime.UtcNow - caughtUp.Wrapped.Timestamp < TimeSpan.FromSeconds(1));
+			Assert.AreEqual(new TFPos(650, 600), caughtUp.Wrapped.AllCheckpoint);
+			Assert.Null(caughtUp.Wrapped.StreamCheckpoint);
 		}
 	}
 }

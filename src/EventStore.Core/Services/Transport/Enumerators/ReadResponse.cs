@@ -1,6 +1,7 @@
 // Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
+using System;
 using EventStore.Core.Data;
 using EventStore.Core.Services.Transport.Common;
 
@@ -15,18 +16,50 @@ public abstract class ReadResponse {
 		}
 	}
 
-	public class SubscriptionCaughtUp : ReadResponse { }
+	public class SubscriptionCaughtUp : ReadResponse {
+		public readonly DateTime Timestamp;
 
-	public class SubscriptionFellBehind : ReadResponse { }
+		// Always populated for stream subscriptions
+		public readonly long? StreamCheckpoint;
 
-	public class CheckpointReceived : ReadResponse {
-		public readonly ulong CommitPosition;
-		public readonly ulong PreparePosition;
+		// Always populated for $all subscriptions
+		public readonly TFPos? AllCheckpoint;
 
-		public CheckpointReceived(ulong commitPosition, ulong preparePosition) {
-			CommitPosition = commitPosition;
-			PreparePosition = preparePosition;
+		public SubscriptionCaughtUp(DateTime timestamp, long streamCheckpoint) {
+			Timestamp = timestamp;
+			StreamCheckpoint = streamCheckpoint;
 		}
+
+		public SubscriptionCaughtUp(DateTime timestamp, TFPos allCheckpoint) {
+			Timestamp = timestamp;
+			AllCheckpoint = allCheckpoint;
+		}
+	}
+
+	public class SubscriptionFellBehind : ReadResponse {
+		public readonly DateTime Timestamp;
+
+		// Always populated for stream subscriptions
+		public readonly long? StreamCheckpoint;
+
+		// Always populated for $all subscriptions
+		public readonly TFPos? AllCheckpoint;
+
+		public SubscriptionFellBehind(DateTime timestamp, long streamCheckpoint) {
+			Timestamp = timestamp;
+			StreamCheckpoint = streamCheckpoint;
+		}
+
+		public SubscriptionFellBehind(DateTime timestamp, TFPos allCheckpoint) {
+			Timestamp = timestamp;
+			AllCheckpoint = allCheckpoint;
+		}
+	}
+
+	public class CheckpointReceived(DateTime timestamp, ulong commitPosition, ulong preparePosition) : ReadResponse {
+		public readonly DateTime Timestamp = timestamp;
+		public readonly ulong CommitPosition = commitPosition;
+		public readonly ulong PreparePosition = preparePosition;
 	}
 
 	public class StreamNotFound : ReadResponse {
