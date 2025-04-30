@@ -331,7 +331,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 					LogRecord.Prepare(_recordFactory, logPosition, msg.CorrelationId, Guid.NewGuid(), logPosition, -1,
 						streamId, commitCheck.CurrentVersion,
 						PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.IsCommitted,
-						_emptyEventTypeId, Empty.ByteArray, Empty.ByteArray)
+						_emptyEventTypeId, Empty.ByteArray, Empty.ByteArray, Empty.ByteArray)
 				);
 			}
 
@@ -411,7 +411,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 			LogRecord.Prepare(_recordFactory, logPosition, Guid.NewGuid(), Guid.NewGuid(), logPosition, 0,
 				_systemStreams.MetaStreamOf(streamId), metaLastEventNumber,
 				PrepareFlags.SingleWrite | PrepareFlags.IsCommitted | PrepareFlags.IsJson,
-				streamMetadataEventTypeId, modifiedMeta, Empty.ByteArray),
+				streamMetadataEventTypeId, modifiedMeta, Empty.ByteArray, Empty.ByteArray),
 			token
 		);
 
@@ -491,7 +491,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 				var res = await WritePrepareWithRetry(
 					LogRecord.Prepare(_recordFactory, logPosition, message.CorrelationId, eventId, logPosition, 0,
-						metastreamId, expectedVersion, flags, streamMetadataEventTypeId, data, null),
+						metastreamId, expectedVersion, flags, streamMetadataEventTypeId, data, Empty.ByteArray, Empty.ByteArray),
 					token
 				);
 				_indexWriter.PreCommit([res.Prepare]);

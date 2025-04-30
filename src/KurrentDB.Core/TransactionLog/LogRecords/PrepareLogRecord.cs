@@ -138,7 +138,6 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		ReadOnlyMemory<byte> metadata,
 		ReadOnlyMemory<byte> properties,
 		byte prepareRecordVersion = PrepareRecordVersion)
-
 		: base(LogRecordType.Prepare, prepareRecordVersion, logPosition) {
 		Ensure.NotEmptyGuid(correlationId, "correlationId");
 		Ensure.NotEmptyGuid(eventId, "eventId");
@@ -231,7 +230,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			data: _dataOnDisk,
 			metadata: Metadata,
 			properties: Properties
-        );
+		);
 	}
 
 	public override void WriteTo(ref BufferWriterSlim<byte> writer) {

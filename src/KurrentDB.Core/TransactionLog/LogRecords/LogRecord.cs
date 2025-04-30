@@ -89,6 +89,7 @@ public abstract class LogRecord : ILogRecord {
 			data, metadata, properties);
 	}
 
+	// Used by tests only
 	public static IPrepareLogRecord<TStreamId> Prepare<TStreamId>(IRecordFactory<TStreamId> factory, long logPosition, Guid correlationId, Guid eventId, long transactionPos,
 		int transactionOffset,
 		TStreamId eventStreamId, long expectedVersion, PrepareFlags flags, TStreamId eventType,
@@ -104,18 +105,7 @@ public abstract class LogRecord : ILogRecord {
 		return new CommitLogRecord(logPosition, correlationId, startPosition, DateTime.UtcNow, eventNumber);
 	}
 
-	public static IPrepareLogRecord<TStreamId> SingleWrite<TStreamId>(IRecordFactory<TStreamId> factory, long logPosition, Guid correlationId, Guid eventId,
-		TStreamId eventStreamId,
-		long expectedVersion, TStreamId eventType, ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> metadata,
-		ReadOnlyMemory<byte> properties, DateTime? timestamp = null, PrepareFlags? additionalFlags = null) {
-		return factory.CreatePrepare(logPosition, correlationId, eventId, logPosition, 0, eventStreamId,
-			expectedVersion,
-			timestamp ?? DateTime.UtcNow,
-			PrepareFlags.Data | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd |
-			(additionalFlags ?? PrepareFlags.None),
-			eventType, data, metadata, properties);
-	}
-
+	// Used by tests only
 	public static IPrepareLogRecord<TStreamId> SingleWrite<TStreamId>(IRecordFactory<TStreamId> factory, long logPosition, Guid correlationId, Guid eventId,
 		TStreamId eventStreamId,
 		long expectedVersion, TStreamId eventType, ReadOnlyMemory<byte> data, ReadOnlyMemory<byte> metadata,
@@ -125,7 +115,8 @@ public abstract class LogRecord : ILogRecord {
 			timestamp ?? DateTime.UtcNow,
 			PrepareFlags.Data | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd |
 			(additionalFlags ?? PrepareFlags.None),
-			eventType, data, metadata, NoData);
+			eventType, data, metadata,
+			properties: NoData);
 	}
 
 	public static IPrepareLogRecord<TStreamId> TransactionBegin<TStreamId>(IRecordFactory<TStreamId> factory, long logPos, Guid correlationId, TStreamId eventStreamId,
