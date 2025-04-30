@@ -8,8 +8,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.Streams;
 using Google.Protobuf;
+using Google.Protobuf.Collections;
 using Grpc.Core;
 using Grpc.Net.Client;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -27,6 +29,7 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 	protected GrpcChannel Channel;
 	private readonly MiniNode<TLogFormat, TStreamId> _node;
 	internal Streams.StreamsClient StreamsClient { get; set; }
+	internal PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptionsClient { get; set; }
 	private BatchAppender _batchAppender;
 
 	protected GrpcSpecification(IExpiryStrategy expiryStrategy = null,
@@ -53,6 +56,7 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 				DisposeHttpClient = false,
 			});
 		StreamsClient = new(Channel);
+		PersistentSubscriptionsClient = new(Channel);
 		_batchAppender = new(StreamsClient);
 		_batchAppender.Start();
 		try {
@@ -102,21 +106,23 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 	internal static IEnumerable<BatchAppendReq.Types.ProposedMessage> CreateEvents(int count) =>
 		Enumerable.Range(0, count).Select(_ => CreateEvent());
 
-	internal static BatchAppendReq.Types.ProposedMessage CreateEvent(string type = "-", int? dataSize = null, int? metadataSize = null) {
+	internal static BatchAppendReq.Types.ProposedMessage CreateEvent(string type = "-", int? dataSize = null,
+		int? metadataSize = null, Dictionary<string, string> properties = null) {
 		var data = dataSize is null
 			? ByteString.Empty
 			: ByteString.CopyFrom(Encoding.UTF8.GetBytes(new string('*', dataSize.Value)));
 		var metadata = metadataSize is null
 			? ByteString.Empty
 			: ByteString.CopyFrom(Encoding.UTF8.GetBytes(new string('*', metadataSize.Value)));
+		properties ??= new Dictionary<string, string>();
+		properties[GrpcMetadata.ContentType] = GrpcMetadata.ContentTypes.ApplicationOctetStream;
+		properties[GrpcMetadata.Type] = type;
+
 		return new BatchAppendReq.Types.ProposedMessage {
 			Data = data,
 			Id = Uuid.NewUuid().ToDto(),
 			CustomMetadata = metadata,
-			Metadata = {
-				{ GrpcMetadata.ContentType, GrpcMetadata.ContentTypes.ApplicationOctetStream },
-				{ GrpcMetadata.Type, type }
-			}
+			Metadata = { properties }
 		};
 	}
 
