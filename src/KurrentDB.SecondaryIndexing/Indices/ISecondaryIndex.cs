@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.InMemory;
 
 namespace KurrentDB.SecondaryIndexing.Indices;
 
@@ -13,22 +14,12 @@ public interface ISecondaryIndex: IDisposable {
 	ValueTask<ulong?> GetLastSequence(CancellationToken ct);
 
 	ISecondaryIndexProcessor Processor { get; }
-}
 
-
-[Flags]
-public enum EventHandlingStatus : short {
-	Ignored = 0b_1000,
-	Success = 0b_0001,
-	Pending = 0b_0010,
-	Failure = 0b_0011,
-	Handled = 0b_0111
-	// 0111 bitmask for Handled means that if any of the three lower bits is set, the message
-	// hs been handled.
+	IEnumerable<IVirtualStreamReader> Readers { get; }
 }
 
 public interface ISecondaryIndexProcessor {
-	ValueTask<EventHandlingStatus> Index(ResolvedEvent resolvedEvent, CancellationToken token = default);
+	ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default);
 	ValueTask Commit(CancellationToken token = default);
 }
 
