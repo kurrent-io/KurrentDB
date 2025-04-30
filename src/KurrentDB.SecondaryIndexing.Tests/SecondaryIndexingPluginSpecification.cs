@@ -14,12 +14,12 @@ using KurrentDB.Core.TransactionLog.LogRecords;
 using NUnit.Framework;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
-namespace KurrentDB.SecondLevelIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-[Category("SecondLevelIndexing")]
-public abstract class SecondLevelIndexingPluginSpecification<TLogFormat, TStreamId>
+[Category("SecondaryIndexing")]
+public abstract class SecondaryIndexingPluginSpecification<TLogFormat, TStreamId>
 	: SpecificationWithDirectoryPerTestFixture {
 	private MiniNode<TLogFormat, TStreamId> _node = null!;
 	private IEventStoreConnection _connection = null!;

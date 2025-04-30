@@ -8,13 +8,13 @@ using NUnit.Framework;
 using Assert = Xunit.Assert;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
-namespace KurrentDB.SecondLevelIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-[Category("SecondLevelIndexing")]
+[Category("SecondaryIndexing")]
 public class when_appending_events<TLogFormat, TStreamId>
-	: SecondLevelIndexingPluginSpecification<TLogFormat, TStreamId> {
+	: SecondaryIndexingPluginSpecification<TLogFormat, TStreamId> {
 	private const string StreamName = "$idx-dummy";
 	private ResolvedEvent[] _expectedEvents = [];
 	private StreamEventsSlice? _readEventsSlice;
@@ -24,7 +24,7 @@ public class when_appending_events<TLogFormat, TStreamId>
 			.Select(i => CreateResolvedEvent(StreamName, "test", $"{i}", i))
 			.ToArray();
 
-		return [new DummyVirtualStreamReader(StreamName, _expectedEvents)];
+		return [new FakeVirtualStreamReader(StreamName, _expectedEvents)];
 	}
 
 	public override async Task When() {

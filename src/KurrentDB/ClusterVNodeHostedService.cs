@@ -33,11 +33,13 @@ using KurrentDB.Core.Hashing;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.PluginModel;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Transport.Http.Controllers;
 using KurrentDB.Diagnostics.LogsEndpointPlugin;
 using KurrentDB.PluginHosting;
 using KurrentDB.POC.ConnectedSubsystemsPlugin;
 using KurrentDB.Projections.Core;
+using KurrentDB.SecondaryIndexing;
 using KurrentDB.Security.EncryptionAtRest;
 using KurrentDB.TcpPlugin;
 using Microsoft.Extensions.Configuration;
@@ -118,16 +120,20 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 
 		(_options, var authProviderFactory) = GetAuthorizationProviderFactory();
+		var secondLevelIndexingVirtualReaders = GetSecondLevelIndexingVirtualStreamReaders();
+
 		if (_options.Database.DbLogFormat == DbLogFormat.V2) {
 			var logFormatFactory = new LogV2FormatAbstractorFactory();
 			Node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
+				secondLevelIndexingVirtualReaders,
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
 		} else if (_options.Database.DbLogFormat == DbLogFormat.ExperimentalV3) {
 			var logFormatFactory = new LogV3FormatAbstractorFactory();
 			Node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
+				secondLevelIndexingVirtualReaders,
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
 		} else {
@@ -187,6 +193,24 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			}
 
 			return (modifiedOptions, factory);
+		}
+
+		IEnumerable<IVirtualStreamReader> GetSecondLevelIndexingVirtualStreamReaders() {
+			var readers = new List<IVirtualStreamReader>();
+			var secondLevelIndexingPlugins = pluginLoader.Load<ISecondLevelIndexingPlugin>().ToList();
+
+			foreach (var potentialPlugin in secondLevelIndexingPlugins) {
+				try {
+					var commandLine = potentialPlugin.CommandLineName.ToLowerInvariant();
+					Log.Information(
+						"Loaded Second Level Indexing plugin: {plugin} version {version} (Command Line: {commandLine})",
+						potentialPlugin.Name, potentialPlugin.Version, commandLine);
+					readers.AddRange(potentialPlugin.IndexingVirtualStreamReaders);
+				} catch (CompositionException ex) {
+					Log.Error(ex, "Error loading Second Level Indexing plugin.");
+				}
+			}
+			return readers;
 		}
 
 		static CompositionContainer FindPlugins() {
@@ -280,7 +304,6 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			plugins.Add(new ConnectedSubsystemsPlugin());
 			plugins.Add(new AutoScavengePlugin());
 			plugins.Add(new TcpApiPlugin());
-			plugins.Add(new ConnectorsPlugin());
 			plugins.Add(new SecondLevelIndexingPlugin());
 
 			foreach (var plugin in plugins) {

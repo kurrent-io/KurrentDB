@@ -8,10 +8,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace KurrentDB.SecondLevelIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests;
 
 public static class TestPluginStartup {
-	public static void Configure(SecondLevelIndexingPlugin plugin, IConfigurationBuilder? configurationBuilder = null) {
+	public static void Configure(SecondaryIndexingPlugin plugin, IConfigurationBuilder? configurationBuilder = null) {
 		var config = (configurationBuilder ?? new ConfigurationBuilder()).Build();
 
 		var builder = WebApplication.CreateBuilder();

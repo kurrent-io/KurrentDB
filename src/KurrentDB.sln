@@ -140,9 +140,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Connectors", "Connectors", "{10D69000-82BA-4C61-A4BD-ED8EB5D7B0A7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{ECDC12A9-73C7-456F-8C28-5674CFD73C6B}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SecondLevelIndexing", "KurrentDB.SecondLevelIndexing\KurrentDB.SecondLevelIndexing.csproj", "{16280B68-F7E2-4CF3-AE96-42F4C243926A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SecondaryIndexing", "KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj", "{16280B68-F7E2-4CF3-AE96-42F4C243926A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SecondLevelIndexing.Tests", "KurrentDB.SecondLevelIndexing.Tests\KurrentDB.SecondLevelIndexing.Tests.csproj", "{E7DA8388-C6DF-4013-830C-AC08C40B2A71}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SecondaryIndexing.Tests", "KurrentDB.SecondaryIndexing.Tests\KurrentDB.SecondaryIndexing.Tests.csproj", "{E7DA8388-C6DF-4013-830C-AC08C40B2A71}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

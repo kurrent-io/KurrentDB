@@ -5,9 +5,9 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.InMemory;
 
-namespace KurrentDB.SecondLevelIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests;
 
-public class DummyVirtualStreamReader(string streamName, ResolvedEvent[] events) : IVirtualStreamReader {
+public class FakeVirtualStreamReader(string streamName, ResolvedEvent[] events) : IVirtualStreamReader {
 	public ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
 		ClientMessage.ReadStreamEventsForward msg,
 		CancellationToken token) {

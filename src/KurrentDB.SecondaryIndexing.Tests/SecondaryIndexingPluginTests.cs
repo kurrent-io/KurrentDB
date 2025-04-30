@@ -5,12 +5,12 @@ using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.Extensions.Configuration;
 
-namespace KurrentDB.SecondLevelIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests;
 
-public class SecondLevelIndexingPluginTests {
+public class SecondaryIndexingPluginTests {
 	[Fact]
 	public void is_disabled_by_default() {
-		using var sut = new SecondLevelIndexingPlugin();
+		using var sut = new SecondaryIndexingPlugin();
 
 		// when
 		TestPluginStartup.Configure(sut);
@@ -27,7 +27,7 @@ public class SecondLevelIndexingPluginTests {
 	[InlineData(null, false, false)]
 	[InlineData(null, true, true)]
 	public void respects_configuration_feature_flag_and_dev_mode(bool? pluginEnabled, bool devMode, bool expected) {
-		using var sut = new SecondLevelIndexingPlugin();
+		using var sut = new SecondaryIndexingPlugin();
 
 		var configuration = new Dictionary<string, string?> {
 			{$"{KurrentConfigurationKeys.Prefix}:Dev", devMode.ToString().ToLower()}
@@ -35,7 +35,7 @@ public class SecondLevelIndexingPluginTests {
 
 		if (pluginEnabled.HasValue)
 			configuration.Add(
-				$"{KurrentConfigurationConstants.Prefix}:SecondLevelIndexing:Enabled",
+				$"{KurrentConfigurationConstants.Prefix}:SecondaryIndexing:Enabled",
 				pluginEnabled.Value.ToString().ToLower()
 			);
 
