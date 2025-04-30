@@ -1,9 +1,9 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Text.Json.Nodes;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using KurrentDB.Core.Bus;
-using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -13,20 +13,22 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-
 public class SecondaryIndexSubscription(IPublisher publisher, ISecondaryIndex index) {
 	static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
-	private const uint CheckpointCommitBatchSize = 50000;
+	private const int CheckpointCommitBatchSize = 50000;
 	private const uint CheckpointCommitDelayMs = 10000;
 	private const uint DefaultCheckpointIntervalMultiplier = 1000;
 
 	private readonly CancellationTokenSource _cts = new();
 	private Enumerator.AllSubscriptionFiltered _sub = null!;
 	private Task _runner = null!;
+	private Subject<bool> _checkpointSubject = null!;
 
 	public async ValueTask Subscribe(CancellationToken cancellationToken) {
 		var position = await index.GetLastPosition(cancellationToken);
 		var startFrom = position == null ? Position.Start : Position.FromInt64((long)position, (long)position);
+
+		_checkpointSubject = GetCheckpointSubject();
 
 		_sub = new Enumerator.AllSubscriptionFiltered(
 			bus: publisher,
@@ -57,7 +59,8 @@ public class SecondaryIndexSubscription(IPublisher publisher, ISecondaryIndex in
 
 	private async Task ProcessEvents() {
 		while (!_cts.IsCancellationRequested) {
-			if (!await _sub.MoveNextAsync()) // not sure if we need to retry forever or if the enumerator will do that for us
+			if (!await _sub
+				    .MoveNextAsync()) // not sure if we need to retry forever or if the enumerator will do that for us
 				break;
 
 			if (_sub.Current is not ReadResponse.EventReceived eventReceived) continue;
@@ -65,6 +68,7 @@ public class SecondaryIndexSubscription(IPublisher publisher, ISecondaryIndex in
 			try {
 				// TODO: Add tracing, error handling etc.
 				await index.Processor.Index(eventReceived.Event, _cts.Token);
+				_checkpointSubject.OnNext(true);
 			} catch (TaskCanceledException) {
 				// ignore
 			} catch (Exception e) {
@@ -72,5 +76,19 @@ public class SecondaryIndexSubscription(IPublisher publisher, ISecondaryIndex in
 				throw;
 			}
 		}
+	}
+
+	private Subject<bool> GetCheckpointSubject() {
+		var subject = new Subject<bool>();
+
+		var observable = subject.Buffer(TimeSpan.FromMilliseconds(CheckpointCommitDelayMs), CheckpointCommitBatchSize);
+
+		observable
+			.Where(x => x.Count > 0)
+			.Select(x => Observable.FromAsync(async ct => await index.Processor.Commit(ct)))
+			.Concat()
+			.Subscribe();
+
+		return subject;
 	}
 }
