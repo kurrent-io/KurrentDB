@@ -53,7 +53,7 @@ internal class MultiWriteProcessor : ICmdProcessor {
 						"type",
 						0, 0,
 						Helper.UTF8NoBom.GetBytes(data),
-						new byte[0])).ToArray(),
+						[], [])).ToArray(),
 					false);
 				var package = new TcpPackage(TcpCommand.WriteEvents, Guid.NewGuid(), writeDto.Serialize())
 					.AsByteArray();

@@ -83,7 +83,8 @@ internal class TransactionWriteProcessor : ICmdProcessor {
 											"TakeSomeSpaceEvent",
 											0, 0,
 											Helper.UTF8NoBom.GetBytes(Guid.NewGuid().ToString()),
-											Helper.UTF8NoBom.GetBytes(Guid.NewGuid().ToString()))
+											Helper.UTF8NoBom.GetBytes(Guid.NewGuid().ToString()),
+											[])
 									},
 									false);
 								var package = new TcpPackage(TcpCommand.TransactionWrite, Guid.NewGuid(),

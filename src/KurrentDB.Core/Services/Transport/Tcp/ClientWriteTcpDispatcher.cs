@@ -87,7 +87,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 				e.EventType,
 				e.IsJson ? 1 : 0,
 				0, e.Data,
-				e.Metadata);
+				e.Metadata,
+				e.Properties);
 		}
 
 		var dto = new WriteEvents(msg.EventStreamId, msg.ExpectedVersion, events,
@@ -191,7 +192,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		var events = new NewEvent[msg.Events.Length];
 		for (int i = 0; i < events.Length; ++i) {
 			var e = msg.Events[i];
-			events[i] = new(e.EventId.ToByteArray(), e.EventType, e.IsJson ? 1 : 0, 0, e.Data, e.Metadata);
+			events[i] = new(e.EventId.ToByteArray(), e.EventType, e.IsJson ? 1 : 0, 0, e.Data, e.Metadata, e.Properties);
 		}
 
 		var dto = new TransactionWrite(msg.TransactionId, events, msg.RequireLeader);

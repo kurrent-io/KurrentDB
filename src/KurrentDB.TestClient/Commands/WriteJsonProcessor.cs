@@ -48,7 +48,8 @@ internal class WriteJsonProcessor : ICmdProcessor {
 					"JsonDataEvent",
 					1, 0,
 					Helper.UTF8NoBom.GetBytes(data),
-					Helper.UTF8NoBom.GetBytes(metadata ?? string.Empty))
+					Helper.UTF8NoBom.GetBytes(metadata ?? string.Empty),
+					[])
 			},
 			false);
 		var package = new TcpPackage(TcpCommand.WriteEvents, Guid.NewGuid(), writeDto.Serialize());

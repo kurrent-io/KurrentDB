@@ -68,7 +68,7 @@ public class TcpConnectionManagerTests {
 			ExpectedVersion.Any,
 			new[] {
 				new NewEvent(evnt.EventId.ToByteArray(), evnt.EventType, evnt.IsJson ? 1 : 0, 0,
-					evnt.Data, evnt.Metadata)
+					evnt.Data, evnt.Metadata, evnt.Properties)
 			},
 			false);
 

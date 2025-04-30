@@ -159,7 +159,8 @@ internal class WriteFloodProcessor : ICmdProcessor {
 							Helper.UTF8NoBom.GetBytes(
 								"{ \"DATA\" : \"" + new string('*', size) + "\"}"),
 							Helper.UTF8NoBom.GetBytes(
-								"{ \"METADATA\" : \"" + new string('$', 100) + "\"}"));
+								"{ \"METADATA\" : \"" + new string('$', 100) + "\"}"),
+							[]);
 					}
 
 					var corrid = Guid.NewGuid();
