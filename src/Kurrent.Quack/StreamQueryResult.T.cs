@@ -17,7 +17,7 @@ namespace Kurrent.Quack;
 /// <typeparam name="TParser"></typeparam>
 [StructLayout(LayoutKind.Auto)]
 public readonly struct StreamQueryResult<TRow, TParser>(StreamQueryResult result)
-	where TRow : struct, ITuple
+	where TRow : struct
 	where TParser : IDataRowParser<TRow> {
 
 	public Enumerator GetEnumerator() => new(result);

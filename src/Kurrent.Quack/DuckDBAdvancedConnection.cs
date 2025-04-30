@@ -35,7 +35,7 @@ public class DuckDBAdvancedConnection : DuckDBConnection {
 		=> ExecuteNonQuery<ValueTuple, TStatement>(new());
 
 	public long ExecuteNonQuery<TArgs, TStatement>(in TArgs args)
-		where TArgs : struct, ITuple
+		where TArgs : struct
 		where TStatement : IPreparedStatement<TArgs> {
 		var statement = Bind<TArgs, TStatement>(in args, out var paramsCount);
 
@@ -54,7 +54,7 @@ public class DuckDBAdvancedConnection : DuckDBConnection {
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private PreparedStatement Bind<TArgs, TStatement>(ref readonly TArgs args, out long paramsCount)
-		where TArgs : struct, ITuple
+		where TArgs : struct
 		where TStatement : IPreparedStatement<TArgs> {
 		var statement = GetPreparedStatement<TStatement>();
 		if (args is ValueTuple) {
@@ -72,7 +72,7 @@ public class DuckDBAdvancedConnection : DuckDBConnection {
 		=> ExecuteQuery<ValueTuple, TQuery>(new());
 
 	public StreamQueryResult ExecuteQuery<TArgs, TQuery>(in TArgs args)
-		where TArgs : struct, ITuple
+		where TArgs : struct
 		where TQuery : IPreparedStatement<TArgs> {
 		var statement = Bind<TArgs, TQuery>(in args, out var paramsCount);
 
@@ -87,13 +87,13 @@ public class DuckDBAdvancedConnection : DuckDBConnection {
 	}
 
 	public StreamQueryResult<TRow, TQuery> ExecuteQuery<TArgs, TRow, TQuery>(in TArgs args)
-		where TArgs : struct, ITuple
-		where TRow : struct, ITuple
+		where TArgs : struct
+		where TRow : struct
 		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow>
 		=> new(ExecuteQuery<TArgs, TQuery>(in args));
 
 	public StreamQueryResult<TRow, TQuery> ExecuteQuery<TRow, TQuery>()
-		where TRow : struct, ITuple
+		where TRow : struct
 		where TQuery : IParameterlessStatement, IDataRowParser<TRow>
 		=> ExecuteQuery<ValueTuple, TRow, TQuery>(new ValueTuple());
 

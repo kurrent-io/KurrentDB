@@ -11,11 +11,11 @@ namespace Kurrent.Quack;
 /// <typeparam name="TArgs"></typeparam>
 /// <typeparam name="TRow"></typeparam>
 public interface IQuery<TArgs, out TRow> : IPreparedStatement<TArgs>, IDataRowParser<TRow>
-	where TArgs : struct, ITuple
-	where TRow : struct, ITuple;
+	where TArgs : struct
+	where TRow : struct;
 
 /// <summary>
 /// A marker interface for the query without parameter.
 /// </summary>
 /// <typeparam name="TRow">The type of the row.</typeparam>
-public interface IQuery<out TRow> : IParameterlessStatement, IQuery<ValueTuple, TRow> where TRow: struct, ITuple;
+public interface IQuery<out TRow> : IParameterlessStatement, IQuery<ValueTuple, TRow> where TRow: struct;

@@ -20,7 +20,7 @@ public interface IPreparedStatement {
 /// </summary>
 /// <typeparam name="TArgs">The tuple that represents parameters.</typeparam>
 public interface IPreparedStatement<TArgs> : IPreparedStatement
-	where TArgs : struct, ITuple {
+	where TArgs : struct {
 
 	/// <summary>
 	/// Binds arguments to the statement parameters.
