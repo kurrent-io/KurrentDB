@@ -23,6 +23,7 @@ public partial struct DataChunk : IResettable {
 		RowsCount = GetRowsCount(dataChunk);
 		ColumnsCount = checked((int)GetColumnCount(dataChunk));
 
+		Unsafe.SkipInit(out _columns); // fix Qodana warning
 		Span<Vector> columns = _columns;
 		for (var i = 0; i < Math.Min(ColumnsCount, MaxColumnCount); i++) {
 			columns[i] = new(dataChunk, i);

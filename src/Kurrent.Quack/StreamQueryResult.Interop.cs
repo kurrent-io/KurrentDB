@@ -12,10 +12,6 @@ partial struct StreamQueryResult {
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial DuckDBState ExecutePrepared(nint preparedStatement, out DuckDBResult result);
 
-	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_row_count")]
-	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
-	private static partial long GetRowsCount(in DuckDBResult result);
-
 	[LibraryImport(Interop.LibraryName, EntryPoint = "duckdb_column_count")]
 	[UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
 	private static partial long GetsColumnCount(in DuckDBResult result);
