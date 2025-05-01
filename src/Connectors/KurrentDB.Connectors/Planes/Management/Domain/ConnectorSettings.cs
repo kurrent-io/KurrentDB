@@ -1,3 +1,6 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 using static System.StringComparer;
 using static KurrentDB.Connectors.Planes.Management.Domain.ConnectorDomainExceptions;
 using static KurrentDB.Connectors.Planes.Management.Domain.ConnectorDomainServices;
