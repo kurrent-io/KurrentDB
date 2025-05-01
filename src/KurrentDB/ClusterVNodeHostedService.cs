@@ -36,6 +36,7 @@ using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
 using KurrentDB.Core.Services.Transport.Http.Controllers;
 using KurrentDB.Diagnostics.LogsEndpointPlugin;
 using KurrentDB.PluginHosting;
+using KurrentDB.Plugins.Connectors;
 using KurrentDB.POC.ConnectedSubsystemsPlugin;
 using KurrentDB.Projections.Core;
 using KurrentDB.Security.EncryptionAtRest;
@@ -43,8 +44,6 @@ using KurrentDB.TcpPlugin;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using KurrentDB.OtlpExporterPlugin;
-using KurrentDB.Plugins.Connectors;
 
 namespace KurrentDB;
 
