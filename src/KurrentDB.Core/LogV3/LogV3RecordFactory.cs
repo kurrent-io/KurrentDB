@@ -90,6 +90,10 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 		ReadOnlyMemory<byte> metadata,
 		ReadOnlyMemory<byte> properties) {
 
+		if (properties.Length != 0) {
+			throw new ArgumentException("LogV3 does not support log record Properties");
+		}
+
 		var result = new LogV3StreamWriteRecord(
 			logPosition: logPosition,
 			transactionPosition: transactionPosition,
@@ -102,8 +106,7 @@ public class LogV3RecordFactory : IRecordFactory<StreamId> {
 			flags: flags,
 			eventType: eventType,
 			data: data.Span,
-			metadata: metadata.Span,
-			properties: properties.Span);
+			metadata: metadata.Span);
 		return result;
 	}
 
