@@ -9,6 +9,7 @@ using KurrentDB.Core.LogRecordSerialization;
 namespace KurrentDB.Core.Services.Transport.Grpc;
 
 public static class MetadataHelpers {
+	// Called on read to populate the grpc metadata from the persisted event record
 	public static void AddGrpcMetadataFrom(this MapField<string, string> self, EventRecord eventRecord) {
 		self.Add(Constants.Metadata.Type, eventRecord.EventType);
 		self.Add(Constants.Metadata.Created, eventRecord.TimeStamp.ToTicksSinceEpoch().ToString());
@@ -27,6 +28,7 @@ public static class MetadataHelpers {
 		}
 	}
 
+	// Called on write to separate out information received via metadata for storage in the log records
 	public static (bool isJson, string eventType, byte[] properties) ParseGrpcMetadata(MapField<string, string> metadata) {
 		if (!metadata.TryGetValue(Constants.Metadata.Type, out var eventType)) {
 			throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.Type);

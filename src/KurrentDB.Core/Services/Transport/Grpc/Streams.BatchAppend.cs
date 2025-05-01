@@ -308,11 +308,11 @@ partial class Streams<TStreamId> {
 				var (isJson, eventType, properties) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
 
 				return new(Uuid.FromDto(proposedMessage.Id).ToGuid(),
-					eventType,
-					isJson,
-					proposedMessage.Data.ToByteArray(),
-					proposedMessage.CustomMetadata.ToByteArray(),
-					properties);
+					eventType: eventType,
+					isJson: isJson,
+					data: proposedMessage.Data.ToByteArray(),
+					metadata: proposedMessage.CustomMetadata.ToByteArray(),
+					properties: properties);
 			}
 
 			static ClientMessage.WriteEvents ToInternalMessage(ClientWriteRequest request, IEnvelope envelope,
