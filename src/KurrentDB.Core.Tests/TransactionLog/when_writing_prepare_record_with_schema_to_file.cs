@@ -51,15 +51,15 @@ public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStream
 				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_dataFormat) }
 			},
 			{
-				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.SchemaVersionId,
+				"schema-version-id",
 				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_dataSchemaVersionId.ToString()) }
 			},
 			{
-				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.MetadataContentType,
+				"metadata-content-type",
 				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_metadataFormat) }
 			},
 			{
-				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.MetadataSchemaVersionId,
+				"metadata-schema-version-id",
 				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_metadataSchemaVersionId.ToString()) }
 			}
 		});

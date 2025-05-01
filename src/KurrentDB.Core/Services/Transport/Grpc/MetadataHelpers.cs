@@ -12,26 +12,18 @@ public static class MetadataHelpers {
 	public static void AddGrpcMetadataFrom(this MapField<string, string> self, EventRecord eventRecord) {
 		self.Add(Constants.Metadata.Type, eventRecord.EventType);
 		self.Add(Constants.Metadata.Created, eventRecord.TimeStamp.ToTicksSinceEpoch().ToString());
-
-		if (eventRecord.Properties.Length > 0) {
-			var properties = Properties.Parser.ParseFrom(eventRecord.Properties.Span);
-			if (properties.PropertiesValues.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersionId) &&
-			    properties.PropertiesValues.TryGetValue(Constants.Metadata.ContentType, out var propertyContentType)) {
-				self.Add(Constants.Metadata.ContentType, propertyContentType.BytesValue.ToStringUtf8());
-				self.Add(Constants.Metadata.SchemaVersionId, schemaVersionId.BytesValue.ToStringUtf8());
-			}
-			if (properties.PropertiesValues.TryGetValue(Constants.Metadata.MetadataContentType,
-				    out var metadataContentType) &&
-			    properties.PropertiesValues.TryGetValue(Constants.Metadata.MetadataSchemaVersionId,
-				    out var metadataSchemaId)) {
-				self.Add(Constants.Metadata.MetadataContentType, metadataContentType.BytesValue.ToStringUtf8());
-				self.Add(Constants.Metadata.MetadataSchemaVersionId, metadataSchemaId.BytesValue.ToStringUtf8());
-			}
-		} else {
-			self.Add(Constants.Metadata.ContentType,
+		self.Add(Constants.Metadata.ContentType,
 				eventRecord.IsJson
 					? Constants.Metadata.ContentTypes.ApplicationJson
 					: Constants.Metadata.ContentTypes.ApplicationOctetStream);
+
+		if (eventRecord.Properties.Length == 0)
+			return;
+
+		var properties = Properties.Parser.ParseFrom(eventRecord.Properties.Span);
+		foreach (var (key, value) in properties.PropertiesValues) {
+			if (!value.HasBytesValue) continue;
+			self[key] = value.BytesValue.ToStringUtf8();
 		}
 	}
 
@@ -47,19 +39,14 @@ public static class MetadataHelpers {
 		var isJson = contentType == Constants.Metadata.ContentTypes.ApplicationJson;
 
 		var properties = new Properties();
-		if (metadata.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersion)) {
-			properties.PropertiesValues.Add(Constants.Metadata.ContentType,
-				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(contentType) });
-			properties.PropertiesValues.Add(Constants.Metadata.SchemaVersionId,
-				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(schemaVersion) });
-		}
-
-		if (metadata.TryGetValue(Constants.Metadata.MetadataSchemaVersionId, out var metadataSchemaVersion) &&
-		    metadata.TryGetValue(Constants.Metadata.MetadataContentType, out var metadataContentType)) {
-			properties.PropertiesValues.Add(Constants.Metadata.MetadataContentType,
-				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(metadataContentType) });
-			properties.PropertiesValues.Add(Constants.Metadata.MetadataSchemaVersionId,
-				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(metadataSchemaVersion) });
+		foreach (var (key, value) in metadata) {
+			if (key == Constants.Metadata.ContentType && value
+				    is Constants.Metadata.ContentTypes.ApplicationJson
+				    or Constants.Metadata.ContentTypes.ApplicationOctetStream) {
+				continue;
+			}
+			properties.PropertiesValues.Add(key,
+				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(value) });
 		}
 
 		return (isJson, eventType, properties.ToByteArray());

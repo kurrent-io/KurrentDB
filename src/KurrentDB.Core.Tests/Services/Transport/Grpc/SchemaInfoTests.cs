@@ -25,9 +25,9 @@ public class SchemaInfoTests {
 	private static StreamIdentifier StreamIdentifier => new() { StreamName = ByteString.CopyFromUtf8(StreamName) };
 
 	private static Dictionary<string, string> Properties => new() {
-		{ MetadataConstants.SchemaVersionId, "schema-version-id" },
-		{ MetadataConstants.MetadataContentType, "meta-content-type" },
-		{ MetadataConstants.MetadataSchemaVersionId, "meta-schema-version-id" },
+		{ "schema-version-id", "my-schema-version-id" },
+		{ "metadata-content-type", "my-meta-content-type" },
+		{ "metadata-schema-version-id", "my-meta-schema-version-id" },
 	};
 
 	private static AppendReq.Types.ProposedMessage CreateAppendReqEvent(Dictionary<string, string> properties) {
@@ -96,9 +96,9 @@ public class SchemaInfoTests {
 		public void read_contains_the_correct_metadata() {
 			var readMetadata = _readResponse.Event.Event.Metadata;
 			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.ContentType], readMetadata[MetadataConstants.ContentType]);
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.SchemaVersionId], readMetadata[MetadataConstants.SchemaVersionId]);
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.MetadataContentType], readMetadata[MetadataConstants.MetadataContentType]);
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.MetadataSchemaVersionId], readMetadata[MetadataConstants.MetadataSchemaVersionId]);
+			foreach (var (key, _) in Properties) {
+				Assert.AreEqual(_proposedMessage.Metadata[key], readMetadata[key]);
+			}
 		}
 	}
 
@@ -150,9 +150,9 @@ public class SchemaInfoTests {
 		public void read_contains_the_correct_metadata() {
 			var readMetadata = _readResponse.Event.Event.Metadata;
 			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.ContentType], readMetadata[MetadataConstants.ContentType]);
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.SchemaVersionId], readMetadata[MetadataConstants.SchemaVersionId]);
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.MetadataContentType], readMetadata[MetadataConstants.MetadataContentType]);
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.MetadataSchemaVersionId], readMetadata[MetadataConstants.MetadataSchemaVersionId]);
+			foreach (var (key, _) in Properties) {
+				Assert.AreEqual(_proposedMessage.Metadata[key], readMetadata[key]);
+			}
 		}
 	}
 
@@ -224,9 +224,9 @@ public class SchemaInfoTests {
 		public void read_contains_the_correct_metadata() {
 			var readMetadata = _readResponse.Event.Event.Metadata;
 			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.ContentType], readMetadata[MetadataConstants.ContentType]);
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.SchemaVersionId], readMetadata[MetadataConstants.SchemaVersionId]);
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.MetadataContentType], readMetadata[MetadataConstants.MetadataContentType]);
-			Assert.AreEqual(_proposedMessage.Metadata[MetadataConstants.MetadataSchemaVersionId], readMetadata[MetadataConstants.MetadataSchemaVersionId]);
+			foreach (var (key, _) in Properties) {
+				Assert.AreEqual(_proposedMessage.Metadata[key], readMetadata[key]);
+			}
 		}
 	}
 }
