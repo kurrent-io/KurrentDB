@@ -6,5 +6,18 @@ namespace KurrentDB.LogCommon;
 public class LogRecordVersion {
 	public const byte LogRecordV0 = 0;
 	public const byte LogRecordV1 = 1;
+}
+
+public class PrepareLogRecordVersion {
+	public const byte LogRecordV0 = 0;
+
+	/// <summary>
+	/// ExpectedVersion is a long rather than an int.
+	/// </summary>
+	public const byte LogRecordV1 = 1;
+
+	/// <summary>
+	/// PrepareLogRecord contains Properties
+	/// </summary>
 	public const byte LogRecordV2 = 2;
 }

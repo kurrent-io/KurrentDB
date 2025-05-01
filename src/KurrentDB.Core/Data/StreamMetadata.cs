@@ -75,7 +75,7 @@ public class StreamMetadata {
 	}
 
 	public static StreamMetadata UpgradeMetadata(byte prepareVersion, StreamMetadata metadata) {
-		if (prepareVersion == LogRecordVersion.LogRecordV0 && metadata.TruncateBefore == int.MaxValue) {
+		if (prepareVersion == PrepareLogRecordVersion.LogRecordV0 && metadata.TruncateBefore == int.MaxValue) {
 			metadata = new StreamMetadata(
 				maxCount: metadata.MaxCount,
 				maxAge: metadata.MaxAge,

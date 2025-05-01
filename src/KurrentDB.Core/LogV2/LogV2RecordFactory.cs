@@ -58,7 +58,7 @@ public class LogV2RecordFactory : IRecordFactory<string> {
 		ReadOnlyMemory<byte> metadata,
 		ReadOnlyMemory<byte> properties) {
 
-		var version = properties.Length == 0 ? LogRecordVersion.LogRecordV1 : PrepareLogRecord.PrepareRecordVersion;
+		var version = properties.Length == 0 ? PrepareLogRecordVersion.LogRecordV1 : PrepareLogRecord.PrepareRecordVersion;
 		var result = new PrepareLogRecord(
 			logPosition: logPosition,
 			correlationId: correlationId,

@@ -92,7 +92,7 @@ public class when_writing_prepare_record_to_file<TLogFormat, TStreamId> : Specif
 			Assert.AreEqual(p.Data.Length, 5);
 			Assert.AreEqual(p.Metadata.Length, 2);
 			if (LogFormatHelper<TLogFormat, TStreamId>.IsV2)
-				Assert.AreEqual(p.Version, LogRecordVersion.LogRecordV1);
+				Assert.AreEqual(p.Version, PrepareLogRecordVersion.LogRecordV1);
 		}
 	}
 

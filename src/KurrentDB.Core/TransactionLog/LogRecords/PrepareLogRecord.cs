@@ -49,7 +49,7 @@ public static class PrepareFlagsExtensions {
 }
 
 public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, IPrepareLogRecord<string> {
-	public const byte PrepareRecordVersion = 2;
+	public const byte PrepareRecordVersion = PrepareLogRecordVersion.LogRecordV2;
 
 	public PrepareFlags Flags { get; }
 	public long TransactionPosition { get; }
@@ -100,7 +100,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			+ sizeof(ushort) /* Flags */
 			+ sizeof(long) /* TransactionPosition */
 			+ sizeof(int) /* TransactionOffset */
-			+ (Version is LogRecordVersion.LogRecordV0 ? sizeof(int) : sizeof(long)) /* ExpectedVersion */
+			+ (Version is PrepareLogRecordVersion.LogRecordV0 ? sizeof(int) : sizeof(long)) /* ExpectedVersion */
 			+ StringSizeWithLengthPrefix(eventStreamIdSize) /* EventStreamId */
 			+ 16 /* EventId */
 			+ 16 /* CorrelationId */
@@ -110,7 +110,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			+ _dataOnDisk.Length /* Data */
 			+ sizeof(int) /* Metadata length */
 			+ Metadata.Length /* Metadata */
-			+ (Version >= LogRecordVersion.LogRecordV2
+			+ (Version >= PrepareLogRecordVersion.LogRecordV2
 				? StringSizeWithLengthPrefix(Properties.Length) : 0); /* Properties */
 
 		// when written to disk, a string is prefixed with its length which is written as ULEB128
@@ -148,7 +148,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			throw new ArgumentOutOfRangeException("expectedVersion");
 
 		Flags = flags;
-		if (properties.Length > 0 && prepareRecordVersion < LogRecordVersion.LogRecordV2) {
+		if (properties.Length > 0 && prepareRecordVersion < PrepareLogRecordVersion.LogRecordV2) {
 			throw new ArgumentException(
 				$"Prepare record version '{prepareRecordVersion}' is not a version that supports properties, " +
 				$"but {nameof(properties)} is not empty");
@@ -174,7 +174,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 
 	internal PrepareLogRecord(ref SequenceReader reader, byte version, long logPosition)
 		: base(LogRecordType.Prepare, version, logPosition) {
-		if (version is not LogRecordVersion.LogRecordV0 and not LogRecordVersion.LogRecordV1 and not LogRecordVersion.LogRecordV2)
+		if (version > PrepareLogRecordVersion.LogRecordV2)
 			throw new ArgumentException(
 				$"PrepareRecord version {version} is incorrect. Supported version: {PrepareRecordVersion}.");
 
@@ -182,7 +182,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		Flags = (PrepareFlags)reader.ReadLittleEndian<ushort>();
 		TransactionPosition = reader.ReadLittleEndian<long>();
 		TransactionOffset = reader.ReadLittleEndian<int>();
-		ExpectedVersion = version is LogRecordVersion.LogRecordV0
+		ExpectedVersion = version is PrepareLogRecordVersion.LogRecordV0
 			? AdjustVersion(reader.ReadLittleEndian<int>())
 			: reader.ReadLittleEndian<long>();
 		EventStreamId = ReadString(ref reader, in context);
@@ -197,7 +197,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		Metadata = reader.ReadLittleEndian<int>() is var metadataCount && metadataCount > 0
 			? reader.Read(metadataCount).ToArray()
 			: NoData;
-		Properties = Version >= LogRecordVersion.LogRecordV2
+		Properties = Version >= PrepareLogRecordVersion.LogRecordV2
 			? reader.ReadBlock(LengthFormat.Compressed).ToArray()
 			: NoData;
 
@@ -240,7 +240,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		writer.WriteLittleEndian((ushort)Flags);
 		writer.WriteLittleEndian(TransactionPosition);
 		writer.WriteLittleEndian(TransactionOffset);
-		if (Version is LogRecordVersion.LogRecordV0) {
+		if (Version is PrepareLogRecordVersion.LogRecordV0) {
 			int expectedVersion = ExpectedVersion == long.MaxValue - 1 ? int.MaxValue - 1 : (int)ExpectedVersion;
 			writer.WriteLittleEndian(expectedVersion);
 		} else {
@@ -272,7 +272,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 
 		writer.Write(_dataOnDisk.Span, LengthFormat.LittleEndian);
 		writer.Write(Metadata.Span, LengthFormat.LittleEndian);
-		if (Version >= LogRecordVersion.LogRecordV2) {
+		if (Version >= PrepareLogRecordVersion.LogRecordV2) {
 			writer.Write(Properties.Span, LengthFormat.Compressed);
 		}
 	}
