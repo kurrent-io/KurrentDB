@@ -111,7 +111,7 @@ public class EventRecord : IEquatable<EventRecord> {
 		       && string.Equals(EventType, other.EventType)
 		       && Data.Span.SequenceEqual(other.Data.Span)
 		       && Metadata.Span.SequenceEqual(other.Metadata.Span)
-		       && Properties.Equals(other.Properties);
+		       && Properties.Span.SequenceEqual(other.Properties.Span);
 	}
 
 	public override bool Equals(object obj) {
