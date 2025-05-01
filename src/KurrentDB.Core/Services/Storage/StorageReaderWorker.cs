@@ -50,7 +50,7 @@ public class StorageReaderWorker<TStreamId> :
 	private readonly ISystemStreamLookup<TStreamId> _systemStreams;
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
-	private readonly IInMemoryStreamReader _inMemReader;
+	private readonly IVirtualStreamReader _virtualStreamReader;
 	private readonly int _queueId;
 	private const int MaxPageSize = 4096;
 	private DateTime? _lastExpireTime;
@@ -62,14 +62,14 @@ public class StorageReaderWorker<TStreamId> :
 		IReadIndex<TStreamId> readIndex,
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
-		IInMemoryStreamReader inMemReader,
+		IVirtualStreamReader virtualStreamReader,
 		int queueId) {
 
 		_publisher = publisher;
 		_readIndex = Ensure.NotNull(readIndex);
 		_systemStreams = Ensure.NotNull(systemStreams);
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
-		_inMemReader = inMemReader;
+		_virtualStreamReader = virtualStreamReader;
 		_queueId = queueId;
 	}
 
@@ -118,8 +118,8 @@ public class StorageReaderWorker<TStreamId> :
 		ClientMessage.ReadStreamEventsForwardCompleted res;
 		var cts = token.LinkTo(msg.CancellationToken);
 		try {
-			res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
-				? _inMemReader.ReadForwards(msg)
+			res = SystemStreams.IsVirtualStream(msg.EventStreamId)
+				? await _virtualStreamReader.ReadForwards(msg, token)
 				: await ReadStreamEventsForward(msg, token);
 		} catch (OperationCanceledException ex) when (ex.CancellationToken == cts?.Token) {
 			throw new OperationCanceledException(null, ex, cts.CancellationOrigin);
@@ -165,8 +165,8 @@ public class StorageReaderWorker<TStreamId> :
 
 		var cts = token.LinkTo(msg.CancellationToken);
 		try {
-			var res = SystemStreams.IsInMemoryStream(msg.EventStreamId)
-				? _inMemReader.ReadBackwards(msg)
+			var res = SystemStreams.IsVirtualStream(msg.EventStreamId)
+				? await _virtualStreamReader.ReadBackwards(msg, token)
 				: await ReadStreamEventsBackward(msg, token);
 
 			msg.Envelope.ReplyWith(res);

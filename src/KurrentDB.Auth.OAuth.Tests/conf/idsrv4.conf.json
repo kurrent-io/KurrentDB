@@ -33,7 +33,7 @@
 	],
 	"ApiResources": [
 		{
-			"Name": "eventstore",
+			"name": "kurrentdb",
 			"Scopes": ["streams"]
 		}
 	],
@@ -48,7 +48,7 @@
 	],
 	"Clients": [
 		{
-			"ClientId": "eventstore-tcp",
+			"ClientId": "kurrentdb-client",
 			"AllowedGrantTypes": [
 				"password"
 			],

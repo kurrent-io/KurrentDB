@@ -779,10 +779,10 @@ public class ClusterVNode<TStreamId> :
 		var nodeStatusListener = new NodeStateListenerService(_mainQueue, memLog);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(nodeStatusListener);
 
-		var inMemReader = new InMemoryStreamReader(new Dictionary<string, IInMemoryStreamReader> {
-			[SystemStreams.GossipStream] = gossipListener,
-			[SystemStreams.NodeStateStream] = nodeStatusListener,
-		});
+		var inMemReader = new VirtualStreamReader([
+			gossipListener.Stream,
+			nodeStatusListener.Stream,
+		]);
 
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,

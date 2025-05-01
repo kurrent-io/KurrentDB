@@ -46,9 +46,11 @@ public static class SystemStreams {
 
 	public const string AuthorizationPolicyRegistryStream = "$authorization-policy-settings";
 
-	// mem streams
-	public const string NodeStateStream = "$mem-node-state";
-	public const string GossipStream = "$mem-gossip";
+	// virtual streams
+	public const string InMemoryStreamPrefix = "$mem-";
+	public const string NodeStateStream = $"{InMemoryStreamPrefix}node-state";
+	public const string GossipStream = $"{InMemoryStreamPrefix}gossip";
+	public const string IndexStreamPrefix = "$idx-";
 
 	public static bool IsSystemStream(string streamId) => streamId is ['$', ..];
 
@@ -67,8 +69,8 @@ public static class SystemStreams {
 		return metastreamId[2..];
 	}
 
-	public static bool IsInMemoryStream(string streamId) {
-		return streamId.StartsWith("$mem-");
+	public static bool IsVirtualStream(string streamId) {
+		return streamId.StartsWith(InMemoryStreamPrefix) || streamId.StartsWith(IndexStreamPrefix);
 	}
 }
 
@@ -91,7 +93,7 @@ public static class SystemMetadata {
 }
 
 public static class SystemEventTypes {
-	private static readonly char[] _linkToSeparator = new[] { '@' };
+	private static readonly char[] _linkToSeparator = ['@'];
 	public const string StreamDeleted = "$streamDeleted";
 	public const string StatsCollection = "$statsCollected";
 	public const string LinkTo = "$>";

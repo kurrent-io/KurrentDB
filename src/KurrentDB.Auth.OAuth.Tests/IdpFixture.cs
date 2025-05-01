@@ -17,7 +17,7 @@ namespace KurrentDB.Auth.OAuth.Tests;
 
 internal class IdpFixture : IDisposable {
 	private const int IdpPort = 5001;
-	public const string ClientId = "eventstore-tcp";
+	public const string ClientId = "kurrentdb-client";
 	public const string ClientSecret = "secret";
 
 	private static string SourceDirectory =>

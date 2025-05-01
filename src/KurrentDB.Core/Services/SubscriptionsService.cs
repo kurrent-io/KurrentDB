@@ -16,7 +16,6 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.TimerService;
-using KurrentDB.Core.Services.UserManagement;
 using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.Core.Services;
@@ -67,7 +66,7 @@ public class SubscriptionsService<TStreamId> :
 	private readonly IEnvelope _busEnvelope;
 	private readonly IQueuedHandler _queuedHandler;
 	private readonly IReadIndex<TStreamId> _readIndex;
-	private readonly IInMemoryStreamReader _inMemReader;
+	private readonly IVirtualStreamReader _virtualStreamReader;
 	private readonly IAuthorizationProvider _authorizationProvider;
 
 	public SubscriptionsService(
@@ -75,12 +74,12 @@ public class SubscriptionsService<TStreamId> :
 		IQueuedHandler queuedHandler,
 		IAuthorizationProvider authorizationProvider,
 		IReadIndex<TStreamId> readIndex,
-		IInMemoryStreamReader inMemReader) {
+		IVirtualStreamReader inMemReader) {
 		_bus = Ensure.NotNull(bus);
 		_busEnvelope = bus;
 		_queuedHandler = Ensure.NotNull(queuedHandler);
 		_readIndex = Ensure.NotNull(readIndex);
-		_inMemReader = Ensure.NotNull(inMemReader);
+		_virtualStreamReader = Ensure.NotNull(inMemReader);
 		_authorizationProvider = Ensure.NotNull(authorizationProvider);
 	}
 
@@ -122,24 +121,11 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.SubscribeToStream>.HandleAsync(ClientMessage.SubscribeToStream msg, CancellationToken token) {
-		var isInMemoryStream = SystemStreams.IsInMemoryStream(msg.EventStreamId);
+		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
-		if (isInMemoryStream) {
-			var readMsg = new ClientMessage.ReadStreamEventsBackward(
-				internalCorrId: Guid.NewGuid(),
-				correlationId: msg.CorrelationId,
-				envelope: new NoopEnvelope(),
-				eventStreamId: msg.EventStreamId,
-				fromEventNumber: -1,
-				maxCount: 1,
-				resolveLinkTos: false,
-				requireLeader: false,
-				validationStreamVersion: null,
-				user: SystemAccounts.System);
-
-			var readResult = _inMemReader.ReadBackwards(readMsg);
-			lastEventNumber = readResult.LastEventNumber;
+		if (isVirtualStream) {
+			lastEventNumber = _virtualStreamReader.GetLastEventNumber(msg.EventStreamId);
 		} else if (!msg.EventStreamId.IsEmptyString()) {
 			lastEventNumber = await _readIndex.GetStreamLastEventNumber(_readIndex.GetStreamId(msg.EventStreamId), token);
 		}
@@ -149,7 +135,9 @@ public class SubscriptionsService<TStreamId> :
 			return;
 		}
 
-		var lastIndexedPos = isInMemoryStream ? -1 : _readIndex.LastIndexedPosition;
+		var lastIndexedPos = isVirtualStream
+			? _virtualStreamReader.GetLastIndexedPosition(msg.EventStreamId)
+			: _readIndex.LastIndexedPosition;
 
 		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.EventStreamId,
 			msg.ResolveLinkTos, lastIndexedPos, lastEventNumber,
@@ -161,16 +149,18 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.FilteredSubscribeToStream>.HandleAsync(ClientMessage.FilteredSubscribeToStream msg, CancellationToken token) {
-		var isInMemoryStream = SystemStreams.IsInMemoryStream(msg.EventStreamId);
+		var isVirtualStream = SystemStreams.IsVirtualStream(msg.EventStreamId);
 
 		long? lastEventNumber = null;
-		if (isInMemoryStream) {
-			lastEventNumber = -1;
+		if (isVirtualStream) {
+			lastEventNumber = _virtualStreamReader.GetLastEventNumber(msg.EventStreamId);
 		} else if (!msg.EventStreamId.IsEmptyString()) {
 			lastEventNumber = await _readIndex.GetStreamLastEventNumber(_readIndex.GetStreamId(msg.EventStreamId), token);
 		}
 
-		var lastIndexedPos = isInMemoryStream ? -1 : _readIndex.LastIndexedPosition;
+		var lastIndexedPos = isVirtualStream
+			? _virtualStreamReader.GetLastIndexedPosition(msg.EventStreamId)
+			: _readIndex.LastIndexedPosition;
 
 		SubscribeToStream(msg.CorrelationId, msg.Envelope, msg.ConnectionId, msg.EventStreamId,
 			msg.ResolveLinkTos, lastIndexedPos, lastEventNumber, msg.User, msg.EventFilter,
@@ -241,7 +231,7 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	private bool MissedEvents(string streamId, long lastIndexedPosition, long? lastEventNumber) {
-		return SystemStreams.IsInMemoryStream(streamId)
+		return SystemStreams.IsVirtualStream(streamId)
 			? _lastSeenInMemoryCommitPosition > lastIndexedPosition
 			: _lastSeenCommitPosition > lastIndexedPosition;
 	}
