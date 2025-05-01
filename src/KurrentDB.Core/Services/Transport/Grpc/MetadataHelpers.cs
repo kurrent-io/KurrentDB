@@ -4,7 +4,7 @@
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using KurrentDB.Core.Data;
-using KurrentDB.TransactionLog.LogRecordSerialization.Proto;
+using KurrentDB.Core.LogRecordSerialization;
 
 namespace KurrentDB.Core.Services.Transport.Grpc;
 
@@ -43,17 +43,17 @@ public static class MetadataHelpers {
 		var properties = new Properties();
 		if (metadata.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersion)) {
 			properties.PropertiesValues.Add(Constants.Metadata.ContentType,
-				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(contentType) });
+				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(contentType) });
 			properties.PropertiesValues.Add(Constants.Metadata.SchemaVersionId,
-				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(schemaVersion) });
+				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(schemaVersion) });
 		}
 
 		if (metadata.TryGetValue(Constants.Metadata.MetadataSchemaVersionId, out var metadataSchemaVersion) &&
 		    metadata.TryGetValue(Constants.Metadata.MetadataContentType, out var metadataContentType)) {
 			properties.PropertiesValues.Add(Constants.Metadata.MetadataContentType,
-				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(metadataContentType) });
+				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(metadataContentType) });
 			properties.PropertiesValues.Add(Constants.Metadata.MetadataSchemaVersionId,
-				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(metadataSchemaVersion) });
+				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(metadataSchemaVersion) });
 		}
 
 		return (contentType, properties.ToByteArray());

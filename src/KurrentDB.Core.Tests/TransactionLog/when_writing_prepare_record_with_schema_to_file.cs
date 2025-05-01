@@ -11,7 +11,7 @@ using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
-using KurrentDB.TransactionLog.LogRecordSerialization.Proto;
+using KurrentDB.Core.LogRecordSerialization;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.TransactionLog;
@@ -45,22 +45,22 @@ public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStream
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
 		_properties = new Properties();
-		_properties.PropertiesValues.Add(new Dictionary<string, PropertyValue> {
+		_properties.PropertiesValues.Add(new Dictionary<string, DynamicValue> {
 			{
 				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.ContentType,
-				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(_dataFormat) }
+				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_dataFormat) }
 			},
 			{
 				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.SchemaVersionId,
-				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(_dataSchemaVersionId.ToString()) }
+				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_dataSchemaVersionId.ToString()) }
 			},
 			{
 				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.MetadataContentType,
-				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(_metadataFormat) }
+				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_metadataFormat) }
 			},
 			{
 				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.MetadataSchemaVersionId,
-				new PropertyValue { BytesValue = ByteString.CopyFromUtf8(_metadataSchemaVersionId.ToString()) }
+				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_metadataSchemaVersionId.ToString()) }
 			}
 		});
 
