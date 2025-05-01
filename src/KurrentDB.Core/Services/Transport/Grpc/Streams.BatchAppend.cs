@@ -305,15 +305,11 @@ partial class Streams<TStreamId> {
 						: new ValueTask(Task.CompletedTask), cancellationToken);
 
 			static Event FromProposedMessage(ProposedMessage proposedMessage) {
-				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.Type, out var eventType)) {
-					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.Type);
-				}
-
-				var (contentType, properties) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
+				var (isJson, eventType, properties) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
 
 				return new(Uuid.FromDto(proposedMessage.Id).ToGuid(),
 					eventType,
-					contentType == Constants.Metadata.ContentTypes.ApplicationJson,
+					isJson,
 					proposedMessage.Data.ToByteArray(),
 					proposedMessage.CustomMetadata.ToByteArray(),
 					properties);

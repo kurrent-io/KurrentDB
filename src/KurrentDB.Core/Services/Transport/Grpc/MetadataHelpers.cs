@@ -35,10 +35,16 @@ public static class MetadataHelpers {
 		}
 	}
 
-	public static (string contentType, byte[] properties) ParseGrpcMetadata(MapField<string, string> metadata) {
+	public static (bool isJson, string eventType, byte[] properties) ParseGrpcMetadata(MapField<string, string> metadata) {
+		if (!metadata.TryGetValue(Constants.Metadata.Type, out var eventType)) {
+			throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.Type);
+		}
+
 		if (!metadata.TryGetValue(Constants.Metadata.ContentType, out var contentType)) {
 			throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.ContentType);
 		}
+
+		var isJson = contentType == Constants.Metadata.ContentTypes.ApplicationJson;
 
 		var properties = new Properties();
 		if (metadata.TryGetValue(Constants.Metadata.SchemaVersionId, out var schemaVersion)) {
@@ -56,6 +62,6 @@ public static class MetadataHelpers {
 				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(metadataSchemaVersion) });
 		}
 
-		return (contentType, properties.ToByteArray());
+		return (isJson, eventType, properties.ToByteArray());
 	}
 }

@@ -59,11 +59,7 @@ internal partial class Streams<TStreamId> {
 				var data = proposedMessage.Data.ToByteArray();
 				var metadata = proposedMessage.CustomMetadata.ToByteArray();
 
-				if (!proposedMessage.Metadata.TryGetValue(Constants.Metadata.Type, out var eventType)) {
-					throw RpcExceptions.RequiredMetadataPropertyMissing(Constants.Metadata.Type);
-				}
-
-				var (contentType, properties) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
+				var (isJson, eventType, properties) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
 
 				var eventSize = Event.SizeOnDisk(eventType, data, metadata);
 				if (eventSize > _maxAppendEventSize) {
@@ -79,7 +75,7 @@ internal partial class Streams<TStreamId> {
 				events.Add(new Event(
 					eventId: Uuid.FromDto(proposedMessage.Id).ToGuid(),
 					eventType: eventType,
-					isJson: contentType == Constants.Metadata.ContentTypes.ApplicationJson,
+					isJson: isJson,
 					data: data,
 					metadata: metadata,
 					properties: properties)
