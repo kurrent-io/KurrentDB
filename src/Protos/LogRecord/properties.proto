@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package KurrentDB.Core.LogRecordSerialization;
 
-import "dynamicvalue.proto";
+import "dynamic-value.proto";
 
 message Properties {
 	map<string, KurrentDB.Core.LogRecordSerialization.DynamicValue> properties_values = 1;
