@@ -135,8 +135,44 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		int? eventTypeSize,
 		ReadOnlyMemory<byte> data,
 		ReadOnlyMemory<byte> metadata,
+		ReadOnlyMemory<byte> properties)
+		: this(logPosition,
+			correlationId,
+			eventId,
+			transactionPosition,
+			transactionOffset,
+			eventStreamId,
+			eventStreamIdSize,
+			expectedVersion,
+			timeStamp,
+			flags,
+			eventType,
+			eventTypeSize,
+			data,
+			metadata,
+			properties,
+			properties.Length == 0
+				? PrepareLogRecordVersion.LogRecordV1
+				: PrepareLogRecordVersion.LogRecordV2
+		) {
+	}
+
+	public PrepareLogRecord(long logPosition,
+		Guid correlationId,
+		Guid eventId,
+		long transactionPosition,
+		int transactionOffset,
+		string eventStreamId,
+		int? eventStreamIdSize,
+		long expectedVersion,
+		DateTime timeStamp,
+		PrepareFlags flags,
+		string eventType,
+		int? eventTypeSize,
+		ReadOnlyMemory<byte> data,
+		ReadOnlyMemory<byte> metadata,
 		ReadOnlyMemory<byte> properties,
-		byte prepareRecordVersion = PrepareRecordVersion)
+		byte prepareRecordVersion)
 		: base(LogRecordType.Prepare, prepareRecordVersion, logPosition) {
 		Ensure.NotEmptyGuid(correlationId, "correlationId");
 		Ensure.NotEmptyGuid(eventId, "eventId");
@@ -146,14 +182,12 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
 		if (expectedVersion < Core.Data.ExpectedVersion.Any)
 			throw new ArgumentOutOfRangeException("expectedVersion");
-
-		Flags = flags;
 		if (properties.Length > 0 && prepareRecordVersion < PrepareLogRecordVersion.LogRecordV2) {
-			throw new ArgumentException(
-				$"Prepare record version '{prepareRecordVersion}' is not a version that supports properties, " +
-				$"but {nameof(properties)} is not empty");
+			throw new ArgumentException($"Prepare record version '{prepareRecordVersion}' is not a version that supports properties, " +
+			                            $"but {nameof(properties)} is not empty");
 		}
 
+		Flags = flags;
 		TransactionPosition = transactionPosition;
 		TransactionOffset = transactionOffset;
 		ExpectedVersion = expectedVersion;
