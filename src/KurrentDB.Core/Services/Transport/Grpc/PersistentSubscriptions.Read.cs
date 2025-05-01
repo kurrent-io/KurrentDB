@@ -125,7 +125,7 @@ internal partial class PersistentSubscriptions {
 			if (e == null)
 				return null;
 			var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
-			return new() {
+			var result = new ReadResp.Types.ReadEvent.Types.RecordedEvent {
 				Id = uuidOptionsCase switch {
 					ReadReq.Types.Options.Types.UUIDOption.ContentOneofCase.String => new UUID {
 						String = e.EventId.ToString()
@@ -136,10 +136,11 @@ internal partial class PersistentSubscriptions {
 				StreamRevision = StreamRevision.FromInt64(e.EventNumber),
 				CommitPosition = position.CommitPosition,
 				PreparePosition = position.PreparePosition,
-				Metadata = { MetadataHelpers.GetGrpcMetadata(e) },
 				Data = ByteString.CopyFrom(e.Data.Span),
 				CustomMetadata = ByteString.CopyFrom(e.Metadata.Span)
 			};
+			result.Metadata.AddGrpcMetadataFrom(e);
+			return result;
 		}
 
 		ReadResp.Types.ReadEvent ConvertToReadEvent((ResolvedEvent, int) _) {
