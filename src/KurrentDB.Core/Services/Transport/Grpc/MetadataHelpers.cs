@@ -42,13 +42,18 @@ public static class MetadataHelpers {
 
 		var properties = new Properties();
 		foreach (var (key, value) in metadata) {
-			if (key == Constants.Metadata.ContentType && value
-				    is Constants.Metadata.ContentTypes.ApplicationJson
-				    or Constants.Metadata.ContentTypes.ApplicationOctetStream) {
-				continue;
+			switch (key)
+			{
+				case Constants.Metadata.Type:
+				case Constants.Metadata.ContentType when value
+					is Constants.Metadata.ContentTypes.ApplicationJson
+					or Constants.Metadata.ContentTypes.ApplicationOctetStream:
+					continue;
+				default:
+					properties.PropertiesValues.Add(key,
+						new DynamicValue { BytesValue = ByteString.CopyFromUtf8(value) });
+					break;
 			}
-			properties.PropertiesValues.Add(key,
-				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(value) });
 		}
 
 		return (isJson, eventType, properties.ToByteArray());
