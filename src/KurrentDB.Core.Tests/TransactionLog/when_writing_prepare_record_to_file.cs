@@ -49,7 +49,8 @@ public class when_writing_prepare_record_to_file<TLogFormat, TStreamId> : Specif
 			flags: PrepareFlags.SingleWrite,
 			eventType: eventTypeId,
 			data: new byte[] { 1, 2, 3, 4, 5 },
-			metadata: new byte[] { 7, 17 });
+			metadata: new byte[] { 7, 17 },
+			properties: Array.Empty<byte>());
 
 		await _writer.Write(_record, CancellationToken.None);
 		await _writer.Flush(CancellationToken.None);
@@ -90,6 +91,8 @@ public class when_writing_prepare_record_to_file<TLogFormat, TStreamId> : Specif
 			Assert.AreEqual(p.EventType, eventTypeId);
 			Assert.AreEqual(p.Data.Length, 5);
 			Assert.AreEqual(p.Metadata.Length, 2);
+			if (LogFormatHelper<TLogFormat, TStreamId>.IsV2)
+				Assert.AreEqual(p.Version, LogRecordVersion.LogRecordV1);
 		}
 	}
 

@@ -52,7 +52,7 @@ public struct PrepareLogRecordView {
 		_length = length;
 
 		Version = _record[1];
-		if (Version != LogRecordVersion.LogRecordV0 && Version != LogRecordVersion.LogRecordV1)
+		if (Version is not LogRecordVersion.LogRecordV0 and not LogRecordVersion.LogRecordV1 and not LogRecordVersion.LogRecordV2)
 			throw new ArgumentException(
 				$"PrepareRecord version {Version} is incorrect. Supported version: {PrepareLogRecord.PrepareRecordVersion}.");
 
@@ -94,9 +94,8 @@ public struct PrepareLogRecordView {
 		_metadataOffset = currentOffset;
 		currentOffset += _metadataSize;
 
-		if (Flags.HasFlag(PrepareFlags.HasProperties)) {
-			_propertiesSize = BitConverter.ToInt32(_record, currentOffset);
-			currentOffset += 4;
+		if (Version >= LogRecordVersion.LogRecordV2) {
+			_propertiesSize = Read7BitEncodedInt(_record.AsSpan(0, _length), ref currentOffset);
 			_propertiesOffset = currentOffset;
 			currentOffset += _propertiesSize;
 		}

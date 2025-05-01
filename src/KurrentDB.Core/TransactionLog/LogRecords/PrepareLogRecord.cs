@@ -28,7 +28,6 @@ public enum PrepareFlags : ushort {
 
 	IsJson = 0x100, // indicates data & metadata are valid json
 	IsRedacted = 0x200,
-	HasProperties = 0x400,
 
 	// aggregate flag set
 	// unused and easily confused with StreamDelete:  DeleteTombstone = TransactionBegin | TransactionEnd | StreamDelete,
@@ -50,7 +49,7 @@ public static class PrepareFlagsExtensions {
 }
 
 public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, IPrepareLogRecord<string> {
-	public const byte PrepareRecordVersion = 1;
+	public const byte PrepareRecordVersion = 2;
 
 	public PrepareFlags Flags { get; }
 	public long TransactionPosition { get; }
@@ -111,8 +110,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			+ _dataOnDisk.Length /* Data */
 			+ sizeof(int) /* Metadata length */
 			+ Metadata.Length /* Metadata */
-			+ (Flags.HasFlag(PrepareFlags.HasProperties) ? sizeof(int) : 0) /* Properties length */
-			+ Properties.Length; /* Properties */
+			+ (Version >= LogRecordVersion.LogRecordV2
+				? StringSizeWithLengthPrefix(Properties.Length) : 0); /* Properties */
 
 		// when written to disk, a string is prefixed with its length which is written as ULEB128
 		static int StringSizeWithLengthPrefix(int stringSize) {
@@ -149,8 +148,11 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			throw new ArgumentOutOfRangeException("expectedVersion");
 
 		Flags = flags;
-		if (properties.Length > 0)
-			Flags |= PrepareFlags.HasProperties;
+		if (properties.Length > 0 && prepareRecordVersion < LogRecordVersion.LogRecordV2) {
+			throw new ArgumentException(
+				$"Prepare record version '{prepareRecordVersion}' is not a version that supports properties, " +
+				$"but {nameof(properties)} is not empty");
+		}
 
 		TransactionPosition = transactionPosition;
 		TransactionOffset = transactionOffset;
@@ -172,7 +174,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 
 	internal PrepareLogRecord(ref SequenceReader reader, byte version, long logPosition)
 		: base(LogRecordType.Prepare, version, logPosition) {
-		if (version is not LogRecordVersion.LogRecordV0 and not LogRecordVersion.LogRecordV1)
+		if (version is not LogRecordVersion.LogRecordV0 and not LogRecordVersion.LogRecordV1 and not LogRecordVersion.LogRecordV2)
 			throw new ArgumentException(
 				$"PrepareRecord version {version} is incorrect. Supported version: {PrepareRecordVersion}.");
 
@@ -195,10 +197,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		Metadata = reader.ReadLittleEndian<int>() is var metadataCount && metadataCount > 0
 			? reader.Read(metadataCount).ToArray()
 			: NoData;
-		Properties = Flags.HasFlag(PrepareFlags.HasProperties) &&
-		             reader.ReadLittleEndian<int>() is var propertiesCount &&
-		             propertiesCount > 0
-			? reader.Read(propertiesCount).ToArray()
+		Properties = Version >= LogRecordVersion.LogRecordV2
+			? reader.ReadBlock(LengthFormat.Compressed).ToArray()
 			: NoData;
 
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
@@ -229,7 +229,8 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			eventTypeSize: _eventTypeSize,
 			data: _dataOnDisk,
 			metadata: Metadata,
-			properties: Properties
+			properties: Properties,
+			prepareRecordVersion: Version
 		);
 	}
 
@@ -271,8 +272,9 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 
 		writer.Write(_dataOnDisk.Span, LengthFormat.LittleEndian);
 		writer.Write(Metadata.Span, LengthFormat.LittleEndian);
-		if (Properties.Length > 0)
-			writer.Write(Properties.Span, LengthFormat.LittleEndian);
+		if (Version >= LogRecordVersion.LogRecordV2) {
+			writer.Write(Properties.Span, LengthFormat.Compressed);
+		}
 	}
 
 	public override int GetSizeWithLengthPrefixAndSuffix()

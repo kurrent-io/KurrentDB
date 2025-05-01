@@ -5,6 +5,7 @@ using System;
 using System.Text;
 using DotNext.Buffers;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.LogCommon;
 using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.TransactionLog.LogRecords;
@@ -21,9 +22,8 @@ public class PrepareLogRecordViewTests {
 	private const string EventType = "test_event_type";
 	private readonly byte[] _data = { 0xDE, 0XAD, 0xC0, 0XDE };
 	private readonly byte[] _metadata = { 0XC0, 0xDE };
-	private const byte Version = 1;
 
-	private PrepareLogRecord CreatePrepareLogRecord(PrepareFlags flags, byte[] properties) {
+	private PrepareLogRecord CreatePrepareLogRecord(byte version, byte[] properties) {
 		return new PrepareLogRecord(
 			LogPosition,
 			_correlationId,
@@ -34,20 +34,20 @@ public class PrepareLogRecordViewTests {
 			null,
 			ExpectedVersion,
 			_timestamp,
-			flags,
+			PrepareFlags.SingleWrite,
 			EventType,
 			null,
 			_data,
 			_metadata,
 			properties,
-			Version);
+			version);
 	}
 
 	[Theory]
-	[InlineData(PrepareFlags.SingleWrite, new byte[]{})]
-	[InlineData(PrepareFlags.SingleWrite | PrepareFlags.HasProperties, new byte[]{ 0xDE, 0XAD })]
-	public void should_have_correct_properties(PrepareFlags flags, byte[] properties) {
-		var prepareLogRecord = CreatePrepareLogRecord(flags, properties);
+	[InlineData(LogRecordVersion.LogRecordV1, new byte[]{})]
+	[InlineData(LogRecordVersion.LogRecordV2, new byte[]{ 0xDE, 0XAD })]
+	public void should_have_correct_properties(byte expectedVersion, byte[] properties) {
+		var prepareLogRecord = CreatePrepareLogRecord(expectedVersion, properties);
 		var writer = new BufferWriterSlim<byte>();
 		prepareLogRecord.WriteTo(ref writer);
 
@@ -64,10 +64,10 @@ public class PrepareLogRecordViewTests {
 		Assert.True(prepare.EventStreamId.SequenceEqual(Encoding.UTF8.GetBytes(EventStreamId)));
 		Assert.Equal(ExpectedVersion, prepare.ExpectedVersion);
 		Assert.Equal(_timestamp, prepare.TimeStamp);
-		Assert.Equal(flags, prepare.Flags);
+		Assert.Equal(PrepareFlags.SingleWrite, prepare.Flags);
 		Assert.True(prepare.Data.SequenceEqual(_data));
 		Assert.True(prepare.Metadata.SequenceEqual(_metadata));
 		Assert.True(prepare.Properties.SequenceEqual(properties));
-		Assert.Equal(Version, prepare.Version);
+		Assert.Equal(expectedVersion, prepare.Version);
 	}
 }

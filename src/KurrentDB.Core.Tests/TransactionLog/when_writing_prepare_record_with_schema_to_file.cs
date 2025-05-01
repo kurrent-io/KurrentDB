@@ -115,7 +115,8 @@ public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStream
 		Assert.AreEqual(p.EventStreamId, streamId);
 		Assert.AreEqual(p.ExpectedVersion, 1234);
 		Assert.That(p.TimeStamp, Is.EqualTo(new DateTime(2012, 12, 21)).Within(7).Milliseconds);
-		Assert.AreEqual(p.Flags, PrepareFlags.SingleWrite | PrepareFlags.HasProperties);
+		Assert.AreEqual(p.Flags, PrepareFlags.SingleWrite);
+		Assert.AreEqual(p.Version, LogRecordVersion.LogRecordV2);
 		Assert.AreEqual(p.EventType, eventTypeId);
 		Assert.AreEqual(p.Data.Length, 5);
 		Assert.AreEqual(p.Metadata.Length, 2);

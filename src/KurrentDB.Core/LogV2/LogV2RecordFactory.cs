@@ -4,6 +4,7 @@
 using System;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.LogCommon;
 
 namespace KurrentDB.Core.LogV2;
 
@@ -57,6 +58,7 @@ public class LogV2RecordFactory : IRecordFactory<string> {
 		ReadOnlyMemory<byte> metadata,
 		ReadOnlyMemory<byte> properties) {
 
+		var version = properties.Length == 0 ? LogRecordVersion.LogRecordV1 : PrepareLogRecord.PrepareRecordVersion;
 		var result = new PrepareLogRecord(
 			logPosition: logPosition,
 			correlationId: correlationId,
@@ -72,7 +74,8 @@ public class LogV2RecordFactory : IRecordFactory<string> {
 			eventTypeSize: null,
 			data: data,
 			metadata: metadata,
-			properties: properties);
+			properties: properties,
+			prepareRecordVersion: version);
 		return result;
 	}
 }

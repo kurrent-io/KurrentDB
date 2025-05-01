@@ -315,7 +315,7 @@ public class TcpClientDispatcherTests {
 	[Test]
 	public void when_wrapping_read_stream_completed_with_properties() {
 		var evnt = ResolvedEvent.ForUnresolvedEvent(new EventRecord(0, 500, Guid.NewGuid(), Guid.NewGuid(), 500, 0,
-			"test-stream", -1, DateTime.Now, PrepareFlags.Data | PrepareFlags.HasProperties, "test-event",
+			"test-stream", -1, DateTime.Now, PrepareFlags.Data, "test-event",
 			"test-data"u8.ToArray(), "test-metadata"u8.ToArray(), "test-properties"u8.ToArray()));
 		var msg = new ClientMessage.ReadStreamEventsForwardCompleted(Guid.NewGuid(), "test-stream", 0, 1,
 			ReadStreamResult.Success, [evnt], StreamMetadata.Empty, false, string.Empty, 1, 0, true, 1000);
