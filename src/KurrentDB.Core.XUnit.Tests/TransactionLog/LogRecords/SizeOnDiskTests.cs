@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Linq;
 using DotNext.Buffers;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using Xunit;
@@ -15,6 +16,7 @@ public class SizeOnDiskTests {
 			CreatePrepareLogRecord(127), // just before needing an extra byte for the 7bit encoding
 			CreatePrepareLogRecord(128), // just after
 			CreatePrepareLogRecord(100_000),
+			..(Enumerable.Range(0, 200).Select(CreateV2PrepareLogRecord)),
 			CreateCommitLogRecord(),
 			CreateSystemLogRecord()
 		];
@@ -37,8 +39,28 @@ public class SizeOnDiskTests {
 				eventTypeSize: null,
 				data: new byte[] { 0xDE, 0XAD, 0xC0, 0XDE },
 				metadata: new byte[] { 0XC0, 0xDE },
-				properties: Array.Empty<byte>(),
+				properties: ReadOnlyMemory<byte>.Empty,
 				prepareRecordVersion: 1);
+		}
+
+		static PrepareLogRecord CreateV2PrepareLogRecord(int propertiesBytesLength) {
+			return new(
+				logPosition: 123,
+				correlationId: Guid.NewGuid(),
+				eventId: Guid.NewGuid(),
+				transactionPosition: 456,
+				transactionOffset: 321,
+				eventStreamId: "my-stream",
+				eventStreamIdSize: null,
+				expectedVersion: 789,
+				timeStamp: DateTime.Now,
+				flags: PrepareFlags.SingleWrite,
+				eventType: "my-event-type",
+				eventTypeSize: null,
+				data: new byte[] { 0xDE, 0XAD, 0xC0, 0XDE },
+				metadata: new byte[] { 0XC0, 0xDE },
+				properties: new byte[propertiesBytesLength],
+				prepareRecordVersion: 2);
 		}
 
 		static CommitLogRecord CreateCommitLogRecord() => new(
