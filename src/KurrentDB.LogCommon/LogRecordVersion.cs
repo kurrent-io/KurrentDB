@@ -9,15 +9,15 @@ public class LogRecordVersion {
 }
 
 public class PrepareLogRecordVersion {
-	public const byte LogRecordV0 = 0;
+	public const byte V0 = 0;
 
 	/// <summary>
 	/// ExpectedVersion is a long rather than an int.
 	/// </summary>
-	public const byte LogRecordV1 = 1;
+	public const byte V1 = 1;
 
 	/// <summary>
 	/// PrepareLogRecord contains Properties
 	/// </summary>
-	public const byte LogRecordV2 = 2;
+	public const byte V2 = 2;
 }
