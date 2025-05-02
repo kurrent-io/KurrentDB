@@ -184,7 +184,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			throw new ArgumentOutOfRangeException("expectedVersion");
 		if (properties.Length > 0 && prepareRecordVersion < PrepareLogRecordVersion.V2) {
 			throw new ArgumentException($"Prepare record version '{prepareRecordVersion}' is not a version that supports properties, " +
-			                            $"but {nameof(properties)} is not empty");
+										$"but {nameof(properties)} is not empty");
 		}
 
 		Flags = flags;

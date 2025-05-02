@@ -2,11 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Text;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.TransactionLog.LogRecords;
-using KurrentDB.Core.Services.Transport.Grpc;
 
 namespace KurrentDB.Core.Data;
 
@@ -99,19 +97,19 @@ public class EventRecord : IEquatable<EventRecord> {
 		if (ReferenceEquals(this, other))
 			return true;
 		return EventNumber == other.EventNumber
-		       && LogPosition == other.LogPosition
-		       && CorrelationId.Equals(other.CorrelationId)
-		       && EventId.Equals(other.EventId)
-		       && TransactionPosition == other.TransactionPosition
-		       && TransactionOffset == other.TransactionOffset
-		       && string.Equals(EventStreamId, other.EventStreamId)
-		       && ExpectedVersion == other.ExpectedVersion
-		       && TimeStamp.Equals(other.TimeStamp)
-		       && Flags.Equals(other.Flags)
-		       && string.Equals(EventType, other.EventType)
-		       && Data.Span.SequenceEqual(other.Data.Span)
-		       && Metadata.Span.SequenceEqual(other.Metadata.Span)
-		       && Properties.Span.SequenceEqual(other.Properties.Span);
+			   && LogPosition == other.LogPosition
+			   && CorrelationId.Equals(other.CorrelationId)
+			   && EventId.Equals(other.EventId)
+			   && TransactionPosition == other.TransactionPosition
+			   && TransactionOffset == other.TransactionOffset
+			   && string.Equals(EventStreamId, other.EventStreamId)
+			   && ExpectedVersion == other.ExpectedVersion
+			   && TimeStamp.Equals(other.TimeStamp)
+			   && Flags.Equals(other.Flags)
+			   && string.Equals(EventType, other.EventType)
+			   && Data.Span.SequenceEqual(other.Data.Span)
+			   && Metadata.Span.SequenceEqual(other.Metadata.Span)
+			   && Properties.Span.SequenceEqual(other.Properties.Span);
 	}
 
 	public override bool Equals(object obj) {

@@ -44,8 +44,8 @@ public class PrepareLogRecordViewTests {
 	}
 
 	[Theory]
-	[InlineData(PrepareLogRecordVersion.V1, new byte[]{})]
-	[InlineData(PrepareLogRecordVersion.V2, new byte[]{ 0xDE, 0XAD })]
+	[InlineData(PrepareLogRecordVersion.V1, new byte[] { })]
+	[InlineData(PrepareLogRecordVersion.V2, new byte[] { 0xDE, 0XAD })]
 	public void should_have_correct_properties(byte expectedVersion, byte[] properties) {
 		var prepareLogRecord = CreatePrepareLogRecord(expectedVersion, properties);
 		var writer = new BufferWriterSlim<byte>();

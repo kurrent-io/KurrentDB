@@ -4,7 +4,6 @@
 using System;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.TransactionLog.LogRecords;
-using KurrentDB.LogCommon;
 
 namespace KurrentDB.Core.LogV2;
 

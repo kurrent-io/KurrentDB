@@ -23,7 +23,8 @@ public static class MetadataHelpers {
 
 		var properties = Properties.Parser.ParseFrom(eventRecord.Properties.Span);
 		foreach (var (key, value) in properties.PropertiesValues) {
-			if (!value.HasBytesValue) continue;
+			if (!value.HasBytesValue)
+				continue;
 			self[key] = value.BytesValue.ToStringUtf8();
 		}
 	}
@@ -42,8 +43,7 @@ public static class MetadataHelpers {
 
 		var properties = new Properties();
 		foreach (var (key, value) in metadata) {
-			switch (key)
-			{
+			switch (key) {
 				case Constants.Metadata.Type:
 				case Constants.Metadata.ContentType when value
 					is Constants.Metadata.ContentTypes.ApplicationJson

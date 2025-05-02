@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Client.Streams;
 using Google.Protobuf;
-using Google.Protobuf.Collections;
 using Grpc.Core;
 using Grpc.Net.Client;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
