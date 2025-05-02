@@ -11,7 +11,7 @@ namespace KurrentDB.Core.TransactionLog.LogRecords;
 // Use when parsing of a full prepare log record isn't required and only some bits need to be inspected.
 // Note that the data structure is not aligned, so performance may degrade if heavily accessing properties.
 // Designed to be reusable to avoid GC pressure when making a pass through the database.
-public struct PrepareLogRecordView {
+public readonly struct PrepareLogRecordView {
 	public byte Version { get; }
 	public long LogPosition => BitConverter.ToInt64(_record, 2);
 	public PrepareFlags Flags => (PrepareFlags)BitConverter.ToUInt16(_record, 10);
