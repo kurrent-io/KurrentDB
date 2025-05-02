@@ -360,6 +360,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			result = (result * 397) ^ EventType.GetHashCode();
 			result = (result * 397) ^ _dataOnDisk.GetHashCode();
 			result = (result * 397) ^ Metadata.GetHashCode();
+			result = (result * 397) ^ Properties.GetHashCode();
 			return result;
 		}
 	}
