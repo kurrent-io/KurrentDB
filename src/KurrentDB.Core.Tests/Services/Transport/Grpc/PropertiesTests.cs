@@ -20,20 +20,20 @@ using ReadResp = EventStore.Client.Streams.ReadResp;
 namespace KurrentDB.Core.Tests.Services.Transport.Grpc;
 
 [TestFixture]
-public class SchemaInfoTests {
+public class PropertiesTests {
 	private static readonly string StreamName = "stream";
 	private static StreamIdentifier StreamIdentifier => new() { StreamName = ByteString.CopyFromUtf8(StreamName) };
 
 	private static Dictionary<string, string> Properties => new() {
-		{ "schema-version-id", "my-schema-version-id" },
-		{ "metadata-content-type", "my-meta-content-type" },
-		{ "metadata-schema-version-id", "my-meta-schema-version-id" },
+		{ "property-key-1", "value-1" },
+		{ "property-key-2", "value-2" },
+		{ "property-key-3", "value-3" },
 	};
 
 	private static AppendReq.Types.ProposedMessage CreateAppendReqEvent(Dictionary<string, string> properties) {
 		var data = ByteString.CopyFromUtf8("test-data");
 		var metadata = ByteString.CopyFromUtf8("test-metadata");
-		properties ??= new Dictionary<string, string>();
+		properties ??= [];
 		properties[MetadataConstants.ContentType] = MetadataConstants.ContentTypes.ApplicationOctetStream;
 		properties[MetadataConstants.Type] = "test-type";
 
@@ -46,7 +46,7 @@ public class SchemaInfoTests {
 	}
 
 	[TestFixture]
-	public class single_append_with_schema_info : GrpcSpecification<LogFormat.V2, string> {
+	public class single_append_with_properties : GrpcSpecification<LogFormat.V2, string> {
 		private AppendReq.Types.ProposedMessage _proposedMessage;
 		private AppendResp _appendResponse;
 		private ReadResp _readResponse;
@@ -103,7 +103,7 @@ public class SchemaInfoTests {
 	}
 
 	[TestFixture]
-	public class batch_append_with_schema_info : GrpcSpecification<LogFormat.V2, string> {
+	public class batch_append_with_properties : GrpcSpecification<LogFormat.V2, string> {
 		private BatchAppendReq.Types.ProposedMessage _proposedMessage;
 		private BatchAppendResp _appendResponse;
 		private ReadResp _readResponse;
@@ -157,7 +157,7 @@ public class SchemaInfoTests {
 	}
 
 	[TestFixture]
-	public class when_receiving_an_event_with_schema_info_over_persistent_subscription : GrpcSpecification<LogFormat.V2, string> {
+	public class when_receiving_an_event_with_properties_over_persistent_subscription : GrpcSpecification<LogFormat.V2, string> {
 		private readonly string _groupName = "test-group";
 		private AppendReq.Types.ProposedMessage _proposedMessage;
 		private AppendResp _appendResponse;

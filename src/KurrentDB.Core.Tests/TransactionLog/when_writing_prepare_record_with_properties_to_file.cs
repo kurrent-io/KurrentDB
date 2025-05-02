@@ -2,31 +2,25 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using KurrentDB.Core.LogRecordSerialization;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
-using KurrentDB.Core.LogRecordSerialization;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.TransactionLog;
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
+public class when_writing_prepare_record_with_properties_to_file<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private ITransactionFileWriter _writer;
 	private InMemoryCheckpoint _writerCheckpoint;
 	private readonly Guid _eventId = Guid.NewGuid();
 	private readonly Guid _correlationId = Guid.NewGuid();
-	private readonly Guid _dataSchemaVersionId = Guid.NewGuid();
-	private readonly Guid _metadataSchemaVersionId = Guid.NewGuid();
-
-	private readonly string _dataFormat = "application/json";
-	private readonly string _metadataFormat = "application/avro";
 
 	private IPrepareLogRecord<TStreamId> _record;
 	private TFChunkDb _db;
@@ -44,25 +38,26 @@ public class when_writing_prepare_record_with_schema_to_file<TLogFormat, TStream
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamId = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 		var eventTypeId = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-		_properties = new Properties();
-		_properties.PropertiesValues.Add(new Dictionary<string, DynamicValue> {
-			{
-				KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata.ContentType,
-				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_dataFormat) }
-			},
-			{
-				"schema-version-id",
-				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_dataSchemaVersionId.ToString()) }
-			},
-			{
-				"metadata-content-type",
-				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_metadataFormat) }
-			},
-			{
-				"metadata-schema-version-id",
-				new DynamicValue { BytesValue = ByteString.CopyFromUtf8(_metadataSchemaVersionId.ToString()) }
+		_properties = new Properties {
+			PropertiesValues = {
+				{
+					"property-key-1",
+					new DynamicValue { Int32Value = 123 }
+				},
+				{
+					"property-key-2",
+					new DynamicValue { DoubleValue = 123.45 }
+				},
+				{
+					"property-key-3",
+					new DynamicValue { StringValue = "my-string-value" }
+				},
+				{
+					"property-key-4",
+					new DynamicValue { BytesValue = ByteString.CopyFromUtf8("my-bytes-value") }
+				}
 			}
-		});
+		};
 
 		_record = LogRecord.Prepare(
 			factory: recordFactory,
