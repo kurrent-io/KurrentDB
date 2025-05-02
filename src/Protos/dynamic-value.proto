@@ -1,8 +1,11 @@
+syntax = "proto3";
+
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/struct.proto";
 
-package KurrentDB.Core.LogRecordSerialization;
+package kurrentdb.protobuf;
+option csharp_namespace = "KurrentDB.Protobuf";
 
 message DynamicValue {
 	oneof kind {

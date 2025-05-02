@@ -90,11 +90,11 @@
 		<Protobuf Include="..\Protos\Grpc\redaction.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
 			<Link>Services\Transport\Grpc\Protos\redaction.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\LogRecord\dynamic-value.proto" LinkBase="Protos">
+		<Protobuf Include="..\Protos\dynamic-value.proto" ProtoRoot="../Protos">
 			<Link>Protos\dynamic-value.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\LogRecord\properties.proto" LinkBase="Protos">
-			<Link>Protos\properties.proto</Link>
+		<Protobuf Include="..\Protos\Server\properties.proto" ProtoRoot="../Protos">
+			<Link>Protos\Server\properties.proto</Link>
 		</Protobuf>
 	</ItemGroup>
 	<ItemGroup>

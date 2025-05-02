@@ -6394,6 +6394,122 @@
           }
         ]
       }
+    },
+    {
+      "protopath": "Server:/:properties.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "Properties",
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 1,
+                  "name": "properties_values",
+                  "type": "kurrentdb.protobuf.DynamicValue"
+                }
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "dynamic-value.proto"
+          }
+        ],
+        "package": {
+          "name": "kurrentdb.protobuf.server"
+        },
+        "options": [
+          {
+            "name": "csharp_namespace",
+            "value": "KurrentDB.Protobuf.Server"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "dynamic-value.proto",
+      "def": {
+        "messages": [
+          {
+            "name": "DynamicValue",
+            "fields": [
+              {
+                "id": 1,
+                "name": "null_value",
+                "type": "google.protobuf.NullValue"
+              },
+              {
+                "id": 2,
+                "name": "int32_value",
+                "type": "sint32"
+              },
+              {
+                "id": 3,
+                "name": "int64_value",
+                "type": "sint64"
+              },
+              {
+                "id": 4,
+                "name": "bytes_value",
+                "type": "bytes"
+              },
+              {
+                "id": 5,
+                "name": "double_value",
+                "type": "double"
+              },
+              {
+                "id": 6,
+                "name": "float_value",
+                "type": "float"
+              },
+              {
+                "id": 7,
+                "name": "string_value",
+                "type": "string"
+              },
+              {
+                "id": 8,
+                "name": "boolean_value",
+                "type": "bool"
+              },
+              {
+                "id": 9,
+                "name": "timestamp_value",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "duration_value",
+                "type": "google.protobuf.Duration"
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/duration.proto"
+          },
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "google/protobuf/struct.proto"
+          }
+        ],
+        "package": {
+          "name": "kurrentdb.protobuf"
+        },
+        "options": [
+          {
+            "name": "csharp_namespace",
+            "value": "KurrentDB.Protobuf"
+          }
+        ]
+      }
     }
   ]
 }

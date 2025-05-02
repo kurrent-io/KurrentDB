@@ -7,9 +7,10 @@ using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.LogRecordSerialization;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Protobuf;
+using KurrentDB.Protobuf.Server;
 using Xunit;
 using Duration = Google.Protobuf.WellKnownTypes.Duration;
 

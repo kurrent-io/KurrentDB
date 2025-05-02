@@ -5,12 +5,13 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
-using KurrentDB.Core.LogRecordSerialization;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
+using KurrentDB.Protobuf;
+using KurrentDB.Protobuf.Server;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.TransactionLog;
