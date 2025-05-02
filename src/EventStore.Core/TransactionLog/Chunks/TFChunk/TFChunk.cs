@@ -131,8 +131,19 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 		private bool _unbuffered;
 		private bool _writeThrough;
 		private readonly bool _reduceFileCachePressure;
+		private readonly IChunkCacheManager _cacheManager;
 
 		private IChunkReadSide _readSide;
+
+		//qq temporary to save some plumbing
+		private static readonly bool Pool = true;
+		private static readonly int AllowanceForPosMap = 16 * 1024 * 1024; //qq hand wave. 6% increase in chunk cache memory usage acceptable
+		public static IChunkCacheManager DefaultCacheManager { get; set; } = Pool
+			? new PoolingChunkCacheManager(
+				new UnmanagedChunkCacheManager(),
+				minBufferSize: TFConsts.ChunkSize + ChunkHeader.Size + ChunkFooter.Size + AllowanceForPosMap,
+				cleanBuffers: true)
+			: new UnmanagedChunkCacheManager();
 
 		private TFChunk(string filename,
 			int initialReaderCount,
@@ -158,6 +169,8 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			_unbuffered = unbuffered;
 			_writeThrough = writethrough;
 			_reduceFileCachePressure = reduceFileCachePressure;
+
+			_cacheManager = DefaultCacheManager;
 		}
 
 		~TFChunk() {
@@ -415,8 +428,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			// ALLOCATE MEM
 			_cacheStatus = CacheStatus.Cached;
 			_cachedLength = fileSize;
-			_cachedData = Marshal.AllocHGlobal(_cachedLength);
-			GC.AddMemoryPressure(_cachedLength);
+			_cachedData = _cacheManager.AllocateAtLeast(_cachedLength);
 
 			// WRITER STREAM
 			var memStream =
@@ -696,8 +708,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 
 				var dataSize = IsReadOnly ? _physicalDataSize + ChunkFooter.MapSize : _chunkHeader.ChunkSize;
 				_cachedLength = GetAlignedSize(ChunkHeader.Size + dataSize + ChunkFooter.Size);
-				var cachedData = Marshal.AllocHGlobal(_cachedLength);
-				GC.AddMemoryPressure(_cachedLength);
+				var cachedData = _cacheManager.AllocateAtLeast(_cachedLength);
 
 				try {
 					using (var unmanagedStream = new UnmanagedMemoryStream((byte*)cachedData, _cachedLength,
@@ -715,8 +726,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 						}
 					}
 				} catch {
-					Marshal.FreeHGlobal(cachedData);
-					GC.RemoveMemoryPressure(_cachedLength);
+					_cacheManager.Free(cachedData);
 					throw;
 				}
 
@@ -1068,8 +1078,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			lock (_cachedDataLock) {
 				var cachedData = _cachedData;
 				if (cachedData != IntPtr.Zero) {
-					Marshal.FreeHGlobal(cachedData);
-					GC.RemoveMemoryPressure(_cachedLength);
+					_cacheManager.Free(cachedData);
 					_cachedData = IntPtr.Zero;
 					_cacheStatus = CacheStatus.Uncached;
 					Log.Debug("UNCACHED TFChunk {chunk}.", this);

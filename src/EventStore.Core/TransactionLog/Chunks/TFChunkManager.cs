@@ -58,15 +58,19 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		private void CacheUncacheReadOnlyChunks() {
 			int lastChunkToCache;
 			lock (_chunksLocker) {
+				//qq this used cache physical chunks of different sizes until the chunk cache is full
+				// now we are using fixed size buffers so we treat every physical chunk as the same size.
+				// if we had a large chunk cache combined with lots of data in the latest chunks being removed by scavenge
+				// and also no chunk merging, then quite a lot of space could be wasted. in later versions with dotnext
+				// it may be sensible to allocate smaller segments and assemble them into a stream via readonlysequence
+				// probably better if this behaviour was determined by the IChunkCacheManager
 				long totalSize = 0;
 				lastChunkToCache = _chunksCount;
 
 				for (int chunkNum = _chunksCount - 1; chunkNum >= 0;) {
 					var chunk = _chunks[chunkNum];
-					var chunkSize = chunk.IsReadOnly
-						? chunk.ChunkFooter.PhysicalDataSize + chunk.ChunkFooter.MapSize + ChunkHeader.Size +
-						  ChunkFooter.Size
-						: chunk.ChunkHeader.ChunkSize + ChunkHeader.Size + ChunkFooter.Size;
+					var chunkSize = 
+						chunk.ChunkHeader.ChunkSize + ChunkHeader.Size + ChunkFooter.Size;
 
 					if (totalSize + chunkSize > _config.MaxChunksCacheSize)
 						break;
