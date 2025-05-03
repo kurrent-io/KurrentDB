@@ -136,6 +136,7 @@ namespace EventStore.Core.Tests.Helpers {
 					MaxMemTableSize = memTableSize,
 					MemDb = inMemDb,
 					Db = _dbPath,
+					ChunkCachePooling = false,
 					ChunkSize = MiniNode.ChunkSize,
 					ChunksCacheSize = MiniNode.CachedChunkSize,
 					StreamExistenceFilterSize = 10_000

@@ -38,6 +38,7 @@ public abstract class LogReplicationWithExistingDbFixture<TLogFormat, TStreamId>
 			chunkId: Guid.NewGuid());
 
 		var chunk = TFChunk.CreateWithHeader(
+			new UnmanagedChunkCacheManager(),
 			filename: filename,
 			header: header,
 			fileSize: TFChunk.GetAlignedSize(db.Config.ChunkSize + ChunkHeader.Size + ChunkFooter.Size),

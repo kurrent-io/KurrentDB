@@ -705,6 +705,7 @@ namespace EventStore.Core.XUnit.Tests.Scavenge {
 					chunkId: Guid.NewGuid());
 
 				var newChunk = TFChunk.CreateWithHeader(
+					new UnmanagedChunkCacheManager(),
 					filename: $"{chunk.FileName}.tmp",
 					header: newChunkHeader,
 					fileSize: ChunkHeader.Size,

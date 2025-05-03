@@ -16,6 +16,7 @@ namespace EventStore.Core.TransactionLog.Scavenging {
 			_dbConfig = dbConfig;
 		}
 
+		public IChunkCacheManager ChunkCacheManager => _manager.ChunkCacheManager;
 		public IChunkWriterForExecutor<TStreamId, ILogRecord> CreateChunkWriter(
 			IChunkReaderForExecutor<TStreamId, ILogRecord> sourceChunk) {
 

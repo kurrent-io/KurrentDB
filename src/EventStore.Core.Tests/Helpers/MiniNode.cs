@@ -115,6 +115,7 @@ namespace EventStore.Core.Tests.Helpers {
 					Database = new() {
 						ChunkSize = chunkSize,
 						ChunksCacheSize = cachedChunkSize,
+						ChunkCachePooling = false,
 						SkipDbVerify = true,
 						StatsStorage = StatsStorage.None,
 						MaxMemTableSize = memTableSize,

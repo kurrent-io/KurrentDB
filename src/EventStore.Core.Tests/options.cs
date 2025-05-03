@@ -62,7 +62,7 @@ namespace EventStore.Core.Tests {
 				nameof(ClusterVNodeOptions.TrustedRootCertificates), 
 				nameof(ClusterVNodeOptions.IndexBitnessVersion), 
 				nameof(ClusterVNodeOptions.Cluster.QuorumSize),
-				nameof(ClusterVNodeOptions.Database.ChunkSize),
+				nameof(ClusterVNodeOptions.Database.ChunkSize), //qq do we want to exclude this
 				nameof(ClusterVNodeOptions.Database.StatsStorage),
 				nameof(ClusterVNodeOptions.Unknown.Options),
 			};

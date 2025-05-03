@@ -28,25 +28,14 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		private int _backgroundPassesRemaining;
 		private int _backgroundRunning;
 
-		public TFChunkManager(TFChunkDbConfig config, ITransactionFileTracker tracker) {
+		public TFChunkManager(TFChunkDbConfig config, IChunkCacheManager cacheManager, ITransactionFileTracker tracker) {
 			Ensure.NotNull(config, "config");
 			_config = config;
 			_tracker = tracker;
-
-			var chunkTotalSize = _config.ChunkSize + ChunkHeader.Size + ChunkFooter.Size;
-			var cacheSizeBytes = _config.MaxChunksCacheSize.RoundUpToMultipleOf(chunkTotalSize);
-			var cacheSizePhysicalChunks = cacheSizeBytes / chunkTotalSize;
-			var initialBuffers = cacheSizePhysicalChunks + 2;
-
-			var allowanceForPosMap = 16 * 1024 * 1024; //qq hand wave. 6% increase in chunk cache memory usage acceptable
-
-			Log.Information($"#### Pre-allocating {initialBuffers} initialBuffers based on chunk cache size of {cacheSizePhysicalChunks} chunks.");
-			TFChunk.TFChunk.DefaultCacheManager = new PoolingChunkCacheManager(
-				new UnmanagedChunkCacheManager(),
-				minBufferSize: TFConsts.ChunkSize + ChunkHeader.Size + ChunkFooter.Size + allowanceForPosMap,
-				cleanBuffers: true,
-				initialBuffers: (int)initialBuffers);
+			ChunkCacheManager = cacheManager;
 		}
+
+		public IChunkCacheManager ChunkCacheManager { get; }
 
 		public void EnableCaching() {
 			if (_chunksCount == 0)
@@ -113,7 +102,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 		public TFChunk.TFChunk CreateTempChunk(ChunkHeader chunkHeader, int fileSize) {
 			var chunkFileName = _config.FileNamingStrategy.GetTempFilename();
-			return TFChunk.TFChunk.CreateWithHeader(chunkFileName,
+			return TFChunk.TFChunk.CreateWithHeader(
+				ChunkCacheManager,
+				chunkFileName,
 				chunkHeader,
 				fileSize,
 				_config.InMemDb,
@@ -129,7 +120,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 			lock (_chunksLocker) {
 				var chunkNumber = _chunksCount;
 				var chunkName = _config.FileNamingStrategy.GetFilenameFor(chunkNumber, 0);
-				var chunk = TFChunk.TFChunk.CreateNew(chunkName,
+				var chunk = TFChunk.TFChunk.CreateNew(
+					ChunkCacheManager,
+					chunkName,
 					_config.ChunkSize,
 					chunkNumber,
 					chunkNumber,
@@ -157,7 +150,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 						chunkHeader.ChunkStartNumber, chunkHeader.ChunkEndNumber, _chunksCount));
 
 				var chunkName = _config.FileNamingStrategy.GetFilenameFor(chunkHeader.ChunkStartNumber, 0);
-				var chunk = TFChunk.TFChunk.CreateWithHeader(chunkName,
+				var chunk = TFChunk.TFChunk.CreateWithHeader(
+					ChunkCacheManager,
+					chunkName,
 					chunkHeader,
 					fileSize,
 					_config.InMemDb,
@@ -222,7 +217,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 					throw;
 				}
 
-				newChunk = TFChunk.TFChunk.FromCompletedFile(newFileName, verifyHash, _config.Unbuffered,
+				newChunk = TFChunk.TFChunk.FromCompletedFile(
+					ChunkCacheManager,
+					newFileName, verifyHash, _config.Unbuffered,
 					_config.InitialReaderCount, _config.MaxReaderCount, _tracker, _config.OptimizeReadSideCache, _config.ReduceFileCachePressure );
 			}
 

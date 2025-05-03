@@ -16,12 +16,13 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		private readonly ITransactionFileTracker _tracker;
 		private int _closed;
 
-		public TFChunkDb(TFChunkDbConfig config, ITransactionFileTracker tracker = null, ILogger log = null) {
+		public TFChunkDb(TFChunkDbConfig config, IChunkCacheManager cacheManager = null, ITransactionFileTracker tracker = null, ILogger log = null) {
 			Ensure.NotNull(config, "config");
 
 			Config = config;
 			_tracker = tracker ?? new TFChunkTracker.NoOp();
-			Manager = new TFChunkManager(Config, _tracker);
+			cacheManager ??= new UnmanagedChunkCacheManager();
+			Manager = new TFChunkManager(Config, cacheManager, _tracker);
 			_log = log ?? Serilog.Log.ForContext<TFChunkDb>();
 		}
 
@@ -72,7 +73,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 							// but the actual last chunk is (lastChunkNum-1) one and it could be not completed yet -- perfectly valid situation.
 							var footer = ReadChunkFooter(chunkInfo.ChunkFileName);
 							if (footer.IsCompleted)
-								chunk = TFChunk.TFChunk.FromCompletedFile(chunkInfo.ChunkFileName, verifyHash: false,
+								chunk = TFChunk.TFChunk.FromCompletedFile(
+									Manager.ChunkCacheManager,
+									chunkInfo.ChunkFileName, verifyHash: false,
 									unbufferedRead: Config.Unbuffered,
 									initialReaderCount: Config.InitialReaderCount,
 									maxReaderCount: Config.MaxReaderCount,
@@ -80,7 +83,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 									optimizeReadSideCache: Config.OptimizeReadSideCache,
 									reduceFileCachePressure: Config.ReduceFileCachePressure);
 							else {
-								chunk = TFChunk.TFChunk.FromOngoingFile(chunkInfo.ChunkFileName, Config.ChunkSize,
+								chunk = TFChunk.TFChunk.FromOngoingFile(
+									Manager.ChunkCacheManager,
+									chunkInfo.ChunkFileName, Config.ChunkSize,
 									checkSize: false,
 									unbuffered: Config.Unbuffered,
 									writethrough: Config.WriteThrough, initialReaderCount: Config.InitialReaderCount,
@@ -92,7 +97,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 									chunk.Complete();
 							}
 						} else {
-							chunk = TFChunk.TFChunk.FromCompletedFile(chunkInfo.ChunkFileName, verifyHash: false,
+							chunk = TFChunk.TFChunk.FromCompletedFile(
+								Manager.ChunkCacheManager,
+								chunkInfo.ChunkFileName, verifyHash: false,
 								unbufferedRead: Config.Unbuffered,
 								initialReaderCount: Config.InitialReaderCount,
 								maxReaderCount: Config.MaxReaderCount,
@@ -121,7 +128,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 				var chunkHeader = ReadChunkHeader(chunkFileName);
 				var chunkLocalPos = chunkHeader.GetLocalLogPosition(checkpoint);
 				if (chunkHeader.IsScavenged) {
-					var lastChunk = TFChunk.TFChunk.FromCompletedFile(chunkFileName, verifyHash: false,
+					var lastChunk = TFChunk.TFChunk.FromCompletedFile(
+						Manager.ChunkCacheManager,
+						chunkFileName, verifyHash: false,
 						unbufferedRead: Config.Unbuffered,
 						initialReaderCount: Config.InitialReaderCount,
 						maxReaderCount: Config.MaxReaderCount,
@@ -148,7 +157,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 						Manager.AddNewChunk();
 					}
 				} else {
-					var lastChunk = TFChunk.TFChunk.FromOngoingFile(chunkFileName, (int)chunkLocalPos, checkSize: false,
+					var lastChunk = TFChunk.TFChunk.FromOngoingFile(
+						Manager.ChunkCacheManager,
+						chunkFileName, (int)chunkLocalPos, checkSize: false,
 						unbuffered: Config.Unbuffered,
 						writethrough: Config.WriteThrough, initialReaderCount: Config.InitialReaderCount,
 						maxReaderCount: Config.MaxReaderCount,

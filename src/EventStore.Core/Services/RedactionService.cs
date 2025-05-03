@@ -244,6 +244,7 @@ namespace EventStore.Core.Services {
 			try {
 				// temporarily open the chunk to verify its integrity
 				newChunk = TFChunk.FromCompletedFile(
+					_db.Manager.ChunkCacheManager,
 					filename: newChunkPath,
 					verifyHash: true,
 					unbufferedRead: _db.Config.Unbuffered,

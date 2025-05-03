@@ -16,6 +16,8 @@ public class UnmanagedChunkCacheManager : IChunkCacheManager {
 	// the actual lengths of all the buffers
 	private readonly Dictionary<nint, int> _bufferLengths = [];
 
+//qq	public static UnmanagedChunkCacheManager Instance { get; } = new UnmanagedChunkCacheManager();
+
 	public nint AllocateAtLeast(int numBytes) {
 		lock (_lock) {
 			var pointer = Marshal.AllocHGlobal(numBytes);
@@ -28,7 +30,7 @@ public class UnmanagedChunkCacheManager : IChunkCacheManager {
 	public void Free(nint pointer) {
 		lock (_lock) {
 			if (!_bufferLengths.Remove(pointer, out var bufferLength))
-				throw new InvalidOperationException("Attempted to free unknown buffer");
+				throw new InvalidOperationException($"Attempted to free unknown buffer {pointer}");
 
 			Marshal.FreeHGlobal(pointer);
 			GC.RemoveMemoryPressure(bufferLength);
