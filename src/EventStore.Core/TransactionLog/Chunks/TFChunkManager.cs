@@ -32,6 +32,20 @@ namespace EventStore.Core.TransactionLog.Chunks {
 			Ensure.NotNull(config, "config");
 			_config = config;
 			_tracker = tracker;
+
+			var chunkTotalSize = _config.ChunkSize + ChunkHeader.Size + ChunkFooter.Size;
+			var cacheSizeBytes = _config.MaxChunksCacheSize.RoundUpToMultipleOf(chunkTotalSize);
+			var cacheSizePhysicalChunks = cacheSizeBytes / chunkTotalSize;
+			var initialBuffers = cacheSizePhysicalChunks + 2;
+
+			var allowanceForPosMap = 16 * 1024 * 1024; //qq hand wave. 6% increase in chunk cache memory usage acceptable
+
+			Log.Information($"#### Pre-allocating {initialBuffers} initialBuffers based on chunk cache size of {cacheSizePhysicalChunks} chunks.");
+			TFChunk.TFChunk.DefaultCacheManager = new PoolingChunkCacheManager(
+				new UnmanagedChunkCacheManager(),
+				minBufferSize: TFConsts.ChunkSize + ChunkHeader.Size + ChunkFooter.Size + allowanceForPosMap,
+				cleanBuffers: true,
+				initialBuffers: (int)initialBuffers);
 		}
 
 		public void EnableCaching() {

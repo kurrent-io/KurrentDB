@@ -1,6 +1,6 @@
-﻿using System.Runtime.InteropServices;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Serilog;
 
 namespace EventStore.Core.TransactionLog.Chunks;
@@ -47,10 +47,23 @@ public class PoolingChunkCacheManager : IChunkCacheManager {
 	private readonly Dictionary<nint, int> _bufferLengths = []; // the actual lengths of all the buffers
 	private readonly Stack<nint> _freeBuffers = [];
 
-	public PoolingChunkCacheManager(IChunkCacheManager inner, int minBufferSize, bool cleanBuffers) {
+	public PoolingChunkCacheManager(
+		IChunkCacheManager inner,
+		int minBufferSize,
+		bool cleanBuffers,
+		int initialBuffers) {
+
 		_inner = inner;
 		_minBufferSize = minBufferSize;
 		_cleanBuffers = cleanBuffers;
+
+		var buffers = new nint[initialBuffers];
+
+		for (var i = 0; i < initialBuffers; i++)
+			buffers[i] = AllocateAtLeast(minBufferSize);
+
+		for (var i = 0; i < initialBuffers; i++)
+			Free(buffers[i]);
 	}
 
 	// This reuses a free buffer if it can, otherwise allocates a new one.

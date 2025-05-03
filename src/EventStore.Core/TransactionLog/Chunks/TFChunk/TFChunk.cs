@@ -136,14 +136,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 		private IChunkReadSide _readSide;
 
 		//qq temporary to save some plumbing
-		private static readonly bool Pool = true;
-		private static readonly int AllowanceForPosMap = 16 * 1024 * 1024; //qq hand wave. 6% increase in chunk cache memory usage acceptable
-		public static IChunkCacheManager DefaultCacheManager { get; set; } = Pool
-			? new PoolingChunkCacheManager(
-				new UnmanagedChunkCacheManager(),
-				minBufferSize: TFConsts.ChunkSize + ChunkHeader.Size + ChunkFooter.Size + AllowanceForPosMap,
-				cleanBuffers: true)
-			: new UnmanagedChunkCacheManager();
+		public static IChunkCacheManager DefaultCacheManager { get; set; } = new UnmanagedChunkCacheManager();
 
 		private TFChunk(string filename,
 			int initialReaderCount,
