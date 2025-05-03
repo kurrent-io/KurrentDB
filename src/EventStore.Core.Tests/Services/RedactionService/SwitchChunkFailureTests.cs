@@ -131,7 +131,9 @@ namespace EventStore.Core.Tests.Services.RedactionService {
 
 			newChunk = $"{nameof(cannot_switch_with_chunk_having_mismatched_range)}-chunk-0-2.tmp";
 			var chunkHeader = new ChunkHeader(1, 1024, 0, 2, true, Guid.NewGuid());
-			var chunk = TFChunk.CreateWithHeader(Path.Combine(PathName, newChunk), chunkHeader, 1024, false, false, false, 1, 1, false,
+			var chunk = TFChunk.CreateWithHeader(
+				new UnmanagedChunkCacheManager(),
+				Path.Combine(PathName, newChunk), chunkHeader, 1024, false, false, false, 1, 1, false,
 				new TFChunkTracker.NoOp());
 			chunk.Dispose();
 			msg = await SwitchChunk(GetChunk(0, 0), newChunk);

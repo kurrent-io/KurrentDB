@@ -28,11 +28,14 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		private int _backgroundPassesRemaining;
 		private int _backgroundRunning;
 
-		public TFChunkManager(TFChunkDbConfig config, ITransactionFileTracker tracker) {
+		public TFChunkManager(TFChunkDbConfig config, IChunkCacheManager cacheManager, ITransactionFileTracker tracker) {
 			Ensure.NotNull(config, "config");
 			_config = config;
 			_tracker = tracker;
+			ChunkCacheManager = cacheManager;
 		}
+
+		public IChunkCacheManager ChunkCacheManager { get; }
 
 		public void EnableCaching() {
 			if (_chunksCount == 0)
@@ -58,15 +61,19 @@ namespace EventStore.Core.TransactionLog.Chunks {
 		private void CacheUncacheReadOnlyChunks() {
 			int lastChunkToCache;
 			lock (_chunksLocker) {
+				//qq this used cache physical chunks of different sizes until the chunk cache is full
+				// now we are using fixed size buffers so we treat every physical chunk as the same size.
+				// if we had a large chunk cache combined with lots of data in the latest chunks being removed by scavenge
+				// and also no chunk merging, then quite a lot of space could be wasted. in later versions with dotnext
+				// it may be sensible to allocate smaller segments and assemble them into a stream via readonlysequence
+				// probably better if this behaviour was determined by the IChunkCacheManager
 				long totalSize = 0;
 				lastChunkToCache = _chunksCount;
 
 				for (int chunkNum = _chunksCount - 1; chunkNum >= 0;) {
 					var chunk = _chunks[chunkNum];
-					var chunkSize = chunk.IsReadOnly
-						? chunk.ChunkFooter.PhysicalDataSize + chunk.ChunkFooter.MapSize + ChunkHeader.Size +
-						  ChunkFooter.Size
-						: chunk.ChunkHeader.ChunkSize + ChunkHeader.Size + ChunkFooter.Size;
+					var chunkSize = 
+						chunk.ChunkHeader.ChunkSize + ChunkHeader.Size + ChunkFooter.Size;
 
 					if (totalSize + chunkSize > _config.MaxChunksCacheSize)
 						break;
@@ -95,7 +102,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 		public TFChunk.TFChunk CreateTempChunk(ChunkHeader chunkHeader, int fileSize) {
 			var chunkFileName = _config.FileNamingStrategy.GetTempFilename();
-			return TFChunk.TFChunk.CreateWithHeader(chunkFileName,
+			return TFChunk.TFChunk.CreateWithHeader(
+				ChunkCacheManager,
+				chunkFileName,
 				chunkHeader,
 				fileSize,
 				_config.InMemDb,
@@ -111,7 +120,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 			lock (_chunksLocker) {
 				var chunkNumber = _chunksCount;
 				var chunkName = _config.FileNamingStrategy.GetFilenameFor(chunkNumber, 0);
-				var chunk = TFChunk.TFChunk.CreateNew(chunkName,
+				var chunk = TFChunk.TFChunk.CreateNew(
+					ChunkCacheManager,
+					chunkName,
 					_config.ChunkSize,
 					chunkNumber,
 					chunkNumber,
@@ -139,7 +150,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 						chunkHeader.ChunkStartNumber, chunkHeader.ChunkEndNumber, _chunksCount));
 
 				var chunkName = _config.FileNamingStrategy.GetFilenameFor(chunkHeader.ChunkStartNumber, 0);
-				var chunk = TFChunk.TFChunk.CreateWithHeader(chunkName,
+				var chunk = TFChunk.TFChunk.CreateWithHeader(
+					ChunkCacheManager,
+					chunkName,
 					chunkHeader,
 					fileSize,
 					_config.InMemDb,
@@ -204,7 +217,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 					throw;
 				}
 
-				newChunk = TFChunk.TFChunk.FromCompletedFile(newFileName, verifyHash, _config.Unbuffered,
+				newChunk = TFChunk.TFChunk.FromCompletedFile(
+					ChunkCacheManager,
+					newFileName, verifyHash, _config.Unbuffered,
 					_config.InitialReaderCount, _config.MaxReaderCount, _tracker, _config.OptimizeReadSideCache, _config.ReduceFileCachePressure );
 			}
 

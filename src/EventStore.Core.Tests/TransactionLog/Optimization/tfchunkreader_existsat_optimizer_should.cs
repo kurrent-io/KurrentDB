@@ -87,7 +87,9 @@ namespace EventStore.Core.Tests.TransactionLog.Optimization {
 
 		private TFChunk CreateChunk(int chunkNumber, bool scavenged, out List<PosMap> posmap) {
 			var map = new List<PosMap>();
-			var chunk = TFChunk.CreateNew(GetFilePathFor("chunk-" + chunkNumber + "-" + Guid.NewGuid()), 1024 * 1024,
+			var chunk = TFChunk.CreateNew(
+				new UnmanagedChunkCacheManager(),
+				GetFilePathFor("chunk-" + chunkNumber + "-" + Guid.NewGuid()), 1024 * 1024,
 				chunkNumber, chunkNumber, scavenged, false, false, false,
 				Constants.TFChunkInitialReaderCountDefault,
 				Constants.TFChunkMaxReaderCountDefault,

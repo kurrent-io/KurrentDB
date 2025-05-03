@@ -12,6 +12,7 @@ public static class ClusterVNodeOptionsExtensions {
 			Database = options.Database with {
 				ChunkSize = MiniNode.ChunkSize,
 				ChunksCacheSize = MiniNode.CachedChunkSize,
+				ChunkCachePooling = false,
 				StreamExistenceFilterSize = 10_000,
 				ScavengeBackendCacheSize = 64 * 1024,
 			}

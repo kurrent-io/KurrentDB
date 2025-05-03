@@ -185,7 +185,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 			TFChunk.TFChunk newChunk;
 			try {
-				newChunk = TFChunk.TFChunk.CreateNew(tmpChunkPath,
+				newChunk = TFChunk.TFChunk.CreateNew(
+					_db.Manager.ChunkCacheManager,
+					tmpChunkPath,
 					_db.Config.ChunkSize,
 					chunkStartNumber,
 					chunkEndNumber,
@@ -421,7 +423,9 @@ namespace EventStore.Core.TransactionLog.Chunks {
 
 			TFChunk.TFChunk newChunk;
 			try {
-				newChunk = TFChunk.TFChunk.CreateNew(tmpChunkPath,
+				newChunk = TFChunk.TFChunk.CreateNew(
+					db.Manager.ChunkCacheManager,
+					tmpChunkPath,
 					db.Config.ChunkSize,
 					chunkStartNumber,
 					chunkEndNumber,

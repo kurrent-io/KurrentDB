@@ -446,7 +446,7 @@ namespace EventStore.Core.Tests.TransactionLog.Validation {
 				.WriteTo.Sink(sink)
 				.MinimumLevel.Verbose()
 				.CreateLogger())
-			using (var db = new TFChunkDb(config, new TFChunkTracker.NoOp(), log)) {
+			using (var db = new TFChunkDb(config, new UnmanagedChunkCacheManager(), new TFChunkTracker.NoOp(), log)) {
 				byte[] contents = new byte[config.ChunkSize];
 				for (var i = 0; i < config.ChunkSize; i++) {
 					contents[i] = 0;

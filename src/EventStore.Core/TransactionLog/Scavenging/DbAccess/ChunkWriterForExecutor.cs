@@ -34,6 +34,7 @@ namespace EventStore.Core.TransactionLog.Scavenging {
 			// from TFChunkScavenger.ScavengeChunk
 			FileName = Path.Combine(dbConfig.Path, Guid.NewGuid() + ".scavenge.tmp");
 			_outputChunk = TFChunk.CreateNew(
+				cacheManager: manager.ChunkCacheManager,
 				filename: FileName,
 				chunkSize: dbConfig.ChunkSize,
 				chunkStartNumber: sourceChunk.ChunkStartNumber,

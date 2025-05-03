@@ -131,10 +131,13 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 		private bool _unbuffered;
 		private bool _writeThrough;
 		private readonly bool _reduceFileCachePressure;
+		private readonly IChunkCacheManager _cacheManager;
 
 		private IChunkReadSide _readSide;
 
-		private TFChunk(string filename,
+		private TFChunk(
+			IChunkCacheManager cacheManager,
+			string filename,
 			int initialReaderCount,
 			int maxReaderCount,
 			int midpointsDepth,
@@ -150,6 +153,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 					"initialReaderCount is greater than maxReaderCount.");
 			Ensure.Nonnegative(midpointsDepth, "midpointsDepth");
 
+			_cacheManager = cacheManager;
 			_filename = filename;
 			_internalStreamsCount = initialReaderCount;
 			_maxReaderCount = maxReaderCount;
@@ -164,9 +168,9 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			FreeCachedData();
 		}
 
-		public static TFChunk FromCompletedFile(string filename, bool verifyHash, bool unbufferedRead,
+		public static TFChunk FromCompletedFile(IChunkCacheManager cacheManager, string filename, bool verifyHash, bool unbufferedRead,
 			int initialReaderCount, int maxReaderCount, ITransactionFileTracker tracker, bool optimizeReadSideCache = false, bool reduceFileCachePressure = false) {
-			var chunk = new TFChunk(filename, initialReaderCount, maxReaderCount,
+			var chunk = new TFChunk(cacheManager, filename, initialReaderCount, maxReaderCount,
 				TFConsts.MidpointsDepth, false, unbufferedRead, false, reduceFileCachePressure);
 			try {
 				chunk.InitCompleted(verifyHash, optimizeReadSideCache, tracker);
@@ -178,9 +182,9 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			return chunk;
 		}
 
-		public static TFChunk FromOngoingFile(string filename, int writePosition, bool checkSize, bool unbuffered,
+		public static TFChunk FromOngoingFile(IChunkCacheManager cacheManager, string filename, int writePosition, bool checkSize, bool unbuffered,
 			bool writethrough, int initialReaderCount, int maxReaderCount, bool reduceFileCachePressure, ITransactionFileTracker tracker) {
-			var chunk = new TFChunk(filename,
+			var chunk = new TFChunk(cacheManager, filename,
 				initialReaderCount,
 				maxReaderCount,
 				TFConsts.MidpointsDepth,
@@ -197,7 +201,9 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			return chunk;
 		}
 
-		public static TFChunk CreateNew(string filename,
+		public static TFChunk CreateNew(
+			IChunkCacheManager cacheManager,
+			string filename,
 			int chunkSize,
 			int chunkStartNumber,
 			int chunkEndNumber,
@@ -212,11 +218,13 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			var size = GetAlignedSize(chunkSize + ChunkHeader.Size + ChunkFooter.Size);
 			var chunkHeader = new ChunkHeader(CurrentChunkVersion, chunkSize, chunkStartNumber, chunkEndNumber,
 				isScavenged, Guid.NewGuid());
-			return CreateWithHeader(filename, chunkHeader, size, inMem, unbuffered, writethrough, initialReaderCount, maxReaderCount,
+			return CreateWithHeader(cacheManager, filename, chunkHeader, size, inMem, unbuffered, writethrough, initialReaderCount, maxReaderCount,
 				reduceFileCachePressure, tracker);
 		}
 
-		public static TFChunk CreateWithHeader(string filename,
+		public static TFChunk CreateWithHeader(
+			IChunkCacheManager cacheManager,
+			string filename,
 			ChunkHeader header,
 			int fileSize,
 			bool inMem,
@@ -226,7 +234,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			int maxReaderCount,
 			bool reduceFileCachePressure,
 			ITransactionFileTracker tracker) {
-			var chunk = new TFChunk(filename,
+			var chunk = new TFChunk(cacheManager, filename,
 				initialReaderCount,
 				maxReaderCount,
 				TFConsts.MidpointsDepth,
@@ -415,8 +423,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			// ALLOCATE MEM
 			_cacheStatus = CacheStatus.Cached;
 			_cachedLength = fileSize;
-			_cachedData = Marshal.AllocHGlobal(_cachedLength);
-			GC.AddMemoryPressure(_cachedLength);
+			_cachedData = _cacheManager.AllocateAtLeast(_cachedLength);
 
 			// WRITER STREAM
 			var memStream =
@@ -696,8 +703,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 
 				var dataSize = IsReadOnly ? _physicalDataSize + ChunkFooter.MapSize : _chunkHeader.ChunkSize;
 				_cachedLength = GetAlignedSize(ChunkHeader.Size + dataSize + ChunkFooter.Size);
-				var cachedData = Marshal.AllocHGlobal(_cachedLength);
-				GC.AddMemoryPressure(_cachedLength);
+				var cachedData = _cacheManager.AllocateAtLeast(_cachedLength);
 
 				try {
 					using (var unmanagedStream = new UnmanagedMemoryStream((byte*)cachedData, _cachedLength,
@@ -715,8 +721,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 						}
 					}
 				} catch {
-					Marshal.FreeHGlobal(cachedData);
-					GC.RemoveMemoryPressure(_cachedLength);
+					_cacheManager.Free(cachedData);
 					throw;
 				}
 
@@ -1068,8 +1073,7 @@ namespace EventStore.Core.TransactionLog.Chunks.TFChunk {
 			lock (_cachedDataLock) {
 				var cachedData = _cachedData;
 				if (cachedData != IntPtr.Zero) {
-					Marshal.FreeHGlobal(cachedData);
-					GC.RemoveMemoryPressure(_cachedLength);
+					_cacheManager.Free(cachedData);
 					_cachedData = IntPtr.Zero;
 					_cacheStatus = CacheStatus.Uncached;
 					Log.Debug("UNCACHED TFChunk {chunk}.", this);

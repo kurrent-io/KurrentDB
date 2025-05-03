@@ -415,6 +415,10 @@ namespace EventStore.Core {
 
 		[Description("Database Options")]
 		public record DatabaseOptions {
+			//qq
+			[Description("Enabled Chunk Cache Buffer Pooling (experimental)")]
+			public bool ChunkCachePooling { get; init; } = true;
+
 			[Description("The minimum flush delay in milliseconds.")]
 			public double MinFlushDelayMs { get; init; } = TFConsts.MinFlushDelayMs.TotalMilliseconds;
 
@@ -579,6 +583,7 @@ namespace EventStore.Core {
 
 
 			internal static DatabaseOptions FromConfiguration(IConfigurationRoot configurationRoot) => new() {
+				ChunkCachePooling = configurationRoot.GetValue<bool>(nameof(ChunkCachePooling)),
 				MinFlushDelayMs = configurationRoot.GetValue<double>(nameof(MinFlushDelayMs)),
 				DisableScavengeMerging = configurationRoot.GetValue<bool>(nameof(DisableScavengeMerging)),
 				MemDb = configurationRoot.GetValue<bool>(nameof(MemDb)),

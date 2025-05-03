@@ -306,7 +306,36 @@ namespace EventStore.Core {
 			metricsConfiguration ??= new();
 			MetricsBootstrapper.Bootstrap(metricsConfiguration, dbConfig, trackers);
 
-			Db = new TFChunkDb(dbConfig, tracker: trackers.TransactionFileTracker);
+
+
+			IChunkCacheManager cacheManager = new UnmanagedChunkCacheManager();
+
+			if (options.Database.ChunkCachePooling) {
+				var chunkTotalSize = dbConfig.ChunkSize + ChunkHeader.Size + ChunkFooter.Size;
+				var cacheSizeBytes = dbConfig.MaxChunksCacheSize.RoundUpToMultipleOf(chunkTotalSize);
+				var cacheSizePhysicalChunks = cacheSizeBytes / chunkTotalSize;
+				var initialBuffers = cacheSizePhysicalChunks + 2;
+
+				var allowanceForPosMap = 16 * 1024 * 1024; //qq hand wave. 6% increase in chunk cache memory usage acceptable
+
+				Log.Information($"#### Chunk cache pooling is enabled");
+				Log.Information($"#### Pre-allocating {initialBuffers} initialBuffers based on chunk cache size of {cacheSizePhysicalChunks} chunks.");
+
+				cacheManager = new PoolingChunkCacheManager(
+					inner: cacheManager,
+					minBufferSize: chunkTotalSize + allowanceForPosMap,
+					cleanBuffers: true,
+					initialBuffers: (int)initialBuffers);
+			} else {
+				Log.Information($"#### Chunk cache pooling is disabled");
+			}
+
+
+
+			Db = new TFChunkDb(
+				dbConfig,
+				cacheManager: cacheManager,
+				tracker: trackers.TransactionFileTracker);
 
 			TFChunkDbConfig CreateDbConfig(
 				out SystemStatsHelper statsHelper,
