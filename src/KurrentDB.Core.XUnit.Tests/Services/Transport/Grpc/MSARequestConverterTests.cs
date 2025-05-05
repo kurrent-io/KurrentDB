@@ -11,6 +11,7 @@ using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
+using KurrentDB.Protobuf.Server;
 using KurrentDB.Protocol.V2;
 using Xunit;
 
@@ -286,6 +287,9 @@ public class MSARequestConverterTests {
 				{ Constants.Properties.EventType, new() { BytesValue = ByteString.CopyFromUtf8("my-event-type") } },
 				{ Constants.Properties.DataFormat, new() { BytesValue = ByteString.CopyFromUtf8(dataFormat) } },
 				{ Constants.Properties.LegacyMetadata, new() { BytesValue = ByteString.CopyFromUtf8("""{ "foo": "bar" }""") } },
+				{ "property1", new() { BooleanValue = true } },
+				{ "property2", new() { StringValue = "test" } },
+				{ "property3", new() { Int32Value = 1234 } },
 			},
 		};
 
@@ -298,7 +302,21 @@ public class MSARequestConverterTests {
 		Assert.Equal(expectedIsJson, output.IsJson);
 		Assert.Equal(Encoding.UTF8.GetBytes("the-data"), output.Data);
 		Assert.Equal(Encoding.UTF8.GetBytes("""{ "foo": "bar" }"""), output.Metadata);
-		// todo: properties once they are supported by the event
+
+		var properties = Properties.Parser.ParseFrom(output.Properties);
+
+		properties.PropertiesValues.TryGetValue("property1", out var property1);
+		Assert.True(property1!.BooleanValue);
+
+		properties.PropertiesValues.TryGetValue("property2", out var property2);
+		Assert.Equal("test", property2!.StringValue);
+
+		properties.PropertiesValues.TryGetValue("property3", out var property3);
+		Assert.Equal(1234, property3!.Int32Value);
+
+		// legacy metadata is excluded
+		properties.PropertiesValues.TryGetValue(Constants.Properties.LegacyMetadata, out var legacyMetadata);
+		Assert.Null(legacyMetadata);
 	}
 
 	[Fact]
