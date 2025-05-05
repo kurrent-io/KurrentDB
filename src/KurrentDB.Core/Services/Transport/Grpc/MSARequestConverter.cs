@@ -153,7 +153,7 @@ public class MSARequestConverter {
 			isJson: contentTypeString == Constants.Properties.DataFormats.Json,
 			data: appendRecord.Data.ToByteArray(),
 			metadata: metadata,
-			properties: properties.ToByteArray());
+			properties: properties.PropertiesValues.Count == 0 ? [] : properties.ToByteArray());
 		return evt;
 	}
 
