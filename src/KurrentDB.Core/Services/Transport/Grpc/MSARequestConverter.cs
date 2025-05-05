@@ -45,7 +45,7 @@ public class MSARequestConverter {
 		}
 
 		var events = ImmutableArray.CreateBuilder<Event>(initialCapacity: numEvents);
-		// todo: if all requests are for one stream we may be able to leave this null
+		// todo: if all requests are for one stream we can leave this null
 		var eventStreamIndexes = ImmutableArray.CreateBuilder<int>(initialCapacity: numEvents);
 
 		var totalSize = 0;
