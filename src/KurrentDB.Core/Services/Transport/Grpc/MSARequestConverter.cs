@@ -6,11 +6,13 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Security.Claims;
 using System.Threading;
+using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Protobuf;
+using KurrentDB.Protobuf.Server;
 using KurrentDB.Protocol.V2;
 
 namespace KurrentDB.Core.Services.Transport.Grpc;
@@ -137,13 +139,21 @@ public class MSARequestConverter {
 			? metadataValue.BytesValue.ToByteArray()
 			: [];
 
+		var properties = new Properties();
+		foreach (var property in appendRecord.Properties) {
+			if (property.Key == Constants.Properties.LegacyMetadata)
+				continue;
+
+			properties.PropertiesValues.Add(property.Key, property.Value);
+		}
+
 		var evt = new Event(
 			eventId: eventId,
 			eventType: eventTypeString,
 			isJson: contentTypeString == Constants.Properties.DataFormats.Json,
 			data: appendRecord.Data.ToByteArray(),
 			metadata: metadata,
-			properties: []);
+			properties: properties.ToByteArray());
 		return evt;
 	}
 
