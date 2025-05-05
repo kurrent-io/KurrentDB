@@ -108,7 +108,7 @@ message AppendStreamFailure {
 	}
 }
 
-// AppendStreamOutput represents the output of appending records to a specific stream.
+// Represents the output of appending records to a specific stream.
 message AppendStreamResponse {
 	// The result of the append operation.
 	oneof result {
