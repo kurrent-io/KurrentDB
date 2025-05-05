@@ -79,8 +79,7 @@ public class MSARequestConverter {
 				var evt = ConvertRecord(appendRecord);
 
 				// todo: consider if these two size related exceptions ought to be non-exceptional
-				// todo: account for properties here once we store them
-				var eventSize = Event.SizeOnDisk(evt.EventType, evt.Data, evt.Metadata);
+				var eventSize = Event.SizeOnDisk(evt.EventType, evt.Data, evt.Metadata, evt.Properties);
 				if (eventSize > _maxAppendEventSize) {
 					throw RpcExceptions.MaxAppendEventSizeExceeded(evt.EventId.ToString(), eventSize, _maxAppendEventSize);
 				}
