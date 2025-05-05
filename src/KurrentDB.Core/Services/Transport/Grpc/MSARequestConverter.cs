@@ -10,6 +10,7 @@ using Grpc.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Protobuf;
 using KurrentDB.Protocol.V2;
 
 namespace KurrentDB.Core.Services.Transport.Grpc;
