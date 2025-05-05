@@ -105,7 +105,7 @@ public class MSAResponseConverter {
 				};
 			}
 
-			// suspect this not be a possible case on the gRPC paths
+			// this is not a possible case on the gRPC paths, but we handle it anyway
 			case OperationResult.AccessDenied: {
 				return new MultiStreamAppendResponse {
 					Failure = new() {
