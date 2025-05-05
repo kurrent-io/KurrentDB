@@ -20,9 +20,6 @@ public class CallbackEnvelope : IEnvelope {
 		_callback(message);
 	}
 
-	public static CallbackEnvelope Create(Action<Message> callback) =>
-		new(callback);
-
 	public static CallbackEnvelope<TArg> Create<TArg>(TArg arg, Action<TArg, Message> callback) =>
 		new(arg, callback);
 }
