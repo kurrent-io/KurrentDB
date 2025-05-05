@@ -101,7 +101,7 @@ public class MultiStreamAppendService : StreamsService.StreamsServiceBase {
 			if (context.RequestHeaders.Get(Constants.Headers.RequiresLeader) is not null) {
 				throw new RpcException(new Status(
 					StatusCode.InvalidArgument,
-					"requires-leader cannot be disabled on this API"));
+					"requires-leader is not supported on this API"));
 			}
 
 			var writeEvents = _requestConverter.ConvertRequests(
