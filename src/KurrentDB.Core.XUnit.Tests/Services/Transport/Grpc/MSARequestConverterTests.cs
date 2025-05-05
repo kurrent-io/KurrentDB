@@ -17,8 +17,8 @@ using Xunit;
 namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Grpc;
 
 public class MSARequestConverterTests {
-	const int TestMaxAppendSize = 150;
-	const int TestMaxAppendEventSize = 100;
+	const int TestMaxAppendSize = 400;
+	const int TestMaxAppendEventSize = 300;
 
 	private readonly MSARequestConverter _sut = new(
 		maxAppendSize: TestMaxAppendSize,
@@ -190,7 +190,7 @@ public class MSARequestConverterTests {
 		});
 
 		// then
-		Assert.Equal($"Event with Id: {eventId}, Size: 116, exceeds Maximum Append Event Size of 100.", ex.Status.Detail);
+		Assert.Equal($"Event with Id: {eventId}, Size: 375, exceeds Maximum Append Event Size of 300.", ex.Status.Detail);
 		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
 	}
 
@@ -234,7 +234,7 @@ public class MSARequestConverterTests {
 		});
 
 		// then
-		Assert.Equal("Maximum Append Size of 150 Exceeded.", ex.Status.Detail);
+		Assert.Equal("Maximum Append Size of 400 Exceeded.", ex.Status.Detail);
 		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
 	}
 
