@@ -141,7 +141,8 @@ public class MSARequestConverter {
 			eventType: eventTypeString,
 			isJson: contentTypeString == Constants.Properties.DataFormats.Json,
 			data: appendRecord.Data.ToByteArray(),
-			metadata: metadata);
+			metadata: metadata,
+			properties: []);
 		return evt;
 	}
 
