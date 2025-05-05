@@ -164,7 +164,7 @@ message ErrorDetails {
 	}
 
 	// When the transaction exceeds the maximum size allowed
-	// (its bigger than the configured chunk size).
+	// (it's bigger than the configured chunk size).
 	message TransactionMaxSizeExceeded {
 		// The maximum allowed size of the transaction.
 		int32 max_size = 1;
