@@ -22,18 +22,18 @@ public class Event {
 			properties) {
 	}
 
-	public static int SizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
-		(data?.Length ?? 0) + (metadata?.Length ?? 0) + (eventType.Length * 2);
+	public static int SizeOnDisk(string eventType, byte[] data, byte[] metadata, byte[] properties) =>
+		(data?.Length ?? 0) + (metadata?.Length ?? 0) + (properties?.Length ?? 0) + (eventType.Length * 2);
 
-	private static bool ExceedsMaximumSizeOnDisk(string eventType, byte[] data, byte[] metadata) =>
-		SizeOnDisk(eventType, data, metadata) > TFConsts.EffectiveMaxLogRecordSize;
+	private static bool ExceedsMaximumSizeOnDisk(string eventType, byte[] data, byte[] metadata, byte[] properties) =>
+		SizeOnDisk(eventType, data, metadata, properties) > TFConsts.EffectiveMaxLogRecordSize;
 
 	public Event(Guid eventId, string eventType, bool isJson, byte[] data, byte[] metadata, byte[] properties) {
 		if (eventId == Guid.Empty)
 			throw new ArgumentException("Empty eventId provided.", nameof(eventId));
 		if (string.IsNullOrEmpty(eventType))
 			throw new ArgumentException("Empty eventType provided.", nameof(eventType));
-		if (ExceedsMaximumSizeOnDisk(eventType, data, metadata))
+		if (ExceedsMaximumSizeOnDisk(eventType, data, metadata, properties))
 			throw new ArgumentException("Record is too big.", nameof(data));
 
 		EventId = eventId;
