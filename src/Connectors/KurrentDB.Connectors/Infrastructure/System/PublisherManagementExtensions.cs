@@ -91,7 +91,8 @@ public static class PublisherManagementExtensions {
 				eventType: SystemEventTypes.StreamMetadata,
 				isJson: true,
 				data: metadata.ToJsonBytes(),
-				metadata: null
+				metadata: null,
+				properties: []
 			)
 		};
 

@@ -34,7 +34,8 @@ public static class ProduceRequestExtensions {
                 schema.Subject,
                 isJson,
                 data.ToArray(),
-                metadata.ToArray()
+                metadata.ToArray(),
+                properties: []
             );
         }
     }
