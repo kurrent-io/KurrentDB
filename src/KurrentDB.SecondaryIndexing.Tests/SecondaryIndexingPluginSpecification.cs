@@ -62,7 +62,7 @@ public abstract class SecondaryIndexingPluginSpecification<TLogFormat, TStreamId
 		new(
 			PathName,
 			inMemDb: true,
-			virtualStreamReaders: virtualStreamReaders
+			subsystems: [new SecondaryIndexingPlugin(virtualStreamReaders)]
 		);
 
 	protected Task<StreamEventsSlice> ReadStream(string stream) =>

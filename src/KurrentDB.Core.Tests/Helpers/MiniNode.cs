@@ -32,6 +32,7 @@ using KurrentDB.Core.Tests.Index.Hashers;
 using KurrentDB.Core.Tests.Services.Transport.Tcp;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Core.Util;
+using KurrentDB.SecondaryIndexing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
@@ -92,7 +93,6 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		int httpClientTimeoutSec = 60,
 		IAuthenticationProviderFactory authenticationProviderFactory = null,
 		IAuthorizationProviderFactory authorizationProviderFactory = null,
-		IEnumerable<IVirtualStreamReader> virtualStreamReaders = null,
 		IExpiryStrategy expiryStrategy = null,
 		string transform = "identity",
 		IConfiguration configuration = null,
@@ -216,6 +216,10 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				StreamExistenceFilterCheckpointInterval = TimeSpan.FromMilliseconds(streamExistenceFilterCheckpointIntervalMs),
 				HighHasher = hash32bit ? new ConstantHasher(0) : options.HighHasher,
 			});
+
+		var virtualStreamReaders = subsystems
+			.OfType<ISecondaryIndexingPlugin>()
+			.SelectMany(indexingPlugin => indexingPlugin.IndicesVirtualStreamReaders);
 
 		Node = new ClusterVNode<TStreamId>(options, logFormatFactory,
 			new AuthenticationProviderFactory(

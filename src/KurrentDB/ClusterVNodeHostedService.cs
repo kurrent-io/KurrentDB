@@ -106,6 +106,12 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				throw new InvalidConfigurationException($"Couldn't acquire exclusive lock on DB at '{_options.Database.Db}'.");
 		}
 
+		var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create();
+		var subsystems = secondaryIndexingPlugin.GetSubsystems();
+		foreach (var subsystem in subsystems) {
+			options = options.WithPlugableComponent(subsystem);
+		}
+
 		_clusterNodeMutex = new ClusterNodeMutex();
 		if (!_clusterNodeMutex.Acquire())
 			throw new InvalidConfigurationException($"Couldn't acquire exclusive Cluster Node mutex '{_clusterNodeMutex.MutexName}'.");
@@ -285,7 +291,6 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			plugins.Add(new ConnectedSubsystemsPlugin());
 			plugins.Add(new AutoScavengePlugin());
 			plugins.Add(new TcpApiPlugin());
-			plugins.Add(new SecondaryIndexingPlugin());
 
 			foreach (var plugin in plugins) {
 				Log.Information("Loaded SubsystemsPlugin plugin: {plugin} {version}.",

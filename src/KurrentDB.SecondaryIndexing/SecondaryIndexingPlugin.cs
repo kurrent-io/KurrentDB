@@ -13,6 +13,12 @@ public interface ISecondaryIndexingPlugin : ISubsystemsPlugin {
 	IEnumerable<IVirtualStreamReader> IndicesVirtualStreamReaders { get; }
 }
 
+public static class SecondaryIndexingPluginFactory {
+	// TODO: For now, it's a dummy method, but it'll eventually get needed classes like IPublisher, ISubscriber and setup plugin
+	public static ISecondaryIndexingPlugin Create() =>
+		new SecondaryIndexingPlugin();
+}
+
 internal class SecondaryIndexingPlugin(IEnumerable<IVirtualStreamReader>? indexingVirtualStreamReaders = null) : SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
 	public IEnumerable<IVirtualStreamReader> IndicesVirtualStreamReaders { get; } = indexingVirtualStreamReaders ?? [];
 
