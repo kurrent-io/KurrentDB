@@ -85,10 +85,10 @@ public class HashListMemTable : IMemTable {
 					if (!_hash.TryGetValue(stream.Value, out list)) {
 						list = new(MemTableComparer);
 						_hash.AddOrUpdate(stream.Value, list,
-					(x, y) => {
-						throw new Exception(
-							"This should never happen as MemTable updates are single-threaded.");
-					});
+							(x, y) => {
+								throw new Exception(
+									"This should never happen as MemTable updates are single-threaded.");
+							});
 					}
 
 					if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))

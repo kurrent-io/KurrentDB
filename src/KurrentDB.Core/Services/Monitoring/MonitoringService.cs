@@ -222,8 +222,8 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 			return;
 		switch (message.Result) {
 			case OperationResult.Success:
-			case OperationResult.WrongExpectedVersion: // already created
-				{
+			case OperationResult.WrongExpectedVersion: {
+				// already created
 				Log.Debug("Created stats stream '{stream}', code = {result}", _nodeStatsStream, message.Result);
 				_statsStreamCreated = true;
 				break;
@@ -240,8 +240,8 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 				break;
 			}
 			case OperationResult.StreamDeleted:
-			case OperationResult.InvalidTransaction: // should not happen at all
-				{
+			case OperationResult.InvalidTransaction: {
+				// should not happen at all
 				Log.Error(
 					"Monitoring service got unexpected response code when trying to create stats stream ({e}).",
 					message.Result);
