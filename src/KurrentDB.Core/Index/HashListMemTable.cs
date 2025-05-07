@@ -84,15 +84,19 @@ public class HashListMemTable : IMemTable {
 
 					if (!_hash.TryGetValue(stream.Value, out list)) {
 						list = new(MemTableComparer);
+						// TryGetLatestEntry requires the list to be non-empty when it reads it
+						// so we acquire the write lock before making the list visible
+						if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
+							throw new UnableToAcquireLockInReasonableTimeException();
 						_hash.AddOrUpdate(stream.Value, list,
 							(x, y) => {
 								throw new Exception(
 									"This should never happen as MemTable updates are single-threaded.");
 							});
+					} else {
+						if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
+							throw new UnableToAcquireLockInReasonableTimeException();
 					}
-
-					if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
-						throw new UnableToAcquireLockInReasonableTimeException();
 				}
 
 				list.Add(new Entry(entry.Version, entry.Position), 0);
@@ -137,6 +141,7 @@ public class HashListMemTable : IMemTable {
 			if (!list.Lock.TryEnterReadLock(DefaultLockTimeout))
 				throw new UnableToAcquireLockInReasonableTimeException();
 			try {
+				// requires the list to be non-empty before we are able to acquire a lock on it.
 				var latest = list.Keys[list.Count - 1];
 				entry = new IndexEntry(hash, latest.EvNum, latest.LogPos);
 				return true;
