@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace KurrentDB.SecondaryIndexing.Tests;
 
-public static class TestPluginStartup {
+internal static class TestPluginStartup {
 	public static void Configure(SecondaryIndexingPlugin plugin, IConfigurationBuilder? configurationBuilder = null) {
 		var config = (configurationBuilder ?? new ConfigurationBuilder()).Build();
 
