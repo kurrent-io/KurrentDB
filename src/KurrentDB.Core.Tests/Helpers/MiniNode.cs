@@ -25,7 +25,6 @@ using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Monitoring;
-using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Http;
 using KurrentDB.Core.Tests.Index.Hashers;
