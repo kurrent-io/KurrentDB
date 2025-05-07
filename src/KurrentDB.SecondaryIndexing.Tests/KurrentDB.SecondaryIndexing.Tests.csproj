@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 
 		<IsPackable>false</IsPackable>
-		<IsTestProject>true</IsTestProject>
+		<IsPluginsTestProject>true</IsPluginsTestProject>
 		<RootNamespace>KurrentDB.SecondaryIndexing.Tests</RootNamespace>
 	</PropertyGroup>
 
