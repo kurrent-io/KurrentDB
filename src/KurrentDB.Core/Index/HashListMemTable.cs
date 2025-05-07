@@ -62,18 +62,21 @@ public class HashListMemTable : IMemTable {
 		var stream = collection[0].Stream; // NOTE: all entries should have the same stream
 		EntryList list = null;
 		try {
-
 			if (!_hash.TryGetValue(stream, out list)) {
 				list = new(MemTableComparer);
-				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
+				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout)) {
+					list = null;
 					throw new UnableToAcquireLockInReasonableTimeException();
+				}
 				_hash.AddOrUpdate(stream, list,
 					(x, y) => {
 						throw new Exception("This should never happen as MemTable updates are single-threaded.");
 					});
 			} else {
-				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
+				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout)) {
+					list = null;
 					throw new UnableToAcquireLockInReasonableTimeException();
+				}
 			}
 
 			for (int i = 0, n = collection.Count; i < n; ++i) {
