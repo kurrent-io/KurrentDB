@@ -10,21 +10,21 @@ This page contains the release notes for EventStoreDB 24.10
 
 6 March 2025
 
-### Reduce allocations when projections validate json (PR [#4881](https://github.com/EventStore/EventStore/pull/4881))
+### Reduce allocations when projections validate JSON (PR [#4881](https://github.com/EventStore/EventStore/pull/4881))
 
 This reduces memory pressure when running projections, especially on databases with larger events.
 
 There is a change in behaviour between 24.10.4 and previous versions.
 
-Previously unquoted keys e.g. `{ foo : "bar" }` were erroneously considered valid json, and would be processed by the projections. This is not the case starting from 24.10.4.
+Previously unquoted keys, e.g., `{ foo : "bar" }`, were erroneously considered valid JSON and would be processed by the projections. This is not the case starting from 24.10.4.
 
-Projections won’t fault after an upgrade if they previously emitted an event based off of a now-invalid event.
+Projections won’t fault after an upgrade if they previously emitted an event based on a now-invalid event.
 
 ### Add an option to limit the size of events appended over gRPC and HTTP (PR [#4882](https://github.com/EventStore/EventStore/pull/4882))
 
-The `MaxAppendEventSize` option has been added to limit the size of individual events in an append request over gRPC and HTTP. The default for this new option is `int.MaxValue` (no limit). Events appended using the AtomPub HTTP API still may not exceed 4mb. Events written by internal systems or services such as projections are unaffected.
+The `MaxAppendEventSize` option has been added to limit the size of individual events in an append request over gRPC and HTTP. The default for this new option is `int.MaxValue` (no limit). Events appended using the AtomPub HTTP API still may not exceed 4 MB. Events written by internal systems or services, such as projections, are unaffected.
 
-This option is different from `MaxAppendSize`, which limits the size of entire append requests over gRPC.
+This option differs from `MaxAppendSize`, which limits the size of entire append requests over gRPC.
 
 A new RPC exception `maximum-append-event-size-exceeded` was added as part of this, and is returned when any event in an append batch exceeds the configured `MaxAppendEventSize`.
 
@@ -36,7 +36,7 @@ The `MaxProjectionStateSize` option has been added to configure the maximum size
 
 A projection will now fault if the total size of the projection’s state and result exceeds the `MaxProjectionStateSize`. This replaces the warning log for state size in `CoreProjectionCheckpointManager`.
 
-**Note:** In certain cases, a projection’s state and result will be set to the same value and be written to the projection state event twice. This can result in the `MaxProjectionStateSize` being exceeded even when the projection state is half the size of the configured maximum.
+**Note:** Sometimes, a projection’s state and result will be set to the same value and written to the projection state event twice. This can result in the `MaxProjectionStateSize` being exceeded even when the projection state is half the configured maximum size.
 
 ## [24.10.3](https://github.com/EventStore/EventStore/releases/tag/v24.10.3)
 
@@ -44,11 +44,11 @@ A projection will now fault if the total size of the projection’s state and re
 
 ### Fix getting projection statistics over gRPC for faulted projections (PR #4863)
 
-Prior to this fix, projection statistics could not be retrieved via gRPC if one of the projections immediately transitions into a faulted state.
+Before this fix, projection statistics could not be retrieved via gRPC if one of the projections immediately transitions into a faulted state.
 
 ### Fix possibility of a gRPC write hanging clientside if a leader election occurs (PR #4858)
 
-Prior to this fix, if a gRPC write was pending at the time of a leader election, the gRPC call could be terminated successfully instead of in a failed state. On the dotnet client this results in the Append Task call hanging indefinitely, other clients may be affected as well.
+Prior to this fix, if a gRPC write was pending at the time of a leader election, the gRPC call could be terminated successfully instead of in a failed state. On the dotnet client, this results in the Append Task call hanging indefinitely; other clients may also be affected.
 
 ## [24.10.2](https://github.com/EventStore/EventStore/releases/tag/v24.10.2)
 
@@ -62,16 +62,16 @@ When this occurs, an error is logged for each message that is missed:
 
 ```
 Error while processing message EventStore.Core.Messages.SubscriptionMessage+PersistentSubscriptionTimerTick in queued handler 'PersistentSubscriptions'.
-System.InvalidOperationException: Operation is not valid due to the current state of the object.
+System.InvalidOperationException: Operation is not valid due to the object's current state.
 ```
 
-If a retried message is missed in this way, the consumer will never receive the message. In order to recover and receive these messages again, the persistent subscription will need to be reset.
+If a retried message is missed in this way, the consumer will never receive it. The persistent subscription will need to be reset in order to recover and receive these messages again.
 
 ### Validate against attempts to set metadata for the "" stream (PR #4799)
 
-Empty string (“”) has never been a valid stream name. Attempting to set the metadata for it results in an attempt to write to the stream “$$” which, until now, has been a valid stream name.
+An empty string (“”) has never been a valid stream name. Attempting to set the metadata for it results in an attempt to write to the stream “$$”, which, until now, has been a valid stream name.
 
-However, writing to “$$” involves checking on the “” stream, to see if it is soft deleted. This results in the storage writer exiting which shuts down the server to avoid a 'sick but not dead' scenario
+However, writing to “$$” involves checking on the “” stream, to see if it is soft deleted. This results in the storage writer exiting, which shuts down the server to avoid a 'sick but not dead' scenario
 
 “$$” is now an invalid stream name, and so any attempt to write to it is rejected at an early stage.
 
@@ -93,13 +93,13 @@ This was caused by a bug when converting ticks between Stopwatch.Frequency and T
 
 Fixed the following issues:
 
-- On Linux the disk usage/capacity were showing the values for the disk mounted at `/` even if the database was on a different disk (PR #4759)
+- On Linux, the disk usage/capacity were showing the values for the disk mounted at `/` even if the database was on a different disk (PR #4759)
 - Align histogram buckets with the dashboard (PR #4811)
-- Fix some disk IO stats being 0 on linux due to the assumption that the `/proc/<pid>/io` file was in a particular order and returned early without reading all the values (PR #4818)
+- Fix some disk IO stats being 0 on Linux due to the assumption that the `/proc/<pid>/io` file was in a particular order and returned early without reading all the values (PR #4818)
 
 ### Support paging in persistent subscriptions (PR #4785)
 
-The persistent subscription UI now pages when listing all persistent subscriptions rather than loading all of them at once. By default, the UI shows the persistent subscription groups for the first 100 streams, and refreshes every second. These options can be changed in the UI.
+The persistent subscription UI now pages when listing all persistent subscriptions rather than loading all of them at once. By default, the UI shows the persistent subscription groups for the first 100 streams and refreshes every second. These options can be changed in the UI.
 
 A count and offset can now be specified when getting all persistent subscription stats through the HTTP API: `/subscriptions?count={count}&offset={offset}`.
 
@@ -111,9 +111,9 @@ The response of `/subscriptions` (without the query string) is unchanged.
 
 ### Up to 100 license entitlements are fetched (PR #4670)
 
-Previously only 10 license entitlements were returned, which meant that entitlements were missing on the commercial license policies that have more than 10 entitlements.
+Previously, only ten license entitlements were returned, meaning that entitlements were missing on the commercial license policies with more than ten entitlements.
 
-If you are using a commercial trial of 24.10 you will need to upgrade to 24.10.1 to transition on to the full license.
+If you are using a commercial trial of 24.10, you must upgrade to 24.10.1 to transition onto the full license.
 
 ### SLOW QUEUE messages are logged by default again (PR #4660)
 
@@ -127,4 +127,4 @@ Slow bus messages were still logged, but the logging of slow queue messages had 
 
 20 November 2024
 
-Find out [What's new](./whatsnew.md) in this release.
+Find out [What's new](../quick-start/whatsnew.md) in this release.
