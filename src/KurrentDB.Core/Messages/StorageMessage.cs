@@ -162,6 +162,10 @@ public static partial class StorageMessage {
 		}
 	}
 
+	/// <summary>
+	/// Sent by the StorageChaser when it chases a prepare that is not self committing
+	/// Handled by RequestManagementService
+	/// </summary>
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class PrepareAck : Message {
 		public readonly Guid CorrelationId;
@@ -178,6 +182,10 @@ public static partial class StorageMessage {
 		}
 	}
 
+	/// <summary>
+	/// Sent by the StorageChaser when it chases a commit log record or a prepare that is self committing and TxEnd
+	/// Received by the IndexCommitterService
+	/// </summary>
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class CommitAck : Message {
 		public readonly Guid CorrelationId;
@@ -235,6 +243,10 @@ public static partial class StorageMessage {
 		}
 	}
 
+	/// <summary>
+	/// Sent by the IndexCommitterService after the the log is indexed up to a CommitAck
+	/// Received by the RequestManagementService
+	/// </summary>
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class CommitIndexed : Message {
 		public readonly Guid CorrelationId;
