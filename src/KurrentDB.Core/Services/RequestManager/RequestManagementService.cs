@@ -69,6 +69,7 @@ public class RequestManagementService :
 							message.ExpectedVersion,
 							message.Events,
 							_commitSource,
+							message,
 							message.CancellationToken);
 		_currentRequests.Add(message.InternalCorrId, manager);
 		_currentTimedRequests.Add(message.InternalCorrId, Stopwatch.StartNew());

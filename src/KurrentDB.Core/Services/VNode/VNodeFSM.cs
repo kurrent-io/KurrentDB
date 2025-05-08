@@ -100,8 +100,11 @@ public class VNodeFSM : IAsyncHandle<Message> {
 	private struct HandlersBuffer {
 		private Handler _handler;
 
-		public readonly ValueTask InvokeAsync(VNodeState index, Message message, CancellationToken token)
-			=> Unsafe.Add(ref Unsafe.AsRef(in _handler), (int)index).InvokeAsync(message, token);
+		public readonly ValueTask InvokeAsync(VNodeState index, Message message, CancellationToken token) {
+			if (message.Trace)
+				message.AddTrace($"FSM handling in state {index}");
+			return Unsafe.Add(ref Unsafe.AsRef(in _handler), (int)index).InvokeAsync(message, token);
+		}
 	}
 
 	[StructLayout(LayoutKind.Auto)]

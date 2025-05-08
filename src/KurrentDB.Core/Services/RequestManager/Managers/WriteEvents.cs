@@ -13,8 +13,10 @@ namespace KurrentDB.Core.Services.RequestManager.Managers;
 public class WriteEvents : RequestManagerBase {
 	private readonly string _streamId;
 	private readonly Event[] _events;
+	private readonly ClientMessage.WriteEvents _request;
 	private readonly CancellationToken _cancellationToken;
-	public WriteEvents(IPublisher publisher,
+	public WriteEvents(
+		IPublisher publisher,
 		TimeSpan timeout,
 		IEnvelope clientResponseEnvelope,
 		Guid internalCorrId,
@@ -23,6 +25,7 @@ public class WriteEvents : RequestManagerBase {
 		long expectedVersion,
 		Event[] events,
 		CommitSource commitSource,
+		ClientMessage.WriteEvents request = default,
 		CancellationToken cancellationToken = default)
 		: base(
 				 publisher,
@@ -33,9 +36,11 @@ public class WriteEvents : RequestManagerBase {
 				 expectedVersion,
 				 commitSource,
 				 prepareCount: 0,
-				 waitForCommit: true) {
+				 waitForCommit: true,
+				 request: request) {
 		_streamId = streamId;
 		_events = events;
+		_request = request;
 		_cancellationToken = cancellationToken;
 	}
 
@@ -46,7 +51,7 @@ public class WriteEvents : RequestManagerBase {
 				_streamId,
 				ExpectedVersion,
 				_events,
-				_cancellationToken);
+				_cancellationToken) { Trace = _request?.Trace ?? false };
 
 
 	protected override Message ClientSuccessMsg =>

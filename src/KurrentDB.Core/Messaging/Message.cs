@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Newtonsoft.Json;
 
@@ -26,4 +27,40 @@ public class DerivedMessageAttribute : Attribute {
 public abstract partial class Message(CancellationToken token = default) {
 	[JsonIgnore]
 	public CancellationToken CancellationToken => token;
+
+	[JsonIgnore]
+	public bool Trace { get; init; }
+
+	public string[] GetTraceMessages() {
+		var list = new List<string>();
+		foreach (var message in GetTrace()) {
+			if (message is string m) {
+				list.Add(m);
+			} else if (message is Message msg) {
+				var msgName = msg.GetType().Name;
+				foreach (var y in msg.GetTraceMessages()) {
+					list.Add($"  {msgName}: {y}");
+				}
+			}
+		}
+		return list.ToArray();
+	}
+
+	public object[] GetTrace() {
+		lock (this) {
+			return _traceMessages.ToArray();
+		}
+	}
+
+	private List<object> _traceMessages;
+
+	public void AddTrace(object message) {
+		if (!Trace)
+			return;
+
+		lock (this) {
+			_traceMessages ??= [];
+			_traceMessages.Add(message);
+		}
+	}
 }
