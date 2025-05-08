@@ -291,6 +291,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 
 		if (indexEntries.Count > 0) {
 			if (_additionalCommitChecks && cacheLastEventNumber) {
+				// called only in tests
 				var actualLastEventNumber = await _indexReader.GetStreamLastEventNumber(streamId, token);
 				CheckStreamVersion(streamId, indexEntries[0].Version, actualLastEventNumber, commit);
 				CheckDuplicateEvents(streamId, commit, indexEntries, prepares);
@@ -521,7 +522,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		}
 	}
 
-	private void CheckStreamVersion(TStreamId streamId, long newEventNumber, long lastEventNumber, CommitLogRecord commit) {
+	private static void CheckStreamVersion(TStreamId streamId, long newEventNumber, long lastEventNumber, CommitLogRecord commit) {
 		if (newEventNumber == EventNumber.DeletedStream)
 			return;
 
@@ -536,7 +537,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 
 	private void CheckDuplicateEvents(TStreamId streamId, CommitLogRecord commit, List<IndexKey<TStreamId>> indexEntries,
 		List<IPrepareLogRecord<TStreamId>> prepares) {
-		using var reader = _backend.BorrowReader();
+
 		var entries = _tableIndex.GetRange(streamId, indexEntries[0].Version, indexEntries[^1].Version);
 		foreach (var indexEntry in entries) {
 			int prepareIndex = (int)(indexEntry.Version - indexEntries[0].Version);

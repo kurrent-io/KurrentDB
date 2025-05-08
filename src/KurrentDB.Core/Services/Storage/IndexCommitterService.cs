@@ -161,6 +161,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 	public ValueTask<long> GetCommitLastEventNumber(CommitLogRecord commit, CancellationToken token)
 		=> _indexCommitter.GetCommitLastEventNumber(commit, token);
 
+	// Only called with complete implicit transactions
 	public void AddPendingPrepare(IPrepareLogRecord<TStreamId>[] prepares, long postPosition) {
 		var transactionPosition = prepares[0].TransactionPosition;
 		var pendingTransaction = new PendingTransaction(transactionPosition, postPosition, prepares);

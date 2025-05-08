@@ -206,9 +206,9 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 			_transaction.Process(record);
 
 			if (record.Flags.HasAnyOf(PrepareFlags.TransactionEnd)) {
-				var firstEventNumbers = _transaction.FirstEventNumbers;
-				var lastEventNumbers = _transaction.LastEventNumbers;
-				var eventStreamIndexes = _transaction.EventStreamIndexes;
+				var firstEventNumbers = _transaction.GetFirstEventNumbers();
+				var lastEventNumbers = _transaction.GetLastEventNumbers();
+				var eventStreamIndexes = _transaction.GetEventStreamIndexes();
 				CommitPendingTransaction(_transaction, postPosition);
 
 				_leaderBus.Publish(new StorageMessage.CommitAck(record.CorrelationId,

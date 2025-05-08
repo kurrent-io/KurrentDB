@@ -9,22 +9,20 @@ namespace KurrentDB.Core.Services.Storage;
 
 public class ImplicitTransaction<TStreamId> {
 	private readonly List<IPrepareLogRecord<TStreamId>> _prepares = [];
-	private readonly Dictionary<TStreamId, int> _streamIndexes = new();
+	private readonly Dictionary<TStreamId, int> _streamIndexes = [];
 	private int CurrentStreamIndex => _firstEventNumbers.Count;
-	private readonly List<long> _firstEventNumbers = new();
-	private readonly List<long> _lastEventNumbers = new();
-	private readonly List<int> _eventStreamIndexes = new();
+	private readonly List<long> _firstEventNumbers = [];
+	private readonly List<long> _lastEventNumbers = [];
+	private readonly List<int> _eventStreamIndexes = [];
 
 	public long? Position { get; private set; }
-	public ReadOnlyMemory<long> FirstEventNumbers => _firstEventNumbers.ToArray();
-	public ReadOnlyMemory<long> LastEventNumbers => _lastEventNumbers.ToArray();
-	public ReadOnlyMemory<int>? EventStreamIndexes {
-		get {
-			if (CurrentStreamIndex == 1)
-				return null;
+	public ReadOnlyMemory<long> GetFirstEventNumbers() => _firstEventNumbers.ToArray();
+	public ReadOnlyMemory<long> GetLastEventNumbers() => _lastEventNumbers.ToArray();
+	public ReadOnlyMemory<int>? GetEventStreamIndexes() {
+		if (CurrentStreamIndex == 1)
+			return null;
 
-			return _eventStreamIndexes.ToArray();
-		}
+		return _eventStreamIndexes.ToArray();
 	}
 
 	public IReadOnlyList<IPrepareLogRecord<TStreamId>> Prepares => _prepares;
