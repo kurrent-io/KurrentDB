@@ -273,7 +273,7 @@ public static partial class ClientMessage {
 				eventStreamIds: new[] { eventStreamId },
 				expectedVersions: new[] { expectedVersion },
 				events: new[] { @event },
-				eventStreamIndexes: new[] { 0 },
+				eventStreamIndexes: null,
 				user,
 				tokens);
 		}
