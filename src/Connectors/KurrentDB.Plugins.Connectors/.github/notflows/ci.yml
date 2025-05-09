@@ -1,0 +1,10 @@
+name: Test CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit

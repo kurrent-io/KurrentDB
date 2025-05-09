@@ -103,6 +103,7 @@ public abstract class ClusterVNode {
 		ILogFormatAbstractorFactory<TStreamId> logFormatAbstractorFactory,
 		AuthenticationProviderFactory authenticationProviderFactory = null,
 		AuthorizationProviderFactory authorizationProviderFactory = null,
+		IEnumerable<IVirtualStreamReader> virtualStreamReaders = null,
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory> factories = null,
 		CertificateProvider certificateProvider = null,
 		IConfiguration configuration = null,
@@ -114,6 +115,7 @@ public abstract class ClusterVNode {
 			logFormatAbstractorFactory,
 			authenticationProviderFactory,
 			authorizationProviderFactory,
+			virtualStreamReaders,
 			factories,
 			certificateProvider,
 			configuration,
@@ -233,6 +235,7 @@ public class ClusterVNode<TStreamId> :
 		ILogFormatAbstractorFactory<TStreamId> logFormatAbstractorFactory,
 		AuthenticationProviderFactory authenticationProviderFactory = null,
 		AuthorizationProviderFactory authorizationProviderFactory = null,
+		IEnumerable<IVirtualStreamReader> virtualStreamReaders = null,
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory>
 			additionalPersistentSubscriptionConsumerStrategyFactories = null,
 		CertificateProvider certificateProvider = null,
@@ -782,6 +785,7 @@ public class ClusterVNode<TStreamId> :
 		var inMemReader = new VirtualStreamReader([
 			gossipListener.Stream,
 			nodeStatusListener.Stream,
+			..virtualStreamReaders ?? []
 		]);
 
 		// Storage Reader

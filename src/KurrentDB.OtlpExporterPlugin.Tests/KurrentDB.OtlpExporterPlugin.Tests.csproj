@@ -3,7 +3,7 @@
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
-		<IsTestProject>true</IsTestProject>
+		<IsPluginsTestProject>true</IsPluginsTestProject>
 	</PropertyGroup>
 
 	<ItemGroup>

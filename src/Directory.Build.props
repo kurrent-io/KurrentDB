@@ -18,14 +18,20 @@
 		<VersionSuffix>prerelease</VersionSuffix>
 		<IsTestProject>false</IsTestProject>
 	</PropertyGroup>
+
 	<ItemGroup>
-		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
-		<None Include="..\..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
-		<None Include="..\..\NOTICE.html" Pack="true" PackagePath="\" />
-		<None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)..\LICENSE.md" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)..\LICENSE_CONTRIBUTIONS.md" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)..\NOTICE.html" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)..\ouro.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(IsTestProject)' == 'true'">
+	<ItemGroup Condition="'$(IsPluginsTestProject)' == 'true'">
 		<ProjectReference Include="..\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
+	</ItemGroup>
+
+	<ItemGroup Label="Default Packages">
+		<PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
+		<Using Include="JetBrains.Annotations" />
 	</ItemGroup>
 </Project>

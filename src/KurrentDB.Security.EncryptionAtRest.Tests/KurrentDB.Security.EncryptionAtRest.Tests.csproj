@@ -5,7 +5,7 @@
 		<Nullable>enable</Nullable>
 
 		<IsPackable>false</IsPackable>
-		<IsTestProject>true</IsTestProject>
+		<IsPluginsTestProject>true</IsPluginsTestProject>
 	</PropertyGroup>
 
 	<ItemGroup>

@@ -14,6 +14,8 @@ WORKDIR /build/ci
 COPY ./ci ./
 
 WORKDIR /build/src
+COPY ./src/Connectors/*/*.csproj ./Connectors/
+RUN for file in $(ls Connectors/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done
 COPY ./src/KurrentDB.sln ./src/*/*.csproj ./src/Directory.Build.* ./
 RUN for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done
 RUN dotnet restore --runtime=${RUNTIME}
