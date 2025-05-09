@@ -4,15 +4,18 @@
 using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.SecondaryIndexing.Indices;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 
 namespace KurrentDB.SecondaryIndexing.Builders;
 
-public class SecondaryIndexBuilder : IAsyncHandle<SystemMessage.SystemReady>,
-	IAsyncHandle<SystemMessage.BecomeShuttingDown> {
+public class SecondaryIndexBuilder
+	: IAsyncHandle<SystemMessage.SystemReady>,
+		IAsyncHandle<SystemMessage.BecomeShuttingDown> {
 	private readonly SecondaryIndexSubscription _subscription;
 	private readonly ISecondaryIndex _index;
+	public IEnumerable<IVirtualStreamReader> IndexVirtualStreamReaders => _index.Readers;
 
 	[Experimental("SECONDARYINDEXING")]
 	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher) {
