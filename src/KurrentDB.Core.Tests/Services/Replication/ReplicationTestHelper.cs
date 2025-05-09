@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -47,6 +48,10 @@ public static class ReplicationTestHelper {
 		node.Node.MainQueue.Publish(writeRequest);
 
 		if (!resetEvent.Wait(_timeout)) {
+			var q = node.Node.MainQueue as QueuedHandlerThreadPool;
+			if (writeRequest.Trace)
+				foreach (var m in q.GetStatus())
+					writeRequest.AddTrace(m);
 			var joined = string.Join(Environment.NewLine, writeRequest.GetTraceMessages());
 			Assert.Fail("Timed out waiting for event to be written: " + Environment.NewLine + joined);
 			return null;

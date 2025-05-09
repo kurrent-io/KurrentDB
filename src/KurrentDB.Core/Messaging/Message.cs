@@ -60,6 +60,9 @@ public abstract partial class Message(CancellationToken token = default) {
 
 		lock (this) {
 			_traceMessages ??= [];
+			if (message is string s) {
+				message = $"[{DateTime.UtcNow}] {s}";
+			}
 			_traceMessages.Add(message);
 		}
 	}

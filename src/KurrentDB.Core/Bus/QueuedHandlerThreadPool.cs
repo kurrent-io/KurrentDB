@@ -24,6 +24,13 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 	public static readonly TimeSpan VerySlowMsgThreshold = TimeSpan.FromSeconds(7);
 	private static readonly ILogger Log = Serilog.Log.ForContext<QueuedHandlerThreadPool>();
 
+	public string[] GetStatus() => [
+		$"Cancelled: {_lifetimeToken.IsCancellationRequested}",
+		$"IsRunning: {_isRunning}",
+		$"Count: {_queue.Count}",
+		$"Stats: {GetStatistics()}",
+	];
+
 	public int MessageCount {
 		get { return _queue.Count; }
 	}
