@@ -308,9 +308,9 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 
 		var numStreams = eventStreamIndexes?.Length ?? 1;
 
-		Span<bool> streamProcessed = numStreams < 1024 / sizeof(bool) ?
-			stackalloc bool[numStreams] :
-			new bool[numStreams];
+		Span<bool> streamProcessed = numStreams < 1024 / sizeof(bool)
+			? stackalloc bool[numStreams]
+			: new bool[numStreams];
 
 		for (var i = committedPrepares.Length - 1; i >= 0; i--) {
 			var streamIndex = eventStreamIndexes.HasValue ? eventStreamIndexes.Value.Span[i] : 0;

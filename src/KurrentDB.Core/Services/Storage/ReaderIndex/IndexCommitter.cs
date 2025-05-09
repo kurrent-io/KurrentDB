@@ -389,17 +389,17 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		var lastIndexedPosition = _indexChk.Read();
 		var lastLogPosition = commitedPrepares[^1].LogPosition;
 
-		Span<int> firstPrepareForStream = numStreams < 1024 / sizeof(int) ?
-			stackalloc int[numStreams] :
-			new int[numStreams];
+		Span<int> firstPrepareForStream = numStreams < 1024 / sizeof(int)
+			? stackalloc int[numStreams]
+			: new int[numStreams];
 
-		Span<int> lastPrepareForStream = numStreams < 1024 / sizeof(int) ?
-			stackalloc int[numStreams] :
-			new int[numStreams];
+		Span<int> lastPrepareForStream = numStreams < 1024 / sizeof(int)
+			? stackalloc int[numStreams]
+			: new int[numStreams];
 
-		Span<long> lastEventNumberForStream = numStreams < 1024 / sizeof(long) ?
-			stackalloc long[numStreams] :
-			new long[numStreams];
+		Span<long> lastEventNumberForStream = numStreams < 1024 / sizeof(long)
+			? stackalloc long[numStreams]
+			: new long[numStreams];
 
 		for (var streamIndex = 0; streamIndex < numStreams; streamIndex++) {
 			firstPrepareForStream[streamIndex] = -1;
