@@ -30,11 +30,11 @@ public class DirectoryFixture<T> : IAsyncLifetime {
 		return Path.Combine(Directory, fileName);
 	}
 
-	public Task InitializeAsync() {
+	public virtual Task InitializeAsync() {
 		return Task.CompletedTask;
 	}
 
-	public async Task DisposeAsync() {
+	public async virtual Task DisposeAsync() {
 		await DirectoryDeleter.TryForceDeleteDirectoryAsync(Directory);
 #pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
 		GC.SuppressFinalize(this);

@@ -33,13 +33,13 @@ public abstract class RequestManagerBase :
 	private readonly IEnvelope _clientResponseEnvelope;
 	protected readonly Guid InternalCorrId;
 	protected readonly Guid ClientCorrId;
-	protected readonly long ExpectedVersion;
 
 	protected OperationResult Result;
-	protected long FirstEventNumber = -1;
-	protected long LastEventNumber = -1;
+	protected ReadOnlyMemory<long> FirstEventNumbers;
+	protected ReadOnlyMemory<long> LastEventNumbers;
 	protected string FailureMessage = string.Empty;
-	protected long FailureCurrentVersion = -1;
+	protected ReadOnlyMemory<int> FailureStreamIndexes;
+	protected ReadOnlyMemory<long> FailureCurrentVersions;
 	protected long TransactionId;
 
 	protected readonly CommitSource CommitSource;
@@ -66,7 +66,6 @@ public abstract class RequestManagerBase :
 			IEnvelope clientResponseEnvelope,
 			Guid internalCorrId,
 			Guid clientCorrId,
-			long expectedVersion,
 			CommitSource commitSource,
 			int prepareCount = 0,
 			long transactionId = -1,
@@ -83,7 +82,6 @@ public abstract class RequestManagerBase :
 		InternalCorrId = internalCorrId;
 		ClientCorrId = clientCorrId;
 		WriteReplyEnvelope = Publisher;
-		ExpectedVersion = expectedVersion;
 		CommitSource = commitSource;
 		_prepareCount = prepareCount;
 		TransactionId = transactionId;
@@ -92,7 +90,7 @@ public abstract class RequestManagerBase :
 		if (prepareCount == 0 && waitForCommit == false) {
 			//empty operation just return success
 			var position = Math.Max(transactionId, 0);
-			ReturnCommitAt(position, 0, 0);
+			ReturnCommitAt(position, ReadOnlyMemory<long>.Empty, ReadOnlyMemory<long>.Empty);
 		}
 	}
 	protected DateTime LiveUntil => NextTimeoutTime - _timeoutOffset;
@@ -131,8 +129,8 @@ public abstract class RequestManagerBase :
 		if (message.LogPosition > LastEventPosition) {
 			LastEventPosition = message.LogPosition;
 		}
-		FirstEventNumber = message.FirstEventNumber;
-		LastEventNumber = message.LastEventNumber;
+		FirstEventNumbers = message.FirstEventNumbers;
+		LastEventNumbers = message.LastEventNumbers;
 		CommitPosition = message.LogPosition;
 		if (_allEventsWritten) { AllEventsWritten(); }
 	}
@@ -164,36 +162,39 @@ public abstract class RequestManagerBase :
 		CompleteFailedRequest(OperationResult.InvalidTransaction, "Invalid transaction.");
 	}
 	public void Handle(StorageMessage.WrongExpectedVersion message) {
-		FailureCurrentVersion = message.CurrentVersion;
-		CompleteFailedRequest(OperationResult.WrongExpectedVersion, "Wrong expected version.", message.CurrentVersion);
+		FailureStreamIndexes = message.FailureStreamIndexes;
+		FailureCurrentVersions = message.FailureCurrentVersions;
+		CompleteFailedRequest(OperationResult.WrongExpectedVersion, "Wrong expected version.", message.FailureCurrentVersions);
 	}
 	public void Handle(StorageMessage.StreamDeleted message) {
+		FailureStreamIndexes = new[] { message.StreamIndex };
+		FailureCurrentVersions = new[] { message.CurrentVersion };
 		CompleteFailedRequest(OperationResult.StreamDeleted, "Stream is deleted.");
 	}
 	public void Handle(StorageMessage.AlreadyCommitted message) {
 		if (Interlocked.Read(ref _complete) == 1 || _allEventsWritten) { return; }
 		Log.Debug("IDEMPOTENT WRITE TO STREAM ClientCorrelationID {clientCorrelationId}, {message}.", ClientCorrId,
 			message);
-		ReturnCommitAt(message.LogPosition, message.FirstEventNumber, message.LastEventNumber);
+		ReturnCommitAt(message.LogPosition, message.FirstEventNumbers, message.LastEventNumbers);
 	}
-	protected virtual void ReturnCommitAt(long logPosition, long firstEvent, long lastEvent) {
+	protected virtual void ReturnCommitAt(long logPosition, ReadOnlyMemory<long> firstEvents, ReadOnlyMemory<long> lastEvents) {
 		lock (_prepareLogPositions) {
 			_prepareLogPositions.Clear();
 			_prepareLogPositions.Add(logPosition);
 
-			FirstEventNumber = firstEvent;
-			LastEventNumber = lastEvent;
+			FirstEventNumbers = firstEvents;
+			LastEventNumbers = lastEvents;
 			CommitPosition = logPosition;
 			Committed();
 		}
 	}
 
-	private void CompleteFailedRequest(OperationResult result, string error, long currentVersion = -1) {
+	private void CompleteFailedRequest(OperationResult result, string error, ReadOnlyMemory<long> currentVersions = default) {
 		Debug.Assert(result != OperationResult.Success);
 		if (Interlocked.CompareExchange(ref _complete, 1, 0) == 1) { return; }
 		Result = result;
 		FailureMessage = error;
-		Publisher.Publish(new StorageMessage.RequestCompleted(InternalCorrId, false, currentVersion));
+		Publisher.Publish(new StorageMessage.RequestCompleted(InternalCorrId, false, currentVersions));
 		_clientResponseEnvelope.ReplyWith(ClientFailMsg);
 	}
 

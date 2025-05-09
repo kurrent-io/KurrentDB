@@ -65,8 +65,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Kur
 	protected ClientMessage.WriteEvents CreateWriteEvent(
 		string streamId, string eventType, string data, string metadata = null, bool isJson = true,
 		Guid? correlationId = null) {
-		return new ClientMessage.WriteEvents(
-			Guid.NewGuid(), correlationId ?? Guid.NewGuid(), GetInputQueue(), false, streamId,
+		return ClientMessage.WriteEvents.ForSingleEvent(Guid.NewGuid(), correlationId ?? Guid.NewGuid(), GetInputQueue(), false, streamId,
 			ExpectedVersion.Any, new Event(Guid.NewGuid(), eventType, isJson, data, metadata, []), null);
 	}
 }

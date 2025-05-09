@@ -257,7 +257,10 @@ public sealed class AuthorizationGateway {
 	}
 
 	private void Authorize(ClientMessage.WriteEvents msg, IPublisher destination) {
-		Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamId)),
+		if (msg.EventStreamIds.Length > 1)
+			throw new NotSupportedException("Authorization of multi-stream writes is not supported");
+
+		Authorize(msg.User, WriteStream.WithParameter(Operations.Streams.Parameters.StreamId(msg.EventStreamIds.Span[0])),
 			msg.Envelope, destination, msg, WriteEventsDenied);
 	}
 

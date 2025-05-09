@@ -4,8 +4,8 @@
 using System;
 using System.Linq;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.Core.Tests.TestAdapters;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.Helpers.IODispatcherTests.QueueWriteEventsTests;

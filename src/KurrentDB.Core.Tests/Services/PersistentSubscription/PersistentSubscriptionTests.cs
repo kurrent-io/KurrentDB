@@ -340,15 +340,15 @@ public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStre
 		}
 
 		public void Handle(ClientMessage.WriteEvents msg) {
-			if (!_streams.TryGetValue(msg.EventStreamId, out var events)) {
+			if (!_streams.TryGetValue(msg.EventStreamIds.Span[0], out var events)) {
 				events = new List<Event>();
-				_streams.Add(msg.EventStreamId, events);
+				_streams.Add(msg.EventStreamIds.Span[0], events);
 			}
 
-			events.AddRange(msg.Events);
+			events.AddRange(msg.Events.Span);
 
-			if (msg.Events.Any(ee => ee.EventType == "$PersistentConfig")) {
-				var cfg = PersistentSubscriptionConfig.FromSerializedForm(msg.Events[0].Data);
+			if (msg.Events.ToArray().Any(ee => ee.EventType == "$PersistentConfig")) {
+				var cfg = PersistentSubscriptionConfig.FromSerializedForm(msg.Events.Span[0].Data);
 				_configurations.Add(cfg);
 
 				if (_isDoneWriting(_configurations)) {
@@ -356,9 +356,7 @@ public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStre
 				}
 			}
 
-			msg.Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(
-				// values are not used and not important for the test
-				msg.CorrelationId,
+			msg.Envelope.ReplyWith(ClientMessage.WriteEventsCompleted.ForSingleStream(msg.CorrelationId,
 				firstEventNumber: 0,
 				lastEventNumber: 0,
 				preparePosition: 0,

@@ -88,19 +88,18 @@ public abstract class RequestManagerServiceSpecification :
 	public void Handle(StorageMessage.WritePrepares message) {
 
 		var transactionPosition = LogPosition;
-		foreach (var _ in message.Events) {
+		foreach (var _ in message.Events.Span) {
 			Dispatcher.Publish(new StorageMessage.PrepareAck(
 									message.CorrelationId,
 									LogPosition,
 									PrepareFlags));
 			LogPosition += 100;
 		}
-		Dispatcher.Publish(new StorageMessage.CommitIndexed(
-								message.CorrelationId,
-								LogPosition,
-								transactionPosition,
-								0,
-								message.Events.Length));
+		Dispatcher.Publish(StorageMessage.CommitIndexed.ForSingleStream(message.CorrelationId,
+			LogPosition,
+			transactionPosition,
+			0,
+			message.Events.Length));
 	}
 
 	protected Event DummyEvent() {

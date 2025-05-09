@@ -24,7 +24,7 @@ public class
 	}
 	public override void Given() { }
 	public override void When() {
-		Service.Handle(new StorageMessage.CommitAck(_correlationId, _logPosition, _logPosition, 0, 0));
+		Service.Handle(StorageMessage.CommitAck.ForSingleStream(_correlationId, _logPosition, _logPosition, 0, 0));
 		ReplicationCheckpoint.Write(_logPosition - 1);
 		ReplicationCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.ReplicatedTo(_logPosition - 1));

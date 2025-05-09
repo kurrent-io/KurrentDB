@@ -24,7 +24,7 @@ public class when_soft_deleted_stream_is_written_to_idempotently<TLogFormat, TSt
 
 	protected override async Task Given() {
 		var writeEventsCompleted = new TaskCompletionSource<bool>();
-		_node.Node.MainQueue.Publish(new ClientMessage.WriteEvents(Guid.NewGuid(), Guid.NewGuid(),
+		_node.Node.MainQueue.Publish(ClientMessage.WriteEvents.ForSingleStream(Guid.NewGuid(), Guid.NewGuid(),
 			new CallbackEnvelope(
 				_ => {
 					writeEventsCompleted.SetResult(true);
@@ -48,7 +48,7 @@ public class when_soft_deleted_stream_is_written_to_idempotently<TLogFormat, TSt
 	public async Task should_return_negative_1_as_log_position() {
 		var writeEventsCompleted = new TaskCompletionSource<ClientMessage.WriteEventsCompleted>();
 
-		_node.Node.MainQueue.Publish(new ClientMessage.WriteEvents(Guid.NewGuid(), Guid.NewGuid(),
+		_node.Node.MainQueue.Publish(ClientMessage.WriteEvents.ForSingleStream(Guid.NewGuid(), Guid.NewGuid(),
 			new CallbackEnvelope(
 				msg => {
 					writeEventsCompleted.SetResult(msg as ClientMessage.WriteEventsCompleted);

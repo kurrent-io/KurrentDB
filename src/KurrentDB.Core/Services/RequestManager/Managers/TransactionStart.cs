@@ -10,6 +10,7 @@ namespace KurrentDB.Core.Services.RequestManager.Managers;
 
 public class TransactionStart : RequestManagerBase {
 	private readonly string _streamId;
+	private readonly long _expectedVersion;
 
 	public TransactionStart(
 				IPublisher publisher,
@@ -26,10 +27,10 @@ public class TransactionStart : RequestManagerBase {
 				 clientResponseEnvelope,
 				 internalCorrId,
 				 clientCorrId,
-				 expectedVersion,
 				 commitSource,
 				 prepareCount: 1) {
 		_streamId = streamId;
+		_expectedVersion = expectedVersion;
 	}
 
 	protected override Message WriteRequestMsg =>
@@ -37,7 +38,7 @@ public class TransactionStart : RequestManagerBase {
 				InternalCorrId,
 				WriteReplyEnvelope,
 				_streamId,
-				ExpectedVersion,
+				_expectedVersion,
 				LiveUntil);
 
 	protected override void AllEventsWritten() {

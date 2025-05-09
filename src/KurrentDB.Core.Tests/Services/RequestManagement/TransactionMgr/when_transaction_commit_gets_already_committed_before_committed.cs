@@ -36,7 +36,7 @@ public class when_transaction_commit_gets_already_committed_before_committed : R
 	}
 
 	protected override Message When() {
-		return new StorageMessage.AlreadyCommitted(InternalCorrId, "test123", 0, 1, commitPosition);
+		return StorageMessage.AlreadyCommitted.ForSingleStream(InternalCorrId, "test123", 0, 1, commitPosition);
 	}
 
 	[Test]

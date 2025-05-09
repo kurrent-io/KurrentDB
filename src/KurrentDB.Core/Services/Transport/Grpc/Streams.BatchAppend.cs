@@ -242,11 +242,11 @@ partial class Streams<TStreamId> {
 								ClientMessage.WriteEventsCompleted completed => completed.Result switch {
 									Success => new BatchAppendResp {
 										Success = BatchAppendResp.Types.Success.Completed(completed.CommitPosition,
-											completed.PreparePosition, completed.LastEventNumber),
+											completed.PreparePosition, completed.LastEventNumbers.Span[0]),
 									},
 									OperationResult.WrongExpectedVersion => new BatchAppendResp {
 										Error = Status.WrongExpectedVersion(
-											StreamRevision.FromInt64(completed.CurrentVersion),
+											StreamRevision.FromInt64(completed.FailureCurrentVersions.Span[0]),
 											clientWriteRequest.ExpectedVersion)
 									},
 									OperationResult.AccessDenied => new BatchAppendResp { Error = Status.AccessDenied },
@@ -317,7 +317,7 @@ partial class Streams<TStreamId> {
 
 			static ClientMessage.WriteEvents ToInternalMessage(ClientWriteRequest request, IEnvelope envelope,
 				bool requiresLeader, ClaimsPrincipal user, CancellationToken token) =>
-				new(Guid.NewGuid(), request.CorrelationId, envelope, requiresLeader, request.StreamId,
+				ClientMessage.WriteEvents.ForSingleStream(Guid.NewGuid(), request.CorrelationId, envelope, requiresLeader, request.StreamId,
 					request.ExpectedVersion, request.Events.ToArray(), user, cancellationToken: token);
 
 			static TimeSpan GetRequestedTimeout(Options options) => options.DeadlineOptionCase switch {

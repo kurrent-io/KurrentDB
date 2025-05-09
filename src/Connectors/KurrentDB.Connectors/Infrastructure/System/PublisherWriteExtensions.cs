@@ -30,7 +30,7 @@ public static class PublisherWriteExtensions {
         var cid = Guid.NewGuid();
 
         try {
-            var command = new ClientMessage.WriteEvents(
+            var command = ClientMessage.WriteEvents.ForSingleStream(
                 internalCorrId: cid,
                 correlationId: cid,
                 envelope: AsyncCallbackEnvelope.Create(OnResult),
@@ -52,7 +52,7 @@ public static class PublisherWriteExtensions {
         async Task OnResult(Message message) {
             if (message is ClientMessage.WriteEventsCompleted { Result: OperationResult.Success } completed) {
                 var position       = new Position((ulong)completed.CommitPosition, (ulong)completed.PreparePosition);
-                var streamRevision = StreamRevision.FromInt64(completed.LastEventNumber);
+                var streamRevision = StreamRevision.FromInt64(completed.LastEventNumbers.Span[0]);
                 await onResult((position, streamRevision, null));
             } else {
                 await onResult((null, null, MapToError(message)));
@@ -70,7 +70,7 @@ public static class PublisherWriteExtensions {
                     OperationResult.WrongExpectedVersion => new ReadResponseException.WrongExpectedRevision(
                         stream,
                         expectedRevision,
-                        completed.CurrentVersion
+                        completed.FailureCurrentVersions.Span[0]
                     ),
                     _ => ReadResponseException.UnknownError.Create(completed.Result)
                 },

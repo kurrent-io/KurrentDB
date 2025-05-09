@@ -13,7 +13,7 @@ public class WriteEventsTests {
 		string eventStreamId = default,
 		long expectedVersion = default) =>
 
-		new(internalCorrId: Guid.NewGuid(),
+		ClientMessage.WriteEvents.ForSingleStream(internalCorrId: Guid.NewGuid(),
 			correlationId: Guid.NewGuid(),
 			envelope: new NoopEnvelope(),
 			requireLeader: false,

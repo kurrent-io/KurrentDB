@@ -3,8 +3,8 @@
 
 using System;
 using System.Linq;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TestAdapters;
 using KurrentDB.Projections.Core.Common;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;

@@ -18,7 +18,6 @@ public class when_creating_stream_request_manager {
 	protected static readonly IEnvelope Envelope = new NoopEnvelope();
 	protected static readonly Guid InternalCorrId = Guid.NewGuid();
 	protected static readonly Guid ClientCorrId = Guid.NewGuid();
-	protected static readonly long ExpectedVersion = 1;
 
 
 
@@ -31,7 +30,6 @@ public class when_creating_stream_request_manager {
 				Envelope,
 				InternalCorrId,
 				ClientCorrId,
-				ExpectedVersion,
 				new CommitSource()));
 	}
 
@@ -44,7 +42,6 @@ public class when_creating_stream_request_manager {
 				null,
 				InternalCorrId,
 				ClientCorrId,
-				ExpectedVersion,
 				new CommitSource()));
 	}
 	[Test]
@@ -56,7 +53,6 @@ public class when_creating_stream_request_manager {
 				Envelope,
 				Guid.Empty,
 				ClientCorrId,
-				ExpectedVersion,
 				new CommitSource()));
 	}
 	[Test]
@@ -68,7 +64,6 @@ public class when_creating_stream_request_manager {
 				Envelope,
 				InternalCorrId,
 				Guid.Empty,
-				ExpectedVersion,
 				new CommitSource()));
 	}
 
@@ -81,7 +76,6 @@ public class when_creating_stream_request_manager {
 				Envelope,
 				InternalCorrId,
 				ClientCorrId,
-				ExpectedVersion,
 				null));
 	}
 }

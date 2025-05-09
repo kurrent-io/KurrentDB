@@ -54,37 +54,53 @@ public class HashListMemTable : IMemTable {
 		Ensure.NotNull(entries, "entries");
 		Ensure.Positive(entries.Count, "entries.Count");
 
-		var collection = entries.Select(x => new IndexEntry(GetHash(x.Stream), x.Version, x.Position)).ToList();
+		if (_version is PTableVersions.IndexV1) {
+			entries = entries.Select(x => new IndexEntry(GetHash(x.Stream), x.Version, x.Position)).ToList();
+		}
 
 		// only one thread at a time can write
-		Interlocked.Add(ref _count, collection.Count);
+		Interlocked.Add(ref _count, entries.Count);
 
-		var stream = collection[0].Stream; // NOTE: all entries should have the same stream
 		EntryList list = null;
+		ulong? stream = null;
+
 		try {
-
-			if (!_hash.TryGetValue(stream, out list)) {
-				list = new(MemTableComparer);
-				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
-					throw new UnableToAcquireLockInReasonableTimeException();
-				_hash.AddOrUpdate(stream, list,
-					(x, y) => {
-						throw new Exception("This should never happen as MemTable updates are single-threaded.");
-					});
-			} else {
-				if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout))
-					throw new UnableToAcquireLockInReasonableTimeException();
-			}
-
-			for (int i = 0, n = collection.Count; i < n; ++i) {
-				var entry = collection[i];
-				if (entry.Stream != stream)
-					throw new Exception("Not all index entries in a bulk have the same stream hash.");
+			for (int i = 0; i < entries.Count; i++) {
+				var entry = entries[i];
 				Ensure.Nonnegative(entry.Version, "entry.Version");
 				Ensure.Nonnegative(entry.Position, "entry.Position");
+
+				if (entry.Stream != stream) {
+					list?.Lock.Release();
+					list = null;
+
+					stream = entry.Stream;
+
+					if (!_hash.TryGetValue(stream.Value, out list)) {
+						list = new(MemTableComparer);
+						// TryGetLatestEntry requires the list to be non-empty when it reads it
+						// so we acquire the write lock before making the list visible
+						if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout)) {
+							list = null;
+							throw new UnableToAcquireLockInReasonableTimeException();
+						}
+						_hash.AddOrUpdate(stream.Value, list,
+							(x, y) => {
+								throw new Exception(
+									"This should never happen as MemTable updates are single-threaded.");
+							});
+					} else {
+						if (!list.Lock.TryEnterWriteLock(DefaultLockTimeout)) {
+							list = null;
+							throw new UnableToAcquireLockInReasonableTimeException();
+						}
+					}
+				}
+
 				list.Add(new Entry(entry.Version, entry.Position), 0);
 			}
 		} finally {
+			// list not null => we hold the list lock.
 			list?.Lock.Release();
 		}
 	}
@@ -124,6 +140,7 @@ public class HashListMemTable : IMemTable {
 			if (!list.Lock.TryEnterReadLock(DefaultLockTimeout))
 				throw new UnableToAcquireLockInReasonableTimeException();
 			try {
+				// requires the list to be non-empty before we are able to acquire a lock on it.
 				var latest = list.Keys[list.Count - 1];
 				entry = new IndexEntry(hash, latest.EvNum, latest.LogPos);
 				return true;

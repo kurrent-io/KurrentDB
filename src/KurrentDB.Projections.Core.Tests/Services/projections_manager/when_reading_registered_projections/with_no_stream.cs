@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.TestAdapters;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
