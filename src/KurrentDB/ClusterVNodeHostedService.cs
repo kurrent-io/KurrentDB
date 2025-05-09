@@ -45,6 +45,7 @@ using KurrentDB.TcpPlugin;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using LogV3StreamId = System.UInt32;
 
 namespace KurrentDB;
 
@@ -129,18 +130,32 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 		if (_options.Database.DbLogFormat == DbLogFormat.V2) {
 			var logFormatFactory = new LogV2FormatAbstractorFactory();
-			Node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
+			var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
 				secondaryIndexingPlugin.IndicesVirtualStreamReaders,
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
+			Node = node;
+
+			secondaryIndexingPlugin.Configure(new SecondaryIndexPluginConfigurationOptions<string> {
+				Publisher = node.MainQueue,
+				Subscriber = node.MainBus,
+				ReadIndex = node.ReadIndex
+			});
 		} else if (_options.Database.DbLogFormat == DbLogFormat.ExperimentalV3) {
 			var logFormatFactory = new LogV3FormatAbstractorFactory();
-			Node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
+			var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
 				secondaryIndexingPlugin.IndicesVirtualStreamReaders,
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
+			Node = node;
+
+			secondaryIndexingPlugin.Configure(new SecondaryIndexPluginConfigurationOptions<LogV3StreamId> {
+				Publisher = node.MainQueue,
+				Subscriber = node.MainBus,
+				ReadIndex = node.ReadIndex
+			});
 		} else {
 			throw new ArgumentOutOfRangeException(nameof(_options.Database.DbLogFormat), "Unexpected log format specified.");
 		}

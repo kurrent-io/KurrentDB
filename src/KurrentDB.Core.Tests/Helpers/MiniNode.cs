@@ -61,7 +61,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 	public static readonly Stopwatch StartingTime = new Stopwatch();
 	public static readonly Stopwatch StoppingTime = new Stopwatch();
 
-	public readonly ClusterVNode Node;
+	public readonly ClusterVNode<TStreamId> Node;
 	public readonly TFChunkDb Db;
 	public readonly string DbPath;
 	public HttpClient HttpClient;
@@ -216,8 +216,11 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				HighHasher = hash32bit ? new ConstantHasher(0) : options.HighHasher,
 			});
 
-		var virtualStreamReaders = subsystems
+		var secondaryIndexingPlugins = subsystems
 			.OfType<ISecondaryIndexingPlugin>()
+			.ToList();
+
+		var virtualStreamReaders = secondaryIndexingPlugins
 			.SelectMany(indexingPlugin => indexingPlugin.IndicesVirtualStreamReaders);
 
 		Node = new ClusterVNode<TStreamId>(options, logFormatFactory,
@@ -237,6 +240,15 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			configuration: inMemConf,
 			configureAdditionalNodeServices: services => ConfigureMiniNodeServices(services, newTransforms));
 		Db = Node.Db;
+
+
+		foreach (var secondaryIndexingPlugin in secondaryIndexingPlugins) {
+			secondaryIndexingPlugin.Configure(new SecondaryIndexPluginConfigurationOptions<TStreamId> {
+				Publisher = Node.MainQueue,
+				Subscriber = Node.MainBus,
+				ReadIndex = Node.ReadIndex
+			});
+		}
 
 		Node.HttpService.SetupController(new TestController(Node.MainQueue));
 		var builder = WebApplication.CreateBuilder();
