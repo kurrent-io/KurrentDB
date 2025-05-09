@@ -4,6 +4,7 @@
 using EventStore.ClientAPI;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Tests;
+using KurrentDB.SecondaryIndexing.Indices;
 using NUnit.Framework;
 using Assert = Xunit.Assert;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
@@ -16,15 +17,15 @@ namespace KurrentDB.SecondaryIndexing.Tests;
 public class when_appending_events<TLogFormat, TStreamId>
 	: SecondaryIndexingPluginSpecification<TLogFormat, TStreamId> {
 	private const string StreamName = "$idx-dummy";
-	private ResolvedEvent[] _expectedEvents = [];
+	private IList<ResolvedEvent> _expectedEvents = [];
 	private StreamEventsSlice? _readEventsSlice;
 
-	public override IEnumerable<IVirtualStreamReader> Given() {
+	public override ISecondaryIndex Given() {
 		_expectedEvents = Enumerable.Range(0, 10)
 			.Select(i => CreateResolvedEvent(StreamName, "test", $"{i}", i))
-			.ToArray();
+			.ToList();
 
-		return [new FakeVirtualStreamReader(StreamName, _expectedEvents)];
+		return new FakeSecondaryIndex(StreamName, _expectedEvents);
 	}
 
 	public override async Task When() {
@@ -34,7 +35,7 @@ public class when_appending_events<TLogFormat, TStreamId>
 	[Test]
 	public void should_read_events() {
 		Assert.NotNull(_readEventsSlice);
-		Assert.Equal(_expectedEvents.Length, _readEventsSlice.Events.Length);
+		Assert.Equal(_expectedEvents.Count, _readEventsSlice.Events.Length);
 		Assert.All(_readEventsSlice.Events, e => Assert.Equal("test", e.Event.EventType));
 	}
 }

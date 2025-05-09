@@ -6,11 +6,11 @@ using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
-using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.Tests.ClientAPI.Helpers;
 using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.SecondaryIndexing.Indices;
 using NUnit.Framework;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 
@@ -26,18 +26,18 @@ public abstract class SecondaryIndexingPluginSpecification<TLogFormat, TStreamId
 	private TimeSpan _timeout;
 	protected UserCredentials _credentials = null!;
 
-	public abstract IEnumerable<IVirtualStreamReader> Given();
+	public abstract ISecondaryIndex Given();
 	public abstract Task When();
 
 	[OneTimeSetUp]
 	public override async Task TestFixtureSetUp() {
 		await base.TestFixtureSetUp();
 
-		IEnumerable<IVirtualStreamReader> virtualStreamReaders = Given();
+		ISecondaryIndex secondaryIndex = Given();
 
 		_credentials = new UserCredentials(SystemUsers.Admin, SystemUsers.DefaultAdminPassword);
 		_timeout = TimeSpan.FromSeconds(20);
-		_node = CreateNode(virtualStreamReaders);
+		_node = CreateNode(secondaryIndex);
 		await _node.Start().WithTimeout(_timeout);
 
 		_connection = TestConnection.Create(_node.TcpEndPoint);
@@ -58,11 +58,11 @@ public abstract class SecondaryIndexingPluginSpecification<TLogFormat, TStreamId
 		await base.TestFixtureTearDown();
 	}
 
-	private MiniNode<TLogFormat, TStreamId> CreateNode(IEnumerable<IVirtualStreamReader> virtualStreamReaders) =>
+	private MiniNode<TLogFormat, TStreamId> CreateNode(ISecondaryIndex secondaryIndex) =>
 		new(
 			PathName,
 			inMemDb: true,
-			subsystems: [new SecondaryIndexingPlugin(virtualStreamReaders)]
+			subsystems: [new SecondaryIndexingPlugin(secondaryIndex)]
 		);
 
 	protected Task<StreamEventsSlice> ReadStream(string stream) =>
