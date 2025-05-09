@@ -725,7 +725,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 					envelope.ReplyWith(new StorageMessage.WrongExpectedVersion(
 						correlationId,
 						numStreams == 1 ?
-							new[] { 0 } : // for backwards compatibility
+							StorageMessage.SingleStreamIndexes : // for backwards compatibility
 							ReadOnlyMemory<int>.Empty,
 						numStreams == 1 ?
 							new[] { results.Span[0].CurrentVersion } : // for backwards compatibility

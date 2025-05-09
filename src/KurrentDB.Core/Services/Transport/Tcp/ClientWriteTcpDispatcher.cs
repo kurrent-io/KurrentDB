@@ -145,7 +145,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 			package.CorrelationId,
 			(OperationResult)dto.Result,
 			dto.Message,
-			new[] { 0 },
+			ClientMessage.SingleStreamIndexes,
 			new[] { dto.CurrentVersion });
 	}
 

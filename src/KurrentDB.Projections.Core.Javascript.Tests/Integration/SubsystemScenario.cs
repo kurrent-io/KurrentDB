@@ -263,7 +263,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 				} else {
 					response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
 						OperationResult.WrongExpectedVersion, "Wrong expected version",
-						new[] { 0 },
+						ClientMessage.SingleStreamIndexes,
 						new long[] { _streams.Count - 1 });
 				}
 			} else {
@@ -274,7 +274,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 				} else {
 					response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
 						OperationResult.WrongExpectedVersion, "Wrong expected version",
-						new[] { 0 },
+						ClientMessage.SingleStreamIndexes,
 						new[] { ExpectedVersion.NoStream });
 				}
 			}

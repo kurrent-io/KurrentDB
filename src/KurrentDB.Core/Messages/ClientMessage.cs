@@ -29,6 +29,8 @@ public enum OperationResult {
 }
 
 public static partial class ClientMessage {
+	public static readonly int[] SingleStreamIndexes = [ 0 ];
+
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class RequestShutdown : Message {
 		public readonly bool ExitProcess;

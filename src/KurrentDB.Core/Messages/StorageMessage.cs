@@ -13,6 +13,8 @@ using KurrentDB.Core.TransactionLog.LogRecords;
 namespace KurrentDB.Core.Messages;
 
 public static partial class StorageMessage {
+	public static readonly int[] SingleStreamIndexes = [ 0 ];
+
 	public interface IPreconditionedWriteMessage {
 		Guid CorrelationId { get; }
 		IEnvelope Envelope { get; }
@@ -387,7 +389,7 @@ public static partial class StorageMessage {
 		public static WrongExpectedVersion ForSingleStream(Guid correlationId, long currentVersion) {
 			return new WrongExpectedVersion(
 				correlationId,
-				failureStreamIndexes: new[] { 0 },
+				failureStreamIndexes: SingleStreamIndexes,
 				failureCurrentVersions: new[] { currentVersion });
 		}
 	}
