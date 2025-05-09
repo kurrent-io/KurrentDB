@@ -25,7 +25,6 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 			committed.AddRange(_pending);
 			_pending.Clear();
 		}
-
-		throw new NotImplementedException();
+		return ValueTask.CompletedTask;
 	}
 }
