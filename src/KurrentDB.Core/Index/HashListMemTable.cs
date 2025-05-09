@@ -54,6 +54,10 @@ public class HashListMemTable : IMemTable {
 		Ensure.NotNull(entries, "entries");
 		Ensure.Positive(entries.Count, "entries.Count");
 
+		if (_version is PTableVersions.IndexV1) {
+			entries = entries.Select(x => new IndexEntry(GetHash(x.Stream), x.Version, x.Position)).ToList();
+		}
+
 		// only one thread at a time can write
 		Interlocked.Add(ref _count, entries.Count);
 
