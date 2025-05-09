@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -22,19 +23,43 @@ public static class ReplicationTestHelper {
 		string streamId) {
 		var resetEvent = new ManualResetEventSlim();
 		ClientMessage.WriteEventsCompleted writeResult = null;
-		node.Node.MainQueue.Publish(new ClientMessage.WriteEvents(Guid.NewGuid(), Guid.NewGuid(),
+		ClientMessage.WriteEvents writeRequest = default;
+		writeRequest = new ClientMessage.WriteEvents(
+			Guid.NewGuid(),
+			Guid.NewGuid(),
 			new CallbackEnvelope(msg => {
+				if (writeRequest.Trace)
+					writeRequest.AddTrace($"Envelope received reply: {msg}");
 				writeResult = (ClientMessage.WriteEventsCompleted)msg;
 				resetEvent.Set();
-			}), false, streamId, -1, events,
-			SystemAccounts.System, new Dictionary<string, string> {
+			}),
+			requireLeader: false, //qq should be leader but this might help make sure?
+			streamId,
+			-1,
+			events,
+			SystemAccounts.System,
+			new Dictionary<string, string> {
 				["uid"] = SystemUsers.Admin,
 				["pwd"] = SystemUsers.DefaultAdminPassword
-			}));
+			}) {
+			Trace = true
+		};
+
+		node.Node.MainQueue.Publish(writeRequest);
+
 		if (!resetEvent.Wait(_timeout)) {
-			Assert.Fail("Timed out waiting for event to be written");
+			var q = node.Node.MainQueue as QueuedHandlerThreadPool;
+			if (writeRequest.Trace)
+				foreach (var m in q.GetStatus())
+					writeRequest.AddTrace(m);
+			var joined = string.Join(Environment.NewLine, writeRequest.GetTraceMessages());
+			Assert.Fail("Timed out waiting for event to be written: " + Environment.NewLine + joined);
 			return null;
 		}
+
+		//qq temp
+//		var joinedTemp = string.Join(Environment.NewLine, writeRequest.GetTraceMessages());
+//		Assert.Fail("Success: " + Environment.NewLine + joinedTemp);
 
 		return writeResult;
 	}

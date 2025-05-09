@@ -104,7 +104,8 @@ public class QueueStats {
 	public override string ToString() {
 		var str = string.Format("{0,-22} L: {1,-5}      Avg: {5,-5}i/s    AvgProcTime: {6:0.0}ms\n"
 								+ "      Idle %:{7,-5:00.0}  Peak: {2,-5}  MaxPeak: {3,-7}  TotalProcessed: {4,-7}\n"
-								+ "      Processing: {8}, Last: {9}",
+								+ "      Processing: {8}, Last: {9}\n"
+								+ "      CurrentItemProcessingTime: {10}, CurrentIdleTime: {11}",
 			Name,
 			Length,
 			LengthCurrentTryPeak,
@@ -114,7 +115,9 @@ public class QueueStats {
 			AvgProcessingTime,
 			IdleTimePercent,
 			InProgressMessageType == null ? "<none>" : InProgressMessageType.Name,
-			LastProcessedMessageType == null ? "<none>" : LastProcessedMessageType.Name);
+			LastProcessedMessageType == null ? "<none>" : LastProcessedMessageType.Name,
+			CurrentItemProcessingTime,
+			CurrentIdleTime);
 		return str;
 	}
 }

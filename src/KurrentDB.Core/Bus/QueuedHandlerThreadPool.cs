@@ -24,6 +24,13 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 	public static readonly TimeSpan VerySlowMsgThreshold = TimeSpan.FromSeconds(7);
 	private static readonly ILogger Log = Serilog.Log.ForContext<QueuedHandlerThreadPool>();
 
+	public string[] GetStatus() => [
+		$"Cancelled: {_lifetimeToken.IsCancellationRequested}",
+		$"IsRunning: {_isRunning}",
+		$"Count: {_queue.Count}",
+		$"Stats: {GetStatistics()}",
+	];
+
 	public int MessageCount {
 		get { return _queue.Count; }
 	}
@@ -135,9 +142,13 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 				while (!_lifetimeToken.IsCancellationRequested && _queue.TryDequeue(out var item)) {
 					var start = _tracker.RecordMessageDequeued(item.EnqueuedAt);
 					var msg = item.Message;
+					//qq maybe build this into the tracker?
+					if (msg.Trace)
+						msg.AddTrace($"Dequeued from {Name}");
 #if DEBUG
 					_queueStats.Dequeued(msg);
 #endif
+
 					try {
 						var queueCnt = _queue.Count;
 						_queueStats.ProcessingStarted(msg.GetType(), queueCnt);
@@ -206,6 +217,10 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 		_queueStats.Enqueued();
 #endif
 		_queue.Enqueue(new(_tracker.Now, message));
+		//qq maybe build this into the tracker?
+		if (message.Trace)
+			message.AddTrace($"Enqueued into {Name}");
+
 		if (!_lifetimeToken.IsCancellationRequested && Interlocked.CompareExchange(ref _isRunning, 1, 0) == 0) {
 			ThreadPool.UnsafeQueueUserWorkItem(this, preferLocal: false);
 		}

@@ -42,6 +42,7 @@ public abstract class RequestManagerBase :
 	protected long FailureCurrentVersion = -1;
 	protected long TransactionId;
 
+	private readonly Message _request;
 	protected readonly CommitSource CommitSource;
 	protected long LastEventPosition;
 	protected bool Registered;
@@ -70,7 +71,8 @@ public abstract class RequestManagerBase :
 			CommitSource commitSource,
 			int prepareCount = 0,
 			long transactionId = -1,
-			bool waitForCommit = false) {
+			bool waitForCommit = false,
+			Message request = default) {
 		Ensure.NotEmptyGuid(internalCorrId, nameof(internalCorrId));
 		Ensure.NotEmptyGuid(clientCorrId, nameof(clientCorrId));
 		Ensure.NotNull(publisher, nameof(publisher));
@@ -87,6 +89,7 @@ public abstract class RequestManagerBase :
 		CommitSource = commitSource;
 		_prepareCount = prepareCount;
 		TransactionId = transactionId;
+		_request = request;
 		_commitReceived = !waitForCommit; //if not waiting for commit flag as true
 		_allPreparesWritten = _prepareCount == 0; //if not waiting for prepares flag as true
 		if (prepareCount == 0 && waitForCommit == false) {
@@ -102,11 +105,18 @@ public abstract class RequestManagerBase :
 	protected abstract Message ClientFailMsg { get; }
 	public void Start() {
 		NextTimeoutTime = DateTime.UtcNow + Timeout;
-		Publisher.Publish(WriteRequestMsg);
+		var x = WriteRequestMsg;
+		if (_request?.Trace ?? false)
+			_request.AddTrace(x);
+		Publisher.Publish(x);
 	}
 
 	public void Handle(StorageMessage.PrepareAck message) {
 		if (Interlocked.Read(ref _complete) == 1 || _allPreparesWritten) { return; }
+
+		if (_request?.Trace ?? false)
+			_request.AddTrace($"RequestManager Received {message.GetType().Name}");
+
 		NextTimeoutTime = DateTime.UtcNow + Timeout;
 		if (message.Flags.HasAnyOf(PrepareFlags.TransactionBegin)) {
 			TransactionId = message.LogPosition;
@@ -125,6 +135,10 @@ public abstract class RequestManagerBase :
 	}
 	public virtual void Handle(StorageMessage.CommitIndexed message) {
 		if (Interlocked.Read(ref _complete) == 1 || _commitReceived) { return; }
+
+		if (_request?.Trace ?? false)
+			_request.AddTrace($"RequestManager Received {message.GetType().Name}");
+
 		NextTimeoutTime = DateTime.UtcNow + Timeout;
 		_commitReceived = true;
 		_allEventsWritten = _commitReceived && _allPreparesWritten;
@@ -153,6 +167,8 @@ public abstract class RequestManagerBase :
 		Publisher.Publish(new StorageMessage.RequestCompleted(InternalCorrId, true));
 	}
 	public void Handle(StorageMessage.RequestManagerTimerTick message) {
+		if (_request?.Trace ?? false)
+			_request.AddTrace($"RequestManager Received {message.GetType().Name}");
 		if (_allEventsWritten) { AllEventsWritten(); }
 		if (Interlocked.Read(ref _complete) == 1 || message.UtcNow < NextTimeoutTime)
 			return;
@@ -161,16 +177,25 @@ public abstract class RequestManagerBase :
 		CompleteFailedRequest(result, msg);
 	}
 	public void Handle(StorageMessage.InvalidTransaction message) {
+		if (_request?.Trace ?? false)
+			_request.AddTrace($"RequestManager Received {message.GetType().Name}");
 		CompleteFailedRequest(OperationResult.InvalidTransaction, "Invalid transaction.");
 	}
 	public void Handle(StorageMessage.WrongExpectedVersion message) {
+		if (_request?.Trace ?? false)
+			_request.AddTrace($"RequestManager Received {message.GetType().Name}");
 		FailureCurrentVersion = message.CurrentVersion;
 		CompleteFailedRequest(OperationResult.WrongExpectedVersion, "Wrong expected version.", message.CurrentVersion);
 	}
 	public void Handle(StorageMessage.StreamDeleted message) {
+		if (_request?.Trace ?? false)
+			_request.AddTrace($"RequestManager Received {message.GetType().Name}");
 		CompleteFailedRequest(OperationResult.StreamDeleted, "Stream is deleted.");
 	}
 	public void Handle(StorageMessage.AlreadyCommitted message) {
+		if (_request?.Trace ?? false)
+			_request.AddTrace($"RequestManager Received {message.GetType().Name}");
+
 		if (Interlocked.Read(ref _complete) == 1 || _allEventsWritten) { return; }
 		Log.Debug("IDEMPOTENT WRITE TO STREAM ClientCorrelationID {clientCorrelationId}, {message}.", ClientCorrId,
 			message);
@@ -193,6 +218,8 @@ public abstract class RequestManagerBase :
 		if (Interlocked.CompareExchange(ref _complete, 1, 0) == 1) { return; }
 		Result = result;
 		FailureMessage = error;
+		if (_request?.Trace ?? false)
+			_request.AddTrace($"RequestManager Replying with RequestCompleted {result}");
 		Publisher.Publish(new StorageMessage.RequestCompleted(InternalCorrId, false, currentVersion));
 		_clientResponseEnvelope.ReplyWith(ClientFailMsg);
 	}
