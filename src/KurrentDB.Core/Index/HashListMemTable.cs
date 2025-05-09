@@ -54,26 +54,15 @@ public class HashListMemTable : IMemTable {
 		Ensure.NotNull(entries, "entries");
 		Ensure.Positive(entries.Count, "entries.Count");
 
-		var collection = entries.Select(x => new IndexEntry(GetHash(x.Stream), x.Version, x.Position)).ToList();
-
-		// sort the entries by stream hash so that we need to acquire only one lock at a time
-		collection.Sort((x, y) => {
-			int cmp;
-			if ((cmp = x.Stream.CompareTo(y.Stream)) != 0)
-				return cmp;
-
-			return x.Position.CompareTo(y.Position);
-		});
-
 		// only one thread at a time can write
-		Interlocked.Add(ref _count, collection.Count);
+		Interlocked.Add(ref _count, entries.Count);
 
 		EntryList list = null;
 		ulong? stream = null;
 
 		try {
-			for (int i = 0; i < collection.Count; i++) {
-				var entry = collection[i];
+			for (int i = 0; i < entries.Count; i++) {
+				var entry = entries[i];
 				Ensure.Nonnegative(entry.Version, "entry.Version");
 				Ensure.Nonnegative(entry.Position, "entry.Position");
 
