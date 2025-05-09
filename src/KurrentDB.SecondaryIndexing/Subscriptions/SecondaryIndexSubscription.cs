@@ -1,8 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
@@ -13,24 +11,33 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-public class SecondaryIndexSubscription(IPublisher publisher, ISecondaryIndex index) {
-	static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
+public class SecondaryIndexSubscription(
+	IPublisher publisher,
+	ISecondaryIndex index
+) : IAsyncDisposable {
+	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
 	private const int CheckpointCommitBatchSize = 50000;
 	private const uint CheckpointCommitDelayMs = 10000;
 	private const uint DefaultCheckpointIntervalMultiplier = 1000;
 
 	private readonly CancellationTokenSource _cts = new();
-	private Enumerator.AllSubscriptionFiltered _sub = null!;
-	private Task _runner = null!;
-	private Subject<bool> _checkpointSubject = null!;
+	private Enumerator.AllSubscriptionFiltered? _subscription;
+	private Task? _processingTask;
+	private SecondaryIndexCheckpointTracker? _checkpointTracker;
 
 	public async ValueTask Subscribe(CancellationToken cancellationToken) {
-		var position = await index.GetLastPosition(cancellationToken);
+		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
+		var position = await index.GetLastPosition(linkedCts.Token);
 		var startFrom = position == null ? Position.Start : Position.FromInt64((long)position, (long)position);
 
-		_checkpointSubject = GetCheckpointSubject();
+		_checkpointTracker = new SecondaryIndexCheckpointTracker(
+			CheckpointCommitBatchSize,
+			CheckpointCommitDelayMs,
+			async ct => await index.Processor.Commit(ct)
+		);
+		_checkpointTracker.Start(linkedCts.Token);
 
-		_sub = new Enumerator.AllSubscriptionFiltered(
+		_subscription = new Enumerator.AllSubscriptionFiltered(
 			bus: publisher,
 			expiryStrategy: new DefaultExpiryStrategy(),
 			checkpoint: startFrom,
@@ -40,37 +47,29 @@ public class SecondaryIndexSubscription(IPublisher publisher, ISecondaryIndex in
 			requiresLeader: false,
 			maxSearchWindow: null,
 			checkpointIntervalMultiplier: DefaultCheckpointIntervalMultiplier,
-			cancellationToken: cancellationToken
+			cancellationToken: linkedCts.Token
 		);
 
-		_runner = Task.Run(ProcessEvents, _cts.Token);
+		_processingTask = Task.Run(() => ProcessEvents(linkedCts.Token), linkedCts.Token);
 	}
 
-	public async ValueTask Unsubscribe(CancellationToken cancellationToken) {
-		try {
-			await _cts.CancelAsync();
-			await _runner;
-		} catch {
-			//
-		} finally {
-			await _sub.DisposeAsync();
-		}
-	}
+	private async Task ProcessEvents(CancellationToken token) {
+		if (_subscription == null || _checkpointTracker == null)
+			throw new InvalidOperationException("Subscription not initialized");
 
-	private async Task ProcessEvents() {
-		while (!_cts.IsCancellationRequested) {
-			if (!await _sub
-				    .MoveNextAsync()) // not sure if we need to retry forever or if the enumerator will do that for us
+		while (!token.IsCancellationRequested) {
+			if (!await _subscription.MoveNextAsync())
 				break;
 
-			if (_sub.Current is not ReadResponse.EventReceived eventReceived) continue;
+			if (_subscription.Current is not ReadResponse.EventReceived eventReceived)
+				continue;
 
 			try {
-				// TODO: Add tracing, error handling etc.
-				await index.Processor.Index(eventReceived.Event, _cts.Token);
-				_checkpointSubject.OnNext(true);
-			} catch (TaskCanceledException) {
-				// ignore
+				await index.Processor.Index(eventReceived.Event, token);
+
+				_checkpointTracker.Increment();
+			} catch (OperationCanceledException) {
+				break;
 			} catch (Exception e) {
 				Log.Error(e, "Error while processing event {EventType}", eventReceived.Event.Event.EventType);
 				throw;
@@ -78,17 +77,29 @@ public class SecondaryIndexSubscription(IPublisher publisher, ISecondaryIndex in
 		}
 	}
 
-	private Subject<bool> GetCheckpointSubject() {
-		var subject = new Subject<bool>();
+	public async ValueTask DisposeAsync() {
+		try {
+			await _cts.CancelAsync();
 
-		var observable = subject.Buffer(TimeSpan.FromMilliseconds(CheckpointCommitDelayMs), CheckpointCommitBatchSize);
+			if (_processingTask != null) {
+				try {
+					await _processingTask;
+				} catch (OperationCanceledException) {
+					// Expected
+				} catch (Exception ex) {
+					Log.Error(ex, "Error during processing task completion");
+				}
+			}
 
-		observable
-			.Where(x => x.Count > 0)
-			.Select(x => Observable.FromAsync(async ct => await index.Processor.Commit(ct)))
-			.Concat()
-			.Subscribe();
+			if (_checkpointTracker != null) {
+				await _checkpointTracker.DisposeAsync();
+			}
 
-		return subject;
+			if (_subscription != null) {
+				await _subscription.DisposeAsync();
+			}
+		} finally {
+			_cts.Dispose();
+		}
 	}
 }
