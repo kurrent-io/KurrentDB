@@ -15,6 +15,7 @@ public static class Constants {
 		public const string MaximumAppendSizeExceeded = "maximum-append-size-exceeded";
 		public const string MaximumAppendEventSizeExceeded = "maximum-append-event-size-exceeded";
 		public const string MissingRequiredMetadataProperty = "missing-required-metadata-property";
+		public const string MissingRequiredProperty = "missing-required-property";
 		public const string NotLeader = "not-leader";
 
 		public const string PersistentSubscriptionFailed = "persistent-subscription-failed";
@@ -41,6 +42,7 @@ public static class Constants {
 		public const string MaximumAppendEventSize = "maximum-append-event-size";
 		public const string ProposedAppendEventSize = "proposed-append-event-size";
 		public const string RequiredMetadataProperties = "required-metadata-properties";
+		public const string RequiredProperties = "required-properties";
 		public const string ScavengeId = "scavenge-id";
 		public const string LeaderEndpointHost = "leader-endpoint-host";
 		public const string LeaderEndpointPort = "leader-endpoint-port";
@@ -59,6 +61,23 @@ public static class Constants {
 			public const string ApplicationJson = "application/json";
 			public const string ApplicationOctetStream = "application/octet-stream";
 		}
+	}
+
+	public static class Properties {
+		public const string EventType = "$schema.name";
+		public const string DataFormat = "$schema.data-format";
+		public const string Created = "$record.timestamp";
+		public const string LegacyMetadata = "$legacy-metadata";
+
+		public static class DataFormats {
+			// can be others (protobuf, avro, ...) but json is the only one the server cares about
+			public const string Json = "json";
+		}
+
+		// for write
+		public const string RequiredProperties =
+			$"{EventType} (bytes), " +
+			$"{DataFormat} (bytes)";
 	}
 
 	public static class Headers {

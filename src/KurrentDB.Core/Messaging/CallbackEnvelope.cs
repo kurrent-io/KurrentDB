@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+#nullable enable
+
 using System;
 using KurrentDB.Common.Utils;
 
@@ -16,5 +18,17 @@ public class CallbackEnvelope : IEnvelope {
 
 	public void ReplyWith<T>(T message) where T : Message {
 		_callback(message);
+	}
+
+	public static CallbackEnvelope Create(Action<Message> callback) =>
+		new(callback);
+
+	public static CallbackEnvelope<TArg> Create<TArg>(TArg arg, Action<TArg, Message> callback) =>
+		new(arg, callback);
+}
+
+public class CallbackEnvelope<TArg>(TArg arg, Action<TArg, Message> callback) : IEnvelope {
+	public void ReplyWith<T>(T message) where T : Message {
+		callback(arg, message);
 	}
 }
