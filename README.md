@@ -67,7 +67,7 @@ KurrentDB supports the gRPC protocol.
 
 ### KurrentDB supported clients
 
-- Python: [pyeventsourcing/esdbclient](https://pypi.org/project/esdbclient/)
+- Python: [pyeventsourcing/kurrentdbclient](https://pypi.org/project/kurrentdbclient/)
 - Node.js (javascript/typescript): [kurrent-io/KurrentDB-Client-NodeJS](https://github.com/kurrent-io/KurrentDB-Client-NodeJS)
 - Java: [(kurrent-io/KurrentDB-Client-Java](https://github.com/kurrent-io/KurrentDB-Client-Java)
 - .NET: [kurrent-io/EventStore-Client-Dotnet](https://github.com/kurrent-io/EventStore-Client-Dotnet)
