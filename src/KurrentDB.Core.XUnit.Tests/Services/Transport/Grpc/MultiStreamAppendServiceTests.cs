@@ -258,7 +258,7 @@ public class MultiStreamAppendServiceTests {
 		_mainQueue.OnPublish = message => {
 			var writeEvents = Assert.IsType<ClientMessage.WriteEvents>(message);
 			// both requests appear in the ClientMessage.WriteEvents message that the sut produces
-			Assert.Equal(new[] { "stream-a", "stream-b" }, writeEvents.EventStreamIds);
+			Assert.Equal(["stream-a", "stream-b"], writeEvents.EventStreamIds.Span);
 
 			writeEvents.Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(
 				correlationId: writeEvents.CorrelationId,
