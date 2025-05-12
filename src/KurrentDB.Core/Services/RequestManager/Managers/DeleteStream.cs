@@ -61,6 +61,7 @@ public class DeleteStream : RequestManagerBase {
 
 	protected override Message ClientFailMsg =>
 		new ClientMessage.DeleteStreamCompleted(ClientCorrId, Result, FailureMessage,
-			FailureCurrentVersions.Span.Length > 0 ?
-				FailureCurrentVersions.Single : -1 /* for backwards compatibility */);
+			FailureCurrentVersions.Length is 1
+				? FailureCurrentVersions.Single
+				: -1 /* for backwards compatibility */);
 }

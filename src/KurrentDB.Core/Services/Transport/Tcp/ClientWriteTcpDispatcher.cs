@@ -152,17 +152,17 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 	private static TcpPackage WrapWriteEventsCompleted(ClientMessage.WriteEventsCompleted msg) {
 		var dto = new WriteEventsCompleted((EventStore.Client.Messages.OperationResult)msg.Result,
 			msg.Message,
-			msg.FirstEventNumbers.Length > 0 ? //qqqqqqqqq was span.length. search for this. what if the length is > 1? there are other places with the same backwards compatibility comment
-				msg.FirstEventNumbers.Single :
-				EventNumber.Invalid, /* for backwards compatibility */
-			msg.LastEventNumbers.Length > 0 ?
-				msg.LastEventNumbers.Single :
-				EventNumber.Invalid, /* for backwards compatibility */
+			msg.FirstEventNumbers.Length is 1
+				? msg.FirstEventNumbers.Single
+				: EventNumber.Invalid, /* for backwards compatibility */
+			msg.LastEventNumbers.Length is 1
+				? msg.LastEventNumbers.Single
+				: EventNumber.Invalid, /* for backwards compatibility */
 			msg.PreparePosition,
 			msg.CommitPosition,
-			msg.FailureCurrentVersions.Length > 0 ?
-				msg.FailureCurrentVersions.Single :
-				msg.Result == OperationResult.Success ? 0L : -1L /* for backwards compatibility */);
+			msg.FailureCurrentVersions.Length is 1
+				? msg.FailureCurrentVersions.Single
+				: msg.Result is OperationResult.Success ? 0L : -1L /* for backwards compatibility */);
 		return new(TcpCommand.WriteEventsCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
