@@ -692,7 +692,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		AddPendingRequest(corrId);
 		return
 			Writer.Publish(
-				ClientMessage.WriteEvents.ForSingleStream(corrId,
+				ClientMessage.WriteEvents.ForSingleStream(
+					corrId,
 					corrId,
 					Writer.Envelope,
 					false,
@@ -826,7 +827,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		Action<ClientMessage.WriteEventsCompleted> action) {
 		var corrId = Guid.NewGuid();
 
-		var message = ClientMessage.WriteEvents.ForSingleStream(corrId,
+		var message = ClientMessage.WriteEvents.ForSingleStream(
+			corrId,
 			corrId,
 			Writer.Envelope,
 			false,
@@ -849,7 +851,8 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		AddPendingRequest(corrId);
 		return
 			Writer.Publish(
-				ClientMessage.WriteEvents.ForSingleStream(corrId,
+				ClientMessage.WriteEvents.ForSingleStream(
+					corrId,
 					corrId,
 					Writer.Envelope,
 					false,
