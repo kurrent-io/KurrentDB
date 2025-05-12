@@ -196,7 +196,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 	protected void OneWriteCompletes() {
 		var message = _writesQueue.Dequeue();
 		ProcessWrite(
-			message.Envelope, message.CorrelationId, message.EventStreamIds.Span[0], message.ExpectedVersions.Span[0], message.Events.ToArray(),
+			message.Envelope, message.CorrelationId, message.EventStreamIds.Single, message.ExpectedVersions.Single, message.Events.ToArray(),
 			(firstEventNumber, lastEventNumber) =>
 				ClientMessage.WriteEventsCompleted.ForSingleStream(message.CorrelationId, firstEventNumber, lastEventNumber, -1,
 					-1),
@@ -207,7 +207,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 	protected void CompleteWriteWithResult(OperationResult result) {
 		var message = _writesQueue.Dequeue();
 		ProcessWrite(
-			message.Envelope, message.CorrelationId, message.EventStreamIds.Span[0], ExpectedVersion.Any, message.Events.ToArray(),
+			message.Envelope, message.CorrelationId, message.EventStreamIds.Single, ExpectedVersion.Any, message.Events.ToArray(),
 			(firstEventNumber, lastEventNumber) =>
 				new ClientMessage.WriteEventsCompleted(message.CorrelationId, result, String.Empty),
 			new ClientMessage.WriteEventsCompleted(
@@ -424,9 +424,9 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 	}
 
 	public void Handle(ClientMessage.WriteEvents message) {
-		if (_allWritesSucceed || _writesToSucceed.Contains(message.EventStreamIds.Span[0])) {
+		if (_allWritesSucceed || _writesToSucceed.Contains(message.EventStreamIds.Single)) {
 			ProcessWrite(
-				message.Envelope, message.CorrelationId, message.EventStreamIds.Span[0], message.ExpectedVersions.Span[0],
+				message.Envelope, message.CorrelationId, message.EventStreamIds.Single, message.ExpectedVersions.Single,
 				message.Events.ToArray(),
 				(firstEventNumber, lastEventNumber) =>
 					ClientMessage.WriteEventsCompleted.ForSingleStream(message.CorrelationId, firstEventNumber, lastEventNumber,

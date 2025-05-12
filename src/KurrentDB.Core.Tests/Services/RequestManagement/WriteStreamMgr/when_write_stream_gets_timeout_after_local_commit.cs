@@ -23,7 +23,7 @@ public class when_write_stream_gets_timeout_after_local_commit : RequestManagerS
 			ClientCorrId,
 			"test123",
 			ExpectedVersion.Any,
-			new[] { DummyEvent() },
+			new(DummyEvent()),
 			CommitSource);
 	}
 

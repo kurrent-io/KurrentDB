@@ -79,7 +79,7 @@ public class PersistentSubscriptionCheckpointWriter : IPersistentSubscriptionChe
 	private void WriteStateCompleted(ClientMessage.WriteEventsCompleted msg) {
 		_outstandingWrite = false;
 		if (msg.Result == OperationResult.Success) {
-			_version = msg.LastEventNumbers.Span[0];
+			_version = msg.LastEventNumbers.Single;
 		} else {
 			Log.Debug("Error writing checkpoint for {stream}: {e}", _subscriptionStateStream, msg.Result);
 			_version = ExpectedVersion.Any;

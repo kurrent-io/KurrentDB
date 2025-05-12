@@ -12,7 +12,7 @@ public static class ClientMessage {
 
 		public WriteEvents(KurrentDB.Core.Messages.ClientMessage.WriteEvents msg) : base(
 			msg.InternalCorrId, msg.CorrelationId, msg.Envelope, msg.RequireLeader, msg.User, msg.Tokens, msg.CancellationToken) {
-			EventStreamId = msg.EventStreamIds.Span[0];
+			EventStreamId = msg.EventStreamIds.Single;
 			Events = msg.Events.ToArray();
 		}
 	}

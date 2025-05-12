@@ -26,7 +26,7 @@ public class when_write_stream_gets_already_committed : RequestManagerSpecificat
 			ClientCorrId,
 			"test123",
 			ExpectedVersion.Any,
-			new[] { DummyEvent() },
+			new(DummyEvent()),
 			CommitSource);
 	}
 

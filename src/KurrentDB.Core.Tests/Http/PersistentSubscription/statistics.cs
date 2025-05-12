@@ -87,7 +87,7 @@ class when_getting_statistics_for_subscription_with_parked_events(string content
 	}
 
 	private void Handle(StorageMessage.WritePrepares msg) {
-		if (msg.EventStreamIds.Span[0] == _subscriptionParkedStream) {
+		if (msg.EventStreamIds.Single == _subscriptionParkedStream) {
 			_writeCorrelationId = msg.CorrelationId;
 		}
 	}

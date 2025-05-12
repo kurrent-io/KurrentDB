@@ -96,9 +96,9 @@ public class TcpConnectionManagerTests {
 			throw new Exception("Timed out waiting for events.");
 		}
 
-		Assert.AreEqual(evnt.EventId, publishedWrite.Events.Span[0].EventId,
+		Assert.AreEqual(evnt.EventId, publishedWrite.Events.Single.EventId,
 			"Expected the published write to be the event that was sent through the tcp connection manager to be the event {0} but got {1}",
-			evnt.EventId, publishedWrite.Events.Span[0].EventId);
+			evnt.EventId, publishedWrite.Events.Single.EventId);
 	}
 
 	[Test]

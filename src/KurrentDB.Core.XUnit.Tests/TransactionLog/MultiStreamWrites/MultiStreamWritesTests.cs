@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -604,7 +605,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIds,
 			expectedVersions,
 			events,
-			eventStreamIndexes is null ? (ReadOnlyMemory<int>?)null : eventStreamIndexes,
+			eventStreamIndexes is null ? (LowAllocReadOnlyMemory<int>?)null : eventStreamIndexes,
 			user: SystemAccounts.System);
 
 		fixture.MiniNode.Node.MainQueue.Publish(writeEventsMsg);

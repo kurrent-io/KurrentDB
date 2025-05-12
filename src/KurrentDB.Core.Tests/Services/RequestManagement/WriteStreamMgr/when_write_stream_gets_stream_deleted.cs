@@ -16,15 +16,15 @@ namespace KurrentDB.Core.Tests.Services.RequestManagement.WriteStreamMgr;
 public class when_write_stream_gets_stream_deleted : RequestManagerSpecification<WriteEvents> {
 	protected override WriteEvents OnManager(FakePublisher publisher) {
 		return WriteEvents.ForSingleStream(
-	publisher,
-	CommitTimeout,
-	Envelope,
-	InternalCorrId,
-	ClientCorrId,
-	"test123",
-	ExpectedVersion.Any,
-	new[] { DummyEvent() },
-	CommitSource);
+			publisher,
+			CommitTimeout,
+			Envelope,
+			InternalCorrId,
+			ClientCorrId,
+			"test123",
+			ExpectedVersion.Any,
+			new(DummyEvent()),
+			CommitSource);
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {

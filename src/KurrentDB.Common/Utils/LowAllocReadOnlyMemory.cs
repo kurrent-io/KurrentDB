@@ -2,6 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -41,6 +43,8 @@ public readonly struct LowAllocReadOnlyMemory<T> {
 
 	public static implicit operator LowAllocReadOnlyMemory<T>(T[] array) => new(items: array);
 
+	public static implicit operator LowAllocReadOnlyMemory<T>(Memory<T> items) => new(items: items);
+
 	public static LowAllocReadOnlyMemory<T> Empty => default;
 
 	public int Length => _isSingle
@@ -60,9 +64,14 @@ public readonly struct LowAllocReadOnlyMemory<T> {
 	public T[] ToArray() => Span.ToArray();
 }
 
-// For collection expressions. Allocates a backing array if necessary.
 public static class LowAllocReadOnlyMemoryBuilder {
+	// For collection expressions. Allocates a backing array if necessary.
 	public static LowAllocReadOnlyMemory<T> Create<T>(ReadOnlySpan<T> items) =>
+		items is [var singleItem]
+			? new(singleItem: singleItem)
+			: new(items: items.ToArray());
+
+	public static LowAllocReadOnlyMemory<T> ToLowAllocReadOnlyMemory<T>(this IList<T> items) =>
 		items is [var singleItem]
 			? new(singleItem: singleItem)
 			: new(items: items.ToArray());

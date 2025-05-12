@@ -242,11 +242,11 @@ partial class Streams<TStreamId> {
 								ClientMessage.WriteEventsCompleted completed => completed.Result switch {
 									Success => new BatchAppendResp {
 										Success = BatchAppendResp.Types.Success.Completed(completed.CommitPosition,
-											completed.PreparePosition, completed.LastEventNumbers.Span[0]),
+											completed.PreparePosition, completed.LastEventNumbers.Single),
 									},
 									OperationResult.WrongExpectedVersion => new BatchAppendResp {
 										Error = Status.WrongExpectedVersion(
-											StreamRevision.FromInt64(completed.FailureCurrentVersions.Span[0]),
+											StreamRevision.FromInt64(completed.FailureCurrentVersions.Single),
 											clientWriteRequest.ExpectedVersion)
 									},
 									OperationResult.AccessDenied => new BatchAppendResp { Error = Status.AccessDenied },

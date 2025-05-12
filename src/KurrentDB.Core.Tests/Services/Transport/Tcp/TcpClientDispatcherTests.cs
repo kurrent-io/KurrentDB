@@ -307,7 +307,7 @@ public class TcpClientDispatcherTests {
 			new Dictionary<string, string>(), default, (byte)ClientVersion.V2);
 		Assert.IsNotNull(unwrapped, "Unwrapped message is null");
 		if (unwrapped is ClientMessage.WriteEvents writeEvents)
-			Assert.AreEqual(evnt.Properties, writeEvents.Events.Span[0].Properties);
+			Assert.AreEqual(evnt.Properties, writeEvents.Events.Single.Properties);
 		else
 			Assert.Fail($"Unwrapped message is not {nameof(ClientMessage.WriteEvents)}");
 	}

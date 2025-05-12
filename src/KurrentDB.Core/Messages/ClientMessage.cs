@@ -29,8 +29,6 @@ public enum OperationResult {
 }
 
 public static partial class ClientMessage {
-	public static readonly int[] SingleStreamIndexes = [ 0 ];
-
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class RequestShutdown : Message {
 		public readonly bool ExitProcess;
@@ -174,20 +172,20 @@ public static partial class ClientMessage {
 
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class WriteEvents : WriteRequestMessage {
-		public readonly ReadOnlyMemory<string> EventStreamIds;
-		public readonly ReadOnlyMemory<long> ExpectedVersions;
-		public readonly ReadOnlyMemory<Event> Events;
-		public readonly ReadOnlyMemory<int>? EventStreamIndexes;
+		public readonly LowAllocReadOnlyMemory<string> EventStreamIds;
+		public readonly LowAllocReadOnlyMemory<long> ExpectedVersions;
+		public readonly LowAllocReadOnlyMemory<Event> Events;
+		public readonly LowAllocReadOnlyMemory<int>? EventStreamIndexes;
 
 		public WriteEvents(
 			Guid internalCorrId,
 			Guid correlationId,
 			IEnvelope envelope,
 			bool requireLeader,
-			ReadOnlyMemory<string> eventStreamIds,
-			ReadOnlyMemory<long> expectedVersions,
-			ReadOnlyMemory<Event> events,
-			ReadOnlyMemory<int>? eventStreamIndexes,
+			LowAllocReadOnlyMemory<string> eventStreamIds,
+			LowAllocReadOnlyMemory<long> expectedVersions,
+			LowAllocReadOnlyMemory<Event> events,
+			LowAllocReadOnlyMemory<int>? eventStreamIndexes,
 			ClaimsPrincipal user,
 			IReadOnlyDictionary<string, string> tokens = null,
 			CancellationToken cancellationToken = default)
@@ -247,7 +245,7 @@ public static partial class ClientMessage {
 			bool requireLeader,
 			string eventStreamId,
 			long expectedVersion,
-			Event[] events,
+			LowAllocReadOnlyMemory<Event> events,
 			ClaimsPrincipal user,
 			IReadOnlyDictionary<string, string> tokens = null,
 			CancellationToken cancellationToken = default) {
@@ -256,8 +254,8 @@ public static partial class ClientMessage {
 				correlationId,
 				envelope,
 				requireLeader,
-				eventStreamIds: new[] { eventStreamId },
-				expectedVersions: new[] { expectedVersion },
+				eventStreamIds: new(eventStreamId),
+				expectedVersions: new(expectedVersion),
 				events,
 				eventStreamIndexes: null,
 				user,
@@ -272,9 +270,9 @@ public static partial class ClientMessage {
 				correlationId,
 				envelope,
 				requireLeader,
-				eventStreamIds: new[] { eventStreamId },
-				expectedVersions: new[] { expectedVersion },
-				events: new[] { @event },
+				eventStreamIds: new(eventStreamId),
+				expectedVersions: new(expectedVersion),
+				events: new(@event),
 				eventStreamIndexes: null,
 				user,
 				tokens);
@@ -297,17 +295,17 @@ public static partial class ClientMessage {
 		public readonly Guid CorrelationId;
 		public readonly OperationResult Result;
 		public readonly string Message;
-		public readonly ReadOnlyMemory<long> FirstEventNumbers;
-		public readonly ReadOnlyMemory<long> LastEventNumbers;
+		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
+		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
 		public readonly long PreparePosition;
 		public readonly long CommitPosition;
-		public readonly ReadOnlyMemory<int> FailureStreamIndexes;
-		public readonly ReadOnlyMemory<long> FailureCurrentVersions;
+		public readonly LowAllocReadOnlyMemory<int> FailureStreamIndexes;
+		public readonly LowAllocReadOnlyMemory<long> FailureCurrentVersions;
 
 		public WriteEventsCompleted(
 			Guid correlationId,
-			ReadOnlyMemory<long> firstEventNumbers,
-			ReadOnlyMemory<long> lastEventNumbers,
+			LowAllocReadOnlyMemory<long> firstEventNumbers,
+			LowAllocReadOnlyMemory<long> lastEventNumbers,
 			long preparePosition, long commitPosition) {
 			ArgumentOutOfRangeException.ThrowIfNotEqual(firstEventNumbers.Length, lastEventNumbers.Length, nameof(firstEventNumbers));
 
@@ -334,7 +332,7 @@ public static partial class ClientMessage {
 		}
 
 		public WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
-			ReadOnlyMemory<int> failureStreamIndexes = default, ReadOnlyMemory<long> failureCurrentVersions = default) {
+			LowAllocReadOnlyMemory<int> failureStreamIndexes = default, LowAllocReadOnlyMemory<long> failureCurrentVersions = default) {
 			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
 
 			if (result == OperationResult.Success)
@@ -343,16 +341,16 @@ public static partial class ClientMessage {
 			CorrelationId = correlationId;
 			Result = result;
 			Message = message;
-			FirstEventNumbers = ReadOnlyMemory<long>.Empty;
-			LastEventNumbers = ReadOnlyMemory<long>.Empty;
+			FirstEventNumbers = [];
+			LastEventNumbers = [];
 			PreparePosition = EventNumber.Invalid;
 			FailureStreamIndexes = failureStreamIndexes;
 			FailureCurrentVersions = failureCurrentVersions;
 		}
 
 		private WriteEventsCompleted(Guid correlationId, OperationResult result, string message,
-			ReadOnlyMemory<long> firstEventNumbers, ReadOnlyMemory<long> lastEventNumbers, long preparePosition,
-			long commitPosition, ReadOnlyMemory<int> failureStreamIndexes, ReadOnlyMemory<long> failureCurrentVersions) {
+			LowAllocReadOnlyMemory<long> firstEventNumbers, LowAllocReadOnlyMemory<long> lastEventNumbers, long preparePosition,
+			long commitPosition, LowAllocReadOnlyMemory<int> failureStreamIndexes, LowAllocReadOnlyMemory<long> failureCurrentVersions) {
 			ArgumentOutOfRangeException.ThrowIfNotEqual(firstEventNumbers.Length, lastEventNumbers.Length, nameof(firstEventNumbers));
 			ArgumentOutOfRangeException.ThrowIfNotEqual(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
 
@@ -370,8 +368,8 @@ public static partial class ClientMessage {
 		public static WriteEventsCompleted ForSingleStream(Guid correlationId, long firstEventNumber, long lastEventNumber, long preparePosition, long commitPosition) {
 			return new WriteEventsCompleted(
 				correlationId,
-				firstEventNumbers: new[] { firstEventNumber },
-				lastEventNumbers: new[] { lastEventNumber },
+				firstEventNumbers: new(firstEventNumber),
+				lastEventNumbers: new(lastEventNumber),
 				preparePosition,
 				commitPosition);
 		}

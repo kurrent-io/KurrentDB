@@ -13,8 +13,6 @@ using KurrentDB.Core.TransactionLog.LogRecords;
 namespace KurrentDB.Core.Messages;
 
 public static partial class StorageMessage {
-	public static readonly int[] SingleStreamIndexes = [ 0 ];
-
 	public interface IPreconditionedWriteMessage {
 		Guid CorrelationId { get; }
 		IEnvelope Envelope { get; }
@@ -30,18 +28,18 @@ public static partial class StorageMessage {
 	public partial class WritePrepares : Message, IPreconditionedWriteMessage, IFlushableMessage, ILeaderWriteMessage {
 		public Guid CorrelationId { get; private set; }
 		public IEnvelope Envelope { get; private set; }
-		public ReadOnlyMemory<string> EventStreamIds { get; private set; }
-		public ReadOnlyMemory<long> ExpectedVersions { get; private set; }
-		public ReadOnlyMemory<Event> Events { get; private set; }
-		public ReadOnlyMemory<int>? EventStreamIndexes { get; private set; }
+		public LowAllocReadOnlyMemory<string> EventStreamIds { get; private set; }
+		public LowAllocReadOnlyMemory<long> ExpectedVersions { get; private set; }
+		public LowAllocReadOnlyMemory<Event> Events { get; private set; }
+		public LowAllocReadOnlyMemory<int>? EventStreamIndexes { get; private set; }
 
 		public WritePrepares(
 			Guid correlationId,
 			IEnvelope envelope,
-			ReadOnlyMemory<string> eventStreamIds,
-			ReadOnlyMemory<long> expectedVersions,
-			ReadOnlyMemory<Event> events,
-			ReadOnlyMemory<int>? eventStreamIndexes,
+			LowAllocReadOnlyMemory<string> eventStreamIds,
+			LowAllocReadOnlyMemory<long> expectedVersions,
+			LowAllocReadOnlyMemory<Event> events,
+			LowAllocReadOnlyMemory<int>? eventStreamIndexes,
 			CancellationToken cancellationToken) : base(cancellationToken) {
 			CorrelationId = correlationId;
 			Envelope = envelope;
@@ -193,14 +191,14 @@ public static partial class StorageMessage {
 		public readonly Guid CorrelationId;
 		public readonly long LogPosition;
 		public readonly long TransactionPosition;
-		public readonly ReadOnlyMemory<long> FirstEventNumbers;
-		public readonly ReadOnlyMemory<long> LastEventNumbers;
-		public readonly ReadOnlyMemory<int>? EventStreamIndexes;
+		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
+		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
+		public readonly LowAllocReadOnlyMemory<int>? EventStreamIndexes;
 		public int NumStreams => FirstEventNumbers.Length;
 
 		public CommitAck(Guid correlationId, long logPosition, long transactionPosition,
-			ReadOnlyMemory<long> firstEventNumbers, ReadOnlyMemory<long> lastEventNumbers,
-			ReadOnlyMemory<int>? eventStreamIndexes) {
+			LowAllocReadOnlyMemory<long> firstEventNumbers, LowAllocReadOnlyMemory<long> lastEventNumbers,
+			LowAllocReadOnlyMemory<int>? eventStreamIndexes) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Nonnegative(logPosition, "logPosition");
 			Ensure.Nonnegative(transactionPosition, "transactionPosition");
@@ -239,8 +237,8 @@ public static partial class StorageMessage {
 				correlationId,
 				logPosition,
 				transactionPosition,
-				firstEventNumbers: new[] { firstEventNumber },
-				lastEventNumbers: new[] { lastEventNumber },
+				firstEventNumbers: new(firstEventNumber),
+				lastEventNumbers: new(lastEventNumber),
 				eventStreamIndexes: null);
 		}
 	}
@@ -254,11 +252,11 @@ public static partial class StorageMessage {
 		public readonly Guid CorrelationId;
 		public readonly long LogPosition;
 		public readonly long TransactionPosition;
-		public readonly ReadOnlyMemory<long> FirstEventNumbers;
-		public readonly ReadOnlyMemory<long> LastEventNumbers;
+		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
+		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
 
 		public CommitIndexed(Guid correlationId, long logPosition, long transactionPosition,
-			ReadOnlyMemory<long> firstEventNumbers, ReadOnlyMemory<long> lastEventNumbers) {
+			LowAllocReadOnlyMemory<long> firstEventNumbers, LowAllocReadOnlyMemory<long> lastEventNumbers) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Nonnegative(logPosition, "logPosition");
 			Ensure.Nonnegative(transactionPosition, "transactionPosition");
@@ -290,8 +288,8 @@ public static partial class StorageMessage {
 				correlationId,
 				logPosition,
 				transactionPosition,
-				firstEventNumbers: new[] { firstEventNumber },
-				lastEventNumbers: new[] { lastEventNumber });
+				firstEventNumbers: new(firstEventNumber),
+				lastEventNumbers: new(lastEventNumber));
 		}
 	}
 
@@ -329,13 +327,13 @@ public static partial class StorageMessage {
 	public partial class AlreadyCommitted : Message {
 		public readonly Guid CorrelationId;
 
-		public readonly ReadOnlyMemory<long> FirstEventNumbers;
-		public readonly ReadOnlyMemory<long> LastEventNumbers;
+		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
+		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
 		public readonly long LogPosition;
 
 		public AlreadyCommitted(Guid correlationId,
-			ReadOnlyMemory<long> firstEventNumbers,
-			ReadOnlyMemory<long> lastEventNumbers,
+			LowAllocReadOnlyMemory<long> firstEventNumbers,
+			LowAllocReadOnlyMemory<long> lastEventNumbers,
 			long logPosition) {
 			Ensure.NotEmptyGuid(correlationId, nameof(correlationId));
 			Ensure.Equal(lastEventNumbers.Length, firstEventNumbers.Length, nameof(lastEventNumbers));
@@ -350,8 +348,8 @@ public static partial class StorageMessage {
 		public static AlreadyCommitted ForSingleStream(Guid correlationId, string eventStreamId, long firstEventNumber, long lastEventNumber, long logPosition) {
 			return new AlreadyCommitted(
 				correlationId,
-				firstEventNumbers: new[] { firstEventNumber },
-				lastEventNumbers: new[] { lastEventNumber },
+				firstEventNumbers: new(firstEventNumber),
+				lastEventNumbers: new(lastEventNumber),
 				logPosition);
 		}
 
@@ -375,10 +373,10 @@ public static partial class StorageMessage {
 	[DerivedMessage(CoreMessage.Storage)]
 	public partial class WrongExpectedVersion : Message {
 		public readonly Guid CorrelationId;
-		public readonly ReadOnlyMemory<int> FailureStreamIndexes;
-		public readonly ReadOnlyMemory<long> FailureCurrentVersions;
+		public readonly LowAllocReadOnlyMemory<int> FailureStreamIndexes;
+		public readonly LowAllocReadOnlyMemory<long> FailureCurrentVersions;
 
-		public WrongExpectedVersion(Guid correlationId, ReadOnlyMemory<int> failureStreamIndexes, ReadOnlyMemory<long> failureCurrentVersions) {
+		public WrongExpectedVersion(Guid correlationId, LowAllocReadOnlyMemory<int> failureStreamIndexes, LowAllocReadOnlyMemory<long> failureCurrentVersions) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Equal(failureStreamIndexes.Length, failureCurrentVersions.Length, nameof(failureStreamIndexes));
 			CorrelationId = correlationId;
@@ -389,8 +387,8 @@ public static partial class StorageMessage {
 		public static WrongExpectedVersion ForSingleStream(Guid correlationId, long currentVersion) {
 			return new WrongExpectedVersion(
 				correlationId,
-				failureStreamIndexes: SingleStreamIndexes,
-				failureCurrentVersions: new[] { currentVersion });
+				failureStreamIndexes: new(0),
+				failureCurrentVersions: new(currentVersion));
 		}
 	}
 
@@ -412,9 +410,9 @@ public static partial class StorageMessage {
 	public partial class RequestCompleted : Message {
 		public readonly Guid CorrelationId;
 		public readonly bool Success;
-		public readonly ReadOnlyMemory<long> CurrentVersions;
+		public readonly LowAllocReadOnlyMemory<long> CurrentVersions;
 
-		public RequestCompleted(Guid correlationId, bool success, ReadOnlyMemory<long> currentVersions = default) {
+		public RequestCompleted(Guid correlationId, bool success, LowAllocReadOnlyMemory<long> currentVersions = default) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			CorrelationId = correlationId;
 			Success = success;

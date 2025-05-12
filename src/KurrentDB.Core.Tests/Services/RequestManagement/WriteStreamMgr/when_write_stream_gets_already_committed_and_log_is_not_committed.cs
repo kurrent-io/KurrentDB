@@ -24,7 +24,7 @@ public class when_write_stream_gets_already_committed_and_log_is_not_committed :
 			ClientCorrId,
 			"test123",
 			ExpectedVersion.Any,
-			new[] { DummyEvent() },
+			new(DummyEvent()),
 			CommitSource);
 	}
 

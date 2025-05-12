@@ -256,26 +256,26 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 
 		public void Handle(ClientMessage.WriteEvents message) {
 			ClientMessage.WriteEventsCompleted response;
-			if (_streams.TryGetValue(message.EventStreamIds.Span[0], out var events)) {
-				if (message.ExpectedVersions.Span[0] == ExpectedVersion.Any ||
-					message.ExpectedVersions.Span[0] == events.Count - 1) {
+			if (_streams.TryGetValue(message.EventStreamIds.Single, out var events)) {
+				if (message.ExpectedVersions.Single == ExpectedVersion.Any ||
+					message.ExpectedVersions.Single == events.Count - 1) {
 					response = WriteEvents(message, events);
 				} else {
 					response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
 						OperationResult.WrongExpectedVersion, "Wrong expected version",
-						ClientMessage.SingleStreamIndexes,
-						new long[] { _streams.Count - 1 });
+						new(0),
+						new(_streams.Count - 1));
 				}
 			} else {
-				if (message.ExpectedVersions.Span[0] is ExpectedVersion.Any or ExpectedVersion.NoStream) {
+				if (message.ExpectedVersions.Single is ExpectedVersion.Any or ExpectedVersion.NoStream) {
 					events = new List<ResolvedEvent>();
-					_streams.Add(message.EventStreamIds.Span[0], events);
+					_streams.Add(message.EventStreamIds.Single, events);
 					response = WriteEvents(message, events);
 				} else {
 					response = new ClientMessage.WriteEventsCompleted(message.CorrelationId,
 						OperationResult.WrongExpectedVersion, "Wrong expected version",
-						ClientMessage.SingleStreamIndexes,
-						new[] { ExpectedVersion.NoStream });
+						new(0),
+						new(ExpectedVersion.NoStream));
 				}
 			}
 
@@ -299,7 +299,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 					flags |= PrepareFlags.TransactionEnd;
 
 				var record = new EventRecord(revision, position, message.CorrelationId,
-					current.EventId, _all.Count, i, message.EventStreamIds.Span[0], -1, DateTime.Now,
+					current.EventId, _all.Count, i, message.EventStreamIds.Single, -1, DateTime.Now,
 					flags, current.EventType, current.Data, current.Metadata, []);
 				if (current.EventType == SystemEventTypes.LinkTo) {
 					var data = Encoding.UTF8.GetString(current.Data);

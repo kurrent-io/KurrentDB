@@ -101,7 +101,7 @@ public class InternalClient : IClient {
 			//qqqqqqqq
 			switch (completed.Result) {
 				case OperationResult.Success:
-					appendResponseSource.TrySetResult(completed.LastEventNumbers.Span[0]);
+					appendResponseSource.TrySetResult(completed.LastEventNumbers.Single);
 					return;
 				case OperationResult.PrepareTimeout:
 				case OperationResult.CommitTimeout:

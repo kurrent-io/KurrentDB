@@ -279,7 +279,7 @@ class TFChunkScavengerLog : ITFChunkScavengerLog {
 					streamId, _retryAttempts, msg.Result);
 			}
 		} else {
-			string eventLinkTo = string.Format("{0}@{1}", msg.FirstEventNumbers.Span[0], streamId);
+			string eventLinkTo = string.Format("{0}@{1}", msg.FirstEventNumbers.Single, streamId);
 			var linkToIndexEvent = new Event(Guid.NewGuid(), SystemEventTypes.LinkTo, false, eventLinkTo, null, null);
 			WriteScavengeIndexEvent(linkToIndexEvent, _retryAttempts);
 		}

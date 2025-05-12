@@ -751,7 +751,7 @@ public class ManagedProjection : IDisposable {
 		_writing = true;
 		_writeDispatcher.Publish(
 			persistedStateEvent,
-			m => WritePersistedStateCompleted(m, persistedStateEvent, persistedStateEvent.EventStreamIds.Span[0]));
+			m => WritePersistedStateCompleted(m, persistedStateEvent, persistedStateEvent.EventStreamIds.Single));
 	}
 
 	private void WritePersistedStateCompleted(ClientMessage.WriteEventsCompleted message,
@@ -763,7 +763,7 @@ public class ManagedProjection : IDisposable {
 		if (message.Result == OperationResult.Success) {
 			_logger.Information("'{projection}' projection source has been written", _name);
 			_pendingWritePersistedState = false;
-			var writtenEventNumber = message.FirstEventNumbers.Span[0];
+			var writtenEventNumber = message.FirstEventNumbers.Single;
 			if (writtenEventNumber != (PersistedProjectionState.Version ?? writtenEventNumber))
 				throw new Exception("Projection version and event number mismatch");
 			_lastWrittenVersion = (PersistedProjectionState.Version ?? writtenEventNumber);

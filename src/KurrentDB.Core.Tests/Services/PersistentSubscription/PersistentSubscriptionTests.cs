@@ -340,15 +340,15 @@ public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStre
 		}
 
 		public void Handle(ClientMessage.WriteEvents msg) {
-			if (!_streams.TryGetValue(msg.EventStreamIds.Span[0], out var events)) {
+			if (!_streams.TryGetValue(msg.EventStreamIds.Single, out var events)) {
 				events = new List<Event>();
-				_streams.Add(msg.EventStreamIds.Span[0], events);
+				_streams.Add(msg.EventStreamIds.Single, events);
 			}
 
 			events.AddRange(msg.Events.Span);
 
 			if (msg.Events.ToArray().Any(ee => ee.EventType == "$PersistentConfig")) {
-				var cfg = PersistentSubscriptionConfig.FromSerializedForm(msg.Events.Span[0].Data);
+				var cfg = PersistentSubscriptionConfig.FromSerializedForm(msg.Events.Single.Data);
 				_configurations.Add(cfg);
 
 				if (_isDoneWriting(_configurations)) {

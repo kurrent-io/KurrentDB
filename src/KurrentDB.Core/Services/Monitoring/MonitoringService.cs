@@ -167,8 +167,8 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 		var data = rawStats.ToJsonBytes();
 		var evnt = new Event(Guid.NewGuid(), SystemEventTypes.StatsCollection, true, data, null, null);
 		var corrId = Guid.NewGuid();
-		var msg = ClientMessage.WriteEvents.ForSingleStream(corrId, corrId, NoopEnvelope, false, _nodeStatsStream,
-			ExpectedVersion.Any, new[] { evnt }, SystemAccounts.System);
+		var msg = ClientMessage.WriteEvents.ForSingleEvent(corrId, corrId, NoopEnvelope, false, _nodeStatsStream,
+			ExpectedVersion.Any, evnt, SystemAccounts.System);
 		_mainQueue.Publish(msg);
 	}
 
@@ -211,9 +211,9 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 		var metadata = Helper.UTF8NoBom.GetBytes(StreamMetadata);
 		_streamMetadataWriteCorrId = Guid.NewGuid();
 		_mainQueue.Publish(
-			ClientMessage.WriteEvents.ForSingleStream(_streamMetadataWriteCorrId, _streamMetadataWriteCorrId, _monitoringQueue,
+			ClientMessage.WriteEvents.ForSingleEvent(_streamMetadataWriteCorrId, _streamMetadataWriteCorrId, _monitoringQueue,
 				false, SystemStreams.MetastreamOf(_nodeStatsStream), ExpectedVersion.NoStream,
-				[new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata, null, null)],
+				new Event(Guid.NewGuid(), SystemEventTypes.StreamMetadata, true, metadata, null, null),
 				SystemAccounts.System));
 	}
 

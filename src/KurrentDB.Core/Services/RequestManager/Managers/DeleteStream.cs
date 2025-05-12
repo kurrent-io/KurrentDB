@@ -55,12 +55,12 @@ public class DeleteStream : RequestManagerBase {
 			 ClientCorrId,
 			 OperationResult.Success,
 			 null,
-			 LastEventNumbers.Span[0],
+			 LastEventNumbers.Single,
 			 CommitPosition,  //not technically correct, but matches current behavior correctly
 			 CommitPosition);
 
 	protected override Message ClientFailMsg =>
 		new ClientMessage.DeleteStreamCompleted(ClientCorrId, Result, FailureMessage,
 			FailureCurrentVersions.Span.Length > 0 ?
-				FailureCurrentVersions.Span[0] : -1 /* for backwards compatibility */);
+				FailureCurrentVersions.Single : -1 /* for backwards compatibility */);
 }

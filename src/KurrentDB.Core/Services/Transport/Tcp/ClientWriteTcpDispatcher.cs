@@ -94,7 +94,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		if (msg.EventStreamIds.Length > 1)
 			throw new NotSupportedException("Forwarding of multi-stream writes is not supported");
 
-		var dto = new WriteEvents(msg.EventStreamIds.Span[0], msg.ExpectedVersions.Span[0], events,
+		var dto = new WriteEvents(msg.EventStreamIds.Single, msg.ExpectedVersions.Single, events,
 			msg.RequireLeader);
 		return CreateWriteRequestPackage(TcpCommand.WriteEvents, msg, dto);
 	}
@@ -136,8 +136,8 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		if (dto.Result == EventStore.Client.Messages.OperationResult.Success)
 			return new ClientMessage.WriteEventsCompleted(
 				package.CorrelationId,
-				new[] { dto.FirstEventNumber },
-				new[] { dto.LastEventNumber },
+				new(dto.FirstEventNumber),
+				new(dto.LastEventNumber),
 				dto.PreparePosition,
 				dto.CommitPosition);
 
@@ -145,23 +145,23 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 			package.CorrelationId,
 			(OperationResult)dto.Result,
 			dto.Message,
-			ClientMessage.SingleStreamIndexes,
-			new[] { dto.CurrentVersion });
+			new(0),
+			new(dto.CurrentVersion));
 	}
 
 	private static TcpPackage WrapWriteEventsCompleted(ClientMessage.WriteEventsCompleted msg) {
 		var dto = new WriteEventsCompleted((EventStore.Client.Messages.OperationResult)msg.Result,
 			msg.Message,
-			msg.FirstEventNumbers.Span.Length > 0 ?
-				msg.FirstEventNumbers.Span[0] :
+			msg.FirstEventNumbers.Length > 0 ? //qqqqqqqqq was span.length. search for this. what if the length is > 1? there are other places with the same backwards compatibility comment
+				msg.FirstEventNumbers.Single :
 				EventNumber.Invalid, /* for backwards compatibility */
-			msg.LastEventNumbers.Span.Length > 0 ?
-				msg.LastEventNumbers.Span[0] :
+			msg.LastEventNumbers.Length > 0 ?
+				msg.LastEventNumbers.Single :
 				EventNumber.Invalid, /* for backwards compatibility */
 			msg.PreparePosition,
 			msg.CommitPosition,
-			msg.FailureCurrentVersions.Span.Length > 0 ?
-				msg.FailureCurrentVersions.Span[0] :
+			msg.FailureCurrentVersions.Length > 0 ?
+				msg.FailureCurrentVersions.Single :
 				msg.Result == OperationResult.Success ? 0L : -1L /* for backwards compatibility */);
 		return new(TcpCommand.WriteEventsCompleted, msg.CorrelationId, dto.Serialize());
 	}

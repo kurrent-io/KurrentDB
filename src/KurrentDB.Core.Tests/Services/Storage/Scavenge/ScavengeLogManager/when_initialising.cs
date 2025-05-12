@@ -39,8 +39,8 @@ public class when_scavenges_stream_does_not_exist<TLogFormat, TStreamId> : TestF
 	[Test]
 	public async Task should_write_scavenge_stream_metadata() {
 		var evnt = await eventWritten.Task.WithTimeout();
-		Assert.AreEqual(SystemStreams.MetastreamOf(SystemStreams.ScavengesStream), evnt.EventStreamIds.Span[0]);
-		Assert.AreEqual(_metadata.ToJsonBytes(), evnt.Events.Span[0].Data);
+		Assert.AreEqual(SystemStreams.MetastreamOf(SystemStreams.ScavengesStream), evnt.EventStreamIds.Single);
+		Assert.AreEqual(_metadata.ToJsonBytes(), evnt.Events.Single.Data);
 	}
 }
 
@@ -68,9 +68,9 @@ public class when_scavenges_stream_has_different_metadata<TLogFormat, TStreamId>
 	[Test]
 	public async Task should_write_new_scavenge_stream_metadata() {
 		var evnt = await eventWritten.Task.WithTimeout();
-		Assert.AreEqual(SystemStreams.MetastreamOf(SystemStreams.ScavengesStream), evnt.EventStreamIds.Span[0]);
+		Assert.AreEqual(SystemStreams.MetastreamOf(SystemStreams.ScavengesStream), evnt.EventStreamIds.Single);
 		var expectedMetadata = ScavengerLogHelper.CreateScavengeMetadata(_scavengeHistoryMaxAge);
-		Assert.AreEqual(expectedMetadata.ToJsonBytes(), evnt.Events.Span[0].Data);
+		Assert.AreEqual(expectedMetadata.ToJsonBytes(), evnt.Events.Single.Data);
 	}
 }
 
@@ -122,8 +122,8 @@ public class when_previous_scavenge_was_interrupted_but_scavenge_stream_not_writ
 		_scavengeStreamId = ScavengerLogHelper.ScavengeStreamId(_scavengeId);
 
 		_bus.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(m => {
-			if (m.EventStreamIds.Span[0] == _scavengeStreamId
-				&& m.Events.Span[0].EventType == SystemEventTypes.ScavengeCompleted) {
+			if (m.EventStreamIds.Single == _scavengeStreamId
+				&& m.Events.Single.EventType == SystemEventTypes.ScavengeCompleted) {
 				_eventWritten.SetResult(m);
 			}
 		}));
@@ -144,7 +144,7 @@ public class when_previous_scavenge_was_interrupted_but_scavenge_stream_not_writ
 	public async Task should_complete_the_scavenge_as_faulted() {
 		var evnt = await _eventWritten.Task.WithTimeout();
 		var expectedData = ScavengerLogHelper.CreateScavengeInterruptedByRestart(_scavengeId, _nodeEndpoint, TimeSpan.Zero);
-		Assert.AreEqual(expectedData.ToJson(), Encoding.UTF8.GetString(evnt.Events.Span[0].Data));
+		Assert.AreEqual(expectedData.ToJson(), Encoding.UTF8.GetString(evnt.Events.Single.Data));
 	}
 }
 
@@ -164,8 +164,8 @@ public class when_previous_scavenge_was_interrupted_and_some_data_was_scavenged<
 		_scavengeStreamId = ScavengerLogHelper.ScavengeStreamId(_scavengeId);
 
 		_bus.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(m => {
-			if (m.EventStreamIds.Span[0] == _scavengeStreamId
-				&& m.Events.Span[0].EventType == SystemEventTypes.ScavengeCompleted) {
+			if (m.EventStreamIds.Single == _scavengeStreamId
+				&& m.Events.Single.EventType == SystemEventTypes.ScavengeCompleted) {
 				_eventWritten.SetResult(m);
 			}
 		}));
@@ -196,7 +196,7 @@ public class when_previous_scavenge_was_interrupted_and_some_data_was_scavenged<
 		long spaceSavedPerChunk = int.MaxValue;
 		var expectedData = ScavengerLogHelper.CreateScavengeInterruptedByRestart(
 			_scavengeId, _nodeEndpoint, TimeSpan.FromSeconds(2), spaceSavedPerChunk * 2, 1);
-		Assert.AreEqual(expectedData.ToJson(), Encoding.UTF8.GetString(evnt.Events.Span[0].Data));
+		Assert.AreEqual(expectedData.ToJson(), Encoding.UTF8.GetString(evnt.Events.Single.Data));
 	}
 }
 
@@ -252,6 +252,6 @@ public class when_previous_scavenge_was_completed<TLogFormat, TStreamId>
 	public async Task should_not_write_any_new_events() {
 		await _eventRead.Task.WithTimeout();
 		await Task.Delay(100); // Give it some time to write any events
-		Assert.IsEmpty(_writtenEvents.Where(x => x.EventStreamIds.Span[0] == _scavengeStreamId));
+		Assert.IsEmpty(_writtenEvents.Where(x => x.EventStreamIds.Single == _scavengeStreamId));
 	}
 }

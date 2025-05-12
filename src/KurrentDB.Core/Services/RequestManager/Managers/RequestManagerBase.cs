@@ -35,11 +35,11 @@ public abstract class RequestManagerBase :
 	protected readonly Guid ClientCorrId;
 
 	protected OperationResult Result;
-	protected ReadOnlyMemory<long> FirstEventNumbers;
-	protected ReadOnlyMemory<long> LastEventNumbers;
+	protected LowAllocReadOnlyMemory<long> FirstEventNumbers;
+	protected LowAllocReadOnlyMemory<long> LastEventNumbers;
 	protected string FailureMessage = string.Empty;
-	protected ReadOnlyMemory<int> FailureStreamIndexes;
-	protected ReadOnlyMemory<long> FailureCurrentVersions;
+	protected LowAllocReadOnlyMemory<int> FailureStreamIndexes;
+	protected LowAllocReadOnlyMemory<long> FailureCurrentVersions;
 	protected long TransactionId;
 
 	protected readonly CommitSource CommitSource;
@@ -90,7 +90,7 @@ public abstract class RequestManagerBase :
 		if (prepareCount == 0 && waitForCommit == false) {
 			//empty operation just return success
 			var position = Math.Max(transactionId, 0);
-			ReturnCommitAt(position, ReadOnlyMemory<long>.Empty, ReadOnlyMemory<long>.Empty);
+			ReturnCommitAt(position, [], []);
 		}
 	}
 	protected DateTime LiveUntil => NextTimeoutTime - _timeoutOffset;
@@ -167,8 +167,8 @@ public abstract class RequestManagerBase :
 		CompleteFailedRequest(OperationResult.WrongExpectedVersion, "Wrong expected version.", message.FailureCurrentVersions);
 	}
 	public void Handle(StorageMessage.StreamDeleted message) {
-		FailureStreamIndexes = new[] { message.StreamIndex };
-		FailureCurrentVersions = new[] { message.CurrentVersion };
+		FailureStreamIndexes = new(message.StreamIndex);
+		FailureCurrentVersions = new(message.CurrentVersion);
 		CompleteFailedRequest(OperationResult.StreamDeleted, "Stream is deleted.");
 	}
 	public void Handle(StorageMessage.AlreadyCommitted message) {
@@ -177,7 +177,7 @@ public abstract class RequestManagerBase :
 			message);
 		ReturnCommitAt(message.LogPosition, message.FirstEventNumbers, message.LastEventNumbers);
 	}
-	protected virtual void ReturnCommitAt(long logPosition, ReadOnlyMemory<long> firstEvents, ReadOnlyMemory<long> lastEvents) {
+	protected virtual void ReturnCommitAt(long logPosition, LowAllocReadOnlyMemory<long> firstEvents, LowAllocReadOnlyMemory<long> lastEvents) {
 		lock (_prepareLogPositions) {
 			_prepareLogPositions.Clear();
 			_prepareLogPositions.Add(logPosition);
@@ -189,7 +189,7 @@ public abstract class RequestManagerBase :
 		}
 	}
 
-	private void CompleteFailedRequest(OperationResult result, string error, ReadOnlyMemory<long> currentVersions = default) {
+	private void CompleteFailedRequest(OperationResult result, string error, LowAllocReadOnlyMemory<long> currentVersions = default) {
 		Debug.Assert(result != OperationResult.Success);
 		if (Interlocked.CompareExchange(ref _complete, 1, 0) == 1) { return; }
 		Result = result;

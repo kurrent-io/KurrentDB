@@ -136,7 +136,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 	}
 
 	private async ValueTask ProcessCommitReplicated(StorageMessage.CommitAck message, CancellationToken token) {
-		ReadOnlyMemory<long> lastEventNumbers = message.LastEventNumbers;
+		var lastEventNumbers = message.LastEventNumbers;
 		if (_pendingTransactions.TryRemove(message.TransactionPosition, out var transaction)) {
 			var isTfEof = IsTfEof(transaction.PostPosition);
 			if (transaction.Prepares.Count > 0) {
@@ -146,7 +146,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 			if (transaction.Commit is not null) {
 				var lastEventNumber = await _indexCommitter.Commit(transaction.Commit, isTfEof, true, token);
 				if (lastEventNumber != EventNumber.Invalid)
-					lastEventNumbers = new[] { lastEventNumber };
+					lastEventNumbers = new(lastEventNumber);
 			}
 		}
 

@@ -135,9 +135,9 @@ public class when_truncating_database<TLogFormat, TStreamId> : SpecificationWith
 					true,
 					"test-stream",
 					ExpectedVersion.Any,
-					new[] {
+					new(
 						new Event(Guid.NewGuid(), "test-event-type", false, new byte[dataSize], null, null)
-					},
+					),
 					null));
 		}
 	}

@@ -26,9 +26,9 @@ public interface IIndexWriter<TStreamId> {
 
 	void Reset();
 	ValueTask<CommitCheckResult<TStreamId>> CheckCommitStartingAt(long transactionPosition, long commitPosition, CancellationToken token);
-	ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, ReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token);
+	ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, LowAllocReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token);
 	ValueTask PreCommit(CommitLogRecord commit, CancellationToken token);
-	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, ReadOnlyMemory<int>? eventStreamIndexes);
+	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, LowAllocReadOnlyMemory<int>? eventStreamIndexes);
 	void UpdateTransactionInfo(long transactionId, long logPosition, TransactionInfo<TStreamId> transactionInfo);
 	ValueTask<TransactionInfo<TStreamId>> GetTransactionInfo(long writerCheckpoint, long transactionId, CancellationToken token);
 	void PurgeNotProcessedCommitsTill(long checkpoint);
@@ -151,7 +151,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		return new(commitDecision, streamId, ExpectedVersion.NoStream, -1, -1, false);
 	}
 
-	public async ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, ReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token) {
+	public async ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, LowAllocReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token) {
 		if (!streamMightExist) {
 			// fast path for completely new streams
 			return CheckCommitForNewStream(streamId, expectedVersion);
@@ -290,7 +290,7 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		}
 	}
 
-	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> committedPrepares, ReadOnlyMemory<int>? eventStreamIndexes) {
+	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> committedPrepares, LowAllocReadOnlyMemory<int>? eventStreamIndexes) {
 		if (eventStreamIndexes.HasValue)
 			ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Value.Length, committedPrepares.Length, nameof(eventStreamIndexes));
 

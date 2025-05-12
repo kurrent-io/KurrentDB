@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -55,8 +56,8 @@ public class TransactionCommit : RequestManagerBase,
 		 new ClientMessage.TransactionCommitCompleted(
 				ClientCorrId,
 				TransactionId,
-				FirstEventNumbers.Span[0],
-				LastEventNumbers.Span[0],
+				FirstEventNumbers.Single,
+				LastEventNumbers.Single,
 				CommitPosition,   //not technically correct, but matches current behavior correctly
 				CommitPosition);
 
@@ -77,7 +78,7 @@ public class TransactionCommit : RequestManagerBase,
 			return;
 		base.Committed();
 	}
-	protected override void ReturnCommitAt(long logPosition, ReadOnlyMemory<long> firstEvents, ReadOnlyMemory<long> lastEvents) {
+	protected override void ReturnCommitAt(long logPosition, LowAllocReadOnlyMemory<long> firstEvents, LowAllocReadOnlyMemory<long> lastEvents) {
 		_transactionWritten = true;
 		base.ReturnCommitAt(logPosition, firstEvents, lastEvents);
 	}

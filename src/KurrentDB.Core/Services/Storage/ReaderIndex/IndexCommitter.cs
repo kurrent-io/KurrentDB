@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index;
@@ -34,7 +35,7 @@ public interface IIndexCommitter {
 public interface IIndexCommitter<TStreamId> : IIndexCommitter {
 	// Indexes an implicit transaction
 	ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> committedPrepares, int numStreams,
-		ReadOnlyMemory<int>? eventStreamIndexes,
+		LowAllocReadOnlyMemory<int>? eventStreamIndexes,
 		bool isTfEof, bool cacheLastEventNumber, CancellationToken token);
 }
 
@@ -345,7 +346,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 	}
 
 	public async ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> commitedPrepares,
-		int numStreams, ReadOnlyMemory<int>? eventStreamIndexes, bool isTfEof, bool cacheLastEventNumber,
+		int numStreams, LowAllocReadOnlyMemory<int>? eventStreamIndexes, bool isTfEof, bool cacheLastEventNumber,
 		CancellationToken token) {
 
 		if (commitedPrepares.Count is 0)
@@ -382,8 +383,8 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 	}
 
 	private void CommitToIndex(IReadOnlyList<IPrepareLogRecord<TStreamId>> commitedPrepares,
-		int numStreams, ReadOnlyMemory<int>? eventStreamIndexes, bool cacheLastEventNumber,
-		ReadOnlyMemory<long> actualLastEventNumbers,
+		int numStreams, LowAllocReadOnlyMemory<int>? eventStreamIndexes, bool cacheLastEventNumber,
+		LowAllocReadOnlyMemory<long> actualLastEventNumbers,
 		out List<IndexKey<TStreamId>> indexEntries, out List<IPrepareLogRecord<TStreamId>> prepares) {
 
 		var lastIndexedPosition = _indexChk.Read();

@@ -851,14 +851,14 @@ public sealed class IODispatcher : IHandle<IODispatcherDelayedMessage>, IHandle<
 		AddPendingRequest(corrId);
 		return
 			Writer.Publish(
-				ClientMessage.WriteEvents.ForSingleStream(
+				ClientMessage.WriteEvents.ForSingleEvent(
 					corrId,
 					corrId,
 					Writer.Envelope,
 					false,
 					streamId,
 					expectedVersion,
-					new[] { @event },
+					@event,
 					principal),
 				res => {
 					RemovePendingRequest(res.CorrelationId);

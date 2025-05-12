@@ -4,6 +4,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.LogRecords;
@@ -31,7 +32,7 @@ public class FakeIndexWriter<TStreamId> : IIndexWriter<TStreamId> {
 		return ValueTask.FromResult(new CommitCheckResult<TStreamId>(CommitDecision.Ok, GetFakeStreamId(), -1, -1, -1, false));
 	}
 
-	public ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, ReadOnlyMemory<Guid> eventIds, bool streamMightExist,
+	public ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, LowAllocReadOnlyMemory<Guid> eventIds, bool streamMightExist,
 		CancellationToken token) {
 		return ValueTask.FromResult(new CommitCheckResult<TStreamId>(CommitDecision.Ok, streamId, expectedVersion, -1, -1, false));
 	}
@@ -39,7 +40,7 @@ public class FakeIndexWriter<TStreamId> : IIndexWriter<TStreamId> {
 	public ValueTask PreCommit(CommitLogRecord commit, CancellationToken token)
 		=> token.IsCancellationRequested ? ValueTask.FromCanceled(token) : ValueTask.CompletedTask;
 
-	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, ReadOnlyMemory<int>? eventStreamIndexes) { }
+	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, LowAllocReadOnlyMemory<int>? eventStreamIndexes) { }
 
 	public void UpdateTransactionInfo(long transactionId, long logPosition, TransactionInfo<TStreamId> transactionInfo) { }
 

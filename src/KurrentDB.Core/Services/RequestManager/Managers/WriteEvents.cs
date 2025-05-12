@@ -3,6 +3,7 @@
 
 using System;
 using System.Threading;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -11,10 +12,10 @@ using KurrentDB.Core.Messaging;
 namespace KurrentDB.Core.Services.RequestManager.Managers;
 
 public class WriteEvents : RequestManagerBase {
-	private readonly ReadOnlyMemory<string> _streamIds;
-	private readonly ReadOnlyMemory<long> _expectedVersions;
-	private readonly ReadOnlyMemory<Event> _events;
-	private readonly ReadOnlyMemory<int>? _eventStreamIndexes;
+	private readonly LowAllocReadOnlyMemory<string> _streamIds;
+	private readonly LowAllocReadOnlyMemory<long> _expectedVersions;
+	private readonly LowAllocReadOnlyMemory<Event> _events;
+	private readonly LowAllocReadOnlyMemory<int>? _eventStreamIndexes;
 	private readonly CancellationToken _cancellationToken;
 
 	public WriteEvents(IPublisher publisher,
@@ -22,10 +23,10 @@ public class WriteEvents : RequestManagerBase {
 		IEnvelope clientResponseEnvelope,
 		Guid internalCorrId,
 		Guid clientCorrId,
-		ReadOnlyMemory<string> streamIds,
-		ReadOnlyMemory<long> expectedVersions,
-		ReadOnlyMemory<Event> events,
-		ReadOnlyMemory<int>? eventStreamIndexes,
+		LowAllocReadOnlyMemory<string> streamIds,
+		LowAllocReadOnlyMemory<long> expectedVersions,
+		LowAllocReadOnlyMemory<Event> events,
+		LowAllocReadOnlyMemory<int>? eventStreamIndexes,
 		CommitSource commitSource,
 		CancellationToken cancellationToken = default)
 		: base(
@@ -53,7 +54,7 @@ public class WriteEvents : RequestManagerBase {
 		Guid clientCorrId,
 		string streamId,
 		long expectedVersion,
-		ReadOnlyMemory<Event> events,
+		LowAllocReadOnlyMemory<Event> events,
 		CommitSource commitSource,
 		CancellationToken cancellationToken = default) {
 		return new WriteEvents(
@@ -62,10 +63,10 @@ public class WriteEvents : RequestManagerBase {
 			clientResponseEnvelope: clientResponseEnvelope,
 			internalCorrId: internalCorrId,
 			clientCorrId: clientCorrId,
-			streamIds: new[] { streamId },
-			expectedVersions: new[] { expectedVersion },
+			streamIds: new(streamId),
+			expectedVersions: new(expectedVersion),
 			events: events,
-			eventStreamIndexes: new[] { events.Length },
+			eventStreamIndexes: null,
 			commitSource: commitSource,
 			cancellationToken: cancellationToken);
 	}

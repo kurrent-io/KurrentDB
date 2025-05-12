@@ -1018,7 +1018,7 @@ public class ProjectionManager
 			foreach (var name in newProjections.Keys)
 				_projectionsRegistrationState.Add(name);
 
-			_projectionsRegistrationExpectedVersion = completed.LastEventNumbers.Span[0];
+			_projectionsRegistrationExpectedVersion = completed.LastEventNumbers.Single;
 			StartNewlyRegisteredProjections(newProjections, OnProjectionsRegistrationCaughtUp, envelope);
 			return;
 		}
@@ -1131,7 +1131,7 @@ public class ProjectionManager
 
 		_isWritePending = false;
 		if (writeCompleted.Result == OperationResult.Success) {
-			onCompleted?.Invoke(writeCompleted.LastEventNumbers.Span[0]);
+			onCompleted?.Invoke(writeCompleted.LastEventNumbers.Single);
 			return;
 		}
 

@@ -34,11 +34,11 @@ public class StreamPolicyWriterTests {
 
 		// The write succeeds
 		writeMessage.Envelope.ReplyWith(
-			new ClientMessage.WriteEventsCompleted(writeMessage.CorrelationId, new[] { 0L }, new[] { 0L }, 100, 100));
+			new ClientMessage.WriteEventsCompleted(writeMessage.CorrelationId, new(0), new(0), 100, 100));
 
 		// It attempts to write an event with a known id to the start of the stream
-		Assert.Equal(StreamPolicyWriter.DefaultStreamPolicyEventId, writeMessage.Events.Span[0].EventId.ToString());
-		Assert.Equal(ExpectedVersion.NoStream, writeMessage.ExpectedVersions.Span[0]);
+		Assert.Equal(StreamPolicyWriter.DefaultStreamPolicyEventId, writeMessage.Events.Single.EventId.ToString());
+		Assert.Equal(ExpectedVersion.NoStream, writeMessage.ExpectedVersions.Single);
 
 		// It does not require leader
 		Assert.False(writeMessage.RequireLeader);
@@ -149,5 +149,5 @@ public class StreamPolicyWriterTests {
 	}
 
 	private ClientMessage.WriteEventsCompleted CreateWriteEventsSuccessfullyCompleted(ClientMessage.WriteEvents msg) =>
-		new(msg.CorrelationId, new[] { 0L }, new[] { 0L }, 1000L, 1000L);
+		new(msg.CorrelationId, new(0), new(0), 1000L, 1000L);
 }

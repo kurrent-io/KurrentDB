@@ -12,7 +12,7 @@ namespace KurrentDB.Core.Tests.Services.RequestManagement.Service;
 [TestFixture]
 public class when_handling_write_stream : RequestManagerServiceSpecification {
 	protected override void Given() {
-		Dispatcher.Publish(ClientMessage.WriteEvents.ForSingleStream(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new[] { DummyEvent() }, null));
+		Dispatcher.Publish(ClientMessage.WriteEvents.ForSingleStream(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new(DummyEvent()), null));
 		Dispatcher.Publish(StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, LogPosition, 2, 3, 3));
 		Dispatcher.Publish(new ReplicationTrackingMessage.ReplicatedTo(LogPosition));
 	}

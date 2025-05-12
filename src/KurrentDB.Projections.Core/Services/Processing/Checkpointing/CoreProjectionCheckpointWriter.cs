@@ -172,7 +172,7 @@ public class CoreProjectionCheckpointWriter {
 		_writeRequestId = _ioDispatcher.WriteEvent(
 			_projectionCheckpointStreamId, _lastWrittenCheckpointEventNumber, _checkpointEventToBePublished,
 			SystemAccounts.System,
-			msg => WriteCheckpointEventCompleted(_projectionCheckpointStreamId, msg.Result, msg.FirstEventNumbers.Span[0]));
+			msg => WriteCheckpointEventCompleted(_projectionCheckpointStreamId, msg.Result, msg.FirstEventNumbers.Single));
 	}
 
 	private void CheckpointSizeCheck() {

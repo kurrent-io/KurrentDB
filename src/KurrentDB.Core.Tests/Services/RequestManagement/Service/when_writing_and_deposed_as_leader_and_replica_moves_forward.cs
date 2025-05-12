@@ -16,7 +16,7 @@ public class when_writing_and_deposed_as_leader_and_replica_moves_forward : Requ
 
 	protected override void Given() {
 		Dispatcher.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
-		Dispatcher.Publish(ClientMessage.WriteEvents.ForSingleStream(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new[] { DummyEvent() }, null));
+		Dispatcher.Publish(ClientMessage.WriteEvents.ForSingleStream(InternalCorrId, ClientCorrId, Envelope, true, StreamId, ExpectedVersion.Any, new(DummyEvent()), null));
 		Dispatcher.Publish(new SystemMessage.BecomePreReplica(Guid.NewGuid(), Guid.NewGuid(), FakeMemberInfo()));
 	}
 

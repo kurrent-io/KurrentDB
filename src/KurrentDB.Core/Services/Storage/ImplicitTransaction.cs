@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
 namespace KurrentDB.Core.Services.Storage;
@@ -16,13 +17,13 @@ public class ImplicitTransaction<TStreamId> {
 	private readonly List<int> _eventStreamIndexes = [];
 
 	public long? Position { get; private set; }
-	public ReadOnlyMemory<long> GetFirstEventNumbers() => _firstEventNumbers.ToArray();
-	public ReadOnlyMemory<long> GetLastEventNumbers() => _lastEventNumbers.ToArray();
-	public ReadOnlyMemory<int>? GetEventStreamIndexes() {
+	public LowAllocReadOnlyMemory<long> GetFirstEventNumbers() => _firstEventNumbers.ToLowAllocReadOnlyMemory();
+	public LowAllocReadOnlyMemory<long> GetLastEventNumbers() => _lastEventNumbers.ToLowAllocReadOnlyMemory();
+	public LowAllocReadOnlyMemory<int>? GetEventStreamIndexes() {
 		if (CurrentStreamIndex == 1)
 			return null;
 
-		return _eventStreamIndexes.ToArray();
+		return _eventStreamIndexes.ToLowAllocReadOnlyMemory();
 	}
 
 	public IReadOnlyList<IPrepareLogRecord<TStreamId>> Prepares => _prepares;
