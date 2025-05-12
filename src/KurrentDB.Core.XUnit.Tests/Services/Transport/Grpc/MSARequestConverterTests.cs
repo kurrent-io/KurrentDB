@@ -191,7 +191,7 @@ public class MSARequestConverterTests {
 		});
 
 		// then
-		Assert.Equal($"Event with Id: {eventId}, Size: 375, exceeds Maximum Append Event Size of 300.", ex.Status.Detail);
+		Assert.Equal($"Event with Id: {eventId}, Size: 316, exceeds Maximum Append Event Size of 300.", ex.Status.Detail);
 		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
 	}
 
@@ -305,6 +305,8 @@ public class MSARequestConverterTests {
 
 		var properties = Properties.Parser.ParseFrom(output.Properties);
 
+		Assert.Equal(3, properties.PropertiesValues.Count);
+
 		properties.PropertiesValues.TryGetValue("property1", out var property1);
 		Assert.True(property1!.BooleanValue);
 
@@ -313,10 +315,6 @@ public class MSARequestConverterTests {
 
 		properties.PropertiesValues.TryGetValue("property3", out var property3);
 		Assert.Equal(1234, property3!.Int32Value);
-
-		// legacy metadata is excluded
-		properties.PropertiesValues.TryGetValue(Constants.Properties.LegacyMetadata, out var legacyMetadata);
-		Assert.Null(legacyMetadata);
 	}
 
 	[Fact]

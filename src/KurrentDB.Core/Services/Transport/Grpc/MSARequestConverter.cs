@@ -140,7 +140,10 @@ public class MSARequestConverter {
 
 		var properties = new Properties();
 		foreach (var property in appendRecord.Properties) {
-			if (property.Key == Constants.Properties.LegacyMetadata)
+			if (property.Key
+				is Constants.Properties.LegacyMetadata
+				or Constants.Properties.EventType
+				or Constants.Properties.DataFormat)
 				continue;
 
 			properties.PropertiesValues.Add(property.Key, property.Value);
