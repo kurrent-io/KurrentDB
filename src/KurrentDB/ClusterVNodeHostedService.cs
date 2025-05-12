@@ -107,12 +107,6 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				throw new InvalidConfigurationException($"Couldn't acquire exclusive lock on DB at '{_options.Database.Db}'.");
 		}
 
-		var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create();
-		var subsystems = secondaryIndexingPlugin.GetSubsystems();
-		foreach (var subsystem in subsystems) {
-			options = options.WithPlugableComponent(subsystem);
-		}
-
 		_clusterNodeMutex = new ClusterNodeMutex();
 		if (!_clusterNodeMutex.Acquire())
 			throw new InvalidConfigurationException($"Couldn't acquire exclusive Cluster Node mutex '{_clusterNodeMutex.MutexName}'.");
@@ -129,6 +123,9 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		(_options, var authProviderFactory) = GetAuthorizationProviderFactory();
 
 		if (_options.Database.DbLogFormat == DbLogFormat.V2) {
+			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<string>();
+			_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
+
 			var logFormatFactory = new LogV2FormatAbstractorFactory();
 			var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
@@ -136,13 +133,10 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
 			Node = node;
-
-			secondaryIndexingPlugin.Configure(new SecondaryIndexPluginConfigurationOptions<string> {
-				Publisher = node.MainQueue,
-				Subscriber = node.MainBus,
-				ReadIndex = node.ReadIndex
-			});
 		} else if (_options.Database.DbLogFormat == DbLogFormat.ExperimentalV3) {
+			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<LogV3StreamId>();
+			_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
+
 			var logFormatFactory = new LogV3FormatAbstractorFactory();
 			var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
@@ -150,12 +144,6 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
 			Node = node;
-
-			secondaryIndexingPlugin.Configure(new SecondaryIndexPluginConfigurationOptions<LogV3StreamId> {
-				Publisher = node.MainQueue,
-				Subscriber = node.MainBus,
-				ReadIndex = node.ReadIndex
-			});
 		} else {
 			throw new ArgumentOutOfRangeException(nameof(_options.Database.DbLogFormat), "Unexpected log format specified.");
 		}

@@ -5,12 +5,11 @@ using FluentStorage.Utils.Extensions;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Indices;
 
-namespace KurrentDB.SecondaryIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests.Indices;
 
 public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<ResolvedEvent>? pending = null): ISecondaryIndexProcessor {
 	private readonly object _lock = new();
 	private readonly IList<ResolvedEvent> _pending = pending ?? [];
-
 
 	public ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default) {
 		lock (_lock) {

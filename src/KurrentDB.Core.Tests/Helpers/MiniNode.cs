@@ -241,15 +241,6 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			configureAdditionalNodeServices: services => ConfigureMiniNodeServices(services, newTransforms));
 		Db = Node.Db;
 
-
-		foreach (var secondaryIndexingPlugin in secondaryIndexingPlugins) {
-			secondaryIndexingPlugin.Configure(new SecondaryIndexPluginConfigurationOptions<TStreamId> {
-				Publisher = Node.MainQueue,
-				Subscriber = Node.MainBus,
-				ReadIndex = Node.ReadIndex
-			});
-		}
-
 		Node.HttpService.SetupController(new TestController(Node.MainQueue));
 		var builder = WebApplication.CreateBuilder();
 		builder.WebHost

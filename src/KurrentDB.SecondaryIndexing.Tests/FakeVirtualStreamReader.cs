@@ -13,10 +13,10 @@ public class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEv
 		CancellationToken token) {
 
 		ReadStreamResult result;
-		long nextEventNumber, lastEventNumber;
+		long nextEventNumber, lastEventNumber, lastPosition;
 
 		var readEvents = events
-			.Where(e =>  e.Event.EventNumber >= msg.FromEventNumber)
+			.Skip((int)msg.FromEventNumber)
 			.ToArray();
 
 		ResolvedEvent? lastEvent = readEvents.Length > 0 ? readEvents.Last(): null;
@@ -25,10 +25,12 @@ public class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEv
 			result = ReadStreamResult.NoStream;
 			nextEventNumber = -1;
 			lastEventNumber = ExpectedVersion.NoStream;
+			lastPosition = -1;
 		} else {
 			result = ReadStreamResult.Success;
-			lastEventNumber = lastEvent.Value.Event.EventNumber;
+			lastEventNumber = Array.IndexOf(readEvents, lastEvent);
 			nextEventNumber =  lastEventNumber + 1;
+			lastPosition = lastEvent.Value.Event.TransactionPosition;
 		}
 
 		return ValueTask.FromResult(new ClientMessage.ReadStreamEventsForwardCompleted(
@@ -43,8 +45,8 @@ public class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEv
 			error: string.Empty,
 			nextEventNumber: nextEventNumber,
 			lastEventNumber: lastEventNumber,
-			isEndOfStream: true,
-			tfLastCommitPosition: 0L));
+			isEndOfStream: nextEventNumber == events.Count,
+			tfLastCommitPosition: lastPosition));
 	}
 
 	public ValueTask<ClientMessage.ReadStreamEventsBackwardCompleted> ReadBackwards(
@@ -52,10 +54,11 @@ public class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEv
 		CancellationToken token) {
 
 		ReadStreamResult result;
-		long nextEventNumber, lastEventNumber;
+		long nextEventNumber, lastEventNumber, lastPosition;
 
 		var readEvents = events
-			.Where(e =>  e.Event.EventNumber <= msg.FromEventNumber)
+			.Reverse()
+			.Skip((int)msg.FromEventNumber)
 			.ToArray();
 
 		ResolvedEvent? lastEvent = readEvents.Length > 0 ? readEvents.First(): null;
@@ -64,10 +67,12 @@ public class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEv
 			result = ReadStreamResult.NoStream;
 			nextEventNumber = -1;
 			lastEventNumber = ExpectedVersion.NoStream;
+			lastPosition = -1;
 		} else {
 			result = ReadStreamResult.Success;
-			lastEventNumber = lastEvent.Value.Event.EventNumber;
+			lastEventNumber = Array.IndexOf(readEvents, lastEvent);
 			nextEventNumber =  lastEventNumber - 1;
+			lastPosition = lastEvent.Value.Event.LogPosition;
 		}
 
 		return ValueTask.FromResult(new ClientMessage.ReadStreamEventsBackwardCompleted(
@@ -76,14 +81,14 @@ public class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEv
 			msg.FromEventNumber,
 			msg.MaxCount,
 			result,
-			readEvents,
+			readEvents.Reverse().ToArray(),
 			StreamMetadata.Empty,
 			isCachePublic: false,
 			error: string.Empty,
 			nextEventNumber: nextEventNumber,
 			lastEventNumber: lastEventNumber,
-			isEndOfStream: true,
-			tfLastCommitPosition: 0L));
+			isEndOfStream: lastEventNumber == 0,
+			tfLastCommitPosition: lastPosition));
 	}
 
 	public long GetLastEventNumber(string streamId) =>

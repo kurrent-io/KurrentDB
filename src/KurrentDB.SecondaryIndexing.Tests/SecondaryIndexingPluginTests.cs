@@ -4,13 +4,17 @@
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.Extensions.Configuration;
+using Assert = Xunit.Assert;
 
 namespace KurrentDB.SecondaryIndexing.Tests;
 
-public class SecondaryIndexingPluginTests {
+public class LogV2SecondaryIndexingPluginTests : SecondaryIndexingPluginTests<string>;
+public class LogV3SecondaryIndexingPluginTests : SecondaryIndexingPluginTests<uint>;
+
+public abstract class SecondaryIndexingPluginTests<TStreamId> {
 	[Fact]
 	public void is_disabled_by_default() {
-		using var sut = new SecondaryIndexingPlugin();
+		using var sut = new SecondaryIndexingPlugin<TStreamId>();
 
 		// when
 		TestPluginStartup.Configure(sut);
@@ -19,7 +23,7 @@ public class SecondaryIndexingPluginTests {
 		Assert.False(sut.Enabled);
 	}
 
-	[Theory]
+	[Xunit.Theory]
 	[InlineData(true, true, true)]
 	[InlineData(true, false, true)]
 	[InlineData(false, false, false)]
@@ -27,7 +31,7 @@ public class SecondaryIndexingPluginTests {
 	[InlineData(null, false, false)]
 	[InlineData(null, true, true)]
 	public void respects_configuration_feature_flag_and_dev_mode(bool? pluginEnabled, bool devMode, bool expected) {
-		using var sut = new SecondaryIndexingPlugin();
+		using var sut = new SecondaryIndexingPlugin<TStreamId>();
 
 		var configuration = new Dictionary<string, string?> {
 			{$"{KurrentConfigurationKeys.Prefix}:Dev", devMode.ToString().ToLower()}

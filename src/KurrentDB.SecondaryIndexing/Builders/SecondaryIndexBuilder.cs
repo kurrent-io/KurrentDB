@@ -7,20 +7,25 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.SecondaryIndexing.Indices;
 using KurrentDB.SecondaryIndexing.Subscriptions;
+using Microsoft.Extensions.Hosting;
 
 namespace KurrentDB.SecondaryIndexing.Builders;
 
 public class SecondaryIndexBuilder
 	: IAsyncHandle<SystemMessage.SystemReady>,
-		IAsyncHandle<SystemMessage.BecomeShuttingDown> {
+		IAsyncHandle<SystemMessage.BecomeShuttingDown>,
+		IHostedService {
 	private readonly SecondaryIndexSubscription _subscription;
 	private readonly ISecondaryIndex _index;
 	public IEnumerable<IVirtualStreamReader> IndexVirtualStreamReaders => _index.Readers;
 
 	[Experimental("SECONDARYINDEXING")]
-	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher) {
+	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber) {
 		_subscription = new SecondaryIndexSubscription(publisher, index);
 		_index = index;
+
+		subscriber.Subscribe<SystemMessage.SystemReady>(this);
+		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
 	}
 
 	public async ValueTask HandleAsync(SystemMessage.SystemReady message, CancellationToken token) {
@@ -33,4 +38,8 @@ public class SecondaryIndexBuilder
 		await Task.Delay(100, token);
 		_index.Dispose();
 	}
+
+	public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+	public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

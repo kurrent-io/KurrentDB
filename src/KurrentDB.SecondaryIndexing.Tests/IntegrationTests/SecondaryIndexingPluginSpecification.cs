@@ -4,6 +4,7 @@
 using System.Text;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
+using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Tests;
@@ -11,26 +12,25 @@ using KurrentDB.Core.Tests.ClientAPI.Helpers;
 using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.SecondaryIndexing.Indices;
-using NUnit.Framework;
+using Microsoft.Extensions.Configuration;
+using ExpectedVersion = KurrentDB.Core.Data.ExpectedVersion;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
+using ClientResolvedEvent = EventStore.ClientAPI.ResolvedEvent;
 
-namespace KurrentDB.SecondaryIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
-[TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-[Category("SecondaryIndexing")]
 public abstract class SecondaryIndexingPluginSpecification<TLogFormat, TStreamId>
-	: SpecificationWithDirectoryPerTestFixture {
+	: SpecificationWithDirectoryPerTestFixture, IAsyncLifetime {
 	private MiniNode<TLogFormat, TStreamId> _node = null!;
 	private IEventStoreConnection _connection = null!;
 	private TimeSpan _timeout;
 	protected UserCredentials _credentials = null!;
+	protected bool IsPluginEnabled;
 
-	public abstract ISecondaryIndex Given();
-	public abstract Task When();
+	protected abstract ISecondaryIndex Given();
+	protected abstract Task When();
 
-	[OneTimeSetUp]
-	public override async Task TestFixtureSetUp() {
+	public async Task InitializeAsync() {
 		await base.TestFixtureSetUp();
 
 		ISecondaryIndex secondaryIndex = Given();
@@ -50,8 +50,7 @@ public abstract class SecondaryIndexingPluginSpecification<TLogFormat, TStreamId
 		}
 	}
 
-	[OneTimeTearDown]
-	public override async Task TestFixtureTearDown() {
+	public async Task DisposeAsync() {
 		_connection.Close();
 		await _node.Shutdown();
 
@@ -62,13 +61,53 @@ public abstract class SecondaryIndexingPluginSpecification<TLogFormat, TStreamId
 		new(
 			PathName,
 			inMemDb: true,
-			subsystems: [new SecondaryIndexingPlugin(secondaryIndex)]
+			subsystems: [new SecondaryIndexingPlugin<TStreamId>(secondaryIndex)],
+			configuration: IsPluginEnabled
+				? new ConfigurationBuilder()
+					.AddInMemoryCollection(new Dictionary<string, string?> {
+						{ $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled", "true" }
+					}).Build()
+				: null
 		);
 
-	protected Task<StreamEventsSlice> ReadStream(string stream) =>
-		_connection.ReadStreamEventsForwardAsync(stream, 0, 4096, false, _credentials);
+	protected async Task<ClientResolvedEvent[]> ReadStream(string streamName) =>
+		(await _connection.ReadStreamEventsForwardAsync(streamName, 0, 4096, false, _credentials)).Events;
 
-	public static ResolvedEvent CreateResolvedEvent(string stream, string eventType, string data, long eventNumber) {
+	protected async Task<ClientResolvedEvent[]> ReadUntil(
+		string streamName,
+		Position? position,
+		TimeSpan? timeout = null
+	) {
+		ClientResolvedEvent[] events = [];
+		var startTime = DateTime.UtcNow;
+		timeout ??= TimeSpan.FromSeconds(1000250);
+
+		do {
+			if (DateTime.UtcNow - startTime > timeout)
+				break;
+
+			var readEvents = await ReadStream(streamName);
+			events = readEvents;
+		} while (!events.Any(e => e.OriginalPosition >= position));
+
+		return events;
+	}
+
+	protected Task<WriteResult> AppendToStream(string stream, params EventData[] events) =>
+		_connection.AppendToStreamAsync(stream, ExpectedVersion.Any, events);
+
+	protected Task<WriteResult> AppendToStream(string stream, params string[] eventData) =>
+		AppendToStream(stream, eventData.Select(ToEventData).ToArray());
+
+	protected static EventData ToEventData(string data) =>
+		new(
+			Guid.NewGuid(),
+			"test",
+			false,
+			Encoding.UTF8.GetBytes(data), []
+		);
+
+	protected static ResolvedEvent ToResolvedEvent(string stream, string eventType, string data, long eventNumber) {
 		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
 		var streamIdIgnored = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
 		var eventTypeIdIgnored = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;

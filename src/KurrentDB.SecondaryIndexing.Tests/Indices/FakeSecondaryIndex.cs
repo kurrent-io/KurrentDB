@@ -5,7 +5,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.SecondaryIndexing.Indices;
 
-namespace KurrentDB.SecondaryIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests.Indices;
 
 public class FakeSecondaryIndex : ISecondaryIndex {
 	public FakeSecondaryIndex(string streamName, IList<ResolvedEvent>? commited = null) {
