@@ -13,14 +13,14 @@ public class LowAllocReadOnlyMemoryTests {
 		Assert.Throws<InvalidOperationException>(() => sut.Single);
 		Assert.Equal(Array.Empty<int>(), sut.Span);
 
-		foreach (var x in sut) {
+		foreach (var _ in sut) {
 			Assert.Fail();
 		}
 	}
 
 	[Fact]
 	public void single_works() {
-		var expected = new int[] { 5 };
+		var expected = new[] { 5 };
 		var sut = new LowAllocReadOnlyMemory<int>(5);
 		Assert.Equal(1, sut.Length);
 		Assert.Equal(5, sut.Single);
@@ -67,7 +67,7 @@ public class LowAllocReadOnlyMemoryTests {
 		Assert.Equal(2, sut.Single);
 
 		sut = [3, 4, 5];
-		var expected = new int[] { 3, 4, 5 };
+		var expected = new[] { 3, 4, 5 };
 		Assert.Equal(expected, sut.Span);
 	}
 }
