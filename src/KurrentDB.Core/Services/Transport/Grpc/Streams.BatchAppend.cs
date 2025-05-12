@@ -359,7 +359,7 @@ partial class Streams<TStreamId> {
 
 		public ClientWriteRequest AddEvents(IEnumerable<Event> events, int maxAppendEventSize) {
 			foreach (var e in events) {
-				var eventSize = Event.SizeOnDisk(e.EventType, e.Data, e.Metadata, []);
+				var eventSize = Event.SizeOnDisk(e.EventType, e.Data, e.Metadata, e.Properties);
 				if (eventSize > maxAppendEventSize) {
 					throw new MaxAppendEventSizeExceededException(e.EventId.ToString(), eventSize, maxAppendEventSize);
 				}
