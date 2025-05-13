@@ -23,7 +23,9 @@ class ServerFeatures(EndpointDataSource endpointDataSource) : EventStore.Client.
 		var supportedEndpoints = endpointDataSource.Endpoints
 			.Select(x => x.Metadata.FirstOrDefault(m => m is GrpcMethodMetadata))
 			.OfType<GrpcMethodMetadata>()
-			.Where(x => x.Method.ServiceName.Contains("client"))
+			.Where(x =>
+				x.Method.ServiceName.Contains("client") ||
+				x.Method.ServiceName.Contains("kurrentdb.protocol"))
 			.Select(x => {
 				var method = new SupportedMethod {
 					MethodName = x.Method.Name.ToLower(),

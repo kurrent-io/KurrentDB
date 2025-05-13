@@ -17,6 +17,7 @@ using Grpc.Net.Client;
 using Kurrent.Client.Redaction;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Tests.Integration;
+using KurrentDB.Protocol.V2;
 using NUnit.Framework;
 using Empty = EventStore.Client.Empty;
 
@@ -54,6 +55,7 @@ public class ServerFeaturesTest {
 			_expectedEndPoints.AddRange(GetEndPoints(Gossip.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(EventStore.Client.Monitoring.Monitoring.Descriptor));
 			_expectedEndPoints.AddRange(GetEndPoints(Redaction.Descriptor));
+			_expectedEndPoints.AddRange(GetEndPoints(StreamsService.Descriptor)); // multi stream appends
 			_expectedEndPoints.AddRange(GetEndPoints(ServerFeatures.Descriptor));
 
 			var versionParts = VersionInfo.Version.Split('.');
