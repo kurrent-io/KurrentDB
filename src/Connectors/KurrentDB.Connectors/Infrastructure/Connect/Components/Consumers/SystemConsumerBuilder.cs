@@ -5,7 +5,7 @@
 
 using KurrentDB.Core.Bus;
 using Kurrent.Surge.Consumers.Configuration;
-using Kurrent.Toolkit;
+using Kurrent.Surge;
 using Microsoft.Extensions.Logging;
 using Polly.Telemetry;
 

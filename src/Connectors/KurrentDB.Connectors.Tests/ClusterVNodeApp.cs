@@ -6,7 +6,7 @@
 using System.ComponentModel;
 using System.Net;
 using DotNext.Collections.Generic;
-using Kurrent.Toolkit;
+using Kurrent.Surge;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;

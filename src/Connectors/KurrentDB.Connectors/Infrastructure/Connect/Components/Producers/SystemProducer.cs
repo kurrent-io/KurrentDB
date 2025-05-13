@@ -13,7 +13,6 @@ using Kurrent.Surge.Producers;
 using Kurrent.Surge.Producers.Interceptors;
 using Kurrent.Surge.Producers.LifecycleEvents;
 using Kurrent.Surge.Schema.Serializers;
-using Kurrent.Toolkit;
 using KurrentDB.Core;
 using Polly;
 

@@ -6,7 +6,6 @@ using KurrentDB.Connectors.Management.Contracts;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
-using Kurrent.Toolkit;
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Core.Bus;

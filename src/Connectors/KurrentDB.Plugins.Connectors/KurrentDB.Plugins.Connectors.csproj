@@ -17,6 +17,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<InternalsVisibleTo Include="EventStore.Plugins.Connectors.Tests" />
+		<InternalsVisibleTo Include="KurrentDB.Connectors.Tests" />
 	</ItemGroup>
 </Project>

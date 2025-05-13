@@ -6,7 +6,6 @@ using KurrentDB.Connect.Readers.Configuration;
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using Kurrent.Surge;
 using Kurrent.Surge.Protocol.Consumers;
-using Kurrent.Toolkit;
 using KurrentDB.Common.Utils;
 using KurrentDB.Connectors.Infrastructure;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;

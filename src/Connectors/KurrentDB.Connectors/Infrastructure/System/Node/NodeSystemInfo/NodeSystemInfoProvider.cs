@@ -4,7 +4,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using KurrentDB.Core;
-using Kurrent.Toolkit;
+using Kurrent.Surge;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Services;

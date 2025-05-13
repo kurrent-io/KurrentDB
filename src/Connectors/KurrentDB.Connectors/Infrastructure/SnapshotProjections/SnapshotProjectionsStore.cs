@@ -10,7 +10,6 @@ using KurrentDB.Connect.Readers;
 using KurrentDB.Connect.Readers.Configuration;
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
-using Kurrent.Toolkit;
 
 namespace KurrentDB.Connectors.Infrastructure;
 

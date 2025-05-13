@@ -5,7 +5,7 @@
 // ReSharper disable AccessToDisposedClosure
 
 using System.Net;
-using Kurrent.Toolkit;
+using Kurrent.Surge;
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -183,7 +183,7 @@ public class NodeLifetimeServiceTests(ITestOutputHelper output, ConnectorsAssemb
 	}
 }
 
-public class NodeStateChangesTestCases : TestCaseGenerator<NodeStateChangesTestCases> {
+public class NodeStateChangesTestCases : TestCaseGeneratorXunit<NodeStateChangesTestCases> {
 	protected override IEnumerable<object[]> Data() =>
 		Enum.GetValues(typeof(VNodeState))
 			.Cast<VNodeState>()

@@ -13,7 +13,7 @@ using Kurrent.Surge.Leases;
 using Kurrent.Surge.Processors;
 using Kurrent.Surge.Processors.Configuration;
 using Kurrent.Surge.Processors.Locks;
-using Kurrent.Toolkit;
+using Kurrent.Surge;
 using Microsoft.Extensions.Logging;
 using NodaTime.Extensions;
 

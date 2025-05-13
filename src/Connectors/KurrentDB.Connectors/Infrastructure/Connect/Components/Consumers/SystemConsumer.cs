@@ -21,7 +21,6 @@ using Kurrent.Surge.Interceptors;
 using Kurrent.Surge.Schema.Serializers;
 using Kurrent.Surge.JsonPath;
 using Kurrent.Surge.Schema;
-using Kurrent.Toolkit;
 using Microsoft.Extensions.Logging;
 using Polly;
 

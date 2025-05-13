@@ -11,7 +11,7 @@ using Kurrent.Surge.Processors;
 using KurrentDB.Connect.Consumers;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.Surge.Testing;
+using Kurrent.Surge.Schema.Serializers;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Connectors.Tests.Infrastructure.Connect.Components.Processors;

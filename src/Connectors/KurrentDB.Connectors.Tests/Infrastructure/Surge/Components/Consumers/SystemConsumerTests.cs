@@ -6,12 +6,13 @@
 using System.Text.RegularExpressions;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
+using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Connect.Consumers;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.Surge.Testing;
 using KurrentDB.Surge.Testing.Xunit;
 using Microsoft.Extensions.Logging;
+using Identifiers = Kurrent.Surge.Identifiers;
 
 namespace KurrentDB.Connectors.Tests.Infrastructure.Connect.Components.Consumers;
 
@@ -58,8 +59,11 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 			actualEvents.Select((re, idx) => re.ToRecord(Fixture.SchemaSerializer.Deserialize, idx + 1).AsTask()).ToArray()
 		);
 
-		consumedRecords.Should()
-			.BeEquivalentTo(actualRecords, options => options.WithStrictOrderingFor(x => x.Position), "because we consumed all the records in the stream");
+        consumedRecords
+            .Should()
+            .BeEquivalentTo(actualRecords,
+                options => options.WithStrictOrderingFor(x => x.Position).Excluding(record => record.SequenceId),
+                "because we consumed all the records in the stream");
 	}
 
 	[Theory, ConsumeFilterCases]
@@ -130,7 +134,7 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		var positions = await consumer.GetLatestPositions();
 
-		positions.Last().Should().BeEquivalentTo(consumedRecords.Last().Position);
+		positions.Last().LogPosition.Should().BeEquivalentTo(consumedRecords.Last().LogPosition);
 	}
 
 	async Task<RecordPosition> ProduceAndConsumeTestStream(
@@ -246,11 +250,11 @@ public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 		var latestPositions = await consumer.GetLatestPositions(CancellationToken.None);
 
-		latestPositions.LastOrDefault().Should()
-			.BeEquivalentTo(consumedRecords.LastOrDefault().Position);
+		latestPositions.LastOrDefault().LogPosition.Should()
+			.BeEquivalentTo(consumedRecords.LastOrDefault().LogPosition);
 	}
 
-    class ConsumeFilterCases : TestCaseGenerator<ConsumeFilterCases> {
+    class ConsumeFilterCases : TestCaseGeneratorXunit<ConsumeFilterCases> {
         protected override IEnumerable<object[]> Data() {
 	        var streamId = Identifiers.GenerateShortId("stream");
             yield return [streamId, ConsumeFilter.FromStreamId(streamId)];

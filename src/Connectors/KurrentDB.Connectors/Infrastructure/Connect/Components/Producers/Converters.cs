@@ -10,7 +10,6 @@ using Kurrent.Surge;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
-using Kurrent.Toolkit;
 
 namespace KurrentDB.Connect.Producers;
 
@@ -27,11 +26,11 @@ public static class ProduceRequestExtensions {
             var eventId  = Uuid.FromGuid(message.RecordId).ToGuid(); // not sure if needed...
             var schema   = SchemaInfo.FromHeaders(message.Headers);
             var metadata = Headers.Encode(message.Headers);
-            var isJson   = schema.SchemaType == SchemaDataFormat.Json;
+            var isJson   = schema.SchemaDataFormat == SchemaDataFormat.Json;
 
             return new(
                 eventId,
-                schema.Subject,
+                schema.SchemaName,
                 isJson,
                 data.ToArray(),
                 metadata.ToArray(),

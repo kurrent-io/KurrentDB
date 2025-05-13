@@ -9,7 +9,6 @@ using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema;
-using Kurrent.Toolkit;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
@@ -106,7 +105,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
         try {
             result = await Reader
                 .ReadForwards(from, filter, count, cancellationToken)
-                .Where(x => !"$".StartsWith(x.SchemaInfo.Subject)) // what?
+                .Where(x => !"$".StartsWith(x.SchemaInfo.SchemaName)) // what?
                 .Select(record => new StreamEvent(
                     record.Id,
                     record.Value,
@@ -147,7 +146,7 @@ public class SystemEventStore(SystemReader reader, SystemProducer producer) : IE
         try {
             result = await Reader
                 .ReadBackwards(ConsumeFilter.FromStreamId(stream.ToString()), count, cancellationToken)
-                .Where(x => !"$".StartsWith(x.SchemaInfo.Subject))
+                .Where(x => !"$".StartsWith(x.SchemaInfo.SchemaName))
                 .Select(record => new StreamEvent(
                     record.Id,
                     record.Value,

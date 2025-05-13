@@ -3,6 +3,7 @@
 
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
+using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Connect.Consumers;
 using KurrentDB.Core;
 
@@ -52,8 +53,8 @@ public class SystemProducerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 
 			actualMessage.Should().BeEquivalentTo(sentMessage,
 				options => options.WithTracing()
-                    .Excluding(x => x.Schema.Subject)
-                    .Excluding(x => x.Schema.SubjectMissing)
+                    .Excluding(x => x.Schema.SchemaName)
+                    .Excluding(x => x.Schema.SchemaNameMissing)
                     .ComparingByValue(typeof(PartitionKey)),
 				"because the actual message should be the same as the sent message");
 

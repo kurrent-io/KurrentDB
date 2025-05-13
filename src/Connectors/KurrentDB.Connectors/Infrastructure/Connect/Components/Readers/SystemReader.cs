@@ -16,7 +16,6 @@ using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema.Serializers;
 using Kurrent.Surge.JsonPath;
-using Kurrent.Toolkit;
 using KurrentDB.Connect.Consumers;
 using Polly;
 using StreamRevision = Kurrent.Surge.StreamRevision;

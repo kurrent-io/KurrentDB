@@ -17,7 +17,7 @@ using EventStore.Plugins.Licensing;
 using FluentValidation;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.DataProtection;
-using Kurrent.Toolkit;
+using Kurrent.Surge;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Infrastructure.Eventuous;
 using KurrentDB.Connectors.Infrastructure.System.Node;

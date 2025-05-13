@@ -5,7 +5,7 @@
 
 using KurrentDB.Core.Bus;
 using Kurrent.Surge.Producers.Configuration;
-using Kurrent.Toolkit;
+using Kurrent.Surge;
 
 namespace KurrentDB.Connect.Producers.Configuration;
 

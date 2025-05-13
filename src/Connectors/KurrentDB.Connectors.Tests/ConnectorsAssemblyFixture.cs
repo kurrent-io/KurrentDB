@@ -161,31 +161,31 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         switch (message)
         {
 	        case ConnectorCreated:
-		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-created" };
+		        schemaInfo = schemaInfo with { SchemaName = "$conn-mngt-connector-created" };
 		        break;
 	        case ConnectorActivating:
-		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-activating" };
+		        schemaInfo = schemaInfo with { SchemaName = "$conn-mngt-connector-activating" };
 		        break;
 	        case ConnectorDeactivating:
-		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-deactivating" };
+		        schemaInfo = schemaInfo with { SchemaName = "$conn-mngt-connector-deactivating" };
 		        break;
 	        case ConnectorDeleted:
-		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-deleted" };
+		        schemaInfo = schemaInfo with { SchemaName = "$conn-mngt-connector-deleted" };
 		        break;
 	        case ConnectorFailed:
-		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-failed" };
+		        schemaInfo = schemaInfo with { SchemaName = "$conn-mngt-connector-failed" };
 		        break;
 	        case ConnectorReconfigured:
-		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-reconfigured" };
+		        schemaInfo = schemaInfo with { SchemaName = "$conn-mngt-connector-reconfigured" };
 		        break;
 	        case ConnectorRenamed:
-		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-renamed" };
+		        schemaInfo = schemaInfo with { SchemaName = "$conn-mngt-connector-renamed" };
 		        break;
 	        case ConnectorRunning:
-		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-running" };
+		        schemaInfo = schemaInfo with { SchemaName = "$conn-mngt-connector-running" };
 		        break;
 	        case ConnectorStopped:
-		        schemaInfo = schemaInfo with { Subject = "$conn-mngt-connector-stopped" };
+		        schemaInfo = schemaInfo with { SchemaName = "$conn-mngt-connector-stopped" };
 		        break;
         }
 

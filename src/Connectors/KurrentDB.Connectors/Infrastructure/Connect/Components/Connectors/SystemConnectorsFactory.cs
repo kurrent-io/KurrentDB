@@ -18,7 +18,6 @@ using Kurrent.Surge.Persistence.State;
 using Kurrent.Surge.Processors;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Transformers;
-using Kurrent.Toolkit;
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using Microsoft.Extensions.Configuration;

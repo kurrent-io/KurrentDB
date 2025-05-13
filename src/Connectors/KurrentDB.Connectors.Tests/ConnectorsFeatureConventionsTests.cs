@@ -15,7 +15,7 @@ public class ConnectorsFeatureConventionsTests : FastFixture  {
     public void valid_filters_should_match(ConsumeFilter filter, string input) =>
         filter.RegEx.IsMatch(input).ShouldBeTrue();
 
-    class ValidFilterPatternTestCases : TestCaseGenerator<ValidFilterPatternTestCases> {
+    class ValidFilterPatternTestCases : TestCaseGeneratorXunit<ValidFilterPatternTestCases> {
         protected override IEnumerable<object[]> Data() {
             yield return [Filters.ManagementFilter, "$connectors/123"];
             yield return [Filters.ManagementFilter, "$connectors/abc"];
