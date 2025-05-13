@@ -33,6 +33,7 @@ using KurrentDB.Core.Hashing;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.PluginModel;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Transport.Http.Controllers;
 using KurrentDB.Diagnostics.LogsEndpointPlugin;
 using KurrentDB.PluginHosting;
@@ -122,25 +123,27 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 		(_options, var authProviderFactory) = GetAuthorizationProviderFactory();
 
+		var virtualStreamReader = new VirtualStreamReader();
+
 		if (_options.Database.DbLogFormat == DbLogFormat.V2) {
-			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<string>();
+			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<string>(virtualStreamReader);
 			_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
 
 			var logFormatFactory = new LogV2FormatAbstractorFactory();
 			var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
-				secondaryIndexingPlugin.IndicesVirtualStreamReaders,
+				virtualStreamReader,
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
 			Node = node;
 		} else if (_options.Database.DbLogFormat == DbLogFormat.ExperimentalV3) {
-			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<LogV3StreamId>();
+			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<LogV3StreamId>(virtualStreamReader);
 			_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
 
 			var logFormatFactory = new LogV3FormatAbstractorFactory();
 			var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
-				secondaryIndexingPlugin.IndicesVirtualStreamReaders,
+				virtualStreamReader,
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
 			Node = node;

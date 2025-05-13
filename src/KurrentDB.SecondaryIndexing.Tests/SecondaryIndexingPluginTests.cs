@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.Extensions.Configuration;
 using Assert = Xunit.Assert;
@@ -14,7 +15,7 @@ public class LogV3SecondaryIndexingPluginTests : SecondaryIndexingPluginTests<ui
 public abstract class SecondaryIndexingPluginTests<TStreamId> {
 	[Fact]
 	public void is_disabled_by_default() {
-		using var sut = new SecondaryIndexingPlugin<TStreamId>();
+		using var sut = new SecondaryIndexingPlugin<TStreamId>(new VirtualStreamReader());
 
 		// when
 		TestPluginStartup.Configure(sut);
@@ -31,7 +32,7 @@ public abstract class SecondaryIndexingPluginTests<TStreamId> {
 	[InlineData(null, false, false)]
 	[InlineData(null, true, true)]
 	public void respects_configuration_feature_flag_and_dev_mode(bool? pluginEnabled, bool devMode, bool expected) {
-		using var sut = new SecondaryIndexingPlugin<TStreamId>();
+		using var sut = new SecondaryIndexingPlugin<TStreamId>(new VirtualStreamReader());
 
 		var configuration = new Dictionary<string, string?> {
 			{$"{KurrentConfigurationKeys.Prefix}:Dev", devMode.ToString().ToLower()}

@@ -103,7 +103,7 @@ public abstract class ClusterVNode {
 		ILogFormatAbstractorFactory<TStreamId> logFormatAbstractorFactory,
 		AuthenticationProviderFactory authenticationProviderFactory = null,
 		AuthorizationProviderFactory authorizationProviderFactory = null,
-		IEnumerable<IVirtualStreamReader> virtualStreamReaders = null,
+		VirtualStreamReader virtualStreamReader = null,
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory> factories = null,
 		CertificateProvider certificateProvider = null,
 		IConfiguration configuration = null,
@@ -115,7 +115,7 @@ public abstract class ClusterVNode {
 			logFormatAbstractorFactory,
 			authenticationProviderFactory,
 			authorizationProviderFactory,
-			virtualStreamReaders,
+			virtualStreamReader,
 			factories,
 			certificateProvider,
 			configuration,
@@ -237,7 +237,7 @@ public class ClusterVNode<TStreamId> :
 		ILogFormatAbstractorFactory<TStreamId> logFormatAbstractorFactory,
 		AuthenticationProviderFactory authenticationProviderFactory = null,
 		AuthorizationProviderFactory authorizationProviderFactory = null,
-		IEnumerable<IVirtualStreamReader> virtualStreamReaders = null,
+		VirtualStreamReader virtualStreamReader = null,
 		IReadOnlyList<IPersistentSubscriptionConsumerStrategyFactory>
 			additionalPersistentSubscriptionConsumerStrategyFactories = null,
 		CertificateProvider certificateProvider = null,
@@ -784,16 +784,16 @@ public class ClusterVNode<TStreamId> :
 		var nodeStatusListener = new NodeStateListenerService(_mainQueue, memLog);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(nodeStatusListener);
 
-		var inMemReader = new VirtualStreamReader([
+		virtualStreamReader ??= new VirtualStreamReader();
+		virtualStreamReader.Register(
 			gossipListener.Stream,
-			nodeStatusListener.Stream,
-			..virtualStreamReaders ?? []
-		]);
+			nodeStatusListener.Stream
+		);
 
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
 			logFormat.SystemStreams,
-			readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(), inMemReader, _queueStatsManager,
+			readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
 			trackers.QueueTrackers);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);
@@ -1159,7 +1159,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<StorageMessage.EventCommitted>(subscrQueue);
 		_mainBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscrQueue);
 
-		var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, inMemReader);
+		var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, virtualStreamReader);
 		subscrBus.Subscribe<SystemMessage.SystemStart>(subscription);
 		subscrBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscription);
 		subscrBus.Subscribe<TcpMessage.ConnectionClosed>(subscription);

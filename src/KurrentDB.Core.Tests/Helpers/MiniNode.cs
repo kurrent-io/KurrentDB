@@ -216,13 +216,6 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				HighHasher = hash32bit ? new ConstantHasher(0) : options.HighHasher,
 			});
 
-		var secondaryIndexingPlugins = subsystems
-			.OfType<ISecondaryIndexingPlugin>()
-			.ToList();
-
-		var virtualStreamReaders = secondaryIndexingPlugins
-			.SelectMany(indexingPlugin => indexingPlugin.IndicesVirtualStreamReaders);
-
 		Node = new ClusterVNode<TStreamId>(options, logFormatFactory,
 			new AuthenticationProviderFactory(
 				c => authenticationProviderFactory ?? new InternalAuthenticationProviderFactory(
@@ -234,7 +227,6 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 						options.Application.AllowAnonymousEndpointAccess,
 						options.Application.AllowAnonymousStreamAccess,
 						options.Application.OverrideAnonymousEndpointAccessForGossip).Create(c.MainQueue)]))),
-			virtualStreamReaders: virtualStreamReaders,
 			expiryStrategy: expiryStrategy,
 			certificateProvider: new OptionsCertificateProvider(),
 			configuration: inMemConf,

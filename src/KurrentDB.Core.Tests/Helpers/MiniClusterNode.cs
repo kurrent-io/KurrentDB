@@ -194,7 +194,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 						options.Application.AllowAnonymousEndpointAccess,
 						options.Application.AllowAnonymousStreamAccess,
 						options.Application.OverrideAnonymousEndpointAccessForGossip).Create(components.MainQueue)]))),
-			virtualStreamReaders ?? [],
+			null,
 			Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>(),
 			new OptionsCertificateProvider(),
 			configuration: inMemConf,

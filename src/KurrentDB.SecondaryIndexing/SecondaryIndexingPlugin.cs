@@ -16,36 +16,33 @@ using Microsoft.Extensions.DependencyInjection;
 namespace KurrentDB.SecondaryIndexing;
 
 public interface ISecondaryIndexingPlugin : ISubsystemsPlugin {
-	IEnumerable<IVirtualStreamReader> IndicesVirtualStreamReaders { get; }
 }
 
 public static class SecondaryIndexingPluginFactory {
-	public static ISecondaryIndexingPlugin Create<TStreamId>() =>
-		new SecondaryIndexingPlugin<TStreamId>();
+	public static ISecondaryIndexingPlugin Create<TStreamId>(VirtualStreamReader virtualStreamReader) =>
+		new SecondaryIndexingPlugin<TStreamId>(virtualStreamReader);
 }
 
-internal class SecondaryIndexingPlugin<TStreamId>()
+internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStreamReader)
 	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
-	private ISecondaryIndex? index;
-
-	public IEnumerable<IVirtualStreamReader> IndicesVirtualStreamReaders =>
-		index?.Readers ?? [];
-
 	[Experimental("SECONDARYINDEXING")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-			services.AddHostedService(sp =>
-				new SecondaryIndexBuilder(
-					sp.GetRequiredService<ISecondaryIndex>(),
-					sp.GetRequiredService<IPublisher>(),
-					sp.GetRequiredService<ISubscriber>()
-				)
-			);
+		services.AddHostedService(sp =>
+			new SecondaryIndexBuilder(
+				sp.GetRequiredService<ISecondaryIndex>(),
+				sp.GetRequiredService<IPublisher>(),
+				sp.GetRequiredService<ISubscriber>()
+			)
+		);
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
 		base.ConfigureApplication(app, configuration);
 
-		index = app.ApplicationServices.GetService<ISecondaryIndex>();
+		var indexes = app.ApplicationServices.GetService<IEnumerable<ISecondaryIndex>>();
+
+		if (indexes != null)
+			virtualStreamReader.Register(indexes.SelectMany(i => i.Readers).ToArray());
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
