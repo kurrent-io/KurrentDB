@@ -55,7 +55,7 @@ public class ConnectorQueries {
             (query.State.IsEmpty()            || query.State.Contains(conn.State))                       &&
             (query.InstanceTypeName.IsEmpty() || query.InstanceTypeName.Contains(conn.InstanceTypeName)) &&
             (query.ConnectorId.IsEmpty()      || query.ConnectorId.Contains(conn.ConnectorId))           &&
-            (query.ShowDeleted ? conn.DeleteTime is not null : conn.DeleteTime is null);
+            (query.ShowDeleted                || conn.DeleteTime is null);
 
         Func<Connector, CancellationToken, ValueTask<Connector>> EnrichWithPosition() =>
             async (conn, token) => {
