@@ -11,13 +11,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
-		<PackageReference Include="Bogus" Version="35.5.1" />
-		<PackageReference Include="coverlet.collector" Version="6.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.7" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-		<PackageReference Include="xunit" Version="2.5.3" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+		<PackageReference Include="Bogus" Version="35.6.3" />
+		<PackageReference Include="coverlet.collector" Version="6.0.4" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.15" />
+		<PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+		<PackageReference Include="xunit" Version="2.9.3" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -25,6 +28,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" />
 		<ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
 		<ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
 	</ItemGroup>

@@ -8,9 +8,9 @@ using KurrentDB.SecondaryIndexing.Indices;
 namespace KurrentDB.SecondaryIndexing.Tests.Indices;
 
 public class FakeSecondaryIndex : ISecondaryIndex {
-	public FakeSecondaryIndex(string streamName, IList<ResolvedEvent>? commited = null) {
-		Committed = commited ?? [];
-		Processor = new FakeSecondaryIndexProcessor(Committed);
+	public FakeSecondaryIndex(string streamName) {
+		Committed = [];
+		Processor = new FakeSecondaryIndexProcessor(Committed, Pending);
 		Readers = [new FakeVirtualStreamReader(streamName, Committed.AsReadOnly())];
 	}
 

@@ -7,7 +7,7 @@ using KurrentDB.Core.Services.Storage.InMemory;
 
 namespace KurrentDB.SecondaryIndexing.Tests;
 
-public class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEvent> events) : IVirtualStreamReader {
+internal class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEvent> events) : IVirtualStreamReader {
 	public ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
 		ClientMessage.ReadStreamEventsForward msg,
 		CancellationToken token) {

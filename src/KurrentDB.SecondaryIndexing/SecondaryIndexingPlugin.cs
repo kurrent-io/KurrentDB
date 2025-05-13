@@ -9,6 +9,7 @@ using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.SecondaryIndexing.Builders;
 using KurrentDB.SecondaryIndexing.Indices;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,22 +24,28 @@ public static class SecondaryIndexingPluginFactory {
 		new SecondaryIndexingPlugin<TStreamId>();
 }
 
-internal class SecondaryIndexingPlugin<TStreamId>(ISecondaryIndex? index = null)
+internal class SecondaryIndexingPlugin<TStreamId>()
 	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
+	private ISecondaryIndex? index;
 
 	public IEnumerable<IVirtualStreamReader> IndicesVirtualStreamReaders =>
 		index?.Readers ?? [];
 
 	[Experimental("SECONDARYINDEXING")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-		if (index != null)
 			services.AddHostedService(sp =>
 				new SecondaryIndexBuilder(
-					index,
+					sp.GetRequiredService<ISecondaryIndex>(),
 					sp.GetRequiredService<IPublisher>(),
 					sp.GetRequiredService<ISubscriber>()
 				)
 			);
+	}
+
+	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
+		base.ConfigureApplication(app, configuration);
+
+		index = app.ApplicationServices.GetService<ISecondaryIndex>();
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

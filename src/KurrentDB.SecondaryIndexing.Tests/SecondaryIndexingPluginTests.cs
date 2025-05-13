@@ -23,7 +23,7 @@ public abstract class SecondaryIndexingPluginTests<TStreamId> {
 		Assert.False(sut.Enabled);
 	}
 
-	[Xunit.Theory]
+	[Theory]
 	[InlineData(true, true, true)]
 	[InlineData(true, false, true)]
 	[InlineData(false, false, false)]
