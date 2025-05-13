@@ -110,8 +110,10 @@ public class MSAResponseConverterTests {
 			});
 	}
 
-	[Fact]
-	public void converts_when_stream_is_deleted() {
+	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void converts_when_stream_is_deleted(bool isStreamKnown) {
 		// given
 		var requests = new AppendStreamRequest[] {
 			new() { Stream = "stream-at-index-0" },
@@ -124,8 +126,8 @@ public class MSAResponseConverterTests {
 			correlationId: Guid.NewGuid(),
 			result: OperationResult.StreamDeleted,
 			message: "the details",
-			failureStreamIndexes: new[] { 1 },
-			failureCurrentVersions: new long[] { 11 });
+			failureStreamIndexes: isStreamKnown ? [1] : [],
+			failureCurrentVersions: isStreamKnown ? [11] : []);
 
 		// when
 		var result = _sut.ConvertToMSAResponse(requests, input);
@@ -134,7 +136,7 @@ public class MSAResponseConverterTests {
 		Assert.Collection(
 			result.Failure.Output,
 			x => {
-				Assert.Equal("stream-at-index-1", x.Stream);
+				Assert.Equal(isStreamKnown ? "stream-at-index-1" : "<unknown>", x.Stream);
 				Assert.Equal(AppendStreamFailure.ErrorOneofCase.StreamDeleted, x.ErrorCase);
 			});
 	}

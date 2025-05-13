@@ -93,7 +93,9 @@ public class MSAResponseConverter {
 					Failure = new() {
 						Output = {
 							new AppendStreamFailure {
-								Stream = appendStreamRequests[completed.FailureStreamIndexes.Span[0]].Stream,
+								Stream = completed.FailureStreamIndexes.Span is [var streamIndex, ..]
+									? appendStreamRequests[streamIndex].Stream
+									: "<unknown>",
 								StreamDeleted = StreamDeletedError,
 							},
 						},
