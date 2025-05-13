@@ -97,7 +97,7 @@ public class MultiStreamAppendServiceTests {
 			var writeEvents = Assert.IsType<ClientMessage.WriteEvents>(message);
 			Assert.Equal(["stream-a", "stream-b"], writeEvents.EventStreamIds.Span);
 			Assert.Equal([1, -2], writeEvents.ExpectedVersions.Span);
-			Assert.Equal([0, 1, 1], writeEvents.EventStreamIndexes!.Value.Span);
+			Assert.Equal([0, 1, 1], writeEvents.EventStreamIndexes.Span);
 			Assert.Equal(3, writeEvents.Events.Length);
 
 			var proposedEvent2 = writeEvents.Events.Span[0];

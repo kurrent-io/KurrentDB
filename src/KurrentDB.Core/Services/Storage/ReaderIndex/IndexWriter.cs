@@ -28,7 +28,7 @@ public interface IIndexWriter<TStreamId> {
 	ValueTask<CommitCheckResult<TStreamId>> CheckCommitStartingAt(long transactionPosition, long commitPosition, CancellationToken token);
 	ValueTask<CommitCheckResult<TStreamId>> CheckCommit(TStreamId streamId, long expectedVersion, LowAllocReadOnlyMemory<Guid> eventIds, bool streamMightExist, CancellationToken token);
 	ValueTask PreCommit(CommitLogRecord commit, CancellationToken token);
-	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, LowAllocReadOnlyMemory<int>? eventStreamIndexes);
+	void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> commitedPrepares, LowAllocReadOnlyMemory<int> eventStreamIndexes);
 	void UpdateTransactionInfo(long transactionId, long logPosition, TransactionInfo<TStreamId> transactionInfo);
 	ValueTask<TransactionInfo<TStreamId>> GetTransactionInfo(long writerCheckpoint, long transactionId, CancellationToken token);
 	void PurgeNotProcessedCommitsTill(long checkpoint);
@@ -290,9 +290,12 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 		}
 	}
 
-	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> committedPrepares, LowAllocReadOnlyMemory<int>? eventStreamIndexes) {
-		if (eventStreamIndexes.HasValue)
-			ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Value.Length, committedPrepares.Length, nameof(eventStreamIndexes));
+	public void PreCommit(ReadOnlySpan<IPrepareLogRecord<TStreamId>> committedPrepares, LowAllocReadOnlyMemory<int> eventStreamIndexes) {
+		if (eventStreamIndexes.Length is not 0) {
+			ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Length, committedPrepares.Length, nameof(eventStreamIndexes));
+		} else {
+			// all events implicitly for a single stream at index 0
+		}
 
 		if (committedPrepares.Length == 0)
 			return;
@@ -306,14 +309,15 @@ public class IndexWriter<TStreamId> : IndexWriter, IIndexWriter<TStreamId> {
 			_committedEvents.PutRecord(prepare.EventId, new EventInfo(streamId, eventNumber), throwOnDuplicate: false);
 		}
 
-		var numStreams = eventStreamIndexes?.Length ?? 1;
+		// returned earlier if there are actually 0 streams to write to
+		var numStreams = eventStreamIndexes.Length is not 0 ? eventStreamIndexes.Length : 1;
 
 		Span<bool> streamProcessed = numStreams < 1024 / sizeof(bool)
 			? stackalloc bool[numStreams]
 			: new bool[numStreams];
 
 		for (var i = committedPrepares.Length - 1; i >= 0; i--) {
-			var streamIndex = eventStreamIndexes.HasValue ? eventStreamIndexes.Value.Span[i] : 0;
+			var streamIndex = eventStreamIndexes.Length is not 0 ? eventStreamIndexes.Span[i] : 0;
 			if (streamProcessed[streamIndex])
 				continue;
 

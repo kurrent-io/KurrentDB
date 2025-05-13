@@ -35,7 +35,7 @@ public interface IIndexCommitter {
 public interface IIndexCommitter<TStreamId> : IIndexCommitter {
 	// Indexes an implicit transaction
 	ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> committedPrepares, int numStreams,
-		LowAllocReadOnlyMemory<int>? eventStreamIndexes,
+		LowAllocReadOnlyMemory<int> eventStreamIndexes,
 		bool isTfEof, bool cacheLastEventNumber, CancellationToken token);
 }
 
@@ -169,7 +169,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 							break;
 						}
 
-						await Commit([prepare], numStreams: 1, eventStreamIndexes: null, result.Eof, false, token);
+						await Commit([prepare], numStreams: 1, eventStreamIndexes: [], result.Eof, false, token);
 
 						break;
 					}
@@ -346,7 +346,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 	}
 
 	public async ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> commitedPrepares,
-		int numStreams, LowAllocReadOnlyMemory<int>? eventStreamIndexes, bool isTfEof, bool cacheLastEventNumber,
+		int numStreams, LowAllocReadOnlyMemory<int> eventStreamIndexes, bool isTfEof, bool cacheLastEventNumber,
 		CancellationToken token) {
 
 		if (commitedPrepares.Count is 0)
@@ -359,7 +359,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			actualLastEventNumbers = new long[numStreams];
 			var streamIndex = 0;
 			for (var i = 0; i < commitedPrepares.Count; i++) {
-				var eventStreamIndex = eventStreamIndexes.HasValue ? eventStreamIndexes.Value.Span[i] : 0;
+				var eventStreamIndex = eventStreamIndexes.Length is not 0 ? eventStreamIndexes.Span[i] : 0;
 				if (eventStreamIndex == streamIndex) {
 					var streamId = commitedPrepares[i].EventStreamId;
 					actualLastEventNumbers[streamIndex] = await _indexReader.GetStreamLastEventNumber(streamId, token);
@@ -383,7 +383,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 	}
 
 	private void CommitToIndex(IReadOnlyList<IPrepareLogRecord<TStreamId>> commitedPrepares,
-		int numStreams, LowAllocReadOnlyMemory<int>? eventStreamIndexes, bool cacheLastEventNumber,
+		int numStreams, LowAllocReadOnlyMemory<int> eventStreamIndexes, bool cacheLastEventNumber,
 		LowAllocReadOnlyMemory<long> actualLastEventNumbers,
 		out List<IndexKey<TStreamId>> indexEntries, out List<IPrepareLogRecord<TStreamId>> prepares) {
 
@@ -411,7 +411,7 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		prepares = new List<IPrepareLogRecord<TStreamId>>();
 
 		for (var i = 0; i < commitedPrepares.Count; i++) {
-			var streamIndex = eventStreamIndexes.HasValue ? eventStreamIndexes.Value.Span[i] : 0;
+			var streamIndex = eventStreamIndexes.Length is not 0 ? eventStreamIndexes.Span[i] : 0;
 
 			if (firstPrepareForStream[streamIndex] < 0)
 				firstPrepareForStream[streamIndex] = i;

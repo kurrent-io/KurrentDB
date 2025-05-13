@@ -15,7 +15,7 @@ public class WriteEvents : RequestManagerBase {
 	private readonly LowAllocReadOnlyMemory<string> _streamIds;
 	private readonly LowAllocReadOnlyMemory<long> _expectedVersions;
 	private readonly LowAllocReadOnlyMemory<Event> _events;
-	private readonly LowAllocReadOnlyMemory<int>? _eventStreamIndexes;
+	private readonly LowAllocReadOnlyMemory<int> _eventStreamIndexes;
 	private readonly CancellationToken _cancellationToken;
 
 	public WriteEvents(IPublisher publisher,
@@ -26,7 +26,7 @@ public class WriteEvents : RequestManagerBase {
 		LowAllocReadOnlyMemory<string> streamIds,
 		LowAllocReadOnlyMemory<long> expectedVersions,
 		LowAllocReadOnlyMemory<Event> events,
-		LowAllocReadOnlyMemory<int>? eventStreamIndexes,
+		LowAllocReadOnlyMemory<int> eventStreamIndexes,
 		CommitSource commitSource,
 		CancellationToken cancellationToken = default)
 		: base(
@@ -66,7 +66,7 @@ public class WriteEvents : RequestManagerBase {
 			streamIds: new(streamId),
 			expectedVersions: new(expectedVersion),
 			events: events,
-			eventStreamIndexes: null,
+			eventStreamIndexes: [],
 			commitSource: commitSource,
 			cancellationToken: cancellationToken);
 	}

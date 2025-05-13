@@ -70,7 +70,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIds: [A],
 			expectedVersions: [ExpectedVersion.Any],
 			events: [NewEvent, NewEvent, NewEvent],
-			eventStreamIndexes: null);
+			eventStreamIndexes: []);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([0], completed.FirstEventNumbers.ToArray());
@@ -87,7 +87,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIds: [A],
 			expectedVersions: [ExpectedVersion.Any],
 			events: [],
-			eventStreamIndexes: null);
+			eventStreamIndexes: []);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([0], completed.FirstEventNumbers.ToArray());
@@ -98,7 +98,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIds: [A],
 			expectedVersions: [ExpectedVersion.Any],
 			events: [NewEvent, NewEvent, NewEvent],
-			eventStreamIndexes: null);
+			eventStreamIndexes: []);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
 
@@ -107,7 +107,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIds: [A],
 			expectedVersions: [ExpectedVersion.Any],
 			events: [],
-			eventStreamIndexes: null);
+			eventStreamIndexes: []);
 
 		Assert.Equal(OperationResult.Success, completed.Result);
 		Assert.Equal([3], completed.FirstEventNumbers.ToArray());
@@ -411,7 +411,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIds: [A],
 			expectedVersions: [ExpectedVersion.NoStream],
 			events: [eventA0, NewEvent],
-			eventStreamIndexes: null);
+			eventStreamIndexes: []);
 
 		Assert.Equal(OperationResult.WrongExpectedVersion, completed.Result);
 		// for backwards compatibility, the arrays are populated when there is a single stream
@@ -527,12 +527,12 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			events: [NewEvent, NewEvent],
 			eventStreamIndexes: [0, 0]));
 
-		// not all streams being written to (with eventStreamIndexes: null)
+		// not all streams being written to (with eventStreamIndexes: [])
 		await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
 			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
 			events: [NewEvent, NewEvent],
-			eventStreamIndexes: null)); // equivalent to [0, 0]
+			eventStreamIndexes: [])); // equivalent to [0, 0]
 
 		// empty write to multiple streams
 		await Assert.ThrowsAsync<ArgumentException>(async () => await WriteEvents(
@@ -541,12 +541,12 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			events: [],
 			eventStreamIndexes: []));
 
-		// empty write to multiple streams (with eventStreamIndexes: null)
+		// empty write to multiple streams (with eventStreamIndexes: [])
 		await Assert.ThrowsAsync<ArgumentException>(async () => await WriteEvents(
 			eventStreamIds: [A, B],
 			expectedVersions: [ExpectedVersion.Any, ExpectedVersion.Any],
 			events: [],
-			eventStreamIndexes: null)); // equivalent to []
+			eventStreamIndexes: [])); // equivalent to []
 	}
 
 	[Fact]
@@ -605,7 +605,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 			eventStreamIds,
 			expectedVersions,
 			events,
-			eventStreamIndexes is null ? (LowAllocReadOnlyMemory<int>?)null : eventStreamIndexes,
+			eventStreamIndexes: eventStreamIndexes,
 			user: SystemAccounts.System);
 
 		fixture.MiniNode.Node.MainQueue.Publish(writeEventsMsg);

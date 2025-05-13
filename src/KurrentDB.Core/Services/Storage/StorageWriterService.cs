@@ -310,8 +310,8 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 				var numEventIds = 0;
 				for (int eventIndex = 0; eventIndex < msg.Events.Length; eventIndex++) {
-					var eventStreamIndex = msg.EventStreamIndexes.HasValue ?
-						msg.EventStreamIndexes.Value.Span[eventIndex] : 0;
+					var eventStreamIndex = msg.EventStreamIndexes.Length is not 0 ?
+						msg.EventStreamIndexes.Span[eventIndex] : 0;
 					if (eventStreamIndex == streamIndex) {
 						eventIds[numEventIds++] = msg.Events.Span[eventIndex].EventId;
 					}
@@ -343,7 +343,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 				var transactionPosition = logPosition;
 				for (int i = 0; i < msg.Events.Length; ++i) {
 					var evnt = msg.Events.Span[i];
-					var streamIndex = msg.EventStreamIndexes.HasValue ? msg.EventStreamIndexes.Value.Span[i] : 0;
+					var streamIndex = msg.EventStreamIndexes.Length is not 0 ? msg.EventStreamIndexes.Span[i] : 0;
 
 					var flags = PrepareFlags.Data | PrepareFlags.IsCommitted;
 					if (i == 0)

@@ -71,7 +71,7 @@ public class MSARequestConverterTests {
 		Assert.True(output.RequireLeader);
 
 		Assert.Equal(["stream-a", "stream-b"], output.EventStreamIds.Span);
-		Assert.Equal([0, 1], output.EventStreamIndexes!.Value.Span);
+		Assert.Equal([0, 1], output.EventStreamIndexes.Span);
 		Assert.Equal([-2, -2], output.ExpectedVersions.Span);
 
 		Assert.Equal(2, output.Events.Length);

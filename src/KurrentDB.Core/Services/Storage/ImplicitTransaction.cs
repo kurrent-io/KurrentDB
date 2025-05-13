@@ -19,9 +19,9 @@ public class ImplicitTransaction<TStreamId> {
 	public long? Position { get; private set; }
 	public LowAllocReadOnlyMemory<long> GetFirstEventNumbers() => _firstEventNumbers.ToLowAllocReadOnlyMemory();
 	public LowAllocReadOnlyMemory<long> GetLastEventNumbers() => _lastEventNumbers.ToLowAllocReadOnlyMemory();
-	public LowAllocReadOnlyMemory<int>? GetEventStreamIndexes() {
+	public LowAllocReadOnlyMemory<int> GetEventStreamIndexes() {
 		if (CurrentStreamIndex == 1)
-			return null;
+			return [];
 
 		return _eventStreamIndexes.ToLowAllocReadOnlyMemory();
 	}

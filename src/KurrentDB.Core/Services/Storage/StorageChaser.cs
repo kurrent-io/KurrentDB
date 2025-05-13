@@ -232,7 +232,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 		if (lastEventNumber is EventNumber.Invalid)
 			lastEventNumber = record.FirstEventNumber - 1;
 		_leaderBus.Publish(new StorageMessage.CommitAck(record.CorrelationId, record.LogPosition,
-			record.TransactionPosition, new(firstEventNumber), new(lastEventNumber), null));
+			record.TransactionPosition, new(firstEventNumber), new(lastEventNumber), []));
 	}
 
 	private ValueTask ProcessSystemRecord(ISystemLogRecord record, CancellationToken token) {

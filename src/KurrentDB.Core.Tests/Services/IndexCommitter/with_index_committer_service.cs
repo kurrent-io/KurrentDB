@@ -107,7 +107,7 @@ public class FakeIndexCommitter<TStreamId> : IIndexCommitter<TStreamId> {
 		return new(0L);
 	}
 
-	public ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> committedPrepares, int numStreams, LowAllocReadOnlyMemory<int>? eventStreamIndexes, bool isTfEof, bool cacheLastEventNumber, CancellationToken token) {
+	public ValueTask Commit(IReadOnlyList<IPrepareLogRecord<TStreamId>> committedPrepares, int numStreams, LowAllocReadOnlyMemory<int> eventStreamIndexes, bool isTfEof, bool cacheLastEventNumber, CancellationToken token) {
 		foreach (var prepare in committedPrepares) {
 			CommittedPrepares.Enqueue(prepare);
 		}

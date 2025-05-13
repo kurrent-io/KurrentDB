@@ -172,10 +172,17 @@ public static partial class ClientMessage {
 
 	[DerivedMessage(CoreMessage.Client)]
 	public partial class WriteEvents : WriteRequestMessage {
+		// one per Stream being written to
 		public readonly LowAllocReadOnlyMemory<string> EventStreamIds;
+
+		// one per Stream being written to
 		public readonly LowAllocReadOnlyMemory<long> ExpectedVersions;
+
 		public readonly LowAllocReadOnlyMemory<Event> Events;
-		public readonly LowAllocReadOnlyMemory<int>? EventStreamIndexes;
+
+		// EventStreamIndexes is     [] => stream of event e == EventStreamIds[0]
+		// EventStreamIndexes is not [] => stream of event e == EventStreamIds[EventStreamIndexes[index of e in Events]]
+		public readonly LowAllocReadOnlyMemory<int> EventStreamIndexes;
 
 		public WriteEvents(
 			Guid internalCorrId,
@@ -185,17 +192,24 @@ public static partial class ClientMessage {
 			LowAllocReadOnlyMemory<string> eventStreamIds,
 			LowAllocReadOnlyMemory<long> expectedVersions,
 			LowAllocReadOnlyMemory<Event> events,
-			LowAllocReadOnlyMemory<int>? eventStreamIndexes,
+			LowAllocReadOnlyMemory<int> eventStreamIndexes,
 			ClaimsPrincipal user,
 			IReadOnlyDictionary<string, string> tokens = null,
 			CancellationToken cancellationToken = default)
 			: base(internalCorrId, correlationId, envelope, requireLeader, user, tokens, cancellationToken) {
 
+			// there must be at least one stream
 			ArgumentOutOfRangeException.ThrowIfNegativeOrZero(eventStreamIds.Length, nameof(eventStreamIds));
+
+			// each stream must correspond to an expected version at the same index
 			ArgumentOutOfRangeException.ThrowIfNotEqual(expectedVersions.Length, eventStreamIds.Length, nameof(expectedVersions));
 
-			if (eventStreamIndexes.HasValue)
-				ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Value.Length, events.Length, nameof(eventStreamIndexes));
+			if (eventStreamIndexes.Length is not 0) {
+				// when non-empty: eventStreamIndexes maps each event to the index of its stream
+				ArgumentOutOfRangeException.ThrowIfNotEqual(eventStreamIndexes.Length, events.Length, nameof(eventStreamIndexes));
+			} else {
+				// when empty, all events implicitly are for the single stream which is at index 0.
+			}
 
 			foreach (var eventStreamId in eventStreamIds.Span) {
 				if (SystemStreams.IsInvalidStream(eventStreamId))
@@ -208,8 +222,8 @@ public static partial class ClientMessage {
 			}
 
 			var nextEventStreamIndex = 0;
-			if (eventStreamIndexes.HasValue) {
-				foreach (var eventStreamIndex in eventStreamIndexes.Value.Span) {
+			if (eventStreamIndexes.Length is not 0) {
+				foreach (var eventStreamIndex in eventStreamIndexes.Span) {
 					if (eventStreamIndex < 0 || eventStreamIndex >= eventStreamIds.Length)
 						throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes),
 							$"Stream index is out of range: {eventStreamIndex}. Number of streams: {eventStreamIds.Length}");
@@ -286,7 +300,7 @@ public static partial class ClientMessage {
 				$"EventStreamIds: {string.Join(", ", EventStreamIds.ToArray())}," + // TODO: use .Span instead of .ToArray() when we move to .NET 10
 				$"ExpectedVersions: {string.Join(", ", ExpectedVersions.ToArray())}," +
 				$"Events: {Events.Length}" +
-				$"EventStreamIndexes: {string.Join(", ", EventStreamIndexes.HasValue ? EventStreamIndexes.Value.ToArray() : [])}";
+				$"EventStreamIndexes: {string.Join(", ", EventStreamIndexes.ToArray())}";
 		}
 	}
 

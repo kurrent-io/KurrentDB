@@ -31,7 +31,7 @@ public static partial class StorageMessage {
 		public LowAllocReadOnlyMemory<string> EventStreamIds { get; private set; }
 		public LowAllocReadOnlyMemory<long> ExpectedVersions { get; private set; }
 		public LowAllocReadOnlyMemory<Event> Events { get; private set; }
-		public LowAllocReadOnlyMemory<int>? EventStreamIndexes { get; private set; }
+		public LowAllocReadOnlyMemory<int> EventStreamIndexes { get; private set; }
 
 		public WritePrepares(
 			Guid correlationId,
@@ -39,7 +39,7 @@ public static partial class StorageMessage {
 			LowAllocReadOnlyMemory<string> eventStreamIds,
 			LowAllocReadOnlyMemory<long> expectedVersions,
 			LowAllocReadOnlyMemory<Event> events,
-			LowAllocReadOnlyMemory<int>? eventStreamIndexes,
+			LowAllocReadOnlyMemory<int> eventStreamIndexes,
 			CancellationToken cancellationToken) : base(cancellationToken) {
 			CorrelationId = correlationId;
 			Envelope = envelope;
@@ -193,12 +193,13 @@ public static partial class StorageMessage {
 		public readonly long TransactionPosition;
 		public readonly LowAllocReadOnlyMemory<long> FirstEventNumbers;
 		public readonly LowAllocReadOnlyMemory<long> LastEventNumbers;
-		public readonly LowAllocReadOnlyMemory<int>? EventStreamIndexes;
+		public readonly LowAllocReadOnlyMemory<int> EventStreamIndexes; // [] => single stream, index 0
 		public int NumStreams => FirstEventNumbers.Length;
 
 		public CommitAck(Guid correlationId, long logPosition, long transactionPosition,
 			LowAllocReadOnlyMemory<long> firstEventNumbers, LowAllocReadOnlyMemory<long> lastEventNumbers,
-			LowAllocReadOnlyMemory<int>? eventStreamIndexes) {
+			LowAllocReadOnlyMemory<int> eventStreamIndexes) {
+
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Nonnegative(logPosition, "logPosition");
 			Ensure.Nonnegative(transactionPosition, "transactionPosition");
@@ -217,11 +218,10 @@ public static partial class StorageMessage {
 						$"LastEventNumber {lastEventNumber}, FirstEventNumber {firstEventNumber}.");
 			}
 
-			if (eventStreamIndexes.HasValue)
-				foreach (var eventStreamIndex in eventStreamIndexes.Value.Span) {
-					if (eventStreamIndex < 0 || eventStreamIndex >= numStreams)
-						throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes));
-				}
+			foreach (var eventStreamIndex in eventStreamIndexes.Span) {
+				if (eventStreamIndex < 0 || eventStreamIndex >= numStreams)
+					throw new ArgumentOutOfRangeException(nameof(eventStreamIndexes));
+			}
 
 			CorrelationId = correlationId;
 			LogPosition = logPosition;
@@ -239,7 +239,7 @@ public static partial class StorageMessage {
 				transactionPosition,
 				firstEventNumbers: new(firstEventNumber),
 				lastEventNumbers: new(lastEventNumber),
-				eventStreamIndexes: null);
+				eventStreamIndexes: []);
 		}
 	}
 
