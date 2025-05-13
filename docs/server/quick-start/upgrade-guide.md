@@ -506,6 +506,27 @@ A number of configuration options have been removed as part of this. EventStoreD
 - `NodeTcpPort`
 - `NodeTcpPortAdvertiseAs`
 
+#### Stricter node certificate requirements
+
+EventStoreDB 24.2.0 introduced stricter requirements for Key Usages in node certificates.
+
+These requirements are:
+- The certificate Extended Key Usages (EKUs) either:
+  - Contains both the ClientAuth EKU and the ServerAuth EKU, or
+  - Is empty.
+- The certificate Key Usages contains either:
+  - DigitalSignature and KeyEncipherment, or
+  - DigitalSignature and KeyAgreement.
+
+If a node certificate does not meet these requirements, the nodes in the cluster will be unable to make gossip and election requests.
+In this case, you will see the following logs:
+
+```
+[16480,21,14:57:06.209,WRN] Failed authorization check for "(anonymous)" in 00:00:00.0000826 with "node/gossip : update Deny : Policy : Legacy 1 9999-12-31 11:59:59 PM +00:00 : default:denied by default:Deny, $"
+```
+
+You can correct this by regenerating the certificates with the correct key usages. See the [Certificate Configuration](../security/protocol-security.md#certificates-configuration) documentation for more information about configuring and generating certificates.
+
 ### From version 22.10 and earlier
 
 The updates to anonymous access described in the [release notes](https://www.eventstore.com/blog/23.10.0-release-notes) have introduced some breaking changes. We have also removed, renamed, and deprecated some options in EventStoreDB.
