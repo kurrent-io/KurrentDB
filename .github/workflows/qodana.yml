@@ -1,12 +1,17 @@
 name: Qodana
+
 on:
   workflow_dispatch:
-  pull_request:
   push:
     branches:
       - main
       - master
       - 'release/*'
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
 
 jobs:
   qodana:
@@ -21,7 +26,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
           fetch-depth: 0  # a full history is required for pull request analysis
           submodules: recursive
-      - name: 'Qodana Scan'
+      - name: Qodana Scan
         uses: JetBrains/qodana-action@v2024.3
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
