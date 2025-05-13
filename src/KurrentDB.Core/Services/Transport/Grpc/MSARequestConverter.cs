@@ -138,7 +138,7 @@ public class MSARequestConverter {
 			? metadataValue.BytesValue.ToByteArray()
 			: [];
 
-		var properties = new Properties();
+		Properties properties = null;
 		foreach (var property in appendRecord.Properties) {
 			if (property.Key
 				is Constants.Properties.LegacyMetadata
@@ -146,6 +146,7 @@ public class MSARequestConverter {
 				or Constants.Properties.DataFormat)
 				continue;
 
+			properties ??= new Properties();
 			properties.PropertiesValues.Add(property.Key, property.Value);
 		}
 
@@ -155,7 +156,7 @@ public class MSARequestConverter {
 			isJson: contentTypeString == Constants.Properties.DataFormats.Json,
 			data: appendRecord.Data.ToByteArray(),
 			metadata: metadata,
-			properties: properties.PropertiesValues.Count == 0 ? [] : properties.ToByteArray());
+			properties: properties?.ToByteArray() ?? []);
 		return evt;
 	}
 
