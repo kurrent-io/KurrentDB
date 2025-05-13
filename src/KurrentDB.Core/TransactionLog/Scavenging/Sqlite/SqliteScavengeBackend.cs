@@ -13,7 +13,7 @@ namespace KurrentDB.Core.TransactionLog.Scavenging.Sqlite;
 // Encapsulates a connection to sqlite, complete with prepared statements and an API to access it
 public class SqliteScavengeBackend<TStreamId> : IScavengeStateBackend<TStreamId> {
 	// WAL with SYNCHRONOUS NORMAL means that
-	//  - commiting a transaction does not wait to it to flush to disk
+	//  - committing a transaction does not wait to it to flush to disk
 	//  - which is nice and quick, but means in powerloss the last x transactions
 	//    can be lost. the database will be in a valid state.
 	//  - this is suitable for us because scavenge will continue from the last

@@ -32,7 +32,7 @@ public class when_writing_delete_prepare_without_commit_and_scavenging<TLogForma
 	}
 
 	[Test]
-	public async Task read_one_by_one_returns_all_commited_events() {
+	public async Task read_one_by_one_returns_all_committed_events() {
 		var result = await ReadIndex.ReadEvent("ES", 0, CancellationToken.None);
 		Assert.AreEqual(ReadEventResult.Success, result.Result);
 		Assert.AreEqual(_event0, result.Record);
