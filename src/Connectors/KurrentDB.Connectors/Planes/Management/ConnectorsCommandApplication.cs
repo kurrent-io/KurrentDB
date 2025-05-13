@@ -121,7 +121,9 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
                 new ConnectorActivating {
                     ConnectorId = connector.Id,
                     Settings    = { connector.CurrentRevision.Settings },
-                    StartFrom   = cmd.StartFrom ?? new StartFromPosition(), // reset to beginning, this is the big difference from StartConnector
+                    StartFrom   = cmd.StartFrom ?? new StartFromPosition {
+	                    LogPosition = 0
+                    }, // reset to beginning, this is the big difference from StartConnector
                     Timestamp   = time.GetUtcNow().ToTimestamp()
                 }
             ];
