@@ -167,12 +167,12 @@ public static partial class StorageMessage {
 	/// Handled by RequestManagementService
 	/// </summary>
 	[DerivedMessage(CoreMessage.Storage)]
-	public partial class PrepareAck : Message {
+	public partial class UncommittedPrepareChased : Message {
 		public readonly Guid CorrelationId;
 		public readonly long LogPosition;
 		public readonly PrepareFlags Flags;
 
-		public PrepareAck(Guid correlationId, long logPosition, PrepareFlags flags) {
+		public UncommittedPrepareChased(Guid correlationId, long logPosition, PrepareFlags flags) {
 			Ensure.NotEmptyGuid(correlationId, "correlationId");
 			Ensure.Nonnegative(logPosition, "logPosition");
 
@@ -187,7 +187,7 @@ public static partial class StorageMessage {
 	/// Received by the IndexCommitterService
 	/// </summary>
 	[DerivedMessage(CoreMessage.Storage)]
-	public partial class CommitAck : Message {
+	public partial class CommitChased : Message {
 		public readonly Guid CorrelationId;
 		public readonly long LogPosition;
 		public readonly long TransactionPosition;
@@ -196,7 +196,7 @@ public static partial class StorageMessage {
 		public readonly LowAllocReadOnlyMemory<int> EventStreamIndexes; // [] => single stream, index 0
 		public int NumStreams => FirstEventNumbers.Length;
 
-		public CommitAck(Guid correlationId, long logPosition, long transactionPosition,
+		public CommitChased(Guid correlationId, long logPosition, long transactionPosition,
 			LowAllocReadOnlyMemory<long> firstEventNumbers, LowAllocReadOnlyMemory<long> lastEventNumbers,
 			LowAllocReadOnlyMemory<int> eventStreamIndexes) {
 
@@ -232,8 +232,8 @@ public static partial class StorageMessage {
 		}
 
 		// used in tests only
-		public static CommitAck ForSingleStream(Guid correlationId, long logPosition, long transactionPosition, long firstEventNumber, long lastEventNumber) {
-			return new CommitAck(
+		public static CommitChased ForSingleStream(Guid correlationId, long logPosition, long transactionPosition, long firstEventNumber, long lastEventNumber) {
+			return new CommitChased(
 				correlationId,
 				logPosition,
 				transactionPosition,

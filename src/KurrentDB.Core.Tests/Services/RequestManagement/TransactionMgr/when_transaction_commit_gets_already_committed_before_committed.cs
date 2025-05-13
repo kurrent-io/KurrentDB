@@ -32,7 +32,7 @@ public class when_transaction_commit_gets_already_committed_before_committed : R
 
 	protected override IEnumerable<Message> WithInitialMessages() {
 
-		yield return new StorageMessage.PrepareAck(InternalCorrId, transactionId, PrepareFlags.TransactionEnd);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, transactionId, PrepareFlags.TransactionEnd);
 	}
 
 	protected override Message When() {

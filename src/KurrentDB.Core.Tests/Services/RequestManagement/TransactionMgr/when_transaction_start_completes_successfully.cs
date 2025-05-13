@@ -29,7 +29,7 @@ public class when_transaction_start_completes_successfully : RequestManagerSpeci
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _transactionPosition, PrepareFlags.TransactionBegin);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _transactionPosition, PrepareFlags.TransactionBegin);
 	}
 
 	protected override Message When() {

@@ -50,7 +50,7 @@ public abstract class RequestManagerSpecification<TManager>
 		Publisher.Messages.Clear();
 
 		Manager = OnManager(Publisher);
-		Dispatcher.Subscribe<StorageMessage.PrepareAck>(Manager);
+		Dispatcher.Subscribe<StorageMessage.UncommittedPrepareChased>(Manager);
 		Dispatcher.Subscribe<StorageMessage.InvalidTransaction>(Manager);
 		Dispatcher.Subscribe<StorageMessage.StreamDeleted>(Manager);
 		Dispatcher.Subscribe<StorageMessage.WrongExpectedVersion>(Manager);
