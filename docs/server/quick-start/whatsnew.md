@@ -7,10 +7,12 @@ order: 2
 ## New features
 
 * Connectors:
+    * Data Protection
     * Kafka
     * MongoDB
     * RabbitMQ
     * HTTP
+    * Serilog
 * Auto-scavenge: Schedule and execute scavenges automatically across a cluster.
 * Stream Policy: Define stream access policies based on stream prefixes rather than using stream ACLs.
 * Encryption-at-rest: Encrypt EventStoreDB chunks to secure them against attackers with file access to the database.
