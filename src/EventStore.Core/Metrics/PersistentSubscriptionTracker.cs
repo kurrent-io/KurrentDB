@@ -35,13 +35,13 @@ public class PersistentSubscriptionTracker : IPersistentSubscriptionTracker {
 				new Measurement<long>(x.ParkedDueToClientNak, [
 					new("event_stream_id", x.EventSource),
 					new("group_name", x.GroupName),
-					new ("reason", "client-nak"),
+					new("reason", "client-nak"),
 				]),
 				new Measurement<long>(x.ParkedDueToMaxRetries, [
 					new("event_stream_id", x.EventSource),
 					new("group_name", x.GroupName),
-					new ("reason", "max-retries"),
-				])
+					new("reason", "max-retries"),
+				]),
 			]);
 
 	public IEnumerable<Measurement<long>> ObserveParkedMessageReplays() =>
