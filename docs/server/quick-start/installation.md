@@ -50,7 +50,7 @@ For most features that require a license, KurrentDB will not start if the featur
 
 Packages for KurrentDB are hosted on [Cloudsmith](https://cloudsmith.io/~eventstore), in the following repositories:
 
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview) containing non-production preview packages.
 
@@ -63,7 +63,7 @@ The name of the KurrentDB package is `kurrentdb`.
 
 Debian packages can be found in the following repositories:
 
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adeb+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adeb+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Adeb+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Adeb+name%3Akurrentdb) containing non-production preview packages.
 
@@ -77,12 +77,12 @@ curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-latest/setup.deb.sh' \
   | sudo -E bash
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-lts/setup.deb.sh' \
   | sudo -E bash
-```
+```-->
 @tab kurrent-preview
 ```bash
 curl -1sLf \
@@ -100,12 +100,12 @@ curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-latest/setup.deb.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH component=COMPONENT bash
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-lts/setup.deb.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH component=COMPONENT bash
-```
+```-->
 @tab kurrent-preview
 ```bash
 curl -1sLf \
@@ -115,9 +115,9 @@ curl -1sLf \
 :::
 
 Alternatively, you can find instructions to manually configure it yourself on Cloudsmith:
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
-* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
-* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-staging/setup/#formats-deb)
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/setup/#formats-deb)-->
+* [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/setup/#formats-deb)
+* [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/setup/#formats-deb)
 
 #### Install with apt-get
 
@@ -145,7 +145,7 @@ apt-get purge kurrentdb
 
 RedHat packages can be found in the following repositories:
 
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Arpm+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Arpm+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) packages.-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Arpm+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) packages.
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Arpm+name%3Akurrentdb) containing non-production preview packages.
 
@@ -160,12 +160,12 @@ curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-latest/setup.rpm.sh' \
   | sudo -E bash
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-lts/setup.rpm.sh' \
   | sudo -E bash
-```
+```-->
 @tab kurrent-preview
 ```bash
 curl -1sLf \
@@ -183,12 +183,12 @@ curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-latest/setup.rpm.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH bash
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 curl -1sLf \
   'https://packages.kurrent.io/public/kurrent-lts/setup.rpm.sh' \
   | sudo -E distro=DISTRO codename=CODENAME arch=ARCH bash
-```
+```-->
 @tab kurrent-preview
 ```bash
 curl -1sLf \
@@ -198,8 +198,8 @@ curl -1sLf \
 :::
 
 Alternatively, you can find instructions to manually configure it yourself on Cloudsmith:
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/setup/#formats-rpm).-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/setup/#formats-rpm).
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/setup/#formats-rpm).
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/setup/#formats-rpm).
 
 #### Install with yum
@@ -275,7 +275,7 @@ closer to what you'd run in production.
 
 KurrentDB Docker images are hosted in the following registries:
 
-* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adocker+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) containers.
+<!--* [kurrent-lts](https://cloudsmith.io/~eventstore/repos/kurrent-lts/packages/?q=format%3Adocker+name%3Akurrentdb) containing only production-ready [LTS](../release-schedule/#long-term-support-releases) containers.-->
 * [kurrent-latest](https://cloudsmith.io/~eventstore/repos/kurrent-latest/packages/?q=format%3Adocker+name%3Akurrentdb) containing production-ready LTS and [STS](../release-schedule/#short-term-support-releases) containers.
 * [kurrent-preview](https://cloudsmith.io/~eventstore/repos/kurrent-preview/packages/?q=format%3Adocker+name%3Akurrentdb) containing non-production preview containers.
 
@@ -288,14 +288,10 @@ Pull the container with:
 ```bash
 docker pull docker.kurrent.io/kurrent-latest/kurrentdb:latest
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
-docker pull docker.kurrent.io/kurrent-lts/kurrentdb:lts
-```
-@tab kurrent-preview
-```bash
-docker pull docker.kurrent.io/kurrent-preview/kurrentdb:latest
-```
+docker pull docker.kurrent.io/kurrent-lts/kurrentdb:latest
+```-->
 :::
 
 The following command will start the KurrentDB node using the default HTTP port, without security. You can then connect to it using one of the clients and the `kurrentdb://localhost:2113?tls=false` connection string. You can also access the Admin UI by opening http://localhost:2113 in your browser.
@@ -304,21 +300,15 @@ The following command will start the KurrentDB node using the default HTTP port,
 @tab kurrent-latest
 ```bash
 docker run --name kurrentdb-node -it -p 2113:2113 \
-    docker.kurrent.io/kurrent-latest/kurrentdb --insecure --run-projections=All
+    docker.kurrent.io/kurrent-latest/kurrentdb:latest --insecure --run-projections=All \
     --enable-atom-pub-over-http
 ```
-@tab kurrent-lts
+<!--@tab kurrent-lts
 ```bash
 docker run --name kurrentdb-node -it -p 2113:2113 \
-    docker.kurrent.io/kurrent-lts/kurrentdb --insecure --run-projections=All
+    docker.kurrent.io/kurrent-lts/kurrentdb:latest --insecure --run-projections=All \
     --enable-atom-pub-over-http
-```
-@tab kurrent-preview
-```bash
-docker run --name kurrentdb-node -it -p 2113:2113 \
-    docker.kurrent.io/kurrent-preview/kurrentdb --insecure --run-projections=All
-    --enable-atom-pub-over-http
-```
+```-->
 :::
 
 Then, you'd be able to connect to KurrentDB with gRPC clients. Also, the Stream Browser will work
