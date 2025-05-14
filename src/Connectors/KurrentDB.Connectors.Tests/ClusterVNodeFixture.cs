@@ -63,6 +63,7 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public async Task DisposeAsync() {
         try {
             await OnTearDown();
+            await ClusterVNodeApp.DisposeAsync();
         }
         catch {
             // ignored
