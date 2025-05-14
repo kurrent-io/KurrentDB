@@ -2,8 +2,12 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 // ReSharper disable CheckNamespace
+#nullable enable
 
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -19,19 +23,6 @@ using WriteEventsResult    = (Position Position, StreamRevision StreamRevision);
 using DeleteStreamResult   = (Position Position, StreamRevision Revision);
 using StreamMetadataResult = (StreamMetadata Metadata, long Revision);
 using StreamInfo           = (string Stream, StreamRevision Revision);
-
-// Snippet from EventStore/src/EventStore.Core.Services.Transport.Enumerators/ReadResponseException.cs to make the code compile:
-// public class StreamNotFound(string streamName) : ReadResponseException {
-//     public string StreamName { get; } = streamName;
-// }
-//
-// public class WrongExpectedRevision(string stream, long expectedRevision, long actualRevision) : ReadResponseException {
-//     public string Stream { get; } = stream;
-//
-//     public StreamRevision ExpectedStreamRevision { get; } = StreamRevision.FromInt64(expectedRevision);
-//
-//     public StreamRevision ActualStreamRevision { get; } = StreamRevision.FromInt64(actualRevision);
-// }
 
 public interface ISystemClient {
     IManagementOperations    Management    { get; }

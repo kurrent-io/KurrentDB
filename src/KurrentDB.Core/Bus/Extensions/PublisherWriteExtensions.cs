@@ -3,6 +3,11 @@
 
 // ReSharper disable CheckNamespace
 
+#nullable enable
+
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -15,15 +20,11 @@ namespace KurrentDB.Core;
 
 using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
 
-// Revision/Version
-// NoStream = -1;
-// Any = -2;
-// StreamExists = -4;
-
 [PublicAPI]
 public static class PublisherWriteExtensions {
     static Task WriteEvents(
-        this IPublisher publisher, string stream, Event[] events, long expectedRevision,
+        this IPublisher publisher,
+        string stream, Event[] events, long expectedRevision,
         Func<(Position? Position, StreamRevision? StreamRevision, Exception? Exception), Task> onResult,
         CancellationToken cancellationToken = default
     ) {
@@ -53,46 +54,39 @@ public static class PublisherWriteExtensions {
             if (message is ClientMessage.WriteEventsCompleted { Result: OperationResult.Success } completed) {
                 var position       = new Position((ulong)completed.CommitPosition, (ulong)completed.PreparePosition);
                 var streamRevision = StreamRevision.FromInt64(completed.LastEventNumbers.Single);
-                await onResult((position, streamRevision, null));
+                await onResult((position, streamRevision, null)).ConfigureAwait(false);
             } else {
-                await onResult((null, null, MapToError(message)));
+                await onResult((null, null, MapToError(message))).ConfigureAwait(false);
             }
         }
 
         ReadResponseException MapToError(Message message) {
             return message switch {
                 ClientMessage.WriteEventsCompleted completed => completed.Result switch {
-                    OperationResult.PrepareTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
-                    OperationResult.CommitTimeout  => new ReadResponseException.Timeout($"{completed.Result}"),
-                    OperationResult.ForwardTimeout => new ReadResponseException.Timeout($"{completed.Result}"),
-                    OperationResult.StreamDeleted  => new ReadResponseException.StreamDeleted(stream),
-                    OperationResult.AccessDenied   => new ReadResponseException.AccessDenied(),
-                    OperationResult.WrongExpectedVersion => new ReadResponseException.WrongExpectedRevision(
-                        stream,
-                        expectedRevision,
-                        completed.FailureCurrentVersions.Single
-                    ),
+                    OperationResult.PrepareTimeout       => new ReadResponseException.Timeout($"{completed.Result}"),
+                    OperationResult.CommitTimeout        => new ReadResponseException.Timeout($"{completed.Result}"),
+                    OperationResult.ForwardTimeout       => new ReadResponseException.Timeout($"{completed.Result}"),
+                    OperationResult.StreamDeleted        => new ReadResponseException.StreamDeleted(stream),
+                    OperationResult.AccessDenied         => new ReadResponseException.AccessDenied(),
+                    OperationResult.WrongExpectedVersion => new ReadResponseException.WrongExpectedRevision(stream, expectedRevision, completed.FailureCurrentVersions.Single),
                     _ => ReadResponseException.UnknownError.Create(completed.Result)
                 },
                 ClientMessage.NotHandled notHandled => notHandled.MapToException(),
-                not null => new ReadResponseException.UnknownMessage(
-                    message.GetType(),
-                    typeof(ClientMessage.WriteEventsCompleted)
-                )
+                not null => new ReadResponseException.UnknownMessage(message.GetType(), typeof(ClientMessage.WriteEventsCompleted)),
+                _ => throw new ArgumentOutOfRangeException(nameof(message), message, null)
             };
         }
     }
 
     public static async Task<WriteEventsResult> WriteEvents(
-        this IPublisher publisher, string stream, Event[] events, long expectedRevision = ExpectedVersion.Any,
+        this IPublisher publisher,
+        string stream, Event[] events, long expectedRevision = ExpectedVersion.Any,
         CancellationToken cancellationToken = default
     ) {
         var operation = new TaskCompletionSource<WriteEventsResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         await publisher.WriteEvents(
-            stream,
-            events,
-            expectedRevision,
+            stream, events, expectedRevision,
             onResult: response => {
                 if (response.Exception is null)
                     operation.TrySetResult(new(response.Position!.Value, response.StreamRevision!.Value));

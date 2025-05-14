@@ -153,6 +153,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SchemaRegistry", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SchemaRegistry.Tests", "SchemaRegistry\KurrentDB.SchemaRegistry.Tests\KurrentDB.SchemaRegistry.Tests.csproj", "{C19C5975-5286-476D-B85B-81C6DF33F18B}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "System", "System", "{4F6587EE-A61E-4FCE-8107-C3117F9C4C4D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Surge", "KurrentDB.Surge\KurrentDB.Surge.csproj", "{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -931,6 +935,18 @@ Global
 		{C19C5975-5286-476D-B85B-81C6DF33F18B}.Release|ARM64.Build.0 = Release|ARM64
 		{C19C5975-5286-476D-B85B-81C6DF33F18B}.Release|x64.ActiveCfg = Release|x64
 		{C19C5975-5286-476D-B85B-81C6DF33F18B}.Release|x64.Build.0 = Release|x64
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Debug|ARM64.Build.0 = Debug|ARM64
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Debug|x64.ActiveCfg = Debug|x64
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Debug|x64.Build.0 = Debug|x64
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Release|ARM64.ActiveCfg = Release|ARM64
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Release|ARM64.Build.0 = Release|ARM64
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Release|x64.ActiveCfg = Release|x64
+		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

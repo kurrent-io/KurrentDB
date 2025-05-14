@@ -3,9 +3,12 @@
 
 // ReSharper disable CheckNamespace
 
+using System;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Transport.Enumerators;
+using static KurrentDB.Core.Messages.ClientMessage.NotHandled.Types;
+using static KurrentDB.Core.Services.Transport.Enumerators.ReadResponseException.NotHandled;
 
 namespace KurrentDB.Core;
 
@@ -13,15 +16,16 @@ namespace KurrentDB.Core;
 public static class ClientMessageExtensions {
 	public static ReadResponseException MapToException(this ClientMessage.NotHandled notHandled) {
 		return notHandled.Reason switch {
-			ClientMessage.NotHandled.Types.NotHandledReason.NotReady   => new ReadResponseException.NotHandled.ServerNotReady(),
-			ClientMessage.NotHandled.Types.NotHandledReason.TooBusy    => new ReadResponseException.NotHandled.ServerBusy(),
-			ClientMessage.NotHandled.Types.NotHandledReason.NotLeader  => LeaderException(),
-			ClientMessage.NotHandled.Types.NotHandledReason.IsReadOnly => LeaderException()
+			NotHandledReason.NotReady   => new ServerNotReady(),
+			NotHandledReason.TooBusy    => new ServerBusy(),
+			NotHandledReason.NotLeader  => LeaderException(),
+			NotHandledReason.IsReadOnly => LeaderException(),
+			_ => throw new ArgumentOutOfRangeException(nameof(notHandled.Reason), notHandled.Reason, null)
 		};
 
 		ReadResponseException LeaderException() =>
 			notHandled.LeaderInfo is not null
 				? new ReadResponseException.NotHandled.LeaderInfo(notHandled.LeaderInfo.Http.GetHost(), notHandled.LeaderInfo.Http.GetPort())
-				: new ReadResponseException.NotHandled.NoLeaderInfo();
+				: new NoLeaderInfo();
 	}
 }

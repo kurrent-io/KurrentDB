@@ -3,10 +3,13 @@
 
 // ReSharper disable CheckNamespace
 
+using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Channels;
+using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
-using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -48,7 +51,7 @@ public static class PublisherSubscribeExtensions {
 
 		await using var sub = new Enumerator.StreamSubscription<string>(
 			bus: publisher,
-			expiryStrategy: new DefaultExpiryStrategy(), //TODO SS: what is this expiry strategy thing?
+			expiryStrategy: new DefaultExpiryStrategy(),
 			streamName: stream,
 			checkpoint: startRevision,
 			resolveLinks: false,
@@ -66,7 +69,8 @@ public static class PublisherSubscribeExtensions {
 
 		yield break;
 
-        static StreamRevision? StartFrom(StreamRevision? revision) => revision == 0 ? null : revision;
+        static StreamRevision? StartFrom(StreamRevision? revision) =>
+	        revision == 0 ? null : revision;
 	}
 
 	public static Task SubscribeToAll(this IPublisher publisher, Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) {
@@ -127,9 +131,8 @@ public static class PublisherSubscribeExtensions {
                         await foreach (var response in state.Publisher.SubscribeToStream(state.Stream, state.Checkpoint, ctx.CancellationToken)) {
 	                        // keeping track of the last position before an error occurs
 	                        // so we can let the policy know where to start from
-	                        if (response is ReadResponse.EventReceived eventReceived) {
+	                        if (response is ReadResponse.EventReceived eventReceived)
 		                        state.Checkpoint = StreamRevision.FromInt64(eventReceived.Event.OriginalEventNumber);
-	                        }
 
 	                        await state.Channel.Writer.WriteAsync(response, ctx.CancellationToken);
                         }

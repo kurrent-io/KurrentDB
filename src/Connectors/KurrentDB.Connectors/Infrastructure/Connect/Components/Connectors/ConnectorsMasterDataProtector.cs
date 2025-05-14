@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using Kurrent.Surge.Connectors;
 using Kurrent.Surge.DataProtection;
 using Kurrent.Toolkit;
+using KurrentDB.Common.Configuration;
 using Microsoft.Extensions.Configuration;
 using static System.Activator;
 

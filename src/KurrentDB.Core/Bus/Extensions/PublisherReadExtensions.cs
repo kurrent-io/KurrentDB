@@ -3,7 +3,12 @@
 
 // ReSharper disable CheckNamespace
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -171,7 +176,7 @@ public static class PublisherReadExtensions {
 		var result = await publisher.GetStreamInfoByPosition(startPosition, cancellationToken);
 
 		if (result is null)
-			throw new Exception("Stream not found by position");
+			throw new("Stream not found by position");
 
 		await foreach(var re in publisher.ReadStream(result.Value.Stream, result.Value.Revision, maxCount, forwards, cancellationToken))
 			yield return re;
