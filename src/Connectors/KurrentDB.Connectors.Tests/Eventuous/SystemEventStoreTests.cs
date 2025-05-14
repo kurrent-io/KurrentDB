@@ -241,8 +241,8 @@ public class SystemEventStoreTests(ITestOutputHelper output, ConnectorsAssemblyF
             { "Key1", "Value1" },
             { "Key2", "12345" },
             { "Key3", "True" },
-            { HeaderKeys.SchemaType, "json" },
-            { HeaderKeys.SchemaSubject, typeof(TestEvent).FullName! }
+            { HeaderKeys.SchemaDataFormat, "json" },
+            { HeaderKeys.SchemaName, typeof(TestEvent).FullName! }
         };
 
         metadataResults.ShouldContainKey(HeaderKeys.ProducerId);

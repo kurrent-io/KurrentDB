@@ -1,15 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-// ReSharper disable CheckNamespace
-
-using KurrentDB.Core.Bus;
+using Kurrent.Surge;
 using Kurrent.Surge.Consumers.Configuration;
-using Kurrent.Toolkit;
+using KurrentDB.Core.Bus;
 using Microsoft.Extensions.Logging;
 using Polly.Telemetry;
 
-namespace KurrentDB.Connect.Consumers.Configuration;
+namespace KurrentDB.Surge.Consumers;
 
 [PublicAPI]
 public record SystemConsumerBuilder : ConsumerBuilder<SystemConsumerBuilder, SystemConsumerOptions> {
@@ -54,7 +52,8 @@ class SystemConsumerResilienceTelemetryListener(ILogger logger) : TelemetryListe
 			ResilienceEventSeverity.Information => LogLevel.Information,
 			ResilienceEventSeverity.Warning     => LogLevel.Warning,
 			ResilienceEventSeverity.Error       => LogLevel.Error,
-			ResilienceEventSeverity.Critical    => LogLevel.Critical
+			ResilienceEventSeverity.Critical    => LogLevel.Critical,
+			_ => throw new ArgumentOutOfRangeException(nameof(args.Event.Severity), args.Event.Severity, null)
 		};
 
 		if (args.Arguments is ExecutionAttemptArguments executionAttemptArguments) {

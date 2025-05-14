@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics;
-using Kurrent.Toolkit;
+using Kurrent.Surge;
 using static KurrentDB.Connectors.Infrastructure.Diagnostics.DiagnosticsCollectionMode;
 
 namespace KurrentDB.Connectors.Infrastructure.Diagnostics;

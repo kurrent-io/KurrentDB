@@ -1,31 +1,28 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-// ReSharper disable CheckNamespace
-
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using DotNext;
-using KurrentDB.Connect.Consumers.Configuration;
-using KurrentDB.Connect.Producers;
-using KurrentDB.Connect.Readers;
-using KurrentDB.Core;
-using KurrentDB.Core.Bus;
-using KurrentDB.Core.Services.Transport.Enumerators;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Checkpoints;
 using Kurrent.Surge.Consumers.Interceptors;
 using Kurrent.Surge.Consumers.LifecycleEvents;
 using Kurrent.Surge.Interceptors;
-using Kurrent.Surge.Schema.Serializers;
 using Kurrent.Surge.JsonPath;
 using Kurrent.Surge.Schema;
-using Kurrent.Toolkit;
+using Kurrent.Surge.Schema.Serializers;
+using KurrentDB.Connect.Consumers;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 using Microsoft.Extensions.Logging;
 using Polly;
 
-namespace KurrentDB.Connect.Consumers;
+namespace KurrentDB.Surge.Consumers;
 
 [PublicAPI]
 public class SystemConsumer : IConsumer {
@@ -110,7 +107,6 @@ public class SystemConsumer : IConsumer {
     SequenceIdGenerator                Sequence             { get; }
 	InterceptorController              Interceptors         { get; }
 	Func<ConsumerLifecycleEvent, Task> Intercept            { get; }
-    ILogger                            Logger               { get; }
 
 	public string                        ConsumerId       => Options.ConsumerId;
     public string                        ClientId         => Options.ClientId;

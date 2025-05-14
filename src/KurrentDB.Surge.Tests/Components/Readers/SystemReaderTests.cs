@@ -5,13 +5,15 @@ using System.Text.RegularExpressions;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Readers;
+using KurrentDB.Connectors.Tests;
 using KurrentDB.Core;
 using KurrentDB.Surge.Testing.Xunit;
 using Shouldly;
+
 using EventStoreCore = KurrentDB.Core.Services.Transport.Common;
 using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
-namespace KurrentDB.Connectors.Tests.Infrastructure.Connect.Components.Readers;
+namespace KurrentDB.Surge.Tests.Components.Readers;
 
 [Trait("Category", "Integration")]
 public class SystemReaderTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {

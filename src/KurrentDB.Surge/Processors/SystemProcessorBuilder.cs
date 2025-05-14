@@ -1,23 +1,21 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-// ReSharper disable CheckNamespace
-
 using System.Diagnostics.CodeAnalysis;
-using KurrentDB.Connect.Consumers;
-using KurrentDB.Connect.Producers;
-using KurrentDB.Connect.Readers;
-using KurrentDB.Core.Bus;
+using Kurrent.Surge;
 using Kurrent.Surge.Configuration;
 using Kurrent.Surge.Leases;
 using Kurrent.Surge.Processors;
 using Kurrent.Surge.Processors.Configuration;
 using Kurrent.Surge.Processors.Locks;
-using Kurrent.Toolkit;
+using KurrentDB.Core.Bus;
+using KurrentDB.Surge.Consumers;
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 using Microsoft.Extensions.Logging;
 using NodaTime.Extensions;
 
-namespace KurrentDB.Connect.Processors.Configuration;
+namespace KurrentDB.Surge.Processors;
 
 [PublicAPI]
 public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, SystemProcessorOptions> {

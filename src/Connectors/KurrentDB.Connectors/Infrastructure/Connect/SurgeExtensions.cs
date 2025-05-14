@@ -4,13 +4,6 @@
 // ReSharper disable CheckNamespace
 
 using KurrentDB.Connect.Connectors;
-using KurrentDB.Connect.Consumers.Configuration;
-using KurrentDB.Connect.Processors;
-using KurrentDB.Connect.Processors.Configuration;
-using KurrentDB.Connect.Producers;
-using KurrentDB.Connect.Producers.Configuration;
-using KurrentDB.Connect.Readers;
-using KurrentDB.Connect.Readers.Configuration;
 using KurrentDB.Connect.Schema;
 using KurrentDB.Core.Bus;
 using Kurrent.Surge;
@@ -24,10 +17,14 @@ using Kurrent.Surge.Producers.Configuration;
 using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
-using Kurrent.Toolkit;
+
 using KurrentDB.Connect.Consumers;
+using KurrentDB.Connectors;
 using KurrentDB.Connectors.Infrastructure.Connect.Components;
-using KurrentDB.Connectors.Infrastructure.Connect.Components.Producers;
+using KurrentDB.Surge.Consumers;
+using KurrentDB.Surge.Processors;
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

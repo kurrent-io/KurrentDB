@@ -1,13 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-// ReSharper disable CheckNamespace
-
-using KurrentDB.Core.Bus;
+using Kurrent.Surge;
 using Kurrent.Surge.Producers.Configuration;
-using Kurrent.Toolkit;
+using KurrentDB.Core.Bus;
 
-namespace KurrentDB.Connect.Producers.Configuration;
+namespace KurrentDB.Surge.Producers;
 
 [PublicAPI]
 public record SystemProducerBuilder : ProducerBuilder<SystemProducerBuilder, SystemProducerOptions> {

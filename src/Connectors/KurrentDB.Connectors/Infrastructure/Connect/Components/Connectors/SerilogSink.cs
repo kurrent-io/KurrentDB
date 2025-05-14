@@ -7,7 +7,7 @@ using System.Runtime;
 using KurrentDB.Common.Utils;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors.Sinks;
-using Kurrent.Toolkit;
+
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Core;
@@ -45,8 +45,8 @@ public class SerilogSink : ISink {
                 LogPosition = x.Position.LogPosition.CommitPosition.ToString(),
                 IsRedacted  = x.IsRedacted,
                 SchemaInfo  = new {
-                    Subject     = x.SchemaInfo.Subject,
-                    SchemaType  = x.SchemaInfo.SchemaType,
+                    Subject     = x.SchemaInfo.SchemaName,
+                    SchemaType  = x.SchemaInfo.SchemaDataFormat,
                     ContentType = x.SchemaInfo.ContentType
                 },
                 Headers      = x.Headers.WithoutSchemaInfo(),

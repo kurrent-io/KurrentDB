@@ -5,7 +5,7 @@
 // ReSharper disable AccessToDisposedClosure
 
 using System.Net;
-using Kurrent.Toolkit;
+using Kurrent.Surge;
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;

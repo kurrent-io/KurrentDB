@@ -3,7 +3,7 @@
 
 using Eventuous;
 using Kurrent.Surge;
-using Kurrent.Toolkit;
+
 using KurrentDB.Connectors.Planes.Management.Domain;
 
 namespace KurrentDB.Connectors.Infrastructure.Eventuous;

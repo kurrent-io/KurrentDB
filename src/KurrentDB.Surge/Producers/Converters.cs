@@ -1,18 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-// ReSharper disable CheckNamespace
-
-using KurrentDB.Core.Data;
-using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.Core.Services.Transport.Grpc;
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
-using Kurrent.Toolkit;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.Transport.Grpc;
 
-namespace KurrentDB.Connect.Producers;
+namespace KurrentDB.Surge.Producers;
 
 public static class ProduceRequestExtensions {
     public static ValueTask<Event[]> ToEvents(this ProduceRequest request, Action<Headers> configureHeaders, Serialize serialize) {
@@ -27,11 +24,11 @@ public static class ProduceRequestExtensions {
             var eventId  = Uuid.FromGuid(message.RecordId).ToGuid(); // not sure if needed...
             var schema   = SchemaInfo.FromHeaders(message.Headers);
             var metadata = Headers.Encode(message.Headers);
-            var isJson   = schema.SchemaType == SchemaDataFormat.Json;
+            var isJson   = schema.SchemaDataFormat == SchemaDataFormat.Json;
 
             return new(
                 eventId,
-                schema.Subject,
+                schema.SchemaName,
                 isJson,
                 data.ToArray(),
                 metadata.ToArray(),

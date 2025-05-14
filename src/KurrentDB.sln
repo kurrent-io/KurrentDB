@@ -157,6 +157,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "System", "System", "{4F6587
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Surge", "KurrentDB.Surge\KurrentDB.Surge.csproj", "{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Surge.Tests", "KurrentDB.Surge.Tests\KurrentDB.Surge.Tests.csproj", "{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -947,6 +949,18 @@ Global
 		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Release|ARM64.Build.0 = Release|ARM64
 		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Release|x64.ActiveCfg = Release|x64
 		{C68CB488-A8C9-4DEC-804E-294BDA3D0F69}.Release|x64.Build.0 = Release|x64
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Debug|ARM64.Build.0 = Debug|ARM64
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Debug|x64.ActiveCfg = Debug|x64
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Debug|x64.Build.0 = Debug|x64
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Release|ARM64.ActiveCfg = Release|ARM64
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Release|ARM64.Build.0 = Release|ARM64
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Release|x64.ActiveCfg = Release|x64
+		{6C0DF5B0-3F57-4857-9AE5-96ADC73FA2FA}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

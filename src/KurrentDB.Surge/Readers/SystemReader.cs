@@ -1,27 +1,23 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-// ReSharper disable CheckNamespace
-
 using System.Runtime.CompilerServices;
 using DotNext;
-using KurrentDB.Connect.Readers.Configuration;
+using Kurrent.Surge;
+using Kurrent.Surge.Consumers;
+using Kurrent.Surge.JsonPath;
+using Kurrent.Surge.Readers;
+using Kurrent.Surge.Schema.Serializers;
+using KurrentDB.Connect.Consumers;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
-using Kurrent.Surge;
-using Kurrent.Surge.Consumers;
-using Kurrent.Surge.Readers;
-using Kurrent.Surge.Schema.Serializers;
-using Kurrent.Surge.JsonPath;
-using Kurrent.Toolkit;
-using KurrentDB.Connect.Consumers;
 using Polly;
 using StreamRevision = Kurrent.Surge.StreamRevision;
 
-namespace KurrentDB.Connect.Readers;
+namespace KurrentDB.Surge.Readers;
 
 [PublicAPI]
 public class SystemReader : IReader {

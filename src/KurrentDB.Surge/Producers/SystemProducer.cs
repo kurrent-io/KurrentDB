@@ -1,23 +1,19 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-// ReSharper disable CheckNamespace
-
 using DotNext;
-using KurrentDB.Connect.Producers.Configuration;
-using KurrentDB.Core.Bus;
-using KurrentDB.Core.Data;
 using Kurrent.Surge;
 using Kurrent.Surge.Interceptors;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Producers.Interceptors;
 using Kurrent.Surge.Producers.LifecycleEvents;
 using Kurrent.Surge.Schema.Serializers;
-using Kurrent.Toolkit;
 using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.Core.Data;
 using Polly;
 
-namespace KurrentDB.Connect.Producers;
+namespace KurrentDB.Surge.Producers;
 
 [PublicAPI]
 public class SystemProducer : IProducer {
@@ -103,7 +99,8 @@ public class SystemProducer : IProducer {
             : request.ExpectedStreamState switch {
                 StreamState.Missing => ExpectedVersion.NoStream,
                 StreamState.Exists  => ExpectedVersion.StreamExists,
-                StreamState.Any     => ExpectedVersion.Any
+                StreamState.Any     => ExpectedVersion.Any,
+                _ => throw new ArgumentOutOfRangeException(nameof(request.ExpectedStreamState), request.ExpectedStreamState, null)
             };
 
         var result = await WriteEvents(Client, validRequest, events, expectedRevision, ResiliencePipeline);

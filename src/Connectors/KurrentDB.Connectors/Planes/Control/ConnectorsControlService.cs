@@ -1,15 +1,15 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.Connect.Consumers.Configuration;
 using KurrentDB.Connectors.Management.Contracts;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
-using Kurrent.Toolkit;
+
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Core.Bus;
+using KurrentDB.Surge.Consumers;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Connectors.Planes.Control;

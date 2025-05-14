@@ -4,13 +4,11 @@
 // ReSharper disable CheckNamespace
 // ReSharper disable InconsistentNaming
 
-using KurrentDB.Connect.Producers;
-using KurrentDB.Connect.Producers.Configuration;
-using KurrentDB.Connect.Readers;
-using KurrentDB.Connect.Readers.Configuration;
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
-using Kurrent.Toolkit;
+
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 
 namespace KurrentDB.Connectors.Infrastructure;
 

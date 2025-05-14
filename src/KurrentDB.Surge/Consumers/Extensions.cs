@@ -48,8 +48,10 @@ public static class ResolvedEventExtensions {
         // Handle backwards compatibility with old schema by injecting the legacy schema in the headers.
         // The legacy schema is generated using the event type and content type from the resolved event.
 
-        var schemaInfo = headers.ContainsKey(HeaderKeys.SchemaSubject)
-            ? SchemaInfo.FromHeaders(headers)
+#pragma warning disable CS0618 // Type or member is obsolete
+        var schemaInfo = headers.ContainsKey(HeaderKeys.SchemaSubject) || headers.ContainsKey(HeaderKeys.SchemaName)
+#pragma warning restore CS0618 // Type or member is obsolete
+	        ? SchemaInfo.FromHeaders(headers)
             : SchemaInfo.FromContentType(resolvedEvent.OriginalEvent.EventType,
                 resolvedEvent.OriginalEvent.IsJson
                     ? "application/json"

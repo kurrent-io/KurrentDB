@@ -6,7 +6,7 @@
 
 using Kurrent.Surge;
 using Kurrent.Surge.Processors;
-using Kurrent.Toolkit;
+
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Connectors.Infrastructure;

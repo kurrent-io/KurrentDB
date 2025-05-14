@@ -7,7 +7,7 @@ using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Management.Contracts.Queries;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors.Sinks;
-using Kurrent.Toolkit;
+
 using KurrentDB.Core.Services.Transport.Enumerators;
 using static System.StringComparison;
 

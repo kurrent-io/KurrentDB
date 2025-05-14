@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
@@ -9,7 +9,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<!-- Some packages that are configured with PrivateAssets in the plugin need to be referenced here -->
 		<PackageReference Include="Kurrent.Surge" Version="1.0.0-alpha.376" />
 		<PackageReference Include="Eventuous.Testing" Version="0.15.0" />
 		<PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
@@ -19,14 +18,6 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-<!--		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.15" />-->
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\..\KurrentDB\KurrentDB.csproj" />
-		<ProjectReference Include="..\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
-<!--		<ProjectReference Include="..\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" />-->
-		<ProjectReference Include="..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -39,18 +30,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Compile Remove="Planes\Management\ConnectorApplication\**" />
+	  <ProjectReference Include="..\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" />
+	  <ProjectReference Include="..\Connectors\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Surge\KurrentDB.Surge.csproj" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <EmbeddedResource Remove="Planes\Management\ConnectorApplication\**" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Remove="Planes\Management\ConnectorApplication\**" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Infrastructure\Surge\" />
-	</ItemGroup>
 </Project>

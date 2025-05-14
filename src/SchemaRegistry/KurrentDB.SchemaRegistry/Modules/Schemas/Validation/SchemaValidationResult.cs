@@ -14,7 +14,7 @@ public record SchemaValidationResult {
 
 public record SchemaValidationError {
     /// <summary>Gets the error message. </summary>
-    public string ErrorMessage { get; init; }
+    public required string ErrorMessage { get; init; }
 
     /// <summary>Gets the property name. </summary>
     public string? Property { get; init; }

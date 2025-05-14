@@ -9,12 +9,13 @@ using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Checkpoints;
 using Kurrent.Surge.Processors;
 using KurrentDB.Connect.Consumers;
+using KurrentDB.Connectors.Tests;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.Surge.Testing;
 using Microsoft.Extensions.Logging;
+using Identifiers = KurrentDB.Surge.Testing.Identifiers;
 
-namespace KurrentDB.Connectors.Tests.Infrastructure.Connect.Components.Processors;
+namespace KurrentDB.Surge.Tests.Components.Processors;
 
 [Trait("Category", "Integration")]
 public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
@@ -56,7 +57,7 @@ public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFi
 
             var actualEvents = await Fixture.Publisher.ReadFullStream(streamId).ToListAsync();
 
-            var actualRecords = await Task.WhenAll(actualEvents.Select((re, idx) => re.ToRecord(Fixture.SchemaSerializer.Deserialize, idx + 1).AsTask()));
+            var actualRecords = await Task.WhenAll(actualEvents.Select((re, idx) => re.ToRecord((data, headers) => Fixture.SchemaSerializer.Deserialize(data, new(headers)), idx + 1).AsTask()));
 
             processedRecords.Should()
                 .BeEquivalentTo(actualRecords, "because the processed records should be the same as the actual records");

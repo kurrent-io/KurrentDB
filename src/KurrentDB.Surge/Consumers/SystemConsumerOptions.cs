@@ -1,14 +1,12 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-// ReSharper disable CheckNamespace
-
-using KurrentDB.Core.Bus;
 using Kurrent.Surge.Configuration;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Configuration;
+using KurrentDB.Core.Bus;
 
-namespace KurrentDB.Connect.Consumers.Configuration;
+namespace KurrentDB.Surge.Consumers;
 
 public record SystemConsumerOptions : ConsumerOptions {
     public SystemConsumerOptions() {
@@ -19,5 +17,5 @@ public record SystemConsumerOptions : ConsumerOptions {
         Filter = ConsumeFilter.ExcludeSystemEvents();
     }
 
-    public IPublisher Publisher { get; init; }
+    public IPublisher Publisher { get; init; } = null!;
 }

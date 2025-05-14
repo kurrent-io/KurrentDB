@@ -4,5 +4,13 @@
 		<LangVersion>preview</LangVersion>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<Deterministic>true</Deterministic>
+		<InvariantGlobalization>true</InvariantGlobalization>
 	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Kurrent.Surge.Core" Version="1.0.0-alpha.376" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+	</ItemGroup>
 </Project>

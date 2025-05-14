@@ -3,8 +3,8 @@
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Kurrent.Surge;
 using KurrentDB.Core;
-using Kurrent.Toolkit;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Services;

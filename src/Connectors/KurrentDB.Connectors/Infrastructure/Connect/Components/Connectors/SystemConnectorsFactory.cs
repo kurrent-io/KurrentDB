@@ -4,7 +4,6 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-using KurrentDB.Connect.Processors;
 using KurrentDB.Core.Bus;
 using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Surge;
@@ -18,9 +17,10 @@ using Kurrent.Surge.Persistence.State;
 using Kurrent.Surge.Processors;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Transformers;
-using Kurrent.Toolkit;
+
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Surge.Processors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

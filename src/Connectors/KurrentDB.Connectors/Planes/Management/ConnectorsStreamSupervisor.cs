@@ -4,7 +4,7 @@
 using KurrentDB.Core;
 using Kurrent.Surge;
 using Kurrent.Surge.DataProtection;
-using Kurrent.Toolkit;
+
 using KurrentDB.Core.Bus;
 using Microsoft.Extensions.Logging;
 using static KurrentDB.Connectors.Planes.ConnectorsFeatureConventions.Streams;

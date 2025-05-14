@@ -4,9 +4,10 @@
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
 using KurrentDB.Connect.Consumers;
+using KurrentDB.Connectors.Tests;
 using KurrentDB.Core;
 
-namespace KurrentDB.Connectors.Tests.Infrastructure.Connect.Components.Producers;
+namespace KurrentDB.Surge.Tests.Components.Producers;
 
 [Trait("Category", "Integration")]
 public class SystemProducerTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
@@ -46,14 +47,14 @@ public class SystemProducerTests(ITestOutputHelper output, ConnectorsAssemblyFix
 		actualEvents.Should().HaveCount(numberOfMessages, "because there should be one event for each message sent");
 
 		for (var i = 0; i < actualEvents.Count; i++) {
-			var actualRecord  = await actualEvents[i].ToRecord(Fixture.SchemaSerializer.Deserialize, i + 1);
+			var actualRecord  = await actualEvents[i].ToRecord((data, headers) => Fixture.SchemaSerializer.Deserialize(data, new(headers)), i + 1);
 			var actualMessage = MapRecordToMessage(actualRecord);
 			var sentMessage   = messages[i];
 
 			actualMessage.Should().BeEquivalentTo(sentMessage,
 				options => options.WithTracing()
-                    .Excluding(x => x.Schema.Subject)
-                    .Excluding(x => x.Schema.SubjectMissing)
+                    .Excluding(x => x.Schema.SchemaName)
+                    .Excluding(x => x.Schema.SchemaNameMissing)
                     .ComparingByValue(typeof(PartitionKey)),
 				"because the actual message should be the same as the sent message");
 
