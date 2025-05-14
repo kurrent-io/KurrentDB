@@ -21,6 +21,7 @@ public interface IPersistentSubscriptionMessageParker {
 }
 
 public enum ParkReason {
+	None = 0,
 	ClientNak,
 	MaxRetries,
 }

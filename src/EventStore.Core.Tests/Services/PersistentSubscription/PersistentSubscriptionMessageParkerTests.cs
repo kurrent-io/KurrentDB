@@ -215,7 +215,7 @@ public class PersistentSubscriptionMessageParkerTests {
 
 		[Test]
 		public async Task should_have_one_parked_message() {
-			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", (_, __) => {
+			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", ParkReason.None, (_, __) => {
 				Assert.AreEqual(1, _messageParker.ParkedMessageCount);
 				Assert.AreEqual(EventTimeStamps[0], _messageParker.GetOldestParkedMessage);
 				_done.TrySetResult(true);
@@ -239,8 +239,8 @@ public class PersistentSubscriptionMessageParkerTests {
 
 			_parked = new TaskCompletionSource<bool>();
 			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
-			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", (_, __) => {
-				_messageParker.BeginParkMessage(CreateResolvedEvent(1, 100), "testing", (_, __) => {
+			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", ParkReason.None, (_, __) => {
+				_messageParker.BeginParkMessage(CreateResolvedEvent(1, 100), "testing", ParkReason.None, (_, __) => {
 					_parked.SetResult(true);
 				});
 			});
@@ -273,8 +273,8 @@ public class PersistentSubscriptionMessageParkerTests {
 
 			_replayParked = new TaskCompletionSource<bool>();
 			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
-			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", (_, __) => {
-				_messageParker.BeginParkMessage(CreateResolvedEvent(1, 100), "testing", (_, __) => {
+			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", ParkReason.None, (_, __) => {
+				_messageParker.BeginParkMessage(CreateResolvedEvent(1, 100), "testing", ParkReason.None, (_, __) => {
 					_messageParker.BeginMarkParkedMessagesReprocessed(2, null, true, () => {
 						_replayParked.SetResult(true);
 					});
@@ -286,7 +286,7 @@ public class PersistentSubscriptionMessageParkerTests {
 		public async Task should_have_one_parked_message() {
 			await _replayParked.Task;
 			_timeProvider.AddToUtcTime(new TimeSpan(0, 0, 1, 0));
-			_messageParker.BeginParkMessage(CreateResolvedEvent(2, 200), "testing", (_, __) => {
+			_messageParker.BeginParkMessage(CreateResolvedEvent(2, 200), "testing", ParkReason.None, (_, __) => {
 				Assert.AreEqual(1, _messageParker.ParkedMessageCount);
 				Assert.AreEqual(EventTimeStamps[2], _messageParker.GetOldestParkedMessage);
 				_done.TrySetResult(true);
