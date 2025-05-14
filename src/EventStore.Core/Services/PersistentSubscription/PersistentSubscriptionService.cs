@@ -1141,9 +1141,10 @@ public class PersistentSubscriptionService<TStreamId> :
 	public void Handle(ClientMessage.ReplayParkedMessages message) {
 		PersistentSubscription subscription;
 		var key = BuildSubscriptionGroupKey(message.EventStreamId, message.GroupName);
-		Log.Debug("Replaying parked messages for persistent subscription {subscriptionKey} {to}",
+		Log.Debug("Replaying parked messages for persistent subscription {subscriptionKey} {to}. Requested by {user}",
 			key,
-			message.StopAt.HasValue ? $" (To: '{message.StopAt.ToString()}')" : " (All)");
+			message.StopAt.HasValue ? $" (To: '{message.StopAt.ToString()}')" : " (All)",
+			message.User?.Identity?.Name);
 
 		if (message.StopAt.HasValue && message.StopAt.Value < 0) {
 			message.Envelope.ReplyWith(new ClientMessage.ReplayMessagesReceived(message.CorrelationId,
