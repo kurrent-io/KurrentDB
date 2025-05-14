@@ -20,9 +20,9 @@
 		<PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
+		</PackageReference>		
 	</ItemGroup>
-
+	
 	<ItemGroup>
 		<Using Include="Xunit" />
 	</ItemGroup>
@@ -31,6 +31,13 @@
 		<ProjectReference Include="..\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" />
 		<ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
 		<ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="xunit.runner.json" />
+	  <Content Include="xunit.runner.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
 	</ItemGroup>
 
 </Project>

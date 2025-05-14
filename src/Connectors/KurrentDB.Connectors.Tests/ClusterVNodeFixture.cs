@@ -41,6 +41,7 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public Dictionary<string, string?>? Configuration     { get; init; }
     public Func<Task>                   OnSetup           { get; init; } = () => Task.CompletedTask;
     public Func<Task>                   OnTearDown        { get; init; } = () => Task.CompletedTask;
+    public bool                         UseRandomPort     { get; init; }
 
     public ClusterVNodeOptions NodeOptions  { get; private set; } = null!;
     public IServiceProvider    NodeServices { get; private set; } = null!;
@@ -51,7 +52,8 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public async Task InitializeAsync() {
         var (options, services) = await ClusterVNodeApp.Start(
 	        configureServices: ConfigureServices,
-	        overrides: Configuration
+	        overrides: Configuration,
+	        useRandomPort: UseRandomPort
 	    );
 
         NodeServices = services;

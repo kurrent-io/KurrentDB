@@ -14,6 +14,7 @@ internal class FakeVirtualStreamReader(string streamName, IReadOnlyList<Resolved
 
 		ReadStreamResult result;
 		long nextEventNumber, lastEventNumber, lastPosition;
+		bool isEndOfStream;
 
 		var readEvents = events
 			.Skip((int)msg.FromEventNumber)
@@ -26,11 +27,13 @@ internal class FakeVirtualStreamReader(string streamName, IReadOnlyList<Resolved
 			nextEventNumber = -1;
 			lastEventNumber = ExpectedVersion.NoStream;
 			lastPosition = -1;
+			isEndOfStream = true;
 		} else {
 			result = ReadStreamResult.Success;
 			lastEventNumber = Array.IndexOf(readEvents, lastEvent);
 			nextEventNumber =  lastEventNumber + 1;
 			lastPosition = lastEvent.Value.Event.TransactionPosition;
+			isEndOfStream = nextEventNumber == events.Count;
 		}
 
 		return ValueTask.FromResult(new ClientMessage.ReadStreamEventsForwardCompleted(
@@ -45,7 +48,7 @@ internal class FakeVirtualStreamReader(string streamName, IReadOnlyList<Resolved
 			error: string.Empty,
 			nextEventNumber: nextEventNumber,
 			lastEventNumber: lastEventNumber,
-			isEndOfStream: nextEventNumber == events.Count,
+			isEndOfStream: isEndOfStream,
 			tfLastCommitPosition: lastPosition));
 	}
 

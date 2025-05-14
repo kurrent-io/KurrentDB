@@ -8,11 +8,11 @@ namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
 public abstract class SecondaryIndexingPluginIntegrationTest {
 	protected SecondaryIndexingFixture Fixture { get; }
 
-	protected string RandomStreamName() => $"test-{Guid.NewGuid()}";
+	protected static string RandomStreamName() => $"test-{Guid.NewGuid()}";
 
 	protected static string IndexStreamName => SecondaryIndexingFixture.IndexStreamName;
 
-	protected SecondaryIndexingPluginIntegrationTest(ITestOutputHelper output, SecondaryIndexingFixture fixture) {
+	protected SecondaryIndexingPluginIntegrationTest(SecondaryIndexingFixture fixture, ITestOutputHelper output) {
 		Fixture = fixture;
 		Fixture.CaptureTestRun(output);
 	}
