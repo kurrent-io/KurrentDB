@@ -29,10 +29,10 @@ public abstract class SecondaryIndexingPluginDisabledIntegrationTests<TStreamId>
 
 	[Fact]
 	public async Task IndexStreamIsNotSetUp_ForDisabledPlugin() {
-		var appendResult = await fixture.AppendToStream(RandomStreamName(), _expectedEventData);
+		var result = await fixture.AppendToStream(RandomStreamName(), _expectedEventData);
 
-		var readResult = await fixture.ReadUntil(IndexStreamName, appendResult.Position);
-
-		Assert.Empty(readResult);
+		await Assert.ThrowsAsync<ReadResponseException.StreamNotFound>(async () =>
+			await fixture.ReadUntil(IndexStreamName, result.Position, TimeSpan.FromMilliseconds(250))
+		);
 	}
 }

@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Diagnostics;
 using System.Text;
 using KurrentDB.Core;
 using KurrentDB.Core.Configuration.Sources;
@@ -13,8 +12,6 @@ using KurrentDB.SecondaryIndexing.Indices;
 using KurrentDB.SecondaryIndexing.Tests.Indices;
 using KurrentDB.System.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Polly;
-using Polly.Retry;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using StreamRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision;
 
@@ -34,6 +31,8 @@ public class SecondaryIndexingDisabledFixture() : SecondaryIndexingFixture(false
 
 public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	public const string IndexStreamName = "$idx-dummy";
+	private const string PluginConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing";
+	private const string OptionsConfigPrefix = $"{PluginConfigPrefix}:Options";
 
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
 		ConfigureServices = services => {
@@ -42,10 +41,13 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		UseRandomPort = true;
 
-		if (isSecondaryIndexingPluginEnabled)
+		if (isSecondaryIndexingPluginEnabled) {
 			Configuration = new Dictionary<string, string?> {
-				{ $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled", "true" }
+				{ $"{PluginConfigPrefix}:Enabled", "true" },
+				{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitBatchSize)}", "2" },
+				{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitDelayMs)}", "100" },
 			};
+		}
 	}
 
 	public IAsyncEnumerable<ResolvedEvent> ReadStream(string streamName, CancellationToken ct = default) =>
@@ -57,12 +59,13 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) {
-		timeout ??= TimeSpan.FromSeconds(10);
+		timeout ??= TimeSpan.FromMilliseconds(5000);
+		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
 		var events = new List<ResolvedEvent>();
 		var reachedPosition = false;
-		var timer = new Stopwatch();
-		timer.Start();
+
+		ReadResponseException.StreamNotFound? streamNotFound = null;
 
 		do {
 			try {
@@ -70,9 +73,12 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition <= (long)position.CommitPosition;
 			} catch (ReadResponseException.StreamNotFound ex) {
-				Console.WriteLine(ex);
+				streamNotFound = ex;
 			}
-		} while (!reachedPosition && timer.Elapsed <= timeout);
+		} while (!reachedPosition && endTime < DateTime.UtcNow);
+
+		if (events.Count == 0 && streamNotFound != null)
+			throw streamNotFound;
 
 		return events;
 	}

@@ -15,7 +15,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace KurrentDB.SecondaryIndexing;
 
-public interface ISecondaryIndexingPlugin : ISubsystemsPlugin {
+public interface ISecondaryIndexingPlugin : ISubsystemsPlugin;
+
+public sealed class SecondaryIndexingPluginOptions {
+	public int? CheckpointCommitBatchSize { get; set; }
+	public uint? CheckpointCommitDelayMs { get; set; }
+	public uint? CheckpointIntervalMultiplier { get; set; }
 }
 
 public static class SecondaryIndexingPluginFactory {
@@ -27,11 +32,15 @@ internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStr
 	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
 	[Experimental("SECONDARYINDEXING")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
+		var options = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
+			.Get<SecondaryIndexingPluginOptions>();
+
 		services.AddHostedService(sp =>
 			new SecondaryIndexBuilder(
 				sp.GetRequiredService<ISecondaryIndex>(),
 				sp.GetRequiredService<IPublisher>(),
-				sp.GetRequiredService<ISubscriber>()
+				sp.GetRequiredService<ISubscriber>(),
+				options
 			)
 		);
 	}

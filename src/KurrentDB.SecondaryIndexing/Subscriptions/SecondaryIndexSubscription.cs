@@ -13,12 +13,13 @@ namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
 public class SecondaryIndexSubscription(
 	IPublisher publisher,
-	ISecondaryIndex index
+	ISecondaryIndex index,
+	SecondaryIndexingPluginOptions? options
 ) : IAsyncDisposable {
 	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
-	private const int CheckpointCommitBatchSize = 50000;
-	private const uint CheckpointCommitDelayMs = 10000;
-	private const uint DefaultCheckpointIntervalMultiplier = 1000;
+	private readonly int _checkpointCommitBatchSize = options?.CheckpointCommitBatchSize ?? 50000;
+	private readonly uint _checkpointCommitDelayMs = options?.CheckpointCommitDelayMs ?? 10000;
+	private readonly uint _checkpointIntervalMultiplier = options?.CheckpointIntervalMultiplier ?? 1000;
 
 	private readonly CancellationTokenSource _cts = new();
 	private Enumerator.AllSubscriptionFiltered? _subscription;
@@ -26,13 +27,14 @@ public class SecondaryIndexSubscription(
 	private SecondaryIndexCheckpointTracker? _checkpointTracker;
 
 	public async ValueTask Subscribe(CancellationToken cancellationToken) {
+
 		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
 		var position = await index.GetLastPosition(linkedCts.Token);
 		var startFrom = position == null ? Position.Start : Position.FromInt64((long)position, (long)position);
 
 		_checkpointTracker = new SecondaryIndexCheckpointTracker(
-			CheckpointCommitBatchSize,
-			CheckpointCommitDelayMs,
+			_checkpointCommitBatchSize,
+			_checkpointCommitDelayMs,
 			async ct => await index.Processor.Commit(ct)
 		);
 		_checkpointTracker.Start(linkedCts.Token);
@@ -46,7 +48,7 @@ public class SecondaryIndexSubscription(
 			user: SystemAccounts.System,
 			requiresLeader: false,
 			maxSearchWindow: null,
-			checkpointIntervalMultiplier: DefaultCheckpointIntervalMultiplier,
+			checkpointIntervalMultiplier: _checkpointIntervalMultiplier,
 			cancellationToken: linkedCts.Token
 		);
 

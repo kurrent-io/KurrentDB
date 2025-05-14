@@ -20,8 +20,8 @@ public class SecondaryIndexBuilder
 	public IEnumerable<IVirtualStreamReader> IndexVirtualStreamReaders => _index.Readers;
 
 	[Experimental("SECONDARYINDEXING")]
-	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber) {
-		_subscription = new SecondaryIndexSubscription(publisher, index);
+	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber, SecondaryIndexingPluginOptions? options = null) {
+		_subscription = new SecondaryIndexSubscription(publisher, index, options);
 		_index = index;
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);

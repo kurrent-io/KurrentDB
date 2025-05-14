@@ -39,7 +39,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
 
     public async Task<(ClusterVNodeOptions Options, IServiceProvider Services)> Start(TimeSpan? readinessTimeout = null, Dictionary<string, string?>? overrides = null, Action<IServiceCollection>? configureServices = null, bool useRandomPort = false) {
         var settings = overrides is not null
-            ? DefaultSettings.With(x => overrides.ForEach((key, value) => x[key] = value))
+            ? DefaultSettings.ToDictionary().With(x => overrides.ForEach((key, value) => x[key] = value))
             : DefaultSettings;
 
         var options = GetClusterVNodeOptions(settings);
