@@ -94,7 +94,7 @@ Add the repository to your system according to the [instructions on Cloudsmith](
 Then, install the package:
 
 ```bash
-apt-get install eventstoredb-ee=24.10.4
+apt-get install eventstoredb-ee=24.10.5
 ```
 
 #### Uninstall with apt-get
@@ -152,7 +152,7 @@ Add the repository to your system according to the [instructions on Cloudsmith](
 Then, install the package:
 
 ```bash
-yum install eventstoredb-ee-24.10.4-1.x86_64
+yum install eventstoredb-ee-24.10.5-1.x86_64
 ```
 
 #### Uninstall with yum
@@ -199,7 +199,7 @@ choco source add -n eventstore-eventstore -s https://nuget.eventstore.com/events
 You can install EventStoreDB through Chocolatey:
 
 ```powershell
-choco install eventstoredb-ee -s eventstore-eventstore --version 24.10.4
+choco install eventstoredb-ee -s eventstore-eventstore --version 24.10.5
 ```
 
 EventStoreDB can then be run with `EventStore.ClusterNode.exe`:

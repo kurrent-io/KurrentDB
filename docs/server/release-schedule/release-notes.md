@@ -6,11 +6,40 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
-## [24.10.4](https://github.com/EventStore/EventStore/releases/tag/v24.10.4)
+## [24.10.5](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.5)
+
+6 May 2025
+
+### Fix filtered $all subscriptions checkpoint behaviour (PR [#4893](https://github.com/kurrent-io/KurrentDB/pull/4893) and [#4990](https://github.com/kurrent-io/KurrentDB/pull/4990))
+
+Fixed an issue with filtered subscriptions where it was possible to incorrectly send a checkpoint of `(ulong.max, ulong.max)` to a filtered $all subscription if:
+
+* the filtered subscription started from the beginning of the database and
+* none of the events in the database matched the filter and
+* the checkpoint interval was greater than the number of events in the database.
+
+The checkpoint will now be updated to a valid value before sending it when transitioning to live.
+
+Fixed a regression where filtered $all subscriptions could send an incorrect checkpoint equal to the end position of the log when an empty page was read. This could cause the subscription to miss an event if it was resumed using only the commit position.
+
+### Fix metrics not reporting faulted projections (PR [#5022](https://github.com/kurrent-io/KurrentDB/pull/5021))
+
+Fixed the projection metrics not reporting the projection status when it had a compound state (e.g., `faulted (enabled)`).
+
+### Add metrics for Connectors (PR [#5007](https://github.com/kurrent-io/KurrentDB/pull/5007))
+
+Added `Kurrent`, `Kurrent.Connectors` and `Kurrent.Connectors.Sinks` meters.
+
+### Add checkpoint to 'CaughtUp' and 'FellBehind' messages (PR [#5034](https://github.com/kurrent-io/KurrentDB/pull/5034))
+
+Added the checkpoint and timestamp to `CaughtUp` and `FellBehind` messages in the streams proto.
+This change is backwards compatible.
+
+## [24.10.4](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.4)
 
 6 March 2025
 
-### Reduce allocations when projections validate JSON (PR [#4881](https://github.com/EventStore/EventStore/pull/4881))
+### Reduce allocations when projections validate JSON (PR [#4881](https://github.com/kurrent-io/KurrentDB/pull/4881))
 
 This reduces memory pressure when running projections, especially on databases with larger events.
 
@@ -20,7 +49,7 @@ Previously unquoted keys, e.g., `{ foo : "bar" }`, were erroneously considered v
 
 Projections won’t fault after an upgrade if they previously emitted an event based on a now-invalid event.
 
-### Add an option to limit the size of events appended over gRPC and HTTP (PR [#4882](https://github.com/EventStore/EventStore/pull/4882))
+### Add an option to limit the size of events appended over gRPC and HTTP (PR [#4882](https://github.com/kurrent-io/KurrentDB/pull/4882))
 
 The `MaxAppendEventSize` option has been added to limit the size of individual events in an append request over gRPC and HTTP. The default for this new option is `int.MaxValue` (no limit). Events appended using the AtomPub HTTP API still may not exceed 4 MB. Events written by internal systems or services, such as projections, are unaffected.
 
@@ -30,7 +59,7 @@ A new RPC exception `maximum-append-event-size-exceeded` was added as part of th
 
 **Note:** The calculation of event size for events appended over gRPC was fixed as part of this, which could result in a change in behaviour for appending batches of events over gRPC. Previously, the event size was calculated off of the event's data, excluding the size of the event's metadata or event type. This means that append requests which previously did not trip the `MaxAppendSize` check could fail on 24.10.4.
 
-### Add an option to limit the size of the projection state (PR [#4884](https://github.com/EventStore/EventStore/pull/4884))
+### Add an option to limit the size of the projection state (PR [#4884](https://github.com/kurrent-io/KurrentDB/pull/4884))
 
 The `MaxProjectionStateSize` option has been added to configure the maximum size of a projection's state before the projection should fault. This defaults to `int.MaxValue` (no limit).
 
@@ -38,7 +67,7 @@ A projection will now fault if the total size of the projection’s state and re
 
 **Note:** Sometimes, a projection’s state and result will be set to the same value and written to the projection state event twice. This can result in the `MaxProjectionStateSize` being exceeded even when the projection state is half the configured maximum size.
 
-## [24.10.3](https://github.com/EventStore/EventStore/releases/tag/v24.10.3)
+## [24.10.3](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.3)
 
 27 February 2025
 
@@ -50,7 +79,7 @@ Before this fix, projection statistics could not be retrieved via gRPC if one of
 
 Prior to this fix, if a gRPC write was pending at the time of a leader election, the gRPC call could be terminated successfully instead of in a failed state. On the dotnet client, this results in the Append Task call hanging indefinitely; other clients may also be affected.
 
-## [24.10.2](https://github.com/EventStore/EventStore/releases/tag/v24.10.2)
+## [24.10.2](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.2)
 
 13 February 2025
 
@@ -105,7 +134,7 @@ A count and offset can now be specified when getting all persistent subscription
 
 The response of `/subscriptions` (without the query string) is unchanged.
 
-## [24.10.1](https://github.com/EventStore/EventStore/releases/tag/v24.10.1)
+## [24.10.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.1)
 
 18 December 2024
 
