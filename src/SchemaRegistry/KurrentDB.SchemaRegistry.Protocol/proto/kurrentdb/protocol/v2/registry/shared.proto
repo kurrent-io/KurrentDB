@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.registry.v2;
+
+option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
+option java_package        = "io.kurrentdb.protocol.registry.v2";
+option java_multiple_files = true;
+
+// Represents the format of the schema data.
+enum SchemaDataFormat {
+  // Default value, should not be used.
+  SCHEMA_DATA_FORMAT_UNSPECIFIED = 0;
+  SCHEMA_DATA_FORMAT_JSON        = 1;  // application/json
+  SCHEMA_DATA_FORMAT_PROTOBUF    = 2;  // application/vnd.google.protobuf
+  SCHEMA_DATA_FORMAT_AVRO        = 3;  // application/vnd.apache.avro+json
+  SCHEMA_DATA_FORMAT_BYTES       = 4;  // application/octet-stream
+}
+
+// Schema compatibility modes define how schema changes are validated against previous versions.
+enum CompatibilityMode {
+  // Default value, should not be used.
+  COMPATIBILITY_MODE_UNSPECIFIED = 0;
+
+  // Backward compatibility allows new schemas to be used with data written by previous schemas.
+  // Example: If schema version 1 has a field "name" and schema version 2 adds a new field "age",
+  // data written with schema version 1 can still be read using schema version 2.
+  // Example of invalid schema: If schema version 1 has a field "name" and schema version 2 removes the "name" field,
+  // data written with schema version 1 cannot be read using schema version 2.
+  COMPATIBILITY_MODE_BACKWARD = 1;
+
+  // Forward compatibility allows data written by new schemas to be read by previous schemas.
+  // Example: If schema version 1 has a field "name" and schema version 2 adds a new field "age",
+  // data written with schema version 2 can still be read using schema version 1, ignoring the "age" field.
+  // Example of invalid schema: If schema version 1 has a field "name" and schema version 2 changes the "name" field type,
+  // data written with schema version 2 cannot be read using schema version 1.
+  COMPATIBILITY_MODE_FORWARD = 2;
+
+  // Full compatibility ensures both backward and forward compatibility.
+  // This mode guarantees that new schemas can read data written by old schemas,
+  // and old schemas can read data written by new schemas.
+  COMPATIBILITY_MODE_FULL = 3;
+
+  // Disables compatibility checks, allowing any kind of schema change.
+  // This mode should be used with caution, as it may lead to compatibility issues.
+  COMPATIBILITY_MODE_NONE = 4;
+}

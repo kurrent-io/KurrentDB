@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- It must be `TargetFrameworks` plural to work on macos -->
+    <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
+    <!--suppress MsbuildTargetFrameworkTagInspection-->
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.4" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Framework\src\Kurrent.Surge.Core\Kurrent.Surge.Core.csproj" />
+    <ProjectReference Include="..\..\..\Framework\src\Kurrent.Surge\Kurrent.Surge.csproj" />
+    <ProjectReference Include="..\..\..\Toolkit\src\Kurrent.Surge.Testing.Containers.KurrentDB\Kurrent.Surge.Testing.Containers.KurrentDB.csproj" />
+    <ProjectReference Include="..\..\..\Toolkit\src\Kurrent.Surge.Testing.Messages\Kurrent.Surge.Testing.Messages.csproj" />
+    <ProjectReference Include="..\..\src\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
+  </ItemGroup>
+</Project>

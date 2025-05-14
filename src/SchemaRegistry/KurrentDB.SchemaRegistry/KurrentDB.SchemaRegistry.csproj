@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- It must be `TargetFrameworks` plural to work on macos -->
+    <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
+    <!--suppress MsbuildTargetFrameworkTagInspection-->
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Eventuous.Application" Version="0.15.1" />
+    <PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.1" />
+    <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.1" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.15" />
+    <PackageReference Include="NJsonSchema" Version="11.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Framework\src\Kurrent.Surge.Core\Kurrent.Surge.Core.csproj" />
+    <ProjectReference Include="..\..\..\Framework\src\Kurrent.Surge.DuckDB\Kurrent.Surge.DuckDB.csproj" />
+    <ProjectReference Include="..\KurrentDB.SchemaRegistry.Protocol\KurrentDB.SchemaRegistry.Protocol.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Kurrent.Surge" />
+    <Using Include="Microsoft.Extensions.Logging" />
+    <Using Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+</Project>

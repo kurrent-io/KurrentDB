@@ -1,0 +1,21 @@
+# For details on buf.yaml configuration, visit https://buf.build/docs/configuration/v2/buf-yaml
+version: v2
+
+modules:
+  - path: proto
+
+# A list of dependencies on modules outside of the workspace. They're
+# shared by all modules, and the manifest is stored in the buf.lock file.
+#
+# Dependencies between the modules in the workspace are automatically handled
+# by Buf and shouldn't be declared here.
+#deps:
+#  - buf.build/google/googleapis
+#  - buf.build/grpc/grpc
+
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - PACKAGE
