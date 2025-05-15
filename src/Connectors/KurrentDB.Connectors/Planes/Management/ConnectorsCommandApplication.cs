@@ -99,7 +99,7 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
                 or ConnectorState.Activating)
                 throw new DomainException($"Connector {connector.Id} already running...");
 
-            connector.EnsureStopped();
+            // connector.EnsureStopped();
 
             return [
                 new ConnectorActivating {
@@ -121,8 +121,8 @@ public class ConnectorsCommandApplication : EntityApplication<ConnectorEntity> {
                 new ConnectorActivating {
                     ConnectorId = connector.Id,
                     Settings    = { connector.CurrentRevision.Settings },
-                    StartFrom   = cmd.StartFrom ?? new StartFromPosition {
-	                    LogPosition = 0
+                    StartFrom = cmd.StartFrom ?? new StartFromPosition {
+                        LogPosition = 0
                     }, // reset to beginning, this is the big difference from StartConnector
                     Timestamp   = time.GetUtcNow().ToTimestamp()
                 }
