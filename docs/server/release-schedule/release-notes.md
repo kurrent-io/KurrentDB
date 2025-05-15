@@ -6,6 +6,30 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.5](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.5)
+
+14 March 2025
+
+### Add data protection to connectors
+
+We've implemented a data protection system to secure sensitive connector
+configurations. All connectors now use envelope encryption to protect sensitive
+data like passwords and tokens, ensuring secure transmission. Setup is simple,
+with token-based protection that can be configured directly or through separate
+files for added security in production.
+
+### Include Deleted Connectors in Results
+
+Previously, deleted connectors were unintentionally omitted from the results, leading to incomplete data visibility. This fix ensures that both deleted and non-deleted connectors are properly included where applicable.
+
+### Added validation for Serilog connector configuration
+
+Added validation for Serilog configuration during setup or changes. This helps catch errors early and prevents issues with logging functionality.
+
+### Ensure Reset Connector Command Starts at Offset 0
+
+Previously, executing the reset connector command did not correctly reset the offset to zero, leading to inconsistent data replay. This fix ensures the connector starts from the beginning as expected when reset.
+
 ## [24.10.4](https://github.com/EventStore/EventStore/releases/tag/v24.10.4)
 
 6 March 2025
