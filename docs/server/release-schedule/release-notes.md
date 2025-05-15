@@ -24,7 +24,7 @@ The checkpoint will now be updated to a valid value before sending it when trans
 
 Fixed the projection metrics not reporting the projection status when it had a compound state (e.g., `faulted (enabled)`).
 
-### Persistent Subscriptions: Add additional metrics for parked messages (PR [#5062](https://github.com/kurrent-io/KurrentDB/pull/5062)
+### Persistent Subscriptions: Add additional metrics for parked messages (PR [#5062](https://github.com/kurrent-io/KurrentDB/pull/5062))
 
 Added two persistent subscription metrics to count the number of parked message requests and replays.
 
