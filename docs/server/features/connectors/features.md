@@ -291,6 +291,10 @@ To enable data protection, configure the data protection settings in your
 configuration file. You can provide an encryption token using either a token
 file or by specifying the token directly in the configuration.
 
+::: warning
+Once the token is set, it is permanent and must never be changed. The same token is required for all connectors, and changing it will make all previously encrypted data inaccessible. For this reason, you should treat the token as a permanent secret and never attempt to change it after initial setup.
+:::
+
 #### Using a Token File
 ```yaml
 Connectors:
