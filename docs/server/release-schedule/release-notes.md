@@ -20,8 +20,6 @@ Fixed an issue with filtered subscriptions where it was possible to incorrectly 
 
 The checkpoint will now be updated to a valid value before sending it when transitioning to live.
 
-Fixed a regression where filtered $all subscriptions could send an incorrect checkpoint equal to the end position of the log when an empty page was read. This could cause the subscription to miss an event if it was resumed using only the commit position.
-
 ### Fix metrics not reporting faulted projections (PR [#5022](https://github.com/kurrent-io/KurrentDB/pull/5021))
 
 Fixed the projection metrics not reporting the projection status when it had a compound state (e.g., `faulted (enabled)`).
