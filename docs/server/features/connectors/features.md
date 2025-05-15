@@ -276,3 +276,66 @@ For more details on customizing these settings, refer to the [Resilience Configu
 ::: note
 Some connectors have their own resilience mechanisms and configurations. Refer to the specific connector's page for details.
 :::
+
+## Data Protection
+
+EventStoreDB Connectors protect sensitive configuration fields using envelope encryption to secure confidential information such as passwords and access tokens.
+
+When you configure a connector, the system encrypts sensitive data using Data Encryption Keys (DEKs), which are then wrapped (encrypted) using a master key based on your provided token. The encrypted data is stored securely in EventStoreDB rather than in plaintext.
+
+Refer to each connector's [individual documentation](./sinks/) to see which fields are considered sensitive and protected.
+
+### Configuring Data Protection
+
+To enable data protection, configure the data protection settings in your
+configuration file. You can provide an encryption token using either a token
+file or by specifying the token directly in the configuration.
+
+::: warning
+Once the token is set, it is permanent and must never be changed. The same token is required for all connectors, and changing it will make all previously encrypted data inaccessible. For this reason, you should treat the token as a permanent secret and never attempt to change it after initial setup.
+:::
+
+#### Using a Token File
+```yaml
+Connectors:
+  Enabled: true
+  DataProtection:
+    TokenFile: "/path/to/token/file"
+```
+
+#### Using a Token Directly
+```yaml
+Connectors:
+  Enabled: true
+  DataProtection:
+    Token: "<your-secret-token>"
+```
+
+::: note
+If you provide both `Token` and `TokenFile`, the system will use the token file and ignore the `Token` setting.
+:::
+
+### Key Vault Configuration
+
+EventStoreDB Connectors currently only supports the Surge key vault for storing
+encryption keys:
+
+The Surge key vault is EventStoreDB's native key storage mechanism that stores
+encryption keys directly within EventStoreDB itself. Rather than requiring a
+separate external key management system, Surge stores the encrypted keys in
+internal system streams. More key vault options will be available in the future.
+
+```yaml {6-8}
+Connectors:
+  Enabled: true
+  DataProtection:
+    Token: "<your-secret-token>"
+    
+    KeyVaults:
+      Surge:
+        KeyMaxHistory: 10
+```
+
+::: tip
+The default value for `KeyMaxHistory` is `-1`, which means unlimited key history. You can set it to a specific number to limit the number of historical keys stored.
+:::

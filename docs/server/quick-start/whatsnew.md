@@ -7,10 +7,12 @@ order: 2
 ## New features
 
 * Connectors:
+    * Data Protection
     * Kafka
     * MongoDB
     * RabbitMQ
     * HTTP
+    * Serilog
 * Auto-scavenge: Schedule and execute scavenges automatically across a cluster.
 * Stream Policy: Define stream access policies based on stream prefixes rather than using stream ACLs.
 * Encryption-at-rest: Encrypt EventStoreDB chunks to secure them against attackers with file access to the database.
@@ -23,6 +25,22 @@ The Connectors feature is enabled by default.
 You can use the HTTP sink without a license, but a license is required for all other connectors.
 
 Refer to the [documentation](../features/connectors/README.md) for instructions on setting up and configuring connectors and sinks.
+
+#### Data Protection
+
+We've introduced a comprehensive data protection system to enhance the security of your sensitive connector configurations.
+
+All connectors now use envelope encryption to automatically protect sensitive data such as passwords and tokens using industry-standard encryption techniques. This ensures your credentials remain secure during transmission.
+
+Setup is straightforward with token-based protection requiring minimal configuration. You can provide tokens directly in your configuration or via separate files for enhanced security in production environments.
+
+We've integrated a native Surge key vault that stores encryption keys directly within EventStoreDB system streams but we will support more key vaults in the future.
+
+See the [Data Protection documentation](../features/connectors/features.md#data-protection) for complete setup instructions.
+
+::: note
+Data protection is available as from 24.10.5 and later.
+:::
 
 #### Kafka sink
 

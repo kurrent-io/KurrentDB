@@ -260,17 +260,19 @@ eventstore_kestrel_connections 1 1688070655500
 
 Persistent subscription metrics track the statistics for the persistent subscriptions.
 
-| Time series                                                                                                                  | Type                     | Description                                                    |
-|:-----------------------------------------------------------------------------------------------------------------------------|:-------------------------|:---------------------------------------------------------------|
-| `eventstore_persistent_sub_connections`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                        | [Gauge](#common-types)   | Number of connections                                          |
-| `eventstore_persistent_sub_parked_messages`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                    | [Gauge](#common-types)   | Number of parked messages                                      |
-| `eventstore_persistent_sub_in_flight_messages`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                 | [Gauge](#common-types)   | Number of messages in flight                                   |
-| `eventstore_persistent_sub_oldest_parked_message_seconds`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`      | [Gauge](#common-types)   | Oldest parked message age in seconds                           |
-| `eventstore_persistent_sub_items_processed`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                    | [Counter](#common-types) | Total items processed                                          |
-| `eventstore_persistent_sub_last_known_event_number`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`            | [Counter](#common-types) | Last known event number (streams other than `$all`)            |
-| `eventstore_persistent_sub_last_known_event_commit_position`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`   | [Counter](#common-types) | Last known event's commit position (`$all` stream only)        |
-| `eventstore_persistent_sub_checkpointed_event_number`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`          | [Counter](#common-types) | Last checkpointed event number (streams other than `$all)`     |
-| `eventstore_persistent_sub_checkpointed_event_commit_position`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}` | [Counter](#common-types) | Last checkpointed event's commit position (`$all` stream only) |
+| Time series                                                                                                                     | Type                     | Description                                                                 |
+|:--------------------------------------------------------------------------------------------------------------------------------|:-------------------------|:----------------------------------------------------------------------------|
+| `eventstore_persistent_sub_connections`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                           | [Gauge](#common-types)   | Number of connections                                                       |
+| `eventstore_persistent_sub_parked_messages`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                       | [Gauge](#common-types)   | Number of parked messages                                                   |
+| `eventstore_persistent_sub_in_flight_messages`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                    | [Gauge](#common-types)   | Number of messages in flight                                                |
+| `eventstore_persistent_sub_oldest_parked_message_seconds`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`         | [Gauge](#common-types)   | Oldest parked message age in seconds                                        |
+| `eventstore_persistent_sub_items_processed`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                       | [Counter](#common-types) | Total items processed                                                       |
+| `eventstore_persistent_sub_last_known_event_number`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`               | [Counter](#common-types) | Last known event number (streams other than `$all`)                         |
+| `eventstore_persistent_sub_last_known_event_commit_position`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`      | [Counter](#common-types) | Last known event's commit position (`$all` stream only)                     |
+| `eventstore_persistent_sub_checkpointed_event_number`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`             | [Counter](#common-types) | Last checkpointed event number (streams other than `$all)`                  |
+| `eventstore_persistent_sub_checkpointed_event_commit_position`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`    | [Counter](#common-types) | Last checkpointed event's commit position (`$all` stream only)              |
+| `eventstore_persistent_sub_park_message_requests`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>,reason=<REASON>}` | [Counter](#common-types) | Count of Park Message requests. Reason can be `client-nak` or `max-retries` |
+| `eventstore_persistent_sub_parked_message_replays`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                | [Counter](#common-types) | Count of Parked Message replay requests                                     |
 
 Example configuration:
 
