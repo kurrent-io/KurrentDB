@@ -21,6 +21,7 @@ using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Connect.Consumers;
 using KurrentDB.Connectors;
 using KurrentDB.Connectors.Infrastructure.Connect.Components;
+using KurrentDB.Surge;
 using KurrentDB.Surge.Consumers;
 using KurrentDB.Surge.Processors;
 using KurrentDB.Surge.Producers;

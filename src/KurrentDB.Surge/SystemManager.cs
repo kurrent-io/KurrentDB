@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Surge;
-
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -10,7 +9,7 @@ using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 using StreamMetadata = Kurrent.Surge.StreamMetadata;
 using StreamRevision = Kurrent.Surge.StreamRevision;
 
-namespace KurrentDB.Connectors.Infrastructure.Connect.Components;
+namespace KurrentDB.Surge;
 
 public class SystemManager : IManager {
     public SystemManager(IPublisher publisher) => Client = publisher;
@@ -106,7 +105,7 @@ public class SystemManager : IManager {
 
             return (metadata, StreamRevision.From(result.Revision));
         } else {
-            var metaRevision = EventStore.Client.StreamRevision.FromInt64(expectedRevision);
+            var metaRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision.FromInt64(expectedRevision);
             var result       = await Client.SetStreamMetadata(stream, meta, metaRevision.ToInt64(), cancellationToken: cancellationToken).ConfigureAwait(false);
             return (metadata, StreamRevision.From(result.Revision));
         }

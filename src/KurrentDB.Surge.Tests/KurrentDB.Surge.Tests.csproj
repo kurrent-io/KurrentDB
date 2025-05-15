@@ -10,7 +10,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="Kurrent.Surge" Version="1.0.0-alpha.376" />
-		<PackageReference Include="Eventuous.Testing" Version="0.15.0" />
 		<PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
 		<PackageReference Include="xunit" Version="2.9.3" />
