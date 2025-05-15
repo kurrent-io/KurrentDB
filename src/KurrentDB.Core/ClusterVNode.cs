@@ -837,7 +837,7 @@ public class ClusterVNode<TStreamId> :
 
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(indexCommitterService);
 		_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(indexCommitterService);
-		_mainBus.Subscribe<StorageMessage.CommitAck>(indexCommitterService);
+		_mainBus.Subscribe<StorageMessage.CommitChased>(indexCommitterService);
 		_mainBus.Subscribe<ClientMessage.MergeIndexes>(indexCommitterService);
 
 		var chaser = new TFChunkChaser(
@@ -1129,7 +1129,7 @@ public class ClusterVNode<TStreamId> :
 
 		_mainBus.Subscribe<StorageMessage.AlreadyCommitted>(requestManagement);
 
-		_mainBus.Subscribe<StorageMessage.PrepareAck>(requestManagement);
+		_mainBus.Subscribe<StorageMessage.UncommittedPrepareChased>(requestManagement);
 		_mainBus.Subscribe<ReplicationTrackingMessage.ReplicatedTo>(requestManagement);
 		_mainBus.Subscribe<ReplicationTrackingMessage.IndexedTo>(requestManagement);
 		_mainBus.Subscribe<StorageMessage.RequestCompleted>(requestManagement);

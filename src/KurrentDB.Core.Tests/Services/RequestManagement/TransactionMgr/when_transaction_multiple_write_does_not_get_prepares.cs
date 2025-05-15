@@ -33,8 +33,8 @@ public class when_transaction_multiple_write_does_not_get_prepares : RequestMana
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _event1Position, PrepareFlags.Data);
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _event2Position, PrepareFlags.Data);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _event1Position, PrepareFlags.Data);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _event2Position, PrepareFlags.Data);
 	}
 
 	protected override Message When() {

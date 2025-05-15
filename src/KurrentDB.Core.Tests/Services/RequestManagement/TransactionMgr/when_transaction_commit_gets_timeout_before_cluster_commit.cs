@@ -29,9 +29,9 @@ public class when_transaction_commit_gets_timeout_before_cluster_commit : Reques
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.PrepareAck(InternalCorrId, 100, PrepareFlags.Data);
-		yield return new StorageMessage.PrepareAck(InternalCorrId, 200, PrepareFlags.Data);
-		yield return StorageMessage.CommitAck.ForSingleStream(InternalCorrId, 300, 100, 1, 2);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, 100, PrepareFlags.Data);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, 200, PrepareFlags.Data);
+		yield return StorageMessage.CommitChased.ForSingleStream(InternalCorrId, 300, 100, 1, 2);
 	}
 
 	protected override Message When() {

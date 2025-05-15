@@ -31,8 +31,8 @@ public class when_transaction_commit_completes_successfully : RequestManagerSpec
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _transactionPosition, PrepareFlags.TransactionEnd);
-		yield return StorageMessage.CommitAck.ForSingleStream(InternalCorrId, _commitPosition, _transactionPosition, 1, 3);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _transactionPosition, PrepareFlags.TransactionEnd);
+		yield return StorageMessage.CommitChased.ForSingleStream(InternalCorrId, _commitPosition, _transactionPosition, 1, 3);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(_commitPosition);
 	}
 

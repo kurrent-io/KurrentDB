@@ -23,7 +23,7 @@ public class RequestManagementService :
 	IHandle<ClientMessage.TransactionCommit>,
 	IHandle<StorageMessage.RequestCompleted>,
 	IHandle<StorageMessage.AlreadyCommitted>,
-	IHandle<StorageMessage.PrepareAck>,
+	IHandle<StorageMessage.UncommittedPrepareChased>,
 	IHandle<ReplicationTrackingMessage.ReplicatedTo>,
 	IHandle<ReplicationTrackingMessage.IndexedTo>,
 	IHandle<StorageMessage.CommitIndexed>,
@@ -215,7 +215,7 @@ public class RequestManagementService :
 	public void Handle(ReplicationTrackingMessage.IndexedTo message) => _commitSource.Handle(message);
 
 	public void Handle(StorageMessage.AlreadyCommitted message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
-	public void Handle(StorageMessage.PrepareAck message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
+	public void Handle(StorageMessage.UncommittedPrepareChased message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
 	public void Handle(StorageMessage.CommitIndexed message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
 	public void Handle(StorageMessage.WrongExpectedVersion message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));
 	public void Handle(StorageMessage.InvalidTransaction message) => DispatchInternal(message.CorrelationId, message, static (manager, m) => manager.Handle(m));

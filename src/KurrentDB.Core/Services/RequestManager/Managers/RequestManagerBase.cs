@@ -15,7 +15,7 @@ using ILogger = Serilog.ILogger;
 namespace KurrentDB.Core.Services.RequestManager.Managers;
 
 public abstract class RequestManagerBase :
-	IHandle<StorageMessage.PrepareAck>,
+	IHandle<StorageMessage.UncommittedPrepareChased>,
 	IHandle<StorageMessage.CommitIndexed>,
 	IHandle<StorageMessage.InvalidTransaction>,
 	IHandle<StorageMessage.StreamDeleted>,
@@ -103,7 +103,7 @@ public abstract class RequestManagerBase :
 		Publisher.Publish(WriteRequestMsg);
 	}
 
-	public void Handle(StorageMessage.PrepareAck message) {
+	public void Handle(StorageMessage.UncommittedPrepareChased message) {
 		if (Interlocked.Read(ref _complete) == 1 || _allPreparesWritten) { return; }
 		NextTimeoutTime = DateTime.UtcNow + Timeout;
 		if (message.Flags.HasAnyOf(PrepareFlags.TransactionBegin)) {
