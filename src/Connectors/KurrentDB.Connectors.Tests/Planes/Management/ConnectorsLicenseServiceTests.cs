@@ -70,26 +70,26 @@ public class ConnectorsLicenseServiceTests(ITestOutputHelper output, LicensingFi
             .CheckLicense(data.Connector).Should().Be(data.Allowed);
     }
 
-    class ConnectorDefaultTestData : TestCaseGenerator<(Type Connector, bool Allowed)> {
+    class ConnectorDefaultTestData : TestCaseGeneratorXunit<(Type Connector, bool Allowed)> {
         protected override IEnumerable<object[]> Data() =>
             ConnectorCatalogue.GetConnectors().Select(connector => (object[])[(connector.ConnectorType, !connector.RequiresLicense)]);
     }
 
-    class FreeConnectorsTestCases : TestCaseGenerator<ConnectorCatalogueItem> {
+    class FreeConnectorsTestCases : TestCaseGeneratorXunit<ConnectorCatalogueItem> {
         protected override IEnumerable<object[]> Data() =>
             ConnectorCatalogue.GetConnectors()
                 .Where(x => !x.RequiresLicense)
                 .Select(x => (object[]) [x]);
     }
 
-    class CommercialConnectorsTestCases : TestCaseGenerator<ConnectorCatalogueItem> {
+    class CommercialConnectorsTestCases : TestCaseGeneratorXunit<ConnectorCatalogueItem> {
         protected override IEnumerable<object[]> Data() =>
             ConnectorCatalogue.GetConnectors()
                 .Where(x => x.RequiresLicense)
                 .Select(x => (object[]) [x]);
     }
 
-    class AllConnectorsTestCases : TestCaseGenerator<ConnectorCatalogueItem> {
+    class AllConnectorsTestCases : TestCaseGeneratorXunit<ConnectorCatalogueItem> {
         protected override IEnumerable<object[]> Data() =>
             ConnectorCatalogue.GetConnectors().Select(x => (object[]) [x]);
     }

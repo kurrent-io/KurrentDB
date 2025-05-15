@@ -208,7 +208,7 @@ public class SystemReaderTests(ITestOutputHelper output, ConnectorsAssemblyFixtu
             result.ShouldBe(SurgeRecord.None);
         });
 
-    class ConsumeFilterCases : TestCaseGenerator<ConsumeFilterCases> {
+    class ConsumeFilterCases : TestCaseGeneratorXunit<ConsumeFilterCases> {
         protected override IEnumerable<object[]> Data() {
             var streamId = Guid.NewGuid().ToString();
             yield return [streamId, ConsumeFilter.FromStreamId(streamId)];

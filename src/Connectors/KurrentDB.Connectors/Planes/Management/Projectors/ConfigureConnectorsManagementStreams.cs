@@ -3,7 +3,6 @@
 
 using Kurrent.Surge;
 using KurrentDB.Core;
-
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Connectors.Planes.Management.Queries;

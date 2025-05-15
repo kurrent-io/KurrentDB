@@ -13,7 +13,7 @@ using KurrentDB.Connectors.Tests;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using Microsoft.Extensions.Logging;
-using Identifiers = KurrentDB.Surge.Testing.Identifiers;
+using Identifiers = Kurrent.Surge.Identifiers;
 
 namespace KurrentDB.Surge.Tests.Components.Processors;
 

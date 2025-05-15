@@ -50,14 +50,7 @@ class ConnectorsControlRegistry {
     public async Task<GetConnectorsResult> GetConnectors(CancellationToken cancellationToken) {
         var (state, checkpoint, snapshotPosition) = await LoadSnapshot(cancellationToken);
 
-        if (checkpoint == RecordPosition.Unset) {
-            return new GetConnectorsResult {
-                Connectors = [],
-                Position   = RecordPosition.Latest
-            };
-        }
-
-        var lastReadPosition = checkpoint;
+        RecordPosition? lastReadPosition = null;
 
         var records = Reader.ReadForwards(checkpoint.LogPosition, Options.Filter, cancellationToken: cancellationToken);
 
@@ -98,19 +91,24 @@ class ConnectorsControlRegistry {
         // updates the snapshot every time the last record position is newer,
         // regardless of state changes
         if (lastReadPosition != checkpoint)
-            await UpdateSnapshot(result, lastReadPosition, snapshotPosition);
+            await UpdateSnapshot(result, lastReadPosition ?? checkpoint, snapshotPosition);
 
         return new GetConnectorsResult {
             Connectors = result,
-            Position   = lastReadPosition
+            Position   = lastReadPosition ?? checkpoint
         };
 
         async Task<(Dictionary<ConnectorId, RegisteredConnector> State, RecordPosition Checkpoint, RecordPosition SnapshotPosition)> LoadSnapshot(CancellationToken ct) {
             try {
                 var snapshotRecord = await Reader.ReadLastStreamRecord(Options.SnapshotStreamId, ct);
 
-                if (snapshotRecord.Value is not ActivatedConnectorsSnapshot snapshot)
-                    return ([], RecordPosition.Unset, snapshotRecord.Position);
+                if (snapshotRecord.Value is not ActivatedConnectorsSnapshot snapshot) {
+                    var record = await Reader
+                        .ReadBackwards(ConsumeFilter.None, cancellationToken: ct)
+                        .FirstOrDefaultAsync(ct);
+
+                    return ([], record.Position, snapshotRecord.Position);
+                }
 
                 var snapshotState = snapshot.Connectors.ToDictionary(
                     conn => ConnectorId.From(conn.ConnectorId),

@@ -32,7 +32,7 @@
 // 			.BeEquivalentTo(fromRandom);
 // 	}
 //
-// 	class FallbackTestCases : TestCaseGenerator<FallbackTestCases> {
+// 	class FallbackTestCases : TestCaseGeneratorXunit<FallbackTestCases> {
 // 		protected override IEnumerable<object[]> Data() {
 // 			yield return [
 // 				ClusterNodeState.ReadOnlyReplica,

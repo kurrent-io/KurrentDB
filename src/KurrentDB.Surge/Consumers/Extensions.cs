@@ -49,7 +49,7 @@ public static class ResolvedEventExtensions {
         // The legacy schema is generated using the event type and content type from the resolved event.
 
 #pragma warning disable CS0618 // Type or member is obsolete
-        var schemaInfo = headers.ContainsKey(HeaderKeys.SchemaSubject) || headers.ContainsKey(HeaderKeys.SchemaName)
+        var schemaInfo = headers.ContainsKey(HeaderKeys.SchemaName) || headers.ContainsKey(HeaderKeys.SchemaName)
 #pragma warning restore CS0618 // Type or member is obsolete
 	        ? SchemaInfo.FromHeaders(headers)
             : SchemaInfo.FromContentType(resolvedEvent.OriginalEvent.EventType,

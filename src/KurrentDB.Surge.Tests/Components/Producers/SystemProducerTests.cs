@@ -3,6 +3,7 @@
 
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
+using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Connect.Consumers;
 using KurrentDB.Connectors.Tests;
 using KurrentDB.Core;

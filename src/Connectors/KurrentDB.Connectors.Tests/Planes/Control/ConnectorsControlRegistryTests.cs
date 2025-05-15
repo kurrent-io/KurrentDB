@@ -4,39 +4,78 @@
 // ReSharper disable ExplicitCallerInfoArgument
 // ReSharper disable AccessToDisposedClosure
 
-using System.Net;
-using KurrentDB.Connectors.Planes;
+using Google.Protobuf.WellKnownTypes;
+using Kurrent.Surge.Producers;
+using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Planes.Control;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
 using Microsoft.Extensions.DependencyInjection;
-using MemberInfo = KurrentDB.Core.Cluster.MemberInfo;
+using static KurrentDB.Connectors.Planes.ConnectorsFeatureConventions;
 
 namespace KurrentDB.Connectors.Tests.Planes.Control;
 
 [Trait("Category", "ControlPlane")]
 public class ConnectorsControlRegistryTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
-    static readonly MessageBus MessageBus = new();
+	[Fact(Skip = "Isolate is conflicting with the one below")]
+    public Task updates_snapshot_with_no_active_connectors() => Fixture.TestWithTimeout(async cancellator => {
+        // Arrange
+        var getReaderBuilder   = Fixture.NodeServices.GetRequiredService<Func<SystemReaderBuilder>>();
+        var getProducerBuilder = Fixture.NodeServices.GetRequiredService<Func<SystemProducerBuilder>>();
 
-    static readonly MemberInfo FakeMemberInfo = MemberInfo.ForManager(Guid.NewGuid(), DateTime.Now, true, new IPEndPoint(0, 0));
+        var options = new ConnectorsControlRegistryOptions {
+            Filter           = Filters.ManagementFilter,
+            SnapshotStreamId = Fixture.NewStreamId() // Random stream ID to avoid test interference
+        };
 
-    // [Fact]
-    public Task returns_active_connectors_and_updates_snapshot() => Fixture.TestWithTimeout(TimeSpan.FromMinutes(5),
-        async cancellator => {
-            // Arrange
-            var options = new ConnectorsControlRegistryOptions {
-                Filter           = ConnectorsFeatureConventions.Filters.ManagementFilter,
-                SnapshotStreamId = $"{ConnectorsFeatureConventions.Streams.ControlConnectorsRegistryStream}/{Fixture.NewIdentifier("test")}"
-            };
+        var sut = new ConnectorsControlRegistry(options, getReaderBuilder, getProducerBuilder, Fixture.TimeProvider);
 
-            var getReaderBuilder   = Fixture.NodeServices.GetRequiredService<Func<SystemReaderBuilder>>();
-            var getProducerBuilder = Fixture.NodeServices.GetRequiredService<Func<SystemProducerBuilder>>();
+        // Act
+        var result = await sut.GetConnectors(cancellator.Token);
 
-            var sut = new ConnectorsControlRegistry(options, getReaderBuilder, getProducerBuilder, TimeProvider.System);
+        // Assert
+        result.Connectors.Should().BeEmpty();
+    });
 
+    [Fact]
+    public Task returns_active_connectors_and_updates_snapshot() => Fixture.TestWithTimeout(async cancellator => {
+        // Arrange
+        var getReaderBuilder   = Fixture.NodeServices.GetRequiredService<Func<SystemReaderBuilder>>();
+        var getProducerBuilder = Fixture.NodeServices.GetRequiredService<Func<SystemProducerBuilder>>();
 
+        var connectorId = Fixture.NewConnectorId();
 
+        var options = new ConnectorsControlRegistryOptions {
+            Filter           = Filters.ManagementFilter,
+            SnapshotStreamId = Streams.ControlConnectorsRegistryStream
+        };
 
-            var result = await sut.GetConnectors(cancellator.Token);
-        });
+        var sut = new ConnectorsControlRegistry(options, getReaderBuilder, getProducerBuilder, Fixture.TimeProvider);
+
+        // Act
+        var activatingMessage = Message.Builder
+            .Value(new ConnectorActivating {
+                ConnectorId = connectorId,
+                Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+            })
+            .Create();
+
+        var runningMessage = Message.Builder
+            .Value(new ConnectorRunning {
+                ConnectorId = connectorId,
+                Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+            })
+            .Create();
+
+        var produceResult = await Fixture.Producer.Produce(ProduceRequest.Builder
+            .Messages(activatingMessage, runningMessage)
+            .Stream(Streams.ManagementStreamTemplate.GetStream(Fixture.NewStreamId()))
+            .Create());
+
+        // Assert
+        var result = await sut.GetConnectors(CancellationToken.None);
+
+        result.Connectors.Should().ContainSingle();
+        result.Position.Should().Be(produceResult.Position);
+    });
 }

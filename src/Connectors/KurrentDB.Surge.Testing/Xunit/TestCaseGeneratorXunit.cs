@@ -5,15 +5,15 @@ using System.Collections;
 
 namespace KurrentDB.Surge.Testing.Xunit;
 
-public abstract class TestCaseGenerator<T> : ClassDataAttribute, IEnumerable<object[]> {
-	protected TestCaseGenerator() : base(typeof(T)) {
+public abstract class TestCaseGeneratorXunit<T> : ClassDataAttribute, IEnumerable<object[]> {
+	protected TestCaseGeneratorXunit() : base(typeof(T)) {
 		Faker = new();
 
 		// ReSharper disable once VirtualMemberCallInConstructor
 		Generated.AddRange(Data());
 
 		if (Generated.Count == 0)
-			throw new InvalidOperationException($"TestDataGenerator<{typeof(T).Name}> must provide at least one test case.");
+			throw new InvalidOperationException($"TestDataGeneratorXunit<{typeof(T).Name}> must provide at least one test case.");
 	}
 
 	protected Faker Faker { get; }

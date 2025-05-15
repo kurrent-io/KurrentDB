@@ -17,14 +17,14 @@ namespace KurrentDB.Connectors.Infrastructure;
 public static class RpcExceptions {
     static RpcException Create(StatusCode statusCode, string message, IMessage? detail = null) {
         if (detail is not null) {
-            throw RpcStatusExtensions.ToRpcException(new() {
+            return RpcStatusExtensions.ToRpcException(new() {
                 Code    = (int)statusCode,
                 Message = message,
                 Details = { Any.Pack(detail) }
             });
         }
 
-        throw RpcStatusExtensions.ToRpcException(new() {
+        return RpcStatusExtensions.ToRpcException(new() {
             Code    = (int)statusCode,
             Message = message
         });
