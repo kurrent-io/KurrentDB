@@ -10,7 +10,7 @@ This page contains the release notes for EventStoreDB 24.10
 
 15 May 2025
 
-### Fix filtered $all subscriptions checkpoint behaviour (PR [#4893](https://github.com/kurrent-io/KurrentDB/pull/4893) and [#4990](https://github.com/kurrent-io/KurrentDB/pull/4990))
+### Fix filtered $all subscriptions checkpoint behavior (PR [#4893](https://github.com/kurrent-io/KurrentDB/pull/4893) and [#4990](https://github.com/kurrent-io/KurrentDB/pull/4990))
 
 Fixed an issue with filtered subscriptions where it was possible to incorrectly send a checkpoint of `(ulong.max, ulong.max)` to a filtered $all subscription if:
 
@@ -20,15 +20,11 @@ Fixed an issue with filtered subscriptions where it was possible to incorrectly 
 
 The checkpoint will now be updated to a valid value before sending it when transitioning to live.
 
-### Fix metrics not reporting faulted projections (PR [#5022](https://github.com/kurrent-io/KurrentDB/pull/5021))
+### Projections: Fix metrics not reporting faulted projections (PR [#5022](https://github.com/kurrent-io/KurrentDB/pull/5021))
 
 Fixed the projection metrics not reporting the projection status when it had a compound state (e.g., `faulted (enabled)`).
 
-### Add metrics for Connectors (PR [#5007](https://github.com/kurrent-io/KurrentDB/pull/5007))
-
-Added `Kurrent`, `Kurrent.Connectors` and `Kurrent.Connectors.Sinks` meters.
-
-### Add additional metrics for parked persistent subscription messages (PR [#5062](https://github.com/kurrent-io/KurrentDB/pull/5062)
+### Persistent Subscriptions: Add additional metrics for parked messages (PR [#5062](https://github.com/kurrent-io/KurrentDB/pull/5062)
 
 Added two persistent subscription metrics to count the number of parked message requests and replays.
 
@@ -39,7 +35,11 @@ eventstore_persistent_sub_parked_message_replays
 
 The park message requests are subdivided into two reason categories: `client-nak` and `max-retries`.
 
-### Add data protection to connectors
+### Connectors: Add metrics (PR [#5007](https://github.com/kurrent-io/KurrentDB/pull/5007))
+
+Added `Kurrent`, `Kurrent.Connectors` and `Kurrent.Connectors.Sinks` meters.
+
+### Connectors: Add data protection
 
 We've implemented a data protection system to secure sensitive connector
 configurations. All connectors now use envelope encryption to protect sensitive
@@ -47,15 +47,15 @@ data like passwords and tokens, ensuring secure transmission. Setup is simple,
 with token-based protection that can be configured directly or through separate
 files for added security in production.
 
-### Include Deleted Connectors in Results
+### Connectors: Include Deleted Connectors in Results
 
 Previously, deleted connectors were unintentionally omitted from the results, leading to incomplete data visibility. This fix ensures that both deleted and non-deleted connectors are properly included where applicable.
 
-### Added validation for Serilog connector configuration
+### Connectors: Added validation for Serilog connector configuration
 
 Added validation for Serilog configuration during setup or changes. This helps catch errors early and prevents issues with logging functionality.
 
-### Ensure Reset Connector Command Starts at Offset 0
+### Connectors: Ensure Reset Connector Command Starts at Offset 0
 
 Previously, executing the reset connector command did not correctly reset the offset to zero, leading to inconsistent data replay. This fix ensures the connector starts from the beginning as expected when reset.
 
