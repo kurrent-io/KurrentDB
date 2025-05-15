@@ -8,7 +8,7 @@
 		<InvariantGlobalization>true</InvariantGlobalization>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Kurrent.Surge.Core" Version="1.0.0-alpha.376" />
+		<PackageReference Include="Kurrent.Surge.Core" Version="1.1.0-alpha" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
