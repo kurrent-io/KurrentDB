@@ -28,6 +28,16 @@ Fixed the projection metrics not reporting the projection status when it had a c
 
 Added `Kurrent`, `Kurrent.Connectors` and `Kurrent.Connectors.Sinks` meters.
 
+### Add additional metrics for parked persistent subscription messages (PR [#5062](https://github.com/kurrent-io/KurrentDB/pull/5062)
+
+Added two persistent subscription metrics to count the number of parked message requests and replays.
+
+```
+eventstore_persistent_sub_park_message_requests
+eventstore_persistent_sub_parked_message_replays 
+```
+
+The park message requests are subdivided into two reason categories: `client-nak` and `max-retries`.
 ## [24.10.4](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.4)
 
 6 March 2025
