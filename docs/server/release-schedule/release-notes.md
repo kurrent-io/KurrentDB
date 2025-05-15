@@ -28,11 +28,6 @@ Fixed the projection metrics not reporting the projection status when it had a c
 
 Added `Kurrent`, `Kurrent.Connectors` and `Kurrent.Connectors.Sinks` meters.
 
-### Add checkpoint to 'CaughtUp' and 'FellBehind' messages (PR [#5034](https://github.com/kurrent-io/KurrentDB/pull/5034))
-
-Added the checkpoint and timestamp to `CaughtUp` and `FellBehind` messages in the streams proto.
-This change is backwards compatible.
-
 ## [24.10.4](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.4)
 
 6 March 2025
