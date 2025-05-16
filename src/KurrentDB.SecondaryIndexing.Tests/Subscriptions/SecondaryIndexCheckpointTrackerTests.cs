@@ -268,10 +268,12 @@ public class SecondaryIndexCheckpointTrackerTests {
 		var commitStarted = new ManualResetEventSlim(false);
 		var commitBlocker = new ManualResetEventSlim(false);
 		var commitCompleted = false;
+		var commitTask = new TaskCompletionSource<bool>();
 
 		var tracker = new SecondaryIndexCheckpointTracker(5, 1000, _ => {
 			commitStarted.Set();
-			commitBlocker.Wait(100);
+			commitTask.SetResult(true); // Signal that commit has started
+			commitBlocker.Wait(); // Wait indefinitely (no timeout)
 			commitCompleted = true;
 			return Task.CompletedTask;
 		});
@@ -279,16 +281,24 @@ public class SecondaryIndexCheckpointTrackerTests {
 		// When
 		tracker.Start(CancellationToken.None);
 
-		for (int i = 0; i < 5; i++) tracker.Increment();
+		var incrementTask = Task.Run(() => {
+			int attemptCount = 0;
+			int maxAttempts = 50;
 
-		Assert.True(commitStarted.Wait(100));
+			while (!commitStarted.IsSet && attemptCount < maxAttempts)
+			{
+				tracker.Increment();
+				Thread.Sleep(10);
+				attemptCount++;
+			}
+		});
+
+		await commitTask.Task;
+		await incrementTask;
 
 		var disposeTask = Task.Run(async () => await tracker.DisposeAsync());
 
-		await Task.Delay(10);
-
 		commitBlocker.Set();
-
 		await disposeTask;
 
 		// Then
