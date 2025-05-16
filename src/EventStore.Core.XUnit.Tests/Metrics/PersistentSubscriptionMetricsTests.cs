@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using EventStore.Core.Messages;
@@ -36,6 +37,9 @@ public class PersistentSubscriptionMetricsTests {
 			NamedConsumerStrategy = "Round Robin",
 			OldestParkedMessage = 1007,
 			OutstandingMessagesCount = 2,
+			ParkedDueToClientNak = 2001,
+			ParkedDueToMaxRetries = 2002,
+			ParkedMessageReplays = 2003,
 			ParkedMessageCount = 1003,
 			ReadBatchSize = 20,
 			ReadBufferCount = 0,
@@ -68,6 +72,9 @@ public class PersistentSubscriptionMetricsTests {
 			NamedConsumerStrategy = "Round Robin",
 			OldestParkedMessage = 1008,
 			OutstandingMessagesCount = 2,
+			ParkedDueToClientNak = 2004,
+			ParkedDueToMaxRetries = 2005,
+			ParkedMessageReplays = 2006,
 			ParkedMessageCount = 1004,
 			ReadBatchSize = 20,
 			ReadBufferCount = 0,
@@ -99,6 +106,52 @@ public class PersistentSubscriptionMetricsTests {
 		Assert.Collection(measurements,
 			AssertMeasurement("test", "testGroup", 1003),
 			AssertMeasurement("$all", "testGroup", 1004));
+	}
+
+	[Fact]
+	public void ObserveParkMessageRequests() {
+		var measurements = _sut.ObserveParkMessageRequests();
+		Assert.Collection(measurements,
+			actual => {
+				Assert.Equal(2001, actual.Value);
+				Assert.Collection(
+					actual.Tags.ToArray(),
+					AssertTag("event_stream_id", "test"),
+					AssertTag("group_name", "testGroup"),
+					AssertTag("reason", "client-nak"));
+			},
+			actual => {
+				Assert.Equal(2002, actual.Value);
+				Assert.Collection(
+					actual.Tags.ToArray(),
+					AssertTag("event_stream_id", "test"),
+					AssertTag("group_name", "testGroup"),
+					AssertTag("reason", "max-retries"));
+			},
+			actual => {
+				Assert.Equal(2004, actual.Value);
+				Assert.Collection(
+					actual.Tags.ToArray(),
+					AssertTag("event_stream_id", "$all"),
+					AssertTag("group_name", "testGroup"),
+					AssertTag("reason", "client-nak"));
+			},
+			actual => {
+				Assert.Equal(2005, actual.Value);
+				Assert.Collection(
+					actual.Tags.ToArray(),
+					AssertTag("event_stream_id", "$all"),
+					AssertTag("group_name", "testGroup"),
+					AssertTag("reason", "max-retries"));
+			});
+	}
+
+	[Fact]
+	public void ObserveParkedMessageReplays() {
+		var measurements = _sut.ObserveParkedMessageReplays();
+		Assert.Collection(measurements,
+			AssertMeasurement("test", "testGroup", 2003),
+			AssertMeasurement("$all", "testGroup", 2006));
 	}
 
 	[Fact]
@@ -162,14 +215,13 @@ public class PersistentSubscriptionMetricsTests {
 			Assert.Equal(expectedValue, actualMeasurement.Value);
 			Assert.Collection(
 				actualMeasurement.Tags.ToArray(),
-				tag => {
-					Assert.Equal("event_stream_id", tag.Key);
-					Assert.Equal(sourceName, tag.Value);
-				},
-				tag => {
-					Assert.Equal("group_name", tag.Key);
-					Assert.Equal(groupName, tag.Value);
-				}
-			);
+				AssertTag("event_stream_id", sourceName),
+				AssertTag("group_name", groupName));
+		};
+
+	static Action<KeyValuePair<string, object>> AssertTag(string key, object value) =>
+		actualTag => {
+			Assert.Equal(key, actualTag.Key);
+			Assert.Equal(value, actualTag.Value);
 		};
 }

@@ -1,11 +1,16 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using EventStore.Common.Configuration;
+using EventStore.Core.Bus;
 using EventStore.Core.Configuration.Sources;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
+using EventStore.Core.Services.UserManagement;
 using EventStore.Core.Tests;
 using EventStore.Core.Tests.Helpers;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +34,39 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 			Assert.Contains(expected, content);
 	}
 
+	private async static Task CreatePersistentSubscription(IPublisher publisher) {
+		var tcs = new TaskCompletionSource();
+		publisher.Publish(new ClientMessage.CreatePersistentSubscriptionToStream(
+			internalCorrId: Guid.NewGuid(),
+			correlationId: Guid.NewGuid(),
+			envelope: new CallbackEnvelope(msg => {
+				var completed = msg as ClientMessage.CreatePersistentSubscriptionToStreamCompleted;
+				Assert.NotNull(completed);
+				Assert.Equal(ClientMessage.CreatePersistentSubscriptionToStreamCompleted.
+					CreatePersistentSubscriptionToStreamResult.Success, completed.Result);
+				tcs.SetResult();
+			}),
+			eventStreamId: "stream",
+			groupName: "group",
+			resolveLinkTos: false,
+			startFrom: 0,
+			messageTimeoutMilliseconds: 1000,
+			recordStatistics: false,
+			maxRetryCount: 10,
+			bufferSize: 100,
+			liveBufferSize: 10,
+			readbatchSize: 10,
+			checkPointAfterMilliseconds: 1000,
+			minCheckPointCount: 10,
+			maxCheckPointCount: 10,
+			maxSubscriberCount: 10,
+			namedConsumerStrategy: "RoundRobin",
+			user: SystemAccounts.System));
+
+		await tcs.Task;
+		await Task.Delay(TimeSpan.FromSeconds(1));
+	}
+
 	async Task<string> Query(bool legacy) {
 		var configuration = new ConfigurationBuilder()
 			.AddSection($"{KurrentConfigurationKeys.Prefix}:Metrics", x => x
@@ -44,6 +82,9 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 			.Build();
 		await using var sut = new MiniNode<LogFormat.V2, string>(Fixture.Directory, configuration: configuration);
 		await sut.Start();
+
+		await CreatePersistentSubscription(sut.Node.MainQueue);
+
 		sut.HttpClient.DefaultRequestHeaders.Add(
 			"Accept",
 			"application/openmetrics-text;version=1.0.0,application/openmetrics-text;version=0.0.1;q=0.75,text/plain;version=0.0.4;q=0.5,*/*;q=0.1");
@@ -96,6 +137,15 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 		"# TYPE kurrentdb_sys_mem_bytes gauge",
 		"# TYPE kurrentdb_writer_flush_duration_max_seconds gauge",
 		"# TYPE kurrentdb_writer_flush_size_max gauge",
+		"# TYPE kurrentdb_persistent_sub_connections gauge",
+		"# TYPE kurrentdb_persistent_sub_parked_messages gauge",
+		"# TYPE kurrentdb_persistent_sub_in_flight_messages gauge",
+		"# TYPE kurrentdb_persistent_sub_oldest_parked_message_seconds gauge",
+		"# TYPE kurrentdb_persistent_sub_last_known_event_number gauge",
+		"# TYPE kurrentdb_persistent_sub_park_message_requests gauge",
+		"# TYPE kurrentdb_persistent_sub_parked_message_replays gauge",
+		"# TYPE kurrentdb_persistent_sub_checkpointed_event_number gauge",
+		"# TYPE kurrentdb_persistent_sub_items_processed counter",
 
 		"# UNIT kurrentdb_cache_resources_entries entries",
 		"# UNIT kurrentdb_disk_io_bytes bytes",
@@ -157,6 +207,15 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 		"kurrentdb_sys_mem_bytes{",
 		"kurrentdb_writer_flush_duration_max_seconds{",
 		"kurrentdb_writer_flush_size_max{",
+		"kurrentdb_persistent_sub_connections{",
+		"kurrentdb_persistent_sub_parked_messages{",
+		"kurrentdb_persistent_sub_in_flight_messages{",
+		"kurrentdb_persistent_sub_oldest_parked_message_seconds{",
+		"kurrentdb_persistent_sub_last_known_event_number{",
+		"kurrentdb_persistent_sub_park_message_requests{",
+		"kurrentdb_persistent_sub_parked_message_replays{",
+		"kurrentdb_persistent_sub_checkpointed_event_number{",
+		"kurrentdb_persistent_sub_items_processed_total{",
 	];
 
 	static IEnumerable<string> EventStoreMetrics => [
@@ -193,6 +252,15 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 		"# TYPE eventstore_sys_mem_bytes gauge",
 		"# TYPE eventstore_writer_flush_duration_max_seconds gauge",
 		"# TYPE eventstore_writer_flush_size_max gauge",
+		"# TYPE eventstore_persistent_sub_connections gauge",
+		"# TYPE eventstore_persistent_sub_parked_messages gauge",
+		"# TYPE eventstore_persistent_sub_in_flight_messages gauge",
+		"# TYPE eventstore_persistent_sub_oldest_parked_message_seconds gauge",
+		"# TYPE eventstore_persistent_sub_last_known_event_number gauge",
+		"# TYPE eventstore_persistent_sub_park_message_requests gauge",
+		"# TYPE eventstore_persistent_sub_parked_message_replays gauge",
+		"# TYPE eventstore_persistent_sub_checkpointed_event_number gauge",
+		"# TYPE eventstore_persistent_sub_items_processed counter",
 
 		"eventstore_cache_hits_misses{",
 		"eventstore_cache_resources_entries{",
@@ -229,5 +297,14 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 		"eventstore_sys_mem_bytes{",
 		"eventstore_writer_flush_duration_max_seconds{",
 		"eventstore_writer_flush_size_max{",
+		"eventstore_persistent_sub_connections{",
+		"eventstore_persistent_sub_parked_messages{",
+		"eventstore_persistent_sub_in_flight_messages{",
+		"eventstore_persistent_sub_oldest_parked_message_seconds{",
+		"eventstore_persistent_sub_last_known_event_number{",
+		"eventstore_persistent_sub_park_message_requests{",
+		"eventstore_persistent_sub_parked_message_replays{",
+		"eventstore_persistent_sub_checkpointed_event_number{",
+		"eventstore_persistent_sub_items_processed{",
 	];
 }
