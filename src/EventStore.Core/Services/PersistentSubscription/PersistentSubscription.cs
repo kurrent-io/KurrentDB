@@ -485,7 +485,7 @@ public class PersistentSubscription {
 				break;
 			case NakAction.Park:
 				if (_outstandingMessages.GetMessageById(id, out m)) {
-					ParkMessage(m.ResolvedEvent, "Client explicitly NAK'ed message.\n" + reason, 0);
+					ParkMessage(m.ResolvedEvent, "Client explicitly NAK'ed message.\n" + reason, ParkReason.ClientNak, 0);
 				}
 
 				break;
@@ -501,14 +501,14 @@ public class PersistentSubscription {
 		}
 	}
 
-	private void ParkMessage(ResolvedEvent resolvedEvent, string reason, int count) {
-		_settings.MessageParker.BeginParkMessage(resolvedEvent, reason, (e, result) => {
+	private void ParkMessage(ResolvedEvent resolvedEvent, string reason, ParkReason parkReason, int count) {
+		_settings.MessageParker.BeginParkMessage(resolvedEvent, reason, parkReason, (e, result) => {
 			if (result != OperationResult.Success) {
 				if (count < 5) {
 					Log.Information("Unable to park message {stream}/{eventNumber} operation failed {e} retrying",
 						e.OriginalStreamId,
 						e.OriginalEventNumber, result);
-					ParkMessage(e, reason, count + 1);
+					ParkMessage(e, reason, parkReason, count + 1);
 					return;
 				}
 
@@ -671,7 +671,7 @@ public class PersistentSubscription {
 	private bool ActionTakenForRetriedMessage(OutstandingMessage message) {
 		if (message.RetryCount < _settings.MaxRetryCount)
 			return false;
-		ParkMessage(message.ResolvedEvent, string.Format("Reached retry count of {0}", _settings.MaxRetryCount), 0);
+		ParkMessage(message.ResolvedEvent, string.Format("Reached retry count of {0}", _settings.MaxRetryCount), ParkReason.MaxRetries, 0);
 		return true;
 	}
 

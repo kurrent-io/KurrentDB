@@ -1511,7 +1511,7 @@ public class Checkpointing {
 		//park an event (this can be done earlier too)
 		var parkedEventId = Guid.NewGuid();
 		var parkedEvent = Helper.BuildFakeEvent(parkedEventId, "type", "$persistentsubscription-streamName::groupName-parked", 15, 15, 15);
-		messageParker.BeginParkMessage(parkedEvent, "parked", (ev, res) => { });
+		messageParker.BeginParkMessage(parkedEvent, "parked", ParkReason.None, (ev, res) => { });
 
 		//retry parked events (this sets correct _state flag so that we can call HandleParkedReadCompleted below)
 		sub.RetryParkedMessages(null);
@@ -2335,7 +2335,7 @@ public class ParkTests {
 		var parkedEvents = Enumerable.Range(0, 19)
 			.Select(v => Helper.BuildFakeEvent(Guid.NewGuid(), "type", "$persistentsubscription-streamName::groupName-parked", v, v, v)).ToArray();
 		foreach (var parkedEvent in parkedEvents) {
-			messageParker.BeginParkMessage(parkedEvent, "parked", (ev, res) => { });
+			messageParker.BeginParkMessage(parkedEvent, "parked", ParkReason.None, (ev, res) => { });
 		}
 
 		sub.RetryParkedMessages(null);
@@ -2381,7 +2381,7 @@ public class ParkTests {
 		var parkedEvents = Enumerable.Range(0, 19)
 			.Select(v => Helper.BuildFakeEvent(Guid.NewGuid(), "type", "$persistentsubscription-streamName::groupName-parked", v, v, v)).ToArray();
 		foreach (var parkedEvent in parkedEvents) {
-			messageParker.BeginParkMessage(parkedEvent, "parked", (ev, res) => { });
+			messageParker.BeginParkMessage(parkedEvent, "parked", ParkReason.None, (ev, res) => { });
 		}
 
 		var stopAt = 7L;
@@ -2593,7 +2593,7 @@ class FakeMessageParker : IPersistentSubscriptionMessageParker {
 		_parkMessageCompleted?.Invoke(ParkedEvents[idx], result);
 	}
 
-	public void BeginParkMessage(ResolvedEvent ev, string reason,
+	public void BeginParkMessage(ResolvedEvent ev, string reason, ParkReason parkReason,
 		Action<ResolvedEvent, OperationResult> completed) {
 		ParkedEvents.Add(ev);
 		_lastParkedEventNumber = ev.OriginalEventNumber;
@@ -2629,6 +2629,9 @@ class FakeMessageParker : IPersistentSubscriptionMessageParker {
 	}
 
 	public DateTime? GetOldestParkedMessage { get; }
+	public long ParkedDueToClientNak { get; }
+	public long ParkedDueToMaxRetries { get; }
+	public long ParkedMessageReplays { get; }
 }
 
 
