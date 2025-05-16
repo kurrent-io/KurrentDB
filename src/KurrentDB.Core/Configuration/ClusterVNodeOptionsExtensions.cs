@@ -7,6 +7,7 @@ using System;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using EventStore.Plugins;
+using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Exceptions;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Certificates;
@@ -19,6 +20,9 @@ public static class ClusterVNodeOptionsExtensions {
 		options.ConfigurationRoot == null
 			? options
 			: ClusterVNodeOptions.FromConfiguration(options.ConfigurationRoot);
+
+	public static ClusterVNodeOptions WithPlugableComponents(this ClusterVNodeOptions options, ISubsystemsPlugin subsystemsPlugin) =>
+		options with { PlugableComponents = [.. options.PlugableComponents, .. subsystemsPlugin.GetSubsystems()] };
 
 	public static ClusterVNodeOptions WithPlugableComponent(this ClusterVNodeOptions options, IPlugableComponent plugableComponent) =>
 		options with { PlugableComponents = [.. options.PlugableComponents, plugableComponent] };

@@ -33,6 +33,7 @@ using KurrentDB.Core.Hashing;
 using KurrentDB.Core.LogAbstraction;
 using KurrentDB.Core.PluginModel;
 using KurrentDB.Core.Services.PersistentSubscription.ConsumerStrategy;
+using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Transport.Http.Controllers;
 using KurrentDB.Diagnostics.LogsEndpointPlugin;
 using KurrentDB.PluginHosting;
@@ -45,6 +46,7 @@ using KurrentDB.TcpPlugin;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using LogV3StreamId = System.UInt32;
 
 namespace KurrentDB;
 
@@ -104,18 +106,11 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			_dbLock = new ExclusiveDbLock(absolutePath);
 			if (!_dbLock.Acquire())
 				throw new InvalidConfigurationException($"Couldn't acquire exclusive lock on DB at '{_options.Database.Db}'.");
+
+			_clusterNodeMutex = new ClusterNodeMutex();
+			if (!_clusterNodeMutex.Acquire())
+				throw new InvalidConfigurationException($"Couldn't acquire exclusive Cluster Node mutex '{_clusterNodeMutex.MutexName}'.");
 		}
-
-		var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create();
-		var subsystems = secondaryIndexingPlugin.GetSubsystems();
-		foreach (var subsystem in subsystems) {
-			options = options.WithPlugableComponent(subsystem);
-		}
-
-		_clusterNodeMutex = new ClusterNodeMutex();
-		if (!_clusterNodeMutex.Acquire())
-			throw new InvalidConfigurationException($"Couldn't acquire exclusive Cluster Node mutex '{_clusterNodeMutex.MutexName}'.");
-
 		var authorizationConfig = string.IsNullOrEmpty(_options.Auth.AuthorizationConfig)
 			? _options.Application.Config
 			: _options.Auth.AuthorizationConfig;
@@ -127,20 +122,30 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 		(_options, var authProviderFactory) = GetAuthorizationProviderFactory();
 
+		var virtualStreamReader = new VirtualStreamReader();
+
 		if (_options.Database.DbLogFormat == DbLogFormat.V2) {
+			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<string>(virtualStreamReader);
+			_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
+
 			var logFormatFactory = new LogV2FormatAbstractorFactory();
-			Node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
+			var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
-				secondaryIndexingPlugin.IndicesVirtualStreamReaders,
+				virtualStreamReader,
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
+			Node = node;
 		} else if (_options.Database.DbLogFormat == DbLogFormat.ExperimentalV3) {
+			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<LogV3StreamId>(virtualStreamReader);
+			_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
+
 			var logFormatFactory = new LogV3FormatAbstractorFactory();
-			Node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
+			var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
 				authProviderFactory,
-				secondaryIndexingPlugin.IndicesVirtualStreamReaders,
+				virtualStreamReader,
 				GetPersistentSubscriptionConsumerStrategyFactories(), certificateProvider,
 				configuration);
+			Node = node;
 		} else {
 			throw new ArgumentOutOfRangeException(nameof(_options.Database.DbLogFormat), "Unexpected log format specified.");
 		}
@@ -355,6 +360,9 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		Node.StopAsync(cancellationToken: cancellationToken);
 
 	public void Dispose() {
+		if (_clusterNodeMutex is { IsAcquired: true })
+			_clusterNodeMutex.Release();
+
 		if (_dbLock is not { IsAcquired: true }) {
 			return;
 		}

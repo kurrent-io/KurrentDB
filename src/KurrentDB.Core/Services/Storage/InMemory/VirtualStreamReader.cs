@@ -9,11 +9,14 @@ using static KurrentDB.Core.Messages.ClientMessage;
 namespace KurrentDB.Core.Services.Storage.InMemory;
 
 public class VirtualStreamReader : IVirtualStreamReader {
-	private readonly IVirtualStreamReader[] _readers;
+	private IVirtualStreamReader[] _readers;
 
-	public VirtualStreamReader(IVirtualStreamReader[] readers) {
-		_readers = readers;
+	public VirtualStreamReader(IVirtualStreamReader[] readers = null) {
+		_readers = readers ?? [];
 	}
+
+	public void Register(params IVirtualStreamReader[] readers) =>
+		_readers = [.._readers, ..readers];
 
 	public ValueTask<ReadStreamEventsForwardCompleted> ReadForwards(ReadStreamEventsForward msg, CancellationToken token) {
 		if (TryGetReader(msg.EventStreamId, out var reader))

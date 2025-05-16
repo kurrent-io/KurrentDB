@@ -37,9 +37,11 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public ILoggerFactory LoggerFactory { get; }
     public Faker          Faker         { get; }
 
-    public Action<IServiceCollection> ConfigureServices { get; init; } = _ => { };
-    public Func<Task>                 OnSetup           { get; init; } = () => Task.CompletedTask;
-    public Func<Task>                 OnTearDown        { get; init; } = () => Task.CompletedTask;
+    public Action<IServiceCollection>   ConfigureServices { get; init; } = _ => { };
+    public Dictionary<string, string?>? Configuration     { get; init; }
+    public Func<Task>                   OnSetup           { get; init; } = () => Task.CompletedTask;
+    public Func<Task>                   OnTearDown        { get; init; } = () => Task.CompletedTask;
+    public bool                         UseRandomPort     { get; init; }
 
     public ClusterVNodeOptions NodeOptions  { get; private set; } = null!;
     public IServiceProvider    NodeServices { get; private set; } = null!;
@@ -48,7 +50,11 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public ISubscriber Subscriber => NodeServices.GetRequiredService<ISubscriber>();
 
     public async Task InitializeAsync() {
-        var (options, services) = await ClusterVNodeApp.Start(configureServices: ConfigureServices);
+        var (options, services) = await ClusterVNodeApp.Start(
+	        configureServices: ConfigureServices,
+	        overrides: Configuration,
+	        useRandomPort: UseRandomPort
+	    );
 
         NodeServices = services;
         NodeOptions  = options;
@@ -59,6 +65,7 @@ public abstract class ClusterVNodeFixture : IAsyncLifetime {
     public async Task DisposeAsync() {
         try {
             await OnTearDown();
+            await ClusterVNodeApp.DisposeAsync();
         }
         catch {
             // ignored
