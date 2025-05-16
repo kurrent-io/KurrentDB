@@ -8,7 +8,7 @@ This page contains the release notes for EventStoreDB 24.10
 
 ## [24.10.5](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.5)
 
-15 May 2025
+16 May 2025
 
 ### Fix filtered $all subscriptions checkpoint behavior (PR [#4893](https://github.com/kurrent-io/KurrentDB/pull/4893) and [#4990](https://github.com/kurrent-io/KurrentDB/pull/4990))
 
@@ -37,7 +37,23 @@ The park message requests are subdivided into two reason categories: `client-nak
 
 ### Connectors: Add metrics (PR [#5007](https://github.com/kurrent-io/KurrentDB/pull/5007))
 
-Added `Kurrent`, `Kurrent.Connectors` and `Kurrent.Connectors.Sinks` meters.
+Added `Kurrent`, `Kurrent.Connectors` and `Kurrent.Connectors.Sinks` meters. The following metrics are now available for connectors:
+
+```
+kurrent_connector_active_total
+kurrent_sink_written_total_records
+kurrent_sink_errors_total
+kurrent_sink_transform_duration_milliseconds
+messaging_kurrent_consumer_message_count_total
+messaging_kurrent_consumer_commit_latency
+messaging_kurrent_consumer_lag
+messaging_kurrent_producer_queue_length
+messaging_kurrent_producer_message_count_total
+messaging_kurrent_producer_produce_duration_milliseconds
+messaging_kurrent_processor_error_count_total
+```
+
+These metrics are described in the [connectors documentation](../features/connectors/metrics.md).
 
 ### Connectors: Add data protection
 
