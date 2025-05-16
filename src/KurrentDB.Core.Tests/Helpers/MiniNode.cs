@@ -61,7 +61,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 	public static readonly Stopwatch StartingTime = new Stopwatch();
 	public static readonly Stopwatch StoppingTime = new Stopwatch();
 
-	public readonly ClusterVNode<TStreamId> Node;
+	public readonly ClusterVNode Node;
 	public readonly TFChunkDb Db;
 	public readonly string DbPath;
 	public HttpClient HttpClient;

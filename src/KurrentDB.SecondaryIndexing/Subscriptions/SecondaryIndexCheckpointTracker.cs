@@ -64,7 +64,7 @@ public sealed class SecondaryIndexCheckpointTracker(
 				await TryCommitAsync(token).ConfigureAwait(false);
 			}
 		} catch (OperationCanceledException) {
-			// expected
+			// Expected during cancellation
 		} catch (Exception ex) {
 			Log.Error(ex, "Unexpected error in checkpoint loop");
 		}
@@ -81,7 +81,7 @@ public sealed class SecondaryIndexCheckpointTracker(
 
 			await commitAction(token).ConfigureAwait(false);
 		} catch (OperationCanceledException) {
-			// expected
+			// Expected during cancellation
 		} catch (Exception ex) {
 			Log.Error(ex, "Error during checkpoint commit");
 		} finally {
@@ -108,7 +108,6 @@ public sealed class SecondaryIndexCheckpointTracker(
 			}
 		}
 
-		// Stop the async loop if running
 		if (localCts != null) {
 			try {
 				await localCts.CancelAsync().ConfigureAwait(false);
@@ -124,7 +123,6 @@ public sealed class SecondaryIndexCheckpointTracker(
 			}
 		}
 
-		// Dispose other resources
 		_incrementSignal.Dispose();
 	}
 

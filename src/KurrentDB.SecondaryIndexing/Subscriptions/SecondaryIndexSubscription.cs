@@ -27,7 +27,6 @@ public class SecondaryIndexSubscription(
 	private SecondaryIndexCheckpointTracker? _checkpointTracker;
 
 	public async ValueTask Subscribe(CancellationToken cancellationToken) {
-
 		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
 		var position = await index.GetLastPosition(linkedCts.Token);
 		var startFrom = position == null ? Position.Start : Position.FromInt64((long)position, (long)position);

@@ -160,8 +160,6 @@ public class ClusterVNode<TStreamId> :
 
 	public override ISubscriber MainBus => _mainBus;
 
-	public IReadIndex<TStreamId> ReadIndex => _readIndex;
-
 	public override IHttpService HttpService {
 		get { return _httpService; }
 	}
