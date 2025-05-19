@@ -1,10 +1,8 @@
 using Bogus;
-using Google.Protobuf;
-using Kurrent.Surge;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
-using Kurrent.Surge.Testing;
+using KurrentDB.Surge.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

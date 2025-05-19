@@ -4,7 +4,7 @@ using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Projectors;
 using Kurrent.Surge.Schema.Validation;
-using Kurrent.Surge.Testing.Messages.Telemetry;
+using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Data;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;

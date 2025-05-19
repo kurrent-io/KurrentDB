@@ -17,12 +17,12 @@
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
     <PackageReference Include="Kurrent.Surge.DuckDB" Version="1.1.0-alpha" />
+    <PackageReference Include="Kurrent.Surge.Core" Version="1.1.0-alpha" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.15" />
     <PackageReference Include="NJsonSchema" Version="11.2.0" />
   </ItemGroup>
 
   <ItemGroup>
-<!--    <ProjectReference Include="..\..\..\Framework\src\Kurrent.Surge.Core\Kurrent.Surge.Core.csproj" />-->
     <ProjectReference Include="..\KurrentDB.SchemaRegistry.Protocol\KurrentDB.SchemaRegistry.Protocol.csproj" />
   </ItemGroup>
 

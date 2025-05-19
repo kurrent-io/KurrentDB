@@ -8,13 +8,36 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Kurrent.Surge" Version="1.1.0-alpha" />
+    <PackageReference Include="Kurrent.Surge.Core" Version="1.1.0-alpha" />
+		<PackageReference Include="TUnit.Engine" Version="0.19.86" />
+		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.6.3" />
+<!--        <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="1.6.0" />-->
+<!--        <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="1.6.0" />-->
+  </ItemGroup>
+	
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.4" />
-  </ItemGroup>
+	</ItemGroup>
+	
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.16" />
+	</ItemGroup>
+	
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Framework\src\Kurrent.Surge.Core\Kurrent.Surge.Core.csproj" />
-    <ProjectReference Include="..\..\..\Framework\src\Kurrent.Surge\Kurrent.Surge.csproj" />
-    <ProjectReference Include="..\..\..\Toolkit\src\Kurrent.Surge.Testing.Containers.KurrentDB\Kurrent.Surge.Testing.Containers.KurrentDB.csproj" />
-    <ProjectReference Include="..\..\..\Toolkit\src\Kurrent.Surge.Testing.Messages\Kurrent.Surge.Testing.Messages.csproj" />
-    <ProjectReference Include="..\..\src\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
+    <ProjectReference Include="..\..\Kurrent.Surge.Testing.Containers.KurrentDB\Kurrent.Surge.Testing.Containers.KurrentDB.csproj" />
+    <ProjectReference Include="..\..\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" />
+    <ProjectReference Include="..\..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
+    <ProjectReference Include="..\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
   </ItemGroup>
+	<ItemGroup>
+		<Using Include="KurrentDB.Surge.Testing.Fixtures"/>
+		<Using Include="KurrentDB.Surge.Testing.FluentAssertions"/>
+		<Using Include="KurrentDB.Surge.Testing.TUnit"/>
+		<Using Include="Kurrent.Surge"/>
+		<Using Include="Humanizer"/>
+		<Using Include="FluentAssertions"/>
+		<Using Include="TUnit"/>
+	</ItemGroup>
 </Project>

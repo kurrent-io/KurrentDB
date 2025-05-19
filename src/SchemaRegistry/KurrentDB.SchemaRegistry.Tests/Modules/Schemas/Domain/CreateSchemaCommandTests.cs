@@ -1,6 +1,6 @@
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
-using Kurrent.Surge.Testing.Messages.Telemetry;
+using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;

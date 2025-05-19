@@ -1,5 +1,5 @@
 using Bogus;
-using Kurrent.Surge.Testing.Messages.Telemetry;
+using KurrentDB.Surge.Testing.Messages.Telemetry;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Schema.Serializers.Json;
 using Kurrent.Surge.Schema.Validation;

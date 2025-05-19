@@ -2,7 +2,7 @@ using System.Text.Json;
 using Bogus;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Schema.Serializers.Json;
-using Kurrent.Surge.Testing.Messages.Telemetry;
+using KurrentDB.Surge.Testing.Messages.Telemetry;
 using Kurrent.Surge.Schema.Validation;
 
 namespace Kurrent.Surge.Core.Tests.Schema.Validation;
@@ -105,17 +105,16 @@ public class SchemaExportTests {
 }
 
 record SchemaTestSubject {
-    public string                     String     { get; set; }
+    public string                     String     { get; set; } = null!;
     public int                        Int        { get; set; }
     public double                     Double     { get; set; }
     public bool                       Bool       { get; set; }
     public DateTime                   DateTime   { get; set; }
     public Guid                       Guid       { get; set; }
-    public Uri                        Uri        { get; set; }
-    public byte[]                     Bytes      { get; set; }
-    public string[]                   Array      { get; set; }
-    public List<string>               List       { get; set; }
-    public Dictionary<string, string> Dictionary { get; set; }
-    public SchemaTestSubject          Nested     { get; set; }
-
+    public Uri                        Uri        { get; set; } = null!;
+    public byte[]                     Bytes      { get; set; } = null!;
+    public string[]                   Array      { get; set; } = null!;
+    public List<string>               List       { get; set; } = null!;
+    public Dictionary<string, string> Dictionary { get; set; } = null!;
+    public SchemaTestSubject          Nested     { get; set; } = null!;
 }

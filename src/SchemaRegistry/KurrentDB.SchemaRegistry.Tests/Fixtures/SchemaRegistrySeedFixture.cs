@@ -1,6 +1,6 @@
 // using Bogus;
 // using Google.Protobuf;
-// using Kurrent.Surge.Testing.Messages.Telemetry;
+// using KurrentDB.Surge.Testing.Messages.Telemetry;
 // using KurrentDB.Protocol.Registry.V2;
 // using static KurrentDB.Protocol.V2.SchemaRegistryService;
 //

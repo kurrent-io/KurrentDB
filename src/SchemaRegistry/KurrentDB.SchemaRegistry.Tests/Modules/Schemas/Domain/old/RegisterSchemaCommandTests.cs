@@ -1,5 +1,5 @@
 // using Google.Protobuf;
-// using Kurrent.Surge.Testing.Messages.Telemetry;
+// using KurrentDB.Surge.Testing.Messages.Telemetry;
 // using KurrentDB.SchemaRegistry.Tests.Fixtures;
 // using KurrentDB.Protocol.Registry.V2;
 // using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;

@@ -159,6 +159,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Surge.Tests", "Ku
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Surge.Testing", "KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj", "{F381EBC5-8D55-47F0-A2A8-1186D9075F4D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Surge.Testing.Messages", "KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj", "{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Surge.Testing.Containers.KurrentDB", "Kurrent.Surge.Testing.Containers.KurrentDB\Kurrent.Surge.Testing.Containers.KurrentDB.csproj", "{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Surge.Testing.Containers", "Kurrent.Surge.Testing.Containers\Kurrent.Surge.Testing.Containers.csproj", "{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -961,6 +967,42 @@ Global
 		{F381EBC5-8D55-47F0-A2A8-1186D9075F4D}.Release|ARM64.Build.0 = Release|ARM64
 		{F381EBC5-8D55-47F0-A2A8-1186D9075F4D}.Release|x64.ActiveCfg = Release|x64
 		{F381EBC5-8D55-47F0-A2A8-1186D9075F4D}.Release|x64.Build.0 = Release|x64
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Debug|ARM64.Build.0 = Debug|ARM64
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Debug|x64.ActiveCfg = Debug|x64
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Debug|x64.Build.0 = Debug|x64
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Release|ARM64.ActiveCfg = Release|ARM64
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Release|ARM64.Build.0 = Release|ARM64
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Release|x64.ActiveCfg = Release|x64
+		{D9DE09EC-A885-4CA3-B80E-4F8D23C034FF}.Release|x64.Build.0 = Release|x64
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Debug|ARM64.Build.0 = Debug|ARM64
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Debug|x64.ActiveCfg = Debug|x64
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Debug|x64.Build.0 = Debug|x64
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Release|ARM64.ActiveCfg = Release|ARM64
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Release|ARM64.Build.0 = Release|ARM64
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Release|x64.ActiveCfg = Release|x64
+		{1FDACC5B-E3AA-4ED3-8A7C-A9079753F552}.Release|x64.Build.0 = Release|x64
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Debug|ARM64.Build.0 = Debug|ARM64
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Debug|x64.ActiveCfg = Debug|x64
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Debug|x64.Build.0 = Debug|x64
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Release|ARM64.ActiveCfg = Release|ARM64
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Release|ARM64.Build.0 = Release|ARM64
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Release|x64.ActiveCfg = Release|x64
+		{AB95729D-561F-4EFB-8A6B-3E76EE109FF2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

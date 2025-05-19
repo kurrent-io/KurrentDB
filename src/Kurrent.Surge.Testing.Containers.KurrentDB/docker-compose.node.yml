@@ -1,0 +1,38 @@
+version: "3.5"
+
+networks:
+  default:
+    name: eventstore-network
+
+services:
+  
+  eventstore:
+    image: ghcr.io/eventstore/eventstore:${CI_EVENTSTORE_DOCKER_IMAGE}
+    container_name: eventstore
+    environment:
+      - EVENTSTORE_MEM_DB=true
+      - EVENTSTORE_HTTP_PORT=2113
+      - EVENTSTORE_LOG_LEVEL=Information
+      - EVENTSTORE_RUN_PROJECTIONS=None
+      - EVENTSTORE_START_STANDARD_PROJECTIONS=true
+      - EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP=true
+      
+      # set certificates location
+      - EVENTSTORE_CERTIFICATE_FILE=/etc/eventstore/certs/node/node.crt
+      - EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE=/etc/eventstore/certs/node/node.key
+      - EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH=/etc/eventstore/certs/ca
+    ports:
+      - "2113:2113"
+    volumes:
+      - ${ES_CERTS_CLUSTER}:/etc/eventstore/certs
+      - type: volume
+        source: eventstore-volume-data1
+        target: /var/lib/eventstore
+      - type: volume
+        source: eventstore-volume-logs1
+        target: /var/log/eventstore
+    restart: unless-stopped
+
+volumes:
+  eventstore-volume-data1:
+  eventstore-volume-logs1:

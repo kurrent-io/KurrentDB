@@ -11,8 +11,11 @@ public class XunitTestFrameworkExecutorWithAssemblyFixture(
     ISourceInformationProvider sourceInformationProvider,
     IMessageSink diagnosticMessageSink
 ) : XunitTestFrameworkExecutor(assemblyName, sourceInformationProvider, diagnosticMessageSink) {
-    protected override async void RunTestCases(
-        IEnumerable<IXunitTestCase> testCases, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions
+	// TODO: is pragma needed here?
+#pragma warning disable TUnit0031
+	protected override async void RunTestCases(
+#pragma warning restore TUnit0031
+		IEnumerable<IXunitTestCase> testCases, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions
     ) {
         using var assemblyRunner = new XunitTestAssemblyRunnerWithAssemblyFixture(
             TestAssembly,

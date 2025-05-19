@@ -1,0 +1,35 @@
+version: "3.5"
+
+networks:
+  default:
+    name: eventstore-network
+
+services:
+  
+  volumes-provisioner:
+    image: hasnat/volumes-provisioner
+    container_name: volumes-provisioner
+    environment:
+      PROVISION_DIRECTORIES: "1000:1000:0755:/tmp/certs"
+    volumes:
+      - "${ES_CERTS_CLUSTER}:/tmp/certs"
+    network_mode: none
+  
+  cert-gen:
+    image: eventstore/es-gencert-cli:1.0.2
+    container_name: cert-gen
+    user: "1000:1000"
+    entrypoint: [ "/bin/sh","-c" ]
+    command:
+      - |
+        es-gencert-cli create-ca -out /tmp/certs/ca
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node -ip-addresses 127.0.0.1 -dns-names localhost,eventstore
+        
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node1 -ip-addresses 127.0.0.1,172.30.240.11 -dns-names localhost,esdb-node1
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node2 -ip-addresses 127.0.0.1,172.30.240.12 -dns-names localhost,esdb-node2
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node3 -ip-addresses 127.0.0.1,172.30.240.13 -dns-names localhost,esdb-node3
+        es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node4 -ip-addresses 127.0.0.1,172.30.240.14 -dns-names localhost,esdb-node4
+    volumes:
+      - "${ES_CERTS_CLUSTER}:/tmp/certs"
+    depends_on:
+      - volumes-provisioner
