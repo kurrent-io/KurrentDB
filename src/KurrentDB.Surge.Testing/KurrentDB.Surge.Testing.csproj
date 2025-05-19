@@ -72,4 +72,8 @@
 	<ItemGroup>
 	  <Folder Include="Tunit\" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
+	</ItemGroup>
 </Project>

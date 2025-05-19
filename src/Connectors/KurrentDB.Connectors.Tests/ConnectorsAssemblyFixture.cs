@@ -19,7 +19,7 @@ using KurrentDB.Surge.Consumers;
 using KurrentDB.Surge.Processors;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
-using KurrentDB.System.Testing;
+using KurrentDB.Surge.Testing;
 using KurrentDB.Surge.Testing.Xunit.Extensions.AssemblyFixture;
 using Microsoft.Extensions.DependencyInjection;
 using FakeTimeProvider = Microsoft.Extensions.Time.Testing.FakeTimeProvider;

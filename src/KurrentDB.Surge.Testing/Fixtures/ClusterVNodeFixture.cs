@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
-using KurrentDB.Surge.Testing;
 using KurrentDB.Surge.Testing.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,7 +14,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using ILogger = Microsoft.Extensions.Logging.ILogger;
 
-namespace KurrentDB.System.Testing;
+namespace KurrentDB.Surge.Testing;
 
 [PublicAPI]
 [SuppressMessage("Performance", "CA1822:Mark members as static")]

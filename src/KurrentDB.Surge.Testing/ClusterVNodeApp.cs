@@ -12,7 +12,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Messages;
-// using KurrentDB.Surge.Testing.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +19,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace KurrentDB.System.Testing;
+namespace KurrentDB.Surge.Testing;
 
 public class ClusterVNodeApp : IAsyncDisposable {
     static readonly Dictionary<string, string?> DefaultSettings = new() {
