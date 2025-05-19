@@ -2,7 +2,7 @@
 order: 1
 ---
 
-# Release Notes
+# Release notes
 
 This page contains the release notes for EventStoreDB 24.10
 
@@ -63,7 +63,7 @@ data like passwords and tokens, ensuring secure transmission. Setup is simple,
 with token-based protection that can be configured directly or through separate
 files for added security in production.
 
-### Connectors: Include Deleted Connectors in Results
+### Connectors: Include deleted connectors in results
 
 Previously, deleted connectors were unintentionally omitted from the results, leading to incomplete data visibility. This fix ensures that both deleted and non-deleted connectors are properly included where applicable.
 
@@ -71,7 +71,7 @@ Previously, deleted connectors were unintentionally omitted from the results, le
 
 Added validation for Serilog configuration during setup or changes. This helps catch errors early and prevents issues with logging functionality.
 
-### Connectors: Ensure Reset Connector Command Starts at Offset 0
+### Connectors: Ensure reset connector command starts at offset 0
 
 Previously, executing the reset connector command did not correctly reset the offset to zero, leading to inconsistent data replay. This fix ensures the connector starts from the beginning as expected when reset.
 
