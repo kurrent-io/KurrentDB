@@ -1,5 +1,7 @@
 using Grpc.Net.Client;
-using KurrentDB.Surge.Testing.Containers.KurrentDB;
+using KurrentDB.Core;
+using KurrentDB.Core.Bus;
+using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
 using KurrentDB.Surge.Testing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -14,17 +16,30 @@ using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 public class SchemaRegistryServerAutoWireUp {
-    public static KurrentDbTestContainer Container { get; private set; } = null!;
+    // public static KurrentDbTestContainer Container { get; private set; } = null!;
 
-    public static TestServer                  TestServer { get; private set; } = null!;
-    public static HttpClient                  HttpClient { get; private set; } = null!;
-    public static SchemaRegistryServiceClient Client     { get; private set; } = null!;
+    public static TestServer                  TestServer      { get; private set; } = null!;
+    public static HttpClient                  HttpClient      { get; private set; } = null!;
+    public static SchemaRegistryServiceClient Client          { get; private set; } = null!;
+    public static ClusterVNodeApp             ClusterVNodeApp { get; private set; } = null!;
+
+    public static ClusterVNodeOptions NodeOptions  { get; private set; } = null!;
+    public static IServiceProvider    NodeServices { get; private set; } = null!;
+
+    public static IPublisher  Publisher  => NodeServices.GetRequiredService<IPublisher>();
+    public static ISubscriber Subscriber => NodeServices.GetRequiredService<ISubscriber>();
 
     [Before(Assembly)]
     public static async Task AssemblySetUp(AssemblyHookContext context, CancellationToken cancellationToken) {
-        Container = new KurrentDbTestContainer();
+        ClusterVNodeApp = new ClusterVNodeApp();
+        // Container = new KurrentDbTestContainer();
 
-        await Container.Start();
+        var (options, services) = await ClusterVNodeApp.Start(configureServices: ConfigureServices);
+
+        NodeServices = services;
+        NodeOptions  = options;
+
+        // await Container.Start();
 
         var timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
 
@@ -43,10 +58,10 @@ public class SchemaRegistryServerAutoWireUp {
 
         await app.StartAsync(cancellationToken);
 
-        // // trigger the creation of the connection pool
-        // app.Services
-        //     .GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry")
-        //     .GetConnection();
+        // // // trigger the creation of the connection pool
+        // // app.Services
+        // //     .GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry")
+        // //     .GetConnection();
 
         TestServer = (TestServer)app.Services.GetRequiredService<IServer>();
         HttpClient = TestServer.CreateClient();
@@ -65,10 +80,11 @@ public class SchemaRegistryServerAutoWireUp {
     }
 
     static void ConfigureServices(IServiceCollection services) {
-        var clientSettings = Container.GetClientSettings();
+        // var clientSettings = Container.GetClientSettings();
 
-        services.AddEventStoreClient("esdb://admin:changeit@localhost:2113/?tls=false");
-        services.AddSingleton(clientSettings);
+        // services.AddEventStoreClient("esdb://admin:changeit@localhost:2113/?tls=false");
+        services.AddEventStore<SurgeEventStore>();
+        // services.AddSingleton(clientSettings);
 
         services.AddSurgeGrpcComponents();
         services.AddSchemaRegistryService();
@@ -78,12 +94,14 @@ public class SchemaRegistryServerAutoWireUp {
     public static async Task AssemblyCleanUp() {
         TestServer.Dispose();
         HttpClient.Dispose();
-        await Container.DisposeAsync();
+        await ClusterVNodeApp.DisposeAsync();
+        // await Container.DisposeAsync();
     }
 
     [BeforeEvery(Test)]
-    public static void TestSetUp(TestContext context) =>
-        Container.ReportStatus();
+    public static void TestSetUp(TestContext context) {
+        // return Container.ReportStatus();
+    }
 
     private class TestContextAwareLoggerFactory : ILoggerFactory {
         readonly ILoggerFactory _defaultLoggerFactory = new LoggerFactory();

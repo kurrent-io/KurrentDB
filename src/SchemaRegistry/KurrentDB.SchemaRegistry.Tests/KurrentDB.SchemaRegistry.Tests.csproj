@@ -16,15 +16,15 @@
 <!--        <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="1.6.0" />-->
 <!--        <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="1.6.0" />-->
   </ItemGroup>
-	
+
 	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.4" />
 	</ItemGroup>
-	
+
 	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.16" />
 	</ItemGroup>
-	
+
   <ItemGroup>
     <ProjectReference Include="..\..\Kurrent.Surge.Testing.Containers.KurrentDB\Kurrent.Surge.Testing.Containers.KurrentDB.csproj" />
     <ProjectReference Include="..\..\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" />
