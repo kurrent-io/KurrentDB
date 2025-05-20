@@ -37,7 +37,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
 
     WebApplication? App { get; set; }
 
-    public async Task<(ClusterVNodeOptions Options, IServiceProvider Services)> Start(TimeSpan? readinessTimeout = null, Dictionary<string, string?>? overrides = null, Action<IServiceCollection>? configureServices = null, bool useRandomPort = false) {
+    public async Task<(ClusterVNodeOptions Options, IServiceProvider Services)> Start(TimeSpan? readinessTimeout = null, Dictionary<string, string?>? overrides = null, Action<IServiceCollection>? configureServices = null) {
         var settings = overrides is not null
             ? DefaultSettings.ToDictionary().With(x => overrides.ForEach((key, value) => x[key] = value))
             : DefaultSettings;
@@ -55,8 +55,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
             .With(x => x.Services.AddSingleton<IHostedService>(esdb))
             .With(x => configureServices?.Invoke(x.Services));
 
-        if(useRandomPort)
-			builder.WebHost.ConfigureKestrel(serverOptions => serverOptions.ListenAnyIP(Random.Shared.Next(5001, 6000)));
+        builder.WebHost.ConfigureKestrel(serverOptions => serverOptions.ListenAnyIP(0));
 
         App = builder.Build().With(x => esdb.Node.Startup.Configure(x));
 

@@ -39,8 +39,6 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			services.AddSingleton<ISecondaryIndex>(new FakeSecondaryIndex(IndexStreamName));
 		};
 
-		UseRandomPort = true;
-
 		if (isSecondaryIndexingPluginEnabled) {
 			Configuration = new Dictionary<string, string?> {
 				{ $"{PluginConfigPrefix}:Enabled", "true" },
