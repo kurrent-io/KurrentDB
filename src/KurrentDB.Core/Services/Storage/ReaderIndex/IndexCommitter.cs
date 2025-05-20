@@ -100,6 +100,55 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 		_tracker = tracker;
 	}
 
+	private readonly struct PreparesBatch(IndexCommitter<TStreamId> indexCommitter) {
+		private const int BatchSize = 128;
+
+		private readonly Dictionary<TStreamId, int> _streamIndexes = new(capacity: BatchSize);
+		private readonly List<IPrepareLogRecord<TStreamId>> _prepares = new(capacity: BatchSize);
+		private readonly int[] _prepareStreamIndexes = new int[BatchSize];
+
+		private int NumPrepares => _prepares.Count;
+		private int NumStreams => _streamIndexes.Keys.Count;
+
+		public async ValueTask Add(IPrepareLogRecord<TStreamId> prepare, CancellationToken token) {
+			if (!_streamIndexes.TryGetValue(prepare.EventStreamId, out var streamIndex)) {
+				streamIndex = NumStreams;
+				_streamIndexes[prepare.EventStreamId] = streamIndex;
+			}
+
+			_prepareStreamIndexes[NumPrepares] = streamIndex;
+			_prepares.Add(prepare);
+
+			if (NumPrepares >= BatchSize) {
+				await Commit(token);
+			}
+		}
+
+		public ValueTask Commit(CancellationToken token) {
+			if (NumPrepares == 0)
+				return ValueTask.CompletedTask;
+
+			var task = indexCommitter.Commit(
+				commitedPrepares: _prepares.AsReadOnly(),
+				numStreams: NumStreams,
+				eventStreamIndexes: NumStreams == 1 ?
+					LowAllocReadOnlyMemory<int>.Empty :
+					new LowAllocReadOnlyMemory<int>(_prepareStreamIndexes.AsMemory(0, NumPrepares)),
+				isTfEof: false, // this parameter is unused during index rebuilds
+				cacheLastEventNumber: false,
+				token: token);
+
+			Clear();
+
+			return task;
+		}
+
+		private void Clear() {
+			_prepares.Clear();
+			_streamIndexes.Clear();
+		}
+	}
+
 	public async ValueTask Init(long buildToPosition, CancellationToken token) {
 		Log.Information("TableIndex initialization...");
 
@@ -148,6 +197,8 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 			var fullRebuild = startPosition == 0;
 			reader.Reposition(startPosition);
 
+			var preparesBatch = new PreparesBatch(this);
+
 			long processed = 0;
 			SeqReadResult result;
 			while ((result = await reader.TryReadNext(token)).Success && result.LogRecord.LogPosition < buildToPosition) {
@@ -169,11 +220,11 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 							break;
 						}
 
-						await Commit([prepare], numStreams: 1, eventStreamIndexes: [], result.Eof, false, token);
-
+						await preparesBatch.Add(prepare, token);
 						break;
 					}
 					case LogRecordType.Commit:
+						await preparesBatch.Commit(token);
 						await Commit((CommitLogRecord)result.LogRecord, result.Eof, false, token);
 						break;
 					case LogRecordType.System:
@@ -183,6 +234,8 @@ public class IndexCommitter<TStreamId> : IndexCommitter, IIndexCommitter<TStream
 					default:
 						throw new Exception(string.Format("Unknown RecordType: {0}", result.LogRecord.RecordType));
 				}
+
+				await preparesBatch.Commit(token);
 
 				processed += 1;
 				if (DateTime.UtcNow - lastTime > reportPeriod || processed % 100000 == 0) {
