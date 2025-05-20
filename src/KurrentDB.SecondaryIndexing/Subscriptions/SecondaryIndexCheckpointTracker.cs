@@ -1,133 +1,83 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
+using DotNext.Runtime.CompilerServices;
+using DotNext.Threading;
 using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-public sealed class SecondaryIndexCheckpointTracker(
-	int batchSize,
-	uint delayMs,
-	Func<CancellationToken, Task> commitAction
-) : IAsyncDisposable {
-	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexCheckpointTracker>();
+// Calls commitAction when the delay is reached or when Increment is called enough times
+// to reach the batch size. Either trigger resets the increment count and the timeout.
+// commitAction is only ever called if Increment has been called at least once.
+public sealed class SecondaryIndexCheckpointTracker : IAsyncDisposable {
+	private readonly int _batchSize;
+	private readonly TimeSpan _timeout;
+	private readonly Func<CancellationToken, ValueTask> _commitAction;
+	private readonly AsyncManualResetEvent _signal = new(initialState: false);
+	private readonly CancellationTokenSource _cts;
+	private readonly Task _loopTask;
 
-	private readonly TimeSpan _interval = TimeSpan.FromMilliseconds(delayMs);
-	private readonly object _startLock = new();
-
-	private readonly SemaphoreSlim _incrementSignal = new(0, 1);
 	private int _counter;
-
-	private int _isCommitting;
-
-	private CancellationTokenSource? _loopCts;
-	private Task? _loopTask;
-
 	private bool _disposed;
 
-	public void Start(CancellationToken externalToken) {
-		ThrowIfDisposed();
+	public SecondaryIndexCheckpointTracker(
+		int batchSize,
+		uint delayMs,
+		Func<CancellationToken, ValueTask> commitAction,
+		CancellationToken ct) {
 
-		lock (_startLock) {
-			if (_loopTask != null)
-				throw new InvalidOperationException("Already started");
+		_batchSize = batchSize;
+		_timeout = TimeSpan.FromMilliseconds(delayMs);
+		_commitAction = commitAction;
 
-			_loopCts = CancellationTokenSource.CreateLinkedTokenSource(externalToken);
-			_loopTask = RunAsync(_loopCts.Token);
-		}
-	}
-
-	public void Increment() {
-		ThrowIfDisposed();
-
-		int count = Interlocked.Increment(ref _counter);
-		if (count < batchSize) return;
-
-		if (_incrementSignal.CurrentCount == 0) {
-			_incrementSignal.Release();
-		}
-	}
-
-	private async Task RunAsync(CancellationToken token) {
-		using var timer = new PeriodicTimer(_interval);
-
-		try {
-			while (!token.IsCancellationRequested) {
-				var signalTask = _incrementSignal.WaitAsync(token);
-				var timerTask = timer.WaitForNextTickAsync(token).AsTask();
-
-				await Task.WhenAny(signalTask, timerTask).ConfigureAwait(false);
-
-				if (token.IsCancellationRequested)
-					break;
-
-				await TryCommitAsync(token).ConfigureAwait(false);
-			}
-		} catch (OperationCanceledException) {
-			// Expected during cancellation
-		} catch (Exception ex) {
-			Log.Error(ex, "Unexpected error in checkpoint loop");
-		}
-	}
-
-	private async Task TryCommitAsync(CancellationToken token) {
-		if (Interlocked.CompareExchange(ref _isCommitting, 1, 0) != 0)
-			return;
-
-		try {
-			int count = Interlocked.Exchange(ref _counter, 0);
-			if (count == 0)
-				return;
-
-			await commitAction(token).ConfigureAwait(false);
-		} catch (OperationCanceledException) {
-			// Expected during cancellation
-		} catch (Exception ex) {
-			Log.Error(ex, "Error during checkpoint commit");
-		} finally {
-			Interlocked.Exchange(ref _isCommitting, 0);
-		}
+		_cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+		_loopTask = Loop(_cts.Token);
 	}
 
 	public async ValueTask DisposeAsync() {
-		if (_disposed) return;
-
-		CancellationTokenSource? localCts = null;
-		Task? localTask = null;
-
-		lock (_startLock) {
-			if (_disposed) return;
-
-			_disposed = true;
-
-			if (_loopCts != null) {
-				localCts = _loopCts;
-				localTask = _loopTask;
-				_loopCts = null;
-				_loopTask = null;
-			}
+		if (_disposed) {
+			return;
 		}
 
-		if (localCts != null) {
-			try {
-				await localCts.CancelAsync().ConfigureAwait(false);
-
-				if (localTask != null)
-					await localTask.ConfigureAwait(false);
-			} catch (OperationCanceledException) {
-				// Expected during cancellation
-			} catch (Exception ex) {
-				Log.Error(ex, "Error during checkpoint tracker disposal");
-			} finally {
-				localCts.Dispose();
-			}
+		_disposed = true;
+		using (_cts) {
+			await _cts.CancelAsync();
 		}
-
-		_incrementSignal.Dispose();
+		await _loopTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+		_signal.Dispose();
 	}
 
-	private void ThrowIfDisposed() {
-		if (!_disposed) return;
-		throw new ObjectDisposedException(nameof(SecondaryIndexCheckpointTracker));
+	public void Increment() {
+		ObjectDisposedException.ThrowIf(_disposed, this);
+
+		if (Interlocked.Increment(ref _counter) >= _batchSize) {
+			_signal.Set();
+		}
+	}
+
+	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
+	private async Task Loop(CancellationToken ct) {
+		while (!ct.IsCancellationRequested) {
+			await _signal.WaitAsync(_timeout, ct);
+
+			// either signalled or timed out
+			var count = Interlocked.Exchange(ref _counter, 0);
+
+			// reset the signal after clearing the _counter to avoid premature setting
+			_signal.Reset();
+
+			if (count == 0)
+				continue;
+
+			try {
+				await _commitAction(ct);
+			} catch (OperationCanceledException) {
+				// expected
+			} catch (Exception ex) {
+				Log.Error(ex, "Error during checkpoint commit");
+			}
+		}
 	}
 }

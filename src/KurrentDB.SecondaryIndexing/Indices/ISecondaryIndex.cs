@@ -15,7 +15,7 @@ public interface ISecondaryIndex: IDisposable {
 
 	ISecondaryIndexProcessor Processor { get; }
 
-	IEnumerable<IVirtualStreamReader> Readers { get; }
+	IReadOnlyList<IVirtualStreamReader> Readers { get; }
 }
 
 public interface ISecondaryIndexProcessor {

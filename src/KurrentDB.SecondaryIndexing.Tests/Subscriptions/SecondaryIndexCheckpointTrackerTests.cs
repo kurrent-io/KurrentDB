@@ -17,10 +17,8 @@ public class SecondaryIndexCheckpointTrackerTests {
 			Interlocked.Increment(ref callCount);
 			batchSize = 5;
 			commitSignal.Set();
-			return Task.CompletedTask;
-		});
-
-		tracker.Start(CancellationToken.None);
+			return ValueTask.CompletedTask;
+		}, CancellationToken.None);
 
 		// When
 		for (int i = 0; i < 5; i++) {
@@ -45,10 +43,8 @@ public class SecondaryIndexCheckpointTrackerTests {
 		var tracker = new SecondaryIndexCheckpointTracker(1000, 10, _ => {
 			Interlocked.Increment(ref callCount);
 			commitSignal.Set();
-			return Task.CompletedTask;
-		});
-
-		tracker.Start(CancellationToken.None);
+			return ValueTask.CompletedTask;
+		}, CancellationToken.None);
 
 		// When
 		tracker.Increment();
@@ -78,9 +74,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 
 			Interlocked.Decrement(ref currentConcurrentCommits);
 			await Task.CompletedTask;
-		});
-
-		tracker.Start(CancellationToken.None);
+		}, CancellationToken.None);
 
 		// When
 		for (int i = 0; i < 3; i++) tracker.Increment();
@@ -106,10 +100,8 @@ public class SecondaryIndexCheckpointTrackerTests {
 		var tracker = new SecondaryIndexCheckpointTracker(100, 5000, _ => {
 			Interlocked.Increment(ref callCount);
 			commitSignal.Set();
-			return Task.CompletedTask;
-		});
-
-		tracker.Start(CancellationToken.None);
+			return ValueTask.CompletedTask;
+		}, CancellationToken.None);
 
 		// When
 		var tasks = Enumerable.Range(0, 100)
@@ -131,13 +123,11 @@ public class SecondaryIndexCheckpointTrackerTests {
 		// Given
 		var callCount = 0;
 
+		// When
 		var tracker = new SecondaryIndexCheckpointTracker(1000, 10, _ => {
 			Interlocked.Increment(ref callCount);
-			return Task.CompletedTask;
-		});
-
-		// When
-		tracker.Start(CancellationToken.None);
+			return ValueTask.CompletedTask;
+		}, CancellationToken.None);
 		await Task.Delay(30);
 		await tracker.DisposeAsync();
 
@@ -151,13 +141,11 @@ public class SecondaryIndexCheckpointTrackerTests {
 		var callCount = 0;
 		var cts = new CancellationTokenSource();
 
+		// When
 		var tracker = new SecondaryIndexCheckpointTracker(1, 1000, _ => {
 			Interlocked.Increment(ref callCount);
-			return Task.CompletedTask;
-		});
-
-		// When
-		tracker.Start(cts.Token);
+			return ValueTask.CompletedTask;
+		}, cts.Token);
 		await cts.CancelAsync();
 		tracker.Increment();
 
@@ -169,29 +157,11 @@ public class SecondaryIndexCheckpointTrackerTests {
 	}
 
 	[Fact]
-	public async Task Concurrent_Start_Calls_Throw_Exception() {
-		// Given
-		var tracker = new SecondaryIndexCheckpointTracker(10, 100, _ => Task.CompletedTask);
-
-		// When
-		tracker.Start(CancellationToken.None);
-
-		// Then
-		var ex = Assert.Throws<InvalidOperationException>(() =>
-			tracker.Start(CancellationToken.None));
-
-		Assert.Contains("Already started", ex.Message);
-
-		await tracker.DisposeAsync();
-	}
-
-	[Fact]
 	public async Task Increment_After_Dispose_Throws() {
 		// Given
-		var tracker = new SecondaryIndexCheckpointTracker(10, 100, _ => Task.CompletedTask);
-
 		// When
-		tracker.Start(CancellationToken.None);
+		var tracker =
+			new SecondaryIndexCheckpointTracker(10, 100, _ => ValueTask.CompletedTask, CancellationToken.None);
 		await tracker.DisposeAsync();
 
 		// Then
@@ -200,28 +170,11 @@ public class SecondaryIndexCheckpointTrackerTests {
 	}
 
 	[Fact]
-	public async Task Start_After_Dispose_Throws() {
-		// Given
-		var tracker = new SecondaryIndexCheckpointTracker(10, 100, _ => Task.CompletedTask);
-
-		// When
-		await tracker.DisposeAsync();
-
-		// Then
-		var ex = Assert.Throws<ObjectDisposedException>(() =>
-			tracker.Start(CancellationToken.None));
-
-		Assert.Contains("SecondaryIndexCheckpointTracker", ex.Message);
-	}
-
-	[Fact]
 	public async Task Multiple_Dispose_Calls_Are_Safe() {
 		// Given
 		var disposeCalled = 0;
-		var tracker = new SecondaryIndexCheckpointTracker(10, 100, _ => Task.CompletedTask);
-
-		// When
-		tracker.Start(CancellationToken.None);
+		var tracker =
+			new SecondaryIndexCheckpointTracker(10, 100, _ => ValueTask.CompletedTask, CancellationToken.None);
 
 		try {
 			await tracker.DisposeAsync();
@@ -240,12 +193,11 @@ public class SecondaryIndexCheckpointTrackerTests {
 	[Fact]
 	public async Task Concurrent_Dispose_Calls_Are_Safe() {
 		// Given
-		var tracker = new SecondaryIndexCheckpointTracker(10, 100, _ => Task.CompletedTask);
+		var tracker =
+			new SecondaryIndexCheckpointTracker(10, 100, _ => ValueTask.CompletedTask, CancellationToken.None);
 		var exceptions = 0;
 
 		// When
-		tracker.Start(CancellationToken.None);
-
 		var disposeTasks = Enumerable.Range(0, 5)
 			.Select(_ => Task.Run(async () => {
 				try {
@@ -275,18 +227,15 @@ public class SecondaryIndexCheckpointTrackerTests {
 			commitTask.SetResult(true); // Signal that commit has started
 			commitBlocker.Wait(); // Wait indefinitely (no timeout)
 			commitCompleted = true;
-			return Task.CompletedTask;
-		});
+			return ValueTask.CompletedTask;
+		}, CancellationToken.None);
 
 		// When
-		tracker.Start(CancellationToken.None);
-
 		var incrementTask = Task.Run(() => {
 			int attemptCount = 0;
 			int maxAttempts = 50;
 
-			while (!commitStarted.IsSet && attemptCount < maxAttempts)
-			{
+			while (!commitStarted.IsSet && attemptCount < maxAttempts) {
 				tracker.Increment();
 				Thread.Sleep(10);
 				attemptCount++;

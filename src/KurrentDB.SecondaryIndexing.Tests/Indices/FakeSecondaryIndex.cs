@@ -18,7 +18,7 @@ public class FakeSecondaryIndex : ISecondaryIndex {
 	public IList<ResolvedEvent> Pending { get; } = new List<ResolvedEvent>();
 
 	public ISecondaryIndexProcessor Processor { get; }
-	public IEnumerable<IVirtualStreamReader> Readers { get; }
+	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
 	public ValueTask Init(CancellationToken ct) => ValueTask.CompletedTask;
 
 	public ValueTask<ulong?> GetLastPosition(CancellationToken ct) =>

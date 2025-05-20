@@ -19,10 +19,9 @@ public class SecondaryIndexSubscription(
 	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
 	private readonly int _checkpointCommitBatchSize = options?.CheckpointCommitBatchSize ?? 50000;
 	private readonly uint _checkpointCommitDelayMs = options?.CheckpointCommitDelayMs ?? 10000;
-	private readonly uint _checkpointIntervalMultiplier = options?.CheckpointIntervalMultiplier ?? 1000;
 
 	private readonly CancellationTokenSource _cts = new();
-	private Enumerator.AllSubscriptionFiltered? _subscription;
+	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
 	private SecondaryIndexCheckpointTracker? _checkpointTracker;
 
@@ -34,20 +33,17 @@ public class SecondaryIndexSubscription(
 		_checkpointTracker = new SecondaryIndexCheckpointTracker(
 			_checkpointCommitBatchSize,
 			_checkpointCommitDelayMs,
-			async ct => await index.Processor.Commit(ct)
+			async ct => await index.Processor.Commit(ct),
+			linkedCts.Token
 		);
-		_checkpointTracker.Start(linkedCts.Token);
 
-		_subscription = new Enumerator.AllSubscriptionFiltered(
+		_subscription = new Enumerator.AllSubscription(
 			bus: publisher,
 			expiryStrategy: new DefaultExpiryStrategy(),
 			checkpoint: startFrom,
 			resolveLinks: false,
-			eventFilter: EventFilter.DefaultAllFilter,
 			user: SystemAccounts.System,
 			requiresLeader: false,
-			maxSearchWindow: null,
-			checkpointIntervalMultiplier: _checkpointIntervalMultiplier,
 			cancellationToken: linkedCts.Token
 		);
 

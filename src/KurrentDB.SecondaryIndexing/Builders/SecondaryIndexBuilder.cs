@@ -19,7 +19,7 @@ public class SecondaryIndexBuilder
 	private readonly ISecondaryIndex _index;
 	public IEnumerable<IVirtualStreamReader> IndexVirtualStreamReaders => _index.Readers;
 
-	[Experimental("SECONDARYINDEXING")]
+	[Experimental("SECONDARY_INDEX")]
 	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber, SecondaryIndexingPluginOptions? options = null) {
 		_subscription = new SecondaryIndexSubscription(publisher, index, options);
 		_index = index;
@@ -35,7 +35,6 @@ public class SecondaryIndexBuilder
 
 	public async ValueTask HandleAsync(SystemMessage.BecomeShuttingDown message, CancellationToken token) {
 		await _index.Processor.Commit(token);
-		await Task.Delay(100, token);
 		_index.Dispose();
 	}
 

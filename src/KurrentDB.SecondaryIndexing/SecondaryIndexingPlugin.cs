@@ -20,7 +20,6 @@ public interface ISecondaryIndexingPlugin : ISubsystemsPlugin;
 public sealed class SecondaryIndexingPluginOptions {
 	public int? CheckpointCommitBatchSize { get; set; }
 	public uint? CheckpointCommitDelayMs { get; set; }
-	public uint? CheckpointIntervalMultiplier { get; set; }
 }
 
 public static class SecondaryIndexingPluginFactory {
@@ -30,7 +29,7 @@ public static class SecondaryIndexingPluginFactory {
 
 internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStreamReader)
 	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
-	[Experimental("SECONDARYINDEXING")]
+	[Experimental("SECONDARY_INDEX")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
 		var options = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
 			.Get<SecondaryIndexingPluginOptions>();
@@ -48,10 +47,10 @@ internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStr
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
 		base.ConfigureApplication(app, configuration);
 
-		var indexes = app.ApplicationServices.GetService<IEnumerable<ISecondaryIndex>>();
+		var index = app.ApplicationServices.GetService<ISecondaryIndex>();
 
-		if (indexes != null)
-			virtualStreamReader.Register(indexes.SelectMany(i => i.Readers).ToArray());
+		if (index != null)
+			virtualStreamReader.Register(index.Readers.ToArray());
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
