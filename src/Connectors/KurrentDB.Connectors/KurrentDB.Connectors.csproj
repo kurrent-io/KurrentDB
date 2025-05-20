@@ -32,12 +32,12 @@
 		<PackageReference Include="Kurrent.Connectors.KurrentDB" Version="1.1.0-alpha" />
 		<PackageReference Include="Kurrent.Connectors.MongoDB" Version="1.1.0-alpha" />
 		<PackageReference Include="Kurrent.Connectors.RabbitMQ" Version="1.1.0-alpha" />
-		<PackageReference Include="Eventuous.Application" Version="0.15.0" />
-		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
-		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
-		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
-		<PackageReference Include="Grpc.StatusProto" Version="2.65.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.7" />
+		<PackageReference Include="Eventuous.Application" Version="0.15.1" />
+		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.1" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.1" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
+		<PackageReference Include="Grpc.StatusProto" Version="2.70.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.15" />
 
 		<PackageReference Include="Serilog" Version="4.0.1" />
 		<PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />

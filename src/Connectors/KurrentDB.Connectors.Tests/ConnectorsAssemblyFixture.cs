@@ -87,7 +87,7 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
         };
     }
 
-    public SchemaRegistry SchemaRegistry => NodeServices.GetRequiredService<SchemaRegistry>();
+    public Kurrent.Surge.Schema.SchemaRegistry SchemaRegistry => NodeServices.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
     public ISchemaSerializer SchemaSerializer => SchemaRegistry;
     public IStateStore       StateStore        { get; private set; } = null!;
     public FakeTimeProvider  TimeProvider      { get; private set; } = null!;

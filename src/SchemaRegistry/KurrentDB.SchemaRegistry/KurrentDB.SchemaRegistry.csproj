@@ -15,11 +15,14 @@
     <PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.1" />
     <PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.1" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
-    <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.64.0" />
     <PackageReference Include="Kurrent.Surge.DuckDB" Version="1.1.0-alpha" />
     <PackageReference Include="Kurrent.Surge.Core" Version="1.1.0-alpha" />
     <PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.15" />
     <PackageReference Include="NJsonSchema" Version="11.2.0" />
+
+		<!-- Required to remove conflicts -->
+    <PackageReference Include="Google.Api.CommonProtos" Version="2.15.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

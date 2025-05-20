@@ -145,7 +145,7 @@ public static class ResolvedEventExtensions {
             Headers    = headers,
             SchemaInfo = schemaInfo,
             Value      = value!,
-            ValueType  = value is not null ? value.GetType() : SchemaRegistry.MissingType,
+            ValueType  = value is not null ? value.GetType() : Kurrent.Surge.Schema.SchemaRegistry.MissingType,
             Data       = data,
             IsRedacted = isRedacted
         };

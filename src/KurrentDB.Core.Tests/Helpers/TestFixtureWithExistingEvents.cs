@@ -491,7 +491,7 @@ public abstract class TestFixtureWithExistingEvents<TLogFormat, TStreamId> : Tes
 	}
 
 	public void Handle(StorageMessage.EventCommitted msg) {
-		var metadata = Json.ParseJson<ParkedMessageMetadata>(msg.Event.Metadata);
+		var metadata = Common.Utils.Json.ParseJson<ParkedMessageMetadata>(msg.Event.Metadata);
 		if (metadata != null)
 			EventTimeStamps.Add(metadata.Added.ToUniversalTime());
 	}

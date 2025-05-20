@@ -9,13 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.30.2" />
-    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.70.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.27.2" />
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.64.0" />
     <PackageReference Include="Grpc.StatusProto" Version="2.70.0" />
     <PackageReference Include="Grpc.Tools" Version="2.71.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+
+		<!-- Required to remove conflicts -->
+    <PackageReference Include="Google.Api.CommonProtos" Version="2.15.0" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
