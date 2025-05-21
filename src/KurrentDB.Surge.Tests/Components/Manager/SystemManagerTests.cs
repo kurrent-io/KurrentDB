@@ -3,13 +3,14 @@
 
 using Kurrent.Surge;
 using KurrentDB.Core;
+using KurrentDB.Surge.Testing.Fixtures;
 using Exception = System.Exception;
 using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 
-namespace KurrentDB.Connectors.Tests.Infrastructure;
+namespace KurrentDB.Surge.Tests.Components.Manager;
 
 [Trait("Category", "Integration")]
-public class SystemManagerTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
+public class SystemManagerTests(ITestOutputHelper output, SystemComponentsAssemblyFixture fixture) : SystemComponentsIntegrationTests(output, fixture) {
     [Fact]
     public async Task returns_false_when_stream_does_not_exist() => await Fixture.TestWithTimeout(async ct => {
         // Arrange

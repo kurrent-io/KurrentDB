@@ -5,8 +5,8 @@ using System.Text.RegularExpressions;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Readers;
-using KurrentDB.Connectors.Tests;
 using KurrentDB.Core;
+using KurrentDB.Surge.Testing.Fixtures;
 using KurrentDB.Surge.Testing.Xunit;
 using Shouldly;
 
@@ -16,7 +16,7 @@ using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
 namespace KurrentDB.Surge.Tests.Components.Readers;
 
 [Trait("Category", "Integration")]
-public class SystemReaderTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
+public class SystemReaderTests(ITestOutputHelper output, SystemComponentsAssemblyFixture fixture) : SystemComponentsIntegrationTests(output, fixture) {
     [Theory]
     [InlineData(3, 1)]
     public Task reads_from_beginning(int expectedCount, int bufferSize) => Fixture.TestWithTimeout(TimeSpan.FromSeconds(10),

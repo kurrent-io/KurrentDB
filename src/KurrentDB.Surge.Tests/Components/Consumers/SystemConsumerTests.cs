@@ -7,9 +7,9 @@ using System.Text.RegularExpressions;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using KurrentDB.Connect.Consumers;
-using KurrentDB.Connectors.Tests;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Surge.Testing.Fixtures;
 using KurrentDB.Surge.Testing.Xunit;
 using Microsoft.Extensions.Logging;
 using Identifiers = Kurrent.Surge.Identifiers;
@@ -17,7 +17,7 @@ using Identifiers = Kurrent.Surge.Identifiers;
 namespace KurrentDB.Surge.Tests.Components.Consumers;
 
 [Trait("Category", "Integration")]
-public class SystemConsumerTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
+public class SystemConsumerTests(ITestOutputHelper output, SystemComponentsAssemblyFixture fixture) : SystemComponentsIntegrationTests(output, fixture) {
 	[Theory, ConsumeFilterCases]
 	public async Task consumes_stream_from_earliest(string streamId, ConsumeFilter filter) {
 		// Arrange

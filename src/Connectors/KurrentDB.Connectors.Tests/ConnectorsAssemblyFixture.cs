@@ -1,28 +1,19 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Runtime.CompilerServices;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.DataProtection;
-using Kurrent.Surge.Persistence.State;
 using Kurrent.Surge.Processors;
-using Kurrent.Surge.Producers;
-using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Connectors.Infrastructure;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Planes.Management;
 using KurrentDB.Connectors.Tests;
-using KurrentDB.Surge.Consumers;
-using KurrentDB.Surge.Processors;
-using KurrentDB.Surge.Producers;
-using KurrentDB.Surge.Readers;
-using KurrentDB.Surge.Testing;
+using KurrentDB.Surge.Testing.Fixtures;
 using KurrentDB.Surge.Testing.Xunit.Extensions.AssemblyFixture;
 using Microsoft.Extensions.DependencyInjection;
-using FakeTimeProvider = Microsoft.Extensions.Time.Testing.FakeTimeProvider;
 using WithExtension = KurrentDB.Surge.Testing.Extensions.WithExtension;
 
 [assembly: TestFramework(XunitTestFrameworkWithAssemblyFixture.TypeName, XunitTestFrameworkWithAssemblyFixture.AssemblyName)]
@@ -31,101 +22,15 @@ using WithExtension = KurrentDB.Surge.Testing.Extensions.WithExtension;
 namespace KurrentDB.Connectors.Tests;
 
 [PublicAPI]
-public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
-    public ConnectorsAssemblyFixture() {
-        TimeProvider = new FakeTimeProvider();
-
-        ConfigureServices = services => {
-            services
-                .AddSingleton<TimeProvider>(TimeProvider)
-                .AddSingleton(LoggerFactory);
-
-            // // Management
-            // services.AddSingleton(ctx => new ConnectorsLicenseService(
-            //     ctx.GetRequiredService<ILicenseService>(),
-            //     ctx.GetRequiredService<ILogger<ConnectorsLicenseService>>()
-            // ));
-            //
-            // services.AddConnectorsManagementSchemaRegistration();
-            //
-            // services
-            //     .AddEventStore<SystemEventStore>(ctx => {
-            //         var reader = ctx.GetRequiredService<Func<SystemReaderBuilder>>()()
-            //             .ReaderId("rdx-eventuous-eventstore")
-            //             .Create();
-            //
-            //         var producer = ctx.GetRequiredService<Func<SystemProducerBuilder>>()()
-            //             .ProducerId("pdx-eventuous-eventstore")
-            //             .Create();
-            //
-            //         return new SystemEventStore(reader, producer);
-            //     })
-            //     .AddCommandService<ConnectorsCommandApplication, ConnectorEntity>();
-            //
-            // // Queries
-            // services.AddSingleton<ConnectorQueries>(ctx => new ConnectorQueries(
-            //     ctx.GetRequiredService<Func<SystemReaderBuilder>>(),
-            //     ConnectorQueryConventions.Streams.ConnectorsStateProjectionStream)
-            // );
-        };
-
-        OnSetup = () => {
-            Producer = NewProducer()
-                .ProducerId("test-pdx")
-                .Create();
-
-            Reader = NewReader()
-                .ReaderId("test-rdx")
-                .Create();
-
-            return Task.CompletedTask;
-        };
-
-        OnTearDown = async () => {
-            await Producer.DisposeAsync();
-            await Reader.DisposeAsync();
-        };
-    }
-
-    public Kurrent.Surge.Schema.SchemaRegistry SchemaRegistry => NodeServices.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
-    public ISchemaSerializer SchemaSerializer => SchemaRegistry;
-    public IStateStore       StateStore        { get; private set; } = null!;
-    public FakeTimeProvider  TimeProvider      { get; private set; } = null!;
+public partial class ConnectorsAssemblyFixture : SystemComponentsAssemblyFixture {
     public IServiceProvider  ConnectorServices { get; private set; } = null!;
 
     public ISnapshotProjectionsStore SnapshotProjectionsStore => NodeServices.GetRequiredService<ISnapshotProjectionsStore>();
-    public IManager                  Manager                  => NodeServices.GetRequiredService<IManager>();
     public IDataProtector            DataProtector            => NodeServices.GetRequiredService<IDataProtector>();
-
-    public IProducer Producer { get; private set; } = null!;
-    public IReader   Reader   { get; private set; } = null!;
 
     public ConnectorsCommandApplication CommandApplication { get; private set; } = null!;
 
     SequenceIdGenerator SequenceIdGenerator { get; } = new();
-
-    public SystemProducerBuilder NewProducer() => SystemProducer.Builder
-        .Publisher(Publisher)
-        .LoggerFactory(LoggerFactory)
-        .SchemaRegistry(SchemaRegistry);
-
-    public SystemReaderBuilder NewReader() => SystemReader.Builder
-        .Publisher(Publisher)
-        .LoggerFactory(LoggerFactory)
-        .SchemaRegistry(SchemaRegistry);
-
-    public SystemConsumerBuilder NewConsumer() => SystemConsumer.Builder
-        .Publisher(Publisher)
-        .LoggerFactory(LoggerFactory)
-        .SchemaRegistry(SchemaRegistry);
-
-    public SystemProcessorBuilder NewProcessor() => SystemProcessor.Builder
-        .Publisher(Publisher)
-        .LoggerFactory(LoggerFactory)
-        .SchemaRegistry(SchemaRegistry);
-
-    public string NewIdentifier([CallerMemberName] string? name = null) =>
-        $"{name.Underscore()}-{GenerateShortId()}".ToLowerInvariant();
 
     public RecordContext CreateRecordContext(string? connectorId = null, CancellationToken cancellationToken = default) {
         connectorId ??= NewConnectorId();

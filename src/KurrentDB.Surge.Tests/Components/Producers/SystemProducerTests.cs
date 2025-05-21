@@ -3,15 +3,14 @@
 
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
-using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Connect.Consumers;
-using KurrentDB.Connectors.Tests;
 using KurrentDB.Core;
+using KurrentDB.Surge.Testing.Fixtures;
 
 namespace KurrentDB.Surge.Tests.Components.Producers;
 
 [Trait("Category", "Integration")]
-public class SystemProducerTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
+public class SystemProducerTests(ITestOutputHelper output, SystemComponentsAssemblyFixture fixture) : SystemComponentsIntegrationTests(output, fixture) {
 	[Theory]
 	[InlineData(1, 1)]
 	[InlineData(1, 3)]

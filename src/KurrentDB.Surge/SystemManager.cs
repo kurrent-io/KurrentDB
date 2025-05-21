@@ -19,7 +19,7 @@ public class SystemManager : IManager {
     public async ValueTask<bool> StreamExists(StreamId stream, CancellationToken cancellationToken) {
         try {
             var read = Client.ReadStreamBackwards(stream: stream,
-                    startRevision: KurrentDB.Core.Services.Transport.Common.StreamRevision.End,
+                    startRevision: Core.Services.Transport.Common.StreamRevision.End,
                     maxCount: 1,
                     cancellationToken: cancellationToken)
                 .FirstOrDefaultAsync(cancellationToken: cancellationToken);

@@ -9,16 +9,16 @@ using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Checkpoints;
 using Kurrent.Surge.Processors;
 using KurrentDB.Connect.Consumers;
-using KurrentDB.Connectors.Tests;
 using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Surge.Testing.Fixtures;
 using Microsoft.Extensions.Logging;
 using Identifiers = Kurrent.Surge.Identifiers;
 
 namespace KurrentDB.Surge.Tests.Components.Processors;
 
 [Trait("Category", "Integration")]
-public class SystemProcessorTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
+public class SystemProcessorTests(ITestOutputHelper output, SystemComponentsAssemblyFixture fixture) : SystemComponentsIntegrationTests(output, fixture) {
     [Theory]
     [InlineData(1)]
     [InlineData(10)]
