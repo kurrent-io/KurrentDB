@@ -5,6 +5,7 @@ using KurrentDB.Surge.Testing;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 
@@ -38,7 +39,7 @@ public class SchemaRegistryServerAutoWireUp {
 				HttpClient.BaseAddress!,
 				new GrpcChannelOptions {
 					HttpClient = HttpClient,
-					// LoggerFactory = app.Services.GetRequiredService<ILoggerFactory>()
+					LoggerFactory = NodeServices.GetRequiredService<ILoggerFactory>()
 				}
 			)
 		);
@@ -47,6 +48,7 @@ public class SchemaRegistryServerAutoWireUp {
 	static void ConfigureServices(IServiceCollection services) {
 		var timeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
 
+        services.AddSingleton<ILoggerFactory>(new TestContextAwareLoggerFactory());
 		services.AddSingleton<TimeProvider>(timeProvider);
 		services.AddSingleton(timeProvider);
 
@@ -62,25 +64,23 @@ public class SchemaRegistryServerAutoWireUp {
 	}
 
 	[BeforeEvery(Test)]
-	public static void TestSetUp(TestContext context) {
-		// return Container.ReportStatus();
-	}
+	public static void TestSetUp(TestContext context) {}
 
-	// private class TestContextAwareLoggerFactory : ILoggerFactory {
-	//     readonly ILoggerFactory _defaultLoggerFactory = new LoggerFactory();
-	//
-	//     public ILogger CreateLogger(string categoryName) {
-	//         return TestContext.Current is not null
-	//             ? TestContext.Current.LoggerFactory().CreateLogger(categoryName)
-	//             : _defaultLoggerFactory.CreateLogger(categoryName);
-	//     }
-	//
-	//     public void AddProvider(ILoggerProvider provider) {
-	//         throw new NotImplementedException();
-	//     }
-	//
-	//     public void Dispose() {
-	//         _defaultLoggerFactory.Dispose();
-	//     }
-	// }
+	private class TestContextAwareLoggerFactory : ILoggerFactory {
+		readonly ILoggerFactory _defaultLoggerFactory = new LoggerFactory();
+
+		public ILogger CreateLogger(string categoryName) {
+			return TestContext.Current is not null
+				? TestContext.Current.LoggerFactory().CreateLogger(categoryName)
+				: _defaultLoggerFactory.CreateLogger(categoryName);
+		}
+
+		public void AddProvider(ILoggerProvider provider) {
+			throw new NotImplementedException();
+		}
+
+		public void Dispose() {
+			_defaultLoggerFactory.Dispose();
+		}
+	}
 }
