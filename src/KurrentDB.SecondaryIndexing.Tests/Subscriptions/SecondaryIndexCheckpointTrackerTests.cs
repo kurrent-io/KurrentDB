@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.SecondaryIndexing.Subscriptions;
+using KurrentDB.Surge.Testing.Extensions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Subscriptions;
 
@@ -61,38 +62,35 @@ public class SecondaryIndexCheckpointTrackerTests {
 	public async Task Commits_MultipleTimes_On_Timer() {
 		// Given
 		var callCount = 0;
-		var commitSignal = new ManualResetEventSlim(false);
-		var incrementSignal = new ManualResetEventSlim(false);
 
-		var tracker = new SecondaryIndexCheckpointTracker(1000, 10, _ => {
-			Interlocked.Increment(ref callCount);
-			incrementSignal.Set();
-			commitSignal.Set();
-			return ValueTask.CompletedTask;
-		}, CancellationToken.None);
+		SecondaryIndexCheckpointTracker tracker = null!;
 
-		// When
-		tracker.Increment();
+		var startedAt = DateTime.UtcNow;
+		var elapsed = new TaskCompletionSource<TimeSpan>();
+		var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+		cts.Token.Register(() => elapsed.TrySetCanceled(cts.Token));
 
-		// Simulate increments happening after the commit cycle
-		// This ensures that there won't be always empty batches on commit
-		await Task.Run(() => {
-			for (var i = 0; i < 10; i++)
-			{
-				incrementSignal.Wait(TimeSpan.FromMilliseconds(100));
-				incrementSignal.Reset();
-				tracker.Increment();
-			}
-		});
+		await using (tracker = new SecondaryIndexCheckpointTracker(1000, 10, _ => {
+			       var commitCounts = Interlocked.Increment(ref callCount);
 
-		var committed = commitSignal.Wait(TimeSpan.FromMilliseconds(250));
-		await tracker.DisposeAsync();
+			       if (commitCounts == 5) {
+				       elapsed.SetResult(DateTime.UtcNow - startedAt);
+			       } else {
+				       tracker.Increment();
+			       }
 
-		// Then
-		Assert.True(committed);
-		// It's enough to check if we triggered more than once.
-		// Trying to match a specific number could lead to flakiness, because of time-based race conditions.
-		Assert.True(callCount > 1);
+			       return ValueTask.CompletedTask;
+		       }, CancellationToken.None)) {
+
+			// When
+			tracker.Increment();
+
+			var totalCommitsElapsedTimeInMs = await elapsed.Task;
+
+			// Then
+			Assert.True(callCount >= 5);
+			Assert.True(totalCommitsElapsedTimeInMs >= TimeSpan.FromMilliseconds(5 * 10));
+		}
 	}
 
 	[Fact]
