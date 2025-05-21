@@ -30,56 +30,56 @@ public class ProjectionsTests : SchemaRegistryServerTestFixture {
 		versionsTableExists.Should().BeTrue();
 	}
 
-	// TODO: This tests fails with NPE
-	// [Test]
-	// public async Task on_schema_created(CancellationToken cancellationToken) {
-	//     var connection = DuckDBConnectionProvider.GetConnection();
-	//
-	//     var projection = new SchemaProjections();
-	//
-	//     await projection.Setup(connection, cancellationToken);
-	//
-	//     var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-	//
-	//     var record = await CreateRecord(
-	//         new SchemaCreated {
-	//             SchemaName       = schemaName,
-	//             SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-	//             Description      = Faker.Lorem.Text(),
-	//             DataFormat       = SchemaDataFormat.Json,
-	//             Compatibility    = Faker.Random.Enum(CompatibilityMode.Unspecified),
-	//             Tags = {
-	//                 new Dictionary<string, string> {
-	//                     [Faker.Lorem.Word()] = Faker.Lorem.Word(),
-	//                     [Faker.Lorem.Word()] = Faker.Lorem.Word(),
-	//                     [Faker.Lorem.Word()] = Faker.Lorem.Word()
-	//                 }
-	//             },
-	//             SchemaVersionId = Guid.NewGuid().ToString(),
-	//             VersionNumber   = 1,
-	//             CreatedAt       = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
-	//         }
-	//     );
-	//
-	//     await projection.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDBConnectionProvider.GetConnection()), record, cancellationToken));
-	//
-	//     var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
-	//
-	//     var getSchemaResponse = await queries.GetSchema(new() { SchemaName = schemaName }, cancellationToken);
-	//
-	//     if (getSchemaResponse.ResultCase == GetSchemaResponse.ResultOneofCase.Failure)
-	//         throw new Exception("Boom");
-	//
-	//     else {
-	//         var getSchemaVersionResponse = await queries.GetSchemaVersion(
-	//             new() {
-	//                 SchemaName    = getSchemaResponse.Success.Schema.SchemaName,
-	//                 VersionNumber = getSchemaResponse.Success.Schema.LatestSchemaVersion
-	//             },
-	//             cancellationToken
-	//         );
-	//     }
-	// }
+	[Test]
+	public async Task on_schema_created(CancellationToken cancellationToken) {
+		var connection = DuckDBConnectionProvider.GetConnection();
+
+		var projection = new SchemaProjections();
+
+		await projection.Setup(connection, cancellationToken);
+
+		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+
+		var record = await CreateRecord(
+			new SchemaCreated {
+				SchemaName = schemaName,
+				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
+				Description = Faker.Lorem.Text(),
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = Faker.Random.Enum(CompatibilityMode.Unspecified),
+				Tags = {
+					new Dictionary<string, string> {
+						[Faker.Lorem.Word()] = Faker.Lorem.Word(),
+						[Faker.Lorem.Word()] = Faker.Lorem.Word(),
+						[Faker.Lorem.Word()] = Faker.Lorem.Word()
+					}
+				},
+				SchemaVersionId = Guid.NewGuid().ToString(),
+				VersionNumber = 1,
+				CreatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
+			}
+		);
+
+		await projection.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDBConnectionProvider.GetConnection()), record,
+			cancellationToken));
+
+		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+
+		var getSchemaResponse = await queries.GetSchema(new GetSchemaRequest { SchemaName = schemaName }, cancellationToken);
+
+		if (getSchemaResponse.ResultCase == GetSchemaResponse.ResultOneofCase.Failure)
+			throw new Exception("Boom");
+
+		else {
+			var getSchemaVersionResponse = await queries.GetSchemaVersion(
+				new() {
+					SchemaName = getSchemaResponse.Success.Schema.SchemaName,
+					VersionNumber = getSchemaResponse.Success.Schema.LatestSchemaVersion
+				},
+				cancellationToken
+			);
+		}
+	}
 
 	[Test]
 	public async Task on_schema_version_registered(CancellationToken cancellationToken) {

@@ -16,7 +16,7 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
     public async Task<bool> WaitUntilCaughtUp(ulong position, CancellationToken cancellationToken) {
         const string sql =
             """
-            SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint)) 
+            SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
                 OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
             """;
 
@@ -43,10 +43,10 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
          var connection = ConnectionProvider.GetConnection();
 
          return await connection.QueryOneAsync(
-             sql, record => record is not null
-                 ? new GetSchemaResponse { Success = { Schema   = MapToSchema(record) } }
-                 : new GetSchemaResponse { Failure = { NotFound = new SchemaNotFound() } },
-             new { schema_name = query.SchemaName }
+	         sql, record => record is not null
+		         ? new GetSchemaResponse { Success = new() { Schema = MapToSchema(record) } }
+		         : new GetSchemaResponse { Failure = new() { NotFound = new SchemaNotFound() } },
+	         new { schema_name = query.SchemaName }
          );
     }
 
@@ -70,27 +70,27 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
     public async Task<GetSchemaVersionResponse> GetSchemaVersion(GetSchemaVersionRequest query, CancellationToken cancellationToken) {
         const string sqlWithVersionNumber =
             """
-            SELECT 
-                  version_id        
-                , version_number    
+            SELECT
+                  version_id
+                , version_number
                 , decode(schema_definition) AS schema_definition
-                , data_format      
-                , registered_at      
+                , data_format
+                , registered_at
             FROM schema_versions
-            WHERE schema_name = $schema_name 
+            WHERE schema_name = $schema_name
               AND version_number = $version_number
             """;
 
         const string sqlWithoutVersionNumber =
             """
-            SELECT 
-                  version_id        
-                , version_number    
+            SELECT
+                  version_id
+                , version_number
                 , decode(schema_definition) AS schema_definition
-                , data_format      
-                , registered_at          
-            FROM schema_versions 
-            WHERE schema_name = $schema_name 
+                , data_format
+                , registered_at
+            FROM schema_versions
+            WHERE schema_name = $schema_name
             ORDER BY version_number DESC
             LIMIT 1;
             """;
@@ -115,12 +115,12 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
     public async Task<GetSchemaVersionByIdResponse> GetSchemaVersionById(GetSchemaVersionByIdRequest query, CancellationToken cancellationToken) {
         const string sql =
             """
-            SELECT 
-                  version_id        
-                , version_number    
-                , decode(schema_definition) AS schema_definition   
-                , data_format        
-                , registered_at      
+            SELECT
+                  version_id
+                , version_number
+                , decode(schema_definition) AS schema_definition
+                , data_format
+                , registered_at
             FROM schema_versions
             WHERE version_id = $schema_version_id
             """;
@@ -178,12 +178,12 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
     public async Task<ListSchemaVersionsResponse> ListSchemaVersions(ListSchemaVersionsRequest query, CancellationToken cancellationToken) {
         const string sqlIncludeDefinition =
             """
-            SELECT 
-                  version_id        
-                , version_number    
-                , decode(schema_definition) AS schema_definition 
+            SELECT
+                  version_id
+                , version_number
+                , decode(schema_definition) AS schema_definition
                 , data_format
-                , registered_at      
+                , registered_at
             FROM schema_versions
             WHERE schema_name = $schema_name
             ORDER BY version_number
@@ -191,11 +191,11 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
 
         const string sqlExcludeDefinition =
             """
-            SELECT 
-                  version_id        
+            SELECT
+                  version_id
                 , version_number
                 , data_format
-                , registered_at            
+                , registered_at
             FROM schema_versions
             WHERE schema_name = $schema_name
             ORDER BY version_number
@@ -222,18 +222,18 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
     public async Task<ListRegisteredSchemasResponse> ListRegisteredSchemas(ListRegisteredSchemasRequest query, CancellationToken cancellationToken) {
         const string sql =
             """
-            SELECT 
-                  s.schema_name           
-                , s.data_format   
-                , s.compatibility         
-                , s.tags                  
-                , v.version_id        
-                , v.version_number    
+            SELECT
+                  s.schema_name
+                , s.data_format
+                , s.compatibility
+                , s.tags
+                , v.version_id
+                , v.version_number
                 , decode(v.schema_definition) AS schema_definition
-                , v.registered_at             
+                , v.registered_at
             FROM schemas s
             INNER JOIN schema_versions v ON s.latest_version_id = v.version_id
-            WHERE ($schema_version_id = '' OR v.version_id = $schema_version_id) 
+            WHERE ($schema_version_id = '' OR v.version_id = $schema_version_id)
               AND ($schema_name_prefix = '' OR s.schema_name ILIKE $schema_name_prefix)
               AND ($tags == '' OR json_contains(s.tags, $tags))
             """;
