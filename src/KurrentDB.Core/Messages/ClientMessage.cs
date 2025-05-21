@@ -575,6 +575,28 @@ public static partial class ClientMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Client)]
+	public partial class ReadLogEvents(
+		Guid internalCorrId,
+		Guid correlationId,
+		IEnvelope envelope,
+		long[] logPositions,
+		ClaimsPrincipal user,
+		DateTime? expires,
+		CancellationToken cancellationToken = default)
+		: ReadRequestMessage(internalCorrId, correlationId, envelope, user, expires, cancellationToken) {
+		public long[] LogPositions = logPositions;
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
+	public partial class ReadLogEventsCompleted(Guid correlationId, ReadEventResult result, ResolvedEvent[] records, string error)
+		: ReadResponseMessage {
+		public readonly Guid CorrelationId = correlationId;
+		public readonly ReadEventResult Result = result;
+		public readonly ResolvedEvent[] Records = records;
+		public readonly string Error = error;
+	}
+
+	[DerivedMessage(CoreMessage.Client)]
 	public partial class DeleteStreamCompleted : Message {
 		public readonly Guid CorrelationId;
 		public readonly OperationResult Result;

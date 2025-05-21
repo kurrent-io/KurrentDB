@@ -14,8 +14,14 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Kurrent.Quack" Version="0.0.0-alpha.0.9" />
 		<ProjectReference Include="..\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
 		<ProjectReference Include="..\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="Storage\1_Schema.sql" />
+	  <EmbeddedResource Include="Storage\1_Schema.sql" />
 	</ItemGroup>
 
 </Project>

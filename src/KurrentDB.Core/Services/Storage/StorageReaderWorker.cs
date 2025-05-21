@@ -594,14 +594,14 @@ public class StorageReaderWorker<TStreamId> :
 		return new(msg.CorrelationId, msg.EventStreamId, result, ResolvedEvent.EmptyEvent, null, false, error);
 	}
 
-	private static ClientMessage.ReadStreamEventsForwardCompleted NoData(ClientMessage.ReadStreamEventsForward msg,
+	public static ClientMessage.ReadStreamEventsForwardCompleted NoData(ClientMessage.ReadStreamEventsForward msg,
 		ReadStreamResult result, long lastIndexedPosition, long lastEventNumber = -1, string error = null) {
 		return new(
 			msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, result,
 			EmptyRecords, null, false, error ?? string.Empty, -1, lastEventNumber, true, lastIndexedPosition);
 	}
 
-	private static ClientMessage.ReadStreamEventsBackwardCompleted NoData(ClientMessage.ReadStreamEventsBackward msg, ReadStreamResult result, long lastIndexedPosition,
+	public static ClientMessage.ReadStreamEventsBackwardCompleted NoData(ClientMessage.ReadStreamEventsBackward msg, ReadStreamResult result, long lastIndexedPosition,
 		long lastEventNumber = -1, string error = null) {
 		return new(
 			msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, result,

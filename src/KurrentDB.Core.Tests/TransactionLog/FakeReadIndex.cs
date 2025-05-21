@@ -26,6 +26,10 @@ public class FakeReadIndex<TLogFormat, TStreamId> : IReadIndex<TStreamId> {
 		get { throw new NotImplementedException(); }
 	}
 
+	public IIndexReader<TStreamId> IndexReader  {
+		get { throw new NotImplementedException(); }
+	}
+
 	private readonly Func<TStreamId, bool> _isStreamDeleted;
 
 	public FakeReadIndex(

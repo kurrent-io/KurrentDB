@@ -48,6 +48,7 @@ public interface IIndexReader<TStreamId> {
 	ValueTask<long> GetStreamLastEventNumber(TStreamId streamId, CancellationToken token);
 	ValueTask<long> GetStreamLastEventNumber_KnownCollisions(TStreamId streamId, long beforePosition, CancellationToken token);
 	ValueTask<long> GetStreamLastEventNumber_NoCollisions(ulong stream, Func<ulong, TStreamId> getStreamId, long beforePosition, CancellationToken token);
+	TFReaderLease BorrowReader();
 }
 
 public abstract class IndexReader {
@@ -829,6 +830,8 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 		using var reader = _backend.BorrowReader();
 		return await GetStreamLastEventNumber_NoCollisions(stream, getStreamId, beforePosition, reader, token);
 	}
+
+	public TFReaderLease BorrowReader() => _backend.BorrowReader();
 
 	private async ValueTask<long> GetStreamLastEventNumber_NoCollisions(
 		ulong stream,

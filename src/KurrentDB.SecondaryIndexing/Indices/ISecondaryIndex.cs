@@ -7,11 +7,11 @@ using KurrentDB.Core.Services.Storage.InMemory;
 namespace KurrentDB.SecondaryIndexing.Indices;
 
 public interface ISecondaryIndex: IDisposable {
-	ValueTask Init(CancellationToken ct);
+	void Init();
 
-	ValueTask<ulong?> GetLastPosition(CancellationToken ct);
+	ulong? GetLastPosition();
 
-	ValueTask<ulong?> GetLastSequence(CancellationToken ct);
+	ulong? GetLastSequence();
 
 	ISecondaryIndexProcessor Processor { get; }
 

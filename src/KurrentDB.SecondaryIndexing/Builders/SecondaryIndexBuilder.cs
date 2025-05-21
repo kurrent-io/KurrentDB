@@ -28,9 +28,11 @@ public class SecondaryIndexBuilder
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
 	}
 
-	public async ValueTask HandleAsync(SystemMessage.SystemReady message, CancellationToken token) {
-		await _index.Init(token);
-		await _subscription.Subscribe(token);
+	public ValueTask HandleAsync(SystemMessage.SystemReady message, CancellationToken token) {
+		_index.Init();
+		_subscription.Subscribe(token);
+
+		return ValueTask.CompletedTask;
 	}
 
 	public async ValueTask HandleAsync(SystemMessage.BecomeShuttingDown message, CancellationToken token) {

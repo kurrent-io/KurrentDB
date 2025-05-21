@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
 namespace KurrentDB.Core.Tests.Services.Storage.ReadIndex;
@@ -72,4 +73,8 @@ class FakeIndexReader<TStreamId> : IIndexReader<TStreamId> {
 
 	public ValueTask<long> GetStreamLastEventNumber_NoCollisions(ulong stream, Func<ulong, TStreamId> getStreamId, long beforePosition, CancellationToken token)
 		=> ValueTask.FromException<long>(new NotImplementedException());
+
+	public TFReaderLease BorrowReader() {
+		throw new NotImplementedException();
+	}
 }

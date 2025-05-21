@@ -19,13 +19,13 @@ public class FakeSecondaryIndex : ISecondaryIndex {
 
 	public ISecondaryIndexProcessor Processor { get; }
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
-	public ValueTask Init(CancellationToken ct) => ValueTask.CompletedTask;
+	public void Init() {}
 
-	public ValueTask<ulong?> GetLastPosition(CancellationToken ct) =>
-		ValueTask.FromResult(Committed.Select(@event => (ulong?)@event.Event.LogPosition).FirstOrDefault());
+	public ulong? GetLastPosition() =>
+		Committed.Select(@event => (ulong?)@event.Event.LogPosition).FirstOrDefault();
 
-	public ValueTask<ulong?> GetLastSequence(CancellationToken ct) =>
-		ValueTask.FromResult(Committed.Select(@event => (ulong?)@event.Event.EventNumber).FirstOrDefault());
+	public ulong? GetLastSequence() =>
+		Committed.Select(@event => (ulong?)@event.Event.EventNumber).FirstOrDefault();
 
 	public void Dispose() { }
 }
