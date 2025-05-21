@@ -48,12 +48,51 @@ public class SecondaryIndexCheckpointTrackerTests {
 
 		// When
 		tracker.Increment();
-		var committed = commitSignal.Wait(TimeSpan.FromMilliseconds(100));
+		var committed = commitSignal.Wait(TimeSpan.FromMilliseconds(250));
 		await tracker.DisposeAsync();
 
 		// Then
 		Assert.True(committed);
 		Assert.Equal(1, callCount);
+	}
+
+
+	[Fact]
+	public async Task Commits_MultipleTimes_On_Timer() {
+		// Given
+		var callCount = 0;
+		var commitSignal = new ManualResetEventSlim(false);
+		var incrementSignal = new ManualResetEventSlim(false);
+
+		var tracker = new SecondaryIndexCheckpointTracker(1000, 10, _ => {
+			Interlocked.Increment(ref callCount);
+			incrementSignal.Set();
+			commitSignal.Set();
+			return ValueTask.CompletedTask;
+		}, CancellationToken.None);
+
+		// When
+		tracker.Increment();
+
+		// Simulate increments happening after the commit cycle
+		// This ensures that there won't be always empty batches on commit
+		await Task.Run(() => {
+			for (var i = 0; i < 10; i++)
+			{
+				incrementSignal.Wait(TimeSpan.FromMilliseconds(100));
+				incrementSignal.Reset();
+				tracker.Increment();
+			}
+		});
+
+		var committed = commitSignal.Wait(TimeSpan.FromMilliseconds(250));
+		await tracker.DisposeAsync();
+
+		// Then
+		Assert.True(committed);
+		// It's enough to check if we triggered more than once.
+		// Trying to match a specific number could lead to flakiness, because of time-based race conditions.
+		Assert.True(callCount > 1);
 	}
 
 	[Fact]

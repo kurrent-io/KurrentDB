@@ -33,7 +33,7 @@ public class SecondaryIndexSubscription(
 		_checkpointTracker = new SecondaryIndexCheckpointTracker(
 			_checkpointCommitBatchSize,
 			_checkpointCommitDelayMs,
-			async ct => await index.Processor.Commit(ct),
+			ct => index.Processor.Commit(ct),
 			linkedCts.Token
 		);
 
