@@ -1,8 +1,0 @@
-services:
-  esdb:
-    image: eventstore/eventstore:24.6.0
-    ports:
-      - "2113:2113"
-    environment:
-      - EVENTSTORE_MEM_DB=true
-      - EVENTSTORE_INSECURE=true

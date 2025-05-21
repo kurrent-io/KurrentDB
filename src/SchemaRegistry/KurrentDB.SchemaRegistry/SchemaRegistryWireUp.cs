@@ -1,7 +1,7 @@
-using Kurrent.Surge;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.DuckDB.Projectors;
 using Kurrent.Surge.Producers.Configuration;
+using Kurrent.Surge.Projectors;
 using Kurrent.Surge.Readers.Configuration;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
@@ -10,8 +10,9 @@ using KurrentDB.SchemaRegistry.Infrastructure;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using KurrentDB.SchemaRegistry.Data;
 using KurrentDB.SchemaRegistry.Domain;
-using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
+using KurrentDB.Surge;
+using KurrentDB.Surge.Eventuous;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -26,7 +27,7 @@ public static class SchemaRegistryWireUp {
 
         services.AddSingleton<GetUtcNow>(ctx => ctx.GetRequiredService<TimeProvider>().GetUtcNow);
 
-        services.AddGrpcWithJsonTranscoding();
+        // services.AddGrpcWithJsonTranscoding();
         services.AddGrpcRequestValidation();
 
         services.AddSingleton<ISchemaCompatibilityManager>(new NJsonSchemaCompatibilityManager());
@@ -45,21 +46,19 @@ public static class SchemaRegistryWireUp {
     }
 
     static IServiceCollection AddCommandPlane(this IServiceCollection services) {
-        services.AddEventStore<SurgeEventStore>(
+        services.AddEventStore<SystemEventStore>(
             ctx => {
                 var reader = ctx.GetRequiredService<IReaderBuilder>()
-                    .ReaderId("SurgeEventStoreReader")
+                    .ReaderId("EventuousReader")
                     .Create();
 
                 var producer = ctx.GetRequiredService<IProducerBuilder>()
-                    .ProducerId("SurgeEventStoreProducer")
+                    .ProducerId("EventuousProducer")
                     .Create();
 
-                var manager = ctx.GetRequiredService<IManagerBuilder>()
-                    .ManagerId("SurgeEventStoreManager")
-                    .Create();
+                var manager = ctx.GetRequiredService<SystemManager>();
 
-                return new SurgeEventStore(reader, producer, manager);
+                return new SystemEventStore(reader, producer, manager);
             }
         );
 
@@ -86,9 +85,9 @@ public static class SchemaRegistryWireUp {
             var connectionProvider = ctx.GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry");
             return new DuckDBProjectorOptions(connectionProvider) {
                 ConnectionProvider = connectionProvider,
-                Filter             = SchemaRegistryConventions.Filters.SchemasFilter,
+                Filter             = Filters.SchemasFilter,
                 InitialPosition    = SubscriptionInitialPosition.Latest,
-                AutoCommit = new() {
+                AutoCommit = new ProjectorAutoCommitOptions {
                     Interval         = TimeSpan.FromSeconds(5),
                     RecordsThreshold = 500
                 }

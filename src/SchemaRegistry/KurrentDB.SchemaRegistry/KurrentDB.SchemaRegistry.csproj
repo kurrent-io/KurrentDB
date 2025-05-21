@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\KurrentDB.Surge\KurrentDB.Surge.csproj" />
     <ProjectReference Include="..\KurrentDB.SchemaRegistry.Protocol\KurrentDB.SchemaRegistry.Protocol.csproj" />
   </ItemGroup>
 

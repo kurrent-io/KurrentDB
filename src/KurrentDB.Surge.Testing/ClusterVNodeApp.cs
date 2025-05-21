@@ -12,7 +12,9 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Messages;
+using KurrentDB.SchemaRegistry;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -53,7 +55,11 @@ public class ClusterVNodeApp : IAsyncDisposable {
             .With(x => x.Services.AddSingleton<IHostedService>(esdb))
             .With(x => configureServices?.Invoke(x.Services));
 
+        builder.WebHost.UseTestServer();
+
         App = builder.Build().With(x => esdb.Node.Startup.Configure(x));
+
+        App.UseSchemaRegistryService();
 
         await App.StartAsync();
 

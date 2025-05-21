@@ -17,10 +17,6 @@ using Kurrent.Surge.Producers.Configuration;
 using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
-
-using KurrentDB.Connect.Consumers;
-using KurrentDB.Connectors;
-using KurrentDB.Connectors.Infrastructure.Connect.Components;
 using KurrentDB.Surge;
 using KurrentDB.Surge.Consumers;
 using KurrentDB.Surge.Processors;
@@ -38,14 +34,14 @@ namespace KurrentDB.Connect;
 
 public static class SurgeExtensions {
     public static IServiceCollection AddSurgeSystemComponents(this IServiceCollection services) {
-        services.AddSurgeSchemaRegistry(Kurrent.Surge.Schema.SchemaRegistry.Global);
+        services.AddSurgeSchemaRegistry(SchemaRegistry.Global);
 
         services.AddSingleton<IStateStore, InMemoryStateStore>();
 
         services.AddSingleton<Func<SystemReaderBuilder>>(ctx => {
             var publisher      = ctx.GetRequiredService<IPublisher>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
-            var schemaRegistry = ctx.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
+            var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
 
             return () => SystemReader.Builder
                 .Publisher(publisher)
@@ -60,7 +56,7 @@ public static class SurgeExtensions {
         services.AddSingleton<Func<SystemConsumerBuilder>>(ctx => {
             var publisher      = ctx.GetRequiredService<IPublisher>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
-            var schemaRegistry = ctx.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
+            var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
 
             return () => SystemConsumer.Builder
                 .Publisher(publisher)
@@ -75,7 +71,7 @@ public static class SurgeExtensions {
         services.AddSingleton<Func<SystemProducerBuilder>>(ctx => {
             var publisher      = ctx.GetRequiredService<IPublisher>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
-            var schemaRegistry = ctx.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
+            var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
 
             return () => SystemProducer.Builder
                 .Publisher(publisher)
@@ -90,7 +86,7 @@ public static class SurgeExtensions {
         services.AddSingleton<Func<SystemProcessorBuilder>>(ctx => {
             var publisher      = ctx.GetRequiredService<IPublisher>();
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
-            var schemaRegistry = ctx.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
+            var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
             var stateStore     = ctx.GetRequiredService<IStateStore>();
 
             return () => SystemProcessor.Builder
@@ -111,7 +107,7 @@ public static class SurgeExtensions {
 
         services.AddSingleton<Func<GrpcProducerBuilder>>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
-            var schemaRegistry = ctx.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
+            var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
 
             return () => GrpcProducer.Builder
                 .SchemaRegistry(schemaRegistry)
@@ -125,7 +121,7 @@ public static class SurgeExtensions {
         return services;
     }
 
-    public static IServiceCollection AddSurgeSchemaRegistry(this IServiceCollection services, Kurrent.Surge.Schema.SchemaRegistry schemaRegistry) =>
+    public static IServiceCollection AddSurgeSchemaRegistry(this IServiceCollection services, SchemaRegistry schemaRegistry) =>
         services
             .AddSingleton(schemaRegistry)
             .AddSingleton<ISchemaRegistry>(schemaRegistry)

@@ -52,6 +52,14 @@
 		</None>
 	</ItemGroup>
 
+	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.4"/>
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.16"/>
+	</ItemGroup>
+
 	<ItemGroup>
 		<PackageReference Include="TUnit.Engine" Version="0.19.86"/>
 		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2"/>
@@ -75,5 +83,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
+	  <ProjectReference Include="..\SchemaRegistry\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
 	</ItemGroup>
 </Project>

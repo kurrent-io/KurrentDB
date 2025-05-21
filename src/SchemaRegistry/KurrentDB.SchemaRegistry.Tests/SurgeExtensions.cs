@@ -1,76 +1,77 @@
-using Kurrent.Surge;
-using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Configuration;
-using Kurrent.Surge.Managers;
 using Kurrent.Surge.Persistence.State;
-using Kurrent.Surge.Processors;
 using Kurrent.Surge.Processors.Configuration;
-using Kurrent.Surge.Producers;
 using Kurrent.Surge.Producers.Configuration;
-using Kurrent.Surge.Readers;
 using Kurrent.Surge.Readers.Configuration;
+using KurrentDB.Core.Bus;
+using KurrentDB.Surge;
+using KurrentDB.Surge.Consumers;
+using KurrentDB.Surge.Processors;
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.SchemaRegistry.Tests;
 
-public static class SurgeGrpcExtensions {
-    public static IServiceCollection AddSurgeGrpcComponents(this IServiceCollection services) {
-        var clientSettings = KurrentDbClientSettings.Default;
-
+public static class SurgeExtensions {
+    public static IServiceCollection AddSurgeSystemComponents(this IServiceCollection services) {
         services.AddSingleton<IStateStore, InMemoryStateStore>();
 
-        services.AddSingleton<IReaderBuilder, GrpcReaderBuilder>(ctx => {
+        services.AddSingleton<IReaderBuilder, SystemReaderBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
 
-            return GrpcReader.Builder
-                .ClientSettings(clientSettings)
+            return SystemReader.Builder
+	            .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
                 .LoggerFactory(loggerFactory)
                 .DisableResiliencePipeline();
         });
 
-        services.AddSingleton<IConsumerBuilder, GrpcConsumerBuilder>(ctx => {
+        services.AddSingleton<IConsumerBuilder, SystemConsumerBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
 
-            return GrpcConsumer.Builder
-                .ClientSettings(clientSettings)
+            return SystemConsumer.Builder
+	            .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
                 .LoggerFactory(loggerFactory)
                 .DisableResiliencePipeline();
         });
 
-        services.AddSingleton<IProducerBuilder, GrpcProducerBuilder>(ctx => {
+        services.AddSingleton<IProducerBuilder, SystemProducerBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
 
-            return GrpcProducer.Builder
-                .ClientSettings(clientSettings)
+            return SystemProducer.Builder
+                .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
                 .LoggerFactory(loggerFactory)
                 .DisableResiliencePipeline();
         });
 
-        services.AddSingleton<IProcessorBuilder, GrpcProcessorBuilder>(ctx => {
+        services.AddSingleton<IProcessorBuilder, SystemProcessorBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
             var stateStore     = ctx.GetRequiredService<IStateStore>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
 
-            return GrpcProcessor.Builder
-                .ClientSettings(clientSettings)
+            return SystemProcessor.Builder
+                .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
                 .StateStore(stateStore)
                 .LoggerFactory(loggerFactory);
         });
 
-        services.AddSingleton<IManagerBuilder, GrpcManagerBuilder>(ctx => {
-            var loggerFactory = ctx.GetRequiredService<ILoggerFactory>();
+        services.AddSingleton<SystemManager>(ctx => {
+            // var loggerFactory = ctx.GetRequiredService<ILoggerFactory>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
 
-            return GrpcManager.Builder
-                .ClientSettings(clientSettings)
-                .LoggerFactory(loggerFactory);
+            return new SystemManager(publisher: publisher);
         });
 
         return services;

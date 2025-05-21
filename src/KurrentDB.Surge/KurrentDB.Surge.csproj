@@ -9,6 +9,9 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Kurrent.Surge.Core" Version="1.1.0-alpha" />
+		<PackageReference Include="Eventuous.Application" Version="0.15.1" />
+		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.1" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.1" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
