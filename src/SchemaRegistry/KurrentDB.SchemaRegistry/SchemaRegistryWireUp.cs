@@ -27,7 +27,7 @@ public static class SchemaRegistryWireUp {
 
         services.AddSingleton<GetUtcNow>(ctx => ctx.GetRequiredService<TimeProvider>().GetUtcNow);
 
-        // services.AddGrpcWithJsonTranscoding();
+        services.AddGrpc(x => x.EnableDetailedErrors = true);
         services.AddGrpcRequestValidation();
 
         services.AddSingleton<ISchemaCompatibilityManager>(new NJsonSchemaCompatibilityManager());
