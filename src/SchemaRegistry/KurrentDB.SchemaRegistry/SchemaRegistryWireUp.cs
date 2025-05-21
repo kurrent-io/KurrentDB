@@ -1,6 +1,8 @@
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.DuckDB.Projectors;
+using Kurrent.Surge.Producers.Configuration;
 using Kurrent.Surge.Projectors;
+using Kurrent.Surge.Readers.Configuration;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
 using Kurrent.Surge.Schema.Validation;
@@ -11,8 +13,6 @@ using KurrentDB.SchemaRegistry.Domain;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.Surge;
 using KurrentDB.Surge.Eventuous;
-using KurrentDB.Surge.Producers;
-using KurrentDB.Surge.Readers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -48,11 +48,11 @@ public static class SchemaRegistryWireUp {
     static IServiceCollection AddCommandPlane(this IServiceCollection services) {
         services.AddEventStore<SystemEventStore>(
             ctx => {
-                var reader = ctx.GetRequiredService<Func<SystemReaderBuilder>>()()
+                var reader = ctx.GetRequiredService<IReaderBuilder>()
                     .ReaderId("EventuousReader")
                     .Create();
 
-                var producer = ctx.GetRequiredService<Func<SystemProducerBuilder>>()()
+                var producer = ctx.GetRequiredService<IProducerBuilder>()
                     .ProducerId("EventuousProducer")
                     .Create();
 
