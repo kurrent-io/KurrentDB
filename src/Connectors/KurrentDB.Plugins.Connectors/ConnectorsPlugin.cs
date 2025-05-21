@@ -3,6 +3,7 @@
 
 using KurrentDB.Connect;
 using EventStore.Plugins;
+using Kurrent.Surge.Schema;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Connectors.Planes.Control;
 using KurrentDB.Connectors.Planes.Management;
@@ -17,6 +18,7 @@ public class ConnectorsPlugin : SubsystemsPlugin {
     public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
         services
             .AddNodeSystemInfoProvider()
+            .AddSurgeSchemaRegistry()
             .AddSurgeSystemComponents()
             .AddSurgeDataProtection(configuration)
             .AddConnectorsControlPlane()

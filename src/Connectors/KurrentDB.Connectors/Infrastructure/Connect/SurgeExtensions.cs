@@ -34,8 +34,6 @@ namespace KurrentDB.Connect;
 
 public static class SurgeExtensions {
     public static IServiceCollection AddSurgeSystemComponents(this IServiceCollection services) {
-        services.AddSurgeSchemaRegistry(SchemaRegistry.Global);
-
         services.AddSingleton<IStateStore, InMemoryStateStore>();
 
         services.AddSingleton<Func<SystemReaderBuilder>>(ctx => {
@@ -121,11 +119,14 @@ public static class SurgeExtensions {
         return services;
     }
 
-    public static IServiceCollection AddSurgeSchemaRegistry(this IServiceCollection services, SchemaRegistry schemaRegistry) =>
-        services
-            .AddSingleton(schemaRegistry)
-            .AddSingleton<ISchemaRegistry>(schemaRegistry)
-            .AddSingleton<ISchemaSerializer>(schemaRegistry);
+    public static IServiceCollection AddSurgeSchemaRegistry(this IServiceCollection services, SchemaRegistry? schemaRegistry = null) {
+		schemaRegistry ??= SchemaRegistry.Global;
+
+	    return services
+		    .AddSingleton(schemaRegistry)
+		    .AddSingleton<ISchemaRegistry>(schemaRegistry)
+		    .AddSingleton<ISchemaSerializer>(schemaRegistry);
+    }
 
     public static IServiceCollection AddSurgeDataProtection(this IServiceCollection services, IConfiguration configuration) {
         var config = configuration

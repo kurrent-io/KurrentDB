@@ -1,5 +1,6 @@
 using Grpc.Net.Client;
 using KurrentDB.Core;
+using KurrentDB.Surge;
 using KurrentDB.Surge.Testing;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.TestHost;

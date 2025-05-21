@@ -1,8 +1,12 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Kurrent.Surge.Consumers.Configuration;
 using KurrentDB.Core.Bus;
 using Kurrent.Surge.Persistence.State;
+using Kurrent.Surge.Processors.Configuration;
+using Kurrent.Surge.Producers.Configuration;
+using Kurrent.Surge.Readers.Configuration;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Surge.Consumers;
@@ -11,77 +15,63 @@ using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using LoggingOptions = Kurrent.Surge.Configuration.LoggingOptions;
 
 namespace KurrentDB.Surge;
 
 public static class SurgeExtensions {
     public static IServiceCollection AddSurgeSystemComponents(this IServiceCollection services) {
-        services.AddSurgeSchemaRegistry(SchemaRegistry.Global);
-
         services.AddSingleton<IStateStore, InMemoryStateStore>();
 
-        services.AddSingleton<Func<SystemReaderBuilder>>(ctx => {
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+        services.AddSingleton<IReaderBuilder, SystemReaderBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
 
-            return () => SystemReader.Builder
-                .Publisher(publisher)
+            return SystemReader.Builder
+	            .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
-                .Logging(new() {
-                    Enabled       = true,
-                    LoggerFactory = loggerFactory,
-                    LogName       = "Kurrent.Surge.SystemReader"
-                });
+                .LoggerFactory(loggerFactory)
+                .DisableResiliencePipeline();
         });
 
-        services.AddSingleton<Func<SystemConsumerBuilder>>(ctx => {
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+        services.AddSingleton<IConsumerBuilder, SystemConsumerBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
 
-            return () => SystemConsumer.Builder
-                .Publisher(publisher)
+            return SystemConsumer.Builder
+	            .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
-                .Logging(new() {
-                    Enabled       = true,
-                    LoggerFactory = loggerFactory,
-                    LogName       = "Kurrent.Surge.SystemConsumer"
-                });
+                .LoggerFactory(loggerFactory)
+                .DisableResiliencePipeline();
         });
 
-        services.AddSingleton<Func<SystemProducerBuilder>>(ctx => {
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+        services.AddSingleton<IProducerBuilder, SystemProducerBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
 
-            return () => SystemProducer.Builder
+            return SystemProducer.Builder
                 .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
-                .Logging(new() {
-                    Enabled       = true,
-                    LoggerFactory = loggerFactory,
-                    LogName       = "Kurrent.Surge.SystemProducer"
-                });
+                .LoggerFactory(loggerFactory)
+                .DisableResiliencePipeline();
         });
 
-        services.AddSingleton<Func<SystemProcessorBuilder>>(ctx => {
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+        services.AddSingleton<IProcessorBuilder, SystemProcessorBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
             var stateStore     = ctx.GetRequiredService<IStateStore>();
+            var publisher      = ctx.GetRequiredService<IPublisher>();
 
-            return () => SystemProcessor.Builder
+            return SystemProcessor.Builder
                 .Publisher(publisher)
                 .SchemaRegistry(schemaRegistry)
                 .StateStore(stateStore)
-                .Logging(new LoggingOptions {
-                    Enabled       = true,
-                    LoggerFactory = loggerFactory,
-                    LogName       = "Kurrent.Surge.SystemProcessor"
-                });
+                .LoggerFactory(loggerFactory);
         });
+
+        services.AddSingleton<SystemManager>(ctx => new SystemManager(ctx.GetRequiredService<IPublisher>()));
 
         return services;
     }
