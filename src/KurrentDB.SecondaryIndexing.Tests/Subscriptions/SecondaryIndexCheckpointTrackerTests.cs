@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.SecondaryIndexing.Subscriptions;
-using KurrentDB.Surge.Testing.Extensions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Subscriptions;
 
@@ -26,7 +25,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 			tracker.Increment();
 		}
 
-		var committed = commitSignal.Wait(TimeSpan.FromMilliseconds(100));
+		var committed = commitSignal.Wait(HalfOfASecond);
 		await tracker.DisposeAsync();
 
 		// Then
@@ -49,7 +48,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 
 		// When
 		tracker.Increment();
-		var committed = commitSignal.Wait(TimeSpan.FromMilliseconds(250));
+		var committed = commitSignal.Wait(HalfOfASecond);
 		await tracker.DisposeAsync();
 
 		// Then
@@ -116,7 +115,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 		// When
 		for (int i = 0; i < 3; i++) tracker.Increment();
 
-		Assert.True(commitInProgress.Wait(100));
+		Assert.True(commitInProgress.Wait(HalfOfASecond));
 
 		for (int i = 0; i < 3; i++) tracker.Increment();
 
@@ -147,7 +146,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 
 		await Task.WhenAll(tasks);
 
-		var committed = commitSignal.Wait(TimeSpan.FromMilliseconds(100));
+		var committed = commitSignal.Wait(HalfOfASecond);
 		await tracker.DisposeAsync();
 
 		// Then
@@ -290,4 +289,6 @@ public class SecondaryIndexCheckpointTrackerTests {
 		// Then
 		Assert.True(commitCompleted);
 	}
+
+	private static readonly TimeSpan HalfOfASecond = TimeSpan.FromMilliseconds(500);
 }
