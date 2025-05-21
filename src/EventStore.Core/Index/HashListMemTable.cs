@@ -62,15 +62,19 @@ public class HashListMemTable : IMemTable, ISearchTable {
 
 			if (!_hash.TryGetValue(stream, out list)) {
 				list = new SortedList<Entry, byte>(MemTableComparer);
-				if (!Monitor.TryEnter(list, 10000))
+				if (!Monitor.TryEnter(list, 10000)) {
+					list = null;
 					throw new UnableToAcquireLockInReasonableTimeException();
+				}
 				_hash.AddOrUpdate(stream, list,
 					(x, y) => {
 						throw new Exception("This should never happen as MemTable updates are single-threaded.");
 					});
 			} else {
-				if (!Monitor.TryEnter(list, 10000))
+				if (!Monitor.TryEnter(list, 10000)) {
+					list = null;
 					throw new UnableToAcquireLockInReasonableTimeException();
+				}
 			}
 
 			for (int i = 0, n = collection.Count; i < n; ++i) {
