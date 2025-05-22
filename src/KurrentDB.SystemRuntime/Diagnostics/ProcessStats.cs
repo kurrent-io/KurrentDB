@@ -50,11 +50,10 @@ public static class ProcessStats {
 
 			return result;
 
-			static bool TryExtractIoValue(string line, string key, out ulong value) {
+			static bool TryExtractIoValue(ReadOnlySpan<char> line, ReadOnlySpan<char> key, out ulong value) {
 				if (line.StartsWith(key)) {
 					var rawValue = line[(key.Length + 1)..].Trim(); // handle the `:` character
-					value = Convert.ToUInt64(rawValue);
-					return true;
+					return ulong.TryParse(rawValue, out value);
 				}
 
 				value = 0;
