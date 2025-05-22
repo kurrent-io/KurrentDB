@@ -21,9 +21,7 @@ using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Transport.Http;
-using KurrentDB.SchemaRegistry;
 using KurrentDB.Services;
-using KurrentDB.Surge;
 using KurrentDB.Tools;
 using KurrentDB.UI.Services;
 using Microsoft.AspNetCore.Builder;
@@ -257,8 +255,6 @@ try {
 			builder.Services.AddScoped<IdentityRedirectManager>();
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
-			builder.Services.AddSurgeSystemComponents();
-			builder.Services.AddSchemaRegistryService();
 
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
@@ -267,8 +263,6 @@ try {
 			if (app.Environment.IsDevelopment()) {
 				app.UseWebAssemblyDebugging();
 			}
-
-			app.UseSchemaRegistryService();
 
 			hostedService.Node.Startup.Configure(app);
 			app.MapRazorComponents<App>()

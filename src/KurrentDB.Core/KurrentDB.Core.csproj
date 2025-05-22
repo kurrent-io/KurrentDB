@@ -98,35 +98,6 @@
 		<Protobuf Include="..\Protos\Grpc\streams.v2.proto" GrpcServices="Both" ProtoRoot="../Protos">
 			<Link>Protos\Server\streams.v2.proto</Link>
 		</Protobuf>
-
-<!--		<Protobuf Include="..\Protos\Registry\core.proto" GrpcServices="Both" ProtoRoot="../Protos/Registry">-->
-<!--			<Link>Protos\Registry\core.proto</Link>-->
-<!--		</Protobuf>-->
-<!--		<Protobuf Include="..\Protos\Registry\common.proto" GrpcServices="Both" ProtoRoot="../Protos/Registry">-->
-<!--			<Link>Protos\Registry\common.proto</Link>-->
-<!--		</Protobuf>-->
-<!--		<Protobuf Include="..\Protos\Registry\validation.proto" GrpcServices="Both" ProtoRoot="../Protos/Registry">-->
-<!--			<Link>Protos\Registry\validation.proto</Link>-->
-<!--		</Protobuf>-->
-<!--		<Protobuf Include="..\Protos\Registry\events.proto" GrpcServices="Both" ProtoRoot="../Protos/Registry">-->
-<!--			<Link>Protos\Registry\events.proto</Link>-->
-<!--		</Protobuf>-->
-<!--		<Protobuf Include="..\Protos\Registry\groups.proto" GrpcServices="Both" ProtoRoot="../Protos/Registry">-->
-<!--			<Link>Protos\Registry\groups.proto</Link>-->
-<!--		</Protobuf>-->
-<!--		<Protobuf Include="..\Protos\Registry\schemas.proto" GrpcServices="Both" ProtoRoot="../Protos/Registry">-->
-<!--			<Link>Protos\Registry\schemas.proto</Link>-->
-<!--		</Protobuf>-->
-<!--		<Protobuf Include="..\Protos\Registry\service.proto" GrpcServices="Both" ProtoRoot="../Protos/Registry">-->
-<!--			<Link>Protos\Registry\service.proto</Link>-->
-<!--		</Protobuf>-->
-
-    <!-- <Protobuf Include="..\Protos\Registry\shared.proto" ProtoRoot="../Protos/Registry">
-        <Link>Protos\Registry\shared.proto</Link>
-    </Protobuf>
-    <Protobuf Include="..\Protos\Registry\validation.proto" ProtoRoot="../Protos/Registry">
-        <Link>Protos\Registry\validation.proto</Link>
-    </Protobuf> -->
 	</ItemGroup>
 	<ItemGroup>
 		<Folder Include="Services\Transport\Tcp\protos\" />
