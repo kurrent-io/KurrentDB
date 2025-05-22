@@ -124,7 +124,7 @@ Alternatively, you can find instructions to manually configure it yourself on Cl
 Install the package:
 
 ```bash
-apt-get install kurrentdb=25.0.0
+apt-get install kurrentdb=25.0.1
 ```
 
 #### Uninstall with apt-get
@@ -207,7 +207,7 @@ Alternatively, you can find instructions to manually configure it yourself on Cl
 Install the package:
 
 ```bash
-yum install kurrentdb-25.0.0-1.x86_64
+yum install kurrentdb-25.0.1-1.x86_64
 ```
 
 #### Uninstall with yum
@@ -248,7 +248,7 @@ KurrentDB has NuGet packages available on [Chocolatey](https://community.chocola
 You can install KurrentDB through Chocolatey:
 
 ```powershell
-choco install kurrentdb --version=25.0.0
+choco install kurrentdb --version=25.0.1
 ```
 
 KurrentDB can then be run with `KurrentDB.exe`:
