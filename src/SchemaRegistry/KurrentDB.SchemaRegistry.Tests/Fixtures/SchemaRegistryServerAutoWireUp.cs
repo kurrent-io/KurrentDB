@@ -1,6 +1,5 @@
 using Grpc.Net.Client;
 using KurrentDB.Core;
-using KurrentDB.Surge;
 using KurrentDB.Surge.Testing;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.TestHost;
@@ -51,9 +50,6 @@ public class SchemaRegistryServerAutoWireUp {
         services.AddSingleton<ILoggerFactory>(new TestContextAwareLoggerFactory());
 		services.AddSingleton<TimeProvider>(timeProvider);
 		services.AddSingleton(timeProvider);
-
-		services.AddSurgeSystemComponents();
-		services.AddSchemaRegistryService();
 	}
 
 	[After(Assembly)]

@@ -1,28 +1,32 @@
+using Kurrent.Surge.Consumers.Configuration;
 using Kurrent.Surge.DuckDB;
-using Kurrent.Surge.DuckDB.Projectors;
 using Kurrent.Surge.Producers.Configuration;
-using Kurrent.Surge.Projectors;
 using Kurrent.Surge.Readers.Configuration;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
 using Kurrent.Surge.Schema.Validation;
+using KurrentDB.Core.Bus;
 using KurrentDB.SchemaRegistry.Infrastructure;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using KurrentDB.SchemaRegistry.Data;
 using KurrentDB.SchemaRegistry.Domain;
+using KurrentDB.SchemaRegistry.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.SchemaRegistry.Planes.Projection;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.Surge;
 using KurrentDB.Surge.Eventuous;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-
+using Microsoft.Extensions.Hosting;
 using static KurrentDB.SchemaRegistry.SchemaRegistryConventions;
 
 namespace KurrentDB.SchemaRegistry;
 
 public static class SchemaRegistryWireUp {
     public static IServiceCollection AddSchemaRegistryService(this IServiceCollection services) {
+	    services.AddNodeSystemInfoProvider();
+
         services.TryAddSingleton(TimeProvider.System);
 
         services.AddSingleton<GetUtcNow>(ctx => ctx.GetRequiredService<TimeProvider>().GetUtcNow);
@@ -81,18 +85,18 @@ public static class SchemaRegistryWireUp {
     }
 
     static IServiceCollection AddQueryPlane(this IServiceCollection services) {
-        services.AddDuckDBProjection<SchemaProjections>(ctx => {
-            var connectionProvider = ctx.GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry");
-            return new DuckDBProjectorOptions(connectionProvider) {
-                ConnectionProvider = connectionProvider,
-                Filter             = Filters.SchemasFilter,
-                InitialPosition    = SubscriptionInitialPosition.Latest,
-                AutoCommit = new ProjectorAutoCommitOptions {
-                    Interval         = TimeSpan.FromSeconds(5),
-                    RecordsThreshold = 500
-                }
-            };
-        });
+	    services.AddSingleton<IHostedService, DuckDBProjectorService>(ctx => {
+		    var connectionProvider = ctx.GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry");
+		    var projector = new DuckDBProjectorService(
+			    connectionProvider: connectionProvider,
+			    publisher: ctx.GetRequiredService<IPublisher>(),
+			    subscriber: ctx.GetRequiredService<ISubscriber>(),
+			    consumerBuilder: ctx.GetRequiredService<IConsumerBuilder>(),
+			    loggerFactory: ctx.GetRequiredService<ILoggerFactory>(),
+			    getNodeSystemInfo: ctx.GetRequiredService<GetNodeSystemInfo>()
+		    );
+		    return projector;
+	    });
 
         services.AddSingleton<SchemaQueries>(ctx => {
             var connectionProvider   = ctx.GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry");
@@ -124,9 +128,13 @@ public static class SchemaRegistryWireUp {
         }
     }
 
-    public static WebApplication UseSchemaRegistryService(this WebApplication app) {
-        app.MapGrpcService<SchemaRegistryService>();
+    public static IApplicationBuilder UseSchemaRegistryService(this IApplicationBuilder app) {
+	    app.UseRouting();
 
-        return app;
+	    app.UseEndpoints(endpoints => {
+		    endpoints.MapGrpcService<SchemaRegistryService>();
+	    });
+
+	    return app;
     }
 }

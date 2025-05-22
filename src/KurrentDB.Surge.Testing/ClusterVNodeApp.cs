@@ -59,8 +59,6 @@ public class ClusterVNodeApp : IAsyncDisposable {
 
         App = builder.Build().With(x => esdb.Node.Startup.Configure(x));
 
-        App.UseSchemaRegistryService();
-
         await App.StartAsync();
 
         await NodeReadinessProbe.WaitUntilReady(esdb.Node, readinessTimeout);
