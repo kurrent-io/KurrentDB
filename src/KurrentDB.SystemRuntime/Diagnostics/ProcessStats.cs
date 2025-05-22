@@ -11,21 +11,23 @@ namespace System.Diagnostics;
 
 [PublicAPI]
 public static class ProcessStats {
-	public static DiskIoData GetDiskIo(Process process) {
+	public static DiskIoData GetDiskIo() {
 		return RuntimeInformation.OsPlatform switch {
-			RuntimeOSPlatform.Linux => GetDiskIoLinux(process),
-			RuntimeOSPlatform.OSX => GetDiskIoOsx(process),
-			RuntimeOSPlatform.Windows => GetDiskIoWindows(process),
+			RuntimeOSPlatform.Linux => GetDiskIoLinux(),
+			RuntimeOSPlatform.OSX => GetDiskIoOsx(),
+			RuntimeOSPlatform.Windows => GetDiskIoWindows(),
 			RuntimeOSPlatform.FreeBSD => default,
 			_ => throw new NotSupportedException("Operating system not supported")
 		};
 
-		static DiskIoData GetDiskIoLinux(Process process) {
-			var procIoFile = $"/proc/{process.Id}/io";
+		static DiskIoData GetDiskIoLinux() {
+			const string procIoFile = $"/proc/self/io";
+
+			var result = new DiskIoData();
+			if (!File.Exists(procIoFile))
+				return result;
 
 			try {
-				var result = new DiskIoData();
-
 				foreach (var line in File.ReadLines(procIoFile)) {
 					if (TryExtractIoValue(line, "read_bytes", out var readBytes))
 						result = result with { ReadBytes = readBytes };
@@ -61,15 +63,12 @@ public static class ProcessStats {
 			}
 		}
 
-		static DiskIoData GetDiskIoOsx(Process process) =>
-			OsxNative.IO.GetDiskIo(process.Id);
+		static DiskIoData GetDiskIoOsx() =>
+			OsxNative.IO.GetDiskIo();
 
-		static DiskIoData GetDiskIoWindows(Process process) =>
-			WindowsNative.IO.GetDiskIo(process);
+		static DiskIoData GetDiskIoWindows() =>
+			WindowsNative.IO.GetDiskIo();
 	}
-
-	public static DiskIoData GetDiskIo() =>
-		GetDiskIo(Process.GetCurrentProcess());
 }
 
 /// <summary>
