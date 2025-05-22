@@ -62,11 +62,11 @@ public sealed class SecondaryIndexCheckpointTracker : IAsyncDisposable {
 		while (!ct.IsCancellationRequested) {
 			await _signal.WaitAsync(_timeout, ct);
 
+			// reset the signal to avoid race conditions of two loops getting into this section
+			_signal.Reset();
+
 			// either signalled or timed out
 			var count = Interlocked.Exchange(ref _counter, 0);
-
-			// reset the signal after clearing the _counter to avoid premature setting
-			_signal.Reset();
 
 			if (count == 0)
 				continue;
