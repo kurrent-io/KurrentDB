@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Collections.Generic;
 using KurrentDB.Projections.Core.Services.Management;
 
 namespace KurrentDB.Projections.Core.Services;
@@ -53,6 +54,8 @@ public class ProjectionStatistics {
 	public string ResultStreamName { get; set; }
 
 	public long CoreProcessingTime { get; set; }
+
+	public Dictionary<string, int> StateSizes { get; set; }
 
 	public ProjectionStatistics Clone() {
 		return (ProjectionStatistics)MemberwiseClone();
