@@ -24,6 +24,7 @@
 		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.11.2" />
 		<PackageReference Include="Polly.Core" Version="8.5.2" />
 		<PackageReference Include="Quickenshtein" Version="1.5.1" />
+		<PackageReference Include="Serilog.Sinks.Seq" Version="8.0.0" />
 		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.1" />
 		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
 		<PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
