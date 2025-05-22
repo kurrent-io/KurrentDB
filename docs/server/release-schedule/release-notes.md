@@ -12,7 +12,7 @@ This page contains the release notes for KurrentDB 25.0
 
 ### Fix filtered $all subscriptions checkpoint behavior (PR [#4991](https://github.com/kurrent-io/KurrentDB/pull/4991))
 
-Fixed an issue where an empty page read would cause filtered $all subscriptions to send an incorrect checkpoint with commit position equal to the end position of the log and prepare position 0. This can cause an event to the missed if the client stores only the commit position instead of both.
+Fixed an issue where an empty page read would cause filtered `$all` subscriptions to send an incorrect checkpoint with commit position equal to the end position of the log and prepare position 0. This can cause an event to be missed if the client stores only the commit position instead of both.
 
 ### Projections: Fix metrics not reporting faulted projections (PR [#5021](https://github.com/kurrent-io/KurrentDB/pull/5021))
 
