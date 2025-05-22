@@ -1,9 +1,7 @@
 using Eventuous;
 using Kurrent.Surge.Schema.Validation;
 using KurrentDB.SchemaRegistry.Domain;
-using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
 using KurrentDB.Surge.Eventuous;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;

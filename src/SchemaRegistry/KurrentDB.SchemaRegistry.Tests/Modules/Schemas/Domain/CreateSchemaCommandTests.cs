@@ -11,7 +11,7 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
-public class RegisterSchemaCommandTests : SchemaApplicationTestFixture {
+public class CreateSchemaCommandTests : SchemaApplicationTestFixture {
     [Test, Timeout(20_000)]
     public async Task registers_initial_version_of_new_schema(CancellationToken cancellationToken) {
         // Arrange
