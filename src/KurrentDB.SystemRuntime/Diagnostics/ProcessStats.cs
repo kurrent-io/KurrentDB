@@ -21,7 +21,7 @@ public static class ProcessStats {
 		};
 
 		static DiskIoData GetDiskIoLinux() {
-			const string procIoFile = $"/proc/self/io";
+			const string procIoFile = "/proc/self/io";
 
 			var result = new DiskIoData();
 			if (File.Exists(procIoFile)) {
@@ -37,10 +37,9 @@ public static class ProcessStats {
 							result = result with { WriteOps = writeOps };
 						}
 
-						if (result.ReadBytes is not 0 &&
-						    result.WrittenBytes is not 0 &&
-						    result.ReadOps is not 0 &&
-						    result.WriteOps is not 0)
+						if (result is {
+							    ReadBytes: not 0UL, ReadOps: not 0UL, WriteOps: not 0UL, WrittenBytes: not 0UL
+						    })
 							break;
 					}
 				} catch (Exception ex) {
