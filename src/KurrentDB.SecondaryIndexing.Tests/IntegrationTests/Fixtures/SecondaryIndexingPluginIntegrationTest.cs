@@ -10,8 +10,6 @@ public abstract class SecondaryIndexingPluginIntegrationTest {
 
 	protected static string RandomStreamName() => $"test-{Guid.NewGuid()}";
 
-	protected static string IndexStreamName => SecondaryIndexingFixture.IndexStreamName;
-
 	protected SecondaryIndexingPluginIntegrationTest(SecondaryIndexingFixture fixture, ITestOutputHelper output) {
 		Fixture = fixture;
 		Fixture.CaptureTestRun(output);

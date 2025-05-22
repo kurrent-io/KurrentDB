@@ -8,10 +8,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
-using KurrentDB.SecondaryIndexing.Indices;
-using KurrentDB.SecondaryIndexing.Tests.Indices;
 using KurrentDB.System.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using StreamRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision;
 
@@ -30,22 +27,24 @@ public class SecondaryIndexingEnabledFixture() : SecondaryIndexingFixture(true);
 public class SecondaryIndexingDisabledFixture() : SecondaryIndexingFixture(false);
 
 public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
-	public const string IndexStreamName = "$idx-dummy";
+	private const string DatabasePathConfig = $"{KurrentConfigurationKeys.Prefix}:Database:Db";
 	private const string PluginConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing";
 	private const string OptionsConfigPrefix = $"{PluginConfigPrefix}:Options";
+	protected string? PathName;
 
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
-		ConfigureServices = services => {
-			services.AddSingleton<ISecondaryIndex>(new FakeSecondaryIndex(IndexStreamName));
+		if (!isSecondaryIndexingPluginEnabled) return;
+
+		SetUpDatabaseDirectory();
+
+		Configuration = new Dictionary<string, string?> {
+			{ $"{PluginConfigPrefix}:Enabled", "true" },
+			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitBatchSize)}", "2" },
+			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitDelayMs)}", "100" },
+			{ DatabasePathConfig, PathName }
 		};
 
-		if (isSecondaryIndexingPluginEnabled) {
-			Configuration = new Dictionary<string, string?> {
-				{ $"{PluginConfigPrefix}:Enabled", "true" },
-				{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitBatchSize)}", "2" },
-				{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitDelayMs)}", "100" },
-			};
-		}
+		OnTearDown = CleanUpDatabaseDirectory;
 	}
 
 	public IAsyncEnumerable<ResolvedEvent> ReadStream(string streamName, CancellationToken ct = default) =>
@@ -112,4 +111,14 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		return ResolvedEvent.ForUnresolvedEvent(record, 0);
 	}
+
+	public void SetUpDatabaseDirectory() {
+		var typeName = GetType().Name.Length > 30 ? GetType().Name[..30] : GetType().Name;
+		PathName = Path.Combine(Path.GetTempPath(), $"ES-{Guid.NewGuid()}-{typeName}");
+
+		Directory.CreateDirectory(PathName);
+	}
+
+	public Task CleanUpDatabaseDirectory() =>
+		PathName != null ? DirectoryDeleter.TryForceDeleteDirectoryAsync(PathName, retries: 10) : Task.CompletedTask;
 }

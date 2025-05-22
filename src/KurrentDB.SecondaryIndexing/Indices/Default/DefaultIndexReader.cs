@@ -27,7 +27,7 @@ internal class DefaultIndexReader<TStreamId>(
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastCommittedPosition;
 
-	public override bool CanReadStream(string streamId) => streamId == $"${SystemStreams.IndexStreamPrefix}all";
+	public override bool CanReadStream(string streamId) => streamId == DefaultIndexConstants.IndexName;
 
 	private List<AllRecord> QueryAll(long fromEventNumber, long toEventNumber) {
 		using var duration = SecondaryIndexMetrics.MeasureIndex("duck_get_all_range");

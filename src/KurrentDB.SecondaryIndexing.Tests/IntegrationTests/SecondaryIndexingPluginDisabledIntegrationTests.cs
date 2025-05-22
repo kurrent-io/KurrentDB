@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.SecondaryIndexing.Indices.Default;
 using KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
 using Xunit.Abstractions;
 
@@ -32,7 +33,7 @@ public abstract class SecondaryIndexingPluginDisabledIntegrationTests<TStreamId>
 		var result = await fixture.AppendToStream(RandomStreamName(), _expectedEventData);
 
 		await Assert.ThrowsAsync<ReadResponseException.StreamNotFound>(async () =>
-			await fixture.ReadUntil(IndexStreamName, result.Position, TimeSpan.FromMilliseconds(250))
+			await fixture.ReadUntil(DefaultIndexConstants.IndexName, result.Position, TimeSpan.FromMilliseconds(250))
 		);
 	}
 }

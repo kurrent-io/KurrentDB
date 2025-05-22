@@ -3,11 +3,16 @@
 
 using DotNext;
 using Kurrent.Quack;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indices.Default;
+
+public static class DefaultIndexConstants {
+	public const string IndexName = $"{SystemStreams.IndexStreamPrefix}all";
+}
 
 public class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 	private readonly DuckDbDataSource _db;
@@ -18,13 +23,14 @@ public class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 
 	public DefaultIndex(DuckDbDataSource db, IReadIndex<TStreamId> readIndex) {
 		_db = db;
+		_db.InitDb();
+
 		var processor = new DefaultSecondaryIndexProcessor<TStreamId>(db.OpenNewConnection(), this);
 		Processor = processor;
 		Readers = [new DefaultIndexReader<TStreamId>(db, processor, readIndex)];
 	}
 
 	public void Init() {
-		_db.InitDb();
 	}
 
 	public ulong? GetLastSequence() =>

@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.SecondaryIndexing.Indices.Default;
 using KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
 using Xunit.Abstractions;
 
@@ -30,7 +31,7 @@ public abstract class SecondaryIndexingPluginEnabledIntegrationTests<TStreamId>(
 	public async Task ReadsIndexStream_ForEnabledPlugin() {
 		var appendResult = await fixture.AppendToStream(RandomStreamName(), _expectedEventData);
 
-		var readResult = await fixture.ReadUntil(IndexStreamName, appendResult.Position);
+		var readResult = await fixture.ReadUntil(DefaultIndexConstants.IndexName, appendResult.Position);
 
 		Assert.NotEmpty(readResult);
 	}

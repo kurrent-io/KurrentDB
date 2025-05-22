@@ -7,8 +7,10 @@ using EventStore.Plugins.Subsystems;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage.InMemory;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Builders;
 using KurrentDB.SecondaryIndexing.Indices;
+using KurrentDB.SecondaryIndexing.Indices.Default;
 using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -32,7 +34,13 @@ internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStr
 	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
 	[Experimental("SECONDARY_INDEX")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-		services.AddSingleton<DuckDbDataSource>();
+		services.AddSingleton<DuckDbDataSource>()
+			.AddSingleton<ISecondaryIndex>(sp =>
+				new DefaultIndex<TStreamId>(
+					sp.GetRequiredService<DuckDbDataSource>(),
+					sp.GetRequiredService<IReadIndex<TStreamId>>()
+				)
+			);
 
 		var options = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
 			.Get<SecondaryIndexingPluginOptions>();
