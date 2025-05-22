@@ -24,32 +24,31 @@ public static class ProcessStats {
 			const string procIoFile = $"/proc/self/io";
 
 			var result = new DiskIoData();
-			if (!File.Exists(procIoFile))
-				return result;
+			if (File.Exists(procIoFile)) {
+				try {
+					foreach (var line in File.ReadLines(procIoFile)) {
+						if (TryExtractIoValue(line, "read_bytes", out var readBytes))
+							result = result with { ReadBytes = readBytes };
+						else if (TryExtractIoValue(line, "write_bytes", out var writeBytes))
+							result = result with { WrittenBytes = writeBytes };
+						else if (TryExtractIoValue(line, "syscr", out var readOps))
+							result = result with { ReadOps = readOps };
+						else if (TryExtractIoValue(line, "syscw", out var writeOps)) {
+							result = result with { WriteOps = writeOps };
+						}
 
-			try {
-				foreach (var line in File.ReadLines(procIoFile)) {
-					if (TryExtractIoValue(line, "read_bytes", out var readBytes))
-						result = result with { ReadBytes = readBytes };
-					else if (TryExtractIoValue(line, "write_bytes", out var writeBytes))
-						result = result with { WrittenBytes = writeBytes };
-					else if (TryExtractIoValue(line, "syscr", out var readOps))
-						result = result with { ReadOps = readOps };
-					else if (TryExtractIoValue(line, "syscw", out var writeOps)) {
-						result = result with { WriteOps = writeOps };
+						if (result.ReadBytes is not 0 &&
+						    result.WrittenBytes is not 0 &&
+						    result.ReadOps is not 0 &&
+						    result.WriteOps is not 0)
+							break;
 					}
-
-					if (result.ReadBytes is not 0 &&
-						result.WrittenBytes is not 0 &&
-						result.ReadOps is not 0 &&
-						result.WriteOps is not 0)
-						break;
+				} catch (Exception ex) {
+					throw new ApplicationException("Failed to get Linux process I/O info", ex);
 				}
-
-				return result;
-			} catch (Exception ex) {
-				throw new ApplicationException("Failed to get Linux process I/O info", ex);
 			}
+
+			return result;
 
 			static bool TryExtractIoValue(string line, string key, out ulong value) {
 				if (line.StartsWith(key)) {
