@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
@@ -15,7 +17,9 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
-	[Test, Timeout(20_000)]
+	const int TestTimeoutMs = 20_000;
+
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_schema_description_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -58,7 +62,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		descriptionUpdated.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.UpdatedAt));
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_schema_tags_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -101,7 +105,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		tagsUpdated.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.UpdatedAt));
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_both_description_and_tags_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -148,7 +152,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		tagsUpdated.Tags.Should().BeEquivalentTo(newTags);
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_not_found(CancellationToken cancellationToken) {
 		// Arrange
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -167,7 +171,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -203,7 +207,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_update_mask_is_empty(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -238,7 +242,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 			.WithMessage("Update mask must contain at least one field");
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_update_mask_contains_unknown_field(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -274,7 +278,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, NotModifiableTestCases]
-	[Timeout(20_000)]
+	[Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_update_non_modifiable_fields(
 		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
 	) {
@@ -312,7 +316,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, UnchangedFieldsTestCases]
-	[Timeout(20_000)]
+	[Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_fields_has_not_changed(
 		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
 	) {
@@ -349,7 +353,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 			.WithMessage($"*{errorMessage}*");
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task handles_case_insensitive_field_paths(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -385,7 +389,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		descriptionUpdated.Description.Should().Be(newDescription);
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_empty_tags_to_non_empty_tags(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -421,7 +425,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		tagsUpdated.Tags.Should().BeEquivalentTo(newTags);
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_non_empty_tags_to_empty_tags(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";

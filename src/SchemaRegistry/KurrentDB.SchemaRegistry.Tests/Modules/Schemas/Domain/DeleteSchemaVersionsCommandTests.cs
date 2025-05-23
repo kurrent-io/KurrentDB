@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
@@ -15,7 +17,9 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
-	[Test, Timeout(20_000)]
+	const int TestTimeoutMs = 20_000;
+
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_versions_successfully_in_none_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -79,7 +83,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		versionsDeleted.LatestSchemaVersionNumber.Should().Be(expectedEvent.LatestSchemaVersionNumber);
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_nonexistent_versions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -124,7 +128,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			.WithMessage($"*Schema {schemaName} does not have versions: 3, 4*");
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_all_versions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -158,7 +162,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			.WithMessage($"*Cannot delete all versions of schema {schemaName}*");
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_latest_version_in_backward_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -201,7 +205,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			.WithMessage($"*Cannot delete the latest version of schema {schemaName} in Backward compatibility mode*");
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_older_version_successfully_in_backward_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -251,7 +255,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	[Test]
 	[Arguments(CompatibilityMode.Forward)]
 	[Arguments(CompatibilityMode.Full)]
-	[Timeout(20_000)]
+	[Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_any_version_in_forward_or_full_compatibility_mode(
 		CompatibilityMode compatibilityMode, CancellationToken cancellationToken
 	) {
@@ -296,7 +300,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			.WithMessage($"*Cannot delete versions of schema {schemaName} in {compatibilityMode} compatibility mode*");
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -341,7 +345,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		await deleteVersions.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_does_not_exist(CancellationToken cancellationToken) {
 		// Arrange
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";

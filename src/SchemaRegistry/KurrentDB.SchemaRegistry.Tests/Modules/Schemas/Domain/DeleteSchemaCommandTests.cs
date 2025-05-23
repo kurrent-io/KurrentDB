@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Protocol.Registry.V2;
@@ -15,7 +17,9 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
-	[Test, Timeout(20_000)]
+	const int TestTimeoutMs = 20_000;
+
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -51,7 +55,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		schemaDeleted.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.DeletedAt));
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_with_multiple_versions_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -104,7 +108,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		schemaDeleted.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.DeletedAt));
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_not_found(CancellationToken cancellationToken) {
 		// Arrange
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -119,7 +123,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		await deleteSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_already_deleted(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -156,7 +160,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, CompatibilityModeTestCases]
-	[Timeout(20_000)]
+	[Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_with_different_compatibility_modes(CompatibilityMode compatibilityMode, CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{compatibilityMode}-{Identifiers.GenerateShortId()}";
@@ -189,7 +193,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 
 
 	[Test, DataFormatTestCases]
-	[Timeout(20_000)]
+	[Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_with_different_data_formats(SchemaFormat dataFormat, CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{dataFormat}-{Identifiers.GenerateShortId()}";
@@ -220,7 +224,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		schemaDeleted.SchemaName.Should().Be(schemaName);
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_with_complex_tags(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -264,7 +268,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		schemaDeleted.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.DeletedAt));
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_with_empty_description_and_no_tags(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -299,7 +303,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		schemaDeleted.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.DeletedAt));
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task subsequent_operations_on_deleted_schema_throw_exceptions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";

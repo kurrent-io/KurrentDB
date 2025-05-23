@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
@@ -15,7 +17,9 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
-	[Test, Timeout(20_000)]
+	const int TestTimeoutMs = 20_000;
+
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_new_schema_version_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -61,7 +65,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			.BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.SchemaVersionId));
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_multiple_schema_versions_with_incrementing_version_numbers(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -130,7 +134,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await registerVersion.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -166,7 +170,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await registerVersion.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_definition_has_not_changed(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -200,7 +204,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			.WithMessage("Schema definition has not changed");
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task preserves_original_data_format_in_registered_version(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -235,7 +239,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.DataFormat.Should().Be(SchemaFormat.Protobuf);
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task generates_unique_schema_version_ids_for_different_versions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -283,7 +287,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		secondVersionId.Should().NotBe(thirdVersionId);
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_version_with_empty_schema_definition(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -318,7 +322,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.VersionNumber.Should().Be(2);
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_version_with_large_schema_definition(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -355,7 +359,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, DataFormatTestCases]
-	[Timeout(20_000)]
+	[Timeout(TestTimeoutMs)]
 	public async Task registers_version_for_different_data_formats(
 		SchemaFormat dataFormat, CancellationToken cancellationToken
 	) {
@@ -394,7 +398,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, CompatibilityModeTestCases]
-	[Timeout(20_000)]
+	[Timeout(TestTimeoutMs)]
 	public async Task registers_version_for_different_compatibility_modes(
 		CompatibilityMode compatibilityMode, CancellationToken cancellationToken
 	) {
@@ -432,7 +436,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.VersionNumber.Should().Be(2);
 	}
 
-	[Test, Timeout(20_000)]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task sets_registered_at_timestamp_correctly(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
