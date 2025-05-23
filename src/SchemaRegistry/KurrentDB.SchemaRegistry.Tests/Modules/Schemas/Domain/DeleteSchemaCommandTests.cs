@@ -159,8 +159,11 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		await deleteSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, CompatibilityModeTestCases]
-	[Timeout(TestTimeoutMs)]
+	[Test, Timeout(TestTimeoutMs)]
+	[Arguments(CompatibilityMode.Backward)]
+	[Arguments(CompatibilityMode.Forward)]
+	[Arguments(CompatibilityMode.Full)]
+	[Arguments(CompatibilityMode.None)]
 	public async Task deletes_schema_with_different_compatibility_modes(CompatibilityMode compatibilityMode, CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{compatibilityMode}-{Identifiers.GenerateShortId()}";
@@ -191,9 +194,11 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		schemaDeleted.SchemaName.Should().Be(schemaName);
 	}
 
-
-	[Test, DataFormatTestCases]
-	[Timeout(TestTimeoutMs)]
+	[Test, Timeout(TestTimeoutMs)]
+	[Arguments(SchemaFormat.Json)]
+	[Arguments(SchemaFormat.Protobuf)]
+	[Arguments(SchemaFormat.Avro)]
+	[Arguments(SchemaFormat.Bytes)]
 	public async Task deletes_schema_with_different_data_formats(SchemaFormat dataFormat, CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{dataFormat}-{Identifiers.GenerateShortId()}";
@@ -356,23 +361,5 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 		await deleteVersions.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
-	}
-
-	public class CompatibilityModeTestCases : TestCaseGenerator<CompatibilityMode> {
-		protected override IEnumerable<CompatibilityMode> Data() {
-			yield return CompatibilityMode.Backward;
-			yield return CompatibilityMode.Forward;
-			yield return CompatibilityMode.Full;
-			yield return CompatibilityMode.None;
-		}
-	}
-
-	public class DataFormatTestCases : TestCaseGenerator<SchemaFormat> {
-		protected override IEnumerable<SchemaFormat> Data() {
-			yield return SchemaFormat.Json;
-			yield return SchemaFormat.Protobuf;
-			yield return SchemaFormat.Avro;
-			yield return SchemaFormat.Bytes;
-		}
 	}
 }

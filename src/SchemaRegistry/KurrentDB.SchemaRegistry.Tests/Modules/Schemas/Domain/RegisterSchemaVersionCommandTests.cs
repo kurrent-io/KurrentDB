@@ -358,8 +358,11 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.VersionNumber.Should().Be(2);
 	}
 
-	[Test, DataFormatTestCases]
-	[Timeout(TestTimeoutMs)]
+	[Test, Timeout(TestTimeoutMs)]
+	[Arguments(SchemaFormat.Json)]
+	[Arguments(SchemaFormat.Protobuf)]
+	[Arguments(SchemaFormat.Avro)]
+	[Arguments(SchemaFormat.Bytes)]
 	public async Task registers_version_for_different_data_formats(
 		SchemaFormat dataFormat, CancellationToken cancellationToken
 	) {
@@ -397,8 +400,11 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.VersionNumber.Should().Be(2);
 	}
 
-	[Test, CompatibilityModeTestCases]
-	[Timeout(TestTimeoutMs)]
+	[Test, Timeout(TestTimeoutMs)]
+	[Arguments(CompatibilityMode.Backward)]
+	[Arguments(CompatibilityMode.Forward)]
+	[Arguments(CompatibilityMode.Full)]
+	[Arguments(CompatibilityMode.None)]
 	public async Task registers_version_for_different_compatibility_modes(
 		CompatibilityMode compatibilityMode, CancellationToken cancellationToken
 	) {
@@ -475,23 +481,5 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 
 		registeredAt.Should().BeOnOrAfter(beforeRegistration);
 		registeredAt.Should().BeOnOrBefore(afterRegistration);
-	}
-
-	public class DataFormatTestCases : TestCaseGenerator<SchemaFormat> {
-		protected override IEnumerable<SchemaFormat> Data() {
-			yield return SchemaFormat.Json;
-			yield return SchemaFormat.Protobuf;
-			yield return SchemaFormat.Avro;
-			yield return SchemaFormat.Bytes;
-		}
-	}
-
-	public class CompatibilityModeTestCases : TestCaseGenerator<CompatibilityMode> {
-		protected override IEnumerable<CompatibilityMode> Data() {
-			yield return CompatibilityMode.None;
-			yield return CompatibilityMode.Backward;
-			yield return CompatibilityMode.Forward;
-			yield return CompatibilityMode.Full;
-		}
 	}
 }
