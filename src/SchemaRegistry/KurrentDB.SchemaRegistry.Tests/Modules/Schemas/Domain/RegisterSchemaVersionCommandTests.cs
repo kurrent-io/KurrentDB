@@ -61,7 +61,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			.BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.SchemaVersionId));
 	}
 
-	[Test, Skip("Flaky test: Version number not updated for third version"), Timeout(20_000)]
+	[Test, Timeout(20_000)]
 	public async Task registers_multiple_schema_versions_with_incrementing_version_numbers(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -393,7 +393,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.VersionNumber.Should().Be(2);
 	}
 
-	[Test, Skip("Flaky tests: Failed to checkpoint connection to *.ddb"), CompatibilityModeTestCases]
+	[Test, CompatibilityModeTestCases]
 	[Timeout(20_000)]
 	public async Task registers_version_for_different_compatibility_modes(
 		CompatibilityMode compatibilityMode, CancellationToken cancellationToken

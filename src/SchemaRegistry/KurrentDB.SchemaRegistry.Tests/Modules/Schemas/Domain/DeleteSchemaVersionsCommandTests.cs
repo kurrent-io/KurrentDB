@@ -15,7 +15,7 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
-	[Test, Skip("Flaky: Expected version Deleted.Versions to contain 2 items but found 3"), Timeout(20_000)]
+	[Test, Timeout(20_000)]
 	public async Task deletes_schema_versions_successfully_in_none_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -37,7 +37,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		);
 
 		// Register additional schema versions
-		var version2Result = await Apply(
+		await Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
@@ -53,14 +53,12 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		// Get all versions to extract version IDs
-		var versionsToDelete = new List<int> { 1, 2 }; // We'll delete the first two versions
+		var versionsToDelete = new List<int> { 1, 2 };
 
 		var expectedEvent = new SchemaVersionsDeleted {
 			SchemaName = schemaName,
-			// Versions will be added by the handler
 			LatestSchemaVersionId = version3Result.Changes.GetSingleEvent<SchemaVersionRegistered>().SchemaVersionId,
-			LatestSchemaVersionNumber = 3, // Third version
+			LatestSchemaVersionNumber = 3,
 			DeletedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
 		};
 
@@ -203,7 +201,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 			.WithMessage($"*Cannot delete the latest version of schema {schemaName} in Backward compatibility mode*");
 	}
 
-	[Test, Skip("Cannot delete the latest version of schema PowerConsumption"), Timeout(20_000)]
+	[Test, Timeout(20_000)]
 	public async Task deletes_older_version_successfully_in_backward_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";

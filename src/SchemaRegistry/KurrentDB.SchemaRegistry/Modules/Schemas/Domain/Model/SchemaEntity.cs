@@ -63,7 +63,9 @@ public record SchemaEntity : State<SchemaEntity> {
     public bool IsDeleted =>
         DeletedAt != DateTimeOffset.MinValue;
 
-    public SchemaVersion LatestVersion => Versions.Values.LastOrDefault() ?? SchemaVersion.None;
+    public SchemaVersion LatestVersion => Versions.Values
+        .OrderByDescending(v => v.VersionNumber)
+        .FirstOrDefault() ?? SchemaVersion.None;
 
     public SchemaVersion GetVersion(string id) {
         return Versions.TryGetValue(id, out var schemaVersion)
@@ -109,3 +111,4 @@ public record SchemaEntity : State<SchemaEntity> {
             !SchemaDefinitionBytes.IsEmpty && SchemaDefinitionBytes.Span.SequenceEqual(otherDefinition.Span);
     }
 }
+
