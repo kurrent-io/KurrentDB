@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext;
-using DuckDB.NET.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.TransactionLog.Chunks;

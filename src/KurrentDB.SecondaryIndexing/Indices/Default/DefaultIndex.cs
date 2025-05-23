@@ -25,7 +25,9 @@ public class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 		_db = db;
 		_db.InitDb();
 
-		var processor = new DefaultSecondaryIndexProcessor<TStreamId>(db.OpenNewConnection(), this);
+		var connection = db.OpenNewConnection();
+
+		var processor = new DefaultSecondaryIndexProcessor<TStreamId>(connection, this);
 		Processor = processor;
 		Readers = [new DefaultIndexReader<TStreamId>(db, processor, readIndex)];
 	}

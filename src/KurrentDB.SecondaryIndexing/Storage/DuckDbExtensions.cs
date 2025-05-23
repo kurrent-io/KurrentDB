@@ -20,8 +20,7 @@ public static class DuckDbExtensions {
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow>
-	{
+		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
 		using (pool.Rent(out var connection)) {
 			using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
 
@@ -29,20 +28,50 @@ public static class DuckDbExtensions {
 		}
 	}
 
-	public static List<TRow> QueryAll<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
+	public static List<TRow> Query<TRow, TQuery>(this DuckDBConnectionPool pool)
+		where TRow : struct
+		where TQuery : IDataRowParser<TRow>, IParameterlessStatement {
+		using (pool.Rent(out var connection)) {
+			return connection.Query<TRow, TQuery>();
+		}
+	}
+
+
+	public static List<TRow> Query<TRow, TQuery>(this DuckDBAdvancedConnection connection)
+		where TRow : struct
+		where TQuery : IDataRowParser<TRow>, IParameterlessStatement {
+		List<TRow> elements = [];
+		using var result = connection.ExecuteQuery<TRow, TQuery>().GetEnumerator();
+
+		while (result.MoveNext()) {
+			elements.Add(result.Current);
+		}
+
+		return elements;
+	}
+
+	public static List<TRow> Query<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
+		where TArgs : struct
+		where TRow : struct
+		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
+		using (pool.Rent(out var connection)) {
+			return connection.Query<TArgs, TRow, TQuery>(args);
+		}
+	}
+
+
+	public static List<TRow> Query<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args)
 		where TArgs : struct
 		where TRow : struct
 		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
 		List<TRow> elements = [];
-		using (pool.Rent(out var connection)) {
-			using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
+		using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
 
-			while (result.MoveNext()) {
-				elements.Add(result.Current);
-			}
-
-			return elements;
+		while (result.MoveNext()) {
+			elements.Add(result.Current);
 		}
+
+		return elements;
 	}
 
 	public static void ExecuteNonQuery<TQuery>(this DuckDBConnectionPool pool)
