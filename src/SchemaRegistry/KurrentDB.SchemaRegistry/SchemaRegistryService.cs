@@ -11,8 +11,6 @@ using KurrentDB.SchemaRegistry.Domain;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Services.Domain;
-using Microsoft.Extensions.Logging;
-
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 
 namespace KurrentDB.SchemaRegistry;
