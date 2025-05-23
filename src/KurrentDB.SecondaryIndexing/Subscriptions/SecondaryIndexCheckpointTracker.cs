@@ -36,7 +36,7 @@ public sealed class SecondaryIndexCheckpointTracker : IAsyncDisposable {
 	}
 
 	public ValueTask DisposeAsync() {
-		// dispose CTS once to deal ith
+		// dispose CTS once to deal with the concurrent call to the current method
 		if (Interlocked.Exchange(ref _cts, null) is not { } cts)
 			return ValueTask.CompletedTask;
 
