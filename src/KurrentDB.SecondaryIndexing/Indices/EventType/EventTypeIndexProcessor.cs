@@ -5,13 +5,13 @@ using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
-using static KurrentDB.SecondaryIndexing.Indices.Category.CategorySql;
+using static KurrentDB.SecondaryIndexing.Indices.EventType.EventTypeSql;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Category;
+namespace KurrentDB.SecondaryIndexing.Indices.EventType;
 
-internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	private readonly Dictionary<string, long> _categories;
-	private readonly Dictionary<long, long> _categorySizes = new();
+internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
+	private readonly Dictionary<string, long> _eventTypes;
+	private readonly Dictionary<long, long> _eventTypeSizes = new();
 	private long _lastLogPosition;
 	private readonly Appender _appender;
 
@@ -19,47 +19,47 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public long LastCommittedPosition { get; private set; }
 	public SequenceRecord LastIndexed { get; private set; }
 
-	public CategoryIndexProcessor(DuckDBAdvancedConnection connection) {
-		_appender = new Appender(connection, "category"u8);
+	public EventTypeIndexProcessor(DuckDBAdvancedConnection connection) {
+		_appender = new Appender(connection, "event_type"u8);
 
-		var ids = connection.Query<ReferenceRecord, QueryCategorySql>();
-		_categories = ids.ToDictionary(x => x.name, x => x.id);
+		var ids = connection.Query<ReferenceRecord, QueryEventTypeSql>();
+		_eventTypes = ids.ToDictionary(x => x.name, x => x.id);
 
 		foreach (var id in ids) {
-			_categorySizes[id.id] = -1;
+			_eventTypeSizes[id.id] = -1;
 		}
 
 		var sequences = connection.Query<(long Id, long Sequence), QueryCategoriesMaxSequencesSql>();
 		foreach (var sequence in sequences) {
-			_categorySizes[sequence.Id] = sequence.Sequence;
+			_eventTypeSizes[sequence.Id] = sequence.Sequence;
 		}
 
-		Seq = _categories.Count > 0 ? _categories.Values.Max() : 0;
+		Seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() : 0;
 	}
 
 	public ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default) {
 		if (IsDisposingOrDisposed)
 			return ValueTask.CompletedTask;
 
-		var categoryName = GetStreamCategory(resolvedEvent.OriginalStreamId);
+		var eventTypeName = resolvedEvent.OriginalEvent.EventType;
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
 
-		if (_categories.TryGetValue(categoryName, out var categoryId)) {
-			var next = _categorySizes[categoryId] + 1;
-			_categorySizes[categoryId] = next;
+		if (_eventTypes.TryGetValue(eventTypeName, out var eventTypeId)) {
+			var next = _eventTypeSizes[eventTypeId] + 1;
+			_eventTypeSizes[eventTypeId] = next;
 
-			LastIndexed = new SequenceRecord(categoryId, next);
+			LastIndexed = new SequenceRecord(eventTypeId, next);
 			return ValueTask.CompletedTask;
 		}
 
 		var id = ++Seq;
 
-		_categories[categoryName] = id;
-		_categorySizes[id] = 0;
+		_eventTypes[eventTypeName] = id;
+		_eventTypeSizes[id] = 0;
 
 		using (var row = _appender.CreateRow()) {
 			row.Append(id);
-			row.Append(categoryName);
+			row.Append(eventTypeName);
 		}
 
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
@@ -68,11 +68,11 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		return ValueTask.CompletedTask;
 	}
 
-	public long GetLastEventNumber(long categoryId) =>
-		_categorySizes.TryGetValue(categoryId, out var size) ? size : ExpectedVersion.NoStream;
+	public long GetLastEventNumber(long eventTypeId) =>
+		_eventTypeSizes.TryGetValue(eventTypeId, out var size) ? size : ExpectedVersion.NoStream;
 
-	public long GetCategoryId(string categoryName) =>
-		_categories.TryGetValue(categoryName, out var categoryId) ? categoryId : ExpectedVersion.NoStream;
+	public long GetEventTypeId(string eventTypeName) =>
+		_eventTypes.TryGetValue(eventTypeName, out var eventTypeId) ? eventTypeId : ExpectedVersion.NoStream;
 
 	public ValueTask Commit(CancellationToken token = default) {
 		if (IsDisposingOrDisposed)
@@ -84,7 +84,7 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		return ValueTask.CompletedTask;
 	}
 
-	private static string GetStreamCategory(string streamName) {
+	private static string GetStreamEventType(string streamName) {
 		var dashIndex = streamName.IndexOf('-');
 		return dashIndex == -1 ? streamName : streamName[..dashIndex];
 	}

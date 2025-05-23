@@ -4,6 +4,7 @@
 using System.Text;
 using KurrentDB.SecondaryIndexing.Indices.Category;
 using KurrentDB.SecondaryIndexing.Indices.Default;
+using KurrentDB.SecondaryIndexing.Indices.EventType;
 using KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
 using Xunit.Abstractions;
 
@@ -36,20 +37,34 @@ public abstract class SecondaryIndexingPluginEnabledIntegrationTests<TStreamId>(
 		var appendResult = await fixture.AppendToStream(streamName, _expectedEventData);
 
 		// When
-		var allReadResult = await fixture.ReadUntil(DefaultIndexConstants.IndexName, appendResult.Position);
-		var categoryReadResult = await fixture.ReadUntil($"{CategoryIndexConstants.IndexPrefix}test", appendResult.Position);
+		var allReadResult = await fixture.ReadUntil(
+			DefaultIndexConstants.IndexName,
+			appendResult.Position
+		);
+		var categoryReadResult = await fixture.ReadUntil(
+			$"{CategoryIndexConstants.IndexPrefix}${CategoryName}",
+			appendResult.Position
+		);
+		var eventTypeReadResult = await fixture.ReadUntil(
+			$"{EventTypeIndexConstants.IndexPrefix}test",
+			appendResult.Position
+		);
 
 		// Then
 		Assert.NotEmpty(allReadResult);
 		Assert.NotEmpty(categoryReadResult);
+		Assert.NotEmpty(eventTypeReadResult);
 
 		var allResults = allReadResult.Where(e => e.Event.EventStreamId == streamName).ToList();
 		var categoryResults = allReadResult.Where(e => e.Event.EventStreamId == streamName).ToList();
+		var eventTypeResults = allReadResult.Where(e => e.Event.EventStreamId == streamName).ToList();
 
 		Assert.Equal(_expectedEventData.Length, allResults.Count);
 		Assert.Equal(_expectedEventData.Length, categoryResults.Count);
+		Assert.Equal(_expectedEventData.Length, eventTypeResults.Count);
 
 		Assert.All(allResults, e => Assert.Contains(e.Event.DebugDataView, _expectedEventData));
 		Assert.All(categoryResults, e => Assert.Contains(e.Event.DebugDataView, _expectedEventData));
+		Assert.All(eventTypeResults, e => Assert.Contains(e.Event.DebugDataView, _expectedEventData));
 	}
 }

@@ -6,14 +6,14 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indices.DuckDb;
 using KurrentDB.SecondaryIndexing.Metrics;
 using KurrentDB.SecondaryIndexing.Storage;
-using static KurrentDB.SecondaryIndexing.Indices.Category.CategorySql;
-using static KurrentDB.SecondaryIndexing.Indices.Category.CategoryIndexConstants;
+using static KurrentDB.SecondaryIndexing.Indices.EventType.EventTypeSql;
+using static KurrentDB.SecondaryIndexing.Indices.EventType.EventTypeIndexConstants;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Category;
+namespace KurrentDB.SecondaryIndexing.Indices.EventType;
 
-internal class CategoryIndexReader<TStreamId>(
+internal class EventTypeIndexReader<TStreamId>(
 	DuckDbDataSource db,
-	CategoryIndexProcessor processor,
+	EventTypeIndexProcessor processor,
 	IReadIndex<TStreamId> index
 )
 	: DuckDbIndexReader<TStreamId>(index) {
@@ -23,8 +23,8 @@ internal class CategoryIndexReader<TStreamId>(
 			return ExpectedVersion.Invalid;
 		}
 
-		var categoryName = streamName[8..];
-		return processor.GetCategoryId(categoryName);
+		var eventTypeName = streamName[8..];
+		return processor.GetEventTypeId(eventTypeName);
 	}
 
 	protected override long GetLastSequence(long id) => processor.GetLastEventNumber(id);
@@ -39,13 +39,13 @@ internal class CategoryIndexReader<TStreamId>(
 		streamId.StartsWith(IndexPrefix);
 
 	private IEnumerable<IndexedPrepare> GetRecords(long id, long fromEventNumber, long toEventNumber) {
-		var range = QueryCategoryIndex(id, fromEventNumber, toEventNumber);
-		var indexPrepares = range.Select(x => new IndexedPrepare(x.category_seq, x.event_number, x.log_position));
+		var range = QueryEventTypeIndex(id, fromEventNumber, toEventNumber);
+		var indexPrepares = range.Select(x => new IndexedPrepare(x.event_type_seq, x.event_number, x.log_position));
 		return indexPrepares;
 	}
 
-	private List<CategoryRecord> QueryCategoryIndex(long id, long fromEventNumber, long toEventNumber) {
+	private List<EventTypeRecord> QueryEventTypeIndex(long id, long fromEventNumber, long toEventNumber) {
 		using var duration = SecondaryIndexMetrics.MeasureIndex("duck_get_cat_range");
-		return db.Pool.Query<(long, long, long), CategoryRecord, QueryCategoryIndexSql>((id, fromEventNumber, toEventNumber));
+		return db.Pool.Query<(long, long, long), EventTypeRecord, QueryEventTypeIndexSql>((id, fromEventNumber, toEventNumber));
 	}
 }

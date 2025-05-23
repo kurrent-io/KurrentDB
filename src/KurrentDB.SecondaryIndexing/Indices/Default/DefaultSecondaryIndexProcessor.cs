@@ -39,8 +39,10 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 			return;
 
 		await _defaultIndex.CategoryIndex.Processor.Index(resolvedEvent, token);
+		await _defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent, token);
 
 		var category = _defaultIndex.CategoryIndex.LastIndexed;
+		var eventType = _defaultIndex.EventTypeIndex.LastIndexed;
 
 		using (var row = _appender.CreateRow()) {
 			row.Append(_seq++);
@@ -48,8 +50,8 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 			row.Append(resolvedEvent.Event.LogPosition);
 			row.Append(resolvedEvent.Event.TimeStamp);
 			row.Append(0);
-			row.Append(0);
-			row.Append(0);
+			row.Append((int)eventType.Id);
+			row.Append(eventType.Sequence);
 			row.Append((int)category.Id);
 			row.Append(category.Sequence);
 		}
@@ -68,5 +70,6 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 		LastCommittedPosition = _lastLogPosition;
 
 		await _defaultIndex.CategoryIndex.Processor.Commit(token);
+		await _defaultIndex.EventTypeIndex.Processor.Commit(token);
 	}
 }

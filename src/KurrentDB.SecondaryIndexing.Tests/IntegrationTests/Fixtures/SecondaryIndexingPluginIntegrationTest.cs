@@ -8,7 +8,9 @@ namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
 public abstract class SecondaryIndexingPluginIntegrationTest {
 	protected SecondaryIndexingFixture Fixture { get; }
 
-	protected static string RandomStreamName() => $"test-{Guid.NewGuid()}";
+	protected const string CategoryName = "testCategory";
+
+	protected static string RandomStreamName() => $"${CategoryName}-{Guid.NewGuid()}";
 
 	protected SecondaryIndexingPluginIntegrationTest(SecondaryIndexingFixture fixture, ITestOutputHelper output) {
 		Fixture = fixture;
