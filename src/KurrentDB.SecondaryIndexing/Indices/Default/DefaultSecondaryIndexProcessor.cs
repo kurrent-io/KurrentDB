@@ -9,7 +9,8 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Indices.Default;
 
-public class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondaryIndexProcessor {
+internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondaryIndexProcessor {
+	private readonly DefaultIndex<TStreamId> _defaultIndex;
 	private long _lastLogPosition;
 	private ulong _seq;
 	private int _page;
@@ -20,7 +21,12 @@ public class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondaryI
 	public long LastCommittedPosition { get; private set; }
 	public long LastSequence => (long)_seq;
 
-	public DefaultSecondaryIndexProcessor(DuckDBAdvancedConnection connection, DefaultIndex<TStreamId> defaultIndex) {
+	public DefaultSecondaryIndexProcessor(
+		DuckDBAdvancedConnection connection,
+		DefaultIndex<TStreamId> defaultIndex
+	) {
+		_defaultIndex = defaultIndex;
+
 		_appender = new Appender(connection, "idx_all"u8);
 
 		var lastPosition = defaultIndex.GetLastSequence();
@@ -28,9 +34,13 @@ public class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondaryI
 		_seq = lastPosition.HasValue ? lastPosition.Value + 1 : 0;
 	}
 
-	public ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default) {
+	public async ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default) {
 		if (IsDisposingOrDisposed)
-			return ValueTask.CompletedTask;
+			return;
+
+		await _defaultIndex.CategoryIndex.Processor.Index(resolvedEvent, token);
+
+		var category = _defaultIndex.CategoryIndex.LastIndexed;
 
 		using (var row = _appender.CreateRow()) {
 			row.Append(_seq++);
@@ -40,25 +50,23 @@ public class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondaryI
 			row.Append(0);
 			row.Append(0);
 			row.Append(0);
-			row.Append(0);
-			row.Append(0);
+			row.Append((int)category.Id);
+			row.Append(category.Sequence);
 		}
 
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
 		_page++;
-
-		return ValueTask.CompletedTask;
 	}
 
-	public ValueTask Commit(CancellationToken token = default) {
+	public async ValueTask Commit(CancellationToken token = default) {
 		if (IsDisposingOrDisposed)
-			return ValueTask.CompletedTask;
+			return;
 
 		_appender.Flush();
 		Logger.Debug("Committed {Count} records to index at sequence {Seq}", _page, _seq);
 		_page = 0;
 		LastCommittedPosition = _lastLogPosition;
 
-		return ValueTask.CompletedTask;
+		await _defaultIndex.CategoryIndex.Processor.Commit(token);
 	}
 }

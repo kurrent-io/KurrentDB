@@ -40,7 +40,7 @@ internal class DefaultIndexReader<TStreamId>(
 		};
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select seq, log_position, event_number from idx_all where seq>=1 and seq<=$2"u8;
+			"select seq, log_position, event_number from idx_all where seq>=$1 and seq<=$2"u8;
 
 		public static AllRecord Parse(ref DataChunk.Row row) => new() {
 			seq = row.ReadInt64(),

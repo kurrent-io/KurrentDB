@@ -6,20 +6,23 @@ using Kurrent.Quack;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.SecondaryIndexing.Indices.Category;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indices.Default;
 
-public static class DefaultIndexConstants {
+internal static class DefaultIndexConstants {
 	public const string IndexName = $"{SystemStreams.IndexStreamPrefix}all";
 }
 
-public class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
+internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 	private readonly DuckDbDataSource _db;
 
 	public ISecondaryIndexProcessor Processor { get; }
 
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
+
+	public CategoryIndex<TStreamId> CategoryIndex { get; }
 
 	public DefaultIndex(DuckDbDataSource db, IReadIndex<TStreamId> readIndex) {
 		_db = db;
@@ -27,9 +30,14 @@ public class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 
 		var connection = db.OpenNewConnection();
 
+		CategoryIndex = new CategoryIndex<TStreamId>(db, connection, readIndex);
+
 		var processor = new DefaultSecondaryIndexProcessor<TStreamId>(connection, this);
 		Processor = processor;
-		Readers = [new DefaultIndexReader<TStreamId>(db, processor, readIndex)];
+		Readers = [
+			new DefaultIndexReader<TStreamId>(db, processor, readIndex),
+			..CategoryIndex.Readers
+		];
 	}
 
 	public void Init() {
