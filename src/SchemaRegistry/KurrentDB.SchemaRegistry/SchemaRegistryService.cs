@@ -55,12 +55,10 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
         Execute(request, context, async (req, ct) => {
             var result = await Commands.Handle(req, ct);
 
-            return result.Match(
-                ok => {
-                    // var evt = ok.Changes.GetSingleEvent<SchemaUpdated>();
-                    return new UpdateSchemaResponse {
-
-                    };
+            return await result.Match(
+                async ok => {
+                    await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
+                    return new UpdateSchemaResponse();
                 },
                 ko => throw ko.Exception ?? new(ko.ErrorMessage)
             );
@@ -100,8 +98,11 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
         Execute(request, context, async (req, ct) => {
             var result = await Commands.Handle(req, ct);
 
-            return result.Match(
-                ok => new DeleteSchemaVersionsResponse(),
+            return await result.Match(
+                async ok => {
+	                await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
+	                return new DeleteSchemaVersionsResponse();
+                },
                 ko => throw ko.Exception ?? new(ko.ErrorMessage)
             );
         });
