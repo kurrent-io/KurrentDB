@@ -18,7 +18,7 @@ Indexes are sorted lists based on the hashes of stream names. To speed up seekin
 file of an entry for a stream, EventStoreDB keeps midpoints to relate the stream hash to the physical offset
 in the file.
 
-As EventStoreDB saves more files, they are automatically merged together whenever there are more than 2 files
+As EventStoreDB saves more files, they are automatically merged together whenever there are 2 or more files
 at the same level into a single file at the next level. Each index entry is 24 bytes and the index file size
 is approximately 24Mb per 1M events. The Bloom filter files are approximately 1% of the size of the rest of
 the index.
