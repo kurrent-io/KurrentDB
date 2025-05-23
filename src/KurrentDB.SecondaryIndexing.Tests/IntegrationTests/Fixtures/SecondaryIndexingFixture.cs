@@ -56,7 +56,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) {
-		timeout ??= TimeSpan.FromMilliseconds(5000);
+		timeout ??= TimeSpan.FromMilliseconds(10000);
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
 		var events = new List<ResolvedEvent>();
@@ -68,7 +68,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			try {
 				events = await ReadStream(streamName, ct).ToListAsync(ct);
 
-				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition <= (long)position.CommitPosition;
+				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition >= (long)position.CommitPosition;
 			} catch (ReadResponseException.StreamNotFound ex) {
 				streamNotFound = ex;
 			}

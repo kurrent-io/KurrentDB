@@ -11,10 +11,16 @@ public static class DuckDbExtensions {
 		where TRow : struct
 		where TQuery : IParameterlessStatement, IDataRowParser<TRow> {
 		using (pool.Rent(out var connection)) {
-			using var result = connection.ExecuteQuery<TRow, TQuery>().GetEnumerator();
-
-			return result.MoveNext() ? null : result.Current;
+			return connection.QueryFirstOrDefault<TRow, TQuery>();
 		}
+	}
+
+	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBAdvancedConnection connection)
+		where TRow : struct
+		where TQuery : IParameterlessStatement, IDataRowParser<TRow> {
+		using var result = connection.ExecuteQuery<TRow, TQuery>().GetEnumerator();
+
+		return result.MoveNext() ? null : result.Current;
 	}
 
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
@@ -22,10 +28,17 @@ public static class DuckDbExtensions {
 		where TRow : struct
 		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
 		using (pool.Rent(out var connection)) {
-			using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
-
-			return result.MoveNext() ? null : result.Current;
+			return connection.QueryFirstOrDefault<TArgs, TRow, TQuery>(args);
 		}
+	}
+
+	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args)
+		where TArgs : struct
+		where TRow : struct
+		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
+		using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
+
+		return result.MoveNext() ? null : result.Current;
 	}
 
 	public static List<TRow> Query<TRow, TQuery>(this DuckDBConnectionPool pool)

@@ -56,15 +56,15 @@ public abstract class SecondaryIndexingPluginEnabledIntegrationTests<TStreamId>(
 		Assert.NotEmpty(eventTypeReadResult);
 
 		var allResults = allReadResult.Where(e => e.Event.EventStreamId == streamName).ToList();
-		var categoryResults = allReadResult.Where(e => e.Event.EventStreamId == streamName).ToList();
-		var eventTypeResults = allReadResult.Where(e => e.Event.EventStreamId == streamName).ToList();
+		var categoryResults = categoryReadResult.Where(e => e.Event.EventStreamId == streamName).ToList();
+		var eventTypeResults = eventTypeReadResult.Where(e => e.Event.EventStreamId == streamName).ToList();
 
 		Assert.Equal(_expectedEventData.Length, allResults.Count);
 		Assert.Equal(_expectedEventData.Length, categoryResults.Count);
 		Assert.Equal(_expectedEventData.Length, eventTypeResults.Count);
 
-		Assert.All(allResults, e => Assert.Contains(e.Event.DebugDataView, _expectedEventData));
-		Assert.All(categoryResults, e => Assert.Contains(e.Event.DebugDataView, _expectedEventData));
-		Assert.All(eventTypeResults, e => Assert.Contains(e.Event.DebugDataView, _expectedEventData));
+		Assert.All(allResults, e => Assert.Contains(Encoding.UTF8.GetString(e.Event.Data.Span), _expectedEventData));
+		Assert.All(categoryResults, e => Assert.Contains(Encoding.UTF8.GetString(e.Event.Data.Span), _expectedEventData));
+		Assert.All(eventTypeResults, e => Assert.Contains(Encoding.UTF8.GetString(e.Event.Data.Span), _expectedEventData));
 	}
 }

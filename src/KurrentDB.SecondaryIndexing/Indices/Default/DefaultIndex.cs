@@ -8,6 +8,7 @@ using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indices.Category;
 using KurrentDB.SecondaryIndexing.Indices.EventType;
+using KurrentDB.SecondaryIndexing.Indices.Stream;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indices.Default;
@@ -25,6 +26,10 @@ internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 
 	public CategoryIndex<TStreamId> CategoryIndex { get; }
 
+	public EventTypeIndex<TStreamId> EventTypeIndex { get; set; }
+
+	public StreamIndex StreamIndex { get; set; }
+
 	public DefaultIndex(DuckDbDataSource db, IReadIndex<TStreamId> readIndex) {
 		_db = db;
 		_db.InitDb();
@@ -33,6 +38,7 @@ internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 
 		CategoryIndex = new CategoryIndex<TStreamId>(db, connection, readIndex);
 		EventTypeIndex = new EventTypeIndex<TStreamId>(db, connection, readIndex);
+		StreamIndex = new StreamIndex(connection);
 
 		var processor = new DefaultSecondaryIndexProcessor<TStreamId>(connection, this);
 		Processor = processor;
@@ -42,8 +48,6 @@ internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 			..EventTypeIndex.Readers
 		];
 	}
-
-	public EventTypeIndex<TStreamId> EventTypeIndex { get; set; }
 
 	public void Init() {
 	}
