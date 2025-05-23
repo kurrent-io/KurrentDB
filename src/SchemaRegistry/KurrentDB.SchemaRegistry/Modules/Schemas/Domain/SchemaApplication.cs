@@ -103,7 +103,9 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
             // Define allowed fields
             var allowedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
                 "Details.Description",
-                "Details.Tags"
+                "Details.Tags",
+                "Details.Compatibility",
+                "Details.DataFormat"
             };
 
             // Check for unknown fields before processing
