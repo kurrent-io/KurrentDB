@@ -198,7 +198,7 @@ public class InaugurationManager :
 			// transition to leader!
 			Respond(
 				received,
-				new SystemMessage.BecomeLeader(_stateCorrelationId),
+				new SystemMessage.BecomeLeader(_stateCorrelationId) { Trace = true },
 				"Correlation id {currentCorrelationId}",
 				_stateCorrelationId);
 			State = ManagerState.Idle;
