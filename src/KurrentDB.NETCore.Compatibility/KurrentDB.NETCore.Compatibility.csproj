@@ -1,13 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="System.ServiceModel.Http" Version="6.2.0" />
+		<PackageReference Include="System.ServiceModel.Http" />
 		<!-- CVE-2023-29331 -->
-		<PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
-		<PackageReference Include="System.Security.Cryptography.Xml" Version="8.0.0" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" />
+		<PackageReference Include="System.Security.Cryptography.Xml" />
 		<!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-447r-wph3-92pm -->
-		<PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
+		<PackageReference Include="System.Formats.Asn1" />
 	</ItemGroup>
 </Project>

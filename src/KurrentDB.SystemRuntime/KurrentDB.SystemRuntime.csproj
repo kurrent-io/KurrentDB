@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
@@ -7,8 +7,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Serilog" Version="4.0.1" />
-	  <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+	  <PackageReference Include="Serilog" />
+	  <PackageReference Include="System.Diagnostics.PerformanceCounter" />
 	</ItemGroup>
 
 	<ItemGroup>
