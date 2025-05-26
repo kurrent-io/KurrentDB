@@ -1,5 +1,8 @@
 {
 	"EventStore": {
+		"SchemaRegistry": {
+			"Enabled": false
+		},
 		"Connectors": {
 			"Enabled": false
 		},
