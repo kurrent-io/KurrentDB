@@ -21,6 +21,13 @@ jobs:
     runs-on: ${{ inputs.os }}
     name: ci/github/build-${{ inputs.os }}
     steps:
+    - name: Free Disk Space (Ubuntu)
+      if: inputs.os != 'windows-2019'
+      uses: jlumbroso/free-disk-space@v1.3.1
+      with:
+        tool-cache: false
+        dotnet: false
+        docker-images: false
     - name: Checkout
       uses: actions/checkout@v4
     - name: Set up Docker Buildx

@@ -11,49 +11,48 @@ namespace System.Diagnostics;
 
 [PublicAPI]
 public static class ProcessStats {
-	public static DiskIoData GetDiskIo(Process process) {
+	public static DiskIoData GetDiskIo() {
 		return RuntimeInformation.OsPlatform switch {
-			RuntimeOSPlatform.Linux => GetDiskIoLinux(process),
-			RuntimeOSPlatform.OSX => GetDiskIoOsx(process),
-			RuntimeOSPlatform.Windows => GetDiskIoWindows(process),
+			RuntimeOSPlatform.Linux => GetDiskIoLinux(),
+			RuntimeOSPlatform.OSX => GetDiskIoOsx(),
+			RuntimeOSPlatform.Windows => GetDiskIoWindows(),
 			RuntimeOSPlatform.FreeBSD => default,
 			_ => throw new NotSupportedException("Operating system not supported")
 		};
 
-		static DiskIoData GetDiskIoLinux(Process process) {
-			var procIoFile = $"/proc/{process.Id}/io";
+		static DiskIoData GetDiskIoLinux() {
+			const string procIoFile = "/proc/self/io";
 
-			try {
-				var result = new DiskIoData();
+			var result = new DiskIoData();
+			if (File.Exists(procIoFile)) {
+				try {
+					foreach (var line in File.ReadLines(procIoFile)) {
+						if (TryExtractIoValue(line, "read_bytes", out var readBytes))
+							result = result with { ReadBytes = readBytes };
+						else if (TryExtractIoValue(line, "write_bytes", out var writeBytes))
+							result = result with { WrittenBytes = writeBytes };
+						else if (TryExtractIoValue(line, "syscr", out var readOps))
+							result = result with { ReadOps = readOps };
+						else if (TryExtractIoValue(line, "syscw", out var writeOps)) {
+							result = result with { WriteOps = writeOps };
+						}
 
-				foreach (var line in File.ReadLines(procIoFile)) {
-					if (TryExtractIoValue(line, "read_bytes", out var readBytes))
-						result = result with { ReadBytes = readBytes };
-					else if (TryExtractIoValue(line, "write_bytes", out var writeBytes))
-						result = result with { WrittenBytes = writeBytes };
-					else if (TryExtractIoValue(line, "syscr", out var readOps))
-						result = result with { ReadOps = readOps };
-					else if (TryExtractIoValue(line, "syscw", out var writeOps)) {
-						result = result with { WriteOps = writeOps };
+						if (result is {
+							    ReadBytes: not 0UL, ReadOps: not 0UL, WriteOps: not 0UL, WrittenBytes: not 0UL
+						    })
+							break;
 					}
-
-					if (result.ReadBytes is not 0 &&
-						result.WrittenBytes is not 0 &&
-						result.ReadOps is not 0 &&
-						result.WriteOps is not 0)
-						break;
+				} catch (Exception ex) {
+					throw new ApplicationException("Failed to get Linux process I/O info", ex);
 				}
-
-				return result;
-			} catch (Exception ex) {
-				throw new ApplicationException("Failed to get Linux process I/O info", ex);
 			}
 
-			static bool TryExtractIoValue(string line, string key, out ulong value) {
+			return result;
+
+			static bool TryExtractIoValue(ReadOnlySpan<char> line, ReadOnlySpan<char> key, out ulong value) {
 				if (line.StartsWith(key)) {
 					var rawValue = line[(key.Length + 1)..].Trim(); // handle the `:` character
-					value = Convert.ToUInt64(rawValue);
-					return true;
+					return ulong.TryParse(rawValue, out value);
 				}
 
 				value = 0;
@@ -61,15 +60,12 @@ public static class ProcessStats {
 			}
 		}
 
-		static DiskIoData GetDiskIoOsx(Process process) =>
-			OsxNative.IO.GetDiskIo(process.Id);
+		static DiskIoData GetDiskIoOsx() =>
+			OsxNative.IO.GetDiskIo();
 
-		static DiskIoData GetDiskIoWindows(Process process) =>
-			WindowsNative.IO.GetDiskIo(process);
+		static DiskIoData GetDiskIoWindows() =>
+			WindowsNative.IO.GetDiskIo();
 	}
-
-	public static DiskIoData GetDiskIo() =>
-		GetDiskIo(Process.GetCurrentProcess());
 }
 
 /// <summary>

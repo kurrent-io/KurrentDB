@@ -2,21 +2,21 @@
 
 # database-mergers team is the default owner for everything in
 # the repo. Unless a later match takes precedence.
-*       @EventStore/database-mergers
+*       @kurrent-io/database-mergers
 
 # documentation and database-mergers teams own any files in the 'docs'
 # directory at the root of the repository and any of its
 # subdirectories.
-/docs/ 	@EventStore/documentation @EventStore/database-mergers
+/docs/ 	@kurrent-io/documentation @kurrent-io/database-mergers
 
 # documentation and database-mergers teams own any markdown files
 # in the root of the repository (README, CONTRIBUTING, LICENSING, etc.)
 # Either team will be able to approve PRs changing these files.
-/*.md 	@EventStore/documentation @EventStore/database-mergers
+/*.md 	@kurrent-io/documentation @kurrent-io/database-mergers
 
 # eventstore-admin team owns the codeowners file to prevent
 # unauthorized changes to it.
-/.github/CODEOWNERS	@EventStore/eventstore-admin
+/.github/CODEOWNERS	@kurrent-io/eventstore-admin
 
 # protected because it contains license rules
-/qodana.yaml	@EventStore/eventstore-admin
+/qodana.yaml	@kurrent-io/eventstore-admin

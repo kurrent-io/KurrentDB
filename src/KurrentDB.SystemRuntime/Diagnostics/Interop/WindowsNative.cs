@@ -11,8 +11,10 @@ namespace System.Diagnostics.Interop;
 
 public static partial class WindowsNative {
 	public static partial class IO {
-		public static DiskIoData GetDiskIo(Process process) {
-			if (GetProcessIoCounters(process.Handle, out var counters)) {
+		private static readonly Process currentProcess = Process.GetCurrentProcess();
+
+		public static DiskIoData GetDiskIo() {
+			if (GetProcessIoCounters(currentProcess.Handle, out var counters)) {
 				return new() {
 					ReadBytes = counters.ReadTransferCount,
 					WrittenBytes = counters.WriteTransferCount,
@@ -23,9 +25,6 @@ public static partial class WindowsNative {
 
 			throw new Win32Exception();
 		}
-
-		public static DiskIoData GetDiskIo() =>
-			GetDiskIo(Process.GetCurrentProcess());
 
 		#region . native .
 
