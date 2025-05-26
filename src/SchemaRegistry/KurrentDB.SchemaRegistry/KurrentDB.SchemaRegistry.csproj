@@ -3,7 +3,7 @@
     <!-- It must be `TargetFrameworks` plural to work on macos -->
     <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
     <!--suppress MsbuildTargetFrameworkTagInspection-->
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

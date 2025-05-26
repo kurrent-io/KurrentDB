@@ -3,7 +3,7 @@
     <!-- It must be `TargetFrameworks` plural to work on macos -->
     <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
     <!--suppress MsbuildTargetFrameworkTagInspection-->
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -14,9 +14,9 @@
 <!--        <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="1.6.0" />-->
   </ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.4" />
-	</ItemGroup>
+<!--	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">-->
+<!--    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.4" />-->
+<!--	</ItemGroup>-->
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.16" />
