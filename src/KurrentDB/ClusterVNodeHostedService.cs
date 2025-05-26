@@ -55,7 +55,6 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 
 	private readonly ClusterVNodeOptions _options;
 	private readonly ExclusiveDbLock _dbLock;
-	private readonly ClusterNodeMutex _clusterNodeMutex;
 
 	public ClusterVNode Node { get; }
 
@@ -106,10 +105,6 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 			_dbLock = new ExclusiveDbLock(absolutePath);
 			if (!_dbLock.Acquire())
 				throw new InvalidConfigurationException($"Couldn't acquire exclusive lock on DB at '{_options.Database.Db}'.");
-
-			_clusterNodeMutex = new ClusterNodeMutex();
-			if (!_clusterNodeMutex.Acquire())
-				throw new InvalidConfigurationException($"Couldn't acquire exclusive Cluster Node mutex '{_clusterNodeMutex.MutexName}'.");
 		}
 		var authorizationConfig = string.IsNullOrEmpty(_options.Auth.AuthorizationConfig)
 			? _options.Application.Config
@@ -360,9 +355,6 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		Node.StopAsync(cancellationToken: cancellationToken);
 
 	public void Dispose() {
-		if (_clusterNodeMutex is { IsAcquired: true })
-			_clusterNodeMutex.Release();
-
 		if (_dbLock is not { IsAcquired: true }) {
 			return;
 		}

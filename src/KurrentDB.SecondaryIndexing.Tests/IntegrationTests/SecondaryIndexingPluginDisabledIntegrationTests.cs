@@ -2,7 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.SecondaryIndexing.Indices.Default;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
 using Xunit.Abstractions;
 
@@ -10,19 +10,7 @@ namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
 [Collection("SecondaryIndexingPluginDisabled")]
-public class SecondaryIndexingPluginDisabledIntegrationTests_LogV2(
-	SecondaryIndexingDisabledFixture fixture,
-	ITestOutputHelper output
-) : SecondaryIndexingPluginDisabledIntegrationTests<string>(fixture, output);
-
-[Trait("Category", "Integration")]
-[Collection("SecondaryIndexingPluginDisabled")]
-public class SecondaryIndexingPluginDisabledIntegrationTests_LogV3(
-	SecondaryIndexingDisabledFixture fixture,
-	ITestOutputHelper output
-) : SecondaryIndexingPluginDisabledIntegrationTests<string>(fixture, output);
-
-public abstract class SecondaryIndexingPluginDisabledIntegrationTests<TStreamId>(
+public class SecondaryIndexingPluginDisabledIntegrationTests(
 	SecondaryIndexingDisabledFixture fixture,
 	ITestOutputHelper output
 ) : SecondaryIndexingPluginIntegrationTest(fixture, output) {

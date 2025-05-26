@@ -3,11 +3,11 @@
 
 using DotNext;
 using Kurrent.Quack;
-using KurrentDB.Core.Data;
 using KurrentDB.Common.Log;
+using KurrentDB.Core.Data;
 using Serilog;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Default;
+namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondaryIndexProcessor {
 	private readonly DefaultIndex<TStreamId> _defaultIndex;
@@ -21,10 +21,8 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 	public long LastCommittedPosition { get; private set; }
 	public long LastSequence => (long)_seq;
 
-	public DefaultSecondaryIndexProcessor(
-		DuckDBAdvancedConnection connection,
-		DefaultIndex<TStreamId> defaultIndex
-	) {
+	public DefaultSecondaryIndexProcessor(DuckDBAdvancedConnection connection, DefaultIndex<TStreamId> defaultIndex) {
+		_appender = new(connection, "idx_all"u8);
 		_defaultIndex = defaultIndex;
 
 		_appender = new Appender(connection, "idx_all"u8);

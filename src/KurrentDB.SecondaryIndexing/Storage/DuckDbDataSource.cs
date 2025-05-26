@@ -16,7 +16,7 @@ public class DuckDbDataSource : Disposable {
 
 	public DuckDbDataSource(TFChunkDbConfig dbConfig) {
 		_connectionString = $"Data Source={Path.Combine(dbConfig.Path, "index.db")};";
-		Pool = new DuckDBConnectionPool(_connectionString);
+		Pool = new(_connectionString);
 	}
 
 	public void InitDb() {
@@ -46,9 +46,5 @@ public class DuckDbDataSource : Disposable {
 		}
 
 		base.Dispose(disposing);
-	}
-
-	private struct CheckpointSql : IParameterlessStatement {
-		public static ReadOnlySpan<byte> CommandText => "checkpoint"u8;
 	}
 }

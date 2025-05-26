@@ -37,10 +37,10 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		SetUpDatabaseDirectory();
 
-		Configuration = new Dictionary<string, string?> {
+		Configuration = new() {
 			{ $"{PluginConfigPrefix}:Enabled", "true" },
-			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitBatchSize)}", "2" },
-			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitDelayMs)}", "100" },
+			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", "2" },
+			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitDelayMs)}", "100" },
 			{ DatabasePathConfig, PathName }
 		};
 
@@ -112,13 +112,13 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		return ResolvedEvent.ForUnresolvedEvent(record, 0);
 	}
 
-	public void SetUpDatabaseDirectory() {
+	void SetUpDatabaseDirectory() {
 		var typeName = GetType().Name.Length > 30 ? GetType().Name[..30] : GetType().Name;
 		PathName = Path.Combine(Path.GetTempPath(), $"ES-{Guid.NewGuid()}-{typeName}");
 
 		Directory.CreateDirectory(PathName);
 	}
 
-	public Task CleanUpDatabaseDirectory() =>
+	Task CleanUpDatabaseDirectory() =>
 		PathName != null ? DirectoryDeleter.TryForceDeleteDirectoryAsync(PathName, retries: 10) : Task.CompletedTask;
 }

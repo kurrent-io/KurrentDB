@@ -5,6 +5,7 @@ using System.Text;
 using KurrentDB.SecondaryIndexing.Indices.Category;
 using KurrentDB.SecondaryIndexing.Indices.Default;
 using KurrentDB.SecondaryIndexing.Indices.EventType;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
 using Xunit.Abstractions;
 
@@ -12,19 +13,7 @@ namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
 [Collection("SecondaryIndexingPluginEnabled")]
-public class SecondaryIndexingPluginEnabledIntegrationTests_LogV2(
-	SecondaryIndexingEnabledFixture fixture,
-	ITestOutputHelper output
-) : SecondaryIndexingPluginEnabledIntegrationTests<string>(fixture, output);
-
-[Trait("Category", "Integration")]
-[Collection("SecondaryIndexingPluginEnabled")]
-public class SecondaryIndexingPluginEnabledIntegrationTests_LogV3(
-	SecondaryIndexingEnabledFixture fixture,
-	ITestOutputHelper output
-) : SecondaryIndexingPluginEnabledIntegrationTests<string>(fixture, output);
-
-public abstract class SecondaryIndexingPluginEnabledIntegrationTests<TStreamId>(
+public class SecondaryIndexingPluginEnabledIntegrationTests(
 	SecondaryIndexingEnabledFixture fixture,
 	ITestOutputHelper output
 ) : SecondaryIndexingPluginIntegrationTest(fixture, output) {

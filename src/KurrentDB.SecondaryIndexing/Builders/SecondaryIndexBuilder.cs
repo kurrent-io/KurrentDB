@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.InMemory;
-using KurrentDB.SecondaryIndexing.Indices;
+using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
 
@@ -20,8 +20,8 @@ public class SecondaryIndexBuilder
 	public IEnumerable<IVirtualStreamReader> IndexVirtualStreamReaders => _index.Readers;
 
 	[Experimental("SECONDARY_INDEX")]
-	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber, SecondaryIndexingPluginOptions? options = null) {
-		_subscription = new SecondaryIndexSubscription(publisher, index, options);
+	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber, SecondaryIndexingPluginOptions options) {
+		_subscription = new(publisher, index, options);
 		_index = index;
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);

@@ -4,7 +4,7 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.InMemory;
 
-namespace KurrentDB.SecondaryIndexing.Indices;
+namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public interface ISecondaryIndex: IDisposable {
 	void Init();
@@ -20,6 +20,7 @@ public interface ISecondaryIndex: IDisposable {
 
 public interface ISecondaryIndexProcessor {
 	ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default);
+
 	ValueTask Commit(CancellationToken token = default);
 }
 
