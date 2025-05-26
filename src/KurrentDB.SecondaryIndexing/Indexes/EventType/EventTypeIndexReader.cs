@@ -3,13 +3,12 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.SecondaryIndexing.Indices.DuckDb;
-using KurrentDB.SecondaryIndexing.Metrics;
+using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indices.EventType.EventTypeSql;
-using static KurrentDB.SecondaryIndexing.Indices.EventType.EventTypeIndexConstants;
+using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeIndexConstants;
 
-namespace KurrentDB.SecondaryIndexing.Indices.EventType;
+namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal class EventTypeIndexReader<TStreamId>(
 	DuckDbDataSource db,
@@ -32,8 +31,7 @@ internal class EventTypeIndexReader<TStreamId>(
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber)
 		=> GetRecords(id, fromEventNumber, toEventNumber);
 
-	public override long GetLastIndexedPosition(string streamId) =>
-		processor.LastCommittedPosition;
+	public override long GetLastIndexedPosition(string streamId) => processor.LastCommittedPosition;
 
 	public override bool CanReadStream(string streamId) =>
 		streamId.StartsWith(IndexPrefix);
@@ -45,7 +43,6 @@ internal class EventTypeIndexReader<TStreamId>(
 	}
 
 	private List<EventTypeRecord> QueryEventTypeIndex(long id, long fromEventNumber, long toEventNumber) {
-		using var duration = SecondaryIndexMetrics.MeasureIndex("duck_get_cat_range");
 		return db.Pool.Query<(long, long, long), EventTypeRecord, QueryEventTypeIndexSql>((id, fromEventNumber, toEventNumber));
 	}
 }

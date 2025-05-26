@@ -5,20 +5,21 @@ using Kurrent.Quack;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.SecondaryIndexing.Indices.Category;
 using KurrentDB.SecondaryIndexing.Storage;
 
-namespace KurrentDB.SecondaryIndexing.Indices.EventType;
+namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
-internal static class EventTypeIndexConstants {
-	public const string IndexPrefix = $"{SystemStreams.IndexStreamPrefix}et-";
+internal static class CategoryIndexConstants {
+	public const string IndexPrefix = $"{SystemStreams.IndexStreamPrefix}ce-";
 }
 
-internal class EventTypeIndex<TStreamId> : ISecondaryIndex {
-	private readonly EventTypeIndexProcessor _processor;
+internal class CategoryIndex<TStreamId> : ISecondaryIndex {
+	private readonly CategoryIndexProcessor _processor;
 
-	public EventTypeIndex(DuckDbDataSource db, DuckDBAdvancedConnection connection, IReadIndex<TStreamId> readIndex) {
-		_processor = new EventTypeIndexProcessor(connection);
-		Readers = [new EventTypeIndexReader<TStreamId>(db, _processor, readIndex)];
+	public CategoryIndex(DuckDbDataSource db, DuckDBAdvancedConnection connection, IReadIndex<TStreamId> readIndex) {
+		_processor = new CategoryIndexProcessor(connection);
+		Readers = [new CategoryIndexReader<TStreamId>(db, _processor, readIndex)];
 	}
 
 	public void Init() {

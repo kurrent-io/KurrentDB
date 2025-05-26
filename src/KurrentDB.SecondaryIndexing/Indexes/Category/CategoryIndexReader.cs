@@ -3,13 +3,13 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.SecondaryIndexing.Indices.DuckDb;
-using KurrentDB.SecondaryIndexing.Metrics;
+using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
+using KurrentDB.SecondaryIndexing.Indices.Category;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indices.Category.CategorySql;
-using static KurrentDB.SecondaryIndexing.Indices.Category.CategoryIndexConstants;
+using static KurrentDB.SecondaryIndexing.Indexes.Category.CategoryIndexConstants;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Category;
+namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 internal class CategoryIndexReader<TStreamId>(
 	DuckDbDataSource db,
@@ -45,7 +45,6 @@ internal class CategoryIndexReader<TStreamId>(
 	}
 
 	private List<CategoryRecord> QueryCategoryIndex(long id, long fromEventNumber, long toEventNumber) {
-		using var duration = SecondaryIndexMetrics.MeasureIndex("duck_get_cat_range");
 		return db.Pool.Query<(long, long, long), CategoryRecord, QueryCategoryIndexSql>((id, fromEventNumber, toEventNumber));
 	}
 }

@@ -7,7 +7,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indices.Category.CategorySql;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Category;
+namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly Dictionary<string, long> _categories;
@@ -20,7 +20,7 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public SequenceRecord LastIndexed { get; private set; }
 
 	public CategoryIndexProcessor(DuckDBAdvancedConnection connection) {
-		_appender = new Appender(connection, "category"u8);
+		_appender = new(connection, "category"u8);
 
 		var ids = connection.Query<ReferenceRecord, QueryCategorySql>();
 		_categories = ids.ToDictionary(x => x.name, x => x.id);
@@ -48,7 +48,7 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			var next = _categorySizes[categoryId] + 1;
 			_categorySizes[categoryId] = next;
 
-			LastIndexed = new SequenceRecord(categoryId, next);
+			LastIndexed = new(categoryId, next);
 			return ValueTask.CompletedTask;
 		}
 
@@ -63,7 +63,7 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		}
 
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
-		LastIndexed = new SequenceRecord(id, 0);
+		LastIndexed = new(id, 0);
 
 		return ValueTask.CompletedTask;
 	}

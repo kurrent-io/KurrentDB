@@ -8,13 +8,14 @@ using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.Extensions.Caching.Memory;
 using static KurrentDB.SecondaryIndexing.Indices.Stream.StreamSql;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Stream;
+namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
 internal class StreamIndexProcessor(DuckDBAdvancedConnection connection) : Disposable, ISecondaryIndexProcessor {
 	private readonly MemoryCache _streamIdCache = new(new MemoryCacheOptions());
 	private readonly MemoryCacheEntryOptions _options = new() { SlidingExpiration = TimeSpan.FromMinutes(10) };
 	private long _lastLogPosition;
 	private readonly Appender _appender = new(connection, "streams"u8);
+
 	public long Seq { get; private set; } = connection.QueryFirstOrDefault<long, QueryStreamsMaxSequencesSql>() ?? 0;
 	public long LastCommittedPosition { get; private set; }
 	public long LastIndexed { get; private set; }
@@ -31,9 +32,7 @@ internal class StreamIndexProcessor(DuckDBAdvancedConnection connection) : Dispo
 			return ValueTask.CompletedTask;
 		}
 
-		var fromDb = connection.QueryFirstOrDefault<QueryStreamArgs, long, QueryStreamIdSql>(
-			new QueryStreamArgs { StreamName = name }
-		);
+		var fromDb = connection.QueryFirstOrDefault<QueryStreamArgs, long, QueryStreamIdSql>(new() { StreamName = name });
 		if (fromDb.HasValue) {
 			_streamIdCache.Set(name, fromDb, _options);
 			LastIndexed = fromDb.Value;

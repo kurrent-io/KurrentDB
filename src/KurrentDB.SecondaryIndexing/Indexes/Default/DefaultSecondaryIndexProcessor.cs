@@ -25,8 +25,6 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 		_appender = new(connection, "idx_all"u8);
 		_defaultIndex = defaultIndex;
 
-		_appender = new Appender(connection, "idx_all"u8);
-
 		var lastPosition = defaultIndex.GetLastSequence();
 		Logger.Information("Last known global sequence: {Seq}", lastPosition);
 		_seq = lastPosition.HasValue ? lastPosition.Value + 1 : 0;

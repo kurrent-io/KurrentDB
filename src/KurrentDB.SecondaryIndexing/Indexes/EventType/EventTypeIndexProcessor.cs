@@ -7,7 +7,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indices.EventType.EventTypeSql;
 
-namespace KurrentDB.SecondaryIndexing.Indices.EventType;
+namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly Dictionary<string, long> _eventTypes;
@@ -20,7 +20,7 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public SequenceRecord LastIndexed { get; private set; }
 
 	public EventTypeIndexProcessor(DuckDBAdvancedConnection connection) {
-		_appender = new Appender(connection, "event_type"u8);
+		_appender = new(connection, "event_type"u8);
 
 		var ids = connection.Query<ReferenceRecord, QueryEventTypeSql>();
 		_eventTypes = ids.ToDictionary(x => x.name, x => x.id);
@@ -48,7 +48,7 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			var next = _eventTypeSizes[eventTypeId] + 1;
 			_eventTypeSizes[eventTypeId] = next;
 
-			LastIndexed = new SequenceRecord(eventTypeId, next);
+			LastIndexed = new(eventTypeId, next);
 			return ValueTask.CompletedTask;
 		}
 
@@ -63,7 +63,7 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		}
 
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
-		LastIndexed = new SequenceRecord(id, 0);
+		LastIndexed = new(id, 0);
 
 		return ValueTask.CompletedTask;
 	}

@@ -3,8 +3,9 @@
 
 using Kurrent.Quack;
 using KurrentDB.Core.Services.Storage.InMemory;
+using KurrentDB.SecondaryIndexing.Indices.Stream;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Stream;
+namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
 internal class StreamIndex(DuckDBAdvancedConnection connection) : ISecondaryIndex {
 	private readonly StreamIndexProcessor _processor = new(connection);

@@ -2,10 +2,9 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text;
-using KurrentDB.SecondaryIndexing.Indices.Category;
-using KurrentDB.SecondaryIndexing.Indices.Default;
-using KurrentDB.SecondaryIndexing.Indices.EventType;
+using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
 using Xunit.Abstractions;
 
