@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
-		<OutputType>Library</OutputType>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<NoWarn>xUnit1041</NoWarn>
@@ -9,17 +8,6 @@
 		<IsPackable>false</IsPackable>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 	</PropertyGroup>
-
-<!--	<ItemGroup>-->
-<!--		<PackageReference Include="Kurrent.Surge" Version="1.1.0-alpha" />-->
-<!--		<PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />-->
-<!--		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />-->
-<!--		<PackageReference Include="xunit" Version="2.9.3" />-->
-<!--		<PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">-->
-<!--			<PrivateAssets>all</PrivateAssets>-->
-<!--			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>-->
-<!--		</PackageReference>-->
-<!--	</ItemGroup>-->
 
 	<ItemGroup>
 		<Using Include="Bogus" />
@@ -31,7 +19,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\Connectors\KurrentDB.Connectors.Tests\KurrentDB.Connectors.Tests.csproj" />
+	  <ProjectReference Include="..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
 	</ItemGroup>
 
 </Project>
