@@ -34,7 +34,7 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 			Assert.Contains(expected, content);
 	}
 
-	private async static Task CreatePersistentSubscription(IPublisher publisher) {
+	private static async Task CreatePersistentSubscription(IPublisher publisher) {
 		var tcs = new TaskCompletionSource();
 		publisher.Publish(new ClientMessage.CreatePersistentSubscriptionToStream(
 			internalCorrId: Guid.NewGuid(),
@@ -55,7 +55,7 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 			maxRetryCount: 10,
 			bufferSize: 100,
 			liveBufferSize: 10,
-			readbatchSize: 10,
+			readBatchSize: 10,
 			checkPointAfterMilliseconds: 1000,
 			minCheckPointCount: 10,
 			maxCheckPointCount: 10,
