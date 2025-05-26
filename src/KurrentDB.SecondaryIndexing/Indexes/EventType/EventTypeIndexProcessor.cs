@@ -37,9 +37,9 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		Seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() : 0;
 	}
 
-	public ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default) {
+	public void Index(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
-			return ValueTask.CompletedTask;
+			return;
 
 		var eventTypeName = resolvedEvent.OriginalEvent.EventType;
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
@@ -49,7 +49,7 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			_eventTypeSizes[eventTypeId] = next;
 
 			LastIndexed = new(eventTypeId, next);
-			return ValueTask.CompletedTask;
+			return;
 		}
 
 		var id = ++Seq;
@@ -64,8 +64,6 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
 		LastIndexed = new(id, 0);
-
-		return ValueTask.CompletedTask;
 	}
 
 	public long GetLastEventNumber(long eventTypeId) =>
@@ -74,13 +72,11 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public long GetEventTypeId(string eventTypeName) =>
 		_eventTypes.TryGetValue(eventTypeName, out var eventTypeId) ? eventTypeId : ExpectedVersion.NoStream;
 
-	public ValueTask Commit(CancellationToken token = default) {
+	public void Commit() {
 		if (IsDisposingOrDisposed)
-			return ValueTask.CompletedTask;
+			return;
 
 		_appender.Flush();
 		LastCommittedPosition = _lastLogPosition;
-
-		return ValueTask.CompletedTask;
 	}
 }

@@ -11,17 +11,15 @@ public interface ISecondaryIndex: IDisposable {
 
 	ulong? GetLastPosition();
 
-	ulong? GetLastSequence();
-
 	ISecondaryIndexProcessor Processor { get; }
 
 	IReadOnlyList<IVirtualStreamReader> Readers { get; }
 }
 
 public interface ISecondaryIndexProcessor {
-	ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default);
+	void Index(ResolvedEvent resolvedEvent);
 
-	ValueTask Commit(CancellationToken token = default);
+	void Commit();
 }
 
 public record struct SequenceRecord(long Id, long Sequence);

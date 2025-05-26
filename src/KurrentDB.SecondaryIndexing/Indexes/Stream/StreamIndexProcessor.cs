@@ -20,23 +20,23 @@ internal class StreamIndexProcessor(DuckDBAdvancedConnection connection) : Dispo
 	public long LastCommittedPosition { get; private set; }
 	public long LastIndexed { get; private set; }
 
-	public ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default) {
+	public void Index(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
-			return ValueTask.CompletedTask;
+			return;
 
 		var name = resolvedEvent.OriginalStreamId;
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
 
 		if (_streamIdCache.TryGetValue(name, out var existing)) {
 			LastIndexed = (long)existing!;
-			return ValueTask.CompletedTask;
+			return;
 		}
 
 		var fromDb = connection.QueryFirstOrDefault<QueryStreamArgs, long, QueryStreamIdSql>(new() { StreamName = name });
 		if (fromDb.HasValue) {
 			_streamIdCache.Set(name, fromDb, _options);
 			LastIndexed = fromDb.Value;
-			return ValueTask.CompletedTask;
+			return;
 		}
 
 		var id = ++Seq;
@@ -49,16 +49,13 @@ internal class StreamIndexProcessor(DuckDBAdvancedConnection connection) : Dispo
 		row.AppendDefault();
 
 		LastIndexed = id;
-		return ValueTask.CompletedTask;
 	}
 
-	public ValueTask Commit(CancellationToken token = default) {
+	public void Commit() {
 		if (IsDisposingOrDisposed)
-			return ValueTask.CompletedTask;
+			return;
 
 		_appender.Flush();
 		LastCommittedPosition = _lastLogPosition;
-
-		return ValueTask.CompletedTask;
 	}
 }

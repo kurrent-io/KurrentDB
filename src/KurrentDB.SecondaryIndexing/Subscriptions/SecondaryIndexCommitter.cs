@@ -14,7 +14,7 @@ namespace KurrentDB.SecondaryIndexing.Subscriptions;
 public sealed class SecondaryIndexCommitter : IAsyncDisposable {
 	private readonly int _batchSize;
 	private readonly TimeSpan _timeout;
-	private readonly Func<CancellationToken, ValueTask> _commitAction;
+	private readonly Action _commitAction;
 	private readonly AsyncAutoResetEvent _signal = new(initialState: false);
 	private volatile CancellationTokenSource? _cts; // null if disposed
 	private readonly Task _loopTask;
@@ -24,7 +24,7 @@ public sealed class SecondaryIndexCommitter : IAsyncDisposable {
 	public SecondaryIndexCommitter(
 		int batchSize,
 		uint delayMs,
-		Func<CancellationToken, ValueTask> commitAction,
+		Action commitAction,
 		CancellationToken ct) {
 
 		_batchSize = batchSize;
@@ -81,10 +81,7 @@ public sealed class SecondaryIndexCommitter : IAsyncDisposable {
 				continue;
 
 			try {
-				await _commitAction(ct);
-			} catch (OperationCanceledException e) when (e.CancellationToken == ct) {
-				// expected
-				break;
+				_commitAction();
 			} catch (Exception ex) {
 				Log.Error(ex, "Error during checkpoint commit");
 			}

@@ -30,13 +30,13 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 		_seq = lastPosition.HasValue ? lastPosition.Value + 1 : 0;
 	}
 
-	public async ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default) {
+	public void Index(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
 			return;
 
-		await _defaultIndex.CategoryIndex.Processor.Index(resolvedEvent, token);
-		await _defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent, token);
-		await _defaultIndex.StreamIndex.Processor.Index(resolvedEvent, token);
+		_defaultIndex.CategoryIndex.Processor.Index(resolvedEvent);
+		_defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent);
+		_defaultIndex.StreamIndex.Processor.Index(resolvedEvent);
 
 		var category = _defaultIndex.CategoryIndex.LastIndexed;
 		var eventType = _defaultIndex.EventTypeIndex.LastIndexed;
@@ -58,7 +58,7 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 		_page++;
 	}
 
-	public async ValueTask Commit(CancellationToken token = default) {
+	public void Commit() {
 		if (IsDisposingOrDisposed)
 			return;
 
@@ -67,8 +67,8 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 		_page = 0;
 		LastCommittedPosition = _lastLogPosition;
 
-		await _defaultIndex.CategoryIndex.Processor.Commit(token);
-		await _defaultIndex.EventTypeIndex.Processor.Commit(token);
-		await _defaultIndex.StreamIndex.Processor.Commit(token);
+		_defaultIndex.CategoryIndex.Processor.Commit();
+		_defaultIndex.EventTypeIndex.Processor.Commit();
+		_defaultIndex.StreamIndex.Processor.Commit();
 	}
 }

@@ -11,19 +11,16 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 	private readonly object _lock = new();
 	private readonly IList<ResolvedEvent> _pending = pending ?? [];
 
-	public ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default) {
+	public void Index(ResolvedEvent resolvedEvent) {
 		lock (_lock) {
 			_pending.Add(resolvedEvent);
 		}
-
-		return ValueTask.CompletedTask;
 	}
 
-	public ValueTask Commit(CancellationToken token = default) {
+	public void Commit() {
 		lock (_lock) {
 			committed.AddRange(_pending);
 			_pending.Clear();
 		}
-		return ValueTask.CompletedTask;
 	}
 }

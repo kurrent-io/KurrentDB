@@ -25,12 +25,11 @@ public class SecondaryIndexSubscription(
 	private Task? _processingTask;
 	private SecondaryIndexCommitter? _committer;
 
-	public void Subscribe(CancellationToken cancellationToken) {
-		var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _cts.Token);
+	public void Subscribe() {
 		var position = index.GetLastPosition();
 		var startFrom = position == null ? Position.Start : Position.FromInt64((long)position, (long)position);
 
-		_committer = new(_commitBatchSize, _commitDelayMs, ct => index.Processor.Commit(ct), linkedCts.Token);
+		_committer = new(_commitBatchSize, _commitDelayMs, () => index.Processor.Commit(), _cts.Token);
 
 		_subscription = new(
 			bus: publisher,
@@ -39,10 +38,10 @@ public class SecondaryIndexSubscription(
 			resolveLinks: false,
 			user: SystemAccounts.System,
 			requiresLeader: false,
-			cancellationToken: linkedCts.Token
+			cancellationToken: _cts.Token
 		);
 
-		_processingTask = Task.Run(() => ProcessEvents(linkedCts.Token), linkedCts.Token);
+		_processingTask = Task.Run(() => ProcessEvents(_cts.Token), _cts.Token);
 	}
 
 	private async Task ProcessEvents(CancellationToken token) {
@@ -57,7 +56,7 @@ public class SecondaryIndexSubscription(
 				continue;
 
 			try {
-				await index.Processor.Index(eventReceived.Event, token);
+				index.Processor.Index(eventReceived.Event);
 
 				_committer.Increment();
 			} catch (OperationCanceledException) {

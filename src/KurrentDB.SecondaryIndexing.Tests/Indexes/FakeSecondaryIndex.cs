@@ -16,16 +16,13 @@ public class FakeSecondaryIndex : ISecondaryIndex {
 
 	public IList<ResolvedEvent> Committed { get; }
 	public IList<ResolvedEvent> Pending { get; } = new List<ResolvedEvent>();
-
 	public ISecondaryIndexProcessor Processor { get; }
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
-	public void Init() {}
+
+	public void Init() { }
 
 	public ulong? GetLastPosition() =>
 		Committed.Select(@event => (ulong?)@event.Event.LogPosition).FirstOrDefault();
-
-	public ulong? GetLastSequence() =>
-		Committed.Select(@event => (ulong?)@event.Event.EventNumber).FirstOrDefault();
 
 	public void Dispose() { }
 }

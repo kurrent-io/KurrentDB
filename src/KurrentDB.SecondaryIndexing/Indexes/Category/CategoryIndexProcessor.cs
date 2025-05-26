@@ -37,9 +37,9 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		Seq = _categories.Count > 0 ? _categories.Values.Max() : 0;
 	}
 
-	public ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default) {
+	public void Index(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
-			return ValueTask.CompletedTask;
+			return;
 
 		var categoryName = GetStreamCategory(resolvedEvent.OriginalStreamId);
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
@@ -49,7 +49,7 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			_categorySizes[categoryId] = next;
 
 			LastIndexed = new(categoryId, next);
-			return ValueTask.CompletedTask;
+			return;
 		}
 
 		var id = ++Seq;
@@ -64,8 +64,6 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
 		LastIndexed = new(id, 0);
-
-		return ValueTask.CompletedTask;
 	}
 
 	public long GetLastEventNumber(long categoryId) =>
@@ -74,14 +72,12 @@ internal class CategoryIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public long GetCategoryId(string categoryName) =>
 		_categories.TryGetValue(categoryName, out var categoryId) ? categoryId : ExpectedVersion.NoStream;
 
-	public ValueTask Commit(CancellationToken token = default) {
+	public void Commit() {
 		if (IsDisposingOrDisposed)
-			return ValueTask.CompletedTask;
+			return;
 
 		_appender.Flush();
 		LastCommittedPosition = _lastLogPosition;
-
-		return ValueTask.CompletedTask;
 	}
 
 	private static string GetStreamCategory(string streamName) {

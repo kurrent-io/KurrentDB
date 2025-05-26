@@ -12,8 +12,8 @@ using Microsoft.Extensions.Hosting;
 namespace KurrentDB.SecondaryIndexing.Builders;
 
 public class SecondaryIndexBuilder
-	: IAsyncHandle<SystemMessage.SystemReady>,
-		IAsyncHandle<SystemMessage.BecomeShuttingDown>,
+	: IHandle<SystemMessage.SystemReady>,
+		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHostedService {
 	private readonly SecondaryIndexSubscription _subscription;
 	private readonly ISecondaryIndex _index;
@@ -28,15 +28,13 @@ public class SecondaryIndexBuilder
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
 	}
 
-	public ValueTask HandleAsync(SystemMessage.SystemReady message, CancellationToken token) {
+	public void Handle(SystemMessage.SystemReady message) {
 		_index.Init();
-		_subscription.Subscribe(token);
-
-		return ValueTask.CompletedTask;
+		_subscription.Subscribe();
 	}
 
-	public async ValueTask HandleAsync(SystemMessage.BecomeShuttingDown message, CancellationToken token) {
-		await _index.Processor.Commit(token);
+	public void Handle(SystemMessage.BecomeShuttingDown message) {
+		_index.Processor.Commit();
 		_index.Dispose();
 	}
 
