@@ -185,7 +185,7 @@ public class SecondaryIndexCommitterTests {
 		await cts.CancelAsync();
 		tracker.Increment();
 
-		await Task.Delay(30);
+		await Task.Delay(30, CancellationToken.None);
 		await tracker.DisposeAsync();
 
 		// Then
@@ -202,7 +202,7 @@ public class SecondaryIndexCommitterTests {
 
 		// Then
 		var ex = Assert.Throws<ObjectDisposedException>(() => tracker.Increment());
-		Assert.Contains("SecondaryIndexCheckpointTracker", ex.Message);
+		Assert.Contains(nameof(SecondaryIndexCommitter), ex.Message);
 	}
 
 	[Fact]
