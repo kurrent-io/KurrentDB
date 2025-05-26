@@ -1,4 +1,4 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
+// Copyright (c) Kurrent, Inc and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using DotNext;
@@ -8,7 +8,7 @@ using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Default;
+namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 public static class DefaultIndexConstants {
 	public const string IndexName = $"{SystemStreams.IndexStreamPrefix}all";

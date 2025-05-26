@@ -36,7 +36,6 @@ public static class DuckDbExtensions {
 		}
 	}
 
-
 	public static List<TRow> Query<TRow, TQuery>(this DuckDBAdvancedConnection connection)
 		where TRow : struct
 		where TQuery : IDataRowParser<TRow>, IParameterlessStatement {
@@ -58,7 +57,6 @@ public static class DuckDbExtensions {
 			return connection.Query<TArgs, TRow, TQuery>(args);
 		}
 	}
-
 
 	public static List<TRow> Query<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args)
 		where TArgs : struct

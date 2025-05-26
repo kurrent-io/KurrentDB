@@ -2,14 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Readers;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
-namespace KurrentDB.SecondaryIndexing.Indices.DuckDb;
+namespace KurrentDB.SecondaryIndexing.Indexes.DuckDb;
 
 public record struct IndexedPrepare(long Version, int EventNumber, long LogPosition);
 

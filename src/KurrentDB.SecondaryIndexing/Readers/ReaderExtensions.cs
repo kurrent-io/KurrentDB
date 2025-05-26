@@ -1,4 +1,4 @@
-// Copyright (c) Event Store Ltd and/or licensed to Event Store Ltd under one or more agreements.
+// Copyright (c) Kurrent, Inc and/or licensed to Event Store Ltd under one or more agreements.
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System.Text;
@@ -11,7 +11,7 @@ using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
-using KurrentDB.SecondaryIndexing.Indices.DuckDb;
+using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
 using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Readers;
@@ -69,85 +69,5 @@ public static class ReaderExtensions {
 		    and not LogRecordType.EventType)
 			throw new($"Incorrect type of log record {r.LogRecord.RecordType}, expected Prepare record.");
 		return (IPrepareLogRecord<TStreamId>)r.LogRecord;
-	}
-
-	public static IEnumerable<ResolvedEvent> ReadAll(this IPublisher publisher, Position startPosition, long maxCount) {
-		using var enumerator = GetEnumerator();
-		while (enumerator.MoveNext()) {
-			if (enumerator.Current is ReadResponse.EventReceived eventReceived)
-				yield return eventReceived.Event;
-		}
-
-		yield break;
-
-		IEnumerator<ReadResponse> GetEnumerator() {
-			return new SyncEnumerator.ReadAllForwardsFiltered(
-				bus: publisher,
-				position: startPosition,
-				maxCount: (ulong)maxCount,
-				user: SystemAccounts.System,
-				requiresLeader: false,
-				deadline: DefaultDeadline,
-				maxSearchWindow: null,
-				eventFilter: UserEventsFilter.Instance
-			);
-		}
-	}
-
-	public static IEnumerable<ResolvedEvent> ReadStream(this IPublisher publisher, string stream,
-		StreamRevision startRevision, long maxCount) {
-		using var enumerator = GetEnumerator();
-
-		while (enumerator.MoveNext()) {
-			if (enumerator.Current is ReadResponse.EventReceived eventReceived) {
-				Log.Debug("Returning event {Event}", eventReceived.Event);
-				yield return eventReceived.Event;
-			}
-		}
-
-		yield break;
-
-		IEnumerator<ReadResponse> GetEnumerator() {
-			return new SyncEnumerator.ReadStreamForwardsSync(
-				bus: publisher,
-				streamName: stream,
-				startRevision: startRevision,
-				maxCount: (ulong)maxCount,
-				resolveLinks: true,
-				user: SystemAccounts.System,
-				requiresLeader: false,
-				deadline: DefaultDeadline
-			);
-		}
-	}
-
-	public static IEnumerable<ResolvedEvent> ReadEvents(this IPublisher publisher, long[] logPositions) {
-		using var enumerator = GetEnumerator();
-
-		while (enumerator.MoveNext()) {
-			if (enumerator.Current is ReadResponse.EventReceived eventReceived)
-				yield return eventReceived.Event;
-		}
-
-		yield break;
-
-		IEnumerator<ReadResponse> GetEnumerator() {
-			return new Enumerator.ReadLogEventsSync(
-				bus: publisher,
-				logPositions: logPositions,
-				user: SystemAccounts.System,
-				deadline: DefaultDeadline
-			);
-		}
-	}
-
-	private static readonly DateTime DefaultDeadline = DateTime.UtcNow.AddYears(1);
-
-	private class UserEventsFilter : IEventFilter {
-		public static readonly UserEventsFilter Instance = new();
-
-		public bool IsEventAllowed(EventRecord eventRecord) {
-			return !eventRecord.EventType.StartsWith('$') && !eventRecord.EventStreamId.StartsWith('$');
-		}
 	}
 }

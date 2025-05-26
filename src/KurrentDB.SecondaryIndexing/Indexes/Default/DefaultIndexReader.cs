@@ -3,11 +3,10 @@
 
 using Kurrent.Quack;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.SecondaryIndexing.Indices.DuckDb;
-using KurrentDB.SecondaryIndexing.Metrics;
+using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
 using KurrentDB.SecondaryIndexing.Storage;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Default;
+namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexReader<TStreamId>(
 	DuckDbDataSource db,
@@ -29,7 +28,6 @@ internal class DefaultIndexReader<TStreamId>(
 	public override bool CanReadStream(string streamId) => streamId == DefaultIndexConstants.IndexName;
 
 	private List<AllRecord> QueryDefaultIndex(long fromEventNumber, long toEventNumber) {
-		using var duration = SecondaryIndexMetrics.MeasureIndex("duck_get_all_range");
 		return db.Pool.Query<(long, long), AllRecord, QueryDefaultIndexSql>((fromEventNumber, toEventNumber));
 	}
 

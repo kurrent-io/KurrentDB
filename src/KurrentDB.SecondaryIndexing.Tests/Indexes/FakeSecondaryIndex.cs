@@ -3,9 +3,9 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.InMemory;
-using KurrentDB.SecondaryIndexing.Indices;
+using KurrentDB.SecondaryIndexing.Indexes;
 
-namespace KurrentDB.SecondaryIndexing.Tests.Indices;
+namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 
 public class FakeSecondaryIndex : ISecondaryIndex {
 	public FakeSecondaryIndex(string streamName) {
