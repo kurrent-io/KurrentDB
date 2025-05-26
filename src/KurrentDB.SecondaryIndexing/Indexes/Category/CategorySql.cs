@@ -4,7 +4,7 @@
 using Kurrent.Quack;
 using KurrentDB.SecondaryIndexing.Storage;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Category;
+namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 internal static class CategorySql {
 	public struct QueryCategoryIndexSql : IQuery<(long, long, long), CategoryRecord> {

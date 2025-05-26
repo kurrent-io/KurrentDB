@@ -2,17 +2,12 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System.Text;
-using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.Core.Services.Transport.Common;
-using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
 using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
-using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Readers;
 

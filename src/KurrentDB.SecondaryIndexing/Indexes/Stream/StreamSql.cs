@@ -3,7 +3,7 @@
 
 using Kurrent.Quack;
 
-namespace KurrentDB.SecondaryIndexing.Indices.Stream;
+namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
 internal static class StreamSql {
 	public struct QueryStreamArgs {

@@ -4,7 +4,6 @@
 using EventStore.Plugins;
 using EventStore.Plugins.Licensing;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.Core.Tests.TransactionLog;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.Plugins.TestHelpers;

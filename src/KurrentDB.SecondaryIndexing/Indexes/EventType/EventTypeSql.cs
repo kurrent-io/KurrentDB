@@ -4,7 +4,7 @@
 using Kurrent.Quack;
 using KurrentDB.SecondaryIndexing.Storage;
 
-namespace KurrentDB.SecondaryIndexing.Indices.EventType;
+namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal static class EventTypeSql {
 	public struct QueryEventTypeIndexSql : IQuery<(long, long, long), EventTypeRecord> {

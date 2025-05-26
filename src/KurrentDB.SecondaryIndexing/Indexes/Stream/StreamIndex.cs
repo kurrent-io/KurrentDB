@@ -3,7 +3,6 @@
 
 using Kurrent.Quack;
 using KurrentDB.Core.Services.Storage.InMemory;
-using KurrentDB.SecondaryIndexing.Indices.Stream;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 

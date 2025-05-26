@@ -5,7 +5,6 @@ using Kurrent.Quack;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.SecondaryIndexing.Indices.Category;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;

@@ -5,7 +5,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
 using KurrentDB.SecondaryIndexing.Storage;
-using static KurrentDB.SecondaryIndexing.Indices.EventType.EventTypeSql;
+using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeIndexConstants;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;

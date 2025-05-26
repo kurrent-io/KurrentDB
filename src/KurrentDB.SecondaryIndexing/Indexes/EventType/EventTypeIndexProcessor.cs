@@ -5,7 +5,7 @@ using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
-using static KurrentDB.SecondaryIndexing.Indices.EventType.EventTypeSql;
+using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
@@ -82,10 +82,5 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		LastCommittedPosition = _lastLogPosition;
 
 		return ValueTask.CompletedTask;
-	}
-
-	private static string GetStreamEventType(string streamName) {
-		var dashIndex = streamName.IndexOf('-');
-		return dashIndex == -1 ? streamName : streamName[..dashIndex];
 	}
 }

@@ -6,7 +6,7 @@ using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.Extensions.Caching.Memory;
-using static KurrentDB.SecondaryIndexing.Indices.Stream.StreamSql;
+using static KurrentDB.SecondaryIndexing.Indexes.Stream.StreamSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 

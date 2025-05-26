@@ -9,9 +9,6 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.Stream;
-using KurrentDB.SecondaryIndexing.Indices.Category;
-using KurrentDB.SecondaryIndexing.Indices.EventType;
-using KurrentDB.SecondaryIndexing.Indices.Stream;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;

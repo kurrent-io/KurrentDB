@@ -5,7 +5,7 @@ using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
-using static KurrentDB.SecondaryIndexing.Indices.Category.CategorySql;
+using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 

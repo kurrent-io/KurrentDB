@@ -4,9 +4,8 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
-using KurrentDB.SecondaryIndexing.Indices.Category;
 using KurrentDB.SecondaryIndexing.Storage;
-using static KurrentDB.SecondaryIndexing.Indices.Category.CategorySql;
+using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategoryIndexConstants;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
