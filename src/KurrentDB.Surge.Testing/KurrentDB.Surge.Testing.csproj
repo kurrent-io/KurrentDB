@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
+		<OutputType>Library</OutputType>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
 		<LangVersion>preview</LangVersion>
 <!--		<Deterministic>true</Deterministic>-->
 		<NoWarn>xUnit1041</NoWarn>
 		<IsTestProject>false</IsTestProject>
+		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
 	<ItemGroup>
