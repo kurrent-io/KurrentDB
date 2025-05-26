@@ -3,7 +3,6 @@
 
 using KurrentDB.Connect;
 using EventStore.Plugins;
-using Kurrent.Surge.Schema;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Connectors.Planes.Control;
 using KurrentDB.Connectors.Planes.Management;
