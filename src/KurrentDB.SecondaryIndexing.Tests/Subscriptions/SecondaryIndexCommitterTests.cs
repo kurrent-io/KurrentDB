@@ -62,27 +62,28 @@ public class SecondaryIndexCommitterTests {
 		// Given
 		var callCount = 0;
 
-		SecondaryIndexCommitter tracker = null!;
+		SecondaryIndexCommitter indexCommitter = null!;
 
 		var startedAt = DateTime.UtcNow;
 		var elapsed = new TaskCompletionSource<TimeSpan>();
 		var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
 		cts.Token.Register(() => elapsed.TrySetCanceled(cts.Token));
 
-		await using (tracker = new SecondaryIndexCommitter(1000, 10, _ => {
-			       var commitCounts = Interlocked.Increment(ref callCount);
+		var committer = indexCommitter;
+		await using (indexCommitter = new(1000, 10, _ => {
+			             var commitCounts = Interlocked.Increment(ref callCount);
 
-			       if (commitCounts == 5) {
-				       elapsed.SetResult(DateTime.UtcNow - startedAt);
-			       } else {
-				       tracker.Increment();
-			       }
+			             if (commitCounts == 5) {
+				             elapsed.SetResult(DateTime.UtcNow - startedAt);
+			             } else {
+				             committer.Increment();
+			             }
 
-			       return ValueTask.CompletedTask;
-		       }, CancellationToken.None)) {
+			             return ValueTask.CompletedTask;
+		             }, CancellationToken.None)) {
 
 			// When
-			tracker.Increment();
+			indexCommitter.Increment();
 
 			var totalCommitsElapsedTimeInMs = await elapsed.Task;
 
