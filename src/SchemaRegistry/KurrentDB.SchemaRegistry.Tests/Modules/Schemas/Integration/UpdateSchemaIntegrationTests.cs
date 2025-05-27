@@ -5,18 +5,16 @@
 
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
-using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
-using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
-using KurrentDB.SchemaRegistry.Services.Domain;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
-namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
+namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
-public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
+public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -27,7 +25,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var newDescription = Faker.Lorem.Sentence();
 
 		// Create initial schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -38,28 +36,36 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
-		var expectedEvent = new SchemaDescriptionUpdated {
-			SchemaName = schemaName,
-			Description = newDescription,
-			UpdatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
-		};
-
 		// Act
-		var result = await Apply(
+		var updateSchemaResult = await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
-				Details = new SchemaDetails { Description = newDescription },
+				Details = new SchemaDetails {
+					Description = newDescription,
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				UpdateMask = new FieldMask { Paths = { "Details.Description" } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
+		);
+
+		var listSchemasResult = await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaNamePrefix = schemaName
+			},
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		var descriptionUpdated = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaDescriptionUpdated>();
-		descriptionUpdated.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.UpdatedAt));
+		updateSchemaResult.Should().NotBeNull();
+
+		listSchemasResult.Schemas.Should().HaveCount(1);
+		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
+		listSchemasResult.Schemas.First().Details.Description.Should().Be(newDescription);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -70,7 +76,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var newTags = new Dictionary<string, string> { ["env"] = "prod", ["team"] = "data" };
 
 		// Create initial schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -81,28 +87,36 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { originalTags }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
-		var expectedEvent = new SchemaTagsUpdated {
-			SchemaName = schemaName,
-			Tags = { newTags },
-			UpdatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
-		};
-
 		// Act
-		var result = await Apply(
+		var updateSchemaResult = await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
-				Details = new SchemaDetails { Tags = { newTags } },
+				Details = new SchemaDetails {
+					Tags = { newTags },
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.Backward,
+				},
 				UpdateMask = new FieldMask { Paths = { "Details.Tags" } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		var tagsUpdated = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaTagsUpdated>();
-		tagsUpdated.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.UpdatedAt));
+		updateSchemaResult.Should().NotBeNull();
+
+		var listSchemasResult = await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaNamePrefix = schemaName
+			},
+			cancellationToken: cancellationToken
+		);
+
+		listSchemasResult.Schemas.Should().HaveCount(1);
+		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
+		listSchemasResult.Schemas.First().Details.Tags.Should().BeEquivalentTo(newTags);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -111,17 +125,23 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = nonExistentSchemaName,
-				Details = new SchemaDetails { Description = Faker.Lorem.Sentence() },
+				Details = new SchemaDetails {
+					Description = Faker.Lorem.Sentence(),
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				UpdateMask = new FieldMask { Paths = { "Details.Description" } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
+		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
+		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
+		updateSchemaException.Which.Message.Should().Contain($"Schema {nonExistentSchemaName} not found");
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -130,7 +150,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Create and then delete schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -141,23 +161,29 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
-		await Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
+		await Client.DeleteSchemaAsync(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken: cancellationToken);
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
-				Details = new SchemaDetails { Description = Faker.Lorem.Sentence() },
+				Details = new SchemaDetails {
+					Description = Faker.Lorem.Sentence(),
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				UpdateMask = new FieldMask { Paths = { "Details.Description" } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
+		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
+		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
+		updateSchemaException.Which.Message.Should().Contain($"Schema schemas/{schemaName} not found");
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -166,7 +192,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Create initial schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -177,22 +203,27 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
-				Details = new SchemaDetails { Description = Faker.Lorem.Sentence() },
+				Details = new SchemaDetails {
+					Description = Faker.Lorem.Sentence(),
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				UpdateMask = new FieldMask()
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityException>()
-			.WithMessage("Update mask must contain at least one field");
+		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
+		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
+		updateSchemaException.Which.Message.Should().Contain("Update mask must contain at least one field");
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -201,7 +232,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Create initial schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -212,22 +243,27 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
-				Details = new SchemaDetails { Description = Faker.Lorem.Sentence() },
+				Details = new SchemaDetails {
+					Description = Faker.Lorem.Sentence(),
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				UpdateMask = new FieldMask { Paths = { "Details.UnknownField" } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityException>()
-			.WithMessage("Unknown field Details.UnknownField in update mask");
+		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
+		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
+		updateSchemaException.Which.Message.Should().Contain("Unknown field Details.UnknownField in update mask");
 	}
 
 	[Test, NotModifiableTestCases]
@@ -239,7 +275,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Create initial schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -250,22 +286,23 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
 				Details = schemaDetails,
 				UpdateMask = new FieldMask { Paths = { maskPath } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityNotModified>()
-			.WithMessage($"*{errorMessage}*");
+		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
+		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
+		updateSchemaException.Which.Message.Should().Contain(errorMessage);
 	}
 
 	[Test, UnchangedFieldsTestCases]
@@ -277,7 +314,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Create initial schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -288,22 +325,23 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
 				Details = schemaDetails,
 				UpdateMask = new FieldMask { Paths = { maskPath } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityNotModified>()
-			.WithMessage($"*{errorMessage}*");
+		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
+		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
+		updateSchemaException.Which.Message.Should().Contain(errorMessage);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -313,7 +351,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var newDescription = Faker.Lorem.Sentence();
 
 		// Create initial schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -324,22 +362,36 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act
-		var result = await Apply(
+		var updateSchemaResult = await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
-				Details = new SchemaDetails { Description = newDescription },
+				Details = new SchemaDetails {
+					Description = newDescription,
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				UpdateMask = new FieldMask { Paths = { "details.description" } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
+		);
+
+		var listSchemasResult = await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaNamePrefix = schemaName
+			},
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		var descriptionUpdated = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaDescriptionUpdated>();
-		descriptionUpdated.Description.Should().Be(newDescription);
+		updateSchemaResult.Should().NotBeNull();
+
+		listSchemasResult.Schemas.Should().HaveCount(1);
+		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
+		listSchemasResult.Schemas.First().Details.Description.Should().Be(newDescription);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -349,7 +401,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var newTags = new Dictionary<string, string> { ["env"] = "prod", ["team"] = "backend" };
 
 		// Create initial schema with no tags
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -360,22 +412,36 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					// No tags specified
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act
-		var result = await Apply(
+		var updateSchemaResult = await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
-				Details = new SchemaDetails { Tags = { newTags } },
+				Details = new SchemaDetails {
+					Tags = { newTags },
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				UpdateMask = new FieldMask { Paths = { "Details.Tags" } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
+		);
+
+		var listSchemasResult = await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaNamePrefix = schemaName
+			},
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		var tagsUpdated = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaTagsUpdated>();
-		tagsUpdated.Tags.Should().BeEquivalentTo(newTags);
+		updateSchemaResult.Should().NotBeNull();
+
+		listSchemasResult.Schemas.Should().HaveCount(1);
+		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
+		listSchemasResult.Schemas.First().Details.Tags.Should().BeEquivalentTo(newTags);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -385,7 +451,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		var initialTags = new Dictionary<string, string> { ["env"] = "test", ["version"] = "1.0" };
 
 		// Create initial schema with tags
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -396,33 +462,53 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { initialTags }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act
-		var result = await Apply(
+		var updateSchemaResult = await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
-				Details = new SchemaDetails { Tags = { } },
+				Details = new SchemaDetails {
+					Tags = { },
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				UpdateMask = new FieldMask { Paths = { "Details.Tags" } }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
+		);
+
+		var listSchemasResult = await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaNamePrefix = schemaName
+			},
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		var tagsUpdated = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaTagsUpdated>();
-		tagsUpdated.Tags.Should().BeEmpty();
+		updateSchemaResult.Should().NotBeNull();
+
+		listSchemasResult.Schemas.Should().HaveCount(1);
+		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
+		listSchemasResult.Schemas.First().Details.Tags.Should().BeEmpty();
 	}
 
 	public class NotModifiableTestCases : TestCaseGenerator<SchemaDetails, string, string> {
 		protected override IEnumerable<(SchemaDetails, string, string)> Data() {
 			yield return (
-				new SchemaDetails { Compatibility = CompatibilityMode.Forward },
+				new SchemaDetails {
+					Compatibility = CompatibilityMode.Forward,
+					DataFormat = SchemaFormat.Json
+				},
 				"Details.Compatibility",
 				"Compatibility mode is not modifiable"
 			);
 			yield return (
-				new SchemaDetails { DataFormat = SchemaFormat.Protobuf },
+				new SchemaDetails {
+					Compatibility = CompatibilityMode.Forward,
+					DataFormat = SchemaFormat.Protobuf
+				},
 				"Details.DataFormat",
 				"DataFormat is not modifiable"
 			);
@@ -432,12 +518,20 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	public class UnchangedFieldsTestCases : TestCaseGenerator<SchemaDetails, string, string> {
 		protected override IEnumerable<(SchemaDetails, string, string)> Data() {
 			yield return (
-				new SchemaDetails { Description = "Unchanged description" },
+				new SchemaDetails {
+					Description = "Unchanged description",
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				"Details.Description",
 				"Description has not changed"
 			);
 			yield return (
-				new SchemaDetails { Tags = { ["env"] = "test" } },
+				new SchemaDetails {
+					Tags = { ["env"] = "test" },
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
 				"Details.Tags",
 				"Tags have not changed"
 			);

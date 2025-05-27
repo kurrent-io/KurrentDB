@@ -1,3 +1,8 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+// ReSharper disable VirtualMemberCallInConstructor
+
 using System.Text.Json;
 using Dapper;
 using Kurrent.Surge.DuckDB.Projectors;
@@ -14,15 +19,15 @@ public class SchemaProjections : DuckDBProjection {
                       version_id        TEXT        PRIMARY KEY
                     , schema_name       TEXT        NOT NULL
                     , version_number    INT         NOT NULL DEFAULT 0
-                    , schema_definition BLOB        NOT NULL 
+                    , schema_definition BLOB        NOT NULL
                     , data_format       TINYINT     NOT NULL DEFAULT 0
                     , registered_at     TIMESTAMPTZ NOT NULL DEFAULT current_localtimestamp()
                     , checkpoint        UBIGINT     NOT NULL DEFAULT 0
                 );
-                
+
                 CREATE INDEX IF NOT EXISTS idx_schema_versions_schema_name ON schema_versions (schema_name);
                 CREATE INDEX IF NOT EXISTS idx_schema_versions_version_number ON schema_versions (version_number);
-                
+
                 CREATE TABLE IF NOT EXISTS schemas (
                       schema_name           TEXT        PRIMARY KEY
                     , description           TEXT
@@ -35,7 +40,7 @@ public class SchemaProjections : DuckDBProjection {
                     , updated_at            TIMESTAMPTZ
                     , checkpoint            UBIGINT     NOT NULL DEFAULT 0
                 );
-                
+
                 CREATE INDEX IF NOT EXISTS idx_schemas_latest_version_id ON schemas (latest_version_id);
                 """;
 
@@ -106,7 +111,7 @@ public class SchemaProjections : DuckDBProjection {
                     , $registered_at
                     , $checkpoint
                 );
-                
+
                 UPDATE schemas
                 SET latest_version_number = $version_number
                   , latest_version_id = $version_id
@@ -215,13 +220,13 @@ public class SchemaProjections : DuckDBProjection {
             const string sql =
                 """
                 BEGIN TRANSACTION;
-                
+
                 DELETE FROM schema_versions
                 WHERE schema_name = $schema_name;
-                
+
                 DELETE FROM schemas
                 WHERE schema_name = $schema_name;
-                
+
                 COMMIT;
                 """;
 

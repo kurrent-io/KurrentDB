@@ -22,6 +22,8 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
 			    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
 			""";
 
+		var connection = ConnectionProvider.GetConnection();
+
 		var parameters = new { checkpoint = position };
 
 		var retryPolicy = Policy
@@ -32,10 +34,7 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
 				sleepDurationProvider: _ => TimeSpan.FromMilliseconds(100)
 			);
 
-		var exists = await retryPolicy.ExecuteAsync(async () => {
-			var connection = ConnectionProvider.GetConnection();
-			return await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters);
-		});
+		var exists = await retryPolicy.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
 
 		return exists;
 	}

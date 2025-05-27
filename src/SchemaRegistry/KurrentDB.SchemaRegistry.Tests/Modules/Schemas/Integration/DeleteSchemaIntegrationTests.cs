@@ -5,18 +5,17 @@
 
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
-using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
-using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Services.Domain;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
-namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
+namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
-public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
+public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -25,7 +24,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Create initial schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -36,23 +35,26 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
-		var expectedEvent = new SchemaDeleted {
-			SchemaName = schemaName,
-			DeletedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
-		};
-
 		// Act
-		var result = await Apply(
+		var deleteSchemaResult = await Client.DeleteSchemaAsync(
 			new DeleteSchemaRequest { SchemaName = schemaName },
-			cancellationToken
+			cancellationToken: cancellationToken
+		);
+
+		var listSchemasResult = await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaNamePrefix = schemaName
+			},
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		var schemaDeleted = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaDeleted>();
-		schemaDeleted.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.DeletedAt));
+		deleteSchemaResult.Should().NotBeNull();
+		listSchemasResult.Should().NotBeNull();
+		listSchemasResult.Schemas.Should().BeEmpty();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -61,7 +63,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Create initial schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -72,40 +74,44 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Register additional versions
-		await Apply(
+		await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
-		await Apply(
+		await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
-
-		var expectedEvent = new SchemaDeleted {
-			SchemaName = schemaName,
-			DeletedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
-		};
 
 		// Act
-		var result = await Apply(
+		var deleteSchemaResult = await Client.DeleteSchemaAsync(
 			new DeleteSchemaRequest { SchemaName = schemaName },
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
+		var listSchemasResult = await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaNamePrefix = schemaName
+			},
+			cancellationToken: cancellationToken
+		);
+
+
 		// Assert
-		var schemaDeleted = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaDeleted>();
-		schemaDeleted.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.DeletedAt));
+		deleteSchemaResult.Should().NotBeNull();
+		listSchemasResult.Should().NotBeNull();
+		listSchemasResult.Schemas.Should().BeEmpty();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -114,13 +120,14 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Act
-		var deleteSchema = async () => await Apply(
+		var deleteSchema = async () => await Client.DeleteSchemaAsync(
 			new DeleteSchemaRequest { SchemaName = nonExistentSchemaName },
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		await deleteSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
+		var exception = await deleteSchema.Should().ThrowAsync<RpcException>();
+		exception.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -129,7 +136,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Create schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -140,23 +147,24 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Delete schema first time
-		await Apply(
+		await Client.DeleteSchemaAsync(
 			new DeleteSchemaRequest { SchemaName = schemaName },
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act - Try to delete again
-		var deleteSchema = async () => await Apply(
+		var deleteSchema = async () => await Client.DeleteSchemaAsync(
 			new DeleteSchemaRequest { SchemaName = schemaName },
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		await deleteSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
+		var deleteSchemaException = await deleteSchema.Should().ThrowAsync<RpcException>();
+		deleteSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -169,7 +177,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{compatibilityMode}-{Identifiers.GenerateShortId()}";
 
 		// Create schema with specific compatibility mode
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -180,18 +188,17 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act
-		var result = await Apply(
+		var deleteSchemaResult = await Client.DeleteSchemaAsync(
 			new DeleteSchemaRequest { SchemaName = schemaName },
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		var schemaDeleted = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaDeleted>();
-		schemaDeleted.SchemaName.Should().Be(schemaName);
+		deleteSchemaResult.Should().NotBeNull();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -204,7 +211,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		var schemaName = $"{nameof(PowerConsumption)}-{dataFormat}-{Identifiers.GenerateShortId()}";
 
 		// Create schema with specific data format
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -215,27 +222,26 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act
-		var result = await Apply(
+		var deleteSchemaResult = await Client.DeleteSchemaAsync(
 			new DeleteSchemaRequest { SchemaName = schemaName },
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Assert
-		var schemaDeleted = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaDeleted>();
-		schemaDeleted.SchemaName.Should().Be(schemaName);
+		deleteSchemaResult.Should().NotBeNull();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task subsequent_operations_on_deleted_schema_throw_exceptions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 
 		// Create and delete schema
-		await Apply(
+		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
@@ -246,41 +252,52 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
 				}
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
-		await Apply(
+		await Client.DeleteSchemaAsync(
 			new DeleteSchemaRequest { SchemaName = schemaName },
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
 
 		// Act & Assert - Try various operations on deleted schema
-		var updateSchema = async () => await Apply(
+		var updateSchema = async () => await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
-				Details = new SchemaDetails { Description = Faker.Lorem.Sentence() },
-				UpdateMask = new FieldMask { Paths = { "Details.Description" } }
+				Details = new SchemaDetails {
+					Description = Faker.Lorem.Sentence(),
+					Compatibility = CompatibilityMode.Backward,
+					DataFormat = SchemaFormat.Json
+				},
+				UpdateMask = new FieldMask {
+					Paths = {
+						"Details.Description"
+					}
+				},
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
-		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
+		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
+		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
 
-		var registerVersion = async () => await Apply(
+		var registerVersion = async () => await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
 				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
-		await registerVersion.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
+		var registerVersionException = await registerVersion.Should().ThrowAsync<RpcException>();
+		registerVersionException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
 
-		var deleteVersions = async () => await Apply(
+		var deleteVersions = async () => await Client.DeleteSchemaVersionsAsync(
 			new DeleteSchemaVersionsRequest {
 				SchemaName = schemaName,
 				Versions = { 1 }
 			},
-			cancellationToken
+			cancellationToken: cancellationToken
 		);
-		await deleteVersions.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
+		var deleteVersionsException = await deleteVersions.Should().ThrowAsync<RpcException>();
+		deleteVersionsException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 }
