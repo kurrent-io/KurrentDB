@@ -23,53 +23,10 @@ using StatusCode = Grpc.Core.StatusCode;
 namespace KurrentDB.Core.Tests.Integration;
 
 public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
-	private const string ProtectedStream = "$foo";
+	protected const string ProtectedStream = "$foo";
 
-	private static readonly string AuthorizationHeaderValue =
+	protected static readonly string AuthorizationHeaderValue =
 		$"Basic {Convert.ToBase64String(Encoding.ASCII.GetBytes("admin:changeit"))}";
-
-	[TestFixture(typeof(LogFormat.V2), typeof(string))]
-	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
-	public class via_http_should : authenticated_requests_made_from_a_follower<TLogFormat, TStreamId> {
-		private HttpStatusCode _statusCode;
-
-		protected override async Task Given() {
-			var node = GetFollowers()[0];
-			await Task.WhenAll(node.AdminUserCreated, node.Started);
-			using var httpClient = new HttpClient(new SocketsHttpHandler {
-				SslOptions = {
-					RemoteCertificateValidationCallback = delegate { return true; }
-				}
-			}, true) {
-				BaseAddress = new Uri($"https://{node.HttpEndPoint}/"),
-				DefaultRequestHeaders = {
-					Authorization = AuthenticationHeaderValue.Parse(AuthorizationHeaderValue)
-				}
-			};
-
-			var content = JsonSerializer.SerializeToUtf8Bytes(new[] {
-				new {
-					eventId = Guid.NewGuid(),
-					data = new{},
-					metadata = new{},
-					eventType = "-"
-				}
-			}, new JsonSerializerOptions {
-				PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-			});
-
-			using var response = await httpClient.PostAsync($"/streams/{ProtectedStream}",
-				new ReadOnlyMemoryContent(content) {
-					Headers = { ContentType = new MediaTypeHeaderValue(ContentType.EventsJson) }
-				});
-
-			_statusCode = response.StatusCode;
-		}
-
-		[Test]
-		[Retry(5)]
-		public void work() => Assert.AreEqual(HttpStatusCode.Created, _statusCode);
-	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
@@ -162,5 +119,58 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 		[Test]
 		[Retry(5)]
 		public void work() => Assert.Null(_caughtException);
+	}
+}
+
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V3), typeof(uint))]
+public class via_http_should<TLogFormat, TStreamId> : authenticated_requests_made_from_a_follower<TLogFormat, TStreamId> {
+	private HttpStatusCode _statusCode;
+	private string _error;
+
+	protected override async Task Given() {
+		var node = GetFollowers()[0];
+		await Task.WhenAll(node.AdminUserCreated, node.Started);
+		using var httpClient = new HttpClient(new SocketsHttpHandler {
+			SslOptions = {
+				RemoteCertificateValidationCallback = delegate { return true; }
+			}
+		}, true) {
+			BaseAddress = new Uri($"https://{node.HttpEndPoint}/"),
+			DefaultRequestHeaders = {
+				Authorization = AuthenticationHeaderValue.Parse(AuthorizationHeaderValue)
+			}
+		};
+
+		var content = JsonSerializer.SerializeToUtf8Bytes(new[] {
+			new {
+				eventId = Guid.NewGuid(),
+				data = new{},
+				metadata = new{},
+				eventType = "-"
+			}
+		}, new JsonSerializerOptions {
+			PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+		});
+
+		using var response = await httpClient.PostAsync($"/streams/{ProtectedStream}",
+			new ReadOnlyMemoryContent(content) {
+				Headers = { ContentType = new MediaTypeHeaderValue(ContentType.EventsJson) }
+			});
+
+		_statusCode = response.StatusCode;
+
+		if (_statusCode is HttpStatusCode.InternalServerError) {
+			_error = await response.Content.ReadAsStringAsync();
+		}
+	}
+
+	[Test]
+	public void work() {
+		if (_error is { Length: > 0 }) {
+			Assert.Fail(_error);
+		} else {
+			Assert.AreEqual(HttpStatusCode.Created, _statusCode);
+		}
 	}
 }

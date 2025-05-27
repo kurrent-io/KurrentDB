@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Mime;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http;
@@ -11,6 +12,7 @@ using KurrentDB.Transport.Http.Codecs;
 using KurrentDB.Transport.Http.EntityManagement;
 using Microsoft.AspNetCore.Http;
 using Serilog;
+using ContentType = KurrentDB.Transport.Http.ContentType;
 using HttpStatusCode = KurrentDB.Transport.Http.HttpStatusCode;
 
 namespace KurrentDB.Core.Services.Transport.Http;
@@ -80,12 +82,12 @@ public class KestrelToInternalBridgeMiddleware : IMiddleware {
 				return true;
 			} catch (Exception exc) {
 				Log.Error(exc, "Error while handling HTTP request '{url}'.", request.Url);
-				InternalServerError(httpEntity);
+				InternalServerError(httpEntity, exc);
 
 			}
 		} catch (Exception exc) {
 			Log.Error(exc, "Unhandled exception while processing HTTP request at {url}.", httpEntity.RequestedUrl);
-			InternalServerError(httpEntity);
+			InternalServerError(httpEntity, exc);
 		}
 		return false;
 	}
@@ -119,6 +121,13 @@ public class KestrelToInternalBridgeMiddleware : IMiddleware {
 	private static void InternalServerError(HttpEntity httpEntity) {
 		var entity = httpEntity.CreateManager();
 		entity.ReplyStatus(HttpStatusCode.InternalServerError, "Internal Server Error", e => Log.Debug("Error while closing HTTP connection (HTTP service core): {e}.", e.Message));
+	}
+
+	private static void InternalServerError(HttpEntity httpEntity, Exception e) {
+		var entity = httpEntity.CreateManager();
+		entity.ReplyTextContent(e.ToString(), HttpStatusCode.InternalServerError, "Internal Server Error",
+			MediaTypeNames.Text.Plain, null,
+			static e => Log.Debug("Error while closing HTTP connection (HTTP service core): {e}.", e.Message));
 	}
 
 	private static void BadCodec(HttpEntity httpEntity, string reason) {
