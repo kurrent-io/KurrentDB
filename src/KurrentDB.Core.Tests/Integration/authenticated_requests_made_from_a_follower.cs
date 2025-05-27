@@ -126,7 +126,7 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class via_http_should<TLogFormat, TStreamId> : authenticated_requests_made_from_a_follower<TLogFormat, TStreamId> {
 	private HttpStatusCode _statusCode;
-	private string _error;
+	private byte[] _error;
 
 	protected override async Task Given() {
 		var node = GetFollowers()[0];
@@ -161,14 +161,14 @@ public class via_http_should<TLogFormat, TStreamId> : authenticated_requests_mad
 		_statusCode = response.StatusCode;
 
 		if (_statusCode is HttpStatusCode.InternalServerError) {
-			_error = await response.Content.ReadAsStringAsync();
+			_error = await response.Content.ReadAsByteArrayAsync();
 		}
 	}
 
 	[Test]
 	public void work() {
 		if (_error is { Length: > 0 }) {
-			Assert.Fail(_error);
+			Assert.Fail(Encoding.UTF8.GetString(_error));
 		} else {
 			Assert.AreEqual(HttpStatusCode.Created, _statusCode);
 		}

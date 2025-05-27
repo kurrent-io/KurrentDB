@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Mime;
+using System.Text;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Http;
@@ -125,8 +126,8 @@ public class KestrelToInternalBridgeMiddleware : IMiddleware {
 
 	private static void InternalServerError(HttpEntity httpEntity, Exception e) {
 		var entity = httpEntity.CreateManager();
-		entity.ReplyTextContent(e.ToString(), HttpStatusCode.InternalServerError, "Internal Server Error",
-			MediaTypeNames.Text.Plain, null,
+		entity.ReplyContent(Encoding.UTF8.GetBytes(e.ToString()), HttpStatusCode.InternalServerError, "Internal Server Error",
+			MediaTypeNames.Application.Octet, null,
 			static e => Log.Debug("Error while closing HTTP connection (HTTP service core): {e}.", e.Message));
 	}
 
