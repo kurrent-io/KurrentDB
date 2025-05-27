@@ -1,9 +1,11 @@
 using System.Text.Json;
 using Dapper;
+using DuckDB.NET.Data;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema.Validation;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
+using Polly;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryErrorDetails.Types;
 using static KurrentDB.SchemaRegistry.Data.SchemaQueriesMapping;
 
@@ -13,25 +15,30 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
     DuckDBConnectionProvider    ConnectionProvider   { get; } = connectionProvider;
     ISchemaCompatibilityManager CompatibilityManager { get; } = compatibilityManager;
 
-    public async Task<bool> WaitUntilCaughtUp(ulong position, CancellationToken cancellationToken) {
-        const string sql =
-            """
-            SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
-                OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
-            """;
+	public async Task<bool> WaitUntilCaughtUp(ulong position, CancellationToken cancellationToken) {
+		const string sql =
+			"""
+			SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
+			    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
+			""";
 
-        var connection = ConnectionProvider.GetConnection();
-        var parameters = new { checkpoint = position };
+		var parameters = new { checkpoint = position };
 
-        var exists = false;
-        while (!exists) {
-            exists = await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters);
-            if (exists) break;
-            await Task.WhenAny(Task.Delay(100, cancellationToken));
-        }
+		var retryPolicy = Policy
+			.HandleResult<bool>(exists => !exists)
+			.Or<DuckDBException>()
+			.WaitAndRetryAsync(
+				retryCount: 5,
+				sleepDurationProvider: _ => TimeSpan.FromMilliseconds(100)
+			);
 
-        return exists;
-    }
+		var exists = await retryPolicy.ExecuteAsync(async () => {
+			var connection = ConnectionProvider.GetConnection();
+			return await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters);
+		});
+
+		return exists;
+	}
 
     public async Task<GetSchemaResponse> GetSchema(GetSchemaRequest query, CancellationToken cancellationToken) {
          const string sql =
