@@ -8,9 +8,9 @@ using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Producers;
 using KurrentDB.Connect.Producers.Configuration;
 using KurrentDB.Connect.Readers.Configuration;
+using KurrentDB.Connectors.Control.Contracts;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Planes.Control;
-using KurrentDB.Connectors.Planes.Management;
 using Microsoft.Extensions.DependencyInjection;
 using static KurrentDB.Connectors.Planes.ConnectorsFeatureConventions;
 
@@ -18,67 +18,67 @@ namespace KurrentDB.Connectors.Tests.Planes.Control;
 
 [Trait("Category", "ControlPlane")]
 public class ConnectorsControlRegistryTests(ITestOutputHelper output, ConnectorsAssemblyFixture fixture) : ConnectorsIntegrationTests(output, fixture) {
-	[Fact(Skip = "Isolate is conflicting with the one below")]
-    public Task updates_snapshot_with_no_active_connectors() => Fixture.TestWithTimeout(async cancellator => {
-        // Arrange
-        var getReaderBuilder   = Fixture.NodeServices.GetRequiredService<Func<SystemReaderBuilder>>();
-        var getProducerBuilder = Fixture.NodeServices.GetRequiredService<Func<SystemProducerBuilder>>();
-        var startupMonitor     = Fixture.NodeServices.GetRequiredService<IStartupWorkCompletionMonitor>();
-
-        var options = new ConnectorsControlRegistryOptions {
-            Filter           = Filters.ManagementFilter,
-            SnapshotStreamId = Fixture.NewStreamId() // Random stream ID to avoid test interference
-        };
-
-        var sut = new ConnectorsControlRegistry(startupMonitor, options, getReaderBuilder, getProducerBuilder, Fixture.TimeProvider);
-
-        // Act
-        var result = await sut.GetConnectors(cancellator.Token);
-
-        // Assert
-        result.Connectors.Should().BeEmpty();
-    });
-
     [Fact]
     public Task returns_active_connectors_and_updates_snapshot() => Fixture.TestWithTimeout(async cancellator => {
         // Arrange
-        var getReaderBuilder   = Fixture.NodeServices.GetRequiredService<Func<SystemReaderBuilder>>();
-        var getProducerBuilder = Fixture.NodeServices.GetRequiredService<Func<SystemProducerBuilder>>();
-        var startupMonitor     = Fixture.NodeServices.GetRequiredService<IStartupWorkCompletionMonitor>();
-
+        var sut = Fixture.NodeServices.GetRequiredService<ConnectorsControlRegistry>();
         var connectorId = Fixture.NewConnectorId();
 
-        var options = new ConnectorsControlRegistryOptions {
-            Filter           = Filters.ManagementFilter,
-            SnapshotStreamId = Streams.ControlConnectorsRegistryStream
-        };
-
-        var sut = new ConnectorsControlRegistry(startupMonitor, options, getReaderBuilder, getProducerBuilder, Fixture.TimeProvider);
-
-        // Act
-        var activatingMessage = Message.Builder
-            .Value(new ConnectorActivating {
-                ConnectorId = connectorId,
-                Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
-            })
-            .Create();
-
-        var runningMessage = Message.Builder
-            .Value(new ConnectorRunning {
-                ConnectorId = connectorId,
-                Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
-            })
-            .Create();
-
-        var produceResult = await Fixture.Producer.Produce(ProduceRequest.Builder
-            .Messages(activatingMessage, runningMessage)
-            .Stream(Streams.ManagementStreamTemplate.GetStream(Fixture.NewStreamId()))
-            .Create());
-
-        // Assert
-        var result = await sut.GetConnectors(CancellationToken.None);
-
-        result.Connectors.Should().ContainSingle();
-        result.Position.Should().Be(produceResult.Position);
+        var streamId = Streams.ManagementStreamTemplate.GetStream(Fixture.NewStreamId());
+        // Act & Assert
+        // Initially, there is no connector, and no snapshot is empty
+        var result = await sut.GetConnectors(cancellator.Token);
+        result.Connectors.Should().BeEmpty();
+        var snapshot = await ReadSnapshot(cancellator.Token);
+        snapshot.Connectors.Should().BeEmpty();
+        snapshot.Should().NotBeNull();
+        // Now, a connector has been created and activated
+        var connectorMessages       = await ProduceConnectorEvents(streamId, connectorId);
+        var connectorRunningMessage = connectorMessages.Last();
+        result = await sut.GetConnectors(cancellator.Token);
+        result.Connectors.Should().NotBeEmpty();
+        snapshot = await ReadSnapshot(cancellator.Token);
+        snapshot.LogPosition.Should().Be(connectorRunningMessage.Position);
+        // Non-connector related events should not affect the snapshot
+        await Fixture.ProduceTestEvents(Fixture.NewStreamId(), 5);
+        result = await sut.GetConnectors(cancellator.Token);
+        result.Connectors.Should().NotBeEmpty();
+        snapshot = await ReadSnapshot(cancellator.Token);
+        snapshot.LogPosition.Should().Be(connectorRunningMessage.Position);
     });
+
+    async Task<ActivatedConnectorsSnapshot> ReadSnapshot(CancellationToken ct) {
+        var snapshot = await Fixture.Reader.ReadLastStreamRecord(Streams.ControlConnectorsRegistryStream, ct);
+        snapshot.Should().NotBeNull();
+        snapshot.Value.Should().BeOfType<ActivatedConnectorsSnapshot>();
+        return (ActivatedConnectorsSnapshot)snapshot.Value;
+    }
+    async Task<List<ProduceResult>> ProduceConnectorEvents(string streamId, string connectorId) {
+        var tasks = new List<Task<ProduceResult>> {
+            ProduceActivating(streamId, connectorId),
+            ProduceRunning(streamId, connectorId)
+        };
+        await Task.WhenAll(tasks);
+        return tasks.Select(x => x.Result).ToList();
+    }
+    async Task<ProduceResult> ProduceActivating(string streamId, string connectorId) {
+        var activating = new ConnectorActivating {
+            ConnectorId = connectorId,
+            Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+        };
+        var message = Message.Builder.Value(activating).Create();
+        var request = ProduceRequest.Builder.Message(message).Stream(streamId).Create();
+        var result  = await Fixture.Producer.Produce(request);
+        return result;
+    }
+    async Task<ProduceResult> ProduceRunning(string streamId, string connectorId) {
+        var running = new ConnectorRunning {
+            ConnectorId = connectorId,
+            Timestamp   = Fixture.TimeProvider.GetUtcNow().ToTimestamp()
+        };
+        var message = Message.Builder.Value(running).Create();
+        var request = ProduceRequest.Builder.Message(message).Stream(streamId).Create();
+        var result  = await Fixture.Producer.Produce(request);
+        return result;
+    }
 }

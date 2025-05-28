@@ -56,7 +56,7 @@ class ConnectorsControlRegistry {
 	    await StartupWorkMonitor.WhenCompletedAsync();
         var (state, checkpoint, snapshotPosition) = await LoadSnapshot(cancellationToken);
 
-        RecordPosition? lastReadPosition = null;
+        RecordPosition lastReadPosition = checkpoint;
 
         var records = Reader.ReadForwards(checkpoint.LogPosition, Options.Filter, cancellationToken: cancellationToken);
 
@@ -96,12 +96,12 @@ class ConnectorsControlRegistry {
 
         // updates the snapshot every time the last record position is newer,
         // regardless of state changes
-        if (lastReadPosition != checkpoint)
-            await UpdateSnapshot(result, lastReadPosition ?? checkpoint, snapshotPosition);
+        if (lastReadPosition != checkpoint || snapshotPosition == RecordPosition.Unset)
+            await UpdateSnapshot(result, lastReadPosition, snapshotPosition);
 
         return new GetConnectorsResult {
             Connectors = result,
-            Position   = lastReadPosition ?? checkpoint
+            Position   = lastReadPosition
         };
 
         async Task<(Dictionary<ConnectorId, RegisteredConnector> State, RecordPosition Checkpoint, RecordPosition SnapshotPosition)> LoadSnapshot(CancellationToken ct) {

@@ -45,11 +45,6 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
                 .AddSingleton<TimeProvider>(TimeProvider)
                 .AddSingleton(LoggerFactory);
 
-            // Setup startup tasks manager
-            services.AddSingleton<SystemStartupManager>();
-            services.AddSingleton<IHostedService, SystemStartupManager>(ctx => ctx.GetRequiredService<SystemStartupManager>());
-            services.AddSingleton<IStartupWorkCompletionMonitor, SystemStartupManager>(ctx => ctx.GetRequiredService<SystemStartupManager>());
-
             // // Management
             // services.AddSingleton(ctx => new ConnectorsLicenseService(
             //     ctx.GetRequiredService<ILicenseService>(),
