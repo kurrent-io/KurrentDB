@@ -30,7 +30,7 @@ public partial class ConnectorsFeatureConventions {
 		public static StreamId GetCheckpointsStream(string connectorId) => CheckpointsStreamTemplate.GetStream(connectorId); // $connectors/3f9728/checkpoints
 		public static StreamId GetLifecycleStream(string connectorId)   => LifecycleStreamTemplate.GetStream(connectorId);   // $connectors/3f9728/lifecycle
 
-		public static StreamId ControlConnectorsRegistryStream = $"${ControlStreamPrefix}/registry-snapshots";
+		public static StreamId ControlConnectorsRegistryStream = $"{ControlStreamPrefix}/registry-snapshots";
 
 		public static StreamId ManagementLifecycleReactorCheckpointsStream = $"{ManagementStreamPrefix}/lifecycle-rx/checkpoints";
 		public static StreamId ManagementStreamSupervisorCheckpointsStream = $"{ManagementStreamPrefix}/supervisor-rx/checkpoints";
