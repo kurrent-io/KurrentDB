@@ -34,8 +34,8 @@ public abstract class with_storage_chaser_service<TLogFormat, TStreamId> : Speci
 	protected TFChunkChaser Chaser;
 	protected TFChunkWriter Writer;
 
-	protected ConcurrentQueue<StorageMessage.PrepareAck> PrepareAcks = new();
-	protected ConcurrentQueue<StorageMessage.CommitAck> CommitAcks = new();
+	protected ConcurrentQueue<StorageMessage.UncommittedPrepareChased> PrepareAcks = new();
+	protected ConcurrentQueue<StorageMessage.CommitChased> CommitAcks = new();
 
 	[OneTimeSetUp]
 	public override async Task TestFixtureSetUp() {
@@ -61,8 +61,8 @@ public abstract class with_storage_chaser_service<TLogFormat, TStreamId> : Speci
 		Service.Handle(new SystemMessage.SystemStart());
 		Service.Handle(new SystemMessage.SystemInit());
 
-		Publisher.Subscribe(new AdHocHandler<StorageMessage.CommitAck>(CommitAcks.Enqueue));
-		Publisher.Subscribe(new AdHocHandler<StorageMessage.PrepareAck>(PrepareAcks.Enqueue));
+		Publisher.Subscribe(new AdHocHandler<StorageMessage.CommitChased>(CommitAcks.Enqueue));
+		Publisher.Subscribe(new AdHocHandler<StorageMessage.UncommittedPrepareChased>(PrepareAcks.Enqueue));
 
 		await When(CancellationToken.None);
 	}

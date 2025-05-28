@@ -31,7 +31,7 @@ public class when_transaction_single_write_completes_successfully : RequestManag
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _event1Position, PrepareFlags.Data);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _event1Position, PrepareFlags.Data);
 	}
 
 	protected override Message When() {

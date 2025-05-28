@@ -24,7 +24,7 @@ public class when_index_committer_service_receives_replicated_to_prepare_pre_pos
 	public override void When() {
 
 		AddPendingPrepare(_logPrePosition, _logPostPosition);
-		Service.Handle(StorageMessage.CommitAck.ForSingleStream(_correlationId, _logPrePosition, _logPrePosition, 0, 0));
+		Service.Handle(StorageMessage.CommitChased.ForSingleStream(_correlationId, _logPrePosition, _logPrePosition, 0, 0));
 		ReplicationCheckpoint.Write(_logPrePosition);
 		ReplicationCheckpoint.Flush();
 		Service.Handle(new ReplicationTrackingMessage.ReplicatedTo(_logPrePosition));

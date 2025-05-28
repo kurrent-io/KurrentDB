@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace KurrentDB.SecondaryIndexing.Tests;
 
 internal static class TestPluginStartup {
-	public static void Configure(SecondaryIndexingPlugin plugin, IConfigurationBuilder? configurationBuilder = null) {
+	public static void Configure<TStreamId>(SecondaryIndexingPlugin<TStreamId> plugin, IConfigurationBuilder? configurationBuilder = null) {
 		var config = (configurationBuilder ?? new ConfigurationBuilder()).Build();
 
 		var builder = WebApplication.CreateBuilder();

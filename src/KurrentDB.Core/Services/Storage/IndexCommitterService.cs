@@ -36,7 +36,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 	IMonitoredQueue,
 	IHandle<SystemMessage.BecomeShuttingDown>,
 	IHandle<ReplicationTrackingMessage.ReplicatedTo>,
-	IHandle<StorageMessage.CommitAck>,
+	IHandle<StorageMessage.CommitChased>,
 	IHandle<ClientMessage.MergeIndexes>,
 	IThreadPoolWorkItem {
 	private readonly IIndexCommitter<TStreamId> _indexCommitter;
@@ -52,9 +52,9 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 	public string Name => _queueStats.Name;
 
 	private readonly QueueStatsCollector _queueStats;
-	private readonly ConcurrentQueueWrapper<StorageMessage.CommitAck> _replicatedQueue = new();
+	private readonly ConcurrentQueueWrapper<StorageMessage.CommitChased> _replicatedQueue = new();
 	private readonly ConcurrentDictionary<long, PendingTransaction> _pendingTransactions = new();
-	private readonly SortedList<long, StorageMessage.CommitAck> _commitAcks = new();
+	private readonly SortedList<long, StorageMessage.CommitChased> _commitAcks = new();
 	private readonly AsyncManualResetEvent _addMsgSignal = new(initialState: false);
 	private readonly TimeSpan _waitTimeoutMs = TimeSpan.FromMilliseconds(100);
 	private readonly TaskCompletionSource<object> _tcs = new();
@@ -98,8 +98,8 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 			_queueStats.Start();
 			QueueMonitor.Default.Register(this);
 
-			StorageMessage.CommitAck replicatedMessage;
-			var msgType = typeof(StorageMessage.CommitAck);
+			StorageMessage.CommitChased replicatedMessage;
+			var msgType = typeof(StorageMessage.CommitChased);
 			while (!_stopToken.IsCancellationRequested) {
 				_addMsgSignal.Reset();
 				if (_replicatedQueue.TryDequeue(out replicatedMessage)) {
@@ -135,7 +135,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 		_publisher.Publish(new SystemMessage.ServiceShutdown(nameof(IndexCommitterService)));
 	}
 
-	private async ValueTask ProcessCommitReplicated(StorageMessage.CommitAck message, CancellationToken token) {
+	private async ValueTask ProcessCommitReplicated(StorageMessage.CommitChased message, CancellationToken token) {
 		var lastEventNumbers = message.LastEventNumbers;
 		if (_pendingTransactions.TryRemove(message.TransactionPosition, out var transaction)) {
 			var isTfEof = IsTfEof(transaction.PostPosition);
@@ -185,7 +185,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 
 	public void Handle(SystemMessage.BecomeShuttingDown message) => Stop();
 
-	public void Handle(StorageMessage.CommitAck message) {
+	public void Handle(StorageMessage.CommitChased message) {
 		lock (_commitAcks) {
 			_commitAcks.TryAdd(message.LogPosition, message);
 		}
@@ -196,7 +196,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 	public void Handle(ReplicationTrackingMessage.ReplicatedTo message) => EnqueueReplicatedCommits();
 
 	private void EnqueueReplicatedCommits() {
-		var replicated = new List<StorageMessage.CommitAck>();
+		var replicated = new List<StorageMessage.CommitChased>();
 		lock (_commitAcks) {
 			while (_commitAcks.Count > 0) {
 				var ack = _commitAcks.Values[0];

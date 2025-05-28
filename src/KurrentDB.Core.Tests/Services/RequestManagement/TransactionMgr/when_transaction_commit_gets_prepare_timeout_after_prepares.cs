@@ -29,7 +29,7 @@ public class when_transaction_commit_gets_prepare_timeout_after_prepares : Reque
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.PrepareAck(InternalCorrId, transactionId, PrepareFlags.SingleWrite);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, transactionId, PrepareFlags.SingleWrite);
 	}
 
 	protected override Message When() {

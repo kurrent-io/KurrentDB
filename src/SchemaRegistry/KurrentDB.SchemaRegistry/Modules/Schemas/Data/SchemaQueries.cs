@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Dapper;
 using DuckDB.NET.Data;
+using Humanizer;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema.Validation;
 using KurrentDB.Protocol.Registry.V2;
@@ -26,13 +27,15 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
 
 		var parameters = new { checkpoint = position };
 
-		var retryPolicy = Policy
+		var foreverRetryOnResult = Policy
 			.HandleResult<bool>(exists => !exists)
-			.Or<DuckDBException>()
-			.WaitAndRetryAsync(
-				retryCount: 5,
-				sleepDurationProvider: _ => TimeSpan.FromMilliseconds(100)
-			);
+			.WaitAndRetryForeverAsync(_ => 100.Milliseconds());
+
+		var retryOnException = Policy<bool>
+			.Handle<DuckDBException>()
+			.WaitAndRetryAsync(5, _ => 100.Milliseconds());
+
+		var retryPolicy = Policy.WrapAsync<bool>(foreverRetryOnResult, retryOnException);
 
 		var exists = await retryPolicy.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
 

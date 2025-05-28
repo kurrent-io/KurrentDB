@@ -42,7 +42,7 @@ public class SpecRunner {
 			}
 
 			var projection = doc.RootElement.GetProperty("projection").GetString();
-			Assert.False(string.IsNullOrWhiteSpace(projection));
+			Assert.False(string.IsNullOrWhiteSpace(projection), "projection name cannot be empty");
 			var projectionSourceName = assembly.GetManifestResourceNames()
 				.SingleOrDefault(x => x.EndsWith($"{projection}.js"));
 			Assert.NotNull(projectionSourceName);
@@ -75,22 +75,39 @@ public class SpecRunner {
 						}
 					}
 					var expectedStates = new Dictionary<string, string?>();
+					var expectedResults = new Dictionary<string, string?>();
 					int stateCount = 0;
 					if (e.TryGetProperty("states", out var states)) {
 						foreach (var state in states.EnumerateArray()) {
 							stateCount++;
+							var partition = state.GetProperty("partition").GetString()!;
 							var expectedStateNode = state.GetProperty("state");
 							var expectedState = expectedStateNode.ValueKind == JsonValueKind.Null ? null : expectedStateNode.GetRawText();
-							if (!expectedStates.TryAdd(state.GetProperty("partition").GetString()!,
-								expectedState)) {
-								throw new InvalidOperationException("Duplicate state");
+							if (!expectedStates.TryAdd(partition, expectedState)) throw new InvalidOperationException("Duplicate expected state");
+
+							if (state.TryGetProperty("result", out var expectedResultNode )) {
+								var expectedResult = expectedResultNode.ValueKind == JsonValueKind.Null
+									? null
+									: expectedResultNode.GetRawText();
+								if (!expectedResults.TryAdd(partition, expectedResult))
+									throw new InvalidOperationException("Duplicate expected result");
 							}
 						}
 					}
+
+
 					if (stateCount > 2)
 						throw new InvalidOperationException("Cannot specify more than 2 states");
 
-					sequence.Events.Add(new InputEvent(et!, e.GetProperty("data").GetRawText(), e.TryGetProperty("metadata", out var metadata) ? metadata.GetRawText() : null, initializedPartitions, expectedStates, skip, e.TryGetProperty("eventId", out var idElement) && idElement.TryGetGuid(out var id) ? id : Guid.NewGuid()));
+					sequence.Events.Add(new InputEvent(et!
+							, e.GetProperty("data").GetRawText()
+							, e.TryGetProperty("metadata", out var metadata) ? metadata.GetRawText() : null
+							, initializedPartitions
+							, expectedStates
+							, expectedResults
+							, skip
+							, e.TryGetProperty("eventId", out var idElement) && idElement.TryGetGuid(out var id) ? id : Guid.NewGuid()
+							));
 				}
 			}
 
@@ -186,10 +203,7 @@ public class SpecRunner {
 					executionTimeout: TimeSpan.FromMilliseconds(200));
 			});
 
-			yield return For($"{projection} getDefinition", () => {
-				definition = runner.GetSourceDefinition();
-			});
-
+			yield return For($"{projection} getDefinition", () => { definition = runner.GetSourceDefinition(); });
 			yield return For($"{projection} qs.AllStreams", () => Assert.Equal(expectedDefinition.AllStreams, definition.AllStreams));
 			yield return For($"{projection} qs.Categories", () => Assert.Equal(expectedDefinition.Categories, definition.Categories));
 			yield return For($"{projection} qs.Streams", () => Assert.Equal(expectedDefinition.Streams, definition.Streams));
@@ -210,6 +224,7 @@ public class SpecRunner {
 			yield return For($"{projection} qs.ProcessingLagOption", () => Assert.Equal(expectedDefinition.ProcessingLagOption, definition.ProcessingLagOption));
 			yield return For($"{projection} qs.LimitingCommitPosition", () => Assert.Equal(expectedDefinition.LimitingCommitPosition, definition.LimitingCommitPosition));
 			var partitionedState = new Dictionary<string, string>();
+			var partitionedResult = new Dictionary<string, string>();
 			var sharedStateInitialized = false;
 			var revision = new Dictionary<string, long>();
 			List<EmittedEventEnvelope> actualEmittedEvents = new();
@@ -315,36 +330,67 @@ public class SpecRunner {
 								() => {
 									Assert.True(runner.ProcessEvent(expectedPartition, CheckpointTag.Empty, "", e,
 										out var newState, out var newSharedState, out var emittedEvents), "Process event should always return true");
-									if (newSharedState != null)
+									var result = runner.TransformStateToResult();
+									if (newSharedState != null) {
 										partitionedState[""] = newSharedState;
+									}
+
 									partitionedState[expectedPartition] = newState;
+									partitionedResult[expectedPartition] = result;
+
 									if (emittedEvents != null && emittedEvents.Length > 0) {
 										actualEmittedEvents.AddRange(emittedEvents);
 									}
+
+
 								});
 							if (@event.ExpectedStates.Any()) {
 								foreach (var expectedState in @event.ExpectedStates) {
-									yield return For(
-										$"state \"{expectedState.Key}\" exists at {er.EventNumber}@{sequence.Stream}",
-										() => Assert.Contains(expectedState.Key,
-											(IReadOnlyDictionary<string, string>)partitionedState));
-									yield return For(
-										$"state \"{expectedState.Key}\" is correct at {er.EventNumber}@{sequence.Stream}",
+									yield return For($@"state ""{expectedState.Key}"" exists at {er.EventNumber}@{sequence.Stream}",
+										() => Assert.Contains(expectedState.Key, (IReadOnlyDictionary<string, string>)partitionedState));
+
+									yield return For($@"state ""{expectedState.Key}"" is correct at {er.EventNumber}@{sequence.Stream}",
 										() => {
-											if (string.IsNullOrEmpty(expectedState.Value)) {
-												Assert.Null(partitionedState[expectedState.Key]);
-											} else {
+											if (string.IsNullOrEmpty(expectedState.Value))  Assert.Null(partitionedState[expectedState.Key]);
+											else {
 												Assert.True(partitionedState.ContainsKey(expectedState.Key), $"partition does not contain key {expectedState.Key}");
 												Assert.NotNull(partitionedState[expectedState.Key]);
 												Assert.NotEmpty(partitionedState[expectedState.Key]);
 												var expected = Sort(expectedState.Value, "expected");
 												var actual = Sort(partitionedState[expectedState.Key], "actual");
-												Assert.Equal(expected.ToString(Formatting.Indented),
-													actual.ToString(Formatting.Indented));
+												Assert.Equal(expected.ToString(Formatting.Indented), actual.ToString(Formatting.Indented));
 											}
 										});
 								}
 							}
+							if (@event.ExpectedResult.Any()) {
+								foreach (var expectedResult in @event.ExpectedResult) {
+
+									yield return For($@"result ""{expectedResult.Key}"" exists at {er.EventNumber}@{sequence.Stream}",
+										() => Assert.Contains(expectedResult.Key, (IReadOnlyDictionary<string, string>)partitionedResult));
+
+									yield return For($@"result ""{expectedResult.Key}"" is correct at {er.EventNumber}@{sequence.Stream}",
+										() => {
+											if (string.IsNullOrEmpty(expectedResult.Value)) Assert.Null(partitionedResult[expectedResult.Key]);
+											else {
+												Assert.True(partitionedResult.ContainsKey(expectedResult.Key), $"partition does not contain key {expectedResult.Key}");
+												if (expectedResult.Value is null) {
+													Assert.Null(partitionedResult[expectedResult.Key]);
+												} else {
+													Assert.NotEmpty(partitionedResult[expectedResult.Key]);
+													var expected = Sort(expectedResult.Value, "expected");
+													var actual = Sort(partitionedResult[expectedResult.Key], "actual");
+													Assert.Equal(expected.ToString(Formatting.Indented),
+														actual.ToString(Formatting.Indented));
+												}
+											}
+										});
+								}
+							}
+
+
+
+
 						}
 					}
 
@@ -435,24 +481,25 @@ public class SpecRunner {
 		}
 	}
 
-	class InputEvent {
-		public string EventType { get; }
-		public string Body { get; }
-		public string Metadata { get; }
-		public IReadOnlyList<string> InitializedPartitions { get; }
-		public IReadOnlyDictionary<string, string> ExpectedStates { get; }
-		public bool Skip { get; }
-		public Guid EventId { get; }
+	class InputEvent(
+		string eventType,
+		string body,
+		string metadata,
+		IReadOnlyList<string> initializedPartitions,
+		IReadOnlyDictionary<string, string> expectedStates,
+		IReadOnlyDictionary<string, string> expectedResults,
+		bool skip,
+		Guid eventId) {
 
-		public InputEvent(string eventType, string body, string metadata, IReadOnlyList<string> initializedPartitions, IReadOnlyDictionary<string, string> expectedStates, bool skip, Guid eventId) {
-			EventType = eventType;
-			Body = body;
-			Metadata = metadata;
-			InitializedPartitions = initializedPartitions;
-			ExpectedStates = expectedStates;
-			Skip = skip;
-			EventId = eventId;
-		}
+		public string EventType { get; } = eventType;
+		public string Body { get; } = body;
+		public string Metadata { get; } = metadata;
+		public IReadOnlyList<string> InitializedPartitions { get; } = initializedPartitions;
+		public IReadOnlyDictionary<string, string> ExpectedStates { get; } = expectedStates;
+		public IReadOnlyDictionary<string, string> ExpectedResult { get; } = expectedResults;
+		public bool Skip { get; } = skip;
+		public Guid EventId { get; } = eventId;
+
 	}
 
 	class OutputEvent {

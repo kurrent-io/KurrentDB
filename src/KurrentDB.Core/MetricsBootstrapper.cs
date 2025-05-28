@@ -179,6 +179,8 @@ public static class MetricsBootstrapper {
 			// these only go up, but are not strictly counters; should not have `_total` appended
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-last-known-event-number", tracker.ObserveLastKnownEvent);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-last-known-event-commit-position", tracker.ObserveLastKnownEventCommitPosition);
+			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-park-message-requests", tracker.ObserveParkMessageRequests);
+			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-parked-message-replays", tracker.ObserveParkedMessageReplays);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-checkpointed-event-number", tracker.ObserveLastCheckpointedEvent);
 			coreMeter.CreateObservableUpDownCounter($"{serviceName}-persistent-sub-checkpointed-event-commit-position", tracker.ObserveLastCheckpointedEventCommitPosition);
 

@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
@@ -19,6 +20,10 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	private long _lastTruncateBefore = -1;
 	private long _lastParkedEventNumber = -1;
 	private DateTime? _oldestParkedMessage;
+	private long _parkedDueToClientNak;
+	private long _parkedDueToMaxRetries;
+	private long _parkedMessageReplays;
+
 	public long ParkedMessageCount {
 		get {
 			return _lastParkedEventNumber == -1 ? 0 :
@@ -26,6 +31,10 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 				_lastParkedEventNumber - _lastTruncateBefore + 1;
 		}
 	}
+
+	public long ParkedDueToClientNak => Interlocked.Read(ref _parkedDueToClientNak);
+	public long ParkedDueToMaxRetries => Interlocked.Read(ref _parkedDueToMaxRetries);
+	public long ParkedMessageReplays => Interlocked.Read(ref _parkedMessageReplays);
 
 	private static readonly ILogger Log = Serilog.Log.ForContext<PersistentSubscriptionMessageParker>();
 
@@ -66,8 +75,19 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 		completed?.Invoke(ev, msg.Result);
 	}
 
-	public void BeginParkMessage(ResolvedEvent ev, string reason,
+	public void BeginParkMessage(ResolvedEvent ev, string reason, ParkReason parkReason,
 		Action<ResolvedEvent, OperationResult> completed) {
+		switch (parkReason) {
+			case ParkReason.MaxRetries:
+				Interlocked.Increment(ref _parkedDueToMaxRetries);
+				break;
+			case ParkReason.ClientNak:
+				Interlocked.Increment(ref _parkedDueToClientNak);
+				break;
+			default:
+				throw new ArgumentOutOfRangeException(nameof(parkReason));
+		}
+
 		var metadata = new ParkedMessageMetadata { Added = DateTime.Now, Reason = reason, SubscriptionEventNumber = ev.OriginalEventNumber };
 
 		string data = GetLinkToFor(ev);
@@ -107,6 +127,8 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 	}
 
 	public void BeginReadEndSequence(Action<long?> completed) {
+		Interlocked.Increment(ref _parkedMessageReplays);
+
 		_ioDispatcher.ReadBackward(ParkedStreamId,
 			long.MaxValue,
 			1,

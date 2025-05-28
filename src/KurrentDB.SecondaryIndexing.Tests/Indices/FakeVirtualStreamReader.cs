@@ -5,18 +5,19 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.InMemory;
 
-namespace KurrentDB.SecondaryIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests.Indices;
 
-public class FakeVirtualStreamReader(string streamName, ResolvedEvent[] events) : IVirtualStreamReader {
+internal class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEvent> events) : IVirtualStreamReader {
 	public ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
 		ClientMessage.ReadStreamEventsForward msg,
 		CancellationToken token) {
 
 		ReadStreamResult result;
-		long nextEventNumber, lastEventNumber;
+		long nextEventNumber, lastEventNumber, lastPosition;
+		bool isEndOfStream;
 
 		var readEvents = events
-			.Where(e =>  e.Event.EventNumber >= msg.FromEventNumber)
+			.Skip((int)msg.FromEventNumber)
 			.ToArray();
 
 		ResolvedEvent? lastEvent = readEvents.Length > 0 ? readEvents.Last(): null;
@@ -25,12 +26,15 @@ public class FakeVirtualStreamReader(string streamName, ResolvedEvent[] events) 
 			result = ReadStreamResult.NoStream;
 			nextEventNumber = -1;
 			lastEventNumber = ExpectedVersion.NoStream;
+			lastPosition = -1;
+			isEndOfStream = true;
 		} else {
 			result = ReadStreamResult.Success;
-			lastEventNumber = lastEvent.Value.Event.EventNumber;
+			lastEventNumber = Array.IndexOf(readEvents, lastEvent);
 			nextEventNumber =  lastEventNumber + 1;
+			lastPosition = lastEvent.Value.Event.TransactionPosition;
+			isEndOfStream = nextEventNumber == events.Count;
 		}
-
 
 		return ValueTask.FromResult(new ClientMessage.ReadStreamEventsForwardCompleted(
 			msg.CorrelationId,
@@ -44,8 +48,8 @@ public class FakeVirtualStreamReader(string streamName, ResolvedEvent[] events) 
 			error: string.Empty,
 			nextEventNumber: nextEventNumber,
 			lastEventNumber: lastEventNumber,
-			isEndOfStream: true,
-			tfLastCommitPosition: 0L));
+			isEndOfStream: isEndOfStream,
+			tfLastCommitPosition: lastPosition));
 	}
 
 	public ValueTask<ClientMessage.ReadStreamEventsBackwardCompleted> ReadBackwards(
@@ -53,10 +57,11 @@ public class FakeVirtualStreamReader(string streamName, ResolvedEvent[] events) 
 		CancellationToken token) {
 
 		ReadStreamResult result;
-		long nextEventNumber, lastEventNumber;
+		long nextEventNumber, lastEventNumber, lastPosition;
 
 		var readEvents = events
-			.Where(e =>  e.Event.EventNumber <= msg.FromEventNumber)
+			.Reverse()
+			.Skip((int)msg.FromEventNumber)
 			.ToArray();
 
 		ResolvedEvent? lastEvent = readEvents.Length > 0 ? readEvents.First(): null;
@@ -65,10 +70,12 @@ public class FakeVirtualStreamReader(string streamName, ResolvedEvent[] events) 
 			result = ReadStreamResult.NoStream;
 			nextEventNumber = -1;
 			lastEventNumber = ExpectedVersion.NoStream;
+			lastPosition = -1;
 		} else {
 			result = ReadStreamResult.Success;
-			lastEventNumber = lastEvent.Value.Event.EventNumber;
+			lastEventNumber = Array.IndexOf(readEvents, lastEvent);
 			nextEventNumber =  lastEventNumber - 1;
+			lastPosition = lastEvent.Value.Event.LogPosition;
 		}
 
 		return ValueTask.FromResult(new ClientMessage.ReadStreamEventsBackwardCompleted(
@@ -77,21 +84,21 @@ public class FakeVirtualStreamReader(string streamName, ResolvedEvent[] events) 
 			msg.FromEventNumber,
 			msg.MaxCount,
 			result,
-			readEvents,
+			readEvents.Reverse().ToArray(),
 			StreamMetadata.Empty,
 			isCachePublic: false,
 			error: string.Empty,
 			nextEventNumber: nextEventNumber,
 			lastEventNumber: lastEventNumber,
-			isEndOfStream: true,
-			tfLastCommitPosition: 0L));
+			isEndOfStream: lastEventNumber == 0,
+			tfLastCommitPosition: lastPosition));
 	}
 
 	public long GetLastEventNumber(string streamId) =>
-		events.Length > 0 ? events.Last().Event.EventNumber : -1;
+		events.Count > 0 ? events.Last().Event.EventNumber : -1;
 
 	public long GetLastIndexedPosition(string streamId) =>
-		events.Length > 0 ? events.Last().Event.LogPosition : -1;
+		events.Count > 0 ? events.Last().Event.LogPosition : -1;
 
 	public bool CanReadStream(string streamId) =>
 		streamId == streamName;
