@@ -52,7 +52,7 @@ public abstract class RequestManagerServiceSpecification :
 			TimeSpan.FromSeconds(2),
 			explicitTransactionsSupported: true);
 		Dispatcher.Subscribe<ClientMessage.WriteEvents>(Service);
-		Dispatcher.Subscribe<StorageMessage.PrepareAck>(Service);
+		Dispatcher.Subscribe<StorageMessage.UncommittedPrepareChased>(Service);
 		Dispatcher.Subscribe<StorageMessage.InvalidTransaction>(Service);
 		Dispatcher.Subscribe<StorageMessage.StreamDeleted>(Service);
 		Dispatcher.Subscribe<StorageMessage.WrongExpectedVersion>(Service);
@@ -89,7 +89,7 @@ public abstract class RequestManagerServiceSpecification :
 
 		var transactionPosition = LogPosition;
 		foreach (var _ in message.Events.Span) {
-			Dispatcher.Publish(new StorageMessage.PrepareAck(
+			Dispatcher.Publish(new StorageMessage.UncommittedPrepareChased(
 									message.CorrelationId,
 									LogPosition,
 									PrepareFlags));

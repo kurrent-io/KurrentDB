@@ -211,7 +211,8 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 				var eventStreamIndexes = _transaction.GetEventStreamIndexes();
 				CommitPendingTransaction(_transaction, postPosition);
 
-				_leaderBus.Publish(new StorageMessage.CommitAck(record.CorrelationId,
+				_leaderBus.Publish(new StorageMessage.CommitChased(
+					record.CorrelationId,
 					record.LogPosition,
 					record.TransactionPosition,
 					firstEventNumbers,
@@ -219,7 +220,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 					eventStreamIndexes));
 			}
 		} else if (record.Flags.HasAnyOf(PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd | PrepareFlags.Data)) {
-			_leaderBus.Publish(new StorageMessage.PrepareAck(record.CorrelationId, record.LogPosition, record.Flags));
+			_leaderBus.Publish(new StorageMessage.UncommittedPrepareChased(record.CorrelationId, record.LogPosition, record.Flags));
 		}
 	}
 
@@ -231,7 +232,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 		_indexCommitterService.AddPendingCommit(record, postPosition);
 		if (lastEventNumber is EventNumber.Invalid)
 			lastEventNumber = record.FirstEventNumber - 1;
-		_leaderBus.Publish(new StorageMessage.CommitAck(record.CorrelationId, record.LogPosition,
+		_leaderBus.Publish(new StorageMessage.CommitChased(record.CorrelationId, record.LogPosition,
 			record.TransactionPosition, new(firstEventNumber), new(lastEventNumber), []));
 	}
 

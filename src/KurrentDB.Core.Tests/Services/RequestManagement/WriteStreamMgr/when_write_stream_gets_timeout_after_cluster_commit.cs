@@ -31,7 +31,7 @@ public class when_write_stream_gets_timeout_after_cluster_commit : RequestManage
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _prepareLogPosition, PrepareFlags.SingleWrite | PrepareFlags.Data);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _prepareLogPosition, PrepareFlags.SingleWrite | PrepareFlags.Data);
 		yield return StorageMessage.CommitIndexed.ForSingleStream(InternalCorrId, _commitPosition, 1, 0, 0);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(_commitPosition);
 	}

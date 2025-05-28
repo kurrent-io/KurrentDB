@@ -72,8 +72,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 	IPEndPoint httpEndPoint, EndPoint[] gossipSeeds, ISubsystem[] subsystems = null,
 	bool enableTrustedAuth = false, int memTableSize = 1000, bool inMemDb = true,
 	bool disableFlushToDisk = false, bool readOnlyReplica = false, int nodePriority = 0,
-	string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null,
-	IEnumerable<IVirtualStreamReader> virtualStreamReaders = null) {
+	string intHostAdvertiseAs = null, IExpiryStrategy expiryStrategy = null) {
 
 		if (RuntimeInformation.IsOSX) {
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport",
@@ -194,7 +193,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 						options.Application.AllowAnonymousEndpointAccess,
 						options.Application.AllowAnonymousStreamAccess,
 						options.Application.OverrideAnonymousEndpointAccessForGossip).Create(components.MainQueue)]))),
-			virtualStreamReaders ?? [],
+			virtualStreamReader: null,
 			Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>(),
 			new OptionsCertificateProvider(),
 			configuration: inMemConf,

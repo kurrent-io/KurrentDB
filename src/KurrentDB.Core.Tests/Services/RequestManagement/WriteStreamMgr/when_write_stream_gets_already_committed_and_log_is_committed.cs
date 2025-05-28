@@ -31,7 +31,7 @@ public class when_write_stream_gets_already_committed_and_log_is_committed : Req
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _prepareLogPosition, PrepareFlags.SingleWrite | PrepareFlags.Data);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _prepareLogPosition, PrepareFlags.SingleWrite | PrepareFlags.Data);
 		yield return new ReplicationTrackingMessage.ReplicatedTo(_commitLogPosition);
 	}
 

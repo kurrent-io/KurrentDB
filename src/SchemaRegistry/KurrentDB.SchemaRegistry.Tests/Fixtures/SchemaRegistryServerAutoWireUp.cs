@@ -1,8 +1,7 @@
+using System.Net;
 using Grpc.Net.Client;
 using KurrentDB.Core;
 using KurrentDB.Surge.Testing;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
@@ -11,7 +10,6 @@ using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 public class SchemaRegistryServerAutoWireUp {
-	public static TestServer TestServer { get; private set; } = null!;
 	public static HttpClient HttpClient { get; private set; } = null!;
 	public static SchemaRegistryServiceClient Client { get; private set; } = null!;
 	public static ClusterVNodeApp ClusterVNodeApp { get; private set; } = null!;
@@ -28,14 +26,19 @@ public class SchemaRegistryServerAutoWireUp {
 		NodeServices = services;
 		NodeOptions = options;
 
-		TestServer = (TestServer)services.GetRequiredService<IServer>();
-		HttpClient = TestServer.CreateClient();
+		var serverUrl = new Uri(ClusterVNodeApp.ServerUrls.First());
 
-		Serilog.Log.Information("Test server started at {Url}", HttpClient.BaseAddress);
+		HttpClient = new HttpClient {
+			BaseAddress = serverUrl,
+			DefaultRequestVersion = HttpVersion.Version20,
+			DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact
+		};
+
+		Serilog.Log.Information("Test server started at {Url}", serverUrl);
 
 		Client = new SchemaRegistryServiceClient(
 			GrpcChannel.ForAddress(
-				HttpClient.BaseAddress!,
+				$"http://localhost:{serverUrl.Port}",
 				new GrpcChannelOptions {
 					HttpClient = HttpClient,
 					LoggerFactory = NodeServices.GetRequiredService<ILoggerFactory>()
@@ -54,7 +57,6 @@ public class SchemaRegistryServerAutoWireUp {
 
 	[After(Assembly)]
 	public static async Task AssemblyCleanUp() {
-		TestServer.Dispose();
 		HttpClient.Dispose();
 		await ClusterVNodeApp.DisposeAsync();
 	}

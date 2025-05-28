@@ -131,7 +131,7 @@ https://api.example.com/{schema-subject}
 For an event with schema subject "TestEvent", this would result in the URL:
 
 ```
-https://api.example.com/TestEvent
+https://api.example.com/test-event
 ```
 
 ### Tutorial

@@ -33,9 +33,9 @@ public class when_transaction_multiple_write_completes_successfully : RequestMan
 	}
 
 	protected override IEnumerable<Message> WithInitialMessages() {
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _event1Position, PrepareFlags.Data);
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _event2Position, PrepareFlags.Data);
-		yield return new StorageMessage.PrepareAck(InternalCorrId, _event3Position, PrepareFlags.Data);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _event1Position, PrepareFlags.Data);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _event2Position, PrepareFlags.Data);
+		yield return new StorageMessage.UncommittedPrepareChased(InternalCorrId, _event3Position, PrepareFlags.Data);
 	}
 
 	protected override Message When() {

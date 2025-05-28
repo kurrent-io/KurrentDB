@@ -53,6 +53,10 @@ public class ProjectionStateHandlerFactory {
 							.FirstOrDefault(v => v != null);
 				}
 
+				if (type is null) {
+					throw new NotSupportedException($"Could not find type \"{rest}\"");
+				}
+
 				var handler = Activator.CreateInstance(type, source, logger);
 				result = (IProjectionStateHandler)handler;
 				break;

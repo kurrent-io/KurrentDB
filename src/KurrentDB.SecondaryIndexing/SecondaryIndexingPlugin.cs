@@ -1,26 +1,57 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics.CodeAnalysis;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage.InMemory;
+using KurrentDB.SecondaryIndexing.Builders;
+using KurrentDB.SecondaryIndexing.Indices;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace KurrentDB.SecondaryIndexing;
 
-public interface ISecondaryIndexingPlugin : ISubsystemsPlugin {
-	IEnumerable<IVirtualStreamReader> IndicesVirtualStreamReaders { get; }
+public interface ISecondaryIndexingPlugin : ISubsystemsPlugin;
+
+public sealed class SecondaryIndexingPluginOptions {
+	public int? CheckpointCommitBatchSize { get; set; }
+	public uint? CheckpointCommitDelayMs { get; set; }
 }
 
 public static class SecondaryIndexingPluginFactory {
-	// TODO: For now, it's a dummy method, but it'll eventually get needed classes like IPublisher, ISubscriber and setup plugin
-	public static ISecondaryIndexingPlugin Create() =>
-		new SecondaryIndexingPlugin();
+	public static ISecondaryIndexingPlugin Create<TStreamId>(VirtualStreamReader virtualStreamReader) =>
+		new SecondaryIndexingPlugin<TStreamId>(virtualStreamReader);
 }
 
-internal class SecondaryIndexingPlugin(IEnumerable<IVirtualStreamReader>? indexingVirtualStreamReaders = null) : SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
-	public IEnumerable<IVirtualStreamReader> IndicesVirtualStreamReaders { get; } = indexingVirtualStreamReaders ?? [];
+internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStreamReader)
+	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
+	[Experimental("SECONDARY_INDEX")]
+	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
+		var options = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
+			.Get<SecondaryIndexingPluginOptions>();
+
+		services.AddHostedService(sp =>
+			new SecondaryIndexBuilder(
+				sp.GetRequiredService<ISecondaryIndex>(),
+				sp.GetRequiredService<IPublisher>(),
+				sp.GetRequiredService<ISubscriber>(),
+				options
+			)
+		);
+	}
+
+	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
+		base.ConfigureApplication(app, configuration);
+
+		var index = app.ApplicationServices.GetService<ISecondaryIndex>();
+
+		if (index != null)
+			virtualStreamReader.Register(index.Readers.ToArray());
+	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
 		var enabledOption =
