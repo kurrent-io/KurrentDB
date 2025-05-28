@@ -8,19 +8,21 @@ using Contracts = KurrentDB.Protocol.Registry.V2;
 namespace KurrentDB.SchemaRegistry.Data;
 
 static class SchemaQueriesMapping {
-    public static Contracts.SchemaValidationInfo MapToSchemaValidationInfo(dynamic source) =>
-        new () {
-            SchemaVersionId  = source.version_id,
-            SchemaDefinition = source.schema_definition.ToStringUtf8(),
-            DataFormat       = (Contracts.SchemaDataFormat)source.data_format,
-            Compatibility    = (Contracts.CompatibilityMode)source.compatibility
-        };
+	public static Contracts.SchemaValidationInfo MapToSchemaValidationInfo(dynamic source) =>
+		new() {
+			SchemaVersionId = source.version_id,
+			SchemaDefinition = source.schema_definition is ByteString bs
+				? bs.ToStringUtf8()
+				: ByteString.CopyFromUtf8(source.schema_definition),
+			DataFormat = (Contracts.SchemaDataFormat)source.data_format,
+			Compatibility = (Contracts.CompatibilityMode)source.compatibility
+		};
 
     public static MapField<string, string?> MapToTags(string source) =>
         source == "{}" ? new() : new() { JsonSerializer.Deserialize<Dictionary<string, string?>>(source) };
 
-    public static ByteString MapToSchemaDefinition(string source) =>
-        source.Length == 0 ? ByteString.Empty : ByteString.CopyFromUtf8(source);
+    public static ByteString MapToSchemaDefinition(string? source) =>
+        source is null || source.Length == 0 ? ByteString.Empty : ByteString.CopyFromUtf8(source);
 
     public static Contracts.SchemaDetails MapToSchemaDetails(dynamic source) =>
         new() {
