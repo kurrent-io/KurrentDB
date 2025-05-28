@@ -10,6 +10,7 @@ using KurrentDB.Connect.Producers.Configuration;
 using KurrentDB.Connect.Readers.Configuration;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Planes.Control;
+using KurrentDB.Connectors.Planes.Management;
 using Microsoft.Extensions.DependencyInjection;
 using static KurrentDB.Connectors.Planes.ConnectorsFeatureConventions;
 
@@ -22,13 +23,14 @@ public class ConnectorsControlRegistryTests(ITestOutputHelper output, Connectors
         // Arrange
         var getReaderBuilder   = Fixture.NodeServices.GetRequiredService<Func<SystemReaderBuilder>>();
         var getProducerBuilder = Fixture.NodeServices.GetRequiredService<Func<SystemProducerBuilder>>();
+        var startupMonitor     = Fixture.NodeServices.GetRequiredService<IStartupWorkCompletionMonitor>();
 
         var options = new ConnectorsControlRegistryOptions {
             Filter           = Filters.ManagementFilter,
             SnapshotStreamId = Fixture.NewStreamId() // Random stream ID to avoid test interference
         };
 
-        var sut = new ConnectorsControlRegistry(options, getReaderBuilder, getProducerBuilder, Fixture.TimeProvider);
+        var sut = new ConnectorsControlRegistry(startupMonitor, options, getReaderBuilder, getProducerBuilder, Fixture.TimeProvider);
 
         // Act
         var result = await sut.GetConnectors(cancellator.Token);
@@ -42,6 +44,7 @@ public class ConnectorsControlRegistryTests(ITestOutputHelper output, Connectors
         // Arrange
         var getReaderBuilder   = Fixture.NodeServices.GetRequiredService<Func<SystemReaderBuilder>>();
         var getProducerBuilder = Fixture.NodeServices.GetRequiredService<Func<SystemProducerBuilder>>();
+        var startupMonitor     = Fixture.NodeServices.GetRequiredService<IStartupWorkCompletionMonitor>();
 
         var connectorId = Fixture.NewConnectorId();
 
@@ -50,7 +53,7 @@ public class ConnectorsControlRegistryTests(ITestOutputHelper output, Connectors
             SnapshotStreamId = Streams.ControlConnectorsRegistryStream
         };
 
-        var sut = new ConnectorsControlRegistry(options, getReaderBuilder, getProducerBuilder, Fixture.TimeProvider);
+        var sut = new ConnectorsControlRegistry(startupMonitor, options, getReaderBuilder, getProducerBuilder, Fixture.TimeProvider);
 
         // Act
         var activatingMessage = Message.Builder

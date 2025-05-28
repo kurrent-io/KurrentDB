@@ -26,6 +26,7 @@ using KurrentDB.Connectors.Tests;
 using KurrentDB.System.Testing;
 using KurrentDB.Surge.Testing.Xunit.Extensions.AssemblyFixture;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using FakeTimeProvider = Microsoft.Extensions.Time.Testing.FakeTimeProvider;
 using WithExtension = KurrentDB.Surge.Testing.Extensions.WithExtension;
 
@@ -43,6 +44,11 @@ public partial class ConnectorsAssemblyFixture : ClusterVNodeFixture {
             services
                 .AddSingleton<TimeProvider>(TimeProvider)
                 .AddSingleton(LoggerFactory);
+
+            // Setup startup tasks manager
+            services.AddSingleton<SystemStartupManager>();
+            services.AddSingleton<IHostedService, SystemStartupManager>(ctx => ctx.GetRequiredService<SystemStartupManager>());
+            services.AddSingleton<IStartupWorkCompletionMonitor, SystemStartupManager>(ctx => ctx.GetRequiredService<SystemStartupManager>());
 
             // // Management
             // services.AddSingleton(ctx => new ConnectorsLicenseService(

@@ -17,6 +17,7 @@ using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Producers;
 using Kurrent.Surge.Readers;
 using KurrentDB.Connectors.Planes.Control.Model;
+using KurrentDB.Connectors.Planes.Management;
 using ConnectorSettings = System.Collections.Generic.IDictionary<string, string?>;
 
 namespace KurrentDB.Connectors.Planes.Control;
@@ -28,17 +29,20 @@ public record ConnectorsControlRegistryOptions {
 
 class ConnectorsControlRegistry {
     public ConnectorsControlRegistry(
+	    IStartupWorkCompletionMonitor startupWorkMonitor,
         ConnectorsControlRegistryOptions options,
         Func<SystemReaderBuilder> getReaderBuilder,
         Func<SystemProducerBuilder> getProducerBuilder,
         TimeProvider time
     ) {
+	    StartupWorkMonitor = startupWorkMonitor;
         Options  = options;
         Reader   = getReaderBuilder().ReaderId("ConnectorsControlRegistryReader").Create();
         Producer = getProducerBuilder().ProducerId("ConnectorsControlRegistryProducer").Create();
         Time     = time;
     }
 
+    IStartupWorkCompletionMonitor StartupWorkMonitor { get; }
     ConnectorsControlRegistryOptions Options  { get; }
     SystemReader                     Reader   { get; }
     SystemProducer                   Producer { get; }
@@ -49,6 +53,7 @@ class ConnectorsControlRegistry {
     /// </summary>
     /// <param name="cancellationToken">A CancellationToken to observe while waiting for the task to complete.</param>
     public async Task<GetConnectorsResult> GetConnectors(CancellationToken cancellationToken) {
+	    await StartupWorkMonitor.WhenCompletedAsync();
         var (state, checkpoint, snapshotPosition) = await LoadSnapshot(cancellationToken);
 
         RecordPosition? lastReadPosition = null;
