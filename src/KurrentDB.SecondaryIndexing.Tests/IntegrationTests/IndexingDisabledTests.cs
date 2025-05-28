@@ -3,21 +3,21 @@
 
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
-using KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
+using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using Xunit.Abstractions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
 [Collection("SecondaryIndexingPluginDisabled")]
-public class SecondaryIndexingPluginDisabledIntegrationTests(
+public class IndexingDisabledTests(
 	SecondaryIndexingDisabledFixture fixture,
 	ITestOutputHelper output
-) : SecondaryIndexingPluginIntegrationTest(fixture, output) {
+) : SecondaryIndexingTestBase(fixture, output) {
 	private readonly string[] _expectedEventData = ["""{"test":"123"}""", """{"test":"321"}"""];
 
 	[Fact]
-	public async Task IndexStreamIsNotSetUp_ForDisabledPlugin() {
+	public async Task Index_streams_should_not_be_found() {
 		var result = await fixture.AppendToStream(RandomStreamName(), _expectedEventData);
 
 		await Assert.ThrowsAsync<ReadResponseException.StreamNotFound>(async () =>

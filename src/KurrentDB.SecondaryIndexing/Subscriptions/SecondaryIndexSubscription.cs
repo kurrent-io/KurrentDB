@@ -23,7 +23,7 @@ public class SecondaryIndexSubscription(
 	private readonly CancellationTokenSource _cts = new();
 	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
-	private SecondaryIndexCommitter? _committer;
+	private Committer? _committer;
 
 	public void Subscribe() {
 		var position = index.GetLastPosition();

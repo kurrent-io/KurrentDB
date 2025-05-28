@@ -5,7 +5,7 @@ using FluentStorage.Utils.Extensions;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Indexes;
 
-namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
+namespace KurrentDB.SecondaryIndexing.Tests.Fakes;
 
 public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<ResolvedEvent>? pending = null): ISecondaryIndexProcessor {
 	private readonly object _lock = new();

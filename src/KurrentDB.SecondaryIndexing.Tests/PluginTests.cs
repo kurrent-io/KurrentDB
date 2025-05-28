@@ -4,15 +4,13 @@
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Plugins.TestHelpers;
+using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using Microsoft.Extensions.Configuration;
 using Assert = Xunit.Assert;
 
 namespace KurrentDB.SecondaryIndexing.Tests;
 
-public class LogV2SecondaryIndexingPluginTests : SecondaryIndexingPluginTests<string>;
-public class LogV3SecondaryIndexingPluginTests : SecondaryIndexingPluginTests<uint>;
-
-public abstract class SecondaryIndexingPluginTests<TStreamId> {
+public class PluginTests<TStreamId> {
 	[Fact]
 	public void is_disabled_by_default() {
 		using var sut = new SecondaryIndexingPlugin<TStreamId>(new VirtualStreamReader());

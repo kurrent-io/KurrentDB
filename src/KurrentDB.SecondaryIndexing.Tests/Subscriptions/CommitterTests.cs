@@ -5,7 +5,7 @@ using KurrentDB.SecondaryIndexing.Subscriptions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Subscriptions;
 
-public class SecondaryIndexCommitterTests {
+public class CommitterTests {
 	[Fact]
 	public async Task Commits_On_Threshold() {
 		// Given
@@ -13,7 +13,7 @@ public class SecondaryIndexCommitterTests {
 		var commitSignal = new ManualResetEventSlim(false);
 		var batchSize = 0;
 
-		var indexCommitter = new SecondaryIndexCommitter(5, 10000, () => {
+		var indexCommitter = new Committer(5, 10000, () => {
 			Interlocked.Increment(ref callCount);
 			batchSize = 5;
 			commitSignal.Set();
@@ -39,7 +39,7 @@ public class SecondaryIndexCommitterTests {
 		var callCount = 0;
 		var commitSignal = new ManualResetEventSlim(false);
 
-		var indexCommitter = new SecondaryIndexCommitter(1000, 10, () => {
+		var indexCommitter = new Committer(1000, 10, () => {
 			Interlocked.Increment(ref callCount);
 			commitSignal.Set();
 		}, CancellationToken.None);
@@ -59,7 +59,7 @@ public class SecondaryIndexCommitterTests {
 		// Given
 		var callCount = 0;
 
-		SecondaryIndexCommitter indexCommitter = null!;
+		Committer indexCommitter = null!;
 
 		var startedAt = DateTime.UtcNow;
 		var elapsed = new TaskCompletionSource<TimeSpan>();
@@ -96,7 +96,7 @@ public class SecondaryIndexCommitterTests {
 		var maxConcurrentCommits = 0;
 		var currentConcurrentCommits = 0;
 
-		var indexCommitter = new SecondaryIndexCommitter(3, 10000, () => {
+		var indexCommitter = new Committer(3, 10000, () => {
 			var currentCommits = Interlocked.Increment(ref currentConcurrentCommits);
 			maxConcurrentCommits = Math.Max(maxConcurrentCommits, currentCommits);
 			commitInProgress.Set();
@@ -125,7 +125,7 @@ public class SecondaryIndexCommitterTests {
 		var callCount = 0;
 		var commitSignal = new ManualResetEventSlim(false);
 
-		var indexCommitter = new SecondaryIndexCommitter(100, 5000, () => {
+		var indexCommitter = new Committer(100, 5000, () => {
 			Interlocked.Increment(ref callCount);
 			commitSignal.Set();
 		}, CancellationToken.None);
@@ -151,7 +151,7 @@ public class SecondaryIndexCommitterTests {
 		var callCount = 0;
 
 		// When
-		var indexCommitter = new SecondaryIndexCommitter(1000, 10, () => {
+		var indexCommitter = new Committer(1000, 10, () => {
 			Interlocked.Increment(ref callCount);
 		}, CancellationToken.None);
 		await Task.Delay(30);
@@ -168,7 +168,7 @@ public class SecondaryIndexCommitterTests {
 		var cts = new CancellationTokenSource();
 
 		// When
-		var indexCommitter = new SecondaryIndexCommitter(1, 1000, () => {
+		var indexCommitter = new Committer(1, 1000, () => {
 			Interlocked.Increment(ref callCount);
 		}, cts.Token);
 		await cts.CancelAsync();
@@ -184,21 +184,21 @@ public class SecondaryIndexCommitterTests {
 	[Fact]
 	public async Task Increment_After_Dispose_Throws() {
 		// Given
-		var indexCommitter = new SecondaryIndexCommitter(10, 100, () => { }, CancellationToken.None);
+		var indexCommitter = new Committer(10, 100, () => { }, CancellationToken.None);
 
 		// When
 		await indexCommitter.DisposeAsync();
 
 		// Then
 		var ex = Assert.Throws<ObjectDisposedException>(() => indexCommitter.Increment());
-		Assert.Contains(nameof(SecondaryIndexCommitter), ex.Message);
+		Assert.Contains(nameof(Committer), ex.Message);
 	}
 
 	[Fact]
 	public async Task Multiple_Dispose_Calls_Are_Safe() {
 		// Given
 		var disposeCalled = 0;
-		var indexCommitter = new SecondaryIndexCommitter(10, 100, () => { }, CancellationToken.None);
+		var indexCommitter = new Committer(10, 100, () => { }, CancellationToken.None);
 
 		try {
 			await indexCommitter.DisposeAsync();
@@ -217,7 +217,7 @@ public class SecondaryIndexCommitterTests {
 	[Fact]
 	public async Task Concurrent_Dispose_Calls_Are_Safe() {
 		// Given
-		var indexCommitter = new SecondaryIndexCommitter(10, 100, () => { }, CancellationToken.None);
+		var indexCommitter = new Committer(10, 100, () => { }, CancellationToken.None);
 		var exceptions = 0;
 
 		// When
@@ -245,7 +245,7 @@ public class SecondaryIndexCommitterTests {
 		var commitCompleted = false;
 		var commitTask = new TaskCompletionSource<bool>();
 
-		var indexCommitter = new SecondaryIndexCommitter(5, 1000, () => {
+		var indexCommitter = new Committer(5, 1000, () => {
 			commitStarted.Set();
 			commitTask.SetResult(true); // Signal that commit has started
 			commitBlocker.Wait(); // Wait indefinitely (no timeout)

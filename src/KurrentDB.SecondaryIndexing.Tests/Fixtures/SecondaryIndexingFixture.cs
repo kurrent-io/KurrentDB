@@ -12,7 +12,7 @@ using KurrentDB.System.Testing;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using StreamRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision;
 
-namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
+namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
 using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
 
@@ -22,8 +22,10 @@ public sealed class SecondaryIndexingPluginDisabledDefinition : ICollectionFixtu
 [CollectionDefinition("SecondaryIndexingPluginEnabled")]
 public sealed class SecondaryIndexingPluginEnabledDefinition : ICollectionFixture<SecondaryIndexingEnabledFixture>;
 
+[UsedImplicitly]
 public class SecondaryIndexingEnabledFixture() : SecondaryIndexingFixture(true);
 
+[UsedImplicitly]
 public class SecondaryIndexingDisabledFixture() : SecondaryIndexingFixture(false);
 
 public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
@@ -72,7 +74,11 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			} catch (ReadResponseException.StreamNotFound ex) {
 				streamNotFound = ex;
 			}
-		} while (!reachedPosition && endTime >= DateTime.UtcNow);
+
+			if (!reachedPosition) {
+				await Task.Delay(100, ct);
+			}
+		} while (!reachedPosition && DateTime.UtcNow < endTime);
 
 		if (events.Count == 0 && streamNotFound != null)
 			throw streamNotFound;

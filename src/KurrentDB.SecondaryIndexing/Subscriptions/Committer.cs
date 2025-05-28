@@ -11,7 +11,7 @@ namespace KurrentDB.SecondaryIndexing.Subscriptions;
 // Calls commitAction when the delay is reached or when Increment is called enough times
 // to reach the batch size. Either trigger resets the increment count and the timeout.
 // commitAction is only ever called if Increment has been called at least once.
-public sealed class SecondaryIndexCommitter : IAsyncDisposable {
+public sealed class Committer : IAsyncDisposable {
 	private readonly int _batchSize;
 	private readonly TimeSpan _timeout;
 	private readonly Action _commitAction;
@@ -21,7 +21,7 @@ public sealed class SecondaryIndexCommitter : IAsyncDisposable {
 
 	private volatile int _counter;
 
-	public SecondaryIndexCommitter(
+	public Committer(
 		int batchSize,
 		uint delayMs,
 		Action commitAction,

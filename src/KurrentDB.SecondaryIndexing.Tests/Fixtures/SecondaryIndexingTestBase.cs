@@ -3,16 +3,16 @@
 
 using Xunit.Abstractions;
 
-namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
+namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
-public abstract class SecondaryIndexingPluginIntegrationTest {
+public abstract class SecondaryIndexingTestBase {
 	protected SecondaryIndexingFixture Fixture { get; }
 
 	protected const string CategoryName = "testCategory";
 
-	protected static string RandomStreamName() => $"${CategoryName}-{Guid.NewGuid()}";
+	protected static string RandomStreamName() => $"{CategoryName}-{Guid.NewGuid()}";
 
-	protected SecondaryIndexingPluginIntegrationTest(SecondaryIndexingFixture fixture, ITestOutputHelper output) {
+	protected SecondaryIndexingTestBase(SecondaryIndexingFixture fixture, ITestOutputHelper output) {
 		Fixture = fixture;
 		Fixture.CaptureTestRun(output);
 	}

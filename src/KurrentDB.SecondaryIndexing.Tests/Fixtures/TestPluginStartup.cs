@@ -6,12 +6,11 @@ using EventStore.Plugins.Licensing;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.TransactionLog.Chunks;
-using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace KurrentDB.SecondaryIndexing.Tests;
+namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
 internal static class TestPluginStartup {
 	public static WebApplication Configure<TStreamId>(SecondaryIndexingPlugin<TStreamId> plugin,
@@ -20,7 +19,7 @@ internal static class TestPluginStartup {
 
 		var builder = WebApplication.CreateBuilder();
 
-		builder.Services.AddSingleton<ILicenseService>(new Fixtures.FakeLicenseService())
+		builder.Services.AddSingleton<ILicenseService>(new Plugins.TestHelpers.Fixtures.FakeLicenseService())
 			.AddSingleton(new TFChunkDbConfig("mem", 10000, 0,  new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1),
 				new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1),
 				new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1), true))
