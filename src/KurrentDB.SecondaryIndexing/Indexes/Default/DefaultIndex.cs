@@ -28,7 +28,7 @@ internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 
 	public EventTypeIndex<TStreamId> EventTypeIndex { get; set; }
 
-	public StreamIndex StreamIndex { get; set; }
+	public StreamIndex<TStreamId> StreamIndex { get; set; }
 
 	public DefaultIndex(DuckDbDataSource db, IReadIndex<TStreamId> readIndex) {
 		_db = db;
@@ -38,7 +38,7 @@ internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 
 		CategoryIndex = new CategoryIndex<TStreamId>(db, connection, readIndex);
 		EventTypeIndex = new EventTypeIndex<TStreamId>(db, connection, readIndex);
-		StreamIndex = new StreamIndex(connection);
+		StreamIndex = new StreamIndex<TStreamId>(connection, readIndex);
 
 		var processor = new DefaultSecondaryIndexProcessor<TStreamId>(connection, this);
 		Processor = processor;

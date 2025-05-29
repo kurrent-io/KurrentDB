@@ -340,6 +340,7 @@ public class LogFormatAbstractorV3Tests : IAsyncLifetime {
 		public long NotCachedStreamInfo => throw new NotImplementedException();
 
 		public long HashCollisions => throw new NotImplementedException();
+		public IIndexBackend<StreamId> Backend => throw new NotImplementedException();
 
 		public ValueTask<StorageMessage.EffectiveAcl> GetEffectiveAcl(StreamId streamId, CancellationToken token) =>
 			ValueTask.FromException<StorageMessage.EffectiveAcl>(new NotImplementedException());
@@ -415,6 +416,10 @@ public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return null;
 	}
 
+	public long? SetStreamSecondaryIndexId(TStreamId streamId, long secondaryIndexId) {
+		return null;
+	}
+
 	public StreamMetadata SetStreamMetadata(TStreamId streamId, StreamMetadata metadata) {
 		throw new NotImplementedException();
 	}
@@ -432,6 +437,10 @@ public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 	}
 
 	public long? UpdateStreamLastEventNumber(int cacheVersion, TStreamId streamId, long? lastEventNumber) {
+		throw new NotImplementedException();
+	}
+
+	public long? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, long? secondaryIndexId) {
 		throw new NotImplementedException();
 	}
 

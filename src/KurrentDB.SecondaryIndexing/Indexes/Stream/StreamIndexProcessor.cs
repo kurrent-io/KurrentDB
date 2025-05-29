@@ -1,18 +1,21 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
 using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.Extensions.Caching.Memory;
 using static KurrentDB.SecondaryIndexing.Indexes.Stream.StreamSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
-internal class StreamIndexProcessor(DuckDBAdvancedConnection connection) : Disposable, ISecondaryIndexProcessor {
-	private readonly MemoryCache _streamIdCache = new(new MemoryCacheOptions());
-	private readonly MemoryCacheEntryOptions _options = new() { SlidingExpiration = TimeSpan.FromMinutes(10) };
+internal class StreamIndexProcessor<TStreamId>(
+	DuckDBAdvancedConnection connection,
+	IIndexBackend<TStreamId> indexReaderBackend
+) : Disposable, ISecondaryIndexProcessor {
 	private long _lastLogPosition;
 	private readonly Appender _appender = new(connection, "streams"u8);
 
@@ -24,23 +27,28 @@ internal class StreamIndexProcessor(DuckDBAdvancedConnection connection) : Dispo
 		if (IsDisposingOrDisposed)
 			return;
 
-		var name = resolvedEvent.OriginalStreamId;
+		string name = resolvedEvent.OriginalStreamId;
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
 
-		if (_streamIdCache.TryGetValue(name, out var existing)) {
-			LastIndexed = (long)existing!;
+		// TODO: meh, think if we can drop constraint or at least use something like IParsable
+		var streamId = Unsafe.As<string, TStreamId>(ref name);
+
+		var cached = indexReaderBackend.TryGetStreamLastEventNumber(streamId);
+
+		if (cached.SecondaryIndexId.HasValue) {
+			LastIndexed = cached.SecondaryIndexId.Value;
 			return;
 		}
 
 		var fromDb = connection.QueryFirstOrDefault<QueryStreamArgs, long, QueryStreamIdSql>(new() { StreamName = name });
 		if (fromDb.HasValue) {
-			_streamIdCache.Set(name, fromDb, _options);
+			indexReaderBackend.UpdateStreamSecondaryIndexId(1, streamId, fromDb.Value);
 			LastIndexed = fromDb.Value;
 			return;
 		}
 
 		var id = ++Seq;
-		_streamIdCache.Set(name, id, _options);
+		indexReaderBackend.UpdateStreamSecondaryIndexId(1, streamId, id);
 
 		using var row = _appender.CreateRow();
 		row.Append(id);

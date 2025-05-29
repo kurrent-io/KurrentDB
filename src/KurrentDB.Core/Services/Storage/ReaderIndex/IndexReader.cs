@@ -24,6 +24,7 @@ public interface IIndexReader<TStreamId> {
 	long CachedStreamInfo { get; }
 	long NotCachedStreamInfo { get; }
 	long HashCollisions { get; }
+	IIndexBackend<TStreamId> Backend { get; }
 
 	// streamId drives the read, streamName is only for populating on the result.
 	// this was less messy than safely adding the streamName to the EventRecord at some point after construction
@@ -70,6 +71,8 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 	public long HashCollisions {
 		get { return Interlocked.Read(ref _hashCollisions); }
 	}
+
+	public IIndexBackend<TStreamId> Backend => _backend;
 
 	private readonly IIndexBackend<TStreamId> _backend;
 	private readonly ITableIndex<TStreamId> _tableIndex;
