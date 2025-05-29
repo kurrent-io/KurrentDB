@@ -11,8 +11,6 @@ using KurrentDB.SchemaRegistry.Domain;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Services.Domain;
-using Microsoft.Extensions.Logging;
-
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 
 namespace KurrentDB.SchemaRegistry;
@@ -58,13 +56,8 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             var result = await Commands.Handle(req, ct);
 
             return result.Match(
-                ok => {
-                    // var evt = ok.Changes.GetSingleEvent<SchemaUpdated>();
-                    return new UpdateSchemaResponse {
-
-                    };
-                },
-                ko => throw ko.Exception ?? new(ko.ErrorMessage)
+	            ok => new UpdateSchemaResponse(),
+	            ko => throw ko.Exception ?? new(ko.ErrorMessage)
             );
         });
 
@@ -72,11 +65,8 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
         Execute(request, context, async (req, ct) => {
             var result = await Commands.Handle(req, ct);
 
-            return await result.Match(
-                async ok => {
-                    await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
-                    return new DeleteSchemaResponse();
-                },
+            return result.Match(
+                 ok => new DeleteSchemaResponse(),
                 ko => throw ko.Exception ?? new(ko.ErrorMessage)
             );
         });

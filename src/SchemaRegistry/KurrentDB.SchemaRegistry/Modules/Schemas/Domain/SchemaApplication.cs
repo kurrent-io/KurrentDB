@@ -100,22 +100,35 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
             if (cmd.UpdateMask.Paths.Count == 0)
                 throw new DomainExceptions.EntityException("Update mask must contain at least one field");
 
-            // Define allowed fields
-            var allowedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
-                "Details.Description",
-                "Details.Tags"
+            var knownPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+	            "Details.Description",
+	            "Details.Tags",
+	            "Details.Compatibility",
+	            "Details.DataFormat"
             };
 
-            // Check for unknown fields before processing
-            var unknownField = cmd.UpdateMask.Paths.FirstOrDefault(path => !allowedPaths.Contains(path));
+            var modifiablePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+	            "Details.Description",
+	            "Details.Tags"
+            };
+
+            // Check for unknown fields first
+            var unknownField = cmd.UpdateMask.Paths.FirstOrDefault(path => !knownPaths.Contains(path));
             if (unknownField != null)
-                throw new DomainExceptions.EntityException($"Unknown field {unknownField} in update mask");
+	            throw new DomainExceptions.EntityException($"Unknown field {unknownField} in update mask");
 
-            if (cmd.UpdateMask.Paths.Contains("Details.Compatibility", StringComparer.OrdinalIgnoreCase))
-                throw new DomainExceptions.EntityNotModified("Schema", state.SchemaName, "Compatibility mode is not modifiable");
+            // Check for non-modifiable fields
+            var nonModifiableField = cmd.UpdateMask.Paths.FirstOrDefault(path =>
+	            knownPaths.Contains(path) && !modifiablePaths.Contains(path));
 
-            if (cmd.UpdateMask.Paths.Contains("Details.DataFormat", StringComparer.OrdinalIgnoreCase))
-                throw new DomainExceptions.EntityNotModified("Schema", state.SchemaName, "DataFormat is not modifiable");
+            if (nonModifiableField != null) {
+	            var fieldDisplayName = nonModifiableField switch {
+		            var p when p.Equals("Details.Compatibility", StringComparison.OrdinalIgnoreCase) => "Compatibility mode",
+		            var p when p.Equals("Details.DataFormat", StringComparison.OrdinalIgnoreCase) => "DataFormat",
+		            _ => nonModifiableField
+	            };
+	            throw new DomainExceptions.EntityNotModified("Schema", state.SchemaName, $"{fieldDisplayName} is not modifiable");
+            }
 
             return cmd.UpdateMask.Paths.Aggregate(new List<object>(), (seed, path) => {
                 if (path.Equals("Details.Description", StringComparison.OrdinalIgnoreCase)) {

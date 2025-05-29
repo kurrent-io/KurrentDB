@@ -1,12 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
+		<OutputType>Library</OutputType>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
 		<LangVersion>preview</LangVersion>
 <!--		<Deterministic>true</Deterministic>-->
 		<NoWarn>xUnit1041</NoWarn>
 		<IsTestProject>false</IsTestProject>
+		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -53,9 +55,9 @@
 		</None>
 	</ItemGroup>
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+	<!-- <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="9.0.4"/>
-	</ItemGroup>
+	</ItemGroup> -->
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
 		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.16"/>

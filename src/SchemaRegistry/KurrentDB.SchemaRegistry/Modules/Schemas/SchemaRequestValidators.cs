@@ -132,6 +132,17 @@ public class GetSchemaVersionByIdRequestValidator : AbstractValidator<GetSchemaV
 }
 
 [UsedImplicitly]
+public class ListRegisteredSchemasRequestValidator : AbstractValidator<ListRegisteredSchemasRequest> {
+    public static readonly ListRegisteredSchemasRequestValidator Instance = new();
+
+    public ListRegisteredSchemasRequestValidator() {
+        // RuleFor(x => x.NamePrefix)
+        //     .NotEmpty()
+        //     .WithMessage("Schema name must not be empty");
+    }
+}
+
+[UsedImplicitly]
 public class ListSchemasRequestValidator : AbstractValidator<ListSchemasRequest> {
     public static readonly ListSchemaVersionsRequestValidator Instance = new();
 

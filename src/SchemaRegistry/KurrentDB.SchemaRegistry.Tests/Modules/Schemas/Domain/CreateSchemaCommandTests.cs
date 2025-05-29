@@ -1,3 +1,8 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
@@ -12,7 +17,9 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class CreateSchemaCommandTests : SchemaApplicationTestFixture {
-    [Test, Timeout(20_000)]
+    const int TestTimeoutMs = 20_000;
+
+    [Test, Timeout(TestTimeoutMs)]
     public async Task registers_initial_version_of_new_schema(CancellationToken cancellationToken) {
         // Arrange
         var expectedEvent = new SchemaCreated {
@@ -56,7 +63,7 @@ public class CreateSchemaCommandTests : SchemaApplicationTestFixture {
         schemaCreated.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.SchemaVersionId));
     }
 
-    [Test, Timeout(20_000)]
+    [Test, Timeout(TestTimeoutMs)]
     public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
         // Arrange
         var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
