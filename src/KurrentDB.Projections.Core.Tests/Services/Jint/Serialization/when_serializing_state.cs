@@ -27,6 +27,7 @@ public class when_serializing_state {
 		_parser = new JsonParser(_engine);
 		_builtIn = new JsonSerializer(_engine);
 		_sut = new JintProjectionStateHandler(
+			projectionName: "projection",
 			source: "",
 			enableContentTypeValidation: false,
 			compilationTimeout: TimeSpan.FromMilliseconds(500),

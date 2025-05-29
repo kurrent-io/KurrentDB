@@ -45,7 +45,8 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	private JsValue _state;
 	private JsValue _sharedState;
 
-	public JintProjectionStateHandler(string source, bool enableContentTypeValidation, TimeSpan compilationTimeout, TimeSpan executionTimeout) {
+	public JintProjectionStateHandler(string projectionName, string source, bool enableContentTypeValidation,
+		TimeSpan compilationTimeout, TimeSpan executionTimeout, IJsFunctionCaller? jsFunctionCallerOverride = null) {
 
 		_enableContentTypeValidation = enableContentTypeValidation;
 		_definitionBuilder = new SourceDefinitionBuilder();
@@ -55,7 +56,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		_engine = new Engine(opts => opts.Constraint(timeConstraint).DisableStringCompilation());
 		_state = JsValue.Undefined;
 		_sharedState = JsValue.Undefined;
-		_interpreterRuntime = new InterpreterRuntime(_engine, _definitionBuilder);
+		_interpreterRuntime = new InterpreterRuntime(projectionName, _engine, _definitionBuilder, jsFunctionCallerOverride);
 		_engine.Global.FastAddProperty("log", new ClrFunction(_engine, "log", Log), false, false, false);
 
 		timeConstraint.Compiling();
@@ -440,7 +441,9 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		private readonly JsValue _outputToInstance;
 		private readonly JsValue _definesStateTransformInstance;
 
+		private readonly string _projectionName;
 		private readonly SourceDefinitionBuilder _definitionBuilder;
+		private readonly IJsFunctionCaller _jsFunctionCaller;
 		private readonly JsonParser _parser;
 
 		private static readonly Dictionary<string, Action<InterpreterRuntime>> _possibleProperties = new Dictionary<string, Action<InterpreterRuntime>>() {
@@ -480,9 +483,15 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		private readonly List<string> _definitionFunctions;
 
-		public InterpreterRuntime(Engine engine, SourceDefinitionBuilder builder) : base(engine) {
+		public InterpreterRuntime(
+			string projectionName,
+			Engine engine,
+			SourceDefinitionBuilder builder,
+			IJsFunctionCaller? jsFunctionCallerOverride = null) : base(engine) {
 
+			_projectionName = projectionName;
 			_definitionBuilder = builder;
+			_jsFunctionCaller = jsFunctionCallerOverride ?? IJsFunctionCaller.Default;
 			_handlers = new Dictionary<string, ScriptFunction>(StringComparer.Ordinal);
 			_createdHandlers = new List<ScriptFunction>();
 			_transforms = new List<(TransformType, ScriptFunction)>();
@@ -705,19 +714,19 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 
 		public JsValue InitializeState() {
-			return _init == null ? new JsObject(Engine) : _init.Call();
+			return _init == null ? new JsObject(Engine) : _jsFunctionCaller.Call(_projectionName, "$init", _init);
 		}
 
 		public JsValue InitializeSharedState() {
-			return _initShared == null ? new JsObject(Engine) : _initShared.Call();
+			return _initShared == null ? new JsObject(Engine) : _jsFunctionCaller.Call(_projectionName, "$initShared", _initShared);
 		}
 
 		public JsValue Handle(JsValue state, EventEnvelope eventEnvelope) {
 			JsValue newState;
 			if (_handlers.TryGetValue(eventEnvelope.EventType, out var handler)) {
-				newState = handler.Call(state, FromObject(Engine, eventEnvelope));
+				newState = _jsFunctionCaller.Call(_projectionName, eventEnvelope.EventType, handler, state, FromObject(Engine, eventEnvelope));
 			} else if (_any != null) {
-				newState = _any.Call(state, FromObject(Engine, eventEnvelope));
+				newState = _jsFunctionCaller.Call(_projectionName, "$any", _any, state, FromObject(Engine, eventEnvelope));
 			} else {
 				newState = eventEnvelope.BodyRaw;
 			}
@@ -728,10 +737,10 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			foreach (var (type, transform) in _transforms) {
 				switch (type) {
 					case TransformType.Transform:
-						state = transform.Call(state);
+						state = _jsFunctionCaller.Call(_projectionName, "transformBy", transform, state);
 						break;
 					case TransformType.Filter: {
-						var result = transform.Call(state);
+						var result = _jsFunctionCaller.Call(_projectionName, "filterBy", transform, state);
 						if (!(result.IsBoolean() && result.AsBoolean()) || result == Null || result == Undefined) {
 							return Null;
 						}
@@ -789,13 +798,13 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		public JsValue GetPartition(EventEnvelope envelope) {
 			if (_partitionFunction != null)
-				return _partitionFunction.Call(envelope);
+				return _jsFunctionCaller.Call(_projectionName, "partitionBy", _partitionFunction, envelope);
 			return Null;
 		}
 
 		public void HandleCreated(JsValue state, EventEnvelope envelope) {
 			for (int i = 0; i < _createdHandlers.Count; i++) {
-				_createdHandlers[i].Call(Undefined, new[] { state, envelope });
+				_jsFunctionCaller.Call(_projectionName, "$created", _createdHandlers[i], state, envelope);
 			}
 		}
 
@@ -816,7 +825,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		public void HandleDeleted(JsValue state, string partition, bool isSoftDelete) {
 			if (_deleted != null) {
-				_deleted.Call(this, new JsValue[] { state, Null, partition, isSoftDelete });
+				_jsFunctionCaller.Call(_projectionName, "$deleted", _deleted, state, Null, partition, isSoftDelete);
 			}
 		}
 	}

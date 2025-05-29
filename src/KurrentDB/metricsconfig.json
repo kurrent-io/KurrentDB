@@ -20,6 +20,8 @@
 
 	"ProjectionStats": true,
 
+	"ProjectionExecutionStats": false,
+
 	"PersistentSubscriptionStats": true,
 
 	"Checkpoints": {

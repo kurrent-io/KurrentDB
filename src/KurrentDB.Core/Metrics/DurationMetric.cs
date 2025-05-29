@@ -7,7 +7,7 @@ using KurrentDB.Core.Time;
 
 namespace KurrentDB.Core.Metrics;
 
-public class DurationMetric {
+public class DurationMetric : IDurationMetric {
 	private readonly Histogram<double> _histogram;
 	private readonly IClock _clock;
 
