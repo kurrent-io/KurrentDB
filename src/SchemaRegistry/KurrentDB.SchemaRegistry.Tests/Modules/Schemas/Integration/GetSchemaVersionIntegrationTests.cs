@@ -4,6 +4,7 @@
 using Bogus;
 using Elastic.Clients.Elasticsearch.Nodes;
 using Google.Protobuf;
+using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
@@ -82,5 +83,30 @@ public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
 		getSchemaResponse.Should().NotBeNull();
 		getSchemaResponse.Version.SchemaVersionId.Should().Be(result.SchemaVersionId);
 		getSchemaResponse.Version.VersionNumber.Should().Be(result.VersionNumber);
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task get_schema_version_with_stream_name_not_found(CancellationToken cancellationToken) {
+		var ex = await FluentActions.Awaiting(async () => await Client.GetSchemaVersionAsync(
+			new GetSchemaVersionRequest {
+				SchemaName = Guid.NewGuid().ToString(),
+				VersionNumber = 1,
+			},
+			cancellationToken: cancellationToken
+		)).Should().ThrowAsync<RpcException>();
+
+		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task get_schema_version_with_version_id_not_found(CancellationToken cancellationToken) {
+		var ex = await FluentActions.Awaiting(async () => await Client.GetSchemaVersionByIdAsync(
+			new GetSchemaVersionByIdRequest {
+				SchemaVersionId = Guid.NewGuid().ToString()
+			},
+			cancellationToken: cancellationToken
+		)).Should().ThrowAsync<RpcException>();
+
+		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 }

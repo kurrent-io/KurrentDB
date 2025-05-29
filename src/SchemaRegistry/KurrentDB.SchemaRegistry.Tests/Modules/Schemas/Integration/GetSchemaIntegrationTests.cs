@@ -70,4 +70,17 @@ public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
 		getSchemaResult.Success.Schema.SchemaName.Should().Be(expectedEvent.SchemaName);
 		getSchemaResult.Success.Schema.Details.Should().BeEquivalentTo(details);
 	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task get_schema_not_found(CancellationToken cancellationToken) {
+		var result = await Client.GetSchemaAsync(
+			new GetSchemaRequest {
+				SchemaName = Guid.NewGuid().ToString(),
+			},
+			cancellationToken: cancellationToken
+		);
+
+		result.ResultCase.Should().Be(GetSchemaResponse.ResultOneofCase.Failure);
+		result.Failure.NotFound.Should().NotBeNull();
+	}
 }
