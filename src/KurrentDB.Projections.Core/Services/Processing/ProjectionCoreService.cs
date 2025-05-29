@@ -10,6 +10,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Services.TimerService;
 using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
 using Serilog;
@@ -74,7 +75,7 @@ public class ProjectionCoreService
 		_timeProvider = timeProvider;
 		_processingStrategySelector = new ProcessingStrategySelector(_subscriptionDispatcher, configuration.MaxProjectionStateSize);
 		_factory = new ProjectionStateHandlerFactory(TimeSpan.FromMilliseconds(configuration.ProjectionCompilationTimeout),
-			TimeSpan.FromMilliseconds(configuration.ProjectionExecutionTimeout));
+			TimeSpan.FromMilliseconds(configuration.ProjectionExecutionTimeout), configuration.ProjectionCoreTracker);
 	}
 
 	public ILogger Logger {
@@ -152,6 +153,7 @@ public class ProjectionCoreService
 			//TODO: factory method can throw
 			var stateHandler = CreateStateHandler(_factory,
 				_logger,
+				message.Name,
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
@@ -300,11 +302,13 @@ public class ProjectionCoreService
 
 	public static IProjectionStateHandler CreateStateHandler(ProjectionStateHandlerFactory factory,
 		ILogger logger,
+		string name,
 		string handlerType,
 		string query,
 		bool enableContentTypeValidation,
 		int? projectionExecutionTimeout) {
 		var stateHandler = factory.Create(
+			name,
 			handlerType,
 			query,
 			enableContentTypeValidation,
