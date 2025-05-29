@@ -69,7 +69,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			try {
 				events = await ReadStream(streamName, ct).ToListAsync(ct);
 
-				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition <= (long)position.CommitPosition;
+				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition >= (long)position.CommitPosition;
 			} catch (ReadResponseException.StreamNotFound ex) {
 				streamNotFound = ex;
 			}
