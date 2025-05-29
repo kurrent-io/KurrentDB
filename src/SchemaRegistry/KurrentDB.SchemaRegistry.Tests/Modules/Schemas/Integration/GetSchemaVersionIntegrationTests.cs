@@ -48,4 +48,39 @@ public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
 		getSchemaResponse.Version.SchemaVersionId.Should().Be(result.SchemaVersionId);
 		getSchemaResponse.Version.VersionNumber.Should().Be(result.VersionNumber);
 	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task get_schema_version_by_id(CancellationToken cancellationToken) {
+		// Arrange
+		var schemaName = NewSchemaName();
+
+		var details = new SchemaDetails {
+			Description = Faker.Lorem.Word(),
+			DataFormat = SchemaDataFormat.Json,
+			Compatibility = CompatibilityMode.Backward,
+			Tags = {  }
+		};
+
+		// Act
+		var result = await Client.CreateSchemaAsync(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
+				Details = details,
+			},
+			cancellationToken: cancellationToken
+		);
+
+		// Assert
+		var getSchemaResponse = await Client.GetSchemaVersionByIdAsync(
+			new GetSchemaVersionByIdRequest {
+				SchemaVersionId = result.SchemaVersionId
+			},
+			cancellationToken: cancellationToken
+		);
+
+		getSchemaResponse.Should().NotBeNull();
+		getSchemaResponse.Version.SchemaVersionId.Should().Be(result.SchemaVersionId);
+		getSchemaResponse.Version.VersionNumber.Should().Be(result.VersionNumber);
+	}
 }
