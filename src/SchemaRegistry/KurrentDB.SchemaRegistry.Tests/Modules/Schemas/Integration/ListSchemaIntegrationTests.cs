@@ -153,4 +153,61 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		listSchemasResponse.Schemas[1].LatestSchemaVersion.Should().Be(schema2.VersionNumber);
 		listSchemasResponse.Schemas[1].Details.Should().BeEquivalentTo(details2);
 	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task list_registered_schemas_with_prefix(CancellationToken cancellationToken) {
+		var prefix = NewPrefix();
+		var schemaName1 = NewSchemaName(prefix);
+		var schemaName2 = NewSchemaName(prefix);
+
+		// Arrange
+		await Client.CreateSchemaAsync(new CreateSchemaRequest {
+			SchemaName = schemaName1,
+			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
+			Details = new SchemaDetails {
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = CompatibilityMode.Backward,
+				Description = Faker.Lorem.Text(),
+			}
+		}, cancellationToken: cancellationToken);
+
+
+		await Client.RegisterSchemaVersionAsync( new RegisterSchemaVersionRequest {
+			SchemaName = schemaName1,
+			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
+		}, cancellationToken: cancellationToken);
+
+		var schema1 = await Client.GetSchemaAsync(new GetSchemaRequest {
+			SchemaName = schemaName1
+		}, cancellationToken: cancellationToken);
+
+		await Client.CreateSchemaAsync(new CreateSchemaRequest {
+			SchemaName = schemaName2,
+			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
+			Details = new SchemaDetails {
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = CompatibilityMode.Backward,
+				Description = Faker.Lorem.Text(),
+			}
+		}, cancellationToken: cancellationToken);
+
+		var schema2 = await Client.GetSchemaAsync(new GetSchemaRequest {
+			SchemaName = schemaName2
+		}, cancellationToken: cancellationToken);
+
+		var listSchemasResponse = await Client.ListRegisteredSchemasAsync(new ListRegisteredSchemasRequest {
+			SchemaNamePrefix = prefix,
+		}, cancellationToken: cancellationToken);
+
+		listSchemasResponse.Should().NotBeNull();
+		listSchemasResponse.Schemas.Count.Should().Be(2);
+
+		var schemas = listSchemasResponse.Schemas.OrderBy(x => x.RegisteredAt).ToList();
+
+		schemas[0].SchemaName.Should().Be(schemaName1);
+		schemas[0].VersionNumber.Should().Be(schema1.Success.Schema.LatestSchemaVersion);
+
+		schemas[1].SchemaName.Should().Be(schema2.Success.Schema.SchemaName);
+		schemas[1].VersionNumber.Should().Be(schema2.Success.Schema.LatestSchemaVersion);
+	}
 }
