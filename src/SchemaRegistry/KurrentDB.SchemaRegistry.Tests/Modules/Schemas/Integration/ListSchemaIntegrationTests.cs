@@ -308,4 +308,42 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		listSchemasResponse.Schemas[0].SchemaName.Should().Be(schemaName);
 		listSchemasResponse.Schemas[0].VersionNumber.Should().Be(schema.Success.Schema.LatestSchemaVersion);
 	}
+
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task list_schema_versions(CancellationToken cancellationToken) {
+		var schemaName = NewSchemaName();
+
+		// Arrange
+		var createResult = await Client.CreateSchemaAsync(new CreateSchemaRequest {
+			SchemaName = schemaName,
+			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
+			Details = new SchemaDetails {
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = CompatibilityMode.Backward,
+				Description = Faker.Lorem.Text(),
+			},
+		}, cancellationToken: cancellationToken);
+
+
+		var registerResult = await Client.RegisterSchemaVersionAsync(new RegisterSchemaVersionRequest {
+			SchemaName = schemaName,
+			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
+		}, cancellationToken: cancellationToken);
+
+		var listSchemasResponse = await Client.ListSchemaVersionsAsync(new ListSchemaVersionsRequest {
+			SchemaName = schemaName,
+		}, cancellationToken: cancellationToken);
+
+		listSchemasResponse.Should().NotBeNull();
+		listSchemasResponse.Versions.Count.Should().Be(2);
+
+		var schemas = listSchemasResponse.Versions.OrderBy(x => x.RegisteredAt).ToList();
+
+		schemas[0].VersionNumber.Should().Be(1);
+		schemas[0].SchemaVersionId.Should().Be(createResult.SchemaVersionId);
+
+		schemas[1].VersionNumber.Should().Be(2);
+		schemas[1].SchemaVersionId.Should().Be(registerResult.SchemaVersionId);
+	}
 }
