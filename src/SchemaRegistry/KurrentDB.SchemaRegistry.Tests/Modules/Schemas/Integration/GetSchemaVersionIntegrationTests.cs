@@ -1,17 +1,20 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using Bogus;
+using Elastic.Clients.Elasticsearch.Nodes;
 using Google.Protobuf;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
-public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
+public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
+
 	private const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
-	public async Task lookup_schema_name(CancellationToken cancellationToken) {
+	public async Task get_schema_version(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
@@ -32,18 +35,17 @@ public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
 			cancellationToken: cancellationToken
 		);
 
-		result.Should().NotBeNull();
-		result.SchemaVersionId.Should().NotBeEmpty();
-
 		// Assert
-		var lookupSchemaNameResponse = await Client.LookupSchemaNameAsync(
-			new LookupSchemaNameRequest {
-				SchemaVersionId = result.SchemaVersionId,
+		var getSchemaResponse = await Client.GetSchemaVersionAsync(
+			new GetSchemaVersionRequest {
+				SchemaName = schemaName,
+				VersionNumber = result.VersionNumber
 			},
 			cancellationToken: cancellationToken
 		);
 
-		lookupSchemaNameResponse.Should().NotBeNull();
-		lookupSchemaNameResponse.SchemaName.Should().Be(schemaName);
+		getSchemaResponse.Should().NotBeNull();
+		getSchemaResponse.Version.SchemaVersionId.Should().Be(result.SchemaVersionId);
+		getSchemaResponse.Version.VersionNumber.Should().Be(result.VersionNumber);
 	}
 }
