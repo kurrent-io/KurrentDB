@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Google.Protobuf;
+using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
@@ -45,5 +46,17 @@ public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
 
 		lookupSchemaNameResponse.Should().NotBeNull();
 		lookupSchemaNameResponse.SchemaName.Should().Be(schemaName);
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task lookup_schema_name_not_found(CancellationToken cancellationToken) {
+		var ex = await FluentActions.Awaiting(async () => await Client.LookupSchemaNameAsync(
+			new LookupSchemaNameRequest {
+				SchemaVersionId = Guid.NewGuid().ToString()
+			},
+			cancellationToken: cancellationToken
+		)).Should().ThrowAsync<RpcException>();
+
+		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 }

@@ -3,6 +3,7 @@
 
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
@@ -346,4 +347,73 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		schemas[1].VersionNumber.Should().Be(2);
 		schemas[1].SchemaVersionId.Should().Be(registerResult.SchemaVersionId);
 	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task list_schema_versions_not_found(CancellationToken cancellationToken) {
+		var ex = await FluentActions.Awaiting(async () => await Client.ListSchemaVersionsAsync(
+			new ListSchemaVersionsRequest() {
+				SchemaName = Guid.NewGuid().ToString()
+			},
+			cancellationToken: cancellationToken
+		)).Should().ThrowAsync<RpcException>();
+
+		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task list_registered_schema_with_version_id_not_found(CancellationToken cancellationToken) {
+		var response = await Client.ListRegisteredSchemasAsync(
+			new ListRegisteredSchemasRequest {
+				SchemaVersionId = Guid.NewGuid().ToString()
+			},
+			cancellationToken: cancellationToken);
+
+		response.Schemas.Should().BeEmpty();
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task list_registered_schema_with_prefix_not_found(CancellationToken cancellationToken) {
+		var response = await Client.ListRegisteredSchemasAsync(
+			new ListRegisteredSchemasRequest {
+				SchemaNamePrefix = Guid.NewGuid().ToString()
+			},
+			cancellationToken: cancellationToken);
+
+		response.Schemas.Should().BeEmpty();
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task list_registered_schema_with_tags_not_found(CancellationToken cancellationToken) {
+		var response = await Client.ListRegisteredSchemasAsync(
+			new ListRegisteredSchemasRequest {
+				SchemaTags = { new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() } }
+			},
+			cancellationToken: cancellationToken);
+
+		response.Schemas.Should().BeEmpty();
+	}
+
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task list_schemas_with_prefix_not_found(CancellationToken cancellationToken) {
+		var response = await Client.ListSchemasAsync(
+			new ListSchemasRequest() {
+				SchemaNamePrefix = Guid.NewGuid().ToString()
+			},
+			cancellationToken: cancellationToken);
+
+		response.Schemas.Should().BeEmpty();
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task list_schemas_with_tags_not_found(CancellationToken cancellationToken) {
+		var response = await Client.ListSchemasAsync(
+			new ListSchemasRequest() {
+				SchemaTags = { new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() } }
+			},
+			cancellationToken: cancellationToken);
+
+		response.Schemas.Should().BeEmpty();
+	}
 }
+

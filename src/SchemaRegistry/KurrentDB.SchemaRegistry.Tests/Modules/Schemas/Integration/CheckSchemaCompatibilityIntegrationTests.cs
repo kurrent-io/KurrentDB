@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Google.Protobuf;
+using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
@@ -56,6 +57,34 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		}, cancellationToken: cancellationToken);
 
 		checkResponse.ValidationResult.IsCompatible.Should().BeFalse();
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task check_schema_compatibility_schema_name_not_found(CancellationToken cancellationToken) {
+		var ex = await FluentActions.Awaiting(async () => await Client.CheckSchemaCompatibilityAsync(
+			new CheckSchemaCompatibilityRequest {
+				SchemaName = Guid.NewGuid().ToString(),
+				DataFormat = SchemaDataFormat.Json,
+				Definition = ByteString.CopyFromUtf8(CarSchema)
+			},
+			cancellationToken: cancellationToken
+		)).Should().ThrowAsync<RpcException>();
+
+		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task check_schema_compatibility_schema_version_id_not_found(CancellationToken cancellationToken) {
+		var ex = await FluentActions.Awaiting(async () => await Client.CheckSchemaCompatibilityAsync(
+			new CheckSchemaCompatibilityRequest {
+				SchemaVersionId = Guid.NewGuid().ToString(),
+				DataFormat = SchemaDataFormat.Json,
+				Definition = ByteString.CopyFromUtf8(CarSchema)
+			},
+			cancellationToken: cancellationToken
+		)).Should().ThrowAsync<RpcException>();
+
+		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 
 	private const string PersonSchema = @"{
