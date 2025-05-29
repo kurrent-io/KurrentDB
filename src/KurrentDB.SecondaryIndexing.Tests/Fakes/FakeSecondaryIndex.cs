@@ -3,9 +3,9 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.InMemory;
-using KurrentDB.SecondaryIndexing.Indices;
+using KurrentDB.SecondaryIndexing.Indexes;
 
-namespace KurrentDB.SecondaryIndexing.Tests.Indices;
+namespace KurrentDB.SecondaryIndexing.Tests.Fakes;
 
 public class FakeSecondaryIndex : ISecondaryIndex {
 	public FakeSecondaryIndex(string streamName) {
@@ -16,16 +16,13 @@ public class FakeSecondaryIndex : ISecondaryIndex {
 
 	public IList<ResolvedEvent> Committed { get; }
 	public IList<ResolvedEvent> Pending { get; } = new List<ResolvedEvent>();
-
 	public ISecondaryIndexProcessor Processor { get; }
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
-	public ValueTask Init(CancellationToken ct) => ValueTask.CompletedTask;
 
-	public ValueTask<ulong?> GetLastPosition(CancellationToken ct) =>
-		ValueTask.FromResult(Committed.Select(@event => (ulong?)@event.Event.LogPosition).FirstOrDefault());
+	public void Init() { }
 
-	public ValueTask<ulong?> GetLastSequence(CancellationToken ct) =>
-		ValueTask.FromResult(Committed.Select(@event => (ulong?)@event.Event.EventNumber).FirstOrDefault());
+	public ulong? GetLastPosition() =>
+		Committed.Select(@event => (ulong?)@event.Event.LogPosition).FirstOrDefault();
 
 	public void Dispose() { }
 }

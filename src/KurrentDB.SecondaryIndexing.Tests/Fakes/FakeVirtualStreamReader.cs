@@ -5,7 +5,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.InMemory;
 
-namespace KurrentDB.SecondaryIndexing.Tests.Indices;
+namespace KurrentDB.SecondaryIndexing.Tests.Fakes;
 
 internal class FakeVirtualStreamReader(string streamName, IReadOnlyList<ResolvedEvent> events) : IVirtualStreamReader {
 	public ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
@@ -95,10 +95,10 @@ internal class FakeVirtualStreamReader(string streamName, IReadOnlyList<Resolved
 	}
 
 	public long GetLastEventNumber(string streamId) =>
-		events.Count > 0 ? events.Last().Event.EventNumber : -1;
+		events.Count > 0 ? events[^1].Event.EventNumber : -1;
 
 	public long GetLastIndexedPosition(string streamId) =>
-		events.Count > 0 ? events.Last().Event.LogPosition : -1;
+		events.Count > 0 ? events[^1].Event.LogPosition : -1;
 
 	public bool CanReadStream(string streamId) =>
 		streamId == streamName;

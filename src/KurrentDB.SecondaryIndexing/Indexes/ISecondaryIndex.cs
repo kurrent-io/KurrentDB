@@ -4,14 +4,12 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.InMemory;
 
-namespace KurrentDB.SecondaryIndexing.Indices;
+namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public interface ISecondaryIndex: IDisposable {
-	ValueTask Init(CancellationToken ct);
+	void Init();
 
-	ValueTask<ulong?> GetLastPosition(CancellationToken ct);
-
-	ValueTask<ulong?> GetLastSequence(CancellationToken ct);
+	ulong? GetLastPosition();
 
 	ISecondaryIndexProcessor Processor { get; }
 
@@ -19,8 +17,9 @@ public interface ISecondaryIndex: IDisposable {
 }
 
 public interface ISecondaryIndexProcessor {
-	ValueTask Index(ResolvedEvent resolvedEvent, CancellationToken token = default);
-	ValueTask Commit(CancellationToken token = default);
+	void Index(ResolvedEvent resolvedEvent);
+
+	void Commit();
 }
 
 public record struct SequenceRecord(long Id, long Sequence);

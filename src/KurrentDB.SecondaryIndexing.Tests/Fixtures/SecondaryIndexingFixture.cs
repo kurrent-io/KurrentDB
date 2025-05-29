@@ -8,14 +8,11 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
-using KurrentDB.SecondaryIndexing.Indices;
-using KurrentDB.SecondaryIndexing.Tests.Indices;
 using KurrentDB.System.Testing;
-using Microsoft.Extensions.DependencyInjection;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using StreamRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision;
 
-namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests.Fixtures;
+namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
 using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
 
@@ -25,27 +22,31 @@ public sealed class SecondaryIndexingPluginDisabledDefinition : ICollectionFixtu
 [CollectionDefinition("SecondaryIndexingPluginEnabled")]
 public sealed class SecondaryIndexingPluginEnabledDefinition : ICollectionFixture<SecondaryIndexingEnabledFixture>;
 
+[UsedImplicitly]
 public class SecondaryIndexingEnabledFixture() : SecondaryIndexingFixture(true);
 
+[UsedImplicitly]
 public class SecondaryIndexingDisabledFixture() : SecondaryIndexingFixture(false);
 
 public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
-	public const string IndexStreamName = "$idx-dummy";
+	private const string DatabasePathConfig = $"{KurrentConfigurationKeys.Prefix}:Database:Db";
 	private const string PluginConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing";
 	private const string OptionsConfigPrefix = $"{PluginConfigPrefix}:Options";
+	protected string? PathName;
 
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
-		ConfigureServices = services => {
-			services.AddSingleton<ISecondaryIndex>(new FakeSecondaryIndex(IndexStreamName));
+		if (!isSecondaryIndexingPluginEnabled) return;
+
+		SetUpDatabaseDirectory();
+
+		Configuration = new() {
+			{ $"{PluginConfigPrefix}:Enabled", "true" },
+			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", "2" },
+			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitDelayMs)}", "100" },
+			{ DatabasePathConfig, PathName }
 		};
 
-		if (isSecondaryIndexingPluginEnabled) {
-			Configuration = new Dictionary<string, string?> {
-				{ $"{PluginConfigPrefix}:Enabled", "true" },
-				{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitBatchSize)}", "2" },
-				{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CheckpointCommitDelayMs)}", "100" },
-			};
-		}
+		OnTearDown = CleanUpDatabaseDirectory;
 	}
 
 	public IAsyncEnumerable<ResolvedEvent> ReadStream(string streamName, CancellationToken ct = default) =>
@@ -57,7 +58,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) {
-		timeout ??= TimeSpan.FromMilliseconds(5000);
+		timeout ??= TimeSpan.FromMilliseconds(10000);
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
 		var events = new List<ResolvedEvent>();
@@ -69,11 +70,15 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			try {
 				events = await ReadStream(streamName, ct).ToListAsync(ct);
 
-				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition <= (long)position.CommitPosition;
+				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition >= (long)position.CommitPosition;
 			} catch (ReadResponseException.StreamNotFound ex) {
 				streamNotFound = ex;
 			}
-		} while (!reachedPosition && endTime >= DateTime.UtcNow);
+
+			if (!reachedPosition) {
+				await Task.Delay(100, ct);
+			}
+		} while (!reachedPosition && DateTime.UtcNow < endTime);
 
 		if (events.Count == 0 && streamNotFound != null)
 			throw streamNotFound;
@@ -112,4 +117,14 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		return ResolvedEvent.ForUnresolvedEvent(record, 0);
 	}
+
+	void SetUpDatabaseDirectory() {
+		var typeName = GetType().Name.Length > 30 ? GetType().Name[..30] : GetType().Name;
+		PathName = Path.Combine(Path.GetTempPath(), $"ES-{Guid.NewGuid()}-{typeName}");
+
+		Directory.CreateDirectory(PathName);
+	}
+
+	Task CleanUpDatabaseDirectory() =>
+		PathName != null ? DirectoryDeleter.TryForceDeleteDirectoryAsync(PathName, retries: 10) : Task.CompletedTask;
 }

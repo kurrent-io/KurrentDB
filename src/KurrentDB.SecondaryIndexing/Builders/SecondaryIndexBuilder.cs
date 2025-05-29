@@ -5,36 +5,36 @@ using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.InMemory;
-using KurrentDB.SecondaryIndexing.Indices;
+using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
 
 namespace KurrentDB.SecondaryIndexing.Builders;
 
 public class SecondaryIndexBuilder
-	: IAsyncHandle<SystemMessage.SystemReady>,
-		IAsyncHandle<SystemMessage.BecomeShuttingDown>,
+	: IHandle<SystemMessage.SystemReady>,
+		IHandle<SystemMessage.BecomeShuttingDown>,
 		IHostedService {
 	private readonly SecondaryIndexSubscription _subscription;
 	private readonly ISecondaryIndex _index;
 	public IEnumerable<IVirtualStreamReader> IndexVirtualStreamReaders => _index.Readers;
 
 	[Experimental("SECONDARY_INDEX")]
-	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber, SecondaryIndexingPluginOptions? options = null) {
-		_subscription = new SecondaryIndexSubscription(publisher, index, options);
+	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber, SecondaryIndexingPluginOptions options) {
+		_subscription = new(publisher, index, options);
 		_index = index;
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
 	}
 
-	public async ValueTask HandleAsync(SystemMessage.SystemReady message, CancellationToken token) {
-		await _index.Init(token);
-		await _subscription.Subscribe(token);
+	public void Handle(SystemMessage.SystemReady message) {
+		_index.Init();
+		_subscription.Subscribe();
 	}
 
-	public async ValueTask HandleAsync(SystemMessage.BecomeShuttingDown message, CancellationToken token) {
-		await _index.Processor.Commit(token);
+	public void Handle(SystemMessage.BecomeShuttingDown message) {
+		_index.Processor.Commit();
 		_index.Dispose();
 	}
 
