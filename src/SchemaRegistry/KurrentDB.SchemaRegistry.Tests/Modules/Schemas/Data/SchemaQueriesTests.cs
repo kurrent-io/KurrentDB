@@ -96,8 +96,8 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  fooSchemaName }, cancellationToken);
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  barSchemaName }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = fooSchemaName }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = barSchemaName }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
 
@@ -117,14 +117,16 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  fooSchemaName }, cancellationToken);
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  barSchemaName, Tags = new Dictionary<string, string> {
-			["baz"] = "qux"
-		}}, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = fooSchemaName }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions {
+			Name = barSchemaName, Tags = new Dictionary<string, string> {
+				["baz"] = "qux"
+			}
+		}, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
 
-		var response = await queries.ListSchemas(new ListSchemasRequest { SchemaTags = { ["baz"] = "qux"  } }, cancellationToken);
+		var response = await queries.ListSchemas(new ListSchemasRequest { SchemaTags = { ["baz"] = "qux" } }, cancellationToken);
 		response.Schemas.Count.Should().Be(1);
 
 		var schema = response.Schemas.First();
@@ -138,7 +140,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 2 }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
@@ -155,7 +157,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 2 }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
@@ -176,10 +178,10 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName1 }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName1 }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName1, VersionNumber = 24 }, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName2 }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName2 }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName2, VersionNumber = 42 }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
@@ -207,8 +209,8 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName1, VersionId = versionId }, cancellationToken);
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName2 }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName1, VersionId = versionId }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName2 }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
 
@@ -233,7 +235,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 				["foo"] = "bar"
 			}
 		}, cancellationToken);
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName2 }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName2 }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
 
@@ -259,7 +261,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName, VersionId =  versionId }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName, VersionId = versionId }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
 
@@ -325,7 +327,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName, VersionId =  versionId1 }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName, VersionId = versionId1 }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 24, VersionId = versionId2 }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
@@ -347,7 +349,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName, VersionId =  versionId1 }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName, VersionId = versionId1 }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 24, VersionId = versionId2 }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
@@ -365,7 +367,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
-		await CreateSchema(projection, new CreateSchemaOptions { Name =  schemaName, VersionId =  versionId1 }, cancellationToken);
+		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName, VersionId = versionId1 }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 24, VersionId = versionId2 }, cancellationToken);
 
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
@@ -425,51 +427,59 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 			cancellationToken));
 	}
 
-	public static readonly string PersonSchema = @"{
-  ""$schema"": ""http://json-schema.org/draft-07/schema#"",
-  ""title"": ""Person"",
-  ""type"": ""object"",
-  ""properties"": {
-    ""firstName"": {
-      ""type"": ""string""
-    },
-    ""lastName"": {
-      ""type"": ""string""
-    },
-    ""age"": {
-      ""type"": ""integer"",
-      ""minimum"": 0
-    },
-    ""email"": {
-      ""type"": ""string"",
-      ""format"": ""email""
-    }
-  },
-  ""required"": [""firstName"", ""lastName""]
-}";
+	static readonly string PersonSchema =
+		// lang=JSON
+		"""
+		{
+		  "$schema": "http://json-schema.org/draft-07/schema#",
+		  "title": "Person",
+		  "type": "object",
+		  "properties": {
+		    "firstName": {
+		      "type": "string"
+		    },
+		    "lastName": {
+		      "type": "string"
+		    },
+		    "age": {
+		      "type": "integer",
+		      "minimum": 0
+		    },
+		    "email": {
+		      "type": "string",
+		      "format": "email"
+		    }
+		  },
+		  "required": ["firstName", "lastName"]
+		}
+		""";
 
-	public static readonly string CarSchema = @"{
-  ""$schema"": ""http://json-schema.org/draft-07/schema#"",
-  ""title"": ""Car"",
-  ""type"": ""object"",
-  ""properties"": {
-    ""make"": {
-      ""type"": ""string""
-    },
-    ""model"": {
-      ""type"": ""string""
-    },
-    ""year"": {
-      ""type"": ""integer"",
-      ""minimum"": 1886
-    },
-    ""vin"": {
-      ""type"": ""string""
-    },
-    ""color"": {
-      ""type"": ""string""
-    }
-  },
-  ""required"": [""make"", ""model"", ""year"", ""vin""]
-}";
+	static readonly string CarSchema =
+		// lang=JSON
+		"""
+		{
+		  "$schema": "http://json-schema.org/draft-07/schema#",
+		  "title": "Car",
+		  "type": "object",
+		  "properties": {
+		    "make": {
+		      "type": "string"
+		    },
+		    "model": {
+		      "type": "string"
+		    },
+		    "year": {
+		      "type": "integer",
+		      "minimum": 1886
+		    },
+		    "vin": {
+		      "type": "string"
+		    },
+		    "color": {
+		      "type": "string"
+		    }
+		  },
+		  "required": ["make", "model", "year", "vin"]
+		}
+		""";
 }
