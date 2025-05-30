@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
@@ -13,31 +13,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Google.Api.CommonProtos" Version="2.15.0" PrivateAssets="All" />
-		<PackageReference Include="Google.Protobuf" Version="3.27.2" PrivateAssets="All" />
-		<PackageReference Include="Grpc.AspNetCore" Version="2.64.0" PrivateAssets="All" />
+		<PackageReference Include="Google.Api.CommonProtos" PrivateAssets="All" />
+		<PackageReference Include="Google.Protobuf" PrivateAssets="All" />
+		<PackageReference Include="Grpc.AspNetCore" PrivateAssets="All" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<Protobuf
-			ProtoRoot="protos"
-			Include="protos/protocol.proto"
-			Link="protos\%(RecursiveDir)/%(FileName)%(Extension)"
-			GrpcServices="None"
-		/>
+		<Protobuf ProtoRoot="protos" Include="protos/protocol.proto" Link="protos\%(RecursiveDir)/%(FileName)%(Extension)" GrpcServices="None" />
 
-		<Protobuf
-			ProtoRoot="protos"
-			Include="protos/controlplane/**/*.proto"
-			Link="protos\controlplane\%(RecursiveDir)/%(FileName)%(Extension)"
-			GrpcServices="None"
-		/>
+		<Protobuf ProtoRoot="protos" Include="protos/controlplane/**/*.proto" Link="protos\controlplane\%(RecursiveDir)/%(FileName)%(Extension)" GrpcServices="None" />
 
-		<Protobuf
-			ProtoRoot="protos"
-			Include="protos/managementplane/**/*.proto"
-			Link="protos\managementplane\%(RecursiveDir)/%(FileName)%(Extension)"
-			GrpcServices="Server"
-		/>
+		<Protobuf ProtoRoot="protos" Include="protos/managementplane/**/*.proto" Link="protos\managementplane\%(RecursiveDir)/%(FileName)%(Extension)" GrpcServices="Server" />
 	</ItemGroup>
 </Project>

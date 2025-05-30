@@ -25,27 +25,27 @@
 		</None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="GitHubActionsTestLogger" Version="2.3.3" />
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.1" />
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.7.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+		<PackageReference Include="GitHubActionsTestLogger" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
 		<!-- upgrade because of transitive dependency vulnerability -->
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+		<PackageReference Include="Newtonsoft.Json" />
 		<!-- upgrade because of transitive dependency vulnerability -->
-		<PackageReference Include="NuGet.Protocol" Version="6.7.1" />
+		<PackageReference Include="NuGet.Protocol" />
 		<!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-447r-wph3-92pm -->
-		<PackageReference Include="System.Formats.Asn1" Version="8.0.1" />
-		<PackageReference Include="System.Linq.Async" Version="6.0.1" />
+		<PackageReference Include="System.Formats.Asn1" />
+		<PackageReference Include="System.Linq.Async" />
 		<!-- upgrade because of transitive dependency vulnerability -->
-		<PackageReference Include="System.Net.Http" Version="4.3.4" />
+		<PackageReference Include="System.Net.Http" />
 		<!-- upgrade because of transitive dependency vulnerability -->
-		<PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-		<PackageReference Include="xunit" Version="2.9.3" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="3.0.1">
+		<PackageReference Include="System.Text.RegularExpressions" />
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="coverlet.collector" Version="6.0.4">
+		<PackageReference Include="coverlet.collector">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>

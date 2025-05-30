@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -13,9 +13,9 @@
 	  <DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" Version="25.2.5" />
-		<PackageReference Include="Scrutor" Version="5.0.2" />
-		<PackageReference Include="Serilog" Version="4.0.1" />
+		<PackageReference Include="EventStore.Plugins" />
+		<PackageReference Include="Scrutor" />
+		<PackageReference Include="Serilog" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Update="encryption-at-rest-plugin-example.yaml">

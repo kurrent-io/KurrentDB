@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -12,13 +12,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Bogus" Version="35.6.3" />
-		<PackageReference Include="coverlet.collector" Version="6.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.15" />
-		<PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-		<PackageReference Include="xunit" Version="2.9.3" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" />
+		<PackageReference Include="Bogus" />
+		<PackageReference Include="coverlet.collector" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+		<PackageReference Include="GitHubActionsTestLogger" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio" />
 	</ItemGroup>
 
 	<ItemGroup>
