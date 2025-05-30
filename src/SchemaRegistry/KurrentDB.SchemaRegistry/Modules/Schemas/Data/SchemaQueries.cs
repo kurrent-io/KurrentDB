@@ -1,3 +1,6 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 using System.Text.Json;
 using Dapper;
 using DuckDB.NET.Data;
@@ -10,6 +13,7 @@ using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using Polly;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryErrorDetails.Types;
 using static KurrentDB.SchemaRegistry.Data.SchemaQueriesMapping;
+using SchemaCompatibilityResult = Kurrent.Surge.Schema.Validation.SchemaCompatibilityResult;
 
 namespace KurrentDB.SchemaRegistry.Data;
 
@@ -272,39 +276,28 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
         if (query.DataFormat != info.DataFormat)
             throw RpcExceptions.FailedPrecondition($"Schema format mismatch: {query.DataFormat} != {info.DataFormat}");
 
-        var uncheckedSchema = query.Definition.ToStringUtf8();
-        var referenceSchema = info.SchemaDefinition.ToStringUtf8();
-        var compatibility   = (SchemaCompatibilityMode)info.Compatibility;
+	    var uncheckedSchema = query.Definition.ToStringUtf8();
+	    var compatibility = (SchemaCompatibilityMode)info.Compatibility;
 
-        if (compatibility is SchemaCompatibilityMode.BackwardAll or SchemaCompatibilityMode.ForwardAll or SchemaCompatibilityMode.FullAll) {
-            var allInfos = query.HasSchemaVersionId
-                ? await GetAllSchemaValidationInfos(Guid.Parse(query.SchemaVersionId), cancellationToken)
-                : await GetAllSchemaValidationInfos(query.SchemaName, cancellationToken);
+	    SchemaCompatibilityResult result;
 
-            var referenceSchemas = allInfos
-                .Select(x => x.SchemaDefinition.ToStringUtf8())
-                .ToList();
+	    if (compatibility is SchemaCompatibilityMode.Backward or SchemaCompatibilityMode.Forward or SchemaCompatibilityMode.Full) {
+		    result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, info.SchemaDefinition.ToStringUtf8(), compatibility, cancellationToken);
+	    } else {
+		    var infos = query.HasSchemaVersionId
+			    ? await GetAllSchemaValidationInfos(Guid.Parse(query.SchemaVersionId), cancellationToken)
+			    : await GetAllSchemaValidationInfos(query.SchemaName, cancellationToken);
 
-            if (referenceSchemas.IsEmpty())
-	            throw RpcExceptions.FailedPrecondition($"No reference schemas found for {query.SchemaName} with version ID {query.SchemaVersionId}");
+		    var referenceSchemas = infos
+			    .Select(i => i.SchemaDefinition.ToStringUtf8())
+			    .ToList();
 
-            var result = await CompatibilityManager
-                .CheckCompatibilityAll(uncheckedSchema, referenceSchemas, compatibility, cancellationToken)
-                .ConfigureAwait(false);
+		    result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, compatibility, cancellationToken);
+	    }
 
-            return new CheckSchemaCompatibilityResponse {
-                ValidationResult = MapToSchemaCompatibilityResult(result, info.SchemaVersionId)
-            };
-        }
-        else {
-            var result = await CompatibilityManager
-                .CheckCompatibility(uncheckedSchema, referenceSchema, compatibility, cancellationToken)
-                .ConfigureAwait(false);
-
-            return new CheckSchemaCompatibilityResponse {
-                ValidationResult = MapToSchemaCompatibilityResult(result, info.SchemaVersionId)
-            };
-        }
+	    return new CheckSchemaCompatibilityResponse {
+		    ValidationResult = MapToSchemaCompatibilityResult(result, info.SchemaVersionId)
+	    };
     }
 
     async Task<SchemaValidationInfo> GetLatestSchemaValidationInfo(string schemaName, CancellationToken cancellationToken) {

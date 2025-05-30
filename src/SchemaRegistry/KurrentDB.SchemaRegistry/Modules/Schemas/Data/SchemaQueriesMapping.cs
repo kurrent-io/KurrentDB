@@ -7,7 +7,7 @@ using Contracts = KurrentDB.Protocol.Registry.V2;
 
 namespace KurrentDB.SchemaRegistry.Data;
 
-static class SchemaQueriesMapping {
+public static class SchemaQueriesMapping {
 	public static Contracts.SchemaValidationInfo MapToSchemaValidationInfo(dynamic source) =>
 		new() {
 			SchemaVersionId = source.version_id,

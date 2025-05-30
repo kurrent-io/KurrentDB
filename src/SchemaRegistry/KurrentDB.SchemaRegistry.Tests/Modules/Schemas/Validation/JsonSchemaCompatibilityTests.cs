@@ -1,3 +1,6 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 // ReSharper disable ConvertToConstant.Local
 // ReSharper disable MemberCanBeMadeStatic.Global
 // ReSharper disable ArrangeTypeMemberModifiers
@@ -6,7 +9,7 @@ using Kurrent.Surge.Schema.Validation;
 
 namespace Kurrent.Surge.Core.Tests.Schema.Validation;
 
-public class SchemaCompatibilityTests {
+public class JsonSchemaCompatibilityTests {
 	static readonly NJsonSchemaCompatibilityManager CompatibilityManager = new();
 
 	[Test]
@@ -463,7 +466,7 @@ public class SchemaCompatibilityTests {
 		};
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibilityAll(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.BackwardAll);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.BackwardAll);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -502,14 +505,14 @@ public class SchemaCompatibilityTests {
 		};
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibilityAll(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.BackwardAll);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.BackwardAll);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
+		result.Errors.Count.Should().Be(3);
 		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
 		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
 		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.OptionalToRequired);
-		result.Errors.Count.Should().Be(3);
 	}
 
 	[Test]
@@ -550,7 +553,7 @@ public class SchemaCompatibilityTests {
 		};
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibilityAll(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.ForwardAll);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.ForwardAll);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -589,7 +592,7 @@ public class SchemaCompatibilityTests {
 		};
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibilityAll(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.ForwardAll);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.ForwardAll);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -807,7 +810,7 @@ public class SchemaCompatibilityTests {
 		};
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibilityAll(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.FullAll);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.FullAll);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -847,7 +850,7 @@ public class SchemaCompatibilityTests {
 		};
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibilityAll(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.FullAll);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.FullAll);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -1285,7 +1288,7 @@ public class SchemaCompatibilityTests {
 		};
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibilityAll(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.BackwardAll);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.BackwardAll);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();

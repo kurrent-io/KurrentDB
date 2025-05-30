@@ -228,7 +228,7 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
 	                        if (olderVersions.IsEmpty()) continue;
 
 	                        var result = compatibilityManager
-		                        .CheckCompatibilityAll(schema.SchemaDefinition, olderVersions, SchemaCompatibilityMode.BackwardAll).AsTask().GetAwaiter()
+		                        .CheckCompatibility(schema.SchemaDefinition, olderVersions, SchemaCompatibilityMode.BackwardAll).AsTask().GetAwaiter()
 		                        .GetResult();
 
 	                        if (!result.IsCompatible) {
@@ -251,7 +251,7 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                                 if (newerVersions.IsEmpty()) continue;
 
                                 var result = compatibilityManager
-	                                .CheckCompatibilityAll(schema.SchemaDefinition, newerVersions, SchemaCompatibilityMode.ForwardAll).AsTask().GetAwaiter()
+	                                .CheckCompatibility(schema.SchemaDefinition, newerVersions, SchemaCompatibilityMode.ForwardAll).AsTask().GetAwaiter()
 	                                .GetResult();
 
                                 if (!result.IsCompatible) {
@@ -273,7 +273,7 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
 
 	                        if (otherVersions.IsEmpty()) continue;
 
-	                        var result = compatibilityManager.CheckCompatibilityAll(schema.SchemaDefinition, otherVersions, SchemaCompatibilityMode.FullAll)
+	                        var result = compatibilityManager.CheckCompatibility(schema.SchemaDefinition, otherVersions, SchemaCompatibilityMode.FullAll)
 		                        .AsTask().GetAwaiter().GetResult();
 
 	                        if (!result.IsCompatible) {
