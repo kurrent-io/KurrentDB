@@ -1,8 +1,11 @@
 // ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+// ReSharper disable ArrangeTypeMemberModifiers
 
 using NJsonSchema;
 
 namespace Kurrent.Surge.Schema.Validation;
+
+public delegate SchemaCompatibilityResult CheckSchemaCompatibility(JsonSchema reference, JsonSchema uncheckedSchema);
 
 [PublicAPI]
 public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
@@ -18,7 +21,23 @@ public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
             )
             .ConfigureAwait(false);
 
-        return CheckCompatibility(results[0], results[1], compatibility);
+        return CheckCompatibility(results[1], results[0], compatibility);
+    }
+
+    protected override async ValueTask<SchemaCompatibilityResult> CheckCompatibilityAllCore(
+        string uncheckedSchema, IList<string> referenceSchemas,
+        SchemaCompatibilityMode compatibility,
+        CancellationToken cancellationToken = default
+    ) {
+        var uncheckedJsonSchema = await JsonSchema.FromJsonAsync(uncheckedSchema, cancellationToken).ConfigureAwait(false);
+
+        var referenceJsonSchemas = await Task
+	        .WhenAll(referenceSchemas
+		        .AsParallel()
+		        .Select(s => JsonSchema.FromJsonAsync(s, cancellationToken)))
+	        .ConfigureAwait(false);
+
+        return CheckCompatibilityAll(referenceJsonSchemas, uncheckedJsonSchema, compatibility);
     }
 
     internal static SchemaCompatibilityResult CheckCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema, SchemaCompatibilityMode compatibility) =>
@@ -29,8 +48,39 @@ public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
             SchemaCompatibilityMode.Full        => CheckFullCompatibility(referenceSchema, uncheckedSchema),
             SchemaCompatibilityMode.Unspecified => throw new ArgumentException("Unspecified compatibility mode", nameof(compatibility)),
             _                                   => throw new ArgumentException($"Invalid compatibility mode", nameof(compatibility))
-
         };
+
+    internal static SchemaCompatibilityResult CheckCompatibilityAll(IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema, SchemaCompatibilityMode compatibility) =>
+        compatibility switch {
+            SchemaCompatibilityMode.BackwardAll => CheckBackwardAllCompatibility(referenceSchemas, uncheckedSchema),
+            SchemaCompatibilityMode.ForwardAll  => CheckForwardAllCompatibility(referenceSchemas, uncheckedSchema),
+            SchemaCompatibilityMode.FullAll     => CheckFullAllCompatibility(referenceSchemas, uncheckedSchema),
+            _                                   => throw new ArgumentException($"Only BackwardAll and ForwardAll modes are supported", nameof(compatibility))
+        };
+
+    static SchemaCompatibilityResult CheckAllCompatibility(
+	    IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema,
+	    CheckSchemaCompatibility checkCompatibility) {
+	    var errors = referenceSchemas
+		    .AsParallel()
+		    .Select(referenceSchema => checkCompatibility(referenceSchema, uncheckedSchema))
+		    .Where(result => !result.IsCompatible)
+		    .SelectMany(result => result.Errors)
+		    .ToList();
+
+	    return errors.Count > 0
+		    ? SchemaCompatibilityResult.Incompatible(errors)
+		    : SchemaCompatibilityResult.Compatible();
+    }
+
+    static SchemaCompatibilityResult CheckBackwardAllCompatibility(IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema) =>
+	    CheckAllCompatibility(referenceSchemas, uncheckedSchema, CheckBackwardCompatibility);
+
+    static SchemaCompatibilityResult CheckForwardAllCompatibility(IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema) =>
+	    CheckAllCompatibility(referenceSchemas, uncheckedSchema, CheckForwardCompatibility);
+
+    static SchemaCompatibilityResult CheckFullAllCompatibility(IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema) =>
+	    CheckAllCompatibility(referenceSchemas, uncheckedSchema, CheckFullCompatibility);
 
     static SchemaCompatibilityResult CheckFullCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
         var backwardResult = CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
@@ -130,6 +180,26 @@ public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
                     CheckBackwardCompatibilityProperties(resolvedRegisteredItem, resolvedOtherItem, errors, $"{propertyPath}/items");
             }
         }
+
+        // Check for new required properties in the unchecked schema that don't exist in the reference schema
+        foreach (var (propertyName, _) in resolvedOtherSchema.Properties) {
+	        var propertyPath = $"{path}/{propertyName}";
+
+	        // If the property exists in the new schema but not in the reference schema
+	        if (!resolvedRegisteredSchema.Properties.ContainsKey(propertyName)) {
+		        // If it's required in the new schema, that's a backward compatibility issue
+		        // because old data won't have this field
+		        if (resolvedOtherSchema.RequiredProperties.Contains(propertyName)) {
+			        errors.Add(
+				        new SchemaCompatibilityError {
+					        Kind = SchemaCompatibilityErrorKind.NewRequiredProperty,
+					        PropertyPath = propertyPath,
+					        Details = "New required property breaks backward compatibility - old data won't have this field"
+				        }
+			        );
+		        }
+	        }
+        }
     }
 
     static SchemaCompatibilityResult CheckForwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
@@ -220,13 +290,15 @@ public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
             var propertyPath = $"{path}/{propertyName}";
 
             if (!resolvedOtherSchema.Properties.ContainsKey(propertyName)) {
-                errors.Add(
-                    new SchemaCompatibilityError {
-                        Kind         = SchemaCompatibilityErrorKind.RemovedProperty,
-                        PropertyPath = propertyPath,
-                        Details      = "Property in original schema is missing in new schema"
-                    }
-                );
+	            if (resolvedRegisteredSchema.RequiredProperties.Contains(propertyName)) {
+		            errors.Add(
+			            new SchemaCompatibilityError {
+				            Kind = SchemaCompatibilityErrorKind.RemovedProperty,
+				            PropertyPath = propertyPath,
+				            Details = "Required property in original schema is missing in new schema"
+			            }
+		            );
+	            }
             }
         }
     }
