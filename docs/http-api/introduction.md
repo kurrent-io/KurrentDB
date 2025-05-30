@@ -79,13 +79,19 @@ The format represents data with the following JSON schema (`eventId` must be a U
 ]
 ```
 
+::: tip 
+You can store the JSON data in a file and upload it using `curl` with the `-d` option. To send the file's contents, be sure to prefix the file name with an `@` symbol. The examples below assume you’ve saved the JSON in a file—be sure the file name matches what's used in the example code, or adjust the command line parameters as needed.
+:::
+
 ### Appending a single event to a new stream
 
-If you issue a `POST` request with data to a stream and the correct content type set it appends the event to the stream, and generates a `201` response from the server, giving you the location of the event. Using the following event, which [you can also download as a file](https://raw.githubusercontent.com/EventStore/EventStore/c948d32302414b456b42a73e0ce212f264ccb30a/samples/http-api/event.json):
+If you issue a `POST` request with data to a stream and the correct content type set it appends the event to the stream, and generates a `201` response from the server, giving you the location of the event. 
+
+Save the following code in a file called `event.json` (or [download it as a file](https://raw.githubusercontent.com/EventStore/EventStore/c948d32302414b456b42a73e0ce212f264ccb30a/samples/http-api/event.json)):
 
 @[code](@httpapi/event.json)
 
-`POST` the following request to create a stream and add an event to it:
+Using `curl`, `POST` the following request to create a stream and add an event to it. Supply the name of the file containing the JSON data using the `-d` parameter, prepending the file name with an `@` symbol:
 
 ::: tabs
 @tab Request
@@ -129,7 +135,7 @@ When posting to either the stream or to the returned redirect, clients must incl
 
 You can append more than one event in a single post by placing multiple events inside the array representing the events, including metadata.
 
-For example, the below has two events:
+This example has two events. Create a file named `multipe-events.json` that contains the following JSON: 
 
 @[code](@httpapi/multiple-events.json)
 
@@ -144,7 +150,9 @@ When you append multiple events in a single post, EventStoreDB treats them as on
 
 #### Appending events
 
-To append events, issue a `POST` request to the same resource with a new `eventId`:
+To append events, issue a `POST` request to the same resource with a new `eventId`.
+
+To run this example, copy the following code into a file named `event-append.json`:
 
 @[code](@httpapi/event-append.json)
 
@@ -178,7 +186,7 @@ If your expected version is not the current version you receive an HTTP status c
 See the idempotence section below, if you post the same event twice it is idempotent and won't return a version error.
 :::
 
-First append an event to a stream, setting a version:
+First append an event to a stream, setting a version. Save the following code to a file named `event-version.json`:
 
 @[code](@httpapi/event-version.json)
 
