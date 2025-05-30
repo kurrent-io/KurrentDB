@@ -83,6 +83,7 @@ The format represents data with the following JSON schema (`eventId` must be a U
 ```
 
 ::: tip You can store the JSON data in a file and upload it using `curl` with the `-d` option. To send the file's contents, be sure to prefix the file name with an `@` symbol. The examples below assume you’ve saved the JSON in a file—be sure the file name matches what's used in the example code, or adjust the command line parameters as needed.
+:::
 
 ### Appending a single event to a new stream
 
