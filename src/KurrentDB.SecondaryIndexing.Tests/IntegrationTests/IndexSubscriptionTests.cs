@@ -22,6 +22,9 @@ public class IndexSubscriptionTests(
 	[Fact]
 	public async Task Appended_events_are_indexed() {
 		var streamName = RandomStreamName();
+		var otherStreamName = RandomStreamName();
+
+		await fixture.AppendToStream(otherStreamName, ["""{"test":"777"}""", """{"test":"888"}"""]);
 		var appendResult = await fixture.AppendToStream(streamName, _expectedEventData);
 
 		CancellationTokenSource cts = new CancellationTokenSource();

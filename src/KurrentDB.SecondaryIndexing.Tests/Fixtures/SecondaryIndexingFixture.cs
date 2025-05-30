@@ -80,7 +80,6 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			if (response is ReadResponse.EventReceived eventReceived)
 				yield return eventReceived.Event;
 		}
-		// return inboundChannel.Reader.ReadAllAsync(ct).OfType<ReadResponse.EventReceived>().Select(e => e.Event);
 	}
 
 	public Task<List<ResolvedEvent>> ReadUntil(
@@ -120,15 +119,14 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			do {
 				try {
 					await foreach (var resolvedEvent in readEvents(streamName, cts.Token)) {
-						if (!events.Exists(e => e.Event.EventId == resolvedEvent.Event.EventId))
+						if (!events.Exists(e => e.OriginalEvent.EventId == resolvedEvent.Event.EventId))
 							events.Add(resolvedEvent);
 
-						reachedPosition = resolvedEvent.Event.LogPosition >= (long)position.CommitPosition;
+						reachedPosition = resolvedEvent.OriginalEvent.LogPosition >= (long)position.CommitPosition;
 
 						if (reachedPosition)
 							break;
 					}
-
 				} catch (ReadResponseException.StreamNotFound ex) {
 					streamNotFound = ex;
 				}
@@ -137,8 +135,9 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 					await Task.Delay(100, cts.Token);
 				}
 			} while (!reachedPosition && DateTime.UtcNow < endTime);
-
 		} catch (TaskCanceledException) {
+			// can happen
+		} catch (OperationCanceledException) {
 			// can happen
 		}
 
