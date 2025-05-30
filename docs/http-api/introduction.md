@@ -69,7 +69,7 @@ KurrentDB supports a custom media type for posting events, `application/vnd.kurr
 
 <!-- TODO: And more? Why not use it? And why are these examples not using it? -->
 
-The format represents data with the following JSON schema (`eventId` must be a UUID). 
+The format represents data with the following JSON schema (`eventId` must be a UUID).
 
 ```json
 [
