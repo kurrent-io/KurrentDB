@@ -10,6 +10,8 @@ public delegate SchemaCompatibilityResult CheckSchemaCompatibility(JsonSchema re
 
 [PublicAPI]
 public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
+	static readonly SchemaCompatibilityChecker CompatibilityChecker = new();
+
 	protected override async ValueTask<SchemaCompatibilityResult> CheckCompatibilityCore(
 		string uncheckedSchema,
 		string referenceSchema,
@@ -54,15 +56,11 @@ public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
 		_                                   => throw new ArgumentException("Invalid compatibility mode", nameof(compatibility))
 	};
 
-	static SchemaCompatibilityResult CheckBackwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
-		var checker = new SchemaCompatibilityChecker();
-		return checker.CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
-	}
+	static SchemaCompatibilityResult CheckBackwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) =>
+		CompatibilityChecker.CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
 
-	static SchemaCompatibilityResult CheckForwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
-		var checker = new SchemaCompatibilityChecker();
-		return checker.CheckForwardCompatibility(referenceSchema, uncheckedSchema);
-	}
+	static SchemaCompatibilityResult CheckForwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) =>
+		CompatibilityChecker.CheckForwardCompatibility(referenceSchema, uncheckedSchema);
 
 	static SchemaCompatibilityResult CheckFullCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
 		var backwardResult = CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
