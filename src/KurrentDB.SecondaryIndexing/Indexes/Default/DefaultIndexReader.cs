@@ -15,7 +15,7 @@ internal class DefaultIndexReader<TStreamId>(
 ) : DuckDbIndexReader<TStreamId>(index) {
 	protected override long GetId(string streamName) => 0;
 
-	protected override long GetLastSequence(long id) => processor.LastSequence - 1;
+	protected override long GetLastIndexedSequence(long id) => processor.LastCommittedSequence;
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long _, long fromEventNumber, long toEventNumber) {
 		var range = QueryDefaultIndex(fromEventNumber, toEventNumber);

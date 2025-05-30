@@ -16,7 +16,7 @@ public record struct IndexedPrepare(long Version, int EventNumber, long LogPosit
 internal abstract class DuckDbIndexReader<TStreamId>(IReadIndex<TStreamId> index) : IVirtualStreamReader {
 	protected abstract long GetId(string streamName);
 
-	protected abstract long GetLastSequence(long id);
+	protected abstract long GetLastIndexedSequence(long id);
 
 	protected abstract IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber);
 
@@ -45,7 +45,7 @@ internal abstract class DuckDbIndexReader<TStreamId>(IReadIndex<TStreamId> index
 
 	public long GetLastEventNumber(string streamName) {
 		var id = GetId(streamName);
-		return id >= 0 ? GetLastSequence(id) : id;
+		return id >= 0 ? GetLastIndexedSequence(id) : id;
 	}
 
 	public abstract long GetLastIndexedPosition(string streamId);
@@ -57,7 +57,7 @@ internal abstract class DuckDbIndexReader<TStreamId>(IReadIndex<TStreamId> index
 		CancellationToken token
 	) {
 		var id = GetId(msg.EventStreamId);
-		var lastEventNumber = GetLastSequence(id);
+		var lastEventNumber = GetLastIndexedSequence(id);
 
 		if (msg.ValidationStreamVersion.HasValue && lastEventNumber == msg.ValidationStreamVersion)
 			return StorageReaderWorker<TStreamId>.NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
@@ -92,7 +92,7 @@ internal abstract class DuckDbIndexReader<TStreamId>(IReadIndex<TStreamId> index
 		CancellationToken token
 	) {
 		var id = GetId(msg.EventStreamId);
-		var lastEventNumber = GetLastSequence(id);
+		var lastEventNumber = GetLastIndexedSequence(id);
 
 		if (msg.ValidationStreamVersion.HasValue && lastEventNumber == msg.ValidationStreamVersion)
 			return StorageReaderWorker<TStreamId>.NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,

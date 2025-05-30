@@ -26,7 +26,7 @@ internal class EventTypeIndexReader<TStreamId>(
 		return processor.GetEventTypeId(eventTypeName);
 	}
 
-	protected override long GetLastSequence(long id) => processor.GetLastEventNumber(id);
+	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber(id);
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber)
 		=> GetRecords(id, fromEventNumber, toEventNumber);

@@ -27,8 +27,6 @@ internal class CategoryIndex<TStreamId> : ISecondaryIndex {
 	public ulong? GetLastPosition() =>
 		(ulong)_processor.LastCommittedPosition;
 
-	public ulong? GetLastSequence() => (ulong)_processor.Seq;
-
 	public ISecondaryIndexProcessor Processor => _processor;
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
 

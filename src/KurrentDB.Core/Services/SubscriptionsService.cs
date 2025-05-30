@@ -46,7 +46,8 @@ public class SubscriptionsService<TStreamId> :
 	IHandle<SubscriptionMessage.PollStream>,
 	IHandle<SubscriptionMessage.CheckPollTimeout>,
 	IAsyncHandle<StorageMessage.InMemoryEventCommitted>,
-	IAsyncHandle<StorageMessage.EventCommitted> {
+	IAsyncHandle<StorageMessage.EventCommitted>,
+	IAsyncHandle<StorageMessage.SecondaryIndexRecordCommitted> {
 
 	private const int DontReportCheckpointReached = -1;
 
@@ -61,6 +62,7 @@ public class SubscriptionsService<TStreamId> :
 
 	private long _lastSeenCommitPosition = -1;
 	private long _lastSeenInMemoryCommitPosition = -1;
+	private long _lastSeenSecondaryIndexLogPosition = -1;
 
 	private readonly IPublisher _bus;
 	private readonly IEnvelope _busEnvelope;
@@ -305,6 +307,30 @@ public class SubscriptionsService<TStreamId> :
 		ProcessStreamMetadataChanges(message.Event.EventStreamId);
 		ProcessSettingsStreamChanges(message.Event.EventStreamId);
 		ReissueReadsFor(message.Event.EventStreamId, message.CommitPosition, message.Event.EventNumber);
+	}
+
+	async ValueTask IAsyncHandle<StorageMessage.SecondaryIndexRecordCommitted>.HandleAsync(StorageMessage.SecondaryIndexRecordCommitted message, CancellationToken token) {
+		_lastSeenSecondaryIndexLogPosition = message.LogPosition;
+
+		var streamCategory = SystemStreams.GetStreamCategory(message.Event.EventStreamId ?? message.Event.EventStreamId);
+		var eventType = message.Event.EventType;
+
+		var categoryIndexStreamName = $"{SystemStreams.CategorySecondaryIndexPrefix}{streamCategory}";
+		var eventTypeIndexStreamName = $"{SystemStreams.EventTypeSecondaryIndexPrefix}{eventType}";
+
+		var resolvedEvent =
+			await ProcessEventCommited(SystemStreams.DefaultSecondaryIndex, message.LogPosition, message.Event, null, token);
+		await ProcessEventCommited(categoryIndexStreamName, message.LogPosition, message.Event, resolvedEvent, token);
+		await ProcessEventCommited(eventTypeIndexStreamName, message.LogPosition, message.Event, resolvedEvent, token);
+
+		// I don't think that we need to handle that for now, but
+		// TODO: check if we can skip it
+		// ProcessStreamMetadataChanges(message.Event.EventStreamId);
+		// ProcessSettingsStreamChanges(message.Event.EventStreamId);
+
+		ReissueReadsFor(SystemStreams.DefaultSecondaryIndex, message.LogPosition, message.Event.EventNumber);
+		ReissueReadsFor(categoryIndexStreamName, message.LogPosition, message.Event.EventNumber);
+		ReissueReadsFor(eventTypeIndexStreamName, message.LogPosition, message.Event.EventNumber);
 	}
 
 	private async ValueTask<ResolvedEvent?> ProcessEventCommited(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {

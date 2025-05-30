@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -56,9 +57,18 @@ public class SecondaryIndexSubscription(
 				continue;
 
 			try {
-				index.Processor.Index(eventReceived.Event);
+				var resolvedEvent = eventReceived.Event;
+
+				index.Processor.Index(resolvedEvent);
 
 				_committer.Increment();
+
+				publisher.Publish(
+					new StorageMessage.SecondaryIndexRecordCommitted(
+						resolvedEvent.Event.LogPosition,
+						resolvedEvent.Event
+					)
+				);
 			} catch (OperationCanceledException) {
 				break;
 			} catch (Exception e) {

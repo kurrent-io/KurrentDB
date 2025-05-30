@@ -19,7 +19,7 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 	private static readonly ILogger Logger = Log.Logger.ForContext(nameof(DefaultSecondaryIndexProcessor<TStreamId>));
 
 	public long LastCommittedPosition { get; private set; }
-	public long LastSequence => (long)_seq;
+	public long LastCommittedSequence { get; private set; }
 
 	public DefaultSecondaryIndexProcessor(DuckDBAdvancedConnection connection, DefaultIndex<TStreamId> defaultIndex) {
 		_appender = new(connection, "idx_all"u8);
@@ -66,6 +66,7 @@ internal class DefaultSecondaryIndexProcessor<TStreamId> : Disposable, ISecondar
 		Logger.Debug("Committed {Count} records to index at sequence {Seq}", _page, _seq);
 		_page = 0;
 		LastCommittedPosition = _lastLogPosition;
+		LastCommittedSequence = (long)_seq - 1;
 
 		_defaultIndex.CategoryIndex.Processor.Commit();
 		_defaultIndex.EventTypeIndex.Processor.Commit();

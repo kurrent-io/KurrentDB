@@ -1,7 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading.Channels;
+using Kurrent.Surge.Resilience;
 using KurrentDB.Core;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
@@ -49,10 +52,55 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		OnTearDown = CleanUpDatabaseDirectory;
 	}
 
-	public IAsyncEnumerable<ResolvedEvent> ReadStream(string streamName, CancellationToken ct = default) =>
+	public IAsyncEnumerable<ResolvedEvent> ReadStream(
+		string streamName,
+		CancellationToken ct = default) =>
 		Publisher.ReadStream(streamName, StreamRevision.Start, long.MaxValue, true, cancellationToken: ct);
 
-	public async Task<List<ResolvedEvent>> ReadUntil(
+	public async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(
+		string streamName,
+		[EnumeratorCancellation] CancellationToken ct = default
+	) {
+		var inboundChannel = Channel.CreateBounded<ReadResponse>(
+			new BoundedChannelOptions(1000) {
+				FullMode = BoundedChannelFullMode.Wait,
+				SingleReader = true,
+				SingleWriter = true
+			}
+		);
+		await Publisher.SubscribeToStream(
+			StreamRevision.Start,
+			streamName,
+			inboundChannel,
+			DefaultRetryPolicies.ConstantBackoffPipelineBuilder().Build(),
+			cancellationToken: ct
+		);
+
+		await foreach (var response in inboundChannel.Reader.ReadAllAsync(ct)) {
+			if (response is ReadResponse.EventReceived eventReceived)
+				yield return eventReceived.Event;
+		}
+		// return inboundChannel.Reader.ReadAllAsync(ct).OfType<ReadResponse.EventReceived>().Select(e => e.Event);
+	}
+
+	public Task<List<ResolvedEvent>> ReadUntil(
+		string streamName,
+		Position position,
+		TimeSpan? timeout = null,
+		CancellationToken ct = default
+	) =>
+		ReadUntil(ReadStream, streamName, position, timeout, ct);
+
+	public Task<List<ResolvedEvent>> SubscribeUntil(
+		string streamName,
+		Position position,
+		TimeSpan? timeout = null,
+		CancellationToken ct = default
+	) =>
+		ReadUntil(SubscribeToStream, streamName, position, timeout, ct);
+
+	private static async Task<List<ResolvedEvent>> ReadUntil(
+		Func<string, CancellationToken, IAsyncEnumerable<ResolvedEvent>> readEvents,
 		string streamName,
 		Position position,
 		TimeSpan? timeout = null,
@@ -63,22 +111,36 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		var events = new List<ResolvedEvent>();
 		var reachedPosition = false;
-
 		ReadResponseException.StreamNotFound? streamNotFound = null;
 
-		do {
-			try {
-				events = await ReadStream(streamName, ct).ToListAsync(ct);
+		try {
+			CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+			cts.CancelAfter(timeout.Value);
 
-				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition >= (long)position.CommitPosition;
-			} catch (ReadResponseException.StreamNotFound ex) {
-				streamNotFound = ex;
-			}
+			do {
+				try {
+					await foreach (var resolvedEvent in readEvents(streamName, cts.Token)) {
+						if (!events.Exists(e => e.Event.EventId == resolvedEvent.Event.EventId))
+							events.Add(resolvedEvent);
 
-			if (!reachedPosition) {
-				await Task.Delay(100, ct);
-			}
-		} while (!reachedPosition && DateTime.UtcNow < endTime);
+						reachedPosition = resolvedEvent.Event.LogPosition >= (long)position.CommitPosition;
+
+						if (reachedPosition)
+							break;
+					}
+
+				} catch (ReadResponseException.StreamNotFound ex) {
+					streamNotFound = ex;
+				}
+
+				if (!reachedPosition) {
+					await Task.Delay(100, cts.Token);
+				}
+			} while (!reachedPosition && DateTime.UtcNow < endTime);
+
+		} catch (TaskCanceledException) {
+			// can happen
+		}
 
 		if (events.Count == 0 && streamNotFound != null)
 			throw streamNotFound;
