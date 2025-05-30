@@ -856,4 +856,490 @@ public class SchemaCompatibilityTests {
 		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.OptionalToRequired);
 		result.Errors.Count.Should().Be(3);
 	}
+
+	[Test]
+	public async Task BackwardMode_WithReferences_Compatible_WhenAddingOptionalField() {
+		// Arrange
+		var uncheckedSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "age": { "type": "integer" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		var referenceSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		// Act
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+
+		// Assert
+		result.IsCompatible.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task BackwardMode_WithReferences_Incompatible_WhenRemovingRequiredField() {
+		// Arrange
+		var uncheckedSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		var referenceSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "age": { "type": "integer" }
+			            },
+			            "required": ["age"]
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		// Act
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+
+		// Assert
+		result.IsCompatible.Should().BeFalse();
+		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.MissingRequiredProperty);
+	}
+
+	[Test]
+	public async Task ForwardMode_WithReferences_Compatible_WhenRemovingOptionalField() {
+		// Arrange
+		var uncheckedSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		var referenceSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "age": { "type": "integer" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		// Act
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
+
+		// Assert
+		result.IsCompatible.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task ForwardMode_WithReferences_Incompatible_WhenAddingRequiredField() {
+		// Arrange
+		var uncheckedSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "age": { "type": "integer" }
+			            },
+			            "required": ["age"]
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		var referenceSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		// Act
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
+
+		// Assert
+		result.IsCompatible.Should().BeFalse();
+		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
+	}
+
+	[Test]
+	public async Task FullMode_WithReferences_Compatible_WithAllowedChanges() {
+		// Arrange
+		var uncheckedSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "email": { "type": "string" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		var referenceSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		// Act
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Full);
+
+		// Assert
+		result.IsCompatible.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task FullMode_WithReferences_Incompatible_WithDisallowedChanges() {
+		// Arrange
+		var uncheckedSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "integer" },
+			                "email": { "type": "string" }
+			            },
+			            "required": ["email"]
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		var referenceSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "field1": { "type": "string" },
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		// Act
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Full);
+
+		// Assert
+		result.IsCompatible.Should().BeFalse();
+		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
+		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
+	}
+
+	[Test]
+	public async Task NestedReferences_AreCorrectlyResolved() {
+		// Arrange
+		var uncheckedSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "address": {
+			            "type": "object",
+			            "properties": {
+			                "street": { "type": "string" },
+			                "city": { "type": "string" }
+			            }
+			        },
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "address": { "$ref": "#/definitions/address" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		var referenceSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "address": {
+			            "type": "object",
+			            "properties": {
+			                "street": { "type": "string" },
+			                "city": { "type": "string" },
+			                "zipCode": { "type": "string" },
+			                "country": { "type": "string" }
+			            },
+			            "required": ["zipCode"]
+			        },
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "address": { "$ref": "#/definitions/address" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		// Act
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+
+		// Assert
+		result.IsCompatible.Should().BeFalse();
+		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.MissingRequiredProperty);
+		result.Errors.Should().Contain(e => e.PropertyPath == "#/person/address/zipCode");
+	}
+
+	[Test]
+	public async Task BackwardAllMode_WithReferences_Compatible_WithMultipleSchemas() {
+		// Arrange
+		var uncheckedSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "age": { "type": "integer" },
+			                "email": { "type": "string" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		var referenceSchemas = new[] {
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""",
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "age": { "type": "integer" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			"""
+		};
+
+		// Act
+		var result = await CompatibilityManager.CheckCompatibilityAll(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.BackwardAll);
+
+		// Assert
+		result.IsCompatible.Should().BeTrue();
+	}
+
+	[Test]
+	public async Task CircularReferences_AreHandledCorrectly() {
+		// Arrange
+		var uncheckedSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "friend": { "$ref": "#/definitions/person" }
+			            }
+			        }
+			    },
+			    "properties": {
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		var referenceSchema =
+			"""
+			{
+			    "type": "object",
+			    "definitions": {
+			        "person": {
+			            "type": "object",
+			            "properties": {
+			                "name": { "type": "string" },
+			                "age": { "type": "integer" },
+			                "friend": { "$ref": "#/definitions/person" }
+			            },
+			            "required": ["age"]
+			        }
+			    },
+			    "properties": {
+			        "person": { "$ref": "#/definitions/person" }
+			    }
+			}
+			""";
+
+		// Act
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+
+		// Assert
+		result.IsCompatible.Should().BeFalse();
+		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.MissingRequiredProperty);
+		result.Errors.Should().Contain(e => e.PropertyPath == "#/person/age");
+	}
 }
