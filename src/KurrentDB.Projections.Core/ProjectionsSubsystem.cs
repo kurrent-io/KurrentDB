@@ -198,6 +198,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-progress", tracker.ObserveProgress);
 		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-running", tracker.ObserveRunning);
 		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-status", tracker.ObserveStatus);
+		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size", tracker.ObserveStateSize);
 	}
 
 	public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>

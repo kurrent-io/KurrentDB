@@ -87,4 +87,22 @@ public class ProjectionTracker : IProjectionTracker {
 			]);
 		}
 	}
+
+	public IEnumerable<Measurement<int>> ObserveStateSize() {
+		foreach (var statistics in _currentStats) {
+			if (statistics.StateSizes is null)
+				continue;
+
+			foreach (var (partition, stateSize) in statistics.StateSizes) {
+				List<KeyValuePair<string, object>> tags = new(capacity: 2) {
+					new("projection", statistics.Name)
+				};
+
+				if (partition != string.Empty)
+					tags.Add(new KeyValuePair<string, object>("partition", partition));
+
+				yield return new(stateSize, tags);
+			}
+		}
+	}
 }
