@@ -289,7 +289,7 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
             """
             SELECT
                   v.version_id
-                , decodse(v.schema_definition) AS schema_definition
+                , decode(v.schema_definition) AS schema_definition
                 , v.data_format
                 , s.compatibility
             FROM schemas s
