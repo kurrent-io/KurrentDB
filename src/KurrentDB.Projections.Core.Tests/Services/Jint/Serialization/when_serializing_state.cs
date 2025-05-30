@@ -27,10 +27,12 @@ public class when_serializing_state {
 		_parser = new JsonParser(_engine);
 		_builtIn = new JsonSerializer(_engine);
 		_sut = new JintProjectionStateHandler(
+			name: "projection",
 			source: "",
 			enableContentTypeValidation: false,
 			compilationTimeout: TimeSpan.FromMilliseconds(500),
-			executionTimeout: TimeSpan.FromMilliseconds(500));
+			executionTimeout: TimeSpan.FromMilliseconds(500),
+			onJsProjectionExecuted: (_, _, _) => {});
 	}
 
 	private void RoundTrip(string json, bool ignoreCase = false) {

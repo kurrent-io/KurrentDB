@@ -21,7 +21,9 @@ using Jint.Runtime;
 using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using KurrentDB.Core.Services;
+using KurrentDB.Core.Time;
 using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
@@ -45,7 +47,8 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	private JsValue _state;
 	private JsValue _sharedState;
 
-	public JintProjectionStateHandler(string source, bool enableContentTypeValidation, TimeSpan compilationTimeout, TimeSpan executionTimeout) {
+	public JintProjectionStateHandler(string name, string source, bool enableContentTypeValidation,
+		TimeSpan compilationTimeout, TimeSpan executionTimeout, OnJsProjectionExecuted onJsProjectionExecuted) {
 
 		_enableContentTypeValidation = enableContentTypeValidation;
 		_definitionBuilder = new SourceDefinitionBuilder();
@@ -55,7 +58,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		_engine = new Engine(opts => opts.Constraint(timeConstraint).DisableStringCompilation());
 		_state = JsValue.Undefined;
 		_sharedState = JsValue.Undefined;
-		_interpreterRuntime = new InterpreterRuntime(_engine, _definitionBuilder);
+		_interpreterRuntime = new InterpreterRuntime(name, _engine, _definitionBuilder, onJsProjectionExecuted);
 		_engine.Global.FastAddProperty("log", new ClrFunction(_engine, "log", Log), false, false, false);
 
 		timeConstraint.Compiling();
@@ -440,7 +443,9 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		private readonly JsValue _outputToInstance;
 		private readonly JsValue _definesStateTransformInstance;
 
+		private readonly string _name;
 		private readonly SourceDefinitionBuilder _definitionBuilder;
+		private readonly OnJsProjectionExecuted _onJsProjectionExecuted;
 		private readonly JsonParser _parser;
 
 		private static readonly Dictionary<string, Action<InterpreterRuntime>> _possibleProperties = new Dictionary<string, Action<InterpreterRuntime>>() {
@@ -480,9 +485,15 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		private readonly List<string> _definitionFunctions;
 
-		public InterpreterRuntime(Engine engine, SourceDefinitionBuilder builder) : base(engine) {
+		public InterpreterRuntime(
+			string name,
+			Engine engine,
+			SourceDefinitionBuilder builder,
+			OnJsProjectionExecuted onJsProjectionExecuted) : base(engine) {
 
+			_name = name;
 			_definitionBuilder = builder;
+			_onJsProjectionExecuted = onJsProjectionExecuted;
 			_handlers = new Dictionary<string, ScriptFunction>(StringComparer.Ordinal);
 			_createdHandlers = new List<ScriptFunction>();
 			_transforms = new List<(TransformType, ScriptFunction)>();
@@ -705,19 +716,37 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 
 		public JsValue InitializeState() {
-			return _init == null ? new JsObject(Engine) : _init.Call();
+			if (_init is null)
+				return new JsObject(Engine);
+
+			var start = Instant.Now;
+			var result = _init.Call();
+			_onJsProjectionExecuted(start, _name, jsHandler: "$init");
+
+			return result;
 		}
 
 		public JsValue InitializeSharedState() {
-			return _initShared == null ? new JsObject(Engine) : _initShared.Call();
+			if (_initShared is null)
+				return new JsObject(Engine);
+
+			var start = Instant.Now;
+			var result = _initShared.Call();
+			_onJsProjectionExecuted(start, _name, jsHandler: "$initShared");
+
+			return result;
 		}
 
 		public JsValue Handle(JsValue state, EventEnvelope eventEnvelope) {
 			JsValue newState;
 			if (_handlers.TryGetValue(eventEnvelope.EventType, out var handler)) {
+				var start = Instant.Now;
 				newState = handler.Call(state, FromObject(Engine, eventEnvelope));
+				_onJsProjectionExecuted(start, _name, jsHandler: eventEnvelope.EventType);
 			} else if (_any != null) {
+				var start = Instant.Now;
 				newState = _any.Call(state, FromObject(Engine, eventEnvelope));
+				_onJsProjectionExecuted(start, _name, jsHandler: "$any");
 			} else {
 				newState = eventEnvelope.BodyRaw;
 			}
@@ -816,7 +845,9 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		public void HandleDeleted(JsValue state, string partition, bool isSoftDelete) {
 			if (_deleted != null) {
+				var start = Instant.Now;
 				_deleted.Call(this, new JsValue[] { state, Null, partition, isSoftDelete });
+				_onJsProjectionExecuted(start, _name, "$deleted");
 			}
 		}
 	}
