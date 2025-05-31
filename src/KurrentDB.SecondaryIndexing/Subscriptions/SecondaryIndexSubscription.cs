@@ -22,7 +22,7 @@ public class SecondaryIndexSubscription(
 	private readonly uint _commitDelayMs = options.CommitDelayMs;
 
 	private readonly CancellationTokenSource _cts = new();
-	private Enumerator.AllSubscriptionFiltered? _subscription;
+	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
 	private Committer? _committer;
 
@@ -39,11 +39,8 @@ public class SecondaryIndexSubscription(
 			expiryStrategy: new DefaultExpiryStrategy(),
 			checkpoint: startFrom,
 			resolveLinks: false,
-			eventFilter: EventFilter.DefaultAllFilter,
 			user: SystemAccounts.System,
 			requiresLeader: false,
-			maxSearchWindow: null,
-			checkpointIntervalMultiplier: DefaultCheckpointIntervalMultiplier,
 			cancellationToken: _cts.Token
 		);
 
@@ -63,6 +60,11 @@ public class SecondaryIndexSubscription(
 
 			try {
 				var resolvedEvent = eventReceived.Event;
+
+				if (resolvedEvent.Event.EventType.StartsWith('$') || resolvedEvent.Event.EventStreamId.StartsWith('$')) {
+					// ignore system events
+					continue;
+				}
 
 				index.Processor.Index(resolvedEvent);
 
