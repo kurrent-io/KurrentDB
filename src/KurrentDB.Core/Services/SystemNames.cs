@@ -74,7 +74,7 @@ public static class SystemStreams {
 	}
 
 	public static bool IsVirtualStream(string streamId) =>
-		IsInMemoryStream(InMemoryStreamPrefix) || IsIndexStream(streamId);
+		IsInMemoryStream(streamId) || IsIndexStream(streamId);
 
 	public static bool IsInMemoryStream(string streamId) =>
 		streamId.StartsWith(InMemoryStreamPrefix);

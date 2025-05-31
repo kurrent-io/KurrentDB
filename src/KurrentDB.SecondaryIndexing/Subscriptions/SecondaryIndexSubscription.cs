@@ -22,9 +22,11 @@ public class SecondaryIndexSubscription(
 	private readonly uint _commitDelayMs = options.CommitDelayMs;
 
 	private readonly CancellationTokenSource _cts = new();
-	private Enumerator.AllSubscription? _subscription;
+	private Enumerator.AllSubscriptionFiltered? _subscription;
 	private Task? _processingTask;
 	private Committer? _committer;
+
+	const uint DefaultCheckpointIntervalMultiplier = 1000;
 
 	public void Subscribe() {
 		var position = index.GetLastPosition();
@@ -37,8 +39,11 @@ public class SecondaryIndexSubscription(
 			expiryStrategy: new DefaultExpiryStrategy(),
 			checkpoint: startFrom,
 			resolveLinks: false,
+			eventFilter: EventFilter.DefaultAllFilter,
 			user: SystemAccounts.System,
 			requiresLeader: false,
+			maxSearchWindow: null,
+			checkpointIntervalMultiplier: DefaultCheckpointIntervalMultiplier,
 			cancellationToken: _cts.Token
 		);
 
