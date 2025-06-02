@@ -97,28 +97,30 @@ public static class JsonSchemaExtensions {
 	public static ByteString ToByteString(this JsonSchema schema)
 		=> ByteString.CopyFromUtf8(schema.ToJson());
 
-	public static JsonSchema AddOptional(this JsonSchema schema, string name, JsonObjectType type, object? defaultValue = null) {
+	static JsonSchema AddField(this JsonSchema schema, string name, JsonObjectType type, object? defaultValue = null, bool? required = false) {
 		var clone = Clone(schema);
 		clone.Properties[name] = new JsonSchemaProperty {
 			Type = type,
 			Default = defaultValue
 		};
-		clone.RequiredProperties.Remove(name);
+		switch (required) {
+			case true when !clone.RequiredProperties.Contains(name):
+				clone.RequiredProperties.Add(name);
+				break;
+			case false:
+				clone.RequiredProperties.Remove(name);
+				break;
+		}
 		return clone;
 	}
 
-	public static JsonSchema AddRequired(this JsonSchema schema, string name, JsonObjectType type, object? defaultValue = null) {
-		var clone = Clone(schema);
-		clone.Properties[name] = new JsonSchemaProperty {
-			Type = type,
-			Default = defaultValue
-		};
-		if (!clone.RequiredProperties.Contains(name))
-			clone.RequiredProperties.Add(name);
-		return clone;
-	}
+	public static JsonSchema AddOptional(this JsonSchema schema, string name, JsonObjectType type, object? defaultValue = null) =>
+		AddField(schema, name, type, defaultValue, required: false);
 
-	public static JsonSchema SetRequired(this JsonSchema schema, string name) {
+	public static JsonSchema AddRequired(this JsonSchema schema, string name, JsonObjectType type, object? defaultValue = null) =>
+		AddField(schema, name, type, defaultValue, required: true);
+
+	public static JsonSchema MakeRequired(this JsonSchema schema, string name) {
 		var clone = Clone(schema);
 		clone.RequiredProperties.Add(name);
 		return clone;

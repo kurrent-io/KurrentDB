@@ -142,7 +142,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 			.AddOptional("role", JsonObjectType.String);
 
 		var uncheckedSchema = referenceSchema
-			.SetRequired("role");
+			.MakeRequired("role");
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(
@@ -313,7 +313,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 		var v2 = v1
 			.ChangeType("role", JsonObjectType.Integer)
 			.AddRequired("address", JsonObjectType.String)
-			.SetRequired("age");
+			.MakeRequired("age");
 
 		var uncheckedSchema = v2.ToCanonicalJson();
 
@@ -368,7 +368,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 		var v2 = v1
 			.ChangeType("role", JsonObjectType.Integer)
 			.AddRequired("email", JsonObjectType.String)
-			.SetRequired("age");
+			.MakeRequired("age");
 
 		var uncheckedSchema = v2.ToCanonicalJson();
 
@@ -480,7 +480,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 			.AddOptional("age", JsonObjectType.Integer);
 
 		var v2 = v1
-			.SetRequired("role");
+			.MakeRequired("role");
 
 		var uncheckedSchema = v2.ToCanonicalJson();
 		var referenceSchema = v1.ToCanonicalJson();
@@ -529,7 +529,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 		var v2 = v1
 			.ChangeType("role", JsonObjectType.Integer)
 			.AddRequired("email", JsonObjectType.String)
-			.SetRequired("age");
+			.MakeRequired("age");
 
 		var uncheckedSchema = v2.ToCanonicalJson();
 

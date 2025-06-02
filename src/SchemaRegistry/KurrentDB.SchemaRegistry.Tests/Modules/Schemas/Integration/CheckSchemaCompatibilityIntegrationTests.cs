@@ -125,7 +125,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 
 		var v2 = v1
 			.AddRequired("age", JsonObjectType.Integer)
-			.SetRequired("email")
+			.MakeRequired("email")
 			.ChangeType("gender", JsonObjectType.Integer);
 
 		await Client.CreateSchemaAsync(
