@@ -3,6 +3,7 @@
 
 using DotNext;
 using Kurrent.Quack;
+using KurrentDB.Core.Data;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -17,12 +18,13 @@ internal static class DefaultIndexConstants {
 	public const string IndexName = $"{SystemStreams.IndexStreamPrefix}all";
 }
 
-internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
+internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndexExt {
 	private readonly DuckDbDataSource _db;
 
-	public ISecondaryIndexProcessor Processor { get; }
+	public DefaultIndexProcessor<TStreamId> Processor { get; }
 
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
+
 
 	public CategoryIndex<TStreamId> CategoryIndex { get; }
 
@@ -34,13 +36,11 @@ internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 		_db = db;
 		_db.InitDb();
 
-		var connection = db.OpenNewConnection();
+		CategoryIndex = new(db, readIndex);
+		EventTypeIndex = new(db, readIndex);
+		StreamIndex = new(db, readIndex);
 
-		CategoryIndex = new CategoryIndex<TStreamId>(db, connection, readIndex);
-		EventTypeIndex = new EventTypeIndex<TStreamId>(db, connection, readIndex);
-		StreamIndex = new StreamIndex<TStreamId>(connection, readIndex);
-
-		var processor = new DefaultSecondaryIndexProcessor<TStreamId>(connection, this);
+		var processor = new DefaultIndexProcessor<TStreamId>(db, this);
 		Processor = processor;
 		Readers = [
 			new DefaultIndexReader<TStreamId>(db, processor, readIndex),
@@ -48,6 +48,10 @@ internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 			..EventTypeIndex.Readers
 		];
 	}
+
+	public void Commit() => Processor.Commit();
+
+	public void Index(ResolvedEvent evt) => Processor.Index(evt);
 
 	public void Init() {
 	}
@@ -70,5 +74,3 @@ internal class DefaultIndex<TStreamId> : Disposable, ISecondaryIndex {
 		public static ulong Parse(ref DataChunk.Row row) => row.ReadUInt64();
 	}
 }
-
-public record struct SequenceRecord(long Id, long Sequence);

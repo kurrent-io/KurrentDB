@@ -11,10 +11,12 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 	private readonly object _lock = new();
 	private readonly IList<ResolvedEvent> _pending = pending ?? [];
 
-	public void Index(ResolvedEvent resolvedEvent) {
+	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
 		lock (_lock) {
 			_pending.Add(resolvedEvent);
 		}
+
+		return new(0, 0);
 	}
 
 	public void Commit() {

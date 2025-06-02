@@ -3,23 +3,22 @@
 
 using Kurrent.Quack;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexReader<TStreamId>(
 	DuckDbDataSource db,
-	DefaultSecondaryIndexProcessor<TStreamId> processor,
+	DefaultIndexProcessor<TStreamId> processor,
 	IReadIndex<TStreamId> index
-) : DuckDbIndexReader<TStreamId>(index) {
+) : SecondaryIndexReaderBase<TStreamId>(index) {
 	protected override long GetId(string streamName) => 0;
 
 	protected override long GetLastIndexedSequence(long id) => processor.LastCommittedSequence;
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long _, long fromEventNumber, long toEventNumber) {
 		var range = QueryDefaultIndex(fromEventNumber, toEventNumber);
-		var indexPrepares = range.Select(x => new IndexedPrepare(x.seq, x.event_number, x.log_position));
+		var indexPrepares = range.Select(x => new IndexedPrepare(x.Seq, x.EventNumber, x.LogPosition));
 		return indexPrepares;
 	}
 
@@ -41,9 +40,9 @@ internal class DefaultIndexReader<TStreamId>(
 			"select seq, log_position, event_number from idx_all where seq>=$1 and seq<=$2"u8;
 
 		public static AllRecord Parse(ref DataChunk.Row row) => new() {
-			seq = row.ReadInt64(),
-			log_position = row.ReadInt64(),
-			event_number = row.ReadInt32(),
+			Seq = row.ReadInt64(),
+			LogPosition = row.ReadInt64(),
+			EventNumber = row.ReadInt32(),
 		};
 	}
 }

@@ -23,7 +23,7 @@ namespace KurrentDB.Core.XUnit.Tests.LogAbstraction;
 // check that lookups of the various combinations of virtual/normal/meta
 // work in both directions and in the stream index.
 public class LogFormatAbstractorV3Tests : IAsyncLifetime {
-	readonly static string _outputDir = $"testoutput/{nameof(LogFormatAbstractorV3Tests)}";
+	static readonly string _outputDir = $"testoutput/{nameof(LogFormatAbstractorV3Tests)}";
 	readonly LogFormatAbstractor<StreamId> _sut = new LogV3FormatAbstractorFactory().Create(new() {
 		IndexDirectory = _outputDir,
 		InMemory = false,
@@ -416,7 +416,7 @@ public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return null;
 	}
 
-	public long? SetStreamSecondaryIndexId(TStreamId streamId, long secondaryIndexId) {
+	public ulong? SetStreamSecondaryIndexId(TStreamId streamId, ulong secondaryIndexId) {
 		return null;
 	}
 
@@ -440,7 +440,7 @@ public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		throw new NotImplementedException();
 	}
 
-	public long? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, long? secondaryIndexId) {
+	public ulong? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, ulong? secondaryIndexId) {
 		throw new NotImplementedException();
 	}
 

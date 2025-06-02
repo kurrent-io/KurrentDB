@@ -14,25 +14,22 @@ internal static class EventTypeIndexConstants {
 }
 
 internal class EventTypeIndex<TStreamId> : ISecondaryIndex {
-	private readonly EventTypeIndexProcessor _processor;
-
-	public EventTypeIndex(DuckDbDataSource db, DuckDBAdvancedConnection connection, IReadIndex<TStreamId> readIndex) {
-		_processor = new EventTypeIndexProcessor(connection);
-		Readers = [new EventTypeIndexReader<TStreamId>(db, _processor, readIndex)];
+	public EventTypeIndex(DuckDbDataSource db, IReadIndex<TStreamId> readIndex) {
+		Processor = new(db);
+		Readers = [new EventTypeIndexReader<TStreamId>(db, Processor, readIndex)];
 	}
 
 	public void Init() {
 	}
 
-	public ulong? GetLastPosition() =>
-		(ulong)_processor.LastCommittedPosition;
+	public ulong? GetLastPosition() => (ulong)Processor.LastCommittedPosition;
 
-	public ulong? GetLastSequence() => (ulong)_processor.Seq;
+	public ulong? GetLastSequence() => (ulong)Processor.Seq;
 
-	public ISecondaryIndexProcessor Processor => _processor;
+	public EventTypeIndexProcessor Processor { get; }
+
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
-
-	public SequenceRecord LastIndexed => _processor.LastIndexed;
+	public void Commit() => Processor.Commit();
 
 	public void Dispose() { }
 }

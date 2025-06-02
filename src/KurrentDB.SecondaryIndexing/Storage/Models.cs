@@ -3,30 +3,11 @@
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
-internal struct IndexRecord {
-	public int event_number { get; set; }
-	public long log_position { get; set; }
-}
-
-internal struct CategoryRecord {
-	public int category_seq { get; set; }
-	public long log_position { get; set; }
-	public int event_number { get; set; }
-}
-
-internal struct EventTypeRecord {
-	public int event_type_seq { get; set; }
-	public long log_position { get; set; }
-	public int event_number { get; set; }
-}
 
 internal struct AllRecord {
-	public long seq { get; set; }
-	public long log_position { get; set; }
-	public int event_number { get; set; }
+	public long Seq { get; set; }
+	public long LogPosition { get; set; }
+	public int EventNumber { get; set; }
 }
 
-public struct ReferenceRecord {
-	public long id { get; set; }
-	public required string name { get; set; }
-}
+public record struct ReferenceRecord(long Id, string Name);

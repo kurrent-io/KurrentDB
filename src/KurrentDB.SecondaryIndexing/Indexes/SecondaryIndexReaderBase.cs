@@ -9,11 +9,11 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Readers;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
-namespace KurrentDB.SecondaryIndexing.Indexes.DuckDb;
+namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public record struct IndexedPrepare(long Version, int EventNumber, long LogPosition);
 
-internal abstract class DuckDbIndexReader<TStreamId>(IReadIndex<TStreamId> index) : IVirtualStreamReader {
+internal abstract class SecondaryIndexReaderBase<TStreamId>(IReadIndex<TStreamId> index) : IVirtualStreamReader {
 	protected abstract long GetId(string streamName);
 
 	protected abstract long GetLastIndexedSequence(long id);

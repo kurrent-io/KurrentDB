@@ -1,35 +1,32 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using DotNext;
-using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
-internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	private readonly Dictionary<string, long> _eventTypes;
-	private readonly Dictionary<long, long> _eventTypeSizes = new();
-	private long _lastLogPosition;
-	private readonly Appender _appender;
+internal class EventTypeIndexProcessor : ISecondaryIndexProcessor {
+	readonly Dictionary<string, long> _eventTypes;
+	readonly Dictionary<long, long> _eventTypeSizes = new();
+	readonly DuckDbDataSource _db;
+
+	long _lastLogPosition;
 
 	public long Seq { get; private set; }
 	public long LastCommittedPosition { get; private set; }
-	public SequenceRecord LastIndexed { get; private set; }
 
-	public EventTypeIndexProcessor(DuckDBAdvancedConnection connection) {
-		_appender = new(connection, "event_type"u8);
-
-		var ids = connection.Query<ReferenceRecord, QueryEventTypeSql>();
-		_eventTypes = ids.ToDictionary(x => x.name, x => x.id);
+	public EventTypeIndexProcessor(DuckDbDataSource db) {
+		_db = db;
+		var ids = db.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>();
+		_eventTypes = ids.ToDictionary(x => x.Name, x => x.Id);
 
 		foreach (var id in ids) {
-			_eventTypeSizes[id.id] = -1;
+			_eventTypeSizes[id.Id] = -1;
 		}
 
-		var sequences = connection.Query<(long Id, long Sequence), QueryCategoriesMaxSequencesSql>();
+		var sequences = db.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>();
 		foreach (var sequence in sequences) {
 			_eventTypeSizes[sequence.Id] = sequence.Sequence;
 		}
@@ -37,10 +34,7 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		Seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() : 0;
 	}
 
-	public void Index(ResolvedEvent resolvedEvent) {
-		if (IsDisposingOrDisposed)
-			return;
-
+	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
 		var eventTypeName = resolvedEvent.OriginalEvent.EventType;
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
 
@@ -48,8 +42,7 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			var next = _eventTypeSizes[eventTypeId] + 1;
 			_eventTypeSizes[eventTypeId] = next;
 
-			LastIndexed = new(eventTypeId, next);
-			return;
+			return new(eventTypeId, next);
 		}
 
 		var id = ++Seq;
@@ -57,13 +50,9 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_eventTypes[eventTypeName] = id;
 		_eventTypeSizes[id] = 0;
 
-		using (var row = _appender.CreateRow()) {
-			row.Append(id);
-			row.Append(eventTypeName);
-		}
-
+		_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new((int)id, eventTypeName));
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
-		LastIndexed = new(id, 0);
+		return new(id, 0);
 	}
 
 	public long GetLastEventNumber(long eventTypeId) =>
@@ -73,10 +62,6 @@ internal class EventTypeIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_eventTypes.TryGetValue(eventTypeName, out var eventTypeId) ? eventTypeId : ExpectedVersion.NoStream;
 
 	public void Commit() {
-		if (IsDisposingOrDisposed)
-			return;
-
-		_appender.Flush();
 		LastCommittedPosition = _lastLogPosition;
 	}
 }

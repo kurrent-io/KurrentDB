@@ -19,6 +19,8 @@ public class FakeSecondaryIndex : ISecondaryIndex {
 	public ISecondaryIndexProcessor Processor { get; }
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
 
+	public void Commit() => Processor.Commit();
+
 	public void Init() { }
 
 	public ulong? GetLastPosition() =>

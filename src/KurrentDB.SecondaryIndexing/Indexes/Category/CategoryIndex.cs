@@ -14,23 +14,21 @@ internal static class CategoryIndexConstants {
 }
 
 internal class CategoryIndex<TStreamId> : ISecondaryIndex {
-	private readonly CategoryIndexProcessor _processor;
-
-	public CategoryIndex(DuckDbDataSource db, DuckDBAdvancedConnection connection, IReadIndex<TStreamId> readIndex) {
-		_processor = new CategoryIndexProcessor(connection);
-		Readers = [new CategoryIndexReader<TStreamId>(db, _processor, readIndex)];
+	public CategoryIndex(DuckDbDataSource db, IReadIndex<TStreamId> readIndex) {
+		Processor = new(db);
+		Readers = [new CategoryIndexReader<TStreamId>(db, Processor, readIndex)];
 	}
 
 	public void Init() {
 	}
 
-	public ulong? GetLastPosition() =>
-		(ulong)_processor.LastCommittedPosition;
+	public ulong? GetLastPosition() => (ulong)Processor.LastCommittedPosition;
 
-	public ISecondaryIndexProcessor Processor => _processor;
+	public CategoryIndexProcessor Processor { get; }
+
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
 
-	public SequenceRecord LastIndexed => _processor.LastIndexed;
+	public void Commit() => Processor.Commit();
 
 	public void Dispose() { }
 }

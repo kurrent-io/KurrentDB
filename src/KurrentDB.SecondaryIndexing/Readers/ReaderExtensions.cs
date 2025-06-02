@@ -7,7 +7,7 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.LogCommon;
-using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
+using KurrentDB.SecondaryIndexing.Indexes;
 
 namespace KurrentDB.SecondaryIndexing.Readers;
 

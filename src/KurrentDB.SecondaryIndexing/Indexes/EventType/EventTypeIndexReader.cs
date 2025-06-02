@@ -3,7 +3,6 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeIndexConstants;
@@ -15,7 +14,7 @@ internal class EventTypeIndexReader<TStreamId>(
 	EventTypeIndexProcessor processor,
 	IReadIndex<TStreamId> index
 )
-	: DuckDbIndexReader<TStreamId>(index) {
+	: SecondaryIndexReaderBase<TStreamId>(index) {
 
 	protected override long GetId(string streamName) {
 		if (!streamName.StartsWith(IndexPrefix)) {
@@ -28,21 +27,14 @@ internal class EventTypeIndexReader<TStreamId>(
 
 	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber(id);
 
-	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber)
-		=> GetRecords(id, fromEventNumber, toEventNumber);
-
-	public override long GetLastIndexedPosition(string streamId) => processor.LastCommittedPosition;
-
-	public override bool CanReadStream(string streamId) =>
-		streamId.StartsWith(IndexPrefix);
-
-	private IEnumerable<IndexedPrepare> GetRecords(long id, long fromEventNumber, long toEventNumber) {
-		var range = QueryEventTypeIndex(id, fromEventNumber, toEventNumber);
-		var indexPrepares = range.Select(x => new IndexedPrepare(x.event_type_seq, x.event_number, x.log_position));
+	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
+		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(new((int)id, fromEventNumber, toEventNumber));
+		var indexPrepares = range.Select(x => new IndexedPrepare(x.EventTypeSeq, x.EventNumber, x.LogPosition));
 		return indexPrepares;
 	}
 
-	private List<EventTypeRecord> QueryEventTypeIndex(long id, long fromEventNumber, long toEventNumber) {
-		return db.Pool.Query<(long, long, long), EventTypeRecord, QueryEventTypeIndexSql>((id, fromEventNumber, toEventNumber));
-	}
+	public override long GetLastIndexedPosition(string streamId) => processor.LastCommittedPosition;
+
+	public override bool CanReadStream(string streamId) => streamId.StartsWith(IndexPrefix);
+
 }

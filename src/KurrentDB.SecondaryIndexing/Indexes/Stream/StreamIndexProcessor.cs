@@ -3,29 +3,43 @@
 
 using System.Runtime.CompilerServices;
 using DotNext;
+using DotNext.Collections.Generic;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
-using Microsoft.Extensions.Caching.Memory;
+using Serilog;
 using static KurrentDB.SecondaryIndexing.Indexes.Stream.StreamSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
-internal class StreamIndexProcessor<TStreamId>(
-	DuckDBAdvancedConnection connection,
-	IIndexBackend<TStreamId> indexReaderBackend
-) : Disposable, ISecondaryIndexProcessor {
-	private long _lastLogPosition;
-	private readonly Appender _appender = new(connection, "streams"u8);
+internal class StreamIndexProcessor<TStreamId> : Disposable {
+	static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor<TStreamId>>();
 
-	public long Seq { get; private set; } = connection.QueryFirstOrDefault<long, QueryStreamsMaxSequencesSql>() ?? 0;
+	readonly Appender _appender;
+	readonly DuckDbDataSource _db;
+	readonly IIndexBackend<TStreamId> _indexReaderBackend;
+	readonly DuckDBAdvancedConnection _connection;
+	readonly Dictionary<string, ulong> _inFlightRecords = new();
+
+	long _lastLogPosition;
+
+	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<TStreamId> indexReaderBackend) {
+		_db = db;
+		_indexReaderBackend = indexReaderBackend;
+		_connection = _db.OpenNewConnection();
+		_appender = new(_connection, "streams"u8);
+		Seq = _connection.QueryFirstOrDefault<ulong, GetStreamMaxSequencesQuery>() ?? 0;
+	}
+
+	public ulong Seq { get; private set; }
 	public long LastCommittedPosition { get; private set; }
-	public long LastIndexed { get; private set; }
 
-	public void Index(ResolvedEvent resolvedEvent) {
+	int _count;
+
+	public long Index(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
-			return;
+			return -1;
 
 		string name = resolvedEvent.OriginalStreamId;
 		_lastLogPosition = resolvedEvent.Event.LogPosition;
@@ -33,37 +47,58 @@ internal class StreamIndexProcessor<TStreamId>(
 		// TODO: meh, think if we can drop constraint or at least use something like IParsable
 		var streamId = Unsafe.As<string, TStreamId>(ref name);
 
-		var cached = indexReaderBackend.TryGetStreamLastEventNumber(streamId);
+		var inFlight = _inFlightRecords.TryGetValue(name);
+		if (inFlight.HasValue) {
+			return (long)inFlight.Value;
+		}
+
+		var cached = _indexReaderBackend.TryGetStreamLastEventNumber(streamId);
 
 		if (cached.SecondaryIndexId.HasValue) {
-			LastIndexed = cached.SecondaryIndexId.Value;
-			return;
+			return (long)cached.SecondaryIndexId.Value;
 		}
 
-		var fromDb = connection.QueryFirstOrDefault<QueryStreamArgs, long, QueryStreamIdSql>(new() { StreamName = name });
+		var fromDb = _db.Pool.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, ulong, GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
-			indexReaderBackend.UpdateStreamSecondaryIndexId(1, streamId, fromDb.Value);
-			LastIndexed = fromDb.Value;
-			return;
+			_indexReaderBackend.UpdateStreamSecondaryIndexId(1, streamId, fromDb.Value);
+			return (long)fromDb.Value;
 		}
 
+		Log.Information("Stream {Name} not in the db", streamId);
 		var id = ++Seq;
-		indexReaderBackend.UpdateStreamSecondaryIndexId(1, streamId, id);
+		_indexReaderBackend.UpdateStreamSecondaryIndexId(1, streamId, id);
+
+		_inFlightRecords[name] = id;
 
 		using var row = _appender.CreateRow();
 		row.Append(id);
 		row.Append(name);
 		row.AppendDefault();
 		row.AppendDefault();
+		_count++;
 
-		LastIndexed = id;
+		return (long)id;
 	}
 
 	public void Commit() {
 		if (IsDisposingOrDisposed)
 			return;
 
+		Log.Information("In-flight records count: {Count}", _inFlightRecords.Count);
+		Log.Information("Appender rows count: {Count}", _count);
+		_inFlightRecords.Clear();
+		_count = 0;
+
 		_appender.Flush();
 		LastCommittedPosition = _lastLogPosition;
+	}
+
+	protected override void Dispose(bool disposing) {
+		if (!IsDisposingOrDisposed) {
+			_appender.Dispose();
+			_connection.Dispose();
+		}
+
+		base.Dispose(disposing);
 	}
 }

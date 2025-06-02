@@ -4,23 +4,18 @@
 using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
 
 namespace KurrentDB.SecondaryIndexing.Builders;
 
-public class SecondaryIndexBuilder
-	: IHandle<SystemMessage.SystemReady>,
-		IHandle<SystemMessage.BecomeShuttingDown>,
-		IHostedService {
+public class SecondaryIndexBuilder : IHandle<SystemMessage.SystemReady>, IHandle<SystemMessage.BecomeShuttingDown>, IHostedService {
 	private readonly SecondaryIndexSubscription _subscription;
-	private readonly ISecondaryIndex _index;
-	public IEnumerable<IVirtualStreamReader> IndexVirtualStreamReaders => _index.Readers;
+	private readonly ISecondaryIndexExt _index;
 
 	[Experimental("SECONDARY_INDEX")]
-	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber, SecondaryIndexingPluginOptions options) {
+	public SecondaryIndexBuilder(ISecondaryIndexExt index, IPublisher publisher, ISubscriber subscriber, SecondaryIndexingPluginOptions options) {
 		_subscription = new(publisher, index, options);
 		_index = index;
 
@@ -34,7 +29,6 @@ public class SecondaryIndexBuilder
 	}
 
 	public void Handle(SystemMessage.BecomeShuttingDown message) {
-		_index.Processor.Commit();
 		_index.Dispose();
 	}
 

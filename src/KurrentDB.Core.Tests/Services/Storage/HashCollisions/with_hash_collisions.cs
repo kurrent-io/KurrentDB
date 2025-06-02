@@ -431,20 +431,18 @@ public class FakeIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 	}
 
 	public IndexBackend<TStreamId>.EventNumberCached TryGetStreamLastEventNumber(TStreamId streamId) {
-		return new IndexBackend<TStreamId>.EventNumberCached(-1, null, null); //always return uncached
+		return new(-1, null, null); //always return uncached
 	}
 
 	public IndexBackend<TStreamId>.MetadataCached TryGetStreamMetadata(TStreamId streamId) {
-		if (_streamMetadata.TryGetValue(streamId, out var metadata))
-			return metadata;
-		return new IndexBackend<TStreamId>.MetadataCached();
+		return _streamMetadata.TryGetValue(streamId, out var metadata) ? metadata : new();
 	}
 
 	public long? UpdateStreamLastEventNumber(int cacheVersion, TStreamId streamId, long? lastEventNumber) {
 		return null;
 	}
 
-	public long? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, long? secondaryIndexId) {
+	public ulong? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, ulong? secondaryIndexId) {
 		return null;
 	}
 
@@ -458,13 +456,13 @@ public class FakeIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return null;
 	}
 
-	public long? SetStreamSecondaryIndexId(TStreamId streamId, long secondaryIndexId) {
+	public ulong? SetStreamSecondaryIndexId(TStreamId streamId, ulong secondaryIndexId) {
 		return null;
 	}
 
 	public StreamMetadata SetStreamMetadata(TStreamId streamId,
 		StreamMetadata metadata) {
-		_streamMetadata[streamId] = new IndexBackend<TStreamId>.MetadataCached(1, metadata);
+		_streamMetadata[streamId] = new(1, metadata);
 		return metadata;
 	}
 

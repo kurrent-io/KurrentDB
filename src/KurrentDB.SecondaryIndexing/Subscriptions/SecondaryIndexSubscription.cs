@@ -14,7 +14,7 @@ namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
 public class SecondaryIndexSubscription(
 	IPublisher publisher,
-	ISecondaryIndex index,
+	ISecondaryIndexExt index,
 	SecondaryIndexingPluginOptions options
 ) : IAsyncDisposable {
 	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
@@ -24,15 +24,10 @@ public class SecondaryIndexSubscription(
 	private readonly CancellationTokenSource _cts = new();
 	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
-	private Committer? _committer;
-
-	const uint DefaultCheckpointIntervalMultiplier = 1000;
 
 	public void Subscribe() {
 		var position = index.GetLastPosition();
 		var startFrom = position == null ? Position.Start : Position.FromInt64((long)position, (long)position);
-
-		_committer = new(_commitBatchSize, _commitDelayMs, () => index.Processor.Commit(), _cts.Token);
 
 		_subscription = new(
 			bus: publisher,
@@ -48,8 +43,10 @@ public class SecondaryIndexSubscription(
 	}
 
 	private async Task ProcessEvents(CancellationToken token) {
-		if (_subscription == null || _committer == null)
+		if (_subscription == null)
 			throw new InvalidOperationException("Subscription not initialized");
+
+		var indexedCount = 0;
 
 		while (!token.IsCancellationRequested) {
 			if (!await _subscription.MoveNextAsync())
@@ -66,16 +63,14 @@ public class SecondaryIndexSubscription(
 					continue;
 				}
 
-				index.Processor.Index(resolvedEvent);
+				index.Index(resolvedEvent);
 
-				_committer.Increment();
+				if (indexedCount++ > _commitBatchSize) {
+					index.Commit();
+					indexedCount = 0;
+				}
 
-				publisher.Publish(
-					new StorageMessage.SecondaryIndexRecordCommitted(
-						resolvedEvent.Event.LogPosition,
-						resolvedEvent.Event
-					)
-				);
+				publisher.Publish(new StorageMessage.SecondaryIndexRecordCommitted(resolvedEvent.Event.LogPosition, resolvedEvent.Event));
 			} catch (OperationCanceledException) {
 				break;
 			} catch (Exception e) {
@@ -99,9 +94,7 @@ public class SecondaryIndexSubscription(
 				}
 			}
 
-			if (_committer != null) {
-				await _committer.DisposeAsync();
-			}
+			index.Dispose();
 
 			if (_subscription != null) {
 				await _subscription.DisposeAsync();

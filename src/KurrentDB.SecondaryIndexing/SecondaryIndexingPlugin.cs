@@ -21,7 +21,8 @@ namespace KurrentDB.SecondaryIndexing;
 public interface ISecondaryIndexingPlugin : ISubsystemsPlugin;
 
 public sealed class SecondaryIndexingPluginOptions {
-	public int CommitBatchSize { get; set; } = 50_000;
+	public int CommitBatchSize { get; set; } = 1_000;
+	// public int CommitBatchSize { get; set; } = 50_000;
 	public uint CommitDelayMs { get; set; } = 10_000;
 }
 
@@ -34,20 +35,17 @@ internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStr
 	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
 	[Experimental("SECONDARY_INDEX")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-		services.AddSingleton<DuckDbDataSource>()
-			.AddSingleton<ISecondaryIndex>(sp =>
+		var options = configuration
+			.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
+			.Get<SecondaryIndexingPluginOptions>() ?? new();
+
+		services.AddSingleton<DuckDbDataSource>();
+		services.AddHostedService(sp =>
+			new SecondaryIndexBuilder(
 				new DefaultIndex<TStreamId>(
 					sp.GetRequiredService<DuckDbDataSource>(),
 					sp.GetRequiredService<IReadIndex<TStreamId>>()
-				)
-			);
-
-		var options = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
-			.Get<SecondaryIndexingPluginOptions>() ?? new();
-
-		services.AddHostedService(sp =>
-			new SecondaryIndexBuilder(
-				sp.GetRequiredService<ISecondaryIndex>(),
+				),
 				sp.GetRequiredService<IPublisher>(),
 				sp.GetRequiredService<ISubscriber>(),
 				options

@@ -3,7 +3,6 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.SecondaryIndexing.Indexes.DuckDb;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategoryIndexConstants;
@@ -15,7 +14,7 @@ internal class CategoryIndexReader<TStreamId>(
 	CategoryIndexProcessor processor,
 	IReadIndex<TStreamId> index
 )
-	: DuckDbIndexReader<TStreamId>(index) {
+	: SecondaryIndexReaderBase<TStreamId>(index) {
 
 	protected override long GetId(string streamName) {
 		if (!streamName.StartsWith(IndexPrefix)) {
@@ -28,22 +27,12 @@ internal class CategoryIndexReader<TStreamId>(
 
 	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber(id);
 
-	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber)
-		=> GetRecords(id, fromEventNumber, toEventNumber);
-
-	public override long GetLastIndexedPosition(string streamId) =>
-		processor.LastCommittedPosition;
-
-	public override bool CanReadStream(string streamId) =>
-		streamId.StartsWith(IndexPrefix);
-
-	private IEnumerable<IndexedPrepare> GetRecords(long id, long fromEventNumber, long toEventNumber) {
-		var range = QueryCategoryIndex(id, fromEventNumber, toEventNumber);
-		var indexPrepares = range.Select(x => new IndexedPrepare(x.category_seq, x.event_number, x.log_position));
-		return indexPrepares;
+	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
+		var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new((int)id, fromEventNumber, toEventNumber));
+		return range.Select(x => new IndexedPrepare(x.CategorySeq, x.EventNumber, x.LogPosition));
 	}
 
-	private List<CategoryRecord> QueryCategoryIndex(long id, long fromEventNumber, long toEventNumber) {
-		return db.Pool.Query<(long, long, long), CategoryRecord, QueryCategoryIndexSql>((id, fromEventNumber, toEventNumber));
-	}
+	public override long GetLastIndexedPosition(string streamId) => processor.LastCommittedPosition;
+
+	public override bool CanReadStream(string streamId) => streamId.StartsWith(IndexPrefix);
 }

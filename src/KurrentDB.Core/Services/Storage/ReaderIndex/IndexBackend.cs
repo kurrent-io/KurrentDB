@@ -21,11 +21,11 @@ public interface IIndexBackend<TStreamId> : IIndexBackend {
 	IndexBackend<TStreamId>.MetadataCached TryGetStreamMetadata(TStreamId streamId);
 
 	long? UpdateStreamLastEventNumber(int cacheVersion, TStreamId streamId, long? lastEventNumber);
-	long? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, long? secondaryIndexId);
+	ulong? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, ulong? secondaryIndexId);
 	StreamMetadata UpdateStreamMetadata(int cacheVersion, TStreamId streamId, StreamMetadata metadata);
 
 	long? SetStreamLastEventNumber(TStreamId streamId, long lastEventNumber);
-	long? SetStreamSecondaryIndexId(TStreamId streamId, long secondaryIndexId);
+	ulong? SetStreamSecondaryIndexId(TStreamId streamId, ulong secondaryIndexId);
 	StreamMetadata SetStreamMetadata(TStreamId streamId, StreamMetadata metadata);
 }
 
@@ -65,10 +65,10 @@ public class IndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return res.LastEventNumber;
 	}
 
-	public long? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, long? secondaryIndexId) {
+	public ulong? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, ulong? secondaryIndexId) {
 		var res = _streamLastEventNumberCache.Put(
 			streamId,
-			new KeyValuePair<int, long?>(cacheVersion, secondaryIndexId),
+			new KeyValuePair<int, ulong?>(cacheVersion, secondaryIndexId),
 			(_, d) => d.Key == 0 ? new EventNumberCached(1, null, d.Value) : new(1, null, null),
 			(_, old, d) => old.Version == d.Key ? new(d.Key + 1, old.LastEventNumber, d.Value ?? old.SecondaryIndexId) : old);
 		return res.SecondaryIndexId;
@@ -91,7 +91,7 @@ public class IndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return res.LastEventNumber;
 	}
 
-	long? IIndexBackend<TStreamId>.SetStreamSecondaryIndexId(TStreamId streamId, long secondaryIndexId) {
+	ulong? IIndexBackend<TStreamId>.SetStreamSecondaryIndexId(TStreamId streamId, ulong secondaryIndexId) {
 		var res = _streamLastEventNumberCache.Put(streamId,
 			secondaryIndexId,
 			(_, secIndexId) => new(1, null, secIndexId),
@@ -115,10 +115,10 @@ public class IndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return _systemSettings;
 	}
 
-	public struct EventNumberCached(int version, long? lastEventNumber, long? secondaryIndexId) {
+	public struct EventNumberCached(int version, long? lastEventNumber, ulong? secondaryIndexId) {
 		public readonly int Version = version;
 		public readonly long? LastEventNumber = lastEventNumber;
-		public readonly long? SecondaryIndexId = secondaryIndexId;
+		public readonly ulong? SecondaryIndexId = secondaryIndexId;
 
 		public static int ApproximateSize => Unsafe.SizeOf<EventNumberCached>();
 	}

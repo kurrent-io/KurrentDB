@@ -6,27 +6,20 @@ using Kurrent.Quack;
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
 internal static class StreamSql {
-	public struct QueryStreamArgs {
-		public string StreamName { get; set; }
+	public record struct GetStreamIdByNameQueryArgs(string StreamName);
+
+	public struct GetStreamIdByNameQuery : IQuery<GetStreamIdByNameQueryArgs, ulong> {
+		public static BindingContext Bind(in GetStreamIdByNameQueryArgs args, PreparedStatement statement)
+			=> new(statement) { args.StreamName };
+
+		public static ReadOnlySpan<byte> CommandText => "select id from streams where name=$1 limit 1"u8;
+
+		public static ulong Parse(ref DataChunk.Row row) => row.ReadUInt64();
 	}
 
-	public struct QueryStreamIdSql : IQuery<QueryStreamArgs, long> {
-		public static BindingContext Bind(in QueryStreamArgs args, PreparedStatement statement) => new(statement) {
-			args.StreamName
-		};
+	public struct GetStreamMaxSequencesQuery : IQuery<ulong> {
+		public static ReadOnlySpan<byte> CommandText => "select max(id) from streams"u8;
 
-		public static ReadOnlySpan<byte> CommandText =>
-			"select id from streams where name=$1"u8;
-
-		public static long Parse(ref DataChunk.Row row) =>
-			row.ReadInt64();
-	}
-
-	public struct QueryStreamsMaxSequencesSql : IQuery<long> {
-		public static ReadOnlySpan<byte> CommandText =>
-			"select max(id) from streams"u8;
-
-		public static long Parse(ref DataChunk.Row row) =>
-			row.ReadInt64();
+		public static ulong Parse(ref DataChunk.Row row) => row.ReadUInt64();
 	}
 }

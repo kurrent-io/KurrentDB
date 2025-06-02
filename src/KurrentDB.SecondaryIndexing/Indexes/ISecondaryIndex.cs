@@ -11,13 +11,17 @@ public interface ISecondaryIndex: IDisposable {
 
 	ulong? GetLastPosition();
 
-	ISecondaryIndexProcessor Processor { get; }
-
 	IReadOnlyList<IVirtualStreamReader> Readers { get; }
+
+	void Commit();
+}
+
+public interface ISecondaryIndexExt : ISecondaryIndex {
+	void Index(ResolvedEvent evt);
 }
 
 public interface ISecondaryIndexProcessor {
-	void Index(ResolvedEvent resolvedEvent);
+	SequenceRecord Index(ResolvedEvent resolvedEvent);
 
 	void Commit();
 }
