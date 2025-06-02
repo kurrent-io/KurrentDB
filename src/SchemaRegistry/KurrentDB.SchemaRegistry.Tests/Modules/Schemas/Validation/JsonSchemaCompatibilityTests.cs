@@ -57,16 +57,19 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenWideningUnionField() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchemaDefinition()
 			.AddRequired("gender", JsonObjectType.Integer);
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.WidenType("gender", JsonObjectType.Integer);
+
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
+			uncheckedSchema,
+			referenceSchema,
 			SchemaCompatibilityMode.Backward
 		);
 
@@ -77,18 +80,17 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenDeletingOptionalField() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchemaDefinition()
 			.AddOptional("email", JsonObjectType.String);
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.Remove("email");
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Backward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -97,18 +99,17 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenDeletingFieldWithDefaultValue() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchemaDefinition()
 			.AddOptional("role", JsonObjectType.String, "admin");
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.Remove("role");
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Backward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -117,18 +118,17 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenDeletingRequiredField() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchemaDefinition()
 			.AddRequired("role", JsonObjectType.String);
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.Remove("role");
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Backward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -138,18 +138,17 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenMakingOptionalFieldRequired() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchemaDefinition()
 			.AddOptional("role", JsonObjectType.String);
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.MakeRequired("role");
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Backward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -159,18 +158,17 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenChangingFieldType() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchemaDefinition()
 			.AddOptional("role", JsonObjectType.String);
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.ChangeType("role", JsonObjectType.Integer);
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Backward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -180,17 +178,16 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenAddingRequiredField() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchemaDefinition();
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.AddRequired("role", JsonObjectType.Integer);
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Backward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -200,18 +197,17 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task ForwardMode_Compatible_WhenDeletingOptionalField() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchemaDefinition()
 			.AddOptional("role", JsonObjectType.String);
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.Remove("role");
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Forward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -220,17 +216,16 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task ForwardMode_Compatible_WhenAddingOptionalField() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchemaDefinition();
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.AddOptional("role", JsonObjectType.String);
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Forward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -239,17 +234,16 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task ForwardMode_Incompatible_WhenAddingRequiredField() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchemaDefinition();
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.AddRequired("role", JsonObjectType.String);
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Forward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -259,18 +253,17 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task ForwardMode_Incompatible_WhenChangingFieldType() {
 		// Arrange
-		var referenceSchema = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchemaDefinition()
 			.AddOptional("role", JsonObjectType.String);
 
-		var uncheckedSchema = referenceSchema
+		var v2 = v1
 			.ChangeType("role", JsonObjectType.Integer);
 
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
+
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(
-			uncheckedSchema.ToCanonicalJson(),
-			referenceSchema.ToCanonicalJson(),
-			SchemaCompatibilityMode.Forward
-		);
+		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -280,7 +273,6 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardAllMode_Compatible_WithAllowedChanges() {
 		// Arrange
-
 		var v1 = NewJsonSchemaDefinition()
 			.AddRequired("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
