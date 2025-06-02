@@ -3,7 +3,6 @@
 
 // ReSharper disable ArrangeTypeMemberModifiers
 
-using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
@@ -28,16 +27,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = originalDescription,
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, description: originalDescription),
 			cancellationToken
 		);
 
@@ -71,16 +61,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { originalTags }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, tags: originalTags),
 			cancellationToken
 		);
 
@@ -131,16 +112,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create and then delete schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -167,16 +139,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -202,16 +165,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -240,16 +194,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -278,16 +223,11 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = "Unchanged description",
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(
+				schemaName: schemaName,
+				description: schemaDetails.Description,
+				tags: new Dictionary<string, string>(schemaDetails.Tags)
+			),
 			cancellationToken
 		);
 
@@ -314,16 +254,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -350,16 +281,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema with no tags
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward
-					// No tags specified
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, tags: null),
 			cancellationToken
 		);
 
@@ -386,16 +308,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema with tags
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { initialTags }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, tags: initialTags),
 			cancellationToken
 		);
 

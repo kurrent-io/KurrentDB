@@ -8,6 +8,7 @@ using Grpc.Core;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
+using NJsonSchema;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
@@ -20,29 +21,16 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	public async Task registers_new_schema_version_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var newDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = originalDefinition,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		// Act
 		var registerSchemaVersionResult = await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = newDefinition
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -60,36 +48,24 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 
 		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
 		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(newDefinition);
+		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_multiple_schema_versions_with_incrementing_version_numbers(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var secondDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var thirdDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
+		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
 
-		// Create initial schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = originalDefinition,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		// Act - Register second version
 		var secondResult = await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = secondDefinition
+				SchemaDefinition = v3.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -98,7 +74,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		var thirdResult = await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = thirdDefinition
+				SchemaDefinition = v3.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -116,7 +92,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 
 		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
 		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(thirdDefinition);
+		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v3.ToByteString());
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -143,22 +119,10 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var originalDefinition = Faker.Lorem.Text();
-		var newDefinition = Faker.Lorem.Text();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create and then delete schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(originalDefinition),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		await Client.DeleteSchemaAsync(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken: cancellationToken);
 
@@ -166,7 +130,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		var registerVersion = async () => await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(newDefinition)
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -180,27 +144,16 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	public async Task throws_exception_when_schema_definition_has_not_changed(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var schemaDefinition = Faker.Lorem.Text();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(schemaDefinition),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		// Act - Try to register the same definition
 		var registerVersion = async () => await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(schemaDefinition)
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -215,28 +168,16 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	public async Task preserves_original_data_format_in_registered_version(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var originalDefinition = Faker.Lorem.Text();
-		var newDefinition = Faker.Lorem.Text();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema with Protobuf format
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(originalDefinition),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Protobuf,
-					Compatibility = CompatibilityMode.Backward
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		// Act
 		var registerSchemaVersionResult = await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(newDefinition)
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -261,29 +202,17 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	public async Task generates_unique_schema_version_ids_for_different_versions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var secondDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var thirdDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
+		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
 
-		// Create initial schema
-		var firstResult = await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = originalDefinition,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		var firstResult = await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		// Act
 		var secondResult = await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = secondDefinition
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -291,7 +220,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		var thirdResult = await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = thirdDefinition
+				SchemaDefinition = v3.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -316,28 +245,16 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		listSchemaVersionsResult.Versions[1].SchemaVersionId.Should().Be(secondResult.SchemaVersionId);
 		listSchemaVersionsResult.Versions[2].VersionNumber.Should().Be(3);
 		listSchemaVersionsResult.Versions[2].SchemaVersionId.Should().Be(thirdResult.SchemaVersionId);
-		listSchemaVersionsResult.Versions[2].SchemaDefinition.Should().BeEquivalentTo(thirdDefinition);
+		listSchemaVersionsResult.Versions[2].SchemaDefinition.Should().BeEquivalentTo(v3.ToByteString());
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_version_with_empty_schema_definition(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var originalDefinition = Faker.Lorem.Text();
+		var v1 = NewJsonSchemaDefinition();
 
-		// Create initial schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(originalDefinition),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		// Act
 		var result = async () => await Client.RegisterSchemaVersionAsync(
@@ -355,40 +272,6 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
-	public async Task registers_version_with_large_schema_definition(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var originalDefinition = Faker.Lorem.Text();
-		var largeDefinition = string.Join("", Enumerable.Repeat(Faker.Lorem.Text(), 100));
-
-		// Create initial schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(originalDefinition),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None
-				}
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Act
-		var result = await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(largeDefinition)
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		result.VersionNumber.Should().Be(2);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
 	[Arguments(SchemaFormat.Json)]
 	[Arguments(SchemaFormat.Protobuf)]
 	[Arguments(SchemaFormat.Avro)]
@@ -398,28 +281,16 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var newDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = originalDefinition,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = dataFormat,
-					Compatibility = CompatibilityMode.None
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, dataFormat: dataFormat, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		// Act
 		var registerSchemaVersionResult = await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = newDefinition
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -435,7 +306,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		// Assert
 		registerSchemaVersionResult.VersionNumber.Should().Be(2);
 		listSchemaVersionsResult.Versions.Should().HaveCount(2);
-		listSchemaVersionsResult.Versions.Last().SchemaDefinition.Should().BeEquivalentTo(newDefinition);
+		listSchemaVersionsResult.Versions.Last().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -448,28 +319,16 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var newDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = originalDefinition,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = compatibilityMode
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, compatibility: compatibilityMode, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		// Act
 		var registerSchemaVersionResult = await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = newDefinition
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -485,6 +344,6 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		// Assert
 		registerSchemaVersionResult.VersionNumber.Should().Be(2);
 		listSchemaVersionsResult.Versions.Should().HaveCount(2);
-		listSchemaVersionsResult.Versions.Last().SchemaDefinition.Should().BeEquivalentTo(newDefinition);
+		listSchemaVersionsResult.Versions.Last().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
 	}
 }

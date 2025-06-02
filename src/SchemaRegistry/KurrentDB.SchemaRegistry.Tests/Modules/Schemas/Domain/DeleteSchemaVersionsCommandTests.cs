@@ -23,22 +23,9 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	public async Task deletes_schema_versions_successfully_in_none_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var initialSchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var definition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 
-		// Create initial schema with compatibility mode None
-		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = initialSchemaDefinition,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken
-		);
+		await Apply(CreateSchemaRequest(schemaName: schemaName, schemaDefinition: definition), cancellationToken);
 
 		// Register additional schema versions
 		await Apply(
@@ -90,16 +77,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema with compatibility mode None
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.None),
 			cancellationToken
 		);
 
@@ -135,16 +113,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema with compatibility mode None
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.None),
 			cancellationToken
 		);
 
@@ -169,16 +138,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema with backward compatibility mode
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.Backward),
 			cancellationToken
 		);
 
@@ -212,16 +172,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema with backward compatibility mode
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.Backward),
 			cancellationToken
 		);
 
@@ -264,16 +215,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Create initial schema with specified compatibility mode
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = compatibilityMode,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, compatibility: compatibilityMode),
 			cancellationToken
 		);
 
@@ -307,16 +249,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 
 		// Create schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.None),
 			cancellationToken
 		);
 

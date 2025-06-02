@@ -6,10 +6,13 @@
 using Eventuous;
 using Google.Protobuf;
 using Kurrent.Surge.Schema.Validation;
+using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Domain;
 using KurrentDB.Surge.Eventuous;
 using Microsoft.Extensions.DependencyInjection;
 using NJsonSchema;
+using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
+using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 
@@ -42,6 +45,51 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 			}
 			"""
 		).GetAwaiter().GetResult();
+	}
+
+	public CreateSchemaRequest CreateSchemaRequest(
+		string? schemaName = null,
+		SchemaFormat dataFormat = SchemaFormat.Json,
+		CompatibilityMode compatibility = CompatibilityMode.Backward,
+		string? description = null,
+		Dictionary<string, string>? tags = null,
+		ByteString? schemaDefinition = null) {
+		schemaName ??= NewSchemaName();
+		description ??= Faker.Lorem.Sentence();
+		tags ??= new Dictionary<string, string> { ["env"] = "test" };
+		schemaDefinition ??= NewJsonSchemaDefinition().ToByteString();
+
+		return new CreateSchemaRequest {
+			SchemaName = schemaName,
+			SchemaDefinition = schemaDefinition,
+			Details = new SchemaDetails {
+				Description = description,
+				DataFormat = dataFormat,
+				Compatibility = compatibility,
+				Tags = { tags }
+			}
+		};
+	}
+
+	public async Task<CreateSchemaResponse> CreateSchemaAsync(
+		string? schemaName = null,
+		SchemaFormat dataFormat = SchemaFormat.Json,
+		CompatibilityMode compatibility = CompatibilityMode.None,
+		string? description = null,
+		Dictionary<string, string>? tags = null,
+		ByteString? schemaDefinition = null,
+		CancellationToken cancellationToken = default) {
+		schemaName ??= NewSchemaName();
+		description ??= Faker.Lorem.Sentence();
+		tags ??= new Dictionary<string, string> { ["env"] = "test" };
+		schemaDefinition ??= NewJsonSchemaDefinition().ToByteString();
+
+		var result = await Client.CreateSchemaAsync(
+			request: CreateSchemaRequest(schemaName, dataFormat, compatibility, description, tags, schemaDefinition),
+			cancellationToken: cancellationToken
+		);
+
+		return result;
 	}
 }
 
