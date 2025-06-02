@@ -20,7 +20,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_schema_description_successfully(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDescription = Faker.Lorem.Sentence();
 		var newDescription = Faker.Lorem.Sentence();
 
@@ -71,7 +71,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_schema_tags_successfully(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalTags = new Dictionary<string, string> { ["env"] = "test", ["version"] = "1.0" };
 		var newTags = new Dictionary<string, string> { ["env"] = "prod", ["team"] = "data" };
 
@@ -147,7 +147,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create and then delete schema
 		await Client.CreateSchemaAsync(
@@ -189,7 +189,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_update_mask_is_empty(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema
 		await Client.CreateSchemaAsync(
@@ -229,7 +229,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_update_mask_contains_unknown_field(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema
 		await Client.CreateSchemaAsync(
@@ -272,7 +272,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
 	) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema
 		await Client.CreateSchemaAsync(
@@ -311,7 +311,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
 	) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema
 		await Client.CreateSchemaAsync(
@@ -347,7 +347,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task handles_case_insensitive_field_paths(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var newDescription = Faker.Lorem.Sentence();
 
 		// Create initial schema
@@ -397,7 +397,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_empty_tags_to_non_empty_tags(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var newTags = new Dictionary<string, string> { ["env"] = "prod", ["team"] = "backend" };
 
 		// Create initial schema with no tags
@@ -447,7 +447,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_non_empty_tags_to_empty_tags(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var initialTags = new Dictionary<string, string> { ["env"] = "test", ["version"] = "1.0" };
 
 		// Create initial schema with tags

@@ -19,7 +19,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_new_schema_version_successfully(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 		var newDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 
@@ -66,7 +66,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_multiple_schema_versions_with_incrementing_version_numbers(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 		var secondDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 		var thirdDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
@@ -142,7 +142,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDefinition = Faker.Lorem.Text();
 		var newDefinition = Faker.Lorem.Text();
 
@@ -179,7 +179,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_definition_has_not_changed(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var schemaDefinition = Faker.Lorem.Text();
 
 		// Create initial schema
@@ -214,7 +214,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task preserves_original_data_format_in_registered_version(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDefinition = Faker.Lorem.Text();
 		var newDefinition = Faker.Lorem.Text();
 
@@ -260,7 +260,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task generates_unique_schema_version_ids_for_different_versions(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 		var secondDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 		var thirdDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
@@ -322,7 +322,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_version_with_empty_schema_definition(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDefinition = Faker.Lorem.Text();
 
 		// Create initial schema
@@ -357,7 +357,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_version_with_large_schema_definition(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDefinition = Faker.Lorem.Text();
 		var largeDefinition = string.Join("", Enumerable.Repeat(Faker.Lorem.Text(), 100));
 
@@ -397,7 +397,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		SchemaFormat dataFormat, CancellationToken cancellationToken
 	) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 		var newDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 
@@ -447,7 +447,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		CompatibilityMode compatibilityMode, CancellationToken cancellationToken
 	) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 		var newDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 

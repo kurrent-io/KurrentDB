@@ -15,7 +15,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 	[Test, Timeout(10_000)]
 	public async Task get_schema_version_with_version_number_returns_version(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		var schemaDefinition = Faker.Lorem.Sentences(10, Environment.NewLine);
 

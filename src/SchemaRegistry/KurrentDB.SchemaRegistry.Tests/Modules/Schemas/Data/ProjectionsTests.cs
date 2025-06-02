@@ -38,7 +38,7 @@ public class ProjectionsTests : SchemaRegistryServerTestFixture {
 
 		await projection.Setup(connection, cancellationToken);
 
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		var record = await CreateRecord(
 			new SchemaCreated {
@@ -89,7 +89,7 @@ public class ProjectionsTests : SchemaRegistryServerTestFixture {
 
 		await projection.Setup(connection, cancellationToken);
 
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		var schemaCreatedRecord = await CreateRecord(
 			new SchemaCreated {
@@ -147,7 +147,7 @@ public class ProjectionsTests : SchemaRegistryServerTestFixture {
 
 		await projection.Setup(connection, cancellationToken);
 
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		var schemaCreatedRecord = await CreateRecord(
 			new SchemaCreated {

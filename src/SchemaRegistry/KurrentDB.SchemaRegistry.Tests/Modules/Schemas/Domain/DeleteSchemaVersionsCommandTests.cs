@@ -22,7 +22,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_versions_successfully_in_none_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var initialSchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 
 		// Create initial schema with compatibility mode None
@@ -86,7 +86,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_nonexistent_versions(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema with compatibility mode None
 		await Apply(
@@ -131,7 +131,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_all_versions(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema with compatibility mode None
 		await Apply(
@@ -165,7 +165,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_latest_version_in_backward_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema with backward compatibility mode
 		await Apply(
@@ -208,7 +208,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_older_version_successfully_in_backward_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema with backward compatibility mode
 		await Apply(
@@ -260,7 +260,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		CompatibilityMode compatibilityMode, CancellationToken cancellationToken
 	) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema with specified compatibility mode
 		await Apply(
@@ -303,7 +303,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create schema
 		await Apply(
