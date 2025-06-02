@@ -17,47 +17,47 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\KurrentDB.Common\KurrentDB.Common.csproj" ExcludeAssets="all" Private="false" />
 		<ProjectReference Include="..\..\KurrentDB.Core\KurrentDB.Core.csproj" ExcludeAssets="all" Private="false" />
-		<ProjectReference Include="..\..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" ExcludeAssets="all" Private="false"/>
+		<ProjectReference Include="..\..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" ExcludeAssets="all" Private="false" />
 		<ProjectReference Include="..\KurrentDB.Connectors.Contracts\KurrentDB.Connectors.Contracts.csproj" />
   </ItemGroup>
 
 	<!-- Required packages -->
 	<ItemGroup>
-		<PackageReference Include="Kurrent.Surge.Core" Version="1.1.0-alpha" />
-		<PackageReference Include="Kurrent.Surge.DataProtection" Version="1.1.0-alpha" />
-		<PackageReference Include="Kurrent.Connectors.Elasticsearch" Version="1.1.0-alpha" />
-		<PackageReference Include="Kurrent.Connectors.Http" Version="1.1.0-alpha" />
-		<PackageReference Include="Kurrent.Connectors.Kafka" Version="1.1.0-alpha" />
-		<PackageReference Include="Kurrent.Connectors.KurrentDB" Version="1.1.0-alpha" />
-		<PackageReference Include="Kurrent.Connectors.MongoDB" Version="1.1.0-alpha" />
-		<PackageReference Include="Kurrent.Connectors.RabbitMQ" Version="1.1.0-alpha" />
-		<PackageReference Include="Eventuous.Application" Version="0.15.0" />
-		<PackageReference Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
-		<PackageReference Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
-		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
-		<PackageReference Include="Grpc.StatusProto" Version="2.65.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" Version="8.0.7" />
+		<PackageReference Include="Kurrent.Surge.Core" />
+		<PackageReference Include="Kurrent.Surge.DataProtection" />
+		<PackageReference Include="Kurrent.Connectors.Elasticsearch" />
+		<PackageReference Include="Kurrent.Connectors.Http" />
+		<PackageReference Include="Kurrent.Connectors.Kafka" />
+		<PackageReference Include="Kurrent.Connectors.KurrentDB" />
+		<PackageReference Include="Kurrent.Connectors.MongoDB" />
+		<PackageReference Include="Kurrent.Connectors.RabbitMQ" />
+		<PackageReference Include="Eventuous.Application" />
+		<PackageReference Include="Eventuous.Extensions.AspNetCore" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+		<PackageReference Include="Grpc.StatusProto" />
+		<PackageReference Include="Microsoft.AspNetCore.Grpc.JsonTranscoding" />
 
-		<PackageReference Include="Serilog" Version="4.0.1" />
-		<PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
-		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
-		<PackageReference Include="Serilog.Expressions" Version="5.0.0" />
-		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
-		<PackageReference Include="Serilog.Settings.Configuration" Version="8.0.2" />
-		<PackageReference Include="Serilog.Sinks.Async" Version="2.0.0" />
-		<PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+		<PackageReference Include="Serilog" />
+		<PackageReference Include="Serilog.Enrichers.Process" />
+		<PackageReference Include="Serilog.Enrichers.Thread" />
+		<PackageReference Include="Serilog.Expressions" />
+		<PackageReference Include="Serilog.Extensions.Logging" />
+		<PackageReference Include="Serilog.Settings.Configuration" />
+		<PackageReference Include="Serilog.Sinks.Async" />
+		<PackageReference Include="Serilog.Sinks.File" />
+		<PackageReference Include="Serilog.Sinks.Console" />
 
-		<PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
-		<PackageReference Include="Serilog.Settings.Reloader" Version="2.10.0" />
-		<PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
-		<PackageReference Include="Serilog.Sinks.Seq" Version="8.0.0" />
-		<PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
+		<PackageReference Include="Serilog.Formatting.Compact" />
+		<PackageReference Include="Serilog.Settings.Reloader" />
+		<PackageReference Include="Serilog.Sinks.Debug" />
+		<PackageReference Include="Serilog.Sinks.Seq" />
+		<PackageReference Include="Serilog.Enrichers.Environment" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<!-- Contains Plugin and License components -->
-		<PackageReference Include="EventStore.Plugins" Version="25.2.6" ExcludeAssets="runtime" />
+		<PackageReference Include="EventStore.Plugins" ExcludeAssets="runtime" />
 	</ItemGroup>
 
   <ItemGroup>

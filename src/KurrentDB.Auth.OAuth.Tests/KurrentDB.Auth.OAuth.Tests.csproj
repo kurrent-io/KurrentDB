@@ -9,18 +9,18 @@
 		<IsPluginsTestProject>true</IsPluginsTestProject>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Ductus.FluentDocker.XUnit" Version="2.10.59" />
-		<PackageReference Include="EventStore.Client" Version="22.0.0" />
-		<PackageReference Include="EventStore.Client.Grpc.Streams" Version="23.1.0" />
-		<PackageReference Include="GitHubActionsTestLogger" Version="2.3.3">
+		<PackageReference Include="Ductus.FluentDocker.XUnit" />
+		<PackageReference Include="EventStore.Client" />
+		<PackageReference Include="EventStore.Client.Grpc.Streams" />
+		<PackageReference Include="GitHubActionsTestLogger">
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		  <PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.11" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-		<PackageReference Include="Polly" Version="8.2.0" />
-		<PackageReference Include="xunit" Version="2.6.6" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="2.5.8">
+		<PackageReference Include="Microsoft.AspNetCore.TestHost" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="Polly" />
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>

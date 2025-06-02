@@ -13,12 +13,12 @@
 	  <DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" Version="25.2.5" />
-		<PackageReference Include="IdentityModel" Version="7.0.0" />
-		<PackageReference Include="LruCacheNet" Version="1.2.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" />
-		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
-		<PackageReference Include="Serilog" Version="4.0.1" />
+		<PackageReference Include="EventStore.Plugins" />
+		<PackageReference Include="IdentityModel" />
+		<PackageReference Include="LruCacheNet" />
+		<PackageReference Include="Newtonsoft.Json" />
+		<PackageReference Include="System.ComponentModel.Composition" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+		<PackageReference Include="Serilog" />
 	</ItemGroup>
 </Project>

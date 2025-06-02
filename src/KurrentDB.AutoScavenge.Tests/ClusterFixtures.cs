@@ -32,7 +32,7 @@ public class ClusterFixtures {
 
 		leader!.State = "Leader";
 
-		Assert.Single(members.Where(m => m.State == "Leader"));
+		Assert.Single(members, m => m.State == "Leader");
 		Assert.Equal(leader.WriterCheckpoint, members.Max(m => m.WriterCheckpoint));
 
 		return members.ToDictionary(m => m.InstanceId);
@@ -66,7 +66,7 @@ public class ClusterFixtures {
 		}
 
 		Assert.Equal(2, members.Count(m => m.IsReadOnlyReplica));
-		Assert.Single(members.Where(m => m.State == "Leader"));
+		Assert.Single(members, m => m.State == "Leader");
 		Assert.Equal(leader.WriterCheckpoint, members.Max(m => m.WriterCheckpoint));
 
 		return members.ToDictionary(m => m.InstanceId);

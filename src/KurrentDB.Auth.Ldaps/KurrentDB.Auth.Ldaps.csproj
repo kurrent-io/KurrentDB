@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -13,9 +13,9 @@
 	  <DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" Version="25.2.5" />
-		<PackageReference Include="Novell.Directory.Ldap.NETStandard" Version="3.6.0" />
-		<PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" />
-		<PackageReference Include="Serilog" Version="4.0.1" />
+		<PackageReference Include="EventStore.Plugins" />
+		<PackageReference Include="Novell.Directory.Ldap.NETStandard" />
+		<PackageReference Include="System.ComponentModel.Composition" />
+		<PackageReference Include="Serilog" />
 	</ItemGroup>
 </Project>
