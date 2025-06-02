@@ -6,35 +6,26 @@
 // ReSharper disable ArrangeTypeMemberModifiers
 
 using Kurrent.Surge.Schema.Validation;
+using KurrentDB.Common.Utils;
+using KurrentDB.SchemaRegistry.Tests.Fixtures;
+using NJsonSchema;
 
 namespace Kurrent.Surge.Core.Tests.Schema.Validation;
 
-public class JsonSchemaCompatibilityTests {
+public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	static readonly NJsonSchemaCompatibilityManager CompatibilityManager = new();
 
 	[Test]
 	public async Task BackwardMode_Compatible_WhenAddingOptionalField() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("email", JsonObjectType.String);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
+		var v2 = v1
+			.Remove("email");
+
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
@@ -46,28 +37,15 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenMakingRequiredFieldOptional() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("email", JsonObjectType.String)
+			.AddRequired("age", JsonObjectType.Integer);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    },
-			    "required": ["field2"]
-			}
-			""";
+		var v2 = v1
+			.MakeOptional("age");
+
+		var referenceSchema = v1.ToCanonicalJson();
+		var uncheckedSchema = v2.ToCanonicalJson();
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
@@ -79,28 +57,18 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenWideningUnionField() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": ["string", "int"] }
-			    }
-			}
-			""";
+		var referenceSchema = NewJsonSchemaDefinition()
+			.AddRequired("gender", JsonObjectType.Integer);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			    },
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.WidenType("gender", JsonObjectType.Integer);
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Backward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -109,29 +77,18 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenDeletingOptionalField() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
+		var referenceSchema = NewJsonSchemaDefinition()
+			.AddOptional("email", JsonObjectType.String);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" },
-			    },
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.Remove("email");
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Backward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -140,29 +97,18 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenDeletingFieldWithDefaultValue() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
+		var referenceSchema = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String, "admin");
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "int", "default": 1 },
-			    },
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.Remove("role");
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Backward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -171,30 +117,18 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenDeletingRequiredField() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			    }
-			}
-			""";
+		var referenceSchema = NewJsonSchemaDefinition()
+			.AddRequired("role", JsonObjectType.String);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    },
-			    "required": ["field2"]
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.Remove("role");
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Backward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -204,31 +138,18 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenMakingOptionalFieldRequired() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    },
-			    "required": ["field1"]
-			}
-			""";
+		var referenceSchema = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    },
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.SetRequired("role");
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Backward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -238,28 +159,18 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenChangingFieldType() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "integer" }
-			    }
-			}
-			""";
+		var referenceSchema = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.ChangeType("role", JsonObjectType.Integer);
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Backward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -269,30 +180,17 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenAddingRequiredField() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-				"type": "object",
-				"properties": {
-					"field1": { "type": "string" },
-					"field2": { "type": "string" }
-				},
-				"required": ["field2"]
-			}
-			""";
+		var referenceSchema = NewJsonSchemaDefinition();
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.AddRequired("role", JsonObjectType.Integer);
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Backward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Backward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -302,30 +200,18 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task ForwardMode_Compatible_WhenDeletingOptionalField() {
 		// Arrange
+		var referenceSchema = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String);
 
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
-
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.Remove("role");
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Forward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -334,30 +220,17 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task ForwardMode_Compatible_WhenAddingOptionalField() {
 		// Arrange
+		var referenceSchema = NewJsonSchemaDefinition();
 
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
-
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.AddOptional("role", JsonObjectType.String);
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Forward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeTrue();
@@ -366,30 +239,17 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task ForwardMode_Incompatible_WhenAddingRequiredField() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    },
-			    "required": ["field2"]
-			}
-			""";
+		var referenceSchema = NewJsonSchemaDefinition();
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.AddRequired("role", JsonObjectType.String);
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Forward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -399,28 +259,18 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task ForwardMode_Incompatible_WhenChangingFieldType() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "integer" }
-			    }
-			}
-			""";
+		var referenceSchema = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
+		var uncheckedSchema = referenceSchema
+			.ChangeType("role", JsonObjectType.Integer);
 
 		// Act
-		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Forward);
+		var result = await CompatibilityManager.CheckCompatibility(
+			uncheckedSchema.ToCanonicalJson(),
+			referenceSchema.ToCanonicalJson(),
+			SchemaCompatibilityMode.Forward
+		);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
@@ -431,39 +281,19 @@ public class JsonSchemaCompatibilityTests {
 	public async Task BackwardAllMode_Compatible_WithAllowedChanges() {
 		// Arrange
 
-		// Added optional fields
-		// Removed optional fields
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field3": { "type": "boolean" }
-			    }
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddRequired("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		var referenceSchemas = new[] {
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""",
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "integer" }
-			    },
-			    "required": ["field1"]
-			}
-			"""
-		};
+		var v2 = v1
+			.Remove("age");
+
+		var v3 = v2
+			.AddOptional("email", JsonObjectType.String);
+
+		var uncheckedSchema = v3.ToCanonicalJson();
+
+		var referenceSchemas = new[] { v1.ToCanonicalJson(), v2.ToCanonicalJson() };
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.BackwardAll);
@@ -476,33 +306,18 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task BackwardAllMode_Incompatible_WithProhibitedChanges() {
 		// Arrange
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		// Changed field type
-		// Added required fields
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "integer" },
-			        "field2": { "type": "string" },
-			        "field3": { "type": "boolean" }
-			    },
-			    "required": ["field2", "field3"]
-			}
-			""";
+		var v2 = v1
+			.ChangeType("role", JsonObjectType.Integer)
+			.AddRequired("address", JsonObjectType.String)
+			.SetRequired("age");
 
-		var referenceSchemas = new[] {
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			"""
-		};
+		var uncheckedSchema = v2.ToCanonicalJson();
+
+		var referenceSchemas = new[] { v1.ToCanonicalJson() };
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.BackwardAll);
@@ -510,47 +325,29 @@ public class JsonSchemaCompatibilityTests {
 		// Assert
 		result.IsCompatible.Should().BeFalse();
 		result.Errors.Count.Should().Be(3);
-		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
-		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
-		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.OptionalToRequired);
+		result.Errors.Should()
+			.Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange)
+			.And.Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty)
+			.And.Contain(e => e.Kind == SchemaCompatibilityErrorKind.OptionalToRequired);
 	}
 
 	[Test]
 	public async Task ForwardAllMode_Compatible_WithAllowedChanges() {
 		// Arrange
 
-		// Deleted optional fields
-		// Added optional fields
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field3": { "type": "boolean" }
-			    }
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		var referenceSchemas = new[] {
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""",
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "integer" }
-			    }
-			}
-			"""
-		};
+		var v2 = v1
+			.Remove("role");
+
+		var v3 = v2
+			.AddOptional("email", JsonObjectType.String);
+
+		var uncheckedSchema = v3.ToCanonicalJson();
+
+		var referenceSchemas = new[] { v1.ToCanonicalJson(), v2.ToCanonicalJson() };
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.ForwardAll);
@@ -564,68 +361,42 @@ public class JsonSchemaCompatibilityTests {
 	public async Task ForwardAllMode_Incompatible_WithProhibitedChanges() {
 		// Arrange
 
-		// Changed field type
-		// Added required fields
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "integer" },
-			        "field2": { "type": "string" },
-			        "field3": { "type": "boolean" }
-			    },
-			    "required": ["field2", "field3"]
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		var referenceSchemas = new[] {
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			"""
-		};
+		var v2 = v1
+			.ChangeType("role", JsonObjectType.Integer)
+			.AddRequired("email", JsonObjectType.String)
+			.SetRequired("age");
+
+		var uncheckedSchema = v2.ToCanonicalJson();
+
+		var referenceSchemas = new[] { v1.ToCanonicalJson() };
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.ForwardAll);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
-		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
-		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
 		result.Errors.Count.Should().Be(2);
+		result.Errors.Should()
+			.Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange)
+			.And.Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
 	}
 
 	[Test]
 	public async Task FullMode_Compatible_WithAddingOptionalFields() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" },
-			        "field3": { "type": "boolean" }
-			    }
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
+		var v2 = v1
+			.AddOptional("email", JsonObjectType.String);
+
+		var uncheckedSchema = v2.ToCanonicalJson();
+		var referenceSchema = v1.ToCanonicalJson();
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Full);
@@ -638,26 +409,15 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task FullMode_Compatible_WithDeletingOptionalFields() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
+		var v2 = v1
+			.Remove("role");
+
+		var uncheckedSchema = v2.ToCanonicalJson();
+		var referenceSchema = v1.ToCanonicalJson();
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Full);
@@ -668,29 +428,17 @@ public class JsonSchemaCompatibilityTests {
 	}
 
 	[Test]
-	public async Task FullMode_Incompatible_WithChangingFieldType() {
+	public async Task FullMode_Incompatible_WhenChangingFieldType() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "integer" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
+		var v2 = v1
+			.ChangeType("role", JsonObjectType.Integer);
+
+		var uncheckedSchema = v2.ToCanonicalJson();
+		var referenceSchema = v1.ToCanonicalJson();
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Full);
@@ -704,29 +452,16 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task FullMode_Incompatible_WithAddingRequiredField() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" },
-			        "field3": { "type": "boolean" }
-			    },
-			    "required": ["field3"]
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
+		var v2 = v1
+			.AddRequired("email", JsonObjectType.String);
+
+		var uncheckedSchema = v2.ToCanonicalJson();
+		var referenceSchema = v1.ToCanonicalJson();
+
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Full);
@@ -740,28 +475,15 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task FullMode_Incompatible_WithMakingOptionalFieldRequired() {
 		// Arrange
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    },
-			    "required": ["field2"]
-			}
-			""";
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		var referenceSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			""";
+		var v2 = v1
+			.SetRequired("role");
+
+		var uncheckedSchema = v2.ToCanonicalJson();
+		var referenceSchema = v1.ToCanonicalJson();
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchema, SchemaCompatibilityMode.Full);
@@ -775,39 +497,19 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task FullAllMode_Compatible_WithAllowedChanges() {
 		// Arrange
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		// Added optional fields
-		// Removed optional fields
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field3": { "type": "boolean" }
-			    }
-			}
-			""";
+		var v2 = v1
+			.Remove("age");
 
-		var referenceSchemas = new[] {
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" }
-			    }
-			}
-			""",
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "integer" }
-			    }
-			}
-			"""
-		};
+		var v3 = v2
+			.AddOptional("email", JsonObjectType.String);
+
+		var uncheckedSchema = v3.ToCanonicalJson();
+
+		var referenceSchemas = new[] { v1.ToCanonicalJson(), v2.ToCanonicalJson() };
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.FullAll);
@@ -820,45 +522,32 @@ public class JsonSchemaCompatibilityTests {
 	[Test]
 	public async Task FullAllMode_Incompatible_WithProhibitedChanges() {
 		// Arrange
+		var v1 = NewJsonSchemaDefinition()
+			.AddOptional("role", JsonObjectType.String)
+			.AddOptional("age", JsonObjectType.Integer);
 
-		// Changed field type
-		// Added required fields
-		// Made optional field required
-		var uncheckedSchema =
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "integer" },
-			        "field2": { "type": "string" },
-			        "field3": { "type": "boolean" }
-			    },
-			    "required": ["field2", "field3"]
-			}
-			""";
+		var v2 = v1
+			.ChangeType("role", JsonObjectType.Integer)
+			.AddRequired("email", JsonObjectType.String)
+			.SetRequired("age");
 
-		var referenceSchemas = new[] {
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "field1": { "type": "string" },
-			        "field2": { "type": "string" }
-			    }
-			}
-			"""
-		};
+		var uncheckedSchema = v2.ToCanonicalJson();
+
+		var referenceSchemas = new[] { v1.ToCanonicalJson() };
 
 		// Act
 		var result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, SchemaCompatibilityMode.FullAll);
 
 		// Assert
 		result.IsCompatible.Should().BeFalse();
-		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
-		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
-		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.OptionalToRequired);
 		result.Errors.Count.Should().Be(3);
+		result.Errors.Should()
+			.Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange)
+			.And.Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty)
+			.And.Contain(e => e.Kind == SchemaCompatibilityErrorKind.OptionalToRequired);
 	}
+
+	#region references
 
 	[Test]
 	public async Task BackwardMode_WithReferences_Compatible_WhenAddingOptionalField() {
@@ -1345,4 +1034,6 @@ public class JsonSchemaCompatibilityTests {
 		result.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.MissingRequiredProperty);
 		result.Errors.Should().Contain(e => e.PropertyPath == "#/person/age");
 	}
+
+	#endregion
 }

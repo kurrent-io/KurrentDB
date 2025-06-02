@@ -47,7 +47,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		).GetAwaiter().GetResult();
 	}
 
-	public CreateSchemaRequest CreateSchemaRequest(
+	protected CreateSchemaRequest CreateSchemaRequest(
 		string? schemaName = null,
 		SchemaFormat dataFormat = SchemaFormat.Json,
 		CompatibilityMode compatibility = CompatibilityMode.Backward,
@@ -71,7 +71,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		};
 	}
 
-	public async Task<CreateSchemaResponse> CreateSchemaAsync(
+	protected async Task<CreateSchemaResponse> CreateSchemaAsync(
 		string? schemaName = null,
 		SchemaFormat dataFormat = SchemaFormat.Json,
 		CompatibilityMode compatibility = CompatibilityMode.None,
@@ -97,19 +97,21 @@ public static class JsonSchemaExtensions {
 	public static ByteString ToByteString(this JsonSchema schema)
 		=> ByteString.CopyFromUtf8(schema.ToJson());
 
-	public static JsonSchema AddOptional(this JsonSchema schema, string name, JsonObjectType type) {
+	public static JsonSchema AddOptional(this JsonSchema schema, string name, JsonObjectType type, object? defaultValue = null) {
 		var clone = Clone(schema);
 		clone.Properties[name] = new JsonSchemaProperty {
-			Type = type
+			Type = type,
+			Default = defaultValue
 		};
 		clone.RequiredProperties.Remove(name);
 		return clone;
 	}
 
-	public static JsonSchema AddRequired(this JsonSchema schema, string name, JsonObjectType type) {
+	public static JsonSchema AddRequired(this JsonSchema schema, string name, JsonObjectType type, object? defaultValue = null) {
 		var clone = Clone(schema);
 		clone.Properties[name] = new JsonSchemaProperty {
-			Type = type
+			Type = type,
+			Default = defaultValue
 		};
 		if (!clone.RequiredProperties.Contains(name))
 			clone.RequiredProperties.Add(name);
@@ -122,26 +124,36 @@ public static class JsonSchemaExtensions {
 		return clone;
 	}
 
-	public static JsonSchema RemoveOptional(this JsonSchema schema, string name) {
+	public static JsonSchema Remove(this JsonSchema schema, string name) {
 		var clone = Clone(schema);
 		clone.Properties.Remove(name);
 		clone.RequiredProperties.Remove(name);
 		return clone;
 	}
 
-	public static JsonSchema RemoveRequired(this JsonSchema schema, string name) {
+	public static JsonSchema MakeOptional(this JsonSchema schema, string name) {
 		var clone = Clone(schema);
 		clone.RequiredProperties.Remove(name);
 		return clone;
 	}
 
-	public static JsonSchema SetType(this JsonSchema schema, string name, JsonObjectType newType) {
+	public static JsonSchema ChangeType(this JsonSchema schema, string name, JsonObjectType newType) {
 		var clone = Clone(schema);
 
 		if (!clone.Properties.TryGetValue(name, out var property))
 			throw new ArgumentException($"Property '{name}' does not exist in the schema");
 
 		property.Type = newType;
+		return clone;
+	}
+
+	public static JsonSchema WidenType(this JsonSchema schema, string name, JsonObjectType additionalType) {
+		var clone = Clone(schema);
+
+		if (!clone.Properties.TryGetValue(name, out var property))
+			throw new ArgumentException($"Property '{name}' does not exist in the schema");
+
+		property.Type |= additionalType;
 		return clone;
 	}
 

@@ -74,7 +74,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		var schemaName = NewSchemaName();
 
 		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.RemoveOptional("name");
+		var v2 = v1.Remove("name");
 		var v3 = v2.AddOptional("age", JsonObjectType.String);
 
 		await Client.CreateSchemaAsync(
@@ -126,7 +126,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		var v2 = v1
 			.AddRequired("age", JsonObjectType.Integer)
 			.SetRequired("email")
-			.SetType("gender", JsonObjectType.Integer);
+			.ChangeType("gender", JsonObjectType.Integer);
 
 		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
@@ -241,7 +241,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 			.AddOptional("email", JsonObjectType.String)
 			.AddOptional("phone", JsonObjectType.String);
 
-		var v2 = v1.RemoveOptional("phone");
+		var v2 = v1.Remove("phone");
 
 		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
@@ -277,7 +277,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		var schemaName = NewSchemaName();
 
 		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.SetType("id", JsonObjectType.Integer);
+		var v2 = v1.ChangeType("id", JsonObjectType.Integer);
 
 		await Client.CreateSchemaAsync(
 			new CreateSchemaRequest {
