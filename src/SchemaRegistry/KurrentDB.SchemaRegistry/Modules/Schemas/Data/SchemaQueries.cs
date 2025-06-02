@@ -7,7 +7,6 @@ using DuckDB.NET.Data;
 using Humanizer;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema.Validation;
-using KurrentDB.Common.Utils;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using Polly;
