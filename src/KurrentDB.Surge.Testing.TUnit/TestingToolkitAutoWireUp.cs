@@ -1,5 +1,7 @@
 using Kurrent.Surge;
-using KurrentDB.Surge.Testing.OpenTelemetry;
+using Kurrent.Surge.Testing.TUnit.Logging;
+using KurrentDB.Surge.Testing.TUnit;
+using KurrentDB.Surge.Testing.TUnit.OpenTelemetry;
 using Serilog;
 
 namespace KurrentDB.Surge.Testing;

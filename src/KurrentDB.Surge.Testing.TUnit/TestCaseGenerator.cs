@@ -1,7 +1,5 @@
 ﻿// ReSharper disable UnusedAutoPropertyAccessor.Global
 
-using Bogus;
-
 namespace KurrentDB.Surge.Testing.TUnit;
 
 public abstract class TestCaseGenerator<T> : DataSourceGeneratorAttribute<T> {

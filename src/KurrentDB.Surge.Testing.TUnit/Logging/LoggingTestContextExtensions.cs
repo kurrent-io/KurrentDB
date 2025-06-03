@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Kurrent.Surge;
 using Microsoft.Extensions.Logging;
 
-namespace KurrentDB.Surge.Testing;
+namespace Kurrent.Surge.Testing.TUnit.Logging;
 
 public static class LoggingTestContextExtensions {
     const string LoggerFactoryKey = "$ToolkitLoggerFactory";

@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using Kurrent.Surge;
 
-namespace KurrentDB.Surge.Testing.OpenTelemetry;
+namespace KurrentDB.Surge.Testing.TUnit.OpenTelemetry;
 
 [PublicAPI]
 public record OtelServiceMetadata {
