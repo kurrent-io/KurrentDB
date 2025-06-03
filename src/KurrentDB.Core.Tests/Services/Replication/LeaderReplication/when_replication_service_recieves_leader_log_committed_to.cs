@@ -8,7 +8,7 @@ using NUnit.Framework;
 namespace KurrentDB.Core.Tests.Services.Replication.LeaderReplication;
 
 [TestFixture]
-public class when_replication_service_recieves_leader_log_commited_to : with_replication_service {
+public class when_replication_service_recieves_leader_log_committed_to : with_replication_service {
 	private long _logPosition;
 
 	public override void When() {

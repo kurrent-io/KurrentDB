@@ -289,8 +289,8 @@ public class SubscriptionsService<TStreamId> :
 		_lastSeenCommitPosition = message.CommitPosition;
 
 		var resolvedEvent =
-			await ProcessEventCommited(AllStreamsSubscriptionId, message.CommitPosition, message.Event, null, token);
-		await ProcessEventCommited(message.Event.EventStreamId, message.CommitPosition, message.Event, resolvedEvent, token);
+			await ProcessEventCommitted(AllStreamsSubscriptionId, message.CommitPosition, message.Event, null, token);
+		await ProcessEventCommitted(message.Event.EventStreamId, message.CommitPosition, message.Event, resolvedEvent, token);
 
 		ProcessStreamMetadataChanges(message.Event.EventStreamId);
 		ProcessSettingsStreamChanges(message.Event.EventStreamId);
@@ -301,13 +301,13 @@ public class SubscriptionsService<TStreamId> :
 
 	async ValueTask IAsyncHandle<StorageMessage.InMemoryEventCommitted>.HandleAsync(StorageMessage.InMemoryEventCommitted message, CancellationToken token) {
 		_lastSeenInMemoryCommitPosition = message.CommitPosition;
-		await ProcessEventCommited(message.Event.EventStreamId, message.CommitPosition, message.Event, null, token);
+		await ProcessEventCommitted(message.Event.EventStreamId, message.CommitPosition, message.Event, null, token);
 		ProcessStreamMetadataChanges(message.Event.EventStreamId);
 		ProcessSettingsStreamChanges(message.Event.EventStreamId);
 		ReissueReadsFor(message.Event.EventStreamId, message.CommitPosition, message.Event.EventNumber);
 	}
 
-	private async ValueTask<ResolvedEvent?> ProcessEventCommited(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {
+	private async ValueTask<ResolvedEvent?> ProcessEventCommitted(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {
 		if (!_subscriptionTopics.TryGetValue(eventStreamId, out var subscriptions))
 			return resolvedEvent;
 		for (int i = 0, n = subscriptions.Count; i < n; i++) {
