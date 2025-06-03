@@ -45,7 +45,6 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		Configuration = new() {
 			{ $"{PluginConfigPrefix}:Enabled", "true" },
 			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", "2" },
-			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitDelayMs)}", "100" },
 			{ DatabasePathConfig, PathName }
 		};
 

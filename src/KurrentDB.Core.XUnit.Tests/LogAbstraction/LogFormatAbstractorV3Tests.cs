@@ -416,7 +416,7 @@ public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return null;
 	}
 
-	public ulong? SetStreamSecondaryIndexId(TStreamId streamId, ulong secondaryIndexId) {
+	public long? SetStreamSecondaryIndexId(TStreamId streamId, long secondaryIndexId) {
 		return null;
 	}
 
@@ -440,7 +440,7 @@ public class MockIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		throw new NotImplementedException();
 	}
 
-	public ulong? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, ulong? secondaryIndexId) {
+	public long? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, long? secondaryIndexId) {
 		throw new NotImplementedException();
 	}
 

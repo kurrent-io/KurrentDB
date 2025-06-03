@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
 internal static class TestPluginStartup {
-	public static WebApplication Configure<TStreamId>(SecondaryIndexingPlugin<TStreamId> plugin,
+	public static WebApplication Configure(SecondaryIndexingPlugin plugin,
 		IConfigurationBuilder? configurationBuilder = null) {
 		var config = (configurationBuilder ?? new ConfigurationBuilder()).Build();
 
@@ -23,7 +23,7 @@ internal static class TestPluginStartup {
 			.AddSingleton(new TFChunkDbConfig("mem", 10000, 0,  new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1),
 				new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1),
 				new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1), new InMemoryCheckpoint(-1), true))
-			.AddSingleton<IReadIndex<TStreamId>>(_ => null!);
+			.AddSingleton<IReadIndex<string>>(_ => null!);
 
 		((IPlugableComponent)plugin).ConfigureServices(
 			builder.Services,

@@ -3,78 +3,102 @@
 
 using DotNext;
 using Kurrent.Quack;
-using KurrentDB.Common.Log;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-internal class DefaultIndexProcessor<TStreamId> : Disposable, ISecondaryIndexProcessor {
-	private readonly DefaultIndex<TStreamId> _defaultIndex;
-	private long _lastLogPosition;
-	private ulong _seq;
-	private int _page;
-	private readonly Appender _appender;
+internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
+	readonly DefaultIndex _defaultIndex;
+	readonly Appender _appender;
 	readonly DuckDBAdvancedConnection _connection;
+	readonly InFlightRecord[] _inFlightRecords;
 
-	private static readonly ILogger Logger = Log.Logger.ForContext(nameof(DefaultIndexProcessor<TStreamId>));
+	int _inFlightRecordsCount;
 
-	public long LastCommittedPosition { get; private set; }
-	public long LastCommittedSequence { get; private set; }
+	static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
-	public DefaultIndexProcessor(DuckDbDataSource db, DefaultIndex<TStreamId> defaultIndex) {
+	public long LastIndexedPosition { get; private set; }
+	public long LastSequence;
+
+	public DefaultIndexProcessor(DuckDbDataSource db, DefaultIndex defaultIndex, int commitBatchSize) {
 		_connection = db.OpenNewConnection();
 		_appender = new(_connection, "idx_all"u8);
 		_defaultIndex = defaultIndex;
+		_inFlightRecords = new InFlightRecord[commitBatchSize];
 
-		var lastPosition = defaultIndex.GetLastSequence();
-		Logger.Information("Last known global sequence: {Seq}", lastPosition);
-		_seq = lastPosition.HasValue ? lastPosition.Value + 1 : 0;
+		var lastSequence = defaultIndex.GetLastSequence();
+		Logger.Information("Last known global sequence: {Seq}", lastSequence);
+		LastSequence = lastSequence.HasValue ? lastSequence.Value + 1 : 0;
 	}
 
-	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
-		if (IsDisposingOrDisposed)
-			return new(-1, -1);
+	public void Index(ResolvedEvent resolvedEvent) {
+		if (IsDisposingOrDisposed) return;
 
 		var category = _defaultIndex.CategoryIndex.Processor.Index(resolvedEvent);
 		var eventType = _defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent);
 		var streamId = _defaultIndex.StreamIndex.Processor.Index(resolvedEvent);
 		if (streamId == -1) {
 			// StreamIndex is disposed
-			return new(-1, -1);
+			return;
 		}
 
+		var sequence = LastSequence++;
+		var logPosition = resolvedEvent.Event.LogPosition;
+		var eventNumber = resolvedEvent.Event.EventNumber;
 		using (var row = _appender.CreateRow()) {
-			row.Append(_seq++);
-			row.Append((int)resolvedEvent.Event.EventNumber);
-			row.Append(resolvedEvent.Event.LogPosition);
+			row.Append(sequence);
+			row.Append(eventNumber);
+			row.Append(logPosition);
 			row.Append(resolvedEvent.Event.TimeStamp);
 			row.Append(streamId);
-			row.Append((int)eventType.Id);
+			row.Append(eventType.Id);
 			row.Append(eventType.Sequence);
-			row.Append((int)category.Id);
+			row.Append(category.Id);
 			row.Append(category.Sequence);
 		}
 
-		_lastLogPosition = resolvedEvent.Event.LogPosition;
-		_page++;
-		return new((long)(_seq - 1), _lastLogPosition);
+		_inFlightRecords[_inFlightRecordsCount]
+			= new(
+				sequence,
+				logPosition,
+				eventNumber,
+				category.Id,
+				category.Sequence,
+				eventType.Id,
+				eventType.Sequence
+			);
+		LastIndexedPosition = resolvedEvent.Event.LogPosition;
+		_inFlightRecordsCount++;
 	}
 
 	public void Commit() {
 		if (IsDisposingOrDisposed)
 			return;
 
-		_defaultIndex.CategoryIndex.Processor.Commit();
-		_defaultIndex.EventTypeIndex.Processor.Commit();
 		_defaultIndex.StreamIndex.Processor.Commit();
 
 		_appender.Flush();
-		Logger.Debug("Committed {Count} records to index at sequence {Seq}", _page, _seq);
-		_page = 0;
-		LastCommittedPosition = _lastLogPosition;
-		LastCommittedSequence = (long)_seq - 1;
+		Logger.Debug("Committed {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
+		_inFlightRecordsCount = 0;
+	}
+
+	public IEnumerable<AllRecord> TryGetInFlightRecords(long fromSeq, long toSeq) {
+		for (var i = 0; i < _inFlightRecordsCount; i++) {
+			var current = _inFlightRecords[i];
+			if (current.Seq > toSeq) yield break;
+			if (current.Seq >= fromSeq && current.Seq <= toSeq) {
+				yield return new(current.Seq, current.LogPosition, current.EventNumber);
+			}
+		}
+	}
+
+	public IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map) {
+		for (var i = 0; i < _inFlightRecordsCount; i++) {
+			var current = _inFlightRecords[i];
+			if (query(current)) yield return map(current);
+		}
 	}
 
 	protected override void Dispose(bool disposing) {

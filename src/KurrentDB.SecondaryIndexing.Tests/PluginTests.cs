@@ -13,7 +13,7 @@ namespace KurrentDB.SecondaryIndexing.Tests;
 public class PluginTests {
 	[Fact]
 	public void is_disabled_by_default() {
-		using var sut = new SecondaryIndexingPlugin<string>(new VirtualStreamReader());
+		using var sut = new SecondaryIndexingPlugin(new VirtualStreamReader());
 
 		// when
 		using var app = TestPluginStartup.Configure(sut);
@@ -30,7 +30,7 @@ public class PluginTests {
 	[InlineData(null, false, false)]
 	[InlineData(null, true, true)]
 	public void respects_configuration_feature_flag_and_dev_mode(bool? pluginEnabled, bool devMode, bool expected) {
-		using var sut = new SecondaryIndexingPlugin<string>(new VirtualStreamReader());
+		using var sut = new SecondaryIndexingPlugin(new());
 
 		var configuration = new Dictionary<string, string?> {
 			{$"{KurrentConfigurationKeys.Prefix}:Dev", devMode.ToString().ToLower()}

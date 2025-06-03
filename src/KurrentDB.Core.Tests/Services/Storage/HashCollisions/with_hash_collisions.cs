@@ -419,8 +419,7 @@ public class when_stream_has_max_age : HashCollisionTestFixture {
 
 public class FakeIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 	private readonly TFReaderLease _readerLease;
-	private readonly Dictionary<TStreamId, IndexBackend<TStreamId>.MetadataCached> _streamMetadata =
-		new();
+	private readonly Dictionary<TStreamId, IndexBackend<TStreamId>.MetadataCached> _streamMetadata = new();
 
 	public FakeIndexBackend(TFReaderLease readerLease) {
 		_readerLease = readerLease;
@@ -442,13 +441,13 @@ public class FakeIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return null;
 	}
 
-	public ulong? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, ulong? secondaryIndexId) {
+	public long? UpdateStreamSecondaryIndexId(int cacheVersion, TStreamId streamId, long? secondaryIndexId) {
 		return null;
 	}
 
 	public StreamMetadata UpdateStreamMetadata(int cacheVersion, TStreamId streamId,
 		StreamMetadata metadata) {
-		_streamMetadata[streamId] = new IndexBackend<TStreamId>.MetadataCached(1, metadata);
+		_streamMetadata[streamId] = new(1, metadata);
 		return metadata;
 	}
 
@@ -456,7 +455,7 @@ public class FakeIndexBackend<TStreamId> : IIndexBackend<TStreamId> {
 		return null;
 	}
 
-	public ulong? SetStreamSecondaryIndexId(TStreamId streamId, ulong secondaryIndexId) {
+	public long? SetStreamSecondaryIndexId(TStreamId streamId, long secondaryIndexId) {
 		return null;
 	}
 

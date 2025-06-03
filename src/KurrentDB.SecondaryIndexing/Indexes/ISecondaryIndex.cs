@@ -2,28 +2,22 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Services.Storage.InMemory;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public interface ISecondaryIndex: IDisposable {
-	void Init();
-
-	ulong? GetLastPosition();
-
-	IReadOnlyList<IVirtualStreamReader> Readers { get; }
-
+public interface ISecondaryIndex : IDisposable {
 	void Commit();
-}
 
-public interface ISecondaryIndexExt : ISecondaryIndex {
 	void Index(ResolvedEvent evt);
+
+	long? GetLastPosition();
 }
 
 public interface ISecondaryIndexProcessor {
-	SequenceRecord Index(ResolvedEvent resolvedEvent);
-
 	void Commit();
+
+	void Index(ResolvedEvent evt);
 }
 
 public record struct SequenceRecord(long Id, long Sequence);
+

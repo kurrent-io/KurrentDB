@@ -30,7 +30,7 @@ public class IndexSubscriptionTests(
 		CancellationTokenSource cts = new CancellationTokenSource();
 
 		string[] indexNames = [
-			DefaultIndexConstants.IndexName,
+			DefaultIndex.IndexName,
 			// $"{CategoryIndexConstants.IndexPrefix}{CategoryName}",
 			// $"{EventTypeIndexConstants.IndexPrefix}test"
 		];

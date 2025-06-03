@@ -7,15 +7,13 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
-internal class EventTypeIndexProcessor : ISecondaryIndexProcessor {
+internal class EventTypeIndexProcessor {
 	readonly Dictionary<string, long> _eventTypes;
 	readonly Dictionary<long, long> _eventTypeSizes = new();
 	readonly DuckDbDataSource _db;
 
-	long _lastLogPosition;
-
 	public long Seq { get; private set; }
-	public long LastCommittedPosition { get; private set; }
+	public long LastIndexedPosition { get; private set; }
 
 	public EventTypeIndexProcessor(DuckDbDataSource db) {
 		_db = db;
@@ -26,7 +24,7 @@ internal class EventTypeIndexProcessor : ISecondaryIndexProcessor {
 			_eventTypeSizes[id.Id] = -1;
 		}
 
-		var sequences = db.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>();
+		var sequences = db.Pool.Query<(long Id, long Sequence), GetEventTypeMaxSequencesQuery>();
 		foreach (var sequence in sequences) {
 			_eventTypeSizes[sequence.Id] = sequence.Sequence;
 		}
@@ -36,11 +34,11 @@ internal class EventTypeIndexProcessor : ISecondaryIndexProcessor {
 
 	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
 		var eventTypeName = resolvedEvent.OriginalEvent.EventType;
-		_lastLogPosition = resolvedEvent.Event.LogPosition;
 
 		if (_eventTypes.TryGetValue(eventTypeName, out var eventTypeId)) {
 			var next = _eventTypeSizes[eventTypeId] + 1;
 			_eventTypeSizes[eventTypeId] = next;
+			LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
 			return new(eventTypeId, next);
 		}
@@ -51,7 +49,7 @@ internal class EventTypeIndexProcessor : ISecondaryIndexProcessor {
 		_eventTypeSizes[id] = 0;
 
 		_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new((int)id, eventTypeName));
-		_lastLogPosition = resolvedEvent.Event.LogPosition;
+		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 		return new(id, 0);
 	}
 
@@ -60,8 +58,4 @@ internal class EventTypeIndexProcessor : ISecondaryIndexProcessor {
 
 	public long GetEventTypeId(string eventTypeName) =>
 		_eventTypes.TryGetValue(eventTypeName, out var eventTypeId) ? eventTypeId : ExpectedVersion.NoStream;
-
-	public void Commit() {
-		LastCommittedPosition = _lastLogPosition;
-	}
 }

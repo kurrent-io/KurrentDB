@@ -3,17 +3,17 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Services.Storage;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Readers;
+using static KurrentDB.Core.Services.Storage.StorageReaderWorker<string>;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public record struct IndexedPrepare(long Version, int EventNumber, long LogPosition);
+public record struct IndexedPrepare(long Version, long EventNumber, long LogPosition);
 
-internal abstract class SecondaryIndexReaderBase<TStreamId>(IReadIndex<TStreamId> index) : IVirtualStreamReader {
+internal abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : IVirtualStreamReader {
 	protected abstract long GetId(string streamName);
 
 	protected abstract long GetLastIndexedSequence(long id);
@@ -33,7 +33,7 @@ internal abstract class SecondaryIndexReaderBase<TStreamId>(IReadIndex<TStreamId
 		ReadBackwards(msg, index.IndexReader, index.LastIndexedPosition, token);
 
 	private async ValueTask<IReadOnlyList<ResolvedEvent>> GetEvents(
-		IIndexReader<TStreamId> indexReader,
+		IIndexReader<string> indexReader,
 		string virtualStreamId,
 		long id,
 		long fromEventNumber,
@@ -53,17 +53,17 @@ internal abstract class SecondaryIndexReaderBase<TStreamId>(IReadIndex<TStreamId
 	public abstract bool CanReadStream(string streamId);
 
 	private async ValueTask<ClientMessage.ReadStreamEventsBackwardCompleted> ReadBackwards(
-		ClientMessage.ReadStreamEventsBackward msg, IIndexReader<TStreamId> reader, long lastIndexedPosition,
+		ClientMessage.ReadStreamEventsBackward msg, IIndexReader<string> reader, long lastIndexedPosition,
 		CancellationToken token
 	) {
 		var id = GetId(msg.EventStreamId);
 		var lastEventNumber = GetLastIndexedSequence(id);
 
 		if (msg.ValidationStreamVersion.HasValue && lastEventNumber == msg.ValidationStreamVersion)
-			return StorageReaderWorker<TStreamId>.NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
+			return NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
 				msg.ValidationStreamVersion.Value);
 		if (lastEventNumber == 0)
-			return StorageReaderWorker<TStreamId>.NoData(msg, ReadStreamResult.NoStream, lastIndexedPosition,
+			return NoData(msg, ReadStreamResult.NoStream, lastIndexedPosition,
 				msg.ValidationStreamVersion ?? 0);
 
 		long endEventNumber = msg.FromEventNumber < 0 ? lastEventNumber : msg.FromEventNumber;
@@ -71,7 +71,7 @@ internal abstract class SecondaryIndexReaderBase<TStreamId>(IReadIndex<TStreamId
 		var resolved = await GetEvents(reader, msg.EventStreamId, id, startEventNumber, endEventNumber, token);
 
 		if (resolved.Count == 0)
-			return StorageReaderWorker<TStreamId>.NoData(msg, ReadStreamResult.Success, lastIndexedPosition,
+			return NoData(msg, ReadStreamResult.Success, lastIndexedPosition,
 				msg.ValidationStreamVersion ?? 0);
 
 		var records = resolved.OrderByDescending(x => x.OriginalEvent.EventNumber).ToArray();
@@ -87,7 +87,7 @@ internal abstract class SecondaryIndexReaderBase<TStreamId>(IReadIndex<TStreamId
 
 	private async ValueTask<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
 		ClientMessage.ReadStreamEventsForward msg,
-		IIndexReader<TStreamId> reader,
+		IIndexReader<string> reader,
 		long lastIndexedPosition,
 		CancellationToken token
 	) {
@@ -95,7 +95,7 @@ internal abstract class SecondaryIndexReaderBase<TStreamId>(IReadIndex<TStreamId
 		var lastEventNumber = GetLastIndexedSequence(id);
 
 		if (msg.ValidationStreamVersion.HasValue && lastEventNumber == msg.ValidationStreamVersion)
-			return StorageReaderWorker<TStreamId>.NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
+			return NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
 				msg.ValidationStreamVersion.Value);
 
 		var fromEventNumber = msg.FromEventNumber < 0 ? 0 : msg.FromEventNumber;
@@ -106,7 +106,7 @@ internal abstract class SecondaryIndexReaderBase<TStreamId>(IReadIndex<TStreamId
 		var resolved = await GetEvents(reader, msg.EventStreamId, id, fromEventNumber, endEventNumber, token);
 
 		if (resolved.Count == 0)
-			return StorageReaderWorker<TStreamId>.NoData(msg, ReadStreamResult.Success, lastIndexedPosition,
+			return NoData(msg, ReadStreamResult.Success, lastIndexedPosition,
 				msg.ValidationStreamVersion ?? 0);
 
 		long nextEventNumber = Math.Min(endEventNumber + 1, lastEventNumber + 1);

@@ -7,15 +7,13 @@ using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
-internal class CategoryIndexProcessor : ISecondaryIndexProcessor {
+internal class CategoryIndexProcessor {
 	readonly Dictionary<string, long> _categories;
 	readonly Dictionary<long, long> _categorySizes = new();
 	readonly DuckDbDataSource _db;
 
-	long _lastLogPosition;
-
-	public long Seq { get; private set; }
-	public long LastCommittedPosition { get; private set; }
+	long _seq;
+	public long LastIndexesPosition { get; private set; }
 
 	public CategoryIndexProcessor(DuckDbDataSource db) {
 		_db = db;
@@ -31,26 +29,26 @@ internal class CategoryIndexProcessor : ISecondaryIndexProcessor {
 			_categorySizes[sequence.Id] = sequence.Sequence;
 		}
 
-		Seq = _categories.Count > 0 ? _categories.Values.Max() : 0;
+		_seq = _categories.Count > 0 ? _categories.Values.Max() : 0;
 	}
 
 	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
 		var categoryName = GetStreamCategory(resolvedEvent.OriginalStreamId);
-		_lastLogPosition = resolvedEvent.Event.LogPosition;
 
 		if (_categories.TryGetValue(categoryName, out var categoryId)) {
 			var next = _categorySizes[categoryId] + 1;
 			_categorySizes[categoryId] = next;
+			LastIndexesPosition = resolvedEvent.Event.LogPosition;
 			return new(categoryId, next);
 		}
 
-		var id = ++Seq;
+		var id = ++_seq;
 
 		_categories[categoryName] = id;
 		_categorySizes[id] = 0;
 
 		_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new((int)id, categoryName));
-		_lastLogPosition = resolvedEvent.Event.LogPosition;
+		LastIndexesPosition = resolvedEvent.Event.LogPosition;
 		return new(id, 0);
 	}
 
@@ -59,10 +57,6 @@ internal class CategoryIndexProcessor : ISecondaryIndexProcessor {
 
 	public long GetCategoryId(string categoryName) =>
 		_categories.TryGetValue(categoryName, out var categoryId) ? categoryId : ExpectedVersion.NoStream;
-
-	public void Commit() {
-		LastCommittedPosition = _lastLogPosition;
-	}
 
 	private static string GetStreamCategory(string streamName) {
 		var dashIndex = streamName.IndexOf('-');

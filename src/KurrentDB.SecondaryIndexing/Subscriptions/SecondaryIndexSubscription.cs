@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Runtime.CompilerServices;
+using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -12,16 +14,15 @@ using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
-public class SecondaryIndexSubscription(
+public sealed class SecondaryIndexSubscription(
 	IPublisher publisher,
-	ISecondaryIndexExt index,
+	ISecondaryIndex index,
 	SecondaryIndexingPluginOptions options
 ) : IAsyncDisposable {
 	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
-	private readonly int _commitBatchSize = options.CommitBatchSize;
-	private readonly uint _commitDelayMs = options.CommitDelayMs;
 
-	private readonly CancellationTokenSource _cts = new();
+	private readonly int _commitBatchSize = options.CommitBatchSize;
+	private CancellationTokenSource? _cts = new();
 	private Enumerator.AllSubscription? _subscription;
 	private Task? _processingTask;
 
@@ -36,12 +37,13 @@ public class SecondaryIndexSubscription(
 			resolveLinks: false,
 			user: SystemAccounts.System,
 			requiresLeader: false,
-			cancellationToken: _cts.Token
+			cancellationToken: _cts!.Token
 		);
 
-		_processingTask = Task.Run(() => ProcessEvents(_cts.Token), _cts.Token);
+		_processingTask = ProcessEvents(_cts.Token);
 	}
 
+	[AsyncMethodBuilder(typeof(SpawningAsyncTaskMethodBuilder))]
 	private async Task ProcessEvents(CancellationToken token) {
 		if (_subscription == null)
 			throw new InvalidOperationException("Subscription not initialized");
@@ -65,7 +67,7 @@ public class SecondaryIndexSubscription(
 
 				index.Index(resolvedEvent);
 
-				if (indexedCount++ > _commitBatchSize) {
+				if (++indexedCount >= _commitBatchSize) {
 					index.Commit();
 					indexedCount = 0;
 				}
@@ -80,27 +82,32 @@ public class SecondaryIndexSubscription(
 		}
 	}
 
-	public async ValueTask DisposeAsync() {
-		try {
-			await _cts.CancelAsync();
+	public ValueTask DisposeAsync() {
+		// dispose CTS once to deal with the concurrent call to the current method
+		if (Interlocked.Exchange(ref _cts, null) is not { } cts)
+			return ValueTask.CompletedTask;
 
-			if (_processingTask != null) {
-				try {
-					await _processingTask;
-				} catch (OperationCanceledException) {
-					// Expected
-				} catch (Exception ex) {
-					Log.Error(ex, "Error during processing task completion");
-				}
+		using (cts) {
+			cts.Cancel();
+		}
+
+		return DisposeCoreAsync();
+	}
+
+	async ValueTask DisposeCoreAsync() {
+		if (_processingTask != null) {
+			try {
+				await _processingTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
+				                               ConfigureAwaitOptions.ContinueOnCapturedContext);
+			} catch (Exception ex) {
+				Log.Error(ex, "Error during processing task completion");
 			}
+		}
 
-			index.Dispose();
+		index.Dispose();
 
-			if (_subscription != null) {
-				await _subscription.DisposeAsync();
-			}
-		} finally {
-			_cts.Dispose();
+		if (_subscription != null) {
+			await _subscription.DisposeAsync();
 		}
 	}
 }

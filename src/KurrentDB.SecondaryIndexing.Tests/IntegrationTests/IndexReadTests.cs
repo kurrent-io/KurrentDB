@@ -25,9 +25,9 @@ public class IndexReadTests(
 		var appendResult = await fixture.AppendToStream(streamName, _expectedEventData);
 
 		string[] indexNames = [
-			DefaultIndexConstants.IndexName,
-			$"{CategoryIndexConstants.IndexPrefix}{CategoryName}",
-			$"{EventTypeIndexConstants.IndexPrefix}test"
+			DefaultIndex.IndexName,
+			$"{CategoryIndex.IndexPrefix}{CategoryName}",
+			$"{EventTypeIndex.IndexPrefix}test"
 		];
 		foreach (var name in indexNames) {
 			await ValidateRead(streamName, name, appendResult.Position);

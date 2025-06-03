@@ -1,17 +1,17 @@
 create table if not exists event_type (
-	id int primary key,
+	id bigint primary key,
 	name varchar not null,
 	unique(name)
 );
 
 create table if not exists category (
-	id int primary key,
+	id bigint primary key,
 	name varchar not null,
 	unique(name)
 );
 
 create table if not exists streams (
-	id ubigint primary key,
+	id bigint primary key,
 	name varchar not null,
 	unique(name),
 	max_age int DEFAULT NULL,
@@ -19,15 +19,15 @@ create table if not exists streams (
 );
 
 create table if not exists idx_all (
-	seq ubigint not null,
-	event_number int not null,
-	log_position ubigint not null,
+	seq bigint not null,
+	event_number bigint not null,
+	log_position bigint not null,
 	created timestamp not null,
-	stream ubigint not null,
-	event_type int not null,
+	stream bigint not null,
+	event_type bigint not null,
 	event_type_seq bigint not null,
-	category int not null,
-	category_seq bigint not null
+	category bigint not null,
+	category_seq bigint not null,
 );
 
 create index if not exists idx_all_category on idx_all(category, category_seq);

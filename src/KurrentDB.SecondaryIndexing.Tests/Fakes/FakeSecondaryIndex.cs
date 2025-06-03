@@ -21,10 +21,11 @@ public class FakeSecondaryIndex : ISecondaryIndex {
 
 	public void Commit() => Processor.Commit();
 
-	public void Init() { }
+	public void Index(ResolvedEvent evt) {
+	}
 
-	public ulong? GetLastPosition() =>
-		Committed.Select(@event => (ulong?)@event.Event.LogPosition).FirstOrDefault();
+	public long? GetLastPosition() =>
+		Committed.Select(@event => @event.Event.LogPosition).FirstOrDefault();
 
 	public void Dispose() { }
 }
