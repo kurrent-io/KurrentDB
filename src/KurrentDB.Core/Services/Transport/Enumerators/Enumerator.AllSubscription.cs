@@ -46,7 +46,9 @@ static partial class Enumerator {
 			bool resolveLinks,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			CancellationToken cancellationToken) {
+			int maxLiveBufferCount = MaxLiveEventBufferCount,
+			int readBatchSize = ReadBatchSize,
+			CancellationToken cancellationToken = default) {
 			_expiryStrategy = expiryStrategy;
 			_subscriptionId = Guid.NewGuid();
 			_bus = Ensure.NotNull(bus);
