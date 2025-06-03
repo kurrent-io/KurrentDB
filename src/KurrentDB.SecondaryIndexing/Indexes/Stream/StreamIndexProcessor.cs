@@ -47,10 +47,8 @@ internal class StreamIndexProcessor<TStreamId> : Disposable {
 		// TODO: meh, think if we can drop constraint or at least use something like IParsable
 		var streamId = Unsafe.As<string, TStreamId>(ref name);
 
-		var inFlight = _inFlightRecords.TryGetValue(name);
-		if (inFlight.HasValue) {
-			return (long)inFlight.Value;
-		}
+		if (_inFlightRecords.TryGetValue(name, out var id))
+			return (long)id;
 
 		var cached = _indexReaderBackend.TryGetStreamLastEventNumber(streamId);
 
@@ -58,23 +56,25 @@ internal class StreamIndexProcessor<TStreamId> : Disposable {
 			return (long)cached.SecondaryIndexId.Value;
 		}
 
-		var fromDb = _db.Pool.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, ulong, GetStreamIdByNameQuery>(new(name));
+		var fromDb = _connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, ulong, GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
-			_indexReaderBackend.UpdateStreamSecondaryIndexId(1, streamId, fromDb.Value);
-			return (long)fromDb.Value;
+			_indexReaderBackend.UpdateStreamSecondaryIndexId(1, streamId, fromDb.GetValueOrDefault());
+			return (long)fromDb.GetValueOrDefault();
 		}
 
 		Log.Information("Stream {Name} not in the db", streamId);
-		var id = ++Seq;
+		id = ++Seq;
 		_indexReaderBackend.UpdateStreamSecondaryIndexId(1, streamId, id);
 
 		_inFlightRecords[name] = id;
 
-		using var row = _appender.CreateRow();
-		row.Append(id);
-		row.Append(name);
-		row.AppendDefault();
-		row.AppendDefault();
+		using (var row = _appender.CreateRow()) {
+			row.Append(id);
+			row.Append(name);
+			row.AppendDefault();
+			row.AppendDefault();
+		}
+
 		_count++;
 
 		return (long)id;
