@@ -3,7 +3,6 @@
 
 using System.Runtime.CompilerServices;
 using DotNext;
-using DotNext.Collections.Generic;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -94,7 +93,7 @@ internal class StreamIndexProcessor<TStreamId> : Disposable {
 	}
 
 	protected override void Dispose(bool disposing) {
-		if (!IsDisposingOrDisposed) {
+		if (disposing) {
 			_appender.Dispose();
 			_connection.Dispose();
 		}
