@@ -43,10 +43,8 @@ internal class StreamIndexProcessor : Disposable {
 		if (_inFlightRecords.TryGetValue(name, out var id))
 			return id;
 
-		var cached = _indexReaderBackend.TryGetStreamLastEventNumber(name);
-
-		if (cached.SecondaryIndexId.HasValue) {
-			return cached.SecondaryIndexId.Value;
+		if (_indexReaderBackend.TryGetStreamLastEventNumber(name) is { SecondaryIndexId: { } secondaryIndexId }) {
+			return secondaryIndexId;
 		}
 
 		var fromDb = _connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
