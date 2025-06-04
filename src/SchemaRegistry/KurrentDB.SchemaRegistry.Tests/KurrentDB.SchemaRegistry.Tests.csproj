@@ -6,6 +6,9 @@
     <TargetFrameworks>net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+		<IsTestProject>true</IsTestProject>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Kurrent.Surge" Version="1.1.0-alpha" />
@@ -16,12 +19,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" />
-    <ProjectReference Include="..\..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
+    <ProjectReference Include="..\..\KurrentDB.Surge.Testing.TUnit\KurrentDB.Surge.Testing.TUnit.csproj" />
     <ProjectReference Include="..\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
   </ItemGroup>
 	<ItemGroup>
-		<Using Include="KurrentDB.Surge.Testing.Fixtures"/>
-		<Using Include="KurrentDB.Surge.Testing.FluentAssertions"/>
+		<Using Include="KurrentDB.Surge.Testing.TUnit.FluentAssertions"/>
 		<Using Include="KurrentDB.Surge.Testing.TUnit"/>
 		<Using Include="Kurrent.Surge"/>
 		<Using Include="Humanizer"/>

@@ -1,7 +1,7 @@
 using System.Net;
 using Grpc.Net.Client;
+using Kurrent.Surge.Testing.TUnit.Logging;
 using KurrentDB.Core;
-using KurrentDB.Surge.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;

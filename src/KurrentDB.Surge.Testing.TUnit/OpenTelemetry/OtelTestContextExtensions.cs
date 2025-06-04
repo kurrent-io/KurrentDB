@@ -1,4 +1,4 @@
-namespace KurrentDB.Surge.Testing.OpenTelemetry;
+namespace KurrentDB.Surge.Testing.TUnit.OpenTelemetry;
 
 public static class OtelTestContextExtensions {
     public static void SetOtelServiceMetadata(this TestContext context, OtelServiceMetadata metadata) {

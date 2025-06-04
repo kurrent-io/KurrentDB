@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Configuration;
 
-namespace KurrentDB.Surge.Testing;
+namespace KurrentDB.Surge.Testing.TUnit;
 
 public static class ApplicationContext {
     public static IConfiguration Configuration { get; private set; } = null!;

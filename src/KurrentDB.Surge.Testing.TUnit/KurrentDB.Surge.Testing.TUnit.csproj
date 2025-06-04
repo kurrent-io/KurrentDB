@@ -1,16 +1,12 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
     <!-- It must be `TargetFrameworks` plural to work on macos -->
     <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
     <!--suppress MsbuildTargetFrameworkTagInspection-->
 		<TargetFrameworks>net8.0</TargetFrameworks>
-		<OutputType>Library</OutputType>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>true</ImplicitUsings>
 		<LangVersion>preview</LangVersion>
-<!--		<Deterministic>true</Deterministic>-->
-		<NoWarn>xUnit1041</NoWarn>
-		<IsTestProject>false</IsTestProject>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
@@ -22,12 +18,14 @@
 		<PackageReference Include="Humanizer.Core" Version="2.14.1" />
 		<PackageReference Include="Eventuous.Testing" Version="0.15.0" />
 		<PackageReference Include="Kurrent.Surge" Version="1.1.0-alpha" />
-		<PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.4.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.4" />
-		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.4" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.4" />
-		<PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.16"/>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.2" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.4.0" />
 		<PackageReference Include="Serilog" Version="4.2.0" />
 		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
@@ -39,22 +37,11 @@
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 		<PackageReference Include="Serilog.Sinks.Observable" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
-		<PackageReference Include="Serilog.Sinks.XUnit" Version="3.0.19" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
 		<PackageReference Include="System.Reactive" Version="6.0.1" />
-		<PackageReference Include="xunit" Version="2.9.3" />
+		<PackageReference Include="TUnit.Engine" Version="0.19.86"/>
 		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2"/>
 		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.6.3"/>
-	</ItemGroup>
-
-	<ItemGroup>
-		<Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="appsettings.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -62,11 +49,15 @@
 		<Using Include="Humanizer" />
 		<Using Include="FluentAssertions" />
 		<Using Include="Microsoft.Extensions.Time.Testing" />
-		<Using Include="Xunit" />
-		<Using Include="Xunit.Abstractions" />
+		<Using Include="TUnit" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\KurrentDB\KurrentDB.csproj" />
+    <ProjectReference Include="..\KurrentDB\KurrentDB.csproj">
+        <ExcludeAssets>runtime</ExcludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+				<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+	  <ProjectReference Include="..\SchemaRegistry\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
 	</ItemGroup>
 </Project>
