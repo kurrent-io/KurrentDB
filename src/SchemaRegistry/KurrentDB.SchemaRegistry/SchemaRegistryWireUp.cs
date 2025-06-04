@@ -1,3 +1,4 @@
+using Grpc.Core;
 using Kurrent.Surge.Consumers.Configuration;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Producers.Configuration;
@@ -68,8 +69,13 @@ public static class SchemaRegistryWireUp {
 
         // Domain services
 
-        // TODO: Correctly implement this
-        services.AddSingleton<CheckAccess>(_ => ValueTask.FromResult(true));
+        services.AddSingleton<CheckAccess>(_ =>
+            context => {
+                var http = context.GetHttpContext();
+				var authenticated = http.User.Identity?.IsAuthenticated ?? false;
+                return ValueTask.FromResult(authenticated);
+            }
+        );
 
         services.AddSingleton<LookupSchemaNameByVersionId>(ctx => {
             var queries = ctx.GetRequiredService<SchemaQueries>();
