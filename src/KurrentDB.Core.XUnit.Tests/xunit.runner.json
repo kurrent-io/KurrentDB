@@ -1,4 +1,5 @@
 {
 	"$schema": "https://xunit.net/schema/current/xunit.runner.schema.json",
-	"maxParallelThreads": -1
+	"parallelAlgorithm": "conservative",
+	"maxParallelThreads": "default"
 }
