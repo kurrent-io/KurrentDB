@@ -1,3 +1,6 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 using System.Text.Json;
 using Dapper;
 using DuckDB.NET.Data;
@@ -9,6 +12,7 @@ using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using Polly;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryErrorDetails.Types;
 using static KurrentDB.SchemaRegistry.Data.SchemaQueriesMapping;
+using SchemaCompatibilityResult = Kurrent.Surge.Schema.Validation.SchemaCompatibilityResult;
 
 namespace KurrentDB.SchemaRegistry.Data;
 
@@ -271,17 +275,28 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
         if (query.DataFormat != info.DataFormat)
             throw RpcExceptions.FailedPrecondition($"Schema format mismatch: {query.DataFormat} != {info.DataFormat}");
 
-        var uncheckedSchema = query.Definition.ToStringUtf8();
-        var referenceSchema = info.SchemaDefinition.ToStringUtf8();
-        var compatibility   = (SchemaCompatibilityMode)info.Compatibility;
+	    var uncheckedSchema = query.Definition.ToStringUtf8();
+	    var compatibility = (SchemaCompatibilityMode)info.Compatibility;
 
-        var result = await CompatibilityManager
-            .CheckCompatibility(uncheckedSchema, referenceSchema, compatibility, cancellationToken)
-            .ConfigureAwait(false);
+	    SchemaCompatibilityResult result;
 
-        return new() {
-            ValidationResult = MapToSchemaCompatibilityResult(result, info.SchemaVersionId)
-        };
+	    if (compatibility is SchemaCompatibilityMode.Backward or SchemaCompatibilityMode.Forward or SchemaCompatibilityMode.Full) {
+		    result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, info.SchemaDefinition.ToStringUtf8(), compatibility, cancellationToken);
+	    } else {
+		    var infos = query.HasSchemaVersionId
+			    ? await GetAllSchemaValidationInfos(Guid.Parse(query.SchemaVersionId), cancellationToken)
+			    : await GetAllSchemaValidationInfos(query.SchemaName, cancellationToken);
+
+		    var referenceSchemas = infos
+			    .Select(i => i.SchemaDefinition.ToStringUtf8())
+			    .ToList();
+
+		    result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, compatibility, cancellationToken);
+	    }
+
+	    return new CheckSchemaCompatibilityResponse {
+		    ValidationResult = MapToSchemaCompatibilityResult(result, info.SchemaVersionId)
+	    };
     }
 
     async Task<SchemaValidationInfo> GetLatestSchemaValidationInfo(string schemaName, CancellationToken cancellationToken) {
@@ -331,5 +346,54 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
                 : throw RpcExceptions.NotFound("SchemaVersion", schemaVersionId.ToString()),
             new { schema_version_id = schemaVersionId }
         );
+    }
+
+    async Task<List<SchemaValidationInfo>> GetAllSchemaValidationInfos(string schemaName, CancellationToken cancellationToken) {
+	    const string sql =
+		    """
+		    SELECT
+		          v.version_id
+		        , decode(v.schema_definition) AS schema_definition
+		        , v.data_format
+		        , s.compatibility
+		    FROM schemas s
+		    INNER JOIN schema_versions v ON v.schema_name = s.schema_name
+		    WHERE s.schema_name = $schema_name
+		    ORDER BY v.version_number
+		    """;
+
+	    var connection = ConnectionProvider.GetConnection();
+
+	    return await connection.QueryManyAsync<SchemaValidationInfo>(
+		    sql,
+		    record => MapToSchemaValidationInfo(record),
+		    new { schema_name = schemaName }
+	    ).ToListAsync(cancellationToken);
+    }
+
+    async Task<List<SchemaValidationInfo>> GetAllSchemaValidationInfos(Guid schemaVersionId, CancellationToken cancellationToken) {
+	    const string sql =
+		    """
+		    SELECT
+		    	v.version_id
+		    	, decode(v.schema_definition) AS schema_definition
+		    	, v.data_format
+		    	, s.compatibility
+		    FROM schemas s
+		    INNER JOIN schema_versions v ON v.schema_name = s.schema_name
+		    WHERE s.schema_name = (
+		    	SELECT schema_name FROM schema_versions
+		    	WHERE version_id = $schema_version_id
+		    )
+		    ORDER BY v.version_number
+		    """;
+
+	    var connection = ConnectionProvider.GetConnection();
+
+	    return await connection.QueryManyAsync<SchemaValidationInfo>(
+		    sql,
+		    record => MapToSchemaValidationInfo(record),
+		    new { schema_version_id = schemaVersionId }
+	    ).ToListAsync(cancellationToken);
     }
 }

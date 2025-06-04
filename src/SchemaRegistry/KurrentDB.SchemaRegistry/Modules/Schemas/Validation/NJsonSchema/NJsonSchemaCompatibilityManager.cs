@@ -1,277 +1,379 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+// ReSharper disable ConvertIfStatementToSwitchStatement
 // ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+// ReSharper disable InconsistentNaming
+// ReSharper disable ArrangeTypeMemberModifiers
 
 using NJsonSchema;
 
 namespace Kurrent.Surge.Schema.Validation;
 
+public delegate SchemaCompatibilityResult CheckSchemaCompatibility(JsonSchema reference, JsonSchema uncheckedSchema);
+
 [PublicAPI]
 public class NJsonSchemaCompatibilityManager : SchemaCompatibilityManagerBase {
-    protected override async ValueTask<SchemaCompatibilityResult> CheckCompatibilityCore(
-        string uncheckedSchema, string referenceSchema,
-        SchemaCompatibilityMode compatibility,
-        CancellationToken cancellationToken = default
-    ) {
-        var results = await Task
-            .WhenAll(
-                JsonSchema.FromJsonAsync(uncheckedSchema, cancellationToken),
-                JsonSchema.FromJsonAsync(referenceSchema, cancellationToken)
-            )
-            .ConfigureAwait(false);
+	static readonly SchemaCompatibilityChecker CompatibilityChecker = new();
 
-        return CheckCompatibility(results[0], results[1], compatibility);
-    }
+	protected override async ValueTask<SchemaCompatibilityResult> CheckCompatibilityCore(
+		string uncheckedSchema,
+		string[] referenceSchemas,
+		SchemaCompatibilityMode compatibility,
+		CancellationToken cancellationToken = default)
+	{
+		var uncheckedJsonSchema = await JsonSchema
+			.FromJsonAsync(uncheckedSchema, cancellationToken)
+			.ConfigureAwait(false);
 
-    internal static SchemaCompatibilityResult CheckCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema, SchemaCompatibilityMode compatibility) =>
-        compatibility switch {
-            SchemaCompatibilityMode.None        => SchemaCompatibilityResult.Compatible(),
-            SchemaCompatibilityMode.Backward    => CheckBackwardCompatibility(referenceSchema, uncheckedSchema),
-            SchemaCompatibilityMode.Forward     => CheckForwardCompatibility(referenceSchema, uncheckedSchema),
-            SchemaCompatibilityMode.Full        => CheckFullCompatibility(referenceSchema, uncheckedSchema),
-            SchemaCompatibilityMode.Unspecified => throw new ArgumentException("Unspecified compatibility mode", nameof(compatibility)),
-            _                                   => throw new ArgumentException($"Invalid compatibility mode", nameof(compatibility))
+		var referenceJsonSchemas = await Task
+			.WhenAll(referenceSchemas.AsParallel().Select(s => JsonSchema.FromJsonAsync(s, cancellationToken)))
+			.ConfigureAwait(false);
 
-        };
+		return CheckCompatibility(referenceJsonSchemas, uncheckedJsonSchema, compatibility);
+	}
 
-    static SchemaCompatibilityResult CheckFullCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
-        var backwardResult = CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
-        return backwardResult.IsCompatible
-            ? CheckForwardCompatibility(referenceSchema, uncheckedSchema)
-            : backwardResult;
-    }
+	internal static SchemaCompatibilityResult CheckCompatibility(
+		JsonSchema referenceSchemas, JsonSchema uncheckedSchema, SchemaCompatibilityMode compatibility
+	) => CheckCompatibility([referenceSchemas], uncheckedSchema, compatibility);
 
-    static SchemaCompatibilityResult CheckBackwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
-        var errors = new List<SchemaCompatibilityError>();
+	internal static SchemaCompatibilityResult CheckCompatibility(
+		IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema, SchemaCompatibilityMode compatibility
+	) => compatibility switch {
+		SchemaCompatibilityMode.None        => SchemaCompatibilityResult.Compatible(),
+		SchemaCompatibilityMode.Backward    => CheckBackwardCompatibility(referenceSchemas.First(), uncheckedSchema),
+		SchemaCompatibilityMode.Forward     => CheckForwardCompatibility(referenceSchemas.First(), uncheckedSchema),
+		SchemaCompatibilityMode.Full        => CheckFullCompatibility(referenceSchemas.First(), uncheckedSchema),
+		SchemaCompatibilityMode.BackwardAll => CheckBackwardAllCompatibility(referenceSchemas, uncheckedSchema),
+		SchemaCompatibilityMode.ForwardAll  => CheckForwardAllCompatibility(referenceSchemas, uncheckedSchema),
+		SchemaCompatibilityMode.FullAll     => CheckFullAllCompatibility(referenceSchemas, uncheckedSchema),
+		SchemaCompatibilityMode.Unspecified => throw new ArgumentException("Unspecified compatibility mode", nameof(compatibility)),
+		_                                   => throw new ArgumentException("Invalid compatibility mode", nameof(compatibility))
+	};
 
-        CheckBackwardCompatibilityProperties(referenceSchema, uncheckedSchema, errors, "#");
+	static SchemaCompatibilityResult CheckBackwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) =>
+		CompatibilityChecker.CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
 
-        return errors.Count > 0
-            ? SchemaCompatibilityResult.Incompatible(errors)
-            : SchemaCompatibilityResult.Compatible();
-    }
+	static SchemaCompatibilityResult CheckForwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) =>
+		CompatibilityChecker.CheckForwardCompatibility(referenceSchema, uncheckedSchema);
 
-    static void CheckBackwardCompatibilityProperties(JsonSchema referenceSchema, JsonSchema otherSchema, List<SchemaCompatibilityError> errors, string path) {
-        // Resolve references to their actual schema objects
-        var resolvedRegisteredSchema = ResolveReference(referenceSchema);
-        var resolvedOtherSchema      = ResolveReference(otherSchema);
+	static SchemaCompatibilityResult CheckFullCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
+		var backwardResult = CheckBackwardCompatibility(referenceSchema, uncheckedSchema);
+		return backwardResult.IsCompatible
+			? CheckForwardCompatibility(referenceSchema, uncheckedSchema)
+			: backwardResult;
+	}
 
-        // Backward compatibility: New schema can process old data
-        foreach (var (propertyName, registeredProperty) in resolvedRegisteredSchema.Properties) {
-            var propertyPath = $"{path}/{propertyName}";
+	static SchemaCompatibilityResult CheckFullAllCompatibility(IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema) =>
+		CheckAllCompatibility(referenceSchemas, uncheckedSchema, CheckFullCompatibility);
 
-            // Resolve any references in the property
-            var resolvedRegisteredProperty = ResolveReference(registeredProperty);
+	static SchemaCompatibilityResult CheckBackwardAllCompatibility(IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema) =>
+		CheckAllCompatibility(referenceSchemas, uncheckedSchema, CheckBackwardCompatibility);
 
-            // Check if property exists in the new schema
-            if (!resolvedOtherSchema.Properties.TryGetValue(propertyName, out var otherProperty)) {
-                // If the property is required in the registered schema but missing in the new one,
-                // that's a backward compatibility issue
-                if (resolvedRegisteredSchema.RequiredProperties.Contains(propertyName))
-                    errors.Add(
-                        new SchemaCompatibilityError {
-                            Kind         = SchemaCompatibilityErrorKind.MissingRequiredProperty,
-                            PropertyPath = propertyPath,
-                            Details      = "Required property in original schema is missing in new schema"
-                        }
-                    );
+	static SchemaCompatibilityResult CheckForwardAllCompatibility(IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema) =>
+		CheckAllCompatibility(referenceSchemas, uncheckedSchema, CheckForwardCompatibility);
 
-                continue;
-            }
+	static SchemaCompatibilityResult CheckAllCompatibility(IList<JsonSchema> referenceSchemas, JsonSchema uncheckedSchema,
+		CheckSchemaCompatibility checkCompatibility) {
+		var errors = referenceSchemas
+			.AsParallel()
+			.Select(referenceSchema => checkCompatibility(referenceSchema, uncheckedSchema))
+			.Where(result => !result.IsCompatible)
+			.SelectMany(result => result.Errors)
+			.ToList();
 
-            // Resolve any references in the other property
-            var resolvedOtherProperty = ResolveReference(otherProperty);
+		return errors.Count > 0
+			? SchemaCompatibilityResult.Incompatible(errors)
+			: SchemaCompatibilityResult.Compatible();
+	}
+}
 
-            // Check type compatibility
-            if (!AreTypesCompatible(resolvedRegisteredProperty, resolvedOtherProperty))
-                errors.Add(
-                    new SchemaCompatibilityError {
-                        Kind         = SchemaCompatibilityErrorKind.IncompatibleTypeChange,
-                        PropertyPath = propertyPath,
-                        Details      = "Property has incompatible type change",
-                        OriginalType = resolvedRegisteredProperty.Type,
-                        NewType      = resolvedOtherProperty.Type
-                    }
-                );
+internal class SchemaCompatibilityChecker {
+	readonly HashSet<(JsonSchema, JsonSchema)> VisitedSchemas = [];
 
-            // Check if a property changed from optional to required
-            if (!resolvedRegisteredSchema.RequiredProperties.Contains(propertyName) && resolvedOtherSchema.RequiredProperties.Contains(propertyName))
-                errors.Add(
-                    new SchemaCompatibilityError {
-                        Kind         = SchemaCompatibilityErrorKind.OptionalToRequired,
-                        PropertyPath = propertyPath,
-                        Details      = "Property changed from optional to required, breaking backward compatibility"
-                    }
-                );
+	public SchemaCompatibilityResult CheckBackwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
+		VisitedSchemas.Clear();
+		var errors = new List<SchemaCompatibilityError>();
+		CheckBackwardCompatibilityProperties(referenceSchema, uncheckedSchema, errors);
 
-            // Recursively check nested objects
-            if (resolvedRegisteredProperty.Type == JsonObjectType.Object && resolvedOtherProperty.Type == JsonObjectType.Object)
-                CheckBackwardCompatibilityProperties(resolvedRegisteredProperty, resolvedOtherProperty, errors, propertyPath);
+		return errors.Count > 0
+			? SchemaCompatibilityResult.Incompatible(errors)
+			: SchemaCompatibilityResult.Compatible();
+	}
 
-            // Check array items
-            if (resolvedRegisteredProperty.Type == JsonObjectType.Array
-                && resolvedOtherProperty.Type   == JsonObjectType.Array
-                && resolvedRegisteredProperty.Item is not null
-                && resolvedOtherProperty.Item is not null) {
-                var resolvedRegisteredItem = ResolveReference(resolvedRegisteredProperty.Item);
-                var resolvedOtherItem      = ResolveReference(resolvedOtherProperty.Item);
+	public SchemaCompatibilityResult CheckForwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
+		VisitedSchemas.Clear();
+		var errors = new List<SchemaCompatibilityError>();
+		CheckForwardCompatibilityProperties(referenceSchema, uncheckedSchema, errors);
 
-                if (!AreTypesCompatible(resolvedRegisteredItem, resolvedOtherItem))
-                    errors.Add(
-                        new SchemaCompatibilityError {
-                            Kind         = SchemaCompatibilityErrorKind.ArrayTypeIncompatibility,
-                            PropertyPath = propertyPath,
-                            Details      = "Array items have incompatible type change",
-                            OriginalType = resolvedRegisteredItem.Type,
-                            NewType      = resolvedOtherItem.Type
-                        }
-                    );
+		return errors.Count > 0
+			? SchemaCompatibilityResult.Incompatible(errors)
+			: SchemaCompatibilityResult.Compatible();
+	}
 
-                // If array items are objects, check them recursively
-                if (resolvedRegisteredItem.Type == JsonObjectType.Object && resolvedOtherItem.Type == JsonObjectType.Object)
-                    CheckBackwardCompatibilityProperties(resolvedRegisteredItem, resolvedOtherItem, errors, $"{propertyPath}/items");
-            }
-        }
-    }
+	void CheckBackwardCompatibilityProperties(
+		JsonSchema referenceSchema,
+		JsonSchema uncheckedSchema,
+		List<SchemaCompatibilityError> errors,
+		string path = "#"
+	) {
+		referenceSchema = ResolveReference(referenceSchema);
+		uncheckedSchema = ResolveReference(uncheckedSchema);
 
-    static SchemaCompatibilityResult CheckForwardCompatibility(JsonSchema referenceSchema, JsonSchema uncheckedSchema) {
-        var errors = new List<SchemaCompatibilityError>();
+		var schemaKey = (referenceSchema, uncheckedSchema);
+		if (!VisitedSchemas.Add(schemaKey))
+			return;
 
-        CheckForwardCompatibilityProperties(referenceSchema, uncheckedSchema, errors, "#");
+		foreach (var (name, value) in referenceSchema.Properties) {
+			var propertyPath = $"{path}/{name}";
+			var resolvedValue = ResolveReference(value);
 
-        return errors.Count > 0
-            ? SchemaCompatibilityResult.Incompatible(errors)
-            : SchemaCompatibilityResult.Compatible();
-    }
+			// Handle missing properties
+			if (!uncheckedSchema.Properties.TryGetValue(name, out var uncheckedSchemaProperty)) {
+				if (referenceSchema.RequiredProperties.Contains(name))
+					AddMissingRequiredPropertyError(errors, propertyPath);
 
-    static void CheckForwardCompatibilityProperties(JsonSchema referenceSchema, JsonSchema otherSchema, List<SchemaCompatibilityError> errors, string path) {
-        // Resolve references to their actual schema objects
-        var resolvedRegisteredSchema = ResolveReference(referenceSchema);
-        var resolvedOtherSchema      = ResolveReference(otherSchema);
+				continue;
+			}
 
-        // Forward compatibility: Old schema can process new data
-        foreach (var (propertyName, otherProperty) in resolvedOtherSchema.Properties) {
-            var propertyPath = $"{path}/{propertyName}";
+			// Compare property types and requirements
+			var resolvedUncheckedValue = ResolveReference(uncheckedSchemaProperty);
+			CheckPropertyTypeCompatibility(resolvedValue, resolvedUncheckedValue, errors, propertyPath);
+			CheckOptionalToRequiredChange(referenceSchema, uncheckedSchema, name, errors, propertyPath);
 
-            // Resolve any references in the property
-            var resolvedOtherProperty = ResolveReference(otherProperty);
+			// Handle nested structures (objects and arrays)
+			CheckNestedStructures(resolvedValue, resolvedUncheckedValue, errors, propertyPath);
+		}
 
-            // Check if property exists in registered schema
-            if (!resolvedRegisteredSchema.Properties.TryGetValue(propertyName, out var registeredProperty)) {
-                // If the property is required in the new schema but missing in the registered one,
-                // that's a forward compatibility issue
-                if (resolvedOtherSchema.RequiredProperties.Contains(propertyName))
-                    errors.Add(
-                        new SchemaCompatibilityError {
-                            Kind         = SchemaCompatibilityErrorKind.NewRequiredProperty,
-                            PropertyPath = propertyPath,
-                            Details      = "Required property in new schema is missing in original schema"
-                        }
-                    );
+		// Check for new required properties that old data won't have
+		CheckNewRequiredProperties(referenceSchema, uncheckedSchema, errors, path);
+	}
 
-                continue;
-            }
+	void CheckForwardCompatibilityProperties(
+		JsonSchema referenceSchema,
+		JsonSchema uncheckedSchema,
+		List<SchemaCompatibilityError> errors,
+		string path = "#"
+	) {
+		referenceSchema = ResolveReference(referenceSchema);
+		uncheckedSchema = ResolveReference(uncheckedSchema);
 
-            // Resolve any references in the registered property
-            var resolvedRegisteredProperty = ResolveReference(registeredProperty);
+		var schemaKey = (referenceSchema, uncheckedSchema);
+		if (!VisitedSchemas.Add(schemaKey))
+			return;
 
-            // Check type compatibility
-            if (!AreTypesCompatible(resolvedOtherProperty, resolvedRegisteredProperty))
-                errors.Add(
-                    new SchemaCompatibilityError {
-                        Kind         = SchemaCompatibilityErrorKind.IncompatibleTypeChange,
-                        PropertyPath = propertyPath,
-                        Details      = "Property has incompatible type change",
-                        OriginalType = resolvedOtherProperty.Type,
-                        NewType      = resolvedRegisteredProperty.Type
-                    }
-                );
+		foreach (var (name, value) in uncheckedSchema.Properties) {
+			var propertyPath = $"{path}/{name}";
+			var resolvedValue = ResolveReference(value);
 
-            // Recursively check nested objects
-            if (resolvedOtherProperty.Type == JsonObjectType.Object && resolvedRegisteredProperty.Type == JsonObjectType.Object)
-                CheckForwardCompatibilityProperties(resolvedRegisteredProperty, resolvedOtherProperty, errors, propertyPath);
+			// Handle missing properties
+			if (!referenceSchema.Properties.TryGetValue(name, out var referenceSchemaProperty)) {
+				if (uncheckedSchema.RequiredProperties.Contains(name))
+					AddNewRequiredPropertyError(errors, propertyPath);
 
-            // Check array items
-            if (resolvedOtherProperty.Type         == JsonObjectType.Array
-                && resolvedRegisteredProperty.Type == JsonObjectType.Array
-                && resolvedOtherProperty.Item is not null
-                && resolvedRegisteredProperty.Item is not null) {
-                var resolvedOtherItem      = ResolveReference(resolvedOtherProperty.Item);
-                var resolvedRegisteredItem = ResolveReference(resolvedRegisteredProperty.Item);
+				continue;
+			}
 
-                if (!AreTypesCompatible(resolvedOtherItem, resolvedRegisteredItem))
-                    errors.Add(
-                        new SchemaCompatibilityError {
-                            Kind         = SchemaCompatibilityErrorKind.ArrayTypeIncompatibility,
-                            PropertyPath = propertyPath,
-                            Details      = "Array items have incompatible type change",
-                            OriginalType = resolvedOtherItem.Type,
-                            NewType      = resolvedRegisteredItem.Type
-                        }
-                    );
+			// Compare property types
+			var resolvedReferenceProperty = ResolveReference(referenceSchemaProperty);
+			CheckPropertyTypeCompatibility(resolvedValue, resolvedReferenceProperty, errors, propertyPath);
 
-                // If array items are objects, check them recursively
-                if (resolvedOtherItem.Type == JsonObjectType.Object && resolvedRegisteredItem.Type == JsonObjectType.Object) {
-                    CheckForwardCompatibilityProperties(resolvedRegisteredItem, resolvedOtherItem, errors, $"{propertyPath}/items");
-                }
-            }
-        }
+			// Handle nested structures (objects and arrays)
+			CheckNestedStructuresForward(resolvedReferenceProperty, resolvedValue, errors, propertyPath);
+		}
 
-        // Check for properties in registered schema that are missing in other schema
-        foreach (var (propertyName, _) in resolvedRegisteredSchema.Properties) {
-            var propertyPath = $"{path}/{propertyName}";
+		// Check for required properties in reference schema missing in unchecked schema
+		CheckMissingRequiredProperties(referenceSchema, uncheckedSchema, errors, path);
+	}
 
-            if (!resolvedOtherSchema.Properties.ContainsKey(propertyName)) {
-                errors.Add(
-                    new SchemaCompatibilityError {
-                        Kind         = SchemaCompatibilityErrorKind.RemovedProperty,
-                        PropertyPath = propertyPath,
-                        Details      = "Property in original schema is missing in new schema"
-                    }
-                );
-            }
-        }
-    }
+	static void AddMissingRequiredPropertyError(List<SchemaCompatibilityError> errors, string propertyPath) =>
+		errors.Add(new SchemaCompatibilityError {
+			Kind = SchemaCompatibilityErrorKind.MissingRequiredProperty,
+			PropertyPath = propertyPath,
+			Details = "Required property in original schema is missing in new schema"
+		});
 
-    static bool AreTypesCompatible(JsonSchema schema1, JsonSchema schema2) {
-        // Resolve any references in the schemas
-        var resolvedSchema1 = ResolveReference(schema1);
-        var resolvedSchema2 = ResolveReference(schema2);
+	static void AddNewRequiredPropertyError(List<SchemaCompatibilityError> errors, string propertyPath) =>
+		errors.Add(new SchemaCompatibilityError {
+			Kind = SchemaCompatibilityErrorKind.NewRequiredProperty,
+			PropertyPath = propertyPath,
+			Details = "Required property in new schema is missing in original schema"
+		});
 
-        // Basic type compatibility check
-        if (resolvedSchema1.Type != resolvedSchema2.Type)
-            return false;
+	static void CheckPropertyTypeCompatibility(JsonSchema schema1, JsonSchema schema2, List<SchemaCompatibilityError> errors, string propertyPath) {
+		if (!AreTypesCompatible(schema1, schema2))
+			errors.Add(new SchemaCompatibilityError {
+				Kind = SchemaCompatibilityErrorKind.IncompatibleTypeChange,
+				PropertyPath = propertyPath,
+				Details = "Property has incompatible type change",
+				OriginalType = schema1.Type,
+				NewType = schema2.Type
+			});
+	}
 
-        // For arrays, check item compatibility
-        // Both should be null or both non-null
-        if (resolvedSchema1.Type == JsonObjectType.Array)
-            return resolvedSchema1.Item is null || resolvedSchema2.Item is null
-                ? resolvedSchema1.Item == resolvedSchema2.Item
-                : AreTypesCompatible(resolvedSchema1.Item, resolvedSchema2.Item);
+	static void CheckOptionalToRequiredChange(JsonSchema referenceSchema, JsonSchema uncheckedSchema, string propertyName,
+		List<SchemaCompatibilityError> errors,
+		string propertyPath) {
+		if (!referenceSchema.RequiredProperties.Contains(propertyName) &&
+		    uncheckedSchema.RequiredProperties.Contains(propertyName)) {
+			errors.Add(new SchemaCompatibilityError {
+				Kind = SchemaCompatibilityErrorKind.OptionalToRequired,
+				PropertyPath = propertyPath,
+				Details = "Property changed from optional to required, breaking backward compatibility"
+			});
+		}
+	}
 
-        // For objects, we'll do a simplified check here
-        // More detailed checks are done recursively in the compatibility methods
-        if (resolvedSchema1.Type == JsonObjectType.Object)
-            return true;
+	void CheckNestedStructures(JsonSchema referenceValue, JsonSchema uncheckedValue, List<SchemaCompatibilityError> errors, string propertyPath) {
+		// Handle nested objects
+		if (referenceValue.Type is JsonObjectType.Object && uncheckedValue.Type is JsonObjectType.Object) {
+			CheckBackwardCompatibilityProperties(referenceValue, uncheckedValue, errors, propertyPath);
+		}
 
-        // For other types, basic type equality check is enough
-        return true;
-    }
+		// Handle arrays with items
+		if (referenceValue.Type is JsonObjectType.Array &&
+		    uncheckedValue.Type is JsonObjectType.Array &&
+		    referenceValue.Item is not null &&
+		    uncheckedValue.Item is not null) {
+			CheckArrayItemCompatibility(referenceValue.Item, uncheckedValue.Item, errors, propertyPath);
+		}
+	}
 
-    /// <summary>
-    /// Resolves a JSON schema reference to its actual schema object
-    /// </summary>
-    /// <param name="schema">The schema that may contain a reference</param>
-    /// <returns>The resolved schema, or the original if it wasn't a reference</returns>
-    static JsonSchema ResolveReference(JsonSchema schema) {
-        // If the schema has a reference, resolve it recursively
-        if (schema is { HasReference: true, Reference: not null })
-            return ResolveReference(schema.Reference);
+	void CheckNestedStructuresForward(JsonSchema referenceValue, JsonSchema uncheckedValue, List<SchemaCompatibilityError> errors, string propertyPath) {
+		// Handle nested objects
+		if (uncheckedValue.Type is JsonObjectType.Object && referenceValue.Type is JsonObjectType.Object) {
+			CheckForwardCompatibilityProperties(referenceValue, uncheckedValue, errors, propertyPath);
+		}
 
-        // If it's a reference to an unresolved schema, we can't do much
-        // This shouldn't happen with NJsonSchema, but adding as a safeguard
-        if (schema is { HasReference: true, Reference: null })
-            return schema;
+		// Handle arrays with items
+		if (uncheckedValue.Type is JsonObjectType.Array &&
+		    referenceValue.Type is JsonObjectType.Array &&
+		    uncheckedValue.Item is not null &&
+		    referenceValue.Item is not null) {
+			CheckArrayItemCompatibilityForward(referenceValue.Item, uncheckedValue.Item, errors, propertyPath);
+		}
+	}
 
-        // Return the schema itself if it's not a reference
-        return schema;
-    }
+	void CheckArrayItemCompatibility(JsonSchema referenceItem, JsonSchema uncheckedItem, List<SchemaCompatibilityError> errors,
+		string propertyPath) {
+		var resolvedReferenceItem = ResolveReference(referenceItem);
+		var resolvedUncheckedItem = ResolveReference(uncheckedItem);
+
+		// Check array item type compatibility
+		if (!AreTypesCompatible(resolvedReferenceItem, resolvedUncheckedItem)) {
+			errors.Add(new SchemaCompatibilityError {
+				Kind = SchemaCompatibilityErrorKind.ArrayTypeIncompatibility,
+				PropertyPath = propertyPath,
+				Details = "Array items have incompatible type change",
+				OriginalType = resolvedReferenceItem.Type,
+				NewType = resolvedUncheckedItem.Type
+			});
+		}
+
+		// If array items are objects, check them recursively
+		if (resolvedReferenceItem.Type is JsonObjectType.Object &&
+		    resolvedUncheckedItem.Type is JsonObjectType.Object) {
+			CheckBackwardCompatibilityProperties(
+				resolvedReferenceItem,
+				resolvedUncheckedItem,
+				errors,
+				$"{propertyPath}/items");
+		}
+	}
+
+	void CheckArrayItemCompatibilityForward(JsonSchema referenceItem, JsonSchema uncheckedItem, List<SchemaCompatibilityError> errors, string propertyPath) {
+		var resolvedReferenceItem = ResolveReference(referenceItem);
+		var resolvedUncheckedItem = ResolveReference(uncheckedItem);
+
+		// Check array item type compatibility
+		if (!AreTypesCompatible(resolvedUncheckedItem, resolvedReferenceItem)) {
+			errors.Add(new SchemaCompatibilityError {
+				Kind = SchemaCompatibilityErrorKind.ArrayTypeIncompatibility,
+				PropertyPath = propertyPath,
+				Details = "Array items have incompatible type change",
+				OriginalType = resolvedUncheckedItem.Type,
+				NewType = resolvedReferenceItem.Type
+			});
+		}
+
+		// If array items are objects, check them recursively
+		if (resolvedUncheckedItem.Type is JsonObjectType.Object &&
+		    resolvedReferenceItem.Type is JsonObjectType.Object) {
+			CheckForwardCompatibilityProperties(
+				resolvedReferenceItem,
+				resolvedUncheckedItem,
+				errors,
+				$"{propertyPath}/items");
+		}
+	}
+
+	static void CheckNewRequiredProperties(JsonSchema referenceSchema, JsonSchema uncheckedSchema, List<SchemaCompatibilityError> errors, string path) {
+		foreach (var (propertyName, _) in uncheckedSchema.Properties) {
+			if (!referenceSchema.Properties.ContainsKey(propertyName) &&
+			    uncheckedSchema.RequiredProperties.Contains(propertyName)) {
+				errors.Add(new SchemaCompatibilityError {
+					Kind = SchemaCompatibilityErrorKind.NewRequiredProperty,
+					PropertyPath = $"{path}/{propertyName}",
+					Details = "New required property breaks backward compatibility - old data won't have this field"
+				});
+			}
+		}
+	}
+
+	static void CheckMissingRequiredProperties(JsonSchema referenceSchema, JsonSchema uncheckedSchema, List<SchemaCompatibilityError> errors, string path) {
+		foreach (var (propertyName, _) in referenceSchema.Properties) {
+			if (!uncheckedSchema.Properties.ContainsKey(propertyName) &&
+			    referenceSchema.RequiredProperties.Contains(propertyName)) {
+				errors.Add(new SchemaCompatibilityError {
+					Kind = SchemaCompatibilityErrorKind.RemovedProperty,
+					PropertyPath = $"{path}/{propertyName}",
+					Details = "Required property in original schema is missing in new schema"
+				});
+			}
+		}
+	}
+
+	static bool AreTypesCompatible(JsonSchema sourceSchema, JsonSchema targetSchema) {
+		// Resolve any references in the schemas
+		sourceSchema = ResolveReference(sourceSchema);
+		targetSchema = ResolveReference(targetSchema);
+
+		// Basic type compatibility check
+		if (sourceSchema.Type != targetSchema.Type)
+			return false;
+
+		return sourceSchema.Type switch {
+			// For arrays, check item compatibility
+			// Both should be null or both non-null
+			JsonObjectType.Array => sourceSchema.Item is null || targetSchema.Item is null
+				? sourceSchema.Item == targetSchema.Item
+				: AreTypesCompatible(sourceSchema.Item, targetSchema.Item),
+
+			// For objects, we'll do a simplified check here
+			// More detailed checks are done recursively in the compatibility methods
+			JsonObjectType.Object => true,
+
+			// For other types, basic type equality check is enough
+			_ => true
+		};
+	}
+
+	/// <summary>
+	/// Resolves a JSON schema reference to its actual schema object
+	/// </summary>
+	/// <param name="schema">The schema that may contain a reference</param>
+	/// <returns>The resolved schema, or the original if it wasn't a reference</returns>
+	static JsonSchema ResolveReference(JsonSchema schema) {
+		return schema switch {
+			// If the schema has a reference, resolve it recursively
+			{ HasReference: true, Reference: not null } => ResolveReference(schema.Reference),
+
+			// If it's a reference to an unresolved schema, we can't do much
+			// This shouldn't happen with NJsonSchema, but adding as a safeguard
+			{ HasReference: true, Reference: null } => schema,
+
+			// Return the schema itself if it's not a reference
+			_ => schema
+		};
+	}
 }

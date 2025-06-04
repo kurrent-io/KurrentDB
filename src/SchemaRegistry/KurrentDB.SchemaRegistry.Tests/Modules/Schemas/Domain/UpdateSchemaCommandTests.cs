@@ -3,7 +3,6 @@
 
 // ReSharper disable ArrangeTypeMemberModifiers
 
-using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
@@ -22,22 +21,13 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_schema_description_successfully(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalDescription = Faker.Lorem.Sentence();
 		var newDescription = Faker.Lorem.Sentence();
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = originalDescription,
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, description: originalDescription),
 			cancellationToken
 		);
 
@@ -65,22 +55,13 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_schema_tags_successfully(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var originalTags = new Dictionary<string, string> { ["env"] = "test", ["version"] = "1.0" };
 		var newTags = new Dictionary<string, string> { ["env"] = "prod", ["team"] = "data" };
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { originalTags }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, tags: originalTags),
 			cancellationToken
 		);
 
@@ -127,20 +108,11 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create and then delete schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -163,20 +135,11 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_update_mask_is_empty(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -198,20 +161,11 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_update_mask_contains_unknown_field(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -236,20 +190,11 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
 	) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -274,20 +219,15 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
 	) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = "Unchanged description",
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(
+				schemaName: schemaName,
+				description: schemaDetails.Description,
+				tags: new Dictionary<string, string>(schemaDetails.Tags)
+			),
 			cancellationToken
 		);
 
@@ -309,21 +249,12 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task handles_case_insensitive_field_paths(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var newDescription = Faker.Lorem.Sentence();
 
 		// Create initial schema
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName),
 			cancellationToken
 		);
 
@@ -345,21 +276,12 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_empty_tags_to_non_empty_tags(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var newTags = new Dictionary<string, string> { ["env"] = "prod", ["team"] = "backend" };
 
 		// Create initial schema with no tags
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward
-					// No tags specified
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, tags: null),
 			cancellationToken
 		);
 
@@ -381,21 +303,12 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task updates_non_empty_tags_to_empty_tags(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 		var initialTags = new Dictionary<string, string> { ["env"] = "test", ["version"] = "1.0" };
 
 		// Create initial schema with tags
 		await Apply(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { initialTags }
-				}
-			},
+			CreateSchemaRequest(schemaName: schemaName, tags: initialTags),
 			cancellationToken
 		);
 

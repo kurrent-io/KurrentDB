@@ -66,7 +66,7 @@ public class CreateSchemaCommandTests : SchemaApplicationTestFixture {
     [Test, Timeout(TestTimeoutMs)]
     public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
         // Arrange
-        var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+        var schemaName = NewSchemaName();
 
         // given the schema is created
         await Apply(

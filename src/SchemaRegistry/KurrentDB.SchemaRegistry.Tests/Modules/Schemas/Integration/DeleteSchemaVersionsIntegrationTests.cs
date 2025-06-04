@@ -8,6 +8,7 @@ using Grpc.Core;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
+using NJsonSchema;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
@@ -19,31 +20,18 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_versions_successfully_in_none_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-		var definition1 = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var definition2 = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var definition3 = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
+		var v3 = v1.AddOptional("age", JsonObjectType.Integer);
 
-		// Create initial schema with compatibility mode None
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = definition1,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
 
 		// Register additional schema versions
 		await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = definition2
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -51,7 +39,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 		await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = definition3
+				SchemaDefinition = v3.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -76,36 +64,24 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 		schemaVersionsResult.Should().NotBeNull();
 		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
 		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(definition3);
+		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v3.ToByteString());
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_nonexistent_versions(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-		var definition1 = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var definition2 = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema with compatibility mode None
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = definition1,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), compatibility: CompatibilityMode.None,
+			cancellationToken: cancellationToken);
 
 		// Register one additional schema version
 		await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = definition2
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -135,28 +111,15 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 
 		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
 		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(definition2);
+		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_all_versions(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
-		// Create initial schema with compatibility mode None
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, cancellationToken: cancellationToken);
 
 		// Act
 		var deleteVersions = async () => await Client.DeleteSchemaVersionsAsync(
@@ -176,22 +139,9 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_delete_latest_version_in_backward_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
-		// Create initial schema with backward compatibility mode
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, compatibility: CompatibilityMode.Backward, cancellationToken: cancellationToken);
 
 		// Register additional schema version
 		await Client.RegisterSchemaVersionAsync(
@@ -220,22 +170,13 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 	[Test]
 	public async Task deletes_older_version_successfully_in_backward_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-		var definition1 = ByteString.CopyFromUtf8(Faker.Lorem.Text());
-		var definition2 = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema with backward compatibility mode
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = definition1,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
+		await CreateSchemaAsync(
+			schemaName: schemaName,
+			schemaDefinition: v1.ToByteString(),
 			cancellationToken: cancellationToken
 		);
 
@@ -243,7 +184,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 		await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = definition2
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -269,7 +210,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 
 		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
 		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(definition2);
+		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
 	}
 
 	[Test]
@@ -280,28 +221,18 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 		CompatibilityMode compatibilityMode, CancellationToken cancellationToken
 	) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema with specified compatibility mode
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = compatibilityMode,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, compatibility: compatibilityMode, schemaDefinition: v1.ToByteString(),
+			cancellationToken: cancellationToken);
 
 		// Register additional schema version
 		await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -324,22 +255,9 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
 
-		// Create schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.None,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		await CreateSchemaAsync(schemaName: schemaName, cancellationToken: cancellationToken);
 
 		// Register additional version
 		await Client.RegisterSchemaVersionAsync(

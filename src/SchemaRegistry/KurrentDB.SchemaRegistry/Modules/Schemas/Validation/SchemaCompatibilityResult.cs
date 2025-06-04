@@ -1,3 +1,6 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
 using NJsonSchema;
 
 namespace Kurrent.Surge.Schema.Validation;
@@ -34,6 +37,7 @@ public record SchemaCompatibilityError {
 }
 
 public enum SchemaCompatibilityErrorKind {
+    Unspecified,                  // Unspecified error, should not be used
     MissingRequiredProperty,      // Backward compatibility: Required property from old schema missing in new schema
     IncompatibleTypeChange,       // Backward compatibility: Property type changed incompatibly
     OptionalToRequired,           // Backward compatibility: Property changed from optional to required

@@ -1,6 +1,7 @@
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Schema.Validation;
+using KurrentDB.Common.Utils;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Services.Domain;
 using KurrentDB.Protocol.Registry.V2;
@@ -151,117 +152,145 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                         UpdatedAt  = getUtcNow().ToTimestamp()
                     });
                 }
-                else if (path.Equals("Details.Compatibility", StringComparison.OrdinalIgnoreCase)) {
-                    if (state.Compatibility.Equals(cmd.Details.Compatibility))
-                        throw new DomainExceptions.EntityNotModified("Schema", state.SchemaName, "Compatibility have not changed");
-
-                    // Validate compatibility requirements based on the new mode
-                    var newMode = (CompatibilityMode)cmd.Details.Compatibility;
-
-                    // // Full compatibility mode validation
-                    // if (newMode == CompatibilityMode.Full) {
-                    //     foreach (var olderVersion in state.Versions.Values) {
-                    //         foreach (var newerVersion in state.Versions.Values.Where(v => v.VersionNumber > olderVersion.VersionNumber)) {
-                    //             // Here you would add the actual compatibility check between versions
-                    //             // This is a placeholder for your actual compatibility verification logic
-                    //             if (!AreVersionsCompatible(olderVersion, newerVersion, true, true)) {
-                    //                 throw new DomainExceptions.EntityException(
-                    //                     $"Cannot change to Full compatibility mode - versions {olderVersion.VersionNumber} and {newerVersion.VersionNumber} " +
-                    //                     $"are not fully compatible with each other");
-                    //             }
-                    //         }
-                    //     }
-                    // }
-                    // // Forward compatibility mode validation
-                    // else if (newMode == CompatibilityMode.Forward) {
-                    //     foreach (var olderVersion in state.Versions.Values) {
-                    //         foreach (var newerVersion in state.Versions.Values.Where(v => v.VersionNumber > olderVersion.VersionNumber)) {
-                    //             // Check if older version can read newer version
-                    //             if (!AreVersionsCompatible(olderVersion, newerVersion, true, false)) {
-                    //                 throw new DomainExceptions.EntityException(
-                    //                     $"Cannot change to Forward compatibility mode - version {olderVersion.VersionNumber} " +
-                    //                     $"cannot read data from version {newerVersion.VersionNumber}");
-                    //             }
-                    //         }
-                    //     }
-                    // }
-                    // // Backward compatibility mode validation
-                    // else if (newMode == CompatibilityMode.Backward) {
-                    //     var latestVersion = state.LatestVersion;
-                    //     foreach (var olderVersion in state.Versions.Values.Where(v => v.VersionNumber < latestVersion.VersionNumber)) {
-                    //         // Check if newer version can read older version
-                    //         if (!AreVersionsCompatible(olderVersion, latestVersion, false, true)) {
-                    //             throw new DomainExceptions.EntityException(
-                    //                 $"Cannot change to Backward compatibility mode - latest version {latestVersion.VersionNumber} " +
-                    //                 $"cannot read data from version {olderVersion.VersionNumber}");
-                    //         }
-                    //     }
-                    // }
-
-                    // Full compatibility mode validation
-                    if (newMode == CompatibilityMode.Full) {
-                        foreach (var olderVersion in state.Versions.Values) {
-                            foreach (var newerVersion in state.Versions.Values.Where(v => v.VersionNumber > olderVersion.VersionNumber)) {
-                                var olderDefinition = olderVersion.SchemaDefinition;
-                                var newerDefinition = newerVersion.SchemaDefinition;
-
-                                // Check full compatibility (bidirectional)
-                                var result = compatibilityManager.CheckCompatibility(olderDefinition, newerDefinition, SchemaCompatibilityMode.Full).AsTask().GetAwaiter().GetResult();
-
-                                if (!result.IsCompatible) {
-                                    throw new DomainExceptions.EntityException(
-                                        $"Cannot change to Full compatibility mode - versions {olderVersion.VersionNumber} and {newerVersion.VersionNumber} "
-                                        + $"are not fully compatible with each other. {result.Errors.FirstOrDefault()?.Details}"
-                                    );
-                                }
-                            }
-                        }
-                    }
-                    // Forward compatibility mode validation
-                    else if (newMode == CompatibilityMode.Forward) {
-                        foreach (var olderVersion in state.Versions.Values) {
-                            foreach (var newerVersion in state.Versions.Values.Where(v => v.VersionNumber > olderVersion.VersionNumber)) {
-                                var olderDefinition = olderVersion.SchemaDefinition;
-                                var newerDefinition = newerVersion.SchemaDefinition;
-
-                                // Check forward compatibility (older can read newer)
-                                var result = compatibilityManager.CheckCompatibility(olderDefinition, newerDefinition, SchemaCompatibilityMode.Forward).AsTask().GetAwaiter().GetResult();
-
-                                if (!result.IsCompatible) {
-                                    throw new DomainExceptions.EntityException(
-                                        $"Cannot change to Forward compatibility mode - version {olderVersion.VersionNumber} "
-                                        + $"cannot read data from version {newerVersion.VersionNumber}. {result.Errors.FirstOrDefault()?.Details}"
-                                    );
-                                }
-                            }
-                        }
-                    }
-                    // Backward compatibility mode validation
-                    else if (newMode == CompatibilityMode.Backward) {
-                        var latestVersion = state.LatestVersion;
-
-                        foreach (var olderVersion in state.Versions.Values.Where(v => v.VersionNumber < latestVersion.VersionNumber)) {
-                            var olderDefinition  = olderVersion.SchemaDefinition;
-                            var latestDefinition = latestVersion.SchemaDefinition;
-
-                            // Check backward compatibility (newer can read older)
-                            var result = compatibilityManager.CheckCompatibility(latestDefinition, olderDefinition, SchemaCompatibilityMode.Backward).AsTask().GetAwaiter().GetResult();
-
-                            if (!result.IsCompatible) {
-                                throw new DomainExceptions.EntityException(
-                                    $"Cannot change to Backward compatibility mode - latest version {latestVersion.VersionNumber} "
-                                    + $"cannot read data from version {olderVersion.VersionNumber}. {result.Errors.FirstOrDefault()?.Details}"
-                                );
-                            }
-                        }
-                    }
-
-                    seed.Add(new SchemaCompatibilityModeChanged {
-                        SchemaName    = cmd.SchemaName,
-                        Compatibility = cmd.Details.Compatibility,
-                        ChangedAt     = getUtcNow().ToTimestamp()
-                    });
-                }
+                // else if (path.Equals("Details.Compatibility", StringComparison.OrdinalIgnoreCase)) {
+                //     if (state.Compatibility.Equals(cmd.Details.Compatibility))
+                //         throw new DomainExceptions.EntityNotModified("Schema", state.SchemaName, "Compatibility have not changed");
+                //
+                //     // Validate compatibility requirements based on the new mode
+                //     var newMode = (CompatibilityMode)cmd.Details.Compatibility;
+                //
+                //     // Full compatibility mode validation
+                //     if (newMode == CompatibilityMode.Full) {
+                //         foreach (var olderVersion in state.Versions.Values) {
+                //             foreach (var newerVersion in state.Versions.Values.Where(v => v.VersionNumber > olderVersion.VersionNumber)) {
+                //                 var olderDefinition = olderVersion.SchemaDefinition;
+                //                 var newerDefinition = newerVersion.SchemaDefinition;
+                //
+                //                 // Check full compatibility (bidirectional)
+                //                 var result = compatibilityManager.CheckCompatibility(olderDefinition, newerDefinition, SchemaCompatibilityMode.Full).AsTask().GetAwaiter().GetResult();
+                //
+                //                 if (!result.IsCompatible) {
+                //                     throw new DomainExceptions.EntityException(
+                //                         $"Cannot change to Full compatibility mode - versions {olderVersion.VersionNumber} and {newerVersion.VersionNumber} "
+                //                         + $"are not fully compatible with each other. {result.Errors.FirstOrDefault()?.Details}"
+                //                     );
+                //                 }
+                //             }
+                //         }
+                //     }
+                //     // Forward compatibility mode validation
+                //     else if (newMode == CompatibilityMode.Forward) {
+                //         foreach (var olderVersion in state.Versions.Values) {
+                //             foreach (var newerVersion in state.Versions.Values.Where(v => v.VersionNumber > olderVersion.VersionNumber)) {
+                //                 var olderDefinition = olderVersion.SchemaDefinition;
+                //                 var newerDefinition = newerVersion.SchemaDefinition;
+                //
+                //                 // Check forward compatibility (older can read newer)
+                //                 var result = compatibilityManager.CheckCompatibility(olderDefinition, newerDefinition, SchemaCompatibilityMode.Forward).AsTask().GetAwaiter().GetResult();
+                //
+                //                 if (!result.IsCompatible) {
+                //                     throw new DomainExceptions.EntityException(
+                //                         $"Cannot change to Forward compatibility mode - version {olderVersion.VersionNumber} "
+                //                         + $"cannot read data from version {newerVersion.VersionNumber}. {result.Errors.FirstOrDefault()?.Details}"
+                //                     );
+                //                 }
+                //             }
+                //         }
+                //     }
+                //     // Backward compatibility mode validation
+                //     else if (newMode == CompatibilityMode.Backward) {
+                //         var latestVersion = state.LatestVersion;
+                //
+                //         foreach (var olderVersion in state.Versions.Values.Where(v => v.VersionNumber < latestVersion.VersionNumber)) {
+                //             var olderDefinition  = olderVersion.SchemaDefinition;
+                //             var latestDefinition = latestVersion.SchemaDefinition;
+                //
+                //             // Check backward compatibility (newer can read older)
+                //             var result = compatibilityManager.CheckCompatibility(latestDefinition, olderDefinition, SchemaCompatibilityMode.Backward).AsTask().GetAwaiter().GetResult();
+                //
+                //             if (!result.IsCompatible) {
+                //                 throw new DomainExceptions.EntityException(
+                //                     $"Cannot change to Backward compatibility mode - latest version {latestVersion.VersionNumber} "
+                //                     + $"cannot read data from version {olderVersion.VersionNumber}. {result.Errors.FirstOrDefault()?.Details}"
+                //                 );
+                //             }
+                //         }
+                //     }
+                //     // BackwardAll compatibility mode validation
+                //     else if (newMode == CompatibilityMode.BackwardAll) {
+                //         var versions = state.Versions.Values.ToList();
+                //         foreach (var schema in versions) {
+                //          var olderVersions = versions
+                //           .Where(v => v.VersionNumber < schema.VersionNumber)
+                //           .Select(v => v.SchemaDefinition)
+                //           .ToList();
+                //
+                //          if (olderVersions.IsEmpty()) continue;
+                //
+                //          var result = compatibilityManager
+                //           .CheckCompatibility(schema.SchemaDefinition, olderVersions, SchemaCompatibilityMode.BackwardAll).AsTask().GetAwaiter()
+                //           .GetResult();
+                //
+                //          if (!result.IsCompatible) {
+                //           throw new DomainExceptions.EntityException(
+                //            $"Cannot change to BackwardAll compatibility mode - version {schema.VersionNumber} " +
+                //            $"is not backward compatible with all previous versions. {result.Errors.FirstOrDefault()?.Details}"
+                //           );
+                //          }
+                //         }
+                //     }
+                //     // ForwardAll compatibility mode validation
+                //     else if (newMode == CompatibilityMode.ForwardAll) {
+                //         var versions = state.Versions.Values.ToList();
+                //             foreach (var schema in versions) {
+                //                 var newerVersions = versions
+                //                     .Where(v => v.VersionNumber > schema.VersionNumber)
+                //                     .Select(v => v.SchemaDefinition)
+                //                     .ToList();
+                //
+                //                 if (newerVersions.IsEmpty()) continue;
+                //
+                //                 var result = compatibilityManager
+                //                  .CheckCompatibility(schema.SchemaDefinition, newerVersions, SchemaCompatibilityMode.ForwardAll).AsTask().GetAwaiter()
+                //                  .GetResult();
+                //
+                //                 if (!result.IsCompatible) {
+                //                  throw new DomainExceptions.EntityException(
+                //                   $"Cannot change to ForwardAll compatibility mode - version {schema.VersionNumber} " +
+                //                   $"is not forward compatible with all newer versions. {result.Errors.FirstOrDefault()?.Details}"
+                //                  );
+                //                 }
+                //             }
+                //     }
+                //     // FullAll compatibility mode validation
+                //     else if (newMode == CompatibilityMode.FullAll) {
+                //         var versions = state.Versions.Values.ToList();
+                //         foreach (var schema in versions) {
+                //          var otherVersions = versions
+                //           .Where(v => v.VersionNumber != schema.VersionNumber)
+                //           .Select(v => v.SchemaDefinition)
+                //           .ToList();
+                //
+                //          if (otherVersions.IsEmpty()) continue;
+                //
+                //          var result = compatibilityManager.CheckCompatibility(schema.SchemaDefinition, otherVersions, SchemaCompatibilityMode.FullAll)
+                //           .AsTask().GetAwaiter().GetResult();
+                //
+                //          if (!result.IsCompatible) {
+                //           throw new DomainExceptions.EntityException(
+                //            $"Cannot change to FullAll compatibility mode - version {schema.VersionNumber} " +
+                //            $"is not fully compatible with all other versions. {result.Errors.FirstOrDefault()?.Details}"
+                //           );
+                //          }
+                //         }
+                //     }
+                //
+                //     seed.Add(new SchemaCompatibilityModeChanged {
+                //         SchemaName    = cmd.SchemaName,
+                //         Compatibility = cmd.Details.Compatibility,
+                //         ChangedAt     = getUtcNow().ToTimestamp()
+                //     });
+                // }
 
                 return seed;
             });

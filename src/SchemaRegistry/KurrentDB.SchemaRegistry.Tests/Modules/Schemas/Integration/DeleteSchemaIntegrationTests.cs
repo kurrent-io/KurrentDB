@@ -7,7 +7,6 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
-using KurrentDB.SchemaRegistry.Services.Domain;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Surge.Testing.Messages.Telemetry;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
@@ -21,22 +20,8 @@ public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_successfully(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-
-		// Create initial schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		var schemaName = NewSchemaName();
+		await CreateSchemaAsync(schemaName: schemaName, cancellationToken: cancellationToken);
 
 		// Act
 		var deleteSchemaResult = await Client.DeleteSchemaAsync(
@@ -60,22 +45,8 @@ public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_with_multiple_versions_successfully(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-
-		// Create initial schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		var schemaName = NewSchemaName();
+		await CreateSchemaAsync(schemaName: schemaName, cancellationToken: cancellationToken);
 
 		// Register additional versions
 		await Client.RegisterSchemaVersionAsync(
@@ -133,22 +104,8 @@ public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_schema_is_already_deleted(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-
-		// Create schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		var schemaName = NewSchemaName();
+		await CreateSchemaAsync(schemaName: schemaName, cancellationToken: cancellationToken);
 
 		// Delete schema first time
 		await Client.DeleteSchemaAsync(
@@ -174,22 +131,8 @@ public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Arguments(CompatibilityMode.None)]
 	public async Task deletes_schema_with_different_compatibility_modes(CompatibilityMode compatibilityMode, CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{compatibilityMode}-{Identifiers.GenerateShortId()}";
-
-		// Create schema with specific compatibility mode
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = compatibilityMode,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		var schemaName = NewSchemaName();
+		await CreateSchemaAsync(schemaName: schemaName, compatibility: compatibilityMode, cancellationToken: cancellationToken);
 
 		// Act
 		var deleteSchemaResult = await Client.DeleteSchemaAsync(
@@ -208,22 +151,8 @@ public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Arguments(SchemaFormat.Bytes)]
 	public async Task deletes_schema_with_different_data_formats(SchemaFormat dataFormat, CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{dataFormat}-{Identifiers.GenerateShortId()}";
-
-		// Create schema with specific data format
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = dataFormat,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		var schemaName = NewSchemaName();
+		await CreateSchemaAsync(schemaName: schemaName, dataFormat: dataFormat, cancellationToken: cancellationToken);
 
 		// Act
 		var deleteSchemaResult = await Client.DeleteSchemaAsync(
@@ -238,22 +167,8 @@ public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task subsequent_operations_on_deleted_schema_throw_exceptions(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-
-		// Create and delete schema
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Tags = { new Dictionary<string, string> { ["env"] = "test" } }
-				}
-			},
-			cancellationToken: cancellationToken
-		);
+		var schemaName = NewSchemaName();
+		await CreateSchemaAsync(schemaName: schemaName, cancellationToken: cancellationToken);
 
 		await Client.DeleteSchemaAsync(
 			new DeleteSchemaRequest { SchemaName = schemaName },
