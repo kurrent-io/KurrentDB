@@ -28,6 +28,7 @@ static partial class Enumerator {
 		private readonly bool _resolveLinks;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
+		private readonly int _readBatchSize;
 		private readonly CancellationTokenSource _cts;
 		private readonly Channel<ReadResponse> _channel;
 		private readonly Channel<(ulong SequenceNumber, ResolvedEvent ResolvedEvent)> _liveEvents;
@@ -46,8 +47,9 @@ static partial class Enumerator {
 			bool resolveLinks,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			int maxLiveBufferCount = MaxLiveEventBufferCount,
-			int readBatchSize = ReadBatchSize,
+			int liveBufferSize = DefaultLiveBufferSize,
+			int catchUpBufferSize = DefaultCatchUpBufferSize,
+			int readBatchSize = DefaultReadBatchSize,
 			CancellationToken cancellationToken = default) {
 			_expiryStrategy = expiryStrategy;
 			_subscriptionId = Guid.NewGuid();
@@ -55,9 +57,10 @@ static partial class Enumerator {
 			_resolveLinks = resolveLinks;
 			_user = user;
 			_requiresLeader = requiresLeader;
+			_readBatchSize = Ensure.Positive(readBatchSize);
 			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-			_channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
-			_liveEvents = Channel.CreateBounded<(ulong, ResolvedEvent)>(LiveChannelOptions);
+			_channel = CreateCatchUpChannel(catchUpBufferSize);
+			_liveEvents = CreateLiveChannel<(ulong SequenceNumber, ResolvedEvent ResolvedEvent)>(liveBufferSize);
 
 			SubscriptionId = _subscriptionId.ToString();
 
@@ -354,7 +357,7 @@ ReadLoop:
 
 			_bus.Publish(new ClientMessage.ReadAllEventsForward(
 				correlationId, correlationId, envelope,
-				startPos.CommitPosition, startPos.PreparePosition, ReadBatchSize, _resolveLinks, _requiresLeader, null, _user,
+				startPos.CommitPosition, startPos.PreparePosition, _readBatchSize, _resolveLinks, _requiresLeader, null, _user,
 				replyOnExpired: true,
 				expires: _expiryStrategy.GetExpiry(),
 				cancellationToken: ct));

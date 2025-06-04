@@ -1,17 +1,17 @@
 create table if not exists event_type (
-	id bigint primary key,
+	id bigint primary key not null,
 	name varchar not null,
 	unique(name)
 );
 
 create table if not exists category (
-	id bigint primary key,
+	id bigint primary key not null,
 	name varchar not null,
 	unique(name)
 );
 
 create table if not exists streams (
-	id bigint primary key,
+	id bigint primary key not null,
 	name varchar not null,
 	unique(name),
 	max_age int DEFAULT NULL,

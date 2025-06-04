@@ -208,7 +208,10 @@ internal partial class Streams<TStreamId> {
 					request.Options.ResolveLinks,
 					user,
 					requiresLeader,
-					cancellationToken),
+					// TODO: temp hack, it should be part of the client message in the future
+					readBatchSize: SystemStreams.IsIndexStream(request.Options.Stream.StreamIdentifier) ? 1000 : Enumerator.DefaultReadBatchSize,
+					catchUpBufferSize: SystemStreams.IsIndexStream(request.Options.Stream.StreamIdentifier) ? 1000 : Enumerator.DefaultReadBatchSize,
+					cancellationToken: cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Subscription,
 				ReadDirection.Forwards,
