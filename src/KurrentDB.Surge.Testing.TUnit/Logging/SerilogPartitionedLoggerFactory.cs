@@ -5,7 +5,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
 
-namespace KurrentDB.Surge.Testing;
+namespace Kurrent.Surge.Testing.TUnit.Logging;
 
 public interface IPartitionedLoggerFactory : ILoggerFactory, IAsyncDisposable;
 
