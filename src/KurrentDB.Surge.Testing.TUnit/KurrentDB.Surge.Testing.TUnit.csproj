@@ -51,13 +51,4 @@
 		<Using Include="Microsoft.Extensions.Time.Testing" />
 		<Using Include="TUnit" />
 	</ItemGroup>
-
-	<ItemGroup>
-    <ProjectReference Include="..\KurrentDB\KurrentDB.csproj">
-        <ExcludeAssets>runtime</ExcludeAssets>
-        <PrivateAssets>all</PrivateAssets>
-				<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </ProjectReference>
-	  <ProjectReference Include="..\SchemaRegistry\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
-	</ItemGroup>
 </Project>
