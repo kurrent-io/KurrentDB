@@ -4,7 +4,7 @@
 using System.Text;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
-// using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using Xunit.Abstractions;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
@@ -27,7 +27,7 @@ public class IndexReadTests(
 		string[] indexNames = [
 			DefaultIndex.IndexName,
 			$"{CategoryIndex.IndexPrefix}{CategoryName}",
-			// $"{EventTypeIndex.IndexPrefix}test"
+			$"{EventTypeIndex.IndexPrefix}test"
 		];
 		foreach (var name in indexNames) {
 			await ValidateRead(streamName, name, appendResult.Position);

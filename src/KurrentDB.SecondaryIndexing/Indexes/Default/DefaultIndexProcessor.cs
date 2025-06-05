@@ -13,7 +13,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	readonly DefaultIndex _defaultIndex;
 	readonly Appender _appender;
-	readonly DuckDBConnection _connection;
+	readonly DuckDBAdvancedConnection _connection;
 	readonly InFlightRecord[] _inFlightRecords;
 
 	int _inFlightRecordsCount;
@@ -24,7 +24,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public long LastSequence;
 
 	public DefaultIndexProcessor(DuckDbDataSource db, DefaultIndex defaultIndex, int commitBatchSize) {
-		_connection = db.OpenConnection();
+		_connection = db.OpenNewConnection();
 		_appender = new(_connection, "idx_all"u8);
 		_defaultIndex = defaultIndex;
 		_inFlightRecords = new InFlightRecord[commitBatchSize];
@@ -54,8 +54,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		row.Append(logPosition);
 		row.Append(resolvedEvent.Event.TimeStamp);
 		row.Append(resolvedEvent.OriginalStreamId);
-		row.Append(0);
-		row.Append(0);
+		row.Append(eventType.Id);
+		row.Append(eventType.Sequence);
 		row.Append(category.Id);
 		row.Append(category.Sequence);
 

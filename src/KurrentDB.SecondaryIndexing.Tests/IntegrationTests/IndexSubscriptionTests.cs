@@ -4,7 +4,7 @@
 using System.Text;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
-// using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using Xunit.Abstractions;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
@@ -31,8 +31,8 @@ public class IndexSubscriptionTests(
 
 		string[] indexNames = [
 			DefaultIndex.IndexName,
-			// $"{CategoryIndexConstants.IndexPrefix}{CategoryName}",
-			// $"{EventTypeIndexConstants.IndexPrefix}test"
+			$"{CategoryIndex.IndexPrefix}{CategoryName}",
+			$"{EventTypeIndex.IndexPrefix}test"
 		];
 
 		await Task.WhenAll(indexNames.Select(name => ValidateSubscription(streamName, name, appendResult.Position, cts.Token)));
