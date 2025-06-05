@@ -18,9 +18,9 @@ internal class DefaultIndexReader(
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long _, long fromEventNumber, long toEventNumber) {
 		// const string query = "select seq, log_position, event_number from idx_all where seq>=$start and seq<=$end";
-		// var range = db.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((fromEventNumber, toEventNumber));
-		using var connection = db.OpenNewConnection();
-		var range = connection.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((fromEventNumber, toEventNumber));
+		var range = db.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((fromEventNumber, toEventNumber));
+		// using var connection = db.OpenNewConnection();
+		// var range = connection.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((fromEventNumber, toEventNumber));
 		// var range = connection.Query<AllRecord>(query, new { start = fromEventNumber, end = toEventNumber }).ToList();
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			var inFlight = processor.TryGetInFlightRecords(fromEventNumber, toEventNumber);

@@ -57,8 +57,8 @@ internal class CategoryIndexProcessor {
 		// _db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new((int)id, categoryName));
 		// using var connection = _db.OpenConnection();
 		// connection.Execute("insert or ignore into category (id, name) values ($id, $name);", new { id, name = categoryName });
-		using var connection = _db.OpenNewConnection();
-		connection.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new((int)id, categoryName));
+		// using var connection = _db.OpenNewConnection();
+		_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new((int)id, categoryName));
 		LastIndexesPosition = resolvedEvent.Event.LogPosition;
 		return new(id, 0);
 	}

@@ -49,13 +49,13 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 	public void Index(ResolvedEvent evt) => Processor.Index(evt);
 
 	public long? GetLastSequence() {
-		using var connection = _db.OpenNewConnection();
-		return connection.QueryFirstOrDefault<long, DefaultSql.GetLastSequenceSql>();
+		// using var connection = _db.OpenNewConnection();
+		return _db.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastSequenceSql>();
 	}
 
 	public long? GetLastPosition() {
-		using var connection = _db.OpenNewConnection();
-		return connection.QueryFirstOrDefault<long, DefaultSql.GetLastLogPositionSql>();
+		// using var connection = _db.OpenNewConnection();
+		return _db.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastLogPositionSql>();
 	}
 	// public long? GetLastPosition() {
 	// 	const string query = "select max(log_position) from idx_all";
