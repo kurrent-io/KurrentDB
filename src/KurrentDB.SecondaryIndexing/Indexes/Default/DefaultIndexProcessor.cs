@@ -77,10 +77,16 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		if (IsDisposingOrDisposed)
 			return;
 
-		_defaultIndex.StreamIndex.Processor.Commit();
+		// _defaultIndex.StreamIndex.Processor.Commit();
 
-		_appender.Flush();
-		Logger.Debug("Committed {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
+		try {
+			_appender.Flush();
+			var lastLogPosition = _connection.QueryFirstOrDefault<long, DefaultSql.GetLastLogPositionSql>();
+			Logger.Debug("Committed {Count} records at log position {LogPosition} to index at sequence {Seq}", _inFlightRecordsCount, lastLogPosition, LastSequence);
+		} catch (Exception e) {
+			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
+			throw;
+		}
 		_inFlightRecordsCount = 0;
 	}
 
