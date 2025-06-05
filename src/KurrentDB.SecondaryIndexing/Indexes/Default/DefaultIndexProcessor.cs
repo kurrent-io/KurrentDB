@@ -23,12 +23,10 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public long LastIndexedPosition { get; private set; }
 	public long LastSequence;
-	// DuckDBAppender _appender;
 
 	public DefaultIndexProcessor(DuckDbDataSource db, DefaultIndex defaultIndex, int commitBatchSize) {
 		_connection = db.OpenConnection();
 		_appender = new(_connection, "idx_all"u8);
-		// _appender = _connection.CreateAppender("idx_all");
 		_defaultIndex = defaultIndex;
 		_inFlightRecords = new InFlightRecord[commitBatchSize];
 
@@ -41,7 +39,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		if (IsDisposingOrDisposed) return;
 
 		var category = _defaultIndex.CategoryIndex.Processor.Index(resolvedEvent);
-		// var eventType = _defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent);
+		var eventType = _defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent);
 		// var streamId = _defaultIndex.StreamIndex.Processor.Index(resolvedEvent);
 		// if (streamId == -1) {
 		// 	// StreamIndex is disposed
@@ -59,23 +57,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		row.Append(resolvedEvent.OriginalStreamId);
 		row.Append(0);
 		row.Append(0);
-		// row.AppendValue(eventType.Id);
-		// row.AppendValue(eventType.Sequence);
 		row.Append(category.Id);
 		row.Append(category.Sequence);
-		// var row = _appender.CreateRow();
-		// row.AppendValue(sequence);
-		// row.AppendValue(eventNumber);
-		// row.AppendValue(logPosition);
-		// row.AppendValue(resolvedEvent.Event.TimeStamp);
-		// row.AppendValue(resolvedEvent.OriginalStreamId);
-		// row.AppendValue(0);
-		// row.AppendValue(0);
-		// // row.AppendValue(eventType.Id);
-		// // row.AppendValue(eventType.Sequence);
-		// row.AppendValue(category.Id);
-		// row.AppendValue(category.Sequence);
-		// row.EndRow();
 
 		_inFlightRecords[_inFlightRecordsCount]
 			= new(
@@ -84,9 +67,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 				eventNumber,
 				category.Id,
 				category.Sequence,
-				0, 0
-				// eventType.Id,
-				// eventType.Sequence
+				eventType.Id,
+				eventType.Sequence
 			);
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 		_inFlightRecordsCount++;
@@ -100,7 +82,6 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		try {
 			_appender.Flush();
-			// _appender = _connection.CreateAppender("idx_all");
 			Logger.Debug("Committed {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);

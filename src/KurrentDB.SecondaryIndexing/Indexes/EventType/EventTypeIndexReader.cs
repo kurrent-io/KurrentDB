@@ -10,10 +10,10 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal class EventTypeIndexReader(
-	// DuckDbDataSource db,
+	DuckDbDataSource db,
 	EventTypeIndexProcessor processor,
-	IReadIndex<string> index
-	// QueryInFlightRecords<EventTypeRecord> queryInFlightRecords
+	IReadIndex<string> index,
+	QueryInFlightRecords<EventTypeRecord> queryInFlightRecords
 )
 	: SecondaryIndexReaderBase(index) {
 	protected override long GetId(string streamName) {
@@ -28,19 +28,18 @@ internal class EventTypeIndexReader(
 	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber(id);
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
-		// var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(new((int)id, fromEventNumber, toEventNumber));
-		// if (range.Count < toEventNumber - fromEventNumber + 1) {
-		// 	// events might be in flight
-		// 	var inFlight = queryInFlightRecords(
-		// 		r => r.EventTypeId == id && r.EventTypeSeq >= fromEventNumber && r.EventTypeSeq <= toEventNumber,
-		// 		r => new(r.EventTypeSeq, r.LogPosition, r.EventNumber)
-		// 	);
-		// 	range.AddRange(inFlight);
-		// }
-		//
-		// var indexPrepares = range.Select(x => new IndexedPrepare(x.EventTypeSeq, x.EventNumber, x.LogPosition));
-		// return indexPrepares;
-		return [];
+		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(new((int)id, fromEventNumber, toEventNumber));
+		if (range.Count < toEventNumber - fromEventNumber + 1) {
+			// events might be in flight
+			var inFlight = queryInFlightRecords(
+				r => r.EventTypeId == id && r.EventTypeSeq >= fromEventNumber && r.EventTypeSeq <= toEventNumber,
+				r => new(r.EventTypeSeq, r.LogPosition, r.EventNumber)
+			);
+			range.AddRange(inFlight);
+		}
+
+		var indexPrepares = range.Select(x => new IndexedPrepare(x.EventTypeSeq, x.EventNumber, x.LogPosition));
+		return indexPrepares;
 	}
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
