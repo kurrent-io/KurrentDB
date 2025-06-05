@@ -65,8 +65,8 @@ internal class StreamIndexProcessor : Disposable {
 		var row = _appender.CreateRow();
 		row.AppendValue(id);
 		row.AppendValue(name);
-		row.AppendDefault();
-		row.AppendDefault();
+		row.AppendNullValue();
+		row.AppendNullValue();
 		row.EndRow();
 
 		_count++;

@@ -41,11 +41,11 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		var category = _defaultIndex.CategoryIndex.Processor.Index(resolvedEvent);
 		var eventType = _defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent);
-		var streamId = _defaultIndex.StreamIndex.Processor.Index(resolvedEvent);
-		if (streamId == -1) {
-			// StreamIndex is disposed
-			return;
-		}
+		// var streamId = _defaultIndex.StreamIndex.Processor.Index(resolvedEvent);
+		// if (streamId == -1) {
+		// 	// StreamIndex is disposed
+		// 	return;
+		// }
 
 		var sequence = LastSequence++;
 		var logPosition = resolvedEvent.Event.LogPosition;
@@ -55,7 +55,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		row.AppendValue(eventNumber);
 		row.AppendValue(logPosition);
 		row.AppendValue(resolvedEvent.Event.TimeStamp);
-		row.AppendValue(streamId);
+		// row.AppendValue(streamId);
+		row.AppendValue(0);
 		row.AppendValue(eventType.Id);
 		row.AppendValue(eventType.Sequence);
 		row.AppendValue(category.Id);
@@ -80,7 +81,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		if (IsDisposingOrDisposed)
 			return;
 
-		_defaultIndex.StreamIndex.Processor.Commit();
+		// _defaultIndex.StreamIndex.Processor.Commit();
 
 		try {
 			// _appender.Flush();
