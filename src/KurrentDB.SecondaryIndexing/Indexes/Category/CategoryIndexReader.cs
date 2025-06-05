@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
+// using Dapper;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
@@ -29,7 +30,17 @@ class CategoryIndexReader(
 	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber(id);
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
-		var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new(id, fromEventNumber, toEventNumber));
+		// var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new(id, fromEventNumber, toEventNumber));
+		// const string query = """
+		//                      select category_seq, log_position, event_number
+		//                      from idx_all where category=$cat and category_seq>=$start and category_seq<=$end
+		//                      """;
+
+		using var connection = db.OpenNewConnection();
+		var range = connection.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new(id, fromEventNumber, toEventNumber));
+		// var range = connection
+		// 	.Query<CategoryRecord>(query, new { cat = id, start = fromEventNumber, end = toEventNumber })
+		// 	.ToList();
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			// events might be in flight
 			var inFlight = queryInFlightRecords(

@@ -15,6 +15,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Kurrent.Quack" Version="0.0.0-alpha.0.9" />
+		<PackageReference Include="DuckDB.NET.Data.Full" Version="1.3.0" />
+<!--		<PackageReference Include="Dapper" Version="2.1.35" />-->
 		<ProjectReference Include="..\KurrentDB.POC.ConnectedSubsystemsPlugin\KurrentDB.POC.ConnectedSubsystemsPlugin.csproj" />
 		<ProjectReference Include="..\KurrentDB.POC.IO.Core\KurrentDB.POC.IO.Core.csproj" />
 	</ItemGroup>
@@ -22,6 +24,19 @@
 	<ItemGroup>
 	  <None Remove="Storage\1_Schema.sql" />
 	  <EmbeddedResource Include="Storage\1_Schema.sql" />
+	  <EmbeddedResource Remove="Indexes\EventType\**" />
+	  <None Remove="Indexes\EventType\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Indexes\Stream\StreamIndexProcessor.cs" />
+	  <Compile Remove="Indexes\Stream\StreamIndex.cs" />
+	  <Compile Remove="Indexes\Stream\StreamSql.cs" />
+	  <Compile Remove="Indexes\EventType\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Indexes\Stream\" />
 	</ItemGroup>
 
 </Project>

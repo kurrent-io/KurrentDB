@@ -43,7 +43,7 @@ internal static class CategorySql {
 
 	public record struct AddCategoryStatementArgs(long Id, string Category);
 
-	public struct AddCategoryStatement : IPreparedStatement<AddCategoryStatementArgs> {
+	public struct AddCategoryStatement  : IPreparedStatement<AddCategoryStatementArgs> {
 		public static BindingContext Bind(in AddCategoryStatementArgs args, PreparedStatement statement)
 			=> new(statement) { args.Id, args.Category };
 

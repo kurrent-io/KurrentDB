@@ -2,7 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext;
-using Kurrent.Quack;
+using DuckDB.NET.Data;
+// using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Storage;
 using Serilog;
@@ -11,8 +12,9 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	readonly DefaultIndex _defaultIndex;
-	readonly Appender _appender;
-	readonly DuckDBAdvancedConnection _connection;
+
+	// readonly Appender _appender;
+	readonly DuckDBConnection _connection;
 	readonly InFlightRecord[] _inFlightRecords;
 
 	int _inFlightRecordsCount;
@@ -21,10 +23,12 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public long LastIndexedPosition { get; private set; }
 	public long LastSequence;
+	DuckDBAppender _appender;
 
 	public DefaultIndexProcessor(DuckDbDataSource db, DefaultIndex defaultIndex, int commitBatchSize) {
-		_connection = db.OpenNewConnection();
-		_appender = new(_connection, "idx_all"u8);
+		_connection = db.OpenConnection();
+		// _appender = new(_connection, "idx_all"u8);
+		_appender = _connection.CreateAppender("idx_all");
 		_defaultIndex = defaultIndex;
 		_inFlightRecords = new InFlightRecord[commitBatchSize];
 
@@ -37,7 +41,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		if (IsDisposingOrDisposed) return;
 
 		var category = _defaultIndex.CategoryIndex.Processor.Index(resolvedEvent);
-		var eventType = _defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent);
+		// var eventType = _defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent);
 		// var streamId = _defaultIndex.StreamIndex.Processor.Index(resolvedEvent);
 		// if (streamId == -1) {
 		// 	// StreamIndex is disposed
@@ -47,17 +51,19 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var sequence = LastSequence++;
 		var logPosition = resolvedEvent.Event.LogPosition;
 		var eventNumber = resolvedEvent.Event.EventNumber;
-		using (var row = _appender.CreateRow()) {
-			row.Append(sequence);
-			row.Append(eventNumber);
-			row.Append(logPosition);
-			row.Append(resolvedEvent.Event.TimeStamp);
-			row.Append(resolvedEvent.OriginalStreamId);
-			row.Append(eventType.Id);
-			row.Append(eventType.Sequence);
-			row.Append(category.Id);
-			row.Append(category.Sequence);
-		}
+		var row = _appender.CreateRow();
+		row.AppendValue(sequence);
+		row.AppendValue(eventNumber);
+		row.AppendValue(logPosition);
+		row.AppendValue(resolvedEvent.Event.TimeStamp);
+		row.AppendValue(resolvedEvent.OriginalStreamId);
+		row.AppendValue(0);
+		row.AppendValue(0);
+		// row.AppendValue(eventType.Id);
+		// row.AppendValue(eventType.Sequence);
+		row.AppendValue(category.Id);
+		row.AppendValue(category.Sequence);
+		row.EndRow();
 
 		_inFlightRecords[_inFlightRecordsCount]
 			= new(
@@ -66,8 +72,9 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 				eventNumber,
 				category.Id,
 				category.Sequence,
-				eventType.Id,
-				eventType.Sequence
+				0, 0
+				// eventType.Id,
+				// eventType.Sequence
 			);
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 		_inFlightRecordsCount++;
@@ -80,13 +87,14 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		// _defaultIndex.StreamIndex.Processor.Commit();
 
 		try {
-			_appender.Flush();
-			var lastLogPosition = _connection.QueryFirstOrDefault<long, DefaultSql.GetLastLogPositionSql>();
-			Logger.Debug("Committed {Count} records at log position {LogPosition} to index at sequence {Seq}", _inFlightRecordsCount, lastLogPosition, LastSequence);
+			_appender.Dispose();
+			_appender = _connection.CreateAppender("idx_all");
+			Logger.Debug("Committed {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
 			throw;
 		}
+
 		_inFlightRecordsCount = 0;
 	}
 
