@@ -12,7 +12,6 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	readonly DefaultIndex _defaultIndex;
-
 	readonly Appender _appender;
 	readonly DuckDBConnection _connection;
 	readonly InFlightRecord[] _inFlightRecords;
