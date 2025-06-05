@@ -30,8 +30,6 @@ class CategoryIndexReader(
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
 		var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new(id, fromEventNumber, toEventNumber));
-		// using var connection = db.OpenNewConnection();
-		// var range = connection.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new(id, fromEventNumber, toEventNumber));
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			// events might be in flight
 			var inFlight = queryInFlightRecords(
