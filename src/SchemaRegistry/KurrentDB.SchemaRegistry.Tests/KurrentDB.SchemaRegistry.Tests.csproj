@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" />
     <ProjectReference Include="..\..\KurrentDB.Surge.Testing.TUnit\KurrentDB.Surge.Testing.TUnit.csproj" />
+    <ProjectReference Include="..\..\KurrentDB\KurrentDB.csproj" />
     <ProjectReference Include="..\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
   </ItemGroup>
 	<ItemGroup>
