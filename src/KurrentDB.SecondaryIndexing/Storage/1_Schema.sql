@@ -23,7 +23,7 @@ create table if not exists idx_all (
 	event_number bigint not null,
 	log_position bigint not null,
 	created timestamp not null,
-	stream bigint not null,
+	stream varchar not null,
 	event_type bigint not null,
 	event_type_seq bigint not null,
 	category bigint not null,
@@ -33,6 +33,7 @@ create table if not exists idx_all (
 create index if not exists idx_all_category on idx_all(category, category_seq);
 create index if not exists idx_all_event_type on idx_all(event_type, category_seq);
 create index if not exists idx_sequence on idx_all(seq);
+create index if not exists idx_all_stream on idx_all(stream);
 
 create or replace macro read_category(name, startAt, finishAt) as table
 select
