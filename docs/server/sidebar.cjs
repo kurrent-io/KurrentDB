@@ -31,5 +31,13 @@ module.exports = [
             "operations.md",
             "diagnostics.md",
         ]
+    },
+    {
+        text:     "Release Schedule",
+        children: [
+            "release-schedule.md",
+            "release-notes.md",
+        ]
     }
+
 ];
