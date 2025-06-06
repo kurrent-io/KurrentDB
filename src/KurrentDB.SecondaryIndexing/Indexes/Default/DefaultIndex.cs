@@ -49,6 +49,14 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 	public long? GetLastSequence() => _db.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastSequenceSql>();
 
 	public long? GetLastPosition() => _db.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastLogPositionSql>();
+
+	protected override void Dispose(bool disposing) {
+		if (TryBeginDispose()) {
+			Processor.Dispose();
+			StreamIndex.Dispose();
+		}
+		base.Dispose(disposing);
+	}
 }
 
 delegate IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map);
