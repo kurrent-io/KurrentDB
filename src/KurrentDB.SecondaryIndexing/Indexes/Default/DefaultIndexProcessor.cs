@@ -92,7 +92,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			_sw.Stop();
 			// _appender.Dispose();
 			// _appender = _connection.CreateAppender("idx_all");
-			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took}ms)", _inFlightRecordsCount, LastSequence, _sw.ElapsedMilliseconds);
+			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _inFlightRecordsCount, LastSequence, _sw.ElapsedMilliseconds);
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
 			throw;
