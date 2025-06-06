@@ -38,7 +38,7 @@ public sealed class SecondaryIndexSubscription(
 			user: SystemAccounts.System,
 			requiresLeader: false,
 			// liveBufferSize: 200,
-			catchUpBufferSize: options.CommitBatchSize,
+			catchUpBufferSize: options.CommitBatchSize * 2,
 			// readBatchSize: 1000,
 			cancellationToken: _cts!.Token
 		);
