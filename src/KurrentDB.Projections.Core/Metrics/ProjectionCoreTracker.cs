@@ -6,6 +6,6 @@ using KurrentDB.Projections.Core.Services.Interpreted;
 
 namespace KurrentDB.Projections.Core.Metrics;
 
-public class ProjectionCoreTracker(IDurationMetric executionDurationMetric) : IProjectionCoreTracker {
+public class ProjectionCoreTracker(DurationMetric executionDurationMetric) : IProjectionCoreTracker {
 	public IJsFunctionCaller MeasureJsCallDuration { get; } = new JsFunctionCallMeasurer(executionDurationMetric);
 }

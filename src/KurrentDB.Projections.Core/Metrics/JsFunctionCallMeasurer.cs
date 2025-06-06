@@ -12,7 +12,7 @@ using KurrentDB.Projections.Core.Services.Interpreted;
 
 namespace KurrentDB.Projections.Core.Metrics;
 
-public class JsFunctionCallMeasurer(IDurationMetric durationMetric) : IJsFunctionCaller {
+public class JsFunctionCallMeasurer(DurationMetric durationMetric) : IJsFunctionCaller {
 	public JsValue Call(string projectionName, string jsFunctionName, ScriptFunction jsFunction) {
 		var start = Instant.Now;
 		JsValue result = jsFunction.Call();

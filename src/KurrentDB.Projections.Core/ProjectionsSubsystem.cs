@@ -211,9 +211,12 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-status", tracker.ObserveStatus);
 		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size", tracker.ObserveStateSize);
 
-		var executionDurationMetric = conf.ProjectionExecutionStats ?
-			new DurationMetric(projectionMeter, $"{serviceName}-projection-execution-duration", conf.LegacyProjectionsNaming) :
-			IDurationMetric.NoOp;
+		if (!conf.ProjectionExecutionStats)
+			return;
+
+		var executionDurationMetric = new DurationMetric(
+			projectionMeter,
+			$"{serviceName}-projection-execution-duration", conf.LegacyProjectionsNaming);
 
 		projectionCoreTracker = new ProjectionCoreTracker(executionDurationMetric);
 	}
