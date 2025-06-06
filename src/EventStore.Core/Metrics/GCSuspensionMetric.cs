@@ -101,8 +101,8 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 						is GCStartType.BlockingOutsideBackgroundGC
 						or GCStartType.BlockingDuringBackgroundGC) {
 
-					Log.Information("Start of full blocking garbage collection. GC: #{GCNumber}. Generation: {Generation}. Reason: {Reason}. Type: {Type}.",
-						gcNumber, generation, reason, type);
+					Log.Information("Start of full blocking garbage collection at {TimeStamp}. GC: #{GCNumber}. Generation: {Generation}. Reason: {Reason}. Type: {Type}.",
+						eventData.TimeStamp, gcNumber, generation, reason, type);
 
 					_fullGCStarted = eventData.TimeStamp;
 					_fullGCNumber = gcNumber;
@@ -117,8 +117,8 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 				if (gcNumber == _fullGCNumber && _fullGCStarted is { } started) {
 					var elapsed = eventData.TimeStamp.Subtract(started);
 
-					Log.Information("End of full blocking garbage collection. GC: #{GCNumber}. Took: {Elapsed:N0}ms",
-						gcNumber, elapsed.TotalMilliseconds);
+					Log.Information("End of full blocking garbage collection at {TimeStamp}. GC: #{GCNumber}. Took: {Elapsed:N0}ms",
+						eventData.TimeStamp, gcNumber, elapsed.TotalMilliseconds);
 
 					_fullGCStarted = null;
 					_fullGCNumber = null;
