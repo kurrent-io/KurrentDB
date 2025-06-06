@@ -55,7 +55,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		row.Append(sequence);
 		row.Append(eventNumber);
 		row.Append(logPosition);
-		row.Append(resolvedEvent.Event.TimeStamp);
+		row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
 		// row.AppendValue(streamId);
 		row.Append(0);
 		row.Append(eventType.Id);
