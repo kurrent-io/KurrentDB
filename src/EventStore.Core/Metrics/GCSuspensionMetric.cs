@@ -23,6 +23,9 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 	// https://learn.microsoft.com/en-us/dotnet/framework/performance/garbage-collection-etw-events
 	// seems to be mostly more up to date than
 	// https://learn.microsoft.com/en-us/dotnet/fundamentals/diagnostics/runtime-garbage-collection-events
+	// but the sources are more authoritative
+	// runtime: https://github.com/dotnet/runtime/blob/release/8.0/src/coreclr/gc/gc.h
+	// perfview: https://github.com/microsoft/perfview/blob/main/src/TraceEvent/Parsers/ClrEtwAll.cs.base
 	private const int GcKeyword = 0x0000001;
 	private const int GCStart = 1;
 	private const int GCEnd = 2;
@@ -39,8 +42,8 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 		OutOfSpaceForLargeObjectHeap = 6,
 		InducedButNotForcedAsBlocking = 7,
 		StressTesting = 8,
-		FinalizerInduced = 9,
-		UserCodeInducedCompacting = 10,
+		LowMemoryBlocking = 9,
+		UserCodeInducedCompacting = 10, // 10 is correct, doc saying 0x10 is incorrect
 	}
 
 	enum GCStartType : uint {
