@@ -161,17 +161,28 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 						_suspendReason, elapsed.TotalMilliseconds);
 				} else if (elapsed >= LongSuspensionThreshold) {
 					// long but not VERY long. Aggregate these in case of a scenario where the threshold is regularly exceeded.
-					_periodLongSuspensionCount++;
-					_periodLongSuspensionsElapsedTotal += elapsed;
 					var now = DateTime.Now;
 					if (now - _lastLog > LongSuspensionLogPeriod) {
+						// haven't logged recently, log now.
+						// any suspension messages we suppressed
+						if (_periodLongSuspensionCount > 0) {
+							Log.Information(
+								"Garbage collection: Long Execution Engine Suspensions omitted. {Count} suspensions took {Elapsed:N0}ms each on average",
+								_periodLongSuspensionCount, _periodLongSuspensionsElapsedTotal.TotalMilliseconds / _periodLongSuspensionCount);
+						}
+
+						// and now this suspension
 						Log.Information(
-							"Garbage collection: Long Execution Engine Suspensions. Last Reason: {Reason}. {Count} long suspensions took: {Elapsed:N0}ms each on average",
-							_suspendReason, _periodLongSuspensionCount, _periodLongSuspensionsElapsedTotal.TotalMilliseconds / _periodLongSuspensionCount);
+							"Garbage collection: Long Execution Engine Suspension. Reason: {Reason}. Took: {Elapsed:N0}ms",
+							_suspendReason, elapsed.TotalMilliseconds);
 
 						_lastLog = now;
 						_periodLongSuspensionCount = 0;
 						_periodLongSuspensionsElapsedTotal = TimeSpan.Zero;
+					} else {
+						// have logged recently 
+						_periodLongSuspensionCount++;
+						_periodLongSuspensionsElapsedTotal += elapsed;
 					}
 				}
 
