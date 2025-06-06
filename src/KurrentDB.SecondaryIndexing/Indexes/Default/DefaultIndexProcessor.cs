@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics;
 using DotNext;
 using DuckDB.NET.Data;
 using Kurrent.Quack;
@@ -77,6 +78,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_inFlightRecordsCount++;
 	}
 
+	readonly Stopwatch _sw = new();
+
 	public void Commit() {
 		if (IsDisposingOrDisposed)
 			return;
@@ -84,10 +87,12 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		// _defaultIndex.StreamIndex.Processor.Commit();
 
 		try {
+			_sw.Restart();
 			_appender.Flush();
+			_sw.Stop();
 			// _appender.Dispose();
 			// _appender = _connection.CreateAppender("idx_all");
-			Logger.Debug("Committed {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
+			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took}ms)", _inFlightRecordsCount, LastSequence, _sw.ElapsedMilliseconds);
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
 			throw;
