@@ -12,8 +12,8 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	readonly DefaultIndex _defaultIndex;
-	// readonly Appender _appender;
-	DuckDBAppender _appender;
+	readonly Appender _appender;
+	// DuckDBAppender _appender;
 	readonly DuckDBAdvancedConnection _connection;
 	readonly InFlightRecord[] _inFlightRecords;
 
@@ -26,8 +26,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public DefaultIndexProcessor(DuckDbDataSource db, DefaultIndex defaultIndex, int commitBatchSize) {
 		_connection = db.OpenNewConnection();
-		// _appender = new(_connection, "idx_all"u8);
-		_appender = _connection.CreateAppender("idx_all");
+		_appender = new(_connection, "idx_all"u8);
+		// _appender = _connection.CreateAppender("idx_all");
 		_defaultIndex = defaultIndex;
 		_inFlightRecords = new InFlightRecord[commitBatchSize];
 
@@ -50,18 +50,18 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var sequence = LastSequence++;
 		var logPosition = resolvedEvent.Event.LogPosition;
 		var eventNumber = resolvedEvent.Event.EventNumber;
-		var row = _appender.CreateRow();
-		row.AppendValue(sequence);
-		row.AppendValue(eventNumber);
-		row.AppendValue(logPosition);
-		row.AppendValue(resolvedEvent.Event.TimeStamp);
+		using var row = _appender.CreateRow();
+		row.Append(sequence);
+		row.Append(eventNumber);
+		row.Append(logPosition);
+		row.Append(resolvedEvent.Event.TimeStamp);
 		// row.AppendValue(streamId);
-		row.AppendValue(0);
-		row.AppendValue(eventType.Id);
-		row.AppendValue(eventType.Sequence);
-		row.AppendValue(category.Id);
-		row.AppendValue(category.Sequence);
-		row.EndRow();
+		row.Append(0);
+		row.Append(eventType.Id);
+		row.Append(eventType.Sequence);
+		row.Append(category.Id);
+		row.Append(category.Sequence);
+		// row.EndRow();
 
 		_inFlightRecords[_inFlightRecordsCount]
 			= new(
@@ -84,9 +84,9 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		// _defaultIndex.StreamIndex.Processor.Commit();
 
 		try {
-			// _appender.Flush();
-			_appender.Dispose();
-			_appender = _connection.CreateAppender("idx_all");
+			_appender.Flush();
+			// _appender.Dispose();
+			// _appender = _connection.CreateAppender("idx_all");
 			Logger.Debug("Committed {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);

@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 
@@ -15,12 +16,25 @@ public static class DuckDbExtensions {
 		}
 	}
 
+	static TRow? FirstOrDefault<TRow, TParser>(this StreamQueryResult<TRow, TParser>.Enumerator result)
+		where TRow : struct where TParser : IDataRowParser<TRow> {
+		TRow row = default;
+		int rowNumber = 0;
+		while (result.MoveNext()) {
+			if (rowNumber == 0) {
+				row = result.Current;
+			}
+			rowNumber++;
+		}
+		return rowNumber > 0 ? row : null;
+	}
+
 	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBAdvancedConnection connection)
 		where TRow : struct
 		where TQuery : IParameterlessStatement, IDataRowParser<TRow> {
 		using var result = connection.ExecuteQuery<TRow, TQuery>().GetEnumerator();
-
-		return result.MoveNext() ? result.Current : null;
+		return result.FirstOrDefault();
+		// return result.MoveNext() ? result.Current : null;
 	}
 
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
@@ -37,8 +51,8 @@ public static class DuckDbExtensions {
 		where TRow : struct
 		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
 		using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
-
-		return result.MoveNext() ? result.Current : null;
+		return result.FirstOrDefault();
+		// return result.MoveNext() ? result.Current : null;
 	}
 
 	public static List<TRow> Query<TRow, TQuery>(this DuckDBConnectionPool pool)
