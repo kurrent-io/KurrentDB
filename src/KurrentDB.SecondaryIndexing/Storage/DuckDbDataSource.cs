@@ -35,7 +35,6 @@ public class DuckDbDataSource : Disposable {
 	}
 
 	public DuckDBAdvancedConnection OpenNewConnection() => Pool.Open();
-	// public DuckDBAdvancedConnection OpenNewConnection() => ;
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {

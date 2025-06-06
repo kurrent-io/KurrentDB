@@ -87,7 +87,7 @@ internal class StreamIndexProcessor : Disposable {
 	}
 
 	protected override void Dispose(bool disposing) {
-		if (TryBeginDispose()) {
+		if (disposing) {
 			_appender.Dispose();
 			_connection.Dispose();
 		}

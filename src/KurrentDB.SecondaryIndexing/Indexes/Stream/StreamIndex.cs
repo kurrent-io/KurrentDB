@@ -16,7 +16,7 @@ internal class StreamIndex(DuckDbDataSource db, IReadIndex<string> readIndex) : 
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; } = [];
 
 	protected override void Dispose(bool disposing) {
-		if (!IsDisposingOrDisposed) {
+		if (disposing) {
 			Processor.Dispose();
 		}
 		base.Dispose(disposing);

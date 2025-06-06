@@ -51,7 +51,7 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 	public long? GetLastPosition() => _db.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastLogPositionSql>();
 
 	protected override void Dispose(bool disposing) {
-		if (TryBeginDispose()) {
+		if (disposing) {
 			Processor.Dispose();
 			StreamIndex.Dispose();
 		}
