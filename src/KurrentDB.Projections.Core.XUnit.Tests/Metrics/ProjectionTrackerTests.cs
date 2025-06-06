@@ -9,10 +9,10 @@ using Xunit;
 
 namespace KurrentDB.Projections.Core.XUnit.Tests.Metrics;
 
-public class ProjectionMetricsTests {
+public class ProjectionTrackerTests {
 	private readonly ProjectionTracker _sut = new();
 
-	public ProjectionMetricsTests() {
+	public ProjectionTrackerTests() {
 		_sut.OnNewStats([Stat("TestProjection", ProjectionMode.Continuous, ManagedProjectionState.Running, stateSizes: null)]);
 	}
 
