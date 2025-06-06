@@ -18,6 +18,7 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 	// Match DefaultSlowMessageThreshold so slow messages can be attributed to GC.
 	private static readonly TimeSpan LongSuspensionThreshold = InMemoryBus.DefaultSlowMessageThreshold;
 	private static readonly TimeSpan VeryLongSuspensionThreshold = TimeSpan.FromMilliseconds(600);
+	private static readonly TimeSpan LongSuspensionLogPeriod = TimeSpan.FromMilliseconds(10_000);
 
 	// For const values
 	// https://learn.microsoft.com/en-us/dotnet/framework/performance/garbage-collection-etw-events
@@ -70,6 +71,11 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 	// the current suspension
 	private DateTime? _suspendStarted;
 	private GCSuspendReason? _suspendReason;
+
+	// long suspension log aggregation
+	private DateTime _lastLog;
+	private TimeSpan _periodLongSuspensionsElapsedTotal;
+	private int _periodLongSuspensionCount;
 
 	protected override void OnEventSourceCreated(EventSource eventSource) {
 		if (eventSource.Name.Equals("Microsoft-Windows-DotNETRuntime")) {
@@ -150,15 +156,25 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 				tracker?.RecordNow(elapsed);
 
 				if (elapsed >= LongSuspensionThreshold) {
-					var veryLong = elapsed >= VeryLongSuspensionThreshold;
-					Log.Write(
-						veryLong
-							? Serilog.Events.LogEventLevel.Warning
-							: Serilog.Events.LogEventLevel.Information,
-						"Garbage collection: "
-							+ (veryLong ? "Very long" : "Long")
-							+ " Execution Engine Suspension. Reason: {Reason}. Took: {Elapsed:N0}ms",
-						_suspendReason, elapsed.TotalMilliseconds);
+					if (elapsed >= VeryLongSuspensionThreshold) {
+						Log.Warning(
+							"Garbage collection: Very long Execution Engine Suspension. Reason: {Reason}. Took: {Elapsed:N0}ms",
+							_suspendReason, elapsed.TotalMilliseconds);
+					} else {
+						// long but not VERY long. Aggregate these in case of a scenario where the threshold is regularly exceeded.
+						_periodLongSuspensionCount++;
+						_periodLongSuspensionsElapsedTotal += elapsed;
+						var now = DateTime.Now;
+						if (now - _lastLog > LongSuspensionLogPeriod) {
+							Log.Information(
+								"Garbage collection: Long Execution Engine Suspensions. Last Reason: {Reason}. {Count} long suspensions took: {Elapsed:N0}ms each on average",
+								_suspendReason, _periodLongSuspensionCount, _periodLongSuspensionsElapsedTotal.TotalMilliseconds / _periodLongSuspensionCount);
+
+							_lastLog = now;
+							_periodLongSuspensionCount = 0;
+							_periodLongSuspensionsElapsedTotal = TimeSpan.Zero;
+						}
+					}
 				}
 
 				_suspendStarted = null;
