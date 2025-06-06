@@ -23,7 +23,7 @@ create table if not exists idx_all (
 	event_number bigint not null,
 	log_position bigint not null,
 	created bigint not null,
-	stream bigint not null,
+	stream varchar not null,
 	event_type bigint not null,
 	event_type_seq bigint not null,
 	category bigint not null,
