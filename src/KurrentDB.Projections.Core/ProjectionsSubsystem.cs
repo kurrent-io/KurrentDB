@@ -87,8 +87,6 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	private VNodeState _nodeState;
 	private SubsystemState _subsystemState = SubsystemState.NotReady;
 	private Guid _instanceCorrelationId;
-	private IProjectionTracker _projectionTracker = IProjectionTracker.NoOp;
-	private IProjectionCoreTracker _projectionCoreTracker = IProjectionCoreTracker.NoOp;
 
 	private readonly List<string> _standardProjections = new List<string> {
 		"$by_category",
@@ -160,7 +158,10 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		LeaderInputBus.Subscribe<SystemMessage.SystemCoreReady>(this);
 		LeaderInputBus.Subscribe<SystemMessage.StateChangeMessage>(this);
 
-		ConfigureProjectionMetrics(standardComponents.MetricsConfiguration);
+		ConfigureProjectionMetrics(
+			standardComponents.MetricsConfiguration,
+			out var projectionTracker,
+			out var projectionCoreTracker);
 
 		var projectionsStandardComponents = new ProjectionsStandardComponents(
 			_projectionWorkerThreadCount,
@@ -173,21 +174,28 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			_compilationTimeout,
 			_executionTimeout,
 			_maxProjectionStateSize,
-			_projectionCoreTracker);
+			projectionCoreTracker);
 
 		CreateAwakerService(standardComponents);
 		_coreWorkers = ProjectionCoreWorkersNode.CreateCoreWorkers(standardComponents, projectionsStandardComponents);
 		_queueMap = _coreWorkers.ToDictionary(v => v.Key, v => v.Value.CoreInputQueue.As<IPublisher>());
 
 		ProjectionManagerNode.CreateManagerService(standardComponents, projectionsStandardComponents, _queueMap,
-			_projectionsQueryExpiry, _projectionTracker);
+			_projectionsQueryExpiry, projectionTracker);
 		LeaderInputBus.Subscribe<CoreProjectionStatusMessage.Stopped>(this);
 		LeaderInputBus.Subscribe<CoreProjectionStatusMessage.Started>(this);
 
 		builder.UseEndpoints(endpoints => endpoints.MapGrpcService<ProjectionManagement>());
 	}
 
-	private void ConfigureProjectionMetrics(MetricsConfiguration conf) {
+	private static void ConfigureProjectionMetrics(
+		MetricsConfiguration conf,
+		out IProjectionTracker projectionTracker,
+		out IProjectionCoreTracker projectionCoreTracker) {
+
+		projectionTracker = IProjectionTracker.NoOp;
+		projectionCoreTracker = IProjectionCoreTracker.NoOp;
+
 		if (!conf.ProjectionStats)
 			return;
 
@@ -195,7 +203,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		var serviceName = conf.ServiceName;
 
 		var tracker = new ProjectionTracker();
-		_projectionTracker = tracker;
+		projectionTracker = tracker;
 
 		projectionMeter.CreateObservableCounter($"{serviceName}-projection-events-processed-after-restart-total", tracker.ObserveEventsProcessed);
 		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-progress", tracker.ObserveProgress);
@@ -207,7 +215,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			new DurationMetric(projectionMeter, $"{serviceName}-projection-execution-duration", conf.LegacyProjectionsNaming) :
 			IDurationMetric.NoOp;
 
-		_projectionCoreTracker = new ProjectionCoreTracker(executionDurationMetric);
+		projectionCoreTracker = new ProjectionCoreTracker(executionDurationMetric);
 	}
 
 	public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
