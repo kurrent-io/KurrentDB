@@ -155,25 +155,23 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 				// will be explainable.
 				tracker?.RecordNow(elapsed);
 
-				if (elapsed >= LongSuspensionThreshold) {
-					if (elapsed >= VeryLongSuspensionThreshold) {
-						Log.Warning(
-							"Garbage collection: Very long Execution Engine Suspension. Reason: {Reason}. Took: {Elapsed:N0}ms",
-							_suspendReason, elapsed.TotalMilliseconds);
-					} else {
-						// long but not VERY long. Aggregate these in case of a scenario where the threshold is regularly exceeded.
-						_periodLongSuspensionCount++;
-						_periodLongSuspensionsElapsedTotal += elapsed;
-						var now = DateTime.Now;
-						if (now - _lastLog > LongSuspensionLogPeriod) {
-							Log.Information(
-								"Garbage collection: Long Execution Engine Suspensions. Last Reason: {Reason}. {Count} long suspensions took: {Elapsed:N0}ms each on average",
-								_suspendReason, _periodLongSuspensionCount, _periodLongSuspensionsElapsedTotal.TotalMilliseconds / _periodLongSuspensionCount);
+				if (elapsed >= VeryLongSuspensionThreshold) {
+					Log.Warning(
+						"Garbage collection: Very long Execution Engine Suspension. Reason: {Reason}. Took: {Elapsed:N0}ms",
+						_suspendReason, elapsed.TotalMilliseconds);
+				} else if (elapsed >= LongSuspensionThreshold) {
+					// long but not VERY long. Aggregate these in case of a scenario where the threshold is regularly exceeded.
+					_periodLongSuspensionCount++;
+					_periodLongSuspensionsElapsedTotal += elapsed;
+					var now = DateTime.Now;
+					if (now - _lastLog > LongSuspensionLogPeriod) {
+						Log.Information(
+							"Garbage collection: Long Execution Engine Suspensions. Last Reason: {Reason}. {Count} long suspensions took: {Elapsed:N0}ms each on average",
+							_suspendReason, _periodLongSuspensionCount, _periodLongSuspensionsElapsedTotal.TotalMilliseconds / _periodLongSuspensionCount);
 
-							_lastLog = now;
-							_periodLongSuspensionCount = 0;
-							_periodLongSuspensionsElapsedTotal = TimeSpan.Zero;
-						}
+						_lastLog = now;
+						_periodLongSuspensionCount = 0;
+						_periodLongSuspensionsElapsedTotal = TimeSpan.Zero;
 					}
 				}
 
