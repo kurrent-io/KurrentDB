@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using Jint;
 using Jint.Native;
 using Jint.Native.Function;
@@ -8,40 +9,33 @@ using KurrentDB.Core.Time;
 
 namespace KurrentDB.Projections.Core.Metrics;
 
+//qq move, no longer part of metrics
 public class JsFunctionCallMeasurer(IProjectionExecutionTracker tracker) {
 	public JsValue Call(string jsFunctionName, ScriptFunction jsFunction) {
-		var start = Instant.Now;
-		var result = jsFunction.Call();
-
-		tracker.CallExecuted(start, jsFunctionName);
-
-		return result;
+		using var _ = new Measurer(tracker, jsFunctionName);
+		return jsFunction.Call();
 	}
 
 	public JsValue Call(string jsFunctionName, ScriptFunction jsFunction, JsValue jsArg1) {
-		var start = Instant.Now;
-		var result = jsFunction.Call(jsArg1);
-
-		tracker.CallExecuted(start, jsFunctionName);
-
-		return result;
+		using var _ = new Measurer(tracker, jsFunctionName);
+		return jsFunction.Call(jsArg1);
 	}
 
 	public JsValue Call(string jsFunctionName, ScriptFunction jsFunction, JsValue jsArg1, JsValue jsArg2) {
-		var start = Instant.Now;
-		var result = jsFunction.Call(jsArg1, jsArg2);
-
-		tracker.CallExecuted(start, jsFunctionName);
-
-		return result;
+		using var _ = new Measurer(tracker, jsFunctionName);
+		return jsFunction.Call(jsArg1, jsArg2);
 	}
 
 	public JsValue Call(string jsFunctionName, ScriptFunction jsFunction, params JsValue[] jsArgs) {
-		var start = Instant.Now;
-		var result = jsFunction.Call(jsArgs);
+		using var _ = new Measurer(tracker, jsFunctionName);
+		return jsFunction.Call(jsArgs);
+	}
 
-		tracker.CallExecuted(start, jsFunctionName);
+	readonly struct Measurer(IProjectionExecutionTracker tracker, string jsFunctionName) : IDisposable {
+		readonly Instant _start = Instant.Now;
 
-		return result;
+		public void Dispose() {
+			tracker.CallExecuted(_start, jsFunctionName);
+		}
 	}
 }
