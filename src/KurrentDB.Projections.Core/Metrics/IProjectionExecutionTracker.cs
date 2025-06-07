@@ -10,12 +10,12 @@ namespace KurrentDB.Projections.Core.Metrics;
 public interface IProjectionExecutionTracker {
 	public static IProjectionExecutionTracker NoOp => NoOpTracker.Instance;
 
-	void CallExecuted(Instant start, string projectionName, string jsFunctionName);
+	void CallExecuted(Instant start, string jsFunctionName);
 }
 
 file sealed class NoOpTracker : IProjectionExecutionTracker {
 	public static NoOpTracker Instance { get; } = new();
 
-	public void CallExecuted(Instant start, string projectionName, string jsFunctionName) {
+	public void CallExecuted(Instant start, string jsFunctionName) {
 	}
 }

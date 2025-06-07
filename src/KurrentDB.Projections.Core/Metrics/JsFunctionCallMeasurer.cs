@@ -9,38 +9,38 @@ using KurrentDB.Core.Time;
 namespace KurrentDB.Projections.Core.Metrics;
 
 public class JsFunctionCallMeasurer(IProjectionExecutionTracker tracker) {
-	public JsValue Call(string projectionName, string jsFunctionName, ScriptFunction jsFunction) {
+	public JsValue Call(string jsFunctionName, ScriptFunction jsFunction) {
 		var start = Instant.Now;
 		var result = jsFunction.Call();
 
-		tracker.CallExecuted(start, projectionName, jsFunctionName);
+		tracker.CallExecuted(start, jsFunctionName);
 
 		return result;
 	}
 
-	public JsValue Call(string projectionName, string jsFunctionName, ScriptFunction jsFunction, JsValue jsArg1) {
+	public JsValue Call(string jsFunctionName, ScriptFunction jsFunction, JsValue jsArg1) {
 		var start = Instant.Now;
 		var result = jsFunction.Call(jsArg1);
 
-		tracker.CallExecuted(start, projectionName, jsFunctionName);
+		tracker.CallExecuted(start, jsFunctionName);
 
 		return result;
 	}
 
-	public JsValue Call(string projectionName, string jsFunctionName, ScriptFunction jsFunction, JsValue jsArg1, JsValue jsArg2) {
+	public JsValue Call(string jsFunctionName, ScriptFunction jsFunction, JsValue jsArg1, JsValue jsArg2) {
 		var start = Instant.Now;
 		var result = jsFunction.Call(jsArg1, jsArg2);
 
-		tracker.CallExecuted(start, projectionName, jsFunctionName);
+		tracker.CallExecuted(start, jsFunctionName);
 
 		return result;
 	}
 
-	public JsValue Call(string projectionName, string jsFunctionName, ScriptFunction jsFunction, params JsValue[] jsArgs) {
+	public JsValue Call(string jsFunctionName, ScriptFunction jsFunction, params JsValue[] jsArgs) {
 		var start = Instant.Now;
 		var result = jsFunction.Call(jsArgs);
 
-		tracker.CallExecuted(start, projectionName, jsFunctionName);
+		tracker.CallExecuted(start, jsFunctionName);
 
 		return result;
 	}

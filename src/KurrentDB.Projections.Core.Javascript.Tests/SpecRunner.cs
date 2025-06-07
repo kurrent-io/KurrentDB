@@ -199,7 +199,7 @@ public class SpecRunner {
 
 			IQuerySources expectedDefinition = sdb.Build();
 			yield return WithOutput($"{projection} compiles", o => {
-				runner = new JintProjectionStateHandler("projection", source, true,
+				runner = new JintProjectionStateHandler(source, true,
 					compilationTimeout: TimeSpan.FromMilliseconds(200),
 					executionTimeout: TimeSpan.FromMilliseconds(200),
 					new(IProjectionExecutionTracker.NoOp));
