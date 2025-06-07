@@ -20,7 +20,9 @@
 
 	"ProjectionStats": true,
 
-	"ProjectionExecutionStats": false,
+	"ProjectionExecutionStats": true,
+
+	"ProjectionExecutionByFunction": false,
 
 	"PersistentSubscriptionStats": true,
 

@@ -211,15 +211,36 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-status", tracker.ObserveStatus);
 		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size", tracker.ObserveStateSize);
 
-		if (!conf.ProjectionExecutionStats)
-			return;
+		// recent max of executions for each projection
+		var executionMaxDurationMetric = new DurationMaxMetric(
+			projectionMeter,
+			$"{serviceName}-projection-execution-duration-max",
+			conf.LegacyProjectionsNaming);
 
+		// histogram of durations for each (projection * function) tuple
 		var executionDurationMetric = new DurationMetric(
 			projectionMeter,
-			$"{serviceName}-projection-execution-duration", conf.LegacyProjectionsNaming);
+			$"{serviceName}-projection-execution-duration",
+			conf.LegacyProjectionsNaming);
+
+		List<Func<string, IProjectionExecutionTracker>> executionTrackerFactories = [];
+
+		if (conf.ProjectionExecutionStats) {
+			executionTrackerFactories.Add(name =>
+				new ProjectionExecutionMaxTracker(new DurationMaxTracker(
+					executionMaxDurationMetric,
+					name: name,
+					expectedScrapeIntervalSeconds: conf.ExpectedScrapeIntervalSeconds)));
+		}
+
+		if (conf.ProjectionExecutionByFunction) {
+			executionTrackerFactories.Add(name =>
+				new ProjectionExecutionHistogramTracker(name, executionDurationMetric));
+		}
 
 		projectionExecutionTrackers = new(name =>
-			new ProjectionExecutionHistogramTracker(name, executionDurationMetric));
+			new CompositeProjectionExecutionTracker(
+				executionTrackerFactories.Select(f => f(name)).ToArray()));
 	}
 
 	public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>

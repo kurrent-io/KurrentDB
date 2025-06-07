@@ -17,10 +17,26 @@ public class ProjectionExecutionHistogramTracker(string projectionName, Duration
 	}
 }
 
+public class ProjectionExecutionMaxTracker(IDurationMaxTracker tracker) : IProjectionExecutionTracker {
+	public void CallExecuted(Instant start, string jsFunctionName) {
+		tracker.RecordNow(start);
+	}
+}
+
 public class ProjectionExecutionTrackers(Func<string, IProjectionExecutionTracker> factory) {
 	public static ProjectionExecutionTrackers NoOp { get; } = new(_ => IProjectionExecutionTracker.NoOp);
 
 	public IProjectionExecutionTracker GetTrackerForProjection(string projectionName) {
 		return factory(projectionName);
+	}
+}
+
+public class CompositeProjectionExecutionTracker(IReadOnlyList<IProjectionExecutionTracker> children)
+	: IProjectionExecutionTracker {
+
+	public void CallExecuted(Instant start, string jsFunctionName) {
+		foreach (var child in children) {
+			child.CallExecuted(start, jsFunctionName);
+		}
 	}
 }
