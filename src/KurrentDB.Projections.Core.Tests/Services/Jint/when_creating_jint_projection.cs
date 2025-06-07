@@ -19,7 +19,7 @@ class when_creating_jint_projection {
 	[SetUp]
 	public void Setup() {
 		_stateHandlerFactory =
-			new ProjectionStateHandlerFactory(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(100), IProjectionCoreTracker.NoOp);
+			new ProjectionStateHandlerFactory(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(100), IProjectionExecutionTracker.NoOp);
 	}
 
 	[Test, Category(_projectionType)]

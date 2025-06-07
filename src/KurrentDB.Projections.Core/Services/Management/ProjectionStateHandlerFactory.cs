@@ -13,12 +13,12 @@ namespace KurrentDB.Projections.Core.Services.Management;
 public class ProjectionStateHandlerFactory {
 	private readonly TimeSpan _javascriptCompilationTimeout;
 	private readonly TimeSpan _javascriptExecutionTimeout;
-	private readonly IProjectionCoreTracker _coreTracker;
+	private readonly IProjectionExecutionTracker _coreTracker;
 
 	public ProjectionStateHandlerFactory(
 		TimeSpan javascriptCompilationTimeout,
 		TimeSpan javascriptExecutionTimeout,
-		IProjectionCoreTracker coreTracker) {
+		IProjectionExecutionTracker coreTracker) {
 		_javascriptCompilationTimeout = javascriptCompilationTimeout;
 		_javascriptExecutionTimeout = javascriptExecutionTimeout;
 		_coreTracker = coreTracker;

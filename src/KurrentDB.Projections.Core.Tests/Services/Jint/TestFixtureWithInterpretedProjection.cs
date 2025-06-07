@@ -29,7 +29,7 @@ public abstract class TestFixtureWithInterpretedProjection {
 		Given();
 		_logged = new List<string>();
 		_stateHandlerFactory =
-			new ProjectionStateHandlerFactory(CompilationTimeout, ExecutionTimeout, IProjectionCoreTracker.NoOp);
+			new ProjectionStateHandlerFactory(CompilationTimeout, ExecutionTimeout, IProjectionExecutionTracker.NoOp);
 		_stateHandler = CreateStateHandler();
 		_source = _stateHandler.GetSourceDefinition();
 

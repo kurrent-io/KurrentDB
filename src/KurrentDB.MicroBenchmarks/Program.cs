@@ -35,7 +35,7 @@ public class ProjectionSerializationBenchmarks {
 		var parser = new JsonParser(engine);
 		_builtIn = new JsonSerializer(engine);
 		_handler = new JintProjectionStateHandler("projection", "", false, TimeSpan.FromMilliseconds(500), TimeSpan.FromMilliseconds(500),
-			new(IProjectionCoreTracker.NoOp));
+			new(IProjectionExecutionTracker.NoOp));
 
 		_stateInstance = parser.Parse(json);
 

@@ -98,7 +98,7 @@ public class TestFixtureWithProjectionCoreService {
 		_workerId = Guid.NewGuid();
 		var guardBus = new GuardBusToTriggerFixingIfUsed();
 		var configuration = new ProjectionsStandardComponents(1, ProjectionType.All, guardBus, guardBus, guardBus, guardBus, true,
-			 500, 250, Opts.MaxProjectionStateSizeDefault, IProjectionCoreTracker.NoOp);
+			 500, 250, Opts.MaxProjectionStateSizeDefault, IProjectionExecutionTracker.NoOp);
 		_service = new ProjectionCoreService(
 			_workerId, _bus, _bus, _subscriptionDispatcher, new RealTimeProvider(), ioDispatcher, configuration);
 		_bus.Subscribe(

@@ -7,14 +7,13 @@ using KurrentDB.Core.Time;
 
 namespace KurrentDB.Projections.Core.Metrics;
 
-
-public interface IProjectionCoreTracker {
-	public static IProjectionCoreTracker NoOp => NoOpTracker.Instance;
+public interface IProjectionExecutionTracker {
+	public static IProjectionExecutionTracker NoOp => NoOpTracker.Instance;
 
 	void CallExecuted(Instant start, string projectionName, string jsFunctionName);
 }
 
-file sealed class NoOpTracker : IProjectionCoreTracker {
+file sealed class NoOpTracker : IProjectionExecutionTracker {
 	public static NoOpTracker Instance { get; } = new();
 
 	public void CallExecuted(Instant start, string projectionName, string jsFunctionName) {

@@ -8,7 +8,7 @@ using KurrentDB.Core.Time;
 
 namespace KurrentDB.Projections.Core.Metrics;
 
-public class JsFunctionCallMeasurer(IProjectionCoreTracker tracker) {
+public class JsFunctionCallMeasurer(IProjectionExecutionTracker tracker) {
 	public JsValue Call(string projectionName, string jsFunctionName, ScriptFunction jsFunction) {
 		var start = Instant.Now;
 		var result = jsFunction.Call();

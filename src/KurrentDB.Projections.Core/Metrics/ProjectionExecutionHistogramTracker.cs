@@ -4,11 +4,10 @@
 using System.Collections.Generic;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Time;
-using KurrentDB.Projections.Core.Services.Interpreted;
 
 namespace KurrentDB.Projections.Core.Metrics;
 
-public class ProjectionCoreTracker(DurationMetric executionDurationMetric) : IProjectionCoreTracker {
+public class ProjectionExecutionHistogramTracker(DurationMetric executionDurationMetric) : IProjectionExecutionTracker {
 	public void CallExecuted(Instant start, string projectionName, string jsFunctionName) {
 		executionDurationMetric.Record(
 			start,

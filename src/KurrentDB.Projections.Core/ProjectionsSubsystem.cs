@@ -161,7 +161,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		ConfigureProjectionMetrics(
 			standardComponents.MetricsConfiguration,
 			out var projectionTracker,
-			out var projectionCoreTracker);
+			out var projectionExecutionTracker);
 
 		var projectionsStandardComponents = new ProjectionsStandardComponents(
 			_projectionWorkerThreadCount,
@@ -174,7 +174,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			_compilationTimeout,
 			_executionTimeout,
 			_maxProjectionStateSize,
-			projectionCoreTracker);
+			projectionExecutionTracker);
 
 		CreateAwakerService(standardComponents);
 		_coreWorkers = ProjectionCoreWorkersNode.CreateCoreWorkers(standardComponents, projectionsStandardComponents);
@@ -191,10 +191,10 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	private static void ConfigureProjectionMetrics(
 		MetricsConfiguration conf,
 		out IProjectionTracker projectionTracker,
-		out IProjectionCoreTracker projectionCoreTracker) {
+		out IProjectionExecutionTracker projectionExecutionTracker) {
 
 		projectionTracker = IProjectionTracker.NoOp;
-		projectionCoreTracker = IProjectionCoreTracker.NoOp;
+		projectionExecutionTracker = IProjectionExecutionTracker.NoOp;
 
 		if (!conf.ProjectionStats)
 			return;
@@ -218,7 +218,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			projectionMeter,
 			$"{serviceName}-projection-execution-duration", conf.LegacyProjectionsNaming);
 
-		projectionCoreTracker = new ProjectionCoreTracker(executionDurationMetric);
+		projectionExecutionTracker = new ProjectionExecutionHistogramTracker(executionDurationMetric);
 	}
 
 	public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
