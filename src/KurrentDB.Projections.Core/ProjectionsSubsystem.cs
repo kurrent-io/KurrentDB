@@ -196,20 +196,8 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		projectionTracker = IProjectionTracker.NoOp;
 		projectionExecutionTrackers = ProjectionExecutionTrackers.NoOp;
 
-		if (!conf.ProjectionStats)
-			return;
-
 		var projectionMeter = new Meter(conf.ProjectionsMeterName, version: "1.0.0");
 		var serviceName = conf.ServiceName;
-
-		var tracker = new ProjectionTracker();
-		projectionTracker = tracker;
-
-		projectionMeter.CreateObservableCounter($"{serviceName}-projection-events-processed-after-restart-total", tracker.ObserveEventsProcessed);
-		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-progress", tracker.ObserveProgress);
-		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-running", tracker.ObserveRunning);
-		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-status", tracker.ObserveStatus);
-		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size", tracker.ObserveStateSize);
 
 		// recent max of executions for each projection
 		var executionMaxDurationMetric = new DurationMaxMetric(
@@ -222,6 +210,17 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			projectionMeter,
 			$"{serviceName}-projection-execution-duration",
 			conf.LegacyProjectionsNaming);
+
+		if (conf.ProjectionStats) {
+			var tracker = new ProjectionTracker();
+			projectionTracker = tracker;
+
+			projectionMeter.CreateObservableCounter($"{serviceName}-projection-events-processed-after-restart-total", tracker.ObserveEventsProcessed);
+			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-progress", tracker.ObserveProgress);
+			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-running", tracker.ObserveRunning);
+			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-status", tracker.ObserveStatus);
+			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size", tracker.ObserveStateSize);
+		}
 
 		List<Func<string, IProjectionExecutionTracker>> executionTrackerFactories = [];
 
