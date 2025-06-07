@@ -9,6 +9,7 @@ using BenchmarkDotNet.Running;
 using Jint;
 using Jint.Native;
 using Jint.Native.Json;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Interpreted;
 using KurrentDB.Projections.Core.Tests.Services.Jint.Serialization;
 
@@ -33,7 +34,8 @@ public class ProjectionSerializationBenchmarks {
 		var engine = new Engine();
 		var parser = new JsonParser(engine);
 		_builtIn = new JsonSerializer(engine);
-		_handler = new JintProjectionStateHandler("projection", "", false, TimeSpan.FromMilliseconds(500), TimeSpan.FromMilliseconds(500));
+		_handler = new JintProjectionStateHandler("projection", "", false, TimeSpan.FromMilliseconds(500), TimeSpan.FromMilliseconds(500),
+			new(IProjectionCoreTracker.NoOp));
 
 		_stateInstance = parser.Parse(json);
 

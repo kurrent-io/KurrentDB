@@ -22,6 +22,7 @@ using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using KurrentDB.Core.Services;
 using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
@@ -46,7 +47,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	private JsValue _sharedState;
 
 	public JintProjectionStateHandler(string projectionName, string source, bool enableContentTypeValidation,
-		TimeSpan compilationTimeout, TimeSpan executionTimeout, IJsFunctionCaller? jsFunctionCallerOverride = null) {
+		TimeSpan compilationTimeout, TimeSpan executionTimeout, JsFunctionCallMeasurer jsFunctionCaller) {
 
 		_enableContentTypeValidation = enableContentTypeValidation;
 		_definitionBuilder = new SourceDefinitionBuilder();
@@ -56,7 +57,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		_engine = new Engine(opts => opts.Constraint(timeConstraint).DisableStringCompilation());
 		_state = JsValue.Undefined;
 		_sharedState = JsValue.Undefined;
-		_interpreterRuntime = new InterpreterRuntime(projectionName, _engine, _definitionBuilder, jsFunctionCallerOverride);
+		_interpreterRuntime = new InterpreterRuntime(projectionName, _engine, _definitionBuilder, jsFunctionCaller);
 		_engine.Global.FastAddProperty("log", new ClrFunction(_engine, "log", Log), false, false, false);
 
 		timeConstraint.Compiling();
@@ -443,7 +444,7 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		private readonly string _projectionName;
 		private readonly SourceDefinitionBuilder _definitionBuilder;
-		private readonly IJsFunctionCaller _jsFunctionCaller;
+		private readonly JsFunctionCallMeasurer _jsFunctionCaller;
 		private readonly JsonParser _parser;
 
 		private static readonly Dictionary<string, Action<InterpreterRuntime>> _possibleProperties = new Dictionary<string, Action<InterpreterRuntime>>() {
@@ -487,11 +488,11 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 			string projectionName,
 			Engine engine,
 			SourceDefinitionBuilder builder,
-			IJsFunctionCaller? jsFunctionCallerOverride = null) : base(engine) {
+			JsFunctionCallMeasurer jsFunctionCaller) : base(engine) {
 
 			_projectionName = projectionName;
 			_definitionBuilder = builder;
-			_jsFunctionCaller = jsFunctionCallerOverride ?? IJsFunctionCaller.Default;
+			_jsFunctionCaller = jsFunctionCaller;
 			_handlers = new Dictionary<string, ScriptFunction>(StringComparer.Ordinal);
 			_createdHandlers = new List<ScriptFunction>();
 			_transforms = new List<(TransformType, ScriptFunction)>();

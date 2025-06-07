@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Interpreted;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -200,7 +201,8 @@ public class SpecRunner {
 			yield return WithOutput($"{projection} compiles", o => {
 				runner = new JintProjectionStateHandler("projection", source, true,
 					compilationTimeout: TimeSpan.FromMilliseconds(200),
-					executionTimeout: TimeSpan.FromMilliseconds(200));
+					executionTimeout: TimeSpan.FromMilliseconds(200),
+					new(IProjectionCoreTracker.NoOp));
 			});
 
 			yield return For($"{projection} getDefinition", () => { definition = runner.GetSourceDefinition(); });

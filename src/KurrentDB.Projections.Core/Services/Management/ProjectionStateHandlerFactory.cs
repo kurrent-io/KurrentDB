@@ -46,7 +46,7 @@ public class ProjectionStateHandlerFactory {
 		switch (kind.ToLowerInvariant()) {
 			case "js":
 				result = new JintProjectionStateHandler(projectionName, source, enableContentTypeValidation,
-					_javascriptCompilationTimeout, executionTimeout, _coreTracker.MeasureJsCallDuration);
+					_javascriptCompilationTimeout, executionTimeout, new(_coreTracker));
 				break;
 			case "native":
 				// Allow loading native projections from previous versions
