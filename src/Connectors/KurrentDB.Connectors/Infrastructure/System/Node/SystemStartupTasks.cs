@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Connectors.Infrastructure.System.Node;
 
-abstract class SystemStartupTaskService : BackgroundService {
+abstract class SystemStartupTaskService {
     protected SystemStartupTaskService(IServiceProvider serviceProvider, string? taskName = null) {
         ServiceProvider = serviceProvider;
         ReadinessProbe  = serviceProvider.GetRequiredService<SystemReadinessProbe>();
@@ -21,7 +21,7 @@ abstract class SystemStartupTaskService : BackgroundService {
     ILogger              Logger          { get; }
     string               TaskName        { get; }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
+    public async Task ExecuteAsync(CancellationToken stoppingToken) {
         try {
             var nodeInfo = await ReadinessProbe.WaitUntilReady(stoppingToken);
             await OnStartup(nodeInfo, ServiceProvider, stoppingToken);
@@ -43,6 +43,12 @@ public interface ISystemStartupTask {
     Task OnStartup(NodeSystemInfo.NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken);
 }
 
+internal class SystemStartupTaskWorker(string taskName, IServiceProvider serviceProvider, ISystemStartupTask startupTask)
+	: SystemStartupTaskService(serviceProvider, taskName) {
+	protected override Task OnStartup(NodeSystemInfo.NodeSystemInfo nodeSystemInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) =>
+		startupTask.OnStartup(nodeSystemInfo, serviceProvider, cancellationToken);
+}
+
 [PublicAPI]
 public static class SystemStartupTasksServiceCollectionExtensions {
     public static IServiceCollection AddSystemStartupTask(
@@ -53,7 +59,7 @@ public static class SystemStartupTasksServiceCollectionExtensions {
             throw new ArgumentException("Value cannot be null or whitespace.", nameof(taskName));
 
         services.TryAddSingleton<SystemReadinessProbe>();
-        return services.AddSingleton<IHostedService, SystemStartupTaskWorker>(
+        return services.AddSingleton<SystemStartupTaskWorker>(
             ctx => new SystemStartupTaskWorker(taskName, ctx, new SystemStartupTaskProxy(onStartup))
         );
     }
@@ -64,19 +70,13 @@ public static class SystemStartupTasksServiceCollectionExtensions {
 
         services.TryAddSingleton<T>();
         services.TryAddSingleton<SystemReadinessProbe>();
-        return services.AddSingleton<IHostedService, SystemStartupTaskWorker>(
+        return services.AddSingleton<SystemStartupTaskWorker>(
             ctx => new SystemStartupTaskWorker(taskName, ctx, ctx.GetRequiredService<T>())
         );
     }
 
     public static IServiceCollection AddSystemStartupTask<T>(this IServiceCollection services) where T : class, ISystemStartupTask =>
         AddSystemStartupTask<T>(services, typeof(T).Name);
-
-    class SystemStartupTaskWorker(string taskName, IServiceProvider serviceProvider, ISystemStartupTask startupTask)
-        : SystemStartupTaskService(serviceProvider, taskName) {
-        protected override Task OnStartup(NodeSystemInfo.NodeSystemInfo nodeSystemInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) =>
-            startupTask.OnStartup(nodeSystemInfo, serviceProvider, cancellationToken);
-    }
 
     class SystemStartupTaskProxy(Func<NodeSystemInfo.NodeSystemInfo, IServiceProvider, CancellationToken, Task> onStartup) : ISystemStartupTask {
         public Task OnStartup(NodeSystemInfo.NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) =>

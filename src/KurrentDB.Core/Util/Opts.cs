@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Index;
+using KurrentDB.Core.TransactionLog.Chunks;
 
 namespace KurrentDB.Core.Util;
 
@@ -16,7 +17,7 @@ public static class Opts {
 
 	public const int ProjectionsQueryExpiryDefault = 5;
 
-	public const int MaxProjectionStateSizeDefault = int.MaxValue;
+	public const int MaxProjectionStateSizeDefault = TFConsts.MaxLogRecordSize;
 
 	public const byte IndexBitnessVersionDefault = PTableVersions.IndexV4;
 

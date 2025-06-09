@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
@@ -19,6 +20,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 	protected readonly ProjectionConfig _projectionConfig;
 	protected readonly ILogger _logger;
 	protected readonly int _maxProjectionStateSize;
+	private readonly int _maxProjectionStateSizeThreshold;
 
 	private readonly bool _usePersistentCheckpoints;
 
@@ -42,6 +44,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 	protected bool _stopped;
 
 	private PartitionState _currentProjectionState;
+	private readonly ConcurrentDictionary<string, int> _stateSizeByPartition = new();
 
 	protected CoreProjectionCheckpointManager(
 		IPublisher publisher,
@@ -79,6 +82,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		_requestedCheckpointState = new PartitionState("", null, _zeroTag);
 		_currentProjectionState = new PartitionState("", null, _zeroTag);
 		_maxProjectionStateSize = maxProjectionStateSize;
+		_maxProjectionStateSizeThreshold = (int)(0.80 * _maxProjectionStateSize);
 	}
 
 	protected abstract ProjectionCheckpoint CreateProjectionCheckpoint(CheckpointTag checkpointPosition);
@@ -126,8 +130,10 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 			throw new InvalidOperationException("Already started");
 		_started = true;
 
-		if (rootPartitionState != null)
+		if (rootPartitionState != null) {
 			_currentProjectionState = rootPartitionState;
+			UpdateStateSizeMetrics(partition: string.Empty, rootPartitionState.Size);
+		}
 
 		_lastProcessedEventPosition.UpdateByCheckpointTagInitial(checkpointTag);
 		_lastProcessedEventProgress = -1;
@@ -178,6 +184,11 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		info.WritesInProgress = (_closingCheckpoint != null ? _closingCheckpoint.GetWritesInProgress() : 0)
 								+ (_currentCheckpoint != null ? _currentCheckpoint.GetWritesInProgress() : 0);
 		info.CheckpointStatus = _inCheckpoint ? "Requested" : "";
+
+		foreach (var (partition, stateSize) in _stateSizeByPartition) {
+			info.StateSizes ??= new();
+			info.StateSizes[partition] = stateSize;
+		}
 	}
 
 	public void StateUpdated(
@@ -198,8 +209,10 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		if (_usePersistentCheckpoints && partition != "")
 			CapturePartitionStateUpdated(partition, oldState, newState);
 
-		if (partition == "")
+		if (partition == "") {
 			_currentProjectionState = newState;
+			UpdateStateSizeMetrics(partition: string.Empty, newState.Size);
+		}
 	}
 
 	private bool CheckStateSize(PartitionState result, string partition) {
@@ -397,6 +410,28 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		_publisher.Publish(
 			new CoreProjectionProcessingMessage.CheckpointCompleted(
 				_projectionCorrelationId, _lastCompletedCheckpointPosition));
+	}
+
+	protected void UpdateStateSizeMetrics(string partition, int newStateSize) {
+		if (newStateSize >= _maxProjectionStateSizeThreshold) {
+			// the new state size is above/equal to the threshold, we definitely need to report this in the metrics.
+			_stateSizeByPartition[partition] = newStateSize;
+		} else if (_stateSizeByPartition.TryGetValue(partition, out var oldStateSize)) {
+			// the new state size is below the threshold, but it was recently above/equal to it
+			// as it's still present in the dictionary
+
+			if (oldStateSize >= _maxProjectionStateSizeThreshold) {
+				// the old state size was above/equal to the threshold -
+				// we provide a last update with a value that's below the threshold so that users
+				// can observe the effects of any actions they have taken to reduce the state size.
+				_stateSizeByPartition[partition] = newStateSize;
+			} else {
+				// the old state size was below to the threshold -
+				// therefore the last update was already provided, and we now stop providing updates for this partition.
+				// it'll automatically be removed from the metrics output after some time.
+				_stateSizeByPartition.TryRemove(partition, out _);
+			}
+		}
 	}
 
 	public virtual void BeginLoadPrerecordedEvents(CheckpointTag checkpointTag) {
