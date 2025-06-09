@@ -35,7 +35,7 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
 
     public async ValueTask<bool> ConfigureConnectorStreams(string connectorId, CancellationToken ct) {
         await Task.WhenAll(
-            TryConfigureStream(GetLeasesStream(connectorId), LeasesMetadata),
+            // TryConfigureStream(GetLeasesStream(connectorId), LeasesMetadata),
             TryConfigureStream(GetCheckpointsStream(connectorId), CheckpointsMetadata)
         );
 
