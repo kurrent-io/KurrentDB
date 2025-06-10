@@ -10,14 +10,18 @@ using KurrentDB.Core.TransactionLog.Chunks;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 
+public class DuckDbDataSourceOptions {
+	public required string ConnectionString { get; set; }
+}
+
 public class DuckDbDataSource : Disposable {
 	readonly string _connectionString;
 
 	public readonly DuckDBConnectionPool Pool;
 	private Atomic.Boolean _wasInitialized;
 
-	public DuckDbDataSource(TFChunkDbConfig dbConfig) {
-		_connectionString = $"Data Source={Path.Combine(dbConfig.Path, "index.db")};";
+	public DuckDbDataSource(DuckDbDataSourceOptions options) {
+		_connectionString = options.ConnectionString;
 		Pool = new(_connectionString);
 	}
 

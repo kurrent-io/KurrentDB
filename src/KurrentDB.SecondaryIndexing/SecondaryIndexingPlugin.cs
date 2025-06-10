@@ -8,6 +8,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Builders;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -36,6 +37,12 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 			.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
 			.Get<SecondaryIndexingPluginOptions>() ?? new();
 
+		services.AddSingleton<DuckDbDataSourceOptions>(sp => {
+			var dbConfig = sp.GetRequiredService<TFChunkDbConfig>();
+			var connectionString = $"Data Source={Path.Combine(dbConfig.Path, "index.db")};";
+
+			return new DuckDbDataSourceOptions { ConnectionString = connectionString };
+		});
 		services.AddSingleton<DuckDbDataSource>();
 		services.AddSingleton(sp =>
 			new DefaultIndex(
@@ -64,7 +71,8 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
-		var enabledOption = configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled");
+		var enabledOption =
+			configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled");
 		var devMode = configuration.GetValue($"{KurrentConfigurationKeys.Prefix}:Dev", defaultValue: false);
 
 		// Enabled by default only in the dev mode

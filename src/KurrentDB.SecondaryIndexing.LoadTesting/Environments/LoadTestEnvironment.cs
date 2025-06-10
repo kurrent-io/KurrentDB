@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
+using KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.InMemory;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.TestServer;
 
@@ -14,6 +15,7 @@ public interface ILoadTestEnvironment {
 public enum LoadTestEnvironmentType {
 	InMemory,
 	TestServer,
+	DuckDB,
 	Container
 }
 
@@ -23,6 +25,7 @@ public static class LoadTestEnvironment {
 			LoadTestEnvironmentType.InMemory => new InMemoryLoadTestEnvironment(),
 			LoadTestEnvironmentType.TestServer => new TestServerEnvironment(),
 			LoadTestEnvironmentType.Container => throw new NotImplementedException("Container environment is not yet supported"),
+			LoadTestEnvironmentType.DuckDB => new DuckDBTestEnvironment(),
 			_ => throw new ArgumentOutOfRangeException(nameof(loadTestEnvironmentType), loadTestEnvironmentType, null)
 		};
 }
