@@ -11,14 +11,14 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace EventStore.Core.Duck.Default;
 
-class StreamIndex1 : Disposable {
+class StreamIndex : Disposable {
 	readonly DuckDb _db;
 	readonly DuckDBConnection _connection;
 	readonly MemoryCache _streamIdCache = new(new MemoryCacheOptions());
 	readonly MemoryCacheEntryOptions _options = new() { SlidingExpiration = TimeSpan.FromMinutes(10) };
 	long _seq;
 
-	public StreamIndex1(DuckDb db) {
+	public StreamIndex(DuckDb db) {
 		const string sql = "select max(id) from streams";
 
 		_connection = db.OpenConnection();

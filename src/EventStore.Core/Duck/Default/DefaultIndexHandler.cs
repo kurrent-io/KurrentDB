@@ -41,7 +41,7 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 
 		if (_appenderDisposed || _disposing) return new(EventHandlingStatus.Ignored);
 
-		// var streamId = _defaultIndex.StreamIndex.Handle(context);
+		var streamId = _defaultIndex.StreamIndex.Handle(context);
 		var et = _defaultIndex.EventTypeIndex.Handle(context);
 		var cat = _defaultIndex.CategoryIndex.Handle(context);
 
@@ -51,8 +51,8 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 			row.AppendValue((int)context.EventNumber);
 			row.AppendValue(context.GlobalPosition);
 			row.AppendValue(new DateTimeOffset(context.Created).ToUnixTimeMilliseconds());
-			// row.AppendValue(streamId);
-			row.AppendValue(0L);
+			row.AppendValue(streamId);
+			// row.AppendValue(0L);
 			// row.AppendValue(context.Stream.ToString());
 			row.AppendValue((int)et.Id);
 			row.AppendValue(et.Sequence);
@@ -84,7 +84,7 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 
 	public bool NeedsCommitting => _page > 0;
 
-	Stopwatch _stopwatch = new();
+	readonly Stopwatch _stopwatch = new();
 
 	public void Commit(bool reopen = true) {
 		if (_appenderDisposed || _page == 0) return;
