@@ -22,6 +22,7 @@ using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using KurrentDB.Core.Services;
 using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
@@ -40,15 +41,20 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 	private readonly List<EmittedEventEnvelope> _emitted;
 	private readonly InterpreterRuntime _interpreterRuntime;
 	private readonly JsonParser _parser;
+	private readonly JsSerializationMeasurer _jsSerializer;
+
 	private CheckpointTag? _currentPosition;
 
 	private JsValue _state;
 	private JsValue _sharedState;
 
 	public JintProjectionStateHandler(string source, bool enableContentTypeValidation,
-		TimeSpan compilationTimeout, TimeSpan executionTimeout, JsFunctionCallMeasurer jsFunctionCaller) {
+		TimeSpan compilationTimeout, TimeSpan executionTimeout,
+		JsFunctionCallMeasurer jsFunctionCaller,
+		JsSerializationMeasurer jsSerializer) {
 
 		_enableContentTypeValidation = enableContentTypeValidation;
+		_jsSerializer = jsSerializer;
 		_definitionBuilder = new SourceDefinitionBuilder();
 		_definitionBuilder.NoWhen();
 		_definitionBuilder.AllEvents();
@@ -1006,13 +1012,12 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 		}
 	}
 
-	private readonly Serializer _serializer = new Serializer();
 	public string Serialize(JsValue value) {
-		var serialized = _serializer.Serialize(value);
-		return Encoding.UTF8.GetString(serialized.Span);
+		var serialized = _jsSerializer.Serialize(value);
+		return Encoding.UTF8.GetString(serialized);
 	}
 
-	private class Serializer {
+	public class Serializer {
 		private readonly WriteState[] _iterators;
 		private readonly ArrayBufferWriter<byte> _bufferWriter;
 		private readonly Utf8JsonWriter _writer;
