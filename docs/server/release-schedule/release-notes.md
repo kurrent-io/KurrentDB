@@ -198,7 +198,7 @@ Slow bus messages were still logged, but the logging of slow queue messages had 
 
 `System.Private.Uri` has been upgraded from 4.3.0 to 4.3.2 (patch upgrade) due to `GHSA-5f2m-466j-3848` and `GHSA-xhfc-gr8f-ffwc`
 
-## [24.10.0](https://github.com/kurrent-io/KurrentDB/releases/tag/oss-v24.10.0)
+## [24.10.0](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.0)
 
 20 November 2024
 
