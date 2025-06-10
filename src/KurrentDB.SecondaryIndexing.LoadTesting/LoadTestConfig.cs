@@ -1,12 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.SecondaryIndexing.LoadTesting.Environments;
+
 namespace KurrentDB.SecondaryIndexing.LoadTesting;
 
-public enum ExecutionMode {
-	InMemory,
-	Container
-}
 
 public class LoadTestConfig {
 	public int PartitionsCount { get; set; } = 1;
@@ -16,7 +14,7 @@ public class LoadTestConfig {
 	public int MessageSize { get; set; } = 400;
 	public int MaxBatchSize { get; set; } = 2;
 	public int TotalMessagesCount { get; set; } = 1010;
-	public ExecutionMode ExecutionMode { get; set; } = ExecutionMode.InMemory;
+	public LoadTestEnvironmentType EnvironmentType { get; set; } = LoadTestEnvironmentType.TestServer;
 	public required string KurrentDBConnectionString { get; set; } = "Dummy";
 	public required string DuckDbConnectionString { get; set; }= "Dummy";
 }

@@ -8,7 +8,7 @@ using KurrentDB.SecondaryIndexing.LoadTesting.Observability;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting;
 
-public class LoadTest(IMessageGenerator generator, IMessagesAppender appender, IMessagesBatchObserver observer) {
+public class LoadTest(IMessageGenerator generator, IMessageBatchAppender appender, IMessagesBatchObserver observer) {
 	public async Task Run(LoadTestConfig config) {
 		var testPartitions = LoadTestPartitionConfig.From(config);
 

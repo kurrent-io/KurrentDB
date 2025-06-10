@@ -1,5 +1,5 @@
 ﻿using KurrentDB.SecondaryIndexing.LoadTesting;
-using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
+using KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 using KurrentDB.SecondaryIndexing.LoadTesting.Observability;
 using Microsoft.Extensions.Configuration;
@@ -17,9 +17,8 @@ Console.WriteLine(
 	$"Running with {config.PartitionsCount} partitions, {config.CategoriesCount} categories, {config.TotalMessagesCount} messages");
 
 var generator = new MessageGenerator();
-var publisher = new DummyPublisher();
-var appender = new PublisherBasedMessageAppender(publisher);
+var environment = LoadTestEnvironment.For(config.EnvironmentType);
 var observer = new SimpleMessagesBatchObserver();
 
-var loadTest = new LoadTest(generator, appender, observer);
+var loadTest = new LoadTest(generator, environment.MessageBatchAppender, observer);
 await loadTest.Run(config);

@@ -8,11 +8,11 @@ using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 
-public interface IMessagesAppender {
+public interface IMessageBatchAppender {
 	ValueTask Append(MessageBatch batch);
 }
 
-public class PublisherBasedMessageAppender(IPublisher publisher) : IMessagesAppender {
+public class PublisherBasedMessageBatchAppender(IPublisher publisher) : IMessageBatchAppender {
 	public async ValueTask Append(MessageBatch batch) {
 		await publisher.WriteEvents(batch.StreamName, batch.Messages.Select(ToEventData).ToArray());
 	}

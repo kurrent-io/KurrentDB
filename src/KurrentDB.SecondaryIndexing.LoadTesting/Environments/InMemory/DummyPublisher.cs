@@ -6,7 +6,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 
-namespace KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
+namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.InMemory;
 
 public class DummyPublisher : IPublisher {
 	public void Publish(Message message) {
@@ -18,7 +18,8 @@ public class DummyPublisher : IPublisher {
 			firstEventNumbers: new LowAllocReadOnlyMemory<long>(0),
 			lastEventNumbers: new LowAllocReadOnlyMemory<long>(1),
 			preparePosition: 1,
-			commitPosition: 1);
+			commitPosition: 1
+		);
 
 		writeEvents.Envelope.ReplyWith(reply);
 	}
