@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext;
-using DuckDB.NET.Data;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -19,15 +18,14 @@ internal class StreamIndexProcessor : Disposable {
 	readonly IIndexBackend<string> _indexReaderBackend;
 	readonly DuckDBAdvancedConnection _connection;
 	readonly Dictionary<string, long> _inFlightRecords = new();
-	DuckDBAppender _appender;
+	Appender _appender;
 
 	long _lastLogPosition;
 
 	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> indexReaderBackend) {
 		_indexReaderBackend = indexReaderBackend;
 		_connection = db.OpenNewConnection();
-		// _appender = new(_connection, "streams"u8);
-		_appender = _connection.CreateAppender("streams");
+		_appender = new Appender(_connection, "streams"u8);
 		Seq = _connection.QueryFirstOrDefault<long, GetStreamMaxSequencesQuery>() ?? 0;
 	}
 
@@ -50,7 +48,8 @@ internal class StreamIndexProcessor : Disposable {
 			return secondaryIndexId;
 		}
 
-		var fromDb = _connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
+		var fromDb =
+			_connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
 			_indexReaderBackend.UpdateStreamSecondaryIndexId(1, name, fromDb.GetValueOrDefault());
 			return fromDb.GetValueOrDefault();
@@ -61,13 +60,12 @@ internal class StreamIndexProcessor : Disposable {
 
 		_inFlightRecords.Add(name, id);
 
-		// using (var row = _appender.CreateRow()) {
-		var row = _appender.CreateRow();
-		row.AppendValue(id);
-		row.AppendValue(name);
-		row.AppendNullValue();
-		row.AppendNullValue();
-		row.EndRow();
+		using (var row = _appender.CreateRow()) {
+			row.Append(id);
+			row.Append(name);
+			row.AppendDefault();
+			row.AppendDefault();
+		}
 
 		_count++;
 
@@ -79,9 +77,7 @@ internal class StreamIndexProcessor : Disposable {
 			return;
 
 		_inFlightRecords.Clear();
-		// _appender.Flush();
-		_appender.Dispose();
-		_appender = _connection.CreateAppender("streams");
+		_appender.Flush();
 		LastCommittedPosition = _lastLogPosition;
 		_count = 0;
 	}
