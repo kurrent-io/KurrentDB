@@ -2,6 +2,7 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using DuckDB.NET.Data;
 using EventStore.Common.Log;
@@ -83,12 +84,17 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 
 	public bool NeedsCommitting => _page > 0;
 
+	Stopwatch _stopwatch = new();
+
 	public void Commit(bool reopen = true) {
 		if (_appenderDisposed || _page == 0) return;
 		lock (_lock) {
+			_stopwatch.Start();
 			_appender.Dispose();
 			_appenderDisposed = true;
-			Logger.Debug("Committed {Count} records to index at sequence {Seq}", _page, _seq);
+			_stopwatch.Stop();
+			Logger.Debug("Committed {Count} records to index at sequence {Seq} in {Time} ms", _page, _seq, _stopwatch.ElapsedMilliseconds);
+			_stopwatch.Reset();
 			_page = 0;
 			if (!reopen) return;
 			_appender = _connection.CreateAppender("idx_all");
