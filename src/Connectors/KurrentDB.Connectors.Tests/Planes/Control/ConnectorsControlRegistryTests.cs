@@ -6,6 +6,7 @@
 
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Producers;
+using KurrentDB.Connectors.Control.Contracts;
 using KurrentDB.Connectors.Management.Contracts.Events;
 using KurrentDB.Connectors.Planes.Control;
 using Microsoft.Extensions.DependencyInjection;
