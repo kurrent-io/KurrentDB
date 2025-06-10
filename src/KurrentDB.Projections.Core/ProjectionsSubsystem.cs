@@ -199,18 +199,6 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		var projectionMeter = new Meter(conf.ProjectionsMeterName, version: "1.0.0");
 		var serviceName = conf.ServiceName;
 
-		// recent max of executions for each projection
-		var executionMaxDurationMetric = new DurationMaxMetric(
-			projectionMeter,
-			$"{serviceName}-projection-execution-duration-max",
-			conf.LegacyProjectionsNaming);
-
-		// histogram of durations for each (projection * function) tuple
-		var executionDurationMetric = new DurationMetric(
-			projectionMeter,
-			$"{serviceName}-projection-execution-duration",
-			conf.LegacyProjectionsNaming);
-
 		if (conf.ProjectionStats) {
 			var tracker = new ProjectionTracker();
 			projectionTracker = tracker;
@@ -225,6 +213,12 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		List<Func<string, IProjectionExecutionTracker>> executionTrackerFactories = [];
 
 		if (conf.ProjectionExecutionStats) {
+			// recent max of executions for each projection
+			var executionMaxDurationMetric = new DurationMaxMetric(
+				projectionMeter,
+				$"{serviceName}-projection-execution-duration-max",
+				conf.LegacyProjectionsNaming);
+
 			executionTrackerFactories.Add(name =>
 				new ProjectionExecutionMaxTracker(new DurationMaxTracker(
 					executionMaxDurationMetric,
@@ -233,6 +227,12 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		}
 
 		if (conf.ProjectionExecutionByFunction) {
+			// histogram of durations for each (projection * function) tuple
+			var executionDurationMetric = new DurationMetric(
+				projectionMeter,
+				$"{serviceName}-projection-execution-duration",
+				conf.LegacyProjectionsNaming);
+
 			executionTrackerFactories.Add(name =>
 				new ProjectionExecutionHistogramTracker(name, executionDurationMetric));
 		}
