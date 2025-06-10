@@ -802,7 +802,6 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		public void HandleCreated(JsValue state, EventEnvelope envelope) {
 			for (int i = 0; i < _createdHandlers.Count; i++) {
-				//qqqq this is different to before, is it ok? no longer calling the overload that accepts this
 				_jsFunctionCaller.Call("$created", _createdHandlers[i], state, envelope);
 			}
 		}
@@ -824,7 +823,6 @@ public class JintProjectionStateHandler : IProjectionStateHandler {
 
 		public void HandleDeleted(JsValue state, string partition, bool isSoftDelete) {
 			if (_deleted != null) {
-				//qqqq no longer passing `this`
 				_jsFunctionCaller.Call("$deleted", _deleted, state, Null, partition, isSoftDelete);
 			}
 		}
