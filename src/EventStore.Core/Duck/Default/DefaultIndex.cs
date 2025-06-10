@@ -13,7 +13,7 @@ public class DefaultIndex<TStreamId> : Disposable {
 
 	public DefaultIndex(DuckDb db, IReadIndex<TStreamId> index) {
 		_db = db;
-		StreamIndex = new(db);
+		// StreamIndex = new(db);
 		CategoryIndex = new(db);
 		EventTypeIndex = new(db);
 		CategoryIndexReader = new(CategoryIndex, index);
@@ -39,7 +39,7 @@ public class DefaultIndex<TStreamId> : Disposable {
 		return connection.Query<ulong?>(query).FirstOrDefault();
 	}
 
-	internal StreamIndex StreamIndex;
+	// internal StreamIndex StreamIndex;
 	internal CategoryIndex CategoryIndex;
 	internal EventTypeIndex EventTypeIndex;
 
@@ -50,7 +50,7 @@ public class DefaultIndex<TStreamId> : Disposable {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			StreamIndex.Dispose();
+			// StreamIndex.Dispose();
 		}
 
 		base.Dispose(disposing);

@@ -20,19 +20,20 @@ create table if not exists streams (
 
 create table if not exists idx_all (
     seq ubigint,
-    event_number int4,
+    event_number int,
     log_position ubigint,
-    created timestamp,
-    stream ubigint,
-    event_type int4,
-    event_type_seq int8,
-    category int4,
-    category_seq int8
+    created bigint,
+    stream bigint,
+    event_type int,
+    event_type_seq bigint,
+    category int,
+    category_seq bigint
 );
 
 create index if not exists idx_all_category on idx_all(category, category_seq);
 create index if not exists idx_all_event_type on idx_all(event_type, category_seq);
 create index if not exists idx_sequence on idx_all(seq);
+create index if not exists idx_all_stream on idx_all(stream);
 
 create or replace macro read_category(name, startAt, finishAt) as table
 select
