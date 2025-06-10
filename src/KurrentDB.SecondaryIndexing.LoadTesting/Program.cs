@@ -2,6 +2,7 @@
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 using KurrentDB.SecondaryIndexing.LoadTesting.Observability;
+using KurrentDB.Surge.Testing;
 using Microsoft.Extensions.Configuration;
 
 var config =
@@ -12,6 +13,8 @@ var config =
 		.Build()
 		.Get<LoadTestConfig>()
 	?? new LoadTestConfig { DuckDbConnectionString = "DUMMY", KurrentDBConnectionString = "DUMMY" };
+
+Logging.Initialize();
 
 Console.WriteLine(
 	$"Running with {config.PartitionsCount} partitions, {config.CategoriesCount} categories, {config.TotalMessagesCount} messages");

@@ -13,9 +13,10 @@ public class MessageGenerator : IMessageGenerator {
 		var eventsLeft = config.TotalMessagesCount;
 
 		do {
-			var batchSize = Math.Min(Random.Shared.Next(1, config.MaxBatchSize + 1), eventsLeft);
+			//var batchSize = Math.Min(Random.Shared.Next(1, config.MaxBatchSize + 1), eventsLeft);
+			var batchSize = Math.Min(config.MaxBatchSize, eventsLeft);
 
-			yield return GenerateBatch(config, eventTypesByCategory, batchSize); // <- Pass batchSize
+			yield return GenerateBatch(config, eventTypesByCategory, batchSize);
 
 			eventsLeft -= batchSize;
 
@@ -23,7 +24,8 @@ public class MessageGenerator : IMessageGenerator {
 		} while (eventsLeft > 0);
 	}
 
-	private static MessageBatch GenerateBatch(LoadTestPartitionConfig config, Dictionary<string, string[]> eventTypesByCategory, int batchSize) {
+	private static MessageBatch GenerateBatch(LoadTestPartitionConfig config,
+		Dictionary<string, string[]> eventTypesByCategory, int batchSize) {
 		var category = eventTypesByCategory.Keys.RandomElement();
 		var streamName = $"{category}-${config.PartitionId}_${Random.Shared.Next(0, config.MaxStreamsPerCategory)}";
 
@@ -38,13 +40,15 @@ public class MessageGenerator : IMessageGenerator {
 	}
 
 	private static Dictionary<string, string[]> GenerateCategories(LoadTestPartitionConfig loadTestPartitionConfig) {
-		var categories = Enumerable.Range(loadTestPartitionConfig.StartCategoryIndex, loadTestPartitionConfig.CategoriesCount)
+		var categories = Enumerable
+			.Range(loadTestPartitionConfig.StartCategoryIndex, loadTestPartitionConfig.CategoriesCount)
 			.Select(index => $"c{index}")
 			.ToArray();
 
 		return categories.ToDictionary(
 			category => category,
-			category => Enumerable.Range(0, loadTestPartitionConfig.MessageTypesCount).Select(index => $"{category}-et{index}").ToArray()
+			category => Enumerable.Range(0, loadTestPartitionConfig.MessageTypesCount)
+				.Select(index => $"{category}-et{index}").ToArray()
 		);
 	}
 }

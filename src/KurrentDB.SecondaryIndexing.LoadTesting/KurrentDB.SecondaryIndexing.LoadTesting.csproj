@@ -10,6 +10,7 @@
     <ItemGroup>
       <ProjectReference Include="..\Connectors\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" />
       <ProjectReference Include="..\Connectors\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
+      <ProjectReference Include="..\Connectors\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
       <ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
     </ItemGroup>
 

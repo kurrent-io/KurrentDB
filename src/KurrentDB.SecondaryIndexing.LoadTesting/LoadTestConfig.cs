@@ -9,11 +9,11 @@ namespace KurrentDB.SecondaryIndexing.LoadTesting;
 public class LoadTestConfig {
 	public int PartitionsCount { get; set; } = 1;
 	public int CategoriesCount { get; set; } = 10;
-	public int MaxStreamsPerCategory { get; set; } = 100;
+	public int MaxStreamsPerCategory { get; set; } = 100000;
 	public int MessageTypesPerCategoryCount { get; set; } = 10;
-	public int MessageSize { get; set; } = 400;
-	public int MaxBatchSize { get; set; } = 2;
-	public int TotalMessagesCount { get; set; } = 1010;
+	public int MessageSize { get; set; } = 1;
+	public int MaxBatchSize { get; set; } = 50;
+	public int TotalMessagesCount { get; set; } = 126000000;
 	public LoadTestEnvironmentType EnvironmentType { get; set; } = LoadTestEnvironmentType.TestServer;
 	public required string KurrentDBConnectionString { get; set; } = "Dummy";
 	public required string DuckDbConnectionString { get; set; }= "Dummy";

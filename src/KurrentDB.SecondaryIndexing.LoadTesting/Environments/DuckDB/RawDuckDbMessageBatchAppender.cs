@@ -43,7 +43,7 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 				row.Append(eventNumber);
 				row.Append(logPosition);
 				row.Append(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-				row.Append(batch.StreamName);
+				row.Append(1); //stream.Id
 				row.Append(1); //eventType.Id);
 				row.Append(1); //eventType.Sequence);
 				row.Append(1); //category.Id);
@@ -54,7 +54,10 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 
 			LastCommittedSequence = LastSequence;
 			try {
+				_sw.Restart();
 				_defaultIndexAppender.Flush();
+				_sw.Stop();
+				Console.WriteLine($"Committed {_commitSize} records to index at seq {LastSequence} ({ _sw.ElapsedMilliseconds} ms)");
 				Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _commitSize, LastSequence, _sw.ElapsedMilliseconds);
 			} catch (Exception e) {
 				Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _commitSize, LastSequence);
