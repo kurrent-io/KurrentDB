@@ -13,7 +13,7 @@ public class ProjectionMetricsTests {
 	private readonly ProjectionTracker _sut = new();
 
 	public ProjectionMetricsTests() {
-		_sut.OnNewStats([Stat("TestProjection", ProjectionMode.Continuous, ManagedProjectionState.Running)]);
+		_sut.OnNewStats([Stat("TestProjection", ProjectionMode.Continuous, ManagedProjectionState.Running, stateSizes: null)]);
 	}
 
 	[Fact]
@@ -41,7 +41,7 @@ public class ProjectionMetricsTests {
 	[Theory]
 	[MemberData(nameof(AllStatuses))]
 	public void ObservedStatuses(StatusCombination combo) {
-		_sut.OnNewStats([Stat(combo.Projection, ProjectionMode.Continuous, combo.WhenObservedStateIs)]);
+		_sut.OnNewStats([Stat(combo.Projection, ProjectionMode.Continuous, combo.WhenObservedStateIs, stateSizes: null)]);
 		var measurements = _sut.ObserveStatus();
 		var prj = new KeyValuePair<string, object>("projection", combo.Projection);
 		Assert.Collection(measurements,
@@ -51,7 +51,29 @@ public class ProjectionMetricsTests {
 		);
 	}
 
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public void ObserveStateSizes(bool isNull) {
+		var stateSizes = isNull ? null : new Dictionary<string, int> {
+			[string.Empty] = 10,
+			["test-partition"] = 12,
+		};
 
+		_sut.OnNewStats([Stat("TestProjection", ProjectionMode.Continuous, ManagedProjectionState.Running, stateSizes: stateSizes)]);
+
+		var measurements = _sut.ObserveStateSize();
+
+		if (isNull) {
+			Assert.Empty(measurements);
+		} else {
+			var ms = measurements.ToArray();
+			Assert.Equal(2, ms.Length);
+			AssertMeasurement(10, new KeyValuePair<string, object>("projection", "TestProjection"))(ms[0]);
+			AssertMeasurement(12, new KeyValuePair<string, object>("projection", "TestProjection"),
+				new KeyValuePair<string, object>("partition", "test-partition"))(ms[1]);
+		}
+	}
 
 	static Action<Measurement<T>> AssertMeasurement<T>(T expectedValue, params KeyValuePair<string, object>[] tags)
 		where T : struct =>
@@ -105,7 +127,7 @@ public class ProjectionMetricsTests {
 		}
 	}
 
-	private static ProjectionStatistics Stat(string name, ProjectionMode mode, ManagedProjectionState state) =>
+	private static ProjectionStatistics Stat(string name, ProjectionMode mode, ManagedProjectionState state, Dictionary<string, int>? stateSizes) =>
 		new() {
 			Name = name,
 			ProjectionId = 1234,
@@ -115,5 +137,6 @@ public class ProjectionMetricsTests {
 			Status = state.ToString(),
 			Progress = 75,
 			EventsProcessedAfterRestart = 50,
+			StateSizes = stateSizes,
 		};
 }
