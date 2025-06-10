@@ -4,11 +4,11 @@
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 
 public interface IMessageGenerator {
-	IAsyncEnumerable<MessageBatch> GenerateBatches(LoadTestShardConfig config);
+	IAsyncEnumerable<MessageBatch> GenerateBatches(LoadTestPartitionConfig config);
 }
 
 public class MessageGenerator : IMessageGenerator {
-	public async IAsyncEnumerable<MessageBatch> GenerateBatches(LoadTestShardConfig config) {
+	public async IAsyncEnumerable<MessageBatch> GenerateBatches(LoadTestPartitionConfig config) {
 		var eventTypesByCategory = GenerateCategories(config);
 		var eventsLeft = config.TotalMessagesCount;
 
@@ -23,9 +23,9 @@ public class MessageGenerator : IMessageGenerator {
 		} while (eventsLeft > 0);
 	}
 
-	private static MessageBatch GenerateBatch(LoadTestShardConfig config, Dictionary<string, string[]> eventTypesByCategory, int batchSize) {
+	private static MessageBatch GenerateBatch(LoadTestPartitionConfig config, Dictionary<string, string[]> eventTypesByCategory, int batchSize) {
 		var category = eventTypesByCategory.Keys.RandomElement();
-		var streamName = $"{category}-${config.ShardId}_${Random.Shared.Next(0, config.MaxStreamsPerCategory)}";
+		var streamName = $"{category}-${config.PartitionId}_${Random.Shared.Next(0, config.MaxStreamsPerCategory)}";
 
 		var messages = new MessageData[batchSize]; // <- Use batchSize instead of MaxBatchSize
 
@@ -37,14 +37,14 @@ public class MessageGenerator : IMessageGenerator {
 		return new MessageBatch(category, streamName, messages);
 	}
 
-	private static Dictionary<string, string[]> GenerateCategories(LoadTestShardConfig loadTestShardConfig) {
-		var categories = Enumerable.Range(loadTestShardConfig.StartCategoryIndex, loadTestShardConfig.CategoriesCount)
+	private static Dictionary<string, string[]> GenerateCategories(LoadTestPartitionConfig loadTestPartitionConfig) {
+		var categories = Enumerable.Range(loadTestPartitionConfig.StartCategoryIndex, loadTestPartitionConfig.CategoriesCount)
 			.Select(index => $"c{index}")
 			.ToArray();
 
 		return categories.ToDictionary(
 			category => category,
-			category => Enumerable.Range(0, loadTestShardConfig.MessageTypesCount).Select(index => $"{category}-et{index}").ToArray()
+			category => Enumerable.Range(0, loadTestPartitionConfig.MessageTypesCount).Select(index => $"{category}-et{index}").ToArray()
 		);
 	}
 }

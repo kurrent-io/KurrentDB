@@ -9,7 +9,7 @@ public enum ExecutionMode {
 }
 
 public class LoadTestConfig {
-	public int ShardsCount { get; set; } = 1;
+	public int PartitionsCount { get; set; } = 1;
 	public int CategoriesCount { get; set; } = 10;
 	public int MaxStreamsPerCategory { get; set; } = 100;
 	public int MessageTypesPerCategoryCount { get; set; } = 10;
@@ -21,8 +21,8 @@ public class LoadTestConfig {
 	public required string DuckDbConnectionString { get; set; }= "Dummy";
 }
 
-public record LoadTestShardConfig(
-	int ShardId,
+public record LoadTestPartitionConfig(
+	int PartitionId,
 	int StartCategoryIndex,
 	int CategoriesCount,
 	int MaxStreamsPerCategory,
@@ -31,31 +31,31 @@ public record LoadTestShardConfig(
 	int MaxBatchSize,
 	int TotalMessagesCount
 ) {
-	public static LoadTestShardConfig[] From(LoadTestConfig loadTestConfig) {
-		var categoriesPerShard = loadTestConfig.CategoriesCount / loadTestConfig.ShardsCount;
-		var messagesPerShard = loadTestConfig.TotalMessagesCount / loadTestConfig.ShardsCount;
+	public static LoadTestPartitionConfig[] From(LoadTestConfig loadTestConfig) {
+		var categoriesPerPartition = loadTestConfig.CategoriesCount / loadTestConfig.PartitionsCount;
+		var messagesPerPartition = loadTestConfig.TotalMessagesCount / loadTestConfig.PartitionsCount;
 
-		var shards = new LoadTestShardConfig[loadTestConfig.ShardsCount];
+		var partitions = new LoadTestPartitionConfig[loadTestConfig.PartitionsCount];
 
-		for (int i = 0; i < loadTestConfig.ShardsCount; i++) {
-			var isLastShard = i == loadTestConfig.ShardsCount - 1;
+		for (int i = 0; i < loadTestConfig.PartitionsCount; i++) {
+			var isLastPartition = i == loadTestConfig.PartitionsCount - 1;
 
-			shards[i] = new LoadTestShardConfig(
-				ShardId: i,
-				StartCategoryIndex: i * categoriesPerShard,
-				CategoriesCount: isLastShard
-					? loadTestConfig.CategoriesCount - i * categoriesPerShard
-					: categoriesPerShard,
+			partitions[i] = new LoadTestPartitionConfig(
+				PartitionId: i,
+				StartCategoryIndex: i * categoriesPerPartition,
+				CategoriesCount: isLastPartition
+					? loadTestConfig.CategoriesCount - i * categoriesPerPartition
+					: categoriesPerPartition,
 				MaxStreamsPerCategory: loadTestConfig.MaxStreamsPerCategory,
 				MessageTypesCount: loadTestConfig.MessageTypesPerCategoryCount,
 				MessageSize: loadTestConfig.MessageSize,
 				MaxBatchSize: loadTestConfig.MaxBatchSize,
-				TotalMessagesCount: isLastShard
-					? loadTestConfig.TotalMessagesCount - i * messagesPerShard
-					: messagesPerShard
+				TotalMessagesCount: isLastPartition
+					? loadTestConfig.TotalMessagesCount - i * messagesPerPartition
+					: messagesPerPartition
 			);
 		}
 
-		return shards;
+		return partitions;
 	}
 }

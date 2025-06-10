@@ -14,7 +14,7 @@ var config =
 	?? new LoadTestConfig { DuckDbConnectionString = "DUMMY", KurrentDBConnectionString = "DUMMY" };
 
 Console.WriteLine(
-	$"Running with {config.ShardsCount} shards, {config.CategoriesCount} categories, {config.TotalMessagesCount} messages");
+	$"Running with {config.PartitionsCount} partitions, {config.CategoriesCount} categories, {config.TotalMessagesCount} messages");
 
 var generator = new MessageGenerator();
 var publisher = new DummyPublisher();
@@ -23,4 +23,3 @@ var observer = new SimpleMessagesBatchObserver();
 
 var loadTest = new LoadTest(generator, appender, observer);
 await loadTest.Run(config);
-

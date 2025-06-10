@@ -10,17 +10,17 @@ namespace KurrentDB.SecondaryIndexing.LoadTesting;
 
 public class LoadTest(IMessageGenerator generator, IMessagesAppender appender, IMessagesBatchObserver observer) {
 	public async Task Run(LoadTestConfig config) {
-		var testShards = LoadTestShardConfig.From(config);
+		var testPartitions = LoadTestPartitionConfig.From(config);
 
-		await Task.WhenAll(testShards.Select(ProcessShard));
+		await Task.WhenAll(testPartitions.Select(ProcessPartition));
 
 		Debug.Assert(observer.TotalCount == config.TotalMessagesCount);
 		Debug.Assert(observer.Categories.Values.Sum() == config.TotalMessagesCount);
 		Debug.Assert(observer.EventTypes.Values.Sum() == config.TotalMessagesCount);
 	}
 
-	private async Task ProcessShard(LoadTestShardConfig loadTestShardConfig) {
-		await foreach (var messageBatch in generator.GenerateBatches(loadTestShardConfig)) {
+	private async Task ProcessPartition(LoadTestPartitionConfig loadTestPartitionConfig) {
+		await foreach (var messageBatch in generator.GenerateBatches(loadTestPartitionConfig)) {
 			await appender.Append(messageBatch);
 			observer.On(messageBatch);
 		}
