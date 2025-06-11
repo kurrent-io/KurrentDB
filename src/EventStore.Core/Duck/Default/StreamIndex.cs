@@ -45,7 +45,7 @@ class StreamIndex : Disposable {
 		var id = ++_seq;
 		lock (_lock) {
 			_streamIdCache.Set(name, id, _options);
-			var row = _appender.CreateRow();
+			using var row = _appender.CreateRow();
 			row.Append(id);
 			row.Append(name);
 			row.AppendDefault();
