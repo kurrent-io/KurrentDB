@@ -63,7 +63,6 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 				_sw.Restart();
 				_defaultIndexAppender.Flush();
 				_sw.Stop();
-				Console.WriteLine($"Committed {_commitSize} records to index at seq {LastSequence} ({ _sw.ElapsedMilliseconds} ms)");
 				Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _commitSize, LastSequence, _sw.ElapsedMilliseconds);
 			} catch (Exception e) {
 				Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _commitSize, LastSequence);

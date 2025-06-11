@@ -86,8 +86,6 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 				_defaultIndexAppender = _connection.CreateAppender("idx_all");
 				_transaction = _connection.BeginTransaction();
 				_sw.Stop();
-				Console.WriteLine(
-					$"Committed {_commitSize} records to index at seq {LastSequence} ({_sw.ElapsedMilliseconds} ms)");
 				Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _commitSize, LastSequence,
 					_sw.ElapsedMilliseconds);
 			} catch (Exception e) {
