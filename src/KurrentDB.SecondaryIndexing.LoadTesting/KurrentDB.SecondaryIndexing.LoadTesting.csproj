@@ -11,11 +11,15 @@
       <ProjectReference Include="..\Connectors\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" />
       <ProjectReference Include="..\Connectors\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
       <ProjectReference Include="..\Connectors\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
+      <ProjectReference Include="..\KurrentDB.Core.Tests\KurrentDB.Core.Tests.csproj" />
       <ProjectReference Include="..\KurrentDB.SecondaryIndexing\KurrentDB.SecondaryIndexing.csproj" />
     </ItemGroup>
 
 	<ItemGroup>
 		<Content Include="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+		<Content Update="logconfig.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>

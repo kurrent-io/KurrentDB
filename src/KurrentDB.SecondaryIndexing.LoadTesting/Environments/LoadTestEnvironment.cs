@@ -3,6 +3,7 @@
 
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
+using KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.InMemory;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.TestServer;
 
@@ -15,6 +16,7 @@ public interface ILoadTestEnvironment {
 public enum LoadTestEnvironmentType {
 	InMemory,
 	TestServer,
+	Index,
 	DuckDb,
 	Container
 }
@@ -26,6 +28,7 @@ public static class LoadTestEnvironment {
 			LoadTestEnvironmentType.TestServer => new TestServerEnvironment(),
 			LoadTestEnvironmentType.Container => throw new NotImplementedException("Container environment is not yet supported"),
 			LoadTestEnvironmentType.DuckDb => new DuckDBTestEnvironment(config.DuckDb),
+			LoadTestEnvironmentType.Index => new IndexesLoadTestEnvironment(config.Index),
 			_ => throw new ArgumentOutOfRangeException(nameof(config.EnvironmentType), config.EnvironmentType, null)
 		};
 }

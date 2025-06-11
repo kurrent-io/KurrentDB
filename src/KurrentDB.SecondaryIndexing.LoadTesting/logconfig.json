@@ -1,9 +1,4 @@
 {
-	"KurrentDBConnectionString": "DummyFromConfig",
-	"EnvironmentType": "Index",
-	"DuckDb": {
-		"ClientType": "Quack"
-	},
 	"Logging": {
 		"LogLevel": {
 			"Amazon": "Warning",

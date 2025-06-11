@@ -1,6 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Text;
+using KurrentDB.Core.Data;
+using KurrentDB.Core.Tests;
+using KurrentDB.Core.TransactionLog.LogRecords;
+
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 
 public interface IMessageGenerator {
@@ -29,11 +34,15 @@ public class MessageGenerator : IMessageGenerator {
 		var category = eventTypesByCategory.Keys.RandomElement();
 		var streamName = $"{category}-${config.PartitionId}_${Random.Shared.Next(0, config.MaxStreamsPerCategory)}";
 
-		var messages = new MessageData[batchSize]; // <- Use batchSize instead of MaxBatchSize
+		var messages = new MessageData[batchSize];
 
 		for (int i = 0; i < messages.Length; i++) {
 			var eventType = eventTypesByCategory[category].RandomElement();
-			messages[i] = new MessageData(eventType, Enumerable.Repeat((byte)0x20, config.MessageSize).ToArray());
+			messages[i] = new MessageData(
+				Random.Shared.Next(0, 20), // TODO: make it a real, base on cache
+				eventType,
+				Enumerable.Repeat((byte)0x20, config.MessageSize).ToArray()
+			);
 		}
 
 		return new MessageBatch(category, streamName, messages);
@@ -53,7 +62,25 @@ public class MessageGenerator : IMessageGenerator {
 	}
 }
 
-public readonly record struct MessageData(string EventType, byte[] Data);
+public readonly record struct MessageData(int StreamPosition, string EventType, byte[] Data) {
+	public ResolvedEvent ToResolvedEvent(string streamName) {
+		var recordFactory = LogFormatHelper<LogFormat.V2, string>.RecordFactory;
+		var streamIdIgnored = LogFormatHelper<LogFormat.V2, string>.StreamId;
+		var eventTypeIdIgnored = LogFormatHelper<LogFormat.V2, string>.EventTypeId;
+
+		var record = new EventRecord(
+			StreamPosition,
+			LogRecord.Prepare(recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
+				streamIdIgnored, StreamPosition, PrepareFlags.None, eventTypeIdIgnored, Data,
+				Encoding.UTF8.GetBytes("")
+			),
+			streamName,
+			EventType
+		);
+
+		return ResolvedEvent.ForUnresolvedEvent(record, 0);
+	}
+}
 
 public readonly record struct MessageBatch(string CategoryName, string StreamName, MessageData[] Messages);
 

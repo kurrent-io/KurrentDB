@@ -3,9 +3,9 @@
 
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
+using KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting;
-
 
 public class LoadTestConfig {
 	public int PartitionsCount { get; set; } = 1;
@@ -19,6 +19,7 @@ public class LoadTestConfig {
 	public required string KurrentDBConnectionString { get; set; } = "Dummy";
 	public required string DuckDbConnectionString { get; set; }= "Dummy";
 	public DuckDBTestEnvironmentOptions DuckDb { get; set; } = new();
+	public IndexesLoadTestEnvironmentOptions Index { get; set; } =  new IndexesLoadTestEnvironmentOptions();
 }
 
 public record LoadTestPartitionConfig(
