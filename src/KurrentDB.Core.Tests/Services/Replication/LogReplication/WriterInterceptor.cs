@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using Serilog;
 
 namespace KurrentDB.Core.Tests.Services.Replication.LogReplication;
 
@@ -65,7 +66,12 @@ internal class WriterInterceptor :
 	}
 
 	public void Handle(SystemMessage.SystemInit message) => Process(message);
-	public void Handle(SystemMessage.StateChangeMessage message) => Process(message);
+	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("WriterInterceptor");
+		Process(message);
+	}
+
 	public void Handle(SystemMessage.WriteEpoch message) => Process(message);
 	public void Handle(SystemMessage.WaitForChaserToCatchUp message) => Process(message);
 	public void Handle(StorageMessage.WritePrepares message) => Process(message);

@@ -48,6 +48,7 @@ public static class ReplicationTestHelper {
 		node.Node.MainQueue.Publish(writeRequest);
 
 		if (!resetEvent.Wait(_timeout)) {
+			MiniNodeLogging.WriteLogs();
 			var q = node.Node.MainQueue as QueuedHandlerThreadPool;
 			if (writeRequest.Trace)
 				foreach (var m in q.GetStatus())

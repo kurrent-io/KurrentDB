@@ -123,6 +123,8 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("PSub state change");
 		_state = message.State;
 
 		if (message.State == VNodeState.Leader)
@@ -133,6 +135,7 @@ public class PersistentSubscriptionService<TStreamId> :
 	}
 
 	public void Handle(SystemMessage.BecomeLeader message) {
+		Log.Error("Start PSub BecomeLeader");
 		Log.Debug("Persistent subscriptions Became Leader so now handling subscriptions");
 		StartSubscriptions();
 	}

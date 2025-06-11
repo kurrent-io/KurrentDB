@@ -151,6 +151,8 @@ public class ReplicationTrackingService :
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage msg) {
+		if (msg is SystemMessage.BecomeLeader)
+			Log.Error("ReplicationTracker");
 		//switching to leader from non-leader
 		if (_state != msg.State) {
 			_replicaLogPositions.Clear();

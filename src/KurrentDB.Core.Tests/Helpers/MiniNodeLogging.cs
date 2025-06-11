@@ -14,12 +14,12 @@ namespace KurrentDB.Core.Tests.Helpers;
 
 
 public static class MiniNodeLogging {
-
-	private static readonly ILogger _logger = new LoggerConfiguration()
+	private static InMemorySink _sink;
+	private static ILogger CreateLogger => new LoggerConfiguration()
 		.Enrich.WithProcessId()
 		.Enrich.WithThreadId()
 		.Enrich.FromLogContext()
-		.MinimumLevel.Debug()
+		.MinimumLevel.Error()
 		.WriteTo.InMemory()
 		.CreateLogger();
 
@@ -27,7 +27,8 @@ public static class MiniNodeLogging {
 		"MiniNode: [{ProcessId,5},{ThreadId,2},{Timestamp:HH:mm:ss.fff},{Level:u3}] {Message}{NewLine}{Exception}";
 
 	public static void Setup() {
-		Log.Logger = _logger;
+		Log.Logger = CreateLogger;
+		_sink = InMemorySink.Instance; //qq instance is specific to asynccontext or something like that
 	}
 
 	public static void WriteLogs() {
@@ -36,8 +37,7 @@ public static class MiniNodeLogging {
 		var sb = new StringBuilder(256);
 		var f = new MessageTemplateTextFormatter(Template);
 		using var tw = new StringWriter(sb);
-		using var snapshot = InMemorySink.Instance.Snapshot();
-
+		using var snapshot = _sink.Snapshot();
 		foreach (var e in snapshot.LogEvents.ToList()) {
 			sb.Clear();
 			f.Format(e, tw);
@@ -49,6 +49,6 @@ public static class MiniNodeLogging {
 
 	public static void Clear() {
 		Log.Logger = Logger.None;
-		InMemorySink.Instance.Dispose();
+		_sink.Dispose();
 	}
 }

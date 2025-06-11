@@ -85,6 +85,8 @@ public class ReplicaService :
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("Replica");
 		_state = message.State;
 
 		switch (message.State) {

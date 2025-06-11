@@ -207,6 +207,7 @@ public class UserManagementService :
 	}
 
 	public void Handle(SystemMessage.BecomeLeader message) {
+		Log.Error("Start UserMgmt BecomeLeader");
 		Interlocked.Exchange(ref _numberOfStandardUsersToBeCreated, 2);
 		if (!_skipInitializeStandardUsersCheck) {
 			BeginReadUserDetails(

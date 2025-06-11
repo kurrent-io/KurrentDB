@@ -11,6 +11,7 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.RequestManager.Managers;
 using KurrentDB.Core.Services.TimerService;
+using Serilog;
 
 namespace KurrentDB.Core.Services.RequestManager;
 
@@ -170,6 +171,8 @@ public class RequestManagementService :
 
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("RequestManagerService");
 
 		if (_nodeState == VNodeState.Leader && message.State is not VNodeState.Leader or VNodeState.ResigningLeader) {
 			var keys = _currentRequests.Keys;

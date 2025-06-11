@@ -155,6 +155,8 @@ public sealed class TelemetryService :
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("Telemwetry");
 		_nodeState = message.State;
 	}
 

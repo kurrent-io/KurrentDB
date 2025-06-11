@@ -53,6 +53,8 @@ public class StorageScavenger :
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("StorageScavengr");
 		if (message.State == VNodeState.Leader || message.State == VNodeState.Follower) {
 			_logManager.Initialise();
 		}

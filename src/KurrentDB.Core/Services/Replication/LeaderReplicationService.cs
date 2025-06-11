@@ -129,6 +129,8 @@ public class LeaderReplicationService : IMonitoredQueue,
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("Leader Replication");
 		switch (_state = message.State) {
 			case VNodeState.PreLeader:
 				_preLeaderReplicationEnabled = false;

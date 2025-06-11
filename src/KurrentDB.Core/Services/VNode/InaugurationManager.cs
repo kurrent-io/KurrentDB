@@ -77,6 +77,8 @@ public class InaugurationManager :
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage received) {
+		if (received is SystemMessage.BecomeLeader)
+			Log.Error("Inauguration");
 		if (received is SystemMessage.BecomePreLeader becomePreLeader) {
 			HandleBecomePreLeader(becomePreLeader);
 		} else {

@@ -172,6 +172,8 @@ public class MonitoringService : IHandle<SystemMessage.SystemInit>,
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("Monitoring");
 		if ((_statsStorage & StatsStorage.Stream) == 0)
 			return;
 

@@ -201,6 +201,8 @@ public abstract class GossipServiceBase : IHandle<SystemMessage.SystemInit>,
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("GossipServiceBase");
 		CurrentRole = message.State;
 		_currentLeader = message is not SystemMessage.ReplicaStateMessage replicaState ? null : replicaState.Leader;
 

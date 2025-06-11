@@ -225,6 +225,8 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("Projectionsubsystem");
 		_nodeState = message.State;
 		if (_subsystemState == SubsystemState.NotReady)
 			return;

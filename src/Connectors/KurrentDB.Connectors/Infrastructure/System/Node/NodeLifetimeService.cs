@@ -38,6 +38,8 @@ public sealed class NodeLifetimeService : IHandle<SystemMessage.StateChangeMessa
     VNodeState CurrentState { get; set; } = VNodeState.Unknown;
 
     public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Logger.LogError("NodeLifetime");
         switch (_leadershipEvent) {
             case { Task.IsCompleted: false } when message.State is VNodeState.Leader:
                 Logger.LogNodeStateChanged(ComponentName, CurrentState, CurrentState = message.State);

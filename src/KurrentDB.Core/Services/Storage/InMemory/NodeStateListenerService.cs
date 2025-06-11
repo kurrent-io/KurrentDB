@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
+using Serilog;
 
 namespace KurrentDB.Core.Services.Storage.InMemory;
 
@@ -26,6 +27,8 @@ public class NodeStateListenerService : IHandle<SystemMessage.StateChangeMessage
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("NodeStateListener");
 		var payload = new { message.State };
 		var data = JsonSerializer.SerializeToUtf8Bytes(payload, _options);
 		Stream.Write(EventType, data);

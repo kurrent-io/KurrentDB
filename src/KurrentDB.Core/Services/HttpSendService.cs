@@ -52,6 +52,8 @@ public class HttpSendService : IHttpForwarder,
 	}
 
 	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Log.Error("HttpSend");
 		switch (message.State) {
 			case VNodeState.PreReplica:
 			case VNodeState.CatchingUp:
