@@ -8,17 +8,6 @@ on:
         type: string
 
 jobs:
-  event_file:
-    name: "Event File"
-#    runs-on: ubuntu-latest
-    runs-on: self-hosted
-    steps:
-      - name: Upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: Event File
-          path: ${{ github.event_path }}
-
   build-container:
     runs-on: ubuntu-latest
     name: ci/github/build-${{ inputs.container-runtime }}
@@ -140,7 +129,6 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           commit: ${{ github.event.workflow_run.head_sha }}
-          event_file: artifacts/Event File/event.json
           event_name: ${{ github.event.workflow_run.event }}
           files: |
             artifacts/**/*.trx
