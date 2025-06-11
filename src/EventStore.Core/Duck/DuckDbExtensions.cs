@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Collections.Generic;
-using System.Linq;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 
@@ -17,7 +16,7 @@ public static class DuckDbExtensions {
 		}
 	}
 
-	static TRow? FirstOrDefault<TRow, TParser>(this QueryResult<TRow, TParser> result)
+	static TRow? GetFirstOrDefault<TRow, TParser>(this QueryResult<TRow, TParser> result)
 		where TRow : struct where TParser : IQuery<TRow> {
 		TRow row = default;
 		int rowNumber = 0;
@@ -31,7 +30,7 @@ public static class DuckDbExtensions {
 		return rowNumber > 0 ? row : null;
 	}
 
-	static TRow? FirstOrDefault<TArgs, TRow, TQuery>(this QueryResult<TArgs, TRow, TQuery> result)
+	static TRow? GetFirstOrDefault<TArgs, TRow, TQuery>(this QueryResult<TArgs, TRow, TQuery> result)
 		where TRow : struct where TQuery : IQuery<TRow>, IQuery<TArgs, TRow> where TArgs : struct {
 		TRow row = default;
 		int rowNumber = 0;
@@ -49,14 +48,14 @@ public static class DuckDbExtensions {
 		where TRow : struct
 		where TQuery : IQuery<TRow> {
 		var result = connection.ExecuteQuery<TRow, TQuery>();
-		return result.FirstOrDefault();
+		return result.GetFirstOrDefault();
 		// return result.MoveNext() ? result.Current : null;
 	}
 
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IQuery<TArgs, TRow> {
+		where TQuery : IQuery<TArgs, TRow>, IQuery<TRow> {
 		using (pool.Rent(out var connection)) {
 			return connection.QueryFirstOrDefault<TArgs, TRow, TQuery>(args);
 		}
@@ -65,9 +64,9 @@ public static class DuckDbExtensions {
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IQuery<TArgs, TRow> {
+		where TQuery : IQuery<TArgs, TRow>, IQuery<TRow> {
 		var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args);
-		return result.FirstOrDefault();
+		return result.GetFirstOrDefault();
 		// return result.MoveNext() ? result.Current : null;
 	}
 

@@ -9,7 +9,7 @@ namespace EventStore.Core.Duck.Default;
 static class StreamSql {
 	public record struct GetStreamIdByNameQueryArgs(string StreamName);
 
-	public struct GetStreamIdByNameQuery : IQuery<GetStreamIdByNameQueryArgs, long> {
+	public struct GetStreamIdByNameQuery : IQuery<GetStreamIdByNameQueryArgs, long>, IQuery<long> {
 		public static BindingContext Bind(in GetStreamIdByNameQueryArgs args, PreparedStatement statement)
 			=> new(statement) { args.StreamName };
 
