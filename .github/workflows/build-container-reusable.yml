@@ -131,4 +131,5 @@ jobs:
           commit: ${{ github.event.workflow_run.head_sha }}
           event_name: ${{ github.event.workflow_run.event }}
           files: |
+            artifacts/**/*.xml
             artifacts/**/*.trx
