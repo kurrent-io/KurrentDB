@@ -20,7 +20,7 @@ create table if not exists streams (
 
 create table if not exists idx_all (
 	seq bigint,
-	event_number int4,
+	event_number bigint,
 	log_position bigint,
 	created bigint,
 	stream bigint,
