@@ -48,7 +48,7 @@ internal class CategoryIndexProcessor {
 		_categories[categoryName] = id;
 		_categorySizes[id] = 0;
 
-		_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new((int)id, categoryName));
+		_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new(id, categoryName));
 		LastIndexesPosition = resolvedEvent.Event.LogPosition;
 		return new(id, 0);
 	}
@@ -56,8 +56,8 @@ internal class CategoryIndexProcessor {
 	public long GetLastEventNumber(int categoryId) =>
 		_categorySizes.TryGetValue(categoryId, out var size) ? size : ExpectedVersion.NoStream;
 
-	public long GetCategoryId(string categoryName) =>
-		_categories.TryGetValue(categoryName, out var categoryId) ? categoryId : ExpectedVersion.NoStream;
+	public int GetCategoryId(string categoryName) =>
+		_categories.TryGetValue(categoryName, out var categoryId) ? categoryId : -1;
 
 	private static string GetStreamCategory(string streamName) {
 		var dashIndex = streamName.IndexOf('-');

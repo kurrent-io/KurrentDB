@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 
@@ -10,39 +9,32 @@ namespace KurrentDB.SecondaryIndexing.Storage;
 public static class DuckDbExtensions {
 	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBConnectionPool pool)
 		where TRow : struct
-		where TQuery : IQuery<TRow>{
+		where TQuery : IQuery<TRow> {
 		using (pool.Rent(out var connection)) {
 			return connection.QueryFirstOrDefault<TRow, TQuery>();
 		}
 	}
 
-	static TRow? FirstOrDefault<TArgs, TRow, TQuery>(this QueryResult<TArgs,TRow, TQuery>.Enumerator result)
-		where TArgs : struct
-		where TRow : struct
-		where TQuery : IQuery<TArgs, TRow> {
-		TRow row = default;
-		int rowNumber = 0;
-		while (result.MoveNext()) {
-			if (rowNumber == 0) {
-				row = result.Current;
-			}
-			rowNumber++;
+	static TRow? GetFirstOrDefault<TRow, TParser>(this QueryResult<TRow, TParser> result)
+		where TRow : struct where TParser : IQuery<TRow> {
+		if (TParser.UseStreamingMode) {
+			throw new InvalidOperationException("Streaming mode must be disabled for query with single result");
 		}
-		return rowNumber > 0 ? row : null;
+		using var enumerator = result.GetEnumerator();
+		return enumerator.MoveNext() ? enumerator.Current : null;
 	}
 
 	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBAdvancedConnection connection)
 		where TRow : struct
 		where TQuery : IQuery<TRow> {
-		using var result = connection.ExecuteQuery<TRow, TQuery>().GetEnumerator();
-		return result.FirstOrDefault();
-		// return result.MoveNext() ? result.Current : null;
+		var result = connection.ExecuteQuery<TRow, TQuery>();
+		return result.GetFirstOrDefault();
 	}
 
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IQuery<TArgs, TRow> {
+		where TQuery : IQuery<TArgs, TRow>, IQuery<TRow> {
 		using (pool.Rent(out var connection)) {
 			return connection.QueryFirstOrDefault<TArgs, TRow, TQuery>(args);
 		}
@@ -52,9 +44,12 @@ public static class DuckDbExtensions {
 		where TArgs : struct
 		where TRow : struct
 		where TQuery : IQuery<TArgs, TRow> {
-		using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
-		return result.FirstOrDefault();
-		// return result.MoveNext() ? result.Current : null;
+		if (TQuery.UseStreamingMode) {
+			throw new InvalidOperationException("Streaming mode must be disabled for query with single result");
+		}
+		var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args);
+		using var enumerator = result.GetEnumerator();
+		return enumerator.MoveNext() ? enumerator.Current : null;
 	}
 
 	public static List<TRow> Query<TRow, TQuery>(this DuckDBConnectionPool pool)

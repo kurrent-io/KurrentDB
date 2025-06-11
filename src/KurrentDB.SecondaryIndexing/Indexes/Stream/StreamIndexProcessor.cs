@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics;
 using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
@@ -14,18 +15,17 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 internal class StreamIndexProcessor : Disposable {
 	static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor>();
 
-	// readonly Appender _appender;
 	readonly IIndexBackend<string> _indexReaderBackend;
 	readonly DuckDBAdvancedConnection _connection;
 	readonly Dictionary<string, long> _inFlightRecords = new();
-	Appender _appender;
 
 	long _lastLogPosition;
+	Appender _appender;
 
 	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> indexReaderBackend) {
 		_indexReaderBackend = indexReaderBackend;
 		_connection = db.OpenNewConnection();
-		_appender = new Appender(_connection, "streams"u8);
+		_appender = new(_connection, "streams"u8);
 		Seq = _connection.QueryFirstOrDefault<long, GetStreamMaxSequencesQuery>() ?? 0;
 	}
 
@@ -48,8 +48,7 @@ internal class StreamIndexProcessor : Disposable {
 			return secondaryIndexId;
 		}
 
-		var fromDb =
-			_connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
+		var fromDb = _connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
 			_indexReaderBackend.UpdateStreamSecondaryIndexId(1, name, fromDb.GetValueOrDefault());
 			return fromDb.GetValueOrDefault();
@@ -72,18 +71,26 @@ internal class StreamIndexProcessor : Disposable {
 		return id;
 	}
 
+	readonly Stopwatch _stopwatch = new();
+
 	public void Commit() {
-		if (IsDisposingOrDisposed || _count == 0)
+		if (IsDisposed || _count == 0)
 			return;
 
 		_inFlightRecords.Clear();
+		_stopwatch.Start();
 		_appender.Flush();
+		_stopwatch.Stop();
+		Log.Debug("Committed {Count} records to streams at seq {Seq} ({Took} ms)", _count, Seq, _stopwatch.ElapsedMilliseconds);
+		_stopwatch.Reset();
+
 		LastCommittedPosition = _lastLogPosition;
 		_count = 0;
 	}
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
+			Commit();
 			_appender.Dispose();
 			_connection.Dispose();
 		}

@@ -11,19 +11,23 @@ static class DefaultSql {
 			=> new(statement) { args.Item1, args.Item2 };
 
 		public static ReadOnlySpan<byte> CommandText =>
-			"select seq, log_position, event_number from idx_all where seq>=$1 and seq<=$2"u8;
+			"select seq, log_position from idx_all where seq>=$1 and seq<=$2"u8;
 
-		public static AllRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt32());
+		public static AllRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
 	public struct GetLastSequenceSql : IQuery<long> {
 		public static ReadOnlySpan<byte> CommandText => "select max(seq) from idx_all"u8;
+
+		public static bool UseStreamingMode => false;
 
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}
 
 	public struct GetLastLogPositionSql : IQuery<long> {
 		public static ReadOnlySpan<byte> CommandText => "select max(log_position) from idx_all"u8;
+
+		public static bool UseStreamingMode => false;
 
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}

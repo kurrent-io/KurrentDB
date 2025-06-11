@@ -12,7 +12,7 @@ internal class EventTypeIndexProcessor {
 	readonly Dictionary<int, long> _eventTypeSizes = new();
 	readonly DuckDbDataSource _db;
 
-	public int Seq { get; private set; }
+	int _seq;
 	public long LastIndexedPosition { get; private set; }
 
 	public EventTypeIndexProcessor(DuckDbDataSource db) {
@@ -29,7 +29,7 @@ internal class EventTypeIndexProcessor {
 			_eventTypeSizes[sequence.Id] = sequence.Sequence;
 		}
 
-		Seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() : 0;
+		_seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() : 0;
 	}
 
 	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
@@ -43,7 +43,7 @@ internal class EventTypeIndexProcessor {
 			return new(eventTypeId, next);
 		}
 
-		var id = ++Seq;
+		var id = ++_seq;
 
 		_eventTypes[eventTypeName] = id;
 		_eventTypeSizes[id] = 0;
@@ -56,6 +56,6 @@ internal class EventTypeIndexProcessor {
 	public long GetLastEventNumber(int eventTypeId) =>
 		_eventTypeSizes.TryGetValue(eventTypeId, out var size) ? size : ExpectedVersion.NoStream;
 
-	public long GetEventTypeId(string eventTypeName) =>
-		_eventTypes.TryGetValue(eventTypeName, out var eventTypeId) ? eventTypeId : ExpectedVersion.NoStream;
+	public int GetEventTypeId(string eventTypeName) =>
+		_eventTypes.TryGetValue(eventTypeName, out var eventTypeId) ? eventTypeId : -1;
 }

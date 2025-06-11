@@ -12,11 +12,11 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	readonly DefaultIndex _defaultIndex;
-	Appender _appender;
 	readonly DuckDBAdvancedConnection _connection;
 	readonly InFlightRecord[] _inFlightRecords;
 
 	int _inFlightRecordsCount;
+	Appender _appender;
 
 	static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
@@ -47,17 +47,18 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		var sequence = LastSequence++;
 		var logPosition = resolvedEvent.Event.LogPosition;
-		int eventNumber = (int)resolvedEvent.Event.EventNumber;
-		using var row = _appender.CreateRow();
-		row.Append(sequence);
-		row.Append(eventNumber);
-		row.Append(logPosition);
-		row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
-		row.Append(streamId);
-		row.Append(eventType.Id);
-		row.Append(eventType.Sequence);
-		row.Append(category.Id);
-		row.Append(category.Sequence);
+		var eventNumber = resolvedEvent.Event.EventNumber;
+		using (var row = _appender.CreateRow()) {
+			row.Append(sequence);
+			row.Append(eventNumber);
+			row.Append(logPosition);
+			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
+			row.Append(streamId);
+			row.Append(eventType.Id);
+			row.Append(eventType.Sequence);
+			row.Append(category.Id);
+			row.Append(category.Sequence);
+		}
 
 		_inFlightRecords[_inFlightRecordsCount]
 			= new(
@@ -99,7 +100,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			var current = _inFlightRecords[i];
 			if (current.Seq > toSeq) yield break;
 			if (current.Seq >= fromSeq && current.Seq <= toSeq) {
-				yield return new(current.Seq, current.LogPosition, current.EventNumber);
+				yield return new(current.Seq, current.LogPosition);
 			}
 		}
 	}

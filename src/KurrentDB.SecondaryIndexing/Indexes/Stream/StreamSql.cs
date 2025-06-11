@@ -12,6 +12,8 @@ internal static class StreamSql {
 		public static BindingContext Bind(in GetStreamIdByNameQueryArgs args, PreparedStatement statement)
 			=> new(statement) { args.StreamName };
 
+		public static bool UseStreamingMode => false;
+
 		public static ReadOnlySpan<byte> CommandText => "select id from streams where name=$1 limit 1"u8;
 
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
@@ -19,6 +21,8 @@ internal static class StreamSql {
 
 	public struct GetStreamMaxSequencesQuery : IQuery<long> {
 		public static ReadOnlySpan<byte> CommandText => "select max(id) from streams"u8;
+
+		public static bool UseStreamingMode => false;
 
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}

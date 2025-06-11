@@ -21,7 +21,7 @@ internal class DefaultIndexReader(
 			var inFlight = processor.TryGetInFlightRecords(fromEventNumber, toEventNumber);
 			range.AddRange(inFlight);
 		}
-		var indexPrepares = range.Select(x => new IndexedPrepare(x.Seq, x.EventNumber, x.LogPosition));
+		var indexPrepares = range.Select(x => new IndexedPrepare(x.Seq, x.LogPosition));
 		return indexPrepares;
 	}
 

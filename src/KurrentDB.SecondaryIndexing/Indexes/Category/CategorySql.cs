@@ -17,16 +17,16 @@ internal static class CategorySql {
 
 		public static ReadOnlySpan<byte> CommandText =>
 			"""
-			select category_seq, log_position, event_number
+			select category_seq, log_position
 			from idx_all where category=$1 and category_seq>=$2 and category_seq<=$3
 			"""u8;
 
-		public static CategoryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
+		public static CategoryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64());
 	}
 
 	public record struct CategoryIndexQueryArgs(int Id, long FromSeq, long ToSeq);
 
-	public record struct CategoryRecord(long CategorySeq, long LogPosition, long EventNumber);
+	public record struct CategoryRecord(long CategorySeq, long LogPosition);
 
 	public struct GetCategoriesQuery : IQuery<ReferenceRecord> {
 		public static ReadOnlySpan<byte> CommandText => "select id, name from category"u8;

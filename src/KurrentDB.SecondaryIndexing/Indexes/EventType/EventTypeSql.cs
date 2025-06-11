@@ -7,26 +7,26 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal static class EventTypeSql {
-	public record struct ReadEventTypeIndexQueryArgs(int EventType, long FromSeq, long ToSeq);
+	public record struct ReadEventTypeIndexQueryArgs(int EventTypeId, long FromSeq, long ToSeq);
 
-	public record struct EventTypeRecord(long EventTypeSeq, long LogPosition, int EventNumber);
+	public record struct EventTypeRecord(long EventTypeSeq, long LogPosition);
 
 	public struct ReadEventTypeIndexQuery : IQuery<ReadEventTypeIndexQueryArgs, EventTypeRecord> {
 		public static BindingContext Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
 			=> new(statement) {
-				args.EventType,
+				args.EventTypeId,
 				args.FromSeq,
 				args.ToSeq
 			};
 
 		public static ReadOnlySpan<byte> CommandText =>
 			"""
-			select event_type_seq, log_position, event_number
+			select event_type_seq, log_position
 			from idx_all where event_type=$1 and event_type_seq>=$2 and event_type_seq<=$3
 			"""u8;
 
 		public static EventTypeRecord Parse(ref DataChunk.Row row)
-			=> new(row.ReadInt32(), row.ReadInt64(), row.ReadInt32());
+			=> new(row.ReadInt32(), row.ReadInt64());
 	}
 
 	public struct GetAllEventTypesQuery : IQuery<ReferenceRecord> {
@@ -43,7 +43,7 @@ internal static class EventTypeSql {
 			(row.ReadInt32(), row.ReadInt64());
 	}
 
-	public record struct AddEventTypeStatementArgs(long Id, string EventType);
+	public record struct AddEventTypeStatementArgs(int Id, string EventType);
 
 	public struct AddEventTypeStatement : IPreparedStatement<AddEventTypeStatementArgs> {
 		public static BindingContext Bind(in AddEventTypeStatementArgs args, PreparedStatement statement)
