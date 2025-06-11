@@ -8,6 +8,7 @@ using DuckDB.NET.Data;
 using EventStore.Common.Log;
 using Eventuous.Subscriptions;
 using Eventuous.Subscriptions.Context;
+using Kurrent.Quack;
 using Serilog;
 
 namespace EventStore.Core.Duck.Default;
@@ -20,16 +21,18 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 	ulong _seq;
 	int _page;
 	long _lastLogPosition;
-	DuckDBAppender _appender;
+	Appender _appender;
+	// DuckDBAppender _appender;
 
 	static readonly ILogger Logger = Log.Logger.ForContext("DefaultIndexHandler");
 
-	public DefaultIndexHandler(DuckDb db, DefaultIndex<TStreamId> defaultIndex) {
+	public DefaultIndexHandler(DuckDbDataSource db, DefaultIndex<TStreamId> defaultIndex) {
 		_defaultIndex = defaultIndex;
 
 		// separate connection for this component
-		_connection = db.OpenConnection();
-		_appender = _connection.CreateAppender("idx_all");
+		_connection = db.OpenNewConnection();
+		// _appender = _connection.CreateAppender("idx_all");
+		_appender = new(_connection, "idx_all"u8);
 		var last = defaultIndex.GetLastSequence();
 		Logger.Information("Last known global sequence: {Seq}", last);
 		_seq = last.HasValue ? last.Value + 1 : 0;
@@ -46,17 +49,16 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 		var cat = _defaultIndex.CategoryIndex.Handle(context);
 
 		lock (_lock) {
-			var row = _appender.CreateRow();
-			row.AppendValue(_seq++);
-			row.AppendValue((int)context.EventNumber);
-			row.AppendValue(context.GlobalPosition);
-			row.AppendValue(new DateTimeOffset(context.Created).ToUnixTimeMilliseconds());
-			row.AppendValue(streamId);
-			row.AppendValue((int)et.Id);
-			row.AppendValue(et.Sequence);
-			row.AppendValue((int)cat.Id);
-			row.AppendValue(cat.Sequence);
-			row.EndRow();
+			using var row = _appender.CreateRow();
+			row.Append(_seq++);
+			row.Append((int)context.EventNumber);
+			row.Append(context.GlobalPosition);
+			row.Append(new DateTimeOffset(context.Created).ToUnixTimeMilliseconds());
+			row.Append(streamId);
+			row.Append((int)et.Id);
+			row.Append(et.Sequence);
+			row.Append((int)cat.Id);
+			row.Append(cat.Sequence);
 		}
 
 		_lastLogPosition = (long)context.GlobalPosition;
@@ -76,6 +78,7 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 		_disposing = true;
 		Commit(false);
 		_disposed = true;
+		_appender.Dispose();
 		_connection.Dispose();
 		_defaultIndex.Dispose();
 	}
@@ -88,14 +91,13 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 		if (_appenderDisposed || _page == 0) return;
 		lock (_lock) {
 			_stopwatch.Start();
-			_appender.Dispose();
-			_appenderDisposed = true;
+			_appender.Flush();
 			_stopwatch.Stop();
 			Logger.Debug("Committed {Count} records to index at {Seq} in {Time} ms", _page, _seq, _stopwatch.ElapsedMilliseconds);
 			_stopwatch.Reset();
 			_page = 0;
 			if (!reopen) return;
-			_appender = _connection.CreateAppender("idx_all");
+			// _appender = _connection.CreateAppender("idx_all");
 			LastPosition = _lastLogPosition;
 		}
 

@@ -7,7 +7,7 @@
 @using EventStore.ClusterNode.Components.Tools
 @using EventStore.Core.Duck
 @using Serilog
-@inject DuckDb DuckDb
+@inject DuckDbDataSource DuckDb
 @inject Preferences Preferences
 @inject IDialogService DialogService
 @implements IDisposable
@@ -102,7 +102,7 @@
 		var watch = new Stopwatch();
 		watch.Start();
 
-		await using var connection = DuckDb.GetOrOpenConnection();
+		await using var connection = DuckDb.OpenConnection();
 		try {
 			_items = (IEnumerable<IDictionary<string, object>>)connection.Query(sql);
 			watch.Stop();

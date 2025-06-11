@@ -10,7 +10,7 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Duck.Default;
 
-class DefaultIndexReader<TStreamId>(DuckDb db, DefaultIndexHandler<TStreamId> handler, IReadIndex<TStreamId> index) : DuckIndexReader<TStreamId>(index) {
+class DefaultIndexReader<TStreamId>(DuckDbDataSource db, DefaultIndexHandler<TStreamId> handler, IReadIndex<TStreamId> index) : DuckIndexReader<TStreamId>(index) {
 	protected override long GetId(string streamName) => 0;
 
 	protected override long GetLastNumber(long id) => handler.LastSequence - 1;
@@ -29,7 +29,7 @@ class DefaultIndexReader<TStreamId>(DuckDb db, DefaultIndexHandler<TStreamId> ha
 		const string query = "select seq, log_position, event_number from idx_all where seq>=$start and seq<=$end";
 
 		using var duration = TempIndexMetrics.MeasureIndex("duck_get_all_range");
-		using var connection = db.GetOrOpenConnection();
+		using var connection = db.Pool.Open();
 		return connection.Query<AllRecord>(query, new { start = fromEventNumber, end = toEventNumber }).ToList();
 	}
 }

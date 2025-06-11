@@ -4,14 +4,13 @@
 using System;
 using System.Linq;
 using Dapper;
-using DuckDB.NET.Data;
 using EventStore.Core.Duck;
 
 namespace EventStore.ClusterNode.Services;
 
-class StatsService(DuckDb db) {
+class StatsService(DuckDbDataSource db) {
 	public CombinedStats[] GetStats() {
-		using var connection = db.GetOrOpenConnection();
+		using var connection = db.OpenConnection();
 		var categories = connection.Query<CategoryStats>(CategoriesSql);
 		var eventTypes = connection.Query<CategoryEventTypeStats>(CategoriesEventTypesSql);
 		return categories.GroupJoin(eventTypes, x => x.CategoryId, y => y.CategoryId, (x, y) => new CombinedStats(x, y.ToArray())).ToArray();

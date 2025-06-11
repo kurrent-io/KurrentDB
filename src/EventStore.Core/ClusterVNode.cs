@@ -683,7 +683,7 @@ public class ClusterVNode<TStreamId> : ClusterVNode,
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(nodeStatusListener);
 
 #pragma warning disable DuckDBNET001
-		var duckDb = new DuckDb(dbConfig);
+		var duckDb = new DuckDbDataSource(dbConfig);
 		duckDb.InitDb();
 		var indexBuilder = new DuckDbIndexBuilder<TStreamId>(duckDb, _mainQueue, readIndex);
 #pragma warning restore DuckDBNET001

@@ -17,13 +17,13 @@ class DuckDbIndexBuilder<TStreamId> : IAsyncHandle<SystemReady>, IAsyncHandle<Be
 	static readonly ILogger Log = Serilog.Log.Logger.ForContext<DuckDbIndexBuilder<TStreamId>>();
 	InternalSubscription _subscription;
 	readonly IndexCheckpointStore<TStreamId> _checkpointStore;
-	readonly DuckDb _db;
+	readonly DuckDbDataSource _db;
 	readonly IPublisher _publisher;
 
 	internal DefaultIndex<TStreamId> DefaultIndex { get; }
 
 	[Experimental("DuckDBNET001")]
-	public DuckDbIndexBuilder(DuckDb db, IPublisher publisher, IReadIndex<TStreamId> index) {
+	public DuckDbIndexBuilder(DuckDbDataSource db, IPublisher publisher, IReadIndex<TStreamId> index) {
 		_publisher = publisher;
 		_db = db;
 		DefaultIndex = new(_db, index);
@@ -45,6 +45,6 @@ class DuckDbIndexBuilder<TStreamId> : IAsyncHandle<SystemReady>, IAsyncHandle<Be
 		DefaultIndex.Handler.Commit(false);
 		await Task.Delay(100, token);
 		DefaultIndex.Dispose();
-		_db.Close();
+		_db.Dispose();
 	}
 }

@@ -10,12 +10,12 @@ using Eventuous.Subscriptions.Context;
 
 namespace EventStore.Core.Duck.Default;
 
-class CategoryIndex(DuckDb db) {
+class CategoryIndex(DuckDbDataSource db) {
 	internal Dictionary<string, long> _categories = new();
 	readonly Dictionary<long, long> _categorySizes = new();
 
 	public void Init() {
-		using var connection = db.GetOrOpenConnection();
+		using var connection = db.OpenConnection();
 		var ids = connection.Query<ReferenceRecord>("select * from category").ToList();
 
 		_categories = ids.ToDictionary(x => x.name, x => x.id);
@@ -46,7 +46,7 @@ class CategoryIndex(DuckDb db) {
 		                     """;
 
 		using var duration = TempIndexMetrics.MeasureIndex("duck_get_cat_range");
-		using var connection = db.GetOrOpenConnection();
+		using var connection = db.Pool.Open();
 		return connection
 			.Query<CategoryRecord>(query, new { cat = id, start = fromEventNumber, end = toEventNumber })
 			.ToList();
@@ -70,7 +70,7 @@ class CategoryIndex(DuckDb db) {
 
 		var id = ++Seq;
 
-		using var connection = db.GetOrOpenConnection();
+		using var connection = db.Pool.Open();
 		connection.Execute(CatSql, new { id, name = categoryName });
 		_categories[categoryName] = id;
 		_categorySizes[id] = 0;

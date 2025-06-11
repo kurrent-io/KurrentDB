@@ -19,7 +19,7 @@ using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
 namespace EventStore.Core.Duck;
 
-public class InlineFunctions<TStreamId>(DuckDb db, IPublisher publisher) {
+public class InlineFunctions<TStreamId>(DuckDbDataSource db, IPublisher publisher) {
 	static readonly IReadOnlyList<ColumnInfo> ColumnInfos = [
 		new("stream_id", typeof(TStreamId)),
 		new("event_number", typeof(long)),

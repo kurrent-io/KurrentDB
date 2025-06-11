@@ -10,13 +10,13 @@ using Eventuous.Subscriptions.Context;
 
 namespace EventStore.Core.Duck.Default;
 
-public class EventTypeIndex(DuckDb db) {
+public class EventTypeIndex(DuckDbDataSource db) {
 	Dictionary<long, string> _eventTypeIds = new();
 	public Dictionary<string, long> EventTypes = new();
 	readonly Dictionary<long, long> _sequences = new();
 
 	public void Init() {
-		using var connection = db.GetOrOpenConnection();
+		using var connection = db.OpenConnection();
 		var ids = connection.Query<ReferenceRecord>("select * from event_type").ToList();
 
 		_eventTypeIds = ids.ToDictionary(x => x.id, x => x.name);
@@ -50,7 +50,7 @@ public class EventTypeIndex(DuckDb db) {
 		                     """;
 
 		using var duration = TempIndexMetrics.MeasureIndex("duck_get_et_range");
-		using var connection = db.GetOrOpenConnection();
+		using var connection = db.Pool.Open();
 
 		return connection.Query<EventTypeRecord>(query, new { et = eventTypeId, start = fromEventNumber, end = toEventNumber }).ToList();
 	}
@@ -65,7 +65,7 @@ public class EventTypeIndex(DuckDb db) {
 
 		var id = ++Seq;
 
-		using var connection = db.GetOrOpenConnection();
+		using var connection = db.Pool.Open();
 		connection.Execute(Sql, new { id, name = ctx.MessageType });
 
 		EventTypes[ctx.MessageType] = id;

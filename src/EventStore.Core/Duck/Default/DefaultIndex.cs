@@ -9,9 +9,9 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 namespace EventStore.Core.Duck.Default;
 
 public class DefaultIndex<TStreamId> : Disposable {
-	readonly DuckDb _db;
+	readonly DuckDbDataSource _db;
 
-	public DefaultIndex(DuckDb db, IReadIndex<TStreamId> index) {
+	public DefaultIndex(DuckDbDataSource db, IReadIndex<TStreamId> index) {
 		_db = db;
 		StreamIndex = new(db);
 		CategoryIndex = new(db);
@@ -29,13 +29,13 @@ public class DefaultIndex<TStreamId> : Disposable {
 
 	public ulong? GetLastPosition() {
 		const string query = "select max(log_position) from idx_all";
-		using var connection = _db.GetOrOpenConnection();
+		using var connection = _db.OpenConnection();
 		return connection.Query<ulong?>(query).FirstOrDefault();
 	}
 
 	public ulong? GetLastSequence() {
 		const string query = "select max(seq) from idx_all";
-		using var connection = _db.GetOrOpenConnection();
+		using var connection = _db.OpenConnection();
 		return connection.Query<ulong?>(query).FirstOrDefault();
 	}
 

@@ -17,6 +17,7 @@
 		<PackageReference Include="Grpc.AspNetCore" Version="2.64.0" />
 		<PackageReference Include="Grpc.Tools" Version="2.65.0" PrivateAssets="All"/>
 		<PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
+		<PackageReference Include="Kurrent.Quack" Version="0.0.0-alpha.0.13" />
 		<PackageReference Include="librdkafka.redist" Version="2.5.0" />
 		<PackageReference Include="Microsoft.FASTER.Core" Version="1.9.16" />
 		<PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.4.0-rc.1" />
@@ -29,9 +30,9 @@
 		<PackageReference Include="Microsoft.Diagnostics.NETCore.Client" Version="0.2.452401" />
 		<PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.1.6" />
 		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
-		<PackageReference Include="DotNext.IO" Version="5.17.1" />
-		<PackageReference Include="DotNext.Threading" Version="5.17.0" />
-		<PackageReference Include="DotNext.Unsafe" Version="5.17.0" />
+		<PackageReference Include="DotNext.IO" Version="5.22.0" />
+		<PackageReference Include="DotNext.Threading" Version="5.22.0" />
+		<PackageReference Include="DotNext.Unsafe" Version="5.22.0" />
 		<PackageReference Include="System.Threading.Channels" Version="9.0.0" />
 		<PackageReference Include="Scrutor" Version="5.0.2" />
 	</ItemGroup>
