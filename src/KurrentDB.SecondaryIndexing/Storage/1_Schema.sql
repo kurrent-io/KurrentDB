@@ -1,11 +1,11 @@
 create table if not exists event_type (
-	id bigint primary key not null,
+	id int4 primary key not null,
 	name varchar not null,
 	unique(name)
 );
 
 create table if not exists category (
-	id bigint primary key not null,
+	id int4 primary key not null,
 	name varchar not null,
 	unique(name)
 );
@@ -19,21 +19,21 @@ create table if not exists streams (
 );
 
 create table if not exists idx_all (
-	seq bigint not null,
-	event_number bigint not null,
-	log_position bigint not null,
-	created bigint not null,
-	stream varchar not null,
-	event_type bigint not null,
-	event_type_seq bigint not null,
-	category bigint not null,
-	category_seq bigint not null,
+	seq bigint,
+	event_number int4,
+	log_position bigint,
+	created bigint,
+	stream bigint,
+	event_type int4,
+	event_type_seq bigint,
+	category int4,
+	category_seq bigint
 );
 
-create index if not exists idx_all_category on idx_all(category, category_seq);
-create index if not exists idx_all_event_type on idx_all(event_type, category_seq);
-create index if not exists idx_sequence on idx_all(seq);
-create index if not exists idx_all_stream on idx_all(stream);
+-- create index if not exists idx_all_category on idx_all(category, category_seq);
+-- create index if not exists idx_all_event_type on idx_all(event_type, category_seq);
+-- create index if not exists idx_sequence on idx_all(seq);
+-- create index if not exists idx_all_stream on idx_all(stream);
 
 create or replace macro read_category(name, startAt, finishAt) as table
 select

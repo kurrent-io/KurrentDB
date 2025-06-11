@@ -19,11 +19,15 @@ static class DefaultSql {
 	public struct GetLastSequenceSql : IQuery<long> {
 		public static ReadOnlySpan<byte> CommandText => "select max(seq) from idx_all"u8;
 
+		public static bool UseStreamingMode => false;
+
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}
 
 	public struct GetLastLogPositionSql : IQuery<long> {
 		public static ReadOnlySpan<byte> CommandText => "select max(log_position) from idx_all"u8;
+
+		public static bool UseStreamingMode => false;
 
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}

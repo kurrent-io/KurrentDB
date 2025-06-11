@@ -15,8 +15,7 @@ class CategoryIndexReader(
 	CategoryIndexProcessor processor,
 	IReadIndex<string> index,
 	QueryInFlightRecords<CategoryRecord> queryInFlightRecords
-)
-	: SecondaryIndexReaderBase(index) {
+) : SecondaryIndexReaderBase(index) {
 	protected override long GetId(string streamName) {
 		if (!streamName.StartsWith(CategoryIndex.IndexPrefix)) {
 			return ExpectedVersion.Invalid;
@@ -26,10 +25,10 @@ class CategoryIndexReader(
 		return processor.GetCategoryId(categoryName);
 	}
 
-	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber(id);
+	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber((int)id);
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
-		var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new(id, fromEventNumber, toEventNumber));
+		var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new((int)id, fromEventNumber, toEventNumber));
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			// events might be in flight
 			var inFlight = queryInFlightRecords(

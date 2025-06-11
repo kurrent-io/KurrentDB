@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 
@@ -10,37 +9,32 @@ namespace KurrentDB.SecondaryIndexing.Storage;
 public static class DuckDbExtensions {
 	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBConnectionPool pool)
 		where TRow : struct
-		where TQuery : IParameterlessStatement, IDataRowParser<TRow> {
+		where TQuery : IQuery<TRow> {
 		using (pool.Rent(out var connection)) {
 			return connection.QueryFirstOrDefault<TRow, TQuery>();
 		}
 	}
 
-	static TRow? FirstOrDefault<TRow, TParser>(this StreamQueryResult<TRow, TParser>.Enumerator result)
-		where TRow : struct where TParser : IDataRowParser<TRow> {
-		TRow row = default;
-		int rowNumber = 0;
-		while (result.MoveNext()) {
-			if (rowNumber == 0) {
-				row = result.Current;
-			}
-			rowNumber++;
+	static TRow? GetFirstOrDefault<TRow, TParser>(this QueryResult<TRow, TParser> result)
+		where TRow : struct where TParser : IQuery<TRow> {
+		if (TParser.UseStreamingMode) {
+			throw new InvalidOperationException("Streaming mode must be disabled for query with single result");
 		}
-		return rowNumber > 0 ? row : null;
+		using var enumerator = result.GetEnumerator();
+		return enumerator.MoveNext() ? enumerator.Current : null;
 	}
 
 	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBAdvancedConnection connection)
 		where TRow : struct
-		where TQuery : IParameterlessStatement, IDataRowParser<TRow> {
-		using var result = connection.ExecuteQuery<TRow, TQuery>().GetEnumerator();
-		return result.FirstOrDefault();
-		// return result.MoveNext() ? result.Current : null;
+		where TQuery : IQuery<TRow> {
+		var result = connection.ExecuteQuery<TRow, TQuery>();
+		return result.GetFirstOrDefault();
 	}
 
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
+		where TQuery : IQuery<TArgs, TRow>, IQuery<TRow> {
 		using (pool.Rent(out var connection)) {
 			return connection.QueryFirstOrDefault<TArgs, TRow, TQuery>(args);
 		}
@@ -49,15 +43,18 @@ public static class DuckDbExtensions {
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
-		using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
-		return result.FirstOrDefault();
-		// return result.MoveNext() ? result.Current : null;
+		where TQuery : IQuery<TArgs, TRow> {
+		if (TQuery.UseStreamingMode) {
+			throw new InvalidOperationException("Streaming mode must be disabled for query with single result");
+		}
+		var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args);
+		using var enumerator = result.GetEnumerator();
+		return enumerator.MoveNext() ? enumerator.Current : null;
 	}
 
 	public static List<TRow> Query<TRow, TQuery>(this DuckDBConnectionPool pool)
 		where TRow : struct
-		where TQuery : IDataRowParser<TRow>, IParameterlessStatement {
+		where TQuery : IQuery<TRow> {
 		using (pool.Rent(out var connection)) {
 			return connection.Query<TRow, TQuery>();
 		}
@@ -65,7 +62,7 @@ public static class DuckDbExtensions {
 
 	public static List<TRow> Query<TRow, TQuery>(this DuckDBAdvancedConnection connection)
 		where TRow : struct
-		where TQuery : IDataRowParser<TRow>, IParameterlessStatement {
+		where TQuery : IQuery<TRow> {
 		List<TRow> elements = [];
 		using var result = connection.ExecuteQuery<TRow, TQuery>().GetEnumerator();
 
@@ -79,7 +76,7 @@ public static class DuckDbExtensions {
 	public static List<TRow> Query<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
+		where TQuery : IQuery<TArgs, TRow> {
 		using (pool.Rent(out var connection)) {
 			return connection.Query<TArgs, TRow, TQuery>(args);
 		}
@@ -88,7 +85,7 @@ public static class DuckDbExtensions {
 	public static List<TRow> Query<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IPreparedStatement<TArgs>, IDataRowParser<TRow> {
+		where TQuery : IQuery<TArgs, TRow> {
 		List<TRow> elements = [];
 		using var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args).GetEnumerator();
 

@@ -24,24 +24,24 @@ internal static class CategorySql {
 		public static CategoryRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadInt64(), row.ReadInt64());
 	}
 
-	public record struct CategoryIndexQueryArgs(long Id, long FromSeq, long ToSeq);
+	public record struct CategoryIndexQueryArgs(int Id, long FromSeq, long ToSeq);
 
 	public record struct CategoryRecord(long CategorySeq, long LogPosition, long EventNumber);
 
 	public struct GetCategoriesQuery : IQuery<ReferenceRecord> {
 		public static ReadOnlySpan<byte> CommandText => "select id, name from category"u8;
 
-		public static ReferenceRecord Parse(ref DataChunk.Row row) => new(row.ReadInt64(), row.ReadString());
+		public static ReferenceRecord Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString());
 	}
 
-	public struct GetCategoriesMaxSequencesQuery : IQuery<(long Id, long Sequence)> {
+	public struct GetCategoriesMaxSequencesQuery : IQuery<(int Id, long Sequence)> {
 		public static ReadOnlySpan<byte> CommandText =>
 			"select category, max(category_seq) from idx_all group by category"u8;
 
-		public static (long Id, long Sequence) Parse(ref DataChunk.Row row) => (row.ReadInt64(), row.ReadInt64());
+		public static (int Id, long Sequence) Parse(ref DataChunk.Row row) => (row.ReadInt32(), row.ReadInt64());
 	}
 
-	public record struct AddCategoryStatementArgs(long Id, string Category);
+	public record struct AddCategoryStatementArgs(int Id, string Category);
 
 	public struct AddCategoryStatement  : IPreparedStatement<AddCategoryStatementArgs> {
 		public static BindingContext Bind(in AddCategoryStatementArgs args, PreparedStatement statement)
