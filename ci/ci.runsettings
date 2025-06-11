@@ -9,7 +9,6 @@
 		<TestCaseFilter>
 			(FullyQualifiedName!~EventStore.Core.Tests.LogFormat+V3)
 			&amp; (FullyQualifiedName!~KurrentDB.Core.Tests.LogFormat+V3)
-			&amp; (FullyQualifiedName!~KurrentDB.SchemaRegistry.Tests)
 		</TestCaseFilter>
 	</RunConfiguration>
 </RunSettings>
