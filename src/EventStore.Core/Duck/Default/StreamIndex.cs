@@ -44,7 +44,6 @@ class StreamIndex : Disposable {
 		// var fromDb = GetStreamIdFromDb(name);
 		var fromDb = _connection.QueryFirstOrDefault<StreamSql.GetStreamIdByNameQueryArgs, long, StreamSql.GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
-			Logger.Debug("Stream {Stream} id {Id} found in db", name, fromDb);
 			_streamIdCache.Set(name, fromDb, _options);
 			return fromDb.Value;
 		}
