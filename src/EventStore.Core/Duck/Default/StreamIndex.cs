@@ -2,13 +2,16 @@
 // Event Store Ltd licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using System;
+using System.Diagnostics;
 using System.Linq;
 using Dapper;
 using DotNext;
 using DuckDB.NET.Data;
+using EventStore.Common.Log;
 using Eventuous.Subscriptions.Context;
 using Kurrent.Quack;
 using Microsoft.Extensions.Caching.Memory;
+using Serilog;
 
 namespace EventStore.Core.Duck.Default;
 
@@ -17,6 +20,8 @@ class StreamIndex : Disposable {
 	readonly MemoryCache _streamIdCache = new(new MemoryCacheOptions());
 	readonly MemoryCacheEntryOptions _options = new() { SlidingExpiration = TimeSpan.FromMinutes(10) };
 	long _seq;
+
+	static readonly ILogger Logger = Log.Logger.ForContext("StreamIndex");
 
 	public StreamIndex(DuckDbDataSource db) {
 		const string sql = "select max(id) from streams";
@@ -27,6 +32,7 @@ class StreamIndex : Disposable {
 	}
 
 	Appender _appender;
+	int _page;
 	readonly object _lock = new();
 
 	public long Handle(IMessageConsumeContext ctx) {
@@ -44,6 +50,7 @@ class StreamIndex : Disposable {
 
 		var id = ++_seq;
 		lock (_lock) {
+			_page++;
 			_streamIdCache.Set(name, id, _options);
 			using var row = _appender.CreateRow();
 			row.Append(id);
@@ -55,9 +62,16 @@ class StreamIndex : Disposable {
 		return id;
 	}
 
+	readonly Stopwatch _stopwatch = new();
+
 	public void Commit() {
 		lock (_lock) {
+			_stopwatch.Start();
 			_appender.Flush();
+			_stopwatch.Stop();
+			Logger.Debug("Committed {Count} records to streams at {Seq} in {Time} ms", _page, _seq, _stopwatch.ElapsedMilliseconds);
+			_stopwatch.Reset();
+			_page = 0;
 			// _appender = _connection.CreateAppender("streams");
 		}
 	}
