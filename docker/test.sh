@@ -15,7 +15,20 @@ dotnet test \
   --logger:trx \
   --logger:"console;verbosity=normal" \
   --results-directory="$output_directory" \
-  "$tests_directory/KurrentDB.sln"
+  "$tests_directory/Connectors/KurrentDB.Connectors.Tests/KurrentDB.Connectors.Tests.csproj"
+
+# dotnet test \
+#   --configuration Release \
+#   --blame \
+#   --blame-hang-timeout 5min \
+#   --blame-hang-dump-type mini \
+#   --settings "$settings" \
+#   --logger:GitHubActions \
+#   --logger:html \
+#   --logger:trx \
+#   --logger:"console;verbosity=normal" \
+#   --results-directory="$output_directory" \
+#   "$tests_directory/KurrentDB.sln"
 
 
 
