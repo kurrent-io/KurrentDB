@@ -15,19 +15,17 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 internal class StreamIndexProcessor : Disposable {
 	static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor>();
 
-	// readonly Appender _appender;
 	readonly IIndexBackend<string> _indexReaderBackend;
 	readonly DuckDBAdvancedConnection _connection;
 	readonly Dictionary<string, long> _inFlightRecords = new();
-	DuckDBAppender _appender;
 
 	long _lastLogPosition;
+	Appender _appender;
 
 	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> indexReaderBackend) {
 		_indexReaderBackend = indexReaderBackend;
 		_connection = db.OpenNewConnection();
-		// _appender = new(_connection, "streams"u8);
-		_appender = _connection.CreateAppender("streams");
+		_appender = new(_connection, "streams"u8);
 		Seq = _connection.QueryFirstOrDefault<long, GetStreamMaxSequencesQuery>() ?? 0;
 	}
 
@@ -61,13 +59,12 @@ internal class StreamIndexProcessor : Disposable {
 
 		_inFlightRecords.Add(name, id);
 
-		// using (var row = _appender.CreateRow()) {
-		var row = _appender.CreateRow();
-		row.AppendValue(id);
-		row.AppendValue(name);
-		row.AppendNullValue();
-		row.AppendNullValue();
-		row.EndRow();
+		using (var row = _appender.CreateRow()) {
+			row.Append(id);
+			row.Append(name);
+			row.AppendDefault();
+			row.AppendDefault();
+		}
 
 		_count++;
 
@@ -79,9 +76,7 @@ internal class StreamIndexProcessor : Disposable {
 			return;
 
 		_inFlightRecords.Clear();
-		// _appender.Flush();
-		_appender.Dispose();
-		_appender = _connection.CreateAppender("streams");
+		_appender.Flush();
 		LastCommittedPosition = _lastLogPosition;
 		_count = 0;
 	}

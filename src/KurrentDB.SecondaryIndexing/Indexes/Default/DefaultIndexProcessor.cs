@@ -13,12 +13,11 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	readonly DefaultIndex _defaultIndex;
-	readonly Appender _appender;
-	// DuckDBAppender _appender;
 	readonly DuckDBAdvancedConnection _connection;
 	readonly InFlightRecord[] _inFlightRecords;
 
 	int _inFlightRecordsCount;
+	Appender _appender;
 
 	static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
@@ -28,7 +27,6 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	public DefaultIndexProcessor(DuckDbDataSource db, DefaultIndex defaultIndex, int commitBatchSize) {
 		_connection = db.OpenNewConnection();
 		_appender = new(_connection, "idx_all"u8);
-		// _appender = _connection.CreateAppender("idx_all");
 		_defaultIndex = defaultIndex;
 		_inFlightRecords = new InFlightRecord[commitBatchSize];
 
@@ -42,27 +40,26 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		var category = _defaultIndex.CategoryIndex.Processor.Index(resolvedEvent);
 		var eventType = _defaultIndex.EventTypeIndex.Processor.Index(resolvedEvent);
-		// var streamId = _defaultIndex.StreamIndex.Processor.Index(resolvedEvent);
-		// if (streamId == -1) {
-		// 	// StreamIndex is disposed
-		// 	return;
-		// }
+		var streamId = _defaultIndex.StreamIndex.Processor.Index(resolvedEvent);
+		if (streamId == -1) {
+			// StreamIndex is disposed
+			return;
+		}
 
 		var sequence = LastSequence++;
 		var logPosition = resolvedEvent.Event.LogPosition;
 		var eventNumber = resolvedEvent.Event.EventNumber;
-		using var row = _appender.CreateRow();
-		row.Append(sequence);
-		row.Append(eventNumber);
-		row.Append(logPosition);
-		row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
-		row.Append(resolvedEvent.OriginalStreamId);
-		// row.Append(0);
-		row.Append(eventType.Id);
-		row.Append(eventType.Sequence);
-		row.Append(category.Id);
-		row.Append(category.Sequence);
-		// row.EndRow();
+		using (var row = _appender.CreateRow()) {
+			row.Append(sequence);
+			row.Append(eventNumber);
+			row.Append(logPosition);
+			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
+			row.Append(streamId);
+			row.Append(eventType.Id);
+			row.Append(eventType.Sequence);
+			row.Append(category.Id);
+			row.Append(category.Sequence);
+		}
 
 		_inFlightRecords[_inFlightRecordsCount]
 			= new(
@@ -84,14 +81,12 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		if (IsDisposingOrDisposed)
 			return;
 
-		// _defaultIndex.StreamIndex.Processor.Commit();
+		_defaultIndex.StreamIndex.Processor.Commit();
 
 		try {
 			_sw.Restart();
 			_appender.Flush();
 			_sw.Stop();
-			// _appender.Dispose();
-			// _appender = _connection.CreateAppender("idx_all");
 			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _inFlightRecordsCount, LastSequence, _sw.ElapsedMilliseconds);
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecordsCount, LastSequence);
