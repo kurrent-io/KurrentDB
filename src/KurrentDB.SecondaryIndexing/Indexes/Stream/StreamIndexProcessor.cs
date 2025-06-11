@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics;
 using DotNext;
 using DuckDB.NET.Data;
 using Kurrent.Quack;
@@ -71,18 +72,26 @@ internal class StreamIndexProcessor : Disposable {
 		return id;
 	}
 
+	readonly Stopwatch _stopwatch = new();
+
 	public void Commit() {
-		if (IsDisposingOrDisposed || _count == 0)
+		if (IsDisposed || _count == 0)
 			return;
 
 		_inFlightRecords.Clear();
+		_stopwatch.Start();
 		_appender.Flush();
+		_stopwatch.Stop();
+		Log.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _count, Seq, _stopwatch.ElapsedMilliseconds);
+		_stopwatch.Reset();
+
 		LastCommittedPosition = _lastLogPosition;
 		_count = 0;
 	}
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
+			Commit();
 			_appender.Dispose();
 			_connection.Dispose();
 		}
