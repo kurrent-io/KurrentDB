@@ -23,10 +23,10 @@ class StreamIndex : Disposable {
 
 		_connection = db.OpenNewConnection();
 		_seq = _connection.Query<long?>(sql).SingleOrDefault() ?? 0;
-		_appender = _connection.CreateAppender("streams");
+		_appender = new(_connection, "streams"u8);
 	}
 
-	DuckDBAppender _appender;
+	Appender _appender;
 	readonly object _lock = new();
 
 	public long Handle(IMessageConsumeContext ctx) {
@@ -46,11 +46,10 @@ class StreamIndex : Disposable {
 		lock (_lock) {
 			_streamIdCache.Set(name, id, _options);
 			var row = _appender.CreateRow();
-			row.AppendValue(id);
-			row.AppendValue(name);
-			row.AppendValue((int?)null);
-			row.AppendValue((int?)null);
-			row.EndRow();
+			row.Append(id);
+			row.Append(name);
+			row.AppendDefault();
+			row.AppendDefault();
 		}
 
 		return id;
@@ -58,8 +57,8 @@ class StreamIndex : Disposable {
 
 	public void Commit() {
 		lock (_lock) {
-			_appender.Dispose();
-			_appender = _connection.CreateAppender("streams");
+			_appender.Flush();
+			// _appender = _connection.CreateAppender("streams");
 		}
 	}
 
@@ -72,7 +71,10 @@ class StreamIndex : Disposable {
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			_connection.Dispose();
+			lock (_lock) {
+				_appender.Dispose();
+				_connection.Dispose();
+			}
 		}
 
 		base.Dispose(disposing);

@@ -25,8 +25,8 @@ public class IndexCheckpointStore<TStreamId>(DefaultIndex<TStreamId> defaultInde
 
 		while (true) {
 			try {
-				handler.Commit();
 				defaultIndex.StreamIndex.Commit();
+				handler.Commit();
 				break;
 			} catch (Exception e) {
 				Log.Warning("Unable to commit {Checkpoint}, will retry. Error: {Error}", checkpoint, e.Message);
