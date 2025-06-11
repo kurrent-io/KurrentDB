@@ -229,11 +229,15 @@ This is also in v23.10.2 and v22.10.6
 It is expected that EventStoreDB is run with a process manager like Systemd to automatically restart the process if it shuts down. This is only a breaking change if your process manager is configured to not restart the process if it shuts down twice within a short period of time.
 
 A node will now restart after a truncation operation. This will affect the behaviour of the node in the following cases:
-Deposed leaders may shut down twice before they rejoin the cluster
+
+#### Deposed leaders may shut down twice before they rejoin the cluster
+
 When a leader loses connection to the rest of the cluster, the remaining nodes may elect a new leader among themselves. When the former leader rejoins the cluster, it may go offline to truncate uncommitted records from its log so that it can subscribe to the new leader.
 
 The node will now restart a second time after truncation has completed successfully.
-Nodes will restart after performing a file copy restore.
+
+#### Nodes will restart after performing a file copy restore.
+
 Part of the file copy backup and restore procedure requires copying the chaser checkpoint file over the truncate checkpoint file. This triggers the database to truncate the log on the next startup.
 
 The node will restart after the truncation has completed.
@@ -242,7 +246,7 @@ The node will restart after the truncation has completed.
 
 The `Unbuffered` config setting is deprecated and now has no effect.
 
-Let us know if you're using this feature.
+[Contact us](https://www.kurrent.io/contact) if you're using this feature.
 
 #### Persistent subscription checkpoint event type name change
 
@@ -265,9 +269,9 @@ This makes it less likely for the database to hit the file limit, and lowers the
 #### Metrics
 
 * Improved system metrics so that the following are available:
-    * CPU Usage on Linux*, FreeBSD*, OSX*, Windows
+    * CPU Usage on Linux, FreeBSD, OSX, Windows
     * CPU Load Averages on Linux, FreeBSD, OSX
-    * Disk IO Stats on Linux, Windows and OSX* (read bytes and written bytes only)
+    * Disk IO Stats on Linux, Windows and OSX (read bytes and written bytes only)
 * Added a metric to track the number of elections, allowing users to configure alerts if the count exceeds a defined threshold within a given time period.
 * Added metrics for projection subsystem:
     * Projection status
