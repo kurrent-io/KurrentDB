@@ -127,9 +127,14 @@ public partial class InMemoryBus {
 
 			// first handler is the parent
 			foreach (var handler in _handlers) {
-				if (message.Trace)
+				if (message.Trace) {
 					message.AddTrace($"InMemoryBus calling handler {handler}");
-				await handler.Invoke(Unsafe.As<T>(message), token);
+				}
+				try {
+					await handler.Invoke(Unsafe.As<T>(message), token).AsTask().WaitAsync(TimeSpan.FromSeconds(2), token);
+				} catch (Exception ex) {
+					throw new Exception($"Exception handling {message} by {handler}", ex);
+				}
 			}
 		}
 

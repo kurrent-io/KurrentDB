@@ -147,6 +147,9 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				ChunksCacheSize = MiniNode.CachedChunkSize,
 				StreamExistenceFilterSize = 10_000
 			},
+			//Logging = new() {
+			//	LogLevel = LogLevel.Warning,
+			//},
 			Projection = new() {
 				RunProjections = ProjectionType.None
 			},
@@ -155,6 +158,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 
 		var inMemConf = new ConfigurationBuilder()
 			.AddInMemoryCollection(new KeyValuePair<string, string>[] {
+				new($"Logging:LogLevel:KurrentDB", "Error"),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:NodeTcpPort", externalTcp.Port.ToString()),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:EnableExternalTcp", "true"),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeTcpPort", externalTcp.Port.ToString()),
@@ -200,6 +204,12 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 		Node.HttpService.SetupController(new TestController(Node.MainQueue));
 
 		var builder = WebApplication.CreateBuilder();
+		builder.Configuration.AddInMemoryCollection([
+			new($"Logging:LogLevel:KurrentDB", "Error"),
+			new($"Logging:LogLevel:Default", "Error"),
+			new($"Logging:LogLevel:Microsoft", "Error"),
+//			new($"Logging:Console:LogLevel:Microsoft", "Warning"),
+		]);
 		builder.WebHost
 			.ConfigureKestrel(o => {
 				o.Listen(HttpEndPoint, options => {

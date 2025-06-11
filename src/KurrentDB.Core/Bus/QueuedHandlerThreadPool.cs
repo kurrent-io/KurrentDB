@@ -181,6 +181,10 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 							ex.CancellationToken.IsOneOf([_lifetimeToken, msg.CancellationToken])) {
 						break;
 					} catch (Exception ex) {
+						foreach (var x in _queue) {
+							if (x.Message.Trace)
+								x.Message.AddTrace(ex);
+						}
 						Log.Error(ex,
 							"Error while processing message {message} in queued handler '{queue}'.", msg,
 							_queueStats.Name);
