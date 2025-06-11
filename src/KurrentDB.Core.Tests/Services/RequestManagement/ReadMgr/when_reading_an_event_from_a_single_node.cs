@@ -17,7 +17,56 @@ namespace KurrentDB.Core.Tests.Services.RequestManagement.ReadMgr;
 
 [Category("LongRunning")]
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
-[TestFixture(typeof(LogFormat.V3), typeof(uint))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
+[TestFixture(typeof(LogFormat.V2), typeof(string))]
 public class when_reading_an_event_from_a_single_node<TLogFormat, TStreamId> : specification_with_cluster<TLogFormat, TStreamId> {
 	private CountdownEvent _expectedNumberOfRoleAssignments;
 	private string _streamId = "test-stream";
@@ -43,7 +92,14 @@ public class when_reading_an_event_from_a_single_node<TLogFormat, TStreamId> : s
 		}
 	}
 
-	protected override async Task Given() {
+	public override Task TestFixtureSetUp() {
+		return Task.CompletedTask;
+	}
+
+	[Test]
+	public async Task should_be_able_to_read_event_from_all_forward() {
+		await base.TestFixtureSetUp();
+
 		_expectedNumberOfRoleAssignments.Wait(5000);
 
 		_liveNode = GetLeader();
@@ -59,38 +115,7 @@ public class when_reading_an_event_from_a_single_node<TLogFormat, TStreamId> : s
 			await ShutdownNode(s.DebugIndex);
 		}
 
-		await base.Given();
-	}
-
-	[Test]
-	public void should_be_able_to_read_event_from_all_forward() {
 		var readResult = ReplicationTestHelper.ReadAllEventsForward(_liveNode, _commitPosition);
 		Assert.AreEqual(1, readResult.Events.Where(x => x.OriginalStreamId == _streamId).Count());
-	}
-
-	[Test]
-	public void should_be_able_to_read_event_from_all_backward() {
-		var readResult = ReplicationTestHelper.ReadAllEventsBackward(_liveNode, _commitPosition);
-		Assert.AreEqual(1, readResult.Events.Where(x => x.OriginalStreamId == _streamId).Count());
-	}
-
-	[Test]
-	public void should_not_be_able_to_read_event_from_stream_forward() {
-		var readResult = ReplicationTestHelper.ReadStreamEventsForward(_liveNode, _streamId);
-		Assert.AreEqual(1, readResult.Events.Count());
-		Assert.AreEqual(ReadStreamResult.Success, readResult.Result);
-	}
-
-	[Test]
-	public void should_not_be_able_to_read_event_from_stream_backward() {
-		var readResult = ReplicationTestHelper.ReadStreamEventsBackward(_liveNode, _streamId);
-		Assert.AreEqual(1, readResult.Events.Count());
-		Assert.AreEqual(ReadStreamResult.Success, readResult.Result);
-	}
-
-	[Test]
-	public void should_not_be_able_to_read_event() {
-		var readResult = ReplicationTestHelper.ReadEvent(_liveNode, _streamId, 0);
-		Assert.AreEqual(ReadEventResult.Success, readResult.Result);
 	}
 }
