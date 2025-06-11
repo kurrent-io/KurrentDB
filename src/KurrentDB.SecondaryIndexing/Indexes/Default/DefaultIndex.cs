@@ -61,7 +61,7 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 
 delegate IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map);
 
-record struct AllRecord(long Seq, long LogPosition, long EventNumber);
+record struct AllRecord(long Seq, long LogPosition);
 
 record struct InFlightRecord(
 	long Seq,

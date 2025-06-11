@@ -101,7 +101,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			var current = _inFlightRecords[i];
 			if (current.Seq > toSeq) yield break;
 			if (current.Seq >= fromSeq && current.Seq <= toSeq) {
-				yield return new(current.Seq, current.LogPosition, current.EventNumber);
+				yield return new(current.Seq, current.LogPosition);
 			}
 		}
 	}

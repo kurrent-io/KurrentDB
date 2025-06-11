@@ -32,12 +32,12 @@ internal class EventTypeIndexReader(
 			// events might be in flight
 			var inFlight = queryInFlightRecords(
 				r => r.EventTypeId == id && r.EventTypeSeq >= fromEventNumber && r.EventTypeSeq <= toEventNumber,
-				r => new(r.EventTypeSeq, r.LogPosition, r.EventNumber)
+				r => new(r.EventTypeSeq, r.LogPosition)
 			);
 			range.AddRange(inFlight);
 		}
 
-		var indexPrepares = range.Select(x => new IndexedPrepare(x.EventTypeSeq, x.EventNumber, x.LogPosition));
+		var indexPrepares = range.Select(x => new IndexedPrepare(x.EventTypeSeq, x.LogPosition));
 		return indexPrepares;
 	}
 

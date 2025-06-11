@@ -27,7 +27,7 @@ public static class ReaderExtensions {
 		var records = recordsQuery
 			.Select(x => ResolvedEvent.ForResolvedLink(
 				new EventRecord(
-					x.Record.EventNumber,
+					x.Prepare!.ExpectedVersion,
 					x.Prepare,
 					x.Prepare!.EventStreamId!.ToString(),
 					x.Prepare!.EventType!.ToString()
@@ -44,7 +44,7 @@ public static class ReaderExtensions {
 					x.Prepare!.TimeStamp,
 					x.Prepare!.Flags,
 					"$>",
-					Encoding.UTF8.GetBytes($"{x.Record.EventNumber}@{x.Prepare!.EventStreamId!.ToString()}"),
+					Encoding.UTF8.GetBytes($"{x.Prepare!.ExpectedVersion}@{x.Prepare!.EventStreamId!.ToString()}"),
 					[],
 					[]
 				))

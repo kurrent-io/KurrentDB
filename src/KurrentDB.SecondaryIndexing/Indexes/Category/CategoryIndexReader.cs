@@ -33,12 +33,12 @@ class CategoryIndexReader(
 			// events might be in flight
 			var inFlight = queryInFlightRecords(
 				r => r.CategoryId == id && r.CategorySeq >= fromEventNumber && r.CategorySeq <= toEventNumber,
-				r => new(r.CategorySeq, r.LogPosition, r.EventNumber)
+				r => new(r.CategorySeq, r.LogPosition)
 			);
 			range.AddRange(inFlight);
 		}
 
-		return range.Select(x => new IndexedPrepare(x.CategorySeq, x.EventNumber, x.LogPosition));
+		return range.Select(x => new IndexedPrepare(x.CategorySeq, x.LogPosition));
 	}
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexesPosition;
