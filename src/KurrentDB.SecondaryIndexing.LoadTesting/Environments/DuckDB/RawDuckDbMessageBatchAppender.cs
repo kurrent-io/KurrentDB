@@ -1,7 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Kurrent.Quack;
+using DuckDB.NET.Data;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -11,21 +11,32 @@ using Stopwatch = System.Diagnostics.Stopwatch;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 
 public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
-	private readonly DuckDbDataSource _dbDataSource;
 	private readonly int _commitSize;
-	private Appender _defaultIndexAppender;
+	private readonly int _checkpointSize;
+	private DuckDBAppender _defaultIndexAppender;
 	public long LastCommittedSequence;
 	public long LastSequence;
+	public long LastCheckpointedSequence;
 	private static readonly ILogger Logger = Log.Logger.ForContext<RawDuckDbMessageBatchAppender>();
 	private readonly Stopwatch _sw = new();
+	private readonly DuckDBConnection _connection;
+	private DuckDBTransaction _transaction;
 
 	public RawDuckDbMessageBatchAppender(DuckDbDataSource dbDataSource, int commitSize) {
-		_dbDataSource = dbDataSource;
 		_commitSize = commitSize;
-		_dbDataSource.InitDb();
+		_checkpointSize = 10 * commitSize;
+		dbDataSource.InitDb();
 
-		var connection = _dbDataSource.OpenNewConnection();
-		_defaultIndexAppender = new Appender(connection, "idx_all"u8);
+		_connection = dbDataSource.OpenConnection();
+		_defaultIndexAppender = _connection.CreateAppender("idx_all");
+
+		using (var cmd = _connection.CreateCommand()) {
+			//cmd.Transaction = _transaction;
+			cmd.CommandText = "PRAGMA wal_autocheckpoint = '500MB'";
+			cmd.ExecuteNonQuery();
+		}
+
+		_transaction = _connection.BeginTransaction();
 	}
 
 	public ValueTask Append(MessageBatch batch) {
@@ -36,31 +47,51 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 		foreach (var batchMessage in batch.Messages) {
 			var sequence = LastSequence++;
 			var logPosition = sequence; //resolvedEvent.Event.LogPosition;
-			var eventNumber = sequence;//resolvedEvent.Event.EventNumber;
+			var eventNumber = sequence; //resolvedEvent.Event.EventNumber;
 
-			using (var row = _defaultIndexAppender.CreateRow()) {
-				row.Append(sequence);
-				row.Append(eventNumber);
-				row.Append(logPosition);
-				row.Append(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-				row.Append(1); //stream.Id
-				row.Append(1); //eventType.Id);
-				row.Append(1); //eventType.Sequence);
-				row.Append(1); //category.Id);
-				row.Append(1); //category.Sequence);
-			}
+			var row = _defaultIndexAppender.CreateRow();
+			row.AppendValue(sequence);
+			row.AppendValue(eventNumber);
+			row.AppendValue(logPosition);
+			row.AppendValue(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+			row.AppendValue(1);
+			row.AppendValue(1);
+			row.AppendValue(1);
+			row.AppendValue(1);
+			row.AppendValue(1);
+			row.EndRow();
 
 			if (LastSequence < LastCommittedSequence + _commitSize) continue;
 
 			LastCommittedSequence = LastSequence;
 			try {
 				_sw.Restart();
-				_defaultIndexAppender.Flush();
+
+				if (LastSequence >= LastCheckpointedSequence + _checkpointSize) {
+					using(var cmd = _connection.CreateCommand())
+					{
+						cmd.Transaction = _transaction;
+						cmd.CommandText = "CHECKPOINT;";
+						cmd.ExecuteNonQuery();
+					}
+
+					LastCheckpointedSequence = LastSequence;
+				}
+
+				_transaction.Commit();
+				_transaction.Dispose();
+
+				_defaultIndexAppender.Dispose();
+				_defaultIndexAppender = _connection.CreateAppender("idx_all");
+				_transaction = _connection.BeginTransaction();
 				_sw.Stop();
-				Console.WriteLine($"Committed {_commitSize} records to index at seq {LastSequence} ({ _sw.ElapsedMilliseconds} ms)");
-				Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _commitSize, LastSequence, _sw.ElapsedMilliseconds);
+				Console.WriteLine(
+					$"Committed {_commitSize} records to index at seq {LastSequence} ({_sw.ElapsedMilliseconds} ms)");
+				Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _commitSize, LastSequence,
+					_sw.ElapsedMilliseconds);
 			} catch (Exception e) {
-				Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _commitSize, LastSequence);
+				Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _commitSize,
+					LastSequence);
 				throw;
 			}
 		}

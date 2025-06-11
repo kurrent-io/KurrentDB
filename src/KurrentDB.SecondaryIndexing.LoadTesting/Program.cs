@@ -17,7 +17,7 @@ var config =
 Logging.Initialize();
 
 Console.WriteLine(
-	$"Running with {config.PartitionsCount} partitions, {config.CategoriesCount} categories, {config.TotalMessagesCount} messages");
+	$"Running {config.EnvironmentType} with {config.PartitionsCount} partitions, {config.CategoriesCount} categories, {config.TotalMessagesCount} messages");
 
 var generator = new MessageGenerator();
 var environment = LoadTestEnvironment.For(config.EnvironmentType);

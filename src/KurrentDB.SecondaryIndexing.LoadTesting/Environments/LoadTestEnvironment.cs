@@ -16,6 +16,7 @@ public enum LoadTestEnvironmentType {
 	InMemory,
 	TestServer,
 	DuckDB,
+	Quack,
 	Container
 }
 
@@ -25,7 +26,8 @@ public static class LoadTestEnvironment {
 			LoadTestEnvironmentType.InMemory => new InMemoryLoadTestEnvironment(),
 			LoadTestEnvironmentType.TestServer => new TestServerEnvironment(),
 			LoadTestEnvironmentType.Container => throw new NotImplementedException("Container environment is not yet supported"),
-			LoadTestEnvironmentType.DuckDB => new DuckDBTestEnvironment(),
+			LoadTestEnvironmentType.DuckDB => new DuckDBTestEnvironment(DuckDBClientType.Duck),
+			LoadTestEnvironmentType.Quack => new DuckDBTestEnvironment(DuckDBClientType.Quack),
 			_ => throw new ArgumentOutOfRangeException(nameof(loadTestEnvironmentType), loadTestEnvironmentType, null)
 		};
 }
