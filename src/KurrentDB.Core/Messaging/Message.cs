@@ -42,5 +42,6 @@ public abstract partial class Message(CancellationToken token = default) {
 	///
 	/// By default, the property returns the affinity object which behavior depends on the handler type.
 	/// </remarks>
+	[JsonIgnore]
 	public virtual object Affinity => UnknownAffinity;
 }
