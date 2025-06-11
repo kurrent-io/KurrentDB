@@ -15,19 +15,17 @@ public interface ILoadTestEnvironment {
 public enum LoadTestEnvironmentType {
 	InMemory,
 	TestServer,
-	DuckDB,
-	Quack,
+	DuckDb,
 	Container
 }
 
 public static class LoadTestEnvironment {
-	public static ILoadTestEnvironment For(LoadTestEnvironmentType loadTestEnvironmentType) =>
-		loadTestEnvironmentType switch {
+	public static ILoadTestEnvironment For(LoadTestConfig config) =>
+		config.EnvironmentType switch {
 			LoadTestEnvironmentType.InMemory => new InMemoryLoadTestEnvironment(),
 			LoadTestEnvironmentType.TestServer => new TestServerEnvironment(),
 			LoadTestEnvironmentType.Container => throw new NotImplementedException("Container environment is not yet supported"),
-			LoadTestEnvironmentType.DuckDB => new DuckDBTestEnvironment(DuckDBClientType.Duck),
-			LoadTestEnvironmentType.Quack => new DuckDBTestEnvironment(DuckDBClientType.Quack),
-			_ => throw new ArgumentOutOfRangeException(nameof(loadTestEnvironmentType), loadTestEnvironmentType, null)
+			LoadTestEnvironmentType.DuckDb => new DuckDBTestEnvironment(config.DuckDb),
+			_ => throw new ArgumentOutOfRangeException(nameof(config.EnvironmentType), config.EnvironmentType, null)
 		};
 }

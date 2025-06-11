@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments;
+using KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting;
 
@@ -17,6 +18,7 @@ public class LoadTestConfig {
 	public LoadTestEnvironmentType EnvironmentType { get; set; } = LoadTestEnvironmentType.TestServer;
 	public required string KurrentDBConnectionString { get; set; } = "Dummy";
 	public required string DuckDbConnectionString { get; set; }= "Dummy";
+	public DuckDBTestEnvironmentOptions DuckDb { get; set; } = new();
 }
 
 public record LoadTestPartitionConfig(

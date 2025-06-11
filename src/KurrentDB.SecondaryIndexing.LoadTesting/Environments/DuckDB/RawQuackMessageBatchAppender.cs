@@ -19,16 +19,17 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 	private static readonly ILogger Logger = Log.Logger.ForContext<RawDuckDbMessageBatchAppender>();
 	private readonly Stopwatch _sw = new();
 
-	public RawQuackMessageBatchAppender(DuckDbDataSource dbDataSource, int commitSize) {
+	public RawQuackMessageBatchAppender(DuckDbDataSource dbDataSource, DuckDBTestEnvironmentOptions options) {
 		_dbDataSource = dbDataSource;
-		_commitSize = commitSize;
+		_commitSize = options.CommitSize;
 		_dbDataSource.InitDb();
 
 		var connection = _dbDataSource.OpenNewConnection();
 		_defaultIndexAppender = new Appender(connection, "idx_all"u8);
 
-		using (var cmd = connection.CreateCommand()) {
-			cmd.CommandText = "PRAGMA wal_autocheckpoint = '1 TB'";
+		if (!string.IsNullOrEmpty(options.WalAutocheckpoint)) {
+			using var cmd = connection.CreateCommand();
+			cmd.CommandText = $"PRAGMA wal_autocheckpoint = '{options.WalAutocheckpoint}'";
 			cmd.ExecuteNonQuery();
 		}
 	}

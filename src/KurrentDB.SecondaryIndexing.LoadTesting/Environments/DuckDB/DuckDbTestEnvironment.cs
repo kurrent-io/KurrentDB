@@ -12,10 +12,17 @@ public enum DuckDBClientType {
 	Quack
 }
 
+public class DuckDBTestEnvironmentOptions {
+	public DuckDBClientType ClientType { get; set; } = DuckDBClientType.Quack;
+	public int CommitSize { get; set; } = 50000;
+	public string? WalAutocheckpoint { get; set; }
+	public int? CheckpointSize { get; set; }
+}
+
 public class DuckDBTestEnvironment : ILoadTestEnvironment {
 	public IMessageBatchAppender MessageBatchAppender { get; }
 
-	public DuckDBTestEnvironment(DuckDBClientType duckDBClientType) {
+	public DuckDBTestEnvironment(DuckDBTestEnvironmentOptions options) {
 		var dbPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "index.db");
 
 		if (File.Exists(dbPath))
@@ -25,8 +32,8 @@ public class DuckDBTestEnvironment : ILoadTestEnvironment {
 			new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" }
 		);
 
-		MessageBatchAppender = duckDBClientType == DuckDBClientType.Duck
-			? new RawDuckDbMessageBatchAppender(dataSource, 50000)
-			: new RawQuackMessageBatchAppender(dataSource, 50000);
+		MessageBatchAppender = options.ClientType == DuckDBClientType.Duck
+			? new RawDuckDbMessageBatchAppender(dataSource, options)
+			: new RawQuackMessageBatchAppender(dataSource, options);
 	}
 }

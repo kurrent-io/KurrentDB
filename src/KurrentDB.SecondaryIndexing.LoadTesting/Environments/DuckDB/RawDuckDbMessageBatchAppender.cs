@@ -12,7 +12,7 @@ namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 
 public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 	private readonly int _commitSize;
-	private readonly int _checkpointSize;
+	private readonly int? _checkpointSize;
 	private DuckDBAppender _defaultIndexAppender;
 	public long LastCommittedSequence;
 	public long LastSequence;
@@ -22,17 +22,18 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 	private readonly DuckDBConnection _connection;
 	private DuckDBTransaction _transaction;
 
-	public RawDuckDbMessageBatchAppender(DuckDbDataSource dbDataSource, int commitSize) {
-		_commitSize = commitSize;
-		_checkpointSize = 10 * commitSize;
+	public RawDuckDbMessageBatchAppender(DuckDbDataSource dbDataSource, DuckDBTestEnvironmentOptions options) {
+		_commitSize = options.CommitSize;
+		_checkpointSize = options.CheckpointSize;
 		dbDataSource.InitDb();
 
 		_connection = dbDataSource.OpenConnection();
 		_defaultIndexAppender = _connection.CreateAppender("idx_all");
 
-		using (var cmd = _connection.CreateCommand()) {
+		if (!string.IsNullOrEmpty(options.WalAutocheckpoint)) {
+			using var cmd = _connection.CreateCommand();
 			cmd.Transaction = _transaction;
-			cmd.CommandText = "PRAGMA wal_autocheckpoint = '1 TB'";
+			cmd.CommandText = $"PRAGMA wal_autocheckpoint = '{options.WalAutocheckpoint}'";
 			cmd.ExecuteNonQuery();
 		}
 
@@ -67,7 +68,7 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 			try {
 				_sw.Restart();
 
-				if (LastSequence >= LastCheckpointedSequence + _checkpointSize) {
+				if (_checkpointSize.HasValue &&LastSequence >= LastCheckpointedSequence + _checkpointSize) {
 					using(var cmd = _connection.CreateCommand())
 					{
 						cmd.Transaction = _transaction;
