@@ -82,7 +82,7 @@ internal class StreamIndexProcessor : Disposable {
 		_stopwatch.Start();
 		_appender.Flush();
 		_stopwatch.Stop();
-		Log.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _count, Seq, _stopwatch.ElapsedMilliseconds);
+		Log.Debug("Committed {Count} records to streams at seq {Seq} ({Took} ms)", _count, Seq, _stopwatch.ElapsedMilliseconds);
 		_stopwatch.Reset();
 
 		LastCommittedPosition = _lastLogPosition;
