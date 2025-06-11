@@ -7,13 +7,13 @@ using Dapper;
 using DotNext;
 using DuckDB.NET.Data;
 using Eventuous.Subscriptions.Context;
+using Kurrent.Quack;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace EventStore.Core.Duck.Default;
 
 class StreamIndex : Disposable {
-	readonly DuckDbDataSource _db;
-	readonly DuckDBConnection _connection;
+	readonly DuckDBAdvancedConnection _connection;
 	readonly MemoryCache _streamIdCache = new(new MemoryCacheOptions());
 	readonly MemoryCacheEntryOptions _options = new() { SlidingExpiration = TimeSpan.FromMinutes(10) };
 	long _seq;
@@ -21,10 +21,9 @@ class StreamIndex : Disposable {
 	public StreamIndex(DuckDbDataSource db) {
 		const string sql = "select max(id) from streams";
 
-		_connection = db.OpenConnection();
+		_connection = db.OpenNewConnection();
 		_seq = _connection.Query<long?>(sql).SingleOrDefault() ?? 0;
 		_appender = _connection.CreateAppender("streams");
-		_db = db;
 	}
 
 	DuckDBAppender _appender;
@@ -36,7 +35,8 @@ class StreamIndex : Disposable {
 			return (long)existing!;
 		}
 
-		var fromDb = GetStreamIdFromDb(name);
+		// var fromDb = GetStreamIdFromDb(name);
+		var fromDb = _connection.QueryFirstOrDefault<StreamSql.GetStreamIdByNameQueryArgs, long, StreamSql.GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
 			_streamIdCache.Set(name, fromDb, _options);
 			return fromDb.Value;
@@ -63,12 +63,12 @@ class StreamIndex : Disposable {
 		}
 	}
 
-	long? GetStreamIdFromDb(string streamName) {
-		const string sql = "select id from streams where name=$name";
-
-		using var connection = _db.Pool.Open();
-		return connection.Query<long?>(sql, new { name = streamName }).SingleOrDefault();
-	}
+	// long? GetStreamIdFromDb(string streamName) {
+	// 	const string sql = "select id from streams where name=$name";
+	//
+	// 	using var connection = _db.Pool.Open();
+	// 	return connection.Query<long?>(sql, new { name = streamName }).SingleOrDefault();
+	// }
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
