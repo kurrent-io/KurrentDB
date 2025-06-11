@@ -6,7 +6,6 @@ using System.Linq;
 using Dapper;
 using EventStore.Core.Data;
 using EventStore.Core.Metrics;
-using Eventuous.Subscriptions.Context;
 
 namespace EventStore.Core.Duck.Default;
 
@@ -55,9 +54,9 @@ public class EventTypeIndex(DuckDbDataSource db) {
 		return connection.Query<EventTypeRecord>(query, new { et = eventTypeId, start = fromEventNumber, end = toEventNumber }).ToList();
 	}
 
-	public SequenceRecord Handle(IMessageConsumeContext ctx) {
-		LastPosition = (long)ctx.GlobalPosition;
-		if (EventTypes.TryGetValue(ctx.MessageType, out var val)) {
+	public SequenceRecord Handle(EventRecord eventRecord) {
+		LastPosition = eventRecord.LogPosition;
+		if (EventTypes.TryGetValue(eventRecord.EventType, out var val)) {
 			var next = _sequences[val] + 1;
 			_sequences[val] = next;
 			return new(val, next);
@@ -66,10 +65,10 @@ public class EventTypeIndex(DuckDbDataSource db) {
 		var id = ++Seq;
 
 		using var connection = db.Pool.Open();
-		connection.Execute(Sql, new { id, name = ctx.MessageType });
+		connection.Execute(Sql, new { id, name = eventRecord.EventType });
 
-		EventTypes[ctx.MessageType] = id;
-		_eventTypeIds[id] = ctx.MessageType;
+		EventTypes[eventRecord.EventType] = id;
+		_eventTypeIds[id] = eventRecord.EventType;
 		_sequences[id] = 0;
 		return new(id, 0);
 	}

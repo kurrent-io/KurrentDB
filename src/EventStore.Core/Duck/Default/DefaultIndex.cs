@@ -8,10 +8,10 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Duck.Default;
 
-public class DefaultIndex<TStreamId> : Disposable {
+public class DefaultIndex : Disposable {
 	readonly DuckDbDataSource _db;
 
-	public DefaultIndex(DuckDbDataSource db, IReadIndex<TStreamId> index) {
+	public DefaultIndex(DuckDbDataSource db, IReadIndex<string> index) {
 		_db = db;
 		StreamIndex = new(db);
 		CategoryIndex = new(db);
@@ -43,13 +43,14 @@ public class DefaultIndex<TStreamId> : Disposable {
 	internal CategoryIndex CategoryIndex;
 	internal EventTypeIndex EventTypeIndex;
 
-	internal readonly CategoryIndexReader<TStreamId> CategoryIndexReader;
-	internal readonly EventTypeIndexReader<TStreamId> EventTypeIndexReader;
-	internal DefaultIndexReader<TStreamId> DefaultIndexReader;
-	internal DefaultIndexHandler<TStreamId> Handler;
+	internal readonly CategoryIndexReader CategoryIndexReader;
+	internal readonly EventTypeIndexReader EventTypeIndexReader;
+	internal DefaultIndexReader DefaultIndexReader;
+	internal DefaultIndexHandler Handler;
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
+			Handler.Dispose();
 			StreamIndex.Dispose();
 		}
 

@@ -10,7 +10,7 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Duck.Default;
 
-class DefaultIndexReader<TStreamId>(DuckDbDataSource db, DefaultIndexHandler<TStreamId> handler, IReadIndex<TStreamId> index) : DuckIndexReader<TStreamId>(index) {
+class DefaultIndexReader(DuckDbDataSource db, DefaultIndexHandler handler, IReadIndex<string> index) : DuckIndexReader(index) {
 	protected override long GetId(string streamName) => 0;
 
 	protected override long GetLastNumber(long id) => handler.LastSequence - 1;

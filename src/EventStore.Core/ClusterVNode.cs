@@ -685,7 +685,7 @@ public class ClusterVNode<TStreamId> : ClusterVNode,
 #pragma warning disable DuckDBNET001
 		var duckDb = new DuckDbDataSource(dbConfig);
 		duckDb.InitDb();
-		var indexBuilder = new DuckDbIndexBuilder<TStreamId>(duckDb, _mainQueue, readIndex);
+		var indexBuilder = new DuckDbIndexBuilder(duckDb, _mainQueue, readIndex as IReadIndex<string>);
 #pragma warning restore DuckDBNET001
 		_mainBus.Subscribe<SystemMessage.SystemReady>(indexBuilder);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(indexBuilder);

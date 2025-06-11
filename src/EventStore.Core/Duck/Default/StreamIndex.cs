@@ -8,10 +8,12 @@ using Dapper;
 using DotNext;
 using DuckDB.NET.Data;
 using EventStore.Common.Log;
+using EventStore.Core.Data;
 using Eventuous.Subscriptions.Context;
 using Kurrent.Quack;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
+using static EventStore.Core.Duck.Default.StreamSql;
 
 namespace EventStore.Core.Duck.Default;
 
@@ -33,31 +35,27 @@ class StreamIndex : Disposable {
 
 	Appender _appender;
 	int _page;
-	readonly object _lock = new();
 
-	public long Handle(IMessageConsumeContext ctx) {
-		var name = ctx.Stream.ToString();
+	public long Handle(EventRecord evt) {
+		var name = evt.EventStreamId;
 		if (_streamIdCache.TryGetValue(name, out var existing)) {
 			return (long)existing!;
 		}
 
-		// var fromDb = GetStreamIdFromDb(name);
-		var fromDb = _connection.QueryFirstOrDefault<StreamSql.GetStreamIdByNameQueryArgs, long, StreamSql.GetStreamIdByNameQuery>(new(name));
+		var fromDb = _connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
 			_streamIdCache.Set(name, fromDb, _options);
 			return fromDb.Value;
 		}
 
 		var id = ++_seq;
-		lock (_lock) {
-			_page++;
-			_streamIdCache.Set(name, id, _options);
-			using var row = _appender.CreateRow();
-			row.Append(id);
-			row.Append(name);
-			row.AppendDefault();
-			row.AppendDefault();
-		}
+		_page++;
+		_streamIdCache.Set(name, id, _options);
+		using var row = _appender.CreateRow();
+		row.Append(id);
+		row.Append(name);
+		row.AppendDefault();
+		row.AppendDefault();
 
 		return id;
 	}
@@ -65,31 +63,19 @@ class StreamIndex : Disposable {
 	readonly Stopwatch _stopwatch = new();
 
 	public void Commit() {
-		lock (_lock) {
-			if (_page == 0) return;
-			_stopwatch.Start();
-			_appender.Flush();
-			_stopwatch.Stop();
-			Logger.Debug("Committed {Count} records to streams at {Seq} in {Time} ms", _page, _seq, _stopwatch.ElapsedMilliseconds);
-			_stopwatch.Reset();
-			_page = 0;
-			// _appender = _connection.CreateAppender("streams");
-		}
+		if (_page == 0) return;
+		_stopwatch.Start();
+		_appender.Flush();
+		_stopwatch.Stop();
+		Logger.Debug("Committed {Count} records to streams at {Seq} in {Time} ms", _page, _seq, _stopwatch.ElapsedMilliseconds);
+		_stopwatch.Reset();
+		_page = 0;
 	}
-
-	// long? GetStreamIdFromDb(string streamName) {
-	// 	const string sql = "select id from streams where name=$name";
-	//
-	// 	using var connection = _db.Pool.Open();
-	// 	return connection.Query<long?>(sql, new { name = streamName }).SingleOrDefault();
-	// }
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {
-			lock (_lock) {
-				_appender.Dispose();
-				_connection.Dispose();
-			}
+			_appender.Dispose();
+			_connection.Dispose();
 		}
 
 		base.Dispose(disposing);

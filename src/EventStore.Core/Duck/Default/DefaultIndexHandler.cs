@@ -3,20 +3,18 @@
 
 using System;
 using System.Diagnostics;
-using System.Threading.Tasks;
+using DotNext;
 using DuckDB.NET.Data;
 using EventStore.Common.Log;
-using Eventuous.Subscriptions;
-using Eventuous.Subscriptions.Context;
 using Kurrent.Quack;
 using Serilog;
+using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
 namespace EventStore.Core.Duck.Default;
 
-public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable {
-	readonly DefaultIndex<TStreamId> _defaultIndex;
+public sealed class DefaultIndexHandler : Disposable {
+	readonly DefaultIndex _defaultIndex;
 	readonly DuckDBConnection _connection;
-	readonly object _lock = new();
 
 	ulong _seq;
 	int _page;
@@ -26,7 +24,7 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 
 	static readonly ILogger Logger = Log.Logger.ForContext("DefaultIndexHandler");
 
-	public DefaultIndexHandler(DuckDbDataSource db, DefaultIndex<TStreamId> defaultIndex) {
+	public DefaultIndexHandler(DuckDbDataSource db, DefaultIndex defaultIndex) {
 		_defaultIndex = defaultIndex;
 
 		// separate connection for this component
@@ -38,70 +36,54 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 		_seq = last.HasValue ? last.Value + 1 : 0;
 	}
 
-	public ValueTask<EventHandlingStatus> HandleEvent(IMessageConsumeContext context) {
-		if (context.Stream.ToString().StartsWith('$'))
-			return ValueTask.FromResult(EventHandlingStatus.Ignored);
+	public void HandleEvent(ResolvedEvent resolved) {
+		var evt = resolved.OriginalEvent;
+		if (evt.EventStreamId.StartsWith('$'))
+			return;
 
-		if (_appenderDisposed || _disposing) return new(EventHandlingStatus.Ignored);
+		if (IsDisposingOrDisposed) return;
 
-		var streamId = _defaultIndex.StreamIndex.Handle(context);
-		var et = _defaultIndex.EventTypeIndex.Handle(context);
-		var cat = _defaultIndex.CategoryIndex.Handle(context);
+		var streamId = _defaultIndex.StreamIndex.Handle(evt);
+		var et = _defaultIndex.EventTypeIndex.Handle(evt);
+		var cat = _defaultIndex.CategoryIndex.Handle(evt);
 
-		lock (_lock) {
-			using var row = _appender.CreateRow();
-			row.Append(_seq++);
-			row.Append((int)context.EventNumber);
-			row.Append(context.GlobalPosition);
-			row.Append(new DateTimeOffset(context.Created).ToUnixTimeMilliseconds());
-			row.Append(streamId);
-			row.Append((int)et.Id);
-			row.Append(et.Sequence);
-			row.Append((int)cat.Id);
-			row.Append(cat.Sequence);
-		}
+		using var row = _appender.CreateRow();
+		row.Append(_seq++);
+		row.Append((int)evt.EventNumber);
+		row.Append(evt.LogPosition);
+		row.Append(new DateTimeOffset(evt.TimeStamp).ToUnixTimeMilliseconds());
+		row.Append(streamId);
+		row.Append((int)et.Id);
+		row.Append(et.Sequence);
+		row.Append((int)cat.Id);
+		row.Append(cat.Sequence);
 
-		_lastLogPosition = (long)context.GlobalPosition;
+		_lastLogPosition = evt.LogPosition;
 		_page++;
-
-		return ValueTask.FromResult(EventHandlingStatus.Success);
 	}
 
-	public string DiagnosticName => "DefaultIndexHandler";
-
-	bool _disposed;
-	bool _disposing;
-	bool _appenderDisposed;
-
-	public void Dispose() {
-		if (_disposing || _disposed) return;
-		_disposing = true;
-		Commit(false);
-		_disposed = true;
-		_appender.Dispose();
-		_connection.Dispose();
-		_defaultIndex.Dispose();
+	protected override void Dispose(bool disposing) {
+		if (disposing) {
+			Commit();
+			_appender.Dispose();
+			_connection.Dispose();
+			_defaultIndex.Dispose();
+		}
+		base.Dispose(disposing);
 	}
-
-	public bool NeedsCommitting => _page > 0;
 
 	readonly Stopwatch _stopwatch = new();
 
-	public void Commit(bool reopen = true) {
-		if (_appenderDisposed || _page == 0) return;
-		lock (_lock) {
-			_stopwatch.Start();
-			_appender.Flush();
-			_stopwatch.Stop();
-			Logger.Debug("Committed {Count} records to index at {Seq} in {Time} ms", _page, _seq, _stopwatch.ElapsedMilliseconds);
-			_stopwatch.Reset();
-			_page = 0;
-			if (!reopen) return;
-			// _appender = _connection.CreateAppender("idx_all");
-			LastPosition = _lastLogPosition;
-		}
-
-		_appenderDisposed = false;
+	public void Commit() {
+		if (_page == 0) return;
+		_defaultIndex.StreamIndex.Commit();
+		_stopwatch.Start();
+		_appender.Flush();
+		_stopwatch.Stop();
+		Logger.Debug("Committed {Count} records to index at {Seq} in {Time} ms", _page, _seq, _stopwatch.ElapsedMilliseconds);
+		_stopwatch.Reset();
+		_page = 0;
+		LastPosition = _lastLogPosition;
 	}
 
 	public long LastPosition { get; private set; }

@@ -8,42 +8,33 @@ using EventStore.Core.Bus;
 using EventStore.Core.Duck.Default;
 using EventStore.Core.Duck.Infrastructure;
 using EventStore.Core.Services.Storage.ReaderIndex;
-using Serilog;
 using static EventStore.Core.Messages.SystemMessage;
 
 namespace EventStore.Core.Duck;
 
-class DuckDbIndexBuilder<TStreamId> : IAsyncHandle<SystemReady>, IAsyncHandle<BecomeShuttingDown> {
-	static readonly ILogger Log = Serilog.Log.Logger.ForContext<DuckDbIndexBuilder<TStreamId>>();
-	InternalSubscription _subscription;
-	readonly IndexCheckpointStore<TStreamId> _checkpointStore;
+class DuckDbIndexBuilder : IHandle<SystemReady>, IAsyncHandle<BecomeShuttingDown> {
+	SecondaryIndexSubscription _subscription;
 	readonly DuckDbDataSource _db;
 	readonly IPublisher _publisher;
 
-	internal DefaultIndex<TStreamId> DefaultIndex { get; }
+	internal DefaultIndex DefaultIndex { get; }
 
 	[Experimental("DuckDBNET001")]
-	public DuckDbIndexBuilder(DuckDbDataSource db, IPublisher publisher, IReadIndex<TStreamId> index) {
+	public DuckDbIndexBuilder(DuckDbDataSource db, IPublisher publisher, IReadIndex<string> index) {
 		_publisher = publisher;
 		_db = db;
 		DefaultIndex = new(_db, index);
-		new InlineFunctions<TStreamId>(_db, publisher).Run();
-		_checkpointStore = new(DefaultIndex, DefaultIndex.Handler);
+		new InlineFunctions(_db, publisher).Run();
 	}
 
-	public async ValueTask HandleAsync(SystemReady message, CancellationToken token) {
+	public void Handle(SystemReady message) {
 		DefaultIndex.Init();
-		_subscription = new(_publisher, _checkpointStore, DefaultIndex.Handler);
-		await _subscription.Subscribe(
-			id => Log.Information("Index subscription {Subscription} subscribed", id),
-			(id, reason, ex) => Log.Warning(ex, "Index subscription {Subscription} dropped {Reason}", id, reason),
-			token
-		);
+		_subscription = new(_publisher, DefaultIndex);
+		_subscription.Subscribe();
 	}
 
-	public async ValueTask HandleAsync(BecomeShuttingDown message, CancellationToken token) {
-		DefaultIndex.Handler.Commit(false);
-		await Task.Delay(100, token);
+	public async ValueTask HandleAsync(BecomeShuttingDown message, CancellationToken cancellationToken) {
+		await _subscription.DisposeAsync();
 		DefaultIndex.Dispose();
 		_db.Dispose();
 	}

@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System;
 using System.Collections.Generic;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -18,30 +19,11 @@ public static class DuckDbExtensions {
 
 	static TRow? GetFirstOrDefault<TRow, TParser>(this QueryResult<TRow, TParser> result)
 		where TRow : struct where TParser : IQuery<TRow> {
-		TRow row = default;
-		int rowNumber = 0;
-		using var enumerator = result.GetEnumerator();
-		while (enumerator.MoveNext()) {
-			if (rowNumber == 0) {
-				row = enumerator.Current;
-			}
-			rowNumber++;
+		if (TParser.UseStreamingMode) {
+			throw new InvalidOperationException("Streaming mode must be disabled for query with single result");
 		}
-		return rowNumber > 0 ? row : null;
-	}
-
-	static TRow? GetFirstOrDefault<TArgs, TRow, TQuery>(this QueryResult<TArgs, TRow, TQuery> result)
-		where TRow : struct where TQuery : IQuery<TRow>, IQuery<TArgs, TRow> where TArgs : struct {
-		TRow row = default;
-		int rowNumber = 0;
 		using var enumerator = result.GetEnumerator();
-		while (enumerator.MoveNext()) {
-			if (rowNumber == 0) {
-				row = enumerator.Current;
-			}
-			rowNumber++;
-		}
-		return rowNumber > 0 ? row : null;
+		return enumerator.MoveNext() ? enumerator.Current : null;
 	}
 
 	public static TRow? QueryFirstOrDefault<TRow, TQuery>(this DuckDBAdvancedConnection connection)
@@ -64,10 +46,13 @@ public static class DuckDbExtensions {
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBAdvancedConnection connection, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IQuery<TArgs, TRow>, IQuery<TRow> {
+		where TQuery : IQuery<TArgs, TRow> {
+		if (TQuery.UseStreamingMode) {
+			throw new InvalidOperationException("Streaming mode must be disabled for query with single result");
+		}
 		var result = connection.ExecuteQuery<TArgs, TRow, TQuery>(args);
-		return result.GetFirstOrDefault();
-		// return result.MoveNext() ? result.Current : null;
+		using var enumerator = result.GetEnumerator();
+		return enumerator.MoveNext() ? enumerator.Current : null;
 	}
 
 	public static List<TRow> Query<TRow, TQuery>(this DuckDBConnectionPool pool)

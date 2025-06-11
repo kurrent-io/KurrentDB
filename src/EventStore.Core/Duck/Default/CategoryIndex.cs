@@ -6,7 +6,6 @@ using System.Linq;
 using Dapper;
 using EventStore.Core.Data;
 using EventStore.Core.Metrics;
-using Eventuous.Subscriptions.Context;
 
 namespace EventStore.Core.Duck.Default;
 
@@ -59,9 +58,9 @@ class CategoryIndex(DuckDbDataSource db) {
 		return dashIndex == -1 ? streamName : streamName[..dashIndex];
 	}
 
-	public SequenceRecord Handle(IMessageConsumeContext ctx) {
-		var categoryName = GetStreamCategory(ctx.Stream.ToString());
-		LastPosition = (long)ctx.GlobalPosition;
+	public SequenceRecord Handle(EventRecord eventRecord) {
+		var categoryName = GetStreamCategory(eventRecord.EventStreamId);
+		LastPosition = eventRecord.LogPosition;
 		if (_categories.TryGetValue(categoryName, out var val)) {
 			var next = _categorySizes[val] + 1;
 			_categorySizes[val] = next;

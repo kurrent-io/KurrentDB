@@ -8,7 +8,7 @@ using EventStore.Core.Services.Storage.ReaderIndex;
 
 namespace EventStore.Core.Duck.Default;
 
-class CategoryIndexReader<TStreamId>(CategoryIndex categoryIndex, IReadIndex<TStreamId> index) : DuckIndexReader<TStreamId>(index) {
+class CategoryIndexReader(CategoryIndex categoryIndex, IReadIndex<string> index) : DuckIndexReader(index) {
 	const string Prefix = "$idx-ce-";
 
 	protected override long GetId(string streamName) {
