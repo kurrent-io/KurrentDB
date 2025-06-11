@@ -8,11 +8,11 @@ using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 internal class CategoryIndexProcessor {
-	readonly Dictionary<string, long> _categories;
-	readonly Dictionary<long, long> _categorySizes = new();
+	readonly Dictionary<string, int> _categories;
+	readonly Dictionary<int, long> _categorySizes = new();
 	readonly DuckDbDataSource _db;
 
-	long _seq;
+	int _seq;
 	public long LastIndexesPosition { get; private set; }
 
 	public CategoryIndexProcessor(DuckDbDataSource db) {
@@ -25,7 +25,7 @@ internal class CategoryIndexProcessor {
 			_categorySizes[id.Id] = -1;
 		}
 
-		var sequences = connection.Query<(long Id, long Sequence), GetCategoriesMaxSequencesQuery>();
+		var sequences = connection.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>();
 		foreach (var sequence in sequences) {
 			_categorySizes[sequence.Id] = sequence.Sequence;
 		}
@@ -53,7 +53,7 @@ internal class CategoryIndexProcessor {
 		return new(id, 0);
 	}
 
-	public long GetLastEventNumber(long categoryId) =>
+	public long GetLastEventNumber(int categoryId) =>
 		_categorySizes.TryGetValue(categoryId, out var size) ? size : ExpectedVersion.NoStream;
 
 	public long GetCategoryId(string categoryName) =>

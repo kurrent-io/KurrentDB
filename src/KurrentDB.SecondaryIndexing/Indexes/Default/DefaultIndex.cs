@@ -66,9 +66,9 @@ record struct AllRecord(long Seq, long LogPosition, long EventNumber);
 record struct InFlightRecord(
 	long Seq,
 	long LogPosition,
-	long EventNumber,
-	long CategoryId,
+	int EventNumber,
+	int CategoryId,
 	long CategorySeq,
-	long EventTypeId,
+	int EventTypeId,
 	long EventTypeSeq
 );

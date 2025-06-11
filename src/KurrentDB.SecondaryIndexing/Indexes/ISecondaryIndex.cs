@@ -19,5 +19,5 @@ public interface ISecondaryIndexProcessor {
 	void Index(ResolvedEvent evt);
 }
 
-public record struct SequenceRecord(long Id, long Sequence);
+public record struct SequenceRecord(int Id, long Sequence);
 

@@ -25,7 +25,7 @@ internal class EventTypeIndexReader(
 		return processor.GetEventTypeId(eventTypeName);
 	}
 
-	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber(id);
+	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber((int)id);
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
 		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(new((int)id, fromEventNumber, toEventNumber));

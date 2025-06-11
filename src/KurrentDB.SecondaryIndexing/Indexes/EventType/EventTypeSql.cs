@@ -7,9 +7,9 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal static class EventTypeSql {
-	public record struct ReadEventTypeIndexQueryArgs(long EventType, long FromSeq, long ToSeq);
+	public record struct ReadEventTypeIndexQueryArgs(int EventType, long FromSeq, long ToSeq);
 
-	public record struct EventTypeRecord(long EventTypeSeq, long LogPosition, long EventNumber);
+	public record struct EventTypeRecord(long EventTypeSeq, long LogPosition, int EventNumber);
 
 	public struct ReadEventTypeIndexQuery : IQuery<ReadEventTypeIndexQueryArgs, EventTypeRecord> {
 		public static BindingContext Bind(in ReadEventTypeIndexQueryArgs args, PreparedStatement statement)
@@ -35,12 +35,12 @@ internal static class EventTypeSql {
 		public static ReferenceRecord Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString());
 	}
 
-	public struct GetEventTypeMaxSequencesQuery : IQuery<(long Id, long Sequence)> {
+	public struct GetEventTypeMaxSequencesQuery : IQuery<(int Id, long Sequence)> {
 		public static ReadOnlySpan<byte> CommandText =>
 			"select event_type, max(event_type_seq) from idx_all group by event_type"u8;
 
-		public static (long Id, long Sequence) Parse(ref DataChunk.Row row) =>
-			(row.ReadInt64(), row.ReadInt64());
+		public static (int Id, long Sequence) Parse(ref DataChunk.Row row) =>
+			(row.ReadInt32(), row.ReadInt64());
 	}
 
 	public record struct AddEventTypeStatementArgs(long Id, string EventType);

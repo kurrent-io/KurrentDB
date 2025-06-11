@@ -8,11 +8,11 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal class EventTypeIndexProcessor {
-	readonly Dictionary<string, long> _eventTypes;
-	readonly Dictionary<long, long> _eventTypeSizes = new();
+	readonly Dictionary<string, int> _eventTypes;
+	readonly Dictionary<int, long> _eventTypeSizes = new();
 	readonly DuckDbDataSource _db;
 
-	public long Seq { get; private set; }
+	public int Seq { get; private set; }
 	public long LastIndexedPosition { get; private set; }
 
 	public EventTypeIndexProcessor(DuckDbDataSource db) {
@@ -24,7 +24,7 @@ internal class EventTypeIndexProcessor {
 			_eventTypeSizes[id.Id] = -1;
 		}
 
-		var sequences = db.Pool.Query<(long Id, long Sequence), GetEventTypeMaxSequencesQuery>();
+		var sequences = db.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>();
 		foreach (var sequence in sequences) {
 			_eventTypeSizes[sequence.Id] = sequence.Sequence;
 		}
@@ -48,12 +48,12 @@ internal class EventTypeIndexProcessor {
 		_eventTypes[eventTypeName] = id;
 		_eventTypeSizes[id] = 0;
 
-		_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new((int)id, eventTypeName));
+		_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new(id, eventTypeName));
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 		return new(id, 0);
 	}
 
-	public long GetLastEventNumber(long eventTypeId) =>
+	public long GetLastEventNumber(int eventTypeId) =>
 		_eventTypeSizes.TryGetValue(eventTypeId, out var size) ? size : ExpectedVersion.NoStream;
 
 	public long GetEventTypeId(string eventTypeName) =>

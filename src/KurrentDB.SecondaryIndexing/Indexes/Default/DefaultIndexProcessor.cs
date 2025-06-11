@@ -47,7 +47,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		var sequence = LastSequence++;
 		var logPosition = resolvedEvent.Event.LogPosition;
-		var eventNumber = resolvedEvent.Event.EventNumber;
+		int eventNumber = (int)resolvedEvent.Event.EventNumber;
 		using var row = _appender.CreateRow();
 		row.Append(sequence);
 		row.Append(eventNumber);
