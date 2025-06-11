@@ -920,7 +920,9 @@ namespace EventStore.Core {
 				if (NodeInfo.ExternalTcp != null && options.Interface.EnableExternalTcp) {
 					var extTcpService = new TcpService(_mainQueue, NodeInfo.ExternalTcp, _workersHandler,
 						TcpServiceType.External, TcpSecurityType.Normal,
-						new ClientTcpDispatcher(TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs)),
+						new ClientTcpDispatcher(
+							readTimeout: TimeSpan.FromMilliseconds(options.Database.TcpReadTimeoutMs),
+							writeTimeout: TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs)),
 						TimeSpan.FromMilliseconds(options.Interface.NodeHeartbeatInterval),
 						TimeSpan.FromMilliseconds(options.Interface.NodeHeartbeatTimeout),
 						_authenticationProvider, AuthorizationGateway, null, null, null,
@@ -934,7 +936,9 @@ namespace EventStore.Core {
 				if (NodeInfo.ExternalSecureTcp != null && options.Interface.EnableExternalTcp) {
 					var extSecTcpService = new TcpService(_mainQueue, NodeInfo.ExternalSecureTcp, _workersHandler,
 						TcpServiceType.External, TcpSecurityType.Secure,
-						new ClientTcpDispatcher(TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs)),
+						new ClientTcpDispatcher(
+							readTimeout: TimeSpan.FromMilliseconds(options.Database.TcpReadTimeoutMs),
+							writeTimeout: TimeSpan.FromMilliseconds(options.Database.WriteTimeoutMs)),
 						TimeSpan.FromMilliseconds(options.Interface.NodeHeartbeatInterval),
 						TimeSpan.FromMilliseconds(options.Interface.NodeHeartbeatTimeout),
 						_authenticationProvider, AuthorizationGateway,

@@ -1,46 +1,32 @@
-using EventStore.Core.Bus;
-using EventStore.Core.Services.Transport.Tcp;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
-using EventStore.Core.Messaging;
-using EventStore.Core.Tests.Authentication;
 using System.Linq;
-using EventStore.Core.Data;
-using EventStore.Core.Messages;
 using System.Text;
 using EventStore.Client.Messages;
-using EventStore.Core.Authentication.InternalAuthentication;
+using EventStore.Core.Data;
 using EventStore.Core.LogV2;
+using EventStore.Core.Messages;
+using EventStore.Core.Messaging;
+using EventStore.Core.Services;
+using EventStore.Core.Services.Transport.Tcp;
 using EventStore.Core.Services.UserManagement;
 using EventStore.Core.TransactionLog.LogRecords;
-using EventStore.Core.Services;
-using EventStore.Core.Tests.Authorization;
-using EventStore.Core.Util;
+using NUnit.Framework;
 using EventRecord = EventStore.Core.Data.EventRecord;
 using ResolvedEvent = EventStore.Core.Data.ResolvedEvent;
 
 namespace EventStore.Core.Tests.Services.Transport.Tcp {
 	[TestFixture]
 	public class TcpClientDispatcherTests {
-		private readonly NoopEnvelope _envelope = new NoopEnvelope();
+		private readonly TimeSpan _readTimeout = TimeSpan.FromSeconds(5);
+		private readonly TimeSpan _writeTimeout = TimeSpan.FromSeconds(2);
+		private readonly TimeSpan _tolerance = TimeSpan.FromSeconds(1);
 
 		private ClientTcpDispatcher _dispatcher;
-		private TcpConnectionManager _connection;
 
 		[OneTimeSetUp]
 		public void Setup() {
-			_dispatcher = new ClientTcpDispatcher(2000);
-			
-			var dummyConnection = new DummyTcpConnection();
-			_connection = new TcpConnectionManager(
-				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
-				InMemoryBus.CreateTest(), dummyConnection, InMemoryBus.CreateTest(), new InternalAuthenticationProvider(
-					InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()),
-					new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
-				new AuthorizationGateway(new TestAuthorizationProvider()), 
-				TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10), (man, err) => { },
-				Opts.ConnectionPendingSendBytesThresholdDefault, Opts.ConnectionQueueSizeThresholdDefault);
+			_dispatcher = new ClientTcpDispatcher(_readTimeout, _writeTimeout);
 		}
 
 		[Test]
@@ -294,6 +280,213 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			return new EventRecord(0, LogRecord.Prepare(new LogV2RecordFactory(), 100, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 				"link-stream", -1, PrepareFlags.SingleWrite | PrepareFlags.Data, SystemEventTypes.LinkTo,
 				Encoding.UTF8.GetBytes(string.Format("{0}@test-stream", long.MaxValue)), new byte[0]), "link-stream", SystemEventTypes.LinkTo);
+		}
+
+		[Test]
+		public void unwraps_ReadEvent() {
+			var dto = new ReadEvent(
+				eventStreamId: "my-stream",
+				eventNumber: 5,
+				resolveLinkTos: true,
+				requireLeader: true);
+
+			var package = new TcpPackage(TcpCommand.ReadEvent, Guid.NewGuid(), dto.Serialize());
+
+			var message = _dispatcher.UnwrapPackage(
+				package: package,
+				envelope: new NoopEnvelope(),
+				user: SystemAccounts.System,
+				tokens: new Dictionary<string, string>(),
+				connection: null,
+				version: (byte)ClientVersion.V2);
+
+			Assert.IsInstanceOf<ClientMessage.ReadEvent>(message);
+			var readEvent = message as ClientMessage.ReadEvent;
+			Assert.AreEqual("my-stream", readEvent.EventStreamId);
+			Assert.AreEqual(5, readEvent.EventNumber);
+			Assert.AreEqual(true, readEvent.ResolveLinkTos);
+			Assert.AreEqual(true, readEvent.RequireLeader);
+			Assert.That(readEvent.Expires, Is.EqualTo(DateTime.UtcNow + _readTimeout).Within(_tolerance));
+		}
+
+		[Test]
+		public void unwraps_ReadStreamEventsForward() {
+			var dto = new ReadStreamEvents(
+				eventStreamId: "my-stream",
+				fromEventNumber: 5,
+				maxCount: 6,
+				resolveLinkTos: true,
+				requireLeader: true);
+
+			var package = new TcpPackage(TcpCommand.ReadStreamEventsForward, Guid.NewGuid(), dto.Serialize());
+
+			var message = _dispatcher.UnwrapPackage(
+				package: package,
+				envelope: new NoopEnvelope(),
+				user: SystemAccounts.System,
+				tokens: new Dictionary<string, string>(),
+				connection: null,
+				version: (byte)ClientVersion.V2);
+
+			Assert.IsInstanceOf<ClientMessage.ReadStreamEventsForward>(message);
+			var readEvent = message as ClientMessage.ReadStreamEventsForward;
+			Assert.AreEqual("my-stream", readEvent.EventStreamId);
+			Assert.AreEqual(5, readEvent.FromEventNumber);
+			Assert.AreEqual(6, readEvent.MaxCount);
+			Assert.AreEqual(true, readEvent.ResolveLinkTos);
+			Assert.AreEqual(true, readEvent.RequireLeader);
+			Assert.That(readEvent.Expires, Is.EqualTo(DateTime.UtcNow + _readTimeout).Within(_tolerance));
+		}
+
+		[Test]
+		public void unwraps_ReadStreamEventsBackward() {
+			var dto = new ReadStreamEvents(
+				eventStreamId: "my-stream",
+				fromEventNumber: 5,
+				maxCount: 6,
+				resolveLinkTos: true,
+				requireLeader: true);
+
+			var package = new TcpPackage(TcpCommand.ReadStreamEventsForward, Guid.NewGuid(), dto.Serialize());
+
+			var message = _dispatcher.UnwrapPackage(
+				package: package,
+				envelope: new NoopEnvelope(),
+				user: SystemAccounts.System,
+				tokens: new Dictionary<string, string>(),
+				connection: null,
+				version: (byte)ClientVersion.V2);
+
+			Assert.IsInstanceOf<ClientMessage.ReadStreamEventsForward>(message);
+			var readEvent = message as ClientMessage.ReadStreamEventsForward;
+			Assert.AreEqual("my-stream", readEvent.EventStreamId);
+			Assert.AreEqual(5, readEvent.FromEventNumber);
+			Assert.AreEqual(6, readEvent.MaxCount);
+			Assert.AreEqual(true, readEvent.ResolveLinkTos);
+			Assert.AreEqual(true, readEvent.RequireLeader);
+			Assert.That(readEvent.Expires, Is.EqualTo(DateTime.UtcNow + _readTimeout).Within(_tolerance));
+		}
+
+		[Test]
+		public void unwraps_ReadAllEventsForward() {
+			var dto = new ReadAllEvents(
+				commitPosition: 2000,
+				preparePosition: 1000,
+				maxCount: 6,
+				resolveLinkTos: true,
+				requireLeader: true);
+
+			var package = new TcpPackage(TcpCommand.ReadAllEventsForward, Guid.NewGuid(), dto.Serialize());
+
+			var message = _dispatcher.UnwrapPackage(
+				package: package,
+				envelope: new NoopEnvelope(),
+				user: SystemAccounts.System,
+				tokens: new Dictionary<string, string>(),
+				connection: null,
+				version: (byte)ClientVersion.V2);
+
+			Assert.IsInstanceOf<ClientMessage.ReadAllEventsForward>(message);
+			var readEvent = message as ClientMessage.ReadAllEventsForward;
+			Assert.AreEqual(2000, readEvent.CommitPosition);
+			Assert.AreEqual(1000, readEvent.PreparePosition);
+			Assert.AreEqual(6, readEvent.MaxCount);
+			Assert.AreEqual(true, readEvent.ResolveLinkTos);
+			Assert.AreEqual(true, readEvent.RequireLeader);
+			Assert.That(readEvent.Expires, Is.EqualTo(DateTime.UtcNow + _readTimeout).Within(_tolerance));
+		}
+
+		[Test]
+		public void unwraps_ReadAllEventsBackward() {
+			var dto = new ReadAllEvents(
+				commitPosition: 2000,
+				preparePosition: 1000,
+				maxCount: 6,
+				resolveLinkTos: true,
+				requireLeader: true);
+
+			var package = new TcpPackage(TcpCommand.ReadAllEventsBackward, Guid.NewGuid(), dto.Serialize());
+
+			var message = _dispatcher.UnwrapPackage(
+				package: package,
+				envelope: new NoopEnvelope(),
+				user: SystemAccounts.System,
+				tokens: new Dictionary<string, string>(),
+				connection: null,
+				version: (byte)ClientVersion.V2);
+
+			Assert.IsInstanceOf<ClientMessage.ReadAllEventsBackward>(message);
+			var readEvent = message as ClientMessage.ReadAllEventsBackward;
+			Assert.AreEqual(2000, readEvent.CommitPosition);
+			Assert.AreEqual(1000, readEvent.PreparePosition);
+			Assert.AreEqual(6, readEvent.MaxCount);
+			Assert.AreEqual(true, readEvent.ResolveLinkTos);
+			Assert.AreEqual(true, readEvent.RequireLeader);
+			Assert.That(readEvent.Expires, Is.EqualTo(DateTime.UtcNow + _readTimeout).Within(_tolerance));
+		}
+
+				[Test]
+		public void unwraps_FilteredReadAllEventsForward() {
+			var dto = new FilteredReadAllEvents(
+				commitPosition: 2000,
+				preparePosition: 1000,
+				maxCount: 6,
+				maxSearchWindow: 7,
+				resolveLinkTos: true,
+				requireLeader: true,
+				filter: null);
+
+			var package = new TcpPackage(TcpCommand.FilteredReadAllEventsForward, Guid.NewGuid(), dto.Serialize());
+
+			var message = _dispatcher.UnwrapPackage(
+				package: package,
+				envelope: new NoopEnvelope(),
+				user: SystemAccounts.System,
+				tokens: new Dictionary<string, string>(),
+				connection: null,
+				version: (byte)ClientVersion.V2);
+
+			Assert.IsInstanceOf<ClientMessage.FilteredReadAllEventsForward>(message);
+			var readEvent = message as ClientMessage.FilteredReadAllEventsForward;
+			Assert.AreEqual(2000, readEvent.CommitPosition);
+			Assert.AreEqual(1000, readEvent.PreparePosition);
+			Assert.AreEqual(6, readEvent.MaxCount);
+			Assert.AreEqual(7, readEvent.MaxSearchWindow);
+			Assert.AreEqual(true, readEvent.ResolveLinkTos);
+			Assert.AreEqual(true, readEvent.RequireLeader);
+			Assert.That(readEvent.Expires, Is.EqualTo(DateTime.UtcNow + _readTimeout).Within(_tolerance));
+		}
+
+		[Test]
+		public void unwraps_FilteredReadAllEventsBackward() {
+			var dto = new FilteredReadAllEvents(
+				commitPosition: 2000,
+				preparePosition: 1000,
+				maxCount: 6,
+				maxSearchWindow: 7,
+				resolveLinkTos: true,
+				requireLeader: true,
+				filter: null);
+
+			var package = new TcpPackage(TcpCommand.FilteredReadAllEventsBackward, Guid.NewGuid(), dto.Serialize());
+
+			var message = _dispatcher.UnwrapPackage(
+				package: package,
+				envelope: new NoopEnvelope(),
+				user: SystemAccounts.System,
+				tokens: new Dictionary<string, string>(),
+				connection: null,
+				version: (byte)ClientVersion.V2);
+
+			Assert.IsInstanceOf<ClientMessage.FilteredReadAllEventsBackward>(message);
+			var readEvent = message as ClientMessage.FilteredReadAllEventsBackward;
+			Assert.AreEqual(2000, readEvent.CommitPosition);
+			Assert.AreEqual(1000, readEvent.PreparePosition);
+			Assert.AreEqual(6, readEvent.MaxCount);
+			Assert.AreEqual(7, readEvent.MaxSearchWindow);
+			Assert.AreEqual(true, readEvent.ResolveLinkTos);
+			Assert.AreEqual(true, readEvent.RequireLeader);
+			Assert.That(readEvent.Expires, Is.EqualTo(DateTime.UtcNow + _readTimeout).Within(_tolerance));
 		}
 	}
 }

@@ -474,6 +474,9 @@ namespace EventStore.Core {
 			[Description("Write timeout (in milliseconds).")]
 			public int WriteTimeoutMs { get; init; } = 2_000;
 
+			[Description("TCP Client Read Timeout (in milliseconds). Reads older than this will be discarded.")]
+			public int TcpReadTimeoutMs { get; init; } = ESConsts.ReadRequestTimeout;
+
 			private readonly bool _unsafeDisableFlushToDisk = false;
 
 			[Description("Disable flushing to disk. (UNSAFE: on power off)")]
