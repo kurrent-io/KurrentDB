@@ -31,8 +31,8 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 		_defaultIndexAppender = _connection.CreateAppender("idx_all");
 
 		using (var cmd = _connection.CreateCommand()) {
-			//cmd.Transaction = _transaction;
-			cmd.CommandText = "PRAGMA wal_autocheckpoint = '500MB'";
+			cmd.Transaction = _transaction;
+			cmd.CommandText = "PRAGMA wal_autocheckpoint = '1 TB'";
 			cmd.ExecuteNonQuery();
 		}
 

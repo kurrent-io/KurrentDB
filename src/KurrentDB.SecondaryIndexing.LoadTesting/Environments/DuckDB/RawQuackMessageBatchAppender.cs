@@ -26,6 +26,11 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 
 		var connection = _dbDataSource.OpenNewConnection();
 		_defaultIndexAppender = new Appender(connection, "idx_all"u8);
+
+		using (var cmd = connection.CreateCommand()) {
+			cmd.CommandText = "PRAGMA wal_autocheckpoint = '1 TB'";
+			cmd.ExecuteNonQuery();
+		}
 	}
 
 	public ValueTask Append(MessageBatch batch) {
