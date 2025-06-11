@@ -601,6 +601,7 @@ namespace EventStore.Core {
 				PrepareTimeoutMs = configurationRoot.GetValue<int>(nameof(PrepareTimeoutMs)),
 				CommitTimeoutMs = configurationRoot.GetValue<int>(nameof(CommitTimeoutMs)),
 				WriteTimeoutMs = configurationRoot.GetValue<int>(nameof(WriteTimeoutMs)),
+				TcpReadTimeoutMs = configurationRoot.GetValue<int>(nameof(TcpReadTimeoutMs)),
 				UnsafeDisableFlushToDisk = configurationRoot.GetValue<bool>(nameof(UnsafeDisableFlushToDisk)),
 				UnsafeIgnoreHardDelete = configurationRoot.GetValue<bool>(nameof(UnsafeIgnoreHardDelete)),
 				SkipIndexVerify = configurationRoot.GetValue<bool>(nameof(SkipIndexVerify)),
