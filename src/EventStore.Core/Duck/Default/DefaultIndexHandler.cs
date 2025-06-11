@@ -50,7 +50,7 @@ public sealed class DefaultIndexHandler<TStreamId> : IEventHandler, IDisposable 
 			row.AppendValue(_seq++);
 			row.AppendValue((int)context.EventNumber);
 			row.AppendValue(context.GlobalPosition);
-			row.AppendValue(context.Created);
+			row.AppendValue(new DateTimeOffset(context.Created).ToUnixTimeMilliseconds());
 			row.AppendValue(streamId);
 			row.AppendValue((int)et.Id);
 			row.AppendValue(et.Sequence);

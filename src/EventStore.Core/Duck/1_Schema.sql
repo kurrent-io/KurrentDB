@@ -22,7 +22,7 @@ create table if not exists idx_all (
     seq ubigint,
     event_number int4,
     log_position ubigint,
-    created timestamp,
+    created bigint,
     stream ubigint,
     event_type int4,
     event_type_seq int8,
