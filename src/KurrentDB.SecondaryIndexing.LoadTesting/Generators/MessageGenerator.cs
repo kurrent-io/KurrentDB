@@ -15,31 +15,44 @@ public interface IMessageGenerator {
 public class MessageGenerator : IMessageGenerator {
 	public async IAsyncEnumerable<MessageBatch> GenerateBatches(LoadTestPartitionConfig config) {
 		var eventTypesByCategory = GenerateCategories(config);
+		var streams = new Dictionary<string, int>();
 		var eventsLeft = config.TotalMessagesCount;
+		long logPosition = 0;
 
 		do {
 			//var batchSize = Math.Min(Random.Shared.Next(1, config.MaxBatchSize + 1), eventsLeft);
 			var batchSize = Math.Min(config.MaxBatchSize, eventsLeft);
 
-			yield return GenerateBatch(config, eventTypesByCategory, batchSize);
+			yield return GenerateBatch(config, eventTypesByCategory, streams, batchSize, logPosition);
 
 			eventsLeft -= batchSize;
+			logPosition += batchSize;
 
 			if (eventsLeft % 10 == 0) await Task.Yield();
 		} while (eventsLeft > 0);
 	}
 
-	private static MessageBatch GenerateBatch(LoadTestPartitionConfig config,
-		Dictionary<string, string[]> eventTypesByCategory, int batchSize) {
+	private MessageBatch GenerateBatch(LoadTestPartitionConfig config,
+		Dictionary<string, string[]> eventTypesByCategory,
+		Dictionary<string, int> streams,
+		int batchSize,
+		long logPosition
+	) {
 		var category = eventTypesByCategory.Keys.RandomElement();
 		var streamName = $"{category}-${config.PartitionId}_${Random.Shared.Next(0, config.MaxStreamsPerCategory)}";
+
+		streams.TryAdd(streamName, -1);
 
 		var messages = new MessageData[batchSize];
 
 		for (int i = 0; i < messages.Length; i++) {
 			var eventType = eventTypesByCategory[category].RandomElement();
+			streams[streamName] += 1;
+			var streamPosition = streams[streamName];
+
 			messages[i] = new MessageData(
-				Random.Shared.Next(0, 20), // TODO: make it a real, base on cache
+				streamPosition,
+				logPosition + i,
 				eventType,
 				Enumerable.Repeat((byte)0x20, config.MessageSize).ToArray()
 			);
@@ -62,7 +75,7 @@ public class MessageGenerator : IMessageGenerator {
 	}
 }
 
-public readonly record struct MessageData(int StreamPosition, string EventType, byte[] Data) {
+public readonly record struct MessageData(int StreamPosition, long LogPosition, string EventType, byte[] Data) {
 	public ResolvedEvent ToResolvedEvent(string streamName) {
 		var recordFactory = LogFormatHelper<LogFormat.V2, string>.RecordFactory;
 		var streamIdIgnored = LogFormatHelper<LogFormat.V2, string>.StreamId;
@@ -70,7 +83,7 @@ public readonly record struct MessageData(int StreamPosition, string EventType, 
 
 		var record = new EventRecord(
 			StreamPosition,
-			LogRecord.Prepare(recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
+			LogRecord.Prepare(recordFactory, LogPosition, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 				streamIdIgnored, StreamPosition, PrepareFlags.None, eventTypeIdIgnored, Data,
 				Encoding.UTF8.GetBytes("")
 			),
