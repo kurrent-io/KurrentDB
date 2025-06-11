@@ -107,6 +107,7 @@ jobs:
         path: test-results/**/*.trx
 
   test-results:
+    needs: build-container
     name: Test Results
     runs-on: ubuntu-latest
 
