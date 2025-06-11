@@ -93,7 +93,7 @@ There is a change in behaviour between 24.10.4 and previous versions.
 
 Previously unquoted keys, e.g., `{ foo : "bar" }`, were erroneously considered valid JSON and would be processed by the projections. This is not the case starting from 24.10.4.
 
-Projections won’t fault after an upgrade if they previously emitted an event based on a now-invalid event.
+Projections won't fault after an upgrade if they previously emitted an event based on a now-invalid event.
 
 ### Add an option to limit the size of events appended over gRPC and HTTP (PR [#4882](https://github.com/kurrent-io/KurrentDB/pull/4882))
 
@@ -109,9 +109,9 @@ A new RPC exception `maximum-append-event-size-exceeded` was added as part of th
 
 The `MaxProjectionStateSize` option has been added to configure the maximum size of a projection's state before the projection should fault. This defaults to `int.MaxValue` (no limit).
 
-A projection will now fault if the total size of the projection’s state and result exceeds the `MaxProjectionStateSize`. This replaces the warning log for state size in `CoreProjectionCheckpointManager`.
+A projection will now fault if the total size of the projection's state and result exceeds the `MaxProjectionStateSize`. This replaces the warning log for state size in `CoreProjectionCheckpointManager`.
 
-**Note:** Sometimes, a projection’s state and result will be set to the same value and written to the projection state event twice. This can result in the `MaxProjectionStateSize` being exceeded even when the projection state is half the configured maximum size.
+**Note:** Sometimes, a projection's state and result will be set to the same value and written to the projection state event twice. This can result in the `MaxProjectionStateSize` being exceeded even when the projection state is half the configured maximum size.
 
 ## [24.10.3](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.3)
 
@@ -198,8 +198,177 @@ Slow bus messages were still logged, but the logging of slow queue messages had 
 
 `System.Private.Uri` has been upgraded from 4.3.0 to 4.3.2 (patch upgrade) due to `GHSA-5f2m-466j-3848` and `GHSA-xhfc-gr8f-ffwc`
 
-## 24.10.0
+## [24.10.0](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.0)
 
 20 November 2024
 
 Find out [What's new](../quick-start/whatsnew.md) in this release.
+
+## [24.6.0](https://github.com/kurrent-io/KurrentDB/releases/tag/oss-v24.6.0)
+
+12 July 2024
+
+### Critical fix - Events in explicit transactions can be missing from $all
+
+Events written in explicit transactions via a TCP client can be missing from $all reads and subscriptions.
+
+These events are present when reading from a specific stream but may be absent when reading from $all. This happens only with events which were written using transactions on the TCP client.
+
+* This bug only affects events written in explicit transactions via the deprecated TCP API
+* The bug appears to affect Filtered all reads when the window is bigger than the maxcount
+* The bug can affect regular all reads/subscriptions
+
+After the fix, the events are no longer missing from $all reads and subscriptions.
+
+This is also in v23.10.2 and v22.10.6
+
+### Breaking changes
+
+#### The database now restarts after a successful truncation operation
+
+It is expected that EventStoreDB is run with a process manager like Systemd to automatically restart the process if it shuts down. This is only a breaking change if your process manager is configured to not restart the process if it shuts down twice within a short period of time.
+
+A node will now restart after a truncation operation. This will affect the behaviour of the node in the following cases:
+
+#### Deposed leaders may shut down twice before they rejoin the cluster
+
+When a leader loses connection to the rest of the cluster, the remaining nodes may elect a new leader among themselves. When the former leader rejoins the cluster, it may go offline to truncate uncommitted records from its log so that it can subscribe to the new leader.
+
+The node will now restart a second time after truncation has completed successfully.
+
+#### Nodes will restart after performing a file copy restore.
+
+Part of the file copy backup and restore procedure requires copying the chaser checkpoint file over the truncate checkpoint file. This triggers the database to truncate the log on the next startup.
+
+The node will restart after the truncation has completed.
+
+#### Unbuffered config setting now has no effect
+
+The `Unbuffered` config setting is deprecated and now has no effect.
+
+[Contact us](https://www.kurrent.io/contact) if you're using this feature.
+
+#### Persistent subscription checkpoint event type name change
+
+The event type for persistent subscription checkpoints has been updated from `SubscriptionCheckpoint` to `$SubscriptionCheckpoint`. Existing checkpoints written before upgrading will still retain the old event type and remain fully functional.
+
+This will only affect users who read from or subscribe to the persistent subscription checkpoint streams or $all, and consume those events directly. The persistent subscriptions themselves are unaffected and will continue to function as usual.
+
+### Performance improvements
+
+#### Scavenged databases now open much faster on startup
+
+Midpoints for scavenged chunks are now built later on demand. This significantly improves the performance of opening a large scavenged database.
+
+#### Reduced FileHandle usage by 80%
+
+This makes it less likely for the database to hit the file limit, and lowers the memory footprint of EventStoreDB.
+
+### In this release
+
+#### Metrics
+
+* Improved system metrics so that the following are available:
+    * CPU Usage on Linux, FreeBSD, OSX, Windows
+    * CPU Load Averages on Linux, FreeBSD, OSX
+    * Disk IO Stats on Linux, Windows and OSX (read bytes and written bytes only)
+* Added a metric to track the number of elections, allowing users to configure alerts if the count exceeds a defined threshold within a given time period.
+* Added metrics for projection subsystem:
+    * Projection status
+    * Percent progress
+    * Events processed since restart
+* Added metrics for Persistent Subscriptions:
+    * Total items processed
+    * Connection count
+    * Total in-flight messages
+    * Total number of parked messages
+    * Last seen and/or checkpointed event
+
+#### Quality of life improvements
+
+* EventStoreDB can now build and run on OSX for development purposes.
+* Index merge will now continue without bloom filters if there is not enough memory to store them.
+* Use the advertised addresses for identifying nodes in the scavenge log.
+* Change status of incomplete scavenges from "Failed" to "Interrupted".
+* Log an error when the node certificate does not have the necessary usages.
+* Add more information to the current database options API response.
+* Allow statusCode for health requests to be provided in the query string. e.g. `/health/live?liveCode=200`
+* Projections will now log a warning when the projection state size becomes greater than 8 MB.
+
+## [24.2.0](https://github.com/kurrent-io/KurrentDB/releases/tag/oss-v24.2.0)
+
+29 February 2024
+
+### New plugins
+
+#### Connectors plugin preview
+
+EventStoreDB 24.2.0 introduces a preview of the Connectors plugin, designed to streamline the integration of EventStoreDB with external services. Connectors allow for the filtering and forwarding of events directly to downstream services and remove the need for manual subscription or checkpoint management.
+
+Each connector runs server-side, maintains its own checkpoints, and can be configured to run on nodes with a specific role (i.e., Leader, Follower, or ReadOnlyReplica).
+
+The preview includes two sinks:
+* Console Sink: For testing and development purposes.
+* HTTP Sink: For POSTing events to an HTTP endpoint of an external system.
+
+Refer to [the documentation](../features/connectors/README.md) for instructions on setting up and configuring connectors and sinks.
+
+#### x.509 user certificates commercial plugin
+
+The new User Certificates plugin enables the use of x.509 user certificates to authenticate users on a cluster.
+
+In this initial version of the plugin, x.509 certificate authentication works in addition to the basic authentication method. This allows you to continue using basic authentication while gradually transitioning to x.509 certificate authentication if desired.
+
+This plugin is available in the commercial version of 24.2.0 and is disabled by default. Refer to [the documentation](../security/user-authentication.md#user-x509-certificates) for more information on how to use this feature.
+
+#### Logs download commercial plugin
+
+The Logs Endpoint plugin provides you with the ability to list and download log files for an EventStoreDB instance over HTTP.
+
+This allows developers and users without direct access to the machines where the log files are stored to easily list and download log files for diagnostic purposes.
+
+This plugin is part of the commercial version in 24.2.0 and is enabled by default. Refer to [the documentation](../diagnostics/logs.md#logs-download) for more information on how to use this feature.
+
+#### OpenTelemetry exporter commercial plugin
+
+The Open Telemetry Exporter plugin allows  you to export EventStoreDB metrics via the Open Telemetry Protocol to a specified endpoint.
+This direct export capability simplifies integration with Application Performance Monitoring (APM) providers, enhancing visibility into EventStoreDB operations without additional configuration overhead.
+
+Refer to [the documentation](../diagnostics/integrations.md#opentelemetry-exporter) for more information about using and configuring this plugin.
+
+### Feature Enhancements
+
+#### Catch-up Subscription Improvements
+
+Version 24.2.0 introduces significant improvements to catch-up subscriptions over gRPC, including a seamless transition mechanism between live and catch-up modes.
+
+This update addresses the previous challenge, where catch-up subscriptions that fell behind would be dropped by the server with the message "Consumer too slow". The client would then need to resubscribe from the last checkpoint to continue receiving events.
+
+As of 24.2.0, catch-up subscriptions automatically revert to catch-up mode on the server side without user intervention, improving reliability and consistency.
+
+Additionally, subscriptions can now reauthorize the user running the subscription in response to user access changes. This means if you remove a user's access to a stream (for example, through ACLs on the stream), any subscriptions that the user has to that stream will be dropped.
+
+#### Better support for containerized environments
+
+EventStoreDB 24.2.0 is now able to detect when it's running in a containerized environment and will disable certain auto-configuration options. This helps prevent the node from running out of resources and allows for more fine-tuned control of the EventStoreDB instances.
+
+### Breaking changes
+
+#### External TCP API Removed
+The deprecated external TCP API has been removed in 24.2.0. This means that any external clients using the TCP API will no longer work with EventStoreDB versions 24.2.0 and onwards.
+
+A number of configuration options have been removed as part of this. EventStoreDB will not start by default if any of the following options are present in the database configuration:
+* AdvertiseTcpPortToClientAs
+* DisableExternalTcpTls
+* EnableExternalTcp
+* ExtHostAdvertiseAs
+* ExtTcpHeartbeatInterval
+* ExtTcpHeartbeatTimeout
+* ExtTcpPort
+* ExtTcpPortAdvertiseAs
+* NodeHeartbeatInterval
+* NodeHeartbeatTimeout
+* NodeTcpPort
+* NodeTcpPortAdvertiseAs
+
+The options for the internal TCP API (`ReplicationTcp*`/`IntTcp*`) are unchanged from version 23.10.0.
