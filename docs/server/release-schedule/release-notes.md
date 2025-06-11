@@ -214,7 +214,7 @@ Events written in explicit transactions via a TCP client can be missing from $al
 
 These events are present when reading from a specific stream but may be absent when reading from $all. This happens only with events which were written using transactions on the TCP client.
 
-* This bug only affects events written in explicit transactions written via the deprecated TCP API
+* This bug only affects events written in explicit transactions via the deprecated TCP API
 * The bug appears to affect Filtered all reads when the window is bigger than the maxcount
 * The bug can affect regular all reads/subscriptions
 
@@ -233,7 +233,7 @@ Deposed leaders may shut down twice before they rejoin the cluster
 When a leader loses connection to the rest of the cluster, the remaining nodes may elect a new leader among themselves. When the former leader rejoins the cluster, it may go offline to truncate uncommitted records from its log so that it can subscribe to the new leader.
 
 The node will now restart a second time after truncation has completed successfully.
-Nodes will restart after performing a file copy restore
+Nodes will restart after performing a file copy restore.
 Part of the file copy backup and restore procedure requires copying the chaser checkpoint file over the truncate checkpoint file. This triggers the database to truncate the log on the next startup.
 
 The node will restart after the truncation has completed.
@@ -246,9 +246,9 @@ Let us know if you're using this feature.
 
 #### Persistent subscription checkpoint event type name change
 
-The persistent subscription checkpoint event type has been changed from `SubscriptionCheckpoint` to `$SubscriptionCheckpoint`. Checkpoints written before upgrading will still have the old event type and will continue to work.
+The event type for persistent subscription checkpoints has been updated from `SubscriptionCheckpoint` to `$SubscriptionCheckpoint`. Existing checkpoints written before upgrading will still retain the old event type and remain fully functional.
 
-This will only affect users who are reading/subscribing to the persistent subscription checkpoint streams or $all, and consuming these events directly. The persistent subscriptions themselves will continue to function as before.
+This will only affect users who read from or subscribe to the persistent subscription checkpoint streams or $all, and consume those events directly. The persistent subscriptions themselves are unaffected and will continue to function as usual.
 
 ### Performance improvements
 
@@ -268,7 +268,7 @@ This makes it less likely for the database to hit the file limit, and lowers the
     * CPU Usage on Linux*, FreeBSD*, OSX*, Windows
     * CPU Load Averages on Linux, FreeBSD, OSX
     * Disk IO Stats on Linux, Windows and OSX* (read bytes and written bytes only)
-* Added an elections counter metric so users can set alerts if the number of elections over a certain period of time exceeds some number.
+* Added a metric to track the number of elections, allowing users to configure alerts if the count exceeds a defined threshold within a given time period.
 * Added metrics for projection subsystem:
     * Projection status
     * Percent progress
@@ -282,7 +282,7 @@ This makes it less likely for the database to hit the file limit, and lowers the
 
 #### Quality of life improvements
 
-* Event Store DB can now build and run on OSX for development purposes.
+* EventStoreDB can now build and run on OSX for development purposes.
 * Index merge will now continue without bloom filters if there is not enough memory to store them.
 * Use the advertised addresses for identifying nodes in the scavenge log.
 * Change status of incomplete scavenges from "Failed" to "Interrupted".
@@ -301,9 +301,9 @@ This makes it less likely for the database to hit the file limit, and lowers the
 
 EventStoreDB 24.2.0 introduces a preview of the Connectors plugin, designed to streamline the integration of EventStoreDB with external services. Connectors allow for the filtering and forwarding of events directly to downstream services and remove the need for manual subscription or checkpoint management.
 
-Each connector runs server-side and maintains its own checkpoints, and can be configured to run on nodes with a specific role (i.e. Leader, Follower, or ReadOnlyReplica).
+Each connector runs server-side, maintains its own checkpoints, and can be configured to run on nodes with a specific role (i.e., Leader, Follower, or ReadOnlyReplica).
 
-The preview includes two sinks, with more to follow in upcoming releases:
+The preview includes two sinks:
 * Console Sink: For testing and development purposes.
 * HTTP Sink: For POSTing events to an HTTP endpoint of an external system.
 
@@ -315,13 +315,13 @@ The new User Certificates plugin enables the use of x.509 user certificates to a
 
 In this initial version of the plugin, x.509 certificate authentication works in addition to the basic authentication method. This allows you to continue using basic authentication while gradually transitioning to x.509 certificate authentication if desired.
 
-This plugin is available in the commercial version of 24.2.0, and is disabled by default. Refer to [the documentation](../security/user-authentication.md#user-x509-certificates) for more information on how to use this feature.
+This plugin is available in the commercial version of 24.2.0 and is disabled by default. Refer to [the documentation](../security/user-authentication.md#user-x509-certificates) for more information on how to use this feature.
 
 #### Logs download commercial plugin
 
 The Logs Endpoint plugin provides you with the ability to list and download log files for an EventStoreDB instance over HTTP.
 
-This allows developers and users who don't have direct access to the machines where the log files are stored, to easily list and download log files for diagnostic purposes.
+This allows developers and users without direct access to the machines where the log files are stored to easily list and download log files for diagnostic purposes.
 
 This plugin is part of the commercial version in 24.2.0 and is enabled by default. Refer to [the documentation](../diagnostics/logs.md#logs-download) for more information on how to use this feature.
 
@@ -334,19 +334,19 @@ Refer to [the documentation](../diagnostics/integrations.md#opentelemetry-export
 
 ### Feature Enhancements
 
-#### Catchup Subscription Improvements
+#### Catch-up Subscription Improvements
 
-Version 24.2.0 introduces significant improvements to catchup subscriptions over gRPC, including a seamless transition mechanism between live and catchup modes.
+Version 24.2.0 introduces significant improvements to catch-up subscriptions over gRPC, including a seamless transition mechanism between live and catch-up modes.
 
-This update addresses the previous challenge where catchup subscriptions that fell behind would be dropped by the server with the message "Consumer too slow". The client would then need to resubscribe from the last checkpoint to continue receiving events.
+This update addresses the previous challenge, where catch-up subscriptions that fell behind would be dropped by the server with the message "Consumer too slow". The client would then need to resubscribe from the last checkpoint to continue receiving events.
 
-As of 24.2.0, catchup subscriptions automatically revert to catch-up mode server-side without user intervention, improving reliability and consistency.
+As of 24.2.0, catch-up subscriptions automatically revert to catch-up mode on the server side without user intervention, improving reliability and consistency.
 
-Additionally, subscriptions are now able to re-authorize the user running the subscription in response to user access changes. This means that if you remove a user's access to a stream (for example, through ACLs on the stream), any subscriptions that the user has to that stream will be dropped.
+Additionally, subscriptions can now reauthorize the user running the subscription in response to user access changes. This means if you remove a user's access to a stream (for example, through ACLs on the stream), any subscriptions that the user has to that stream will be dropped.
 
 #### Better support for containerized environments
 
-EventStoreDB 24.2.0 is now able to detect when it's running in a containerized environment, and will disable certain auto-configuration options. This helps prevent the node from running out of resources and allows for finer tuning of the EventStoreDB instances.
+EventStoreDB 24.2.0 is now able to detect when it's running in a containerized environment and will disable certain auto-configuration options. This helps prevent the node from running out of resources and allows for more fine-tuned control of the EventStoreDB instances.
 
 ### Breaking changes
 
