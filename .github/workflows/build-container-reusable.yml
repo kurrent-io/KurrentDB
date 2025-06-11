@@ -108,6 +108,7 @@ jobs:
 
   test-results:
     needs: build-container
+    if: always()
     name: Test Results
     runs-on: ubuntu-latest
 
