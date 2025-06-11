@@ -48,7 +48,7 @@ internal class CategoryIndexProcessor {
 		_categories[categoryName] = id;
 		_categorySizes[id] = 0;
 
-		_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new((int)id, categoryName));
+		_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new(id, categoryName));
 		LastIndexesPosition = resolvedEvent.Event.LogPosition;
 		return new(id, 0);
 	}

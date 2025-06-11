@@ -48,7 +48,7 @@ internal class EventTypeIndexProcessor {
 		_eventTypes[eventTypeName] = id;
 		_eventTypeSizes[id] = 0;
 
-		_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new((int)id, eventTypeName));
+		_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new(id, eventTypeName));
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 		return new(id, 0);
 	}
