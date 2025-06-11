@@ -8,15 +8,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-			<_Parameter1>$(AssemblyName).Tests</_Parameter1>
-		</AssemblyAttribute>
-	</ItemGroup>
-
-	<ItemGroup>
-		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
-			<_Parameter1>$(AssemblyName).LoadTesting</_Parameter1>
-		</AssemblyAttribute>
+		<InternalsVisibleTo Include="KurrentDB.SecondaryIndexing.Tests"/>
+		<InternalsVisibleTo Include="KurrentDB.SecondaryIndexing.LoadTesting"/>
 	</ItemGroup>
 
 	<ItemGroup>
