@@ -212,7 +212,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 
 		List<Func<string, IProjectionExecutionTracker>> executionTrackerFactories = [];
 
-		if (conf.ProjectionExecutionStats) {
+		if (conf.ProjectionExecution) {
 			// recent max of executions for each projection
 			var executionMaxDurationMetric = new DurationMaxMetric(
 				projectionMeter,

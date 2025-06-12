@@ -17,7 +17,7 @@
 
 	"ProjectionStats": true,
 
-	"ProjectionExecutionStats": true,
+	"ProjectionExecution": true,
 
 	"ProjectionExecutionByFunction": true,
 

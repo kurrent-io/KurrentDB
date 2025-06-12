@@ -176,7 +176,7 @@ public class MetricsConfiguration {
 
 	public bool ProjectionStats { get; set; }
 
-	public bool ProjectionExecutionStats { get; set; }
+	public bool ProjectionExecution { get; set; }
 
 	public bool ProjectionExecutionByFunction { get; set; }
 
