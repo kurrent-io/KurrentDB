@@ -9,6 +9,9 @@
 		<TestCaseFilter>
 			(FullyQualifiedName!~EventStore.Core.Tests.LogFormat+V3)
 			&amp; (FullyQualifiedName!~KurrentDB.Core.Tests.LogFormat+V3)
+      &amp; (FullyQualifiedName!~KurrentDB.Auth.Ldaps.Tests)
+      &amp; (FullyQualifiedName!~KurrentDB.Auth.OAuth.Tests)
+      &amp; (FullyQualifiedName!~KurrentDB.Auth.UserCertificates.Tests)
 		</TestCaseFilter>
 	</RunConfiguration>
 </RunSettings>

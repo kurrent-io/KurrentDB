@@ -84,8 +84,9 @@ jobs:
         --logger:html
         --logger:trx
         --logger:"console;verbosity=normal"
-        --results-directory=$(pwd)/test-results
+        --results-directory $(pwd)/test-results
         src/KurrentDB.sln
+        -- --report-trx --results-directory $(pwd)/test-results
     -  
       name: Collect Test Results
       shell: bash
