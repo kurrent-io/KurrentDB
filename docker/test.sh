@@ -14,7 +14,7 @@ for test in $tests; do
         dotnet exec \
           "$test/$proj.dll" \
           --report-trx \
-          --results-directory "$output_directory/$proj"
+          --results-directory "$output_directory"
     fi
     # else
     #     # dotnet test \
