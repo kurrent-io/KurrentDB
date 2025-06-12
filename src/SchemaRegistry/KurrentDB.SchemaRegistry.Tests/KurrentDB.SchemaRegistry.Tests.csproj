@@ -12,7 +12,7 @@
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <EnableMSTestRunner>true</EnableMSTestRunner>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <TestingPlatformCommandLineArguments>--report-trx --results-directory $(RepoRoot)/test-results</TestingPlatformCommandLineArguments>
+    <TestingPlatformCommandLineArguments>--report-trx --report-trx-filename schemaregistry.trx --results-directory $(RepoRoot)/test-results</TestingPlatformCommandLineArguments>
     <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
   </PropertyGroup>
   <ItemGroup>
