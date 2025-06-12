@@ -12,7 +12,7 @@ for test in $tests; do
 
     if [ "$proj" = "KurrentDB.SchemaRegistry.Tests" ]; then
         dotnet exec \
-          --project "$test/$proj.dll" \
+          "$test/$proj.dll" \
           --report-trx \
           --results-directory "$output_directory/$proj"
     fi
