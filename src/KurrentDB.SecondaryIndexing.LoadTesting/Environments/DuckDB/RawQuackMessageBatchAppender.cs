@@ -72,4 +72,11 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 
 		return ValueTask.CompletedTask;
 	}
+
+	public ValueTask DisposeAsync() {
+		 _dbDataSource.Dispose();
+		 _defaultIndexAppender.Dispose();
+		 return ValueTask.CompletedTask;
+
+	}
 }

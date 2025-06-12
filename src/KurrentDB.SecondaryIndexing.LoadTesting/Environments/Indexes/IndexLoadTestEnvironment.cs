@@ -12,7 +12,11 @@ public class IndexesLoadTestEnvironmentOptions {
 }
 
 public class IndexesLoadTestEnvironment: ILoadTestEnvironment {
+	private readonly DuckDbDataSource _dataSource;
 	public IMessageBatchAppender MessageBatchAppender { get; }
+	public ValueTask InitAsync(CancellationToken ct = default) {
+		throw new NotImplementedException();
+	}
 
 	public IndexesLoadTestEnvironment(IndexesLoadTestEnvironmentOptions options) {
 		var dbPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "index.db");
@@ -20,10 +24,15 @@ public class IndexesLoadTestEnvironment: ILoadTestEnvironment {
 		if (File.Exists(dbPath))
 			File.Delete(dbPath);
 
-		var dataSource = new DuckDbDataSource(
+		_dataSource = new DuckDbDataSource(
 			new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" }
 		);
 
-		MessageBatchAppender = new IndexMessageBatchAppender(dataSource, 50000);
+		MessageBatchAppender = new IndexMessageBatchAppender(_dataSource, 50000);
+	}
+
+	public ValueTask DisposeAsync() {
+		_dataSource.Dispose();
+		return ValueTask.CompletedTask;
 	}
 }

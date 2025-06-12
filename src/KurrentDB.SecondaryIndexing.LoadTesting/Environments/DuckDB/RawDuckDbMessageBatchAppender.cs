@@ -97,4 +97,12 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 
 		return ValueTask.CompletedTask;
 	}
+
+	public ValueTask DisposeAsync() {
+		_defaultIndexAppender.Dispose();
+		_transaction.Dispose();
+		_connection.Dispose();
+
+		return ValueTask.CompletedTask;
+	}
 }
