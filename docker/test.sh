@@ -15,6 +15,7 @@ for test in $tests; do
           --project "$test" \
           --report-trx \
           --results-directory "$output_directory/$proj"
+    fi
     # else
     #     # dotnet test \
     #     #   --blame \
