@@ -106,6 +106,6 @@ jobs:
       with:
         name: test-results-${{ matrix.configuration }}-${{ inputs.os }}
         path: |
-          test-results/**/*.trx
-          test-results/**/*.xml
-          test-results/**/*.json
+          test-results/*.trx
+          test-results/*.xml
+          test-results/*.json
