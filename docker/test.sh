@@ -14,7 +14,6 @@ for test in $tests; do
         dotnet exec \
           "$test/$proj.dll" \
           --report-trx \
-          --report-junit \
           --results-directory "$output_directory/$proj"
     else
         dotnet test \
@@ -23,7 +22,6 @@ for test in $tests; do
           --settings "$settings" \
           --logger:"GitHubActions;report-warnings=false" \
           --logger:trx \
-          --logger:junit \
           --logger:"console;verbosity=normal" \
           --results-directory "$output_directory/$proj" "$test/$proj.dll"
     fi
