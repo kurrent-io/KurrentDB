@@ -124,21 +124,25 @@ public partial class InMemoryBus {
 		// read to stop it being cached.
 		public override async ValueTask InvokeAsync(Message message, CancellationToken token) {
 			Debug.Assert(message is T);
+			var invocationId = Guid.NewGuid();
 
 			var log = message is KurrentDB.Core.Messages.SystemMessage.BecomeLeader;
 			if (log)
-				Serilog.Log.Error($"####### Bus dispatching become leader to {_handlers.Length} handlers");
+				Serilog.Log.Error($"####### {invocationId} Bus dispatching become leader to {_handlers.Length} handlers");
 			// first handler is the parent
+			var i = 0;
 			foreach (var handler in _handlers) {
+				i++;
+				var id = Guid.NewGuid();
 				if (log)
-					Serilog.Log.Error($"    #### start handler");
+					Serilog.Log.Error($"    #### {invocationId} start handler {id}   {i}/{_handlers.Length}");
 				await handler.Invoke(Unsafe.As<T>(message), token).AsTask();
 				if (log)
-					Serilog.Log.Error($"    #### end handler");
+					Serilog.Log.Error($"    #### {invocationId} end handler {id}   {i}/{_handlers.Length}");
 			}
 
 			if (log)
-				Serilog.Log.Error($"####### Bus done dispatching become leader to {_handlers.Length} handlers");
+				Serilog.Log.Error($"####### {invocationId} Bus done dispatching become leader to {_handlers.Length} handlers");
 		}
 
 		internal void AddHandler(IAsyncHandle<T> handler) {
