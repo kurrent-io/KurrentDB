@@ -3,8 +3,6 @@
 
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
-using KurrentDB.Connect.Producers.Configuration;
-using KurrentDB.Connect.Readers.Configuration;
 using KurrentDB.Connectors.Control.Contracts;
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
@@ -12,6 +10,8 @@ using KurrentDB.Connectors.Planes.Control;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Surge.Producers;
+using KurrentDB.Surge.Readers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
