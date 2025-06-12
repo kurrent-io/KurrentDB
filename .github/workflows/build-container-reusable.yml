@@ -104,32 +104,35 @@ jobs:
       if: always()
       with:
         name: test-results-${{ inputs.container-runtime }}
-        path: test-results/**/*.trx
+        path: |
+          test-results/**/*.trx
+          test-results/**/*.xml
+          test-results/**/*.json
 
-  test-results:
-    needs: build-container
-    if: always()
-    name: Test Results
-    runs-on: ubuntu-latest
+  # test-results:
+  #   needs: build-container
+  #   if: always()
+  #   name: Test Results
+  #   runs-on: ubuntu-latest
 
-    permissions:
-      checks: write
-      pull-requests: write
-      actions: read
+  #   permissions:
+  #     checks: write
+  #     pull-requests: write
+  #     actions: read
 
-    steps:
-      -
-        name: Download and Extract Artifacts
-        uses: dawidd6/action-download-artifact@07ab29fd4a977ae4d2b275087cf67563dfdf0295
-        with:
-          run_id: ${{ github.event.workflow_run.id }}
-          path: artifacts
-      -
-        name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          commit: ${{ github.event.workflow_run.head_sha }}
-          event_name: ${{ github.event.workflow_run.event }}
-          files: |
-            artifacts/**/*.xml
-            artifacts/**/*.trx
+  #   steps:
+  #     -
+  #       name: Download and Extract Artifacts
+  #       uses: dawidd6/action-download-artifact@07ab29fd4a977ae4d2b275087cf67563dfdf0295
+  #       with:
+  #         run_id: ${{ github.event.workflow_run.id }}
+  #         path: artifacts
+  #     -
+  #       name: Publish Test Results
+  #       uses: EnricoMi/publish-unit-test-result-action@v2
+  #       with:
+  #         commit: ${{ github.event.workflow_run.head_sha }}
+  #         event_name: ${{ github.event.workflow_run.event }}
+  #         files: |
+  #           artifacts/**/*.xml
+  #           artifacts/**/*.trx

@@ -105,4 +105,7 @@ jobs:
       if: always()
       with:
         name: test-results-${{ matrix.configuration }}-${{ inputs.os }}
-        path: test-results/*.trx
+        path: |
+          test-results/**/*.trx
+          test-results/**/*.xml
+          test-results/**/*.json
