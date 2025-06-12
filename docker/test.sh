@@ -11,8 +11,8 @@ for test in $tests; do
     proj=$(basename "$test")
 
     if [ "$proj" = "KurrentDB.SchemaRegistry.Tests" ]; then
-        dotnet run \
-          --project "$test" \
+        dotnet exec \
+          --project "$test/$proj.dll" \
           --report-trx \
           --results-directory "$output_directory/$proj"
     fi
