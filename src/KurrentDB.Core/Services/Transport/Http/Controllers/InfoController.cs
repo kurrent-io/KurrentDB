@@ -47,8 +47,11 @@ public class InfoController : IHttpController, IHandle<SystemMessage.StateChange
 			OnGetOptions);
 	}
 
-	public void Handle(SystemMessage.StateChangeMessage message) =>
+	public void Handle(SystemMessage.StateChangeMessage message) {
+		if (message is SystemMessage.BecomeLeader)
+			Serilog.Log.Error("InfoController become leader");
 		_currentState = message.State;
+	}
 
 	private void OnGetInfo(HttpEntityManager entity, UriTemplateMatch match) {
 		entity.ReplyTextContent(

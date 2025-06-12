@@ -513,6 +513,7 @@ public sealed class ClusterVNodeController<TStreamId> : ClusterVNodeController {
 	}
 
 	private ValueTask Handle(SystemMessage.BecomeLeader message, CancellationToken token) {
+		Serilog.Log.Error("Controller become leader");
 		if (State is VNodeState.Leader)
 			return ValueTask.FromException(new Exception("We should not BecomeLeader twice in a row."));
 

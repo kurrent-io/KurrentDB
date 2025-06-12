@@ -30,8 +30,13 @@ public class SystemReadinessProbe : IHandle<SystemMessage.BecomeLeader>, IHandle
     GetNodeSystemInfo    GetNodeSystemInfo { get; }
     TaskCompletionSource CompletionSource  { get; }
 
-    public void Handle(SystemMessage.BecomeLeader message)          => CompletionSource.TrySetResult();
-    public void Handle(SystemMessage.BecomeFollower message)        => CompletionSource.TrySetResult();
+	public void Handle(SystemMessage.BecomeLeader message) {
+		Serilog.Log.Error("Start Readiness probe become leader");
+		CompletionSource.TrySetResult();
+		Serilog.Log.Error("End Readiness probe become leader");
+	}
+
+	public void Handle(SystemMessage.BecomeFollower message)        => CompletionSource.TrySetResult();
     public void Handle(SystemMessage.BecomeReadOnlyReplica message) => CompletionSource.TrySetResult();
 
     public async ValueTask<NodeSystemInfo> WaitUntilReady(CancellationToken cancellationToken = default) {

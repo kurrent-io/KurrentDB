@@ -16,6 +16,7 @@ using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
 using KurrentDB.Core.Services.Transport.Grpc;
+using KurrentDB.Core.Tests.Helpers;
 using NUnit.Framework;
 using ContentType = KurrentDB.Transport.Http.ContentType;
 using StatusCode = Grpc.Core.StatusCode;
@@ -68,7 +69,11 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 
 		[Test]
 		[Retry(5)]
-		public void work() => Assert.AreEqual(HttpStatusCode.Created, _statusCode);
+		public void work() {
+			if (_statusCode is not HttpStatusCode.Created)
+				MiniNodeLogging.WriteLogs();
+			Assert.AreEqual(HttpStatusCode.Created, _statusCode);
+		}
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
