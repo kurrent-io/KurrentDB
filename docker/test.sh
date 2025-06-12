@@ -15,14 +15,14 @@ for test in $tests; do
           --project "$test" \
           --report-trx \
           --results-directory "$output_directory/$proj"
-    else
-        # dotnet test \
-        #   --blame \
-        #   --blame-hang-timeout 5min \
-        #   --settings "$settings" \
-        #   --logger:"GitHubActions;report-warnings=false" \
-        #   --logger:trx \
-        #   --logger:"console;verbosity=normal" \
-        #   --results-directory "$output_directory/$proj" "$test/$proj.dll"
-    fi
+    # else
+    #     # dotnet test \
+    #     #   --blame \
+    #     #   --blame-hang-timeout 5min \
+    #     #   --settings "$settings" \
+    #     #   --logger:"GitHubActions;report-warnings=false" \
+    #     #   --logger:trx \
+    #     #   --logger:"console;verbosity=normal" \
+    #     #   --results-directory "$output_directory/$proj" "$test/$proj.dll"
+    # fi
 done
