@@ -81,7 +81,6 @@ jobs:
         --blame-hang-dump-type mini
         --settings ./ci/ci.runsettings
         --logger:GitHubActions
-        --logger:html
         --logger:trx
         --logger:"console;verbosity=normal"
         --results-directory $(pwd)/test-results
@@ -106,4 +105,4 @@ jobs:
       if: always()
       with:
         name: test-results-${{ matrix.configuration }}-${{ inputs.os }}
-        path: test-results/**/*.trx
+        path: test-results/*.trx
