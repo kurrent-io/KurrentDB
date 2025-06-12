@@ -4,7 +4,7 @@ tests_directory=./src
 settings=/build/ci/ci.runsettings
 output_directory=/build/test-results
 
-dotnet test \ 
+dotnet test \
   --configuration Release \
   --blame \
   --blame-hang-timeout 5min \
