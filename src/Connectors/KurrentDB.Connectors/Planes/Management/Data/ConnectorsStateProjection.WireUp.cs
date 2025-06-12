@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.Connect.Processors.Configuration;
 using KurrentDB.Connectors.Infrastructure;
 using Humanizer;
 using Kurrent.Surge;
@@ -9,6 +8,7 @@ using Kurrent.Surge.Configuration;
 using Kurrent.Surge.Consumers.Configuration;
 using Kurrent.Surge.Processors;
 using KurrentDB.Connectors.Infrastructure.System.Node;
+using KurrentDB.Surge.Processors;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

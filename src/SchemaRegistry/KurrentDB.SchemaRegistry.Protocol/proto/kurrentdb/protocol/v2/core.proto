@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.registry.v2;
+
+option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
+option java_package        = "io.kurrentdb.protocol.registry.v2";
+option java_multiple_files = true;
+
+message ErrorDetails {
+  string code    = 1;  // Standardized string to programmatically identify the error.
+  string message = 2;  // Detailed error description and debugging information.
+}
