@@ -3,9 +3,26 @@
 
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.InMemory;
+using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.TestServer;
 
 public class TestServerEnvironment: ILoadTestEnvironment {
-	public IMessageBatchAppender MessageBatchAppender { get; } = new PublisherBasedMessageBatchAppender(new DummyPublisher());
+	private readonly SecondaryIndexingEnabledFixture _fixture;
+
+	public IMessageBatchAppender MessageBatchAppender { get; }
+
+	public TestServerEnvironment() {
+		_fixture = new SecondaryIndexingEnabledFixture();
+		MessageBatchAppender = new TestServerMessageBatchAppender(_fixture);
+	}
+
+	public async ValueTask InitAsync(CancellationToken ct = default) {
+		await _fixture.InitializeAsync();
+	}
+
+	public async ValueTask DisposeAsync() {
+		await MessageBatchAppender.DisposeAsync();
+		await _fixture.DisposeAsync();
+	}
 }

@@ -27,15 +27,18 @@ public class IndexMessageBatchAppender: IMessageBatchAppender {
 		foreach (var resolvedEvent in batch.Messages.Select(m => m.ToResolvedEvent(batch.StreamName))) {
 			_processor.Index(resolvedEvent);
 
-			if (++_indexedCount >= _commitSize) {
-				_processor.Commit();
-				_indexedCount = 0;
-			}
+			if (++_indexedCount < _commitSize) continue;
+
+			_processor.Commit();
+			_indexedCount = 0;
 		}
 
 		return ValueTask.CompletedTask;
 	}
 
-	private static Event ToEventData(MessageData messageData) =>
-		new(Guid.NewGuid(), messageData.EventType, false, messageData.Data, null, null);
+	public ValueTask DisposeAsync() {
+		_processor.Dispose();
+
+		return ValueTask.CompletedTask;
+	}
 }

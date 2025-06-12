@@ -29,5 +29,6 @@ var generator = new MessageGenerator();
 var environment = LoadTestEnvironment.For(config);
 var observer = new SimpleMessagesBatchObserver();
 
-var loadTest = new LoadTest(generator, environment.MessageBatchAppender, observer);
+var loadTest = new LoadTest(generator, environment, observer);
+
 await loadTest.Run(config);

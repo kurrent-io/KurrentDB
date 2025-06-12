@@ -9,8 +9,9 @@ using KurrentDB.SecondaryIndexing.LoadTesting.Environments.TestServer;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 
-public interface ILoadTestEnvironment {
+public interface ILoadTestEnvironment: IAsyncDisposable {
 	IMessageBatchAppender MessageBatchAppender { get; }
+	public ValueTask InitAsync(CancellationToken ct = default);
 }
 
 public enum LoadTestEnvironmentType {

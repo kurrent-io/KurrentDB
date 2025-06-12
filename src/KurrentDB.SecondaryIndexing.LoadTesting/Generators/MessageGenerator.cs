@@ -39,7 +39,7 @@ public class MessageGenerator : IMessageGenerator {
 		long logPosition
 	) {
 		var category = eventTypesByCategory.Keys.RandomElement();
-		var streamName = $"{category}-${config.PartitionId}_${Random.Shared.Next(0, config.MaxStreamsPerCategory)}";
+		var streamName = $"{category}-{config.PartitionId}_{Random.Shared.Next(0, config.MaxStreamsPerCategory)}";
 
 		streams.TryAdd(streamName, -1);
 
