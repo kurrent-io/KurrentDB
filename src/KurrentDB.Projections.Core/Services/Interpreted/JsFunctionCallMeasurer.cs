@@ -6,10 +6,10 @@ using Jint;
 using Jint.Native;
 using Jint.Native.Function;
 using KurrentDB.Core.Time;
+using KurrentDB.Projections.Core.Metrics;
 
-namespace KurrentDB.Projections.Core.Metrics;
+namespace KurrentDB.Projections.Core.Services.Interpreted;
 
-//qq move, no longer part of metrics
 public class JsFunctionCallMeasurer(IProjectionExecutionTracker tracker) {
 	public JsValue Call(string jsFunctionName, ScriptFunction jsFunction) {
 		using var _ = new Measurer(tracker, jsFunctionName);

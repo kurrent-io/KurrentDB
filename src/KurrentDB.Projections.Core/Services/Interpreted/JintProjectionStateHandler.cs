@@ -22,7 +22,6 @@ using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using KurrentDB.Core.Services;
 using KurrentDB.Projections.Core.Messages;
-using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
 using KurrentDB.Projections.Core.Services.Processing.Emitting.EmittedEvents;
