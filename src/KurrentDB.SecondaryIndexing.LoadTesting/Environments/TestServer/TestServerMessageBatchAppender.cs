@@ -9,8 +9,18 @@ using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.TestServer;
 
 public class TestServerMessageBatchAppender(SecondaryIndexingEnabledFixture fixture) : IMessageBatchAppender {
-	public async ValueTask Append(MessageBatch batch) =>
-		await fixture.AppendToStream(batch.StreamName, batch.Messages.Select(ToEventData).ToArray());
+	public async ValueTask Append(MessageBatch batch) {
+		bool appended = false;
+		do {
+			try {
+				await fixture.AppendToStream(batch.StreamName, batch.Messages.Select(ToEventData).ToArray());
+			} catch {
+				await Task.Delay(10);
+				continue;
+			}
+			appended = true;
+		} while (!appended);
+	}
 
 	private static Event ToEventData(MessageData messageData) =>
 		new(Guid.NewGuid(), messageData.EventType, false, messageData.Data, null, null);
