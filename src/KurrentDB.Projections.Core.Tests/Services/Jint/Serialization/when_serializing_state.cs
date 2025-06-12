@@ -32,7 +32,7 @@ public class when_serializing_state {
 			enableContentTypeValidation: false,
 			compilationTimeout: TimeSpan.FromMilliseconds(500),
 			executionTimeout: TimeSpan.FromMilliseconds(500),
-			new(IProjectionExecutionTracker.NoOp));
+			jsFunctionCaller: new(IProjectionExecutionTracker.NoOp));
 	}
 
 	private void RoundTrip(string json, bool ignoreCase = false) {
