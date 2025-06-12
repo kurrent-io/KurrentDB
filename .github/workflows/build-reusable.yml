@@ -87,23 +87,23 @@ jobs:
         --results-directory $(pwd)/test-results
         src/KurrentDB.sln
         -- --report-trx --results-directory $(pwd)/test-results
-    -  
-      name: Collect Test Results
-      shell: bash
-      if: always()
-      run: |
-        echo $(find ./test-results -name "*.html" | xargs cat) > test-results.html
-    -  
-      name: Publish Test Results (HTML)
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        path: test-results.html
-        name: test-results-${{ matrix.configuration }}-${{ inputs.os }}.html
+    # -  
+      # name: Collect Test Results
+      # shell: bash
+      # if: always()
+      # run: |
+      #   echo $(find ./test-results -name "*.html" | xargs cat) > test-results.html
+    # -  
+    #   name: Publish Test Results (HTML)
+    #   uses: actions/upload-artifact@v4
+    #   if: always()
+    #   with:
+    #     path: test-results.html
+    #     name: test-results-${{ matrix.configuration }}-${{ inputs.os }}.html
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ matrix.configuration }}-${{ inputs.os }}
-        path: test-results
+        path: test-results/**/*.trx

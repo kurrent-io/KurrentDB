@@ -1,19 +1,28 @@
 #!/usr/bin/env sh
+set -e
 
-tests_directory=./src
+tests_directory=/build/published-tests
 settings=/build/ci/ci.runsettings
 output_directory=/build/test-results
 
-dotnet test \
-  --configuration Release \
-  --blame \
-  --blame-hang-timeout 5min \
-  --blame-hang-dump-type mini \
-  --settings "$settings" \
-  --logger:GitHubActions \
-  --logger:html \
-  --logger:trx \
-  --logger:"console;verbosity=normal" \
-  --results-directory "$output_directory" \
-  "$tests_directory/KurrentDB.sln" \
-  -- --report-trx --results-directory "$output_directory"
+tests=$(find "$tests_directory" -maxdepth 2 -type d -name "*.Tests")
+
+for test in $tests; do
+    proj=$(basename "$test")
+
+    if [ "$proj" = "KurrentDB.SchemaRegistry.Tests" ]; then
+        dotnet run \
+          --project "$test" \
+          --report-trx \
+          --results-directory "$output_directory/$proj"
+    else
+        dotnet test \
+          --blame \
+          --blame-hang-timeout 5min \
+          --settings "$settings" \
+          --logger:"GitHubActions;report-warnings=false" \
+          --logger:trx \
+          --logger:"console;verbosity=normal" \
+          --results-directory "$output_directory/$proj" "$test/$proj.dll"
+    fi
+done

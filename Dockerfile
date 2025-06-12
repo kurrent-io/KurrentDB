@@ -26,15 +26,14 @@ COPY ./src .
 WORKDIR /build/.git
 COPY ./.git/ .
 
+RUN /build/scripts/build.sh /build/src /build/published-tests
+
 # "test" image
 FROM mcr.microsoft.com/dotnet/sdk:8.0-${CONTAINER_RUNTIME} AS test
 WORKDIR /build
-COPY --from=build ./build/src ./src
+COPY --from=build ./build/published-tests ./published-tests
 COPY --from=build ./build/ci ./ci
 COPY --from=build ./build/scripts ./scripts
-COPY --from=build ./build/LICENSE.md ./LICENSE.md
-COPY --from=build ./build/LICENSE_CONTRIBUTIONS.md ./LICENSE_CONTRIBUTIONS.md
-COPY --from=build ./build/NOTICE.html ./NOTICE.html
 COPY --from=build ./build/src/KurrentDB.Core.Tests/Services/Transport/Tcp/test_certificates/ca/ca.crt /usr/local/share/ca-certificates/ca_kurrentdb_test.crt
 RUN mkdir ./test-results
 
