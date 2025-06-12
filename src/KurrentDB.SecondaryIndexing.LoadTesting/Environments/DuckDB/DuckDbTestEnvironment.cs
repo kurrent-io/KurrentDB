@@ -21,7 +21,6 @@ public class DuckDBTestEnvironmentOptions {
 
 public class DuckDBTestEnvironment : ILoadTestEnvironment {
 	public IMessageBatchAppender MessageBatchAppender { get; }
-	public ValueTask InitAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 
 	public DuckDBTestEnvironment(DuckDBTestEnvironmentOptions options) {
 		var dbPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "index.db");
@@ -37,6 +36,8 @@ public class DuckDBTestEnvironment : ILoadTestEnvironment {
 			? new RawDuckDbMessageBatchAppender(dataSource, options)
 			: new RawQuackMessageBatchAppender(dataSource, options);
 	}
+
+	public ValueTask InitializeAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 
 	public ValueTask DisposeAsync() {
 		return MessageBatchAppender.DisposeAsync();

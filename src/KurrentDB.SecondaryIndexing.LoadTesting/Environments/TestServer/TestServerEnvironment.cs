@@ -17,7 +17,7 @@ public class TestServerEnvironment: ILoadTestEnvironment {
 		MessageBatchAppender = new TestServerMessageBatchAppender(_fixture);
 	}
 
-	public async ValueTask InitAsync(CancellationToken ct = default) {
+	public async ValueTask InitializeAsync(CancellationToken ct = default) {
 		await _fixture.InitializeAsync();
 	}
 

@@ -11,7 +11,7 @@ namespace KurrentDB.SecondaryIndexing.LoadTesting;
 
 public class LoadTest(IMessageGenerator generator, ILoadTestEnvironment environment, IMessagesBatchObserver observer) {
 	public async Task Run(LoadTestConfig config) {
-		await environment.InitAsync();
+		await environment.InitializeAsync();
 		var testPartitions = LoadTestPartitionConfig.From(config);
 
 		await Task.WhenAll(testPartitions.Select(ProcessPartition));

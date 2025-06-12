@@ -11,7 +11,7 @@ namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 
 public interface ILoadTestEnvironment: IAsyncDisposable {
 	IMessageBatchAppender MessageBatchAppender { get; }
-	public ValueTask InitAsync(CancellationToken ct = default);
+	public ValueTask InitializeAsync(CancellationToken ct = default);
 }
 
 public enum LoadTestEnvironmentType {

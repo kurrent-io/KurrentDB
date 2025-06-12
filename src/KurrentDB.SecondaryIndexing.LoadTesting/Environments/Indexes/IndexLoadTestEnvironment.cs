@@ -14,9 +14,7 @@ public class IndexesLoadTestEnvironmentOptions {
 public class IndexesLoadTestEnvironment: ILoadTestEnvironment {
 	private readonly DuckDbDataSource _dataSource;
 	public IMessageBatchAppender MessageBatchAppender { get; }
-	public ValueTask InitAsync(CancellationToken ct = default) {
-		throw new NotImplementedException();
-	}
+	public ValueTask InitializeAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 
 	public IndexesLoadTestEnvironment(IndexesLoadTestEnvironmentOptions options) {
 		var dbPath = Path.Combine(Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location)!, "index.db");

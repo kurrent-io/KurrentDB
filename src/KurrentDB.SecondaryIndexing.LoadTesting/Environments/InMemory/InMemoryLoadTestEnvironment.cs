@@ -7,7 +7,7 @@ namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.InMemory;
 
 public class InMemoryLoadTestEnvironment: ILoadTestEnvironment {
 	public IMessageBatchAppender MessageBatchAppender { get; } = new PublisherBasedMessageBatchAppender(new DummyPublisher());
-	public ValueTask InitAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
+	public ValueTask InitializeAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 
 	public ValueTask DisposeAsync() {
 		return MessageBatchAppender.DisposeAsync();
