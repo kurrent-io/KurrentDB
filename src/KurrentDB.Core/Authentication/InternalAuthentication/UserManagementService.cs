@@ -207,25 +207,40 @@ public class UserManagementService :
 	}
 
 	public void Handle(SystemMessage.BecomeLeader message) {
-		Log.Error("Start UserMgmt BecomeLeader");
-		Interlocked.Exchange(ref _numberOfStandardUsersToBeCreated, 2);
-		if (!_skipInitializeStandardUsersCheck) {
-			BeginReadUserDetails(
-				"admin", completed => {
-					if (completed.Result == ReadStreamResult.NoStream)
-						CreateAdminUser();
-					else
-						NotifyInitialized();
-				});
-			BeginReadUserDetails(
-				"ops", completed => {
-					if (completed.Result == ReadStreamResult.NoStream)
-						CreateOperationsUser();
-					else
-						NotifyInitialized();
-				});
-		} else
-			_tcs.TrySetResult(true);
+		try {
+			Log.Error("Start UserMgmt BecomeLeader");
+			Interlocked.Exchange(ref _numberOfStandardUsersToBeCreated, 2);
+			if (!_skipInitializeStandardUsersCheck) {
+				Log.Error("    Begin read admin");
+				BeginReadUserDetails(
+					"admin", completed => {
+						Log.Error("    read admin result");
+						if (completed.Result == ReadStreamResult.NoStream)
+							CreateAdminUser();
+						else
+							NotifyInitialized();
+						Log.Error("    read admin completed");
+					});
+				Log.Error("    End read admin");
+				Log.Error("    Begin read ops");
+				BeginReadUserDetails(
+					"ops", completed => {
+						Log.Error("    read ops result");
+						if (completed.Result == ReadStreamResult.NoStream)
+							CreateOperationsUser();
+						else
+							NotifyInitialized();
+						Log.Error("    read ops completed");
+					});
+				Log.Error("    End read ops");
+			} else {
+				Log.Error("    Skipped");
+				_tcs.TrySetResult(true);
+			}
+			Log.Error("End UserMgmt BecomeLeader");
+		} catch (Exception ex) {
+			Log.Error(ex, $"Ust mgmt exception: {ex.Message}");
+		}
 	}
 
 	public void Handle(SystemMessage.BecomeFollower message) =>

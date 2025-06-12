@@ -66,16 +66,22 @@ public class RequestResponseDispatcher<TRequest, TResponse, THandler> :
 	public Guid Publish(TRequest request, THandler handler) {
 		//TODO: expiration?
 		Guid requestCorrelationId;
+
+		Serilog.Log.Error("        Acquire1");
 		lock (_map) {
 			requestCorrelationId = _getRequestCorrelationId(request);
 			_map.Add(requestCorrelationId, handler);
 		}
+		Serilog.Log.Error("        Release1");
 
 		_publisher.Publish(request);
 		//NOTE: the following condition is required as publishing the message could also process the message
 		// and the correlationId is already invalid here
-		lock (_map)
+		Serilog.Log.Error("        Acquire2");
+		lock (_map) {
+			Serilog.Log.Error("        Release2");
 			return _map.ContainsKey(requestCorrelationId) ? requestCorrelationId : Guid.Empty;
+		}
 	}
 
 	void IHandle<TResponse>.Handle(TResponse message) {
