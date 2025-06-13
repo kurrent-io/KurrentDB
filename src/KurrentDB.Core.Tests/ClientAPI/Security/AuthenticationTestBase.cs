@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
@@ -35,7 +36,7 @@ public abstract class AuthenticationTestBase<TLogFormat, TStreamId> : Specificat
 		_node = new MiniNode<TLogFormat, TStreamId>(PathName, enableTrustedAuth: true);
 		await _node.Start();
 
-		var userCreateEvent1 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var userCreateEvent1 = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 		_node.Node.MainQueue.Publish(
 			new UserManagementMessage.Create(
 				new CallbackEnvelope(
@@ -52,7 +53,7 @@ public abstract class AuthenticationTestBase<TLogFormat, TStreamId> : Specificat
 				new string[0],
 				"pa$$1"));
 
-		var userCreateEvent2 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var userCreateEvent2 = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 		_node.Node.MainQueue.Publish(
 			new UserManagementMessage.Create(
 				new CallbackEnvelope(
@@ -69,7 +70,7 @@ public abstract class AuthenticationTestBase<TLogFormat, TStreamId> : Specificat
 				new string[0],
 				"pa$$2"));
 
-		var adminCreateEvent2 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var adminCreateEvent2 = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 		_node.Node.MainQueue.Publish(
 			new UserManagementMessage.Create(
 				new CallbackEnvelope(

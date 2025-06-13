@@ -5,6 +5,7 @@ using System.Security.Claims;
 using DotNext.Threading;
 using EventStore.Plugins.Authorization;
 using KurrentDB.Auth.StreamPolicyPlugin.Schema;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -64,7 +65,7 @@ public class StreamPolicySelectorTests {
 
 	[Fact]
 	public async Task when_policy_stream_is_empty_policy_selector_uses_not_ready_policy() {
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 		_bus.Subscribe(new AdHocHandler<ClientMessage.ReadStreamEventsBackward>(
 			msg => {
 				msg.Envelope.ReplyWith(NoStreamResponse(msg));
@@ -80,7 +81,7 @@ public class StreamPolicySelectorTests {
 
 	[Fact]
 	public async Task when_policy_stream_contains_only_invalid_policy_events_policy_selector_uses_not_ready_policy() {
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 		_bus.Subscribe(new AdHocHandler<ClientMessage.ReadStreamEventsBackward>(
 			msg => {
 				msg.Envelope.ReplyWith(CreateReadCompleted(msg, [
@@ -103,7 +104,7 @@ public class StreamPolicySelectorTests {
 	public async Task when_parsing_policy_with_multiple_rules_the_rules_are_applied_in_order() {
 		string username = _customUser;
 		string role = _customRole;
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 		var existingPolicy = new Policy {
 			StreamPolicies = new Dictionary<string, Schema.AccessPolicy>{
 				{ "systemDefault", new Schema.AccessPolicy{ Readers = [], Writers = [], Deleters = [], MetadataWriters = [], MetadataReaders = []}},
@@ -150,7 +151,7 @@ public class StreamPolicySelectorTests {
 	[InlineData(_customUser, _customRole, Grant.Allow, Grant.Deny)]
 	public async Task when_using_the_default_policy_standard_projection_streams_are_read_only(
 		string username, string role, Grant expectedReadGrant, Grant expectedWriteGrant) {
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 		var existingPolicy = StreamPolicySelector.DefaultPolicy;
 		var user = PolicyTestHelpers.CreateUser(username, [role]);
 
@@ -190,7 +191,7 @@ public class StreamPolicySelectorTests {
 	[InlineData(_userStream, _customUser, _customRole, Grant.Allow)]
 	public async Task when_policy_stream_contains_a_valid_policy_that_policy_is_used(
 		string stream, string username, string role, Grant expectedGrant) {
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 		var existingPolicy = StreamPolicySelector.DefaultPolicy;
 		var user = PolicyTestHelpers.CreateUser(username, [role]);
 
@@ -213,7 +214,7 @@ public class StreamPolicySelectorTests {
 	[MemberData(nameof(ValidActionsData))]
 	public async Task
 		when_policy_stream_contains_multiple_policies_the_most_recent_policy_is_used(string allowedAction) {
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 		var user = PolicyTestHelpers.CreateUser(SystemUsers.Operations, [SystemRoles.Operations]);
 		var stream = _systemStream;
 
@@ -250,7 +251,7 @@ public class StreamPolicySelectorTests {
 	[MemberData(nameof(ValidActionsData))]
 	public async Task when_policy_stream_contains_an_invalid_policy_the_most_recent_valid_policy_is_used(
 		string allowedAction) {
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 		var user = PolicyTestHelpers.CreateUser(SystemUsers.Operations, [SystemRoles.Operations]);
 		var stream = _systemStream;
 
@@ -300,12 +301,12 @@ public class StreamPolicySelectorTests {
 			StreamRules = [new StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
-		var subscribeSource = new TaskCompletionSource<ClientMessage.SubscribeToStream>();
+		var subscribeSource = TaskCompletionSourceFactory.CreateDefault<ClientMessage.SubscribeToStream>();
 		_bus.Subscribe(new AdHocHandler<ClientMessage.SubscribeToStream>(msg => {
 			subscribeSource.TrySetResult(msg);
 		}));
 
-		var readCompletionSource = new TaskCompletionSource();
+		var readCompletionSource = TaskCompletionSourceFactory.CreateDefault();
 		_bus.Subscribe(new AdHocHandler<ClientMessage.ReadStreamEventsBackward>(
 			msg => {
 				msg.Envelope.ReplyWith(CreateReadCompleted(msg, [CreateResolvedEventForPolicy(policy1, 0)]));
@@ -349,12 +350,12 @@ public class StreamPolicySelectorTests {
 			StreamRules = [new StreamRule { Policy = "NewPolicy", StartsWith = stream }]
 		};
 
-		var subscribeSource = new TaskCompletionSource<ClientMessage.SubscribeToStream>();
+		var subscribeSource = TaskCompletionSourceFactory.CreateDefault<ClientMessage.SubscribeToStream>();
 		_bus.Subscribe(new AdHocHandler<ClientMessage.SubscribeToStream>(msg => {
 			subscribeSource.TrySetResult(msg);
 		}));
 
-		var readCompletionSource = new TaskCompletionSource();
+		var readCompletionSource = TaskCompletionSourceFactory.CreateDefault();
 		_bus.Subscribe(new AdHocHandler<ClientMessage.ReadStreamEventsBackward>(
 			msg => {
 				msg.Envelope.ReplyWith(CreateReadCompleted(msg, [CreateResolvedEventForPolicy(policy1, 0)]));

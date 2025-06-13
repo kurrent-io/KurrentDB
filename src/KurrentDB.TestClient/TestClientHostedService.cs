@@ -3,6 +3,7 @@
 
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using Microsoft.Extensions.Hosting;
 
 namespace KurrentDB.TestClient;
@@ -17,7 +18,7 @@ internal class TestClientHostedService : IHostedService {
 	public CancellationToken CancellationToken => _stopped.Token;
 
 	public TestClientHostedService(ClientOptions options) {
-		_exitCode = new TaskCompletionSource<int>();
+		_exitCode = TaskCompletionSourceFactory.CreateDefault<int>();
 		_stopped = new CancellationTokenSource();
 		_stopped.Token.Register(() => _exitCode.TrySetResult(0));
 		_client = new Client(options, _stopped);

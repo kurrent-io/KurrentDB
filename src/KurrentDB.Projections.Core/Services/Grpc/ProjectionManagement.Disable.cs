@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using EventStore.Client.Projections;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Projections.Core.Messages;
@@ -16,7 +17,7 @@ namespace EventStore.Projections.Core.Services.Grpc;
 internal partial class ProjectionManagement {
 	private static readonly Operation DisableOperation = new Operation(Operations.Projections.Disable);
 	public override async Task<DisableResp> Disable(DisableReq request, ServerCallContext context) {
-		var disableSource = new TaskCompletionSource<bool>();
+		var disableSource = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		var options = request.Options;
 

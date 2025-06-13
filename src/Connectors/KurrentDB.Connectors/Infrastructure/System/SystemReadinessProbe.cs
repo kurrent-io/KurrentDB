@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Surge;
+using KurrentDB.Common.Utils;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
@@ -15,7 +16,7 @@ public interface ISystemReadinessProbe {
 [UsedImplicitly]
 public class SystemReadinessProbe : IHandle<SystemMessage.BecomeLeader>, IHandle<SystemMessage.BecomeFollower>, IHandle<SystemMessage.BecomeReadOnlyReplica> {
     public SystemReadinessProbe(ISubscriber subscriber, GetNodeSystemInfo getNodeSystemInfo) {
-        CompletionSource = new();
+        CompletionSource = TaskCompletionSourceFactory.CreateDefault();
 
         Subscriber = subscriber.With(x => {
             x.Subscribe<SystemMessage.BecomeLeader>(this);

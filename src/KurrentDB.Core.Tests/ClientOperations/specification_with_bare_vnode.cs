@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Authentication;
 using KurrentDB.Core.Authentication.InternalAuthentication;
 using KurrentDB.Core.Authorization;
@@ -63,7 +64,7 @@ public abstract class specification_with_bare_vnode<TLogFormat, TStreamId> : IPu
 	}
 	private sealed class TaskHandler<T> : IHandle<T>, IDisposable where T : Message {
 		private readonly ISubscriber _source;
-		private readonly TaskCompletionSource<T> _tcs = new TaskCompletionSource<T>();
+		private readonly TaskCompletionSource<T> _tcs = TaskCompletionSourceFactory.CreateDefault<T>();
 		public Task<T> Message => _tcs.Task;
 		public void Handle(T message) {
 			_tcs.SetResult(message);

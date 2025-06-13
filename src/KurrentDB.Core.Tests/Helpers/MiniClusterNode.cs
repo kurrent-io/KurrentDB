@@ -57,8 +57,8 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 	public TFChunkDb Db => Node.Db;
 	private readonly string _dbPath;
 	private readonly bool _isReadOnlyReplica;
-	private readonly TaskCompletionSource<bool> _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
-	private readonly TaskCompletionSource<bool> _adminUserCreated = new(TaskCreationOptions.RunContinuationsAsynchronously);
+	private readonly TaskCompletionSource<bool> _started = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+	private readonly TaskCompletionSource<bool> _adminUserCreated = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	public Task Started => _started.Task;
 	public Task AdminUserCreated => _adminUserCreated.Task;

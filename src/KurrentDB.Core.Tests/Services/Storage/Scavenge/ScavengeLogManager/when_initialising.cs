@@ -21,7 +21,7 @@ namespace KurrentDB.Core.Tests.Services.Storage.Scavenge.ScavengeLogManager;
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_scavenges_stream_does_not_exist<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private TFChunkScavengerLogManager _logManager;
-	private TaskCompletionSource<ClientMessage.WriteEvents> eventWritten = new();
+	private TaskCompletionSource<ClientMessage.WriteEvents> eventWritten = TaskCompletionSourceFactory.CreateDefault<ClientMessage.WriteEvents>();
 	private StreamMetadata _metadata;
 
 	protected override void Given1() {
@@ -48,7 +48,7 @@ public class when_scavenges_stream_does_not_exist<TLogFormat, TStreamId> : TestF
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_scavenges_stream_has_different_metadata<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private TFChunkScavengerLogManager _logManager;
-	private TaskCompletionSource<ClientMessage.WriteEvents> eventWritten = new();
+	private TaskCompletionSource<ClientMessage.WriteEvents> eventWritten = TaskCompletionSourceFactory.CreateDefault<ClientMessage.WriteEvents>();
 	private TimeSpan _scavengeHistoryMaxAge = TimeSpan.FromMinutes(5);
 
 	protected override void Given1() {
@@ -78,7 +78,7 @@ public class when_scavenges_stream_has_different_metadata<TLogFormat, TStreamId>
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_scavenges_stream_has_correct_metadata<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 	private TFChunkScavengerLogManager _logManager;
-	private TaskCompletionSource<ClientMessage.ReadStreamEventsBackward> _eventRead = new();
+	private TaskCompletionSource<ClientMessage.ReadStreamEventsBackward> _eventRead = TaskCompletionSourceFactory.CreateDefault<ClientMessage.ReadStreamEventsBackward>();
 	private List<ClientMessage.WriteEvents> _writeRequests = new();
 	private TimeSpan _scavengeHistoryMaxAge = TimeSpan.FromMinutes(5);
 
@@ -113,7 +113,7 @@ public class when_previous_scavenge_was_interrupted_but_scavenge_stream_not_writ
 	private const string _nodeEndpoint = "localhost:2113";
 	private Guid _scavengeId = Guid.NewGuid();
 	private TFChunkScavengerLogManager _logManager;
-	private TaskCompletionSource<ClientMessage.WriteEvents> _eventWritten = new();
+	private TaskCompletionSource<ClientMessage.WriteEvents> _eventWritten = TaskCompletionSourceFactory.CreateDefault<ClientMessage.WriteEvents>();
 	private string _scavengeStreamId;
 
 	protected override void Given1() {
@@ -155,7 +155,7 @@ public class when_previous_scavenge_was_interrupted_and_some_data_was_scavenged<
 	private const string _nodeEndpoint = "localhost:2113";
 	private Guid _scavengeId = Guid.NewGuid();
 	private TFChunkScavengerLogManager _logManager;
-	private TaskCompletionSource<ClientMessage.WriteEvents> _eventWritten = new();
+	private TaskCompletionSource<ClientMessage.WriteEvents> _eventWritten = TaskCompletionSourceFactory.CreateDefault<ClientMessage.WriteEvents>();
 	private string _scavengeStreamId;
 
 	protected override void Given1() {
@@ -207,7 +207,7 @@ public class when_previous_scavenge_was_completed<TLogFormat, TStreamId>
 	private const string _nodeEndpoint = "localhost:2113";
 	private Guid _scavengeId = Guid.NewGuid();
 	private TFChunkScavengerLogManager _logManager;
-	private TaskCompletionSource<ClientMessage.ReadStreamEventsBackward> _eventRead = new();
+	private TaskCompletionSource<ClientMessage.ReadStreamEventsBackward> _eventRead = TaskCompletionSourceFactory.CreateDefault<ClientMessage.ReadStreamEventsBackward>();
 	private List<ClientMessage.WriteEvents> _writtenEvents = new();
 	private string _scavengeStreamId;
 

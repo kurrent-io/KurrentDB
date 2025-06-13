@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
+using Empty = EventStore.Client.Empty;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
@@ -16,7 +18,7 @@ internal partial class PersistentSubscriptions {
 	private static readonly Operation RestartOperation = new(Plugins.Authorization.Operations.Subscriptions.Restart);
 
 	public override async Task<Empty> RestartSubsystem(Empty request, ServerCallContext context) {
-		var restartSubsystemSource = new TaskCompletionSource<Empty>();
+		var restartSubsystemSource = TaskCompletionSourceFactory.CreateDefault<Empty>();
 
 		var user = context.GetHttpContext().User;
 

@@ -12,6 +12,7 @@ using EventStore.Plugins.Subsystems;
 using EventStore.Projections.Core.Services.Grpc;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Common.Options;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
@@ -117,7 +118,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		_leaderInputBus = new InMemoryBus("manager input bus");
 		_leaderOutputBus = new InMemoryBus("ProjectionManagerAndCoreCoordinatorOutput");
 
-		_subsystemInitialized = new();
+		_subsystemInitialized = TaskCompletionSourceFactory.CreateDefault();
 		_executionTimeout = projectionSubsystemOptions.ExecutionTimeout;
 		_compilationTimeout = projectionSubsystemOptions.CompilationTimeout;
 		_maxProjectionStateSize = projectionSubsystemOptions.MaxProjectionStateSize;

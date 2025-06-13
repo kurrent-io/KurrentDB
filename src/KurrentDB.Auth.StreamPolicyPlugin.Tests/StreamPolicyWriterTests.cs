@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using DotNext.Threading;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -23,7 +24,7 @@ public class StreamPolicyWriterTests {
 
 	[Fact]
 	public async Task when_writing_the_default_policy() {
-		var tcs = new TaskCompletionSource<ClientMessage.WriteEvents>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClientMessage.WriteEvents>();
 		_bus.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(msg => {
 			tcs.TrySetResult(msg);
 		}));
@@ -80,7 +81,7 @@ public class StreamPolicyWriterTests {
 	[InlineData(ClientMessage.NotHandled.Types.NotHandledReason.IsReadOnly)]
 	public async Task when_the_default_policy_write_request_is_not_handled_and_cannot_be_retried(
 		ClientMessage.NotHandled.Types.NotHandledReason notHandledReason) {
-		var tcs = new TaskCompletionSource<ClientMessage.WriteEvents>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClientMessage.WriteEvents>();
 		_bus.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(msg => {
 			tcs.TrySetResult(msg);
 		}));
@@ -132,7 +133,7 @@ public class StreamPolicyWriterTests {
 	[InlineData(OperationResult.StreamDeleted)]
 	public async Task when_the_default_policy_write_request_fails_and_cannot_be_retried(
 		OperationResult operationResult) {
-		var tcs = new TaskCompletionSource<ClientMessage.WriteEvents>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClientMessage.WriteEvents>();
 		_bus.Subscribe(new AdHocHandler<ClientMessage.WriteEvents>(msg => {
 			tcs.TrySetResult(msg);
 		}));

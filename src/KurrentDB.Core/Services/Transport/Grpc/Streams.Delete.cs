@@ -5,14 +5,15 @@ using System;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
-using EventStore.Client;
 using EventStore.Client.Streams;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Grpc;
 using static EventStore.Client.Streams.TombstoneReq.Types.Options;
+using Empty = EventStore.Client.Empty;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
@@ -21,6 +22,7 @@ internal partial class Streams<TStreamId> {
 	public override async Task<DeleteResp> Delete(DeleteReq request, ServerCallContext context) {
 		using var duration = _deleteTracker.Start();
 		try {
+			TaskCompletionSource<bool> tcs = TaskCompletionSourceFactory.CreateDefault<bool>();
 			var options = request.Options;
 			var streamName = options.StreamIdentifier;
 			var expectedVersion = options.ExpectedStreamRevisionCase switch {
@@ -105,7 +107,7 @@ internal partial class Streams<TStreamId> {
 	private async Task<Position?> DeleteInternal(string streamName, long expectedVersion,
 		ClaimsPrincipal user, bool hardDelete, bool requiresLeader, CancellationToken cancellationToken) {
 		var correlationId = Guid.NewGuid(); // TODO: JPB use request id?
-		var deleteResponseSource = new TaskCompletionSource<Position?>();
+		var deleteResponseSource = TaskCompletionSourceFactory.CreateDefault<Position?>();
 
 		var envelope = new CallbackEnvelope(HandleStreamDeletedCompleted);
 

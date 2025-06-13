@@ -81,7 +81,7 @@ internal class WriteFloodProcessor : ICmdProcessor {
 			streams.FirstOrDefault(),
 			streams.LastOrDefault());
 
-		var start = new TaskCompletionSource();
+		var start = TaskCompletionSourceFactory.CreateDefault();
 		stats.StartTime = DateTime.UtcNow;
 		var sw2 = new Stopwatch();
 		var capacity = 2000 / clientsCnt;

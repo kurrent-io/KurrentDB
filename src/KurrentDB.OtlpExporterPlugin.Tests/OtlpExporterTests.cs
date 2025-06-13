@@ -6,6 +6,7 @@ using EventStore.Plugins;
 using EventStore.Plugins.Diagnostics;
 using EventStore.Plugins.Licensing;
 using FluentAssertions;
+using KurrentDB.Common.Utils;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -33,14 +34,14 @@ public class OtlpExporterTests {
 	[Fact]
 	public async Task disabled_when_no_config() {
 		using var collector = PluginDiagnosticsDataCollector.Start("OtlpExporter");
-		await using var _ = await CreateServer(new(), []);
+		await using var _ = await CreateServer(TaskCompletionSourceFactory.CreateDefault<ExportMetricsServiceRequest>(), []);
 		collector.CollectedEvents("OtlpExporter").Should().ContainSingle().Which
 			.Data["enabled"].Should().Be(false);
 	}
 
 	[Fact]
 	public async Task respects_expected_scrape_interval() {
-		await using var _ = await CreateServer(new(), new Dictionary<string, string?> {
+		await using var _ = await CreateServer(TaskCompletionSourceFactory.CreateDefault<ExportMetricsServiceRequest>(), new Dictionary<string, string?> {
 			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", Endpoint },
 			{ $"{KurrentConfigurationConstants.Prefix}:Metrics:ExpectedScrapeIntervalSeconds", "5" },
 		});
@@ -50,7 +51,7 @@ public class OtlpExporterTests {
 
 	[Fact]
 	public async Task export_interval_superceeds_expected_scrape_interval() {
-		await using var _ = await CreateServer(new(), new Dictionary<string, string?> {
+		await using var _ = await CreateServer(TaskCompletionSourceFactory.CreateDefault<ExportMetricsServiceRequest>(), new Dictionary<string, string?> {
 			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", Endpoint },
 			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
 			{ $"{KurrentConfigurationConstants.Prefix}:Metrics:ExpectedScrapeIntervalSeconds", "4" },
@@ -66,7 +67,7 @@ public class OtlpExporterTests {
 
 	[Fact]
 	public async Task does_not_warn_when_settings_agree() {
-		await using var _ = await CreateServer(new(), new Dictionary<string, string?> {
+		await using var _ = await CreateServer(TaskCompletionSourceFactory.CreateDefault<ExportMetricsServiceRequest>(), new Dictionary<string, string?> {
 			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", Endpoint },
 			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Metrics:PeriodicExportingMetricReaderOptions:ExportIntervalMilliseconds", "5000" },
 			{ $"{KurrentConfigurationConstants.Prefix}:Metrics:ExpectedScrapeIntervalSeconds", "5" },
@@ -80,7 +81,7 @@ public class OtlpExporterTests {
 		var meter = new Meter("EventStore.TestMeter", version: "1.0.0");
 		meter.CreateObservableCounter("test-counter", () => 7);
 
-		var tcs = new TaskCompletionSource<ExportMetricsServiceRequest>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ExportMetricsServiceRequest>();
 
 		await using var _ = await CreateServer(tcs, new Dictionary<string, string?> {
 			{ $"{KurrentConfigurationConstants.Prefix}:OpenTelemetry:Otlp:Endpoint", Endpoint },

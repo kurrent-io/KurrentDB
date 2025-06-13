@@ -185,7 +185,7 @@ public class
 		.StartFromBeginning();
 
 	private readonly Guid _id = Guid.NewGuid();
-	private readonly TaskCompletionSource<ResolvedEvent> _firstEventSource = new TaskCompletionSource<ResolvedEvent>(TaskCreationOptions.RunContinuationsAsynchronously);
+	private readonly TaskCompletionSource<ResolvedEvent> _firstEventSource = Common.Utils.TaskCompletionSourceFactory.CreateDefault<ResolvedEvent>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	private const string _group = "startinbeginning1";
 
@@ -233,7 +233,7 @@ public class
 
 	private readonly AutoResetEvent _resetEvent = new AutoResetEvent(false);
 	private readonly Guid _id = Guid.NewGuid();
-	private readonly TaskCompletionSource<ResolvedEvent> _firstEventSource = new TaskCompletionSource<ResolvedEvent>(TaskCreationOptions.RunContinuationsAsynchronously);
+	private readonly TaskCompletionSource<ResolvedEvent> _firstEventSource = Common.Utils.TaskCompletionSourceFactory.CreateDefault<ResolvedEvent>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	private const string _group = "startinbeginning1";
 

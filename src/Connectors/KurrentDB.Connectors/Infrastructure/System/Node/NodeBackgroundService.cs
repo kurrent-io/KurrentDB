@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using Microsoft.Extensions.Hosting;
@@ -85,7 +86,7 @@ public abstract class NodeBackgroundService : IHostedService, IDisposable {
         }
         finally {
             // Wait until the task completes or the stop token triggers
-            var completion = new TaskCompletionSource();
+            var completion = TaskCompletionSourceFactory.CreateDefault();
 
             await using var registration = cancellationToken
                 .Register(tcs => ((TaskCompletionSource)tcs!).SetCanceled(CancellationToken.None), completion);

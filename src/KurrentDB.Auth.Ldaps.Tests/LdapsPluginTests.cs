@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using EventStore.Plugins.Licensing;
+using KurrentDB.Common.Utils;
 using KurrentDB.Plugins.TestHelpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -38,7 +39,7 @@ public class LdapsPluginTests {
 		// There is no health check in this container
 		// Simply try a few requests until one succeeds
 		for (var i = 0; i < 5; i++) {
-			var completionSource = new TaskCompletionSource<TestAuthenticationResponse>();
+			var completionSource = TaskCompletionSourceFactory.CreateDefault<TestAuthenticationResponse>();
 			var request = CreateAuthenticationRequest("professor", "professor", completionSource);
 			var task = completionSource.Task;
 			sut.Authenticate(request);
@@ -61,7 +62,7 @@ public class LdapsPluginTests {
 
 		using var fixture = await CreateAndStartFixture();
 
-		var completionSource = new TaskCompletionSource<TestAuthenticationResponse>();
+		var completionSource = TaskCompletionSourceFactory.CreateDefault<TestAuthenticationResponse>();
 		var request = CreateAuthenticationRequest("professor", "professor", completionSource);
 		sut.Authenticate(request);
 
@@ -84,7 +85,7 @@ public class LdapsPluginTests {
 
 		using var fixture = await CreateAndStartFixture();
 
-		var completionSource = new TaskCompletionSource<TestAuthenticationResponse>();
+		var completionSource = TaskCompletionSourceFactory.CreateDefault<TestAuthenticationResponse>();
 		var request = CreateAuthenticationRequest("professor", "wrong", completionSource);
 		sut.Authenticate(request);
 
@@ -104,7 +105,7 @@ public class LdapsPluginTests {
 
 		using var fixture = await CreateAndStartFixture();
 
-		var completionSource = new TaskCompletionSource<TestAuthenticationResponse>();
+		var completionSource = TaskCompletionSourceFactory.CreateDefault<TestAuthenticationResponse>();
 		var request = CreateAuthenticationRequest("wrong", "wrong", completionSource);
 		sut.Authenticate(request);
 
@@ -124,7 +125,7 @@ public class LdapsPluginTests {
 
 		using var fixture = await CreateAndStartFixture();
 
-		var completionSource = new TaskCompletionSource<TestAuthenticationResponse>();
+		var completionSource = TaskCompletionSourceFactory.CreateDefault<TestAuthenticationResponse>();
 		var request = CreateAuthenticationRequest("fry", "fry", completionSource);
 		sut.Authenticate(request);
 
@@ -147,7 +148,7 @@ public class LdapsPluginTests {
 
 		using var fixture = await CreateAndStartFixture();
 
-		var completionSource = new TaskCompletionSource<TestAuthenticationResponse>();
+		var completionSource = TaskCompletionSourceFactory.CreateDefault<TestAuthenticationResponse>();
 		var request = CreateAuthenticationRequest("amy", "amy", completionSource);
 		sut.Authenticate(request);
 

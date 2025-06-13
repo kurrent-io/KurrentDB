@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 
@@ -19,7 +20,7 @@ public class MessageBus(string? name = null) : InMemoryBus(name ?? "test-bus", f
         });
 
     public Task SubscribeAndWait<T>(HandleMessageAsync<T> handler, CancellationToken timeoutToken = default) where T : Message {
-    	var completion = new TaskCompletionSource();
+    	var completion = TaskCompletionSourceFactory.CreateDefault();
 
     	timeoutToken.Register(() => completion.SetCanceled(timeoutToken));
 

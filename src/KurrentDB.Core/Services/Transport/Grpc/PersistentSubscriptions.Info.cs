@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
@@ -19,7 +20,7 @@ internal partial class PersistentSubscriptions {
 	private static readonly Operation GetInfoOperation = new(Plugins.Authorization.Operations.Subscriptions.Statistics);
 
 	public override async Task<GetInfoResp> GetInfo(GetInfoReq request, ServerCallContext context) {
-		var getPersistentSubscriptionInfoSource = new TaskCompletionSource<GetInfoResp>();
+		var getPersistentSubscriptionInfoSource = TaskCompletionSourceFactory.CreateDefault<GetInfoResp>();
 
 		var user = context.GetHttpContext().User;
 
@@ -74,7 +75,7 @@ internal partial class PersistentSubscriptions {
 	}
 
 	public override async Task<ListResp> List(ListReq request, ServerCallContext context) {
-		var listPersistentSubscriptionsSource = new TaskCompletionSource<ListResp>();
+		var listPersistentSubscriptionsSource = TaskCompletionSourceFactory.CreateDefault<ListResp>();
 		var user = context.GetHttpContext().User;
 
 		if (!await _authorizationProvider.CheckAccessAsync(user, GetInfoOperation, context.CancellationToken)) {

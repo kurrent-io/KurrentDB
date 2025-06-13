@@ -4,7 +4,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using EventStore.ClientAPI.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services;
@@ -37,7 +36,7 @@ public static class user_management_service {
 
 			_users = new KurrentDB.Core.Authentication.InternalAuthentication.UserManagementService(
 				_ioDispatcher, new StubPasswordHashAlgorithm(), skipInitializeStandardUsersCheck: true,
-				new TaskCompletionSource<bool>(), DefaultData.DefaultUserOptions);
+				Common.Utils.TaskCompletionSourceFactory.CreateDefault<bool>(), DefaultData.DefaultUserOptions);
 
 			_bus.Subscribe<UserManagementMessage.Get>(_users);
 			_bus.Subscribe<UserManagementMessage.GetAll>(_users);

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventStore.Client.Projections;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Projections.Core.Messages;
@@ -25,7 +26,7 @@ internal partial class ProjectionManagement {
 			throw RpcExceptions.AccessDenied();
 		}
 
-		var statsSource = new TaskCompletionSource<ProjectionStatistics[]>();
+		var statsSource = TaskCompletionSourceFactory.CreateDefault<ProjectionStatistics[]>();
 
 		var options = request.Options;
 		var name = string.IsNullOrEmpty(options.Name) ? null : options.Name;

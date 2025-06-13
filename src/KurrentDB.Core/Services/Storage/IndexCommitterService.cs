@@ -57,7 +57,7 @@ public class IndexCommitterService<TStreamId> : IndexCommitterService, IIndexCom
 	private readonly SortedList<long, StorageMessage.CommitChased> _commitAcks = new();
 	private readonly AsyncManualResetEvent _addMsgSignal = new(initialState: false);
 	private readonly TimeSpan _waitTimeoutMs = TimeSpan.FromMilliseconds(100);
-	private readonly TaskCompletionSource<object> _tcs = new();
+	private readonly TaskCompletionSource<object> _tcs = TaskCompletionSourceFactory.CreateDefault<object>();
 
 	public Task Task => _tcs.Task;
 

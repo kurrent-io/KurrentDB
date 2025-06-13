@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.AutoScavenge.Scavengers;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.AutoScavenge.Tests.StateMachine;
 
@@ -49,7 +50,7 @@ public class ControlTests {
 
 		simulator.Scavenger.RegisterScavengeFor(Guid.Parse("5cabeeee-0000-0000-0000-000000000001"), clusterMembersByNodeId[followers[0]], ScavengeStatus.InProgress);
 
-		var pauseProcessTask = new TaskCompletionSource<Response<Unit>>();
+		var pauseProcessTask = TaskCompletionSourceFactory.CreateDefault<Response<Unit>>();
 
 		simulator.EnqueueCommands([
 			Command.ReceiveGossip(leader.InstanceId, clusterMembers.Values.ToList()),
@@ -93,7 +94,7 @@ public class ControlTests {
 
 		simulator.Scavenger.RegisterScavengeFor(Guid.Parse("5cabeeee-0000-0000-0000-000000000001"), clusterMembers[followers[0]], ScavengeStatus.InProgress);
 
-		var pauseProcessTask = new TaskCompletionSource<Response<Unit>>();
+		var pauseProcessTask = TaskCompletionSourceFactory.CreateDefault<Response<Unit>>();
 
 		simulator.EnqueueCommands([
 			Command.ReceiveGossip(leader.InstanceId, clusterMembers.Values.ToList()),
@@ -144,7 +145,7 @@ public class ControlTests {
 
 		simulator.Scavenger.Enabled = false;
 
-		var pauseProcessTask = new TaskCompletionSource<Response<Unit>>();
+		var pauseProcessTask = TaskCompletionSourceFactory.CreateDefault<Response<Unit>>();
 
 		simulator.EnqueueCommands([
 			Command.ReceiveGossip(leader.InstanceId, clusterMembers.Values.ToList()),
@@ -207,7 +208,7 @@ public class ControlTests {
 			Reacts.OnEvent<Events.NodeScavengeStarted>(_ => simulator.EnqueueCommands(Command.Suspend)),
 		]);
 
-		var pauseProcessTask = new TaskCompletionSource<Response<Unit>>();
+		var pauseProcessTask = TaskCompletionSourceFactory.CreateDefault<Response<Unit>>();
 
 		simulator.EnqueueCommands(
 			Command.ReceiveGossip(leader.InstanceId, clusterMembers.Values.ToList()),
@@ -278,7 +279,7 @@ public class ControlTests {
 		simulator.Scavenger.RegisterScavengeFor(Guid.Parse("5cabeeee-0000-0000-0000-000000000001"), clusterMembersByNodeId[followers[0]], ScavengeStatus.InProgress);
 		simulator.Scavenger.Pausable = false;
 
-		var pauseProcessTask = new TaskCompletionSource<Response<Unit>>();
+		var pauseProcessTask = TaskCompletionSourceFactory.CreateDefault<Response<Unit>>();
 
 		simulator.EnqueueCommands([
 			Command.ReceiveGossip(leader.InstanceId, clusterMembers.Values.ToList()),
@@ -351,7 +352,7 @@ public class ControlTests {
 		simulator.Scavenger.RegisterScavengeFor(Guid.Parse("5cabeeee-0000-0000-0000-000000000001"), clusterMembersByNodeId[followers[0]], ScavengeStatus.InProgress);
 		simulator.Scavenger.Pausable = false;
 
-		var pauseProcessTask = new TaskCompletionSource<Response<Unit>>();
+		var pauseProcessTask = TaskCompletionSourceFactory.CreateDefault<Response<Unit>>();
 
 		simulator.EnqueueCommands([
 			Command.ReceiveGossip(leader.InstanceId, clusterMembers.Values.ToList()),

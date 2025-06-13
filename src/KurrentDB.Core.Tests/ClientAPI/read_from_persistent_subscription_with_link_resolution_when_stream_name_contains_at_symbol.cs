@@ -5,6 +5,7 @@ using System;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Tests.ClientAPI.Helpers;
 using NUnit.Framework;
 using ExpectedVersion = EventStore.ClientAPI.ExpectedVersion;
@@ -18,7 +19,7 @@ public class read_from_persistent_subscription_with_link_resolution_when_stream_
 	private string _result;
 
 	protected override async Task When() {
-		var task = new TaskCompletionSource<string>();
+		var task = TaskCompletionSourceFactory.CreateDefault<string>();
 
 		var setts = PersistentSubscriptionSettings.Create()
 			.ResolveLinkTos()

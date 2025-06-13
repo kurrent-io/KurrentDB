@@ -5,9 +5,11 @@ using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Projections.Core.Messages;
+using Empty = EventStore.Client.Empty;
 
 // ReSharper disable CheckNamespace
 
@@ -17,7 +19,7 @@ internal partial class ProjectionManagement {
 	private static readonly Operation RestartOperation = new Operation(Operations.Projections.Restart);
 
 	public override async Task<Empty> RestartSubsystem(Empty empty, ServerCallContext context) {
-		var restart = new TaskCompletionSource<bool>();
+		var restart = TaskCompletionSourceFactory.CreateDefault<bool>();
 		var envelope = new CallbackEnvelope(OnMessage);
 
 		var user = context.GetHttpContext().User;

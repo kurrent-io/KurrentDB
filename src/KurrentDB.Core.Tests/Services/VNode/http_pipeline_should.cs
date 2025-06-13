@@ -8,6 +8,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using EventStore.Plugins;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests.Helpers;
@@ -30,7 +31,7 @@ public class http_pipeline_should : SpecificationWithDirectory {
 
 	[Test]
 	public async Task allow_subsystems_to_protect_their_endpoints() {
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 
 		await using var node = new MiniNode<LogFormat.V2, string>(PathName, subsystems: [new FakeProtectedSubSystem()]);
 		node.Node.MainBus.Subscribe(new AdHocHandler<SystemMessage.SystemReady>(t => {

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Auth.StreamPolicyPlugin.Schema;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -67,7 +68,7 @@ public class StreamPolicyWriter : IPolicyWriter {
 		CancellationToken ct) {
 		var correlationId = Guid.NewGuid();
 		var appendResponseSource =
-			new TaskCompletionSource<RetryAction>(TaskCreationOptions.RunContinuationsAsynchronously);
+			TaskCompletionSourceFactory.CreateDefault<RetryAction>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var envelope = new CallbackEnvelope(HandleWriteEventsCallback);
 
 		_bus.Publish(ClientMessage.WriteEvents.ForSingleStream(

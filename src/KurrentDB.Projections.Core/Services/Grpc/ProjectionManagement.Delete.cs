@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using EventStore.Client.Projections;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Projections.Core.Messages;
@@ -16,7 +17,7 @@ namespace EventStore.Projections.Core.Services.Grpc;
 internal partial class ProjectionManagement {
 	private static readonly Operation DeleteOperation = new Operation(Operations.Projections.Delete);
 	public override async Task<DeleteResp> Delete(DeleteReq request, ServerCallContext context) {
-		var deletedSource = new TaskCompletionSource<bool>();
+		var deletedSource = TaskCompletionSourceFactory.CreateDefault<bool>();
 		var options = request.Options;
 
 		var user = context.GetHttpContext().User;

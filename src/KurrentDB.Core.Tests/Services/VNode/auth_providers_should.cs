@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Plugins.Authentication;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Tests.Helpers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -20,10 +21,10 @@ namespace KurrentDB.Core.Tests.Services.VNode;
 public class auth_providers_should : SpecificationWithDirectory {
 	[Test]
 	public async Task be_registered_with_di() {
-		var authenticationConfigured = new TaskCompletionSource();
-		var authenticationServicesConfigured = new TaskCompletionSource();
-		var authorizationConfigured = new TaskCompletionSource();
-		var authorizationServicesConfigured = new TaskCompletionSource();
+		var authenticationConfigured = TaskCompletionSourceFactory.CreateDefault();
+		var authenticationServicesConfigured = TaskCompletionSourceFactory.CreateDefault();
+		var authorizationConfigured = TaskCompletionSourceFactory.CreateDefault();
+		var authorizationServicesConfigured = TaskCompletionSourceFactory.CreateDefault();
 
 		await using var node = new MiniNode<LogFormat.V2, string>(
 			PathName,

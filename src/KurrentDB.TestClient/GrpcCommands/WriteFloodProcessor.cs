@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Client;
+using KurrentDB.Common.Utils;
 using KurrentDB.TestClient.Commands;
 using KurrentDB.TestClient.Statistics;
 
@@ -85,7 +86,7 @@ internal class WriteFloodProcessor : ICmdProcessor {
 			streams.FirstOrDefault(),
 			streams.LastOrDefault());
 
-		var start = new TaskCompletionSource();
+		var start = TaskCompletionSourceFactory.CreateDefault();
 		stats.StartTime = DateTime.UtcNow;
 		var sw2 = new Stopwatch();
 		var capacity = 2000 / clientsCnt;

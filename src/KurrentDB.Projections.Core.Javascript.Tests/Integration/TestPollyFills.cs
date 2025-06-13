@@ -5,19 +5,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 
 namespace KurrentDB.Projections.Core.Javascript.Tests.Integration;
 
 public static class TestPollyFills {
 	public static async Task WaitAsync(this Task toWaitFor, CancellationToken cancellationToken) {
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 		await using var reg = cancellationToken.Register(() => { tcs.TrySetCanceled(); });
 		var result = await Task.WhenAny(tcs.Task, toWaitFor);
 		await result;
 	}
 	public static async Task<T> WaitAsync<T>(this Task<T> toWaitFor, CancellationToken cancellationToken) {
-		var tcs = new TaskCompletionSource<T>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<T>();
 		await using var reg = cancellationToken.Register(() => { tcs.TrySetCanceled(); });
 		var result = await Task.WhenAny(tcs.Task, toWaitFor);
 		return await result;

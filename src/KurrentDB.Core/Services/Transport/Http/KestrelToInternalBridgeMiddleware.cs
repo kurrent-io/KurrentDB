@@ -30,7 +30,7 @@ public class KestrelToInternalBridgeMiddleware : IMiddleware {
 	}
 
 	private static bool TryMatch(HttpContext context, IUriRouter uriRouter, bool logHttpRequests, string advertiseAsAddress, int advertiseAsPort) {
-		var tcs = new TaskCompletionSource<bool>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<bool>();
 		var httpEntity = new HttpEntity(context, logHttpRequests, advertiseAsAddress, advertiseAsPort, () => tcs.TrySetResult(true));
 
 		var request = httpEntity.Request;

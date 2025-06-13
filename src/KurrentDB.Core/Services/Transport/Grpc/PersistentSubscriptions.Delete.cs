@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services;
@@ -21,7 +22,7 @@ internal partial class PersistentSubscriptions {
 	private static readonly Operation DeleteOperation = new(Plugins.Authorization.Operations.Subscriptions.Delete);
 
 	public override async Task<DeleteResp> Delete(DeleteReq request, ServerCallContext context) {
-		var createPersistentSubscriptionSource = new TaskCompletionSource<DeleteResp>();
+		var createPersistentSubscriptionSource = TaskCompletionSourceFactory.CreateDefault<DeleteResp>();
 		var correlationId = Guid.NewGuid();
 
 		var user = context.GetHttpContext().User;

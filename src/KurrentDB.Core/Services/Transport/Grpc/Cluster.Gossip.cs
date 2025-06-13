@@ -47,7 +47,7 @@ partial class Gossip {
 		}
 
 		var clusterInfo = KurrentDB.Core.Cluster.ClusterInfo.FromGrpcClusterInfo(request.Info, _clusterDns);
-		var tcs = new TaskCompletionSource<ClusterInfo>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClusterInfo>();
 		var duration = _updateTracker.Start();
 		_bus.Publish(new GossipMessage.GossipReceived(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration)),
 			clusterInfo, new DnsEndPoint(request.Server.Address, (int)request.Server.Port).WithClusterDns(_clusterDns)));
@@ -60,7 +60,7 @@ partial class Gossip {
 			throw RpcExceptions.AccessDenied();
 		}
 
-		var tcs = new TaskCompletionSource<ClusterInfo>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClusterInfo>();
 		var duration = _readTracker.Start();
 		_bus.Publish(new GossipMessage.ReadGossip(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration))));
 		return await tcs.Task;

@@ -262,7 +262,7 @@ ReadLoop:
 				_subscriptionId, _eventFilter, checkpoint);
 
 			var checkpointIntervalCounter = 0L;
-			var catchupCompletionTcs = new TaskCompletionSource<TFPos>();
+			var catchupCompletionTcs = TaskCompletionSourceFactory.CreateDefault<TFPos>();
 
 			// this is a safe use of AsyncTaskEnvelope. Only one call to OnMessage will be running
 			// at any given time because we only expect one reply and that reply kicks off the next read.
@@ -373,7 +373,7 @@ ReadLoop:
 
 		private Task<TFPos> SubscribeToLive() {
 			var nextLiveSequenceNumber = 0UL;
-			var confirmationPositionTcs = new TaskCompletionSource<TFPos>();
+			var confirmationPositionTcs = TaskCompletionSourceFactory.CreateDefault<TFPos>();
 
 			_bus.Publish(new ClientMessage.FilteredSubscribeToStream(Guid.NewGuid(), _subscriptionId,
 				new CallbackEnvelope(OnSubscriptionMessage), _subscriptionId,

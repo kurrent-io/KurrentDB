@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
@@ -282,7 +283,7 @@ public class when_updating_all_stream_subscription_with_filter<TLogFormat, TStre
 		private readonly Func<IEnumerable<PersistentSubscriptionConfig>, bool> _isDoneWriting;
 		private readonly List<PersistentSubscriptionConfig> _configurations = new();
 		private readonly Dictionary<string, List<Event>> _streams = new();
-		private readonly TaskCompletionSource _tcs = new();
+		private readonly TaskCompletionSource _tcs = TaskCompletionSourceFactory.CreateDefault();
 
 		public IEnumerable<PersistentSubscriptionConfig> Configurtations => _configurations;
 		public TaskCompletionSource FinishedWriting => _tcs;
@@ -549,7 +550,7 @@ public class LiveTests {
 	[Test]
 	public async Task
 		when_reading_end_of_stream_and_a_live_event_is_received_subscription_should_read_stream_again() {
-		var eventsFoundSource = new TaskCompletionSource<bool>();
+		var eventsFoundSource = TaskCompletionSourceFactory.CreateDefault<bool>();
 		var envelope = new FakeEnvelope();
 		var checkpointReader = new FakeCheckpointReader();
 		var sub = new KurrentDB.Core.Services.PersistentSubscription.PersistentSubscription(

@@ -4,6 +4,7 @@
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Services.Processing;
@@ -19,7 +20,7 @@ internal static class SystemProjections {
 					BindingFlags.FlattenHierarchy)
 				.Where(x => x.IsLiteral && !x.IsInitOnly)
 				.Select(x => x.GetRawConstantValue().ToString())
-				.ToDictionary(x => x, _ => new TaskCompletionSource<bool>());
+				.ToDictionary(x => x, _ => TaskCompletionSourceFactory.CreateDefault<bool>());
 
 		bus.Subscribe(new AdHocHandler<CoreProjectionStatusMessage.Stopped>(m => {
 			if (!systemProjectionsReady.TryGetValue(m.Name, out var ready))

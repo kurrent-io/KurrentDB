@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventStore.Client.Users;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
@@ -24,7 +25,7 @@ internal partial class Users {
 			throw RpcExceptions.AccessDenied();
 		}
 
-		var createSource = new TaskCompletionSource<bool>();
+		var createSource = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		var envelope = new CallbackEnvelope(OnMessage);
 

@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -99,7 +100,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 		private readonly CancellationTokenRegistration _registration;
 
 		public TellMeWhenItsDone(CancellationToken token) {
-			_completion = new TaskCompletionSource<Message>(TaskCreationOptions.RunContinuationsAsynchronously);
+			_completion = TaskCompletionSourceFactory.CreateDefault<Message>(TaskCreationOptions.RunContinuationsAsynchronously);
 			_registration = token.Register(static o => {
 				if (o is not TellMeWhenItsDone state)
 					return;
@@ -116,7 +117,7 @@ public abstract class SubsystemScenario : IHandle<Message>, IAsyncLifetime {
 	}
 
 	protected Task Notify(string streamName) {
-		return _notifications.GetOrAdd(streamName, new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously)).Task;
+		return _notifications.GetOrAdd(streamName, TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously)).Task;
 	}
 
 	public void Handle(Message message) {

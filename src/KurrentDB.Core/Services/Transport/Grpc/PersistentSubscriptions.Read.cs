@@ -188,7 +188,7 @@ internal partial class PersistentSubscriptions {
 
 			_correlationId = Ensure.NotEmptyGuid(correlationId);
 			_publisher = Ensure.NotNull(publisher);
-			_subscriptionIdSource = new();
+			_subscriptionIdSource = TaskCompletionSourceFactory.CreateDefault<string>();
 			_user = user;
 			_cancellationToken = cancellationToken;
 			_channel = Channel.CreateBounded<(ResolvedEvent, int)>(new BoundedChannelOptions(bufferSize) {

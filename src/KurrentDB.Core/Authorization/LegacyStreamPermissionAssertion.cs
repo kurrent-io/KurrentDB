@@ -7,6 +7,7 @@ using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Plugins.Authorization;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -185,7 +186,7 @@ public class
 		private readonly TaskCompletionSource<string> _tcs;
 
 		public StreamIdFromTransactionIdEnvelope() {
-			_tcs = new TaskCompletionSource<string>();
+			_tcs = TaskCompletionSourceFactory.CreateDefault<string>();
 		}
 
 		public Task<string> Task => _tcs.Task;

@@ -7,6 +7,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.TestClient.Commands.RunTestScenarios;
 
@@ -172,7 +173,7 @@ internal class LoopingProjTranWriteScenario : ProjectionsScenarioBase {
 		Log.Information("Starting to write {eventCount} events in transaction {transactionId}", eventCount,
 			transaction.TransactionId);
 
-		var resSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var resSource = TaskCompletionSourceFactory.CreateDefault<object>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		Action<Task> fail = prevTask => {
 			Log.Information("WriteEventsInTransactionalWay for transaction {transactionId} failed.",
@@ -202,7 +203,7 @@ internal class LoopingProjTranWriteScenario : ProjectionsScenarioBase {
 	}
 
 	private Task<object> CommitTransaction(EventStoreTransaction transaction) {
-		var resSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var resSource = TaskCompletionSourceFactory.CreateDefault<object>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		Action<Task> fail = prevTask => {
 			Log.Information("WriteEventsInTransactionalWay for transaction {transactionId} failed",

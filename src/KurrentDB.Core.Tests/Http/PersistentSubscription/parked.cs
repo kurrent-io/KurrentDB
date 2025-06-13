@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Transport.Http;
@@ -22,7 +23,7 @@ class when_parking_a_message(string contentType) : with_subscription_having_even
 	private Guid _eventIdToPark;
 	private Guid _parkedEventId;
 	private List<JToken> _entries;
-	private readonly TaskCompletionSource<bool> _eventParked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+	private readonly TaskCompletionSource<bool> _eventParked = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	protected override async Task Given() {
 		NumberOfEventsToCreate = 1;
@@ -71,7 +72,7 @@ class when_replaying_one_all_parked_message(string contentType) : with_subscript
 
 	private string _subscriptionParkedStream;
 	private Guid _writeCorrelationId;
-	private TaskCompletionSource<bool> _eventParked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+	private TaskCompletionSource<bool> _eventParked = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	protected override async Task Given() {
 		_connection.Close();
@@ -155,7 +156,7 @@ class when_replaying_multiple_all_parked_messages(string contentType) : with_sub
 
 	private string _subscriptionParkedStream;
 	private ConcurrentDictionary<Guid, bool> _writeCorrelationId = new ConcurrentDictionary<Guid, bool>();
-	private TaskCompletionSource<bool> _eventParked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+	private TaskCompletionSource<bool> _eventParked = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	protected override async Task Given() {
 		_connection.Close();
@@ -254,7 +255,7 @@ class when_replaying_multiple_some_parked_messages(string contentType) : with_su
 
 	private string _subscriptionParkedStream;
 	private ConcurrentDictionary<Guid, bool> _writeCorrelationId = new ConcurrentDictionary<Guid, bool>();
-	private TaskCompletionSource<bool> _eventParked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+	private TaskCompletionSource<bool> _eventParked = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	protected override async Task Given() {
 		_connection.Close();

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -82,7 +83,7 @@ internal partial class Streams<TStreamId> {
 				);
 			}
 
-			var appendResponseSource = new TaskCompletionSource<AppendResp>(TaskCreationOptions.RunContinuationsAsynchronously);
+			var appendResponseSource = TaskCompletionSourceFactory.CreateDefault<AppendResp>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 			var envelope = new CallbackEnvelope(HandleWriteEventsCompleted);
 

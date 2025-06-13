@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -23,7 +24,7 @@ namespace KurrentDB.Core.Tests.Services.VNode;
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class ShutdownServiceWithMiniNodeTests<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestFixture {
 	private readonly CancellationTokenSource _cts = new();
-	private readonly TaskCompletionSource _tcs = new();
+	private readonly TaskCompletionSource _tcs = TaskCompletionSourceFactory.CreateDefault();
 	private MiniNode<TLogFormat, TStreamId> _node;
 
 	[OneTimeSetUp]

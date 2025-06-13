@@ -10,6 +10,7 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services;
 using IdentityModel.Client;
+using KurrentDB.Common.Utils;
 using Polly;
 using Xunit.Abstractions;
 
@@ -51,7 +52,7 @@ internal class IdpFixture : IDisposable {
 			.Build();
 
 		_identityServer.StopOnDispose = true;
-		_discoveryDocumentSource = new TaskCompletionSource<DiscoveryDocumentResponse>();
+		_discoveryDocumentSource = TaskCompletionSourceFactory.CreateDefault<DiscoveryDocumentResponse>();
 
 		HttpClient = new HttpClient(new SocketsHttpHandler {
 			SslOptions = {

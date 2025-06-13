@@ -491,7 +491,7 @@ public static partial class StorageMessage {
 			private readonly TaskCompletionSource<EffectiveAcl> _tcs;
 
 			public RequestEffectiveAclEnvelope() {
-				_tcs = new TaskCompletionSource<EffectiveAcl>(TaskCreationOptions.RunContinuationsAsynchronously);
+				_tcs = TaskCompletionSourceFactory.CreateDefault<EffectiveAcl>(TaskCreationOptions.RunContinuationsAsynchronously);
 			}
 			public void ReplyWith<T>(T message) where T : Message {
 				if (message == null)

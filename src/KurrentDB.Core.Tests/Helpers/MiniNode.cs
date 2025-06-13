@@ -261,8 +261,8 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 		Node.Startup.ConfigureServices(builder.Services);
 		_webHost = builder.Build();
 		Node.Startup.Configure(_webHost);
-		_started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-		_adminUserCreated = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		_started = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		_adminUserCreated = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 	}
 
 	public async Task StartTestServer() {
