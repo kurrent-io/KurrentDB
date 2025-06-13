@@ -123,5 +123,6 @@ jobs:
           commit: ${{ github.event.workflow_run.head_sha }}
           event_name: ${{ github.event.workflow_run.event }}
           comment_mode: off
+          check_run_annotations: none
           files: |
             artifacts/**/*.trx
