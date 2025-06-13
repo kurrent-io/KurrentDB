@@ -99,30 +99,3 @@ jobs:
         name: test-results-${{ inputs.container-runtime }}
         path: |
           test-results/**/*.trx
-
-  test-results:
-    needs: build-container
-    name: Test Results
-    runs-on: ubuntu-latest
-    if: ${{ !cancelled() }}
-
-    permissions:
-      checks: write
-      pull-requests: write
-      actions: read
-
-    steps:
-      - name: Download and Extract Artifacts
-        uses: dawidd6/action-download-artifact@07ab29fd4a977ae4d2b275087cf67563dfdf0295
-        with:
-          run_id: ${{ github.event.workflow_run.id }}
-          path: artifacts
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          commit: ${{ github.event.workflow_run.head_sha }}
-          event_name: ${{ github.event.workflow_run.event }}
-          comment_mode: off
-          check_run_annotations: none
-          files: |
-            artifacts/**/*.trx
