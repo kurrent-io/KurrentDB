@@ -9,6 +9,7 @@ using Kurrent.Surge;
 using Kurrent.Surge.Connectors.Sinks;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using static System.StringComparison;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Connectors.Planes.Management.Data;
 
@@ -101,7 +102,7 @@ public class ConnectorsStateProjection : SnapshotProjectionsModule<ConnectorsSna
         });
     }
 
-    TaskCompletionSource<(LogPosition Position, DateTimeOffset Timestamp)> HasCaughtUpTaskCompletionSource { get; } = new();
+    TaskCompletionSource<(LogPosition Position, DateTimeOffset Timestamp)> HasCaughtUpTaskCompletionSource { get; } = TaskCompletionSourceFactory.CreateDefault<(LogPosition Position, DateTimeOffset Timestamp)>();
 
     public Task<(LogPosition Position, DateTimeOffset Timestamp)> WaitUntilCaughtUp => HasCaughtUpTaskCompletionSource.Task;
 }

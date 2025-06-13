@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.AutoScavenge.Domain;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.AutoScavenge.Tests.StateMachine;
 
@@ -24,7 +25,7 @@ public class StatusTests {
 			},
 		]);
 
-		var statusTask = new TaskCompletionSource<Response<AutoScavengeStatusResponse>>();
+		var statusTask = TaskCompletionSourceFactory.CreateDefault<Response<AutoScavengeStatusResponse>>();
 
 		simulator.EnqueueCommands([
 			Command.ReceiveGossip(leader.InstanceId, clusterMembers.Values.ToList()),
@@ -47,7 +48,7 @@ public class StatusTests {
 		var simulator = new Simulator(1);
 		var singleNode = ClusterFixtures.GenerateSingleNode();
 		var tokenSource = new CancellationTokenSource();
-		var statusTask = new TaskCompletionSource<Response<AutoScavengeStatusResponse>>();
+		var statusTask = TaskCompletionSourceFactory.CreateDefault<Response<AutoScavengeStatusResponse>>();
 
 		simulator.EnqueueCommands([
 			Command.ReceiveGossip(singleNode.InstanceId, [singleNode]),
@@ -72,7 +73,7 @@ public class StatusTests {
 		var simulator = new Simulator(1);
 		var singleNode = ClusterFixtures.GenerateSingleNode();
 		var tokenSource = new CancellationTokenSource();
-		var statusTask = new TaskCompletionSource<Response<AutoScavengeStatusResponse>>();
+		var statusTask = TaskCompletionSourceFactory.CreateDefault<Response<AutoScavengeStatusResponse>>();
 
 		simulator.EnqueueCommands([
 			Command.ReceiveGossip(singleNode.InstanceId, [singleNode]),
@@ -95,7 +96,7 @@ public class StatusTests {
 		var simulator = new Simulator(clusterSize: 1);
 		var singleNode = ClusterFixtures.GenerateSingleNode();
 		var tokenSource = new CancellationTokenSource();
-		var statusTask = new TaskCompletionSource<Response<AutoScavengeStatusResponse>>();
+		var statusTask = TaskCompletionSourceFactory.CreateDefault<Response<AutoScavengeStatusResponse>>();
 
 		simulator.AddEventsToStorage([
 			new Events.ConfigurationUpdated {
@@ -128,7 +129,7 @@ public class StatusTests {
 		var simulator = new Simulator(clusterSize: 1);
 		var singleNode = ClusterFixtures.GenerateSingleNode();
 		var tokenSource = new CancellationTokenSource();
-		var statusTask = new TaskCompletionSource<Response<AutoScavengeStatusResponse>>();
+		var statusTask = TaskCompletionSourceFactory.CreateDefault<Response<AutoScavengeStatusResponse>>();
 
 		simulator.AddEventsToStorage([
 			new Events.ConfigurationUpdated {

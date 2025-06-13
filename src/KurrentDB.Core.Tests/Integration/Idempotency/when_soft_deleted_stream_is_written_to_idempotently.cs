@@ -3,6 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -23,7 +24,7 @@ public class when_soft_deleted_stream_is_written_to_idempotently<TLogFormat, TSt
 	}
 
 	protected override async Task Given() {
-		var writeEventsCompleted = new TaskCompletionSource<bool>();
+		var writeEventsCompleted = TaskCompletionSourceFactory.CreateDefault<bool>();
 		_node.Node.MainQueue.Publish(ClientMessage.WriteEvents.ForSingleStream(Guid.NewGuid(), Guid.NewGuid(),
 			new CallbackEnvelope(
 				_ => {
@@ -33,7 +34,7 @@ public class when_soft_deleted_stream_is_written_to_idempotently<TLogFormat, TSt
 		await writeEventsCompleted.Task
 			.WithTimeout(TimeSpan.FromSeconds(2));
 
-		var deleteStreamCompleted = new TaskCompletionSource<bool>();
+		var deleteStreamCompleted = TaskCompletionSourceFactory.CreateDefault<bool>();
 		_node.Node.MainQueue.Publish(new ClientMessage.DeleteStream(Guid.NewGuid(), Guid.NewGuid(),
 			new CallbackEnvelope(
 				_ => {
@@ -46,7 +47,7 @@ public class when_soft_deleted_stream_is_written_to_idempotently<TLogFormat, TSt
 
 	[Test]
 	public async Task should_return_negative_1_as_log_position() {
-		var writeEventsCompleted = new TaskCompletionSource<ClientMessage.WriteEventsCompleted>();
+		var writeEventsCompleted = TaskCompletionSourceFactory.CreateDefault<ClientMessage.WriteEventsCompleted>();
 
 		_node.Node.MainQueue.Publish(ClientMessage.WriteEvents.ForSingleStream(Guid.NewGuid(), Guid.NewGuid(),
 			new CallbackEnvelope(

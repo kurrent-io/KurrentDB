@@ -4,6 +4,7 @@
 using System;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Tests.ClientAPI.Helpers;
 using KurrentDB.Core.Tests.Helpers;
 using KurrentDB.Core.Tests.Helpers.Logging;
@@ -27,7 +28,7 @@ public abstract class SpecificationWithMiniNode<TLogFormat, TStreamId> : Specifi
 	}
 
 	protected async Task CloseConnectionAndWait(IEventStoreConnection conn) {
-		TaskCompletionSource closed = new TaskCompletionSource();
+		TaskCompletionSource closed = TaskCompletionSourceFactory.CreateDefault();
 		conn.Closed += (_, _) => closed.SetResult();
 		conn.Close();
 		await closed.Task.WithTimeout(Timeout);

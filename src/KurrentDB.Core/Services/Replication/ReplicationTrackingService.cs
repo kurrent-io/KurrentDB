@@ -38,7 +38,7 @@ public class ReplicationTrackingService :
 	private long _publishedPosition;
 	private readonly ConcurrentDictionary<Guid, long> _replicaLogPositions = new();
 	private readonly ManualResetEventSlim _replicationChange = new(false, 1);
-	private readonly TaskCompletionSource<object> _tcs = new();
+	private readonly TaskCompletionSource<object> _tcs = TaskCompletionSourceFactory.CreateDefault<object>();
 
 	public ReplicationTrackingService(
 		IPublisher publisher,

@@ -7,9 +7,11 @@ using EventStore.Client;
 using EventStore.Client.Operations;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
+using Empty = EventStore.Client.Empty;
 
 // ReSharper disable once CheckNamespace
 namespace EventStore.Core.Services.Transport.Grpc;
@@ -33,7 +35,7 @@ internal partial class Operations {
 	}
 
 	public override async Task<Empty> MergeIndexes(Empty request, ServerCallContext context) {
-		var mergeResultSource = new TaskCompletionSource<string>();
+		var mergeResultSource = TaskCompletionSourceFactory.CreateDefault<string>();
 
 		var user = context.GetHttpContext().User;
 		if (!await _authorizationProvider.CheckAccessAsync(user, MergeIndexesOperation, context.CancellationToken)) {
@@ -76,7 +78,7 @@ internal partial class Operations {
 	}
 
 	public override async Task<Empty> RestartPersistentSubscriptions(Empty request, ServerCallContext context) {
-		var restart = new TaskCompletionSource<bool>();
+		var restart = TaskCompletionSourceFactory.CreateDefault<bool>();
 		var envelope = new CallbackEnvelope(OnMessage);
 
 		var user = context.GetHttpContext().User;

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventStore.Client.Operations;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
@@ -18,7 +19,7 @@ partial class Operations {
 	private static readonly Operation StopOperation = new(Plugins.Authorization.Operations.Node.Scavenge.Stop);
 
 	public override async Task<ScavengeResp> StartScavenge(StartScavengeReq request, ServerCallContext context) {
-		var scavengeResultSource = new TaskCompletionSource<(string, ScavengeResp.Types.ScavengeResult)>();
+		var scavengeResultSource = TaskCompletionSourceFactory.CreateDefault<(string, ScavengeResp.Types.ScavengeResult)>();
 
 		var user = context.GetHttpContext().User;
 		if (!await _authorizationProvider.CheckAccessAsync(user, StartOperation, context.CancellationToken)) {
@@ -49,7 +50,7 @@ partial class Operations {
 	}
 
 	public override async Task<ScavengeResp> StopScavenge(StopScavengeReq request, ServerCallContext context) {
-		var scavengeResultSource = new TaskCompletionSource<(string, ScavengeResp.Types.ScavengeResult)>();
+		var scavengeResultSource = TaskCompletionSourceFactory.CreateDefault<(string, ScavengeResp.Types.ScavengeResult)>();
 
 		var user = context.GetHttpContext().User;
 		if (!await _authorizationProvider.CheckAccessAsync(user, StopOperation, context.CancellationToken)) {

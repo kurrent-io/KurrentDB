@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using EventStore.ClientAPI;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Tests.Http.Users.users;
@@ -53,7 +54,7 @@ class when_getting_statistics_for_subscription_with_parked_events(string content
 
 	private string _subscriptionParkedStream;
 	private Guid _writeCorrelationId;
-	private TaskCompletionSource<bool> _eventParked = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+	private TaskCompletionSource<bool> _eventParked = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	protected override async Task Given() {
 		_connection.Close();

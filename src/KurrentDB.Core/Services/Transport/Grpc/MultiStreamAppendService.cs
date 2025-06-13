@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
@@ -82,7 +83,7 @@ public class MultiStreamAppendService : StreamsService.StreamsServiceBase {
 				}
 			}
 
-			var appendResponseSource = new TaskCompletionSource<MultiStreamAppendResponse>(
+			var appendResponseSource = TaskCompletionSourceFactory.CreateDefault<MultiStreamAppendResponse>(
 				TaskCreationOptions.RunContinuationsAsynchronously);
 
 			var envelope = CallbackEnvelope.Create(

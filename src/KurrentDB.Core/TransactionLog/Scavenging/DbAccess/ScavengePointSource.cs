@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.Messages;
@@ -30,7 +31,7 @@ public class ScavengePointSource : IScavengePointSource {
 
 		_logger.Information("SCAVENGING: Getting latest scavenge point...");
 
-		var readTcs = new TaskCompletionSource<IReadOnlyList<ResolvedEvent>>(
+		var readTcs = TaskCompletionSourceFactory.CreateDefault<IReadOnlyList<ResolvedEvent>>(
 			TaskCreationOptions.RunContinuationsAsynchronously);
 		var endStreamPosition = -1;
 
@@ -97,7 +98,7 @@ public class ScavengePointSource : IScavengePointSource {
 			Threshold = threshold,
 		};
 
-		var writeTcs = new TaskCompletionSource<bool>(
+		var writeTcs = TaskCompletionSourceFactory.CreateDefault<bool>(
 			TaskCreationOptions.RunContinuationsAsynchronously);
 		_ioDispatcher.WriteEvent(
 			streamId: SystemStreams.ScavengePointsStream,

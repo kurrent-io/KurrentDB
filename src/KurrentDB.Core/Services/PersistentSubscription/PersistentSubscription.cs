@@ -90,7 +90,7 @@ public class PersistentSubscription {
 		_totalTimeWatch.Start();
 		_statistics = new PersistentSubscriptionStats(this, _settings, _totalTimeWatch);
 		_outstandingMessages = new OutstandingMessageCache();
-		_streamBufferSource = new TaskCompletionSource<StreamBuffer>(TaskCreationOptions.RunContinuationsAsynchronously);
+		_streamBufferSource = TaskCompletionSourceFactory.CreateDefault<StreamBuffer>(TaskCreationOptions.RunContinuationsAsynchronously);
 		InitAsNew();
 	}
 

@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Common.Utils;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Subscriptions;
@@ -65,7 +66,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 		SecondaryIndexCheckpointTracker tracker = null!;
 
 		var startedAt = DateTime.UtcNow;
-		var elapsed = new TaskCompletionSource<TimeSpan>();
+		var elapsed = TaskCompletionSourceFactory.CreateDefault<TimeSpan>();
 		var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
 		cts.Token.Register(() => elapsed.TrySetCanceled(cts.Token));
 
@@ -256,7 +257,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 		var commitStarted = new ManualResetEventSlim(false);
 		var commitBlocker = new ManualResetEventSlim(false);
 		var commitCompleted = false;
-		var commitTask = new TaskCompletionSource<bool>();
+		var commitTask = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		var tracker = new SecondaryIndexCheckpointTracker(5, 1000, _ => {
 			commitStarted.Set();

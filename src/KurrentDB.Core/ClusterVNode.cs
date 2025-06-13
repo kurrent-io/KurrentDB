@@ -187,7 +187,7 @@ public class ClusterVNode<TStreamId> :
 	private readonly KestrelHttpService _httpService;
 	private readonly ITimeProvider _timeProvider;
 	private readonly IReadOnlyList<ISubsystem> _subsystems;
-	private readonly TaskCompletionSource<bool> _shutdownSource = new();
+	private readonly TaskCompletionSource<bool> _shutdownSource = TaskCompletionSourceFactory.CreateDefault<bool>();
 	private readonly IAuthenticationProvider _authenticationProvider;
 	private readonly IAuthorizationProvider _authorizationProvider;
 	private readonly IReadIndex<TStreamId> _readIndex;
@@ -227,7 +227,7 @@ public class ClusterVNode<TStreamId> :
 	public override bool IsShutdown => _shutdownSource.Task.IsCompleted;
 
 #if DEBUG
-	public TaskCompletionSource<bool> _taskAddedTrigger = new();
+	public TaskCompletionSource<bool> _taskAddedTrigger = TaskCompletionSourceFactory.CreateDefault<bool>();
 	public object _taskAddLock = new();
 #endif
 
@@ -1857,7 +1857,7 @@ public class ClusterVNode<TStreamId> :
 			var oldTrigger = _taskAddedTrigger;
 
 			//create and add new trigger task to list
-			_taskAddedTrigger = new TaskCompletionSource<bool>();
+			_taskAddedTrigger = TaskCompletionSourceFactory.CreateDefault<bool>();
 			_tasks.Add(_taskAddedTrigger.Task);
 
 			//remove old trigger task from list
@@ -1870,7 +1870,7 @@ public class ClusterVNode<TStreamId> :
 	}
 
 	public override async Task<ClusterVNode> StartAsync(bool waitUntilReady, CancellationToken token) {
-		var tcs = new TaskCompletionSource<ClusterVNode>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClusterVNode>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		if (waitUntilReady) {
 			_mainBus.Subscribe(new AdHocHandler<SystemMessage.SystemReady>(

@@ -3,6 +3,7 @@
 
 using System.Threading.Channels;
 using KurrentDB.AutoScavenge.Domain;
+using KurrentDB.Common.Utils;
 using NCrontab;
 
 namespace KurrentDB.AutoScavenge.Clients;
@@ -22,7 +23,7 @@ public class InternalAutoScavengeClient(ChannelWriter<ICommand> channel) : IAuto
 		Execute<Unit>(r => new Commands.Configure(schedule, r), token);
 
 	private async Task<Response<TResp>> Execute<TResp>(Func<Action<Response<TResp>>, ICommand> make, CancellationToken token) {
-		var source = new TaskCompletionSource<Response<TResp>>();
+		var source = TaskCompletionSourceFactory.CreateDefault<Response<TResp>>();
 
 		await using var _ = token.Register(() => source.TrySetCanceled(token));
 		var command = make(source.SetResult);

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using KurrentDB.Common.Configuration;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messages;
@@ -35,7 +36,7 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 	}
 
 	private async static Task CreatePersistentSubscription(IPublisher publisher) {
-		var tcs = new TaskCompletionSource();
+		var tcs = TaskCompletionSourceFactory.CreateDefault();
 		publisher.Publish(new ClientMessage.CreatePersistentSubscriptionToStream(
 			internalCorrId: Guid.NewGuid(),
 			correlationId: Guid.NewGuid(),

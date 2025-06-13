@@ -58,7 +58,7 @@ public class StorageChaser<TStreamId> : StorageChaser, IMonitoredQueue,
 	private readonly ImplicitTransaction<TStreamId> _transaction = new();
 	private bool _commitsAfterEof;
 
-	private readonly TaskCompletionSource<object> _tcs = new();
+	private readonly TaskCompletionSource<object> _tcs = TaskCompletionSourceFactory.CreateDefault<object>();
 
 	public Task Task => _tcs.Task;
 

@@ -7,6 +7,7 @@ using EventStore.Client.Projections;
 using EventStore.Plugins.Authorization;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Projections.Core.Messages;
@@ -25,7 +26,7 @@ internal partial class ProjectionManagement {
 			throw RpcExceptions.AccessDenied();
 		}
 
-		var resultSource = new TaskCompletionSource<Value>();
+		var resultSource = TaskCompletionSourceFactory.CreateDefault<Value>();
 		var options = request.Options;
 
 		var name = options.Name;
@@ -67,7 +68,7 @@ internal partial class ProjectionManagement {
 		if (!await _authorizationProvider.CheckAccessAsync(user, StateOperation, context.CancellationToken)) {
 			throw RpcExceptions.AccessDenied();
 		}
-		var resultSource = new TaskCompletionSource<Value>();
+		var resultSource = TaskCompletionSourceFactory.CreateDefault<Value>();
 
 		var options = request.Options;
 

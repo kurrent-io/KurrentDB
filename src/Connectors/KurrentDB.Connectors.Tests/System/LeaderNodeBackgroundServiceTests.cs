@@ -6,6 +6,7 @@
 
 using System.Net;
 using Kurrent.Surge;
+using KurrentDB.Common.Utils;
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Core.Cluster;
@@ -70,7 +71,7 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 
 			MessageBus.Publish(new SystemMessage.BecomeFollower(Guid.NewGuid(), FakeMemberInfo));
 
-			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = new();
+			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = TaskCompletionSourceFactory.CreateDefault<SystemMessage.ComponentTerminated>();
 			MessageBus.Subscribe<SystemMessage.ComponentTerminated>((message, _) => {
 				if (message.ComponentName == serviceName)
 					componentTerminated.SetResult(message);
@@ -123,7 +124,7 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 			await sut.WaitUntilExecuted();
 			await Task.Delay(1000, cancellator.Token);
 
-			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = new();
+			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = TaskCompletionSourceFactory.CreateDefault<SystemMessage.ComponentTerminated>();
 			MessageBus.Subscribe<SystemMessage.ComponentTerminated>((message, _) => {
 				if (message.ComponentName == serviceName)
 					componentTerminated.SetResult(message);
@@ -178,7 +179,7 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 			// Act
 			MessageBus.Publish(new SystemMessage.BecomeLeader(Guid.NewGuid()));
 
-			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = new();
+			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = TaskCompletionSourceFactory.CreateDefault<SystemMessage.ComponentTerminated>();
 			MessageBus.Subscribe<SystemMessage.ComponentTerminated>((message, _) => {
 				if (message.ComponentName == serviceName)
 					componentTerminated.SetResult(message);
@@ -234,7 +235,7 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 
 			await sut.WaitUntilExecuting();
 
-			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = new();
+			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = TaskCompletionSourceFactory.CreateDefault<SystemMessage.ComponentTerminated>();
 			MessageBus.Subscribe<SystemMessage.ComponentTerminated>((message, _) => {
 				if (message.ComponentName == serviceName)
 					componentTerminated.SetResult(message);
@@ -272,7 +273,7 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 
 			await sut.WaitUntilExecuted();
 
-			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = new();
+			TaskCompletionSource<SystemMessage.ComponentTerminated> componentTerminated = TaskCompletionSourceFactory.CreateDefault<SystemMessage.ComponentTerminated>();
 			MessageBus.Subscribe<SystemMessage.ComponentTerminated>((message, _) => {
 				if (message.ComponentName == serviceName)
 					componentTerminated.SetResult(message);
@@ -287,8 +288,8 @@ public class LeaderNodeBackgroundServiceTests(ITestOutputHelper output, Connecto
 
 class TestLeadershipAwareService(string serviceName, MessageBus bus, NodeSystemInfo nodeSystemInfo, ILoggerFactory loggerFactory)
 	: LeaderNodeBackgroundService(bus, bus, _ => new ValueTask<NodeSystemInfo>(nodeSystemInfo), loggerFactory, serviceName) {
-	volatile TaskCompletionSource<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)> _executingCompletionSource = new();
-	volatile TaskCompletionSource<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)> _executedCompletionSource  = new();
+	volatile TaskCompletionSource<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)> _executingCompletionSource = TaskCompletionSourceFactory.CreateDefault<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)>();
+	volatile TaskCompletionSource<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)> _executedCompletionSource  = TaskCompletionSourceFactory.CreateDefault<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)>();
 
 	public TimeSpan ExecuteDelay { get; set; } = TimeSpan.FromMinutes(10);
 
@@ -300,13 +301,13 @@ class TestLeadershipAwareService(string serviceName, MessageBus bus, NodeSystemI
 
 	public async Task<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)> WaitUntilExecuting() {
 		var result = await _executingCompletionSource.Task;
-		_executingCompletionSource = new();
+		_executingCompletionSource = TaskCompletionSourceFactory.CreateDefault<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)>();
 		return result;
 	}
 
 	public async Task<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)> WaitUntilExecuted() {
 		var result = await _executedCompletionSource.Task;
-		_executedCompletionSource = new();
+		_executedCompletionSource = TaskCompletionSourceFactory.CreateDefault<(NodeSystemInfo NodeInfo, CancellationToken StoppingToken)>();
 		return result;
 	}
 }

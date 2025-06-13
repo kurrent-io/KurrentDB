@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Common;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 
 namespace KurrentDB.Core.Tests.ClientAPI;
@@ -371,8 +372,8 @@ public class when_writing_and_subscribing_to_normal_events_manual_nack<TLogForma
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class when_connection_drops_messages_that_have_run_out_of_retries_are_not_retried<TLogFormat, TStreamId>
 	: SpecificationWithMiniNode<TLogFormat, TStreamId> {
-	private readonly TaskCompletionSource<bool> _subscriptionDropped = new TaskCompletionSource<bool>();
-	private readonly TaskCompletionSource<bool> _eventReceived = new TaskCompletionSource<bool>();
+	private readonly TaskCompletionSource<bool> _subscriptionDropped = TaskCompletionSourceFactory.CreateDefault<bool>();
+	private readonly TaskCompletionSource<bool> _eventReceived = TaskCompletionSourceFactory.CreateDefault<bool>();
 	private ResolvedEvent _receivedEvent;
 
 	protected override Task When() => Task.WhenAll(_node.Started, _node.AdminUserCreated);

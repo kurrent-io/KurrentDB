@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Exceptions;
 using KurrentDB.Core.TransactionLog.Chunks;
 using NUnit.Framework;
@@ -578,7 +579,7 @@ public class when_validating_tfchunk_db : SpecificationWithDirectory {
 
 		public TestLogEventSink() {
 			_output = new StringBuilder();
-			_logEventReceived = new TaskCompletionSource<Exception>();
+			_logEventReceived = TaskCompletionSourceFactory.CreateDefault<Exception>();
 		}
 
 		public void Emit(LogEvent logEvent) {

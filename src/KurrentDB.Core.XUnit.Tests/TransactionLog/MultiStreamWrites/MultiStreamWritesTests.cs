@@ -4,6 +4,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -590,7 +591,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 		Event[] events,
 		int[] eventStreamIndexes,
 		Guid? correlationId = null) {
-		var tcs = new TaskCompletionSource<ClientMessage.WriteEventsCompleted>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClientMessage.WriteEventsCompleted>();
 		var envelope = new CallbackEnvelope(m => {
 			Assert.IsType<ClientMessage.WriteEventsCompleted>(m);
 			tcs.SetResult((ClientMessage.WriteEventsCompleted)m);
@@ -613,7 +614,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	private Task<ClientMessage.ReadStreamEventsForwardCompleted> ReadEvents(string eventStreamId) {
-		var tcs = new TaskCompletionSource<ClientMessage.ReadStreamEventsForwardCompleted>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClientMessage.ReadStreamEventsForwardCompleted>();
 		var envelope = new CallbackEnvelope(m => {
 			Assert.IsType<ClientMessage.ReadStreamEventsForwardCompleted>(m);
 			tcs.SetResult((ClientMessage.ReadStreamEventsForwardCompleted)m);
@@ -638,7 +639,7 @@ public class MultiStreamWritesTests(MiniNodeFixture<MultiStreamWritesTests> fixt
 	}
 
 	private async Task DeleteStream(string eventStreamId, bool hardDelete) {
-		var tcs = new TaskCompletionSource<ClientMessage.DeleteStreamCompleted>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClientMessage.DeleteStreamCompleted>();
 		var envelope = new CallbackEnvelope(m => {
 			Assert.IsType<ClientMessage.DeleteStreamCompleted>(m);
 			tcs.SetResult((ClientMessage.DeleteStreamCompleted)m);

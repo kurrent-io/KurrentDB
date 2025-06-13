@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using static KurrentDB.Core.Services.Transport.Grpc.RpcExceptions;
@@ -17,7 +18,7 @@ internal partial class PersistentSubscriptions {
 	private static readonly Operation ReplayParkedOperation = new(Plugins.Authorization.Operations.Subscriptions.ReplayParked);
 
 	public override async Task<ReplayParkedResp> ReplayParked(ReplayParkedReq request, ServerCallContext context) {
-		var replayParkedMessagesSource = new TaskCompletionSource<ReplayParkedResp>();
+		var replayParkedMessagesSource = TaskCompletionSourceFactory.CreateDefault<ReplayParkedResp>();
 		var correlationId = Guid.NewGuid();
 
 		var user = context.GetHttpContext().User;

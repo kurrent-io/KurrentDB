@@ -6,6 +6,7 @@ using System.Net;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Internal;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Tests.ClientAPI.Helpers;
 using KurrentDB.Core.Tests.Helpers;
 using NUnit.Framework;
@@ -39,7 +40,7 @@ public class Connect<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestF
 		ClientApiLoggerBridge.Default.Info("Starting '{0}' test...",
 			"should_throw_exception_when_trying_to_reopen_closed_connection");
 
-		var closed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var closed = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var settings = ConnectionSettings.Create()
 			.EnableVerboseLogging()
 			.UseCustomLogger(ClientApiLoggerBridge.Default)
@@ -69,7 +70,7 @@ public class Connect<TLogFormat, TStreamId> : SpecificationWithDirectoryPerTestF
 	//TODO GFY THIS TEST TIMES OUT IN LINUX.
 	[Test, Category("Network")]
 	public async Task should_close_connection_after_configured_amount_of_failed_reconnections() {
-		var closed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var closed = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var settings =
 			ConnectionSettings.Create()
 				.EnableVerboseLogging()
@@ -116,7 +117,7 @@ public class not_connected_tests {
 
 	[Test]
 	public async Task should_timeout_connection_after_configured_amount_time_on_conenct() {
-		var closed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var closed = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var settings =
 			ConnectionSettings.Create()
 				.EnableVerboseLogging()

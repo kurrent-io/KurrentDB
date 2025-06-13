@@ -3,6 +3,7 @@
 
 using System;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 
 namespace KurrentDB.Core.Messaging;
 
@@ -11,7 +12,7 @@ public class TcsEnvelope<TResult> : IEnvelope where TResult : class {
 	public Task<TResult> Task => _tcs.Task;
 
 	public TcsEnvelope() {
-		_tcs = new TaskCompletionSource<TResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+		_tcs = TaskCompletionSourceFactory.CreateDefault<TResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 	}
 
 	public void ReplyWith<T>(T message) where T : Message {

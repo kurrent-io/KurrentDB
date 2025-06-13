@@ -28,7 +28,7 @@ public class InternalAuthenticationProvider : AuthenticationProviderBase, IHandl
 
 	readonly LRUCache<string, (string hash, string salt, ClaimsPrincipal principal)> _userPasswordsCache;
 
-	readonly TaskCompletionSource<bool> _tcs = new();
+	readonly TaskCompletionSource<bool> _tcs = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 	public InternalAuthenticationProvider(
 		ISubscriber subscriber, IODispatcher ioDispatcher,

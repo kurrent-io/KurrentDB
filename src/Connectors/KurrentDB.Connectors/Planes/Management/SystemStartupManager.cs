@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Common.Utils;
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,7 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace KurrentDB.Connectors.Planes.Management;
 
 internal class SystemStartupManager(IServiceProvider serviceProvider) : BackgroundService, IStartupWorkCompletionMonitor {
-	private readonly TaskCompletionSource _completed = new();
+	private readonly TaskCompletionSource _completed = TaskCompletionSourceFactory.CreateDefault();
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken) {
 		var workers = serviceProvider.GetServices<SystemStartupTaskWorker>().ToList();
