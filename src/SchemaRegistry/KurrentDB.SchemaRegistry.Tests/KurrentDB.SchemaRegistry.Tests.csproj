@@ -8,11 +8,17 @@
     <Nullable>enable</Nullable>
 		<IsTestProject>true</IsTestProject>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <IsPackable>false</IsPackable>
+    <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+    <EnableMSTestRunner>true</EnableMSTestRunner>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Kurrent.Surge" Version="1.1.0-alpha" />
-		<PackageReference Include="TUnit.Engine" Version="0.19.86" />
+		<PackageReference Include="TUnit" Version="0.19.86"/>
+		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.6.3"/>
+
 <!--        <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="1.6.0" />-->
 <!--        <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="1.6.0" />-->
   </ItemGroup>
@@ -20,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\KurrentDB.Surge.Testing.Messages\KurrentDB.Surge.Testing.Messages.csproj" />
     <ProjectReference Include="..\..\KurrentDB.Surge.Testing.TUnit\KurrentDB.Surge.Testing.TUnit.csproj" />
+    <ProjectReference Include="..\..\KurrentDB\KurrentDB.csproj" />
     <ProjectReference Include="..\KurrentDB.SchemaRegistry\KurrentDB.SchemaRegistry.csproj" />
   </ItemGroup>
 	<ItemGroup>
@@ -29,5 +36,20 @@
 		<Using Include="Humanizer"/>
 		<Using Include="FluentAssertions"/>
 		<Using Include="TUnit"/>
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Remove="Modules\Schemas\Data\**" />
+	  <Compile Remove="Modules\Schemas\Domain\**" />
+	  <Compile Remove="Modules\Schemas\Integration\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <EmbeddedResource Remove="Modules\Schemas\Data\**" />
+	  <EmbeddedResource Remove="Modules\Schemas\Domain\**" />
+	  <EmbeddedResource Remove="Modules\Schemas\Integration\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="Modules\Schemas\Data\**" />
+	  <None Remove="Modules\Schemas\Domain\**" />
+	  <None Remove="Modules\Schemas\Integration\**" />
 	</ItemGroup>
 </Project>

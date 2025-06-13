@@ -14,6 +14,7 @@ using KurrentDB.Connectors.Tests;
 using KurrentDB.Surge.Testing.Fixtures;
 using KurrentDB.Surge.Testing.Xunit.Extensions.AssemblyFixture;
 using Microsoft.Extensions.DependencyInjection;
+using FakeTimeProvider = Microsoft.Extensions.Time.Testing.FakeTimeProvider;
 using WithExtension = KurrentDB.Surge.Testing.Extensions.WithExtension;
 
 [assembly: TestFramework(XunitTestFrameworkWithAssemblyFixture.TypeName, XunitTestFrameworkWithAssemblyFixture.AssemblyName)]

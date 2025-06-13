@@ -46,8 +46,4 @@
 	<ItemGroup>
 	  <None Remove="Planes\Management\ConnectorApplication\**" />
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Infrastructure\Surge\" />
-	</ItemGroup>
 </Project>

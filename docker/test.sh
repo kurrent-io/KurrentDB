@@ -10,19 +10,19 @@ tests=$(find "$tests_directory" -maxdepth 2 -type d -name "*.Tests")
 for test in $tests; do
     proj=$(basename "$test")
 
-    dotnet test \
-      --blame \
-      --blame-hang-timeout 5min \
-      --settings "$settings" \
-      --logger:"GitHubActions;report-warnings=false" \
-      --logger:html \
-      --logger:trx \
-      --logger:"console;verbosity=normal" \
-      --results-directory "$output_directory/$proj" "$test/$proj.dll"
-
-    html_files=$(find "$output_directory/$proj" -name "*.html")
-
-    for html in $html_files; do
-      cat "$html" > "$output_directory/test-results.html"
-    done
+    if [ "$proj" = "KurrentDB.SchemaRegistry.Tests" ]; then
+        dotnet exec \
+          "$test/$proj.dll" \
+          --report-trx \
+          --results-directory "$output_directory"
+    else
+        dotnet test \
+          --blame \
+          --blame-hang-timeout 5min \
+          --settings "$settings" \
+          --logger:"GitHubActions;report-warnings=false" \
+          --logger:trx \
+          --logger:"console;verbosity=normal" \
+          --results-directory "$output_directory" "$test/$proj.dll"
+    fi
 done

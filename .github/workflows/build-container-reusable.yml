@@ -91,17 +91,19 @@ jobs:
         --env GITHUB_WORKSPACE=${{ github.workspace }}
         --env GITHUB_SHA=${{ github.sha }}
         kurrentdb-test
-    -  
-      name: Publish Test Results (HTML)
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        path: test-results/test-results.html
-        name: test-results-${{ inputs.container-runtime }}.html
-    -  
+    -
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ inputs.container-runtime }}
-        path: test-results
+        path: |
+          test-results/**/*.trx
+    -
+      name: Parse Trx files
+      if: ${{ !cancelled() }}
+      uses: NasAmin/trx-parser@v0.6.0
+      id: trx-parser
+      with:
+        TRX_PATH: ${{ github.workspace }}/test-results
+        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}          

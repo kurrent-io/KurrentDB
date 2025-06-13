@@ -15,12 +15,12 @@ COPY ./ci ./
 
 WORKDIR /build/src
 COPY ./src/Connectors/*/*.csproj ./Connectors/
-RUN for file in $(ls Connectors/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done
 COPY ./src/SchemaRegistry/*/*.csproj ./SchemaRegistry/
-RUN for file in $(ls SchemaRegistry/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done
 COPY ./src/KurrentDB.sln ./src/*/*.csproj ./src/Directory.Build.* ./
-RUN for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done
-RUN dotnet restore --runtime=${RUNTIME}
+RUN for file in $(ls Connectors/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
+    for file in $(ls SchemaRegistry/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
+    for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
+    dotnet restore --runtime=${RUNTIME}
 COPY ./src .
 
 WORKDIR /build/.git
@@ -29,7 +29,7 @@ COPY ./.git/ .
 RUN /build/scripts/build.sh /build/src /build/published-tests
 
 # "test" image
-FROM mcr.microsoft.com/dotnet/sdk:8.0-${CONTAINER_RUNTIME} as test
+FROM mcr.microsoft.com/dotnet/sdk:8.0-${CONTAINER_RUNTIME} AS test
 WORKDIR /build
 COPY --from=build ./build/published-tests ./published-tests
 COPY --from=build ./build/ci ./ci
@@ -40,7 +40,7 @@ RUN mkdir ./test-results
 CMD ["/build/scripts/test.sh"]
 
 # "publish" image
-FROM build as publish
+FROM build AS publish
 ARG RUNTIME=linux-x64
 
 RUN dotnet publish --configuration=Release --runtime=${RUNTIME} --self-contained \
