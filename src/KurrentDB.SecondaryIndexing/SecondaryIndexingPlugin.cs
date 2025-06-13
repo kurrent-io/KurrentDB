@@ -7,8 +7,11 @@ using EventStore.Plugins.Subsystems;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage.InMemory;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Builders;
-using KurrentDB.SecondaryIndexing.Indices;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,25 +21,39 @@ namespace KurrentDB.SecondaryIndexing;
 public interface ISecondaryIndexingPlugin : ISubsystemsPlugin;
 
 public sealed class SecondaryIndexingPluginOptions {
-	public int? CheckpointCommitBatchSize { get; set; }
-	public uint? CheckpointCommitDelayMs { get; set; }
+	public int CommitBatchSize { get; set; } = 50_000;
 }
 
 public static class SecondaryIndexingPluginFactory {
-	public static ISecondaryIndexingPlugin Create<TStreamId>(VirtualStreamReader virtualStreamReader) =>
-		new SecondaryIndexingPlugin<TStreamId>(virtualStreamReader);
+	public static ISecondaryIndexingPlugin Create(VirtualStreamReader virtualStreamReader) =>
+		new SecondaryIndexingPlugin(virtualStreamReader);
 }
 
-internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStreamReader)
+internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
 	[Experimental("SECONDARY_INDEX")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-		var options = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
-			.Get<SecondaryIndexingPluginOptions>();
+		var options = configuration
+			.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
+			.Get<SecondaryIndexingPluginOptions>() ?? new();
 
+		services.AddSingleton<DuckDbDataSourceOptions>(sp => {
+			var dbConfig = sp.GetRequiredService<TFChunkDbConfig>();
+			var connectionString = $"Data Source={Path.Combine(dbConfig.Path, "index.db")};";
+
+			return new DuckDbDataSourceOptions { ConnectionString = connectionString };
+		});
+		services.AddSingleton<DuckDbDataSource>();
+		services.AddSingleton(sp =>
+			new DefaultIndex(
+				sp.GetRequiredService<DuckDbDataSource>(),
+				sp.GetRequiredService<IReadIndex<string>>(),
+				options.CommitBatchSize
+			)
+		);
 		services.AddHostedService(sp =>
 			new SecondaryIndexBuilder(
-				sp.GetRequiredService<ISecondaryIndex>(),
+				sp.GetRequiredService<DefaultIndex>(),
 				sp.GetRequiredService<IPublisher>(),
 				sp.GetRequiredService<ISubscriber>(),
 				options
@@ -47,7 +64,7 @@ internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStr
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
 		base.ConfigureApplication(app, configuration);
 
-		var index = app.ApplicationServices.GetService<ISecondaryIndex>();
+		var index = app.ApplicationServices.GetService<DefaultIndex>();
 
 		if (index != null)
 			virtualStreamReader.Register(index.Readers.ToArray());

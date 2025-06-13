@@ -1156,6 +1156,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscrQueue);
 		_mainBus.Subscribe<StorageMessage.EventCommitted>(subscrQueue);
 		_mainBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscrQueue);
+		_mainBus.Subscribe<StorageMessage.SecondaryIndexRecordCommitted>(subscrQueue);
 
 		var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, virtualStreamReader);
 		subscrBus.Subscribe<SystemMessage.SystemStart>(subscription);
@@ -1169,6 +1170,7 @@ public class ClusterVNode<TStreamId> :
 		subscrBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscription);
 		subscrBus.Subscribe<StorageMessage.EventCommitted>(subscription);
 		subscrBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscription);
+		subscrBus.Subscribe<StorageMessage.SecondaryIndexRecordCommitted>(subscription);
 
 		// PERSISTENT SUBSCRIPTIONS
 		// IO DISPATCHER
@@ -1604,7 +1606,8 @@ public class ClusterVNode<TStreamId> :
 					(() => (_certificateSelector(), _intermediateCertsSelector(), _trustedRootCertsSelector()))
 				.AddSingleton(_nodeHttpClientFactory)
 				.AddSingleton<IChunkRegistry<IChunkBlob>>(Db.Manager)
-				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy);
+				.AddSingleton<IVersionedFileNamingStrategy>(Db.Manager.FileSystem.LocalNamingStrategy)
+				.AddSingleton(dbConfig);
 
 			configureAdditionalNodeServices?.Invoke(services);
 			return services;

@@ -46,7 +46,6 @@ using KurrentDB.TcpPlugin;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using LogV3StreamId = System.UInt32;
 
 namespace KurrentDB;
 
@@ -120,7 +119,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 		var virtualStreamReader = new VirtualStreamReader();
 
 		if (_options.Database.DbLogFormat == DbLogFormat.V2) {
-			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<string>(virtualStreamReader);
+			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create(virtualStreamReader);
 			_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
 
 			var logFormatFactory = new LogV2FormatAbstractorFactory();
@@ -131,8 +130,9 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				configuration);
 			Node = node;
 		} else if (_options.Database.DbLogFormat == DbLogFormat.ExperimentalV3) {
-			var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<LogV3StreamId>(virtualStreamReader);
-			_options = _options.WithPlugableComponents(secondaryIndexingPlugin);
+			// Secondary indexes not supported for LogV3 as it's not being used
+			// var secondaryIndexingPlugin = SecondaryIndexingPluginFactory.Create<LogV3StreamId>(virtualStreamReader);
+			// _options = _options.WithPlugableComponents(secondaryIndexingPlugin);
 
 			var logFormatFactory = new LogV3FormatAbstractorFactory();
 			var node = ClusterVNode.Create(_options, logFormatFactory, GetAuthenticationProviderFactory(),
@@ -169,7 +169,7 @@ public class ClusterVNodeHostedService : IHostedService, IDisposable {
 				return (modifiedOptions, internalFactory);
 			}
 
-			var authorizationTypeToPlugin = new Dictionary<string, AuthorizationProviderFactory> { };
+			var authorizationTypeToPlugin = new Dictionary<string, AuthorizationProviderFactory>();
 			var authzPlugins = pluginLoader.Load<IAuthorizationPlugin>().ToList();
 			authzPlugins.Add(new LegacyAuthorizationWithStreamAuthorizationDisabledPlugin());
 

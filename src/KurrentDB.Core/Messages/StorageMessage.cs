@@ -307,6 +307,17 @@ public static partial class StorageMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
+	public partial class SecondaryIndexRecordCommitted : Message {
+		public readonly long LogPosition;
+		public readonly EventRecord Event;
+
+		public SecondaryIndexRecordCommitted(long logPosition, EventRecord @event) {
+			LogPosition = logPosition;
+			Event = @event;
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Storage)]
 	public partial class InMemoryEventCommitted : Message {
 		public readonly long CommitPosition;
 		public readonly EventRecord Event;
