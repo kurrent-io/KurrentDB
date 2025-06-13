@@ -12,7 +12,16 @@ public interface IMessagesBatchObserver {
 	public ConcurrentDictionary<string, long> Categories { get; }
 	public ConcurrentDictionary<string, long> EventTypes { get; }
 	public long TotalCount { get; }
+
+
+	public IndexingSummary Summary { get; }
 }
+
+public record IndexingSummary(
+	IDictionary<string, long> Categories,
+	IDictionary<string, long> EventTypes,
+	long TotalCount
+);
 
 public class SimpleMessagesBatchObserver : IMessagesBatchObserver {
 	private long _totalCount;
@@ -33,4 +42,10 @@ public class SimpleMessagesBatchObserver : IMessagesBatchObserver {
 	public ConcurrentDictionary<string, long> EventTypes { get; } = new();
 
 	public long TotalCount => _totalCount;
+
+	public IndexingSummary Summary => new IndexingSummary(
+		Categories.ToDictionary(ks => ks.Key, vs => vs.Value),
+		EventTypes.ToDictionary(ks => ks.Key, vs => vs.Value),
+		TotalCount
+	);
 }

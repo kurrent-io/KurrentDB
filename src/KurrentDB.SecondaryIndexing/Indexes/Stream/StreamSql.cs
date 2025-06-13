@@ -26,4 +26,26 @@ internal static class StreamSql {
 
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}
+
+	public record struct StreamSummary(long Id, string Name, long LastLogPosition);
+
+	public struct GetStreamsSummaryQuery : IQuery<(long LastId, int Take), StreamSummary> {
+		public static BindingContext Bind(in (long LastId, int Take) args, PreparedStatement statement) =>
+			new(statement) { args.Take, args.LastId };
+
+		public static ReadOnlySpan<byte> CommandText =>
+			"""
+			SELECT s.id, s.name, max_seq.max_streams_seq
+			FROM streams s
+			LEFT JOIN (
+			    SELECT streams, MAX(streams_seq) AS max_streams_seq
+			    FROM idx_all
+			    GROUP BY streams
+			) max_seq ON s.id = max_seq.streams;
+			WHERE id>$1
+			LIMIT $2
+			"""u8;
+
+		public static StreamSummary Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString(), row.ReadInt64());
+	}
 }

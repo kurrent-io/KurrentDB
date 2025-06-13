@@ -16,9 +16,7 @@ public class LoadTest(IMessageGenerator generator, ILoadTestEnvironment environm
 
 		await Task.WhenAll(testPartitions.Select(ProcessPartition));
 
-		Debug.Assert(observer.TotalCount == config.TotalMessagesCount);
-		Debug.Assert(observer.Categories.Values.Sum() == config.TotalMessagesCount);
-		Debug.Assert(observer.EventTypes.Values.Sum() == config.TotalMessagesCount);
+		await environment.AssertThat.IsIndexedMatching(observer.Summary);
 	}
 
 	private async Task ProcessPartition(LoadTestPartitionConfig loadTestPartitionConfig) {

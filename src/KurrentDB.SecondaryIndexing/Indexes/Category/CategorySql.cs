@@ -34,6 +34,23 @@ internal static class CategorySql {
 		public static ReferenceRecord Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString());
 	}
 
+	public record struct CategorySummary(long Id, string Name, long LastLogPosition);
+
+	public struct GetCategoriesSummaryQuery : IQuery<CategorySummary> {
+		public static ReadOnlySpan<byte> CommandText =>
+			"""
+			SELECT c.id, c.name, max_seq.max_category_seq
+			FROM category c
+			LEFT JOIN (
+			    SELECT category, MAX(category_seq) AS max_category_seq
+			    FROM idx_all
+			    GROUP BY category
+			) max_seq ON c.id = max_seq.category;
+			"""u8;
+
+		public static CategorySummary Parse(ref DataChunk.Row row) => new(row.ReadInt32(), row.ReadString(), row.ReadInt64());
+	}
+
 	public struct GetCategoriesMaxSequencesQuery : IQuery<(int Id, long Sequence)> {
 		public static ReadOnlySpan<byte> CommandText =>
 			"select category, max(category_seq) from idx_all group by category"u8;
@@ -43,7 +60,7 @@ internal static class CategorySql {
 
 	public record struct AddCategoryStatementArgs(int Id, string Category);
 
-	public struct AddCategoryStatement  : IPreparedStatement<AddCategoryStatementArgs> {
+	public struct AddCategoryStatement : IPreparedStatement<AddCategoryStatementArgs> {
 		public static BindingContext Bind(in AddCategoryStatementArgs args, PreparedStatement statement)
 			=> new(statement) { args.Id, args.Category };
 

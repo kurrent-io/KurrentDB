@@ -3,6 +3,8 @@
 
 using System.Reflection;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
+using KurrentDB.SecondaryIndexing.LoadTesting.Assertions;
+using KurrentDB.SecondaryIndexing.LoadTesting.Assertions.DuckDb;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
@@ -14,6 +16,7 @@ public class IndexesLoadTestEnvironmentOptions {
 public class IndexesLoadTestEnvironment: ILoadTestEnvironment {
 	private readonly DuckDbDataSource _dataSource;
 	public IMessageBatchAppender MessageBatchAppender { get; }
+	public IIndexingSummaryAssertion AssertThat { get; }
 	public ValueTask InitializeAsync(CancellationToken ct = default) => ValueTask.CompletedTask;
 
 	public IndexesLoadTestEnvironment(IndexesLoadTestEnvironmentOptions options) {
@@ -27,6 +30,7 @@ public class IndexesLoadTestEnvironment: ILoadTestEnvironment {
 		);
 
 		MessageBatchAppender = new IndexMessageBatchAppender(_dataSource, 50000);
+		AssertThat = new DuckDbIndexingSummaryAssertion(_dataSource);
 	}
 
 	public ValueTask DisposeAsync() {

@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
+using KurrentDB.SecondaryIndexing.LoadTesting.Assertions;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.InMemory;
@@ -11,6 +12,7 @@ namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 
 public interface ILoadTestEnvironment: IAsyncDisposable {
 	IMessageBatchAppender MessageBatchAppender { get; }
+	IIndexingSummaryAssertion AssertThat { get; }
 	public ValueTask InitializeAsync(CancellationToken ct = default);
 }
 
