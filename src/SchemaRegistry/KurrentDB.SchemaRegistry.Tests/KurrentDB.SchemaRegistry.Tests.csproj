@@ -12,12 +12,14 @@
     <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
     <EnableMSTestRunner>true</EnableMSTestRunner>
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-    <TestingPlatformCommandLineArguments>--report-trx --report-trx-filename schemaregistry.trx --results-directory $(RepoRoot)/test-results</TestingPlatformCommandLineArguments>
     <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Kurrent.Surge" Version="1.1.0-alpha" />
-		<PackageReference Include="TUnit.Engine" Version="0.19.86" />
+		<PackageReference Include="TUnit" Version="0.19.86"/>
+		<PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2"/>
+		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.6.3"/>
+
 <!--        <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="1.6.0" />-->
 <!--        <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="1.6.0" />-->
   </ItemGroup>
