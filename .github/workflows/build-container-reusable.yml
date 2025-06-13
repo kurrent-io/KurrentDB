@@ -99,3 +99,11 @@ jobs:
         name: test-results-${{ inputs.container-runtime }}
         path: |
           test-results/**/*.trx
+    -
+      name: Parse Trx files
+      if: ${{ !cancelled() }}
+      uses: NasAmin/trx-parser@v0.6.0
+      id: trx-parser
+      with:
+        TRX_PATH: ${{ github.workspace }}/test-results
+        REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}          

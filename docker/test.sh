@@ -14,7 +14,7 @@ for test in $tests; do
         dotnet exec \
           "$test/$proj.dll" \
           --report-trx \
-          --results-directory "$output_directory/$proj"
+          --results-directory "$output_directory"
     else
         dotnet test \
           --blame \
@@ -23,6 +23,6 @@ for test in $tests; do
           --logger:"GitHubActions;report-warnings=false" \
           --logger:trx \
           --logger:"console;verbosity=normal" \
-          --results-directory "$output_directory/$proj" "$test/$proj.dll"
+          --results-directory "$output_directory" "$test/$proj.dll"
     fi
 done
