@@ -39,10 +39,10 @@ public class RawQuackMessageBatchAppender : IMessageBatchAppender {
 	}
 
 	public ValueTask AppendToDefaultIndex(MessageBatch batch) {
-		foreach (var batchMessage in batch.Messages) {
+		foreach (var message in batch.Messages) {
 			var sequence = LastSequence++;
-			var logPosition = sequence; //resolvedEvent.Event.LogPosition;
-			var eventNumber = sequence;//resolvedEvent.Event.EventNumber;
+			var logPosition = message.LogPosition;
+			var eventNumber = message.StreamPosition;
 
 			using (var row = _defaultIndexAppender.CreateRow()) {
 				row.Append(sequence);

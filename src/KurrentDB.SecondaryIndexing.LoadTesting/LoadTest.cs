@@ -16,7 +16,7 @@ public class LoadTest(IMessageGenerator generator, ILoadTestEnvironment environm
 
 		await Task.WhenAll(testPartitions.Select(ProcessPartition));
 
-		await environment.AssertThat.IsIndexedMatching(observer.Summary);
+		await environment.AssertThat.IndexesMatch(observer.Summary);
 	}
 
 	private async Task ProcessPartition(LoadTestPartitionConfig loadTestPartitionConfig) {

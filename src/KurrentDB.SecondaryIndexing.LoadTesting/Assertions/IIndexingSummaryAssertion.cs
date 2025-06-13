@@ -6,9 +6,9 @@ using KurrentDB.SecondaryIndexing.LoadTesting.Observability;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Assertions;
 
 public interface IIndexingSummaryAssertion {
-	ValueTask IsIndexedMatching(IndexingSummary summary);
+	ValueTask IndexesMatch(IndexingSummary summary);
 }
 
 public class DummyIndexingSummaryAssertion: IIndexingSummaryAssertion {
-	public ValueTask IsIndexedMatching(IndexingSummary summary) => ValueTask.CompletedTask;
+	public ValueTask IndexesMatch(IndexingSummary summary) => ValueTask.CompletedTask;
 }

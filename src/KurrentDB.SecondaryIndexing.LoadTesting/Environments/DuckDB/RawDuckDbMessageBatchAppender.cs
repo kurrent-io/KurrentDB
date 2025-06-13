@@ -45,21 +45,22 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 	}
 
 	public ValueTask AppendToDefaultIndex(MessageBatch batch) {
-		foreach (var batchMessage in batch.Messages) {
+		foreach (var message in batch.Messages) {
 			var sequence = LastSequence++;
-			var logPosition = sequence; //resolvedEvent.Event.LogPosition;
-			var eventNumber = sequence; //resolvedEvent.Event.EventNumber;
+			var logPosition = message.LogPosition;
+			var eventNumber = message.StreamPosition;
 
 			var row = _defaultIndexAppender.CreateRow();
 			row.AppendValue(sequence);
 			row.AppendValue(eventNumber);
 			row.AppendValue(logPosition);
 			row.AppendValue(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
-			row.AppendValue(1);
-			row.AppendValue(1);
-			row.AppendValue(1);
-			row.AppendValue(1);
-			row.AppendValue(1);
+			row.AppendValue(message.StreamPosition);
+			row.AppendValue(1); //stream.Id
+			row.AppendValue(1); //eventType.Id);
+			row.AppendValue(1); //eventType.Sequence);
+			row.AppendValue(1); //category.Id);
+			row.AppendValue(1); //category.Sequence);
 			row.EndRow();
 
 			if (LastSequence < LastCommittedSequence + _commitSize) continue;

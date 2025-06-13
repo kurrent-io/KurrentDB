@@ -9,7 +9,7 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Assertions.DuckDb;
 
 public class DuckDbIndexingSummaryAssertion(DuckDbDataSource db): IIndexingSummaryAssertion {
-	public async ValueTask IsIndexedMatching(IndexingSummary summary) {
+	public async ValueTask IndexesMatch(IndexingSummary summary) {
 		await AssertCategoriesAreIndexed(summary);
 		await AssertEventTypesAreIndexed(summary);
 	}
