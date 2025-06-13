@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,7 +52,7 @@ public class StorageReaderWorker<TStreamId> :
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
 	private readonly IVirtualStreamReader _virtualStreamReader;
-	private readonly int _queueId;
+	private readonly IBinaryInteger<int> _queueId;
 	private const int MaxPageSize = 4096;
 	private DateTime? _lastExpireTime;
 	private long _expiredBatchCount;
@@ -736,7 +737,7 @@ public class StorageReaderWorker<TStreamId> :
 		_publisher.Publish(
 			TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2),
 				_publisher,
-				new StorageMessage.BatchLogExpiredMessages(Guid.NewGuid(), _queueId))
+				new StorageMessage.BatchLogExpiredMessages(_queueId))
 		);
 	}
 
@@ -770,7 +771,7 @@ public class StorageReaderWorker<TStreamId> :
 		_publisher.Publish(
 			TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2),
 				_publisher,
-				new StorageMessage.BatchLogExpiredMessages(Guid.NewGuid(), _queueId))
+				new StorageMessage.BatchLogExpiredMessages(_queueId))
 		);
 		_expiredBatchCount = 1;
 		_lastExpireTime = expire;

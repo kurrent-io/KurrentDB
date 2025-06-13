@@ -5,7 +5,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 
 namespace KurrentDB.Core.Bus;
@@ -46,7 +45,9 @@ public class MultiQueuedHandler : IPublisher {
 	}
 
 	public void Publish(Message message) {
-		int queueHash = (message as IQueueAffineMessage)?.QueueId ?? NextQueueHash();
+		var queueHash = message.Affinity is not { } affinity || ReferenceEquals(affinity, Message.UnknownAffinity)
+			? NextQueueHash()
+			: affinity.GetHashCode();
 		var queueNum = (int)((uint)queueHash % _queues.Length);
 		_queues.Span[queueNum].Publish(message);
 	}

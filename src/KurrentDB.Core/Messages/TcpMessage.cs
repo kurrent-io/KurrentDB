@@ -10,10 +10,8 @@ namespace KurrentDB.Core.Messages;
 
 public static partial class TcpMessage {
 	[DerivedMessage(CoreMessage.Tcp)]
-	public partial class TcpSend : Message, IQueueAffineMessage {
-		public int QueueId {
-			get { return ConnectionManager.GetHashCode(); }
-		}
+	public partial class TcpSend : Message {
+		public override TcpConnectionManager Affinity => ConnectionManager;
 
 		public readonly TcpConnectionManager ConnectionManager;
 		public readonly Message Message;
