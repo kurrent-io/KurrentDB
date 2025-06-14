@@ -1,12 +1,21 @@
 syntax = "proto3";
 
-import "google/protobuf/duration.proto";
+//package kurrentdb.protocol.v2;
+//
+//option csharp_namespace    = "KurrentDB.Protocol.V2";
+//option java_package        = "io.kurrentdb.protocol.v2";
+//option java_multiple_files = true;
+
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
 
 package kurrentdb.protobuf;
 option csharp_namespace = "KurrentDB.Protobuf";
 
+// Represents a dynamic value
+// A dynamic value can be of various types, including null, integers, bytes,
+// floating-point numbers, strings, booleans, timestamps, and durations.
 message DynamicValue {
 	oneof kind {
 		// Represents a null value.
@@ -39,4 +48,16 @@ message DynamicValue {
 		// Represents a duration value.
 		google.protobuf.Duration duration_value = 10;
 	}
+}
+
+// Represents a list of dynamically typed values.
+message DynamicValueList {
+	// Repeated property of dynamically typed values.
+	repeated DynamicValue values = 1;
+}
+
+// Represents a map of dynamically typed values.
+message DynamicValueMap {
+	// A map of string keys to dynamically typed values.
+	map<string, DynamicValue> values = 1;
 }

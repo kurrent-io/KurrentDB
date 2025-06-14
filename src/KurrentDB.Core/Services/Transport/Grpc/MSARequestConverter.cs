@@ -11,7 +11,6 @@ using Grpc.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Protobuf;
 using KurrentDB.Protobuf.Server;
 using KurrentDB.Protocol.V2;
 
@@ -154,15 +153,20 @@ public class MSARequestConverter {
 			eventId: eventId,
 			eventType: eventTypeString,
 			isJson: contentTypeString == Constants.Properties.DataFormats.Json,
-			data: appendRecord.Data.ToByteArray(),
+			data: appendRecord.Data.ToByteArray(), //UnsafeByteOperations.UnsafeWrap()
 			metadata: metadata,
 			properties: properties?.ToByteArray() ?? []);
 		return evt;
 	}
 
-	private static string GetRequiredStringProperty(AppendRecord appendRecord, string key) =>
-		appendRecord.Properties.TryGetValue(key, out var value) &&
-		value.KindCase == DynamicValue.KindOneofCase.BytesValue
-			? value.BytesValue.ToStringUtf8()
+	private static string GetRequiredStringProperty(AppendRecord appendRecord, string key) {
+		return appendRecord.Properties.TryGetValue(key, out var value)
+			? value.StringValue
 			: throw RpcExceptions.RequiredPropertyMissing(key);
+
+		// return appendRecord.Properties.TryGetValue(key, out var value) &&
+		//        value.KindCase == DynamicValue.KindOneofCase.BytesValue
+		// 	? value.BytesValue.ToStringUtf8()
+		// 	: throw RpcExceptions.RequiredPropertyMissing(key);
+	}
 }
