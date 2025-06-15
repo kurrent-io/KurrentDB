@@ -3,10 +3,10 @@ syntax = "proto3";
 package kurrentdb.protobuf.server;
 option csharp_namespace = "KurrentDB.Protobuf.Server";
 
-import "dynamic-value.proto";
+import "kurrentdb/protocol/core.proto";
 
 message Properties {
-	map<string, kurrentdb.protobuf.DynamicValue> properties_values = 1;
+	map<string, kurrentdb.protocol.DynamicValue> properties_values = 1;
 
 	// later we can introduce this if we have some kind of mapping (e.g. stored in a stream)
 	// it would be an implementation detail of how the data is stored and wouldn't change the

@@ -473,3 +473,7 @@ MigrationBackup/
 certs/
 /es-gencert-cli
 .temp/
+
+# DuckDB
+*.ddb
+*.ddb.wal

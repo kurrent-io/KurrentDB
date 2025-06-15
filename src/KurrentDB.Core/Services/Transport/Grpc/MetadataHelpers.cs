@@ -4,8 +4,8 @@
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using KurrentDB.Core.Data;
-using KurrentDB.Protobuf;
 using KurrentDB.Protobuf.Server;
+using KurrentDB.Protocol;
 
 namespace KurrentDB.Core.Services.Transport.Grpc;
 

@@ -1,0 +1,25 @@
+---
+Language: Proto
+BasedOnStyle: Google
+
+# Indentation
+IndentWidth: 2
+UseTab: Never
+TabWidth: 2
+
+# Formatting
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignTrailingComments: true
+ColumnLimit: 160
+AllowShortBlocksOnASingleLine: Never
+
+# Includes
+SortIncludes: true
+
+# Braces
+BreakBeforeBraces: Attach # Or Allman, etc.
+
+# Comments
+ReflowComments: true
+...

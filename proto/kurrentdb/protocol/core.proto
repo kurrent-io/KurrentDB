@@ -1,11 +1,22 @@
 syntax = "proto3";
 
-import "google/protobuf/duration.proto";
+//
+// This protocol is UNSTABLE in the sense of being subject to change.
+//
+
+package kurrentdb.protocol;
+
+option csharp_namespace    = "KurrentDB.Protocol";
+option java_package        = "io.kurrentdb.protocol";
+option java_multiple_files = true;
+
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
 
-package kurrentdb.protobuf;
-option csharp_namespace = "KurrentDB.Protobuf";
+//===================================================================
+// Dynamic value
+//===================================================================
 
 message DynamicValue {
 	oneof kind {
@@ -39,4 +50,16 @@ message DynamicValue {
 		// Represents a duration value.
 		google.protobuf.Duration duration_value = 10;
 	}
+}
+
+// Represents a list of dynamically typed values.
+message DynamicValueList {
+	// Repeated property of dynamically typed values.
+	repeated DynamicValue values = 1;
+}
+
+// Represents a map of dynamically typed values.
+message DynamicValueMap {
+	// A map of string keys to dynamically typed values.
+	map<string, DynamicValue> values = 1;
 }

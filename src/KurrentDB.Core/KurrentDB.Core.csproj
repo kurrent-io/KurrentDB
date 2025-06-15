@@ -49,6 +49,25 @@
 		<ProjectReference Include="..\KurrentDB.NETCore.Compatibility\KurrentDB.NETCore.Compatibility.csproj" />
 		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<!-- kurrentdb protocol -->
+		<Protobuf
+			ProtoRoot="../../proto/kurrentdb/protocol"
+			Include="../../proto/kurrentdb/protocol/*.proto"
+			Link="Services\Transport\Grpc\proto\kurrentdb\protocol\%(FileName)%(Extension)"
+			GrpcServices="Server"
+		/>
+
+		<!-- kurrentdb protocol v2 -->
+		<Protobuf
+			ProtoRoot="../../proto/kurrentdb/protocol/v2" AdditionalImportDirs="../../proto/kurrentdb/protocol"
+			Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
+			Link="Services/Transport/Grpc/proto/kurrentdb/protocol/v2/%(RecursiveDir)/%(FileName)%(Extension)"
+			GrpcServices="Server"
+		/>
+	</ItemGroup>
+
 	<ItemGroup>
 		<Protobuf Include="..\Protos\ClientAPI\ClientMessageDtos.proto">
 			<Link>Services\Transport\Tcp\protos\ClientMessageDtos.proto</Link>
@@ -89,14 +108,8 @@
 		<Protobuf Include="..\Protos\Grpc\redaction.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
 			<Link>Services\Transport\Grpc\Protos\redaction.proto</Link>
 		</Protobuf>
-		<Protobuf Include="..\Protos\dynamic-value.proto" ProtoRoot="../Protos">
-			<Link>Protos\dynamic-value.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Server\properties.proto" ProtoRoot="../Protos">
-			<Link>Protos\Server\properties.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\streams.v2.proto" GrpcServices="Both" ProtoRoot="../Protos">
-			<Link>Protos\Server\streams.v2.proto</Link>
+		<Protobuf Include="..\Protos\Server\properties.proto" ProtoRoot="..\Protos\Server" AdditionalImportDirs="../../proto">
+		<Link>Protos\Server\properties.proto</Link>
 		</Protobuf>
 	</ItemGroup>
 	<ItemGroup>
