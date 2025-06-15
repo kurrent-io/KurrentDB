@@ -37,8 +37,11 @@
 		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 	<ItemGroup>
-		<Protobuf Include="../Protos/Grpc/projections.proto" GrpcServices="Server" LinkBase="Services/Grpc" Access="Internal">
-			<Link>Services\Grpc\Protos\projections.proto</Link>
-		</Protobuf>
+		<Protobuf 
+			Include="../../proto/kurrentdb/protocol/v1/projections.proto" 
+			Link="../../proto/kurrentdb/protocol/v1/projections.proto" 
+			GrpcServices="Server" 
+			LinkBase="Services/Grpc" 
+			Access="Internal" />
 	</ItemGroup>
 </Project>

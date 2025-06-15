@@ -50,92 +50,60 @@
 		<ProjectReference Include="..\KurrentDB.SourceGenerators\KurrentDB.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	</ItemGroup>
 
+	<!-- Client Protocol -->
 	<ItemGroup>
-		<!-- kurrentdb protocol -->
+		<!-- core -->
 		<Protobuf
 			ProtoRoot="../../proto/kurrentdb/protocol"
-			Include="../../proto/kurrentdb/protocol/*.proto"
-			Link="Services\Transport\Grpc\proto\kurrentdb\protocol\%(FileName)%(Extension)"
-			GrpcServices="Server"
+			Include="../../proto/kurrentdb/protocol/core.proto"
+			Link="Services\Transport\Grpc\proto\kurrentdb\protocol\core.proto"
 		/>
 
-		<!-- kurrentdb protocol v2 -->
+		<!-- v2 -->
 		<Protobuf
-			ProtoRoot="../../proto/kurrentdb/protocol/v2" AdditionalImportDirs="../../proto/kurrentdb/protocol"
+			ProtoRoot="../../proto/kurrentdb/protocol/v2" 
+			AdditionalImportDirs="../../proto/kurrentdb/protocol"
 			Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
 			Link="Services/Transport/Grpc/proto/kurrentdb/protocol/v2/%(RecursiveDir)/%(FileName)%(Extension)"
 			GrpcServices="Server"
 		/>
+		
+		<!-- v1 -->
+		<Protobuf
+			ProtoRoot="../../proto/kurrentdb/protocol/v1" 
+			AdditionalImportDirs="../../proto/kurrentdb/protocol"
+			Include="../../proto/kurrentdb/protocol/v1/**/*.proto"
+			Exclude="../../proto/kurrentdb/protocol/v1/projections.proto"
+			Link="Services/Transport/Grpc/proto/kurrentdb/protocol/v1/%(RecursiveDir)/%(FileName)%(Extension)"
+			GrpcServices="Both"
+		/>
 	</ItemGroup>
 
+	<!-- Server Protocol -->
 	<ItemGroup>
-		<Protobuf Include="..\Protos\ClientAPI\ClientMessageDtos.proto">
-			<Link>Services\Transport\Tcp\protos\ClientMessageDtos.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\code.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\code.proto</Link>
-		</Protobuf>
-		<Protobuf Include="../Protos/Grpc/cluster.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\cluster.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\gossip.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\gossip.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\operations.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\operations.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\persistent.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\persistent.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\shared.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\shared.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\status.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\status.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\streams.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\streams.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\users.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\users.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\monitoring.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\monitoring.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\serverfeatures.proto" GrpcServices="Both" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\serverfeatures.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Grpc\redaction.proto" GrpcServices="Server" LinkBase="Services/Transport/Grpc" ProtoRoot="../Protos/Grpc">
-			<Link>Services\Transport\Grpc\Protos\redaction.proto</Link>
-		</Protobuf>
-		<Protobuf Include="..\Protos\Server\properties.proto" ProtoRoot="..\Protos\Server" AdditionalImportDirs="../../proto">
-		<Link>Protos\Server\properties.proto</Link>
-		</Protobuf>
-	</ItemGroup>
-	<ItemGroup>
+    <Protobuf
+			ProtoRoot="../Protos/Grpc"
+			AdditionalImportDirs="../../proto"
+			Include="../Protos/Grpc/cluster.proto" 
+			Link="Services\Transport\Grpc\Protos\cluster.proto"
+			LinkBase="Services/Transport/Grpc"
+			GrpcServices="Both" 
+		/>
+		
+		<Protobuf 
+			Include="..\Protos\Server\properties.proto"  
+			Link="Protos\Server\properties.proto" 
+			ProtoRoot="..\Protos\Server" 
+			AdditionalImportDirs="../../proto" 
+		/>
+		
+		<!-- Tcp  -->
+		<Protobuf 
+			Include="..\Protos\ClientAPI\ClientMessageDtos.proto"
+			Link="Services\Transport\Tcp\protos\ClientMessageDtos.proto"
+		/>
+		
 		<Folder Include="Services\Transport\Tcp\protos\" />
 	</ItemGroup>
-	<ItemGroup>
-	  <Compile Update="Services\Transport\Grpc\Cluster.*.cs">
-	    <DependentUpon>Cluster.cs</DependentUpon>
-	  </Compile>
-	  <Compile Update="Services\Transport\Grpc\Gossip.*.cs">
-	    <DependentUpon>Gossip.cs</DependentUpon>
-	  </Compile>
-	  <Compile Update="Services\Transport\Grpc\Operations.*.cs">
-	    <DependentUpon>Operations.cs</DependentUpon>
-	  </Compile>
-	  <Compile Update="Services\Transport\Grpc\PersistentSubscriptions.*.cs">
-	    <DependentUpon>PersistentSubscriptions.cs</DependentUpon>
-	  </Compile>
-	  <Compile Update="Services\Transport\Grpc\Redaction.*.cs">
-	    <DependentUpon>Redaction.cs</DependentUpon>
-	  </Compile>
-	  <Compile Update="Services\Transport\Grpc\Streams.*.cs">
-	    <DependentUpon>Streams.cs</DependentUpon>
-	  </Compile>
-	  <Compile Update="Services\Transport\Grpc\Users.*.cs">
-	    <DependentUpon>Users.cs</DependentUpon>
-	  </Compile>
-	</ItemGroup>
+
 </Project>

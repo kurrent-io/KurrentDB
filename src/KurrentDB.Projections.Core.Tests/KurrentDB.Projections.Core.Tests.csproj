@@ -37,7 +37,12 @@
 		<ProjectReference Include="..\KurrentDB.Projections.Core\KurrentDB.Projections.Core.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<Protobuf Include="..\Protos\Grpc\projections.proto" Link="Protos\projections.proto" GrpcServices="Client" ProtoRoot="../Protos/Grpc" Access="Internal" />
+		<Protobuf 
+			Include="../../proto/kurrentdb/protocol/v1/projections.proto" 
+			Link="../../proto/kurrentdb/protocol/v1/projections.proto" 
+			GrpcServices="Client" 
+			LinkBase="Services/Grpc"
+			Access="Internal" />
 	</ItemGroup>
 	<ItemGroup>
 		<Content Include="Queries\1Query.js">
