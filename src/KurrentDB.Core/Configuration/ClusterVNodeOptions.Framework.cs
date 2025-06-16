@@ -19,7 +19,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Core;
 
-public partial record ClusterVNodeOptions {
+public partial class ClusterVNodeOptions {
 	private static readonly IEnumerable<Type> OptionSections;
 	public static readonly string HelpText;
 	public string GetComponentName() => $"{Interface.NodeIp}-{Interface.NodePort}-cluster-node";

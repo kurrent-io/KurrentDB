@@ -17,9 +17,7 @@ namespace KurrentDB.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests.when_
 
 [TestFixture]
 public class with_legacy_eventstore_settings : SingleNodeScenario<LogFormat.V2, string> {
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
-		options with {
-		};
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options;
 
 	private IConfigurationRoot _configurationRoot;
 

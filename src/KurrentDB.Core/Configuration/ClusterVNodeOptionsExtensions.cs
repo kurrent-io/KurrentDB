@@ -21,32 +21,42 @@ public static class ClusterVNodeOptionsExtensions {
 			? options
 			: ClusterVNodeOptions.FromConfiguration(options.ConfigurationRoot);
 
-	public static ClusterVNodeOptions WithPlugableComponents(this ClusterVNodeOptions options, ISubsystemsPlugin subsystemsPlugin) =>
-		options with { PlugableComponents = [.. options.PlugableComponents, .. subsystemsPlugin.GetSubsystems()] };
+	public static ClusterVNodeOptions WithPlugableComponents(this ClusterVNodeOptions options, ISubsystemsPlugin subsystemsPlugin) {
+		options.PlugableComponents.AddRange(subsystemsPlugin.GetSubsystems());
+		return options;
+	}
 
-	public static ClusterVNodeOptions WithPlugableComponent(this ClusterVNodeOptions options, IPlugableComponent plugableComponent) =>
-		options with { PlugableComponents = [.. options.PlugableComponents, plugableComponent] };
+	public static void AddPlugableComponent(this ClusterVNodeOptions options, IPlugableComponent plugableComponent) {
+		options.PlugableComponents.Add(plugableComponent);
+	}
 
-	public static ClusterVNodeOptions InCluster(this ClusterVNodeOptions options, int clusterSize) => options with {
-		Cluster = options.Cluster with {
+	public static ClusterVNodeOptions WithPlugableComponent(this ClusterVNodeOptions options, IPlugableComponent plugableComponent) {
+		options.AddPlugableComponent(plugableComponent);
+		return options;
+	}
+
+	public static ClusterVNodeOptions InCluster(this ClusterVNodeOptions options, int clusterSize) {
+		options.Cluster = options.Cluster with {
 			ClusterSize = clusterSize <= 1
 				? throw new ArgumentOutOfRangeException(nameof(clusterSize), clusterSize,
 					$"{nameof(clusterSize)} must be greater than 1.")
 				: clusterSize
-		}
-	};
+		};
+		return options;
+	}
 
 	/// <summary>
 	/// Returns a builder set to run in memory only
 	/// </summary>
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions RunInMemory(this ClusterVNodeOptions options) => options with {
-		Database = options.Database with {
+	public static ClusterVNodeOptions RunInMemory(this ClusterVNodeOptions options) {
+		options.Database = options.Database with {
 			MemDb = true,
 			Db = new ClusterVNodeOptions().Database.Db
-		}
-	};
+		};
+		return options;
+	}
 
 	/// <summary>
 	/// Returns a builder set to write database files to the specified path
@@ -54,25 +64,25 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <param name="path">The path on disk in which to write the database files</param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions RunOnDisk(this ClusterVNodeOptions options, string path) => options with {
-		Database = options.Database with {
+	public static ClusterVNodeOptions RunOnDisk(this ClusterVNodeOptions options, string path) {
+		options.Database = options.Database with {
 			MemDb = false,
 			Db = path
-		}
-	};
+		};
+		return options;
+	}
 
 	/// <summary>
 	/// Runs the node in insecure mode.
 	/// </summary>
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions Insecure(this ClusterVNodeOptions options) => options with {
-		Application = options.Application with {
-			Insecure = true
-		},
-		ServerCertificate = null,
-		TrustedRootCertificates = null
-	};
+	public static ClusterVNodeOptions Insecure(this ClusterVNodeOptions options) {
+		options.Application = options.Application with { Insecure = true };
+		options.ServerCertificate = null;
+		options.TrustedRootCertificates = null;
+		return options;
+	}
 
 	/// <summary>
 	/// Runs the node in secure mode.
@@ -82,13 +92,14 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <param name="serverCertificate">A <see cref="X509Certificate2"/> for the server</param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
 	public static ClusterVNodeOptions Secure(this ClusterVNodeOptions options,
-		X509Certificate2Collection trustedRootCertificates, X509Certificate2 serverCertificate) => options with {
-			Application = options.Application with {
-				Insecure = false,
-			},
-			ServerCertificate = serverCertificate,
-			TrustedRootCertificates = trustedRootCertificates
+		X509Certificate2Collection trustedRootCertificates, X509Certificate2 serverCertificate) {
+		options.Application = options.Application with {
+			Insecure = false,
 		};
+		options.ServerCertificate = serverCertificate;
+		options.TrustedRootCertificates = trustedRootCertificates;
+		return options;
+	}
 
 	/// <summary>
 	/// Sets gossip seeds to the specified value and turns off dns discovery
@@ -96,14 +107,14 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <param name="gossipSeeds">The list of gossip seeds</param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions WithGossipSeeds(this ClusterVNodeOptions options, EndPoint[] gossipSeeds) =>
-		options with {
-			Cluster = options.Cluster with {
-				GossipSeed = gossipSeeds,
-				DiscoverViaDns = false,
-				ClusterDns = string.Empty
-			}
+	public static ClusterVNodeOptions WithGossipSeeds(this ClusterVNodeOptions options, EndPoint[] gossipSeeds) {
+		options.Cluster = options.Cluster with {
+			GossipSeed = gossipSeeds,
+			DiscoverViaDns = false,
+			ClusterDns = string.Empty
 		};
+		return options;
+	}
 
 	/// <summary>
 	/// Sets the external tcp endpoint to the specified value
@@ -111,13 +122,12 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <param name="endPoint">The external endpoint to use</param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions WithExternalTcpOn(
-		this ClusterVNodeOptions options, IPEndPoint endPoint) =>
-		options with {
-			Interface = options.Interface with {
-				NodeIp = endPoint.Address,
-			}
+	public static ClusterVNodeOptions WithExternalTcpOn(this ClusterVNodeOptions options, IPEndPoint endPoint) {
+		options.Interface = options.Interface with {
+			NodeIp = endPoint.Address,
 		};
+		return options;
+	}
 
 	/// <summary>
 	/// Sets the internal tcp endpoint to the specified value
@@ -125,14 +135,13 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <param name="endPoint">The internal endpoint to use</param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions WithReplicationEndpointOn(
-		this ClusterVNodeOptions options, IPEndPoint endPoint) =>
-		options with {
-			Interface = options.Interface with {
-				ReplicationIp = endPoint.Address,
-				ReplicationPort = endPoint.Port,
-			}
+	public static ClusterVNodeOptions WithReplicationEndpointOn(this ClusterVNodeOptions options, IPEndPoint endPoint) {
+		options.Interface = options.Interface with {
+			ReplicationIp = endPoint.Address,
+			ReplicationPort = endPoint.Port,
 		};
+		return options;
+	}
 
 	/// <summary>
 	/// Sets the http endpoint to the specified value
@@ -140,14 +149,13 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <param name="endPoint">The http endpoint to use</param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions WithNodeEndpointOn(
-		this ClusterVNodeOptions options, IPEndPoint endPoint) =>
-		options with {
-			Interface = options.Interface with {
-				NodeIp = endPoint.Address,
-				NodePort = endPoint.Port
-			}
+	public static ClusterVNodeOptions WithNodeEndpointOn(this ClusterVNodeOptions options, IPEndPoint endPoint) {
+		options.Interface = options.Interface with {
+			NodeIp = endPoint.Address,
+			NodePort = endPoint.Port
 		};
+		return options;
+	}
 
 	/// <summary>
 	/// Sets up the External Host that would be advertised
@@ -155,13 +163,12 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <param name="endPoint">The advertised host</param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions
-		AdvertiseExternalHostAs(this ClusterVNodeOptions options, EndPoint endPoint) =>
-		options with {
-			Interface = options.Interface with {
-				NodeHostAdvertiseAs = endPoint.GetHost(),
-			}
+	public static ClusterVNodeOptions AdvertiseExternalHostAs(this ClusterVNodeOptions options, EndPoint endPoint) {
+		options.Interface = options.Interface with {
+			NodeHostAdvertiseAs = endPoint.GetHost(),
 		};
+		return options;
+	}
 
 	/// <summary>
 	/// Sets up the Internal Host that would be advertised
@@ -169,27 +176,26 @@ public static class ClusterVNodeOptionsExtensions {
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <param name="endPoint">The advertised host</param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions
-		AdvertiseInternalHostAs(this ClusterVNodeOptions options, EndPoint endPoint) =>
-		options with {
-			Interface = options.Interface with {
-				ReplicationHostAdvertiseAs = endPoint.GetHost(),
-				ReplicationTcpPortAdvertiseAs = endPoint.GetPort()
-			}
+	public static ClusterVNodeOptions AdvertiseInternalHostAs(this ClusterVNodeOptions options, EndPoint endPoint) {
+		options.Interface = options.Interface with {
+			ReplicationHostAdvertiseAs = endPoint.GetHost(),
+			ReplicationTcpPortAdvertiseAs = endPoint.GetPort()
 		};
+		return options;
+	}
 
 	/// <summary>
 	/// </summary>
 	/// <param name="options">The <see cref="ClusterVNodeOptions"/></param>
 	/// <param name="endPoint">The advertised host</param>
 	/// <returns>A <see cref="ClusterVNodeOptions"/> with the options set</returns>
-	public static ClusterVNodeOptions AdvertiseNodeAs(this ClusterVNodeOptions options, EndPoint endPoint) =>
-		options with {
-			Interface = options.Interface with {
-				NodeHostAdvertiseAs = endPoint.GetHost(),
-				NodePortAdvertiseAs = endPoint.GetPort()
-			}
+	public static ClusterVNodeOptions AdvertiseNodeAs(this ClusterVNodeOptions options, EndPoint endPoint) {
+		options.Interface = options.Interface with {
+			NodeHostAdvertiseAs = endPoint.GetHost(),
+			NodePortAdvertiseAs = endPoint.GetPort()
 		};
+		return options;
+	}
 
 	/// <summary>
 	/// </summary>
@@ -219,16 +225,14 @@ public static class ClusterVNodeOptionsExtensions {
 					options.CertificateStore.CertificateThumbprint), null);
 		}
 
-		if (options.CertificateFile.CertificateFile.IsNotEmptyString()) {
-			Log.Information("Loading the node's certificate(s) from file: {path}",
-				options.CertificateFile.CertificateFile);
-			return CertificateUtils.LoadFromFile(options.CertificateFile.CertificateFile,
-				options.CertificateFile.CertificatePrivateKeyFile, options.CertificateFile.CertificatePassword,
-				options.CertificateFile.CertificatePrivateKeyPassword);
-		}
+		if (!options.CertificateFile.CertificateFile.IsNotEmptyString())
+			throw new InvalidConfigurationException("A certificate is required unless insecure mode (--insecure) is set.");
 
-		throw new InvalidConfigurationException(
-			"A certificate is required unless insecure mode (--insecure) is set.");
+		Log.Information("Loading the node's certificate(s) from file: {path}",
+			options.CertificateFile.CertificateFile);
+		return CertificateUtils.LoadFromFile(options.CertificateFile.CertificateFile,
+			options.CertificateFile.CertificatePrivateKeyFile, options.CertificateFile.CertificatePassword,
+			options.CertificateFile.CertificatePrivateKeyPassword);
 	}
 
 	/// <summary>
@@ -273,7 +277,7 @@ public static class ClusterVNodeOptionsExtensions {
 
 		Log.Information("Loading trusted root certificates.");
 		foreach (var (fileName, cert) in CertificateUtils
-					 .LoadAllCertificates(options.Certificate.TrustedRootCertificatesPath)) {
+			         .LoadAllCertificates(options.Certificate.TrustedRootCertificatesPath)) {
 			trustedRootCerts.Add(cert);
 			Log.Information("Loading trusted root certificate file: {file}", fileName);
 		}

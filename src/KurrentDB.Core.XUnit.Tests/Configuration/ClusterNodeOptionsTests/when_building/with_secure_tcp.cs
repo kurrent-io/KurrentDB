@@ -21,14 +21,13 @@ public class with_ssl_enabled_and_using_a_security_certificate_from_file<TLogFor
 	private readonly IPEndPoint _externalSecTcp = new(IPAddress.Parse("127.0.1.15"), 1115);
 
 	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) {
-
-		return options.WithReplicationEndpointOn(_internalSecTcp).WithExternalTcpOn(_externalSecTcp) with {
-			CertificateFile = new() {
+		options.WithReplicationEndpointOn(_internalSecTcp).WithExternalTcpOn(_externalSecTcp);
+		options.CertificateFile = new() {
 				CertificateFile = GetCertificatePath(),
 				CertificatePrivateKeyFile = string.Empty,
 				CertificatePassword = "password"
-			}
 		};
+		return options;
 	}
 
 	[Test]

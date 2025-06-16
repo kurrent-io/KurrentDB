@@ -30,30 +30,30 @@ using Serilog;
 namespace KurrentDB.Core;
 
 [PublicAPI]
-public partial record ClusterVNodeOptions {
+public partial class ClusterVNodeOptions {
 	public ClusterVNodeOptions() => FileStreamExtensions.ConfigureFlush(Database.UnsafeDisableFlushToDisk);
 
-	public IConfigurationRoot? ConfigurationRoot { get; init; }
-	[OptionGroup] public ApplicationOptions Application { get; init; } = new();
+	public IConfigurationRoot? ConfigurationRoot { get; set; }
+	[OptionGroup] public ApplicationOptions Application { get; set; } = new();
 	[OptionGroup] public DevModeOptions DevMode { get; init; } = new();
-	[OptionGroup] public DefaultUserOptions DefaultUser { get; init; } = new();
+	[OptionGroup] public DefaultUserOptions DefaultUser { get; set; } = new();
 	[OptionGroup] public LoggingOptions Logging { get; init; } = new();
 	[OptionGroup] public AuthOptions Auth { get; init; } = new();
 	[OptionGroup] public CertificateOptions Certificate { get; init; } = new();
-	[OptionGroup] public CertificateFileOptions CertificateFile { get; init; } = new();
+	[OptionGroup] public CertificateFileOptions CertificateFile { get; set; } = new();
 	[OptionGroup] public CertificateStoreOptions CertificateStore { get; init; } = new();
-	[OptionGroup] public ClusterOptions Cluster { get; init; } = new();
-	[OptionGroup] public DatabaseOptions Database { get; init; } = new();
+	[OptionGroup] public ClusterOptions Cluster { get; set; } = new();
+	[OptionGroup] public DatabaseOptions Database { get; set; } = new();
 	[OptionGroup] public GrpcOptions Grpc { get; init; } = new();
-	[OptionGroup] public InterfaceOptions Interface { get; init; } = new();
+	[OptionGroup] public InterfaceOptions Interface { get; set; } = new();
 	[OptionGroup] public ProjectionOptions Projection { get; init; } = new();
 	public UnknownOptions Unknown { get; init; } = new([]);
 
 	public byte IndexBitnessVersion { get; init; } = PTableVersions.IndexV4;
 
-	public X509Certificate2? ServerCertificate { get; init; }
-	public X509Certificate2Collection? TrustedRootCertificates { get; init; }
-	public IReadOnlyList<IPlugableComponent> PlugableComponents { get; init; } = [];
+	public X509Certificate2? ServerCertificate { get; set; }
+	public X509Certificate2Collection? TrustedRootCertificates { get; set; }
+	public List<IPlugableComponent> PlugableComponents { get; init; } = [];
 
 	public IReadOnlyList<ISubsystem> Subsystems => PlugableComponents.OfType<ISubsystem>().ToArray();
 

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
@@ -97,7 +98,7 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 		var useHttps = EnableHttps();
 
 		subsystems ??= [];
-		subsystems = [.. subsystems, new TcpApiTestPlugin.TcpApiTestPlugin()];
+		subsystems = [..subsystems, new TcpApiTestPlugin.TcpApiTestPlugin()];
 
 		var options = new ClusterVNodeOptions {
 			Application = new() {
@@ -151,18 +152,18 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 			Projection = new() {
 				RunProjections = ProjectionType.None
 			},
-			PlugableComponents = subsystems
 		};
+		options.PlugableComponents.AddRange(subsystems);
 
 		var inMemConf = new ConfigurationBuilder()
-			.AddInMemoryCollection(new KeyValuePair<string, string>[] {
+			.AddInMemoryCollection([
 				new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:NodeTcpPort", externalTcp.Port.ToString()),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpPlugin:EnableExternalTcp", "true"),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeTcpPort", externalTcp.Port.ToString()),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatInterval", "10000"),
 				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:NodeHeartbeatTimeout", "10000"),
-				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:Insecure", options.Application.Insecure.ToString()),
-			}).Build();
+				new($"{KurrentConfigurationKeys.Prefix}:TcpUnitTestPlugin:Insecure", options.Application.Insecure.ToString())
+			]).Build();
 		var serverCertificate = useHttps ? ssl_connections.GetServerCertificate() : null;
 		var trustedRootCertificates =
 			useHttps ? new X509Certificate2Collection(ssl_connections.GetRootCertificate()) : null;

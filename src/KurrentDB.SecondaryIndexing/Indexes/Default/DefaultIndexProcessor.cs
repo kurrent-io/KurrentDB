@@ -64,7 +64,6 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			= new(
 				sequence,
 				logPosition,
-				eventNumber,
 				category.Id,
 				category.Sequence,
 				eventType.Id,

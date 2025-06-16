@@ -50,7 +50,7 @@ public sealed class TelemetryServiceTests : IAsyncLifetime {
 		_sut = new TelemetryService(
 			_db.Manager,
 			new ClusterVNodeOptions().WithPlugableComponent(_plugin),
-			new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string>() {
+			new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string> {
 				{ $"{KurrentConfigurationKeys.Prefix}:Telemetry:CloudIdentifier", "abc"},
 			}).Build(),
 			new EnvelopePublisher(new ChannelEnvelope(channel)),

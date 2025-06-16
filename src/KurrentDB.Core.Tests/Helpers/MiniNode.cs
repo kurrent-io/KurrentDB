@@ -157,7 +157,6 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 				StreamExistenceFilterSize = streamExistenceFilterSize,
 				Transform = transform
 			},
-			PlugableComponents = subsystems,
 			// limitation: the LoadedOptions here will only reflect the defaults and not the rest
 			// of the config specified above. however we only use it for /info/options
 			LoadedOptions = ClusterVNodeOptions.GetLoadedOptions(new ConfigurationBuilder()
@@ -168,6 +167,7 @@ public class MiniNode<TLogFormat, TStreamId> : MiniNode, IAsyncDisposable {
 			.WithReplicationEndpointOn(IntTcpEndPoint)
 			.WithExternalTcpOn(TcpEndPoint)
 			.WithNodeEndpointOn(HttpEndPoint);
+		options.PlugableComponents.AddRange(subsystems);
 
 		var configurationBuilder = new ConfigurationBuilder()
 			.AddInMemoryCollection([

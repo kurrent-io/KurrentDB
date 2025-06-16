@@ -68,17 +68,18 @@ public class with_custom_ip_endpoints<TLogFormat, TStreamId> : SingleNodeScenari
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_custom_chunk_size<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
-	private readonly int _chunkSize = 268435;
+	const int ChunkSize = 268435;
 
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options with {
-		Database = options.Database with {
-			ChunkSize = _chunkSize
-		}
-	};
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) {
+		options.Database = options.Database with {
+			ChunkSize = ChunkSize
+		};
+		return options;
+	}
 
 	[Test]
 	public void should_set_chunk_size() {
-		Assert.AreEqual(_chunkSize, _node.Db.Config.ChunkSize);
+		Assert.AreEqual(ChunkSize, _node.Db.Config.ChunkSize);
 	}
 }
 
@@ -87,11 +88,12 @@ public class with_custom_chunk_size<TLogFormat, TStreamId> : SingleNodeScenario<
 public class with_custom_chunk_cache_size<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
 	private readonly long _chunkCacheSize = 268435712;
 
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options with {
-		Database = options.Database with {
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) {
+		options.Database = options.Database with {
 			ChunksCacheSize = _chunkCacheSize
-		}
-	};
+		};
+		return options;
+	}
 
 	[Test]
 	public void should_set_max_chunk_cache_size() {
@@ -101,19 +103,19 @@ public class with_custom_chunk_cache_size<TLogFormat, TStreamId> : SingleNodeSce
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class
-	with_custom_number_of_cached_chunks<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
-	private readonly int _cachedChunks = 10;
+public class with_custom_number_of_cached_chunks<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
+	const int CachedChunks = 10;
 
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options with {
-		Database = options.Database with {
-			CachedChunks = _cachedChunks
-		}
-	};
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) {
+		options.Database = options.Database with {
+			CachedChunks = CachedChunks
+		};
+		return options;
+	}
 
 	[Test]
 	public void should_set_max_chunk_size_to_the_size_of_the_number_of_cached_chunks() {
-		var chunkSizeResult = _cachedChunks * (long)(_node.Db.Config.ChunkSize + ChunkHeader.Size + ChunkFooter.Size);
+		var chunkSizeResult = CachedChunks * (long)(_node.Db.Config.ChunkSize + ChunkHeader.Size + ChunkFooter.Size);
 		Assert.AreEqual(chunkSizeResult, _node.Db.Config.MaxChunksCacheSize);
 	}
 }
@@ -126,7 +128,6 @@ public class with_custom_advertise_as<TLogFormat, TStreamId> : SingleNodeScenari
 	private readonly IPEndPoint _httpEndpoint = new(IPAddress.Parse(ExternalIp), 1116);
 	const string InternalIp = "127.0.1.1";
 	const string ExternalIp = "127.0.1.2";
-
 
 	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) {
 		return options
@@ -154,29 +155,26 @@ public class with_custom_advertise_as<TLogFormat, TStreamId> : SingleNodeScenari
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class
-	with_custom_password_for_admin_and_ops_user<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
-	private const string _adminPassword = "Admin";
-	private const string _opsPassword = "Ops";
+public class with_custom_password_for_admin_and_ops_user<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
+	private const string AdminPassword = "Admin";
+	private const string OpsPassword = "Ops";
 
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
-		options with {
-			DefaultUser = new ClusterVNodeOptions.DefaultUserOptions { DefaultAdminPassword = _adminPassword, DefaultOpsPassword = _opsPassword }
-		};
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) {
+		options.DefaultUser = new() { DefaultAdminPassword = AdminPassword, DefaultOpsPassword = OpsPassword };
+		return options;
+	}
 
 	[Test]
 	public void should_set_the_custom_admin_and_ops_user_password() {
-		Assert.AreEqual(_adminPassword, _options.DefaultUser.DefaultAdminPassword);
-		Assert.AreEqual(_opsPassword, _options.DefaultUser.DefaultOpsPassword);
+		Assert.AreEqual(AdminPassword, _options.DefaultUser.DefaultAdminPassword);
+		Assert.AreEqual(OpsPassword, _options.DefaultUser.DefaultOpsPassword);
 	}
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class
-	with_custom_settings_check_for_environment_only_options<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat,
-	TStreamId> {
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options with { };
+public class with_custom_settings_check_for_environment_only_options<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat, TStreamId> {
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options;
 
 	[Test]
 	public void should_return_error_when_default_password_options_pass_through_command_line() {

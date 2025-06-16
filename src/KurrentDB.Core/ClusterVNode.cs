@@ -90,6 +90,7 @@ using IODispatcherDelayedMessage = KurrentDB.Core.Helpers.IODispatcherDelayedMes
 using LogLevel = KurrentDB.Common.Options.LogLevel;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 using TelemetryMessage = KurrentDB.Core.Telemetry.TelemetryMessage;
+// ReSharper disable VirtualMemberCallInConstructor
 
 namespace KurrentDB.Core;
 public abstract class ClusterVNode {
@@ -214,10 +215,6 @@ public class ClusterVNode<TStreamId> :
 	private int _stopCalled;
 	private int _reloadingConfig;
 	private PosixSignalRegistration _reloadConfigSignalRegistration;
-
-	public IEnumerable<Task> Tasks {
-		get { return _tasks; }
-	}
 
 	public override CertificateDelegates.ClientCertificateValidator InternalClientCertificateValidator => _internalClientCertificateValidator;
 	public override Func<X509Certificate2> CertificateSelector => _certificateSelector;
@@ -971,12 +968,11 @@ public class ClusterVNode<TStreamId> :
 			}).Build();
 		Ensure.NotNull(_authorizationProvider, "authorizationProvider");
 
-		var modifiedOptions = options
-			.WithPlugableComponent(_authorizationProvider)
-			.WithPlugableComponent(_authenticationProvider)
-			.WithPlugableComponent(new ArchivePlugableComponent(options.Cluster.Archiver));
+		options.AddPlugableComponent(_authorizationProvider);
+		options.AddPlugableComponent(_authenticationProvider);
+		options.AddPlugableComponent(new ArchivePlugableComponent(options.Cluster.Archiver));
 
-		modifiedOptions = modifiedOptions.WithPlugableComponent(new LicensingPlugin(ex => {
+		options.AddPlugableComponent(new LicensingPlugin(ex => {
 			Log.Warning("Shutting down due to licensing error: {Message}", ex.Message);
 			MainQueue.Publish(new ClientMessage.RequestShutdown(exitProcess: true, shutdownHttp: true));
 		}));
@@ -1022,7 +1018,6 @@ public class ClusterVNode<TStreamId> :
 			// ReSharper restore RedundantTypeArgumentsOfMethod
 		});
 
-
 		var httpAuthenticationProviders = new List<IHttpAuthenticationProvider>();
 
 		foreach (var authenticationScheme in _authenticationProvider.GetSupportedAuthenticationSchemes() ?? Enumerable.Empty<string>()) {
@@ -1039,7 +1034,7 @@ public class ClusterVNode<TStreamId> :
 			}
 		}
 
-		if (!httpAuthenticationProviders.Any()) {
+		if (httpAuthenticationProviders.Count == 0) {
 			throw new InvalidConfigurationException($"The server does not support any authentication scheme supported by the '{_authenticationProvider.Name}' authentication provider.");
 		}
 
@@ -1243,7 +1238,6 @@ public class ClusterVNode<TStreamId> :
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(persistentSubscription);
 
 		// STORAGE SCAVENGER
-		ScavengerFactory scavengerFactory;
 		var scavengerDispatcher = new IODispatcher(_mainQueue, _mainQueue);
 		_mainBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(scavengerDispatcher.BackwardReader);
 		_mainBus.Subscribe<ClientMessage.NotHandled>(scavengerDispatcher.BackwardReader);
@@ -1254,7 +1248,7 @@ public class ClusterVNode<TStreamId> :
 		// reuse the same buffer; it's quite big.
 		var calculatorBuffer = new Calculator<TStreamId>.Buffer(32_768);
 
-		scavengerFactory = new ScavengerFactory((message, scavengerLogger, logger) => {
+		var scavengerFactory = new ScavengerFactory((message, scavengerLogger, logger) => {
 			// currently on the main queue
 			var optionsCalculator = new ScavengeOptionsCalculator(options, archiveOptions, message);
 
@@ -1278,8 +1272,8 @@ public class ClusterVNode<TStreamId> :
 			// so that we don't keep hold of memory used for the page caches between scavenges
 			var backendPool = new ObjectPool<IScavengeStateBackend<TStreamId>>(
 				objectPoolName: "scavenge backend pool",
-				initialCount: 0, // so that factory is not called on the main queue
-				maxCount: TFChunkScavenger.MaxThreadCount + 1,
+				initialCount: 0, maxCount // so that factory is not called on the main queue
+				: TFChunkScavenger.MaxThreadCount + 1,
 				factory: () => {
 					// not on the main queue
 					var scavengeDirectory = Path.Combine(indexPath, "scavenging");
@@ -1395,11 +1389,11 @@ public class ClusterVNode<TStreamId> :
 				cleaner: cleaner,
 				scavengePointSource: scavengePointSource,
 				scavengerLogger: scavengerLogger,
-				statusTracker: trackers.ScavengeStatusTracker,
+				statusTracker: trackers.ScavengeStatusTracker, thresholdForNewScavenge
 				// threshold < 0: execute all chunks, even those with no weight
 				// threshold = 0: execute all chunks with weight greater than 0
 				// threshold > 0: execute all chunks above a certain weight
-				thresholdForNewScavenge: optionsCalculator.ChunkExecutionThreshold,
+				: optionsCalculator.ChunkExecutionThreshold,
 				syncOnly: message.SyncOnly,
 				getThrottleStats: () => throttle.PrettyPrint());
 		});
@@ -1465,14 +1459,14 @@ public class ClusterVNode<TStreamId> :
 		// TELEMETRY
 		var telemetryService = new TelemetryService(
 			Db.Manager,
-			modifiedOptions,
+			options,
 			configuration,
 			_mainQueue,
 			new TelemetrySink(options.Application.TelemetryOptout),
 			Db.Config.WriterCheckpoint.AsReadOnly(),
 			memberInfo.InstanceId
 		);
-		if (modifiedOptions.Cluster.ReadOnlyReplica)
+		if (options.Cluster.ReadOnlyReplica)
 			_mainBus.Subscribe<SystemMessage.ReplicaStateMessage>(telemetryService);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(telemetryService);
 		_mainBus.Subscribe<ElectionMessage.ElectionsDone>(telemetryService);
@@ -1533,7 +1527,6 @@ public class ClusterVNode<TStreamId> :
 		}
 
 		// GOSSIP
-
 		var gossipSeedSource = (
 			options.Cluster.DiscoverViaDns,
 			options.Cluster.ClusterSize > 1,
@@ -1680,7 +1673,6 @@ public class ClusterVNode<TStreamId> :
 
 		_startup = new ClusterVNodeStartup<TStreamId>(
 			options,
-			modifiedOptions.PlugableComponents,
 			_mainQueue, monitoringQueue, _mainBus, _workersHandler,
 			_authenticationProvider, _authorizationProvider,
 			expiryStrategy ?? new DefaultExpiryStrategy(),

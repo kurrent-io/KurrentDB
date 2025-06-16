@@ -18,12 +18,12 @@ namespace KurrentDB.Core.XUnit.Tests.Configuration.ClusterNodeOptionsTests.when_
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_cluster_dns_name<TLogFormat, TStreamId> : ClusterMemberScenario<TLogFormat, TStreamId> {
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
-		options with {
-			Cluster = options.Cluster with {
-				ClusterDns = "ClusterDns"
-			}
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) {
+		options.Cluster = options.Cluster with {
+			ClusterDns = "ClusterDns"
 		};
+		return options;
+	}
 
 	[Test]
 	public void should_set_discover_via_dns_to_true() {
@@ -45,10 +45,10 @@ public class with_dns_discovery_disabled_and_no_gossip_seeds<TLogFormat, TStream
 	[OneTimeSetUp]
 	public void TestFixtureSetUp() {
 		_options = new ClusterVNodeOptions {
-			Cluster = new() {
-				DiscoverViaDns = false
+				Cluster = new() {
+					DiscoverViaDns = false
+				}
 			}
-		}
 			.ReduceMemoryUsageForTests()
 			.RunInMemory();
 		try {
@@ -207,28 +207,26 @@ public class
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
 public class with_cluster_custom_password_for_admin_and_ops_user<TLogFormat, TStreamId> : ClusterMemberScenario<TLogFormat, TStreamId> {
-	private const string _adminPassword = "Admin";
-	private const string _opsPassword = "Ops";
+	private const string AdminPassword = "Admin";
+	private const string OpsPassword = "Ops";
 
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
-		options with {
-			DefaultUser = new ClusterVNodeOptions.DefaultUserOptions { DefaultAdminPassword = _adminPassword, DefaultOpsPassword = _opsPassword }
-		};
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) {
+		options.DefaultUser = new() { DefaultAdminPassword = AdminPassword, DefaultOpsPassword = OpsPassword };
+		return options;
+	}
 
 	[Test]
 	public void should_set_the_custom_admin_and_ops_user_password() {
-		Assert.AreEqual(_adminPassword, _options.DefaultUser.DefaultAdminPassword);
-		Assert.AreEqual(_opsPassword, _options.DefaultUser.DefaultOpsPassword);
+		Assert.AreEqual(AdminPassword, _options.DefaultUser.DefaultAdminPassword);
+		Assert.AreEqual(OpsPassword, _options.DefaultUser.DefaultOpsPassword);
 	}
 }
 
 [TestFixture(typeof(LogFormat.V2), typeof(string))]
 [TestFixture(typeof(LogFormat.V3), typeof(uint))]
-public class with_cluster_custom_settings_check_for_environment_only_options<TLogFormat, TStreamId> : SingleNodeScenario<TLogFormat,
-		TStreamId> {
-	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) =>
-		options with {
-		};
+public class with_cluster_custom_settings_check_for_environment_only_options<TLogFormat, TStreamId>
+	: SingleNodeScenario<TLogFormat, TStreamId> {
+	protected override ClusterVNodeOptions WithOptions(ClusterVNodeOptions options) => options;
 
 	private IConfigurationRoot _configurationRoot;
 

@@ -82,11 +82,9 @@ public class ClusterVNodeApp : IAsyncDisposable {
         TypeDescriptor.AddAttributes(typeof(IPAddress), new TypeConverterAttribute(typeof(IPAddressConverter)));
 
         // because we use full keys everything is mapped correctly
-        return (configurationRoot.GetRequiredSection("KurrentDB").Get<ClusterVNodeOptions>() ?? new()) with {
-            ConfigurationRoot = configurationRoot
-            // Unknown           = ClusterVNodeOptions.UnknownOptions.FromConfiguration(configurationRoot.GetRequiredSection("EventStore")),
-            // LoadedOptions     = ClusterVNodeOptions.GetLoadedOptions(configurationRoot)
-        };
+        var options = configurationRoot.GetRequiredSection("KurrentDB").Get<ClusterVNodeOptions>() ?? new();
+        options.ConfigurationRoot = configurationRoot;
+        return options;
     }
 
     class NodeReadinessProbe : IHandle<SystemMessage.SystemReady> {

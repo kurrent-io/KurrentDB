@@ -68,7 +68,6 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 
 	public ClusterVNodeStartup(
 		ClusterVNodeOptions options,
-		IReadOnlyList<IPlugableComponent> plugableComponents,
 		IPublisher mainQueue,
 		IPublisher monitoringQueue,
 		ISubscriber mainBus,
@@ -82,7 +81,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		Func<IServiceCollection, IServiceCollection> configureNodeServices,
 		Action<IApplicationBuilder> configureNode) {
 		_options = options;
-		_plugableComponents = plugableComponents;
+		_plugableComponents = options.PlugableComponents;
 		_mainQueue = mainQueue;
 		_monitoringQueue = monitoringQueue ?? throw new ArgumentNullException(nameof(monitoringQueue));
 		_mainBus = mainBus ?? throw new ArgumentNullException(nameof(mainBus));
