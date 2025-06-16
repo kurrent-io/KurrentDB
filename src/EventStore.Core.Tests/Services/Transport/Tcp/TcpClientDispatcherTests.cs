@@ -425,7 +425,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			Assert.That(readEvent.Expires, Is.EqualTo(DateTime.UtcNow + _readTimeout).Within(_tolerance));
 		}
 
-				[Test]
+		[Test]
 		public void unwraps_FilteredReadAllEventsForward() {
 			var dto = new FilteredReadAllEvents(
 				commitPosition: 2000,
