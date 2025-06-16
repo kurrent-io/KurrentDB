@@ -347,7 +347,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 				resolveLinkTos: true,
 				requireLeader: true);
 
-			var package = new TcpPackage(TcpCommand.ReadStreamEventsForward, Guid.NewGuid(), dto.Serialize());
+			var package = new TcpPackage(TcpCommand.ReadStreamEventsBackward, Guid.NewGuid(), dto.Serialize());
 
 			var message = _dispatcher.UnwrapPackage(
 				package: package,
@@ -357,8 +357,8 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 				connection: null,
 				version: (byte)ClientVersion.V2);
 
-			Assert.IsInstanceOf<ClientMessage.ReadStreamEventsForward>(message);
-			var readEvent = message as ClientMessage.ReadStreamEventsForward;
+			Assert.IsInstanceOf<ClientMessage.ReadStreamEventsBackward>(message);
+			var readEvent = message as ClientMessage.ReadStreamEventsBackward;
 			Assert.AreEqual("my-stream", readEvent.EventStreamId);
 			Assert.AreEqual(5, readEvent.FromEventNumber);
 			Assert.AreEqual(6, readEvent.MaxCount);
