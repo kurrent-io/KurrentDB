@@ -79,12 +79,13 @@ jobs:
         --blame
         --blame-hang-timeout 5min
         --blame-hang-dump-type mini
-        --settings ./ci/ci.runsettings
+        --settings ./ci/ci.local.runsettings
         --logger:GitHubActions
         --logger:trx
         --logger:"console;verbosity=normal"
         --results-directory $(pwd)/test-results
         src/KurrentDB.sln
+        -- --report-trx --results-directory $(pwd)/test-results
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
