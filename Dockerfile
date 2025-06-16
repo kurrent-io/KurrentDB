@@ -31,7 +31,7 @@ WORKDIR /build
 COPY --from=build ./build/src ./src
 COPY --from=build ./build/ci ./ci
 COPY --from=build ./build/LICENSE.md ./LICENSE.md
-COPY --from=build ./build/NOTICE.md ./NOTICE.html
+COPY --from=build ./build/NOTICE.html ./NOTICE.html
 COPY --from=build ./build/LICENSE_CONTRIBUTIONS.md ./LICENSE_CONTRIBUTIONS.md
 COPY --from=build ./build/src/KurrentDB.Core.Tests/Services/Transport/Tcp/test_certificates/ca/ca.crt /usr/local/share/ca-certificates/ca_kurrentdb_test.crt
 RUN mkdir ./test-results
