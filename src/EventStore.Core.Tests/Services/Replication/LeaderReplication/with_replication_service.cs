@@ -9,6 +9,7 @@ using EventStore.Core.Messaging;
 using EventStore.Core.Services;
 using EventStore.Core.Services.Replication;
 using EventStore.Core.Services.Transport.Tcp;
+using EventStore.Core.Settings;
 using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
 using EventStore.Core.Tests.Helpers;
@@ -91,7 +92,7 @@ namespace EventStore.Core.Tests.Services.Replication.LeaderReplication {
 			var tcpConn = new DummyTcpConnection() { ConnectionId = replicaId };
 
 			manager = new TcpConnectionManager(
-				"Test Subscription Connection manager", TcpServiceType.External, new ClientTcpDispatcher(2000),
+				"Test Subscription Connection manager", TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 				InMemoryBus.CreateTest(), tcpConn, InMemoryBus.CreateTest(),
 				new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 					new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()),

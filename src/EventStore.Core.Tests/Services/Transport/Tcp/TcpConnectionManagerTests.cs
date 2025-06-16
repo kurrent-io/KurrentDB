@@ -36,7 +36,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			var dummyConnection = new DummyTcpConnection();
 
 			var tcpConnectionManager = new TcpConnectionManager(
-				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 				InMemoryBus.CreateTest(), dummyConnection, InMemoryBus.CreateTest(),
 				new InternalAuthenticationProvider(
 					InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()),
@@ -78,7 +78,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			}));
 
 			var tcpConnectionManager = new TcpConnectionManager(
-				Guid.NewGuid().ToString(), TcpServiceType.Internal, new ClientTcpDispatcher(2000),
+				Guid.NewGuid().ToString(), TcpServiceType.Internal, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 				publisher, dummyConnection, publisher,
 				new InternalAuthenticationProvider(publisher, new Core.Helpers.IODispatcher(publisher, new NoopEnvelope()),
 					new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
@@ -113,7 +113,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			dummyConnection.PendingSendBytes = _connectionPendingSendBytesThreshold + 1000;
 
 			var tcpConnectionManager = new TcpConnectionManager(
-				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 				InMemoryBus.CreateTest(), dummyConnection, InMemoryBus.CreateTest(),
 				new InternalAuthenticationProvider(
 					InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(),
@@ -143,7 +143,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			dummyConnection.PendingSendBytes = 0;
 
 			var tcpConnectionManager = new TcpConnectionManager(
-				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 				InMemoryBus.CreateTest(), dummyConnection, InMemoryBus.CreateTest(),
 				new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 					new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
@@ -176,7 +176,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			dummyConnection.PendingSendBytes = _connectionPendingSendBytesThreshold + 1000;
 
 			var tcpConnectionManager = new TcpConnectionManager(
-				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 				InMemoryBus.CreateTest(), dummyConnection, InMemoryBus.CreateTest(),
 				new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 					new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
@@ -209,7 +209,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			dummyConnection.SendQueueSize = ESConsts.MaxConnectionQueueSize - 1;
 
 			var tcpConnectionManager = new TcpConnectionManager(
-				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 				InMemoryBus.CreateTest(), dummyConnection, InMemoryBus.CreateTest(),
 				new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 					new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
@@ -242,7 +242,7 @@ namespace EventStore.Core.Tests.Services.Transport.Tcp {
 			dummyConnection.SendQueueSize = ESConsts.MaxConnectionQueueSize + 1;
 
 			var tcpConnectionManager = new TcpConnectionManager(
-				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+				Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 				InMemoryBus.CreateTest(), dummyConnection, InMemoryBus.CreateTest(),
 				new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 					new Core.Helpers.IODispatcher(InMemoryBus.CreateTest(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
