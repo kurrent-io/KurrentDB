@@ -261,7 +261,8 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 				maxAppendSize: Ensure.Positive(_options.Application.MaxAppendSize),
 				maxAppendEventSize: Ensure.Positive(_options.Application.MaxAppendEventSize),
 				chunkSize: _options.Database.ChunkSize))
-			.AddSingleton<ServerFeatures>();
+			.AddSingleton<ServerFeatures>()
+			.AddSingleton(_options);
 
 		// OpenTelemetry
 		services.AddOpenTelemetry()

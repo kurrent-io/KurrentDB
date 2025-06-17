@@ -30,7 +30,7 @@ public static class SecondaryIndexingPluginFactory {
 }
 
 internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
-	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
+	: SubsystemsPlugin(name: "SecondaryIndexes"), ISecondaryIndexingPlugin {
 	[Experimental("SECONDARY_INDEX")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
 		var options = configuration
