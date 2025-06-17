@@ -20,7 +20,7 @@ internal static class StreamSql {
 	}
 
 	public struct GetStreamMaxSequencesQuery : IQuery<long> {
-		public static ReadOnlySpan<byte> CommandText => "select max(id) from streams"u8;
+		public static ReadOnlySpan<byte> CommandText => "select COALESCE(max(id), -1) from streams"u8;
 
 		public static bool UseStreamingMode => false;
 

@@ -12,7 +12,7 @@ public abstract class DuckDbIntegrationTest : IAsyncLifetime {
 	private readonly string _directory;
 
 	protected DuckDbIntegrationTest() {
-		_directory = Path.Combine(Path.GetTempPath(), GetType().Name);
+		_directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
 
 		if (!Directory.Exists(_directory))
 			Directory.CreateDirectory(_directory);

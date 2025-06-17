@@ -53,31 +53,31 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		// Then
 		// Default Index
-		AssertLastSequenceQueryReturns(9);
+		AssertLastSequenceQueryReturns(8);
 		AssertLastLogPositionQueryReturns(987);
 
 		AssertDefaultIndexQueryReturns([
-			new AllRecord(1, 100),
-			new AllRecord(2, 110),
-			new AllRecord(3, 117),
-			new AllRecord(4, 200),
-			new AllRecord(5, 213),
-			new AllRecord(6, 394),
-			new AllRecord(7, 500),
-			new AllRecord(8, 601),
-			new AllRecord(9, 987)
+			new AllRecord(0, 100),
+			new AllRecord(1, 110),
+			new AllRecord(2, 117),
+			new AllRecord(3, 200),
+			new AllRecord(4, 213),
+			new AllRecord(5, 394),
+			new AllRecord(6, 500),
+			new AllRecord(7, 601),
+			new AllRecord(8, 987)
 		]);
 
 		// Categories
 		AssertGetCategoriesQueryReturns([
-			new ReferenceRecord(1, cat1),
-			new ReferenceRecord(2, cat2)
+			new ReferenceRecord(0, cat1),
+			new ReferenceRecord(1, cat2)
 		]);
 		AssertGetCategoriesMaxSequencesQueryReturns([
-			(1, 6),
-			(2, 1)
+			(0, 6),
+			(1, 1)
 		]);
-		AssertCategoryIndexQueryReturns(1, [
+		AssertCategoryIndexQueryReturns(0, [
 			new CategoryRecord(0, 100),
 			new CategoryRecord(1, 117),
 			new CategoryRecord(2, 200),
@@ -86,55 +86,55 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new CategoryRecord(5, 601),
 			new CategoryRecord(6, 987)
 		]);
-		AssertCategoryIndexQueryReturns(2, [
+		AssertCategoryIndexQueryReturns(1, [
 			new CategoryRecord(0, 110),
 			new CategoryRecord(1, 394)
 		]);
 
 		// EventTypes
 		AssertGetAllEventTypesQueryReturns([
-			new ReferenceRecord(1, cat1_et1),
-			new ReferenceRecord(2, cat2_et1),
-			new ReferenceRecord(3, cat1_et2),
-			new ReferenceRecord(4, cat1_et3),
-			new ReferenceRecord(5, cat2_et2)
+			new ReferenceRecord(0, cat1_et1),
+			new ReferenceRecord(1, cat2_et1),
+			new ReferenceRecord(2, cat1_et2),
+			new ReferenceRecord(3, cat1_et3),
+			new ReferenceRecord(4, cat2_et2)
 		]);
 		AssertGetEventTypeMaxSequencesQueryReturns([
-			(1, 2),
-			(2, 0),
+			(0, 2),
+			(1, 0),
+			(2, 1),
 			(3, 1),
-			(4, 1),
-			(5, 0)
+			(4, 0)
 		]);
-		AssertReadEventTypeIndexQueryReturns(1, [
+		AssertReadEventTypeIndexQueryReturns(0, [
 			new EventTypeRecord(0, 100),
 			new EventTypeRecord(1, 213),
 			new EventTypeRecord(2, 987)
 		]);
-		AssertReadEventTypeIndexQueryReturns(2, [
+		AssertReadEventTypeIndexQueryReturns(1, [
 			new EventTypeRecord(0, 110)
 		]);
-		AssertReadEventTypeIndexQueryReturns(3, [
+		AssertReadEventTypeIndexQueryReturns(2, [
 			new EventTypeRecord(0, 117),
 			new EventTypeRecord(1, 500)
 		]);
-		AssertReadEventTypeIndexQueryReturns(4, [
+		AssertReadEventTypeIndexQueryReturns(3, [
 			new EventTypeRecord(0, 200),
 			new EventTypeRecord(1, 601)
 		]);
-		AssertReadEventTypeIndexQueryReturns(5, [
+		AssertReadEventTypeIndexQueryReturns(4, [
 			new EventTypeRecord(0, 394)
 		]);
 
 		// Streams
-		AssertGetStreamMaxSequencesQueryReturns(3);
+		AssertGetStreamMaxSequencesQueryReturns(2);
 
-		AssertGetStreamIdByNameQueryReturns(cat1_stream1, 1);
-		AssertGetStreamIdByNameQueryReturns(cat2_stream1, 2);
-		AssertGetStreamIdByNameQueryReturns(cat1_stream2, 3);
+		AssertGetStreamIdByNameQueryReturns(cat1_stream1, 0);
+		AssertGetStreamIdByNameQueryReturns(cat2_stream1, 1);
+		AssertGetStreamIdByNameQueryReturns(cat1_stream2, 2);
 	}
 
-	[Fact(Skip = "¯\\_(ツ)_//¯")]
+	[Fact]
 	public void UncommittedMultipleEventsInMultipleStreams_AreNOTIndexedCorrectly() {
 		// Given
 		string cat1 = "first";
@@ -165,12 +165,48 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		];
 
 		// When
-		// foreach (var resolvedEvent in events) {
-		// 	_processor.Index(resolvedEvent);
-		// }
+		foreach (var resolvedEvent in events) {
+			_processor.Index(resolvedEvent);
+		}
 
 		// Then
+		AssertLastSequenceQueryReturns(-1);
+		AssertLastLogPositionQueryReturns(-1);
+
 		AssertDefaultIndexQueryReturns([]);
+
+		// Categories
+		// Note: Categories are inserted using separate connection
+		AssertGetCategoriesQueryReturns([
+			new ReferenceRecord(0, cat1),
+			new ReferenceRecord(1, cat2)
+		]);
+		AssertGetCategoriesMaxSequencesQueryReturns([]);
+		AssertCategoryIndexQueryReturns(0, []);
+		AssertCategoryIndexQueryReturns(1, []);
+
+		// EventTypes
+		// Note: Event Types are inserted using separate connection
+		AssertGetAllEventTypesQueryReturns([
+			new ReferenceRecord(0, cat1_et1),
+			new ReferenceRecord(1, cat2_et1),
+			new ReferenceRecord(2, cat1_et2),
+			new ReferenceRecord(3, cat1_et3),
+			new ReferenceRecord(4, cat2_et2)
+		]);
+		AssertGetEventTypeMaxSequencesQueryReturns([]);
+		AssertReadEventTypeIndexQueryReturns(0, []);
+		AssertReadEventTypeIndexQueryReturns(1, []);
+		AssertReadEventTypeIndexQueryReturns(2, []);
+		AssertReadEventTypeIndexQueryReturns(3, []);
+		AssertReadEventTypeIndexQueryReturns(4, []);
+
+		// Streams
+		AssertGetStreamMaxSequencesQueryReturns(-1);
+
+		AssertGetStreamIdByNameQueryReturns(cat1_stream1, null);
+		AssertGetStreamIdByNameQueryReturns(cat2_stream1, null);
+		AssertGetStreamIdByNameQueryReturns(cat1_stream2, null);
 	}
 
 	private void AssertDefaultIndexQueryReturns(List<AllRecord> expected) {

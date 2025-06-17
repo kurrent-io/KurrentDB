@@ -11,21 +11,21 @@ using Serilog;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	readonly DefaultIndex _defaultIndex;
-	readonly DuckDBAdvancedConnection _connection;
-	readonly InFlightRecord[] _inFlightRecords;
+	private readonly DefaultIndex _defaultIndex;
+	private readonly DuckDBAdvancedConnection _connection;
+	private readonly InFlightRecord[] _inFlightRecords;
 
-	int _inFlightRecordsCount;
-	Appender _appender;
+	private int _inFlightRecordsCount;
+	private Appender _appender;
 
-	static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
+	private static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
 
 	public long LastIndexedPosition { get; private set; }
 	public long LastSequence;
 
 	public DefaultIndexProcessor(DuckDbDataSource db, DefaultIndex defaultIndex, int commitBatchSize) {
 		_connection = db.OpenNewConnection();
-		_appender = new(_connection, "idx_all"u8);
+		_appender = new Appender(_connection, "idx_all"u8);
 		_defaultIndex = defaultIndex;
 		_inFlightRecords = new InFlightRecord[commitBatchSize];
 
@@ -74,7 +74,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_inFlightRecordsCount++;
 	}
 
-	readonly Stopwatch _sw = new();
+	private readonly Stopwatch _sw = new();
 
 	public void Commit() {
 		if (IsDisposingOrDisposed)

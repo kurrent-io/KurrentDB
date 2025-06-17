@@ -17,7 +17,7 @@ internal static class DefaultSql {
 	}
 
 	public struct GetLastSequenceSql : IQuery<long> {
-		public static ReadOnlySpan<byte> CommandText => "select max(seq) from idx_all"u8;
+		public static ReadOnlySpan<byte> CommandText => "select COALESCE(max(seq), -1) from idx_all"u8;
 
 		public static bool UseStreamingMode => false;
 
@@ -25,7 +25,7 @@ internal static class DefaultSql {
 	}
 
 	public struct GetLastLogPositionSql : IQuery<long> {
-		public static ReadOnlySpan<byte> CommandText => "select max(log_position) from idx_all"u8;
+		public static ReadOnlySpan<byte> CommandText => "select COALESCE(max(log_position), -1) from idx_all"u8;
 
 		public static bool UseStreamingMode => false;
 

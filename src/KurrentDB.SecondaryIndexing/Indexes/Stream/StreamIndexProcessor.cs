@@ -13,26 +13,26 @@ using static KurrentDB.SecondaryIndexing.Indexes.Stream.StreamSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
 internal class StreamIndexProcessor : Disposable {
-	static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor>();
+	private static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor>();
 
-	readonly IIndexBackend<string> _indexReaderBackend;
-	readonly DuckDBAdvancedConnection _connection;
-	readonly Dictionary<string, long> _inFlightRecords = new();
+	private readonly IIndexBackend<string> _indexReaderBackend;
+	private readonly DuckDBAdvancedConnection _connection;
+	private readonly Dictionary<string, long> _inFlightRecords = new();
 
-	long _lastLogPosition;
-	Appender _appender;
+	private long _lastLogPosition;
+	private Appender _appender;
 
 	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> indexReaderBackend) {
 		_indexReaderBackend = indexReaderBackend;
 		_connection = db.OpenNewConnection();
-		_appender = new(_connection, "streams"u8);
-		Seq = _connection.QueryFirstOrDefault<long, GetStreamMaxSequencesQuery>() ?? 0;
+		_appender = new Appender(_connection, "streams"u8);
+		_seq = _connection.QueryFirstOrDefault<long, GetStreamMaxSequencesQuery>() ?? -1;
 	}
 
-	public long Seq { get; private set; }
+	private long _seq;
 	public long LastCommittedPosition { get; private set; }
 
-	int _count;
+	private int _count;
 
 	public long Index(ResolvedEvent resolvedEvent) {
 		if (IsDisposingOrDisposed)
@@ -50,11 +50,11 @@ internal class StreamIndexProcessor : Disposable {
 
 		var fromDb = _connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
-			_indexReaderBackend.UpdateStreamSecondaryIndexId(1, name, fromDb.GetValueOrDefault());
-			return fromDb.GetValueOrDefault();
+			_indexReaderBackend.UpdateStreamSecondaryIndexId(1, name, fromDb.Value);
+			return fromDb.Value;
 		}
 
-		id = ++Seq;
+		id = ++_seq;
 		_indexReaderBackend.UpdateStreamSecondaryIndexId(1, name, id);
 
 		_inFlightRecords.Add(name, id);
@@ -71,7 +71,7 @@ internal class StreamIndexProcessor : Disposable {
 		return id;
 	}
 
-	readonly Stopwatch _stopwatch = new();
+	private readonly Stopwatch _stopwatch = new();
 
 	public void Commit() {
 		if (IsDisposed || _count == 0)
@@ -81,7 +81,7 @@ internal class StreamIndexProcessor : Disposable {
 		_stopwatch.Start();
 		_appender.Flush();
 		_stopwatch.Stop();
-		Log.Debug("Committed {Count} records to streams at seq {Seq} ({Took} ms)", _count, Seq, _stopwatch.ElapsedMilliseconds);
+		Log.Debug("Committed {Count} records to streams at seq {Seq} ({Took} ms)", _count, _seq, _stopwatch.ElapsedMilliseconds);
 		_stopwatch.Reset();
 
 		LastCommittedPosition = _lastLogPosition;

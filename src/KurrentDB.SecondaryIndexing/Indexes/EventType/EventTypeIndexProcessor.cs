@@ -8,11 +8,11 @@ using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal class EventTypeIndexProcessor {
-	readonly Dictionary<string, int> _eventTypes;
-	readonly Dictionary<int, long> _eventTypeSizes = new();
-	readonly DuckDbDataSource _db;
+	private readonly Dictionary<string, int> _eventTypes;
+	private readonly Dictionary<int, long> _eventTypeSizes = new();
+	private readonly DuckDbDataSource _db;
 
-	int _seq;
+	private int _seq;
 	public long LastIndexedPosition { get; private set; }
 
 	public EventTypeIndexProcessor(DuckDbDataSource db) {
@@ -29,7 +29,7 @@ internal class EventTypeIndexProcessor {
 			_eventTypeSizes[sequence.Id] = sequence.Sequence;
 		}
 
-		_seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() : 0;
+		_seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() - 1 : -1;
 	}
 
 	public SequenceRecord Index(ResolvedEvent resolvedEvent) {

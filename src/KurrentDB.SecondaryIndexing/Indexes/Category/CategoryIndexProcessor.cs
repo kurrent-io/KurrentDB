@@ -30,7 +30,7 @@ internal class CategoryIndexProcessor {
 			_categorySizes[sequence.Id] = sequence.Sequence;
 		}
 
-		_seq = _categories.Count > 0 ? _categories.Values.Max() : 0;
+		_seq = _categories.Count > 0 ? _categories.Values.Max() - 1 : -1;
 	}
 
 	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
