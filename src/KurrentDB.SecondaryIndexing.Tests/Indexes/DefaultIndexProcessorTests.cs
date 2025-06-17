@@ -1,7 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using DuckDB.NET.Data;
+using Kurrent.Quack;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Tests;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
@@ -297,5 +301,125 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	public override Task DisposeAsync() {
 		_defaultIndex.Dispose();
 		return base.DisposeAsync();
+	}
+
+}
+
+public class CleanUpTests {
+	[Fact(Skip = "TODO: Check why is it failing")]
+	public void DisposingAndDroppingDatabaseCleansAllResources() {
+		var directory = Path.Combine(Path.GetTempPath(), "TestCleanup");
+
+		if (!Directory.Exists(directory))
+			Directory.CreateDirectory(directory);
+
+		var fileName = Path.Combine(directory, Path.GetRandomFileName());
+		var connectionString = $"Data Source={fileName};";
+		var options = new DuckDbDataSourceOptions { ConnectionString = connectionString };
+
+		using (var dataSource = new DuckDbDataSource(options)) {
+			var reader = new DummyReadIndex();
+
+			const int commitBatchSize = 9;
+			using var defaultIndex = new DefaultIndex(dataSource, reader, commitBatchSize);
+			var processor = new DefaultIndexProcessor(dataSource, defaultIndex, commitBatchSize);
+
+			const string cat1 = "first";
+
+			string cat1_stream1 = $"{cat1}-{Guid.NewGuid()}";
+			string cat1_et1 = $"{cat1}-{Guid.NewGuid()}";
+
+			// When
+			processor.Index(From(cat1_stream1, 0, 100, cat1_et1, []));
+			processor.Commit();
+		}
+
+		Assert.True(DirectoryDeleter.TryForceDeleteDirectory(directory));
+
+		Assert.False(Directory.Exists(directory));
+		Assert.False(File.Exists(fileName));
+
+		Directory.CreateDirectory(directory);
+
+		using (var dataSource = new DuckDbDataSource(options)) {
+			var actual = dataSource.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastSequenceSql>();
+
+			Assert.Equal(-1, actual);
+		}
+	}
+
+
+	[Fact]
+	public void DisposingAndDroppingDatabaseCleansAllResourcesRawQuack() {
+		var directory = Path.Combine(Path.GetTempPath(), "QuackDisposeTest");
+
+		if (!Directory.Exists(directory))
+			Directory.CreateDirectory(directory);
+
+		var fileName = Path.Combine(directory, Path.GetRandomFileName());
+		var connectionString = $"Data Source={fileName};";
+
+		using (var pool = new DuckDBConnectionPool(connectionString)) {
+			using (pool.Rent(out var connection)) {
+				connection.ExecuteNonQuery<NotNullTableDefinition>();
+
+				using (var appender = new Appender(connection, "test_table"u8)) {
+					using (var row = appender.CreateRow()) {
+						row.Append(1u);
+						row.Append("test"u8);
+					}
+				}
+
+				uint actualCount = 0U;
+
+				foreach (ref readonly var row in connection.ExecuteQuery<(uint, string), QueryStatement>()) {
+					Assert.Equal((1u, "test"), row);
+					actualCount++;
+				}
+
+				Assert.Equal(1u, actualCount);
+			}
+
+			using (var c = new DuckDBConnection(connectionString)) {
+				c.Open();
+				c.Checkpoint();
+			}
+		}
+
+		Assert.True(DirectoryDeleter.TryForceDeleteDirectory(directory));
+
+		Assert.False(Directory.Exists(directory));
+		Assert.False(File.Exists(fileName));
+
+		Directory.CreateDirectory(directory);
+
+		using (var pool = new DuckDBConnectionPool(connectionString)) {
+			using (pool.Rent(out var connection)) {
+				uint actualCount = 0U;
+				connection.ExecuteNonQuery<NotNullTableDefinition>();
+
+				foreach (ref readonly var row in connection.ExecuteQuery<(uint, string), QueryStatement>()) {
+					Assert.NotEqual((1u, "test"), row);
+					actualCount++;
+				}
+
+				Assert.Equal(0u, actualCount);
+			}
+		}
+	}
+
+	private struct NotNullTableDefinition : IParameterlessStatement {
+		public static ReadOnlySpan<byte> CommandText => """
+		                                                create table if not exists test_table (
+		                                                    col0 UINTEGER not null primary key,
+		                                                    col1 VARCHAR not null
+		                                                );
+		                                                """u8;
+	}
+
+	private struct QueryStatement : IQuery<(uint, string)> {
+		public static ReadOnlySpan<byte> CommandText => "SELECT * FROM test_table;"u8;
+
+		public static (uint, string) Parse(ref DataChunk.Row row) => (row.ReadUInt32(), row.ReadString());
 	}
 }
