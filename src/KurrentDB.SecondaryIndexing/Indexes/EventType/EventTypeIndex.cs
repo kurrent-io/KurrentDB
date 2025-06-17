@@ -21,8 +21,6 @@ internal class EventTypeIndex {
 		Reader = new EventTypeIndexReader(db, Processor, readIndex, queryInFlightRecords);
 	}
 
-	public long? GetLastPosition() => Processor.LastIndexedPosition;
-
 	public EventTypeIndexProcessor Processor { get; }
 
 	public IVirtualStreamReader Reader { get; }

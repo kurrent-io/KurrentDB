@@ -26,7 +26,7 @@ internal static class EventTypeSql {
 			"""u8;
 
 		public static EventTypeRecord Parse(ref DataChunk.Row row)
-			=> new(row.ReadInt32(), row.ReadInt64());
+			=> new(row.ReadInt64(), row.ReadInt64());
 	}
 
 	public struct GetAllEventTypesQuery : IQuery<ReferenceRecord> {
