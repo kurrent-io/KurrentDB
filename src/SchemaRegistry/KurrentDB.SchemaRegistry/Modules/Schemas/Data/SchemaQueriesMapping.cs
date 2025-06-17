@@ -62,12 +62,20 @@ public static class SchemaQueriesMapping {
             RegisteredAt     = MapToTimestamp(source.registered_at),
         };
 
-    public static Contracts.SchemaCompatibilityResult MapToSchemaCompatibilityResult(Kurrent.Surge.Schema.Validation.SchemaCompatibilityResult result, string schemaVersionId) {
-        return new () {
-            IsCompatible    = result.IsCompatible,
-            SchemaVersionId = schemaVersionId,
-            Errors          = { result.Errors.Select(MapToSchemaValidationError) }
-        };
+    public static Contracts.CheckSchemaCompatibilityResponse MapToSchemaCompatibilityResult(Kurrent.Surge.Schema.Validation.SchemaCompatibilityResult result, string schemaVersionId) {
+	    if (result.Errors.Any()) {
+		    return new Contracts.CheckSchemaCompatibilityResponse {
+			    Failure = new Contracts.CheckSchemaCompatibilityResponse.Types.Failure {
+				    Errors = { result.Errors.Select(MapToSchemaValidationError) }
+			    }
+		    };
+	    }
+
+	    return new Contracts.CheckSchemaCompatibilityResponse {
+		    Success = new Contracts.CheckSchemaCompatibilityResponse.Types.Success {
+			    SchemaVersionId = schemaVersionId
+		    }
+	    };
 
         static Contracts.SchemaCompatibilityError MapToSchemaValidationError(Kurrent.Surge.Schema.Validation.SchemaCompatibilityError value) =>
             new() {

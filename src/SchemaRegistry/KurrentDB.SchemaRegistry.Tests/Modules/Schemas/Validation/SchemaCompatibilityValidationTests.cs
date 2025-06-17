@@ -36,12 +36,10 @@ public class SchemaCompatibilityValidationTests {
 		};
 
 		// Act
-		var result = new CheckSchemaCompatibilityResponse {
-			ValidationResult = MapToSchemaCompatibilityResult(SchemaCompatibilityResult.Incompatible(errors), schemaVersionId)
-		};
+		var result = MapToSchemaCompatibilityResult(SchemaCompatibilityResult.Incompatible(errors), schemaVersionId);
 
 		// Assert
-		result.ValidationResult.Errors
+		result.Failure.Errors
 			.Select(e => e.Kind)
 			.Should()
 			.ContainInOrder(expectedKinds);

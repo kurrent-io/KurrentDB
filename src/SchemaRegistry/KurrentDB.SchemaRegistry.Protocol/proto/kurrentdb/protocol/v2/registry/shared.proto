@@ -1,10 +1,15 @@
 syntax = "proto3";
 
-package kurrentdb.protocol.registry.v2;
+package kurrentdb.protocol.v2;
 
 option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
 option java_package        = "io.kurrentdb.protocol.registry.v2";
 option java_multiple_files = true;
+
+message ErrorDetails {
+  string code    = 1;  // Standardized string to programmatically identify the error.
+  string message = 2;  // Detailed error description and debugging information.
+}
 
 // Represents the format of the schema data.
 enum SchemaDataFormat {
@@ -40,19 +45,7 @@ enum CompatibilityMode {
   // and old schemas can read data written by new schemas.
   COMPATIBILITY_MODE_FULL = 3;
 
-  // Backward All compatibility ensures new schemas can read data written by ALL previous schema versions,
-  // not just the immediately preceding one.
-  COMPATIBILITY_MODE_BACKWARD_ALL = 4;
-
-  // Forward All compatibility ensures ALL previous schema versions can read data written by new schemas.
-  // This provides stronger guarantees than regular forward compatibility.
-  COMPATIBILITY_MODE_FORWARD_ALL = 5;
-
-  // Full All compatibility combines backward all and forward all compatibility modes.
-  // This ensures complete compatibility across all schema versions, providing the strongest compatibility guarantees.
-  COMPATIBILITY_MODE_FULL_ALL = 6;
-
   // Disables compatibility checks, allowing any kind of schema change.
   // This mode should be used with caution, as it may lead to compatibility issues.
-  COMPATIBILITY_MODE_NONE = 7;
+  COMPATIBILITY_MODE_NONE = 4;
 }

@@ -1,7 +1,6 @@
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Schema.Validation;
-using KurrentDB.Common.Utils;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Services.Domain;
 using KurrentDB.Protocol.Registry.V2;

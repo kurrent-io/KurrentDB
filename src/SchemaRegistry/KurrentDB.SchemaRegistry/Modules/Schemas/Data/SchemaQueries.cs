@@ -10,7 +10,6 @@ using Kurrent.Surge.Schema.Validation;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using Polly;
-using static KurrentDB.Protocol.Registry.V2.SchemaRegistryErrorDetails.Types;
 using static KurrentDB.SchemaRegistry.Data.SchemaQueriesMapping;
 using SchemaCompatibilityResult = Kurrent.Surge.Schema.Validation.SchemaCompatibilityResult;
 
@@ -57,8 +56,8 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
 
          return await connection.QueryOneAsync(
 	         sql, record => record is not null
-		         ? new GetSchemaResponse { Success = new() { Schema = MapToSchema(record) } }
-		         : new GetSchemaResponse { Failure = new() { NotFound = new SchemaNotFound() } },
+		         ? new GetSchemaResponse { Schema = MapToSchema(record) }
+		         : throw RpcExceptions.NotFound("Schema", query.SchemaName),
 	         new { schema_name = query.SchemaName }
          );
     }
@@ -294,9 +293,7 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
 		    result = await CompatibilityManager.CheckCompatibility(uncheckedSchema, referenceSchemas, compatibility, cancellationToken);
 	    }
 
-	    return new CheckSchemaCompatibilityResponse {
-		    ValidationResult = MapToSchemaCompatibilityResult(result, info.SchemaVersionId)
-	    };
+	    return MapToSchemaCompatibilityResult(result, info.SchemaVersionId);
     }
 
     async Task<SchemaValidationInfo> GetLatestSchemaValidationInfo(string schemaName, CancellationToken cancellationToken) {

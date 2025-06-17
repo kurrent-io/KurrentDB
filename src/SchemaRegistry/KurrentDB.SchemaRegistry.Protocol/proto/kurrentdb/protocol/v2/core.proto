@@ -1,12 +1,82 @@
 syntax = "proto3";
 
-package kurrentdb.protocol.registry.v2;
+package kurrentdb.protocol.v2;
 
 option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
 option java_package        = "io.kurrentdb.protocol.registry.v2";
 option java_multiple_files = true;
 
-message ErrorDetails {
-  string code    = 1;  // Standardized string to programmatically identify the error.
-  string message = 2;  // Detailed error description and debugging information.
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/descriptor.proto";
+
+//===================================================================
+// Error Annotations
+//===================================================================
+
+message ErrorAnnotations {
+  // Identifies the error condition.
+  string code = 1;
+
+  // Severity of the error.
+  Severity severity = 2;
+
+  // Human-readable message that describes the error condition.
+  optional string message = 3;
+
+  enum Severity {
+    // The error is recoverable, the operation failed but the session can continue.
+    RECOVERABLE = 0;
+    // The error is fatal and the session should be terminated.
+    FATAL = 1;
+  }
+}
+
+// Extend the MessageOptions to include error information.
+extend google.protobuf.MessageOptions {
+  // Provides additional information about the error condition.
+  optional ErrorAnnotations error_info = 50000;
+}
+
+//===================================================================
+// Dynamic values map
+//===================================================================
+
+// Represents a list of dynamically typed values.
+message DynamicValueList {
+  // Repeated property of dynamically typed values.
+  repeated DynamicValue values = 1;
+}
+
+// Represents a map of dynamically typed values.
+message DynamicValueMap {
+  // A map of string keys to dynamically typed values.
+  map<string, DynamicValue> values = 1;
+}
+
+// Represents a dynamic value
+message DynamicValue {
+  oneof kind {
+    // Represents a null value.
+    google.protobuf.NullValue null_value = 1;
+    // Represents a 32-bit signed integer value.
+    sint32 int32_value = 2;
+    // Represents a 64-bit signed integer value.
+    sint64 int64_value = 3;
+    // Represents a byte array value.
+    bytes bytes_value = 4;
+    // Represents a 64-bit double-precision floating-point value.
+    double double_value = 5;
+    // Represents a 32-bit single-precision floating-point value
+    float float_value = 6;
+    // Represents a string value.
+    string string_value = 7;
+    // Represents a boolean value.
+    bool boolean_value = 8;
+    // Represents a timestamp value.
+    google.protobuf.Timestamp timestamp_value = 9;
+    // Represents a duration value.
+    google.protobuf.Duration duration_value = 10;
+  }
 }

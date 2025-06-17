@@ -25,7 +25,7 @@
     <!-- TODO: share the protos to avoid generating the server code here -->
 
     <Protobuf
-        ProtoRoot="proto"
+        ProtoRoot="proto/kurrentdb/protocol/v2"
         Include="proto/kurrentdb/protocol/v2/**/*.proto"
         Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
         GrpcServices="All"
