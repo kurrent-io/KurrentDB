@@ -8,11 +8,11 @@ using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
 internal class CategoryIndexProcessor {
-	readonly Dictionary<string, int> _categories;
-	readonly Dictionary<int, long> _categorySizes = new();
-	readonly DuckDbDataSource _db;
+	private readonly Dictionary<string, int> _categories;
+	private readonly Dictionary<int, long> _categorySizes = new();
+	private readonly DuckDbDataSource _db;
 
-	int _seq;
+	private int _seq;
 	public long LastIndexesPosition { get; private set; }
 
 	public CategoryIndexProcessor(DuckDbDataSource db) {

@@ -2,13 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.Core.Data;
-using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
+using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 
@@ -50,6 +50,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		_processor.Commit();
 
 		// Then
+		// Default Index
 		AssertLastSequenceQueryReturns(8);
 		AssertLastLogPositionQueryReturns(601);
 
@@ -63,6 +64,16 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new AllRecord(7, 500),
 			new AllRecord(8, 601)
 		]);
+
+		// Categories
+		AssertGetCategoriesQueryReturns([
+			new ReferenceRecord(1, cat1),
+			new ReferenceRecord(2, cat2)
+		]);
+		AssertGetCategoriesMaxSequencesQueryReturns([
+			(1, 5),
+			(2, 1)
+		]);
 		AssertCategoryIndexQueryReturns(1, [
 			new CategoryRecord(0, 100),
 			new CategoryRecord(1, 117),
@@ -74,6 +85,40 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertCategoryIndexQueryReturns(2, [
 			new CategoryRecord(0, 110),
 			new CategoryRecord(1, 394)
+		]);
+
+		// EventTypes
+		AssertGetAllEventTypesQueryReturns([
+			new ReferenceRecord(1, cat1_et1),
+			new ReferenceRecord(2, cat2_et1),
+			new ReferenceRecord(3, cat1_et2),
+			new ReferenceRecord(4, cat1_et3),
+			new ReferenceRecord(5, cat2_et2)
+		]);
+		AssertGetEventTypeMaxSequencesQueryReturns([
+			(1, 1),
+			(2, 0),
+			(3, 1),
+			(4, 1),
+			(5, 0)
+		]);
+		AssertReadEventTypeIndexQueryReturns(1, [
+			new EventTypeRecord(0, 100),
+			new EventTypeRecord(1, 213)
+		]);
+		AssertReadEventTypeIndexQueryReturns(2, [
+			new EventTypeRecord(0, 110)
+		]);
+		AssertReadEventTypeIndexQueryReturns(3, [
+			new EventTypeRecord(0, 117),
+			new EventTypeRecord(1, 500)
+		]);
+		AssertReadEventTypeIndexQueryReturns(4, [
+			new EventTypeRecord(0, 200),
+			new EventTypeRecord(1, 601)
+		]);
+		AssertReadEventTypeIndexQueryReturns(5, [
+			new EventTypeRecord(0, 394)
 		]);
 	}
 
@@ -133,10 +178,45 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expectedLastSequence, actual);
 	}
 
+	private void AssertGetCategoriesQueryReturns(List<ReferenceRecord> expected) {
+		var records = DuckDb.Pool.Query<ReferenceRecord, GetCategoriesQuery>().OrderBy(x => x.Id);
+		;
+
+		Assert.Equal(expected, records);
+	}
+
+	private void AssertGetCategoriesMaxSequencesQueryReturns(List<(int Id, long Sequence)> expected) {
+		var records = DuckDb.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>().OrderBy(x => x.Id);
+		;
+
+		Assert.Equal(expected, records);
+	}
+
 	private void AssertCategoryIndexQueryReturns(long categoryId, List<CategoryRecord> expected) {
 		var records = DuckDb.Pool
 			.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(
-				new((int)categoryId, 0, 32)
+				new CategoryIndexQueryArgs((int)categoryId, 0, 32)
+			);
+
+		Assert.Equal(expected, records);
+	}
+
+	private void AssertGetAllEventTypesQueryReturns(List<ReferenceRecord> expected) {
+		var records = DuckDb.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>().OrderBy(x => x.Id);
+
+		Assert.Equal(expected, records);
+	}
+
+	private void AssertGetEventTypeMaxSequencesQueryReturns(List<(int Id, long Sequence)> expected) {
+		var records = DuckDb.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>().OrderBy(x => x.Id);
+
+		Assert.Equal(expected, records);
+	}
+
+	private void AssertReadEventTypeIndexQueryReturns(long eventTypeId, List<EventTypeRecord> expected) {
+		var records = DuckDb.Pool
+			.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(
+				new ReadEventTypeIndexQueryArgs((int)eventTypeId, 0, 32)
 			);
 
 		Assert.Equal(expected, records);
