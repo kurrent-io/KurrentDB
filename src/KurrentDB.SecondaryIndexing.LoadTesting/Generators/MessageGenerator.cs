@@ -9,11 +9,11 @@ using KurrentDB.Core.TransactionLog.LogRecords;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 
 public interface IMessageGenerator {
-	IAsyncEnumerable<MessageBatch> GenerateBatches(LoadTestPartitionConfig config);
+	IAsyncEnumerable<TestMessageBatch> GenerateBatches(LoadTestPartitionConfig config);
 }
 
 public class MessageGenerator : IMessageGenerator {
-	public async IAsyncEnumerable<MessageBatch> GenerateBatches(LoadTestPartitionConfig config) {
+	public async IAsyncEnumerable<TestMessageBatch> GenerateBatches(LoadTestPartitionConfig config) {
 		var eventTypesByCategory = GenerateCategories(config);
 		var streams = new Dictionary<string, int>();
 		var eventsLeft = config.TotalMessagesCount;
@@ -32,7 +32,7 @@ public class MessageGenerator : IMessageGenerator {
 		} while (eventsLeft > 0);
 	}
 
-	private MessageBatch GenerateBatch(LoadTestPartitionConfig config,
+	private TestMessageBatch GenerateBatch(LoadTestPartitionConfig config,
 		Dictionary<string, string[]> eventTypesByCategory,
 		Dictionary<string, int> streams,
 		int batchSize,
@@ -43,14 +43,14 @@ public class MessageGenerator : IMessageGenerator {
 
 		streams.TryAdd(streamName, -1);
 
-		var messages = new MessageData[batchSize];
+		var messages = new TestMessageData[batchSize];
 
 		for (int i = 0; i < messages.Length; i++) {
 			var eventType = eventTypesByCategory[category].RandomElement();
 			streams[streamName] += 1;
 			var streamPosition = streams[streamName];
 
-			messages[i] = new MessageData(
+			messages[i] = new TestMessageData(
 				streamPosition,
 				logPosition + i,
 				eventType,
@@ -58,7 +58,7 @@ public class MessageGenerator : IMessageGenerator {
 			);
 		}
 
-		return new MessageBatch(category, streamName, messages);
+		return new TestMessageBatch(category, streamName, messages);
 	}
 
 	private static Dictionary<string, string[]> GenerateCategories(LoadTestPartitionConfig loadTestPartitionConfig) {
@@ -75,7 +75,7 @@ public class MessageGenerator : IMessageGenerator {
 	}
 }
 
-public readonly record struct MessageData(int StreamPosition, long LogPosition, string EventType, byte[] Data) {
+public readonly record struct TestMessageData(int StreamPosition, long LogPosition, string EventType, byte[] Data) {
 	public ResolvedEvent ToResolvedEvent(string streamName) {
 		var recordFactory = LogFormatHelper<LogFormat.V2, string>.RecordFactory;
 		var streamIdIgnored = LogFormatHelper<LogFormat.V2, string>.StreamId;
@@ -95,7 +95,7 @@ public readonly record struct MessageData(int StreamPosition, long LogPosition, 
 	}
 }
 
-public readonly record struct MessageBatch(string CategoryName, string StreamName, MessageData[] Messages);
+public readonly record struct TestMessageBatch(string CategoryName, string StreamName, TestMessageData[] Messages);
 
 public static class CollectionExtension {
 	public static T RandomElement<T>(this ICollection<T> collection) =>

@@ -7,7 +7,7 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
-namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
+namespace KurrentDB.SecondaryIndexing.Tests.Fakes;
 
 public class DummyReadIndex: IReadIndex<string> {
 	public long LastIndexedPosition { get; }

@@ -8,6 +8,8 @@ using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 using KurrentDB.SecondaryIndexing.Storage;
+using KurrentDB.SecondaryIndexing.Tests.Fakes;
+using KurrentDB.SecondaryIndexing.Tests.Indexes;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
 
@@ -23,7 +25,7 @@ public class IndexMessageBatchAppender: IMessageBatchAppender {
 		_processor = new DefaultIndexProcessor(dbDataSource, defaultIndex, commitSize);
 	}
 
-	public ValueTask Append(MessageBatch batch) {
+	public ValueTask Append(TestMessageBatch batch) {
 		foreach (var resolvedEvent in batch.Messages.Select(m => m.ToResolvedEvent(batch.StreamName))) {
 			_processor.Index(resolvedEvent);
 

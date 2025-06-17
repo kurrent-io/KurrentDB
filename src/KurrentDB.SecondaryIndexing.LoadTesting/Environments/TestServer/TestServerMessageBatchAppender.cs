@@ -9,7 +9,7 @@ using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.TestServer;
 
 public class TestServerMessageBatchAppender(SecondaryIndexingEnabledFixture fixture) : IMessageBatchAppender {
-	public async ValueTask Append(MessageBatch batch) {
+	public async ValueTask Append(TestMessageBatch batch) {
 		bool appended = false;
 		do {
 			try {
@@ -22,7 +22,7 @@ public class TestServerMessageBatchAppender(SecondaryIndexingEnabledFixture fixt
 		} while (!appended);
 	}
 
-	private static Event ToEventData(MessageData messageData) =>
+	private static Event ToEventData(TestMessageData messageData) =>
 		new(Guid.NewGuid(), messageData.EventType, false, messageData.Data, null, null);
 
 	public ValueTask DisposeAsync() => ValueTask.CompletedTask;

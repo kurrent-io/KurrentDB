@@ -5,7 +5,7 @@ using Kurrent.Quack;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-static class DefaultSql {
+internal static class DefaultSql {
 	public struct DefaultIndexQuery : IQuery<(long, long), AllRecord> {
 		public static BindingContext Bind(in (long, long) args, PreparedStatement statement)
 			=> new(statement) { args.Item1, args.Item2 };

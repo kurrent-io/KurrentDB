@@ -40,11 +40,11 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 		_transaction = _connection.BeginTransaction();
 	}
 
-	public ValueTask Append(MessageBatch batch) {
+	public ValueTask Append(TestMessageBatch batch) {
 		return AppendToDefaultIndex(batch);
 	}
 
-	public ValueTask AppendToDefaultIndex(MessageBatch batch) {
+	public ValueTask AppendToDefaultIndex(TestMessageBatch batch) {
 		foreach (var message in batch.Messages) {
 			var sequence = LastSequence++;
 			var logPosition = message.LogPosition;

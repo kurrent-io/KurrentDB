@@ -7,7 +7,7 @@ using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Observability;
 
 public interface IMessagesBatchObserver {
-	void On(MessageBatch batch);
+	void On(TestMessageBatch batch);
 
 	public ConcurrentDictionary<string, long> Categories { get; }
 	public ConcurrentDictionary<string, long> EventTypes { get; }
@@ -26,7 +26,7 @@ public record IndexingSummary(
 public class SimpleMessagesBatchObserver : IMessagesBatchObserver {
 	private long _totalCount;
 
-	public void On(MessageBatch batch) {
+	public void On(TestMessageBatch batch) {
 		long messagesCount = batch.Messages.Length;
 
 		Categories.AddOrUpdate(batch.CategoryName, messagesCount, (_, current) => current + messagesCount);

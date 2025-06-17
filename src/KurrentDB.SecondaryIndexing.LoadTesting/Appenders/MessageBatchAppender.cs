@@ -6,5 +6,5 @@ using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 
 public interface IMessageBatchAppender: IAsyncDisposable {
-	ValueTask Append(MessageBatch batch);
+	ValueTask Append(TestMessageBatch batch);
 }
