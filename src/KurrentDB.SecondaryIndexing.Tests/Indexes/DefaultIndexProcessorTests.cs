@@ -9,6 +9,7 @@ using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
+using static KurrentDB.SecondaryIndexing.Indexes.Stream.StreamSql;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 
@@ -39,7 +40,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			From(cat1_stream2, 0, 213, cat1_et1, []),
 			From(cat2_stream1, 0, 394, cat2_et2, []),
 			From(cat1_stream2, 1, 500, cat1_et2, []),
-			From(cat1_stream1, 3, 601, cat1_et3, [])
+			From(cat1_stream1, 3, 601, cat1_et3, []),
+			From(cat1_stream1, 4, 987, cat1_et1, [])
 		];
 
 		// When
@@ -51,8 +53,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		// Then
 		// Default Index
-		AssertLastSequenceQueryReturns(8);
-		AssertLastLogPositionQueryReturns(601);
+		AssertLastSequenceQueryReturns(9);
+		AssertLastLogPositionQueryReturns(987);
 
 		AssertDefaultIndexQueryReturns([
 			new AllRecord(1, 100),
@@ -62,7 +64,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new AllRecord(5, 213),
 			new AllRecord(6, 394),
 			new AllRecord(7, 500),
-			new AllRecord(8, 601)
+			new AllRecord(8, 601),
+			new AllRecord(9, 987)
 		]);
 
 		// Categories
@@ -71,7 +74,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new ReferenceRecord(2, cat2)
 		]);
 		AssertGetCategoriesMaxSequencesQueryReturns([
-			(1, 5),
+			(1, 6),
 			(2, 1)
 		]);
 		AssertCategoryIndexQueryReturns(1, [
@@ -80,7 +83,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new CategoryRecord(2, 200),
 			new CategoryRecord(3, 213),
 			new CategoryRecord(4, 500),
-			new CategoryRecord(5, 601)
+			new CategoryRecord(5, 601),
+			new CategoryRecord(6, 987)
 		]);
 		AssertCategoryIndexQueryReturns(2, [
 			new CategoryRecord(0, 110),
@@ -96,7 +100,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new ReferenceRecord(5, cat2_et2)
 		]);
 		AssertGetEventTypeMaxSequencesQueryReturns([
-			(1, 1),
+			(1, 2),
 			(2, 0),
 			(3, 1),
 			(4, 1),
@@ -104,7 +108,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		]);
 		AssertReadEventTypeIndexQueryReturns(1, [
 			new EventTypeRecord(0, 100),
-			new EventTypeRecord(1, 213)
+			new EventTypeRecord(1, 213),
+			new EventTypeRecord(2, 987)
 		]);
 		AssertReadEventTypeIndexQueryReturns(2, [
 			new EventTypeRecord(0, 110)
@@ -120,6 +125,13 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertReadEventTypeIndexQueryReturns(5, [
 			new EventTypeRecord(0, 394)
 		]);
+
+		// Streams
+		AssertGetStreamMaxSequencesQueryReturns(3);
+
+		AssertGetStreamIdByNameQueryReturns(cat1_stream1, 1);
+		AssertGetStreamIdByNameQueryReturns(cat2_stream1, 2);
+		AssertGetStreamIdByNameQueryReturns(cat1_stream2, 3);
 	}
 
 	[Fact(Skip = "¯\\_(ツ)_//¯")]
@@ -148,7 +160,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			From(cat1_stream2, 0, 213, cat1_et1, []),
 			From(cat2_stream1, 0, 394, cat2_et2, []),
 			From(cat1_stream2, 1, 500, cat1_et2, []),
-			From(cat1_stream1, 3, 601, cat1_et3, [])
+			From(cat1_stream1, 3, 601, cat1_et3, []),
+			From(cat1_stream1, 4, 987, cat1_et1, [])
 		];
 
 		// When
@@ -180,14 +193,12 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 	private void AssertGetCategoriesQueryReturns(List<ReferenceRecord> expected) {
 		var records = DuckDb.Pool.Query<ReferenceRecord, GetCategoriesQuery>().OrderBy(x => x.Id);
-		;
 
 		Assert.Equal(expected, records);
 	}
 
 	private void AssertGetCategoriesMaxSequencesQueryReturns(List<(int Id, long Sequence)> expected) {
 		var records = DuckDb.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>().OrderBy(x => x.Id);
-		;
 
 		Assert.Equal(expected, records);
 	}
@@ -222,13 +233,29 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expected, records);
 	}
 
+	private void AssertGetStreamIdByNameQueryReturns(string streamName, long? expectedId) {
+		var actual = DuckDb.Pool.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(
+			new GetStreamIdByNameQueryArgs(streamName)
+		);
+
+		Assert.Equal(expectedId, actual);
+	}
+
+	private void AssertGetStreamMaxSequencesQueryReturns(long expectedId) {
+		var actual = DuckDb.Pool.QueryFirstOrDefault<long, GetStreamMaxSequencesQuery>();
+
+		Assert.Equal(expectedId, actual);
+	}
+
 	private readonly DefaultIndexProcessor _processor;
 	private readonly DefaultIndex _defaultIndex;
 
 	public DefaultIndexProcessorTests() {
 		var reader = new DummyReadIndex();
-		_defaultIndex = new DefaultIndex(DuckDb, reader, 8);
-		_processor = new DefaultIndexProcessor(DuckDb, _defaultIndex, 8);
+
+		const int commitBatchSize = 9;
+		_defaultIndex = new DefaultIndex(DuckDb, reader, commitBatchSize);
+		_processor = new DefaultIndexProcessor(DuckDb, _defaultIndex, commitBatchSize);
 	}
 
 	public override Task DisposeAsync() {

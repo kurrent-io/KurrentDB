@@ -34,7 +34,7 @@ public static class DuckDbExtensions {
 	public static TRow? QueryFirstOrDefault<TArgs, TRow, TQuery>(this DuckDBConnectionPool pool, TArgs args)
 		where TArgs : struct
 		where TRow : struct
-		where TQuery : IQuery<TArgs, TRow>, IQuery<TRow> {
+		where TQuery : IQuery<TArgs, TRow> {
 		using (pool.Rent(out var connection)) {
 			return connection.QueryFirstOrDefault<TArgs, TRow, TQuery>(args);
 		}
