@@ -8,7 +8,7 @@ This page contains the release notes for EventStoreDB 23.10 and 23.6
 
 ## [23.10.7](https://github.com/kurrent-io/KurrentDB/releases/tag/oss-v23.10.7)
 
-18 June 2025
+19 June 2025
 
 ### Add server configuration option for TCP read expiry (PR [#5144](https://github.com/kurrent-io/KurrentDB/pull/5144))
 
@@ -16,7 +16,7 @@ The option is `TcpReadTimeoutMs` and it defaults to `10000` (10s, which matches 
 
 It applies to reads received via the TCP client API. When a read has been in the server queue for longer than this, it will be discarded without being executed. If your TCP clients are configured to timeout after X milliseconds, it is advisable to set this server option to be the same, so that the server will not execute reads that the client is no longer waiting for.
 
-For gRPC clients, the server-side discarding is driven by the deadline on the read itself and does not require server configuration.
+For gRPC clients, the server-side discarding is already driven by the deadline on the read itself without requiring server configuration.
 
 ### Add logging for significant garbage collections (PR [#5134](https://github.com/kurrent-io/KurrentDB/pull/5134))
 
