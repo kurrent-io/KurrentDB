@@ -6,6 +6,7 @@ using DuckDB.NET.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -295,7 +296,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		var reader = new DummyReadIndex();
 
 		const int commitBatchSize = 9;
-		_defaultIndex = new DefaultIndex(DuckDb, reader, commitBatchSize);
+		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
+		_defaultIndex = new DefaultIndex(DuckDb, reader, hasher, commitBatchSize);
 		_processor = new DefaultIndexProcessor(DuckDb, _defaultIndex, commitBatchSize);
 	}
 
@@ -322,7 +324,8 @@ public class CleanUpTests {
 			var reader = new DummyReadIndex();
 
 			const int commitBatchSize = 9;
-			using var defaultIndex = new DefaultIndex(dataSource, reader, commitBatchSize);
+			var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
+			using var defaultIndex = new DefaultIndex(dataSource, reader, hasher, commitBatchSize);
 			var processor = new DefaultIndexProcessor(dataSource, defaultIndex, commitBatchSize);
 
 			const string cat1 = "first";

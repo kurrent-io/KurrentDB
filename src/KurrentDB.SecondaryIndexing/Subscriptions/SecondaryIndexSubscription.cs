@@ -28,7 +28,8 @@ public sealed class SecondaryIndexSubscription(
 
 	public void Subscribe() {
 		var position = index.GetLastPosition();
-		var startFrom = position == null ? Position.Start : Position.FromInt64((long)position, (long)position);
+		var startFrom = position is null or -1 ? Position.Start : Position.FromInt64((long)position, (long)position);
+		Log.Information("Starting indexing subscription from {StartFrom}", startFrom);
 
 		_subscription = new(
 			bus: publisher,

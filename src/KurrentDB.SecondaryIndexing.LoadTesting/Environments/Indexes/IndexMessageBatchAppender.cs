@@ -1,19 +1,16 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.Core;
-using KurrentDB.Core.Bus;
-using KurrentDB.Core.Data;
+using KurrentDB.Core.Index.Hashes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
-using KurrentDB.SecondaryIndexing.Tests.Indexes;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
 
-public class IndexMessageBatchAppender: IMessageBatchAppender {
+public class IndexMessageBatchAppender : IMessageBatchAppender {
 	private readonly int _commitSize;
 	private long _indexedCount;
 	private readonly DefaultIndexProcessor _processor;
@@ -21,7 +18,8 @@ public class IndexMessageBatchAppender: IMessageBatchAppender {
 	public IndexMessageBatchAppender(DuckDbDataSource dbDataSource, int commitSize) {
 		_commitSize = commitSize;
 		var reader = new DummyReadIndex();
-		var defaultIndex = new DefaultIndex(dbDataSource, reader, commitSize);
+		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
+		var defaultIndex = new DefaultIndex(dbDataSource, reader, hasher, commitSize);
 		_processor = new DefaultIndexProcessor(dbDataSource, defaultIndex, commitSize);
 	}
 

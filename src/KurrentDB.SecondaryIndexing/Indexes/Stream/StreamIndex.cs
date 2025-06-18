@@ -2,16 +2,17 @@
 // Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using DotNext;
+using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
-internal class StreamIndex(DuckDbDataSource db, IReadIndex<string> readIndex) : Disposable {
+internal class StreamIndex(DuckDbDataSource db, IReadIndex<string> readIndex, ILongHasher<string> hasher) : Disposable {
 	public long? GetLastPosition() => Processor.LastCommittedPosition;
 
-	public StreamIndexProcessor Processor { get; } = new(db, readIndex.IndexReader.Backend);
+	public StreamIndexProcessor Processor { get; } = new(db, readIndex.IndexReader.Backend, hasher);
 
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; } = [];
 

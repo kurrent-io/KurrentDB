@@ -14,6 +14,7 @@ create table if not exists streams (
 	id bigint primary key not null,
 	name varchar not null,
 	unique(name),
+	name_hash ubigint not null,
 	max_age int DEFAULT NULL,
 	max_count int DEFAULT NULL
 );
@@ -27,7 +28,8 @@ create table if not exists idx_all (
 	event_type int4 not null,
 	event_type_seq bigint not null,
 	category int4 not null,
-	category_seq bigint not null
+	category_seq bigint not null,
+	is_deleted boolean not null
 );
 
 -- create index if not exists idx_all_category on idx_all(category, category_seq);

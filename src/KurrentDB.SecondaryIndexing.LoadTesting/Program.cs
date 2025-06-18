@@ -1,10 +1,7 @@
-﻿using KurrentDB.Common.Log;
-using KurrentDB.Common.Options;
-using KurrentDB.SecondaryIndexing.LoadTesting;
+﻿using KurrentDB.SecondaryIndexing.LoadTesting;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 using KurrentDB.SecondaryIndexing.LoadTesting.Observability;
-using KurrentDB.Surge.Testing;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 

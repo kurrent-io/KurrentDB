@@ -214,10 +214,7 @@ public class ClusterVNode<TStreamId> :
 	private int _stopCalled;
 	private int _reloadingConfig;
 	private PosixSignalRegistration _reloadConfigSignalRegistration;
-
-	public IEnumerable<Task> Tasks {
-		get { return _tasks; }
-	}
+	readonly CompositeHasher<TStreamId> _longHasher;
 
 	public override CertificateDelegates.ClientCertificateValidator InternalClientCertificateValidator => _internalClientCertificateValidator;
 	public override Func<X509Certificate2> CertificateSelector => _certificateSelector;
@@ -692,8 +689,7 @@ public class ClusterVNode<TStreamId> :
 			logFormat.LowHasher,
 			logFormat.HighHasher,
 			logFormat.EmptyStreamId,
-			() => new HashListMemTable(options.IndexBitnessVersion,
-				maxSize: options.Database.MaxMemTableSize * 2),
+			() => new HashListMemTable(options.IndexBitnessVersion, maxSize: options.Database.MaxMemTableSize * 2),
 			() => new TFReaderLease(readerPool),
 			options.IndexBitnessVersion,
 			maxSizeForMemory: options.Database.MaxMemTableSize,
@@ -947,6 +943,8 @@ public class ClusterVNode<TStreamId> :
 			HttpService = _httpService,
 		};
 
+		_longHasher = new CompositeHasher<TStreamId>(logFormat.LowHasher, logFormat.HighHasher);
+
 		// AUTHENTICATION INFRASTRUCTURE - delegate to plugins
 		authorizationProviderFactory ??= !options.Application.Insecure
 			? throw new InvalidConfigurationException($"An {nameof(AuthorizationProviderFactory)} is required when running securely.")
@@ -954,8 +952,7 @@ public class ClusterVNode<TStreamId> :
 		authenticationProviderFactory ??= !options.Application.Insecure
 			? throw new InvalidConfigurationException($"An {nameof(AuthenticationProviderFactory)} is required when running securely.")
 			: new AuthenticationProviderFactory(_ => new PassthroughAuthenticationProviderFactory());
-		additionalPersistentSubscriptionConsumerStrategyFactories ??=
-			Array.Empty<IPersistentSubscriptionConsumerStrategyFactory>();
+		additionalPersistentSubscriptionConsumerStrategyFactories ??= [];
 
 		_authenticationProvider = new DelegatedAuthenticationProvider(
 			authenticationProviderFactory
@@ -1243,7 +1240,6 @@ public class ClusterVNode<TStreamId> :
 		perSubscrBus.Subscribe<SubscriptionMessage.PersistentSubscriptionsRestart>(persistentSubscription);
 
 		// STORAGE SCAVENGER
-		ScavengerFactory scavengerFactory;
 		var scavengerDispatcher = new IODispatcher(_mainQueue, _mainQueue);
 		_mainBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(scavengerDispatcher.BackwardReader);
 		_mainBus.Subscribe<ClientMessage.NotHandled>(scavengerDispatcher.BackwardReader);
@@ -1254,7 +1250,7 @@ public class ClusterVNode<TStreamId> :
 		// reuse the same buffer; it's quite big.
 		var calculatorBuffer = new Calculator<TStreamId>.Buffer(32_768);
 
-		scavengerFactory = new ScavengerFactory((message, scavengerLogger, logger) => {
+		var scavengerFactory = new ScavengerFactory((message, scavengerLogger, logger) => {
 			// currently on the main queue
 			var optionsCalculator = new ScavengeOptionsCalculator(options, archiveOptions, message);
 
@@ -1272,14 +1268,12 @@ public class ClusterVNode<TStreamId> :
 
 			var cancellationCheckPeriod = 1024;
 
-			var longHasher = new CompositeHasher<TStreamId>(logFormat.LowHasher, logFormat.HighHasher);
-
 			// the backends (and therefore connections) are scoped to the run of the scavenge
 			// so that we don't keep hold of memory used for the page caches between scavenges
 			var backendPool = new ObjectPool<IScavengeStateBackend<TStreamId>>(
 				objectPoolName: "scavenge backend pool",
-				initialCount: 0, // so that factory is not called on the main queue
-				maxCount: TFChunkScavenger.MaxThreadCount + 1,
+				initialCount: 0, maxCount // so that factory is not called on the main queue
+				: TFChunkScavenger.MaxThreadCount + 1,
 				factory: () => {
 					// not on the main queue
 					var scavengeDirectory = Path.Combine(indexPath, "scavenging");
@@ -1304,7 +1298,7 @@ public class ClusterVNode<TStreamId> :
 
 			var state = new ScavengeState<TStreamId>(
 				logger,
-				longHasher,
+				_longHasher,
 				logFormat.Metastreams,
 				backendPool,
 				options.Database.ScavengeHashUsersCacheCapacity);
@@ -1395,11 +1389,11 @@ public class ClusterVNode<TStreamId> :
 				cleaner: cleaner,
 				scavengePointSource: scavengePointSource,
 				scavengerLogger: scavengerLogger,
-				statusTracker: trackers.ScavengeStatusTracker,
+				statusTracker: trackers.ScavengeStatusTracker, thresholdForNewScavenge
 				// threshold < 0: execute all chunks, even those with no weight
 				// threshold = 0: execute all chunks with weight greater than 0
 				// threshold > 0: execute all chunks above a certain weight
-				thresholdForNewScavenge: optionsCalculator.ChunkExecutionThreshold,
+				: optionsCalculator.ChunkExecutionThreshold,
 				syncOnly: message.SyncOnly,
 				getThrottleStats: () => throttle.PrettyPrint());
 		});
@@ -1588,10 +1582,11 @@ public class ClusterVNode<TStreamId> :
 		_subsystems = options.Subsystems;
 
 		var standardComponents = new StandardComponents(Db.Config, _mainQueue, _mainBus, _timerService, _timeProvider,
-			httpSendService, new IHttpService[] { _httpService }, _workersHandler, _queueStatsManager, trackers.QueueTrackers, metricsConfiguration);
+			httpSendService, [_httpService], _workersHandler, _queueStatsManager, trackers.QueueTrackers, metricsConfiguration);
 
 		IServiceCollection ConfigureNodeServices(IServiceCollection services) {
 			services
+				.AddSingleton<ILongHasher<TStreamId>>(_longHasher)
 				.AddSingleton(telemetryService) // for correct disposal
 				.AddSingleton(_readIndex)
 				.AddSingleton(standardComponents)
@@ -1599,7 +1594,7 @@ public class ClusterVNode<TStreamId> :
 				.AddSingleton(certificateProvider)
 				.AddSingleton(_authenticationProvider)
 				.AddSingleton<IReadOnlyList<IDbTransform>>(new List<IDbTransform> { new IdentityDbTransform() })
-				.AddSingleton<IReadOnlyList<IClusterVNodeStartupTask>>(new List<IClusterVNodeStartupTask> { })
+				.AddSingleton<IReadOnlyList<IClusterVNodeStartupTask>>(new List<IClusterVNodeStartupTask>())
 				.AddSingleton<IReadOnlyList<IHttpAuthenticationProvider>>(httpAuthenticationProviders)
 				.AddSingleton<Func<(X509Certificate2 Node, X509Certificate2Collection Intermediates,
 						X509Certificate2Collection Roots)>>

@@ -3,6 +3,7 @@
 
 using DotNext;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -24,16 +25,21 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 	public EventTypeIndex EventTypeIndex { get; }
 	public StreamIndex StreamIndex { get; }
 
-	public DefaultIndex(DuckDbDataSource db, IReadIndex<string> readIndex, int commitBatchSize) {
+	public DefaultIndex(DuckDbDataSource db, IReadIndex<string> readIndex, ILongHasher<string> hasher, int commitSize)
+		: this(db, readIndex, hasher, new SecondaryIndexingPluginOptions { CommitBatchSize = commitSize }) {
+	}
+
+	[UsedImplicitly]
+	public DefaultIndex(DuckDbDataSource db, IReadIndex<string> readIndex, ILongHasher<string> hasher, SecondaryIndexingPluginOptions options) {
 		_db = db;
 		_db.InitDb();
 
-		var processor = new DefaultIndexProcessor(db, this, commitBatchSize);
+		var processor = new DefaultIndexProcessor(db, this, options.CommitBatchSize);
 		Processor = processor;
 
 		CategoryIndex = new(db, readIndex, processor.QueryInFlightRecords);
 		EventTypeIndex = new(db, readIndex, processor.QueryInFlightRecords);
-		StreamIndex = new(db, readIndex);
+		StreamIndex = new(db, readIndex, hasher);
 
 		Readers = [
 			new DefaultIndexReader(db, processor, readIndex),
@@ -57,6 +63,7 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 			Processor.Dispose();
 			StreamIndex.Dispose();
 		}
+
 		base.Dispose(disposing);
 	}
 }
@@ -68,9 +75,9 @@ record struct AllRecord(long Seq, long LogPosition);
 record struct InFlightRecord(
 	long Seq,
 	long LogPosition,
-	long EventNumber,
 	int CategoryId,
 	long CategorySeq,
 	int EventTypeId,
-	long EventTypeSeq
+	long EventTypeSeq,
+	bool IsDeleted = false
 );

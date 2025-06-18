@@ -5,6 +5,7 @@ using System.Diagnostics;
 using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 using Serilog;
@@ -16,14 +17,16 @@ internal class StreamIndexProcessor : Disposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor>();
 
 	private readonly IIndexBackend<string> _indexReaderBackend;
+	readonly ILongHasher<string> _hasher;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly Dictionary<string, long> _inFlightRecords = new();
 
 	private long _lastLogPosition;
 	private Appender _appender;
 
-	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> indexReaderBackend) {
+	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> indexReaderBackend, ILongHasher<string> hasher) {
 		_indexReaderBackend = indexReaderBackend;
+		_hasher = hasher;
 		_connection = db.OpenNewConnection();
 		_appender = new Appender(_connection, "streams"u8);
 		_seq = _connection.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>().WithDefault(-1);
@@ -59,9 +62,11 @@ internal class StreamIndexProcessor : Disposable {
 
 		_inFlightRecords.Add(name, id);
 
+		var streamHash = _hasher.Hash(name);
 		using (var row = _appender.CreateRow()) {
 			row.Append(id);
 			row.Append(name);
+			row.Append(streamHash);
 			row.AppendDefault();
 			row.AppendDefault();
 		}

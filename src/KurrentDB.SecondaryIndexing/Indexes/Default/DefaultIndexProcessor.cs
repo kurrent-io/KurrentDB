@@ -58,13 +58,13 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(eventType.Sequence);
 			row.Append(category.Id);
 			row.Append(category.Sequence);
+			row.Append(false); // TODO: What happens if the event is deleted before we commit?
 		}
 
 		_inFlightRecords[_inFlightRecordsCount]
 			= new(
 				sequence,
 				logPosition,
-				eventNumber,
 				category.Id,
 				category.Sequence,
 				eventType.Id,
