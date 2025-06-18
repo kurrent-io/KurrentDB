@@ -2,7 +2,7 @@ version: "3.4"
 
 services:
   eventstore.db:
-    image: eventstore/eventstore:23.10.0-bookworm-slim
+    image: eventstore/eventstore:23.10.7-bookworm-slim
     environment:
       - EVENTSTORE_CLUSTER_SIZE=1
       - EVENTSTORE_RUN_PROJECTIONS=All
