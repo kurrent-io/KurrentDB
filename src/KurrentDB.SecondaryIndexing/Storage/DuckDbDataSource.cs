@@ -6,7 +6,6 @@ using DotNext.Threading;
 using DuckDB.NET.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
-using KurrentDB.Core.TransactionLog.Chunks;
 
 namespace KurrentDB.SecondaryIndexing.Storage;
 

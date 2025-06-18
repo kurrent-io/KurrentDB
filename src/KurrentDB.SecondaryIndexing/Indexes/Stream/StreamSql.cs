@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using DotNext;
 using Kurrent.Quack;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
@@ -19,12 +20,12 @@ internal static class StreamSql {
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}
 
-	public struct GetStreamMaxSequencesQuery : IQuery<long> {
-		public static ReadOnlySpan<byte> CommandText => "select COALESCE(max(id), -1) from streams"u8;
+	public struct GetStreamMaxSequencesQuery : IQuery<Optional<long>> {
+		public static ReadOnlySpan<byte> CommandText => "select max(id) from streams"u8;
 
 		public static bool UseStreamingMode => false;
 
-		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
+		public static Optional<long> Parse(ref DataChunk.Row row) => row.TryReadInt64().ToOptional();
 	}
 
 	public record struct StreamSummary(long Id, string Name, long LastLogPosition);

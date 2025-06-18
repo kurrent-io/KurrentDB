@@ -46,9 +46,11 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 
 	public void Index(ResolvedEvent evt) => Processor.Index(evt);
 
-	public long? GetLastSequence() => _db.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastSequenceSql>();
+	public long? GetLastSequence() =>
+		_db.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>()?.OrNull();
 
-	public long? GetLastPosition() => _db.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastLogPositionSql>();
+	public long? GetLastPosition() =>
+		_db.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>()?.OrNull();
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {

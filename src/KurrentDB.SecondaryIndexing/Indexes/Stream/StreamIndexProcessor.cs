@@ -26,7 +26,7 @@ internal class StreamIndexProcessor : Disposable {
 		_indexReaderBackend = indexReaderBackend;
 		_connection = db.OpenNewConnection();
 		_appender = new Appender(_connection, "streams"u8);
-		_seq = _connection.QueryFirstOrDefault<long, GetStreamMaxSequencesQuery>() ?? -1;
+		_seq = _connection.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>().WithDefault(-1);
 	}
 
 	private long _seq;

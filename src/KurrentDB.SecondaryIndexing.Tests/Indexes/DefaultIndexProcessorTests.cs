@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using DotNext;
 using DuckDB.NET.Data;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
@@ -174,8 +175,8 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		}
 
 		// Then
-		AssertLastSequenceQueryReturns(-1);
-		AssertLastLogPositionQueryReturns(-1);
+		AssertLastSequenceQueryReturns(null);
+		AssertLastLogPositionQueryReturns(null);
 
 		AssertDefaultIndexQueryReturns([]);
 
@@ -206,7 +207,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertReadEventTypeIndexQueryReturns(4, []);
 
 		// Streams
-		AssertGetStreamMaxSequencesQueryReturns(-1);
+		AssertGetStreamMaxSequencesQueryReturns(null);
 
 		AssertGetStreamIdByNameQueryReturns(cat1_stream1, null);
 		AssertGetStreamIdByNameQueryReturns(cat2_stream1, null);
@@ -219,16 +220,16 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expected, records);
 	}
 
-	private void AssertLastSequenceQueryReturns(long expectedLastSequence) {
-		var actual = DuckDb.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastSequenceSql>();
+	private void AssertLastSequenceQueryReturns(long? expectedLastSequence) {
+		var actual = DuckDb.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>();
 
-		Assert.Equal(expectedLastSequence, actual);
+		Assert.Equal(expectedLastSequence, actual?.OrNull());
 	}
 
-	private void AssertLastLogPositionQueryReturns(long expectedLastSequence) {
-		var actual = DuckDb.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastLogPositionSql>();
+	private void AssertLastLogPositionQueryReturns(long? expectedLastSequence) {
+		var actual = DuckDb.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>();
 
-		Assert.Equal(expectedLastSequence, actual);
+		Assert.Equal(expectedLastSequence, actual?.OrNull());
 	}
 
 	private void AssertGetCategoriesQueryReturns(List<ReferenceRecord> expected) {
@@ -281,10 +282,10 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		Assert.Equal(expectedId, actual);
 	}
 
-	private void AssertGetStreamMaxSequencesQueryReturns(long expectedId) {
-		var actual = DuckDb.Pool.QueryFirstOrDefault<long, GetStreamMaxSequencesQuery>();
+	private void AssertGetStreamMaxSequencesQueryReturns(long? expectedId) {
+		var actual = DuckDb.Pool.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>();
 
-		Assert.Equal(expectedId, actual);
+		Assert.Equal(expectedId, actual?.OrNull());
 	}
 
 	private readonly DefaultIndexProcessor _processor;
@@ -342,9 +343,9 @@ public class CleanUpTests {
 		Directory.CreateDirectory(directory);
 
 		using (var dataSource = new DuckDbDataSource(options)) {
-			var actual = dataSource.Pool.QueryFirstOrDefault<long, DefaultSql.GetLastSequenceSql>();
+			var actual = dataSource.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>();
 
-			Assert.Equal(-1, actual);
+			Assert.Null(actual?.OrNull());
 		}
 	}
 
