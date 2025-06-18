@@ -206,10 +206,10 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var schemas = listSchemasResponse.Schemas.OrderBy(x => x.RegisteredAt).ToList();
 
 		schemas[0].SchemaName.Should().Be(schemaName1);
-		schemas[0].VersionNumber.Should().Be(schema1.Success.Schema.LatestSchemaVersion);
+		schemas[0].VersionNumber.Should().Be(schema1.Schema.LatestSchemaVersion);
 
-		schemas[1].SchemaName.Should().Be(schema2.Success.Schema.SchemaName);
-		schemas[1].VersionNumber.Should().Be(schema2.Success.Schema.LatestSchemaVersion);
+		schemas[1].SchemaName.Should().Be(schema2.Schema.SchemaName);
+		schemas[1].VersionNumber.Should().Be(schema2.Schema.LatestSchemaVersion);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -266,10 +266,10 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var schemas = listSchemasResponse.Schemas.OrderBy(x => x.RegisteredAt).ToList();
 
 		schemas[0].SchemaName.Should().Be(schemaName1);
-		schemas[0].VersionNumber.Should().Be(schema1.Success.Schema.LatestSchemaVersion);
+		schemas[0].VersionNumber.Should().Be(schema1.Schema.LatestSchemaVersion);
 
-		schemas[1].SchemaName.Should().Be(schema2.Success.Schema.SchemaName);
-		schemas[1].VersionNumber.Should().Be(schema2.Success.Schema.LatestSchemaVersion);
+		schemas[1].SchemaName.Should().Be(schema2.Schema.SchemaName);
+		schemas[1].VersionNumber.Should().Be(schema2.Schema.LatestSchemaVersion);
 	}
 
 
@@ -307,7 +307,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		listSchemasResponse.Schemas.Count.Should().Be(1);
 
 		listSchemasResponse.Schemas[0].SchemaName.Should().Be(schemaName);
-		listSchemasResponse.Schemas[0].VersionNumber.Should().Be(schema.Success.Schema.LatestSchemaVersion);
+		listSchemasResponse.Schemas[0].VersionNumber.Should().Be(schema.Schema.LatestSchemaVersion);
 	}
 
 

@@ -6,6 +6,7 @@ using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
+using Shouldly;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
@@ -63,12 +64,9 @@ public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
 
 		getSchemaResult.Should().NotBeNull();
 
-		if (getSchemaResult.ResultCase != GetSchemaResponse.ResultOneofCase.Success)
-			throw new Exception("Boom");
-
-		getSchemaResult.Success.Schema.LatestSchemaVersion.Should().Be(1);
-		getSchemaResult.Success.Schema.SchemaName.Should().Be(expectedEvent.SchemaName);
-		getSchemaResult.Success.Schema.Details.Should().BeEquivalentTo(details);
+		getSchemaResult.Schema.LatestSchemaVersion.Should().Be(1);
+		getSchemaResult.Schema.SchemaName.Should().Be(expectedEvent.SchemaName);
+		getSchemaResult.Schema.Details.Should().BeEquivalentTo(details);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -80,7 +78,6 @@ public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
 			cancellationToken: cancellationToken
 		);
 
-		result.ResultCase.Should().Be(GetSchemaResponse.ResultOneofCase.Failure);
-		result.Failure.NotFound.Should().NotBeNull();
+		result.Schema.ShouldBeNull();
 	}
 }

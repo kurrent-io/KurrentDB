@@ -35,7 +35,8 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 			Definition = v1.ToByteString()
 		}, cancellationToken: cancellationToken);
 
-		checkResponse.ValidationResult.IsCompatible.Should().BeTrue();
+		checkResponse.Success.SchemaVersionId.Should().NotBeEmpty();
+		checkResponse.Failure.Errors.Should().BeEmpty();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -110,8 +111,8 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
-		response.ValidationResult.IsCompatible.Should().BeTrue();
-		response.ValidationResult.Errors.Should().BeEmpty();
+		response.Success.SchemaVersionId.Should().NotBeEmpty();
+		response.Failure.Errors.Should().BeEmpty();
 	}
 
 	[Test]
@@ -151,12 +152,11 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 			cancellationToken: cancellationToken
 		);
 
-		response.ValidationResult.IsCompatible.Should().BeFalse();
-		response.ValidationResult.Errors.Should().NotBeEmpty();
-		response.ValidationResult.Errors.Count.Should().Be(3);
-		response.ValidationResult.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
-		response.ValidationResult.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
-		response.ValidationResult.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.OptionalToRequired);
+		response.Failure.Errors.Should().NotBeEmpty();
+		response.Failure.Errors.Count.Should().Be(3);
+		response.Failure.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
+		response.Failure.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
+		response.Failure.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.OptionalToRequired);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -191,8 +191,8 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
-		response.ValidationResult.IsCompatible.Should().BeTrue();
-		response.ValidationResult.Errors.Should().BeEmpty();
+		response.Success.SchemaVersionId.Should().NotBeEmpty();
+		response.Failure.Errors.Should().BeEmpty();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -227,9 +227,8 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
-		response.ValidationResult.IsCompatible.Should().BeFalse();
-		response.ValidationResult.Errors.Should().NotBeEmpty();
-		response.ValidationResult.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
+		response.Failure.Errors.Should().NotBeEmpty();
+		response.Failure.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -267,8 +266,8 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
-		response.ValidationResult.IsCompatible.Should().BeTrue();
-		response.ValidationResult.Errors.Should().BeEmpty();
+		response.Success.SchemaVersionId.Should().NotBeEmpty();
+		response.Failure.Errors.Should().BeEmpty();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -303,9 +302,8 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
-		response.ValidationResult.IsCompatible.Should().BeFalse();
-		response.ValidationResult.Errors.Should().NotBeEmpty();
-		response.ValidationResult.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
+		response.Failure.Errors.Should().NotBeEmpty();
+		response.Failure.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -340,8 +338,8 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
-		response.ValidationResult.IsCompatible.Should().BeTrue();
-		response.ValidationResult.Errors.Should().BeEmpty();
+		response.Success.SchemaVersionId.Should().NotBeEmpty();
+		response.Failure.Errors.Should().BeEmpty();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -376,8 +374,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
-		response.ValidationResult.IsCompatible.Should().BeFalse();
-		response.ValidationResult.Errors.Should().NotBeEmpty();
-		response.ValidationResult.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
+		response.Failure.Errors.Should().NotBeEmpty();
+		response.Failure.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
 	}
 }

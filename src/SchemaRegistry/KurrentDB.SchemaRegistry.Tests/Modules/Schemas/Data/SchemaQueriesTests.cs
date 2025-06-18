@@ -3,7 +3,6 @@ using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Projectors;
 using Kurrent.Surge.Schema.Validation;
-using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Data;
@@ -80,7 +79,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 
 		response.Should().BeEquivalentTo(
 			expectedResponse, options => options
-				.Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, 1.Seconds()))
+				.Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, TimeSpan.FromSeconds(1)))
 				.WhenTypeIs<DateTime>()
 		);
 	}
@@ -291,7 +290,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 					Definition = ByteString.CopyFromUtf8(PersonSchema)
 				}, cancellationToken);
 
-		response.ValidationResult.IsCompatible.Should().BeTrue();
+		response.Success.Should().NotBeNull();
 	}
 
 	[Test]
@@ -315,7 +314,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 					Definition = ByteString.CopyFromUtf8(CarSchema)
 				}, cancellationToken);
 
-		response.ValidationResult.IsCompatible.Should().BeFalse();
+		response.Failure.Errors.Should().NotBeEmpty();
 	}
 
 	[Test]
@@ -333,11 +332,9 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.GetSchema(new GetSchemaRequest { SchemaName = schemaName }, cancellationToken);
-		if (response.ResultCase != GetSchemaResponse.ResultOneofCase.Success)
-			throw new Exception("Boom");
 
-		response.Success.Schema.SchemaName.Should().Be(schemaName);
-		response.Success.Schema.LatestSchemaVersion.Should().Be(24);
+		response.Schema.SchemaName.Should().Be(schemaName);
+		response.Schema.LatestSchemaVersion.Should().Be(24);
 	}
 
 	[Test]

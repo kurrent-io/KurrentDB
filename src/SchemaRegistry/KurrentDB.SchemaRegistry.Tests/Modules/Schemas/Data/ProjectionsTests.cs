@@ -67,18 +67,13 @@ public class ProjectionsTests : SchemaRegistryServerTestFixture {
 
 		var getSchemaResponse = await queries.GetSchema(new GetSchemaRequest { SchemaName = schemaName }, cancellationToken);
 
-		if (getSchemaResponse.ResultCase == GetSchemaResponse.ResultOneofCase.Failure)
-			throw new Exception("Boom");
-
-		else {
-			var getSchemaVersionResponse = await queries.GetSchemaVersion(
-				new() {
-					SchemaName = getSchemaResponse.Success.Schema.SchemaName,
-					VersionNumber = getSchemaResponse.Success.Schema.LatestSchemaVersion
-				},
-				cancellationToken
-			);
-		}
+		var getSchemaVersionResponse = await queries.GetSchemaVersion(
+			new() {
+				SchemaName = getSchemaResponse.Schema.SchemaName,
+				VersionNumber = getSchemaResponse.Schema.LatestSchemaVersion
+			},
+			cancellationToken
+		);
 	}
 
 	[Test]
