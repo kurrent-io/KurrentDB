@@ -117,8 +117,9 @@ public class GetSchemaVersionRequestValidator : AbstractValidator<GetSchemaVersi
             .SetValidator(SchemaNameValidator.Instance);
 
         RuleFor(x => x.VersionNumber)
-            .GreaterThanOrEqualTo(1)
-            .WithMessage("Version number must be greater than or equal to 1");
+	        .GreaterThanOrEqualTo(1)
+	        .WithMessage("Version number must be greater than or equal to 1")
+	        .When(x => x.HasVersionNumber);
     }
 }
 
