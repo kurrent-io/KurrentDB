@@ -3,8 +3,8 @@
 
 using DuckDB.NET.Data;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
-using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 using KurrentDB.SecondaryIndexing.Storage;
+using KurrentDB.SecondaryIndexing.Tests.Generators;
 using Serilog;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
@@ -47,7 +47,7 @@ public class RawDuckDbMessageBatchAppender : IMessageBatchAppender {
 	public ValueTask AppendToDefaultIndex(TestMessageBatch batch) {
 		foreach (var message in batch.Messages) {
 			var sequence = LastSequence++;
-			var logPosition = message.LogPosition;
+			var logPosition = message.LogSequence;
 			var eventNumber = message.StreamPosition;
 
 			var row = _defaultIndexAppender.CreateRow();

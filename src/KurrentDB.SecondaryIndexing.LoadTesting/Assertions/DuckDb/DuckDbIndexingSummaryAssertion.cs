@@ -1,8 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using KurrentDB.SecondaryIndexing.LoadTesting.Observability;
 using KurrentDB.SecondaryIndexing.Storage;
+using KurrentDB.SecondaryIndexing.Tests.Observability;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
 

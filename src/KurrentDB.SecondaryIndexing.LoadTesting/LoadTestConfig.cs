@@ -4,6 +4,7 @@
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
+using KurrentDB.SecondaryIndexing.Tests.Generators;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting;
 
@@ -20,39 +21,29 @@ public class LoadTestConfig {
 	public required string DuckDbConnectionString { get; set; }= "Dummy";
 	public DuckDBTestEnvironmentOptions DuckDb { get; set; } = new();
 	public IndexesLoadTestEnvironmentOptions Index { get; set; } =  new IndexesLoadTestEnvironmentOptions();
-}
 
-public record LoadTestPartitionConfig(
-	int PartitionId,
-	int StartCategoryIndex,
-	int CategoriesCount,
-	int MaxStreamsPerCategory,
-	int MessageTypesCount,
-	int MessageSize,
-	int MaxBatchSize,
-	int TotalMessagesCount
-) {
-	public static LoadTestPartitionConfig[] From(LoadTestConfig loadTestConfig) {
-		var categoriesPerPartition = loadTestConfig.CategoriesCount / loadTestConfig.PartitionsCount;
-		var messagesPerPartition = loadTestConfig.TotalMessagesCount / loadTestConfig.PartitionsCount;
 
-		var partitions = new LoadTestPartitionConfig[loadTestConfig.PartitionsCount];
+	public LoadTestPartitionConfig[] GeneratePartitions() {
+		var categoriesPerPartition = CategoriesCount / PartitionsCount;
+		var messagesPerPartition = TotalMessagesCount / PartitionsCount;
 
-		for (int i = 0; i < loadTestConfig.PartitionsCount; i++) {
-			var isLastPartition = i == loadTestConfig.PartitionsCount - 1;
+		var partitions = new LoadTestPartitionConfig[PartitionsCount];
+
+		for (int i = 0; i < PartitionsCount; i++) {
+			var isLastPartition = i == PartitionsCount - 1;
 
 			partitions[i] = new LoadTestPartitionConfig(
 				PartitionId: i,
 				StartCategoryIndex: i * categoriesPerPartition,
 				CategoriesCount: isLastPartition
-					? loadTestConfig.CategoriesCount - i * categoriesPerPartition
+					? CategoriesCount - i * categoriesPerPartition
 					: categoriesPerPartition,
-				MaxStreamsPerCategory: loadTestConfig.MaxStreamsPerCategory,
-				MessageTypesCount: loadTestConfig.MessageTypesPerCategoryCount,
-				MessageSize: loadTestConfig.MessageSize,
-				MaxBatchSize: loadTestConfig.MaxBatchSize,
+				MaxStreamsPerCategory: MaxStreamsPerCategory,
+				MessageTypesCount: MessageTypesPerCategoryCount,
+				MessageSize: MessageSize,
+				MaxBatchSize: MaxBatchSize,
 				TotalMessagesCount: isLastPartition
-					? loadTestConfig.TotalMessagesCount - i * messagesPerPartition
+					? TotalMessagesCount - i * messagesPerPartition
 					: messagesPerPartition
 			);
 		}

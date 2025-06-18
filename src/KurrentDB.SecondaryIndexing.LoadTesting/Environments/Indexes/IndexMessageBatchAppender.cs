@@ -4,13 +4,13 @@
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
-using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
+using KurrentDB.SecondaryIndexing.Tests.Generators;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
 
-public class IndexMessageBatchAppender : IMessageBatchAppender {
+public class IndexMessageBatchAppender: IMessageBatchAppender {
 	private readonly int _commitSize;
 	private long _indexedCount;
 	private readonly DefaultIndexProcessor _processor;

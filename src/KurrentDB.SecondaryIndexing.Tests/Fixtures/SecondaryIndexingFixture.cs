@@ -53,11 +53,13 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 	public IAsyncEnumerable<ResolvedEvent> ReadStream(
 		string streamName,
+		int maxCount,
 		CancellationToken ct = default) =>
-		Publisher.ReadStream(streamName, StreamRevision.Start, long.MaxValue, true, cancellationToken: ct);
+		Publisher.ReadStream(streamName, StreamRevision.Start, maxCount, true, cancellationToken: ct);
 
 	public async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(
 		string streamName,
+		int maxCount,
 		[EnumeratorCancellation] CancellationToken ct = default
 	) {
 		var inboundChannel = Channel.CreateBounded<ReadResponse>(
@@ -75,32 +77,40 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			cancellationToken: ct
 		);
 
+		int count = 0;
+
 		await foreach (var response in inboundChannel.Reader.ReadAllAsync(ct)) {
-			if (response is ReadResponse.EventReceived eventReceived)
-				yield return eventReceived.Event;
+			if (count == maxCount)
+				yield break;
+
+			if (response is not ReadResponse.EventReceived eventReceived) continue;
+
+			count++;
+			yield return eventReceived.Event;
+
 		}
 	}
 
 	public Task<List<ResolvedEvent>> ReadUntil(
 		string streamName,
-		Position position,
+		int maxCount,
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) =>
-		ReadUntil(ReadStream, streamName, position, timeout, ct);
+		ReadUntil(ReadStream, streamName, maxCount, timeout, ct);
 
 	public Task<List<ResolvedEvent>> SubscribeUntil(
 		string streamName,
-		Position position,
+		int maxCount,
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) =>
-		ReadUntil(SubscribeToStream, streamName, position, timeout, ct);
+		ReadUntil(SubscribeToStream, streamName, maxCount, timeout, ct);
 
 	private static async Task<List<ResolvedEvent>> ReadUntil(
-		Func<string, CancellationToken, IAsyncEnumerable<ResolvedEvent>> readEvents,
+		Func<string, int, CancellationToken, IAsyncEnumerable<ResolvedEvent>> readEvents,
 		string streamName,
-		Position position,
+		int maxCount,
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) {
@@ -108,36 +118,29 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
 		var events = new List<ResolvedEvent>();
-		var reachedPosition = false;
 		ReadResponseException.StreamNotFound? streamNotFound = null;
 
 		try {
 			CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-			cts.CancelAfter(timeout.Value);
+			//cts.CancelAfter(timeout.Value);
 
 			do {
 				try {
-					await foreach (var resolvedEvent in readEvents(streamName, cts.Token)) {
-						if (!events.Exists(e => e.OriginalEvent.EventId == resolvedEvent.Event.EventId))
-							events.Add(resolvedEvent);
-
-						reachedPosition = resolvedEvent.OriginalEvent.LogPosition >= (long)position.CommitPosition;
-
-						if (reachedPosition)
-							break;
-					}
+					events = await readEvents(streamName, maxCount, cts.Token).Take(maxCount).ToListAsync(cts.Token);
 				} catch (ReadResponseException.StreamNotFound ex) {
 					streamNotFound = ex;
 				}
 
-				if (!reachedPosition) {
-					await Task.Delay(100, cts.Token);
+				if (events.Count != maxCount) {
+					await Task.Delay(25, cts.Token);
 				}
-			} while (!reachedPosition && DateTime.UtcNow < endTime);
-		} catch (TaskCanceledException) {
+			} while (events.Count != maxCount && DateTime.UtcNow < endTime);
+		} catch (TaskCanceledException ex) {
 			// can happen
-		} catch (OperationCanceledException) {
+			Console.WriteLine(ex);
+		} catch (OperationCanceledException ex) {
 			// can happen
+			Console.WriteLine(ex);
 		}
 
 		if (events.Count == 0 && streamNotFound != null)

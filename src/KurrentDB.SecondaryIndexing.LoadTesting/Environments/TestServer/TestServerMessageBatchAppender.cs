@@ -3,8 +3,8 @@
 
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
-using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
+using KurrentDB.SecondaryIndexing.Tests.Generators;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.TestServer;
 

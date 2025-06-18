@@ -5,17 +5,14 @@ using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
-using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
+using KurrentDB.SecondaryIndexing.Tests.Generators;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting.Environments.InMemory;
 
 public class PublisherBasedMessageBatchAppender(IPublisher publisher) : IMessageBatchAppender {
 	public async ValueTask Append(TestMessageBatch batch) {
-		await publisher.WriteEvents(batch.StreamName, batch.Messages.Select(ToEventData).ToArray());
+		await publisher.WriteEvents(batch.StreamName, batch.Messages.Select(m => m.ToEventData()).ToArray());
 	}
-
-	private static Event ToEventData(TestMessageData messageData) =>
-		new(Guid.NewGuid(), messageData.EventType, false, messageData.Data, null, null);
 
 	public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

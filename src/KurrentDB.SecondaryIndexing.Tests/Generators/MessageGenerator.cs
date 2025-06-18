@@ -6,11 +6,22 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
 
-namespace KurrentDB.SecondaryIndexing.LoadTesting.Generators;
+namespace KurrentDB.SecondaryIndexing.Tests.Generators;
 
 public interface IMessageGenerator {
 	IAsyncEnumerable<TestMessageBatch> GenerateBatches(LoadTestPartitionConfig config);
 }
+
+public record LoadTestPartitionConfig(
+	int PartitionId,
+	int StartCategoryIndex,
+	int CategoriesCount,
+	int MaxStreamsPerCategory,
+	int MessageTypesCount,
+	int MessageSize,
+	int MaxBatchSize,
+	int TotalMessagesCount
+);
 
 public class MessageGenerator : IMessageGenerator {
 	public async IAsyncEnumerable<TestMessageBatch> GenerateBatches(LoadTestPartitionConfig config) {
@@ -75,7 +86,7 @@ public class MessageGenerator : IMessageGenerator {
 	}
 }
 
-public readonly record struct TestMessageData(int StreamPosition, long LogPosition, string EventType, byte[] Data) {
+public readonly record struct TestMessageData(int StreamPosition, long LogSequence, string EventType, byte[] Data) {
 	public ResolvedEvent ToResolvedEvent(string streamName) {
 		var recordFactory = LogFormatHelper<LogFormat.V2, string>.RecordFactory;
 		var streamIdIgnored = LogFormatHelper<LogFormat.V2, string>.StreamId;
@@ -83,7 +94,7 @@ public readonly record struct TestMessageData(int StreamPosition, long LogPositi
 
 		var record = new EventRecord(
 			StreamPosition,
-			LogRecord.Prepare(recordFactory, LogPosition, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
+			LogRecord.Prepare(recordFactory, LogSequence, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 				streamIdIgnored, StreamPosition, PrepareFlags.None, eventTypeIdIgnored, Data,
 				Encoding.UTF8.GetBytes("")
 			),
@@ -93,6 +104,9 @@ public readonly record struct TestMessageData(int StreamPosition, long LogPositi
 
 		return ResolvedEvent.ForUnresolvedEvent(record, 0);
 	}
+
+	public Event ToEventData() =>
+		new(Guid.NewGuid(), EventType, false, Data, null, null);
 }
 
 public readonly record struct TestMessageBatch(string CategoryName, string StreamName, TestMessageData[] Messages);

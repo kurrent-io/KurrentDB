@@ -2,6 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using KurrentDB.SecondaryIndexing.Indexes.Category;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
 using Xunit.Abstractions;
@@ -10,10 +12,11 @@ namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
 [Collection("SecondaryIndexingPluginEnabled")]
-public class IndexSubscriptionTests(
+public class IndexingEnabledTests(
 	SecondaryIndexingEnabledFixture fixture,
 	ITestOutputHelper output
-) : SecondaryIndexingTestBase(fixture, output) {private readonly MessageGenerator _messageGenerator = new();
+) : SecondaryIndexingTestBase(fixture, output) {
+	private readonly MessageGenerator _messageGenerator = new();
 
 	private readonly LoadTestPartitionConfig _config = new(
 		PartitionId: 1,
@@ -28,7 +31,7 @@ public class IndexSubscriptionTests(
 
 	private readonly List<TestMessageBatch> _appendedBatches = [];
 
-	private long TotalMessagesCount =>
+	private int TotalMessagesCount =>
 		_appendedBatches.Count > 0 ? _appendedBatches.Sum(b => b.Messages.Length) : 0;
 
 	private string[] Categories =>
@@ -46,18 +49,33 @@ public class IndexSubscriptionTests(
 		}
 
 		(string Name, int MessagesCount)[] indexes = [
-			//DefaultIndex.IndexName,
-			..Categories.Select(category =>
-				(
-					$"{CategoryIndex.IndexPrefix}{category}",
-					_appendedBatches.Where(c => c.CategoryName == category).Sum(c => c.Messages.Length)
-				)
-			),
-			//..EventTypes.Select(eventType => $"{EventTypeIndex.IndexPrefix}{eventType}")
+			(DefaultIndex.IndexName, TotalMessagesCount),
+			// ..Categories.Select(category =>
+			// 	(
+			// 		$"{CategoryIndex.IndexPrefix}{category}",
+			// 		_appendedBatches.Where(c => c.CategoryName == category).Sum(c => c.Messages.Length)
+			// 	)
+			// ),
+			// ..EventTypes.Select(eventType =>
+			// 	(
+			// 		$"{EventTypeIndex.IndexPrefix}{eventType}",
+			// 		_appendedBatches.Sum(c => c.Messages.Where(e => e.EventType == eventType).Count())
+			// 	)
+			// ),
 		];
 		foreach (var index in indexes) {
+			//await ValidateRead(index.Name, index.MessagesCount);
 			await ValidateSubscription(index.Name, index.MessagesCount);
 		}
+	}
+
+	async Task ValidateRead(string index, int maxCount) {
+		var results = await fixture.ReadUntil(index, maxCount);
+
+		Assert.NotEmpty(results);
+		// var results = readResult.Where(e => e.Event.EventStreamId == streamName).ToList();
+		Assert.Equal(maxCount, results.Count);
+		//Assert.All(results, e => Assert.Contains(Encoding.UTF8.GetString(e.Event.Data.Span), _expectedEventData));
 	}
 
 	private async Task ValidateSubscription(string index, int maxCount) {

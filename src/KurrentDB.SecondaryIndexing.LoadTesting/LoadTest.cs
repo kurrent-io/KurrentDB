@@ -4,15 +4,15 @@
 using System.Diagnostics;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments;
-using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
-using KurrentDB.SecondaryIndexing.LoadTesting.Observability;
+using KurrentDB.SecondaryIndexing.Tests.Generators;
+using KurrentDB.SecondaryIndexing.Tests.Observability;
 
 namespace KurrentDB.SecondaryIndexing.LoadTesting;
 
 public class LoadTest(IMessageGenerator generator, ILoadTestEnvironment environment, IMessagesBatchObserver observer) {
 	public async Task Run(LoadTestConfig config) {
 		await environment.InitializeAsync();
-		var testPartitions = LoadTestPartitionConfig.From(config);
+		var testPartitions = config.GeneratePartitions();
 
 		await Task.WhenAll(testPartitions.Select(ProcessPartition));
 

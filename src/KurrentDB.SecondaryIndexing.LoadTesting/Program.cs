@@ -1,7 +1,7 @@
 ﻿using KurrentDB.SecondaryIndexing.LoadTesting;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments;
-using KurrentDB.SecondaryIndexing.LoadTesting.Generators;
-using KurrentDB.SecondaryIndexing.LoadTesting.Observability;
+using KurrentDB.SecondaryIndexing.Tests.Generators;
+using KurrentDB.SecondaryIndexing.Tests.Observability;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 
