@@ -10,21 +10,21 @@ This page contains the release notes for EventStoreDB 23.10 and 23.6
 
 18 June 2025
 
-### Add Server Configuration Option for TCP read expiry (PR [#5144](https://github.com/kurrent-io/KurrentDB/pull/5144))
+### Add server configuration option for TCP read expiry (PR [#5144](https://github.com/kurrent-io/KurrentDB/pull/5144))
 
 The option is `TcpReadTimeoutMs` and it defaults to `10000` (10s, which matches the previous behavior)
 
 It applies to reads received via the TCP client API. When a read has been in the server queue for longer than this, it will be discarded without being executed. If your TCP clients are configured to timeout after X milliseconds, it is advisable to set this server option to be the same, so that the server will not execute reads that the client is no longer waiting for.
 
-For gRPC clients, the server-side discarding driven by the deadline on the read itself and does not require server configuration.
+For gRPC clients, the server-side discarding is driven by the deadline on the read itself and does not require server configuration.
 
 ### Add logging for significant garbage collections (PR [#5134](https://github.com/kurrent-io/KurrentDB/pull/5134))
 
-This makes it clear from the logs if slow messages or leader elections are attributable to GC.
+This makes it clear from the logs if slow messages or leader elections are attributable to Garbage Collection (GC).
 
-Execution engine suspensions longer than 48ms are logged as Information. Execution engine suspensions longer than 600ms are logged as Warnings. Full compacting GC start/end are logged as Information.
+Execution engine (EE) suspensions longer than 48ms are logged as Information. Execution engine suspensions longer than 600ms are logged as Warnings. Full compacting GC start/end are logged as Information.
 
-Note that the Start/End log messages may both be logged AFTER the execution engine pause as complete.
+Note that the Start/End log messages may both be logged AFTER the execution engine pause has completed.
 
 These will be logged even if the node shortly goes offline for truncation, which would likely prevent the EE suspension from appearing in the metrics.
 
@@ -48,7 +48,7 @@ eventstore_persistent_sub_parked_message_replays
 
 The park message requests are subdivided into two reason categories: `client-nak` and `max-retries`.
 
-### Add Support paging in persistent subscriptions UI (PR [#4762](https://github.com/kurrent-io/KurrentDB/pull/4762))
+### Allow paging in persistent subscriptions UI (PR [#4762](https://github.com/kurrent-io/KurrentDB/pull/4762))
 
 The persistent subscription UI now pages when listing all persistent subscriptions rather than loading all of them at once. By default, the UI shows the persistent subscription groups for the first 100 streams and refreshes every second. These options can be changed in the UI.
 
@@ -77,7 +77,7 @@ However, writing to “$$” involves checking on the “” stream, to see if i
 
 “$$” is now an invalid stream name, and so any attempt to write to it is rejected at an early stage.
 
-### Fix getting projection statistics over gRPC for faulted projections (PR [#4865](https://github.com/kurrent-io/KurrentDB/pull/4865))
+### Fix: Getting projection statistics over gRPC for faulted projections (PR [#4865](https://github.com/kurrent-io/KurrentDB/pull/4865))
 
 Before this fix, projection statistics could not be retrieved via gRPC if one of the projections had immediately transitioned into a faulted state.
 
