@@ -47,7 +47,8 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 			return new() { ConnectionString = connectionString };
 		});
 		services.AddSingleton<DuckDbDataSource>();
-		services.AddSingleton<ISecondaryIndex, DefaultIndex>();
+		services.AddSingleton<DefaultIndex>();
+		services.AddSingleton<ISecondaryIndex>(sp => sp.GetRequiredService<DefaultIndex>());
 		services.AddHostedService<SecondaryIndexBuilder>();
 	}
 

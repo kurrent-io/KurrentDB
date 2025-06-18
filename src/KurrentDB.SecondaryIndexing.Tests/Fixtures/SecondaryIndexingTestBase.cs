@@ -5,15 +5,21 @@ using Xunit.Abstractions;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
-public abstract class SecondaryIndexingTestBase {
+public abstract class SecondaryIndexingTestBase: IAsyncLifetime {
 	protected SecondaryIndexingFixture Fixture { get; }
 
-	protected const string CategoryName = "testCategory";
-
-	protected static string RandomStreamName() => $"{CategoryName}-{Guid.NewGuid()}";
+	protected static string RandomStreamName() => $"c{DateTime.Now.Ticks}-{Guid.NewGuid()}";
 
 	protected SecondaryIndexingTestBase(SecondaryIndexingFixture fixture, ITestOutputHelper output) {
 		Fixture = fixture;
 		Fixture.CaptureTestRun(output);
+	}
+
+	public virtual Task InitializeAsync() {
+		return Task.CompletedTask;
+	}
+
+	public virtual Task DisposeAsync() {
+		return Task.CompletedTask;
 	}
 }

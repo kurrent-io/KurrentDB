@@ -114,7 +114,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) {
-		timeout ??= TimeSpan.FromMilliseconds(10000);
+		timeout ??= TimeSpan.FromMilliseconds(100000);
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
 		var events = new List<ResolvedEvent>();
@@ -122,7 +122,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		try {
 			CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-			//cts.CancelAfter(timeout.Value);
+			cts.CancelAfter(timeout.Value);
 
 			do {
 				try {

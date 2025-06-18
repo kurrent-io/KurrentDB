@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using DotNext;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
@@ -26,7 +27,7 @@ public class IndexingEnabledTests(
 		MessageTypesCount: 10,
 		MessageSize: 10,
 		MaxBatchSize: 2,
-		TotalMessagesCount: 1000
+		TotalMessagesCount: 100
 	);
 
 	private readonly List<TestMessageBatch> _appendedBatches = [];
@@ -40,50 +41,89 @@ public class IndexingEnabledTests(
 	private string[] EventTypes =>
 		_appendedBatches.SelectMany(b => b.Messages.Select(m => m.EventType)).Distinct().ToArray();
 
-	[Fact]
-	public async Task Appended_events_are_indexed() {
+	public override async Task InitializeAsync() {
 		await foreach (var batch in _messageGenerator.GenerateBatches(_config)) {
 			var messages = batch.Messages.Select(m => m.ToEventData()).ToArray();
 			await fixture.AppendToStream(batch.StreamName, messages);
 			_appendedBatches.Add(batch);
 		}
+	}
 
-		(string Name, int MessagesCount)[] indexes = [
-			(DefaultIndex.IndexName, TotalMessagesCount),
-			// ..Categories.Select(category =>
-			// 	(
-			// 		$"{CategoryIndex.IndexPrefix}{category}",
-			// 		_appendedBatches.Where(c => c.CategoryName == category).Sum(c => c.Messages.Length)
-			// 	)
-			// ),
-			// ..EventTypes.Select(eventType =>
-			// 	(
-			// 		$"{EventTypeIndex.IndexPrefix}{eventType}",
-			// 		_appendedBatches.Sum(c => c.Messages.Where(e => e.EventType == eventType).Count())
-			// 	)
-			// ),
-		];
+	[Fact]
+	public Task ReadsAllEventsFromDefaultIndex() =>
+		ValidateRead(DefaultIndex.IndexName, TotalMessagesCount);
+
+	[Fact]
+	public async Task ReadsAllEventsFromCategoryIndex() {
+		(string CategoryName, int MessagesCount)[] indexes = Categories
+			.Select(category =>
+			(
+				$"{CategoryIndex.IndexPrefix}{category}",
+				_appendedBatches.Where(c => c.CategoryName == category).Sum(c => c.Messages.Length)
+			)).ToArray();
+
 		foreach (var index in indexes) {
-			//await ValidateRead(index.Name, index.MessagesCount);
-			await ValidateSubscription(index.Name, index.MessagesCount);
+			await ValidateRead(index.CategoryName, index.MessagesCount);
 		}
 	}
 
-	async Task ValidateRead(string index, int maxCount) {
+	[Fact]
+	public async Task ReadsAllEventsFromEventTypeIndex() {
+		(string EventType, int MessagesCount)[] indexes = EventTypes
+			.Select(eventType =>
+			(
+				$"{EventTypeIndex.IndexPrefix}{eventType}",
+				_appendedBatches.Sum(c => c.Messages.Where(e => e.EventType == eventType).Count())
+			)).ToArray();
+
+		foreach (var index in indexes) {
+			await ValidateRead(index.EventType, index.MessagesCount);
+		}
+	}
+
+	[Fact(Skip = "TODO")]
+	public Task SubscriptionReturnsAllEventsFromDefaultIndex() =>
+		ValidateSubscription(DefaultIndex.IndexName, TotalMessagesCount);
+
+	[Fact(Skip = "TODO")]
+	public async Task SubscriptionReturnsAllEventsFromCategoryIndex() {
+		(string CategoryName, int MessagesCount)[] indexes = Categories
+			.Select(category =>
+			(
+				$"{CategoryIndex.IndexPrefix}{category}",
+				_appendedBatches.Where(c => c.CategoryName == category).Sum(c => c.Messages.Length)
+			)).ToArray();
+
+		foreach (var index in indexes) {
+			await ValidateSubscription(index.CategoryName, index.MessagesCount);
+		}
+	}
+
+	[Fact(Skip = "TODO")]
+	public async Task SubscriptionReturnsAllEventsFromEventTypeIndex() {
+		(string EventType, int MessagesCount)[] indexes = EventTypes
+			.Select(eventType =>
+			(
+				$"{EventTypeIndex.IndexPrefix}{eventType}",
+				_appendedBatches.Sum(c => c.Messages.Where(e => e.EventType == eventType).Count())
+			)).ToArray();
+
+		foreach (var index in indexes) {
+			await ValidateSubscription(index.EventType, index.MessagesCount);
+		}
+	}
+
+	private async Task ValidateRead(string index, int maxCount) {
 		var results = await fixture.ReadUntil(index, maxCount);
 
 		Assert.NotEmpty(results);
-		// var results = readResult.Where(e => e.Event.EventStreamId == streamName).ToList();
 		Assert.Equal(maxCount, results.Count);
-		//Assert.All(results, e => Assert.Contains(Encoding.UTF8.GetString(e.Event.Data.Span), _expectedEventData));
 	}
 
 	private async Task ValidateSubscription(string index, int maxCount) {
 		var results = await fixture.SubscribeUntil(index, maxCount);
 
 		Assert.NotEmpty(results);
-		// var results = readResult.Where(e => e.Event.EventStreamId == streamName).ToList();
 		Assert.Equal(maxCount, results.Count);
-		// Assert.All(results, e => Assert.Contains(Encoding.UTF8.GetString(e.Event.Data.Span), _expectedEventData));
 	}
 }

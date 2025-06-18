@@ -14,11 +14,9 @@ public class IndexingDisabledTests(
 	SecondaryIndexingDisabledFixture fixture,
 	ITestOutputHelper output
 ) : SecondaryIndexingTestBase(fixture, output) {
-	private readonly string[] _expectedEventData = ["""{"test":"123"}""", """{"test":"321"}"""];
-
 	[Fact]
 	public async Task Index_streams_should_not_be_found() {
-		var result = await fixture.AppendToStream(RandomStreamName(), _expectedEventData);
+		await fixture.AppendToStream(RandomStreamName(), """{"test":"123"}""", """{"test":"321"}""");
 
 		await Assert.ThrowsAsync<ReadResponseException.StreamNotFound>(async () =>
 			await fixture.ReadUntil(DefaultIndex.IndexName, 2, TimeSpan.FromMilliseconds(500))
