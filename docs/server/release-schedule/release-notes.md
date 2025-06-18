@@ -6,6 +6,85 @@ order: 1
 
 This page contains the release notes for EventStoreDB 23.10 and 23.6
 
+## [23.10.7](https://github.com/kurrent-io/KurrentDB/releases/tag/oss-v23.10.7)
+
+18 June 2025
+
+### Add Server Configuration Option for TCP read expiry (PR [#5144](https://github.com/kurrent-io/KurrentDB/pull/5144))
+
+The option is `TcpReadTimeoutMs` and it defaults to `10000` (10s, which matches the previous behavior)
+
+It applies to reads received via the TCP client API. When a read has been in the server queue for longer than this, it will be discarded without being executed. If your TCP clients are configured to timeout after X milliseconds, it is advisable to set this server option to be the same, so that the server will not execute reads that the client is no longer waiting for.
+
+For gRPC clients, the server-side discarding driven by the deadline on the read itself and does not require server configuration.
+
+### Add logging for significant garbage collections (PR [#5134](https://github.com/kurrent-io/KurrentDB/pull/5134))
+
+This makes it clear from the logs if slow messages or leader elections are attributable to GC.
+
+Execution engine suspensions longer than 48ms are logged as Information. Execution engine suspensions longer than 600ms are logged as Warnings. Full compacting GC start/end are logged as Information.
+
+Note that the Start/End log messages may both be logged AFTER the execution engine pause as complete.
+
+These will be logged even if the node shortly goes offline for truncation, which would likely prevent the EE suspension from appearing in the metrics.
+
+If GC is determined as the cause of a leader election, a sensible course of action could be to reduce the Stream Info Cache Capacity (say, to the 100k traditional value) and/or consider enabling ServerGC.
+
+example logs:
+```
+[34144,13,11:03:05.307,INF] Start of full blocking garbage collection at 06/06/2025 10:02:49. GC: #210548. Generation: 2. Reason: LargeObjectHeapAllocation. Type: BlockingOutsideBackgroundGC.
+[34144,13,11:03:05.307,INF] End of full blocking garbage collection at 06/06/2025 10:03:05. GC: #210548. Took: 15,727ms
+[34144,13,11:03:05.307,WRN] Garbage collection: Very long Execution Engine Suspension. Reason: GarbageCollection. Took: 15,727ms
+```
+
+### Add metrics for parked persistent subscription messages (PR [#4745](https://github.com/kurrent-io/KurrentDB/pull/4745))
+
+Added two persistent subscription metrics to count the number of parked message requests and replays.
+
+```
+eventstore_persistent_sub_park_message_requests
+eventstore_persistent_sub_parked_message_replays 
+```
+
+The park message requests are subdivided into two reason categories: `client-nak` and `max-retries`.
+
+### Add Support paging in persistent subscriptions UI (PR [#4762](https://github.com/kurrent-io/KurrentDB/pull/4762))
+
+The persistent subscription UI now pages when listing all persistent subscriptions rather than loading all of them at once. By default, the UI shows the persistent subscription groups for the first 100 streams and refreshes every second. These options can be changed in the UI.
+
+A count and offset can now be specified when getting all persistent subscription stats through the HTTP API: `/subscriptions?count={count}&offset={offset}`.
+
+The response of `/subscriptions` (without the query string) is unchanged.
+
+### Fix: Handle replayed messages when retrying events in a persistent subscription (PR [#4780](https://github.com/kurrent-io/KurrentDB/pull/4780))
+
+This fixes an issue with persistent subscriptions where retried messages may be missed if they are retried after a parked message is already in the buffer. This can happen if a user triggers a replay of parked messages while there are non-parked messages timing out and being retried.
+
+When this occurs, an error is logged for each message that is missed:
+
+```
+Error while processing message EventStore.Core.Messages.SubscriptionMessage+PersistentSubscriptionTimerTick in queued handler 'PersistentSubscriptions'.
+System.InvalidOperationException: Operation is not valid due to the object's current state.
+```
+
+If a retried message is missed in this way, the consumer will never receive it. The persistent subscription will need to be reset in order to recover and receive these messages again.
+
+### Fix: Validate against attempts to set metadata for the "" stream (PR [#4806](https://github.com/kurrent-io/KurrentDB/pull/4806))
+
+An empty string (“”) has never been a valid stream name. Attempting to set the metadata for it results in an attempt to write to the stream “$$”, which, until now, has been a valid stream name.
+
+However, writing to “$$” involves checking on the “” stream, to see if it is soft deleted. Being an invalid stream name, this results in the storage writer exiting, which shuts down the server to avoid a 'sick but not dead' scenario.
+
+“$$” is now an invalid stream name, and so any attempt to write to it is rejected at an early stage.
+
+### Fix getting projection statistics over gRPC for faulted projections (PR [#4865](https://github.com/kurrent-io/KurrentDB/pull/4865))
+
+Before this fix, projection statistics could not be retrieved via gRPC if one of the projections had immediately transitioned into a faulted state.
+
+## 23.10.6
+
+Not published, changes included in 23.10.7.
+
 ## [23.10.5](https://github.com/kurrent-io/KurrentDB/releases/tag/oss-v23.10.5)
 
 7 February 2025
