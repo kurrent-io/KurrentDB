@@ -49,13 +49,74 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		OnTearDown = CleanUpDatabaseDirectory;
 	}
 
-	public IAsyncEnumerable<ResolvedEvent> ReadStream(
+	public async Task<List<ResolvedEvent>> ReadUntil(
 		string streamName,
 		int maxCount,
-		CancellationToken ct = default) =>
-		Publisher.ReadStream(streamName, StreamRevision.Start, maxCount, true, cancellationToken: ct);
+		TimeSpan? timeout = null,
+		CancellationToken ct = default
+	) {
+		timeout ??= TimeSpan.FromMilliseconds(30000);
+		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
-	public async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(
+		var events = new List<ResolvedEvent>();
+		ReadResponseException.StreamNotFound? streamNotFound = null;
+
+		CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+		cts.CancelAfter(timeout.Value);
+
+		do {
+			try {
+				events =
+					await Publisher.ReadStream(
+						streamName,
+						StreamRevision.Start,
+						maxCount,
+						true,
+						cancellationToken: cts.Token
+					).ToListAsync(cts.Token);
+			} catch (ReadResponseException.StreamNotFound ex) {
+				streamNotFound = ex;
+			} catch (OperationCanceledException ex) {
+				// can happen
+				Console.WriteLine(ex);
+			}
+
+			if (events.Count != maxCount) {
+				await Task.Delay(25, cts.Token);
+			}
+		} while (events.Count != maxCount && DateTime.UtcNow < endTime);
+
+
+		if (events.Count == 0 && streamNotFound != null)
+			throw streamNotFound;
+
+		return events;
+	}
+
+	public async Task<List<ResolvedEvent>> SubscribeUntil(
+		string streamName,
+		int maxCount,
+		TimeSpan? timeout = null,
+		CancellationToken ct = default
+	) {
+		timeout ??= TimeSpan.FromMilliseconds(30000);
+
+		var events = new List<ResolvedEvent>();
+
+		CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+		cts.CancelAfter(timeout.Value);
+
+		try {
+			events = await SubscribeToStream(streamName, maxCount, cts.Token).Take(maxCount).ToListAsync(cts.Token);
+		} catch (OperationCanceledException ex) {
+			// can happen
+			Console.WriteLine(ex);
+		}
+
+		return events;
+	}
+
+	private async IAsyncEnumerable<ResolvedEvent> SubscribeToStream(
 		string streamName,
 		int maxCount,
 		[EnumeratorCancellation] CancellationToken ct = default
@@ -86,65 +147,6 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			count++;
 			yield return eventReceived.Event;
 		}
-	}
-
-	public Task<List<ResolvedEvent>> ReadUntil(
-		string streamName,
-		int maxCount,
-		TimeSpan? timeout = null,
-		CancellationToken ct = default
-	) =>
-		ReadUntil(ReadStream, streamName, maxCount, timeout, ct);
-
-	public Task<List<ResolvedEvent>> SubscribeUntil(
-		string streamName,
-		int maxCount,
-		TimeSpan? timeout = null,
-		CancellationToken ct = default
-	) =>
-		ReadUntil(SubscribeToStream, streamName, maxCount, timeout, ct);
-
-	private static async Task<List<ResolvedEvent>> ReadUntil(
-		Func<string, int, CancellationToken, IAsyncEnumerable<ResolvedEvent>> readEvents,
-		string streamName,
-		int maxCount,
-		TimeSpan? timeout = null,
-		CancellationToken ct = default
-	) {
-		timeout ??= TimeSpan.FromMilliseconds(30000);
-		var endTime = DateTime.UtcNow.Add(timeout.Value);
-
-		var events = new List<ResolvedEvent>();
-		ReadResponseException.StreamNotFound? streamNotFound = null;
-
-		try {
-			CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-			cts.CancelAfter(timeout.Value);
-
-			do {
-				try {
-					events = await readEvents(streamName, maxCount, cts.Token).Take(maxCount).ToListAsync(cts.Token);
-				} catch (ReadResponseException.StreamNotFound ex) {
-					streamNotFound = ex;
-				}
-				catch (OperationCanceledException ex) {
-					// can happen
-					Console.WriteLine(ex);
-				}
-
-				if (events.Count != maxCount) {
-					await Task.Delay(25, cts.Token);
-				}
-			} while (events.Count != maxCount && DateTime.UtcNow < endTime);
-		} catch (TaskCanceledException ex) {
-			// can happen
-			Console.WriteLine(ex);
-		}
-
-		if (events.Count == 0 && streamNotFound != null)
-			throw streamNotFound;
-
-		return events;
 	}
 
 	public Task<WriteEventsResult> AppendToStream(string stream, params Event[] events) =>
