@@ -29,16 +29,11 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" />
-		<!-- upgrade because of transitive dependency vulnerability -->
 		<PackageReference Include="Newtonsoft.Json" />
-		<!-- upgrade because of transitive dependency vulnerability -->
 		<PackageReference Include="NuGet.Protocol" />
-		<!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-447r-wph3-92pm -->
 		<PackageReference Include="System.Formats.Asn1" />
 		<PackageReference Include="System.Linq.Async" />
-		<!-- upgrade because of transitive dependency vulnerability -->
 		<PackageReference Include="System.Net.Http" />
-		<!-- upgrade because of transitive dependency vulnerability -->
 		<PackageReference Include="System.Text.RegularExpressions" />
 		<PackageReference Include="xunit" />
 		<PackageReference Include="xunit.runner.visualstudio">

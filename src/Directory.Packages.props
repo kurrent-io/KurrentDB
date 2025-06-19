@@ -82,8 +82,10 @@
     <PackageVersion Include="MudBlazor.Markdown" Version="8.0.0" />
     <PackageVersion Include="NCrontab" Version="3.3.3" />
     <PackageVersion Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
+		<!-- upgrade because of transitive dependency vulnerability -->
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="Novell.Directory.Ldap.NETStandard" Version="3.6.0" />
+		<!-- upgrade because of transitive dependency vulnerability -->
     <PackageVersion Include="NuGet.Protocol" Version="6.7.1" />
     <PackageVersion Include="NUnit" Version="3.14.0" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.5.0" />
@@ -121,17 +123,23 @@
     <PackageVersion Include="System.ComponentModel.Composition" Version="8.0.0" />
     <PackageVersion Include="System.Diagnostics.DiagnosticSource" Version="9.0.2" />
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+		<!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-447r-wph3-92pm -->
     <PackageVersion Include="System.Formats.Asn1" Version="8.0.1" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.6.0" />
     <PackageVersion Include="System.IO.Pipelines" Version="9.0.4" />
     <PackageVersion Include="System.Linq.Async" Version="6.0.1" />
+		<!-- upgrade because of transitive dependency vulnerability -->
     <PackageVersion Include="System.Net.Http" Version="4.3.4" />
+		<!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-5f2m-466j-3848 and https://github.com/advisories/GHSA-xhfc-gr8f-ffwc -->
     <PackageVersion Include="System.Private.Uri" Version="4.3.2" />
     <PackageVersion Include="System.Reactive" Version="6.0.1" />
+		<!-- CVE-2023-29331 -->
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.0" />
     <PackageVersion Include="System.Security.Cryptography.Xml" Version="8.0.0" />
     <PackageVersion Include="System.ServiceModel.Http" Version="6.2.0" />
+		<!-- upgrade because of transitive dependency vulnerability https://github.com/advisories/GHSA-8g4q-xg66-9fp4 -->
     <PackageVersion Include="System.Text.Json" Version="9.0.4" />
+		<!-- upgrade because of transitive dependency vulnerability -->
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="System.Threading.Channels" Version="9.0.1" />
     <PackageVersion Include="TestableIO.System.IO.Abstractions" Version="21.3.1" />
