@@ -1,11 +1,13 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
+using System.Diagnostics;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
+
 // ReSharper disable InvertIf
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
@@ -27,8 +29,17 @@ class CategoryIndexReader(
 
 	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber((int)id);
 
+	readonly Stopwatch _watch = new();
+
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
+		_watch.Reset();
+		_watch.Start();
 		var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new((int)id, fromEventNumber, toEventNumber));
+		_watch.Stop();
+		Log.Debug(
+			"Category index query took {ElapsedMilliseconds}ms (from {From} to {To} event nr)",
+			_watch.ElapsedMilliseconds, fromEventNumber, toEventNumber
+		);
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			// events might be in flight
 			var inFlight = queryInFlightRecords(
