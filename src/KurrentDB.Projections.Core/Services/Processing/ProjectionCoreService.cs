@@ -73,8 +73,10 @@ public class ProjectionCoreService
 		_subscriptionDispatcher = subscriptionDispatcher;
 		_timeProvider = timeProvider;
 		_processingStrategySelector = new ProcessingStrategySelector(_subscriptionDispatcher, configuration.MaxProjectionStateSize);
-		_factory = new ProjectionStateHandlerFactory(TimeSpan.FromMilliseconds(configuration.ProjectionCompilationTimeout),
-			TimeSpan.FromMilliseconds(configuration.ProjectionExecutionTimeout));
+		_factory = new ProjectionStateHandlerFactory(
+			javascriptCompilationTimeout: TimeSpan.FromMilliseconds(configuration.ProjectionCompilationTimeout),
+			javascriptExecutionTimeout: TimeSpan.FromMilliseconds(configuration.ProjectionExecutionTimeout),
+			executionTrackers: configuration.ProjectionExecutionTrackers);
 	}
 
 	public ILogger Logger {
@@ -152,6 +154,7 @@ public class ProjectionCoreService
 			//TODO: factory method can throw
 			var stateHandler = CreateStateHandler(_factory,
 				_logger,
+				message.Name,
 				message.HandlerType,
 				message.Query,
 				message.EnableContentTypeValidation,
@@ -300,11 +303,13 @@ public class ProjectionCoreService
 
 	public static IProjectionStateHandler CreateStateHandler(ProjectionStateHandlerFactory factory,
 		ILogger logger,
+		string projectionName,
 		string handlerType,
 		string query,
 		bool enableContentTypeValidation,
 		int? projectionExecutionTimeout) {
 		var stateHandler = factory.Create(
+			projectionName,
 			handlerType,
 			query,
 			enableContentTypeValidation,

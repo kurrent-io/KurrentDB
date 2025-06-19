@@ -166,6 +166,8 @@ public class DefaultCheckpointManager : CoreProjectionCheckpointManager,
 		if (_partitionStateUpdateManager == null)
 			_partitionStateUpdateManager = new PartitionStateUpdateManager(_namingBuilder);
 		_partitionStateUpdateManager.StateUpdated(partition, newState, oldState.CausedBy);
+
+		UpdateStateSizeMetrics(partition, newState.Size);
 	}
 
 	protected override void EmitPartitionCheckpoints() {

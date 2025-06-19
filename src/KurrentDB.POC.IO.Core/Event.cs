@@ -5,9 +5,6 @@ using System;
 
 namespace KurrentDB.POC.IO.Core;
 
-//qq move, rename? and does this want to be events or records
-//qq we probably want to reuse these, and we may want part of the pipline to transform them
-// but they should be immutable so that parallel parts of the pipeline don't trip each other up.
 public class Event {
 	public Guid EventId { get; init; }
 	public DateTime Created { get; init; }
@@ -15,7 +12,6 @@ public class Event {
 	public ulong EventNumber { get; init; }
 	public string EventType { get; init; }
 	public string ContentType { get; init; }
-	//qq do these want to be long or ulong
 	public ulong CommitPosition { get; init; }
 	public ulong PreparePosition { get; init; }
 	public bool IsRedacted { get; init; }

@@ -3,6 +3,7 @@
 
 using KurrentDB.Common.Options;
 using KurrentDB.Core.Bus;
+using KurrentDB.Projections.Core.Metrics;
 
 namespace KurrentDB.Projections.Core;
 
@@ -15,7 +16,8 @@ public class ProjectionsStandardComponents {
 		ISubscriber leaderInputBus,
 		IPublisher leaderInputQueue,
 		bool faultOutOfOrderProjections, int projectionCompilationTimeout, int projectionExecutionTimeout,
-		int maxProjectionStateSize) {
+		int maxProjectionStateSize,
+		ProjectionExecutionTrackers projectionExecutionTrackers) {
 		ProjectionWorkerThreadCount = projectionWorkerThreadCount;
 		RunProjections = runProjections;
 		LeaderOutputBus = leaderOutputBus;
@@ -26,6 +28,7 @@ public class ProjectionsStandardComponents {
 		ProjectionCompilationTimeout = projectionCompilationTimeout;
 		ProjectionExecutionTimeout = projectionExecutionTimeout;
 		MaxProjectionStateSize = maxProjectionStateSize;
+		ProjectionExecutionTrackers = projectionExecutionTrackers;
 	}
 
 	public int ProjectionWorkerThreadCount { get; }
@@ -45,4 +48,6 @@ public class ProjectionsStandardComponents {
 	public int ProjectionExecutionTimeout { get; }
 
 	public int MaxProjectionStateSize { get; }
+
+	public ProjectionExecutionTrackers ProjectionExecutionTrackers { get; }
 }

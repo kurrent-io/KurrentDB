@@ -9,6 +9,7 @@ using System.Text.Json;
 using Jint;
 using Jint.Native;
 using Jint.Native.Json;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Interpreted;
 using NUnit.Framework;
 using JsonSerializer = Jint.Native.Json.JsonSerializer;
@@ -30,7 +31,8 @@ public class when_serializing_state {
 			source: "",
 			enableContentTypeValidation: false,
 			compilationTimeout: TimeSpan.FromMilliseconds(500),
-			executionTimeout: TimeSpan.FromMilliseconds(500));
+			executionTimeout: TimeSpan.FromMilliseconds(500),
+			jsFunctionCaller: new(IProjectionExecutionTracker.NoOp));
 	}
 
 	private void RoundTrip(string json, bool ignoreCase = false) {

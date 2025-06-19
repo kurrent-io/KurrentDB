@@ -24,12 +24,14 @@ using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Management;
 using KurrentDB.Connectors.Planes.Management.Data;
 using KurrentDB.Connectors.Planes.Management.Domain;
+using KurrentDB.Connectors.Planes.Management.Migrations;
 using KurrentDB.Connectors.Planes.Management.Projectors;
 using KurrentDB.Connectors.Planes.Management.Queries;
 using KurrentDB.Core.Bus;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Grpc.JsonTranscoding;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using static KurrentDB.Connectors.Planes.ConnectorsFeatureConventions;
 using static KurrentDB.Connectors.Planes.Management.Queries.ConnectorQueryConventions;
@@ -134,8 +136,13 @@ public static class ManagementPlaneWireUp {
         ));
 
         services.AddConnectorsStateProjection();
+        // Setup startup tasks manager
+        services.AddSingleton<SystemStartupManager>();
+        services.AddSingleton<IHostedService, SystemStartupManager>(ctx => ctx.GetRequiredService<SystemStartupManager>());
+        services.AddSingleton<IStartupWorkCompletionMonitor, SystemStartupManager>(ctx => ctx.GetRequiredService<SystemStartupManager>());
 
         services.AddSystemStartupTask<ConfigureConnectorsManagementStreams>();
+        services.AddSystemStartupTask<FixConnectorsControlRegistryStreamName>();
 
         return services;
     }

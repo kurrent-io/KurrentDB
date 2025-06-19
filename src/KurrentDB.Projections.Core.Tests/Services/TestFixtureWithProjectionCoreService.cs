@@ -14,6 +14,7 @@ using KurrentDB.Core.Tests.Bus.Helpers;
 using KurrentDB.Core.TransactionLog.Checkpoint;
 using KurrentDB.Core.Util;
 using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Strategies;
@@ -97,7 +98,7 @@ public class TestFixtureWithProjectionCoreService {
 		_workerId = Guid.NewGuid();
 		var guardBus = new GuardBusToTriggerFixingIfUsed();
 		var configuration = new ProjectionsStandardComponents(1, ProjectionType.All, guardBus, guardBus, guardBus, guardBus, true,
-			 500, 250, Opts.MaxProjectionStateSizeDefault);
+			 500, 250, Opts.MaxProjectionStateSizeDefault, ProjectionExecutionTrackers.NoOp);
 		_service = new ProjectionCoreService(
 			_workerId, _bus, _bus, _subscriptionDispatcher, new RealTimeProvider(), ioDispatcher, configuration);
 		_bus.Subscribe(

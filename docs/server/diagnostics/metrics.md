@@ -401,6 +401,8 @@ Projection metrics track the statistics for projections.
 | `kurrentdb_projection_progress{projection=<PROJECTION_NAME>}`                                    | [Gauge](#common-types)   | Projection progress 0 - 1, where 1 = projection progress at 100% |
 | `kurrentdb_projection_running{projection=<PROJECTION_NAME>}`                                     | [Gauge](#common-types)   | If 1, projection is in 'Running' state                           |
 | `kurrentdb_projection_status{projection=<PROJECTION_NAME>,status=<PROJECTION_STATUS>}`           | [Gauge](#common-types)   | If 1, projection is in specified state                           |
+| `kurrentdb_projection_execution_duration_max_seconds{name=<PROJECTION_NAME>,range=<RANGE>}`      | [RecentMax](#recentmax)  | Recent maximum time in seconds for custom projection to execute an event |
+| `kurrentdb_projection_execution_duration_seconds_bucket{projection=<PROJECTION_NAME>,jsFunction=<JS_FUNCTION>,le=<DURATION>}` | [Histogram](#common-types) | Number of events executed by JS_FUNCTION of custom projection PROJECTION_NAME that took less than or equal to DURATION seconds.
 
 `Status` can have one of the following statuses:
 
@@ -412,6 +414,12 @@ Example configuration:
 
 ```json
 "ProjectionStats": true
+
+// This enables kurrentdb_projection_execution_duration_max_seconds
+"ProjectionExecution": true,
+
+// This enables kurrentdb_projection_execution_duration_seconds_bucket
+"ProjectionExecutionByFunction": false,
 ```
 
 Example output:
@@ -431,6 +439,19 @@ kurrentdb_projection_status{projection="$by_category",status="Running"} 1 171952
 kurrentdb_projection_status{projection="$by_category",status="Faulted"} 0 1719526306309
 kurrentdb_projection_status{projection="$by_category",status="Stopped"} 0 1719526306309
 ```
+
+`kurrentdb_projection_execution_duration_seconds_bucket` is a set of execution histograms, one for each (projection * function) pair.
+It is intended for non-production environments and is off by default.
+Enable this to help identify which functions of which projections are commonly taking a long time. The JS_FUNCTIONs are:
+- `$any`
+- `$created`
+- `$deleted`
+- `$init`
+- `$initShared`
+- `filterBy`
+- `partitionBy`
+- `transformBy`
+- `<event-type>` (one per handler)
 
 ### Queues
 

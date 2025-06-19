@@ -3,6 +3,7 @@
 
 using System;
 using Jint.Runtime;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -18,19 +19,19 @@ class when_creating_jint_projection {
 	[SetUp]
 	public void Setup() {
 		_stateHandlerFactory =
-			new ProjectionStateHandlerFactory(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(100));
+			new ProjectionStateHandlerFactory(TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(100), ProjectionExecutionTrackers.NoOp);
 	}
 
 	[Test, Category(_projectionType)]
 	public void it_can_be_created() {
-		using (_stateHandlerFactory.Create(_projectionType, @"", true, null)) {
+		using (_stateHandlerFactory.Create("projection", _projectionType, @"", true, null)) {
 		}
 	}
 
 	[Test, Category(_projectionType)]
 	public void js_syntax_errors_are_reported() {
 		try {
-			using (_stateHandlerFactory.Create(_projectionType, @"log(1;", true, null, logger: (s, _) => { })) {
+			using (_stateHandlerFactory.Create("projection", _projectionType, @"log(1;", true, null, logger: (s, _) => { })) {
 			}
 		} catch (Exception ex) {
 			Assert.IsInstanceOf<JavaScriptException>(ex);
@@ -40,7 +41,7 @@ class when_creating_jint_projection {
 	[Test, Category(_projectionType)]
 	public void js_exceptions_errors_are_reported() {
 		try {
-			using (_stateHandlerFactory.Create(_projectionType, @"throw 123;", true, null, logger: (s, _) => { })) {
+			using (_stateHandlerFactory.Create("projection", _projectionType, @"throw 123;", true, null, logger: (s, _) => { })) {
 			}
 		} catch (Exception ex) {
 			Assert.IsInstanceOf<JavaScriptException>(ex);
@@ -51,7 +52,7 @@ class when_creating_jint_projection {
 	[Test, Category(_projectionType)]
 	public void long_compilation_times_out() {
 		try {
-			using (_stateHandlerFactory.Create(_projectionType,
+			using (_stateHandlerFactory.Create("projection", _projectionType,
 				@"
                                 var i = 0;
                                 while (true) i++;
@@ -68,7 +69,7 @@ class when_creating_jint_projection {
 	[Test, Category(_projectionType)]
 	public void long_execution_times_out() {
 		try {
-			using (var h = _stateHandlerFactory.Create(_projectionType,
+			using (var h = _stateHandlerFactory.Create("projection", _projectionType,
 				@"
                         fromAll().when({
                             $any: function (s, e) {
@@ -103,7 +104,7 @@ class when_creating_jint_projection {
 	[Test, Category(_projectionType)]
 	public void long_post_processing_times_out() {
 		try {
-			using (var h = _stateHandlerFactory.Create(_projectionType,
+			using (var h = _stateHandlerFactory.Create("projection", _projectionType,
 				@"
                         fromAll().when({
                             $any: function (s, e) {
@@ -138,7 +139,7 @@ class when_creating_jint_projection {
 		for (var i = 0; i < 10; i++) {
 			try {
 				using (var h = _stateHandlerFactory.Create(
-					_projectionType, @"
+					"projection", _projectionType, @"
                     fromAll().when({
                         $any: function (s, e) {
                             log('1');
