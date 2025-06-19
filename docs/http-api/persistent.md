@@ -7,7 +7,7 @@ order: 3
 This document explains how to use HTTP API for setting up and consuming persistent subscriptions and competing consumer subscription groups. For an overview on competing consumers and how they relate to other subscription types please see our [getting started guide](@server/features/persistent-subscriptions.md).
 
 ::: tip
-The Administration UI includes a _Competing Consumers_ section where you are able to create, update, delete and view subscriptions and their statuses.
+The Administration UI includes a _Persistent Subscriptions_ section where you are able to create, update, delete and view subscriptions and their statuses.
 :::
 
 ## Creating a persistent subscription
@@ -99,9 +99,11 @@ Deleting persistent subscriptions to `$all` is not supported over the HTTP API. 
 
 By default, reading a stream via a persistent subscription returns a single event per request and does not embed the event properties as part of the response.
 
-| URI                                                                                                                                                                  | Supported Content Types                                                                      | Method |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------ |
-| `/subscriptions/{stream}/{subscription_name} /subscriptions/{stream}/{subscription_name}?embed={embed} /subscriptions/{stream}/{subscription}/{count}?embed={embed}` | `application/vnd.eventstore.competingatom+xml application/vnd.eventstore.competingatom+json` | GET    |
+| URI                                                            | Supported Content Types                                                                         | Method |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ------ |
+| `/subscriptions/{stream}/{subscription_name}`                  | `application/vnd.eventstore.competingatom+json`, `application/vnd.eventstore.competingatom+xml` | GET    |
+| `/subscriptions/{stream}/{subscription_name}?embed={embed}`    | `application/vnd.eventstore.competingatom+json`, `application/vnd.eventstore.competingatom+xml` | GET    |
+| `/subscriptions/{stream}/{subscription}/{count}?embed={embed}` | `application/vnd.eventstore.competingatom+json`, `application/vnd.eventstore.competingatom+xml` | GET    |
 
 ### Query parameters
 
@@ -126,9 +128,10 @@ For example:
 
 ```json
 {
-  "uri": "http://localhost:2113/subscriptions/newstream/competing_consumers_group1/ack/c322e299-cb73-4b47-97c5-5054f920746f",
-  "relation": "ack"
-}
+  "uri": "https://localhost:2113/subscriptions/teststream1/testgroup-1/ack/33635881-5881-5881-5881-175033635881",
+  "relation": "ack",
+  "type": null
+},
 ```
 
 ### Ack multiple messages
@@ -169,12 +172,12 @@ For example:
 
 #### Query parameters
 
-| Parameter           | Description                                                                                                                                                                                                                          |     |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
-| `stream`            | The stream to the persistent subscription is on.                                                                                                                                                                                     |     |
-| `subscription_name` | The name of the subscription group.                                                                                                                                                                                                  |     |
-| `action`            | <ul><li>**Park**: Don't retry the message, park it until a request is sent to reply the parked messages</li><li>**Retry**: Retry the message</li><li>**Skip**: Discard the message</li><li>**Stop**: Stop the subscription</li></ul> |     |
-| `messageid`         | The id of the message that needs to be acked                                                                                                                                                                                         |     |
+| Parameter           | Description                                                                                                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `stream`            | The stream to the persistent subscription is on.                                                                                                                                                                                     |
+| `subscription_name` | The name of the subscription group.                                                                                                                                                                                                  |
+| `action`            | <ul><li>**Park**: Don't retry the message, park it until a request is sent to reply the parked messages</li><li>**Retry**: Retry the message</li><li>**Skip**: Discard the message</li></ul> |
+| `messageid`         | The id of the message that needs to be acked                                                                                                                                                                                         |
 
 ### Nack a single message
 
@@ -197,6 +200,26 @@ For example:
 ### Response
 
 @[code](@httpapi/persistent-subscriptions/get-all-subscriptions-response.json)
+
+
+## Getting information for a page of subscriptions
+
+When a count is specified, the response includes the paging information for the request.
+
+| URI              | Method |
+| ---------------- | ------ |
+| `/subscriptions?count={count}&offset={offset}` | GET    |
+
+### Query parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| `count`   | The number of streams to get the persistent susbcriptions groups for. Used for paging, omit to get all streams. |
+| `offset`  | The number of streams to skip when getting persistent subscription groups. Used for paging. |
+
+### Response
+
+@[code](@httpapi/persistent-subscriptions/get-all-subscriptions-response-paged.json)
 
 ## Get subscriptions for a stream
 
