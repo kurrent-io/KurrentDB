@@ -1,14 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Runtime.CompilerServices;
-using KurrentDB.Common.Log;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Readers;
-using Serilog;
 using static KurrentDB.Core.Services.Storage.StorageReaderWorker<string>;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
@@ -16,16 +13,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public record struct IndexedPrepare(long Version, long LogPosition);
 
-internal abstract class SecondaryIndexReaderBase : IVirtualStreamReader {
-	readonly IReadIndex<string> _index;
-
-	protected ILogger Log;
-
-	protected SecondaryIndexReaderBase(IReadIndex<string> index) {
-		_index = index;
-		Log = Serilog.Log.Logger.ForContext(GetType().Name);
-	}
-
+internal abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : IVirtualStreamReader {
 	protected abstract long GetId(string streamName);
 
 	protected abstract long GetLastIndexedSequence(long id);
@@ -36,13 +24,13 @@ internal abstract class SecondaryIndexReaderBase : IVirtualStreamReader {
 		ClientMessage.ReadStreamEventsForward msg,
 		CancellationToken token
 	) =>
-		ReadForwards(msg, _index.IndexReader, _index.LastIndexedPosition, token);
+		ReadForwards(msg, index.IndexReader, index.LastIndexedPosition, token);
 
 	public ValueTask<ClientMessage.ReadStreamEventsBackwardCompleted> ReadBackwards(
 		ClientMessage.ReadStreamEventsBackward msg,
 		CancellationToken token
 	) =>
-		ReadBackwards(msg, _index.IndexReader, _index.LastIndexedPosition, token);
+		ReadBackwards(msg, index.IndexReader, index.LastIndexedPosition, token);
 
 	private async ValueTask<IReadOnlyList<ResolvedEvent>> GetEvents(
 		IIndexReader<string> indexReader,
