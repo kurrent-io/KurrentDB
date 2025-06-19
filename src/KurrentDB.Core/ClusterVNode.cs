@@ -330,7 +330,7 @@ public class ClusterVNode<TStreamId> :
 		var dbConfig = CreateDbConfig(
 			out var statsHelper,
 			out var readerThreadsCount,
-			out var workerThreadsCount);
+			out _);
 
 		var trackers = new Trackers();
 		var metricsConfiguration = MetricsConfiguration.Get(configuration);

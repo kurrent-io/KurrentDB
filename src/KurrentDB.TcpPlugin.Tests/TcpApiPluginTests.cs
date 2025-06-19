@@ -2,9 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using DotNext.Net.Http;
@@ -21,7 +19,6 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Messages;
-using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.TimerService;
@@ -31,9 +28,7 @@ using KurrentDB.Core.Tests.TransactionLog;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Serilog;
 using Xunit;
-using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.TcpPlugin.Tests;
 
