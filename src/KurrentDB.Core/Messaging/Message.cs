@@ -33,14 +33,15 @@ public abstract partial class Message(CancellationToken token = default) {
 	/// Returns the synchronization affinity for the current message.
 	/// </summary>
 	/// <remarks>
-	/// The affinity changes the ordering guarantees for the two messages X and Y, if the published
-	/// in order, as follows:
-	/// 1. If <see langword="null"/> then there is no happens-before relationship between publish(X) and publish(Y);
-	/// 2. If X and Y have the same affinity (X.Affinity == Y.Affinity) then publish(X) happens before publish(Y);
-	/// 3. If X and Y have the different affinity (X.Affinity != Y.Affinity) then there is no happens-before
-	/// relationship between publish(X) and publish(Y), as for the case #1;
+	/// For two messages X and Y, published in that order into queue Q, the affinity governs the order in
+	/// which X and Y are handled by Q.
 	///
-	/// By default, the property returns the affinity object which behavior depends on the handler type.
+	/// 1. If either affinity is <see langword="null"/>, then X and Y may be handled in either order.
+	/// 2. Else if X and Y have different affinity objects, then X and Y may be handled in either order.
+	/// 3. Else if X and Y both have UnknownAffinity, the order guarantee is determined by Q.
+	/// 4. Else if X and Y both have the same affinity object then X is handled before Y;
+	///
+	/// By default, the property returns the UnknownAffinity object whose behavior depends on Q.
 	/// </remarks>
 	[JsonIgnore]
 	public virtual object Affinity => UnknownAffinity;
