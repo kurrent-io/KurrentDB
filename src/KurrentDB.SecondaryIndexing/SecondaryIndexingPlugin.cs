@@ -12,7 +12,10 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Builders;
 using KurrentDB.SecondaryIndexing.Indexes;
+using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -50,15 +53,23 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton<DefaultIndex>();
 		services.AddSingleton<ISecondaryIndex>(sp => sp.GetRequiredService<DefaultIndex>());
 		services.AddHostedService<SecondaryIndexBuilder>();
+
+		services.AddSingleton<DefaultIndexProcessor>();
+		services.AddSingleton<CategoryIndexProcessor>();
+		services.AddSingleton<EventTypeIndexReader>();
+		services.AddSingleton<StreamIndexProcessor>();
+
+		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
+		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
+		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
 		base.ConfigureApplication(app, configuration);
 
-		var index = app.ApplicationServices.GetService<DefaultIndex>();
+		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
-		if (index != null)
-			virtualStreamReader.Register(index.Readers.ToArray());
+		virtualStreamReader.Register(indexReaders.ToArray<IVirtualStreamReader>());
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

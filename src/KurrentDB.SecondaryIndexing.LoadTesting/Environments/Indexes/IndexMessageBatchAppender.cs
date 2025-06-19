@@ -28,7 +28,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 
 		var categoryIndexProcessor = new CategoryIndexProcessor(dbDataSource);
 		var eventTypeIndexProcessor = new EventTypeIndexProcessor(dbDataSource);
-		var streamIndexProcessor = new StreamIndexProcessor(dbDataSource, reader.IndexReader.Backend, hasher);
+		var streamIndexProcessor = new StreamIndexProcessor(dbDataSource, reader, hasher);
 
 		_processor = new DefaultIndexProcessor(
 			dbDataSource,

@@ -306,7 +306,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb);
 		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb);
-		var streamIndexProcessor = new StreamIndexProcessor(DuckDb, reader.IndexReader.Backend, hasher);
+		var streamIndexProcessor = new StreamIndexProcessor(DuckDb, reader, hasher);
 
 		_processor = new DefaultIndexProcessor(
 			DuckDb,
@@ -347,7 +347,7 @@ public class CleanUpTests {
 
 			var categoryIndexProcessor = new CategoryIndexProcessor(dataSource);
 			var eventTypeIndexProcessor = new EventTypeIndexProcessor(dataSource);
-			var streamIndexProcessor = new StreamIndexProcessor(dataSource, reader.IndexReader.Backend, hasher);
+			var streamIndexProcessor = new StreamIndexProcessor(dataSource, reader, hasher);
 
 			using var processor = new DefaultIndexProcessor(
 				dataSource,

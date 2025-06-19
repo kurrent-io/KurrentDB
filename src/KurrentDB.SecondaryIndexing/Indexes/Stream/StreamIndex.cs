@@ -10,9 +10,7 @@ using KurrentDB.SecondaryIndexing.Storage;
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
 internal class StreamIndex(DuckDbDataSource db, IReadIndex<string> readIndex, ILongHasher<string> hasher) : Disposable {
-	public long? GetLastPosition() => Processor.LastCommittedPosition;
-
-	public StreamIndexProcessor Processor { get; } = new(db, readIndex.IndexReader.Backend, hasher);
+	public StreamIndexProcessor Processor { get; } = new(db, readIndex, hasher);
 
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; } = [];
 

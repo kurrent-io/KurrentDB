@@ -14,20 +14,20 @@ using static KurrentDB.SecondaryIndexing.Indexes.Stream.StreamSql;
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
 internal class StreamIndexProcessor : Disposable {
-	static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor>();
+	private static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor>();
 
-	readonly IIndexBackend<string> _indexReaderBackend;
-	readonly ILongHasher<string> _hasher;
-	readonly DuckDBAdvancedConnection _connection;
-	readonly Dictionary<string, long> _inFlightRecords = new();
+	private readonly IIndexBackend<string> _indexReaderBackend;
+	private readonly ILongHasher<string> _hasher;
+	private readonly DuckDBAdvancedConnection _connection;
+	private readonly Dictionary<string, long> _inFlightRecords = new();
 
-	long _lastLogPosition;
-	int _count;
-	long _seq;
-	Appender _appender;
+	private long _lastLogPosition;
+	private int _count;
+	private long _seq;
+	private Appender _appender;
 
-	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> indexReaderBackend, ILongHasher<string> hasher) {
-		_indexReaderBackend = indexReaderBackend;
+	public StreamIndexProcessor(DuckDbDataSource db, IReadIndex<string> index, ILongHasher<string> hasher) {
+		_indexReaderBackend = index.IndexReader.Backend;
 		_hasher = hasher;
 		_connection = db.OpenNewConnection();
 		_appender = new Appender(_connection, "streams"u8);
