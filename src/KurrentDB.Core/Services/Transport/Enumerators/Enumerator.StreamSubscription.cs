@@ -35,7 +35,7 @@ static partial class Enumerator {
 		private readonly bool _resolveLinks;
 		private readonly ClaimsPrincipal _user;
 		private readonly bool _requiresLeader;
-		readonly int _readBatchSize;
+		private readonly int _readBatchSize;
 		private readonly CancellationTokenSource _cts;
 		private readonly Channel<ReadResponse> _channel;
 		private readonly Channel<(ulong SequenceNumber, ResolvedEvent ResolvedEvent)> _liveEvents;

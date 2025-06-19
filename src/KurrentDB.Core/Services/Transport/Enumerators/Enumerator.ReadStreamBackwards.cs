@@ -26,6 +26,7 @@ partial class Enumerator {
 		private readonly bool _requiresLeader;
 		private readonly DateTime _deadline;
 		private readonly uint _compatibility;
+		private readonly int _batchSize;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
 		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
@@ -43,7 +44,8 @@ partial class Enumerator {
 			bool requiresLeader,
 			DateTime deadline,
 			uint compatibility,
-			CancellationToken cancellationToken) {
+			int batchSize = DefaultReadBatchSize,
+			CancellationToken cancellationToken = default) {
 			_bus = Ensure.NotNull(bus);
 			_streamName = Ensure.NotNullOrEmpty(streamName);
 			_maxCount = maxCount;
@@ -52,6 +54,7 @@ partial class Enumerator {
 			_requiresLeader = requiresLeader;
 			_deadline = deadline;
 			_compatibility = compatibility;
+			_batchSize = batchSize;
 			_cancellationToken = cancellationToken;
 
 			ReadPage(startRevision);
@@ -77,7 +80,7 @@ partial class Enumerator {
 
 			_bus.Publish(new ClientMessage.ReadStreamEventsBackward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
-				_streamName, startRevision.ToInt64(), (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
+				_streamName, startRevision.ToInt64(), (int)Math.Min((ulong)_batchSize, _maxCount), _resolveLinks,
 				_requiresLeader, null, _user, _deadline,
 				cancellationToken: _cancellationToken));
 
