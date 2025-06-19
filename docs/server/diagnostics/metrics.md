@@ -243,8 +243,8 @@ Persistent subscription metrics track the statistics for the persistent subscrip
 
 | Time series                                                                                                                 | Type                     | Description                                                    |
 |:----------------------------------------------------------------------------------------------------------------------------|:-------------------------|:---------------------------------------------------------------|
-| `eventstore_persistent_subscriptions_messages_parked`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>,reason=<REASON>}` | [Counter](#common-types) | Count of Park Message requests. Reason can be `client-nak` or `max-retries` |
-| `eventstore_persistent_subscriptions_replays_requested`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                | [Counter](#common-types) | Count of Parked Message replay requests                                     |
+| `eventstore_persistent_subscriptions_messages_parked`<br/>`{reason=<REASON>}` | [Counter](#common-types) | Count of Park Message requests. Reason can be `client-nak` or `max-retries` |
+| `eventstore_persistent_subscriptions_replays_requested`                | [Counter](#common-types) | Count of Parked Message replay requests                                     |
 
 ::: warning
 The `eventstore_persistent_subscriptions_messages_parked` and `eventstore_persistent_subscriptions_replays_requested` metrics have been renamed to `eventstore_persistent_sub_park_message_requests` and `eventstore_persistent_sub_parked_message_replays` respectively in EventStoreDB version 24.10 and onwards.
