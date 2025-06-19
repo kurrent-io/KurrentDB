@@ -108,7 +108,7 @@ internal partial class Streams<TStreamId> {
 		CancellationToken cancellationToken) {
 		int readBatchSize = streamOptionsCase switch {
 			StreamOptionOneofCase.All => Enumerator.DefaultReadBatchSize,
-			StreamOptionOneofCase.Stream => SystemStreams.IsIndexStream(request.Options.Stream.StreamIdentifier) ? 3000 : Enumerator.DefaultReadBatchSize,
+			StreamOptionOneofCase.Stream => SystemStreams.IsIndexStream(request.Options.Stream.StreamIdentifier) ? 1000 : Enumerator.DefaultReadBatchSize,
 			StreamOptionOneofCase.None => Enumerator.DefaultReadBatchSize,
 			_ => throw RpcExceptions.InvalidArgument(streamOptionsCase)
 		};
