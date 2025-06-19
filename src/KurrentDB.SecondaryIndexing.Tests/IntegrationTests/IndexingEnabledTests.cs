@@ -1,11 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Text;
-using Amazon.S3;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Tests;
-using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
@@ -110,7 +106,7 @@ public class IndexingEnabledTests(
 
 		Assert.All(results, (item, index) => {
 			Assert.Equal(index, item.Link.EventNumber);
-			Assert.Equal(index - 1, item.Link.ExpectedVersion - 1);
+			Assert.Equal(index - 1, item.Link.ExpectedVersion);
 		});
 
 		Assert.All(results,
@@ -146,10 +142,10 @@ public class IndexingEnabledTests(
 			Assert.Equal(expected.Event.EventType, actual.Event.EventType);
 
 			Assert.Equal(expected.Event.Data, actual.Event.Data);
-			//Assert.Equal(expected.Link.Data, actual.Link.Data);
+			Assert.Equal(expected.Link.Data, actual.Link.Data);
 
 			//TODO: For some reason that fails for subscription
-			//Assert.Equal(expected.Event.EventNumber, actual.Event.EventNumber);
+			Assert.Equal(expected.Event.EventNumber, actual.Event.EventNumber);
 			Assert.Equal(sequence, actual.Link.EventNumber);
 
 			Assert.Equal(expected.Link.IsJson, actual.Link.IsJson);

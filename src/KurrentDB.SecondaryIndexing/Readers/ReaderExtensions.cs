@@ -44,7 +44,7 @@ public static class ReaderExtensions {
 				resolvedEvent.Event.TransactionPosition,
 				resolvedEvent.Event.TransactionOffset,
 				virtualStreamId,
-				virtualStreamEventNumber,
+				virtualStreamEventNumber - 1,
 				resolvedEvent.Event.TimeStamp,
 				resolvedEvent.Event.Flags,
 				"$>",
@@ -53,8 +53,11 @@ public static class ReaderExtensions {
 				[]
 			));
 
-	private static ResolvedEvent ToResolvedLink<TStreamId>(string virtualStreamId, IndexedPrepare record,
-		IPrepareLogRecord<TStreamId> prepare) =>
+	private static ResolvedEvent ToResolvedLink<TStreamId>(
+		string virtualStreamId,
+		IndexedPrepare record,
+		IPrepareLogRecord<TStreamId> prepare
+	) =>
 		ResolvedEvent.ForResolvedLink(
 			new EventRecord(
 				prepare.Version,
@@ -70,7 +73,7 @@ public static class ReaderExtensions {
 				prepare.TransactionPosition,
 				prepare.TransactionOffset,
 				virtualStreamId,
-				record.Version,
+				record.Version - 1,
 				prepare.TimeStamp,
 				prepare.Flags,
 				"$>",
