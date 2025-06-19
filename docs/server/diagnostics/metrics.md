@@ -7,7 +7,7 @@ order: 2
 EventStoreDB collects metrics in [prometheus format](https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format), available on the `/metrics` endpoint. Prometheus can be configured to scrape this endpoint directly. The metrics are configured in `metricsconfig.json`. 
 
 ::: note
-Native EventStoreDB metrics do not yet contain metrics for Projections and Persistent Subscriptions. To view these in Prometheus you can still use the [Prometheus exporter](https://github.com/marcinbudny/eventstore_exporter).
+Native EventStoreDB metrics do not yet contain all of the metrics for Projections and Persistent Subscriptions. To view these in Prometheus you can still use the [Prometheus exporter](https://github.com/marcinbudny/eventstore_exporter).
 :::
 
 ## Metrics Reference
@@ -236,6 +236,39 @@ Example Output:
 # TYPE eventstore_kestrel_connections gauge
 eventstore_kestrel_connections 1 1688070655500
 ```
+
+### Persistent Subscriptions
+
+Persistent subscription metrics track the statistics for the persistent subscriptions.
+
+| Time series                                                                                                                 | Type                     | Description                                                    |
+|:----------------------------------------------------------------------------------------------------------------------------|:-------------------------|:---------------------------------------------------------------|
+| `eventstore_persistent_subscriptions_messages_parked`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>,reason=<REASON>}` | [Counter](#common-types) | Count of Park Message requests. Reason can be `client-nak` or `max-retries` |
+| `eventstore_persistent_subscriptions_replays_requested`<br/>`{event_stream_id=<STREAM_NAME>,group_name=<GROUP_NAME>}`                | [Counter](#common-types) | Count of Parked Message replay requests                                     |
+
+::: warning
+The `eventstore_persistent_subscriptions_messages_parked` and `eventstore_persistent_subscriptions_replays_requested` metrics have been renamed to `eventstore_persistent_sub_park_message_requests` and `eventstore_persistent_sub_parked_message_replays` respectively in EventStoreDB version 24.10 and onwards.
+:::
+
+Example configuration:
+
+```json
+"PersistentSubscriptionStats": true,
+```
+
+Example Output:
+```
+# TYPE eventstore_persistent_subscriptions_messages_parked counter
+eventstore_persistent_subscriptions_messages_parked{reason="client-nak"} 0 1750337191056
+eventstore_persistent_subscriptions_messages_parked{reason="max-retries"} 0 1750337191056
+
+# TYPE eventstore_persistent_subscriptions_replays_requested counter
+eventstore_persistent_subscriptions_replays_requested 0 1750337191056
+```
+
+::: note
+Native EventStoreDB metrics do not yet contain all of the metrics for Persistent Subscriptions. To view these in Prometheus you can still use the [Prometheus exporter](https://github.com/marcinbudny/eventstore_exporter).
+:::
 
 ### Process
 
