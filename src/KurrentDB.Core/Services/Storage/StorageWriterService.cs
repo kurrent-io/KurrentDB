@@ -75,7 +75,7 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 	protected readonly IEpochManager EpochManager;
 	protected readonly IPublisher Bus;
 	private readonly ISubscriber _subscribeToBus;
-	private readonly QueuedHandlerThreadPool _writerQueue;
+	private readonly ThreadPoolMessageScheduler _writerQueue;
 	private readonly InMemoryBus _writerBus;
 
 	private readonly Clock _clock = Clock.Instance;
@@ -152,13 +152,11 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 		Writer = Ensure.NotNull(writer);
 
-		_writerBus = new("StorageWriterBus", watchSlowMsg: false);
-		_writerQueue = new(new AdHocHandler<Message>(CommonHandle),
-			"StorageWriterQueue",
-			queueStatsManager,
-			queueTrackers,
-			true,
-			TimeSpan.FromMilliseconds(500));
+		_writerBus = new("StorageWriterBus", watchSlowMsg: true, TimeSpan.FromMilliseconds(500));
+		_writerQueue = new(new AdHocHandler<Message>(CommonHandle)) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Name = "StorageWriterQueue",
+		};
 
 		SubscribeToMessage<SystemMessage.SystemInit>();
 		SubscribeToMessage<SystemMessage.StateChangeMessage>();
@@ -174,7 +172,6 @@ public class StorageWriterService<TStreamId> : IHandle<SystemMessage.SystemInit>
 
 	public async ValueTask Start(CancellationToken token) {
 		await Writer.Open(token);
-		_writerQueue.Start();
 	}
 
 	protected void SubscribeToMessage<T>() where T : Message {

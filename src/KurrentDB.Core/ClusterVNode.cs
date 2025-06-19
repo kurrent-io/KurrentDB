@@ -580,10 +580,10 @@ public class ClusterVNode<TStreamId> :
 		// MONITORING
 		var monitoringInnerBus = new InMemoryBus("MonitoringInnerBus", watchSlowMsg: false);
 		var monitoringRequestBus = new InMemoryBus("MonitoringRequestBus", watchSlowMsg: false);
-		var monitoringQueue = new QueuedHandlerThreadPool(monitoringInnerBus, "MonitoringQueue", _queueStatsManager,
-			trackers.QueueTrackers,
-			true,
-			TimeSpan.FromMilliseconds(800));
+		var monitoringQueue = new ThreadPoolMessageScheduler(monitoringInnerBus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Name = "MonitoringQueue",
+		};
 
 		var monitoring = new MonitoringService(monitoringQueue,
 			monitoringRequestBus,
@@ -1120,8 +1120,11 @@ public class ClusterVNode<TStreamId> :
 
 		// SUBSCRIPTIONS
 		var subscrBus = new InMemoryBus("SubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
-		var subscrQueue = new QueuedHandlerThreadPool(subscrBus, "Subscriptions", _queueStatsManager,
-			trackers.QueueTrackers, false);
+		var subscrQueue = new ThreadPoolMessageScheduler(subscrBus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Name = "Subscriptions",
+		};
+
 		_mainBus.Subscribe<SystemMessage.SystemStart>(subscrQueue);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(subscrQueue);
 		_mainBus.Subscribe<TcpMessage.ConnectionClosed>(subscrQueue);
@@ -1150,8 +1153,10 @@ public class ClusterVNode<TStreamId> :
 		// PERSISTENT SUBSCRIPTIONS
 		// IO DISPATCHER
 		var perSubscrBus = new InMemoryBus("PersistentSubscriptionsBus", true, TimeSpan.FromMilliseconds(50));
-		var perSubscrQueue = new QueuedHandlerThreadPool(perSubscrBus, "PersistentSubscriptions", _queueStatsManager,
-			trackers.QueueTrackers, false);
+		var perSubscrQueue = new ThreadPoolMessageScheduler(perSubscrBus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Name = "PersistentSubscriptions",
+		};
 		var psubDispatcher = new IODispatcher(_mainQueue, perSubscrQueue);
 		perSubscrBus.Subscribe<ClientMessage.ReadStreamEventsBackwardCompleted>(psubDispatcher.BackwardReader);
 		perSubscrBus.Subscribe<ClientMessage.NotHandled>(psubDispatcher.BackwardReader);
@@ -1399,8 +1404,10 @@ public class ClusterVNode<TStreamId> :
 
 		// REDACTION
 		var redactionBus = new InMemoryBus("RedactionBus", true, TimeSpan.FromSeconds(2));
-		var redactionQueue = new QueuedHandlerThreadPool(redactionBus, "Redaction", _queueStatsManager,
-			trackers.QueueTrackers, false);
+		var redactionQueue = new ThreadPoolMessageScheduler(redactionBus) {
+			SynchronizeMessagesWithUnknownAffinity = true,
+			Name = "Redaction"
+		};
 
 		_mainBus.Subscribe<RedactionMessage.GetEventPosition>(redactionQueue);
 		_mainBus.Subscribe<RedactionMessage.AcquireChunksLock>(redactionQueue);
@@ -1642,10 +1649,6 @@ public class ClusterVNode<TStreamId> :
 
 			await storageWriter.Start(token);
 
-			monitoringQueue.Start();
-			subscrQueue.Start();
-			perSubscrQueue.Start();
-			redactionQueue.Start();
 			dynamicCacheManager.Start();
 			_mainQueue.Publish(new SystemMessage.SystemInit());
 		}
