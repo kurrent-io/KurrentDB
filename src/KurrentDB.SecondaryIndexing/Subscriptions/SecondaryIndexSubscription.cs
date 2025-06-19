@@ -16,7 +16,7 @@ namespace KurrentDB.SecondaryIndexing.Subscriptions;
 
 public sealed class SecondaryIndexSubscription(
 	IPublisher publisher,
-	ISecondaryIndex index,
+	ISecondaryIndexProcessor indexProcessor,
 	SecondaryIndexingPluginOptions options
 ) : IAsyncDisposable {
 	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexSubscription>();
@@ -27,8 +27,8 @@ public sealed class SecondaryIndexSubscription(
 	private Task? _processingTask;
 
 	public void Subscribe() {
-		var position = index.GetLastPosition();
-		var startFrom = position is null or -1 ? Position.Start : Position.FromInt64((long)position, (long)position);
+		var position = indexProcessor.GetLastPosition();
+		var startFrom = position is null ? Position.Start : Position.FromInt64((long)position, (long)position);
 		Log.Information("Starting indexing subscription from {StartFrom}", startFrom);
 
 		_subscription = new(
@@ -74,10 +74,10 @@ public sealed class SecondaryIndexSubscription(
 					continue;
 				}
 
-				index.Index(resolvedEvent);
+				indexProcessor.Index(resolvedEvent);
 
 				if (++indexedCount >= _commitBatchSize) {
-					index.Commit();
+					indexProcessor.Commit();
 					indexedCount = 0;
 				}
 
@@ -112,8 +112,6 @@ public sealed class SecondaryIndexSubscription(
 				Log.Error(ex, "Error during processing task completion");
 			}
 		}
-
-		index.Dispose();
 
 		if (_subscription != null) {
 			await _subscription.DisposeAsync();

@@ -6,17 +6,15 @@ using KurrentDB.Core.Data;
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public interface ISecondaryIndex : IDisposable {
+	ISecondaryIndexProcessor Processor { get; }
+}
+
+public interface ISecondaryIndexProcessor : IDisposable {
 	void Commit();
 
 	void Index(ResolvedEvent evt);
 
 	long? GetLastPosition();
-}
-
-public interface ISecondaryIndexProcessor {
-	void Commit();
-
-	void Index(ResolvedEvent evt);
 }
 
 public record struct SequenceRecord(int Id, long Sequence);

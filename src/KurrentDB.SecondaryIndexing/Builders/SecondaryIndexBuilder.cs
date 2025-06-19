@@ -7,16 +7,24 @@ using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
+using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Builders;
 
-public class SecondaryIndexBuilder : IHandle<SystemMessage.SystemReady>, IHandle<SystemMessage.BecomeShuttingDown>, IHostedService {
+public class SecondaryIndexBuilder : IHandle<SystemMessage.SystemReady>, IHandle<SystemMessage.BecomeShuttingDown>,
+	IHostedService, IAsyncDisposable {
+	private static readonly ILogger Logger = Log.Logger.ForContext<SecondaryIndexBuilder>();
 	private readonly SecondaryIndexSubscription _subscription;
 	private readonly ISecondaryIndex _index;
 
 	[Experimental("SECONDARY_INDEX")]
-	public SecondaryIndexBuilder(ISecondaryIndex index, IPublisher publisher, ISubscriber subscriber, SecondaryIndexingPluginOptions options) {
-		_subscription = new(publisher, index, options);
+	public SecondaryIndexBuilder(
+		ISecondaryIndex index,
+		IPublisher publisher,
+		ISubscriber subscriber,
+		SecondaryIndexingPluginOptions options
+	) {
+		_subscription = new SecondaryIndexSubscription(publisher, index.Processor, options);
 		_index = index;
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
@@ -30,4 +38,18 @@ public class SecondaryIndexBuilder : IHandle<SystemMessage.SystemReady>, IHandle
 	public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
 	public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+	public void Dispose() {
+		_index.Dispose();
+	}
+
+	public async ValueTask DisposeAsync() {
+		try {
+			await _subscription.DisposeAsync();
+		} catch (Exception e) {
+			Logger.Error(e, "Failed to dispose secondary index subscription");
+		}
+
+		_index.Dispose();
+	}
 }

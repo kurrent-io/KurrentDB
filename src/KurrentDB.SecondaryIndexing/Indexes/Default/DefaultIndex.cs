@@ -17,46 +17,46 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 internal class DefaultIndex : Disposable, ISecondaryIndex {
 	public const string IndexName = $"{SystemStreams.IndexStreamPrefix}all";
 
-	private readonly DuckDbDataSource _db;
-
-	public DefaultIndexProcessor Processor { get; }
+	public ISecondaryIndexProcessor Processor { get; }
 	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
 	public CategoryIndex CategoryIndex { get; }
 	public EventTypeIndex EventTypeIndex { get; }
 	public StreamIndex StreamIndex { get; }
 
-	public DefaultIndex(DuckDbDataSource db, IReadIndex<string> readIndex, ILongHasher<string> hasher, int commitSize)
-		: this(db, readIndex, hasher, new SecondaryIndexingPluginOptions { CommitBatchSize = commitSize }) {
+	public DefaultIndex(
+		DuckDbDataSource db,
+		IReadIndex<string> readIndex,
+		ILongHasher<string> hasher,
+		DefaultIndexProcessor processor,
+		DefaultIndexInFlightRecordsCache inFlightRecordsCache,
+		int commitSize
+	) : this(db, readIndex, hasher, processor, inFlightRecordsCache,
+		new SecondaryIndexingPluginOptions { CommitBatchSize = commitSize }) {
 	}
 
 	[UsedImplicitly]
-	public DefaultIndex(DuckDbDataSource db, IReadIndex<string> readIndex, ILongHasher<string> hasher, SecondaryIndexingPluginOptions options) {
-		_db = db;
-		_db.InitDb();
+	public DefaultIndex(
+		DuckDbDataSource db,
+		IReadIndex<string> readIndex,
+		ILongHasher<string> hasher,
+		DefaultIndexProcessor processor,
+		DefaultIndexInFlightRecordsCache inFlightRecordsCache,
+		SecondaryIndexingPluginOptions options
+	) {
+		db.InitDb();
 
-		var processor = new DefaultIndexProcessor(db, this, options.CommitBatchSize);
 		Processor = processor;
 
-		CategoryIndex = new(db, readIndex, processor.QueryInFlightRecords);
-		EventTypeIndex = new(db, readIndex, processor.QueryInFlightRecords);
+		CategoryIndex = new(db, readIndex, inFlightRecordsCache.QueryInFlightRecords);
+		EventTypeIndex = new(db, readIndex, inFlightRecordsCache.QueryInFlightRecords);
 		StreamIndex = new(db, readIndex, hasher);
 
 		Readers = [
-			new DefaultIndexReader(db, processor, readIndex),
+			new DefaultIndexReader(db, processor, inFlightRecordsCache, readIndex),
 			CategoryIndex.Reader,
 			EventTypeIndex.Reader
 		];
 	}
-
-	public void Commit() => Processor.Commit();
-
-	public void Index(ResolvedEvent evt) => Processor.Index(evt);
-
-	public long? GetLastSequence() =>
-		_db.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>()?.OrNull();
-
-	public long? GetLastPosition() =>
-		_db.Pool.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>()?.OrNull();
 
 	protected override void Dispose(bool disposing) {
 		if (disposing) {

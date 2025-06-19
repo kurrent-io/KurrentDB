@@ -8,7 +8,11 @@ using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests;
+using KurrentDB.Core.Tests.Fakes;
+using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Storage;
 using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
@@ -290,22 +294,34 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	}
 
 	private readonly DefaultIndexProcessor _processor;
-	private readonly DefaultIndex _defaultIndex;
 
 	public DefaultIndexProcessorTests() {
 		var reader = new DummyReadIndex();
 
 		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-		_defaultIndex = new DefaultIndex(DuckDb, reader, hasher, commitBatchSize);
-		_processor = new DefaultIndexProcessor(DuckDb, _defaultIndex, commitBatchSize);
+		var inflightRecordsCache =
+			new DefaultIndexInFlightRecordsCache(new SecondaryIndexingPluginOptions
+				{ CommitBatchSize = commitBatchSize });
+
+		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb);
+		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb);
+		var streamIndexProcessor = new StreamIndexProcessor(DuckDb, reader.IndexReader.Backend, hasher);
+
+		_processor = new DefaultIndexProcessor(
+			DuckDb,
+			inflightRecordsCache,
+			categoryIndexProcessor,
+			eventTypeIndexProcessor,
+			streamIndexProcessor,
+			new FakePublisher()
+		);
 	}
 
 	public override Task DisposeAsync() {
-		_defaultIndex.Dispose();
+		_processor.Dispose();
 		return base.DisposeAsync();
 	}
-
 }
 
 public class CleanUpTests {
@@ -325,8 +341,22 @@ public class CleanUpTests {
 
 			const int commitBatchSize = 9;
 			var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-			using var defaultIndex = new DefaultIndex(dataSource, reader, hasher, commitBatchSize);
-			var processor = new DefaultIndexProcessor(dataSource, defaultIndex, commitBatchSize);
+			var inflightRecordsCache =
+				new DefaultIndexInFlightRecordsCache(new SecondaryIndexingPluginOptions
+					{ CommitBatchSize = commitBatchSize });
+
+			var categoryIndexProcessor = new CategoryIndexProcessor(dataSource);
+			var eventTypeIndexProcessor = new EventTypeIndexProcessor(dataSource);
+			var streamIndexProcessor = new StreamIndexProcessor(dataSource, reader.IndexReader.Backend, hasher);
+
+			using var processor = new DefaultIndexProcessor(
+				dataSource,
+				inflightRecordsCache,
+				categoryIndexProcessor,
+				eventTypeIndexProcessor,
+				streamIndexProcessor,
+				new FakePublisher()
+			);
 
 			const string cat1 = "first";
 

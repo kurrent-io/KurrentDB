@@ -9,6 +9,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 internal class DefaultIndexReader(
 	DuckDbDataSource db,
 	DefaultIndexProcessor processor,
+	DefaultIndexInFlightRecordsCache inFlightRecordsCache,
 	IReadIndex<string> index
 ) : SecondaryIndexReaderBase(index) {
 	protected override long GetId(string streamName) => 0;
@@ -18,7 +19,7 @@ internal class DefaultIndexReader(
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long _, long fromEventNumber, long toEventNumber) {
 		var range = db.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((fromEventNumber, toEventNumber));
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
-			var inFlight = processor.TryGetInFlightRecords(fromEventNumber, toEventNumber);
+			var inFlight = inFlightRecordsCache.TryGetInFlightRecords(fromEventNumber, toEventNumber);
 			range.AddRange(inFlight);
 		}
 		var indexPrepares = range.Select(x => new IndexedPrepare(x.Seq, x.LogPosition));

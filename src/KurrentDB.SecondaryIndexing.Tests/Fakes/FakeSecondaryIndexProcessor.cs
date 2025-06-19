@@ -2,12 +2,14 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using FluentStorage.Utils.Extensions;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.Indexes;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Fakes;
 
-public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<ResolvedEvent>? pending = null): ISecondaryIndexProcessor {
+public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<ResolvedEvent>? pending = null)
+	: ISecondaryIndexProcessor {
 	private readonly object _lock = new();
 	private readonly IList<ResolvedEvent> _pending = pending ?? [];
 
@@ -17,10 +19,18 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 		}
 	}
 
+	public long? GetLastPosition() {
+		return !committed.IsEmpty() ? committed.Last().Event.LogPosition : null;
+	}
+
 	public void Commit() {
 		lock (_lock) {
 			committed.AddRange(_pending);
 			_pending.Clear();
 		}
+	}
+
+	public void Dispose() {
+
 	}
 }
