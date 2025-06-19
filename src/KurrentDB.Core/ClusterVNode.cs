@@ -172,7 +172,7 @@ public class ClusterVNode<TStreamId> :
 		get { return _authenticationProvider; }
 	}
 
-	internal MultiQueuedHandler WorkersHandler {
+	internal ThreadPoolMessageScheduler WorkersHandler {
 		get { return _workersHandler; }
 	}
 
@@ -193,8 +193,8 @@ public class ClusterVNode<TStreamId> :
 	private readonly IReadIndex<TStreamId> _readIndex;
 	private readonly SemaphoreSlimLock _switchChunksLock = new();
 
-	private readonly InMemoryBus[] _workerBuses;
-	private readonly MultiQueuedHandler _workersHandler;
+	private readonly InMemoryBus _workerBus;
+	private readonly ThreadPoolMessageScheduler _workersHandler;
 	private readonly List<Task> _tasks = new();
 	private readonly QueueStatsManager _queueStatsManager;
 	private readonly bool _disableHttps;
@@ -524,19 +524,11 @@ public class ClusterVNode<TStreamId> :
 		var forwardingProxy = new MessageForwardingProxy();
 
 		// MISC WORKERS
-		_workerBuses = Enumerable.Range(0, workerThreadsCount).Select(queueNum =>
-			new InMemoryBus($"Worker #{queueNum + 1} Bus",
-				watchSlowMsg: true,
-				slowMsgThreshold: TimeSpan.FromMilliseconds(200))).ToArray();
-		_workersHandler = new MultiQueuedHandler(
-			workerThreadsCount,
-			queueNum => new QueuedHandlerThreadPool(_workerBuses[queueNum],
-				$"Worker #{queueNum + 1}",
-				_queueStatsManager,
-				trackers.QueueTrackers,
-				groupName: "Workers",
-				watchSlowMsg: true,
-				slowMsgThreshold: TimeSpan.FromMilliseconds(200)));
+		_workerBus = new("Worker Bus", watchSlowMsg: true, slowMsgThreshold: TimeSpan.FromMilliseconds(200));
+		_workersHandler = new ThreadPoolMessageScheduler(_workerBus) {
+			SynchronizeMessagesWithUnknownAffinity = false,
+			Name = "Worker Scheduler",
+		};
 
 		void StartSubsystems() {
 			foreach (var subsystem in _subsystems) {
@@ -867,13 +859,11 @@ public class ClusterVNode<TStreamId> :
 		var httpPipe = new HttpMessagePipe();
 		var httpSendService = new HttpSendService(httpPipe, true, _externalServerCertificateValidator);
 		_mainBus.Subscribe<SystemMessage.StateChangeMessage>(httpSendService);
-		SubscribeWorkers(bus => bus.Subscribe<HttpMessage.HttpSend>(httpSendService));
+		_workerBus.Subscribe<HttpMessage.HttpSend>(httpSendService);
 
 		var grpcSendService = new GrpcSendService(_eventStoreClusterClientCache);
 		_mainBus.Subscribe<GrpcMessage.SendOverGrpc>(_workersHandler);
-		SubscribeWorkers(bus => {
-			bus.Subscribe<GrpcMessage.SendOverGrpc>(grpcSendService);
-		});
+		_workerBus.Subscribe<GrpcMessage.SendOverGrpc>(grpcSendService);
 
 		GossipAdvertiseInfo = GetGossipAdvertiseInfo();
 		GossipAdvertiseInfo GetGossipAdvertiseInfo() {
@@ -941,7 +931,7 @@ public class ClusterVNode<TStreamId> :
 		var components = new AuthenticationProviderFactoryComponents {
 			MainBus = _mainBus,
 			MainQueue = _mainQueue,
-			WorkerBuses = _workerBuses,
+			WorkerBus = _workerBus,
 			WorkersQueue = _workersHandler,
 			HttpSendService = httpSendService,
 			HttpService = _httpService,
@@ -1015,13 +1005,7 @@ public class ClusterVNode<TStreamId> :
 			}
 		}
 
-		SubscribeWorkers(bus => {
-			var tcpSendService = new TcpSendService();
-			// ReSharper disable RedundantTypeArgumentsOfMethod
-			bus.Subscribe<TcpMessage.TcpSend>(tcpSendService);
-			// ReSharper restore RedundantTypeArgumentsOfMethod
-		});
-
+		_workerBus.Subscribe<TcpMessage.TcpSend>(new TcpSendService());
 
 		var httpAuthenticationProviders = new List<IHttpAuthenticationProvider>();
 
@@ -1098,7 +1082,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<SystemMessage.SystemInit>(_httpService);
 		_mainBus.Subscribe<SystemMessage.BecomeShuttingDown>(_httpService);
 
-		SubscribeWorkers(KestrelHttpService.CreateAndSubscribePipeline);
+		KestrelHttpService.CreateAndSubscribePipeline(_workerBus);
 
 		// REQUEST FORWARDING
 		var forwardingService = new RequestForwardingService(_mainQueue, forwardingProxy, TimeSpan.FromSeconds(1));
@@ -1665,7 +1649,6 @@ public class ClusterVNode<TStreamId> :
 
 			await storageWriter.Start(token);
 
-			_workersHandler.Start();
 			monitoringQueue.Start();
 			subscrQueue.Start();
 			perSubscrQueue.Start();
@@ -1790,12 +1773,6 @@ public class ClusterVNode<TStreamId> :
 			weight: 100,
 			new DynamicCacheResizer(ResizerUnit.Bytes, minCapacityPerCache, maxCapacityPerCache, 60, streamLastEventNumberCache),
 			new DynamicCacheResizer(ResizerUnit.Bytes, minCapacityPerCache, maxCapacityPerCache, 40, streamMetadataCache));
-	}
-
-	private void SubscribeWorkers(Action<InMemoryBus> setup) {
-		foreach (var workerBus in _workerBuses) {
-			setup(workerBus);
-		}
 	}
 
 	public override async Task StopAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default) {

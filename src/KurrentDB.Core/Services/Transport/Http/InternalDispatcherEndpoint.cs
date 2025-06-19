@@ -12,12 +12,12 @@ using Microsoft.AspNetCore.Http;
 
 namespace KurrentDB.Core.Services.Transport.Http;
 
-public class InternalDispatcherEndpoint(IPublisher inputBus, MultiQueuedHandler requestsMultiHandler) : IHandle<HttpMessage.PurgeTimedOutRequests> {
+public class InternalDispatcherEndpoint(IPublisher inputBus, IPublisher requestsMultiHandler) : IHandle<HttpMessage.PurgeTimedOutRequests> {
 	private static readonly TimeSpan UpdateInterval = TimeSpan.FromSeconds(1);
 	private readonly IEnvelope _publishEnvelope = inputBus;
 
 	public void Handle(HttpMessage.PurgeTimedOutRequests message) {
-		requestsMultiHandler.PublishToAll(message);
+		requestsMultiHandler.Publish(message);
 		inputBus.Publish(TimerMessage.Schedule.Create(UpdateInterval, _publishEnvelope, message));
 	}
 
