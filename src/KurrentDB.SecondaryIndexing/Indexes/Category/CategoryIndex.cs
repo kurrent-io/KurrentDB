@@ -17,7 +17,7 @@ class CategoryIndex {
 		IReadIndex<string> readIndex,
 		QueryInFlightRecords<CategorySql.CategoryRecord> queryInFlightRecords
 	) {
-		Processor = new(db);
+		Processor = new CategoryIndexProcessor(db);
 		Reader = new CategoryIndexReader(db, Processor, readIndex, queryInFlightRecords);
 	}
 

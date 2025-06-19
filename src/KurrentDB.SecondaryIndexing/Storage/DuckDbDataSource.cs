@@ -25,10 +25,10 @@ public class DuckDbDataSource : Disposable {
 	}
 
 	public void InitDb() {
-		if (_wasInitialized.FalseToTrue()) {
-			using var connection = OpenConnection();
-			DuckDbSchema.CreateSchema(connection);
-		}
+		if (!_wasInitialized.FalseToTrue()) return;
+
+		using var connection = OpenConnection();
+		DuckDbSchema.CreateSchema(connection);
 	}
 
 	public DuckDBConnection OpenConnection() {

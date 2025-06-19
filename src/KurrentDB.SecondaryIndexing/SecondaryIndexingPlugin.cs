@@ -4,11 +4,8 @@
 using System.Diagnostics.CodeAnalysis;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
-using KurrentDB.Core.Bus;
 using KurrentDB.Core.Configuration.Sources;
-using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Services.Storage.InMemory;
-using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Builders;
 using KurrentDB.SecondaryIndexing.Indexes;
@@ -49,14 +46,26 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 
 			return new() { ConnectionString = connectionString };
 		});
-		services.AddSingleton<DuckDbDataSource>();
+		services.AddSingleton<DuckDbDataSource>(sp => {
+			var dbSource = new DuckDbDataSource(sp.GetRequiredService<DuckDbDataSourceOptions>());
+			dbSource.InitDb();
+			return dbSource;
+		});
 		services.AddSingleton<DefaultIndex>();
 		services.AddSingleton<ISecondaryIndex>(sp => sp.GetRequiredService<DefaultIndex>());
 		services.AddHostedService<SecondaryIndexBuilder>();
 
+		services.AddSingleton<DefaultIndexInFlightRecordsCache>();
+		services.AddSingleton<QueryInFlightRecords<EventTypeSql.EventTypeRecord>>(sp =>
+			sp.GetRequiredService<DefaultIndexInFlightRecordsCache>().QueryInFlightRecords
+		);
+		services.AddSingleton<QueryInFlightRecords<CategorySql.CategoryRecord>>(sp =>
+			sp.GetRequiredService<DefaultIndexInFlightRecordsCache>().QueryInFlightRecords
+		);
+
 		services.AddSingleton<DefaultIndexProcessor>();
 		services.AddSingleton<CategoryIndexProcessor>();
-		services.AddSingleton<EventTypeIndexReader>();
+		services.AddSingleton<EventTypeIndexProcessor>();
 		services.AddSingleton<StreamIndexProcessor>();
 
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
@@ -73,7 +82,8 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
-		var enabledOption = configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled");
+		var enabledOption =
+			configuration.GetValue<bool?>($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled");
 		var devMode = configuration.GetValue($"{KurrentConfigurationKeys.Prefix}:Dev", defaultValue: false);
 
 		// Enabled by default only in the dev mode
@@ -82,6 +92,7 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 
 		return enabled
 			? (true, "")
-			: (false, $"To enable Second Level Indexing Set '{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled' to 'true'");
+			: (false,
+				$"To enable Second Level Indexing Set '{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Enabled' to 'true'");
 	}
 }

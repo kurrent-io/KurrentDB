@@ -24,6 +24,7 @@ public abstract class DuckDbIntegrationTest : IAsyncLifetime {
 		DuckDb = new DuckDbDataSource(
 			new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" }
 		);
+		DuckDb.InitDb();
 	}
 
 	public virtual Task InitializeAsync() =>

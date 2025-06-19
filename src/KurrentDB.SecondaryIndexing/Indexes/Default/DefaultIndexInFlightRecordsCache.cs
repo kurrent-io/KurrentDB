@@ -3,6 +3,16 @@
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
+record struct InFlightRecord(
+	long Seq,
+	long LogPosition,
+	int CategoryId,
+	long CategorySeq,
+	int EventTypeId,
+	long EventTypeSeq,
+	bool IsDeleted = false
+);
+
 internal class DefaultIndexInFlightRecordsCache(SecondaryIndexingPluginOptions options) {
 	private readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
 	public int Count { get; private set; }

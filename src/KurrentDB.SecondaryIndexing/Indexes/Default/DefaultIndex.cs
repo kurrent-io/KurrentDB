@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Event Store License v2 (see LICENSE.md).
 
 using DotNext;
-using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.InMemory;
@@ -18,7 +17,6 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 	public const string IndexName = $"{SystemStreams.IndexStreamPrefix}all";
 
 	public ISecondaryIndexProcessor Processor { get; }
-	public IReadOnlyList<IVirtualStreamReader> Readers { get; }
 	public CategoryIndex CategoryIndex { get; }
 	public EventTypeIndex EventTypeIndex { get; }
 	public StreamIndex StreamIndex { get; }
@@ -50,12 +48,6 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 		CategoryIndex = new(db, readIndex, inFlightRecordsCache.QueryInFlightRecords);
 		EventTypeIndex = new(db, readIndex, inFlightRecordsCache.QueryInFlightRecords);
 		StreamIndex = new(db, readIndex, hasher);
-
-		Readers = [
-			new DefaultIndexReader(db, processor, inFlightRecordsCache, readIndex),
-			CategoryIndex.Reader,
-			EventTypeIndex.Reader
-		];
 	}
 
 	protected override void Dispose(bool disposing) {
@@ -71,13 +63,3 @@ internal class DefaultIndex : Disposable, ISecondaryIndex {
 delegate IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map);
 
 record struct AllRecord(long Seq, long LogPosition);
-
-record struct InFlightRecord(
-	long Seq,
-	long LogPosition,
-	int CategoryId,
-	long CategorySeq,
-	int EventTypeId,
-	long EventTypeSeq,
-	bool IsDeleted = false
-);
