@@ -255,7 +255,7 @@ try {
 			builder.Services.AddScoped<IdentityRedirectManager>();
 			builder.Services.AddSingleton(monitoringService);
 			builder.Services.AddSingleton(metricsObserver);
-
+			builder.Services.AddWindowsService();
 			Log.Information("Environment Name: {0}", builder.Environment.EnvironmentName);
 			Log.Information("ContentRoot Path: {0}", builder.Environment.ContentRootPath);
 

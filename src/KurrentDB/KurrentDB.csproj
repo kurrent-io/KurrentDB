@@ -9,6 +9,7 @@
 	<ItemGroup>
 		<PackageReference Include="Extensions.MudBlazor.StaticInput" Version="3.2.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
 		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.6.0" />
 		<PackageReference Include="MudBlazor.Markdown" Version="8.0.0" />
 		<PackageReference Include="MudBlazor" Version="8.3.0" />
