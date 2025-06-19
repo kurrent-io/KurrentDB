@@ -329,8 +329,7 @@ public class ClusterVNode<TStreamId> :
 
 		var dbConfig = CreateDbConfig(
 			out var statsHelper,
-			out var readerThreadsCount,
-			out _);
+			out var readerThreadsCount);
 
 		var trackers = new Trackers();
 		var metricsConfiguration = MetricsConfiguration.Get(configuration);
@@ -367,8 +366,7 @@ public class ClusterVNode<TStreamId> :
 
 		TFChunkDbConfig CreateDbConfig(
 			out SystemStatsHelper statsHelper,
-			out int readerThreadsCount,
-			out int workerThreadsCount) {
+			out int readerThreadsCount) {
 
 			ICheckpoint writerChk;
 			ICheckpoint chaserChk;
@@ -463,10 +461,6 @@ public class ClusterVNode<TStreamId> :
 			readerThreadsCount =
 				ThreadCountCalculator.CalculateReaderThreadCount(options.Database.ReaderThreadsCount,
 					processorCount, isRunningInContainer);
-
-			workerThreadsCount =
-				ThreadCountCalculator.CalculateWorkerThreadCount(options.Application.WorkerThreads,
-					readerThreadsCount, isRunningInContainer);
 
 			return new TFChunkDbConfig(dbPath,
 				options.Database.ChunkSize,
