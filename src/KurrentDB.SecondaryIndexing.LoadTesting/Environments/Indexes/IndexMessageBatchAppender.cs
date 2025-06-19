@@ -26,8 +26,9 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var inflightRecordsCache =
 			new DefaultIndexInFlightRecordsCache(new SecondaryIndexingPluginOptions { CommitBatchSize = commitSize });
 
-		var categoryIndexProcessor = new CategoryIndexProcessor(dbDataSource);
-		var eventTypeIndexProcessor = new EventTypeIndexProcessor(dbDataSource);
+		var publisher = new FakePublisher();
+		var categoryIndexProcessor = new CategoryIndexProcessor(dbDataSource, publisher);
+		var eventTypeIndexProcessor = new EventTypeIndexProcessor(dbDataSource, publisher);
 		var streamIndexProcessor = new StreamIndexProcessor(dbDataSource, reader, hasher);
 
 		_processor = new DefaultIndexProcessor(
@@ -36,7 +37,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 			categoryIndexProcessor,
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
-			new FakePublisher()
+			publisher
 		);
 	}
 

@@ -15,17 +15,17 @@ public class SecondaryIndexBuilder : IHandle<SystemMessage.SystemReady>, IHandle
 	IHostedService, IAsyncDisposable {
 	private static readonly ILogger Logger = Log.Logger.ForContext<SecondaryIndexBuilder>();
 	private readonly SecondaryIndexSubscription _subscription;
-	private readonly ISecondaryIndex _index;
+	private readonly ISecondaryIndexProcessor _processor;
 
 	[Experimental("SECONDARY_INDEX")]
 	public SecondaryIndexBuilder(
-		ISecondaryIndex index,
+		ISecondaryIndexProcessor processor,
 		IPublisher publisher,
 		ISubscriber subscriber,
 		SecondaryIndexingPluginOptions options
 	) {
-		_subscription = new SecondaryIndexSubscription(publisher, index.Processor, options);
-		_index = index;
+		_processor = processor;
+		_subscription = new SecondaryIndexSubscription(publisher, processor, options);
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
@@ -33,15 +33,11 @@ public class SecondaryIndexBuilder : IHandle<SystemMessage.SystemReady>, IHandle
 
 	public void Handle(SystemMessage.SystemReady message) => _subscription.Subscribe();
 
-	public void Handle(SystemMessage.BecomeShuttingDown message) => _index.Dispose();
+	public void Handle(SystemMessage.BecomeShuttingDown message) => _processor.Dispose();
 
 	public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
 	public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
-
-	public void Dispose() {
-		_index.Dispose();
-	}
 
 	public async ValueTask DisposeAsync() {
 		try {
@@ -50,6 +46,6 @@ public class SecondaryIndexBuilder : IHandle<SystemMessage.SystemReady>, IHandle
 			Logger.Error(e, "Failed to dispose secondary index subscription");
 		}
 
-		_index.Dispose();
+		_processor.Dispose();
 	}
 }

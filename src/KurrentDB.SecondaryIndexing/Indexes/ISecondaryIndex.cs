@@ -6,7 +6,6 @@ using KurrentDB.Core.Data;
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
 public interface ISecondaryIndex : IDisposable {
-	ISecondaryIndexProcessor Processor { get; }
 }
 
 public interface ISecondaryIndexProcessor : IDisposable {

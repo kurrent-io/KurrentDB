@@ -304,8 +304,10 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			new DefaultIndexInFlightRecordsCache(new SecondaryIndexingPluginOptions
 				{ CommitBatchSize = commitBatchSize });
 
-		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb);
-		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb);
+		var publisher = new FakePublisher();
+
+		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb, publisher);
+		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb, publisher);
 		var streamIndexProcessor = new StreamIndexProcessor(DuckDb, reader, hasher);
 
 		_processor = new DefaultIndexProcessor(
@@ -314,7 +316,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			categoryIndexProcessor,
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
-			new FakePublisher()
+			publisher
 		);
 	}
 
@@ -345,8 +347,10 @@ public class CleanUpTests {
 				new DefaultIndexInFlightRecordsCache(new SecondaryIndexingPluginOptions
 					{ CommitBatchSize = commitBatchSize });
 
-			var categoryIndexProcessor = new CategoryIndexProcessor(dataSource);
-			var eventTypeIndexProcessor = new EventTypeIndexProcessor(dataSource);
+			var publisher = new FakePublisher();
+
+			var categoryIndexProcessor = new CategoryIndexProcessor(dataSource, publisher);
+			var eventTypeIndexProcessor = new EventTypeIndexProcessor(dataSource, publisher);
 			var streamIndexProcessor = new StreamIndexProcessor(dataSource, reader, hasher);
 
 			using var processor = new DefaultIndexProcessor(
@@ -355,7 +359,7 @@ public class CleanUpTests {
 				categoryIndexProcessor,
 				eventTypeIndexProcessor,
 				streamIndexProcessor,
-				new FakePublisher()
+				publisher
 			);
 
 			const string cat1 = "first";

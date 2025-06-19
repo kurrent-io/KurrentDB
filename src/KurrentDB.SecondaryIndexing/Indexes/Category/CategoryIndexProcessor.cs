@@ -1,7 +1,11 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Readers;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 
@@ -11,12 +15,15 @@ internal class CategoryIndexProcessor {
 	private readonly Dictionary<string, int> _categories;
 	private readonly Dictionary<int, long> _categorySizes = new();
 	private readonly DuckDbDataSource _db;
+	private readonly IPublisher _publisher;
 
 	private int _seq;
 	public long LastIndexesPosition { get; private set; }
 
-	public CategoryIndexProcessor(DuckDbDataSource db) {
+	public CategoryIndexProcessor(DuckDbDataSource db, IPublisher publisher) {
 		_db = db;
+		_publisher = publisher;
+
 		using var connection = db.OpenNewConnection();
 		var ids = connection.Query<ReferenceRecord, GetCategoriesQuery>();
 		_categories = ids.ToDictionary(x => x.Name, x => x.Id);
@@ -40,6 +47,12 @@ internal class CategoryIndexProcessor {
 			var next = _categorySizes[categoryId] + 1;
 			_categorySizes[categoryId] = next;
 			LastIndexesPosition = resolvedEvent.Event.LogPosition;
+
+			_publisher.Publish(
+				new StorageMessage.SecondaryIndexCommitted(
+					resolvedEvent.ToResolvedLink($"{CategoryIndex.IndexPrefix}{categoryName}", next))
+			);
+
 			return new(categoryId, next);
 		}
 
@@ -50,6 +63,12 @@ internal class CategoryIndexProcessor {
 
 		_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new(id, categoryName));
 		LastIndexesPosition = resolvedEvent.Event.LogPosition;
+
+		_publisher.Publish(
+			new StorageMessage.SecondaryIndexCommitted(
+				resolvedEvent.ToResolvedLink($"{CategoryIndex.IndexPrefix}{categoryName}", 0))
+		);
+
 		return new(id, 0);
 	}
 

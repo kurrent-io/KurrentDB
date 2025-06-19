@@ -63,6 +63,7 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 			sp.GetRequiredService<DefaultIndexInFlightRecordsCache>().QueryInFlightRecords
 		);
 
+		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
 		services.AddSingleton<DefaultIndexProcessor>();
 		services.AddSingleton<CategoryIndexProcessor>();
 		services.AddSingleton<EventTypeIndexProcessor>();
