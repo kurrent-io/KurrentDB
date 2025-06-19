@@ -74,15 +74,15 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 						true,
 						cancellationToken: cts.Token
 					).ToListAsync(cts.Token);
+
+				if (events.Count != maxCount) {
+					await Task.Delay(25, cts.Token);
+				}
 			} catch (ReadResponseException.StreamNotFound ex) {
 				streamNotFound = ex;
 			} catch (OperationCanceledException ex) {
 				// can happen
 				Console.WriteLine(ex);
-			}
-
-			if (events.Count != maxCount) {
-				await Task.Delay(25, cts.Token);
 			}
 		} while (events.Count != maxCount && DateTime.UtcNow < endTime);
 
