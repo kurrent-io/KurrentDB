@@ -10,6 +10,7 @@ using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.Stream;
+using KurrentDB.SecondaryIndexing.Readers;
 using KurrentDB.SecondaryIndexing.Storage;
 using Serilog;
 
@@ -90,8 +91,11 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		);
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
-		//_publisher.Publish(new StorageMessage.DefaultIndexCommitted(resolvedEvent.Event.LogPosition, resolvedEvent.Event));
+		_publisher.Publish(
+			new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(DefaultIndex.IndexName, sequence))
+		);
 	}
+
 	public long? GetLastPosition() =>
 		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>()?.OrNull();
 

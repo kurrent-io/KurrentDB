@@ -47,7 +47,7 @@ public class SubscriptionsService<TStreamId> :
 	IHandle<SubscriptionMessage.CheckPollTimeout>,
 	IAsyncHandle<StorageMessage.InMemoryEventCommitted>,
 	IAsyncHandle<StorageMessage.EventCommitted>,
-	IAsyncHandle<StorageMessage.DefaultIndexCommitted> {
+	IAsyncHandle<StorageMessage.SecondaryIndexCommitted> {
 
 	private const int DontReportCheckpointReached = -1;
 
@@ -309,26 +309,37 @@ public class SubscriptionsService<TStreamId> :
 		ReissueReadsFor(message.Event.EventStreamId, message.CommitPosition, message.Event.EventNumber);
 	}
 
-	ValueTask IAsyncHandle<StorageMessage.DefaultIndexCommitted>.HandleAsync(StorageMessage.DefaultIndexCommitted message, CancellationToken token) {
-		var evnt = message.Event.Link;
-		var commitPosition = _lastSeenSecondaryIndexLogPosition = evnt.LogPosition;
+	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexCommitted>.HandleAsync(
+		StorageMessage.SecondaryIndexCommitted message,
+		CancellationToken token
+	) {
+		if (ProcessSecondaryIndexEvent(message.Event)) return ValueTask.CompletedTask;
 
-		// var streamCategory = SystemStreams.GetStreamCategory(message.Event.EventStreamId ?? message.Event.EventStreamId);
-		// var eventType = message.Event.EventType;
-		//
-		// var categoryIndexStreamName = $"{SystemStreams.CategorySecondaryIndexPrefix}{streamCategory}";
-		// var eventTypeIndexStreamName = $"{SystemStreams.EventTypeSecondaryIndexPrefix}{eventType}";
+		// I don't think that we need to handle that for now, but
+		// TODO: check if we can skip it
+		// ProcessStreamMetadataChanges(message.Event.EventStreamId);
+		// ProcessSettingsStreamChanges(message.Event.EventStreamId);
 
-		if (!_subscriptionTopics.TryGetValue(SystemStreams.DefaultSecondaryIndex, out var subscriptions))
-			return ValueTask.CompletedTask;
+		ReissueReadsFor(message.Event.Link.EventStreamId, message.Event.Link.LogPosition, message.Event.Link.EventNumber);
+		return ValueTask.CompletedTask;
+	}
+
+
+	private bool ProcessSecondaryIndexEvent(ResolvedEvent resolvedEvent)
+	{
+		var indexEvent = resolvedEvent.Link;
+		var commitPosition = _lastSeenSecondaryIndexLogPosition = indexEvent.LogPosition;
+
+		if (!_subscriptionTopics.TryGetValue(resolvedEvent.Link.EventStreamId, out var subscriptions))
+			return true;
 
 		for (int i = 0, n = subscriptions.Count; i < n; i++) {
 			var subscr = subscriptions[i];
-			if (commitPosition <= subscr.LastIndexedPosition || evnt.EventNumber <= subscr.LastEventNumber)
+			if (commitPosition <= subscr.LastIndexedPosition || indexEvent.EventNumber <= subscr.LastEventNumber)
 				continue;
 
-			if (subscr.EventFilter.IsEventAllowed(evnt)) {
-				subscr.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(subscr.CorrelationId, message.Event));
+			if (subscr.EventFilter.IsEventAllowed(indexEvent)) {
+				subscr.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(subscr.CorrelationId, resolvedEvent));
 			}
 
 			if (subscr.CheckpointInterval == DontReportCheckpointReached)
@@ -338,24 +349,12 @@ public class SubscriptionsService<TStreamId> :
 
 			if (subscr.CheckpointInterval != null &&
 			    subscr.CheckpointIntervalCurrent >= subscr.CheckpointInterval) {
-				subscr.Envelope.ReplyWith(new ClientMessage.CheckpointReached(subscr.CorrelationId, message.Event.LinkPosition));
+				subscr.Envelope.ReplyWith(new ClientMessage.CheckpointReached(subscr.CorrelationId, resolvedEvent.LinkPosition));
 				subscr.CheckpointIntervalCurrent = 0;
 			}
-
 		}
 
-		// await ProcessEventCommited(categoryIndexStreamName, message.LogPosition, message.Event, resolvedEvent, token);
-		// await ProcessEventCommited(eventTypeIndexStreamName, message.LogPosition, message.Event, resolvedEvent, token);
-
-		// I don't think that we need to handle that for now, but
-		// TODO: check if we can skip it
-		// ProcessStreamMetadataChanges(message.Event.EventStreamId);
-		// ProcessSettingsStreamChanges(message.Event.EventStreamId);
-
-		ReissueReadsFor(SystemStreams.DefaultSecondaryIndex, evnt.LogPosition, evnt.EventNumber);
-		// ReissueReadsFor(categoryIndexStreamName, message.LogPosition, message.Event.EventNumber);
-		// ReissueReadsFor(eventTypeIndexStreamName, message.LogPosition, message.Event.EventNumber);
-		return ValueTask.CompletedTask;
+		return false;
 	}
 
 	private async ValueTask<ResolvedEvent?> ProcessEventCommited(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {

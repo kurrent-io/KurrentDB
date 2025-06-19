@@ -1153,7 +1153,7 @@ public class ClusterVNode<TStreamId> :
 		_mainBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscrQueue);
 		_mainBus.Subscribe<StorageMessage.EventCommitted>(subscrQueue);
 		_mainBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscrQueue);
-		_mainBus.Subscribe<StorageMessage.DefaultIndexCommitted>(subscrQueue);
+		_mainBus.Subscribe<StorageMessage.SecondaryIndexCommitted>(subscrQueue);
 
 		var subscription = new SubscriptionsService<TStreamId>(_mainQueue, subscrQueue, _authorizationProvider, readIndex, virtualStreamReader);
 		subscrBus.Subscribe<SystemMessage.SystemStart>(subscription);
@@ -1167,7 +1167,7 @@ public class ClusterVNode<TStreamId> :
 		subscrBus.Subscribe<SubscriptionMessage.CheckPollTimeout>(subscription);
 		subscrBus.Subscribe<StorageMessage.EventCommitted>(subscription);
 		subscrBus.Subscribe<StorageMessage.InMemoryEventCommitted>(subscription);
-		subscrBus.Subscribe<StorageMessage.DefaultIndexCommitted>(subscription);
+		subscrBus.Subscribe<StorageMessage.SecondaryIndexCommitted>(subscription);
 
 		// PERSISTENT SUBSCRIPTIONS
 		// IO DISPATCHER

@@ -62,7 +62,7 @@ public class IndexingEnabledTests(
 		}
 	}
 
-	[Fact(Skip = "TODO: Fix live subscriptions")]
+	[Fact]
 	public Task SubscriptionReturnsAllEventsFromDefaultIndex() =>
 		ValidateSubscription(DefaultIndex.IndexName, _appendedBatches.ToDefaultIndexResolvedEvents());
 
