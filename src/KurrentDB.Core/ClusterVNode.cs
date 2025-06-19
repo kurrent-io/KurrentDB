@@ -782,8 +782,7 @@ public class ClusterVNode<TStreamId> :
 
 		// Storage Reader
 		var storageReader = new StorageReaderService<TStreamId>(_mainQueue, _mainBus, readIndex,
-			logFormat.SystemStreams,
-			readerThreadsCount, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
+			logFormat.SystemStreams, Db.Config.WriterCheckpoint.AsReadOnly(), virtualStreamReader, _queueStatsManager,
 			trackers.QueueTrackers);
 
 		_mainBus.Subscribe<SystemMessage.SystemInit>(storageReader);

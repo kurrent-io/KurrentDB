@@ -52,7 +52,6 @@ public class StorageReaderWorker<TStreamId> :
 	private readonly IReadOnlyCheckpoint _writerCheckpoint;
 	private readonly IPublisher _publisher;
 	private readonly IVirtualStreamReader _virtualStreamReader;
-	private readonly IBinaryInteger<int> _queueId;
 	private const int MaxPageSize = 4096;
 	private DateTime? _lastExpireTime;
 	private long _expiredBatchCount;
@@ -63,15 +62,13 @@ public class StorageReaderWorker<TStreamId> :
 		IReadIndex<TStreamId> readIndex,
 		ISystemStreamLookup<TStreamId> systemStreams,
 		IReadOnlyCheckpoint writerCheckpoint,
-		IVirtualStreamReader virtualStreamReader,
-		int queueId) {
+		IVirtualStreamReader virtualStreamReader) {
 
 		_publisher = publisher;
 		_readIndex = Ensure.NotNull(readIndex);
 		_systemStreams = Ensure.NotNull(systemStreams);
 		_writerCheckpoint = Ensure.NotNull(writerCheckpoint);
 		_virtualStreamReader = virtualStreamReader;
-		_queueId = queueId;
 	}
 
 	async ValueTask IAsyncHandle<ClientMessage.ReadEvent>.HandleAsync(ClientMessage.ReadEvent msg, CancellationToken token) {
@@ -728,16 +725,16 @@ public class StorageReaderWorker<TStreamId> :
 			return;
 		if (_expiredBatchCount == 0) {
 			_batchLoggingEnabled = false;
-			Log.Warning("StorageReaderWorker #{0}: Batch logging disabled, read load is back to normal", _queueId);
+			Log.Warning("StorageReaderWorker: Batch logging disabled, read load is back to normal");
 			return;
 		}
 
-		Log.Warning("StorageReaderWorker #{0}: {1} read operations have expired", _queueId, _expiredBatchCount);
+		Log.Warning("StorageReaderWorker: {0} read operations have expired", _expiredBatchCount);
 		_expiredBatchCount = 0;
 		_publisher.Publish(
 			TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2),
 				_publisher,
-				new StorageMessage.BatchLogExpiredMessages(_queueId))
+				new StorageMessage.BatchLogExpiredMessages())
 		);
 	}
 
@@ -767,11 +764,11 @@ public class StorageReaderWorker<TStreamId> :
 
 		//heuristic to match approximately >= 50 expired messages / second
 		_batchLoggingEnabled = true;
-		Log.Warning("StorageReaderWorker #{0}: Batch logging enabled, high rate of expired read messages detected", _queueId);
+		Log.Warning("StorageReaderWorker: Batch logging enabled, high rate of expired read messages detected");
 		_publisher.Publish(
 			TimerMessage.Schedule.Create(TimeSpan.FromSeconds(2),
 				_publisher,
-				new StorageMessage.BatchLogExpiredMessages(_queueId))
+				new StorageMessage.BatchLogExpiredMessages())
 		);
 		_expiredBatchCount = 1;
 		_lastExpireTime = expire;
