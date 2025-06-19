@@ -80,8 +80,6 @@ public sealed class SecondaryIndexSubscription(
 					indexProcessor.Commit();
 					indexedCount = 0;
 				}
-
-				publisher.Publish(new StorageMessage.SecondaryIndexRecordCommitted(resolvedEvent.Event.LogPosition, resolvedEvent.Event));
 			} catch (OperationCanceledException) {
 				break;
 			} catch (Exception e) {

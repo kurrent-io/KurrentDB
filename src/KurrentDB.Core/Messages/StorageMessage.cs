@@ -307,12 +307,28 @@ public static partial class StorageMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
-	public partial class SecondaryIndexRecordCommitted : Message {
-		public readonly long LogPosition;
-		public readonly EventRecord Event;
+	public partial class DefaultIndexCommitted : Message {
+		public readonly ResolvedEvent Event;
 
-		public SecondaryIndexRecordCommitted(long logPosition, EventRecord @event) {
-			LogPosition = logPosition;
+		public DefaultIndexCommitted(ResolvedEvent @event) {
+			Event = @event;
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Storage)]
+	public partial class CategorySecondaryIndexCommitted : Message {
+		public readonly ResolvedEvent Event;
+
+		public CategorySecondaryIndexCommitted(ResolvedEvent @event) {
+			Event = @event;
+		}
+	}
+
+	[DerivedMessage(CoreMessage.Storage)]
+	public partial class EventTypeSecondaryIndexCommitted : Message {
+		public readonly ResolvedEvent Event;
+
+		public EventTypeSecondaryIndexCommitted(ResolvedEvent @event) {
 			Event = @event;
 		}
 	}

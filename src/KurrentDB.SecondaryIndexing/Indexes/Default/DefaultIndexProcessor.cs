@@ -6,6 +6,7 @@ using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.Stream;
@@ -20,6 +21,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly CategoryIndexProcessor _categoryIndexProcessor;
 	private readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
 	private readonly StreamIndexProcessor _streamIndexProcessor;
+	private readonly IPublisher _publisher;
 	private Appender _appender;
 
 	private static readonly ILogger Logger = Log.Logger.ForContext<DefaultIndexProcessor>();
@@ -42,6 +44,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_categoryIndexProcessor = categoryIndexProcessor;
 		_eventTypeIndexProcessor = eventTypeIndexProcessor;
 		_streamIndexProcessor = streamIndexProcessor;
+		_publisher = publisher;
 
 		var lastSequence = GetLastSequence();
 		Logger.Information("Last known global sequence: {Seq}", lastSequence);
@@ -86,6 +89,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			)
 		);
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
+
+		//_publisher.Publish(new StorageMessage.DefaultIndexCommitted(resolvedEvent.Event.LogPosition, resolvedEvent.Event));
 	}
 	public long? GetLastPosition() =>
 		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>()?.OrNull();
