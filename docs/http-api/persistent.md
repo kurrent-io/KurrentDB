@@ -169,12 +169,12 @@ For example:
 
 #### Query parameters
 
-| Parameter           | Description                                                                                                                                                                                                                          |     |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
-| `stream`            | The stream to the persistent subscription is on.                                                                                                                                                                                     |     |
-| `subscription_name` | The name of the subscription group.                                                                                                                                                                                                  |     |
-| `action`            | <ul><li>**Park**: Don't retry the message, park it until a request is sent to reply the parked messages</li><li>**Retry**: Retry the message</li><li>**Skip**: Discard the message</li><li>**Stop**: Stop the subscription</li></ul> |     |
-| `messageid`         | The id of the message that needs to be acked                                                                                                                                                                                         |     |
+| Parameter           | Description                                                                                                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `stream`            | The stream to the persistent subscription is on.                                                                                                                                                                                     |
+| `subscription_name` | The name of the subscription group.                                                                                                                                                                                                  |
+| `action`            | <ul><li>**Park**: Don't retry the message, park it until a request is sent to reply the parked messages</li><li>**Retry**: Retry the message</li><li>**Skip**: Discard the message</li><li>**Stop**: Stop the subscription</li></ul> |
+| `messageid`         | The id of the message that needs to be acked                                                                                                                                                                                         |
 
 ### Nack a single message
 
@@ -197,6 +197,26 @@ For example:
 ### Response
 
 @[code](@httpapi/persistent-subscriptions/get-all-subscriptions-response.json)
+
+
+## Getting information for a page of subscriptions
+
+When a count is specified, the response includes the paging information for the request.
+
+| URI              | Method |
+| ---------------- | ------ |
+| `/subscriptions?count={count}&offset={offset}` | GET    |
+
+### Query parameters
+
+| Parameter | Description |
+| --------- | ----------- |
+| `count`   | The number of streams to get the persistent susbcriptions groups for. Used for paging, omit to get all streams. |
+| `offset`  | The number of streams to skip when getting persistent subscription groups. Used for paging. |
+
+### Response
+
+@[code](@httpapi/persistent-subscriptions/get-all-subscriptions-response-paged.json)
 
 ## Get subscriptions for a stream
 
