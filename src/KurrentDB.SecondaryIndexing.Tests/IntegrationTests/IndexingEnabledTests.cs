@@ -142,9 +142,9 @@ public class IndexingEnabledTests(
 			Assert.Equal(expected.Event.EventType, actual.Event.EventType);
 
 			Assert.Equal(expected.Event.Data, actual.Event.Data);
+			//TODO: Check as for some reason that fails sometimes for subscription
 			Assert.Equal(expected.Link.Data, actual.Link.Data);
 
-			//TODO: For some reason that fails for subscription
 			Assert.Equal(expected.Event.EventNumber, actual.Event.EventNumber);
 			Assert.Equal(sequence, actual.Link.EventNumber);
 
