@@ -237,7 +237,7 @@ Example Output:
 eventstore_kestrel_connections 1 1688070655500
 ```
 
-### Persistent Subscriptions
+### Persistent Subscriptions (23.10.7+)
 
 Persistent subscription metrics track the statistics for the persistent subscriptions.
 
@@ -279,9 +279,9 @@ The names of these metrics have been adjusted in EventStoreDB v24.10 and onwards
 
 These metrics are now also broken down per stream/group.
 
-The following detail is only important if you edited your `metricsconfig.json` file in EventStoreDB v23.10.6:
+The following detail is only important if you edited your `metricsconfig.json` file in EventStoreDB v23.10:
 
-In v23.10.6 the metrics were enabled/disabled with this line in `metricsconfig.json`
+In v23.10 the metrics were enabled/disabled with this line in `metricsconfig.json`
 
 ```json
 "PersistentSubscriptions": {
@@ -289,7 +289,7 @@ In v23.10.6 the metrics were enabled/disabled with this line in `metricsconfig.j
 },
 ```
 
-In v24.10.5 it is covered by the existing line:
+In v24.10 it is covered by the existing line:
 
 ```json
 "PersistentSubscriptionStats": true,
