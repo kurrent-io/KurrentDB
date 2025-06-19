@@ -100,6 +100,20 @@ Depending on your client operation timeout settings (default is 7 seconds), incr
 
 **Default**: `2000` (in milliseconds)
 
+### TCP read timeout
+
+Applies to reads received via the TCP client API. When a read has been in the server queue for longer than this, it will be discarded without being executed. If your TCP clients are configured to timeout after X milliseconds, it is advisable to set this server option to be the same, so that the server will not execute reads that the client is no longer waiting for.
+
+This does not affect gRPC clients. For gRPC the server-side discarding is driven by the deadline on the read itself without requiring server configuration.
+
+| Format               | Syntax                           |
+|:---------------------|:---------------------------------|
+| Command line         | `--tcp-read-timeout-ms`          |
+| YAML                 | `TcpReadTimeoutMs`               |
+| Environment variable | `EVENTSTORE_TCP_READ_TIMEOUT_MS` |
+
+**Default**: `10000` (in milliseconds)
+
 ### Disable flush to disk
 
 :::warning
