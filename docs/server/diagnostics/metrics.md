@@ -247,13 +247,15 @@ Persistent subscription metrics track the statistics for the persistent subscrip
 | `eventstore_persistent_subscriptions_replays_requested`                | [Counter](#common-types) | Count of Parked Message replay requests                                     |
 
 ::: warning
-The `eventstore_persistent_subscriptions_messages_parked` and `eventstore_persistent_subscriptions_replays_requested` metrics have been renamed to `eventstore_persistent_sub_park_message_requests` and `eventstore_persistent_sub_parked_message_replays` respectively in EventStoreDB version 24.10 and onwards.
+These metrics have been renamed in EventStoreDB v24.10, see the compatibility note below.
 :::
 
 Example configuration:
 
 ```json
-"PersistentSubscriptionStats": true,
+"PersistentSubscriptions": {
+	"ParkedMessages": true
+},
 ```
 
 Example Output:
@@ -265,6 +267,35 @@ eventstore_persistent_subscriptions_messages_parked{reason="max-retries"} 0 1750
 # TYPE eventstore_persistent_subscriptions_replays_requested counter
 eventstore_persistent_subscriptions_replays_requested 0 1750337191056
 ```
+
+#### Compatibility with v24.10 and onwards
+
+The names of these metrics have been adjusted in EventStoreDB v24.10 and onwards:
+
+| Old name | New name |
+|:---------|:---------|
+| `eventstore_persistent_subscriptions_messages_parked` | `eventstore_persistent_sub_park_message_requests` |
+| `eventstore_persistent_subscriptions_replays_requested` | `eventstore_persistent_sub_parked_message_replays` |
+
+These metrics are now also broken down per stream/group.
+
+The following detail is only important if you edited your `metricsconfig.json` file in EventStoreDB v23.10.6:
+
+In v23.10.6 the metrics were enabled/disabled with this line in `metricsconfig.json`
+
+```json
+"PersistentSubscriptions": {
+	"ParkedMessages": true
+},
+```
+
+In v24.10.5 it is covered by the existing line:
+
+```json
+"PersistentSubscriptionStats": true,
+```
+
+The metrics are on by default in both cases.
 
 ::: note
 Native EventStoreDB metrics do not yet contain all of the metrics for Persistent Subscriptions. To view these in Prometheus you can still use the [Prometheus exporter](https://github.com/marcinbudny/eventstore_exporter).
