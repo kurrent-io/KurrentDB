@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Channels;
 using Kurrent.Surge.Resilience;
 using KurrentDB.Core;
@@ -10,7 +9,6 @@ using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Tests;
-using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.System.Testing;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using StreamRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision;
@@ -87,7 +85,6 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 			count++;
 			yield return eventReceived.Event;
-
 		}
 	}
 
@@ -114,7 +111,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) {
-		timeout ??= TimeSpan.FromMilliseconds(100000);
+		timeout ??= TimeSpan.FromMilliseconds(30000);
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
 		var events = new List<ResolvedEvent>();
@@ -130,15 +127,16 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 				} catch (ReadResponseException.StreamNotFound ex) {
 					streamNotFound = ex;
 				}
+				catch (OperationCanceledException ex) {
+					// can happen
+					Console.WriteLine(ex);
+				}
 
 				if (events.Count != maxCount) {
 					await Task.Delay(25, cts.Token);
 				}
 			} while (events.Count != maxCount && DateTime.UtcNow < endTime);
 		} catch (TaskCanceledException ex) {
-			// can happen
-			Console.WriteLine(ex);
-		} catch (OperationCanceledException ex) {
 			// can happen
 			Console.WriteLine(ex);
 		}
@@ -158,36 +156,13 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	public static Event ToEventData(string data) =>
 		new(Guid.NewGuid(), "test", false, data, null, null);
 
-	public static ResolvedEvent ToResolvedEvent<TLogFormat, TStreamId>(
-		string stream,
-		string eventType,
-		string data,
-		long eventNumber
-	) {
-		var recordFactory = LogFormatHelper<TLogFormat, TStreamId>.RecordFactory;
-		var streamIdIgnored = LogFormatHelper<TLogFormat, TStreamId>.StreamId;
-		var eventTypeIdIgnored = LogFormatHelper<TLogFormat, TStreamId>.EventTypeId;
-
-		var record = new EventRecord(
-			eventNumber,
-			LogRecord.Prepare(recordFactory, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
-				streamIdIgnored, eventNumber, PrepareFlags.None, eventTypeIdIgnored, Encoding.UTF8.GetBytes(data),
-				Encoding.UTF8.GetBytes("")
-			),
-			stream,
-			eventType
-		);
-
-		return ResolvedEvent.ForUnresolvedEvent(record, 0);
-	}
-
-	void SetUpDatabaseDirectory() {
+	private void SetUpDatabaseDirectory() {
 		var typeName = GetType().Name.Length > 30 ? GetType().Name[..30] : GetType().Name;
 		PathName = Path.Combine(Path.GetTempPath(), $"ES-{Guid.NewGuid()}-{typeName}");
 
 		Directory.CreateDirectory(PathName);
 	}
 
-	Task CleanUpDatabaseDirectory() =>
+	private Task CleanUpDatabaseDirectory() =>
 		PathName != null ? DirectoryDeleter.TryForceDeleteDirectoryAsync(PathName, retries: 10) : Task.CompletedTask;
 }

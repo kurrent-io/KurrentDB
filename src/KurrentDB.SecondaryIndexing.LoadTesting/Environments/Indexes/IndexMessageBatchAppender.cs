@@ -24,7 +24,7 @@ public class IndexMessageBatchAppender: IMessageBatchAppender {
 	}
 
 	public ValueTask Append(TestMessageBatch batch) {
-		foreach (var resolvedEvent in batch.Messages.Select(m => m.ToResolvedEvent(batch.StreamName))) {
+		foreach (var resolvedEvent in batch.ToResolvedEvents()) {
 			_processor.Index(resolvedEvent);
 
 			if (++_indexedCount < _commitSize) continue;

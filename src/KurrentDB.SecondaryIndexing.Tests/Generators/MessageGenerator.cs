@@ -5,6 +5,9 @@ using System.Text;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.SecondaryIndexing.Indexes.Category;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Generators;
 
@@ -65,7 +68,8 @@ public class MessageGenerator : IMessageGenerator {
 				streamPosition,
 				logPosition + i,
 				eventType,
-				Enumerable.Repeat((byte)0x20, config.MessageSize).ToArray()
+				Enumerable.Repeat((byte)0x20, config.MessageSize).ToArray(),
+				Enumerable.Repeat((byte)0x30, config.MessageSize).ToArray()
 			);
 		}
 
@@ -86,18 +90,37 @@ public class MessageGenerator : IMessageGenerator {
 	}
 }
 
-public readonly record struct TestMessageData(int StreamPosition, long LogSequence, string EventType, byte[] Data) {
-	public ResolvedEvent ToResolvedEvent(string streamName) {
+public readonly record struct TestMessageData(
+	int StreamPosition,
+	long LogSequence,
+	string EventType,
+	byte[] Data,
+	byte[] MetaData
+) {
+	public readonly Guid EventId = Guid.NewGuid();
+	public readonly Guid CorrelationId = Guid.NewGuid();
+
+	public ResolvedEvent ToResolvedEvent(string streamName, int batchIndex) {
 		var recordFactory = LogFormatHelper<LogFormat.V2, string>.RecordFactory;
-		var streamIdIgnored = LogFormatHelper<LogFormat.V2, string>.StreamId;
-		var eventTypeIdIgnored = LogFormatHelper<LogFormat.V2, string>.EventTypeId;
+
+		var prepare = LogRecord.Prepare(
+			recordFactory,
+			LogSequence,
+			CorrelationId,
+			EventId,
+			LogSequence,
+			batchIndex,
+			streamName,
+			StreamPosition,
+			PrepareFlags.None,
+			EventType,
+			Data,
+			MetaData
+		);
 
 		var record = new EventRecord(
 			StreamPosition,
-			LogRecord.Prepare(recordFactory, LogSequence, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
-				streamIdIgnored, StreamPosition, PrepareFlags.None, eventTypeIdIgnored, Data,
-				Encoding.UTF8.GetBytes("")
-			),
+			prepare,
 			streamName,
 			EventType
 		);
@@ -105,11 +128,137 @@ public readonly record struct TestMessageData(int StreamPosition, long LogSequen
 		return ResolvedEvent.ForUnresolvedEvent(record, 0);
 	}
 
+	public ResolvedEvent ToIndexResolvedEvent(string originalStreamName, string indexStreamName, int indexSequence,
+		int batchIndex) {
+		var recordFactory = LogFormatHelper<LogFormat.V2, string>.RecordFactory;
+
+		var prepare = LogRecord.Prepare(
+			recordFactory,
+			LogSequence,
+			CorrelationId,
+			EventId,
+			LogSequence,
+			batchIndex,
+			originalStreamName,
+			StreamPosition,
+			PrepareFlags.None,
+			EventType,
+			Data,
+			MetaData
+		);
+
+		return ResolvedEvent.ForResolvedLink(
+			new EventRecord(
+				prepare.Version,
+				prepare,
+				prepare.EventStreamId,
+				prepare.EventType
+			),
+			new EventRecord(
+				indexSequence,
+				prepare.LogPosition,
+				prepare.CorrelationId,
+				prepare.EventId,
+				prepare.TransactionPosition,
+				prepare.TransactionOffset,
+				indexStreamName,
+				indexSequence,
+				prepare.TimeStamp,
+				PrepareFlags.None,
+				"$>",
+				Encoding.UTF8.GetBytes($"{prepare.Version}@{prepare.EventStreamId}"),
+				[],
+				[]
+			));
+	}
+
 	public Event ToEventData() =>
-		new(Guid.NewGuid(), EventType, false, Data, null, null);
+		new(EventId, EventType, false, Data, MetaData, null);
 }
 
-public readonly record struct TestMessageBatch(string CategoryName, string StreamName, TestMessageData[] Messages);
+public readonly record struct TestMessageBatch(string CategoryName, string StreamName, TestMessageData[] Messages) {
+	public ResolvedEvent[] ToResolvedEvents() {
+		var streamName = StreamName;
+		return Messages.Select((m, i) => m.ToResolvedEvent(streamName, i)).ToArray();
+	}
+
+	public ResolvedEvent[] ToIndexResolvedEvents(
+		string indexStreamName,
+		int indexPosition,
+		Func<TestMessageData, bool>? predicate = null
+	) {
+		var streamName = StreamName;
+		predicate ??= _ => true;
+
+		return Messages
+			.Where(predicate)
+			.Select((m, i) => m.ToIndexResolvedEvent(streamName, indexStreamName, indexPosition + i, i))
+			.ToArray();
+	}
+}
+
+public static class TestMessageBatchExtensions {
+	public static ResolvedEvent[] ToDefaultIndexResolvedEvents(this List<TestMessageBatch> batches) {
+		var result = new List<ResolvedEvent>();
+
+		var currentIndex = 0;
+
+		foreach (var batch in batches) {
+			var resolvedEvents = batch.ToIndexResolvedEvents(
+				DefaultIndex.IndexName,
+				currentIndex
+			);
+			currentIndex += batch.Messages.Length;
+			result.AddRange(resolvedEvents);
+		}
+
+		return result.ToArray();
+	}
+	public static ResolvedEvent[] ToCategoryIndexResolvedEvents(
+		this List<TestMessageBatch> batches,
+		string category
+	) {
+		var eventTypeStreamName = $"{CategoryIndex.IndexPrefix}{category}";
+
+		var result = new List<ResolvedEvent>();
+
+		var currentIndex = 0;
+
+		foreach (var batch in batches.Where(b => b.StreamName.StartsWith(category + "-"))) {
+			var resolvedEvents = batch.ToIndexResolvedEvents(
+				eventTypeStreamName,
+				currentIndex
+			);
+			currentIndex += batch.Messages.Length;
+			result.AddRange(resolvedEvents);
+		}
+
+		return result.ToArray();
+	}
+
+	public static ResolvedEvent[] ToEventTypeIndexResolvedEvents(
+		this List<TestMessageBatch> batches,
+		string eventType
+	) {
+		var eventTypeStreamName = $"{EventTypeIndex.IndexPrefix}{eventType}";
+
+		var result = new List<ResolvedEvent>();
+
+		var currentIndex = 0;
+
+		foreach (var batch in batches) {
+			var resolvedEvents = batch.ToIndexResolvedEvents(
+				eventTypeStreamName,
+				currentIndex,
+				m => m.EventType == eventType
+			);
+			currentIndex += resolvedEvents.Length;
+			result.AddRange(resolvedEvents);
+		}
+
+		return result.ToArray();
+	}
+}
 
 public static class CollectionExtension {
 	public static T RandomElement<T>(this ICollection<T> collection) =>
