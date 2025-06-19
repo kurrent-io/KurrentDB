@@ -15,18 +15,12 @@ public enum DenialReason {
 public static partial class HttpMessage {
 	[DerivedMessage]
 	public abstract partial class HttpSendMessage : Message {
-		public sealed override object Affinity => HttpEntityManager;
+		public sealed override HttpEntityManager Affinity => HttpEntityManager;
 
-		public readonly IEnvelope Envelope;
-		public readonly Guid CorrelationId;
 		public readonly HttpEntityManager HttpEntityManager;
 
-		/// <param name="correlationId"></param>
-		/// <param name="envelope">non-null envelope requests HttpCompleted messages in response</param>
 		/// <param name="httpEntityManager"></param>
-		protected HttpSendMessage(Guid correlationId, IEnvelope envelope, HttpEntityManager httpEntityManager) {
-			CorrelationId = correlationId;
-			Envelope = envelope;
+		protected HttpSendMessage(HttpEntityManager httpEntityManager) {
 			HttpEntityManager = httpEntityManager;
 		}
 	}
@@ -39,7 +33,7 @@ public static partial class HttpMessage {
 
 		public HttpSend(
 			HttpEntityManager httpEntityManager, ResponseConfiguration configuration, object data, Message message)
-			: base(Guid.Empty, null, httpEntityManager) {
+			: base(httpEntityManager) {
 			Data = data;
 			Configuration = configuration;
 			Message = message;
