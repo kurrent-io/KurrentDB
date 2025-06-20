@@ -39,7 +39,7 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             var result = await Commands.Handle(req, ct);
 
             return await result.Match(
-	            ok =>  {
+	            async ok =>  {
 #if DEBUG
 	                await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
 #endif
@@ -78,7 +78,7 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             var result = await Commands.Handle(req, ct);
 
             return await result.Match(
-	            ok => {
+	            async ok => {
 #if DEBUG
                     await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
 #endif
