@@ -202,7 +202,8 @@ public class SpecRunner {
 				runner = new JintProjectionStateHandler(source, true,
 					compilationTimeout: TimeSpan.FromMilliseconds(200),
 					executionTimeout: TimeSpan.FromMilliseconds(200),
-					jsFunctionCaller: new(IProjectionExecutionTracker.NoOp));
+					jsFunctionCaller: new(IProjectionExecutionTracker.NoOp),
+					jsSerializer: new(IProjectionStateSerializationTracker.NoOp));
 			});
 
 			yield return For($"{projection} getDefinition", () => { definition = runner.GetSourceDefinition(); });
