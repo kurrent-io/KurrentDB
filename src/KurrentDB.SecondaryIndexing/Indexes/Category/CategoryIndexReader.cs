@@ -42,7 +42,7 @@ class CategoryIndexReader(
 		return range.Select(x => new IndexedPrepare(x.CategorySeq, x.LogPosition));
 	}
 
-	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexesPosition;
+	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
 
 	public override bool CanReadStream(string streamId) => streamId.StartsWith(CategoryIndex.IndexPrefix);
 }

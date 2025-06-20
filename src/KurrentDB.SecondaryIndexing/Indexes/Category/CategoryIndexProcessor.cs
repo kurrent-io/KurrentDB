@@ -4,7 +4,6 @@
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
-using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Readers;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
@@ -18,7 +17,7 @@ internal class CategoryIndexProcessor {
 	private readonly IPublisher _publisher;
 
 	private int _seq;
-	public long LastIndexesPosition { get; private set; }
+	public long LastIndexedPosition { get; private set; }
 
 	public CategoryIndexProcessor(DuckDbDataSource db, IPublisher publisher) {
 		_db = db;
@@ -43,33 +42,22 @@ internal class CategoryIndexProcessor {
 	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
 		var categoryName = GetStreamCategory(resolvedEvent.OriginalStreamId);
 
-		if (_categories.TryGetValue(categoryName, out var categoryId)) {
-			var next = _categorySizes[categoryId] + 1;
-			_categorySizes[categoryId] = next;
-			LastIndexesPosition = resolvedEvent.Event.LogPosition;
-
-			_publisher.Publish(
-				new StorageMessage.SecondaryIndexCommitted(
-					resolvedEvent.ToResolvedLink($"{CategoryIndex.IndexPrefix}{categoryName}", next))
-			);
-
-			return new(categoryId, next);
+		if (!_categories.TryGetValue(categoryName, out var categoryId)) {
+			categoryId = ++_seq;
+			_categories[categoryName] = categoryId;
+			_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new(categoryId, categoryName));
 		}
 
-		var id = ++_seq;
+		var nextCategorySequence = _categorySizes.GetValueOrDefault(categoryId, -1) + 1;
+		_categorySizes[categoryId] = nextCategorySequence;
 
-		_categories[categoryName] = id;
-		_categorySizes[id] = 0;
+		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
-		_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new(id, categoryName));
-		LastIndexesPosition = resolvedEvent.Event.LogPosition;
-
-		_publisher.Publish(
-			new StorageMessage.SecondaryIndexCommitted(
-				resolvedEvent.ToResolvedLink($"{CategoryIndex.IndexPrefix}{categoryName}", 0))
+		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(
+				resolvedEvent.ToResolvedLink($"{CategoryIndex.IndexPrefix}{categoryName}", nextCategorySequence))
 		);
 
-		return new(id, 0);
+		return new SequenceRecord(categoryId, nextCategorySequence);
 	}
 
 	public long GetLastEventNumber(int categoryId) =>

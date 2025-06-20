@@ -4,7 +4,6 @@
 using System.Runtime.CompilerServices;
 using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core.Bus;
-using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
