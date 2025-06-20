@@ -90,10 +90,11 @@ public class CheckSchemaCompatibilityRequestValidator : AbstractValidator<CheckS
         RuleFor(x => x.Definition)
             .SetValidator(SchemaDefinitionValidator.Instance);
 
-        RuleFor(x => x.DataFormat)
-            .SetValidator(SchemaDataFormatValidator.Instance)
-            .Must((_, format) => format == SchemaDataFormat.Json)
-            .WithMessage("Schema format must be JSON for compatibility check");
+        // This should be a domain level exception
+        // RuleFor(x => x.DataFormat)
+        //     .SetValidator(SchemaDataFormatValidator.Instance)
+        //     .Must((_, format) => format == SchemaDataFormat.Json)
+        //     .WithMessage("Schema format must be JSON for compatibility check");
     }
 }
 

@@ -66,6 +66,7 @@ enum SchemaCompatibilityErrorKind {
   SCHEMA_COMPATIBILITY_ERROR_KIND_NEW_REQUIRED_PROPERTY          = 4;  // Forward compatibility: New required property added
   SCHEMA_COMPATIBILITY_ERROR_KIND_REMOVED_PROPERTY               = 5;  // Forward compatibility: Property removed from schema
   SCHEMA_COMPATIBILITY_ERROR_KIND_ARRAY_TYPE_INCOMPATIBILITY     = 6;  // Issues with array item types
+  SCHEMA_COMPATIBILITY_ERROR_KIND_DATA_FORMAT_MISMATCH           = 7;  // Data format mismatch between schemas
 }
 
 // Represents the information necessary to check schema compatibility or validate a schema.

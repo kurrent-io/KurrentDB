@@ -4,6 +4,7 @@
 using System.Text.Json;
 using Dapper;
 using DuckDB.NET.Data;
+using Google.Protobuf.Collections;
 using Humanizer;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema.Validation;
@@ -11,6 +12,8 @@ using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
 using Polly;
 using static KurrentDB.SchemaRegistry.Data.SchemaQueriesMapping;
+using SchemaCompatibilityError = KurrentDB.Protocol.Registry.V2.SchemaCompatibilityError;
+using SchemaCompatibilityErrorKind = KurrentDB.Protocol.Registry.V2.SchemaCompatibilityErrorKind;
 using SchemaCompatibilityResult = Kurrent.Surge.Schema.Validation.SchemaCompatibilityResult;
 
 namespace KurrentDB.SchemaRegistry.Data;
@@ -287,10 +290,24 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
             ? await GetLatestSchemaValidationInfo(Guid.Parse(query.SchemaVersionId), cancellationToken)
             : await GetLatestSchemaValidationInfo(query.SchemaName, cancellationToken);
 
-        if (query.DataFormat != info.DataFormat)
-            throw RpcExceptions.FailedPrecondition($"Schema format mismatch: {query.DataFormat} != {info.DataFormat}");
+        if (query.DataFormat != info.DataFormat) {
+	        var errors = new RepeatedField<SchemaCompatibilityError> {
+		        new List<SchemaCompatibilityError> {
+			        new() {
+				        Kind = SchemaCompatibilityErrorKind.DataFormatMismatch,
+				        Details = $"Schema format mismatch: {query.DataFormat} != {info.DataFormat}"
+			        }
+		        }
+	        };
 
-	    var uncheckedSchema = query.Definition.ToStringUtf8();
+	        return new CheckSchemaCompatibilityResponse {
+		        Failure = new CheckSchemaCompatibilityResponse.Types.Failure {
+			        Errors = { errors }
+		        }
+	        };
+        }
+
+        var uncheckedSchema = query.Definition.ToStringUtf8();
 	    var compatibility = (SchemaCompatibilityMode)info.Compatibility;
 
 	    SchemaCompatibilityResult result;
