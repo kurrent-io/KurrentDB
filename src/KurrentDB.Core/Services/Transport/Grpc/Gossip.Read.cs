@@ -8,6 +8,7 @@ using EventStore.Client;
 using EventStore.Client.Gossip;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Cluster;
 using KurrentDB.Core.Messages;
@@ -15,6 +16,7 @@ using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Transport.Grpc;
 using ClusterInfo = EventStore.Client.Gossip.ClusterInfo;
+using Empty = EventStore.Client.Empty;
 using MemberInfo = EventStore.Client.Gossip.MemberInfo;
 
 // ReSharper disable once CheckNamespace
@@ -29,7 +31,7 @@ partial class Gossip {
 			throw RpcExceptions.AccessDenied();
 		}
 
-		var tcs = new TaskCompletionSource<ClusterInfo>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<ClusterInfo>();
 		var duration = _tracker.Start();
 		_bus.Publish(new GossipMessage.ClientGossip(new CallbackEnvelope(msg => GossipResponse(msg, tcs, duration))));
 		return await tcs.Task;

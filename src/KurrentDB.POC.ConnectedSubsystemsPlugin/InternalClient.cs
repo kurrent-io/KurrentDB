@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -57,7 +58,7 @@ public class InternalClient : IClient {
 
 	public async Task<long> WriteAsync(string stream, EventToWrite[] events, long expectedVersion, CancellationToken cancellationToken) {
 
-		var appendResponseSource = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var appendResponseSource = TaskCompletionSourceFactory.CreateDefault<long>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var envelope = new CallbackEnvelope(HandleWriteEventsCompleted);
 
 		var correlationId = Guid.NewGuid();
@@ -206,7 +207,7 @@ public class InternalClient : IClient {
 				compatibility: 1));
 
 	public async Task DeleteStreamAsync(string stream, long expectedVersion, CancellationToken cancellationToken) {
-		var appendResponseSource = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+		var appendResponseSource = TaskCompletionSourceFactory.CreateDefault(TaskCreationOptions.RunContinuationsAsynchronously);
 		var envelope = new CallbackEnvelope(HandleDeleteStreamCompleted);
 
 		var correlationId = Guid.NewGuid();

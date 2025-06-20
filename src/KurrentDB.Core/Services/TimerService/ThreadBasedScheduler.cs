@@ -28,7 +28,7 @@ public sealed class ThreadBasedScheduler : IMonitoredQueue, IScheduler {
 
 	private readonly QueueStatsCollector _queueStats;
 	private readonly QueueTracker _tracker;
-	private readonly TaskCompletionSource<object> _tcs = new();
+	private readonly TaskCompletionSource<object> _tcs = TaskCompletionSourceFactory.CreateDefault<object>();
 
 	private long _nextWakeupTimeTicks = long.MinValue;
 

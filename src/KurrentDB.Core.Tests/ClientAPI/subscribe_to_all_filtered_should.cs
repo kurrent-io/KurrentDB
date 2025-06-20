@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.SystemData;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Tests.ClientAPI.Helpers;
 using KurrentDB.Core.Tests.Helpers;
@@ -62,7 +63,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 
 		using (var store = BuildConnection(_node)) {
 			await store.ConnectAsync();
-			var appeared = new TaskCompletionSource<bool>();
+			var appeared = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 			using (await store.FilteredSubscribeToAllAsync(false, filter, (s, e) => {
 				foundEvents.Add(e);
@@ -88,7 +89,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 
 		using (var store = BuildConnection(_node)) {
 			await store.ConnectAsync();
-			var appeared = new TaskCompletionSource<bool>();
+			var appeared = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 			using (await store.FilteredSubscribeToAllAsync(false, filter, (s, e) => {
 				if (e.OriginalStreamId == SystemStreams.EventTypesStream)
@@ -117,7 +118,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 
 		using (var store = BuildConnection(_node)) {
 			await store.ConnectAsync();
-			var appeared = new TaskCompletionSource<bool>();
+			var appeared = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 			using (await store.FilteredSubscribeToAllAsync(false, filter, (s, e) => {
 				foundEvents.Add(e);
@@ -143,7 +144,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 
 		using (var store = BuildConnection(_node)) {
 			await store.ConnectAsync();
-			var appeared = new TaskCompletionSource<bool>();
+			var appeared = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 			using (await store.FilteredSubscribeToAllAsync(false, filter, (s, e) => {
 				foundEvents.Add(e);
@@ -169,7 +170,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 
 		using (var store = BuildConnection(_node)) {
 			await store.ConnectAsync();
-			var appeared = new TaskCompletionSource<bool>();
+			var appeared = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 			using (await store.FilteredSubscribeToAllAsync(false, filter, (s, e) => {
 				foundEvents.Add(e);
@@ -211,7 +212,7 @@ public class subscribe_to_all_filtered_should<TLogFormat, TStreamId> : Specifica
 
 		using (var store = BuildConnection(_node)) {
 			await store.ConnectAsync();
-			var appeared = new TaskCompletionSource<bool>();
+			var appeared = TaskCompletionSourceFactory.CreateDefault<bool>();
 			var eventsSeen = new List<ResolvedEvent>();
 			var checkpointsSeen = 0;
 

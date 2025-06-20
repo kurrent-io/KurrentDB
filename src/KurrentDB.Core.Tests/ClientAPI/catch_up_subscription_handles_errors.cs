@@ -12,6 +12,7 @@ using EventStore.ClientAPI.ClientOperations;
 using EventStore.ClientAPI.Common.Log;
 using EventStore.ClientAPI.Internal;
 using EventStore.ClientAPI.SystemData;
+using KurrentDB.Common.Utils;
 using NUnit.Framework;
 using ClientMessage = EventStore.ClientAPI.Messages.ClientMessage;
 using ResolvedEvent = EventStore.ClientAPI.ResolvedEvent;
@@ -38,8 +39,8 @@ public class catch_up_subscription_handles_errors {
 	public void SetUp() {
 		_connection = new FakeEventStoreConnection();
 		_raisedEvents = new List<ResolvedEvent>();
-		_dropEvent = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-		_raisedEventEvent = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		_dropEvent = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+		_raisedEventEvent = TaskCompletionSourceFactory.CreateDefault<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 		_liveProcessingStarted = false;
 		_isDropped = false;
 		_dropReason = SubscriptionDropReason.Unknown;
@@ -91,7 +92,7 @@ public class catch_up_subscription_handles_errors {
 		var expectedException = new ApplicationException("Test");
 		_connection.HandleReadStreamEventsForwardAsync((stream, start, max) => {
 			var taskCompletionSource =
-				new TaskCompletionSource<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
+				TaskCompletionSourceFactory.CreateDefault<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
 			Assert.That(stream, Is.EqualTo(StreamId));
 			Assert.That(start, Is.EqualTo(0));
 			Assert.That(max, Is.EqualTo(1));
@@ -115,7 +116,7 @@ public class catch_up_subscription_handles_errors {
 			if (callCount++ == 0) {
 				Assert.That(start, Is.EqualTo(0));
 				var taskCompletionSource =
-					new TaskCompletionSource<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
+					TaskCompletionSourceFactory.CreateDefault<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
 				taskCompletionSource.SetResult(CreateStreamEventsSlice());
 				return taskCompletionSource.Task;
 			} else {
@@ -141,13 +142,13 @@ public class catch_up_subscription_handles_errors {
 			if (callCount++ == 0) {
 				Assert.That(start, Is.EqualTo(0));
 				var taskCompletionSource =
-					new TaskCompletionSource<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
+					TaskCompletionSourceFactory.CreateDefault<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
 				taskCompletionSource.SetResult(CreateStreamEventsSlice());
 				return taskCompletionSource.Task;
 			} else {
 				Assert.That(start, Is.EqualTo(1));
 				var taskCompletionSource =
-					new TaskCompletionSource<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
+					TaskCompletionSourceFactory.CreateDefault<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
 				taskCompletionSource.SetException(expectedException);
 				return taskCompletionSource.Task;
 			}
@@ -163,7 +164,7 @@ public class catch_up_subscription_handles_errors {
 
 		_connection.HandleReadStreamEventsForwardAsync((stream, start, max) => {
 			var taskCompletionSource =
-				new TaskCompletionSource<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
+				TaskCompletionSourceFactory.CreateDefault<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
 			taskCompletionSource.SetResult(CreateStreamEventsSlice(isEnd: true));
 			return taskCompletionSource.Task;
 		});
@@ -183,14 +184,14 @@ public class catch_up_subscription_handles_errors {
 
 		_connection.HandleReadStreamEventsForwardAsync((stream, start, max) => {
 			var taskCompletionSource =
-				new TaskCompletionSource<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
+				TaskCompletionSourceFactory.CreateDefault<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
 			taskCompletionSource.SetResult(CreateStreamEventsSlice(isEnd: true));
 			return taskCompletionSource.Task;
 		});
 
 		_connection.HandleSubscribeToStreamAsync((stream, raise, drop) => {
 			var taskCompletionSource =
-				new TaskCompletionSource<EventStoreSubscription>(TaskCreationOptions
+				TaskCompletionSourceFactory.CreateDefault<EventStoreSubscription>(TaskCreationOptions
 					.RunContinuationsAsynchronously);
 			taskCompletionSource.SetException(expectedException);
 			return taskCompletionSource.Task;
@@ -208,7 +209,7 @@ public class catch_up_subscription_handles_errors {
 		_connection.HandleReadStreamEventsForwardAsync((stream, start, max) => {
 			if (callCount++ == 0) {
 				var taskCompletionSource =
-					new TaskCompletionSource<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
+					TaskCompletionSourceFactory.CreateDefault<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
 				taskCompletionSource.SetResult(CreateStreamEventsSlice(isEnd: true));
 				return taskCompletionSource.Task;
 			} else {
@@ -219,7 +220,7 @@ public class catch_up_subscription_handles_errors {
 
 		_connection.HandleSubscribeToStreamAsync((stream, raise, drop) => {
 			var taskCompletionSource =
-				new TaskCompletionSource<EventStoreSubscription>(TaskCreationOptions
+				TaskCompletionSourceFactory.CreateDefault<EventStoreSubscription>(TaskCreationOptions
 					.RunContinuationsAsynchronously);
 			taskCompletionSource.SetResult(CreateVolatileSubscription(raise, drop, 1));
 			return taskCompletionSource.Task;
@@ -238,13 +239,13 @@ public class catch_up_subscription_handles_errors {
 		_connection.HandleReadStreamEventsForwardAsync((stream, start, max) => {
 			if (callCount++ == 0) {
 				var taskCompletionSource =
-					new TaskCompletionSource<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
+					TaskCompletionSourceFactory.CreateDefault<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
 				taskCompletionSource.SetResult(CreateStreamEventsSlice(isEnd: true));
 				return taskCompletionSource.Task;
 			} else {
 				Assert.That(start, Is.EqualTo(1));
 				var taskCompletionSource =
-					new TaskCompletionSource<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
+					TaskCompletionSourceFactory.CreateDefault<StreamEventsSlice>(TaskCreationOptions.RunContinuationsAsynchronously);
 				taskCompletionSource.SetException(expectedException);
 				return taskCompletionSource.Task;
 			}
@@ -252,7 +253,7 @@ public class catch_up_subscription_handles_errors {
 
 		_connection.HandleSubscribeToStreamAsync((stream, raise, drop) => {
 			var taskCompletionSource =
-				new TaskCompletionSource<EventStoreSubscription>(TaskCreationOptions
+				TaskCompletionSourceFactory.CreateDefault<EventStoreSubscription>(TaskCreationOptions
 					.RunContinuationsAsynchronously);
 			taskCompletionSource.SetResult(CreateVolatileSubscription(raise, drop, 1));
 			return taskCompletionSource.Task;
@@ -297,7 +298,7 @@ public class catch_up_subscription_handles_errors {
 		Action<EventStoreSubscription, SubscriptionDropReason, Exception> drop, int? lastEventNumber) {
 		return new VolatileEventStoreSubscription(
 			new VolatileSubscriptionOperation(new NoopLogger(),
-				new TaskCompletionSource<EventStoreSubscription>(TaskCreationOptions
+				TaskCompletionSourceFactory.CreateDefault<EventStoreSubscription>(TaskCreationOptions
 					.RunContinuationsAsynchronously), StreamId, false, null, raise, drop, false, () => null),
 			StreamId, -1, lastEventNumber);
 	}

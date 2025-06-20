@@ -3,6 +3,7 @@
 
 // ReSharper disable CheckNamespace
 
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -19,7 +20,7 @@ public static class PublisherManagementExtensions {
 	public static Task<(Position Position, StreamRevision Revision)> DeleteStream(this IPublisher publisher, string stream, long expectedRevision = -2, bool hardDelete = false, CancellationToken cancellationToken = default) {
 		cancellationToken.ThrowIfCancellationRequested();
 
-		var operation = new TaskCompletionSource<(Position Position, StreamRevision StreamRevision)>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var operation = TaskCompletionSourceFactory.CreateDefault<(Position Position, StreamRevision StreamRevision)>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		var cid = Guid.NewGuid();
 

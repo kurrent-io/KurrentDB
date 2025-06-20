@@ -16,7 +16,7 @@ public static class ParallelLoop {
 	private static readonly Task<int> _neverComplete;
 
 	static ParallelLoop() {
-		var tcs = new TaskCompletionSource<int>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<int>();
 		_neverComplete = tcs.Task;
 	}
 

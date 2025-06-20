@@ -42,7 +42,7 @@ var optionsWithLegacyDefaults = LocationOptionWithLegacyDefault.SupportedLegacyL
 var configuration = KurrentConfiguration.Build(optionsWithLegacyDefaults, args);
 
 ThreadPool.SetMaxThreads(1000, 1000);
-var exitCodeSource = new TaskCompletionSource<int>();
+var exitCodeSource = TaskCompletionSourceFactory.CreateDefault<int>();
 
 Log.Logger = EventStoreLoggerConfiguration.ConsoleLog;
 try {

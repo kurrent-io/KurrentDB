@@ -13,6 +13,7 @@ using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Net.Client;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Tests.Helpers;
@@ -164,7 +165,7 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 				throw new ArgumentException($"All {nameof(BatchAppendReq)} must have same CorrelationId.",
 					nameof(requests));
 			}
-			var tcs = new TaskCompletionSource<BatchAppendResp>();
+			var tcs = TaskCompletionSourceFactory.CreateDefault<BatchAppendResp>();
 			var correlationId = Uuid.FromDto(requests[0].CorrelationId);
 
 			if (!_responses.TryAdd(correlationId, tcs)) {

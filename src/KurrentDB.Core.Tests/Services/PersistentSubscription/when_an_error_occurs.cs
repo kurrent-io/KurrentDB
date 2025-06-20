@@ -4,6 +4,7 @@
 using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Helpers;
 using KurrentDB.Core.LogAbstraction;
@@ -30,7 +31,7 @@ public class PersistentSubscriptionServiceErrorTests {
 
 		protected when_an_error_occurs(TResult expectedResult) {
 			_expectedResult = expectedResult;
-			_replySource = new TaskCompletionSource<Message>();
+			_replySource = TaskCompletionSourceFactory.CreateDefault<Message>();
 			var bus = new SynchronousScheduler();
 			var trackers = new Trackers();
 			_sut = new PersistentSubscriptionService<TStreamId>(

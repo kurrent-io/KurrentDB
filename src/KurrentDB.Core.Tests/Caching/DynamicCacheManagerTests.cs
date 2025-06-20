@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Caching;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
@@ -215,7 +216,7 @@ public class DynamicCacheManagerTests {
 
 	[Test]
 	public async Task freed_size_is_reset_when_gc_occurs() {
-		var tcs = new TaskCompletionSource<bool>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		var cache = new AdHocDynamicCache(
 			() => 0,

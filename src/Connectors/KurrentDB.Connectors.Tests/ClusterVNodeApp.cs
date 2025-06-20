@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Net;
 using DotNext.Collections.Generic;
 using Kurrent.Surge;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Certificates;
@@ -92,7 +93,7 @@ public class ClusterVNodeApp : IAsyncDisposable {
     class NodeReadinessProbe : IHandle<SystemMessage.SystemReady> {
 	    static readonly Serilog.ILogger Log = Serilog.Log.Logger.ForContext<NodeReadinessProbe>();
 
-	    TaskCompletionSource Ready { get; } = new();
+	    TaskCompletionSource Ready { get; } = TaskCompletionSourceFactory.CreateDefault();
 
 	    void IHandle<SystemMessage.SystemReady>.Handle(SystemMessage.SystemReady message) {
 		    if (!Ready.Task.IsCompleted)

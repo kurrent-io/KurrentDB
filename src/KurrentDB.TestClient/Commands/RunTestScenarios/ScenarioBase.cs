@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using EventStore.ClientAPI.Projections;
 using EventStore.ClientAPI.SystemData;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services;
 using Serilog.Core;
 using ConsoleLogger = EventStore.ClientAPI.Common.Log.ConsoleLogger;
@@ -432,7 +433,7 @@ internal abstract class ScenarioBase : IScenario {
 	}
 
 	private Task WriteSingleEventAtTime(string stream, int events, Func<int, EventData> createEvent) {
-		var resSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var resSource = TaskCompletionSourceFactory.CreateDefault<object>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		Log.Information("Starting to write {events} events to [{stream}]", events, stream);
 		var store = GetConnection();
@@ -471,7 +472,7 @@ internal abstract class ScenarioBase : IScenario {
 		Log.Information("Starting to write {eventCount} events to [{stream}] ({bucketSize} events at once)", eventCount,
 			stream, bucketSize);
 
-		var resSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var resSource = TaskCompletionSourceFactory.CreateDefault<object>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var store = GetConnection();
 		int writtenCount = 0;
 
@@ -510,7 +511,7 @@ internal abstract class ScenarioBase : IScenario {
 	private Task WriteEventsInTransactionalWay(string stream, int eventCount, Func<int, EventData> createEvent) {
 		Log.Information("Starting to write {eventCount} events to [{stream}] (in single transaction)", eventCount, stream);
 
-		var resSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var resSource = TaskCompletionSourceFactory.CreateDefault<object>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var store = GetConnection();
 
 		Action<Task> fail = prevTask => {
@@ -553,7 +554,7 @@ internal abstract class ScenarioBase : IScenario {
 
 	private Task ReadStream(string stream, int from, int count) {
 		Log.Information("Reading [{stream}] from {from,-10} count {count,-10}", stream, from, count);
-		var resSource = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var resSource = TaskCompletionSourceFactory.CreateDefault<object>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var store = GetConnection();
 
 		Action<Task> fail = prevTask => {

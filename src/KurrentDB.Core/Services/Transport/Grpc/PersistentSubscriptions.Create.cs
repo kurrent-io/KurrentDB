@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using EventStore.Client.PersistentSubscriptions;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
@@ -28,7 +29,7 @@ internal partial class PersistentSubscriptions {
 	private static readonly Operation CreateOperation = new(Plugins.Authorization.Operations.Subscriptions.Create);
 
 	public override async Task<CreateResp> Create(CreateReq request, ServerCallContext context) {
-		var createPersistentSubscriptionSource = new TaskCompletionSource<CreateResp>();
+		var createPersistentSubscriptionSource = TaskCompletionSourceFactory.CreateDefault<CreateResp>();
 		var settings = request.Options.Settings;
 		var correlationId = Guid.NewGuid();
 

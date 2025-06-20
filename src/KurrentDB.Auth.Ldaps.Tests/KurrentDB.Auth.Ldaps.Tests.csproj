@@ -31,6 +31,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\KurrentDB.Auth.Ldaps\KurrentDB.Auth.Ldaps.csproj" />
+      <ProjectReference Include="..\KurrentDB.Common\KurrentDB.Common.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.XUnit.Tests;
 using Xunit;
 
@@ -86,7 +87,7 @@ public class PluginLoaderTests : IAsyncLifetime {
 	}
 
 	private static async Task BuildFakePlugin(DirectoryInfo outputFolder) {
-		var tcs = new TaskCompletionSource<bool>();
+		var tcs = TaskCompletionSourceFactory.CreateDefault<bool>();
 		using var process = new Process {
 			StartInfo = new ProcessStartInfo {
 				FileName = "dotnet",

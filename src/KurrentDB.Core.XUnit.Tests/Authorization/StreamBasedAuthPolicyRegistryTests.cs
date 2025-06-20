@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using DotNext.Threading;
 using KurrentDB.Common.Exceptions;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Authorization;
 using KurrentDB.Core.Authorization.AuthorizationPolicies;
 using KurrentDB.Core.Bus;
@@ -30,7 +31,7 @@ public class StreamBasedAuthPolicyRegistryTests {
 
 	private List<ReadOnlyPolicy[]> _policyUpdates = new();
 	private AsyncManualResetEvent _policyUpdated = new(false);
-	private TaskCompletionSource<ClientMessage.SubscribeToStream> _subscribed = new();
+	private TaskCompletionSource<ClientMessage.SubscribeToStream> _subscribed = TaskCompletionSourceFactory.CreateDefault<ClientMessage.SubscribeToStream>();
 
 	private static readonly JsonSerializerOptions SerializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 	private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(1);
@@ -419,7 +420,7 @@ public class StreamBasedAuthPolicyRegistryTests {
 	private class AuthRegistryTestPublisher : IPublisher {
 		private readonly Action<ClientMessage.ReadStreamEventsBackward> _onReadBackward;
 		private readonly Action<ClientMessage.SubscribeToStream> _onSubscribed;
-		public readonly TaskCompletionSource<ClientMessage.SubscribeToStream> Subscribed = new();
+		public readonly TaskCompletionSource<ClientMessage.SubscribeToStream> Subscribed = TaskCompletionSourceFactory.CreateDefault<ClientMessage.SubscribeToStream>();
 
 		public AuthRegistryTestPublisher(Action<ClientMessage.ReadStreamEventsBackward> onReadBackward) {
 			_onReadBackward = onReadBackward;

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -35,7 +36,7 @@ public class PersistentSubscriptionMessageParkerTests {
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class given_parked_stream_does_not_exist<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		protected override void Given() {
 			base.Given();
@@ -59,7 +60,7 @@ public class PersistentSubscriptionMessageParkerTests {
 	public class given_parked_messages_and_no_truncate_before<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		protected override void Given() {
 			base.Given();
@@ -85,7 +86,7 @@ public class PersistentSubscriptionMessageParkerTests {
 	public class given_parked_messages_and_no_truncate_before_oldest_parked_message_timestamp<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 		private List<EventRecord> _eventRecords = new List<EventRecord>();
 
 		protected override void Given() {
@@ -111,7 +112,7 @@ public class PersistentSubscriptionMessageParkerTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class given_parked_messages_and_half_are_truncated<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
 
@@ -138,7 +139,7 @@ public class PersistentSubscriptionMessageParkerTests {
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class given_parked_messages_and_half_are_truncated_oldest_parked_message_timestamp<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
 		private List<EventRecord> _eventRecords = new List<EventRecord>();
@@ -170,7 +171,7 @@ public class PersistentSubscriptionMessageParkerTests {
 	public class given_parked_messages_and_all_are_truncated<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		protected override void Given() {
 			base.Given();
@@ -204,7 +205,7 @@ public class PersistentSubscriptionMessageParkerTests {
 	public class given_a_message_is_parked<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		protected override void Given() {
 			base.Given();
@@ -232,14 +233,14 @@ public class PersistentSubscriptionMessageParkerTests {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
 		private TaskCompletionSource<bool> _parked;
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		protected override void Given() {
 			base.Given();
 
 			AllWritesSucceed();
 
-			_parked = new TaskCompletionSource<bool>();
+			_parked = TaskCompletionSourceFactory.CreateDefault<bool>();
 			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
 			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", ParkReason.MaxRetries, (_, __) => {
 				_messageParker.BeginParkMessage(CreateResolvedEvent(1, 100), "testing", ParkReason.MaxRetries, (_, __) => {
@@ -268,14 +269,14 @@ public class PersistentSubscriptionMessageParkerTests {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
 		private TaskCompletionSource<bool> _replayParked;
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 
 		protected override void Given() {
 			base.Given();
 
 			AllWritesSucceed();
 
-			_replayParked = new TaskCompletionSource<bool>();
+			_replayParked = TaskCompletionSourceFactory.CreateDefault<bool>();
 			_messageParker = new PersistentSubscriptionMessageParker(_streamId, _ioDispatcher);
 			_messageParker.BeginParkMessage(CreateResolvedEvent(0, 0), "testing", ParkReason.ClientNak, (_, __) => {
 				_messageParker.BeginParkMessage(CreateResolvedEvent(1, 100), "testing", ParkReason.ClientNak, (_, __) => {
@@ -307,9 +308,9 @@ public class PersistentSubscriptionMessageParkerTests {
 	public class given_read_backwards_fails_when_getting_stats<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 
-		private TaskCompletionSource<bool> _timerMessageReceived = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _timerMessageReceived = TaskCompletionSourceFactory.CreateDefault<bool>();
 		private IODispatcherDelayedMessage _timerMessage;
 
 		protected override void Given() {
@@ -345,10 +346,10 @@ public class PersistentSubscriptionMessageParkerTests {
 	public class given_read_forwards_fails_when_getting_stats<TLogFormat, TStreamId> : TestFixtureWithExistingEvents<TLogFormat, TStreamId> {
 		private PersistentSubscriptionMessageParker _messageParker;
 		private string _streamId = Guid.NewGuid().ToString();
-		private TaskCompletionSource<bool> _done = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _done = TaskCompletionSourceFactory.CreateDefault<bool>();
 
-		private TaskCompletionSource<bool> _timerMessagesReceived = new TaskCompletionSource<bool>();
-		private TaskCompletionSource<bool> _readForwardReceived = new TaskCompletionSource<bool>();
+		private TaskCompletionSource<bool> _timerMessagesReceived = TaskCompletionSourceFactory.CreateDefault<bool>();
+		private TaskCompletionSource<bool> _readForwardReceived = TaskCompletionSourceFactory.CreateDefault<bool>();
 		private List<IODispatcherDelayedMessage> _timerMessages = new List<IODispatcherDelayedMessage>();
 		private Guid _readForwardCorrelationId;
 

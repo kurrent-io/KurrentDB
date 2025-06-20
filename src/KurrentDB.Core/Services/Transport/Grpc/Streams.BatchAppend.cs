@@ -85,7 +85,7 @@ partial class Streams<TStreamId> {
 
 		public Task Work(CancellationToken cancellationToken) {
 			var remaining = 2;
-			var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+			var tcs = TaskCompletionSourceFactory.CreateDefault(TaskCreationOptions.RunContinuationsAsynchronously);
 
 #if DEBUG
 			var sendTask =

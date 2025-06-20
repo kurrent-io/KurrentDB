@@ -51,7 +51,7 @@ public class QueuedHandlerThreadPool : IQueuedHandler, IMonitoredQueue, IThreadP
 	private int _isRunning;
 	private int _queueStatsState; //0 - never started, 1 - started, 2 - stopped
 
-	private readonly TaskCompletionSource _tcs = new();
+	private readonly TaskCompletionSource _tcs = TaskCompletionSourceFactory.CreateDefault();
 
 	public QueuedHandlerThreadPool(IAsyncHandle<Message> consumer,
 		string name,

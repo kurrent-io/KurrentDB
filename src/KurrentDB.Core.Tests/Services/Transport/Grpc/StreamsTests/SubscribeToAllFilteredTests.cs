@@ -11,8 +11,10 @@ using EventStore.Client;
 using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services.Transport.Grpc;
 using NUnit.Framework;
+using Empty = EventStore.Client.Empty;
 using GrpcMetadata = KurrentDB.Core.Services.Transport.Grpc.Constants.Metadata;
 using LogV3StreamId = System.UInt32;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
@@ -339,8 +341,8 @@ public class SubscribeToAllFilteredTests {
 		}
 
 		protected override async Task When() {
-			var caughtUp = new TaskCompletionSource();
-			var cancelSubscription = new TaskCompletionSource();
+			var caughtUp = TaskCompletionSourceFactory.CreateDefault();
+			var cancelSubscription = TaskCompletionSourceFactory.CreateDefault();
 			var _ = Task.Run(async () => {
 				// subscribe
 				using var call = StreamsClient.Read(new ReadReq {

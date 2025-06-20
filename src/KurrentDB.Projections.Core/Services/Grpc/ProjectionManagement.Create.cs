@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventStore.Client.Projections;
 using EventStore.Plugins.Authorization;
 using Grpc.Core;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Projections.Core.Messages;
@@ -20,7 +21,7 @@ internal partial class ProjectionManagement {
 	private static readonly Operation CreateOperation = new Operation(Operations.Projections.Create);
 
 	public override async Task<CreateResp> Create(CreateReq request, ServerCallContext context) {
-		var createdSource = new TaskCompletionSource<bool>();
+		var createdSource = TaskCompletionSourceFactory.CreateDefault<bool>();
 		var options = request.Options;
 
 		var user = context.GetHttpContext().User;

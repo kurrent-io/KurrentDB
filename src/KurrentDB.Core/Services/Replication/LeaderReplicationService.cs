@@ -89,7 +89,7 @@ public class LeaderReplicationService : IMonitoredQueue,
 	private bool _noQuorumNotified;
 	private bool _preLeaderReplicationEnabled;
 	private readonly AsyncManualResetEvent _flushSignal = new(false);
-	private readonly TaskCompletionSource _tcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+	private readonly TaskCompletionSource _tcs = TaskCompletionSourceFactory.CreateDefault(TaskCreationOptions.RunContinuationsAsynchronously);
 
 	public Task Task => _tcs.Task;
 

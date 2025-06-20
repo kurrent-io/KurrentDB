@@ -3,6 +3,7 @@
 
 // ReSharper disable CheckNamespace
 
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
@@ -87,7 +88,7 @@ public static class PublisherWriteExtensions {
         this IPublisher publisher, string stream, Event[] events, long expectedRevision = ExpectedVersion.Any,
         CancellationToken cancellationToken = default
     ) {
-        var operation = new TaskCompletionSource<WriteEventsResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var operation = TaskCompletionSourceFactory.CreateDefault<WriteEventsResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         await publisher.WriteEvents(
             stream,

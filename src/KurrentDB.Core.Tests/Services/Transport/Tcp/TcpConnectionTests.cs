@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using KurrentDB.Common.Utils;
 using KurrentDB.Transport.Tcp;
 using NUnit.Framework;
 
@@ -33,7 +34,7 @@ public class TcpConnectionTests {
 			bool closed = false;
 			bool dataReceivedAfterClose = false;
 			var listeningSocket = CreateListeningSocket();
-			TaskCompletionSource<SocketError> connectionResult = new(TaskCreationOptions.RunContinuationsAsynchronously);
+			TaskCompletionSource<SocketError> connectionResult = TaskCompletionSourceFactory.CreateDefault<SocketError>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 			var clientTcpConnection = TcpConnection.CreateConnectingTcpConnection(
 				Guid.NewGuid(),

@@ -224,7 +224,7 @@ ReadLoop:
 			var startEventNumber = checkpoint + 1;
 			Log.Verbose("Subscription {subscriptionId} to {streamName} is catching up from checkpoint {checkpoint:N0}", _subscriptionId, _streamName, checkpoint);
 
-			var catchupCompletionTcs = new TaskCompletionSource<long>();
+			var catchupCompletionTcs = TaskCompletionSourceFactory.CreateDefault<long>();
 
 			// this is a safe use of AsyncTaskEnvelope. Only one call to OnMessage will be running
 			// at any given time because we only expect one reply and that reply kicks off the next read.
@@ -293,7 +293,7 @@ ReadLoop:
 
 		private Task<long> SubscribeToLive() {
 			var nextLiveSequenceNumber = 0UL;
-			var confirmationEventNumberTcs = new TaskCompletionSource<long>();
+			var confirmationEventNumberTcs = TaskCompletionSourceFactory.CreateDefault<long>();
 
 			_bus.Publish(new ClientMessage.SubscribeToStream(Guid.NewGuid(), _subscriptionId, new CallbackEnvelope(OnSubscriptionMessage), _subscriptionId, _streamName, _resolveLinks, _user));
 
