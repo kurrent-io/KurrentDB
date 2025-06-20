@@ -24,16 +24,11 @@ internal class EventTypeIndexProcessor {
 		_publisher = publisher;
 
 		var ids = db.Pool.Query<ReferenceRecord, GetAllEventTypesQuery>();
+		var sequences = db.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>()
+			.ToDictionary(ks => ks.Id, vs => vs.Sequence);
+
 		_eventTypes = ids.ToDictionary(x => x.Name, x => x.Id);
-
-		foreach (var id in ids) {
-			_eventTypeSizes[id.Id] = -1;
-		}
-
-		var sequences = db.Pool.Query<(int Id, long Sequence), GetEventTypeMaxSequencesQuery>();
-		foreach (var sequence in sequences) {
-			_eventTypeSizes[sequence.Id] = sequence.Sequence;
-		}
+		_eventTypeSizes = ids.ToDictionary(x => x.Id, x => sequences.GetValueOrDefault(x.Id, -1L));
 
 		_seq = _eventTypes.Count > 0 ? _eventTypes.Values.Max() - 1 : -1;
 	}
@@ -41,33 +36,23 @@ internal class EventTypeIndexProcessor {
 	public SequenceRecord Index(ResolvedEvent resolvedEvent) {
 		var eventTypeName = resolvedEvent.OriginalEvent.EventType;
 
-		if (_eventTypes.TryGetValue(eventTypeName, out var eventTypeId)) {
-			var next = _eventTypeSizes[eventTypeId] + 1;
-			_eventTypeSizes[eventTypeId] = next;
-			LastIndexedPosition = resolvedEvent.Event.LogPosition;
-
-			_publisher.Publish(
-				new StorageMessage.SecondaryIndexCommitted(
-					resolvedEvent.ToResolvedLink($"{EventTypeIndex.IndexPrefix}{eventTypeName}", next))
-			);
-
-			return new(eventTypeId, next);
+		if (!_eventTypes.TryGetValue(eventTypeName, out var eventTypeId)) {
+			eventTypeId = ++_seq;
+			_eventTypes[eventTypeName] = eventTypeId;
+			_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new(eventTypeId, eventTypeName));
 		}
 
-		var id = ++_seq;
+		var nextEventTypeSequence = _eventTypeSizes.GetValueOrDefault(eventTypeId, -1) + 1;
+		_eventTypeSizes[eventTypeId] = nextEventTypeSequence;
 
-		_eventTypes[eventTypeName] = id;
-		_eventTypeSizes[id] = 0;
-
-		_db.Pool.ExecuteNonQuery<AddEventTypeStatementArgs, AddEventTypeStatement>(new(id, eventTypeName));
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
 		_publisher.Publish(
 			new StorageMessage.SecondaryIndexCommitted(
-				resolvedEvent.ToResolvedLink($"{EventTypeIndex.IndexPrefix}{eventTypeName}", 0))
+				resolvedEvent.ToResolvedLink($"{EventTypeIndex.IndexPrefix}{eventTypeName}", nextEventTypeSequence))
 		);
 
-		return new(id, 0);
+		return new SequenceRecord(eventTypeId, nextEventTypeSequence);
 	}
 
 	public long GetLastEventNumber(int eventTypeId) =>

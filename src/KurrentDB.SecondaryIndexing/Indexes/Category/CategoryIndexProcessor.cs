@@ -23,18 +23,12 @@ internal class CategoryIndexProcessor {
 		_db = db;
 		_publisher = publisher;
 
-		using var connection = db.OpenNewConnection();
-		var ids = connection.Query<ReferenceRecord, GetCategoriesQuery>();
+		var ids = db.Pool.Query<ReferenceRecord, GetCategoriesQuery>();
+		var sequences = db.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>()
+			.ToDictionary(ks => ks.Id, vs => vs.Sequence);
+
 		_categories = ids.ToDictionary(x => x.Name, x => x.Id);
-
-		foreach (var id in ids) {
-			_categorySizes[id.Id] = -1;
-		}
-
-		var sequences = connection.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>();
-		foreach (var sequence in sequences) {
-			_categorySizes[sequence.Id] = sequence.Sequence;
-		}
+		_categorySizes = ids.ToDictionary(x => x.Id, x => sequences.GetValueOrDefault(x.Id, -1L));
 
 		_seq = _categories.Count > 0 ? _categories.Values.Max() - 1 : -1;
 	}
