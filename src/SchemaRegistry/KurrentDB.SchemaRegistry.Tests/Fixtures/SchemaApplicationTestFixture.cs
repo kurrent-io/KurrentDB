@@ -91,6 +91,18 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 
 		return result;
 	}
+
+	// protected async ValueTask WaitForSchemaDeleteProjected(string schemaName, CancellationToken cancellationToken) {
+	// 	await Wait.UntilAsserted(
+	// 		async () => {
+	// 			var result = await Client.ListSchemasAsync(new ListSchemasRequest {
+	// 				SchemaNamePrefix = schemaName
+	// 			}, cancellationToken: cancellationToken);
+	// 			result.Schemas.Should().NotContain(x => x.SchemaName == schemaName);
+	// 		},
+	// 		cancellationToken: cancellationToken
+	// 	);
+	// }
 }
 
 public static class JsonSchemaExtensions {
@@ -111,6 +123,7 @@ public static class JsonSchemaExtensions {
 				clone.RequiredProperties.Remove(name);
 				break;
 		}
+
 		return clone;
 	}
 

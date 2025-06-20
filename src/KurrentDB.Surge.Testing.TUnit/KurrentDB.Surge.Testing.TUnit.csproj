@@ -40,7 +40,7 @@
 		<PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
 		<PackageReference Include="System.Reactive" Version="6.0.1" />
-		<PackageReference Include="TUnit.Core" Version="0.19.86"/>
+		<PackageReference Include="TUnit.Core" Version="0.25.21"/>
 	</ItemGroup>
 
 	<ItemGroup>

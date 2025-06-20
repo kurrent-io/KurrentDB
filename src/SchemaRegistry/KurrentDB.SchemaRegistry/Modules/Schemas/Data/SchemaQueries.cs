@@ -19,7 +19,23 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
     DuckDBConnectionProvider    ConnectionProvider   { get; } = connectionProvider;
     ISchemaCompatibilityManager CompatibilityManager { get; } = compatibilityManager;
 
-	public async Task<bool> WaitUntilCaughtUp(ulong position, CancellationToken cancellationToken) {
+    /// <summary>
+    /// Waits until the schema registry has caught up to the specified position represented by a checkpoint value.
+    /// This method monitors the `schemas` or `schema_versions` tables to ensure that a checkpoint value
+    /// greater than or equal to the specified position exists.
+    ///
+    /// NOTE: This method is for tests only.
+    /// </summary>
+    /// <param name="position">
+    /// The checkpoint value representing the position to wait for in the schema registry.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token that can be used to propagate notification that the operation should be canceled.
+    /// </param>
+    /// <returns>
+    /// A boolean value indicating whether the schema registry has successfully caught up to the specified checkpoint value.
+    /// </returns>
+    public async Task<bool> WaitUntilCaughtUp(ulong position, CancellationToken cancellationToken) {
 		const string sql =
 			"""
 			SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))

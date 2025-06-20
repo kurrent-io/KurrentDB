@@ -39,13 +39,15 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             var result = await Commands.Handle(req, ct);
 
             return await result.Match(
-                async ok => {
-                    await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
+	            ok =>  {
+#if DEBUG
+	                await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
+#endif
                     var evt = ok.Changes.GetSingleEvent<SchemaCreated>();
-                    return new CreateSchemaResponse {
-                        SchemaVersionId = evt.SchemaVersionId,
-                        VersionNumber   = evt.VersionNumber
-                    };
+                    return Task.FromResult(new CreateSchemaResponse {
+	                    SchemaVersionId = evt.SchemaVersionId,
+	                    VersionNumber   = evt.VersionNumber
+                    });
                 },
                 ko => throw ko.Exception ?? new(ko.ErrorMessage)
             );
@@ -76,13 +78,15 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             var result = await Commands.Handle(req, ct);
 
             return await result.Match(
-                async ok => {
+	            ok => {
+#if DEBUG
                     await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
+#endif
                     var evt = ok.Changes.GetSingleEvent<SchemaVersionRegistered>();
-                    return new RegisterSchemaVersionResponse {
-                        SchemaVersionId = evt.SchemaVersionId,
-                        VersionNumber   = evt.VersionNumber
-                    };
+                    return Task.FromResult(new RegisterSchemaVersionResponse {
+	                    SchemaVersionId = evt.SchemaVersionId,
+	                    VersionNumber   = evt.VersionNumber
+                    });
                 },
                 ko => throw ko.Exception ?? new(ko.ErrorMessage)
             );

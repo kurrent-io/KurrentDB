@@ -41,7 +41,7 @@ public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver,
 		DuckDBConnectionProvider = NodeServices.GetRequiredKeyedService<DuckDBConnectionProvider>("schema-registry");
 	}
 
-	public async ValueTask OnTestEnd(TestContext testContext) =>
+	public async ValueTask OnTestEnd(AfterTestContext testContext) =>
 		await TestingToolkitAutoWireUp.TestCleanUp(testContext);
 
 	protected async ValueTask<SurgeRecord> CreateRecord<T>(T message, SchemaDataFormat dataFormat = SchemaDataFormat.Json, string? streamId = null) {

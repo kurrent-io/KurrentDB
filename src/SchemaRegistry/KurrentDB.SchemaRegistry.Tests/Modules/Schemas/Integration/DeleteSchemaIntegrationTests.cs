@@ -15,7 +15,7 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
+	const int TestTimeoutMs = 10_000;
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_successfully(CancellationToken cancellationToken) {

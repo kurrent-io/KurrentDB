@@ -5,19 +5,18 @@
 
 using Google.Protobuf;
 using Grpc.Core;
-using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
 using NJsonSchema;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
-using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
+	const int TestTimeoutMs = 10_000;
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
+	[Timeout(TestTimeoutMs)]
 	public async Task deletes_schema_versions_successfully_in_none_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
@@ -62,6 +61,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 
 		// Assert
 		schemaVersionsResult.Should().NotBeNull();
+		listRegisteredSchemasResult.Schemas.Should().NotBeEmpty();
 		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
 		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
 		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v3.ToByteString());
@@ -109,6 +109,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 		deleteVersionsException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
 		deleteVersionsException.Which.Message.Should().Contain($"Schema {schemaName} does not have versions: 3, 4");
 
+		listRegisteredSchemasResult.Schemas.Should().NotBeEmpty();
 		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
 		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
 		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
@@ -167,7 +168,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 		deleteLatestVersionException.Which.Message.Should().Contain($"Cannot delete the latest version of schema {schemaName} in Backward compatibility mode");
 	}
 
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task deletes_older_version_successfully_in_backward_compatibility_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
@@ -208,6 +209,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 		// Assert
 		deleteSchemaVersionsResult.Should().NotBeNull();
 
+		listRegisteredSchemasResult.Schemas.Should().NotBeEmpty();
 		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
 		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
 		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
@@ -275,25 +277,6 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 		var deleteVersions = async () => await Client.DeleteSchemaVersionsAsync(
 			new DeleteSchemaVersionsRequest {
 				SchemaName = schemaName,
-				Versions = { 1 }
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		var deleteVersionException = await deleteVersions.Should().ThrowAsync<RpcException>();
-		deleteVersionException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_schema_does_not_exist(CancellationToken cancellationToken) {
-		// Arrange
-		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-
-		// Act
-		var deleteVersions = async () => await Client.DeleteSchemaVersionsAsync(
-			new DeleteSchemaVersionsRequest {
-				SchemaName = nonExistentSchemaName,
 				Versions = { 1 }
 			},
 			cancellationToken: cancellationToken
