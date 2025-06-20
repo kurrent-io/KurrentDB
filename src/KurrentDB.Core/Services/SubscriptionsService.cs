@@ -233,9 +233,11 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	private bool MissedEvents(string streamId, long lastIndexedPosition, long? lastEventNumber) {
-		return SystemStreams.IsVirtualStream(streamId)
-			? _lastSeenInMemoryCommitPosition > lastIndexedPosition
-			: _lastSeenCommitPosition > lastIndexedPosition;
+		return SystemStreams.IsIndexStream(streamId)
+			? _lastSeenSecondaryIndexLogPosition > lastIndexedPosition
+			: SystemStreams.IsInMemoryStream(streamId)
+				? _lastSeenInMemoryCommitPosition > lastIndexedPosition
+				: _lastSeenCommitPosition > lastIndexedPosition;
 	}
 
 	private void SubscribePoller(string streamId, DateTime expireAt, long lastIndexedPosition, long? lastEventNumber, Message originalRequest) {
