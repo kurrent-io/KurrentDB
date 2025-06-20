@@ -10,7 +10,7 @@ internal static class EventTypeIndex {
 	private const string Prefix = $"{SystemStreams.IndexStreamPrefix}et-";
 	public static string Name(string eventType) => $"{Prefix}{eventType}";
 
-	public static bool TryGetEventType(string streamName, [NotNullWhen(true)] out string? eventTypeName) {
+	public static bool TryParseEventType(string streamName, [NotNullWhen(true)] out string? eventTypeName) {
 		if (!IsEventTypeIndexStream(Prefix)) {
 			eventTypeName = null;
 			return false;

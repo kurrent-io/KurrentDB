@@ -16,7 +16,7 @@ internal class EventTypeIndexReader(
 	QueryInFlightRecords<EventTypeRecord> queryInFlightRecords
 ) : SecondaryIndexReaderBase(index) {
 	protected override long GetId(string streamName) =>
-		EventTypeIndex.TryGetEventType(streamName, out var eventTypeName)
+		EventTypeIndex.TryParseEventType(streamName, out var eventTypeName)
 			? processor.GetEventTypeId(eventTypeName)
 			: ExpectedVersion.Invalid;
 

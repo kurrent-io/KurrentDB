@@ -18,7 +18,7 @@ internal class CategoryIndexReader(
 	QueryInFlightRecords<CategoryRecord> queryInFlightRecords
 ) : SecondaryIndexReaderBase(index) {
 	protected override long GetId(string streamName) =>
-		CategoryIndex.TryGetCategoryName(streamName, out var categoryName)
+		CategoryIndex.TryParseCategoryName(streamName, out var categoryName)
 			? processor.GetCategoryId(categoryName)
 			: ExpectedVersion.Invalid;
 

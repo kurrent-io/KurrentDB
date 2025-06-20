@@ -10,7 +10,7 @@ internal static class CategoryIndex {
 	public const string Prefix = $"{SystemStreams.IndexStreamPrefix}ce-";
 	public static string Name(string categoryName) => $"{Prefix}{categoryName}";
 
-	public static bool TryGetCategoryName(string streamName, [NotNullWhen(true)] out string? categoryName) {
+	public static bool TryParseCategoryName(string streamName, [NotNullWhen(true)] out string? categoryName) {
 		if (!IsCategoryIndexStream(Prefix)) {
 			categoryName = null;
 			return false;
