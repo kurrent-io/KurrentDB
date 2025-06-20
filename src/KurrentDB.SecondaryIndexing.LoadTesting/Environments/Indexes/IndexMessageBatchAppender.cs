@@ -24,7 +24,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var reader = new DummyReadIndex();
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
 		var inflightRecordsCache =
-			new DefaultIndexInFlightRecordsCache(new SecondaryIndexingPluginOptions { CommitBatchSize = commitSize });
+			new DefaultIndexInFlightRecords(new SecondaryIndexingPluginOptions { CommitBatchSize = commitSize });
 
 		var publisher = new FakePublisher();
 		var categoryIndexProcessor = new CategoryIndexProcessor(dbDataSource, publisher);

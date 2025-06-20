@@ -53,12 +53,12 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		});
 		services.AddHostedService<SecondaryIndexBuilder>();
 
-		services.AddSingleton<DefaultIndexInFlightRecordsCache>();
+		services.AddSingleton<DefaultIndexInFlightRecords>();
 		services.AddSingleton<QueryInFlightRecords<EventTypeSql.EventTypeRecord>>(sp =>
-			sp.GetRequiredService<DefaultIndexInFlightRecordsCache>().QueryInFlightRecords
+			sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
 		);
 		services.AddSingleton<QueryInFlightRecords<CategorySql.CategoryRecord>>(sp =>
-			sp.GetRequiredService<DefaultIndexInFlightRecordsCache>().QueryInFlightRecords
+			sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
 		);
 
 		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());

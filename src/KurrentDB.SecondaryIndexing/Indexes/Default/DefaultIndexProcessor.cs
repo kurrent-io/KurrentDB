@@ -17,7 +17,7 @@ using Serilog;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
-	private readonly DefaultIndexInFlightRecordsCache _inFlightRecordsCache;
+	private readonly DefaultIndexInFlightRecords _inFlightRecords;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly CategoryIndexProcessor _categoryIndexProcessor;
 	private readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
@@ -32,7 +32,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 	public DefaultIndexProcessor(
 		DuckDbDataSource db,
-		DefaultIndexInFlightRecordsCache inFlightRecordsCache,
+		DefaultIndexInFlightRecords inFlightRecords,
 		CategoryIndexProcessor categoryIndexProcessor,
 		EventTypeIndexProcessor eventTypeIndexProcessor,
 		StreamIndexProcessor streamIndexProcessor,
@@ -40,7 +40,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	) {
 		_connection = db.OpenNewConnection();
 		_appender = new Appender(_connection, "idx_all"u8);
-		_inFlightRecordsCache = inFlightRecordsCache;
+		_inFlightRecords = inFlightRecords;
 
 		_categoryIndexProcessor = categoryIndexProcessor;
 		_eventTypeIndexProcessor = eventTypeIndexProcessor;
@@ -79,7 +79,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			row.Append(false); // TODO: What happens if the event is deleted before we commit?
 		}
 
-		_inFlightRecordsCache.Append(
+		_inFlightRecords.Append(
 			new(
 				sequence,
 				logPosition,
@@ -116,15 +116,15 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			_sw.Restart();
 			_appender.Flush();
 			_sw.Stop();
-			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _inFlightRecordsCache.Count,
+			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _inFlightRecords.Count,
 				LastSequence, _sw.ElapsedMilliseconds);
 		} catch (Exception e) {
-			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecordsCache.Count,
+			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecords.Count,
 				LastSequence);
 			throw;
 		}
 
-		_inFlightRecordsCache.Clear();
+		_inFlightRecords.Clear();
 	}
 
 	protected override void Dispose(bool disposing) {

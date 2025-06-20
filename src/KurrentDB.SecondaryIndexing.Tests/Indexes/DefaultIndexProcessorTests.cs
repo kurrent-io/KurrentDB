@@ -27,31 +27,31 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	[Fact]
 	public void CommittedMultipleEventsInMultipleStreams_AreIndexedCorrectly() {
 		// Given
-		string cat1 = "first";
-		string cat2 = "second";
+		const string cat1 = "first";
+		const string cat2 = "second";
 
-		string cat1_stream1 = $"{cat1}-{Guid.NewGuid()}";
-		string cat1_stream2 = $"{cat1}-{Guid.NewGuid()}";
+		string cat1Stream1 = $"{cat1}-{Guid.NewGuid()}";
+		string cat1Stream2 = $"{cat1}-{Guid.NewGuid()}";
 
-		string cat2_stream1 = $"{cat2}-{Guid.NewGuid()}";
+		string cat2Stream1 = $"{cat2}-{Guid.NewGuid()}";
 
-		string cat1_et1 = $"{cat1}-{Guid.NewGuid()}";
-		string cat1_et2 = $"{cat1}-{Guid.NewGuid()}";
-		string cat1_et3 = $"{cat1}-{Guid.NewGuid()}";
+		string cat1Et1 = $"{cat1}-{Guid.NewGuid()}";
+		string cat1Et2 = $"{cat1}-{Guid.NewGuid()}";
+		string cat1Et3 = $"{cat1}-{Guid.NewGuid()}";
 
-		string cat2_et1 = $"{cat2}-{Guid.NewGuid()}";
-		string cat2_et2 = $"{cat2}-{Guid.NewGuid()}";
+		string cat2Et1 = $"{cat2}-{Guid.NewGuid()}";
+		string cat2Et2 = $"{cat2}-{Guid.NewGuid()}";
 
 		ResolvedEvent[] events = [
-			From(cat1_stream1, 0, 100, cat1_et1, []),
-			From(cat2_stream1, 0, 110, cat2_et1, []),
-			From(cat1_stream1, 1, 117, cat1_et2, []),
-			From(cat1_stream1, 2, 200, cat1_et3, []),
-			From(cat1_stream2, 0, 213, cat1_et1, []),
-			From(cat2_stream1, 0, 394, cat2_et2, []),
-			From(cat1_stream2, 1, 500, cat1_et2, []),
-			From(cat1_stream1, 3, 601, cat1_et3, []),
-			From(cat1_stream1, 4, 987, cat1_et1, [])
+			From(cat1Stream1, 0, 100, cat1Et1, []),
+			From(cat2Stream1, 0, 110, cat2Et1, []),
+			From(cat1Stream1, 1, 117, cat1Et2, []),
+			From(cat1Stream1, 2, 200, cat1Et3, []),
+			From(cat1Stream2, 0, 213, cat1Et1, []),
+			From(cat2Stream1, 0, 394, cat2Et2, []),
+			From(cat1Stream2, 1, 500, cat1Et2, []),
+			From(cat1Stream1, 3, 601, cat1Et3, []),
+			From(cat1Stream1, 4, 987, cat1Et1, [])
 		];
 
 		// When
@@ -103,11 +103,11 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		// EventTypes
 		AssertGetAllEventTypesQueryReturns([
-			new ReferenceRecord(0, cat1_et1),
-			new ReferenceRecord(1, cat2_et1),
-			new ReferenceRecord(2, cat1_et2),
-			new ReferenceRecord(3, cat1_et3),
-			new ReferenceRecord(4, cat2_et2)
+			new ReferenceRecord(0, cat1Et1),
+			new ReferenceRecord(1, cat2Et1),
+			new ReferenceRecord(2, cat1Et2),
+			new ReferenceRecord(3, cat1Et3),
+			new ReferenceRecord(4, cat2Et2)
 		]);
 		AssertGetEventTypeMaxSequencesQueryReturns([
 			(0, 2),
@@ -139,39 +139,39 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		// Streams
 		AssertGetStreamMaxSequencesQueryReturns(2);
 
-		AssertGetStreamIdByNameQueryReturns(cat1_stream1, 0);
-		AssertGetStreamIdByNameQueryReturns(cat2_stream1, 1);
-		AssertGetStreamIdByNameQueryReturns(cat1_stream2, 2);
+		AssertGetStreamIdByNameQueryReturns(cat1Stream1, 0);
+		AssertGetStreamIdByNameQueryReturns(cat2Stream1, 1);
+		AssertGetStreamIdByNameQueryReturns(cat1Stream2, 2);
 	}
 
 	[Fact]
 	public void UncommittedMultipleEventsInMultipleStreams_AreNOTIndexedCorrectly() {
 		// Given
-		string cat1 = "first";
-		string cat2 = "second";
+		const string cat1 = "first";
+		const string cat2 = "second";
 
-		string cat1_stream1 = $"{cat1}-{Guid.NewGuid()}";
-		string cat1_stream2 = $"{cat1}-{Guid.NewGuid()}";
+		var cat1Stream1 = $"{cat1}-{Guid.NewGuid()}";
+		var cat1Stream2 = $"{cat1}-{Guid.NewGuid()}";
 
-		string cat2_stream1 = $"{cat2}-{Guid.NewGuid()}";
+		var cat2Stream1 = $"{cat2}-{Guid.NewGuid()}";
 
-		string cat1_et1 = $"{cat1}-{Guid.NewGuid()}";
-		string cat1_et2 = $"{cat1}-{Guid.NewGuid()}";
-		string cat1_et3 = $"{cat1}-{Guid.NewGuid()}";
+		var cat1Et1 = $"{cat1}-{Guid.NewGuid()}";
+		var cat1Et2 = $"{cat1}-{Guid.NewGuid()}";
+		var cat1Et3 = $"{cat1}-{Guid.NewGuid()}";
 
-		string cat2_et1 = $"{cat2}-{Guid.NewGuid()}";
-		string cat2_et2 = $"{cat2}-{Guid.NewGuid()}";
+		var cat2Et1 = $"{cat2}-{Guid.NewGuid()}";
+		var cat2Et2 = $"{cat2}-{Guid.NewGuid()}";
 
 		ResolvedEvent[] events = [
-			From(cat1_stream1, 0, 100, cat1_et1, []),
-			From(cat2_stream1, 0, 110, cat2_et1, []),
-			From(cat1_stream1, 1, 117, cat1_et2, []),
-			From(cat1_stream1, 2, 200, cat1_et3, []),
-			From(cat1_stream2, 0, 213, cat1_et1, []),
-			From(cat2_stream1, 0, 394, cat2_et2, []),
-			From(cat1_stream2, 1, 500, cat1_et2, []),
-			From(cat1_stream1, 3, 601, cat1_et3, []),
-			From(cat1_stream1, 4, 987, cat1_et1, [])
+			From(cat1Stream1, 0, 100, cat1Et1, []),
+			From(cat2Stream1, 0, 110, cat2Et1, []),
+			From(cat1Stream1, 1, 117, cat1Et2, []),
+			From(cat1Stream1, 2, 200, cat1Et3, []),
+			From(cat1Stream2, 0, 213, cat1Et1, []),
+			From(cat2Stream1, 0, 394, cat2Et2, []),
+			From(cat1Stream2, 1, 500, cat1Et2, []),
+			From(cat1Stream1, 3, 601, cat1Et3, []),
+			From(cat1Stream1, 4, 987, cat1Et1, [])
 		];
 
 		// When
@@ -198,11 +198,11 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		// EventTypes
 		// Note: Event Types are inserted using separate connection
 		AssertGetAllEventTypesQueryReturns([
-			new ReferenceRecord(0, cat1_et1),
-			new ReferenceRecord(1, cat2_et1),
-			new ReferenceRecord(2, cat1_et2),
-			new ReferenceRecord(3, cat1_et3),
-			new ReferenceRecord(4, cat2_et2)
+			new ReferenceRecord(0, cat1Et1),
+			new ReferenceRecord(1, cat2Et1),
+			new ReferenceRecord(2, cat1Et2),
+			new ReferenceRecord(3, cat1Et3),
+			new ReferenceRecord(4, cat2Et2)
 		]);
 		AssertGetEventTypeMaxSequencesQueryReturns([]);
 		AssertReadEventTypeIndexQueryReturns(0, []);
@@ -214,9 +214,9 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		// Streams
 		AssertGetStreamMaxSequencesQueryReturns(null);
 
-		AssertGetStreamIdByNameQueryReturns(cat1_stream1, null);
-		AssertGetStreamIdByNameQueryReturns(cat2_stream1, null);
-		AssertGetStreamIdByNameQueryReturns(cat1_stream2, null);
+		AssertGetStreamIdByNameQueryReturns(cat1Stream1, null);
+		AssertGetStreamIdByNameQueryReturns(cat2Stream1, null);
+		AssertGetStreamIdByNameQueryReturns(cat1Stream2, null);
 	}
 
 	private void AssertDefaultIndexQueryReturns(List<AllRecord> expected) {
@@ -300,9 +300,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-		var inflightRecordsCache = new DefaultIndexInFlightRecordsCache(
-			new SecondaryIndexingPluginOptions { CommitBatchSize = commitBatchSize }
-		);
+		var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
 
 		var publisher = new FakePublisher();
 
@@ -343,9 +341,7 @@ public class CleanUpTests {
 
 			const int commitBatchSize = 9;
 			var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-			var inflightRecordsCache = new DefaultIndexInFlightRecordsCache(
-				new SecondaryIndexingPluginOptions { CommitBatchSize = commitBatchSize }
-			);
+			var inflightRecordsCache = new DefaultIndexInFlightRecords(new() { CommitBatchSize = commitBatchSize });
 
 			var publisher = new FakePublisher();
 
@@ -364,11 +360,11 @@ public class CleanUpTests {
 
 			const string cat1 = "first";
 
-			string cat1_stream1 = $"{cat1}-{Guid.NewGuid()}";
-			string cat1_et1 = $"{cat1}-{Guid.NewGuid()}";
+			var cat1Stream1 = $"{cat1}-{Guid.NewGuid()}";
+			var cat1Et1 = $"{cat1}-{Guid.NewGuid()}";
 
 			// When
-			processor.Index(From(cat1_stream1, 0, 100, cat1_et1, []));
+			processor.Index(From(cat1Stream1, 0, 100, cat1Et1, []));
 			processor.Commit();
 		}
 
