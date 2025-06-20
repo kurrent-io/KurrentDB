@@ -38,17 +38,17 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
         Execute(request, context, async (req, ct) => {
             var result = await Commands.Handle(req, ct);
 
-            return await result.Match(
-	            async ok =>  {
+            return result.Match(
+	             ok =>  {
 #if DEBUG
-	                await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
+	                Queries.WaitUntilCaughtUp(ok.StreamPosition, ct).GetAwaiter().GetResult();
 #endif
                     var evt = ok.Changes.GetSingleEvent<SchemaCreated>();
-                    return Task.FromResult(new CreateSchemaResponse {
+                    return new CreateSchemaResponse {
 	                    SchemaVersionId = evt.SchemaVersionId,
-	                    VersionNumber   = evt.VersionNumber
-                    });
-                },
+	                    VersionNumber = evt.VersionNumber
+                    };
+	             },
                 ko => throw ko.Exception ?? new(ko.ErrorMessage)
             );
         });
@@ -77,16 +77,16 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
         Execute(request, context, async (req, ct) => {
             var result = await Commands.Handle(req, ct);
 
-            return await result.Match(
-	            async ok => {
+            return result.Match(
+	            ok => {
 #if DEBUG
-                    await Queries.WaitUntilCaughtUp(ok.StreamPosition, ct);
+                    Queries.WaitUntilCaughtUp(ok.StreamPosition, ct).GetAwaiter().GetResult();
 #endif
                     var evt = ok.Changes.GetSingleEvent<SchemaVersionRegistered>();
-                    return Task.FromResult(new RegisterSchemaVersionResponse {
+                    return new RegisterSchemaVersionResponse {
 	                    SchemaVersionId = evt.SchemaVersionId,
 	                    VersionNumber   = evt.VersionNumber
-                    });
+                    };
                 },
                 ko => throw ko.Exception ?? new(ko.ErrorMessage)
             );
