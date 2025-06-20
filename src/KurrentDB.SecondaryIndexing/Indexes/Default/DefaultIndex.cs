@@ -9,6 +9,4 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 internal class DefaultIndex : Disposable, ISecondaryIndex {
 	public const string IndexName = $"{SystemStreams.IndexStreamPrefix}all"; }
 
-delegate IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map);
-
-record struct AllRecord(long Seq, long LogPosition);
+internal record struct AllRecord(long Seq, long LogPosition);

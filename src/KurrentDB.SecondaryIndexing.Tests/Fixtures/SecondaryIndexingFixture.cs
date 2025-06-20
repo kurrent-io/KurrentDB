@@ -34,6 +34,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	private const string PluginConfigPrefix = $"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing";
 	private const string OptionsConfigPrefix = $"{PluginConfigPrefix}:Options";
 	protected string? PathName;
+	private readonly TimeSpan _defaultTimeout = TimeSpan.FromMilliseconds(30000);
 
 	protected SecondaryIndexingFixture(bool isSecondaryIndexingPluginEnabled) {
 		if (!isSecondaryIndexingPluginEnabled) return;
@@ -55,7 +56,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) {
-		timeout ??= TimeSpan.FromMilliseconds(30000);
+		timeout ??= _defaultTimeout;
 		var endTime = DateTime.UtcNow.Add(timeout.Value);
 
 		var events = new List<ResolvedEvent>();
@@ -80,9 +81,8 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 				}
 			} catch (ReadResponseException.StreamNotFound ex) {
 				streamNotFound = ex;
-			} catch (OperationCanceledException ex) {
+			} catch (OperationCanceledException) {
 				// can happen
-				Console.WriteLine(ex);
 			}
 		} while (events.Count != maxCount && DateTime.UtcNow < endTime);
 
@@ -99,7 +99,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		TimeSpan? timeout = null,
 		CancellationToken ct = default
 	) {
-		timeout ??= TimeSpan.FromMilliseconds(30000);
+		timeout ??= _defaultTimeout;
 
 		var events = new List<ResolvedEvent>();
 
@@ -108,9 +108,8 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		try {
 			events = await SubscribeToStream(streamName, maxCount, cts.Token).Take(maxCount).ToListAsync(cts.Token);
-		} catch (OperationCanceledException ex) {
+		} catch (OperationCanceledException) {
 			// can happen
-			Console.WriteLine(ex);
 		}
 
 		return events;

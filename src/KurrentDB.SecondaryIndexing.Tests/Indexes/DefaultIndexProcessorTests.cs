@@ -300,9 +300,9 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-		var inflightRecordsCache =
-			new DefaultIndexInFlightRecordsCache(new SecondaryIndexingPluginOptions
-				{ CommitBatchSize = commitBatchSize });
+		var inflightRecordsCache = new DefaultIndexInFlightRecordsCache(
+			new SecondaryIndexingPluginOptions { CommitBatchSize = commitBatchSize }
+		);
 
 		var publisher = new FakePublisher();
 
@@ -343,9 +343,9 @@ public class CleanUpTests {
 
 			const int commitBatchSize = 9;
 			var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
-			var inflightRecordsCache =
-				new DefaultIndexInFlightRecordsCache(new SecondaryIndexingPluginOptions
-					{ CommitBatchSize = commitBatchSize });
+			var inflightRecordsCache = new DefaultIndexInFlightRecordsCache(
+				new SecondaryIndexingPluginOptions { CommitBatchSize = commitBatchSize }
+			);
 
 			var publisher = new FakePublisher();
 

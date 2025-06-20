@@ -324,7 +324,6 @@ public class SubscriptionsService<TStreamId> :
 		return ValueTask.CompletedTask;
 	}
 
-
 	private bool ProcessSecondaryIndexEvent(ResolvedEvent resolvedEvent)
 	{
 		var indexEvent = resolvedEvent.Link;

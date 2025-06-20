@@ -13,6 +13,8 @@ record struct InFlightRecord(
 	bool IsDeleted = false
 );
 
+internal delegate IEnumerable<T> QueryInFlightRecords<T>(Func<InFlightRecord, bool> query, Func<InFlightRecord, T> map);
+
 internal class DefaultIndexInFlightRecordsCache(SecondaryIndexingPluginOptions options) {
 	private readonly InFlightRecord[] _records = new InFlightRecord[options.CommitBatchSize];
 	public int Count { get; private set; }
