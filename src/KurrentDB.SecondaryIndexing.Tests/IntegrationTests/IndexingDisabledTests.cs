@@ -19,7 +19,7 @@ public class IndexingDisabledTests(
 		await fixture.AppendToStream(RandomStreamName(), """{"test":"123"}""", """{"test":"321"}""");
 
 		await Assert.ThrowsAsync<ReadResponseException.StreamNotFound>(async () =>
-			await fixture.ReadUntil(DefaultIndex.IndexName, 2, TimeSpan.FromMilliseconds(500))
+			await fixture.ReadUntil(DefaultIndex.Name, 2, TimeSpan.FromMilliseconds(500))
 		);
 	}
 }

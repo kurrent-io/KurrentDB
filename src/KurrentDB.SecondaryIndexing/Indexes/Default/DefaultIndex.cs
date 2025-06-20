@@ -7,6 +7,5 @@ using KurrentDB.Core.Services;
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
 internal class DefaultIndex : Disposable, ISecondaryIndex {
-	public const string IndexName = $"{SystemStreams.IndexStreamPrefix}all"; }
-
-internal record struct AllRecord(long Seq, long LogPosition);
+	public const string Name = $"{SystemStreams.IndexStreamPrefix}all";
+}

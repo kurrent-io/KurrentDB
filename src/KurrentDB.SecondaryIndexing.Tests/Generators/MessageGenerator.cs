@@ -205,7 +205,7 @@ public static class TestMessageBatchExtensions {
 
 		foreach (var batch in batches) {
 			var resolvedEvents = batch.ToIndexResolvedEvents(
-				DefaultIndex.IndexName,
+				DefaultIndex.Name,
 				currentIndex
 			);
 			currentIndex += batch.Messages.Length;

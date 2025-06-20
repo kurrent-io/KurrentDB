@@ -28,6 +28,6 @@ internal class DefaultIndexReader(
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
 
-	public override bool CanReadStream(string streamId) => streamId == DefaultIndex.IndexName;
+	public override bool CanReadStream(string streamId) => streamId == DefaultIndex.Name;
 }
 

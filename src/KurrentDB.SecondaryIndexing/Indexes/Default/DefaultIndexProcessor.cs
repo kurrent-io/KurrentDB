@@ -92,7 +92,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
 		_publisher.Publish(
-			new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(DefaultIndex.IndexName, sequence))
+			new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(DefaultIndex.Name, sequence))
 		);
 	}
 

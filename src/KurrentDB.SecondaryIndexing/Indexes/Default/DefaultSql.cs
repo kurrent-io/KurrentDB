@@ -33,3 +33,5 @@ internal static class DefaultSql {
 		public static Optional<long> Parse(ref DataChunk.Row row) => row.TryReadInt64().ToOptional();
 	}
 }
+
+internal record struct AllRecord(long Seq, long LogPosition);

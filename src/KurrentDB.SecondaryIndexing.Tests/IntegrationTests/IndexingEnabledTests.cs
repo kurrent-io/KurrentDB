@@ -40,7 +40,7 @@ public class IndexingEnabledTests(
 
 	[Fact]
 	public Task ReadsAllEventsFromDefaultIndex() =>
-		ValidateRead(DefaultIndex.IndexName, AppendedBatches.ToDefaultIndexResolvedEvents());
+		ValidateRead(DefaultIndex.Name, AppendedBatches.ToDefaultIndexResolvedEvents());
 
 	[Fact]
 	public async Task ReadsAllEventsFromCategoryIndex() {
@@ -60,7 +60,7 @@ public class IndexingEnabledTests(
 
 	[Fact]
 	public Task SubscriptionReturnsAllEventsFromDefaultIndex() =>
-		ValidateSubscription(DefaultIndex.IndexName, AppendedBatches.ToDefaultIndexResolvedEvents());
+		ValidateSubscription(DefaultIndex.Name, AppendedBatches.ToDefaultIndexResolvedEvents());
 
 	[Fact]
 	public async Task SubscriptionReturnsAllEventsFromCategoryIndex() {
