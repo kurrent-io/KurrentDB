@@ -85,7 +85,16 @@ public abstract class when_publishing_to_queued_handler : QueuedHandlerTestWithW
 [TestFixture, Category("LongRunning")]
 public class when_publishing_to_queued_handler_threadpool : when_publishing_to_queued_handler {
 	public when_publishing_to_queued_handler_threadpool()
-		: base((consumer, name, timeout) =>
+		: base(static (consumer, name, timeout) =>
 			new QueuedHandlerThreadPool(consumer, name, new QueueStatsManager(), new(), false, null, timeout)) {
+	}
+}
+
+[TestFixture, Category("LongRunning")]
+public class when_publishing_to_ThreadPoolMessageScheduler : when_publishing_to_queued_handler {
+	public when_publishing_to_ThreadPoolMessageScheduler()
+		: base(static (consumer, name, timeout) =>
+			new ThreadPoolMessageScheduler(consumer)
+				{ StopTimeout = timeout, SynchronizeMessagesWithUnknownAffinity = true, Name = name }) {
 	}
 }

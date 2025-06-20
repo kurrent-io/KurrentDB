@@ -20,6 +20,8 @@ namespace KurrentDB.Core.Bus;
 /// Subscribers are responsible for handling exceptions
 /// </summary>
 public partial class InMemoryBus : ISubscriber, IAsyncHandle<Message> {
+	public static readonly TimeSpan VerySlowMsgThreshold = TimeSpan.FromSeconds(7);
+
 	public static InMemoryBus CreateTest(bool watchSlowMsg = true) =>
 		new("Test", watchSlowMsg);
 
@@ -84,7 +86,7 @@ public partial class InMemoryBus : ISubscriber, IAsyncHandle<Message> {
 		if (elapsedMs > _slowMsgThresholdMs) {
 			Log.Debug("SLOW BUS MSG [{bus}]: {message} - {elapsed}ms.",
 				Name, message.GetType().Name, (int)elapsedMs);
-			if (elapsedMs > QueuedHandlerThreadPool.VerySlowMsgThreshold.TotalMilliseconds &&
+			if (elapsedMs > VerySlowMsgThreshold.TotalMilliseconds &&
 				message is not SystemMessage.SystemInit)
 				Log.Error("---!!! VERY SLOW BUS MSG [{bus}]: {message} - {elapsed}ms.",
 					Name, message.GetType().Name, (int)elapsedMs);
