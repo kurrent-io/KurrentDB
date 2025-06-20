@@ -1,4 +1,5 @@
 using Bogus;
+
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
@@ -8,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using TUnit.Core.Interfaces;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
+
+[assembly: NotInParallel]
 
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 

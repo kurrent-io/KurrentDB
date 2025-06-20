@@ -10,7 +10,7 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
-[NotInParallel]
+
 public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	const int TestTimeoutMs = 20_000;
 

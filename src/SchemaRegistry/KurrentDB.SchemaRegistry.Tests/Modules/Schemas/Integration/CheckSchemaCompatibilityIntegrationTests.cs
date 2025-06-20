@@ -10,7 +10,6 @@ using NJsonSchema;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
-[NotInParallel]
 public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFixture {
 	const int TestTimeoutMs = 20_000;
 

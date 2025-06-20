@@ -12,7 +12,7 @@ using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
-[NotInParallel]
+
 public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture {
 	const int TestTimeoutMs = 10_000;
 
