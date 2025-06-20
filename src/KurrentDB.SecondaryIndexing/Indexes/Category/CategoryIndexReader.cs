@@ -11,25 +11,22 @@ using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Category;
 
-class CategoryIndexReader(
+internal class CategoryIndexReader(
 	DuckDbDataSource db,
 	CategoryIndexProcessor processor,
 	IReadIndex<string> index,
 	QueryInFlightRecords<CategoryRecord> queryInFlightRecords
 ) : SecondaryIndexReaderBase(index) {
-	protected override long GetId(string streamName) {
-		if (!streamName.StartsWith(CategoryIndex.IndexPrefix)) {
-			return ExpectedVersion.Invalid;
-		}
-
-		var categoryName = streamName[8..];
-		return processor.GetCategoryId(categoryName);
-	}
+	protected override long GetId(string streamName) =>
+		CategoryIndex.TryGetCategoryName(streamName, out var categoryName)
+			? processor.GetCategoryId(categoryName)
+			: ExpectedVersion.Invalid;
 
 	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber((int)id);
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
-		var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(new((int)id, fromEventNumber, toEventNumber));
+		var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(
+			new((int)id, fromEventNumber, toEventNumber));
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			// events might be in flight
 			var inFlight = queryInFlightRecords(
@@ -44,5 +41,5 @@ class CategoryIndexReader(
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
 
-	public override bool CanReadStream(string streamId) => streamId.StartsWith(CategoryIndex.IndexPrefix);
+	public override bool CanReadStream(string streamId) => CategoryIndex.IsCategoryIndexStream(streamId);
 }

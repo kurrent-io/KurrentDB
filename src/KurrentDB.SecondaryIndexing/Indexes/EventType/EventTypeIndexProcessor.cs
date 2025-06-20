@@ -12,7 +12,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.EventType;
 
 internal class EventTypeIndexProcessor {
 	private readonly Dictionary<string, int> _eventTypes;
-	private readonly Dictionary<int, long> _eventTypeSizes = new();
+	private readonly Dictionary<int, long> _eventTypeSizes;
 	private readonly DuckDbDataSource _db;
 	private readonly IPublisher _publisher;
 
@@ -49,7 +49,7 @@ internal class EventTypeIndexProcessor {
 
 		_publisher.Publish(
 			new StorageMessage.SecondaryIndexCommitted(
-				resolvedEvent.ToResolvedLink($"{EventTypeIndex.IndexPrefix}{eventTypeName}", nextEventTypeSequence))
+				resolvedEvent.ToResolvedLink(EventTypeIndex.Name(eventTypeName), nextEventTypeSequence))
 		);
 
 		return new SequenceRecord(eventTypeId, nextEventTypeSequence);

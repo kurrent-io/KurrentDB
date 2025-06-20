@@ -218,7 +218,7 @@ public static class TestMessageBatchExtensions {
 		this List<TestMessageBatch> batches,
 		string category
 	) {
-		var eventTypeStreamName = $"{CategoryIndex.IndexPrefix}{category}";
+		var categoryStreamName = CategoryIndex.Name(category);
 
 		var result = new List<ResolvedEvent>();
 
@@ -226,7 +226,7 @@ public static class TestMessageBatchExtensions {
 
 		foreach (var batch in batches.Where(b => b.StreamName.StartsWith(category + "-"))) {
 			var resolvedEvents = batch.ToIndexResolvedEvents(
-				eventTypeStreamName,
+				categoryStreamName,
 				currentIndex
 			);
 			currentIndex += batch.Messages.Length;
@@ -240,7 +240,7 @@ public static class TestMessageBatchExtensions {
 		this List<TestMessageBatch> batches,
 		string eventType
 	) {
-		var eventTypeStreamName = $"{EventTypeIndex.IndexPrefix}{eventType}";
+		var eventTypeStreamName = EventTypeIndex.Name(eventType);
 
 		var result = new List<ResolvedEvent>();
 

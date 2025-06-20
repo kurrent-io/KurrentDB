@@ -46,7 +46,7 @@ public class IndexingEnabledTests(
 	public async Task ReadsAllEventsFromCategoryIndex() {
 		foreach (var category in Categories) {
 			var expectedEvents = AppendedBatches.ToCategoryIndexResolvedEvents(category);
-			await ValidateRead($"{CategoryIndex.IndexPrefix}{category}", expectedEvents);
+			await ValidateRead(CategoryIndex.Name(category), expectedEvents);
 		}
 	}
 
@@ -54,7 +54,7 @@ public class IndexingEnabledTests(
 	public async Task ReadsAllEventsFromEventTypeIndex() {
 		foreach (var eventType in EventTypes) {
 			var expectedEvents = AppendedBatches.ToEventTypeIndexResolvedEvents(eventType);
-			await ValidateRead($"{EventTypeIndex.IndexPrefix}{eventType}", expectedEvents);
+			await ValidateRead(EventTypeIndex.Name(eventType), expectedEvents);
 		}
 	}
 
@@ -66,7 +66,7 @@ public class IndexingEnabledTests(
 	public async Task SubscriptionReturnsAllEventsFromCategoryIndex() {
 		foreach (var category in Categories) {
 			var expectedEvents = AppendedBatches.ToCategoryIndexResolvedEvents(category);
-			await ValidateSubscription($"{CategoryIndex.IndexPrefix}{category}", expectedEvents);
+			await ValidateSubscription(CategoryIndex.Name(category), expectedEvents);
 		}
 	}
 
@@ -74,7 +74,7 @@ public class IndexingEnabledTests(
 	public async Task SubscriptionReturnsAllEventsFromEventTypeIndex() {
 		foreach (var eventType in EventTypes) {
 			var expectedEvents = AppendedBatches.ToEventTypeIndexResolvedEvents(eventType);
-			await ValidateSubscription($"{EventTypeIndex.IndexPrefix}{eventType}", expectedEvents);
+			await ValidateSubscription(EventTypeIndex.Name(eventType), expectedEvents);
 		}
 	}
 

@@ -15,19 +15,17 @@ internal class EventTypeIndexReader(
 	IReadIndex<string> index,
 	QueryInFlightRecords<EventTypeRecord> queryInFlightRecords
 ) : SecondaryIndexReaderBase(index) {
-	protected override long GetId(string streamName) {
-		if (!streamName.StartsWith(EventTypeIndex.IndexPrefix)) {
-			return ExpectedVersion.Invalid;
-		}
-
-		var eventTypeName = streamName[8..];
-		return processor.GetEventTypeId(eventTypeName);
-	}
+	protected override long GetId(string streamName) =>
+		EventTypeIndex.TryGetEventType(streamName, out var eventTypeName)
+			? processor.GetEventTypeId(eventTypeName)
+			: ExpectedVersion.Invalid;
 
 	protected override long GetLastIndexedSequence(long id) => processor.GetLastEventNumber((int)id);
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
-		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(new((int)id, fromEventNumber, toEventNumber));
+		var range = db.Pool.Query<ReadEventTypeIndexQueryArgs, EventTypeRecord, ReadEventTypeIndexQuery>(
+			new ReadEventTypeIndexQueryArgs((int)id, fromEventNumber, toEventNumber)
+		);
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			// events might be in flight
 			var inFlight = queryInFlightRecords(
@@ -43,5 +41,5 @@ internal class EventTypeIndexReader(
 
 	public override long GetLastIndexedPosition(string streamId) => processor.LastIndexedPosition;
 
-	public override bool CanReadStream(string streamId) => streamId.StartsWith(EventTypeIndex.IndexPrefix);
+	public override bool CanReadStream(string streamId) => EventTypeIndex.IsEventTypeIndexStream(streamId);
 }

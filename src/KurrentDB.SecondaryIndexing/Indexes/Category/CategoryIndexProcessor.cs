@@ -48,7 +48,7 @@ internal class CategoryIndexProcessor {
 		LastIndexedPosition = resolvedEvent.Event.LogPosition;
 
 		_publisher.Publish(new StorageMessage.SecondaryIndexCommitted(
-				resolvedEvent.ToResolvedLink($"{CategoryIndex.IndexPrefix}{categoryName}", nextCategorySequence))
+				resolvedEvent.ToResolvedLink(CategoryIndex.Name(categoryName), nextCategorySequence))
 		);
 
 		return new SequenceRecord(categoryId, nextCategorySequence);
