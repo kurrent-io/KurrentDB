@@ -14,4 +14,3 @@ public interface ISecondaryIndexProcessor : IDisposable {
 }
 
 public record struct SequenceRecord(int Id, long Sequence);
-

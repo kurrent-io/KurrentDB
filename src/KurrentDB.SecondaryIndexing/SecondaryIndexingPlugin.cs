@@ -2,8 +2,10 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Metrics;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.TransactionLog.Chunks;
@@ -11,6 +13,7 @@ using KurrentDB.SecondaryIndexing.Builders;
 using KurrentDB.SecondaryIndexing.Indexes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -61,6 +64,12 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 			sp.GetRequiredService<DefaultIndexInFlightRecordsCache>().QueryInFlightRecords
 		);
 
+		var conf = MetricsConfiguration.Get(configuration);
+		var coreMeter = new Meter(conf.CoreMeterName, version: "1.0.0");
+
+		services.AddSingleton<ISecondaryIndexProgressTracker>(
+			//new NoOpSecondaryIndexProgressTracker());
+			new SecondaryIndexProgressTracker(coreMeter, "indexes.secondary"));
 		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
 		services.AddSingleton<DefaultIndexProcessor>();
 		services.AddSingleton<CategoryIndexProcessor>();

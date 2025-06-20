@@ -8,6 +8,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Readers;
@@ -22,6 +23,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly CategoryIndexProcessor _categoryIndexProcessor;
 	private readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
 	private readonly StreamIndexProcessor _streamIndexProcessor;
+	private readonly ISecondaryIndexProgressTracker _progressTracker;
 	private readonly IPublisher _publisher;
 	private Appender _appender;
 
@@ -36,6 +38,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		CategoryIndexProcessor categoryIndexProcessor,
 		EventTypeIndexProcessor eventTypeIndexProcessor,
 		StreamIndexProcessor streamIndexProcessor,
+		ISecondaryIndexProgressTracker progressTracker,
 		IPublisher publisher
 	) {
 		_connection = db.OpenNewConnection();
@@ -45,6 +48,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_categoryIndexProcessor = categoryIndexProcessor;
 		_eventTypeIndexProcessor = eventTypeIndexProcessor;
 		_streamIndexProcessor = streamIndexProcessor;
+		_progressTracker = progressTracker;
 		_publisher = publisher;
 
 		var lastSequence = GetLastSequence();
@@ -94,6 +98,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_publisher.Publish(
 			new StorageMessage.SecondaryIndexCommitted(resolvedEvent.ToResolvedLink(DefaultIndex.Name, sequence))
 		);
+		_progressTracker.RecordIndexed(resolvedEvent);
 	}
 
 	public long? GetLastPosition() =>
@@ -118,9 +123,12 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			_sw.Stop();
 			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _inFlightRecordsCache.Count,
 				LastSequence, _sw.ElapsedMilliseconds);
+
+			_progressTracker.RecordCommit(LastSequence, _inFlightRecordsCache.Count, _sw.ElapsedMilliseconds);
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecordsCache.Count,
 				LastSequence);
+			_progressTracker.RecordError(e);
 			throw;
 		}
 
