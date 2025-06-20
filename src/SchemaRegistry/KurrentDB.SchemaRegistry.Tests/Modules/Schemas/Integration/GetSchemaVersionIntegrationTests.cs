@@ -8,9 +8,10 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
+[NotInParallel]
 public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
 
-	private const int TestTimeoutMs = 20_000;
+	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_version(CancellationToken cancellationToken) {

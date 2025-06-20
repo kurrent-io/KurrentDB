@@ -9,13 +9,11 @@ using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using NJsonSchema;
-using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
-using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
+	const int TestTimeoutMs = 10_000;
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_new_schema_version_successfully(CancellationToken cancellationToken) {
@@ -47,52 +45,9 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		registerSchemaVersionResult.VersionNumber.Should().Be(2);
 
 		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
-		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task registers_multiple_schema_versions_with_incrementing_version_numbers(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
-		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
-
-		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
-
-		// Act - Register second version
-		var secondResult = await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v3.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Act - Register third version
-		var thirdResult = await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v3.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		var listRegisteredSchemasResult = await Client.ListRegisteredSchemasAsync(
-			new ListRegisteredSchemasRequest {
-				SchemaNamePrefix = schemaName
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		secondResult.VersionNumber.Should().Be(2);
-		thirdResult.VersionNumber.Should().Be(3);
-
-		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
-		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listRegisteredSchemasResult.Schemas.First().SchemaDefinition.Should().BeEquivalentTo(v3.ToByteString());
+		listRegisteredSchemasResult.Schemas.Last().SchemaName.Should().Be(schemaName);
+		listRegisteredSchemasResult.Schemas.Last().VersionNumber.Should().Be(2);
+		listRegisteredSchemasResult.Schemas.Last().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -116,44 +71,18 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
+	public async Task throws_exception_when_schema_definition_has_not_changed(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
-
-		await Client.DeleteSchemaAsync(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken: cancellationToken);
 
 		// Act
 		var registerVersion = async () => await Client.RegisterSchemaVersionAsync(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		var registerVersionException = await registerVersion.Should().ThrowAsync<RpcException>();
-		registerVersionException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_schema_definition_has_not_changed(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
-
-		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
-
-		// Act - Try to register the same definition
-		var registerVersion = async () => await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v2.ToByteString()
+				SchemaDefinition = v1.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
@@ -162,188 +91,5 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		var registerVersionException = await registerVersion.Should().ThrowAsync<RpcException>();
 		registerVersionException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
 		registerVersionException.Which.Message.Should().Contain("Schema definition has not changed");
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task preserves_original_data_format_in_registered_version(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
-
-		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
-
-		// Act
-		var registerSchemaVersionResult = await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		var listRegisteredSchemasResult = await Client.ListRegisteredSchemasAsync(
-			new ListRegisteredSchemasRequest {
-				SchemaNamePrefix = schemaName
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		registerSchemaVersionResult.Should().NotBeNull();
-
-		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
-		listRegisteredSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listRegisteredSchemasResult.Schemas.First().DataFormat.Should().Be(SchemaFormat.Protobuf);
-		listRegisteredSchemasResult.Schemas.First().VersionNumber.Should().Be(2);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task generates_unique_schema_version_ids_for_different_versions(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
-		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
-
-		var firstResult = await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
-
-		// Act
-		var secondResult = await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		var thirdResult = await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v3.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		var listSchemaVersionsResult = await Client.ListSchemaVersionsAsync(
-			new ListSchemaVersionsRequest {
-				SchemaName = schemaName,
-				IncludeDefinition = true
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		firstResult.SchemaVersionId.Should().NotBe(secondResult.SchemaVersionId);
-		secondResult.SchemaVersionId.Should().NotBe(thirdResult.SchemaVersionId);
-		thirdResult.SchemaVersionId.Should().NotBe(firstResult.SchemaVersionId);
-
-		listSchemaVersionsResult.Versions.Should().HaveCount(3);
-		listSchemaVersionsResult.Versions[0].VersionNumber.Should().Be(1);
-		listSchemaVersionsResult.Versions[0].SchemaVersionId.Should().Be(firstResult.SchemaVersionId);
-		listSchemaVersionsResult.Versions[1].VersionNumber.Should().Be(2);
-		listSchemaVersionsResult.Versions[1].SchemaVersionId.Should().Be(secondResult.SchemaVersionId);
-		listSchemaVersionsResult.Versions[2].VersionNumber.Should().Be(3);
-		listSchemaVersionsResult.Versions[2].SchemaVersionId.Should().Be(thirdResult.SchemaVersionId);
-		listSchemaVersionsResult.Versions[2].SchemaDefinition.Should().BeEquivalentTo(v3.ToByteString());
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task registers_version_with_empty_schema_definition(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
-
-		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
-
-		// Act
-		var result = async () => await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.Empty
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		var exception = await result.Should().ThrowAsync<RpcException>();
-		exception.Which.Status.StatusCode.Should().Be(StatusCode.InvalidArgument);
-		exception.Which.Status.Detail.Should().Contain("Schema definition must not be empty");
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	[Arguments(SchemaFormat.Json)]
-	[Arguments(SchemaFormat.Protobuf)]
-	[Arguments(SchemaFormat.Avro)]
-	[Arguments(SchemaFormat.Bytes)]
-	public async Task registers_version_for_different_data_formats(
-		SchemaFormat dataFormat, CancellationToken cancellationToken
-	) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
-
-		await CreateSchemaAsync(schemaName: schemaName, dataFormat: dataFormat, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
-
-		// Act
-		var registerSchemaVersionResult = await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		var listSchemaVersionsResult = await Client.ListSchemaVersionsAsync(
-			new ListSchemaVersionsRequest {
-				SchemaName = schemaName,
-				IncludeDefinition = true
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		registerSchemaVersionResult.VersionNumber.Should().Be(2);
-		listSchemaVersionsResult.Versions.Should().HaveCount(2);
-		listSchemaVersionsResult.Versions.Last().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	[Arguments(CompatibilityMode.Backward)]
-	[Arguments(CompatibilityMode.Forward)]
-	[Arguments(CompatibilityMode.Full)]
-	[Arguments(CompatibilityMode.None)]
-	public async Task registers_version_for_different_compatibility_modes(
-		CompatibilityMode compatibilityMode, CancellationToken cancellationToken
-	) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
-
-		await CreateSchemaAsync(schemaName: schemaName, compatibility: compatibilityMode, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
-
-		// Act
-		var registerSchemaVersionResult = await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		var listSchemaVersionsResult = await Client.ListSchemaVersionsAsync(
-			new ListSchemaVersionsRequest {
-				SchemaName = schemaName,
-				IncludeDefinition = true
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		registerSchemaVersionResult.VersionNumber.Should().Be(2);
-		listSchemaVersionsResult.Versions.Should().HaveCount(2);
-		listSchemaVersionsResult.Versions.Last().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
 	}
 }

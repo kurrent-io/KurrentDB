@@ -10,8 +10,9 @@ using NJsonSchema;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
+[NotInParallel]
 public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFixture {
-	private const int TestTimeoutMs = 20_000;
+	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task check_schema_compatibility_matches(CancellationToken cancellationToken) {
@@ -29,14 +30,15 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 			},
 		}, cancellationToken: cancellationToken);
 
-		var checkResponse = await Client.CheckSchemaCompatibilityAsync(new CheckSchemaCompatibilityRequest {
+		var response= await Client.CheckSchemaCompatibilityAsync(new CheckSchemaCompatibilityRequest {
 			SchemaName = schemaName,
 			DataFormat = SchemaDataFormat.Json,
 			Definition = v1.ToByteString()
 		}, cancellationToken: cancellationToken);
 
-		checkResponse.Success.SchemaVersionId.Should().NotBeEmpty();
-		checkResponse.Failure.Errors.Should().BeEmpty();
+		response.Success.Should().NotBeNull();
+		response.Success.SchemaVersionId.Should().NotBeEmpty();
+		response.Failure.Should().BeNull();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -111,8 +113,9 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
+		response.Success.Should().NotBeNull();
 		response.Success.SchemaVersionId.Should().NotBeEmpty();
-		response.Failure.Errors.Should().BeEmpty();
+		response.Failure.Should().BeNull();
 	}
 
 	[Test]
@@ -191,8 +194,9 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
+		response.Success.Should().NotBeNull();
 		response.Success.SchemaVersionId.Should().NotBeEmpty();
-		response.Failure.Errors.Should().BeEmpty();
+		response.Failure.Should().BeNull();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -266,8 +270,9 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
+		response.Success.Should().NotBeNull();
 		response.Success.SchemaVersionId.Should().NotBeEmpty();
-		response.Failure.Errors.Should().BeEmpty();
+		response.Failure.Should().BeNull();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -338,8 +343,9 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		);
 
 		// Assert
+		response.Success.Should().NotBeNull();
 		response.Success.SchemaVersionId.Should().NotBeEmpty();
-		response.Failure.Errors.Should().BeEmpty();
+		response.Failure.Should().BeNull();
 	}
 
 	[Test, Timeout(TestTimeoutMs)]

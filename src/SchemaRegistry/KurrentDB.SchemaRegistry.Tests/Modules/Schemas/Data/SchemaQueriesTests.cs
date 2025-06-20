@@ -10,7 +10,7 @@ using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Data;
 
-public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
+public class SchemaQueriesTests : SchemaApplicationTestFixture {
 	[Test, Timeout(10_000)]
 	public async Task get_schema_version_with_version_number_returns_version(CancellationToken cancellationToken) {
 		// Arrange
@@ -91,14 +91,14 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var fooSchemaName = NewSchemaName(foo);
 		var barSchemaName = NewSchemaName(bar);
 
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
 		await CreateSchema(projection, new CreateSchemaOptions { Name = fooSchemaName }, cancellationToken);
 		await CreateSchema(projection, new CreateSchemaOptions { Name = barSchemaName }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.ListSchemas(new ListSchemasRequest { SchemaNamePrefix = foo }, cancellationToken);
 		response.Schemas.Count.Should().Be(1);
@@ -112,7 +112,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var fooSchemaName = NewSchemaName(NewPrefix());
 		var barSchemaName = NewSchemaName(NewPrefix());
 
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
@@ -123,7 +123,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 			}
 		}, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.ListSchemas(new ListSchemasRequest { SchemaTags = { ["baz"] = "qux" } }, cancellationToken);
 		response.Schemas.Count.Should().Be(1);
@@ -135,14 +135,14 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 	[Test]
 	public async Task list_all_schema_versions(CancellationToken cancellationToken) {
 		var schemaName = NewSchemaName();
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 2 }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.ListSchemaVersions(new ListSchemaVersionsRequest { SchemaName = schemaName },
 			cancellationToken);
@@ -152,14 +152,14 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 	[Test]
 	public async Task list_registered_schemas(CancellationToken cancellationToken) {
 		var schemaName = NewSchemaName(NewPrefix());
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 2 }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.ListRegisteredSchemas(new ListRegisteredSchemasRequest(), cancellationToken);
 		response.Schemas.Count.Should().Be(1);
@@ -173,7 +173,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var prefix = NewPrefix();
 		var schemaName1 = NewSchemaName(prefix);
 		var schemaName2 = NewSchemaName(prefix);
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
@@ -183,7 +183,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName2 }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName2, VersionNumber = 42 }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.ListRegisteredSchemas(new ListRegisteredSchemasRequest { SchemaNamePrefix = prefix }, cancellationToken);
 		var schemas = response.Schemas.OrderBy(x => x.RegisteredAt).ToList();
@@ -204,14 +204,14 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName1 = NewSchemaName(NewPrefix());
 		var schemaName2 = NewSchemaName(NewPrefix());
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName1, VersionId = versionId }, cancellationToken);
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName2 }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.ListRegisteredSchemas(new ListRegisteredSchemasRequest { SchemaVersionId = versionId }, cancellationToken);
 		response.Schemas.Count.Should().Be(1);
@@ -225,7 +225,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 	public async Task list_registered_schemas_multiple_with_tags(CancellationToken cancellationToken) {
 		var schemaName1 = NewSchemaName(NewPrefix());
 		var schemaName2 = NewSchemaName(NewPrefix());
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
@@ -236,7 +236,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		}, cancellationToken);
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName2 }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.ListRegisteredSchemas(new ListRegisteredSchemasRequest {
 			SchemaTags = {
@@ -256,13 +256,13 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 	public async Task lookup_schema_name(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName, VersionId = versionId }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.LookupSchemaName(new LookupSchemaNameRequest { SchemaVersionId = versionId }, cancellationToken);
 		response.SchemaName.Should().Be(schemaName);
@@ -272,7 +272,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 	public async Task check_schema_compatibility_should_be_compatible(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
@@ -280,7 +280,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 			new CreateSchemaOptions { Name = schemaName, VersionId = versionId, Definition = PersonSchema },
 			cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response =
 			await queries.CheckSchemaCompatibility(
@@ -297,7 +297,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 	public async Task check_schema_compatibility_should_not_be_compatible(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
@@ -305,7 +305,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 			new CreateSchemaOptions { Name = schemaName, VersionId = versionId, Definition = PersonSchema },
 			cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response =
 			await queries.CheckSchemaCompatibility(
@@ -322,14 +322,14 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var versionId1 = Guid.NewGuid().ToString();
 		var versionId2 = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName, VersionId = versionId1 }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 24, VersionId = versionId2 }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.GetSchema(new GetSchemaRequest { SchemaName = schemaName }, cancellationToken);
 
@@ -342,14 +342,14 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var versionId1 = Guid.NewGuid().ToString();
 		var versionId2 = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName, VersionId = versionId1 }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 24, VersionId = versionId2 }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.GetSchemaVersion(new GetSchemaVersionRequest { SchemaName = schemaName }, cancellationToken);
 		response.Version.SchemaVersionId.Should().Be(versionId2);
@@ -360,14 +360,14 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 		var versionId1 = Guid.NewGuid().ToString();
 		var versionId2 = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
-		var connection = DuckDBConnectionProvider.GetConnection();
+		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
 		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName, VersionId = versionId1 }, cancellationToken);
 		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 24, VersionId = versionId2 }, cancellationToken);
 
-		var queries = new SchemaQueries(DuckDBConnectionProvider, new NJsonSchemaCompatibilityManager());
+		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
 
 		var response = await queries.GetSchemaVersion(new GetSchemaVersionRequest { SchemaName = schemaName, VersionNumber = 1 }, cancellationToken);
 		response.Version.SchemaVersionId.Should().Be(versionId1);
@@ -397,7 +397,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 			}
 		);
 
-		await projections.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDBConnectionProvider.GetConnection()), record,
+		await projections.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()), record,
 			cancellationToken));
 	}
 
@@ -420,7 +420,7 @@ public class SchemaQueriesTests : SchemaRegistryServerTestFixture {
 			}
 		);
 
-		await projections.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDBConnectionProvider.GetConnection()), record,
+		await projections.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()), record,
 			cancellationToken));
 	}
 

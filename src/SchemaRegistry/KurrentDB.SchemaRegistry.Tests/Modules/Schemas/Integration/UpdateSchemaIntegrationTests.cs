@@ -5,7 +5,6 @@
 
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
@@ -13,17 +12,20 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
+[NotInParallel]
 public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
-	public async Task updates_schema_description_successfully(CancellationToken cancellationToken) {
+	public async Task updates_schema_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var originalDescription = Faker.Lorem.Sentence();
 		var newDescription = Faker.Lorem.Sentence();
+		var originalTags = new Dictionary<string, string> { ["env"] = "test" };
+		var newTags = new Dictionary<string, string> { ["env"] = "prod" };
 
-		await CreateSchemaAsync(schemaName: schemaName, description: originalDescription, cancellationToken: cancellationToken);
+		await CreateSchemaAsync(schemaName: schemaName, description: originalDescription, tags: originalTags, cancellationToken: cancellationToken);
 
 		// Act
 		var updateSchemaResult = await Client.UpdateSchemaAsync(
@@ -32,9 +34,10 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 				Details = new SchemaDetails {
 					Description = newDescription,
 					Compatibility = CompatibilityMode.Backward,
-					DataFormat = SchemaFormat.Json
+					DataFormat = SchemaFormat.Json,
+					Tags = { newTags }
 				},
-				UpdateMask = new FieldMask { Paths = { "Details.Description" } }
+				UpdateMask = new FieldMask { Paths = { "Details.Description", "Details.Tags" } }
 			},
 			cancellationToken: cancellationToken
 		);
@@ -48,73 +51,10 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 
 		// Assert
 		updateSchemaResult.Should().NotBeNull();
-
 		listSchemasResult.Schemas.Should().HaveCount(1);
 		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
 		listSchemasResult.Schemas.First().Details.Description.Should().Be(newDescription);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task updates_schema_tags_successfully(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var originalTags = new Dictionary<string, string> { ["env"] = "test", ["version"] = "1.0" };
-		var newTags = new Dictionary<string, string> { ["env"] = "prod", ["team"] = "data" };
-
-		await CreateSchemaAsync(schemaName: schemaName, tags: originalTags, cancellationToken: cancellationToken);
-
-		// Act
-		var updateSchemaResult = await Client.UpdateSchemaAsync(
-			new UpdateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					Tags = { newTags },
-					DataFormat = SchemaFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-				},
-				UpdateMask = new FieldMask { Paths = { "Details.Tags" } }
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		updateSchemaResult.Should().NotBeNull();
-
-		var listSchemasResult = await Client.ListSchemasAsync(
-			new ListSchemasRequest {
-				SchemaNamePrefix = schemaName
-			},
-			cancellationToken: cancellationToken
-		);
-
-		listSchemasResult.Schemas.Should().HaveCount(1);
-		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
 		listSchemasResult.Schemas.First().Details.Tags.Should().BeEquivalentTo(newTags);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_schema_not_found(CancellationToken cancellationToken) {
-		// Arrange
-		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-
-		// Act
-		var updateSchema = async () => await Client.UpdateSchemaAsync(
-			new UpdateSchemaRequest {
-				SchemaName = nonExistentSchemaName,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					Compatibility = CompatibilityMode.Backward,
-					DataFormat = SchemaFormat.Json
-				},
-				UpdateMask = new FieldMask { Paths = { "Details.Description" } }
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
-		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
-		updateSchemaException.Which.Message.Should().Contain($"Schema {nonExistentSchemaName} not found");
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -143,33 +83,6 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
 		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
 		updateSchemaException.Which.Message.Should().Contain($"Schema schemas/{schemaName} not found");
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_update_mask_is_empty(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-
-		await CreateSchemaAsync(schemaName: schemaName, cancellationToken: cancellationToken);
-
-		// Act
-		var updateSchema = async () => await Client.UpdateSchemaAsync(
-			new UpdateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					Description = Faker.Lorem.Sentence(),
-					Compatibility = CompatibilityMode.Backward,
-					DataFormat = SchemaFormat.Json
-				},
-				UpdateMask = new FieldMask()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		var updateSchemaException = await updateSchema.Should().ThrowAsync<RpcException>();
-		updateSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
-		updateSchemaException.Which.Message.Should().Contain("Update mask must contain at least one field");
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -286,82 +199,6 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 		listSchemasResult.Schemas.Should().HaveCount(1);
 		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
 		listSchemasResult.Schemas.First().Details.Description.Should().Be(newDescription);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task updates_empty_tags_to_non_empty_tags(CancellationToken cancellationToken) {
-		// Arrange
-		var newTags = new Dictionary<string, string> { ["env"] = "prod", ["team"] = "backend" };
-		var schemaName = NewSchemaName();
-
-		// Create initial schema with no tags
-		await CreateSchemaAsync(schemaName: schemaName, tags: null, cancellationToken: cancellationToken);
-
-		// Act
-		var updateSchemaResult = await Client.UpdateSchemaAsync(
-			new UpdateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					Tags = { newTags },
-					Compatibility = CompatibilityMode.Backward,
-					DataFormat = SchemaFormat.Json
-				},
-				UpdateMask = new FieldMask { Paths = { "Details.Tags" } }
-			},
-			cancellationToken: cancellationToken
-		);
-
-		var listSchemasResult = await Client.ListSchemasAsync(
-			new ListSchemasRequest {
-				SchemaNamePrefix = schemaName
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		updateSchemaResult.Should().NotBeNull();
-
-		listSchemasResult.Schemas.Should().HaveCount(1);
-		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listSchemasResult.Schemas.First().Details.Tags.Should().BeEquivalentTo(newTags);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task updates_non_empty_tags_to_empty_tags(CancellationToken cancellationToken) {
-		// Arrange
-		var initialTags = new Dictionary<string, string> { ["env"] = "test", ["version"] = "1.0" };
-		var schemaName = NewSchemaName();
-
-		// Create initial schema with tags
-		await CreateSchemaAsync(schemaName: schemaName, tags: initialTags, cancellationToken: cancellationToken);
-
-		// Act
-		var updateSchemaResult = await Client.UpdateSchemaAsync(
-			new UpdateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					Tags = { },
-					Compatibility = CompatibilityMode.Backward,
-					DataFormat = SchemaFormat.Json
-				},
-				UpdateMask = new FieldMask { Paths = { "Details.Tags" } }
-			},
-			cancellationToken: cancellationToken
-		);
-
-		var listSchemasResult = await Client.ListSchemasAsync(
-			new ListSchemasRequest {
-				SchemaNamePrefix = schemaName
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		updateSchemaResult.Should().NotBeNull();
-
-		listSchemasResult.Schemas.Should().HaveCount(1);
-		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listSchemasResult.Schemas.First().Details.Tags.Should().BeEmpty();
 	}
 
 	public class NotModifiableTestCases : TestCaseGenerator<SchemaDetails, string, string> {

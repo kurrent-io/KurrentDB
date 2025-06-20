@@ -3,15 +3,16 @@
 
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
-using Shouldly;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
+[NotInParallel]
 public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
-	private const int TestTimeoutMs = 20_000;
+	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_newly_created_schema(CancellationToken cancellationToken) {
@@ -71,13 +72,14 @@ public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_not_found(CancellationToken cancellationToken) {
-		var result = await Client.GetSchemaAsync(
+		var getSchema = async () => await Client.GetSchemaAsync(
 			new GetSchemaRequest {
-				SchemaName = Guid.NewGuid().ToString(),
+				SchemaName = NewSchemaName()
 			},
 			cancellationToken: cancellationToken
 		);
 
-		result.Schema.ShouldBeNull();
+		var getSchemaException = await getSchema.Should().ThrowAsync<RpcException>();
+		getSchemaException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 }

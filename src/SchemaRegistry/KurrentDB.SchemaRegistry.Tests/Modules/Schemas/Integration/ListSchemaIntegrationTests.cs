@@ -10,8 +10,9 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
+[NotInParallel]
 public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
-	private const int TestTimeoutMs = 20_000;
+	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_schemas_with_prefix(CancellationToken cancellationToken) {
@@ -416,4 +417,3 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		response.Schemas.Should().BeEmpty();
 	}
 }
-

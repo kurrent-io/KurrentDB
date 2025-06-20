@@ -8,8 +8,9 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
+[NotInParallel]
 public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
-	private const int TestTimeoutMs = 20_000;
+	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task lookup_schema_name(CancellationToken cancellationToken) {
@@ -37,15 +38,17 @@ public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
 		result.SchemaVersionId.Should().NotBeEmpty();
 
 		// Assert
-		var lookupSchemaNameResponse = await Client.LookupSchemaNameAsync(
-			new LookupSchemaNameRequest {
-				SchemaVersionId = result.SchemaVersionId,
-			},
-			cancellationToken: cancellationToken
-		);
+		await Wait.UntilAsserted(async () => {
+			var lookupSchemaNameResponse = await Client.LookupSchemaNameAsync(
+				new LookupSchemaNameRequest {
+					SchemaVersionId = result.SchemaVersionId,
+				},
+				cancellationToken: cancellationToken
+			);
 
-		lookupSchemaNameResponse.Should().NotBeNull();
-		lookupSchemaNameResponse.SchemaName.Should().Be(schemaName);
+			lookupSchemaNameResponse.Should().NotBeNull();
+			lookupSchemaNameResponse.SchemaName.Should().Be(schemaName);
+		}, cancellationToken: cancellationToken);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]

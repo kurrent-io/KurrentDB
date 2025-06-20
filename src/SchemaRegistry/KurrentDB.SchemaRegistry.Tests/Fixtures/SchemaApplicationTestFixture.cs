@@ -3,6 +3,7 @@
 
 // ReSharper disable ArrangeTypeMemberModifiers
 
+using System.Runtime.CompilerServices;
 using Eventuous;
 using Google.Protobuf;
 using Kurrent.Surge.Schema.Validation;
@@ -30,7 +31,15 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		return result.Get()!;
 	}
 
-	protected static string NewSchemaName() => $"test-schema-{Guid.NewGuid():N}";
+	private static string GenerateShortId() => Identifiers.GenerateShortId();
+
+	protected static string NewSchemaName(string? prefix = null, [CallerMemberName] string? name = null) {
+		var prefixValue = prefix is null ? string.Empty : $"{prefix}-";
+		return $"{prefixValue}{name.Underscore()}-{GenerateShortId()}".ToLowerInvariant();
+	}
+
+	protected static string NewPrefix([CallerMemberName] string? name = null) =>
+		$"{name.Underscore()}-{GenerateShortId()}".ToLowerInvariant();
 
 	protected static JsonSchema NewJsonSchemaDefinition() {
 		return JsonSchema.FromJsonAsync(
