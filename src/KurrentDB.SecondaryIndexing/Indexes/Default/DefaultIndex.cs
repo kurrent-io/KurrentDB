@@ -6,6 +6,6 @@ using KurrentDB.Core.Services;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Default;
 
-internal class DefaultIndex : Disposable, ISecondaryIndex {
+internal static class DefaultIndex {
 	public const string Name = $"{SystemStreams.IndexStreamPrefix}all";
 }

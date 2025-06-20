@@ -11,8 +11,7 @@ using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
 namespace KurrentDB.SecondaryIndexing.Indexes;
 
-public interface ISecondaryIndexReader: IVirtualStreamReader {
-
+public interface ISecondaryIndexReader : IVirtualStreamReader {
 }
 
 public record struct IndexedPrepare(long Version, long LogPosition);

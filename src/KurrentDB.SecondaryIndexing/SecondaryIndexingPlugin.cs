@@ -51,8 +51,6 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 			dbSource.InitDb();
 			return dbSource;
 		});
-		services.AddSingleton<DefaultIndex>();
-		services.AddSingleton<ISecondaryIndex>(sp => sp.GetRequiredService<DefaultIndex>());
 		services.AddHostedService<SecondaryIndexBuilder>();
 
 		services.AddSingleton<DefaultIndexInFlightRecordsCache>();
