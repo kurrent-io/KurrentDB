@@ -124,7 +124,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _inFlightRecords.Count,
 				LastSequence, _sw.ElapsedMilliseconds);
 
-			_progressTracker.RecordCommit(LastSequence, _inFlightRecordsCache.Count, _sw.ElapsedMilliseconds);
+			_progressTracker.RecordCommit(LastSequence, _inFlightRecords.Count, _sw.ElapsedMilliseconds);
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecords.Count,
 				LastSequence);
