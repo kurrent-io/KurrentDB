@@ -2,13 +2,21 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Metrics;
 using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
-using KurrentDB.Core.Bus;
+using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Services.Storage.InMemory;
+using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Builders;
-using KurrentDB.SecondaryIndexing.Indices;
+using KurrentDB.SecondaryIndexing.Indexes;
+using KurrentDB.SecondaryIndexing.Indexes.Category;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
+using KurrentDB.SecondaryIndexing.Indexes.EventType;
+using KurrentDB.SecondaryIndexing.Indexes.Stream;
+using KurrentDB.SecondaryIndexing.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,39 +26,67 @@ namespace KurrentDB.SecondaryIndexing;
 public interface ISecondaryIndexingPlugin : ISubsystemsPlugin;
 
 public sealed class SecondaryIndexingPluginOptions {
-	public int? CheckpointCommitBatchSize { get; set; }
-	public uint? CheckpointCommitDelayMs { get; set; }
+	public int CommitBatchSize { get; set; } = 50_000;
 }
 
 public static class SecondaryIndexingPluginFactory {
-	public static ISecondaryIndexingPlugin Create<TStreamId>(VirtualStreamReader virtualStreamReader) =>
-		new SecondaryIndexingPlugin<TStreamId>(virtualStreamReader);
+	public static ISecondaryIndexingPlugin Create(VirtualStreamReader virtualStreamReader) =>
+		new SecondaryIndexingPlugin(virtualStreamReader);
 }
 
-internal class SecondaryIndexingPlugin<TStreamId>(VirtualStreamReader virtualStreamReader)
-	: SubsystemsPlugin(name: "secondary-indexing"), ISecondaryIndexingPlugin {
+internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
+	: SubsystemsPlugin(name: "SecondaryIndexes"), ISecondaryIndexingPlugin {
 	[Experimental("SECONDARY_INDEX")]
 	public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
-		var options = configuration.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
-			.Get<SecondaryIndexingPluginOptions>();
+		var options = configuration
+			.GetSection($"{KurrentConfigurationKeys.Prefix}:SecondaryIndexing:Options")
+			.Get<SecondaryIndexingPluginOptions>() ?? new();
+		services.AddSingleton(options);
 
-		services.AddHostedService(sp =>
-			new SecondaryIndexBuilder(
-				sp.GetRequiredService<ISecondaryIndex>(),
-				sp.GetRequiredService<IPublisher>(),
-				sp.GetRequiredService<ISubscriber>(),
-				options
-			)
+		services.AddSingleton<DuckDbDataSourceOptions>(sp => {
+			var dbConfig = sp.GetRequiredService<TFChunkDbConfig>();
+			var connectionString = $"Data Source={Path.Combine(dbConfig.Path, "index.db")};";
+
+			return new() { ConnectionString = connectionString };
+		});
+		services.AddSingleton<DuckDbDataSource>(sp => {
+			var dbSource = new DuckDbDataSource(sp.GetRequiredService<DuckDbDataSourceOptions>());
+			dbSource.InitDb();
+			return dbSource;
+		});
+		services.AddHostedService<SecondaryIndexBuilder>();
+
+		services.AddSingleton<DefaultIndexInFlightRecords>();
+		services.AddSingleton<QueryInFlightRecords<EventTypeSql.EventTypeRecord>>(sp =>
+			sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
 		);
+		services.AddSingleton<QueryInFlightRecords<CategorySql.CategoryRecord>>(sp =>
+			sp.GetRequiredService<DefaultIndexInFlightRecords>().QueryInFlightRecords
+		);
+
+		var conf = MetricsConfiguration.Get(configuration);
+		var coreMeter = new Meter(conf.CoreMeterName, version: "1.0.0");
+
+		services.AddSingleton<ISecondaryIndexProgressTracker>(
+			//new NoOpSecondaryIndexProgressTracker());
+			new SecondaryIndexProgressTracker(coreMeter, "indexes.secondary"));
+		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
+		services.AddSingleton<DefaultIndexProcessor>();
+		services.AddSingleton<CategoryIndexProcessor>();
+		services.AddSingleton<EventTypeIndexProcessor>();
+		services.AddSingleton<StreamIndexProcessor>();
+
+		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
+		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
+		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
 		base.ConfigureApplication(app, configuration);
 
-		var index = app.ApplicationServices.GetService<ISecondaryIndex>();
+		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
-		if (index != null)
-			virtualStreamReader.Register(index.Readers.ToArray());
+		virtualStreamReader.Register(indexReaders.ToArray<IVirtualStreamReader>());
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {

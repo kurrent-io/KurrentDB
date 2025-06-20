@@ -46,7 +46,8 @@ public class SubscriptionsService<TStreamId> :
 	IHandle<SubscriptionMessage.PollStream>,
 	IHandle<SubscriptionMessage.CheckPollTimeout>,
 	IAsyncHandle<StorageMessage.InMemoryEventCommitted>,
-	IAsyncHandle<StorageMessage.EventCommitted> {
+	IAsyncHandle<StorageMessage.EventCommitted>,
+	IAsyncHandle<StorageMessage.SecondaryIndexCommitted> {
 
 	private const int DontReportCheckpointReached = -1;
 
@@ -61,6 +62,7 @@ public class SubscriptionsService<TStreamId> :
 
 	private long _lastSeenCommitPosition = -1;
 	private long _lastSeenInMemoryCommitPosition = -1;
+	private long _lastSeenSecondaryIndexLogPosition = -1;
 
 	private readonly IPublisher _bus;
 	private readonly IEnvelope _busEnvelope;
@@ -231,9 +233,11 @@ public class SubscriptionsService<TStreamId> :
 	}
 
 	private bool MissedEvents(string streamId, long lastIndexedPosition, long? lastEventNumber) {
-		return SystemStreams.IsVirtualStream(streamId)
-			? _lastSeenInMemoryCommitPosition > lastIndexedPosition
-			: _lastSeenCommitPosition > lastIndexedPosition;
+		return SystemStreams.IsIndexStream(streamId)
+			? _lastSeenSecondaryIndexLogPosition > lastIndexedPosition
+			: SystemStreams.IsInMemoryStream(streamId)
+				? _lastSeenInMemoryCommitPosition > lastIndexedPosition
+				: _lastSeenCommitPosition > lastIndexedPosition;
 	}
 
 	private void SubscribePoller(string streamId, DateTime expireAt, long lastIndexedPosition, long? lastEventNumber, Message originalRequest) {
@@ -305,6 +309,53 @@ public class SubscriptionsService<TStreamId> :
 		ProcessStreamMetadataChanges(message.Event.EventStreamId);
 		ProcessSettingsStreamChanges(message.Event.EventStreamId);
 		ReissueReadsFor(message.Event.EventStreamId, message.CommitPosition, message.Event.EventNumber);
+	}
+
+	ValueTask IAsyncHandle<StorageMessage.SecondaryIndexCommitted>.HandleAsync(
+		StorageMessage.SecondaryIndexCommitted message,
+		CancellationToken token
+	) {
+		if (ProcessSecondaryIndexEvent(message.Event)) return ValueTask.CompletedTask;
+
+		// I don't think that we need to handle that for now, but
+		// TODO: check if we can skip it
+		// ProcessStreamMetadataChanges(message.Event.EventStreamId);
+		// ProcessSettingsStreamChanges(message.Event.EventStreamId);
+
+		ReissueReadsFor(message.Event.Link.EventStreamId, message.Event.Link.LogPosition, message.Event.Link.EventNumber);
+		return ValueTask.CompletedTask;
+	}
+
+	private bool ProcessSecondaryIndexEvent(ResolvedEvent resolvedEvent)
+	{
+		var indexEvent = resolvedEvent.Link;
+		var commitPosition = _lastSeenSecondaryIndexLogPosition = indexEvent.LogPosition;
+
+		if (!_subscriptionTopics.TryGetValue(resolvedEvent.Link.EventStreamId, out var subscriptions))
+			return true;
+
+		for (int i = 0, n = subscriptions.Count; i < n; i++) {
+			var subscr = subscriptions[i];
+			if (commitPosition <= subscr.LastIndexedPosition || indexEvent.EventNumber <= subscr.LastEventNumber)
+				continue;
+
+			if (subscr.EventFilter.IsEventAllowed(indexEvent)) {
+				subscr.Envelope.ReplyWith(new ClientMessage.StreamEventAppeared(subscr.CorrelationId, resolvedEvent));
+			}
+
+			if (subscr.CheckpointInterval == DontReportCheckpointReached)
+				continue;
+
+			subscr.CheckpointIntervalCurrent++;
+
+			if (subscr.CheckpointInterval != null &&
+			    subscr.CheckpointIntervalCurrent >= subscr.CheckpointInterval) {
+				subscr.Envelope.ReplyWith(new ClientMessage.CheckpointReached(subscr.CorrelationId, resolvedEvent.LinkPosition));
+				subscr.CheckpointIntervalCurrent = 0;
+			}
+		}
+
+		return false;
 	}
 
 	private async ValueTask<ResolvedEvent?> ProcessEventCommited(string eventStreamId, long commitPosition, EventRecord evnt, ResolvedEvent? resolvedEvent, CancellationToken token) {

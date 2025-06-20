@@ -22,7 +22,7 @@ using ILogger = Serilog.ILogger;
 
 namespace KurrentDB.AutoScavenge;
 
-public class AutoScavengePlugin() : SubsystemsPlugin(name: "auto-scavenge", requiredEntitlements: ["AUTO_SCAVENGE"]), IConnectedSubsystemsPlugin {
+public class AutoScavengePlugin() : SubsystemsPlugin(name: "AutoScavenge", requiredEntitlements: ["AUTO_SCAVENGE"]), IConnectedSubsystemsPlugin {
 	private static readonly ILogger Log = Serilog.Log.ForContext<AutoScavengePlugin>();
 	private readonly CancellationTokenSource _cts = new();
 	private AutoScavengeService? _autoScavengeService;

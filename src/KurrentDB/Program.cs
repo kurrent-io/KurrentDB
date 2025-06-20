@@ -250,7 +250,6 @@ try {
 			builder.Services.AddCascadingAuthenticationState();
 			builder.Services.AddMudServices();
 			builder.Services.AddMudMarkdownServices();
-			builder.Services.AddSingleton(options);
 			builder.Services.AddScoped<LogObserver>();
 			builder.Services.AddScoped<IdentityRedirectManager>();
 			builder.Services.AddSingleton(monitoringService);
