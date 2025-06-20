@@ -61,7 +61,8 @@ public class TFChunkReader : ITransactionFileReader {
 						string.Format(
 							"Got a file that was being deleted {0} times from TFChunkDb, likely a bug there.",
 							MaxRetries));
-				return await TryReadNextInternal(retries + 1, token);
+				retries++;
+				continue;
 			}
 
 			if (result.Success) {
@@ -115,7 +116,9 @@ public class TFChunkReader : ITransactionFileReader {
 					throw new Exception(string.Format(
 						"Got a file that was being deleted {0} times from TFChunkDb, likely a bug there.",
 						MaxRetries));
-				return await TryReadPrevInternal(retries + 1, token);
+
+				retries++;
+				continue;
 			}
 
 			if (result.Success) {
@@ -139,44 +142,48 @@ public class TFChunkReader : ITransactionFileReader {
 		=> TryReadAtInternal(position, couldBeScavenged, 0, token);
 
 	private async ValueTask<RecordReadResult> TryReadAtInternal(long position, bool couldBeScavenged, int retries, CancellationToken token) {
-		var writerChk = _writerCheckpoint.Read();
-		if (position >= writerChk) {
-			_log.Warning(
-				"Attempted to read at position {position}, which is further than writer checkpoint {writerChk}",
-				position, writerChk);
-			return RecordReadResult.Failure;
+		while (retries <= MaxRetries) {
+			var writerChk = _writerCheckpoint.Read();
+			if (position >= writerChk) {
+				_log.Warning(
+					"Attempted to read at position {position}, which is further than writer checkpoint {writerChk}",
+					position, writerChk);
+				return RecordReadResult.Failure;
+			}
+
+			var chunk = await _db.Manager.GetInitializedChunkFor(position, token);
+			try {
+				CountRead(chunk.IsCached);
+				return await chunk.TryReadAt(chunk.ChunkHeader.GetLocalLogPosition(position), couldBeScavenged, token);
+			} catch (FileBeingDeletedException) {
+				retries++;
+			}
 		}
 
-		var chunk = await _db.Manager.GetInitializedChunkFor(position, token);
-		try {
-			CountRead(chunk.IsCached);
-			return await chunk.TryReadAt(chunk.ChunkHeader.GetLocalLogPosition(position), couldBeScavenged, token);
-		} catch (FileBeingDeletedException) {
-			if (retries > MaxRetries)
-				throw new FileBeingDeletedException(
-					"Been told the file was deleted > MaxRetries times. Probably a problem in db.");
-			return await TryReadAtInternal(position, couldBeScavenged, retries + 1, token);
-		}
+		throw new FileBeingDeletedException(
+			"Been told the file was deleted > MaxRetries times. Probably a problem in db.");
 	}
 
 	public ValueTask<bool> ExistsAt(long position, CancellationToken token)
 		=> ExistsAtInternal(position, 0, token);
 
 	private async ValueTask<bool> ExistsAtInternal(long position, int retries, CancellationToken token) {
-		var writerChk = _writerCheckpoint.Read();
-		if (position >= writerChk)
-			return false;
+		while (retries <= MaxRetries) {
+			var writerChk = _writerCheckpoint.Read();
+			if (position >= writerChk)
+				return false;
 
-		var chunk = await _db.Manager.GetInitializedChunkFor(position, token);
-		try {
-			CountRead(chunk.IsCached);
-			return await chunk.ExistsAt(chunk.ChunkHeader.GetLocalLogPosition(position), token);
-		} catch (FileBeingDeletedException) {
-			if (retries > MaxRetries)
-				throw new FileBeingDeletedException(
-					"Been told the file was deleted > MaxRetries times. Probably a problem in db.");
-			return await ExistsAtInternal(position, retries + 1, token);
+			var chunk = await _db.Manager.GetInitializedChunkFor(position, token);
+			try {
+				CountRead(chunk.IsCached);
+				return await chunk.ExistsAt(chunk.ChunkHeader.GetLocalLogPosition(position), token);
+			} catch (FileBeingDeletedException) {
+				retries++;
+			}
 		}
+
+		throw new FileBeingDeletedException(
+			"Been told the file was deleted > MaxRetries times. Probably a problem in db.");
 	}
 
 	private static void CountRead(bool isCached) {
