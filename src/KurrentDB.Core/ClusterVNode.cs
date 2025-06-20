@@ -1589,6 +1589,7 @@ public class ClusterVNode<TStreamId> :
 				.AddSingleton<ILongHasher<TStreamId>>(_longHasher)
 				.AddSingleton(telemetryService) // for correct disposal
 				.AddSingleton(_readIndex)
+				.AddSingleton(_readIndex.IndexReader.Backend)
 				.AddSingleton(standardComponents)
 				.AddSingleton(authorizationGateway)
 				.AddSingleton(certificateProvider)

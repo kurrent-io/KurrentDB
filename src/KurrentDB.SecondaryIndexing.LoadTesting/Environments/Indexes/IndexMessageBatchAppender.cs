@@ -29,7 +29,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 		var publisher = new FakePublisher();
 		var categoryIndexProcessor = new CategoryIndexProcessor(dbDataSource, publisher);
 		var eventTypeIndexProcessor = new EventTypeIndexProcessor(dbDataSource, publisher);
-		var streamIndexProcessor = new StreamIndexProcessor(dbDataSource, reader, hasher);
+		var streamIndexProcessor = new StreamIndexProcessor(dbDataSource, reader.IndexReader.Backend, hasher);
 
 		_processor = new DefaultIndexProcessor(
 			dbDataSource,

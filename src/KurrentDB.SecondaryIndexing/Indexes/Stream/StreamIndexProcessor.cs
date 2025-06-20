@@ -16,7 +16,7 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 internal class StreamIndexProcessor : Disposable {
 	private static readonly ILogger Log = Serilog.Log.ForContext<StreamIndexProcessor>();
 
-	private readonly IIndexBackend<string> _indexReaderBackend;
+	private readonly IIndexBackend<string> _streamsCache;
 	private readonly ILongHasher<string> _hasher;
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly Dictionary<string, long> _inFlightRecords = new();
@@ -26,8 +26,8 @@ internal class StreamIndexProcessor : Disposable {
 	private long _seq;
 	private Appender _appender;
 
-	public StreamIndexProcessor(DuckDbDataSource db, IReadIndex<string> index, ILongHasher<string> hasher) {
-		_indexReaderBackend = index.IndexReader.Backend;
+	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> streamsCache, ILongHasher<string> hasher) {
+		_streamsCache = streamsCache;
 		_hasher = hasher;
 		_connection = db.OpenNewConnection();
 		_appender = new Appender(_connection, "streams"u8);
@@ -46,18 +46,18 @@ internal class StreamIndexProcessor : Disposable {
 		if (_inFlightRecords.TryGetValue(name, out var id))
 			return id;
 
-		if (_indexReaderBackend.TryGetStreamLastEventNumber(name) is { SecondaryIndexId: { } secondaryIndexId }) {
+		if (_streamsCache.TryGetStreamLastEventNumber(name) is { SecondaryIndexId: { } secondaryIndexId }) {
 			return secondaryIndexId;
 		}
 
 		var fromDb = _connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
-			_indexReaderBackend.UpdateStreamSecondaryIndexId(1, name, fromDb.Value);
+			_streamsCache.UpdateStreamSecondaryIndexId(1, name, fromDb.Value);
 			return fromDb.Value;
 		}
 
 		id = ++_seq;
-		_indexReaderBackend.UpdateStreamSecondaryIndexId(1, name, id);
+		_streamsCache.UpdateStreamSecondaryIndexId(1, name, id);
 
 		_inFlightRecords.Add(name, id);
 
