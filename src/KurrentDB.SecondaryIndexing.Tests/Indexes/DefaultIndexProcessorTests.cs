@@ -11,6 +11,7 @@ using KurrentDB.Core.Tests;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.Storage;
@@ -314,6 +315,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 			categoryIndexProcessor,
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
+			new NoOpSecondaryIndexProgressTracker(),
 			publisher
 		);
 	}
@@ -355,6 +357,7 @@ public class CleanUpTests {
 				categoryIndexProcessor,
 				eventTypeIndexProcessor,
 				streamIndexProcessor,
+				new NoOpSecondaryIndexProgressTracker(),
 				publisher
 			);
 

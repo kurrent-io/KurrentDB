@@ -5,6 +5,7 @@ using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.Stream;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
@@ -37,6 +38,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 			categoryIndexProcessor,
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
+			new NoOpSecondaryIndexProgressTracker(), // TODO: Use the real one with metrics
 			publisher
 		);
 	}
