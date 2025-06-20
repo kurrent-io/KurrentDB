@@ -79,30 +79,18 @@ jobs:
         --blame
         --blame-hang-timeout 5min
         --blame-hang-dump-type mini
-        --settings ./ci/ci.runsettings
+        --settings ./ci/ci.local.runsettings
         --logger:GitHubActions
-        --logger:html
         --logger:trx
         --logger:"console;verbosity=normal"
-        --results-directory=$(pwd)/test-results
+        --results-directory $(pwd)/test-results
         src/KurrentDB.sln
-    -  
-      name: Collect Test Results
-      shell: bash
-      if: always()
-      run: |
-        echo $(find ./test-results -name "*.html" | xargs cat) > test-results.html
-    -  
-      name: Publish Test Results (HTML)
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        path: test-results.html
-        name: test-results-${{ matrix.configuration }}-${{ inputs.os }}.html
+        -- --report-trx --results-directory $(pwd)/test-results
     -  
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ matrix.configuration }}-${{ inputs.os }}
-        path: test-results
+        path: |
+          test-results/*.trx

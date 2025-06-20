@@ -10,7 +10,7 @@ using KurrentDB.Core.Tests;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.SecondaryIndexing.Indices;
 using KurrentDB.SecondaryIndexing.Tests.Indices;
-using KurrentDB.System.Testing;
+using KurrentDB.Surge.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Position = KurrentDB.Core.Services.Transport.Common.Position;
 using StreamRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision;

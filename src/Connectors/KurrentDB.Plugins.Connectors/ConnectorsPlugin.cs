@@ -17,6 +17,7 @@ public class ConnectorsPlugin : SubsystemsPlugin {
     public override void ConfigureServices(IServiceCollection services, IConfiguration configuration) {
         services
             .AddNodeSystemInfoProvider()
+            .AddSurgeSchemaRegistry()
             .AddSurgeSystemComponents()
             .AddSurgeDataProtection(configuration)
             .AddConnectorsControlPlane()
