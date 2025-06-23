@@ -243,6 +243,9 @@ public static class RpcExceptions {
 			{ Constants.Exceptions.LoginName, loginName }
 		});
 
+	public static RpcException InvalidArgument(string errorMessage) =>
+		new(new Status(StatusCode.InvalidArgument, errorMessage));
+
 	public static RpcException InvalidArgument<T>(T argument) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{argument}' is not a valid {typeof(T)}"));
 

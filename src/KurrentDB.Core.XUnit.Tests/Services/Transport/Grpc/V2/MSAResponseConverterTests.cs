@@ -10,6 +10,7 @@ using System.Net;
 using Grpc.Core;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Transport.Grpc;
+using KurrentDB.Core.Services.Transport.Grpc.V2;
 using KurrentDB.Protocol.V2;
 using Xunit;
 
@@ -17,7 +18,10 @@ namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Grpc;
 
 public class MSAResponseConverterTests {
 	const int TestChunkSize = 10_000;
-	private readonly MSAResponseConverter _sut = new(chunkSize: TestChunkSize);
+	const int TestMaxAppendSize = 400;
+	const int TestMaxAppendEventSize = 300;
+
+	MultiStreamAppendConverter Sut { get; } = new(TestChunkSize, TestMaxAppendSize, TestMaxAppendEventSize);
 
 	[Fact]
 	public void converts_when_first_expected_version_is_wrong() {
@@ -37,7 +41,7 @@ public class MSAResponseConverterTests {
 			failureCurrentVersions: new long[] { 10 });
 
 		// when
-		var result = _sut.ConvertToMSAResponse(requests, input);
+		var result = Sut.ConvertToResponse(input,requests);
 
 		// then
 		Assert.Collection(
@@ -66,7 +70,7 @@ public class MSAResponseConverterTests {
 			failureCurrentVersions: new long[] { 11 });
 
 		// when
-		var result = _sut.ConvertToMSAResponse(requests, input);
+		var result = Sut.ConvertToResponse(input,requests);
 
 		// then
 		Assert.Collection(
@@ -95,7 +99,7 @@ public class MSAResponseConverterTests {
 			failureCurrentVersions: new long[] { 11, 13 });
 
 		// when
-		var result = _sut.ConvertToMSAResponse(requests, input);
+		var result = Sut.ConvertToResponse(input,requests);
 
 		// then
 		Assert.Collection(
@@ -130,7 +134,7 @@ public class MSAResponseConverterTests {
 			failureCurrentVersions: isStreamKnown ? [11] : []);
 
 		// when
-		var result = _sut.ConvertToMSAResponse(requests, input);
+		var result = Sut.ConvertToResponse(input,requests);
 
 		// then
 		Assert.Collection(
@@ -151,7 +155,7 @@ public class MSAResponseConverterTests {
 			message: "the details");
 
 		// when
-		var result = _sut.ConvertToMSAResponse([], input);
+		var result = Sut.ConvertToResponse(input, []);
 
 		// then
 		Assert.Collection(
@@ -171,7 +175,7 @@ public class MSAResponseConverterTests {
 			message: "the details");
 
 		// when
-		var result = _sut.ConvertToMSAResponse([], input);
+		var result = Sut.ConvertToResponse(input, []);
 
 		// then
 		Assert.Collection(
@@ -191,7 +195,7 @@ public class MSAResponseConverterTests {
 
 		// when
 		var ex = Assert.Throws<RpcException>(() =>
-			 _sut.ConvertToMSAResponse([], input));
+			 Sut.ConvertToResponse(input, []));
 
 		// then
 		Assert.Equal("Server Is Not Ready", ex.Status.Detail);
@@ -211,7 +215,7 @@ public class MSAResponseConverterTests {
 
 		// when
 		var ex = Assert.Throws<RpcException>(() =>
-			 _sut.ConvertToMSAResponse([], input));
+			 Sut.ConvertToResponse(input, []));
 
 		// then
 		Assert.Equal("Leader info available", ex.Status.Detail);
@@ -241,7 +245,7 @@ public class MSAResponseConverterTests {
 
 		// when
 		var ex = Assert.Throws<RpcException>(() =>
-			 _sut.ConvertToMSAResponse([], input));
+			 Sut.ConvertToResponse(input, []));
 
 		// then
 		Assert.Equal(StatusCode.Unknown, ex.Status.StatusCode);
@@ -264,8 +268,7 @@ public class MSAResponseConverterTests {
 			message: "the details");
 
 		// when
-		var ex = Assert.Throws<RpcException>(() =>
-			 _sut.ConvertToMSAResponse([], input));
+		var ex = Assert.Throws<RpcException>(() => Sut.ConvertToResponse(input, []));
 
 		// then
 		Assert.Equal(expectedDetail, ex.Status.Detail);

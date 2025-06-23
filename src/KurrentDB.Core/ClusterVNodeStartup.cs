@@ -19,6 +19,7 @@ using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Grpc;
+using KurrentDB.Core.Services.Transport.Grpc.V2;
 using KurrentDB.Core.Services.Transport.Http;
 using KurrentDB.Core.TransactionLog.Chunks;
 using Microsoft.AspNetCore.Authentication;

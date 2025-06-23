@@ -33,8 +33,10 @@ message AppendRecord {
 	// If not provided, the server will generate a new one.
 	optional string record_id = 1;
 
-	// A collection of properties providing additional system information about the
-	// record.
+	// A collection of properties providing additional information about the
+	// record. This can include user-defined metadata or system properties.
+	// System properties are prefixed with "$." to avoid conflicts with user-defined properties.
+	// For example, "$schema.name" or "$schema.data-format".
 	map<string, kurrentdb.protobuf.DynamicValue> properties = 2;
 
 	// The actual data payload of the record, stored as bytes.
@@ -94,7 +96,7 @@ message AppendStreamFailure {
 	// The error details
 	oneof error {
 		// Failed because the actual stream revision didn't match the expected revision.
-		ErrorDetails.WrongExpectedRevision wrong_expected_revision = 2;
+		ErrorDetails.RevisionConflict wrong_expected_revision = 2;
 
 		// Failed because the client lacks sufficient permissions.
 		ErrorDetails.AccessDenied access_denied = 3;
@@ -153,10 +155,18 @@ message ErrorDetails {
 
 	// When the stream has been deleted.
 	message StreamDeleted {
+		// The name of the stream that was deleted.
+		string stream = 1;
+	}
+
+	// When the stream is not found.
+	message StreamNotFound {
+		// The name of the stream that was not found.
+		string stream = 1;
 	}
 
 	// When the expected revision of the stream does not match the actual revision.
-	message WrongExpectedRevision {
+	message RevisionConflict {
 		// The actual revision of the stream.
 		int64 stream_revision = 1;
 	}

@@ -16,6 +16,7 @@ using Grpc.Core;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Transport.Grpc;
+using KurrentDB.Core.Services.Transport.Grpc.V2;
 using KurrentDB.Core.Tests.Authorization;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.Core.TransactionLog.Chunks;
