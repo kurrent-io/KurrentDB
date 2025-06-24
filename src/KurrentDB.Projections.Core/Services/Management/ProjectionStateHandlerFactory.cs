@@ -51,7 +51,7 @@ public class ProjectionStateHandlerFactory {
 				result = new JintProjectionStateHandler(source, enableContentTypeValidation,
 					_javascriptCompilationTimeout, executionTimeout,
 					new(_executionTrackers.GetTrackerForProjection(projectionName)),
-					new (_trackers.GetSerializationTrackerForProjection(projectionName)));
+					new(_trackers.GetSerializationTrackerForProjection(projectionName)));
 				break;
 			case "native":
 				// Allow loading native projections from previous versions
