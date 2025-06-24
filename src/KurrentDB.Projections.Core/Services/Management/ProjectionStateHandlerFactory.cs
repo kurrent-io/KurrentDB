@@ -8,22 +8,17 @@ using KurrentDB.Projections.Core.Services.Interpreted;
 
 namespace KurrentDB.Projections.Core.Services.Management;
 
-
-
 public class ProjectionStateHandlerFactory {
 	private readonly TimeSpan _javascriptCompilationTimeout;
 	private readonly TimeSpan _javascriptExecutionTimeout;
-	private readonly ProjectionExecutionTrackers _executionTrackers;
 	private readonly ProjectionTrackers _trackers;
 
 	public ProjectionStateHandlerFactory(
 		TimeSpan javascriptCompilationTimeout,
 		TimeSpan javascriptExecutionTimeout,
-		ProjectionExecutionTrackers executionTrackers,
 		ProjectionTrackers trackers) {
 		_javascriptCompilationTimeout = javascriptCompilationTimeout;
 		_javascriptExecutionTimeout = javascriptExecutionTimeout;
-		_executionTrackers = executionTrackers;
 		_trackers = trackers;
 	}
 	public IProjectionStateHandler Create(
@@ -50,7 +45,7 @@ public class ProjectionStateHandlerFactory {
 			case "js":
 				result = new JintProjectionStateHandler(source, enableContentTypeValidation,
 					_javascriptCompilationTimeout, executionTimeout,
-					new(_executionTrackers.GetTrackerForProjection(projectionName)),
+					new(_trackers.GetExecutionTrackerForProjection(projectionName)),
 					new(_trackers.GetSerializationTrackerForProjection(projectionName)));
 				break;
 			case "native":

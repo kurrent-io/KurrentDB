@@ -12,12 +12,14 @@ namespace KurrentDB.Projections.Core.XUnit.Tests.Metrics;
 public class ProjectionExecutionTrackersTests {
 	private static MeterListener SetUpTrackers(
 		Func<Meter, string, IProjectionExecutionTracker> factory,
-		out ProjectionExecutionTrackers trackers,
+		out ProjectionTrackers trackers,
 		out IReadOnlyList<double> measurements,
 		out IReadOnlyList<string?[]> tags) {
 
 		var meter = new Meter("Projections");
-		trackers = new ProjectionExecutionTrackers(name => factory(meter, name));
+		trackers = new ProjectionTrackers(
+			name => factory(meter, name),
+			_ => IProjectionStateSerializationTracker.NoOp);
 
 		var seenTags = new List<string?[]>();
 		var seenMeasurements = new List<double>();
@@ -46,10 +48,10 @@ public class ProjectionExecutionTrackersTests {
 		return meterListener;
 	}
 
-	private static void ExecuteCalls(ProjectionExecutionTrackers trackers) {
+	private static void ExecuteCalls(ProjectionTrackers trackers) {
 		var start = Instant.Now;
-		var projection1 = trackers.GetTrackerForProjection("projection1");
-		var projection2 = trackers.GetTrackerForProjection("projection2");
+		var projection1 = trackers.GetExecutionTrackerForProjection("projection1");
+		var projection2 = trackers.GetExecutionTrackerForProjection("projection2");
 
 		projection1.CallExecuted(start, "func0");
 		projection1.CallExecuted(start, "func1");

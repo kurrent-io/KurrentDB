@@ -17,7 +17,9 @@ public class ProjectionTrackersTest {
 		out IReadOnlyList<string?[]> tags) {
 
 		var meter = new Meter("Projections");
-		trackers = new ProjectionTrackers(name => serializationTrackerfactory(meter, name));
+		trackers = new ProjectionTrackers(
+			_ => IProjectionExecutionTracker.NoOp,
+			name => serializationTrackerfactory(meter, name));
 
 		var seenTags = new List<string?[]>();
 		var seenMeasurements = new List<double>();
