@@ -234,11 +234,6 @@ We recommend that when using Linux you set the 'open file limit' to a high numbe
 
 ## Windows
 
-::: warning
-KurrentDB doesn't install as a Windows service. You need to ensure that the server executable
-starts automatically.
-:::
-
 ### NuGet
 
 KurrentDB has NuGet packages available on [Chocolatey](https://community.chocolatey.org/packages/kurrentdb).
@@ -264,6 +259,34 @@ You can uninstall KurrentDB through Chocolatey with:
 ```powershell
 choco uninstall kurrentdb
 ```
+
+#### Running as a service
+
+KurrentDB can be run as a windows service. The following commands are for example. Consult the [sc.exe documentation](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-config) for details. 
+
+Create the service:
+
+```powershell
+sc.exe create "KurrentDB" `
+  start= delayed-auto     `
+  binpath= "C:\ProgramData\chocolatey\lib\kurrentdb\kurrentdb-25.1.0-windows.x64\KurrentDB.exe --config=c:\path\to\kurrentdb-config.yaml"
+```
+
+Configure the restart policy:
+
+```powershell
+sc.exe failure "KurrentDB" `
+  reset= 0                 `
+  actions= restart/5000/restart/5000/restart/5000
+```
+
+Start the service:
+
+```powershell
+sc.exe start "KurrentDB"
+```
+
+Logs will still be written to the usual log file location. By default on windows this is the `logs` directory within the directory that contains `KurrentDB.exe`.
 
 ## Docker
 

@@ -30,6 +30,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
@@ -86,6 +87,7 @@ try {
 		GCSettings.IsServerGC,
 		GCSettings.LatencyMode);
 	Log.Information("{description,-25} {logsDirectory}", "LOGS:", options.Logging.Log);
+	Log.Information("{description,-25} {isWindowsService}", "IsWindowsService:", WindowsServiceHelpers.IsWindowsService());
 
 	var gcSettings = string.Join($"{Environment.NewLine}    ", GC.GetConfigurationVariables().Select(kvp => $"{kvp.Key}: {kvp.Value}"));
 	Log.Information($"GC Configuration settings:{Environment.NewLine}    {{settings}}", gcSettings);
