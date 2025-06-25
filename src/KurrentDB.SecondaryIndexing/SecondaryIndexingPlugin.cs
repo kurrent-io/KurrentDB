@@ -67,9 +67,12 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		var conf = MetricsConfiguration.Get(configuration);
 		var coreMeter = new Meter(conf.CoreMeterName, version: "1.0.0");
 
-		services.AddSingleton<ISecondaryIndexProgressTracker>(
-			//new NoOpSecondaryIndexProgressTracker());
-			new SecondaryIndexProgressTracker(coreMeter, "indexes.secondary"));
+		services.AddSingleton<ISecondaryIndexProgressTracker>(sp =>
+			new SecondaryIndexProgressTracker(
+				coreMeter,
+				"indexes.secondary"
+			)
+		);
 		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
 		services.AddSingleton<DefaultIndexProcessor>();
 		services.AddSingleton<CategoryIndexProcessor>();

@@ -1,8 +1,10 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Metrics;
 using Serilog;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
@@ -10,7 +12,8 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 public interface ISecondaryIndexProgressTracker {
 	void RecordIndexed(ResolvedEvent resolvedEvent);
 	void RecordAppended(EventRecord eventRecord);
-	void RecordCommit(long position, int batchSize, long duration);
+
+	void RecordCommit(Func<(long position, int batchSize)> callback);
 	void RecordError(Exception e);
 }
 
@@ -21,7 +24,7 @@ public class NoOpSecondaryIndexProgressTracker : ISecondaryIndexProgressTracker 
 	public void RecordAppended(EventRecord eventRecord) {
 	}
 
-	public void RecordCommit(long position, int batchSize, long duration) {
+	public void RecordCommit(Func<(long position, int batchSize)> callback) {
 	}
 
 	public void RecordError(Exception e) {
@@ -36,8 +39,13 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 	private long _lastIndexedAt;
 	private long _lastAppendedAt;
 	private int _pendingEvents;
+	private readonly SecondaryIndexTrackers _trackers = new();
+	private readonly Stopwatch _sw = new();
 
-	public SecondaryIndexProgressTracker(Meter meter, string meterPrefix) {
+	public SecondaryIndexProgressTracker(
+		Meter meter,
+		string meterPrefix
+	) {
 		meter.CreateObservableGauge(
 			$"{meterPrefix}.subscription.gap",
 			ObserveGap,
@@ -58,6 +66,10 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 			"events",
 			"Events pending checkpoint"
 		);
+
+		var commitLatencyTracker = new DurationMetric(meter, $"{meterPrefix}.commit", false);
+
+		_trackers.Commit = new DurationTracker(commitLatencyTracker, "commit");
 	}
 
 	public void RecordIndexed(ResolvedEvent resolvedEvent) {
@@ -84,12 +96,20 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		}
 	}
 
-	public void RecordCommit(long position, int batchSize, long duration) {
+	public void RecordCommit(Func<(long position, int batchSize)> callback) {
+		using var duration = _trackers.Commit.Start();
 		try {
+			_sw.Restart();
+			var (position, batchSize) = callback();
 			Interlocked.Exchange(ref _lastCommittedPosition, position);
 			Interlocked.Exchange(ref _pendingEvents, 0);
+			_sw.Stop();
+
+			Log.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)",
+				batchSize, position, _sw.ElapsedMilliseconds);
 		} catch (Exception exc) {
 			Log.Error(exc, "Error recording metrics of event appended.");
+			throw;
 		}
 	}
 
