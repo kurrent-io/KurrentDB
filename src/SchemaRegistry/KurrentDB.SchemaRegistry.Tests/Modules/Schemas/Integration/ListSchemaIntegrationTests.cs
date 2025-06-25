@@ -9,6 +9,7 @@ using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
+using NJsonSchema;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
@@ -144,8 +145,11 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var key = Faker.Lorem.Word();
 		var value = Faker.Lorem.Word();
 
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
+
 		// Arrange
-		await CreateSchema(schemaName1,
+		await CreateSchema(schemaName1, v1,
 			new SchemaDetails {
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = CompatibilityMode.Backward,
@@ -155,7 +159,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await RegisterSchemaVersion(schemaName1, cancellationToken);
+		await RegisterSchemaVersion(schemaName1, v2, cancellationToken);
 
 		var schema1 = await Client.GetSchemaAsync(new GetSchemaRequest {
 			SchemaName = schemaName1
@@ -196,9 +200,13 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var prefix = NewPrefix();
 		var schemaName = NewSchemaName(prefix);
 
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
+
 		// Arrange
 		await CreateSchema(
 			schemaName,
+			v1,
 			new SchemaDetails {
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = CompatibilityMode.Backward,
@@ -206,7 +214,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			},
 			cancellationToken);
 
-		var result = await RegisterSchemaVersion(schemaName, cancellationToken);
+		var result = await RegisterSchemaVersion(schemaName, v2, cancellationToken);
 
 		var schema = await Client.GetSchemaAsync(new GetSchemaRequest {
 			SchemaName = schemaName,
@@ -227,9 +235,11 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_schema_versions(CancellationToken cancellationToken) {
 		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		// Arrange
-		var createResult = await CreateSchema(schemaName,
+		var createResult = await CreateSchema(schemaName, v1,
 			new SchemaDetails {
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = CompatibilityMode.Backward,
@@ -238,7 +248,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			cancellationToken);
 
 
-		var registerResult = await RegisterSchemaVersion(schemaName, cancellationToken);
+		var registerResult = await RegisterSchemaVersion(schemaName, v2, cancellationToken);
 
 		var listSchemasResponse = await Client.ListSchemaVersionsAsync(new ListSchemaVersionsRequest {
 			SchemaName = schemaName,
