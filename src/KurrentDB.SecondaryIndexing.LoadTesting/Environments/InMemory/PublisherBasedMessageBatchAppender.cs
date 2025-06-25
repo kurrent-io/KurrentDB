@@ -3,7 +3,6 @@
 
 using KurrentDB.Core;
 using KurrentDB.Core.Bus;
-using KurrentDB.Core.Data;
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.Tests.Generators;
 

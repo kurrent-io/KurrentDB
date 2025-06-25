@@ -25,4 +25,8 @@
 		</Content>
 	</ItemGroup>
 
+	<ItemGroup>
+	  <PackageReference Include="KurrentDB.Client" Version="1.0.0" />
+	</ItemGroup>
+
 </Project>

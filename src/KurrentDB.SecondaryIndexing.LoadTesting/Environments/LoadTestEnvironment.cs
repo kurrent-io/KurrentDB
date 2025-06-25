@@ -4,6 +4,7 @@
 using KurrentDB.SecondaryIndexing.LoadTesting.Appenders;
 using KurrentDB.SecondaryIndexing.LoadTesting.Assertions;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.DuckDB;
+using KurrentDB.SecondaryIndexing.LoadTesting.Environments.gRPC;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.Indexes;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.InMemory;
 using KurrentDB.SecondaryIndexing.LoadTesting.Environments.TestServer;
@@ -21,7 +22,7 @@ public enum LoadTestEnvironmentType {
 	TestServer,
 	Index,
 	DuckDb,
-	Container
+	gRPC
 }
 
 public static class LoadTestEnvironment {
@@ -29,7 +30,7 @@ public static class LoadTestEnvironment {
 		config.EnvironmentType switch {
 			LoadTestEnvironmentType.InMemory => new InMemoryLoadTestEnvironment(),
 			LoadTestEnvironmentType.TestServer => new TestServerEnvironment(),
-			LoadTestEnvironmentType.Container => throw new NotImplementedException("Container environment is not yet supported"),
+			LoadTestEnvironmentType.gRPC => new gRPCClientEnvironment(config.KurrentDBConnectionString),
 			LoadTestEnvironmentType.DuckDb => new DuckDBTestEnvironment(config.DuckDb),
 			LoadTestEnvironmentType.Index => new IndexesLoadTestEnvironment(config.Index),
 			_ => throw new ArgumentOutOfRangeException(nameof(config.EnvironmentType), config.EnvironmentType, null)
