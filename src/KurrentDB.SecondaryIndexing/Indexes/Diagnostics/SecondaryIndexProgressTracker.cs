@@ -48,7 +48,7 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		meter.CreateObservableGauge(
 			$"{meterPrefix}.subscription.lag",
 			ObserveLag,
-			"s",
+			"ms",
 			"Time between last appended and last indexed event"
 		);
 
@@ -72,6 +72,11 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 
 	public void RecordAppended(EventRecord eventRecord) {
 		try {
+			if (eventRecord.EventType.StartsWith('$') || eventRecord.EventStreamId.StartsWith('$')) {
+				// ignore system events
+				return;
+			}
+
 			Interlocked.Exchange(ref _lastLogPosition, eventRecord.LogPosition);
 			Interlocked.Exchange(ref _lastAppendedAt, eventRecord.TimeStamp.Ticks);
 		} catch (Exception exc) {
@@ -88,26 +93,26 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		}
 	}
 
-		public void RecordError(Exception e) {
-			//TODO: Log error here
-		}
-
-		private Measurement<long> ObserveGap() {
-			var streamPos = Interlocked.Read(ref _lastLogPosition);
-			var indexedPos = Interlocked.Read(ref _lastIndexedPosition);
-
-			return new Measurement<long>(streamPos - indexedPos);
-		}
-
-		private Measurement<long> ObserveLag() {
-			var lastAppendedAt = Interlocked.Read(ref _lastAppendedAt);
-			var lastIndexedAt = Interlocked.Read(ref _lastIndexedAt);
-			var lag = lastAppendedAt - lastIndexedAt;
-
-			return new Measurement<long>(lag);
-		}
-
-		private Measurement<int> ObservePending() {
-			return new Measurement<int>(_pendingEvents);
-		}
+	public void RecordError(Exception e) {
+		//TODO: Log error here
 	}
+
+	private Measurement<long> ObserveGap() {
+		var streamPos = Interlocked.Read(ref _lastLogPosition);
+		var indexedPos = Interlocked.Read(ref _lastIndexedPosition);
+
+		return new Measurement<long>(streamPos - indexedPos);
+	}
+
+	private Measurement<long> ObserveLag() {
+		var lastAppendedAt = Interlocked.Read(ref _lastAppendedAt);
+		var lastIndexedAt = Interlocked.Read(ref _lastIndexedAt);
+		var lag = (lastAppendedAt - lastIndexedAt) / 1000;
+
+		return new Measurement<long>(lag);
+	}
+
+	private Measurement<int> ObservePending() {
+		return new Measurement<int>(_pendingEvents);
+	}
+}
