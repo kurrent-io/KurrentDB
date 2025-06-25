@@ -188,7 +188,7 @@ public abstract class TestFixtureWithProjectionCoreAndManagementServices<TLogFor
 
 		var guardBus = new GuardBusToTriggerFixingIfUsed();
 		var configuration = new ProjectionsStandardComponents(1, ProjectionType.All, guardBus, guardBus, guardBus, guardBus, true,
-			500, 250, Opts.MaxProjectionStateSizeDefault, ProjectionExecutionTrackers.NoOp);
+			500, 250, Opts.MaxProjectionStateSizeDefault, ProjectionTrackers.NoOp);
 		var coreService = new ProjectionCoreService(
 			workerId,
 			inputQueue,

@@ -161,7 +161,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		ConfigureProjectionMetrics(
 			standardComponents.MetricsConfiguration,
 			out var projectionTracker,
-			out var projectionExecutionTrackers);
+			out var projectionTrackers);
 
 		var projectionsStandardComponents = new ProjectionsStandardComponents(
 			_projectionWorkerThreadCount,
@@ -174,7 +174,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			_compilationTimeout,
 			_executionTimeout,
 			_maxProjectionStateSize,
-			projectionExecutionTrackers);
+			projectionTrackers);
 
 		CreateAwakerService(standardComponents);
 		_coreWorkers = ProjectionCoreWorkersNode.CreateCoreWorkers(standardComponents, projectionsStandardComponents);
@@ -191,10 +191,14 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	private static void ConfigureProjectionMetrics(
 		MetricsConfiguration conf,
 		out IProjectionTracker projectionTracker,
-		out ProjectionExecutionTrackers projectionExecutionTrackers) {
+		out ProjectionTrackers projectionTrackers) {
 
 		projectionTracker = IProjectionTracker.NoOp;
-		projectionExecutionTrackers = ProjectionExecutionTrackers.NoOp;
+
+		Func<string, IProjectionExecutionTracker> executionTrackerFactory =
+			_ => IProjectionExecutionTracker.NoOp;
+		Func<string, IProjectionStateSerializationTracker> serializationTrackerFactory =
+			_ => IProjectionStateSerializationTracker.NoOp;
 
 		var projectionMeter = new Meter(conf.ProjectionsMeterName, version: "1.0.0");
 		var serviceName = conf.ServiceName;
@@ -208,6 +212,17 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-running", tracker.ObserveRunning);
 			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-status", tracker.ObserveStatus);
 			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size", tracker.ObserveStateSize);
+
+			serializationTrackerFactory = name =>
+				new ProjectionStateSerializationTracker(
+					tracker: new DurationMaxTracker(
+						metric: new DurationMaxMetric(
+							projectionMeter,
+							$"{serviceName}-projection-state-serialization-duration-max",
+							conf.LegacyProjectionsNaming),
+						name: name,
+						expectedScrapeIntervalSeconds: conf.ExpectedScrapeIntervalSeconds
+				));
 		}
 
 		List<Func<string, IProjectionExecutionTracker>> executionTrackerFactories = [];
@@ -237,9 +252,13 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 				new ProjectionExecutionHistogramTracker(name, executionDurationMetric));
 		}
 
-		projectionExecutionTrackers = new(name =>
+		executionTrackerFactory = name =>
 			new CompositeProjectionExecutionTracker(
-				executionTrackerFactories.Select(f => f(name)).ToArray()));
+				executionTrackerFactories.Select(f => f(name)).ToArray());
+
+		projectionTrackers = new(
+			executionTrackerFactory,
+			serializationTrackerFactory);
 	}
 
 	public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>

@@ -8,11 +8,20 @@ using KurrentDB.Core.Time;
 
 namespace KurrentDB.Projections.Core.Metrics;
 
-public class ProjectionExecutionTrackers(Func<string, IProjectionExecutionTracker> factory) {
-	public static ProjectionExecutionTrackers NoOp { get; } = new(_ => IProjectionExecutionTracker.NoOp);
+public class ProjectionTrackers(
+	Func<string, IProjectionExecutionTracker> executionTrackerFactory,
+	Func<string, IProjectionStateSerializationTracker> serializationTrackerFactory) {
 
-	public IProjectionExecutionTracker GetTrackerForProjection(string projectionName) {
-		return factory(projectionName);
+	public static ProjectionTrackers NoOp { get; } = new(
+		_ => IProjectionExecutionTracker.NoOp,
+		_ => IProjectionStateSerializationTracker.NoOp);
+
+	public IProjectionExecutionTracker GetExecutionTrackerForProjection(string projectionName) {
+		return executionTrackerFactory(projectionName);
+	}
+
+	public IProjectionStateSerializationTracker GetSerializationTrackerForProjection(string projectionName) {
+		return serializationTrackerFactory(projectionName);
 	}
 }
 

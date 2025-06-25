@@ -14,10 +14,8 @@ public enum DenialReason {
 
 public static partial class HttpMessage {
 	[DerivedMessage]
-	public abstract partial class HttpSendMessage : Message, IQueueAffineMessage {
-		public int QueueId {
-			get { return HttpEntityManager.GetHashCode(); }
-		}
+	public abstract partial class HttpSendMessage : Message {
+		public sealed override object Affinity => HttpEntityManager;
 
 		public readonly IEnvelope Envelope;
 		public readonly Guid CorrelationId;
