@@ -3,10 +3,9 @@
 
 // ReSharper disable ArrangeTypeMemberModifiers
 
-using Google.Protobuf;
 using Grpc.Core;
-using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.Protocol.Registry.V2;
+using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using NJsonSchema;
 
@@ -18,24 +17,19 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task registers_new_schema_version_successfully(CancellationToken cancellationToken) {
 		// Arrange
-		var schemaName = NewSchemaName();
+		var prefix = NewSchemaName();
+		var schemaName = NewSchemaName(prefix);
 		var v1 = NewJsonSchemaDefinition();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
+		await CreateSchema(schemaName: schemaName, schemaDefinition: v1.ToByteString(), ct: cancellationToken);
 
 		// Act
-		var registerSchemaVersionResult = await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
+		var registerSchemaVersionResult = await RegisterSchemaVersion(schemaName, v2, cancellationToken);
 
 		var listRegisteredSchemasResult = await Client.ListRegisteredSchemasAsync(
 			new ListRegisteredSchemasRequest {
-				SchemaNamePrefix = schemaName
+				SchemaNamePrefix = prefix
 			},
 			cancellationToken: cancellationToken
 		);
@@ -54,16 +48,10 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	public async Task throws_exception_when_schema_not_found(CancellationToken cancellationToken) {
 		// Arrange
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-		var schemaDefinition = Faker.Lorem.Text();
+		var v1 = NewJsonSchemaDefinition();
 
 		// Act
-		var registerVersion = async () => await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = nonExistentSchemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(schemaDefinition)
-			},
-			cancellationToken: cancellationToken
-		);
+		var registerVersion = async () => await RegisterSchemaVersion(nonExistentSchemaName, v1, cancellationToken);
 
 		// Assert
 		var registerVersionException = await registerVersion.Should().ThrowAsync<RpcException>();
@@ -76,16 +64,10 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		var schemaName = NewSchemaName();
 		var v1 = NewJsonSchemaDefinition();
 
-		await CreateSchemaAsync(schemaName: schemaName, schemaDefinition: v1.ToByteString(), cancellationToken: cancellationToken);
+		await CreateSchema(schemaName: schemaName, schemaDefinition: v1.ToByteString(), ct: cancellationToken);
 
 		// Act
-		var registerVersion = async () => await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v1.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
+		var registerVersion = async () => await RegisterSchemaVersion(schemaName, v1, cancellationToken);
 
 		// Assert
 		var registerVersionException = await registerVersion.Should().ThrowAsync<RpcException>();

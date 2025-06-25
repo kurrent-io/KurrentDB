@@ -10,8 +10,6 @@ using Microsoft.Extensions.Time.Testing;
 using TUnit.Core.Interfaces;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 
-[assembly: NotInParallel]
-
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver, ITestEndEventReceiver {
@@ -21,7 +19,6 @@ public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver,
 	protected ILoggerFactory              LoggerFactory            { get; private set; } = null!;
 	protected FakeTimeProvider            TimeProvider             { get; private set; } = null!;
 	protected IServiceProvider            NodeServices             { get; private set; } = null!;
-	protected HttpClient                  HttpClient               { get; private set; } = null!;
 	protected SchemaRegistryServiceClient Client                   { get; private set; } = null!;
 	protected ISchemaRegistry             SchemaRegistry           { get; private set; } = null!;
 	protected DuckDBConnectionProvider    DuckDbConnectionProvider { get; private set; } = null!;
@@ -32,7 +29,6 @@ public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver,
 
 		FixtureName              = beforeTestContext.TestContext.TestDetails.TestClass.Name;
 		NodeServices             = SchemaRegistryServerAutoWireUp.NodeServices;
-		HttpClient               = SchemaRegistryServerAutoWireUp.HttpClient;
 		Client                   = SchemaRegistryServerAutoWireUp.Client;
 		LoggerFactory            = NodeServices.GetRequiredService<ILoggerFactory>();
 		TimeProvider             = NodeServices.GetRequiredService<FakeTimeProvider>();

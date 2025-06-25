@@ -21,7 +21,7 @@ public class CreateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	public async Task registers_initial_version_of_new_schema(CancellationToken cancellationToken) {
 		// Arrange
 		var expectedEvent = new SchemaCreated {
-			SchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}",
+			SchemaName = NewSchemaName(),
 			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
 			Description = Faker.Lorem.Text(),
 			DataFormat = SchemaFormat.Json,
@@ -46,13 +46,11 @@ public class CreateSchemaIntegrationTests : SchemaApplicationTestFixture {
 		};
 
 		// Act
-		var createResult = await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = expectedEvent.SchemaName,
-				SchemaDefinition = expectedEvent.SchemaDefinition,
-				Details = details
-			},
-			cancellationToken: cancellationToken
+		var createResult = await CreateSchema(
+			expectedEvent.SchemaName,
+			expectedEvent.SchemaDefinition,
+			details,
+			cancellationToken
 		);
 
 		// Assert

@@ -8,32 +8,23 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
-
 public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
-
 	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_version(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
 
 		var details = new SchemaDetails {
 			Description = Faker.Lorem.Word(),
 			DataFormat = SchemaDataFormat.Json,
-			Compatibility = CompatibilityMode.Backward,
-			Tags = {  }
+			Compatibility = CompatibilityMode.Backward
 		};
 
 		// Act
-		var result = await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = details,
-			},
-			cancellationToken: cancellationToken
-		);
+		var result = await CreateSchema(schemaName, v1, details, cancellationToken);
 
 		// Assert
 		var getSchemaResponse = await Client.GetSchemaVersionAsync(
@@ -53,23 +44,16 @@ public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
 	public async Task get_schema_version_by_id(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
 
 		var details = new SchemaDetails {
 			Description = Faker.Lorem.Word(),
 			DataFormat = SchemaDataFormat.Json,
-			Compatibility = CompatibilityMode.Backward,
-			Tags = {  }
+			Compatibility = CompatibilityMode.Backward
 		};
 
 		// Act
-		var result = await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-				Details = details,
-			},
-			cancellationToken: cancellationToken
-		);
+		var result = await CreateSchema(schemaName, v1, details, cancellationToken);
 
 		// Assert
 		var getSchemaResponse = await Client.GetSchemaVersionByIdAsync(

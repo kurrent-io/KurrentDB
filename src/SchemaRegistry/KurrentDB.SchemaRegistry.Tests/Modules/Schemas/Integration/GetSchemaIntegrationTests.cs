@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
@@ -10,14 +12,13 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
-
 public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
 	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_newly_created_schema(CancellationToken cancellationToken) {
 		// Arrange
-		var expectedEvent = new SchemaCreated {
+		var expected = new SchemaCreated {
 			SchemaName = NewSchemaName(),
 			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
 			Description = Faker.Lorem.Text(),
@@ -36,29 +37,22 @@ public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
 		};
 
 		var details = new SchemaDetails {
-			Description = expectedEvent.Description,
-			DataFormat = expectedEvent.DataFormat,
-			Compatibility = expectedEvent.Compatibility,
-			Tags = { expectedEvent.Tags }
+			Description = expected.Description,
+			DataFormat = expected.DataFormat,
+			Compatibility = expected.Compatibility,
+			Tags = { expected.Tags }
 		};
 
 		// Act
-		var createResult = await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = expectedEvent.SchemaName,
-				SchemaDefinition = expectedEvent.SchemaDefinition,
-				Details = details
-			},
-			cancellationToken: cancellationToken
-		);
+		var createResult = await CreateSchema(expected.SchemaName, expected.SchemaDefinition, details, cancellationToken);
 
 		// Assert
 		createResult.Should().NotBeNull();
-		createResult.VersionNumber.Should().Be(expectedEvent.VersionNumber);
+		createResult.VersionNumber.Should().Be(expected.VersionNumber);
 
 		var getSchemaResult = await Client.GetSchemaAsync(
 			new GetSchemaRequest {
-				SchemaName = expectedEvent.SchemaName
+				SchemaName = expected.SchemaName
 			},
 			cancellationToken: cancellationToken
 		);
@@ -66,7 +60,7 @@ public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
 		getSchemaResult.Should().NotBeNull();
 
 		getSchemaResult.Schema.LatestSchemaVersion.Should().Be(1);
-		getSchemaResult.Schema.SchemaName.Should().Be(expectedEvent.SchemaName);
+		getSchemaResult.Schema.SchemaName.Should().Be(expected.SchemaName);
 		getSchemaResult.Schema.Details.Should().BeEquivalentTo(details);
 	}
 

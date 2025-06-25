@@ -58,10 +58,9 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var secondDefinition = Faker.Lorem.Text();
 		var thirdDefinition = Faker.Lorem.Text();
 
-		// Create initial schema
 		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
 
-		// Act - Register second version
+		// Act
 		var secondResult = await Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
@@ -70,7 +69,6 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		// Act - Register third version
 		var thirdResult = await Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
@@ -114,7 +112,6 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		// Create and then delete schema
 		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
 
 		await Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
@@ -138,10 +135,9 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var schemaDefinition = NewJsonSchemaDefinition();
 
-		// Create initial schema
-		await Apply(CreateSchemaRequest(schemaName: schemaName, schemaDefinition: schemaDefinition.ToByteString()), cancellationToken);
+		await Apply(CreateSchemaRequest(schemaName: schemaName, definition: schemaDefinition.ToByteString()), cancellationToken);
 
-		// Act - Try to register the same definition
+		// Act
 		var registerVersion = async () => await Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
@@ -184,7 +180,6 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var secondDefinition = Faker.Lorem.Text();
 		var thirdDefinition = Faker.Lorem.Text();
 
-		// Create initial schema
 		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
 
 		// Act
@@ -218,7 +213,6 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		// Create initial schema
 		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
 
 		// Act
@@ -248,7 +242,6 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		// Create initial schema
 		await Apply(CreateSchemaRequest(schemaName: schemaName, dataFormat: dataFormat), cancellationToken);
 
 		// Act
@@ -302,7 +295,6 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var newDefinition = Faker.Lorem.Text();
 		var beforeRegistration = TimeProvider.GetUtcNow();
 
-		// Create initial schema
 		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
 
 		// Act

@@ -6,6 +6,7 @@ using Dapper;
 using DuckDB.NET.Data;
 using Google.Protobuf.Collections;
 using Humanizer;
+using Kurrent.Quack;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema.Validation;
 using KurrentDB.Protocol.Registry.V2;
@@ -282,7 +283,7 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
             )
             .ToListAsync(cancellationToken);
 
-        return new() { Schemas = { result } };
+        return new ListRegisteredSchemasResponse { Schemas = { result } };
     }
 
     public async Task<CheckSchemaCompatibilityResponse> CheckSchemaCompatibility(CheckSchemaCompatibilityRequest query, CancellationToken cancellationToken) {

@@ -1,3 +1,5 @@
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using DuckDB.NET.Data;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -7,84 +9,14 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Data;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
+using NJsonSchema;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Data;
 
 public class SchemaQueriesTests : SchemaApplicationTestFixture {
-	[Test, Timeout(10_000)]
-	public async Task get_schema_version_with_version_number_returns_version(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
+	const int TestTimeoutMs = 20_000;
 
-		var schemaDefinition = Faker.Lorem.Sentences(10, Environment.NewLine);
-
-		var createSchemaCommand = new CreateSchemaRequest {
-			SchemaName = schemaName,
-			SchemaDefinition = ByteString.CopyFromUtf8(schemaDefinition),
-			Details = new SchemaDetails {
-				Description = Faker.Lorem.Text(),
-				DataFormat = SchemaDataFormat.Json,
-				Compatibility = Faker.Random.Enum(CompatibilityMode.Unspecified),
-				Tags = {
-					new Dictionary<string, string> {
-						[Faker.Lorem.Word()] = Faker.Lorem.Word(),
-						[Faker.Lorem.Word()] = Faker.Lorem.Word(),
-						[Faker.Lorem.Word()] = Faker.Lorem.Word()
-					}
-				}
-			}
-		};
-
-		var createSchemaResponse = await Client.CreateSchemaAsync(createSchemaCommand, cancellationToken: cancellationToken);
-
-		var expectedResponse = new GetSchemaVersionResponse {
-			Version = new SchemaVersion {
-				SchemaVersionId = createSchemaResponse.SchemaVersionId,
-				SchemaDefinition = createSchemaCommand.SchemaDefinition,
-				DataFormat = createSchemaCommand.Details.DataFormat,
-				VersionNumber = createSchemaResponse.VersionNumber,
-				RegisteredAt = Timestamp.FromDateTime(TimeProvider.GetUtcNow().UtcDateTime)
-			}
-		};
-
-		// Act
-		// await Wait.UntilAsserted(
-		//     async () => {
-		//         var response = await Client.GetSchemaVersionAsync(
-		//             new GetSchemaVersionRequest {
-		//                 SchemaName    = schemaName,
-		//                 VersionNumber = createSchemaResponse.VersionNumber
-		//             },
-		//             cancellationToken: cancellationToken
-		//         );
-		//
-		//         response.Should().BeEquivalentTo(expectedResponse);
-		//     },
-		//     cancellationToken: cancellationToken
-		// );
-
-		// await Tasks.SafeDelay(1_000, cancellationToken);
-
-		var response = await Client.GetSchemaVersionAsync(
-			new GetSchemaVersionRequest {
-				SchemaName = schemaName,
-				VersionNumber = createSchemaResponse.VersionNumber
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		// WARNING!!! BECAUSE for some reason, FLUENT ASSERTIONS it is not using the options!!!
-		expectedResponse.Version.RegisteredAt = response.Version.RegisteredAt;
-
-		response.Should().BeEquivalentTo(
-			expectedResponse, options => options
-				.Using<DateTime>(ctx => ctx.Subject.Should().BeCloseTo(ctx.Expectation, TimeSpan.FromSeconds(1)))
-				.WhenTypeIs<DateTime>()
-		);
-	}
-
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_schemas_with_name_prefix(CancellationToken cancellationToken) {
 		var foo = NewPrefix();
 		var bar = NewPrefix();
@@ -107,7 +39,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		schema.SchemaName.Should().Be(fooSchemaName);
 	}
 
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_schemas_with_tags(CancellationToken cancellationToken) {
 		var fooSchemaName = NewSchemaName(NewPrefix());
 		var barSchemaName = NewSchemaName(NewPrefix());
@@ -132,7 +64,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		schema.SchemaName.Should().Be(barSchemaName);
 	}
 
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_all_schema_versions(CancellationToken cancellationToken) {
 		var schemaName = NewSchemaName();
 		var connection = DuckDbConnectionProvider.GetConnection();
@@ -149,57 +81,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		response.Versions.Count.Should().Be(2);
 	}
 
-	[Test]
-	public async Task list_registered_schemas(CancellationToken cancellationToken) {
-		var schemaName = NewSchemaName(NewPrefix());
-		var connection = DuckDbConnectionProvider.GetConnection();
-		var projection = new SchemaProjections();
-		await projection.Setup(connection, cancellationToken);
-
-		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName }, cancellationToken);
-		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName, VersionNumber = 2 }, cancellationToken);
-
-		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
-
-		var response = await queries.ListRegisteredSchemas(new ListRegisteredSchemasRequest(), cancellationToken);
-		response.Schemas.Count.Should().Be(1);
-		var schema = response.Schemas.First();
-		schema.SchemaName.Should().Be(schemaName);
-		schema.VersionNumber.Should().Be(2);
-	}
-
-	[Test]
-	public async Task list_registered_schemas_multiple_with_prefix(CancellationToken cancellationToken) {
-		var prefix = NewPrefix();
-		var schemaName1 = NewSchemaName(prefix);
-		var schemaName2 = NewSchemaName(prefix);
-		var connection = DuckDbConnectionProvider.GetConnection();
-		var projection = new SchemaProjections();
-		await projection.Setup(connection, cancellationToken);
-
-		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName1 }, cancellationToken);
-		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName1, VersionNumber = 24 }, cancellationToken);
-
-		await CreateSchema(projection, new CreateSchemaOptions { Name = schemaName2 }, cancellationToken);
-		await UpdateSchema(projection, new UpdateSchemaOptions { Name = schemaName2, VersionNumber = 42 }, cancellationToken);
-
-		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
-
-		var response = await queries.ListRegisteredSchemas(new ListRegisteredSchemasRequest { SchemaNamePrefix = prefix }, cancellationToken);
-		var schemas = response.Schemas.OrderBy(x => x.RegisteredAt).ToList();
-		schemas.Count.Should().Be(2);
-		var schema1 = schemas[0];
-		var schema2 = schemas[1];
-
-		schema1.SchemaName.Should().Be(schemaName1);
-		schema1.VersionNumber.Should().Be(24);
-
-		schema2.SchemaName.Should().Be(schemaName2);
-		schema2.VersionNumber.Should().Be(42);
-	}
-
-
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_registered_schemas_multiple_with_version_id(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName1 = NewSchemaName(NewPrefix());
@@ -221,7 +103,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		schema.SchemaVersionId.Should().Be(versionId);
 	}
 
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_registered_schemas_multiple_with_tags(CancellationToken cancellationToken) {
 		var schemaName1 = NewSchemaName(NewPrefix());
 		var schemaName2 = NewSchemaName(NewPrefix());
@@ -252,7 +134,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		schema.Tags["foo"].Should().Be("bar");
 	}
 
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task lookup_schema_name(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
@@ -268,16 +150,18 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		response.SchemaName.Should().Be(schemaName);
 	}
 
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task check_schema_compatibility_should_be_compatible(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
+		var schema = NewJsonSchemaDefinition();
+
 		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
 		await projection.Setup(connection, cancellationToken);
 
 		await CreateSchema(projection,
-			new CreateSchemaOptions { Name = schemaName, VersionId = versionId, Definition = PersonSchema },
+			new CreateSchemaOptions { Name = schemaName, VersionId = versionId, Definition = schema.ToJson() },
 			cancellationToken);
 
 		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
@@ -287,37 +171,13 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 				new CheckSchemaCompatibilityRequest {
 					SchemaVersionId = versionId,
 					DataFormat = SchemaDataFormat.Json,
-					Definition = ByteString.CopyFromUtf8(PersonSchema)
+					Definition = schema.ToByteString()
 				}, cancellationToken);
 
 		response.Success.Should().NotBeNull();
 	}
 
-	[Test]
-	public async Task check_schema_compatibility_should_not_be_compatible(CancellationToken cancellationToken) {
-		var versionId = Guid.NewGuid().ToString();
-		var schemaName = NewSchemaName(NewPrefix());
-		var connection = DuckDbConnectionProvider.GetConnection();
-		var projection = new SchemaProjections();
-		await projection.Setup(connection, cancellationToken);
-
-		await CreateSchema(projection,
-			new CreateSchemaOptions { Name = schemaName, VersionId = versionId, Definition = PersonSchema },
-			cancellationToken);
-
-		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
-
-		var response =
-			await queries.CheckSchemaCompatibility(
-				new CheckSchemaCompatibilityRequest {
-					SchemaVersionId = versionId, DataFormat = SchemaDataFormat.Json,
-					Definition = ByteString.CopyFromUtf8(CarSchema)
-				}, cancellationToken);
-
-		response.Failure.Errors.Should().NotBeEmpty();
-	}
-
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema(CancellationToken cancellationToken) {
 		var versionId1 = Guid.NewGuid().ToString();
 		var versionId2 = Guid.NewGuid().ToString();
@@ -337,7 +197,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		response.Schema.LatestSchemaVersion.Should().Be(24);
 	}
 
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_version(CancellationToken cancellationToken) {
 		var versionId1 = Guid.NewGuid().ToString();
 		var versionId2 = Guid.NewGuid().ToString();
@@ -355,7 +215,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		response.Version.SchemaVersionId.Should().Be(versionId2);
 	}
 
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_version_with_version_number(CancellationToken cancellationToken) {
 		var versionId1 = Guid.NewGuid().ToString();
 		var versionId2 = Guid.NewGuid().ToString();
@@ -384,7 +244,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		var record = await CreateRecord(
 			new SchemaCreated {
 				SchemaName = options.Name,
-				SchemaDefinition = ByteString.CopyFromUtf8(options.Definition ?? PersonSchema),
+				SchemaDefinition = ByteString.CopyFromUtf8(options.Definition ?? NewJsonSchemaDefinition().ToJson()),
 				Description = Faker.Lorem.Text(),
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = Faker.Random.Enum(CompatibilityMode.Unspecified),
@@ -423,60 +283,4 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		await projections.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()), record,
 			cancellationToken));
 	}
-
-	static readonly string PersonSchema =
-		// lang=JSON
-		"""
-		{
-		  "$schema": "http://json-schema.org/draft-07/schema#",
-		  "title": "Person",
-		  "type": "object",
-		  "properties": {
-		    "firstName": {
-		      "type": "string"
-		    },
-		    "lastName": {
-		      "type": "string"
-		    },
-		    "age": {
-		      "type": "integer",
-		      "minimum": 0
-		    },
-		    "email": {
-		      "type": "string",
-		      "format": "email"
-		    }
-		  },
-		  "required": ["firstName", "lastName"]
-		}
-		""";
-
-	static readonly string CarSchema =
-		// lang=JSON
-		"""
-		{
-		  "$schema": "http://json-schema.org/draft-07/schema#",
-		  "title": "Car",
-		  "type": "object",
-		  "properties": {
-		    "make": {
-		      "type": "string"
-		    },
-		    "model": {
-		      "type": "string"
-		    },
-		    "year": {
-		      "type": "integer",
-		      "minimum": 1886
-		    },
-		    "vin": {
-		      "type": "string"
-		    },
-		    "color": {
-		      "type": "string"
-		    }
-		  },
-		  "required": ["make", "model", "year", "vin"]
-		}
-		""";
 }

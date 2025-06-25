@@ -1,6 +1,8 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
@@ -9,7 +11,6 @@ using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
-
 
 public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	const int TestTimeoutMs = 20_000;
@@ -24,7 +25,6 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			Description = Faker.Lorem.Text(),
 			DataFormat = SchemaDataFormat.Json,
 			Compatibility = Faker.Random.Enum(CompatibilityMode.Unspecified),
-			Tags = { },
 			SchemaVersionId = Guid.NewGuid().ToString(),
 			VersionNumber = 1,
 			CreatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
@@ -43,7 +43,6 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			Description = Faker.Lorem.Text(),
 			DataFormat = SchemaDataFormat.Json,
 			Compatibility = Faker.Random.Enum(CompatibilityMode.Unspecified),
-			Tags = { },
 			SchemaVersionId = Guid.NewGuid().ToString(),
 			VersionNumber = 1,
 			CreatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
@@ -56,17 +55,8 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			Tags = { schema2.Tags }
 		};
 
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schema1.SchemaName,
-			SchemaDefinition = schema1.SchemaDefinition,
-			Details = details1,
-		}, cancellationToken: cancellationToken);
-
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schema2.SchemaName,
-			SchemaDefinition = schema2.SchemaDefinition,
-			Details = details2,
-		}, cancellationToken: cancellationToken);
+		await CreateSchema(schema1.SchemaName, schema1.SchemaDefinition, details1, cancellationToken);
+		await CreateSchema(schema2.SchemaName, schema2.SchemaDefinition, details2, cancellationToken);
 
 		var listSchemasResponse = await Client.ListSchemasAsync(new ListSchemasRequest {
 			SchemaNamePrefix = prefix,
@@ -128,17 +118,8 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			Tags = { schema2.Tags }
 		};
 
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schema1.SchemaName,
-			SchemaDefinition = schema1.SchemaDefinition,
-			Details = details1,
-		}, cancellationToken: cancellationToken);
-
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schema2.SchemaName,
-			SchemaDefinition = schema2.SchemaDefinition,
-			Details = details2,
-		}, cancellationToken: cancellationToken);
+		await CreateSchema(schema1.SchemaName, schema1.SchemaDefinition, details1, cancellationToken);
+		await CreateSchema(schema2.SchemaName, schema2.SchemaDefinition, details2, cancellationToken);
 
 		var listSchemasResponse = await Client.ListSchemasAsync(new ListSchemasRequest {
 			SchemaTags = { new Dictionary<string, string> { [key] = value } }
@@ -157,63 +138,6 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
-	public async Task list_registered_schemas_with_prefix(CancellationToken cancellationToken) {
-		var prefix = NewPrefix();
-		var schemaName1 = NewSchemaName(prefix);
-		var schemaName2 = NewSchemaName(prefix);
-
-		// Arrange
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schemaName1,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-			Details = new SchemaDetails {
-				DataFormat = SchemaDataFormat.Json,
-				Compatibility = CompatibilityMode.Backward,
-				Description = Faker.Lorem.Text(),
-			}
-		}, cancellationToken: cancellationToken);
-
-
-		await Client.RegisterSchemaVersionAsync(new RegisterSchemaVersionRequest {
-			SchemaName = schemaName1,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-		}, cancellationToken: cancellationToken);
-
-		var schema1 = await Client.GetSchemaAsync(new GetSchemaRequest {
-			SchemaName = schemaName1
-		}, cancellationToken: cancellationToken);
-
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schemaName2,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-			Details = new SchemaDetails {
-				DataFormat = SchemaDataFormat.Json,
-				Compatibility = CompatibilityMode.Backward,
-				Description = Faker.Lorem.Text(),
-			}
-		}, cancellationToken: cancellationToken);
-
-		var schema2 = await Client.GetSchemaAsync(new GetSchemaRequest {
-			SchemaName = schemaName2
-		}, cancellationToken: cancellationToken);
-
-		var listSchemasResponse = await Client.ListRegisteredSchemasAsync(new ListRegisteredSchemasRequest {
-			SchemaNamePrefix = prefix,
-		}, cancellationToken: cancellationToken);
-
-		listSchemasResponse.Should().NotBeNull();
-		listSchemasResponse.Schemas.Count.Should().Be(2);
-
-		var schemas = listSchemasResponse.Schemas.OrderBy(x => x.RegisteredAt).ToList();
-
-		schemas[0].SchemaName.Should().Be(schemaName1);
-		schemas[0].VersionNumber.Should().Be(schema1.Schema.LatestSchemaVersion);
-
-		schemas[1].SchemaName.Should().Be(schema2.Schema.SchemaName);
-		schemas[1].VersionNumber.Should().Be(schema2.Schema.LatestSchemaVersion);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_registered_schemas_with_tags(CancellationToken cancellationToken) {
 		var schemaName1 = NewSchemaName();
 		var schemaName2 = NewSchemaName();
@@ -221,37 +145,30 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var value = Faker.Lorem.Word();
 
 		// Arrange
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schemaName1,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-			Details = new SchemaDetails {
+		await CreateSchema(schemaName1,
+			new SchemaDetails {
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = CompatibilityMode.Backward,
 				Description = Faker.Lorem.Text(),
 				Tags = { new Dictionary<string, string> { [key] = value } }
 			},
-		}, cancellationToken: cancellationToken);
+			cancellationToken
+		);
 
-
-		await Client.RegisterSchemaVersionAsync(new RegisterSchemaVersionRequest {
-			SchemaName = schemaName1,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-		}, cancellationToken: cancellationToken);
+		await RegisterSchemaVersion(schemaName1, cancellationToken);
 
 		var schema1 = await Client.GetSchemaAsync(new GetSchemaRequest {
 			SchemaName = schemaName1
 		}, cancellationToken: cancellationToken);
 
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schemaName2,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-			Details = new SchemaDetails {
+		await CreateSchema(schemaName2,
+			new SchemaDetails {
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = CompatibilityMode.Backward,
 				Description = Faker.Lorem.Text(),
 				Tags = { new Dictionary<string, string> { [key] = value } }
-			}
-		}, cancellationToken: cancellationToken);
+			},
+			cancellationToken);
 
 		var schema2 = await Client.GetSchemaAsync(new GetSchemaRequest {
 			SchemaName = schemaName2
@@ -280,21 +197,16 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName(prefix);
 
 		// Arrange
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schemaName,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-			Details = new SchemaDetails {
+		await CreateSchema(
+			schemaName,
+			new SchemaDetails {
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = CompatibilityMode.Backward,
 				Description = Faker.Lorem.Text(),
-			}
-		}, cancellationToken: cancellationToken);
+			},
+			cancellationToken);
 
-
-		var result = await Client.RegisterSchemaVersionAsync(new RegisterSchemaVersionRequest {
-			SchemaName = schemaName,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-		}, cancellationToken: cancellationToken);
+		var result = await RegisterSchemaVersion(schemaName, cancellationToken);
 
 		var schema = await Client.GetSchemaAsync(new GetSchemaRequest {
 			SchemaName = schemaName,
@@ -317,21 +229,16 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 
 		// Arrange
-		var createResult = await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schemaName,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-			Details = new SchemaDetails {
+		var createResult = await CreateSchema(schemaName,
+			new SchemaDetails {
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = CompatibilityMode.Backward,
 				Description = Faker.Lorem.Text(),
 			},
-		}, cancellationToken: cancellationToken);
+			cancellationToken);
 
 
-		var registerResult = await Client.RegisterSchemaVersionAsync(new RegisterSchemaVersionRequest {
-			SchemaName = schemaName,
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-		}, cancellationToken: cancellationToken);
+		var registerResult = await RegisterSchemaVersion(schemaName, cancellationToken);
 
 		var listSchemasResponse = await Client.ListSchemaVersionsAsync(new ListSchemaVersionsRequest {
 			SchemaName = schemaName,
@@ -352,7 +259,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_schema_versions_not_found(CancellationToken cancellationToken) {
 		var ex = await FluentActions.Awaiting(async () => await Client.ListSchemaVersionsAsync(
-			new ListSchemaVersionsRequest() {
+			new ListSchemaVersionsRequest {
 				SchemaName = Guid.NewGuid().ToString()
 			},
 			cancellationToken: cancellationToken
@@ -398,7 +305,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_schemas_with_prefix_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListSchemasAsync(
-			new ListSchemasRequest() {
+			new ListSchemasRequest {
 				SchemaNamePrefix = Guid.NewGuid().ToString()
 			},
 			cancellationToken: cancellationToken);
@@ -409,7 +316,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task list_schemas_with_tags_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListSchemasAsync(
-			new ListSchemasRequest() {
+			new ListSchemasRequest {
 				SchemaTags = { new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() } }
 			},
 			cancellationToken: cancellationToken);

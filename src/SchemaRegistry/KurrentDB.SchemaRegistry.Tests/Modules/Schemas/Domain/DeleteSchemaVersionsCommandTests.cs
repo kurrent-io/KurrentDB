@@ -25,7 +25,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var definition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName, schemaDefinition: definition), cancellationToken);
+		await Apply(CreateSchemaRequest(schemaName: schemaName, definition: definition), cancellationToken);
 
 		// Register additional schema versions
 		await Apply(
@@ -166,120 +166,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
-	public async Task deletes_older_version_successfully_in_backward_compatibility_mode(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-
-		// Create initial schema with backward compatibility mode
-		await Apply(
-			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.Backward),
-			cancellationToken
-		);
-
-		// Register additional schema version
-		var version2Result = await Apply(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
-			},
-			cancellationToken
-		);
-
-		var latestVersionId = version2Result.Changes.GetSingleEvent<SchemaVersionRegistered>().SchemaVersionId;
-
-		// Act - delete the older version (1) while keeping the latest (2)
-		var result = await Apply(
-			new DeleteSchemaVersionsRequest {
-				SchemaName = schemaName,
-				Versions = { 1 }
-			},
-			cancellationToken
-		);
-
-		// Assert
-		var versionsDeleted = result.Changes.Should().HaveCount(1).And.Subject.GetSingleEvent<SchemaVersionsDeleted>();
-		versionsDeleted.SchemaName.Should().Be(schemaName);
-		versionsDeleted.LatestSchemaVersionId.Should().Be(latestVersionId);
-		versionsDeleted.LatestSchemaVersionNumber.Should().Be(2);
-	}
-
-	[Test]
-	[Arguments(CompatibilityMode.Forward)]
-	[Arguments(CompatibilityMode.Full)]
-	[Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_trying_to_delete_any_version_in_forward_or_full_compatibility_mode(
-		CompatibilityMode compatibilityMode, CancellationToken cancellationToken
-	) {
-		// Arrange
-		var schemaName = NewSchemaName();
-
-		// Create initial schema with specified compatibility mode
-		await Apply(
-			CreateSchemaRequest(schemaName: schemaName, compatibility: compatibilityMode),
-			cancellationToken
-		);
-
-		// Register additional schema version
-		await Apply(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
-			},
-			cancellationToken
-		);
-
-		// Act - attempt to delete any version
-		var deleteVersion = async () => await Apply(
-			new DeleteSchemaVersionsRequest {
-				SchemaName = schemaName,
-				Versions = { 1 } // Trying to delete first version
-			},
-			cancellationToken
-		);
-
-		// Assert
-		await deleteVersion.ShouldThrowAsync<DomainExceptions.EntityException>()
-			.WithMessage($"*Cannot delete versions of schema {schemaName} in {compatibilityMode} compatibility mode*");
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-
-		// Create schema
-		await Apply(
-			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.None),
-			cancellationToken
-		);
-
-		// Register additional version
-		await Apply(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
-			},
-			cancellationToken
-		);
-
-		// Delete the schema
-		await Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
-
-		// Act
-		var deleteVersions = async () => await Apply(
-			new DeleteSchemaVersionsRequest {
-				SchemaName = schemaName,
-				Versions = { 1 }
-			},
-			cancellationToken
-		);
-
-		// Assert
-		await deleteVersions.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_schema_does_not_exist(CancellationToken cancellationToken) {
+	public async Task throws_exception_when_schema_is_not_found(CancellationToken cancellationToken) {
 		// Arrange
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
 

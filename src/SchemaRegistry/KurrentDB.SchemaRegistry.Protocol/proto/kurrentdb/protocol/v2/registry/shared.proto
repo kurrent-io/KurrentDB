@@ -6,9 +6,43 @@ option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
 option java_package        = "io.kurrentdb.protocol.registry.v2";
 option java_multiple_files = true;
 
+import "core.proto";
+
+// ErrorDetails provides detailed information about specific error conditions.
 message ErrorDetails {
-  string code    = 1;  // Standardized string to programmatically identify the error.
-  string message = 2;  // Detailed error description and debugging information.
+    // When the user does not have sufficient permissions to perform the
+    // operation.
+    message AccessDenied {
+      option (error_info) = {
+        code : "ACCESS_DENIED",
+        severity : RECOVERABLE,
+        message : "The user does not have sufficient permissions to perform the operation."
+      };
+    }
+
+  // When the schema is not found.
+  message SchemaNotFound {
+    option (error_info) = {
+      code : "STREAM_NOT_FOUND",
+      severity : RECOVERABLE,
+      message : "The specified schema was not found."
+    };
+
+    // The name of the schema that was not found.
+    optional string stream = 1;
+  }
+
+  // When the schema already exists.
+  message SchemaAlreadyExists {
+    option (error_info) = {
+      code : "STREAM_ALREADY_EXISTS",
+      severity : RECOVERABLE,
+      message : "The specified schema already exists."
+    };
+
+    // The name of the stream that already exists.
+    optional string stream = 1;
+  }
 }
 
 // Represents the format of the schema data.

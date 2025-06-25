@@ -6,6 +6,7 @@
 using System.Runtime.CompilerServices;
 using Eventuous;
 using Google.Protobuf;
+using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Schema.Validation;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Domain;
@@ -42,18 +43,14 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		$"{name.Underscore()}-{GenerateShortId()}".ToLowerInvariant();
 
 	protected static JsonSchema NewJsonSchemaDefinition() {
-		return JsonSchema.FromJsonAsync(
-			"""
-			{
-			    "type": "object",
-			    "properties": {
-			        "id": { "type": "string" },
-			        "name": { "type": "string" }
-			    },
-			    "required": ["id"]
-			}
-			"""
-		).GetAwaiter().GetResult();
+		return new JsonSchema {
+			Type = JsonObjectType.Object,
+			Properties = {
+				["id"] = new JsonSchemaProperty { Type = JsonObjectType.String },
+				["name"] = new JsonSchemaProperty { Type = JsonObjectType.String }
+			},
+			RequiredProperties = { "id" }
+		};
 	}
 
 	protected CreateSchemaRequest CreateSchemaRequest(
@@ -62,15 +59,16 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		CompatibilityMode compatibility = CompatibilityMode.Backward,
 		string? description = null,
 		Dictionary<string, string>? tags = null,
-		ByteString? schemaDefinition = null) {
+		ByteString? definition = null
+	) {
 		schemaName ??= NewSchemaName();
 		description ??= Faker.Lorem.Sentence();
+		definition ??= NewJsonSchemaDefinition().ToByteString();
 		tags ??= new Dictionary<string, string> { ["env"] = "test" };
-		schemaDefinition ??= NewJsonSchemaDefinition().ToByteString();
 
 		return new CreateSchemaRequest {
 			SchemaName = schemaName,
-			SchemaDefinition = schemaDefinition,
+			SchemaDefinition = definition,
 			Details = new SchemaDetails {
 				Description = description,
 				DataFormat = dataFormat,
@@ -80,38 +78,171 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		};
 	}
 
-	protected async Task<CreateSchemaResponse> CreateSchemaAsync(
-		string? schemaName = null,
-		SchemaFormat dataFormat = SchemaFormat.Json,
-		CompatibilityMode compatibility = CompatibilityMode.None,
-		string? description = null,
-		Dictionary<string, string>? tags = null,
-		ByteString? schemaDefinition = null,
-		CancellationToken cancellationToken = default) {
-		schemaName ??= NewSchemaName();
-		description ??= Faker.Lorem.Sentence();
-		tags ??= new Dictionary<string, string> { ["env"] = "test" };
-		schemaDefinition ??= NewJsonSchemaDefinition().ToByteString();
+	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, SchemaDetails details, CancellationToken ct = default) =>
+		await CreateSchema(schemaName, NewJsonSchemaDefinition(), details, ct);
 
+	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, CancellationToken cancellationToken = default) {
+		var details = new SchemaDetails {
+			Compatibility = CompatibilityMode.Backward,
+			DataFormat = SchemaFormat.Json,
+			Description = Faker.Lorem.Sentence(),
+		};
+		return await CreateSchema(schemaName, NewJsonSchemaDefinition(), details, cancellationToken);
+	}
+
+	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName,
+		JsonSchema schemaDefinition,
+		CancellationToken ct = default) {
+		var details = new SchemaDetails {
+			Compatibility = CompatibilityMode.Backward,
+			DataFormat = SchemaFormat.Json,
+			Description = Faker.Lorem.Sentence(),
+		};
+		return await CreateSchema(schemaName, schemaDefinition, details, ct);
+	}
+
+	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, ByteString schemaDefinition, CancellationToken ct = default) {
+		var details = new SchemaDetails {
+			Compatibility = CompatibilityMode.Backward,
+			DataFormat = SchemaFormat.Json,
+			Description = Faker.Lorem.Sentence(),
+		};
+		return await CreateSchema(schemaName, schemaDefinition, details, ct);
+	}
+
+	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, ByteString schemaDefinition, SchemaDetails details,
+		CancellationToken ct = default) {
 		var result = await Client.CreateSchemaAsync(
-			request: CreateSchemaRequest(schemaName, dataFormat, compatibility, description, tags, schemaDefinition),
-			cancellationToken: cancellationToken
+			request: new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = schemaDefinition,
+				Details = details
+			},
+			cancellationToken: ct
+		);
+
+		await Wait.UntilAsserted(async () => {
+			var response = await Client.ListSchemaVersionsAsync(
+				new ListSchemaVersionsRequest {
+					SchemaName = schemaName
+				}, cancellationToken: ct);
+			response.Versions.Should().HaveCount(1);
+		}, cancellationToken: ct);
+
+		return result;
+	}
+
+	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, JsonSchema schemaDefinition, SchemaDetails details,
+		CancellationToken ct = default) {
+		var result = await Client.CreateSchemaAsync(
+			request: new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = schemaDefinition.ToByteString(),
+				Details = details
+			},
+			cancellationToken: ct
+		);
+
+		await Wait.UntilAsserted(async () => {
+			var response = await Client.ListSchemaVersionsAsync(
+				new ListSchemaVersionsRequest {
+					SchemaName = schemaName
+				}, cancellationToken: ct);
+			response.Versions.Should().HaveCount(1);
+		}, cancellationToken: ct);
+
+		return result;
+	}
+
+	protected async Task<RegisterSchemaVersionResponse> RegisterSchemaVersion(string schemaName, CancellationToken ct = default) =>
+		await RegisterSchemaVersion(schemaName, NewJsonSchemaDefinition(), ct);
+
+	protected async Task<RegisterSchemaVersionResponse> RegisterSchemaVersion(string schemaName, JsonSchema schemaDefinition, CancellationToken ct = default) {
+		var result = await Client.RegisterSchemaVersionAsync(
+			new RegisterSchemaVersionRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = schemaDefinition.ToByteString()
+			},
+			cancellationToken: ct
+		);
+
+		await Wait.UntilAsserted(async () => {
+			var response = await Client.ListRegisteredSchemasAsync(
+				new ListRegisteredSchemasRequest {
+					SchemaVersionId = result.SchemaVersionId
+				},
+				cancellationToken: ct
+			);
+
+			response.Schemas.Should().ContainSingle(s =>
+				s.SchemaName == schemaName && s.VersionNumber == result.VersionNumber
+			);
+		}, cancellationToken: ct);
+
+		return result;
+	}
+
+	protected async Task<CheckSchemaCompatibilityResponse> CheckSchemaCompatibility(string schemaName, SchemaFormat dataFormat, JsonSchema definition,
+		CancellationToken ct = default) {
+		var result = await Client.CheckSchemaCompatibilityAsync(
+			new CheckSchemaCompatibilityRequest {
+				SchemaName = schemaName,
+				DataFormat = dataFormat,
+				Definition = definition.ToByteString()
+			},
+			cancellationToken: ct
+		);
+		return result;
+	}
+
+	protected async Task<DeleteSchemaResponse> DeleteSchema(string schemaName, CancellationToken ct = default) {
+		var result = await Client.DeleteSchemaAsync(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken: ct);
+
+		await Wait.UntilAsserted(async () => {
+			var response = await Client.ListSchemasAsync(
+				new ListSchemasRequest { SchemaNamePrefix = schemaName },
+				cancellationToken: ct
+			);
+			response.Schemas.Should().BeEmpty();
+		}, cancellationToken: ct);
+
+		return result;
+	}
+
+	protected async Task<DeleteSchemaVersionsResponse> DeleteSchemaVersions(string schemaName, IEnumerable<int> versions, CancellationToken ct = default) {
+		var versionsList = versions.ToList();
+
+		var result = await Client.DeleteSchemaVersionsAsync(
+			new DeleteSchemaVersionsRequest {
+				SchemaName = schemaName,
+				Versions = { versionsList }
+			},
+			cancellationToken: ct
 		);
 
 		return result;
 	}
 
-	// protected async ValueTask WaitForSchemaDeleteProjected(string schemaName, CancellationToken cancellationToken) {
-	// 	await Wait.UntilAsserted(
-	// 		async () => {
-	// 			var result = await Client.ListSchemasAsync(new ListSchemasRequest {
-	// 				SchemaNamePrefix = schemaName
-	// 			}, cancellationToken: cancellationToken);
-	// 			result.Schemas.Should().NotContain(x => x.SchemaName == schemaName);
-	// 		},
-	// 		cancellationToken: cancellationToken
-	// 	);
-	// }
+	protected async Task<UpdateSchemaResponse> UpdateSchema(string schemaName, SchemaDetails details, FieldMask mask, CancellationToken ct = default) {
+		var result = await Client.UpdateSchemaAsync(
+			new UpdateSchemaRequest {
+				SchemaName = schemaName,
+				Details = details,
+				UpdateMask = mask
+			},
+			cancellationToken: ct
+		);
+
+		// await Wait.UntilAsserted(async () => {
+		// 	var response = await Client.ListSchemasAsync(
+		// 		new ListSchemasRequest { SchemaNamePrefix = schemaName },
+		// 		cancellationToken: cancellationToken
+		// 	);
+		// 	response.Schemas.Should().ContainSingle(s => s.SchemaName == schemaName && s.Details.Equals(details));
+		// }, cancellationToken: cancellationToken);
+
+		return result;
+	}
 }
 
 public static class JsonSchemaExtensions {

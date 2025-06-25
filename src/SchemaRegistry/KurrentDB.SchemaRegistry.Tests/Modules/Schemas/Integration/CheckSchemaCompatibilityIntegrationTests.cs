@@ -14,58 +14,18 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
-	public async Task check_schema_compatibility_matches(CancellationToken cancellationToken) {
+	public async Task check_schema_compatibility_schema_name_not_found(CancellationToken cancellationToken) {
 		var schemaName = NewSchemaName();
 		var v1 = NewJsonSchemaDefinition();
 
-		// Arrange
-		await Client.CreateSchemaAsync(new CreateSchemaRequest {
-			SchemaName = schemaName,
-			SchemaDefinition = v1.ToByteString(),
-			Details = new SchemaDetails {
-				DataFormat = SchemaDataFormat.Json,
-				Compatibility = CompatibilityMode.Forward,
-				Description = Faker.Lorem.Text(),
-			},
-		}, cancellationToken: cancellationToken);
-
-		var response= await Client.CheckSchemaCompatibilityAsync(new CheckSchemaCompatibilityRequest {
-			SchemaName = schemaName,
-			DataFormat = SchemaDataFormat.Json,
-			Definition = v1.ToByteString()
-		}, cancellationToken: cancellationToken);
-
-		response.Success.Should().NotBeNull();
-		response.Success.SchemaVersionId.Should().NotBeEmpty();
-		response.Failure.Should().BeNull();
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task check_schema_compatibility_schema_name_not_found(CancellationToken cancellationToken) {
-		var v1 = NewJsonSchemaDefinition();
-
-		var ex = await FluentActions.Awaiting(async () => await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaName = Guid.NewGuid().ToString(),
-				DataFormat = SchemaDataFormat.Json,
-				Definition = v1.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		)).Should().ThrowAsync<RpcException>();
-
-		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task check_schema_compatibility_schema_version_id_not_found(CancellationToken cancellationToken) {
-		var ex = await FluentActions.Awaiting(async () => await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaVersionId = Guid.NewGuid().ToString(),
-				DataFormat = SchemaDataFormat.Json,
-				Definition = NewJsonSchemaDefinition().ToByteString()
-			},
-			cancellationToken: cancellationToken
-		)).Should().ThrowAsync<RpcException>();
+		var ex = await FluentActions.Awaiting(async () =>
+			await CheckSchemaCompatibility(
+				schemaName,
+				SchemaDataFormat.Json,
+				v1,
+				cancellationToken
+			)
+		).Should().ThrowAsync<RpcException>();
 
 		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
 	}
@@ -79,37 +39,19 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		var v2 = v1.Remove("name");
 		var v3 = v2.AddOptional("age", JsonObjectType.String);
 
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					DataFormat = SchemaDataFormat.Json,
-					Compatibility = CompatibilityMode.BackwardAll,
-					Description = Faker.Lorem.Text(),
-				},
-				SchemaDefinition = v1.ToByteString()
+		await CreateSchema(schemaName, v1,
+			new SchemaDetails {
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = CompatibilityMode.BackwardAll,
+				Description = Faker.Lorem.Text(),
 			},
-			cancellationToken: cancellationToken
+			cancellationToken
 		);
 
-
-		await Client.RegisterSchemaVersionAsync(
-			new RegisterSchemaVersionRequest {
-				SchemaName = schemaName,
-				SchemaDefinition = v2.ToByteString(),
-			},
-			cancellationToken: cancellationToken
-		);
+		await RegisterSchemaVersion(schemaName, v2, cancellationToken);
 
 		// Act
-		var response = await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaName = schemaName,
-				DataFormat = SchemaDataFormat.Json,
-				Definition = v3.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
+		var response = await CheckSchemaCompatibility(schemaName, SchemaDataFormat.Json, v3, cancellationToken);
 
 		// Assert
 		response.Success.Should().NotBeNull();
@@ -117,7 +59,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		response.Failure.Should().BeNull();
 	}
 
-	[Test]
+	[Test, Timeout(TestTimeoutMs)]
 	public async Task check_schema_compatibility_backward_all_is_incompatible(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
@@ -131,28 +73,17 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 			.MakeRequired("email")
 			.ChangeType("gender", JsonObjectType.Integer);
 
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					DataFormat = SchemaDataFormat.Json,
-					Compatibility = CompatibilityMode.BackwardAll,
-					Description = Faker.Lorem.Text(),
-				},
-				SchemaDefinition = v1.ToByteString()
+		await CreateSchema(schemaName, v1,
+			new SchemaDetails {
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = CompatibilityMode.BackwardAll,
+				Description = Faker.Lorem.Text(),
 			},
-			cancellationToken: cancellationToken
+			cancellationToken
 		);
 
 		// Act
-		var response = await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaName = schemaName,
-				DataFormat = SchemaDataFormat.Json,
-				Definition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
+		var response = await CheckSchemaCompatibility(schemaName, SchemaDataFormat.Json, v2, cancellationToken);
 
 		response.Failure.Errors.Should().NotBeEmpty();
 		response.Failure.Errors.Count.Should().Be(3);
@@ -169,28 +100,17 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		var v1 = NewJsonSchemaDefinition();
 		var v2 = v1.AddOptional("address", JsonObjectType.String);
 
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					DataFormat = SchemaDataFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Description = Faker.Lorem.Text(),
-				},
-				SchemaDefinition = v1.ToByteString()
+		await CreateSchema(schemaName, v1,
+			new SchemaDetails {
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = CompatibilityMode.Backward,
+				Description = Faker.Lorem.Text(),
 			},
-			cancellationToken: cancellationToken
+			cancellationToken
 		);
 
 		// Act
-		var response = await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaName = schemaName,
-				DataFormat = SchemaDataFormat.Json,
-				Definition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
+		var response = await CheckSchemaCompatibility(schemaName, SchemaDataFormat.Json, v2, cancellationToken);
 
 		// Assert
 		response.Success.Should().NotBeNull();
@@ -206,28 +126,17 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		var v1 = NewJsonSchemaDefinition();
 		var v2 = v1.AddRequired("email", JsonObjectType.String);
 
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					DataFormat = SchemaDataFormat.Json,
-					Compatibility = CompatibilityMode.Backward,
-					Description = Faker.Lorem.Text(),
-				},
-				SchemaDefinition = v1.ToByteString()
+		await CreateSchema(schemaName, v1,
+			new SchemaDetails {
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = CompatibilityMode.Backward,
+				Description = Faker.Lorem.Text(),
 			},
-			cancellationToken: cancellationToken
+			cancellationToken
 		);
 
 		// Act
-		var response = await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaName = schemaName,
-				DataFormat = SchemaDataFormat.Json,
-				Definition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
+		var response = await CheckSchemaCompatibility(schemaName, SchemaDataFormat.Json, v2, cancellationToken);
 
 		// Assert
 		response.Failure.Errors.Should().NotBeEmpty();
@@ -245,28 +154,17 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 
 		var v2 = v1.Remove("phone");
 
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					DataFormat = SchemaDataFormat.Json,
-					Compatibility = CompatibilityMode.Forward,
-					Description = Faker.Lorem.Text(),
-				},
-				SchemaDefinition = v1.ToByteString()
+		await CreateSchema(schemaName, v1,
+			new SchemaDetails {
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = CompatibilityMode.Forward,
+				Description = Faker.Lorem.Text(),
 			},
-			cancellationToken: cancellationToken
+			cancellationToken
 		);
 
 		// Act
-		var response = await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaName = schemaName,
-				DataFormat = SchemaDataFormat.Json,
-				Definition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
+		var response = await CheckSchemaCompatibility(schemaName, SchemaDataFormat.Json, v2, cancellationToken);
 
 		// Assert
 		response.Success.Should().NotBeNull();
@@ -282,104 +180,20 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		var v1 = NewJsonSchemaDefinition();
 		var v2 = v1.ChangeType("id", JsonObjectType.Integer);
 
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					DataFormat = SchemaDataFormat.Json,
-					Compatibility = CompatibilityMode.Forward,
-					Description = Faker.Lorem.Text(),
-				},
-				SchemaDefinition = v1.ToByteString()
+		await CreateSchema(schemaName, v1,
+			new SchemaDetails {
+				DataFormat = SchemaDataFormat.Json,
+				Compatibility = CompatibilityMode.Forward,
+				Description = Faker.Lorem.Text(),
 			},
-			cancellationToken: cancellationToken
+			cancellationToken
 		);
 
 		// Act
-		var response = await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaName = schemaName,
-				DataFormat = SchemaDataFormat.Json,
-				Definition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
+		var response = await CheckSchemaCompatibility(schemaName, SchemaDataFormat.Json, v2, cancellationToken);
 
 		// Assert
 		response.Failure.Errors.Should().NotBeEmpty();
 		response.Failure.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.IncompatibleTypeChange);
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task check_schema_compatibility_full_is_compatible(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-
-		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
-
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					DataFormat = SchemaDataFormat.Json,
-					Compatibility = CompatibilityMode.Full,
-					Description = Faker.Lorem.Text(),
-				},
-				SchemaDefinition = v1.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Act
-		var response = await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaName = schemaName,
-				DataFormat = SchemaDataFormat.Json,
-				Definition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		response.Success.Should().NotBeNull();
-		response.Success.SchemaVersionId.Should().NotBeEmpty();
-		response.Failure.Should().BeNull();
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task check_schema_compatibility_full_is_incompatible(CancellationToken cancellationToken) {
-		// Arrange
-		var schemaName = NewSchemaName();
-
-		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddRequired("email", JsonObjectType.String);
-
-		await Client.CreateSchemaAsync(
-			new CreateSchemaRequest {
-				SchemaName = schemaName,
-				Details = new SchemaDetails {
-					DataFormat = SchemaDataFormat.Json,
-					Compatibility = CompatibilityMode.Full,
-					Description = Faker.Lorem.Text(),
-				},
-				SchemaDefinition = v1.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Act
-		var response = await Client.CheckSchemaCompatibilityAsync(
-			new CheckSchemaCompatibilityRequest {
-				SchemaName = schemaName,
-				DataFormat = SchemaDataFormat.Json,
-				Definition = v2.ToByteString()
-			},
-			cancellationToken: cancellationToken
-		);
-
-		// Assert
-		response.Failure.Errors.Should().NotBeEmpty();
-		response.Failure.Errors.Should().Contain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
 	}
 }

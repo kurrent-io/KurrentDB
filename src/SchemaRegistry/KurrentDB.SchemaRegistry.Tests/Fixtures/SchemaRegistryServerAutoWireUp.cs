@@ -10,12 +10,13 @@ using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 public class SchemaRegistryServerAutoWireUp {
-	public static HttpClient HttpClient { get; private set; } = null!;
-	public static SchemaRegistryServiceClient Client { get; private set; } = null!;
-	public static ClusterVNodeApp ClusterVNodeApp { get; private set; } = null!;
+	public static SchemaRegistryServiceClient Client          { get; private set; } = null!;
+	public static ClusterVNodeOptions         NodeOptions     { get; private set; } = null!;
+	public static IServiceProvider            NodeServices    { get; private set; } = null!;
 
-	public static ClusterVNodeOptions NodeOptions { get; private set; } = null!;
-	public static IServiceProvider NodeServices { get; private set; } = null!;
+	static ClusterVNodeApp ClusterVNodeApp { get; set; } = null!;
+	static GrpcChannel     GrpcChannel     { get; set; } = null!;
+	static HttpClient      HttpClient      { get; set; } = null!;
 
 	[Before(Assembly)]
 	public static async Task AssemblySetUp(AssemblyHookContext context, CancellationToken cancellationToken) {
@@ -23,10 +24,12 @@ public class SchemaRegistryServerAutoWireUp {
 
 		var (options, services) = await ClusterVNodeApp.Start(configureServices: ConfigureServices);
 
+		var serverUrl = new Uri(ClusterVNodeApp.ServerUrls.First());
+
 		NodeServices = services;
 		NodeOptions = options;
 
-		var serverUrl = new Uri(ClusterVNodeApp.ServerUrls.First());
+		Serilog.Log.Information("Test server started at {Url}", serverUrl);
 
 		HttpClient = new HttpClient {
 			BaseAddress = serverUrl,
@@ -34,17 +37,15 @@ public class SchemaRegistryServerAutoWireUp {
 			DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact
 		};
 
-		Serilog.Log.Information("Test server started at {Url}", serverUrl);
-
-		Client = new SchemaRegistryServiceClient(
-			GrpcChannel.ForAddress(
-				$"http://localhost:{serverUrl.Port}",
-				new GrpcChannelOptions {
-					HttpClient = HttpClient,
-					LoggerFactory = NodeServices.GetRequiredService<ILoggerFactory>()
-				}
-			)
+		GrpcChannel = GrpcChannel.ForAddress(
+			$"http://localhost:{serverUrl.Port}",
+			new GrpcChannelOptions {
+				HttpClient = HttpClient,
+				LoggerFactory = services.GetRequiredService<ILoggerFactory>()
+			}
 		);
+
+		Client = new SchemaRegistryServiceClient(GrpcChannel);
 	}
 
 	static void ConfigureServices(IServiceCollection services) {
@@ -57,12 +58,10 @@ public class SchemaRegistryServerAutoWireUp {
 
 	[After(Assembly)]
 	public static async Task AssemblyCleanUp() {
-		HttpClient.Dispose();
 		await ClusterVNodeApp.DisposeAsync();
+		HttpClient.Dispose();
+		GrpcChannel.Dispose();
 	}
-
-	[BeforeEvery(Test)]
-	public static void TestSetUp(TestContext context) {}
 
 	private class TestContextAwareLoggerFactory : ILoggerFactory {
 		readonly ILoggerFactory _defaultLoggerFactory = new LoggerFactory();
