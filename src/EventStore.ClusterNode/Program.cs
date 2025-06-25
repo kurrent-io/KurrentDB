@@ -24,6 +24,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
@@ -85,6 +86,7 @@ internal static class Program {
 				GCSettings.IsServerGC,
 				GCSettings.LatencyMode);
 			Log.Information("{description,-25} {logsDirectory}", "LOGS:", logsDirectory);
+			Log.Information("{description,-25} {isWindowsService}", "IsWindowsService:", WindowsServiceHelpers.IsWindowsService());
 			Log.Information(options.DumpOptions());
 
 			var level = options.Application.AllowUnknownOptions
@@ -186,7 +188,7 @@ internal static class Program {
 
 			async Task Run(ClusterVNodeHostedService hostedService, ManualResetEventSlim signal) {
 				try {
-					await new HostBuilder()
+					var builder = new HostBuilder()
 						.ConfigureHostConfiguration(builder => builder.AddEnvironmentVariables("DOTNET_").AddCommandLine(args))
 						.ConfigureAppConfiguration(builder => builder.AddConfiguration(configuration))
 						.ConfigureLogging(logging => logging.ClearProviders().AddSerilog())
@@ -219,8 +221,16 @@ internal static class Program {
 						// ClusterVNodeHostedService and the subsystems are started after configuration is finished.
 						// Allows the subsystems to resolve dependencies out of the DI in Configure() before being started.
 						// Later it may be possible to use constructor injection instead if it fits with the bootstrapping strategy.
-						.ConfigureServices(services => services.AddSingleton<IHostedService>(hostedService))
-						.RunConsoleAsync(x => x.SuppressStatusMessages = true, cts.Token);
+						.ConfigureServices(services => services.AddSingleton<IHostedService>(hostedService));
+
+					if (WindowsServiceHelpers.IsWindowsService()) {
+						await builder
+							.ConfigureServices(services => services.AddWindowsService())
+							.Build()
+							.RunAsync(cts.Token);
+					} else {
+						await builder.RunConsoleAsync(x => x.SuppressStatusMessages = true, cts.Token);
+					}
 
 					exitCodeSource.TrySetResult(0);
 				} catch (Exception ex) {
