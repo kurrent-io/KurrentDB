@@ -8,6 +8,7 @@
 	<ItemGroup>
 		<PackageReference Include="SharpDotYaml.Extensions.Configuration" Version="0.3.0" />
 		<PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.1" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\EventStore.ClusterNode.Web\EventStore.ClusterNode.Web.csproj" />
