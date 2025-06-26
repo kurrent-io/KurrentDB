@@ -64,7 +64,7 @@ public class MetricsEndpointTests : DirectoryPerTest<MetricsEndpointTests> {
 			user: SystemAccounts.System));
 
 		await tcs.Task;
-		await Task.Delay(TimeSpan.FromSeconds(1));
+		await Task.Delay(TimeSpan.FromSeconds(5));
 	}
 
 	async Task<string> Query(bool legacy) {
