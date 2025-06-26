@@ -98,7 +98,8 @@ public class MultiStreamAppendService : StreamsService.StreamsServiceBase {
 
 			// not supported because writing to a follower to have it forward to the leader is just
 			// a way to accidentally slow down your writes.
-			if (context.RequestHeaders.Get(Constants.Headers.RequiresLeader) is not null) {
+			var requiresLeader = context.RequestHeaders.Get(Constants.Headers.RequiresLeader);
+			if (requiresLeader is not null) {
 				throw new RpcException(new Status(
 					StatusCode.InvalidArgument,
 					"requires-leader is not supported on this API"));
