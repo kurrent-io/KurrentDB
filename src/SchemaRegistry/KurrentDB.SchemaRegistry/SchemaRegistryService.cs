@@ -102,50 +102,54 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             );
         });
 
-    public override async Task<BulkRegisterSchemasResponse> BulkRegisterSchemas(BulkRegisterSchemasRequest cmd, ServerCallContext ctx) {
-        // interesting, we can optimize this by requesting sequence of ids from duck
-        // but if it does not work we loose them... still not sure about this...
-        // need to pay attention to the parallel execution cause it will call the
-        // get next id function multiple times...
+    public override Task<BulkRegisterSchemasResponse> BulkRegisterSchemas(BulkRegisterSchemasRequest cmd, ServerCallContext ctx) {
+	    throw new NotImplementedException("Bulk registration is not implemented yet.");
 
-        // ATTENTION!!! XD
-        // thinking out of the box here!! but we could use duck db with an appender
-        // to generate the ids, and then read from it to actually register the schemas.
-
-        // its true that with guids we have no issues, but yeah a numeric id
-        // is sooo much better...
-
-        var start = TimeProvider.System.GetTimestamp();
-
-        var responses = new ConcurrentBag<CreateSchemaResponse>();
-
-        if (!cmd.KeepOrder) {
-            await Parallel.ForEachAsync(
-                cmd.Requests,
-                ctx.CancellationToken,
-                (request, _) => ProcessBulkRegistration(request, ctx, cmd.StopOnError)
-            );
-        }
-        else {
-            foreach (var request in cmd.Requests)
-                await ProcessBulkRegistration(request, ctx, cmd.StopOnError);
-        }
-
-        var elapsed = TimeProvider.System.GetElapsedTime(start);
-
-        return new BulkRegisterSchemasResponse {
-            Duration  = elapsed.ToDuration(),
-            Responses = { responses }
-        };
-
-        async ValueTask ProcessBulkRegistration(CreateSchemaRequest request, ServerCallContext serverCallContext, bool stopOnError) {
-            try {
-                responses.Add(await CreateSchema(request, serverCallContext));
-            }
-            catch (RpcException rex) when (rex.StatusCode == StatusCode.AlreadyExists && !stopOnError) {
-                // no worries
-            }
-        }
+	    #region implementation
+	    // // interesting, we can optimize this by requesting sequence of ids from duck
+	    // // but if it does not work we loose them... still not sure about this...
+	    // // need to pay attention to the parallel execution cause it will call the
+	    // // get next id function multiple times...
+	    //
+	    // // ATTENTION!!! XD
+	    // // thinking out of the box here!! but we could use duck db with an appender
+	    // // to generate the ids, and then read from it to actually register the schemas.
+	    //
+	    // // its true that with guids we have no issues, but yeah a numeric id
+	    // // is sooo much better...
+	    //
+	    // var start = TimeProvider.System.GetTimestamp();
+	    //
+	    // var responses = new ConcurrentBag<CreateSchemaResponse>();
+	    //
+	    // if (!cmd.KeepOrder) {
+	    //     await Parallel.ForEachAsync(
+	    //         cmd.Requests,
+	    //         ctx.CancellationToken,
+	    //         (request, _) => ProcessBulkRegistration(request, ctx, cmd.StopOnError)
+	    //     );
+	    // }
+	    // else {
+	    //     foreach (var request in cmd.Requests)
+	    //         await ProcessBulkRegistration(request, ctx, cmd.StopOnError);
+	    // }
+	    //
+	    // var elapsed = TimeProvider.System.GetElapsedTime(start);
+	    //
+	    // return new BulkRegisterSchemasResponse {
+	    //     Duration  = elapsed.ToDuration(),
+	    //     Responses = { responses }
+	    // };
+	    //
+	    // async ValueTask ProcessBulkRegistration(CreateSchemaRequest request, ServerCallContext serverCallContext, bool stopOnError) {
+	    //     try {
+	    //         responses.Add(await CreateSchema(request, serverCallContext));
+	    //     }
+	    //     catch (RpcException rex) when (rex.StatusCode == StatusCode.AlreadyExists && !stopOnError) {
+	    //         // no worries
+	    //     }
+	    // }
+	    #endregion
     }
 
     #endregion
@@ -211,9 +215,9 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
                 _                                       => RpcExceptions.Internal(error)
             };
 
-            if (rpcEx.StatusCode == StatusCode.Internal)
-                Logger.LogError(error, "{TraceIdentifier} {CommandType} failed", traceId, request.GetType().Name);
-            else
+            if (rpcEx.StatusCode == StatusCode.Internal) {
+	            Logger.LogError(error, "{TraceIdentifier} {CommandType} failed", traceId, request.GetType().Name);
+            }  else
                 Logger.LogError("{TraceIdentifier} {CommandType} failed: {ErrorMessage}", traceId, request.GetType().Name, error.Message);
 
             throw rpcEx;

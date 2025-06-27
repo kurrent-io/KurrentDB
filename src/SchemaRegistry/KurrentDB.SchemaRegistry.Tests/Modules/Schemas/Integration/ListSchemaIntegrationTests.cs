@@ -14,9 +14,7 @@ using NJsonSchema;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_schemas_with_prefix(CancellationToken cancellationToken) {
 		var prefix = NewPrefix();
 		// Arrange
@@ -75,7 +73,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		listSchemasResponse.Schemas[1].Details.Should().BeEquivalentTo(details2);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_schemas_with_tags(CancellationToken cancellationToken) {
 		var key = Faker.Hacker.Noun();
 		var value = Faker.Database.Engine();
@@ -138,7 +136,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		listSchemasResponse.Schemas[1].Details.Should().BeEquivalentTo(details2);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_registered_schemas_with_tags(CancellationToken cancellationToken) {
 		var schemaName1 = NewSchemaName();
 		var schemaName2 = NewSchemaName();
@@ -195,7 +193,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	}
 
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_registered_schemas_with_version_id(CancellationToken cancellationToken) {
 		var prefix = NewPrefix();
 		var schemaName = NewSchemaName(prefix);
@@ -232,7 +230,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	}
 
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_schema_versions(CancellationToken cancellationToken) {
 		var schemaName = NewSchemaName();
 		var v1 = NewJsonSchemaDefinition();
@@ -266,7 +264,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		schemas[1].SchemaVersionId.Should().Be(registerResult.SchemaVersionId);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_schema_versions_not_found(CancellationToken cancellationToken) {
 		var ex = await FluentActions.Awaiting(async () => await Client.ListSchemaVersionsAsync(
 			new ListSchemaVersionsRequest {
@@ -276,9 +274,13 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		)).Should().ThrowAsync<RpcException>();
 
 		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
+
+		if (ex.Which.StatusCode is StatusCode.Internal) {
+			Serilog.Log.Logger.Error(ex.Which, "Error");
+		}
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_registered_schema_with_version_id_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListRegisteredSchemasAsync(
 			new ListRegisteredSchemasRequest {
@@ -289,7 +291,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		response.Schemas.Should().BeEmpty();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_registered_schema_with_prefix_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListRegisteredSchemasAsync(
 			new ListRegisteredSchemasRequest {
@@ -300,7 +302,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		response.Schemas.Should().BeEmpty();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_registered_schema_with_tags_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListRegisteredSchemasAsync(
 			new ListRegisteredSchemasRequest {
@@ -312,7 +314,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	}
 
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_schemas_with_prefix_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListSchemasAsync(
 			new ListSchemasRequest {
@@ -323,7 +325,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		response.Schemas.Should().BeEmpty();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_schemas_with_tags_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListSchemasAsync(
 			new ListSchemasRequest {

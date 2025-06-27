@@ -12,9 +12,7 @@ using NJsonSchema;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 10_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task registers_new_schema_version_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var prefix = NewSchemaName();
@@ -44,7 +42,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		listRegisteredSchemasResult.Schemas.Last().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_schema_not_found(CancellationToken cancellationToken) {
 		// Arrange
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -58,7 +56,7 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		registerVersionException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_schema_definition_has_not_changed(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();

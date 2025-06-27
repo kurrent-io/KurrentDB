@@ -1,10 +1,10 @@
 using DuckDB.NET.Data;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Kurrent.Quack;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Projectors;
 using Kurrent.Surge.Schema.Validation;
-using KurrentDB.Surge.Testing.Messages.Telemetry;
 using KurrentDB.SchemaRegistry.Data;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
@@ -12,6 +12,7 @@ using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Data;
 
+[NotInParallel]
 public class ProjectionsTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task setup_creates_tables_and_indexes(CancellationToken cancellationToken) {
@@ -60,7 +61,7 @@ public class ProjectionsTests : SchemaApplicationTestFixture {
 			}
 		);
 
-		await projection.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()), record,
+		await projection.ProjectRecord(new ProjectionContext<DuckDBAdvancedConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()), record,
 			cancellationToken));
 
 		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
@@ -106,7 +107,7 @@ public class ProjectionsTests : SchemaApplicationTestFixture {
 			}
 		);
 
-		await projection.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
+		await projection.ProjectRecord(new ProjectionContext<DuckDBAdvancedConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
 			schemaCreatedRecord, cancellationToken));
 
 		var schemaVersionRegisteredRecord = await CreateRecord(
@@ -120,7 +121,7 @@ public class ProjectionsTests : SchemaApplicationTestFixture {
 			}
 		);
 
-		await projection.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
+		await projection.ProjectRecord(new ProjectionContext<DuckDBAdvancedConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
 			schemaVersionRegisteredRecord, cancellationToken));
 
 		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());
@@ -164,12 +165,12 @@ public class ProjectionsTests : SchemaApplicationTestFixture {
 			}
 		);
 
-		await projection.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
+		await projection.ProjectRecord(new ProjectionContext<DuckDBAdvancedConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
 			schemaCreatedRecord, cancellationToken));
 
 		var schemaDeletedRecord = await CreateRecord(new SchemaDeleted { SchemaName = schemaName });
 
-		await projection.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
+		await projection.ProjectRecord(new ProjectionContext<DuckDBAdvancedConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
 			schemaDeletedRecord, cancellationToken));
 
 		var queries = new SchemaQueries(DuckDbConnectionProvider, new NJsonSchemaCompatibilityManager());

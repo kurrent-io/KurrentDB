@@ -1,22 +1,20 @@
 // ReSharper disable ArrangeTypeMemberModifiers
 
-using DuckDB.NET.Data;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
+using Kurrent.Quack;
 using Kurrent.Surge.Projectors;
 using Kurrent.Surge.Schema.Validation;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Data;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
-using NJsonSchema;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Data;
 
+[NotInParallel]
 public class SchemaQueriesTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_schemas_with_name_prefix(CancellationToken cancellationToken) {
 		var foo = NewPrefix();
 		var bar = NewPrefix();
@@ -39,7 +37,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		schema.SchemaName.Should().Be(fooSchemaName);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_schemas_with_tags(CancellationToken cancellationToken) {
 		var fooSchemaName = NewSchemaName(NewPrefix());
 		var barSchemaName = NewSchemaName(NewPrefix());
@@ -64,7 +62,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		schema.SchemaName.Should().Be(barSchemaName);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_all_schema_versions(CancellationToken cancellationToken) {
 		var schemaName = NewSchemaName();
 		var connection = DuckDbConnectionProvider.GetConnection();
@@ -81,7 +79,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		response.Versions.Count.Should().Be(2);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_registered_schemas_multiple_with_version_id(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName1 = NewSchemaName(NewPrefix());
@@ -103,7 +101,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		schema.SchemaVersionId.Should().Be(versionId);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task list_registered_schemas_multiple_with_tags(CancellationToken cancellationToken) {
 		var schemaName1 = NewSchemaName(NewPrefix());
 		var schemaName2 = NewSchemaName(NewPrefix());
@@ -134,7 +132,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		schema.Tags["foo"].Should().Be("bar");
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task lookup_schema_name(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
@@ -150,7 +148,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		response.SchemaName.Should().Be(schemaName);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task check_schema_compatibility_should_be_compatible(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
@@ -177,7 +175,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		response.Success.Should().NotBeNull();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task get_schema(CancellationToken cancellationToken) {
 		var versionId1 = Guid.NewGuid().ToString();
 		var versionId2 = Guid.NewGuid().ToString();
@@ -197,7 +195,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		response.Schema.LatestSchemaVersion.Should().Be(24);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task get_schema_version(CancellationToken cancellationToken) {
 		var versionId1 = Guid.NewGuid().ToString();
 		var versionId2 = Guid.NewGuid().ToString();
@@ -215,7 +213,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		response.Version.SchemaVersionId.Should().Be(versionId2);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task get_schema_version_with_version_number(CancellationToken cancellationToken) {
 		var versionId1 = Guid.NewGuid().ToString();
 		var versionId2 = Guid.NewGuid().ToString();
@@ -257,7 +255,8 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 			}
 		);
 
-		await projections.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()), record,
+		await projections.ProjectRecord(new ProjectionContext<DuckDBAdvancedConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
+			record,
 			cancellationToken));
 	}
 
@@ -280,7 +279,8 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 			}
 		);
 
-		await projections.ProjectRecord(new ProjectionContext<DuckDBConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()), record,
+		await projections.ProjectRecord(new ProjectionContext<DuckDBAdvancedConnection>(_ => ValueTask.FromResult(DuckDbConnectionProvider.GetConnection()),
+			record,
 			cancellationToken));
 	}
 }

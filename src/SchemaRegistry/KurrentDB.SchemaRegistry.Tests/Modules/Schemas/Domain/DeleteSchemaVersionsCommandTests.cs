@@ -3,35 +3,44 @@
 
 // ReSharper disable ArrangeTypeMemberModifiers
 
-using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
-using KurrentDB.Surge.Testing.Messages.Telemetry;
-using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
-using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
+using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Services.Domain;
+using KurrentDB.SchemaRegistry.Tests.Fixtures;
+using NJsonSchema;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
-using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
-
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task deletes_schema_versions_successfully_in_none_compatibility_mode(CancellationToken cancellationToken) {
+	[Test]
+	[Arguments(CompatibilityMode.None)]
+	[Arguments(CompatibilityMode.Backward)]
+	public async Task delete_versions_successfully(CompatibilityMode compatibility, CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var definition = ByteString.CopyFromUtf8(Faker.Lorem.Text());
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
+		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName, definition: definition), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = v1.ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaDataFormat.Json,
+					Compatibility = compatibility,
+				}
+			},
+			cancellationToken
+		);
 
-		// Register additional schema versions
 		await Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken
 		);
@@ -39,7 +48,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		var version3Result = await Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
+				SchemaDefinition = v3.ToByteString()
 			},
 			cancellationToken
 		);
@@ -70,116 +79,211 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 		versionsDeleted.LatestSchemaVersionNumber.Should().Be(expectedEvent.LatestSchemaVersionNumber);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_trying_to_delete_nonexistent_versions(CancellationToken cancellationToken) {
+	[Test]
+	public async Task throws_not_found_for_non_existing_schema(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema with compatibility mode None
 		await Apply(
-			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.None),
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = v1.ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaDataFormat.Json,
+					Compatibility = CompatibilityMode.None,
+				}
+			},
 			cancellationToken
 		);
 
-		// Register one additional schema version
 		await Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken
 		);
 
-		var nonExistentVersions = new List<int> { 3, 4 }; // These versions don't exist
-
-		// Act
-		var deleteVersions = async () => await Apply(
-			new DeleteSchemaVersionsRequest {
-				SchemaName = schemaName,
-				Versions = { nonExistentVersions }
+		await Apply(
+			new DeleteSchemaRequest {
+				SchemaName = schemaName
 			},
 			cancellationToken
 		);
 
-		// Assert
-		await deleteVersions.ShouldThrowAsync<DomainExceptions.EntityException>()
-			.WithMessage($"*Schema {schemaName} does not have versions: 3, 4*");
+		// Act & Assert
+		var action = async () =>
+			await Apply(
+				new DeleteSchemaVersionsRequest {
+					SchemaName = schemaName,
+					Versions = { 1 }
+				},
+				cancellationToken
+			);
+
+		await action.Should().ThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_trying_to_delete_all_versions(CancellationToken cancellationToken) {
+	[Test]
+	public async Task throws_precondition_when_deleting_all_versions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
 
-		// Create initial schema with compatibility mode None
 		await Apply(
-			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.None),
-			cancellationToken
-		);
-
-		// Act
-		var deleteVersions = async () => await Apply(
-			new DeleteSchemaVersionsRequest {
+			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				Versions = { 1 } // Trying to delete the only version
+				SchemaDefinition = v1.ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaDataFormat.Json,
+					Compatibility = CompatibilityMode.None,
+				}
 			},
 			cancellationToken
 		);
 
-		// Assert
-		await deleteVersions.ShouldThrowAsync<DomainExceptions.EntityException>()
-			.WithMessage($"*Cannot delete all versions of schema {schemaName}*");
+		// Act & Assert
+		var action = async () =>
+			await Apply(
+				new DeleteSchemaVersionsRequest {
+					SchemaName = schemaName,
+					Versions = { 1 }
+				},
+				cancellationToken
+			);
+
+		var exception = await action.Should().ThrowAsync<DomainExceptions.EntityException>();
+		exception.WithMessage($"*Cannot delete all versions of schema {schemaName}*");
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_trying_to_delete_latest_version_in_backward_compatibility_mode(CancellationToken cancellationToken) {
+	[Test]
+	[Arguments(CompatibilityMode.Forward)]
+	[Arguments(CompatibilityMode.Full)]
+	public async Task throws_precondition_for_restricted_compatibility_modes(
+		CompatibilityMode compatibility, CancellationToken cancellationToken
+	) {
 		// Arrange
 		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Create initial schema with backward compatibility mode
 		await Apply(
-			CreateSchemaRequest(schemaName: schemaName, compatibility: CompatibilityMode.Backward),
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = v1.ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaDataFormat.Json,
+					Compatibility = compatibility
+				}
+			},
 			cancellationToken
 		);
 
-		// Register additional schema version
 		await Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken
 		);
 
-		// Act
-		var deleteLatestVersion = async () => await Apply(
-			new DeleteSchemaVersionsRequest {
-				SchemaName = schemaName,
-				Versions = { 2 } // Trying to delete the latest version
-			},
-			cancellationToken
-		);
+		// Act & Assert
+		var action = async () =>
+			await Apply(
+				new DeleteSchemaVersionsRequest {
+					SchemaName = schemaName,
+					Versions = { 1 }
+				},
+				cancellationToken
+			);
 
-		// Assert
-		await deleteLatestVersion.ShouldThrowAsync<DomainExceptions.EntityException>()
-			.WithMessage($"*Cannot delete the latest version of schema {schemaName} in Backward compatibility mode*");
+		var exception = await action.Should().ThrowAsync<DomainExceptions.EntityException>();
+		exception.WithMessage($"*Cannot delete versions of schema {schemaName} in {compatibility} compatibility mode*");
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task throws_exception_when_schema_is_not_found(CancellationToken cancellationToken) {
+	[Test]
+	public async Task throws_precondition_when_deleting_latest_in_backward_mode(CancellationToken cancellationToken) {
 		// Arrange
-		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
+		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Act
-		var deleteVersions = async () => await Apply(
-			new DeleteSchemaVersionsRequest {
-				SchemaName = nonExistentSchemaName,
-				Versions = { 1 }
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = v1.ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaDataFormat.Json,
+					Compatibility = CompatibilityMode.Backward
+				}
 			},
 			cancellationToken
 		);
 
-		// Assert
-		await deleteVersions.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
+		await Apply(
+			new RegisterSchemaVersionRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = v2.ToByteString()
+			},
+			cancellationToken
+		);
+
+		// Act & Assert
+		var action = async () =>
+			await Apply(
+				new DeleteSchemaVersionsRequest {
+					SchemaName = schemaName,
+					Versions = { 2 }
+				},
+				cancellationToken
+			);
+
+		var exception = await action.Should().ThrowAsync<DomainExceptions.EntityException>();
+		exception.WithMessage($"*Cannot delete the latest version of schema {schemaName} in Backward compatibility mode*");
+	}
+
+	[Test]
+	public async Task throws_precondition_for_non_existing_versions(CancellationToken cancellationToken) {
+		// Arrange
+		var schemaName = NewSchemaName();
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
+
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = v1.ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaDataFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
+
+		await Apply(
+			new RegisterSchemaVersionRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = v2.ToByteString()
+			},
+			cancellationToken
+		);
+
+		var nonExistentVersions = new List<int> { 3, 4 };
+
+		// Act & Assert
+		var action = async () =>
+			await Apply(
+				new DeleteSchemaVersionsRequest {
+					SchemaName = schemaName,
+					Versions = { nonExistentVersions }
+				},
+				cancellationToken
+			);
+
+		var exception = await action.Should().ThrowAsync<DomainExceptions.EntityException>();
+		exception.WithMessage($"*Schema {schemaName} does not have versions: 3, 4*");
 	}
 }

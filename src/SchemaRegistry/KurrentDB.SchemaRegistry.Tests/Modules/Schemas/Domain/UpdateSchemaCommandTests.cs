@@ -15,18 +15,23 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task updates_schema_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var originalDescription = Faker.Lorem.Sentence();
 		var newDescription = Faker.Lorem.Sentence();
 
-		// Create initial schema
 		await Apply(
-			CreateSchemaRequest(schemaName: schemaName, description: originalDescription),
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None,
+					Description = originalDescription
+				}
+			},
 			cancellationToken
 		);
 
@@ -51,14 +56,20 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		descriptionUpdated.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.UpdatedAt));
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		// Create and then delete schema
 		await Apply(
-			CreateSchemaRequest(schemaName: schemaName),
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
 			cancellationToken
 		);
 
@@ -78,14 +89,20 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		await updateSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_update_mask_contains_unknown_field(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		// Create initial schema
 		await Apply(
-			CreateSchemaRequest(schemaName: schemaName),
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
 			cancellationToken
 		);
 
@@ -105,16 +122,21 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, NotModifiableTestCases]
-	[Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_update_non_modifiable_fields(
 		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
 	) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		// Create initial schema
 		await Apply(
-			CreateSchemaRequest(schemaName: schemaName),
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
 			cancellationToken
 		);
 
@@ -134,20 +156,23 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, UnchangedFieldsTestCases]
-	[Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_fields_has_not_changed(
 		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
 	) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		// Create initial schema
 		await Apply(
-			CreateSchemaRequest(
-				schemaName: schemaName,
-				description: schemaDetails.Description,
-				tags: new Dictionary<string, string>(schemaDetails.Tags)
-			),
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None,
+					Description = schemaDetails.Description,
+					Tags = { schemaDetails.Tags }
+				}
+			},
 			cancellationToken
 		);
 

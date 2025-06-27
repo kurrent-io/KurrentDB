@@ -3,89 +3,58 @@
 
 // ReSharper disable ArrangeTypeMemberModifiers
 
-using Google.Protobuf;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
-using KurrentDB.Surge.Testing.Messages.Telemetry;
-using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
-using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
+using NJsonSchema;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 10_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task deletes_schema_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var prefix = NewPrefix();
 		var schemaName = NewSchemaName(prefix);
-		var v1 = NewJsonSchemaDefinition();
 
-		await CreateSchema(schemaName, v1, cancellationToken);
+		await CreateSchema(schemaName, cancellationToken);
 
 		// Act
 		var deleteSchemaResult = await DeleteSchema(schemaName, cancellationToken);
 
-		var listSchemasResult = await Client.ListSchemasAsync(
-			new ListSchemasRequest {
-				SchemaNamePrefix = schemaName
-			},
-			cancellationToken: cancellationToken
-		);
-
 		// Assert
+		var listSchemasResult = await ListSchemas(prefix, cancellationToken);
+
 		deleteSchemaResult.Should().NotBeNull();
 		listSchemasResult.Should().NotBeNull();
 		listSchemasResult.Schemas.Should().BeEmpty();
 	}
 
-	// [Test, Timeout(TestTimeoutMs)]
-	// public async Task deletes_schema_with_multiple_versions_successfully(CancellationToken cancellationToken) {
-	// 	// Arrange
-	// 	var schemaName = NewSchemaName();
-	// 	await CreateSchemaAsync(schemaName: schemaName, cancellationToken: cancellationToken);
-	//
-	// 	// Register additional versions
-	// 	await Client.RegisterSchemaVersionAsync(
-	// 		new RegisterSchemaVersionRequest {
-	// 			SchemaName = schemaName,
-	// 			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
-	// 		},
-	// 		cancellationToken: cancellationToken
-	// 	);
-	//
-	// 	await Client.RegisterSchemaVersionAsync(
-	// 		new RegisterSchemaVersionRequest {
-	// 			SchemaName = schemaName,
-	// 			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text())
-	// 		},
-	// 		cancellationToken: cancellationToken
-	// 	);
-	//
-	// 	// Act
-	// 	var deleteSchemaResult = await Client.DeleteSchemaAsync(
-	// 		new DeleteSchemaRequest { SchemaName = schemaName },
-	// 		cancellationToken: cancellationToken
-	// 	);
-	//
-	// 	var listSchemasResult = await Client.ListSchemasAsync(
-	// 		new ListSchemasRequest {
-	// 			SchemaNamePrefix = schemaName
-	// 		},
-	// 		cancellationToken: cancellationToken
-	// 	);
-	//
-	//
-	// 	// Assert
-	// 	deleteSchemaResult.Should().NotBeNull();
-	// 	listSchemasResult.Should().NotBeNull();
-	// 	listSchemasResult.Schemas.Should().BeEmpty();
-	// }
+	[Test]
+	public async Task deletes_schema_with_multiple_versions_successfully(CancellationToken cancellationToken) {
+		// Arrange
+		var prefix = NewPrefix();
+		var schemaName = NewSchemaName(prefix);
 
-	[Test, Timeout(TestTimeoutMs)]
+		var v1 = NewJsonSchemaDefinition();
+		var v2 = v1.AddOptional("email", JsonObjectType.String);
+		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
+
+		await CreateSchema(schemaName, v1, cancellationToken);
+		await RegisterSchemaVersion(schemaName, v2, cancellationToken);
+		await RegisterSchemaVersion(schemaName, v3, cancellationToken);
+
+		// Act
+		var deleteSchemaResult = await DeleteSchema(schemaName, cancellationToken);
+
+		// Assert
+		var listSchemasResult = await ListSchemas(prefix, cancellationToken);
+
+		deleteSchemaResult.Should().NotBeNull();
+		listSchemasResult.Should().NotBeNull();
+		listSchemasResult.Schemas.Should().BeEmpty();
+	}
+
+	[Test]
 	public async Task throws_exception_when_schema_not_found(CancellationToken cancellationToken) {
 		// Arrange
 		var nonExistentSchemaName = NewSchemaName();

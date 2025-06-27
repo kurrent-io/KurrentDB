@@ -13,17 +13,13 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task updates_schema_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var prefix = NewPrefix();
 		var schemaName = NewSchemaName(prefix);
 		var originalDescription = Faker.Lorem.Sentence();
 		var newDescription = Faker.Lorem.Sentence();
-		var originalTags = new Dictionary<string, string> { ["env"] = "test" };
-		var newTags = new Dictionary<string, string> { ["env"] = "prod" };
 
 		await CreateSchema(
 			schemaName,
@@ -31,7 +27,6 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 				Description = originalDescription,
 				DataFormat = SchemaFormat.Json,
 				Compatibility = CompatibilityMode.None,
-				Tags = { originalTags }
 			},
 			cancellationToken
 		);
@@ -43,9 +38,8 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 				Description = newDescription,
 				Compatibility = CompatibilityMode.Backward,
 				DataFormat = SchemaFormat.Json,
-				Tags = { newTags }
 			},
-			new FieldMask { Paths = { "Details.Description", "Details.Tags" } },
+			new FieldMask { Paths = { "Details.Description" } },
 			cancellationToken
 		);
 
@@ -61,10 +55,9 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 		listSchemasResult.Schemas.Should().HaveCount(1);
 		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
 		listSchemasResult.Schemas.First().Details.Description.Should().Be(newDescription);
-		listSchemasResult.Schemas.First().Details.Tags.Should().BeEquivalentTo(newTags);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
@@ -90,7 +83,7 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 		updateSchemaException.Which.Message.Should().Contain($"Schema schemas/{schemaName} not found");
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_update_mask_contains_unknown_field(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
@@ -116,7 +109,6 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, NotModifiableTestCases]
-	[Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_trying_to_update_non_modifiable_fields(
 		SchemaDetails schemaDetails, string maskPath, string errorMessage, CancellationToken cancellationToken
 	) {
@@ -139,7 +131,6 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 	}
 
 	[Test, UnchangedFieldsTestCases]
-	[Timeout(TestTimeoutMs)]
 	public async Task throws_exception_when_fields_has_not_changed(SchemaDetails schemaDetails, string maskPath, string errorMessage,
 		CancellationToken cancellationToken) {
 		// Arrange

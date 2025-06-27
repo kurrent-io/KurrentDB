@@ -17,14 +17,11 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task deletes_schema_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		// Create initial schema
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
@@ -55,12 +52,11 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		schemaDeleted.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.DeletedAt));
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task deletes_schema_with_multiple_versions_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		// Create initial schema
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
@@ -75,7 +71,6 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		// Register additional versions
 		await Apply(
 			new RegisterSchemaVersionRequest {
 				SchemaName = schemaName,
@@ -108,7 +103,7 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		schemaDeleted.Should().BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.DeletedAt));
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_schema_not_found(CancellationToken cancellationToken) {
 		// Arrange
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
@@ -123,12 +118,11 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 		await deleteSchema.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_schema_is_already_deleted(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		// Create schema
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
@@ -143,13 +137,12 @@ public class DeleteSchemaCommandTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		// Delete schema first time
 		await Apply(
 			new DeleteSchemaRequest { SchemaName = schemaName },
 			cancellationToken
 		);
 
-		// Act - Try to delete again
+		// Act
 		var deleteSchema = async () => await Apply(
 			new DeleteSchemaRequest { SchemaName = schemaName },
 			cancellationToken

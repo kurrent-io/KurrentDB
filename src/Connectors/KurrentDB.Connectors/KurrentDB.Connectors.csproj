@@ -24,7 +24,7 @@
 
 	<!-- Required packages -->
 	<ItemGroup>
-		<PackageReference Include="Kurrent.Surge.Core" Version="1.1.0-alpha" />
+		<PackageReference Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1" />
 		<PackageReference Include="Kurrent.Surge.DataProtection" Version="1.1.0-alpha" />
 		<PackageReference Include="Kurrent.Connectors.Elasticsearch" Version="1.1.0-alpha" />
 		<PackageReference Include="Kurrent.Connectors.Http" Version="1.1.0-alpha" />

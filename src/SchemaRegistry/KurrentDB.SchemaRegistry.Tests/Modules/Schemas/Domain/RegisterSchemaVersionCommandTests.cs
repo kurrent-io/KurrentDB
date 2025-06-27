@@ -17,15 +17,23 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task registers_new_schema_version_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
 
 		var expectedEvent = new SchemaVersionRegistered {
 			SchemaName = schemaName,
@@ -51,14 +59,24 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			.BeEquivalentTo(expectedEvent, o => o.Excluding(e => e.SchemaVersionId));
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task registers_multiple_schema_versions_with_incrementing_version_numbers(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var secondDefinition = Faker.Lorem.Text();
 		var thirdDefinition = Faker.Lorem.Text();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
 
 		// Act
 		var secondResult = await Apply(
@@ -106,13 +124,23 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await registerVersion.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_schema_is_deleted(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
 
 		await Apply(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken);
 
@@ -129,13 +157,23 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await registerVersion.ShouldThrowAsync<DomainExceptions.EntityNotFound>();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task throws_exception_when_schema_definition_has_not_changed(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var schemaDefinition = NewJsonSchemaDefinition();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName, definition: schemaDefinition.ToByteString()), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = schemaDefinition.ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
 
 		// Act
 		var registerVersion = async () => await Apply(
@@ -151,13 +189,23 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 			.WithMessage("Schema definition has not changed");
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task preserves_original_data_format_in_registered_version(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName, dataFormat: SchemaFormat.Protobuf), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Protobuf,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
 
 		// Act
 		var result = await Apply(
@@ -173,14 +221,24 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.DataFormat.Should().Be(SchemaFormat.Protobuf);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task generates_unique_schema_version_ids_for_different_versions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var secondDefinition = Faker.Lorem.Text();
 		var thirdDefinition = Faker.Lorem.Text();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
 
 		// Act
 		var secondResult = await Apply(
@@ -208,12 +266,22 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		secondVersionId.Should().NotBe(thirdVersionId);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task registers_version_with_empty_schema_definition(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
 
 		// Act
 		var result = await Apply(
@@ -230,7 +298,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.VersionNumber.Should().Be(2);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	[Arguments(SchemaFormat.Json)]
 	[Arguments(SchemaFormat.Protobuf)]
 	[Arguments(SchemaFormat.Avro)]
@@ -242,7 +310,17 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName, dataFormat: dataFormat), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = dataFormat,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
 
 		// Act
 		var result = await Apply(
@@ -259,7 +337,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.VersionNumber.Should().Be(2);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	[Arguments(CompatibilityMode.Backward)]
 	[Arguments(CompatibilityMode.Forward)]
 	[Arguments(CompatibilityMode.Full)]
@@ -271,7 +349,17 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName, compatibility: compatibilityMode), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = compatibilityMode
+				}
+			},
+			cancellationToken
+		);
 
 		// Act
 		var result = await Apply(
@@ -288,14 +376,24 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		versionRegistered.VersionNumber.Should().Be(2);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task sets_registered_at_timestamp_correctly(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var newDefinition = Faker.Lorem.Text();
 		var beforeRegistration = TimeProvider.GetUtcNow();
 
-		await Apply(CreateSchemaRequest(schemaName: schemaName), cancellationToken);
+		await Apply(
+			new CreateSchemaRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				Details = new SchemaDetails {
+					DataFormat = SchemaFormat.Json,
+					Compatibility = CompatibilityMode.None
+				}
+			},
+			cancellationToken
+		);
 
 		// Act
 		var result = await Apply(

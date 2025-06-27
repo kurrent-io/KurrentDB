@@ -10,6 +10,8 @@ using Microsoft.Extensions.Time.Testing;
 using TUnit.Core.Interfaces;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 
+[assembly: Timeout(20_000)]
+
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 
 public abstract class SchemaRegistryServerTestFixture : ITestStartEventReceiver, ITestEndEventReceiver {

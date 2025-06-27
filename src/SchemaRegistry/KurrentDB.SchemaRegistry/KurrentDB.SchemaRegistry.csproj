@@ -14,8 +14,8 @@
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.64.0" />
     <PackageReference Include="Kurrent.Quack" Version="0.0.0-alpha.0.13" />
-    <PackageReference Include="Kurrent.Surge.DuckDB" Version="1.1.0-alpha" />
-    <PackageReference Include="Kurrent.Surge.Core" Version="1.1.0-alpha" />
+    <PackageReference Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1" />
+    <PackageReference Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1" />
     <PackageReference Include="NJsonSchema" Version="11.2.0" />
 
 		<!-- Required to remove conflicts -->
@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\KurrentDB.Surge\KurrentDB.Surge.csproj" />
+<!--    <ProjectReference Include="..\..\Surge\src\Framework\src\Kurrent.Surge.DuckDB\Kurrent.Surge.DuckDB.csproj" />-->
     <ProjectReference Include="..\KurrentDB.SchemaRegistry.Protocol\KurrentDB.SchemaRegistry.Protocol.csproj" />
   </ItemGroup>
 

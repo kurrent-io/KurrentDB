@@ -6,7 +6,6 @@ using Dapper;
 using DuckDB.NET.Data;
 using Google.Protobuf.Collections;
 using Humanizer;
-using Kurrent.Quack;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema.Validation;
 using KurrentDB.Protocol.Registry.V2;

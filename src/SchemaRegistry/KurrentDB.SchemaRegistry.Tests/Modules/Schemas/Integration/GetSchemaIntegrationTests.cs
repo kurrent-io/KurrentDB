@@ -13,9 +13,9 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
 
-	[Test, Timeout(TestTimeoutMs)]
+
+	[Test]
 	public async Task get_newly_created_schema(CancellationToken cancellationToken) {
 		// Arrange
 		var expected = new SchemaCreated {
@@ -64,7 +64,7 @@ public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
 		getSchemaResult.Schema.Details.Should().BeEquivalentTo(details);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task get_schema_not_found(CancellationToken cancellationToken) {
 		var getSchema = async () => await Client.GetSchemaAsync(
 			new GetSchemaRequest {

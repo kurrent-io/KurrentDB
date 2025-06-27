@@ -314,12 +314,12 @@ public class SchemaApplication : EntityApplication<SchemaEntity> {
                     .Select(x => x.SchemaVersionId)
                     .ToList();
 
-                if (state.Compatibility == CompatibilityMode.Backward) {
+                if (state.Compatibility is CompatibilityMode.Backward) {
                     var latestVersionNumber = state.LatestVersion.VersionNumber;
                     if (cmd.Versions.Contains(latestVersionNumber))
                         throw new DomainExceptions.EntityException($"Cannot delete the latest version of schema {state.SchemaName} in Backward compatibility mode");
                 }
-                else if (state.Compatibility == CompatibilityMode.Forward || state.Compatibility == CompatibilityMode.Full) {
+                else if (state.Compatibility is CompatibilityMode.Forward or CompatibilityMode.Full) {
                     // Prevent deletion of any versions in Forward or Full compatibility mode
                     throw new DomainExceptions.EntityException($"Cannot delete versions of schema {state.SchemaName} in {state.Compatibility} compatibility mode");
                 }

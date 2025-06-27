@@ -3,7 +3,6 @@
 
 // ReSharper disable ArrangeTypeMemberModifiers
 
-using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
@@ -12,9 +11,7 @@ using Shouldly;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task lookup_schema_name(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
@@ -44,7 +41,7 @@ public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
 		lookupSchemaNameResponse.SchemaName.Should().Be(schemaName);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task lookup_schema_name_not_found(CancellationToken cancellationToken) {
 		var response = async () => await Client.LookupSchemaNameAsync(
 			new LookupSchemaNameRequest {

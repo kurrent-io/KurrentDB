@@ -15,9 +15,7 @@ using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class CreateSchemaIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
-
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task registers_initial_version_of_new_schema(CancellationToken cancellationToken) {
 		// Arrange
 		var expectedEvent = new SchemaCreated {

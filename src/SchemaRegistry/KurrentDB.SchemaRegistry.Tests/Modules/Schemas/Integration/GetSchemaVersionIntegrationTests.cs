@@ -9,9 +9,9 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
-	const int TestTimeoutMs = 20_000;
 
-	[Test, Timeout(TestTimeoutMs)]
+
+	[Test]
 	public async Task get_schema_version(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
@@ -40,7 +40,7 @@ public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
 		getSchemaResponse.Version.VersionNumber.Should().Be(result.VersionNumber);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task get_schema_version_by_id(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
@@ -68,7 +68,7 @@ public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
 		getSchemaResponse.Version.VersionNumber.Should().Be(result.VersionNumber);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task get_schema_version_with_stream_name_not_found(CancellationToken cancellationToken) {
 		var ex = await FluentActions.Awaiting(async () => await Client.GetSchemaVersionAsync(
 			new GetSchemaVersionRequest {
@@ -81,7 +81,7 @@ public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
 		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
+	[Test]
 	public async Task get_schema_version_with_version_id_not_found(CancellationToken cancellationToken) {
 		var ex = await FluentActions.Awaiting(async () => await Client.GetSchemaVersionByIdAsync(
 			new GetSchemaVersionByIdRequest {

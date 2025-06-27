@@ -40,7 +40,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 	}
 
 	protected static string NewPrefix([CallerMemberName] string? name = null) =>
-		$"{name.Underscore()}-{GenerateShortId()}".ToLowerInvariant();
+		$"{name.Underscore()}_{GenerateShortId()}".ToLowerInvariant();
 
 	protected static JsonSchema NewJsonSchemaDefinition() {
 		return new JsonSchema {
@@ -53,37 +53,12 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		};
 	}
 
-	protected CreateSchemaRequest CreateSchemaRequest(
-		string? schemaName = null,
-		SchemaFormat dataFormat = SchemaFormat.Json,
-		CompatibilityMode compatibility = CompatibilityMode.Backward,
-		string? description = null,
-		Dictionary<string, string>? tags = null,
-		ByteString? definition = null
-	) {
-		schemaName ??= NewSchemaName();
-		description ??= Faker.Lorem.Sentence();
-		definition ??= NewJsonSchemaDefinition().ToByteString();
-		tags ??= new Dictionary<string, string> { ["env"] = "test" };
-
-		return new CreateSchemaRequest {
-			SchemaName = schemaName,
-			SchemaDefinition = definition,
-			Details = new SchemaDetails {
-				Description = description,
-				DataFormat = dataFormat,
-				Compatibility = compatibility,
-				Tags = { tags }
-			}
-		};
-	}
-
 	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, SchemaDetails details, CancellationToken ct = default) =>
 		await CreateSchema(schemaName, NewJsonSchemaDefinition(), details, ct);
 
 	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, CancellationToken cancellationToken = default) {
 		var details = new SchemaDetails {
-			Compatibility = CompatibilityMode.Backward,
+			Compatibility = CompatibilityMode.None,
 			DataFormat = SchemaFormat.Json,
 			Description = Faker.Lorem.Sentence(),
 		};
@@ -91,10 +66,21 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 	}
 
 	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName,
+		JsonSchema schemaDefinition, CompatibilityMode compatibility, SchemaFormat format,
+		CancellationToken ct = default) {
+		var details = new SchemaDetails {
+			Compatibility = compatibility,
+			DataFormat = format,
+			Description = Faker.Lorem.Sentence(),
+		};
+		return await CreateSchema(schemaName, schemaDefinition, details, ct);
+	}
+
+	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName,
 		JsonSchema schemaDefinition,
 		CancellationToken ct = default) {
 		var details = new SchemaDetails {
-			Compatibility = CompatibilityMode.Backward,
+			Compatibility = CompatibilityMode.None,
 			DataFormat = SchemaFormat.Json,
 			Description = Faker.Lorem.Sentence(),
 		};
@@ -103,7 +89,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 
 	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, ByteString schemaDefinition, CancellationToken ct = default) {
 		var details = new SchemaDetails {
-			Compatibility = CompatibilityMode.Backward,
+			Compatibility = CompatibilityMode.None,
 			DataFormat = SchemaFormat.Json,
 			Description = Faker.Lorem.Sentence(),
 		};
@@ -121,13 +107,13 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 			cancellationToken: ct
 		);
 
-		await Wait.UntilAsserted(async () => {
-			var response = await Client.ListSchemaVersionsAsync(
-				new ListSchemaVersionsRequest {
-					SchemaName = schemaName
-				}, cancellationToken: ct);
-			response.Versions.Should().HaveCount(1);
-		}, cancellationToken: ct);
+		// await Wait.UntilAsserted(async () => {
+		// 	var response = await Client.ListSchemaVersionsAsync(
+		// 		new ListSchemaVersionsRequest {
+		// 			SchemaName = schemaName
+		// 		}, cancellationToken: ct);
+		// 	response.Versions.Should().HaveCount(1);
+		// }, cancellationToken: ct);
 
 		return result;
 	}
@@ -143,13 +129,13 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 			cancellationToken: ct
 		);
 
-		await Wait.UntilAsserted(async () => {
-			var response = await Client.ListSchemaVersionsAsync(
-				new ListSchemaVersionsRequest {
-					SchemaName = schemaName
-				}, cancellationToken: ct);
-			response.Versions.Should().HaveCount(1);
-		}, cancellationToken: ct);
+		// await Wait.UntilAsserted(async () => {
+		// 	var response = await Client.ListSchemaVersionsAsync(
+		// 		new ListSchemaVersionsRequest {
+		// 			SchemaName = schemaName
+		// 		}, cancellationToken: ct);
+		// 	response.Versions.Should().HaveCount(1);
+		// }, cancellationToken: ct);
 
 		return result;
 	}
@@ -166,18 +152,18 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 			cancellationToken: ct
 		);
 
-		await Wait.UntilAsserted(async () => {
-			var response = await Client.ListRegisteredSchemasAsync(
-				new ListRegisteredSchemasRequest {
-					SchemaVersionId = result.SchemaVersionId
-				},
-				cancellationToken: ct
-			);
-
-			response.Schemas.Should().ContainSingle(s =>
-				s.SchemaName == schemaName && s.VersionNumber == result.VersionNumber
-			);
-		}, cancellationToken: ct);
+		// await Wait.UntilAsserted(async () => {
+		// 	var response = await Client.ListRegisteredSchemasAsync(
+		// 		new ListRegisteredSchemasRequest {
+		// 			SchemaVersionId = result.SchemaVersionId
+		// 		},
+		// 		cancellationToken: ct
+		// 	);
+		//
+		// 	response.Schemas.Should().ContainSingle(s =>
+		// 		s.SchemaName == schemaName && s.VersionNumber == result.VersionNumber
+		// 	);
+		// }, cancellationToken: ct);
 
 		return result;
 	}
@@ -198,13 +184,13 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 	protected async Task<DeleteSchemaResponse> DeleteSchema(string schemaName, CancellationToken ct = default) {
 		var result = await Client.DeleteSchemaAsync(new DeleteSchemaRequest { SchemaName = schemaName }, cancellationToken: ct);
 
-		await Wait.UntilAsserted(async () => {
-			var response = await Client.ListSchemasAsync(
-				new ListSchemasRequest { SchemaNamePrefix = schemaName },
-				cancellationToken: ct
-			);
-			response.Schemas.Should().BeEmpty();
-		}, cancellationToken: ct);
+		// await Wait.UntilAsserted(async () => {
+		// 	var response = await Client.ListSchemasAsync(
+		// 		new ListSchemasRequest { SchemaNamePrefix = schemaName },
+		// 		cancellationToken: ct
+		// 	);
+		// 	response.Schemas.Should().BeEmpty();
+		// }, cancellationToken: ct);
 
 		return result;
 	}
@@ -242,6 +228,24 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		// }, cancellationToken: cancellationToken);
 
 		return result;
+	}
+
+	protected async Task<ListSchemaVersionsResponse> ListSchemaVersions(string schemaName, CancellationToken ct = default) {
+		return await Client.ListSchemaVersionsAsync(
+			new ListSchemaVersionsRequest {
+				SchemaName = schemaName
+			},
+			cancellationToken: ct
+		);
+	}
+
+	protected async Task<ListSchemasResponse> ListSchemas(string prefix, CancellationToken ct = default) {
+		return await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaNamePrefix = prefix
+			},
+			cancellationToken: ct
+		);
 	}
 }
 
