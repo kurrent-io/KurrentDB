@@ -25,7 +25,7 @@ The HTTP endpoint always binds to the IP address configured in the `NodeIp` sett
 When the `NodeIp` setting is not provided, EventStoreDB will use the first available non-loopback address. You can also bind HTTP to all available interfaces using `0.0.0.0` as the setting value. If you do that, you'd need to configure the `NodeHostAdvertiseAs` (previously `ExtHostAdvertiseAs`) setting (read more [here](#network-address-translation)), since `0.0.0.0` is not a valid IP address to connect from the outside world.
 
 ::: warning
-Please note that the `ExtIp` setting has been removed as of version 25.2.0, use the `NodeIp` setting instead.
+Please note that the `ExtIp` setting has been removed as of version 25.0.0, use the `NodeIp` setting instead.
 :::
 
 The default HTTP port is `2113`. Depending on the [security settings](../security/README.md) of the node, it either responds over plain HTTP or via HTTPS. There is no HSTS redirect, so if you try reaching a secure node via HTTP, you can get an empty response.
@@ -41,7 +41,7 @@ You can change the HTTP port using the `NodePort` setting (previously `HttpPort`
 **Default**: `2113`
 
 ::: warning
-Please note that the `HttpPort` setting has been removed as of version 25.2.0, use the `NodePort` setting instead.
+Please note that the `HttpPort` setting has been removed as of version 25.0.0, use the `NodePort` setting instead.
 :::
 
 If your network setup requires any kind of IP address, DNS name and port translation for internal or external communication, you can use available [address translation](#network-address-translation) settings.
@@ -179,7 +179,7 @@ By default, EventStoreDB binds its internal networking on the loopback interface
 If you keep this setting to its default value, cluster nodes won't be able to talk to each other.
 
 ::: warning
-Please note that the `IntIp` setting has been removed as of version 25.2.0, use the `ReplicationIp` setting instead.
+Please note that the `IntIp` setting has been removed as of version 25.0.0, use the `ReplicationIp` setting instead.
 :::
 
 By default, EventStoreDB uses port `1112` for internal TCP. You can change this by specifying the `ReplicationPort` setting (previously `IntTcpPort` setting).
@@ -193,7 +193,7 @@ By default, EventStoreDB uses port `1112` for internal TCP. You can change this 
 **Default**: `1112`
 
 ::: warning
-Please note that the `IntTcpPort` setting has been removed as of version 25.2.0, use the `ReplicationPort` setting instead.
+Please note that the `IntTcpPort` setting has been removed as of version 25.0.0, use the `ReplicationPort` setting instead.
 :::
 
 If your network setup requires any kind of IP address, DNS name and port translation for internal communication, you can use available [address translation](#network-address-translation) settings.
@@ -221,7 +221,7 @@ By default, a cluster node will advertise itself using `NodeIp` and `NodePort`. 
 | Environment variable | `EVENTSTORE_NODE_PORT_ADVERTISE_AS` | 
 
 ::: warning
-Please note that the `HttpPortAdvertiseAs` setting has been removed as of version 25.2.0, use the `NodePortAdvertiseAs` setting instead.
+Please note that the `HttpPortAdvertiseAs` setting has been removed as of version 25.0.0, use the `NodePortAdvertiseAs` setting instead.
 :::
 
 If you want the node to advertise itself using the hostname rather than its IP address, use the `NodeHostAdvertiseAs` setting (previously `ExtHostAdvertiseAs` setting).
@@ -233,7 +233,7 @@ If you want the node to advertise itself using the hostname rather than its IP a
 | Environment variable | `EVENTSTORE_NODE_HOST_ADVERTISE_AS` | 
 
 ::: warning
-Please note that the `ExtHostAdvertiseAs` setting has been removed as of version 25.2.0, use the `NodeHostAdvertiseAs` setting instead.
+Please note that the `ExtHostAdvertiseAs` setting has been removed as of version 25.0.0, use the `NodeHostAdvertiseAs` setting instead.
 :::
 
 ### TCP translations
@@ -247,7 +247,7 @@ TCP ports used for replication can be advertised using custom values:
 | Environment variable | `EVENTSTORE_REPLICATION_TCP_PORT_ADVERTISE_AS` | 
 
 ::: warning
-Please note that the `IntTcpPortAdvertiseAs` setting has been removed as of version 25.2.0, use the `ReplicationTcpPortAdvertiseAs` setting instead.
+Please note that the `IntTcpPortAdvertiseAs` setting has been removed as of version 25.0.0, use the `ReplicationTcpPortAdvertiseAs` setting instead.
 :::
 
 If you want to change how the node TCP address is advertised internally, use the `ReplicationHostAdvertiseAs` setting (previously `IntHostAdvertiseAs` setting). You can use an IP address or a hostname.
@@ -259,7 +259,7 @@ If you want to change how the node TCP address is advertised internally, use the
 | Environment variable | `EVENTSTORE_REPLICATION_HOST_ADVERTISE_AS` | 
 
 ::: warning
-Please note that the `IntHostAdvertiseAs` setting has been removed as of version 25.2.0, use the `ReplicationHostAdvertiseAs` setting instead.
+Please note that the `IntHostAdvertiseAs` setting has been removed as of version 25.0.0, use the `ReplicationHostAdvertiseAs` setting instead.
 :::
 
 ### Advertise to clients
@@ -285,7 +285,7 @@ Specify the advertised HTTP(S) port (previously `AdvertiseHttpPortToClientAs` se
 | Environment variable | `EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS` |
 
 ::: warning
-Please note that the `AdvertiseHttpPortToClientAs` setting has been removed as of version 25.2.0, use the `AdvertiseNodePortToClientAs` setting instead.
+Please note that the `AdvertiseHttpPortToClientAs` setting has been removed as of version 25.0.0, use the `AdvertiseNodePortToClientAs` setting instead.
 :::
 
 ## Heartbeat timeouts
@@ -324,7 +324,7 @@ Replication/Internal TCP heartbeat (between cluster nodes):
 **Default**: `700` (ms)
 
 ::: warning
-Please note that the `IntTcpHeartbeatInterval` and `IntTcpHeartbeatTimeout` setting have been removed as of version 25.2.0, use the `ReplicationHeartbeatInterval` and `ReplicationHeartbeatTimeout` setting instead, respectively.
+Please note that the `IntTcpHeartbeatInterval` and `IntTcpHeartbeatTimeout` setting have been removed as of version 25.0.0, use the `ReplicationHeartbeatInterval` and `ReplicationHeartbeatTimeout` setting instead, respectively.
 :::
 
 ### gRPC heartbeats
