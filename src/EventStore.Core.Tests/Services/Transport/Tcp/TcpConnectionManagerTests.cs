@@ -39,7 +39,7 @@ public class TcpConnectionManagerTests {
 		var dummyConnection = new DummyTcpConnection();
 
 		var tcpConnectionManager = new TcpConnectionManager(
-			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(
 				InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),
@@ -81,7 +81,7 @@ public class TcpConnectionManagerTests {
 		}));
 
 		var tcpConnectionManager = new TcpConnectionManager(
-			Guid.NewGuid().ToString(), TcpServiceType.Internal, new ClientTcpDispatcher(2000),
+			Guid.NewGuid().ToString(), TcpServiceType.Internal, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 			publisher, dummyConnection, publisher,
 			new InternalAuthenticationProvider(publisher, new Core.Helpers.IODispatcher(publisher, new NoopEnvelope()),
 				new StubPasswordHashAlgorithm(), 1, false, DefaultData.DefaultUserOptions),
@@ -116,7 +116,7 @@ public class TcpConnectionManagerTests {
 		dummyConnection.PendingSendBytes = _connectionPendingSendBytesThreshold + 1000;
 
 		var tcpConnectionManager = new TcpConnectionManager(
-			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(
 				InMemoryBus.CreateTest(), new Core.Helpers.IODispatcher(new SynchronousScheduler(),
@@ -146,7 +146,7 @@ public class TcpConnectionManagerTests {
 		dummyConnection.PendingSendBytes = 0;
 
 		var tcpConnectionManager = new TcpConnectionManager(
-			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
@@ -179,7 +179,7 @@ public class TcpConnectionManagerTests {
 		dummyConnection.PendingSendBytes = _connectionPendingSendBytesThreshold + 1000;
 
 		var tcpConnectionManager = new TcpConnectionManager(
-			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
@@ -212,7 +212,7 @@ public class TcpConnectionManagerTests {
 		dummyConnection.SendQueueSize = ESConsts.MaxConnectionQueueSize - 1;
 
 		var tcpConnectionManager = new TcpConnectionManager(
-			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),
@@ -245,7 +245,7 @@ public class TcpConnectionManagerTests {
 		dummyConnection.SendQueueSize = ESConsts.MaxConnectionQueueSize + 1;
 
 		var tcpConnectionManager = new TcpConnectionManager(
-			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(2000),
+			Guid.NewGuid().ToString(), TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2000),
 			new SynchronousScheduler(), dummyConnection, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()), null, 1, false, DefaultData.DefaultUserOptions),

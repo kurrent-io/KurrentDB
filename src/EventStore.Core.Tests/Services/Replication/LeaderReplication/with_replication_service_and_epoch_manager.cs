@@ -16,6 +16,7 @@ using EventStore.Core.Services;
 using EventStore.Core.Services.Replication;
 using EventStore.Core.Services.Storage.EpochManager;
 using EventStore.Core.Services.Transport.Tcp;
+using EventStore.Core.Settings;
 using EventStore.Core.Tests.Authentication;
 using EventStore.Core.Tests.Authorization;
 using EventStore.Core.Tests.Helpers;
@@ -116,7 +117,7 @@ public abstract class with_replication_service_and_epoch_manager<TLogFormat, TSt
 		var tcpConn = new DummyTcpConnection() { ConnectionId = replicaId };
 
 		manager = new TcpConnectionManager(
-			"Test Subscription Connection manager", TcpServiceType.External, new ClientTcpDispatcher(2_000),
+			"Test Subscription Connection manager", TcpServiceType.External, new ClientTcpDispatcher(ESConsts.ReadRequestTimeout, 2_000),
 			new SynchronousScheduler(), tcpConn, new SynchronousScheduler(),
 			new InternalAuthenticationProvider(InMemoryBus.CreateTest(),
 				new Core.Helpers.IODispatcher(new SynchronousScheduler(), new NoopEnvelope()),

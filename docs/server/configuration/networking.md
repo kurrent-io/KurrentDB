@@ -247,7 +247,7 @@ TCP ports used for replication can be advertised using custom values:
 | Environment variable | `EVENTSTORE_REPLICATION_TCP_PORT_ADVERTISE_AS` | 
 
 ::: warning
-Please note that the `IntTcpPortAdvertiseAs` setting has been removed as of version 25.2.0, use the `ReplicationTcpPortAdvertiseAs` and `NodeTcpPortAdvertiseAs` setting instead, respectively.
+Please note that the `IntTcpPortAdvertiseAs` setting has been removed as of version 25.2.0, use the `ReplicationTcpPortAdvertiseAs` setting instead.
 :::
 
 If you want to change how the node TCP address is advertised internally, use the `ReplicationHostAdvertiseAs` setting (previously `IntHostAdvertiseAs` setting). You can use an IP address or a hostname.
@@ -390,7 +390,7 @@ Once enabled, the server will log a message similar to the one below:
 [11212, 1,18:44:34.070,INF] "TcpApi" "24.10.0.0" plugin enabled.
 ```
 
-#### Other setting
+#### Other settings
 
 The following options can be set in the json configuration:
 
@@ -398,6 +398,7 @@ The following options can be set in the json configuration:
 2. `NodeHeartbeatInterval` - defaults to: 2000
 3. `NodeTcpPort` - defaults to: 1113
 4. `NodeTcpPortAdvertiseAs` - defaults to: 1113
+5. `TcpReadTimeoutMs` - defaults to 10000. Applies to reads received via the TCP client API. When a read has been in the server queue for longer than this, it will be discarded without being executed. If your TCP clients are configured to timeout after X milliseconds, it is advisable to set this server option to be the same, so that the server will not execute reads that the client is no longer waiting for.
 
 The above default values can be overridden, for example:
 
@@ -408,6 +409,21 @@ TcpPlugin:
   NodeTcpPortAdvertiseAs: 8113
   NodeHeartbeatInterval: 2000
   NodeHeartbeatTimeout: 1000
+  TcpReadTimeoutMs: 2000
+```
+
+The server logs the TcpPlugin configuration on start up, for example:
+
+```
+TcpPlugin Configuration:
+{
+  "EnableExternalTcp": true,
+  "NodeTcpPort": 8113,
+  "NodeTcpPortAdvertiseAs": 8113
+  "NodeHeartbeatInterval": 2000,
+  "NodeHeartbeatTimeout": 1000,
+  "TcpReadTimeoutMs": 2000,
+}
 ```
 
 ### Troubleshooting
