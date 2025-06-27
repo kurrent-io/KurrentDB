@@ -505,6 +505,7 @@ A number of configuration options have been removed as part of this. EventStoreD
 - `NodeHeartbeatTimeout`
 - `NodeTcpPort`
 - `NodeTcpPortAdvertiseAs`
+- `TcpReadTimeoutMs`
 
 #### Stricter node certificate requirements
 
