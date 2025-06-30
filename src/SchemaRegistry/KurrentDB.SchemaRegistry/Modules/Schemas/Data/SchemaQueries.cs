@@ -1,16 +1,14 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+// ReSharper disable ArrangeTypeMemberModifiers
+
 using System.Text.Json;
-using Dapper;
-using DuckDB.NET.Data;
 using Google.Protobuf.Collections;
-using Humanizer;
 using Kurrent.Surge.DuckDB;
 using Kurrent.Surge.Schema.Validation;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Infrastructure.Grpc;
-using Polly;
 using static KurrentDB.SchemaRegistry.Data.SchemaQueriesMapping;
 using SchemaCompatibilityError = KurrentDB.Protocol.Registry.V2.SchemaCompatibilityError;
 using SchemaCompatibilityErrorKind = KurrentDB.Protocol.Registry.V2.SchemaCompatibilityErrorKind;
@@ -21,48 +19,6 @@ namespace KurrentDB.SchemaRegistry.Data;
 public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaCompatibilityManager compatibilityManager) {
     DuckDBConnectionProvider    ConnectionProvider   { get; } = connectionProvider;
     ISchemaCompatibilityManager CompatibilityManager { get; } = compatibilityManager;
-
-    /// <summary>
-    /// Waits until the schema registry has caught up to the specified position represented by a checkpoint value.
-    /// This method monitors the `schemas` or `schema_versions` tables to ensure that a checkpoint value
-    /// greater than or equal to the specified position exists.
-    ///
-    /// NOTE: This method is for tests only.
-    /// </summary>
-    /// <param name="position">
-    /// The checkpoint value representing the position to wait for in the schema registry.
-    /// </param>
-    /// <param name="cancellationToken">
-    /// A token that can be used to propagate notification that the operation should be canceled.
-    /// </param>
-    /// <returns>
-    /// A boolean value indicating whether the schema registry has successfully caught up to the specified checkpoint value.
-    /// </returns>
-    public async Task<bool> WaitUntilCaughtUp(ulong position, CancellationToken cancellationToken) {
-		const string sql =
-			"""
-			SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
-			    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
-			""";
-
-		var connection = ConnectionProvider.GetConnection();
-
-		var parameters = new { checkpoint = position };
-
-		var foreverRetryOnResult = Policy
-			.HandleResult<bool>(exists => !exists)
-			.WaitAndRetryForeverAsync(_ => 100.Milliseconds());
-
-		var retryOnException = Policy<bool>
-			.Handle<DuckDBException>()
-			.WaitAndRetryAsync(5, _ => 100.Milliseconds());
-
-		var retryPolicy = Policy.WrapAsync<bool>(foreverRetryOnResult, retryOnException);
-
-		var exists = await retryPolicy.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
-
-		return exists;
-	}
 
     public async Task<GetSchemaResponse> GetSchema(GetSchemaRequest query, CancellationToken cancellationToken) {
          const string sql =
@@ -186,24 +142,7 @@ public class SchemaQueries(DuckDBConnectionProvider connectionProvider, ISchemaC
             )
             .ToListAsync(cancellationToken);
 
-        return new() { Schemas = { result } };
-
-        // static string BuildSql(ListSchemasRequest query) {
-        //     var expressions = new List<string>();
-        //
-        //     if (query.HasSchemaNamePrefix)
-        //         expressions.Add("schema_name ILIKE $schema_name_prefix");
-        //
-        //     if (query.SchemaTags.Count > 0) {
-        //         expressions.Add("json_contains(tags, $tags)");
-        //     }
-        //
-        //     var filters = expressions.Count > 0
-        //         ? $"WHERE {string.Join(" AND ", expressions)}"
-        //         : "";
-        //
-        //     return $"SELECT * FROM schemas {filters}";
-        // }
+        return new ListSchemasResponse { Schemas = { result } };
     }
 
     public async Task<ListSchemaVersionsResponse> ListSchemaVersions(ListSchemaVersionsRequest query, CancellationToken cancellationToken) {

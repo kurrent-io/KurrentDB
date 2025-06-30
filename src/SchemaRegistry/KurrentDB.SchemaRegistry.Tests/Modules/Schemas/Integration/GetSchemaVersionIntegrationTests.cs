@@ -15,7 +15,7 @@ public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
 	public async Task get_schema_version(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
 		var details = new SchemaDetails {
 			Description = Faker.Lorem.Word(),
@@ -44,7 +44,7 @@ public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
 	public async Task get_schema_version_by_id(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
 		var details = new SchemaDetails {
 			Description = Faker.Lorem.Word(),

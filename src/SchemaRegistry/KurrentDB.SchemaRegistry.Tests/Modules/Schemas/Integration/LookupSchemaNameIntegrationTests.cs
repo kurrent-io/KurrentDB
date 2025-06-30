@@ -15,7 +15,7 @@ public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
 	public async Task lookup_schema_name(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
 		var details = new SchemaDetails {
 			Description = Faker.Lorem.Word(),

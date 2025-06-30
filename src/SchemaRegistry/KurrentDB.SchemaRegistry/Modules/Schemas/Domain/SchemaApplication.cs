@@ -1,3 +1,8 @@
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+// ReSharper disable ConvertIfStatementToReturnStatement
+
 using Eventuous;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Surge.Schema.Validation;
@@ -23,8 +28,7 @@ public static class DictionaryExtensions {
         if (first.Count != second.Count)
             return false;
 
-        return first.All(kvp => second.TryGetValue(kvp.Key, out var value)
-                             && EqualityComparer<TValue>.Default.Equals(kvp.Value, value));
+        return first.All(kvp => second.TryGetValue(kvp.Key, out var value) && EqualityComparer<TValue>.Default.Equals(kvp.Value, value));
     }
 }
 

@@ -14,7 +14,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 	[Test]
 	public async Task check_schema_compatibility_schema_name_not_found(CancellationToken cancellationToken) {
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
 		var ex = await FluentActions.Awaiting(async () =>
 			await CheckSchemaCompatibility(
@@ -33,7 +33,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.Remove("name");
 		var v3 = v2.AddOptional("age", JsonObjectType.String);
 
@@ -55,7 +55,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("gender", JsonObjectType.String)
 			.AddOptional("email", JsonObjectType.String);
 
@@ -81,7 +81,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("address", JsonObjectType.String);
 
 		await CreateSchema(schemaName, v1, CompatibilityMode.Backward, SchemaDataFormat.Json, cancellationToken);
@@ -100,7 +100,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddRequired("email", JsonObjectType.String);
 
 		await CreateSchema(schemaName, v1, CompatibilityMode.Backward, SchemaDataFormat.Json, cancellationToken);
@@ -118,7 +118,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("email", JsonObjectType.String)
 			.AddOptional("phone", JsonObjectType.String);
 
@@ -140,7 +140,7 @@ public class CheckSchemaCompatibilityIntegrationTests : SchemaApplicationTestFix
 		// Arrange
 		var schemaName = NewSchemaName();
 
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.ChangeType("id", JsonObjectType.Integer);
 
 		await CreateSchema(schemaName, v1, CompatibilityMode.Forward, SchemaDataFormat.Json, cancellationToken);

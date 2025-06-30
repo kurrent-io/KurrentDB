@@ -21,7 +21,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	public async Task delete_versions_successfully(CompatibilityMode compatibility, CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
 
@@ -83,7 +83,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	public async Task throws_not_found_for_non_existing_schema(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		await Apply(
@@ -130,7 +130,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	public async Task throws_precondition_when_deleting_all_versions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
 		await Apply(
 			new CreateSchemaRequest {
@@ -166,7 +166,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		await Apply(
@@ -207,7 +207,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	public async Task throws_precondition_when_deleting_latest_in_backward_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		await Apply(
@@ -248,7 +248,7 @@ public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
 	public async Task throws_precondition_for_non_existing_versions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		await Apply(

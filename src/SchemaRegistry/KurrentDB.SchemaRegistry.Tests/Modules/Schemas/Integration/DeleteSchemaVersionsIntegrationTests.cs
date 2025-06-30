@@ -18,7 +18,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 	public async Task delete_versions_successfully(CompatibilityMode compatibility, CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
 
@@ -48,7 +48,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 	public async Task throws_not_found_for_non_existing_schema(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		await CreateSchema(schemaName, v1, cancellationToken);
@@ -99,7 +99,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 	) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		await CreateSchema(schemaName, v1, compatibilityMode, SchemaDataFormat.Json, cancellationToken);
@@ -124,7 +124,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 	public async Task throws_precondition_when_deleting_latest_in_backward_mode(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		await CreateSchema(schemaName, v1, CompatibilityMode.Backward, SchemaDataFormat.Json, cancellationToken);
@@ -149,7 +149,7 @@ public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture
 	public async Task throws_precondition_for_non_existing_versions(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		await CreateSchema(schemaName, v1, cancellationToken);

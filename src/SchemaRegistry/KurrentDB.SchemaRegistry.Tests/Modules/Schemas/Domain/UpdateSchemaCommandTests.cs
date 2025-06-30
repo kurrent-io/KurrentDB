@@ -25,7 +25,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None,
@@ -64,7 +64,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None
@@ -97,7 +97,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None
@@ -131,7 +131,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None
@@ -165,7 +165,7 @@ public class UpdateSchemaCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None,

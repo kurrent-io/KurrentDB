@@ -18,9 +18,8 @@
     <PackageReference Include="Kurrent.Surge" Version="1.1.0-alpha" />
 		<PackageReference Include="TUnit" Version="0.25.21"/>
 		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.7.3"/>
-
-<!--        <PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="1.6.0" />-->
-<!--        <PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="1.6.0" />-->
+		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="1.7.3" />
+		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="1.7.3" />
   </ItemGroup>
 
   <ItemGroup>

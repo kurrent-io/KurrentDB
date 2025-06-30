@@ -152,7 +152,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 	public async Task check_schema_compatibility_should_be_compatible(CancellationToken cancellationToken) {
 		var versionId = Guid.NewGuid().ToString();
 		var schemaName = NewSchemaName(NewPrefix());
-		var schema = NewJsonSchemaDefinition();
+		var schema = NewJsonSchema();
 
 		var connection = DuckDbConnectionProvider.GetConnection();
 		var projection = new SchemaProjections();
@@ -242,7 +242,7 @@ public class SchemaQueriesTests : SchemaApplicationTestFixture {
 		var record = await CreateRecord(
 			new SchemaCreated {
 				SchemaName = options.Name,
-				SchemaDefinition = ByteString.CopyFromUtf8(options.Definition ?? NewJsonSchemaDefinition().ToJson()),
+				SchemaDefinition = ByteString.CopyFromUtf8(options.Definition ?? NewJsonSchema().ToJson()),
 				Description = Faker.Lorem.Text(),
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = Faker.Random.Enum(CompatibilityMode.Unspecified),

@@ -1,8 +1,11 @@
-using System.Collections.Concurrent;
+// Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
+// Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
+
+// ReSharper disable ConvertToPrimaryConstructor
+
 using Eventuous;
 using FluentValidation;
 using Google.Protobuf;
-using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.SchemaRegistry.Infrastructure.Eventuous;
 using KurrentDB.Protocol.Registry.V2;
@@ -40,9 +43,6 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
 
             return result.Match(
 	             ok =>  {
-#if DEBUG
-	                Queries.WaitUntilCaughtUp(ok.StreamPosition, ct).GetAwaiter().GetResult();
-#endif
                     var evt = ok.Changes.GetSingleEvent<SchemaCreated>();
                     return new CreateSchemaResponse {
 	                    SchemaVersionId = evt.SchemaVersionId,
@@ -58,7 +58,7 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             var result = await Commands.Handle(req, ct);
 
             return result.Match(
-	            ok => new UpdateSchemaResponse(),
+	            _ => new UpdateSchemaResponse(),
 	            ko => throw ko.Exception ?? new(ko.ErrorMessage)
             );
         });
@@ -68,8 +68,8 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             var result = await Commands.Handle(req, ct);
 
             return result.Match(
-                 ok => new DeleteSchemaResponse(),
-                ko => throw ko.Exception ?? new(ko.ErrorMessage)
+                 _ => new DeleteSchemaResponse(),
+                ko => throw ko.Exception ?? new Exception(ko.ErrorMessage)
             );
         });
 
@@ -79,16 +79,13 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
 
             return result.Match(
 	            ok => {
-#if DEBUG
-                    Queries.WaitUntilCaughtUp(ok.StreamPosition, ct).GetAwaiter().GetResult();
-#endif
                     var evt = ok.Changes.GetSingleEvent<SchemaVersionRegistered>();
                     return new RegisterSchemaVersionResponse {
 	                    SchemaVersionId = evt.SchemaVersionId,
 	                    VersionNumber   = evt.VersionNumber
                     };
                 },
-                ko => throw ko.Exception ?? new(ko.ErrorMessage)
+                ko => throw ko.Exception ?? new Exception(ko.ErrorMessage)
             );
         });
 
@@ -97,8 +94,8 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             var result = await Commands.Handle(req, ct);
 
             return result.Match(
-                ok => new DeleteSchemaVersionsResponse(),
-                ko => throw ko.Exception ?? new(ko.ErrorMessage)
+                _ => new DeleteSchemaVersionsResponse(),
+                ko => throw ko.Exception ?? new Exception(ko.ErrorMessage)
             );
         });
 

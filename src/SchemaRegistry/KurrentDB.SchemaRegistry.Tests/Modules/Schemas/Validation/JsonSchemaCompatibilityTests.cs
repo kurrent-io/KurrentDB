@@ -18,7 +18,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenAddingOptionalField() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("email", JsonObjectType.String);
 
 		var v2 = v1
@@ -37,7 +37,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenMakingRequiredFieldOptional() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("email", JsonObjectType.String)
 			.AddRequired("age", JsonObjectType.Integer);
 
@@ -57,7 +57,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenWideningUnionField() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddRequired("gender", JsonObjectType.Integer);
 
 		var v2 = v1
@@ -80,7 +80,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenDeletingOptionalField() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("email", JsonObjectType.String);
 
 		var v2 = v1
@@ -99,7 +99,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Compatible_WhenDeletingFieldWithDefaultValue() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String, "admin");
 
 		var v2 = v1
@@ -118,7 +118,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenDeletingRequiredField() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddRequired("role", JsonObjectType.String);
 
 		var v2 = v1
@@ -138,7 +138,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenMakingOptionalFieldRequired() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String);
 
 		var v2 = v1
@@ -158,7 +158,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenChangingFieldType() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String);
 
 		var v2 = v1
@@ -178,7 +178,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardMode_Incompatible_WhenAddingRequiredField() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
 		var v2 = v1
 			.AddRequired("role", JsonObjectType.Integer);
@@ -197,7 +197,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task ForwardMode_Compatible_WhenDeletingOptionalField() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String);
 
 		var v2 = v1
@@ -216,7 +216,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task ForwardMode_Compatible_WhenAddingOptionalField() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
 		var v2 = v1
 			.AddOptional("role", JsonObjectType.String);
@@ -234,7 +234,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task ForwardMode_Incompatible_WhenAddingRequiredField() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
 		var v2 = v1
 			.AddRequired("role", JsonObjectType.String);
@@ -253,7 +253,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task ForwardMode_Incompatible_WhenChangingFieldType() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String);
 
 		var v2 = v1
@@ -273,7 +273,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardAllMode_Compatible_WithAllowedChanges() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddRequired("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -298,7 +298,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task BackwardAllMode_Incompatible_WithProhibitedChanges() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -327,7 +327,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	public async Task ForwardAllMode_Compatible_WithAllowedChanges() {
 		// Arrange
 
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -353,7 +353,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	public async Task ForwardAllMode_Incompatible_WithProhibitedChanges() {
 		// Arrange
 
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -380,7 +380,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task FullMode_Compatible_WithAddingOptionalFields() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -401,7 +401,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task FullMode_Compatible_WithDeletingOptionalFields() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -422,7 +422,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task FullMode_Incompatible_WhenChangingFieldType() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -444,7 +444,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task FullMode_Incompatible_WithAddingRequiredField() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -467,7 +467,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task FullMode_Incompatible_WithMakingOptionalFieldRequired() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -489,7 +489,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task FullAllMode_Compatible_WithAllowedChanges() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 
@@ -514,7 +514,7 @@ public class JsonSchemaCompatibilityTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task FullAllMode_Incompatible_WithProhibitedChanges() {
 		// Arrange
-		var v1 = NewJsonSchemaDefinition()
+		var v1 = NewJsonSchema()
 			.AddOptional("role", JsonObjectType.String)
 			.AddOptional("age", JsonObjectType.Integer);
 

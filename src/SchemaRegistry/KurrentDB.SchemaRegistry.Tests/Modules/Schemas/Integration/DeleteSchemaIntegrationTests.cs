@@ -4,6 +4,7 @@
 // ReSharper disable ArrangeTypeMemberModifiers
 
 using Grpc.Core;
+using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using NJsonSchema;
 
@@ -35,7 +36,7 @@ public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var prefix = NewPrefix();
 		var schemaName = NewSchemaName(prefix);
 
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 		var v3 = v2.AddOptional("age", JsonObjectType.Integer);
 

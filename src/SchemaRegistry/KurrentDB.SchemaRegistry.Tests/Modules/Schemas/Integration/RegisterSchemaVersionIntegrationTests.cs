@@ -17,22 +17,23 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		// Arrange
 		var prefix = NewSchemaName();
 		var schemaName = NewSchemaName(prefix);
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		await CreateSchema(schemaName: schemaName, schemaDefinition: v1.ToByteString(), ct: cancellationToken);
+		await CreateSchema(schemaName, v1, cancellationToken);
 
 		// Act
-		var registerSchemaVersionResult = await RegisterSchemaVersion(schemaName, v2, cancellationToken);
-
-		var listRegisteredSchemasResult = await Client.ListRegisteredSchemasAsync(
-			new ListRegisteredSchemasRequest {
-				SchemaNamePrefix = prefix
+		var registerSchemaVersionResult = await Client.RegisterSchemaVersionAsync(
+			new RegisterSchemaVersionRequest {
+				SchemaName = schemaName,
+				SchemaDefinition = v2.ToByteString()
 			},
 			cancellationToken: cancellationToken
 		);
 
 		// Assert
+		var listRegisteredSchemasResult = await ListRegisteredSchemas(prefix, cancellationToken);
+
 		registerSchemaVersionResult.Should().NotBeNull();
 		registerSchemaVersionResult.VersionNumber.Should().Be(2);
 
@@ -46,30 +47,36 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 	public async Task throws_exception_when_schema_not_found(CancellationToken cancellationToken) {
 		// Arrange
 		var nonExistentSchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}";
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
 		// Act
-		var registerVersion = async () => await RegisterSchemaVersion(nonExistentSchemaName, v1, cancellationToken);
+		var act = async () => await Client.RegisterSchemaVersionAsync(new RegisterSchemaVersionRequest {
+			SchemaName = nonExistentSchemaName,
+			SchemaDefinition = v1.ToByteString(),
+		}, cancellationToken: cancellationToken);
 
 		// Assert
-		var registerVersionException = await registerVersion.Should().ThrowAsync<RpcException>();
-		registerVersionException.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
+		var exception = await act.Should().ThrowAsync<RpcException>();
+		exception.Which.Status.StatusCode.Should().Be(StatusCode.NotFound);
 	}
 
 	[Test]
 	public async Task throws_exception_when_schema_definition_has_not_changed(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 
-		await CreateSchema(schemaName: schemaName, schemaDefinition: v1.ToByteString(), ct: cancellationToken);
+		await CreateSchema(schemaName, v1, cancellationToken);
 
 		// Act
-		var registerVersion = async () => await RegisterSchemaVersion(schemaName, v1, cancellationToken);
+		var act = async () => await Client.RegisterSchemaVersionAsync(new RegisterSchemaVersionRequest {
+			SchemaName = schemaName,
+			SchemaDefinition = v1.ToByteString(),
+		}, cancellationToken: cancellationToken);
 
 		// Assert
-		var registerVersionException = await registerVersion.Should().ThrowAsync<RpcException>();
-		registerVersionException.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
-		registerVersionException.Which.Message.Should().Contain("Schema definition has not changed");
+		var exception = await act.Should().ThrowAsync<RpcException>();
+		exception.Which.Status.StatusCode.Should().Be(StatusCode.FailedPrecondition);
+		exception.Which.Message.Should().Contain("Schema definition has not changed");
 	}
 }

@@ -143,7 +143,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var key = Faker.Lorem.Word();
 		var value = Faker.Lorem.Word();
 
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		// Arrange
@@ -198,7 +198,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var prefix = NewPrefix();
 		var schemaName = NewSchemaName(prefix);
 
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		// Arrange
@@ -233,7 +233,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task list_schema_versions(CancellationToken cancellationToken) {
 		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var v1 = NewJsonSchema();
 		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		// Arrange

@@ -26,7 +26,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None
@@ -69,7 +69,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None
@@ -133,7 +133,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None
@@ -161,7 +161,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 	public async Task throws_exception_when_schema_definition_has_not_changed(CancellationToken cancellationToken) {
 		// Arrange
 		var schemaName = NewSchemaName();
-		var schemaDefinition = NewJsonSchemaDefinition();
+		var schemaDefinition = NewJsonSchema();
 
 		await Apply(
 			new CreateSchemaRequest {
@@ -198,7 +198,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Protobuf,
 					Compatibility = CompatibilityMode.None
@@ -231,7 +231,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None
@@ -274,7 +274,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None
@@ -313,7 +313,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = dataFormat,
 					Compatibility = CompatibilityMode.None
@@ -352,7 +352,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = compatibilityMode
@@ -386,7 +386,7 @@ public class RegisterSchemaVersionCommandTests : SchemaApplicationTestFixture {
 		await Apply(
 			new CreateSchemaRequest {
 				SchemaName = schemaName,
-				SchemaDefinition = NewJsonSchemaDefinition().ToByteString(),
+				SchemaDefinition = NewJsonSchema().ToByteString(),
 				Details = new SchemaDetails {
 					DataFormat = SchemaFormat.Json,
 					Compatibility = CompatibilityMode.None
