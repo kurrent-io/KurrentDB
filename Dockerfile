@@ -15,7 +15,7 @@ COPY ./ci ./
 WORKDIR /build/src
 COPY ./src/Connectors/*/*.csproj ./Connectors/
 COPY ./src/SchemaRegistry/*/*.csproj ./SchemaRegistry/
-COPY ./src/KurrentDB.sln ./src/*/*.csproj ./src/Directory.Build.* ./
+COPY ./src/KurrentDB.sln ./src/*/*.csproj ./src/Directory.Build.* ./src/Directory.Packages.props ./
 RUN for file in $(ls Connectors/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
     for file in $(ls SchemaRegistry/*.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \
     for file in $(ls *.csproj); do mkdir -p ./${file%.*}/ && mv $file ./${file%.*}/; done && \

@@ -62,6 +62,7 @@ public static class ControlPlaneWireUp {
                 var options = new SystemConnectorsFactoryOptions {
                     CheckpointsStreamTemplate = Streams.CheckpointsStreamTemplate,
                     AutoLock = new() {
+	                    Enabled            = false,
                         LeaseDuration      = 5.Seconds(),
                         AcquisitionTimeout = 60.Seconds(),
                         AcquisitionDelay   = 5.Seconds(),

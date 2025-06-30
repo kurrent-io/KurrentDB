@@ -12,35 +12,35 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Bogus" Version="35.6.3" />
-		<PackageReference Include="DotNext" Version="5.21.0" />
-		<PackageReference Include="FluentAssertions" Version="6.12.2" />
-		<PackageReference Include="GitHubActionsTestLogger" Version="2.4.1" />
-		<PackageReference Include="Humanizer.Core" Version="2.14.1" />
-		<PackageReference Include="Eventuous.Testing" Version="0.15.0" />
-		<PackageReference Include="Kurrent.Surge" Version="1.1.0-alpha" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.2" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="9.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.2" />
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.4.0" />
-		<PackageReference Include="Serilog" Version="4.2.0" />
-		<PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
-    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-    <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
-		<PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
-		<PackageReference Include="Serilog.Expressions" Version="5.0.0" />
-		<PackageReference Include="Serilog.Extensions.Logging" Version="9.0.1" />
-		<PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
-		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
-		<PackageReference Include="Serilog.Sinks.Observable" Version="3.0.0" />
-		<PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
-		<PackageReference Include="System.Reactive" Version="6.0.1" />
-		<PackageReference Include="TUnit.Core" Version="0.25.21"/>
+		<PackageReference Include="Bogus" />
+		<PackageReference Include="DotNext" />
+		<PackageReference Include="FluentAssertions" />
+		<PackageReference Include="GitHubActionsTestLogger" />
+		<PackageReference Include="Humanizer.Core" />
+		<PackageReference Include="Eventuous.Testing" />
+		<PackageReference Include="Kurrent.Surge" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.AutoActivation" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+		<PackageReference Include="Serilog" />
+		<PackageReference Include="Serilog.Enrichers.Thread" />
+    <PackageReference Include="Serilog.Enrichers.Environment" />
+    <PackageReference Include="Serilog.Enrichers.Process" />
+		<PackageReference Include="Serilog.Exceptions" />
+		<PackageReference Include="Serilog.Expressions" />
+		<PackageReference Include="Serilog.Extensions.Logging" />
+		<PackageReference Include="Serilog.Settings.Configuration" />
+		<PackageReference Include="Serilog.Sinks.Console" />
+		<PackageReference Include="Serilog.Sinks.Observable" />
+		<PackageReference Include="Serilog.Sinks.Seq" />
+    <PackageReference Include="Serilog.Sinks.File" />
+		<PackageReference Include="System.Reactive" />
+		<PackageReference Include="TUnit.Core" />
 	</ItemGroup>
 
 	<ItemGroup>

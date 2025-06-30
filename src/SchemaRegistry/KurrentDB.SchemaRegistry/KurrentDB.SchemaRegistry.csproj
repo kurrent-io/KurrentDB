@@ -11,15 +11,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.11.0" />
-    <PackageReference Include="Grpc.AspNetCore" Version="2.64.0" />
-    <PackageReference Include="Kurrent.Quack" Version="0.0.0-alpha.0.13" />
-    <PackageReference Include="Kurrent.Surge.DuckDB" Version="1.1.1-alpha.1" />
-    <PackageReference Include="Kurrent.Surge.Core" Version="1.1.1-alpha.1" />
-    <PackageReference Include="NJsonSchema" Version="11.2.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="Kurrent.Quack" />
+    <PackageReference Include="Kurrent.Surge.DuckDB" />
+    <PackageReference Include="Kurrent.Surge.Core" />
+    <PackageReference Include="NJsonSchema" />
 
 		<!-- Required to remove conflicts -->
-    <PackageReference Include="Google.Api.CommonProtos" Version="2.15.0" PrivateAssets="All" />
+    <PackageReference Include="Google.Api.CommonProtos" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

@@ -21,12 +21,14 @@ public class PublicTcpApiService : IHostedService {
 		IAuthenticationProvider authProvider,
 		CertificateProvider? certificateProvider) {
 
+		OptionsFormatter.LogConfig("TcpPlugin", options.TcpPlugin);
+
 		var endpoint = new IPEndPoint(options.NodeIp, options.TcpPlugin.NodeTcpPort);
 		if (options.Insecure) {
 			var extTcpService = new TcpService(
 				components.MainQueue, endpoint, components.NetworkSendService,
 				TcpServiceType.External, TcpSecurityType.Normal,
-				new ClientTcpDispatcher(options.WriteTimeoutMs),
+				new ClientTcpDispatcher(options.TcpPlugin.TcpReadTimeoutMs, options.WriteTimeoutMs),
 				TimeSpan.FromMilliseconds(options.TcpPlugin.NodeHeartbeatInterval),
 				TimeSpan.FromMilliseconds(options.TcpPlugin.NodeHeartbeatTimeout),
 				authProvider,
@@ -44,7 +46,7 @@ public class PublicTcpApiService : IHostedService {
 			var extTcpSecureService = new TcpService(
 				components.MainQueue, endpoint, components.NetworkSendService,
 				TcpServiceType.External, TcpSecurityType.Secure,
-				new ClientTcpDispatcher(options.WriteTimeoutMs),
+				new ClientTcpDispatcher(options.TcpPlugin.TcpReadTimeoutMs, options.WriteTimeoutMs),
 				TimeSpan.FromMilliseconds(options.TcpPlugin.NodeHeartbeatInterval),
 				TimeSpan.FromMilliseconds(options.TcpPlugin.NodeHeartbeatTimeout),
 				authProvider,

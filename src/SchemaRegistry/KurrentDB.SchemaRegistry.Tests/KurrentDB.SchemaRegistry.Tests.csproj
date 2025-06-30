@@ -15,11 +15,11 @@
     <TestingPlatformCaptureOutput>false</TestingPlatformCaptureOutput>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Kurrent.Surge" Version="1.1.0-alpha" />
-		<PackageReference Include="TUnit" Version="0.25.21"/>
-		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="1.7.3"/>
-		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" Version="1.7.3" />
-		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" Version="1.7.3" />
+    <PackageReference Include="Kurrent.Surge" />
+		<PackageReference Include="TUnit" />
+		<PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
+		<PackageReference Include="Microsoft.Testing.Extensions.CrashDump" />
+		<PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
   </ItemGroup>
 
   <ItemGroup>
