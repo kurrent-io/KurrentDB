@@ -17,6 +17,7 @@ using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
+using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.AwakeReaderService;
 using KurrentDB.Projections.Core.Messages;
 using KurrentDB.Projections.Core.Metrics;
@@ -86,7 +87,6 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 	private VNodeState _nodeState;
 	private SubsystemState _subsystemState = SubsystemState.NotReady;
 	private Guid _instanceCorrelationId;
-	private IProjectionTracker _projectionTracker = IProjectionTracker.NoOp;
 
 	private readonly List<string> _standardProjections = new List<string> {
 		"$by_category",
@@ -158,6 +158,11 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 		LeaderInputBus.Subscribe<SystemMessage.SystemCoreReady>(this);
 		LeaderInputBus.Subscribe<SystemMessage.StateChangeMessage>(this);
 
+		ConfigureProjectionMetrics(
+			standardComponents.MetricsConfiguration,
+			out var projectionTracker,
+			out var projectionTrackers);
+
 		var projectionsStandardComponents = new ProjectionsStandardComponents(
 			_projectionWorkerThreadCount,
 			_runProjections,
@@ -168,37 +173,92 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			_faultOutOfOrderProjections,
 			_compilationTimeout,
 			_executionTimeout,
-			_maxProjectionStateSize);
+			_maxProjectionStateSize,
+			projectionTrackers);
 
 		CreateAwakerService(standardComponents);
 		_coreWorkers = ProjectionCoreWorkersNode.CreateCoreWorkers(standardComponents, projectionsStandardComponents);
 		_queueMap = _coreWorkers.ToDictionary(v => v.Key, v => v.Value.CoreInputQueue.As<IPublisher>());
 
-		ConfigureProjectionMetrics(standardComponents.MetricsConfiguration);
-
 		ProjectionManagerNode.CreateManagerService(standardComponents, projectionsStandardComponents, _queueMap,
-			_projectionsQueryExpiry, _projectionTracker);
+			_projectionsQueryExpiry, projectionTracker);
 		LeaderInputBus.Subscribe<CoreProjectionStatusMessage.Stopped>(this);
 		LeaderInputBus.Subscribe<CoreProjectionStatusMessage.Started>(this);
 
 		builder.UseEndpoints(endpoints => endpoints.MapGrpcService<ProjectionManagement>());
 	}
 
-	private void ConfigureProjectionMetrics(MetricsConfiguration conf) {
-		if (!conf.ProjectionStats)
-			return;
+	private static void ConfigureProjectionMetrics(
+		MetricsConfiguration conf,
+		out IProjectionTracker projectionTracker,
+		out ProjectionTrackers projectionTrackers) {
+
+		projectionTracker = IProjectionTracker.NoOp;
+
+		Func<string, IProjectionExecutionTracker> executionTrackerFactory =
+			_ => IProjectionExecutionTracker.NoOp;
+		Func<string, IProjectionStateSerializationTracker> serializationTrackerFactory =
+			_ => IProjectionStateSerializationTracker.NoOp;
 
 		var projectionMeter = new Meter(conf.ProjectionsMeterName, version: "1.0.0");
 		var serviceName = conf.ServiceName;
 
-		var tracker = new ProjectionTracker();
-		_projectionTracker = tracker;
+		if (conf.ProjectionStats) {
+			var tracker = new ProjectionTracker();
+			projectionTracker = tracker;
 
-		projectionMeter.CreateObservableCounter($"{serviceName}-projection-events-processed-after-restart-total", tracker.ObserveEventsProcessed);
-		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-progress", tracker.ObserveProgress);
-		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-running", tracker.ObserveRunning);
-		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-status", tracker.ObserveStatus);
-		projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size", tracker.ObserveStateSize);
+			projectionMeter.CreateObservableCounter($"{serviceName}-projection-events-processed-after-restart-total", tracker.ObserveEventsProcessed);
+			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-progress", tracker.ObserveProgress);
+			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-running", tracker.ObserveRunning);
+			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-status", tracker.ObserveStatus);
+			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size", tracker.ObserveStateSize);
+
+			serializationTrackerFactory = name =>
+				new ProjectionStateSerializationTracker(
+					tracker: new DurationMaxTracker(
+						metric: new DurationMaxMetric(
+							projectionMeter,
+							$"{serviceName}-projection-state-serialization-duration-max",
+							conf.LegacyProjectionsNaming),
+						name: name,
+						expectedScrapeIntervalSeconds: conf.ExpectedScrapeIntervalSeconds
+				));
+		}
+
+		List<Func<string, IProjectionExecutionTracker>> executionTrackerFactories = [];
+
+		if (conf.ProjectionExecution) {
+			// recent max of executions for each projection
+			var executionMaxDurationMetric = new DurationMaxMetric(
+				projectionMeter,
+				$"{serviceName}-projection-execution-duration-max",
+				conf.LegacyProjectionsNaming);
+
+			executionTrackerFactories.Add(name =>
+				new ProjectionExecutionMaxTracker(new DurationMaxTracker(
+					executionMaxDurationMetric,
+					name: name,
+					expectedScrapeIntervalSeconds: conf.ExpectedScrapeIntervalSeconds)));
+		}
+
+		if (conf.ProjectionExecutionByFunction) {
+			// histogram of durations for each (projection * function) tuple
+			var executionDurationMetric = new DurationMetric(
+				projectionMeter,
+				$"{serviceName}-projection-execution-duration",
+				conf.LegacyProjectionsNaming);
+
+			executionTrackerFactories.Add(name =>
+				new ProjectionExecutionHistogramTracker(name, executionDurationMetric));
+		}
+
+		executionTrackerFactory = name =>
+			new CompositeProjectionExecutionTracker(
+				executionTrackerFactories.Select(f => f(name)).ToArray());
+
+		projectionTrackers = new(
+			executionTrackerFactory,
+			serializationTrackerFactory);
 	}
 
 	public void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>

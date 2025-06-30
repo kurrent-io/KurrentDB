@@ -29,7 +29,7 @@ namespace KurrentDB.Core.Services.Transport.Tcp;
 public class TcpConnectionManager : IHandle<TcpMessage.Heartbeat>, IHandle<TcpMessage.HeartbeatTimeout> {
 	public static readonly TimeSpan ConnectionTimeout = TimeSpan.FromMilliseconds(1000);
 	private static readonly ILogger Log = Serilog.Log.ForContext<TcpConnectionManager>();
-	private static readonly ClaimsPrincipal Anonymous = new(new ClaimsIdentity([new(ClaimTypes.Anonymous, "")]));
+	private static readonly ClaimsPrincipal Anonymous = new(new ClaimsIdentity([new Claim(ClaimTypes.Anonymous, "")]));
 	public readonly Guid ConnectionId;
 	public readonly string ConnectionName;
 	public readonly EndPoint RemoteEndPoint;

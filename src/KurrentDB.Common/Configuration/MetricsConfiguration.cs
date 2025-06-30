@@ -176,6 +176,10 @@ public class MetricsConfiguration {
 
 	public bool ProjectionStats { get; set; }
 
+	public bool ProjectionExecution { get; set; }
+
+	public bool ProjectionExecutionByFunction { get; set; }
+
 	public bool PersistentSubscriptionStats { get; set; } = false;
 
 	public bool ElectionsCount { get; set; } = false;

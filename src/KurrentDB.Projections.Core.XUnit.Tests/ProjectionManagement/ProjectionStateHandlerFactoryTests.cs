@@ -1,6 +1,7 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Management;
 using KurrentDB.Projections.Core.Standard;
 using Xunit;
@@ -10,7 +11,7 @@ namespace KurrentDB.Projections.Core.XUnit.Tests.ProjectionManagement;
 public class ProjectionStateHandlerFactoryTests {
 	private ProjectionStateHandlerFactory _sut;
 	public ProjectionStateHandlerFactoryTests() {
-		_sut = new ProjectionStateHandlerFactory(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+		_sut = new ProjectionStateHandlerFactory(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1), ProjectionTrackers.NoOp);
 	}
 
 	private static (Type HandlerType, string Source)[] StandardProjections => [
@@ -36,7 +37,7 @@ public class ProjectionStateHandlerFactoryTests {
 	[Theory]
 	[MemberData(nameof(SystemProjectionsData))]
 	public void can_create_system_projections(string factoryType, string source, Type expectedType) {
-		var result = _sut.Create(factoryType, source, true, 1000);
+		var result = _sut.Create("projection", factoryType, source, true, 1000);
 		Assert.IsType(expectedType, result);
 	}
 }

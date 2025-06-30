@@ -2,6 +2,7 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Common.Utils;
@@ -446,15 +447,12 @@ public static partial class StorageMessage {
 	}
 
 	[DerivedMessage(CoreMessage.Storage)]
-	public partial class BatchLogExpiredMessages : Message, IQueueAffineMessage {
-		public readonly Guid CorrelationId;
-		public int QueueId { get; }
+	public partial class BatchLogExpiredMessages : Message {
+		public sealed override IBinaryInteger<int> Affinity { get; }
 
-		public BatchLogExpiredMessages(Guid correlationId, int queueId) {
-			Ensure.NotEmptyGuid(correlationId, "correlationId");
-			Ensure.Nonnegative(queueId, "queueId");
-			CorrelationId = correlationId;
-			QueueId = queueId;
+		public BatchLogExpiredMessages(IBinaryInteger<int> affinity) {
+			ArgumentNullException.ThrowIfNull(affinity);
+			Affinity = affinity;
 		}
 	}
 

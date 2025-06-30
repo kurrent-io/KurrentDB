@@ -321,6 +321,7 @@ A number of configuration options have been removed as part of this. KurrentDB w
 - `NodeHeartbeatTimeout`
 - `NodeTcpPort`
 - `NodeTcpPortAdvertiseAs`
+- `TcpReadTimeoutMs`
 
 #### Stricter node certificate requirements
 
