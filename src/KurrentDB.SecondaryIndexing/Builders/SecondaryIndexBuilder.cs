@@ -4,11 +4,16 @@
 using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Services.Transport.Enumerators;
+using KurrentDB.Core.Services.UserManagement;
+using KurrentDB.POC.IO.Core;
 using KurrentDB.SecondaryIndexing.Indexes;
+using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Position = KurrentDB.Core.Services.Transport.Common.Position;
 
 namespace KurrentDB.SecondaryIndexing.Builders;
 
@@ -22,6 +27,10 @@ public class SecondaryIndexBuilder :
 	private readonly SecondaryIndexSubscription _subscription;
 	private readonly ISecondaryIndexProcessor _processor;
 	private readonly ISecondaryIndexProgressTracker _progressTracker;
+	private readonly IPublisher _publisher;
+	private readonly IClient _client;
+	private Task? _readLastEventTask;
+	private readonly CancellationTokenSource _readLastEventCts;
 
 	[Experimental("SECONDARY_INDEX")]
 	public SecondaryIndexBuilder(
@@ -29,18 +38,25 @@ public class SecondaryIndexBuilder :
 		ISecondaryIndexProgressTracker progressTracker,
 		IPublisher publisher,
 		ISubscriber subscriber,
+		IClient client,
 		SecondaryIndexingPluginOptions options
 	) {
 		_processor = processor;
 		_progressTracker = progressTracker;
+		_publisher = publisher;
+		_client = client;
 		_subscription = new SecondaryIndexSubscription(publisher, processor, options);
+		_readLastEventCts = new CancellationTokenSource();
 
 		subscriber.Subscribe<SystemMessage.SystemReady>(this);
 		subscriber.Subscribe<SystemMessage.BecomeShuttingDown>(this);
 		subscriber.Subscribe<StorageMessage.EventCommitted>(this);
 	}
 
-	public void Handle(SystemMessage.SystemReady message) => _subscription.Subscribe();
+	public void Handle(SystemMessage.SystemReady message) {
+		_readLastEventTask = ReadLastLogEvent();
+		_subscription.Subscribe();
+	}
 
 	public void Handle(SystemMessage.BecomeShuttingDown message) => _processor.Dispose();
 
@@ -49,6 +65,14 @@ public class SecondaryIndexBuilder :
 	public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
 	public async ValueTask DisposeAsync() {
+		if (_readLastEventTask?.IsCompleted == false) {
+			try {
+				await _readLastEventCts.CancelAsync();
+			} catch (Exception e) {
+				Logger.Error(e, "Failed to cancel reading last event");
+			}
+		}
+
 		try {
 			await _subscription.DisposeAsync();
 		} catch (Exception e) {
@@ -61,5 +85,21 @@ public class SecondaryIndexBuilder :
 	public ValueTask HandleAsync(StorageMessage.EventCommitted message, CancellationToken token) {
 		_progressTracker.RecordAppended(message.Event);
 		return ValueTask.CompletedTask;
+	}
+
+	private async Task ReadLastLogEvent() {
+		try {
+			_readLastEventCts.CancelAfter(TimeSpan.FromSeconds(120));
+
+			var lastLogEvent = await _client.ReadAllBackwardsAsync(KurrentDB.POC.IO.Core.Position.End, 1, _readLastEventCts.Token)
+				.FirstOrDefaultAsync();
+
+			if(lastLogEvent != null)
+				_progressTracker.RecordAppended(lastLogEvent);
+			else
+				Logger.Information("No events found in the log.");
+		} catch (Exception exc) {
+			Logger.Error(exc, "Error reading last event");
+		}
 	}
 }

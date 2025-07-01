@@ -6,19 +6,23 @@ using System.Diagnostics.Metrics;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Metrics;
 using Serilog;
+using Event = KurrentDB.POC.IO.Core.Event;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 
 public interface ISecondaryIndexProgressTracker {
 	void RecordIndexed(ResolvedEvent resolvedEvent);
+	void RecordAppended(Event eventRecord);
 	void RecordAppended(EventRecord eventRecord);
-
 	void RecordCommit(Func<(long position, int batchSize)> callback);
 	void RecordError(Exception e);
 }
 
 public class NoOpSecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 	public void RecordIndexed(ResolvedEvent resolvedEvent) {
+	}
+
+	public void RecordAppended(Event eventRecord) {
 	}
 
 	public void RecordAppended(EventRecord eventRecord) {
@@ -33,11 +37,11 @@ public class NoOpSecondaryIndexProgressTracker : ISecondaryIndexProgressTracker 
 
 public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 	private static readonly ILogger Log = Serilog.Log.Logger.ForContext<SecondaryIndexProgressTracker>();
-	private long _lastIndexedPosition;
-	private long _lastCommittedPosition;
-	private long _lastLogPosition;
-	private long _lastIndexedAt;
-	private long _lastAppendedAt;
+	private long _lastIndexedPosition = -1;
+	private long _lastCommittedPosition = -1;
+	private long _lastLogPosition = -1;
+	private long _lastIndexedAt = -1;
+	private long _lastAppendedAt = -1;
 	private int _pendingEvents;
 	private readonly SecondaryIndexTrackers _trackers = new();
 	private readonly Stopwatch _sw = new();
@@ -82,15 +86,39 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		}
 	}
 
-	public void RecordAppended(EventRecord eventRecord) {
+	public void RecordAppended(Event eventRecord) =>
+		RecordAppended(
+			eventRecord.Stream,
+			eventRecord.EventType,
+			(long)eventRecord.PreparePosition,
+			eventRecord.Created.Ticks
+		);
+
+	public void RecordAppended(EventRecord eventRecord) =>
+		RecordAppended(
+			eventRecord.EventStreamId,
+			eventRecord.EventType,
+			eventRecord.LogPosition,
+			eventRecord.TimeStamp.Ticks
+		);
+
+	private void RecordAppended(string streamId, string eventType, long logPosition, long timestampTicks) {
 		try {
-			if (eventRecord.EventType.StartsWith('$') || eventRecord.EventStreamId.StartsWith('$')) {
+			if (eventType.StartsWith('$') || streamId.StartsWith('$')) {
 				// ignore system events
 				return;
 			}
 
-			Interlocked.Exchange(ref _lastLogPosition, eventRecord.LogPosition);
-			Interlocked.Exchange(ref _lastAppendedAt, eventRecord.TimeStamp.Ticks);
+			var currentLasLogPosition = Interlocked.Read(ref _lastLogPosition);
+
+			// Just in case we have some race condition between reading last event and getting a newly appended notification
+			if (currentLasLogPosition >= logPosition)
+				return;
+
+			if (Interlocked.CompareExchange(ref _lastLogPosition, currentLasLogPosition, logPosition) ==
+			    currentLasLogPosition) {
+				Interlocked.Exchange(ref _lastAppendedAt, timestampTicks);
+			}
 		} catch (Exception exc) {
 			Log.Error(exc, "Error recording metrics of event appended.");
 		}
@@ -117,19 +145,26 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		//TODO: Log error here
 	}
 
-	private Measurement<long> ObserveGap() {
+	private IEnumerable<Measurement<long>> ObserveGap() {
 		var streamPos = Interlocked.Read(ref _lastLogPosition);
 		var indexedPos = Interlocked.Read(ref _lastIndexedPosition);
 
-		return new Measurement<long>(streamPos - indexedPos);
+		if(streamPos == -1 || indexedPos == -1)
+			yield break;
+
+		yield return new Measurement<long>(streamPos - indexedPos);
 	}
 
-	private Measurement<long> ObserveLag() {
+	private IEnumerable<Measurement<long>> ObserveLag() {
 		var lastAppendedAt = Interlocked.Read(ref _lastAppendedAt);
 		var lastIndexedAt = Interlocked.Read(ref _lastIndexedAt);
+
+		if(lastAppendedAt == -1 || lastIndexedAt == -1)
+			yield break;
+
 		var lag = (lastAppendedAt - lastIndexedAt) / 1000;
 
-		return new Measurement<long>(lag);
+		yield return new Measurement<long>(lag);
 	}
 
 	private Measurement<int> ObservePending() {
