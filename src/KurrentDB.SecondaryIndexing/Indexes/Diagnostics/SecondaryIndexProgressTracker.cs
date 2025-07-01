@@ -115,7 +115,7 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 			if (currentLasLogPosition >= logPosition)
 				return;
 
-			if (Interlocked.CompareExchange(ref _lastLogPosition, currentLasLogPosition, logPosition) ==
+			if (Interlocked.CompareExchange(ref _lastLogPosition, logPosition, currentLasLogPosition) ==
 			    currentLasLogPosition) {
 				Interlocked.Exchange(ref _lastAppendedAt, timestampTicks);
 			}

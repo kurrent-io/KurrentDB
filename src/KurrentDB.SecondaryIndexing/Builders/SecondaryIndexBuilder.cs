@@ -4,6 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
+using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.POC.IO.Core;
@@ -91,10 +92,15 @@ public class SecondaryIndexBuilder :
 		try {
 			_readLastEventCts.CancelAfter(TimeSpan.FromSeconds(120));
 
-			var lastLogEvent = await _client.ReadAllBackwardsAsync(KurrentDB.POC.IO.Core.Position.End, 1, _readLastEventCts.Token)
+			var lastLogEvent = await _client.ReadAllBackwardsFilteredAsync(
+					KurrentDB.POC.IO.Core.Position.End,
+					1,
+					new EventFilter.DefaultAllFilterStrategy.NonSystemStreamStrategy(),
+					_readLastEventCts.Token
+				)
 				.FirstOrDefaultAsync();
 
-			if(lastLogEvent != null)
+			if (lastLogEvent != null)
 				_progressTracker.RecordAppended(lastLogEvent);
 			else
 				Logger.Information("No events found in the log.");
