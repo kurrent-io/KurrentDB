@@ -80,12 +80,13 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			else
 				row.AppendDefault();
 			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
+			row.AppendDefault(); // expires
 			row.Append(streamId);
 			row.Append(eventType.Id);
 			row.Append(eventType.Sequence);
 			row.Append(category.Id);
 			row.Append(category.Sequence);
-			row.Append(false); // TODO: What happens if the event is deleted before we commit?
+			row.Append(false); // is_deleted TODO: What happens if the event is deleted before we commit?
 		}
 
 		_inFlightRecords.Append(

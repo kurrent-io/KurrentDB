@@ -66,8 +66,10 @@ internal class StreamIndexProcessor : Disposable {
 			row.Append(id);
 			row.Append(name);
 			row.Append(streamHash);
-			row.AppendDefault();
-			row.AppendDefault();
+			row.AppendDefault(); // max_age
+			row.AppendDefault(); // max_count
+			row.AppendDefault(); // is_deleted
+			row.AppendDefault(); // acl
 		}
 
 		_count++;

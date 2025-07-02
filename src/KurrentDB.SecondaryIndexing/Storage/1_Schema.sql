@@ -16,7 +16,9 @@ create table if not exists streams (
 	unique(name),
 	name_hash ubigint not null,
 	max_age int DEFAULT NULL,
-	max_count int DEFAULT NULL
+	max_count int DEFAULT NULL,
+	is_deleted boolean DEFAULT false,
+	acl varchar DEFAULT NULL
 );
 
 create table if not exists idx_all (
@@ -25,6 +27,7 @@ create table if not exists idx_all (
 	log_position bigint not null,
 	commit_position bigint null,
 	created bigint not null,
+	expires bigint null,
 	stream bigint not null,
 	event_type int4 not null,
 	event_type_seq bigint not null,
