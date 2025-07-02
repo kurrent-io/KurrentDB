@@ -101,6 +101,10 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_progressTracker.RecordIndexed(resolvedEvent);
 	}
 
+	public void HandleStreanMetadataChange(ResolvedEvent evt) {
+
+	}
+
 	public long? GetLastPosition() =>
 		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>()?.OrNull();
 

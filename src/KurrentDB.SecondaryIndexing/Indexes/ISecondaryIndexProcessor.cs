@@ -10,6 +10,8 @@ public interface ISecondaryIndexProcessor : IDisposable {
 
 	void Index(ResolvedEvent evt);
 
+	void HandleStreanMetadataChange(ResolvedEvent evt);
+
 	long? GetLastPosition();
 }
 

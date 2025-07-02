@@ -19,6 +19,9 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 		}
 	}
 
+	public void HandleStreanMetadataChange(ResolvedEvent evt) {
+	}
+
 	public long? GetLastPosition() {
 		return !committed.IsEmpty() ? committed.Last().Event.LogPosition : null;
 	}
@@ -31,6 +34,5 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 	}
 
 	public void Dispose() {
-
 	}
 }
