@@ -13,7 +13,7 @@ namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
 [Collection("SecondaryIndexingPluginEnabled")]
-public class IndexingEnabledTests(
+public class IndexingTests(
 	SecondaryIndexingEnabledFixture fixture,
 	ITestOutputHelper output
 ) : SecondaryIndexingTestBase(fixture, output) {

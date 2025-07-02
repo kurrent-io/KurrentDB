@@ -69,11 +69,16 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		var sequence = LastSequence++;
 		var logPosition = resolvedEvent.Event.LogPosition;
+		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
 		var eventNumber = resolvedEvent.Event.EventNumber;
 		using (var row = _appender.CreateRow()) {
 			row.Append(sequence);
 			row.Append(eventNumber);
 			row.Append(logPosition);
+			if(commitPosition.HasValue && logPosition != commitPosition)
+				row.Append(commitPosition.Value);
+			else
+				row.AppendDefault();
 			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
 			row.Append(streamId);
 			row.Append(eventType.Id);
