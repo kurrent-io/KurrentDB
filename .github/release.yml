@@ -2,6 +2,7 @@ changelog:
   exclude:
     labels:
       - ignore-for-release
+      - documentation
   categories:
     - title: Added
       labels:
@@ -15,9 +16,6 @@ changelog:
     - title: Breaking Changes
       labels:
         - breaking
-    - title: Documentation
-      labels:
-        - documentation
     - title: Changed
       labels:
         - "*"
