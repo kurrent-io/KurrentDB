@@ -15,8 +15,8 @@ create table if not exists streams (
 	name varchar not null,
 	unique(name),
 	name_hash ubigint not null,
-	max_age int DEFAULT NULL,
-	max_count int DEFAULT NULL,
+	max_age bigint DEFAULT NULL,
+	max_count bigint DEFAULT NULL,
 	is_deleted boolean DEFAULT false,
 	acl varchar DEFAULT NULL
 );

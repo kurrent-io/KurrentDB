@@ -19,7 +19,7 @@ public class FakeSecondaryIndexProcessor(IList<ResolvedEvent> committed, IList<R
 		}
 	}
 
-	public void HandleStreanMetadataChange(ResolvedEvent evt) {
+	public void HandleStreamMetadataChange(ResolvedEvent evt) {
 	}
 
 	public long? GetLastPosition() {

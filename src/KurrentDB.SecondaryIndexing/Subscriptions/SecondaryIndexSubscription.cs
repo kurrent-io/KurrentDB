@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using DotNext.Runtime.CompilerServices;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -71,7 +72,7 @@ public sealed partial class SecondaryIndexSubscription(
 				var resolvedEvent = eventReceived.Event;
 
 				if (IsRegularStreamMetadataChange(resolvedEvent)) {
-					indexProcessor.HandleStreanMetadataChange(resolvedEvent);
+					indexProcessor.HandleStreamMetadataChange(resolvedEvent);
 					continue;
 				}
 
@@ -123,7 +124,7 @@ public sealed partial class SecondaryIndexSubscription(
 	}
 
 	private static bool IsRegularStreamMetadataChange(ResolvedEvent resolvedEvent) =>
-		MetadataStreamRegex().IsMatch(resolvedEvent.Event.EventStreamId);
+		MetadataStreamRegex().IsMatch(resolvedEvent.Event.EventStreamId) && resolvedEvent.Event.EventType == SystemEventTypes.StreamMetadata;
 
 	[GeneratedRegex(@"^\$\$(?!\$)")]
 	private static partial Regex MetadataStreamRegex();

@@ -107,8 +107,8 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_progressTracker.RecordIndexed(resolvedEvent);
 	}
 
-	public void HandleStreanMetadataChange(ResolvedEvent evt) {
-
+	public void HandleStreamMetadataChange(ResolvedEvent evt) {
+		_streamIndexProcessor.HandleStreamMetadataChange(evt);
 	}
 
 	public long? GetLastPosition() =>

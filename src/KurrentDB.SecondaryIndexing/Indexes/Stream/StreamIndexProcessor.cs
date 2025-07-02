@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using DotNext;
 using Kurrent.Quack;
+using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
@@ -50,7 +51,8 @@ internal class StreamIndexProcessor : Disposable {
 			return secondaryIndexId;
 		}
 
-		var fromDb = _connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
+		var fromDb =
+			_connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
 		if (fromDb.HasValue) {
 			_streamsCache.UpdateStreamSecondaryIndexId(1, name, fromDb.Value);
 			return fromDb.Value;
@@ -77,6 +79,18 @@ internal class StreamIndexProcessor : Disposable {
 		return id;
 	}
 
+	public void HandleStreamMetadataChange(ResolvedEvent evt) {
+		var metadata = StreamMetadata.FromJson(Helper.UTF8NoBom.GetString(evt.Event.Data.Span));
+		_connection.UpdateStreamMetadata(
+			new UpdateStreamMetadataParams(
+				metadata.MaxAge,
+				metadata.MaxCount,
+				metadata.TruncateBefore,
+				metadata.Acl
+			)
+		);
+	}
+
 	private readonly Stopwatch _stopwatch = new();
 
 	public void Commit() {
@@ -87,7 +101,8 @@ internal class StreamIndexProcessor : Disposable {
 		_stopwatch.Start();
 		_appender.Flush();
 		_stopwatch.Stop();
-		Log.Debug("Committed {Count} records to streams at seq {Seq} ({Took} ms)", _count, _seq, _stopwatch.ElapsedMilliseconds);
+		Log.Debug("Committed {Count} records to streams at seq {Seq} ({Took} ms)", _count, _seq,
+			_stopwatch.ElapsedMilliseconds);
 		_stopwatch.Reset();
 
 		LastCommittedPosition = _lastLogPosition;

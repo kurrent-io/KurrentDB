@@ -109,6 +109,13 @@ public static class DuckDbExtensions {
 			connection.ExecuteNonQuery<TArgs, TQuery>(args);
 		}
 	}
+
+	public static void Add(this BindingContext bindingContext, long? value) {
+		if (value.HasValue)
+			bindingContext.Add(value.Value);
+		else
+			bindingContext.Add(DBNull.Value);
+	}
 }
 
 public static class OptionalResultExtensions {
