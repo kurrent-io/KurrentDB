@@ -151,6 +151,15 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	public Task<WriteEventsResult> AppendToStream(string stream, params Event[] events) =>
 		Publisher.WriteEvents(stream, events);
 
+
+	public Task<WriteEventsResult> DeleteStream(string stream) =>
+		Publisher.DeleteStream(stream);
+
+
+	public Task<WriteEventsResult> HardDeleteStream(string stream) =>
+		Publisher.HardDeleteStream(stream);
+
+
 	public Task<WriteEventsResult> AppendToStream(string stream, params string[] eventData) =>
 		AppendToStream(stream, eventData.Select(ToEventData).ToArray());
 
