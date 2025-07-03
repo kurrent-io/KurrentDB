@@ -128,13 +128,11 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_streamIndexProcessor.Commit();
 
 		try {
-
+			_sw.Restart();
 			_progressTracker.RecordCommit(() => {
 				_appender.Flush();
 				return (LastSequence, _inFlightRecords.Count);
 			});
-			_sw.Restart();
-			_appender.Flush();
 			_sw.Stop();
 			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _inFlightRecords.Count,
 				LastSequence, _sw.ElapsedMilliseconds);
