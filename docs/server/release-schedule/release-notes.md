@@ -6,6 +6,45 @@ order: 1
 
 This page contains the release notes for EventStoreDB 24.10
 
+## [24.10.6](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.6)
+
+04 July 2025
+
+### Added logging for significant garbage collections (PR [#5161](https://github.com/kurrent-io/KurrentDB/pull/5161)
+
+This makes it clear from the logs if slow messages or leader elections are attributable to Garbage Collection (GC).
+
+Execution engine (EE) suspensions longer than 48ms are logged as Information. Execution engine suspensions longer than 600ms are logged as Warnings. Full compacting GC start/end are logged as Information.
+
+Note that the Start/End log messages may both be logged AFTER the execution engine pause has completed.
+
+These will be logged even if the node shortly goes offline for truncation, which would likely prevent the EE suspension from appearing in the metrics.
+
+If GC is determined as the cause of a leader election, a sensible course of action could be to reduce the Stream Info Cache Capacity (say, to the 100k traditional value) and/or consider enabling ServerGC.
+
+example logs:
+```
+[34144,13,11:03:05.307,INF] Start of full blocking garbage collection at 06/06/2025 10:02:49. GC: #210548. Generation: 2. Reason: LargeObjectHeapAllocation. Type: BlockingOutsideBackgroundGC.
+[34144,13,11:03:05.307,INF] End of full blocking garbage collection at 06/06/2025 10:03:05. GC: #210548. Took: 15,727ms
+[34144,13,11:03:05.307,WRN] Garbage collection: Very long Execution Engine Suspension. Reason: GarbageCollection. Took: 15,727ms
+```
+
+### Added support for running as a Windows service. (PR [#5163](https://github.com/kurrent-io/KurrentDB/pull/5163)
+
+The server can now be installed as a WIndows Service.
+
+### Added server configuration option for TCP read expiry (PR [#5166](https://github.com/kurrent-io/KurrentDB/pull/5166)
+
+The option is `TcpReadTimeoutMs` and it defaults to 10000 (10s, which matches the previous behavior).
+
+It applies to reads received via the TCP client API. When a read has been in the server queue for longer than this, it will be discarded without being executed. If your TCP clients are configured to timeout after X milliseconds, it is advisable to set this server option to be the same, so that the server will not execute reads that the client is no longer waiting for.
+
+For gRPC clients, the server-side discarding is already driven by the deadline on the read itself without requiring server configuration
+
+### Fixed: Do not throw if io stat is disabled in the Linux kernel (PR [#5107](https://github.com/kurrent-io/KurrentDB/pull/5107)
+
+This allows stats to be collected in environments where `/proc/self/io` is disabled. e.g. Azure Container Instances
+
 ## [24.10.5](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.5)
 
 19 May 2025
