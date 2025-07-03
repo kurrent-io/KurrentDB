@@ -45,6 +45,14 @@ For gRPC clients, the server-side discarding is already driven by the deadline o
 
 This allows stats to be collected in environments where `/proc/self/io` is disabled. e.g. Azure Container Instances
 
+### Connectors: Disable Leases
+
+Leases are now disabled by default since we only run on the leader. The stream `$connectors/{id}/leases` is no longer created when a connector is created.
+
+### Connectors: Track writes for Serilog and Elasticsearch connector
+
+The Serilog and Elasticsearch connectors previously did not track the number of writes they made to the sink. This has now been added, and the metric `kurrent_sink_written_total_records` will now include the number of writes made by the serilog and elasticsearch connectors.
+
 ## [24.10.5](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.5)
 
 19 May 2025
