@@ -18,6 +18,7 @@ create table if not exists streams (
 	max_age bigint DEFAULT NULL,
 	max_count bigint DEFAULT NULL,
 	is_deleted boolean DEFAULT false,
+	truncate_before bigint DEFAULT NULL,
 	acl varchar DEFAULT NULL
 );
 

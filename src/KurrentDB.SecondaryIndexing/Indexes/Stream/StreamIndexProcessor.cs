@@ -71,6 +71,7 @@ internal class StreamIndexProcessor : Disposable {
 			row.AppendDefault(); // max_age
 			row.AppendDefault(); // max_count
 			row.AppendDefault(); // is_deleted
+			row.AppendDefault(); // truncate_before
 			row.AppendDefault(); // acl
 		}
 

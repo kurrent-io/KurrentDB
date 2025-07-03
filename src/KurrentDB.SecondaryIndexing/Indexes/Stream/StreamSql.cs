@@ -38,16 +38,18 @@ internal static class StreamSql {
 		long? TruncateBefore,
 		StreamAcl Acl);
 
-	public static void UpdateStreamMetadata(this DuckDBAdvancedConnection connection, UpdateStreamMetadataParams metadata) =>
+	public static void UpdateStreamMetadata(this DuckDBAdvancedConnection connection,
+		UpdateStreamMetadataParams metadata) =>
 		connection.ExecuteNonQuery<UpdateStreamMetadataParams, UpdateStreamMetadataStatement>(metadata);
 
 	private struct UpdateStreamMetadataStatement : IPreparedStatement<UpdateStreamMetadataParams> {
 		public static BindingContext Bind(in UpdateStreamMetadataParams args, PreparedStatement statement) {
 			var bindingContext = new BindingContext(statement) {
-				(long?)args.MaxAge?.TotalMilliseconds,
+				(long?)args.MaxAge?.TotalSeconds,
 				args.MaxCount,
 				args.TruncateBefore == EventNumber.DeletedStream,
-				args.Acl.ToString()
+				args.TruncateBefore,
+				args.Acl.ReadRoles.Length == 0 ? null : $"[${string.Join(",", args.Acl.ReadRoles)}]"
 			};
 
 			return bindingContext;
@@ -60,6 +62,7 @@ internal static class StreamSql {
 				max_age = $1,
 				max_count = $2,
 				is_deleted = $3,
+			    truncate_before = $3,
 				acl = $4,
 			"""u8;
 	}
