@@ -10,7 +10,7 @@ This page contains the release notes for EventStoreDB 24.10
 
 04 July 2025
 
-### Added logging for significant garbage collections (PR [#5161](https://github.com/kurrent-io/KurrentDB/pull/5161)
+### Added logging for significant garbage collections (PR [#5161](https://github.com/kurrent-io/KurrentDB/pull/5161))
 
 This makes it clear from the logs if slow messages or leader elections are attributable to Garbage Collection (GC).
 
@@ -29,11 +29,11 @@ example logs:
 [34144,13,11:03:05.307,WRN] Garbage collection: Very long Execution Engine Suspension. Reason: GarbageCollection. Took: 15,727ms
 ```
 
-### Added support for running as a Windows service. (PR [#5163](https://github.com/kurrent-io/KurrentDB/pull/5163)
+### Added support for running as a Windows service. (PR [#5163](https://github.com/kurrent-io/KurrentDB/pull/5163))
 
-The server can now be installed as a WIndows Service.
+The server can now be installed as a Windows Service.
 
-### Added server configuration option for TCP read expiry (PR [#5166](https://github.com/kurrent-io/KurrentDB/pull/5166)
+### Added server configuration option for TCP read expiry (PR [#5166](https://github.com/kurrent-io/KurrentDB/pull/5166))
 
 The option is `TcpReadTimeoutMs` and it defaults to 10000 (10s, which matches the previous behavior).
 
@@ -41,7 +41,7 @@ It applies to reads received via the TCP client API. When a read has been in the
 
 For gRPC clients, the server-side discarding is already driven by the deadline on the read itself without requiring server configuration
 
-### Fixed: Do not throw if io stat is disabled in the Linux kernel (PR [#5107](https://github.com/kurrent-io/KurrentDB/pull/5107)
+### Fixed: Do not throw if io stat is disabled in the Linux kernel (PR [#5107](https://github.com/kurrent-io/KurrentDB/pull/5107))
 
 This allows stats to be collected in environments where `/proc/self/io` is disabled. e.g. Azure Container Instances
 
