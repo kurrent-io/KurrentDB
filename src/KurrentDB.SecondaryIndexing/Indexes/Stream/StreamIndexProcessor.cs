@@ -7,6 +7,7 @@ using Kurrent.Quack;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 using Serilog;
@@ -32,7 +33,7 @@ internal class StreamIndexProcessor : Disposable {
 		_hasher = hasher;
 		_connection = db.OpenNewConnection();
 		_appender = new Appender(_connection, "streams"u8);
-		_seq = _connection.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>().WithDefault(-1);
+		_seq = _connection.GetStreamMaxSequences() ?? -1;
 	}
 
 	public long LastCommittedPosition { get; private set; }
@@ -51,8 +52,7 @@ internal class StreamIndexProcessor : Disposable {
 			return secondaryIndexId;
 		}
 
-		var fromDb =
-			_connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(new(name));
+		var fromDb = _connection.GetStreamIdByName(name);
 		if (fromDb.HasValue) {
 			_streamsCache.UpdateStreamSecondaryIndexId(1, name, fromDb.Value);
 			return fromDb.Value;
@@ -81,15 +81,11 @@ internal class StreamIndexProcessor : Disposable {
 	}
 
 	public void HandleStreamMetadataChange(ResolvedEvent evt) {
+		var streamName = SystemStreams.OriginalStreamOf(evt.Event.EventStreamId);
 		var metadata = StreamMetadata.FromJson(Helper.UTF8NoBom.GetString(evt.Event.Data.Span));
-		_connection.UpdateStreamMetadata(
-			new UpdateStreamMetadataParams(
-				metadata.MaxAge,
-				metadata.MaxCount,
-				metadata.TruncateBefore,
-				metadata.Acl
-			)
-		);
+
+		// TODO: Check if stream metadata can be set before event was appended
+		_connection.UpdateStreamMetadata(streamName, metadata);
 	}
 
 	private readonly Stopwatch _stopwatch = new();

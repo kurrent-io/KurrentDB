@@ -3,15 +3,33 @@
 
 using DotNext;
 using Kurrent.Quack;
+using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
+using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 
 internal static class StreamSql {
-	public record struct GetStreamIdByNameQueryArgs(string StreamName);
+	public static long? GetStreamIdByName(
+		this DuckDBAdvancedConnection connection,
+		string streamName
+	) =>
+		connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(
+			new GetStreamIdByNameQueryArgs(streamName)
+		);
 
-	public struct GetStreamIdByNameQuery : IQuery<GetStreamIdByNameQueryArgs, long> {
+	public static long? GetStreamIdByName(
+		this DuckDBConnectionPool pool,
+		string streamName
+	) =>
+		pool.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(
+			new GetStreamIdByNameQueryArgs(streamName)
+		);
+
+	private record struct GetStreamIdByNameQueryArgs(string StreamName);
+
+	private struct GetStreamIdByNameQuery : IQuery<GetStreamIdByNameQueryArgs, long> {
 		public static BindingContext Bind(in GetStreamIdByNameQueryArgs args, PreparedStatement statement)
 			=> new(statement) { args.StreamName };
 
@@ -22,7 +40,13 @@ internal static class StreamSql {
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}
 
-	public struct GetStreamMaxSequencesQuery : IQuery<Optional<long>> {
+	public static long? GetStreamMaxSequences(this DuckDBAdvancedConnection connection) =>
+		connection.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>()?.OrNull();
+
+	public static long? GetStreamMaxSequences(this DuckDBConnectionPool pool) =>
+		pool.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>()?.OrNull();
+
+	private struct GetStreamMaxSequencesQuery : IQuery<Optional<long>> {
 		public static ReadOnlySpan<byte> CommandText => "select max(id) from streams"u8;
 
 		public static bool UseStreamingMode => false;
@@ -30,61 +54,114 @@ internal static class StreamSql {
 		public static Optional<long> Parse(ref DataChunk.Row row) => row.TryReadInt64().ToOptional();
 	}
 
-	public record struct StreamSummary(long Id, string Name, long LastLogPosition);
-
 	public readonly record struct UpdateStreamMetadataParams(
-		TimeSpan? MaxAge,
-		long? MaxCount,
-		long? TruncateBefore,
-		StreamAcl Acl);
+		string StreamName,
+		long MaxAge, // TODO: Make nullable after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+		long MaxCount, // TODO: Make nullable after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+		bool IsDeleted,
+		long TruncateBefore, // TODO: Make nullable after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+		string Acl // TODO: Make nullable after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+	) {
+		public static UpdateStreamMetadataParams From(string streamName, StreamMetadata streamMetadata) =>
+			new(
+				streamName,
+				(long?)streamMetadata.MaxAge?.TotalSeconds ??
+				long.MinValue, // TODO: remove default value after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+				streamMetadata.MaxCount ??
+				long.MinValue, // TODO: remove default value after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+				streamMetadata.TruncateBefore == EventNumber.DeletedStream,
+				streamMetadata.TruncateBefore ??
+				long.MinValue, // TODO: remove default value after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+				streamMetadata.Acl == null || streamMetadata.Acl.ReadRoles.Length == 0
+					? "" // TODO: use null after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+					: $"[${string.Join(",", streamMetadata.Acl.ReadRoles)}]"
+			);
+	}
 
-	public static void UpdateStreamMetadata(this DuckDBAdvancedConnection connection,
-		UpdateStreamMetadataParams metadata) =>
-		connection.ExecuteNonQuery<UpdateStreamMetadataParams, UpdateStreamMetadataStatement>(metadata);
+	public static void UpdateStreamMetadata(
+		this DuckDBAdvancedConnection connection,
+		string streamName,
+		StreamMetadata metadata
+	) =>
+		connection.ExecuteNonQuery<UpdateStreamMetadataParams, UpdateStreamMetadataStatement>(
+			UpdateStreamMetadataParams.From(streamName, metadata)
+		);
 
 	private struct UpdateStreamMetadataStatement : IPreparedStatement<UpdateStreamMetadataParams> {
-		public static BindingContext Bind(in UpdateStreamMetadataParams args, PreparedStatement statement) {
-			var bindingContext = new BindingContext(statement) {
-				(long?)args.MaxAge?.TotalSeconds,
+		public static BindingContext Bind(in UpdateStreamMetadataParams args, PreparedStatement statement) =>
+			new(statement) {
+				args.StreamName,
+				args.MaxAge,
 				args.MaxCount,
-				args.TruncateBefore == EventNumber.DeletedStream,
+				args.IsDeleted,
 				args.TruncateBefore,
-				args.Acl.ReadRoles.Length == 0 ? null : $"[${string.Join(",", args.Acl.ReadRoles)}]"
+				args.Acl
 			};
-
-			return bindingContext;
-		}
 
 		public static ReadOnlySpan<byte> CommandText =>
 			"""
 			UPDATE streams
 			SET
-				max_age = $1,
-				max_count = $2,
-				is_deleted = $3,
-			    truncate_before = $3,
-				acl = $4,
+				max_age = $2,
+				max_count = $3,
+				is_deleted = $4,
+			    truncate_before = $5,
+				acl = $6,
+			where
+			    name = $1
 			"""u8;
 	}
 
-	public struct GetStreamsSummaryQuery : IQuery<(long LastId, int Take), StreamSummary> {
-		public static BindingContext Bind(in (long LastId, int Take) args, PreparedStatement statement) =>
-			new(statement) { args.Take, args.LastId };
+	public record struct StreamSummary(
+		long Id,
+		string Name,
+		ulong NameHash,
+		long? MaxAge,
+		long? MaxCount,
+		bool IsDeleted,
+		long? TruncateBefore,
+		string? Acl
+	);
+
+
+	public static StreamSummary? GetStreamsSummary(
+		this DuckDBConnectionPool pool,
+		string streamName
+	) =>
+		pool.Query<GetStreamSummaryArgs, StreamSummary, GetStreamSummaryQuery>(new GetStreamSummaryArgs(streamName))
+			.FirstOrDefault();
+
+	private readonly record struct GetStreamSummaryArgs(string StreamName);
+
+	private struct GetStreamSummaryQuery : IQuery<GetStreamSummaryArgs, StreamSummary> {
+		public static BindingContext Bind(in GetStreamSummaryArgs args, PreparedStatement statement) =>
+			new(statement) { args.StreamName };
 
 		public static ReadOnlySpan<byte> CommandText =>
 			"""
-			SELECT s.id, s.name, max_seq.max_streams_seq
+			SELECT
+			    s.id,
+			    s.name,
+			    s.name_hash,
+			    s.max_age,
+			    s.max_count,
+			    s.is_deleted,
+			    s.truncate_before,
+			    s.acl
 			FROM streams s
-			LEFT JOIN (
-			    SELECT streams, MAX(streams_seq) AS max_streams_seq
-			    FROM idx_all
-			    GROUP BY streams
-			) max_seq ON s.id = max_seq.streams;
-			WHERE id>$1
-			LIMIT $2
+			WHERE name = $1
 			"""u8;
 
 		public static StreamSummary Parse(ref DataChunk.Row row) =>
-			new(row.ReadInt32(), row.ReadString(), row.ReadInt64());
+			new(
+				row.ReadInt32(),
+				row.ReadString(),
+				row.ReadUInt64(),
+				row.TryReadInt64(),
+				row.TryReadInt64(),
+				row.ReadBoolean(),
+				row.TryReadInt64(),
+				row.TryReadString()
+			);
 	}
 }

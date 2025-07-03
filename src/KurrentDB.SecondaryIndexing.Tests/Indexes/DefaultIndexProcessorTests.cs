@@ -7,6 +7,7 @@ using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
+using KurrentDB.Core.Services;
 using KurrentDB.Core.Tests;
 using KurrentDB.Core.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
@@ -220,6 +221,48 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertGetStreamIdByNameQueryReturns(cat1Stream2, null);
 	}
 
+	[Fact]
+	public void StreamMetadataChangeWithEmptyValues_IsStored() {
+		// Given
+		const string cat1 = "first";
+		string cat1Stream1 = $"{cat1}-{Guid.NewGuid()}";
+		string cat1Et1 = $"{cat1}-{Guid.NewGuid()}";
+
+		_processor.Index(From(cat1Stream1, 0, 100, cat1Et1, []));
+		_processor.Commit();
+
+		// When
+		var streamMetadata = new StreamMetadata();
+
+		_processor.HandleStreamMetadataChange(
+			StreamMetadataChanged(cat1Stream1, 0, 1293, streamMetadata)
+		);
+
+		// Then
+		var summary = DuckDb.Pool.GetStreamsSummary(cat1Stream1);
+
+		Assert.NotNull(summary);
+		Assert.Equal(cat1Stream1, summary.Value.Name);
+		Assert.Equal(long.MinValue, summary.Value.MaxAge);
+		Assert.Equal(long.MinValue, summary.Value.MaxCount);
+		Assert.False(summary.Value.IsDeleted);
+		Assert.Equal(long.MinValue, summary.Value.TruncateBefore);
+		Assert.Equal("", summary.Value.Acl);
+	}
+
+	private static ResolvedEvent StreamMetadataChanged(
+		string streamName,
+		int streamPosition,
+		long logPosition,
+		StreamMetadata streamMetadata) =>
+		From(
+			SystemStreams.MetastreamOf(streamName),
+			streamPosition,
+			logPosition,
+			SystemEventTypes.StreamMetadata,
+			streamMetadata.ToJsonBytes()
+		);
+
 	private void AssertDefaultIndexQueryReturns(List<AllRecord> expected) {
 		var records = DuckDb.Pool.Query<(long, long), AllRecord, DefaultSql.DefaultIndexQuery>((0, 32));
 
@@ -281,17 +324,15 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	}
 
 	private void AssertGetStreamIdByNameQueryReturns(string streamName, long? expectedId) {
-		var actual = DuckDb.Pool.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(
-			new GetStreamIdByNameQueryArgs(streamName)
-		);
+		var actual = DuckDb.Pool.GetStreamIdByName(streamName);
 
 		Assert.Equal(expectedId, actual);
 	}
 
 	private void AssertGetStreamMaxSequencesQueryReturns(long? expectedId) {
-		var actual = DuckDb.Pool.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>();
+		var actual = DuckDb.Pool.GetStreamMaxSequences();
 
-		Assert.Equal(expectedId, actual?.OrNull());
+		Assert.Equal(expectedId, actual);
 	}
 
 	private readonly DefaultIndexProcessor _processor;

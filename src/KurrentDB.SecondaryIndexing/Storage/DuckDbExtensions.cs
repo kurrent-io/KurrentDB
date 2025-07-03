@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using DotNext;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 
@@ -109,16 +108,4 @@ public static class DuckDbExtensions {
 			connection.ExecuteNonQuery<TArgs, TQuery>(args);
 		}
 	}
-
-	public static void Add(this BindingContext bindingContext, long? value) {
-		if (value.HasValue)
-			bindingContext.Add(value.Value);
-		else
-			bindingContext.Add(DBNull.Value);
-	}
-}
-
-public static class OptionalResultExtensions {
-	public static T WithDefault<T>(this Optional<T>? optional, T value) where T: struct =>
-		optional?.OrNull() ?? value;
 }
