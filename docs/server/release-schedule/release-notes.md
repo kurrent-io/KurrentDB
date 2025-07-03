@@ -31,7 +31,7 @@ example logs:
 
 ### Added support for running as a Windows service. (PR [#5163](https://github.com/kurrent-io/KurrentDB/pull/5163))
 
-The server can now be installed as a WIndows Service.
+The server can now be installed as a Windows Service.
 
 ### Added server configuration option for TCP read expiry (PR [#5166](https://github.com/kurrent-io/KurrentDB/pull/5166))
 
