@@ -6,4 +6,7 @@
 	<ItemGroup>
 		<PackageReference Include="EventStore.Plugins" />
 	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+	</ItemGroup>
 </Project>
