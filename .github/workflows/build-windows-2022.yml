@@ -1,4 +1,4 @@
-name: Build Windows 2019
+name: Build Windows 2022
 
 on:
   pull_request:
@@ -21,5 +21,5 @@ jobs:
   build:
     uses: ./.github/workflows/build-reusable.yml
     with:
-      os: windows-2019
+      os: windows-2022
       arch: x64
