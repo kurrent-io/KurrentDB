@@ -140,7 +140,7 @@ public readonly record struct TestMessageData(
 			LogSequence,
 			batchIndex,
 			originalStreamName,
-			StreamPosition,
+			StreamPosition - 1,
 			PrepareFlags.None,
 			EventType,
 			Data,
@@ -149,7 +149,7 @@ public readonly record struct TestMessageData(
 
 		return ResolvedEvent.ForResolvedLink(
 			new EventRecord(
-				prepare.Version,
+				prepare.ExpectedVersion + 1,
 				prepare,
 				prepare.EventStreamId,
 				prepare.EventType
@@ -166,7 +166,7 @@ public readonly record struct TestMessageData(
 				prepare.TimeStamp,
 				PrepareFlags.None,
 				"$>",
-				Encoding.UTF8.GetBytes($"{prepare.Version}@{prepare.EventStreamId}"),
+				Encoding.UTF8.GetBytes($"{prepare.ExpectedVersion + 1}@{prepare.EventStreamId}"),
 				[],
 				[]
 			));
@@ -214,6 +214,7 @@ public static class TestMessageBatchExtensions {
 
 		return result.ToArray();
 	}
+
 	public static ResolvedEvent[] ToCategoryIndexResolvedEvents(
 		this List<TestMessageBatch> batches,
 		string category

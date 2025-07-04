@@ -21,7 +21,6 @@ using KurrentDB.SecondaryIndexing.Tests.Fixtures;
 using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 using static KurrentDB.SecondaryIndexing.Indexes.EventType.EventTypeSql;
-using static KurrentDB.SecondaryIndexing.Indexes.Stream.StreamSql;
 
 namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 

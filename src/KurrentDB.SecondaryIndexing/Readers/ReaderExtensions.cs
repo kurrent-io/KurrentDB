@@ -48,7 +48,8 @@ public static class ReaderExtensions {
 				resolvedEvent.Event.TimeStamp,
 				resolvedEvent.Event.Flags,
 				"$>",
-				Encoding.UTF8.GetBytes($"{resolvedEvent.Event.ExpectedVersion}@{resolvedEvent.Event.EventStreamId!}"),
+				Encoding.UTF8.GetBytes(
+					$"{resolvedEvent.Event.ExpectedVersion + 1}@{resolvedEvent.Event.EventStreamId!}"),
 				[],
 				[]
 			));
@@ -60,7 +61,7 @@ public static class ReaderExtensions {
 	) =>
 		ResolvedEvent.ForResolvedLink(
 			new EventRecord(
-				prepare.Version,
+				prepare.ExpectedVersion + 1,
 				prepare,
 				prepare.EventStreamId!.ToString(),
 				prepare.EventType!.ToString()
@@ -77,7 +78,7 @@ public static class ReaderExtensions {
 				prepare.TimeStamp,
 				prepare.Flags,
 				"$>",
-				Encoding.UTF8.GetBytes($"{prepare.Version}@{prepare.EventStreamId!.ToString()}"),
+				Encoding.UTF8.GetBytes($"{prepare.ExpectedVersion + 1}@{prepare.EventStreamId!.ToString()}"),
 				[],
 				[]
 			));
