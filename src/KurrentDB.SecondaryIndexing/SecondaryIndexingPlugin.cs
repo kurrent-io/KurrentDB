@@ -27,6 +27,7 @@ public interface ISecondaryIndexingPlugin : ISubsystemsPlugin;
 
 public sealed class SecondaryIndexingPluginOptions {
 	public int CommitBatchSize { get; set; } = 50_000;
+	public string? DbPath { get; set; }
 }
 
 public static class SecondaryIndexingPluginFactory {
@@ -44,10 +45,9 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton(options);
 
 		services.AddSingleton<DuckDbDataSourceOptions>(sp => {
-			var dbConfig = sp.GetRequiredService<TFChunkDbConfig>();
-			var connectionString = $"Data Source={Path.Combine(dbConfig.Path, "index.db")};";
+			var dbPath = options.DbPath ?? Path.Combine(sp.GetRequiredService<TFChunkDbConfig>().Path, "index.db");
 
-			return new() { ConnectionString = connectionString };
+			return new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" };
 		});
 		services.AddSingleton<DuckDbDataSource>(sp => {
 			var dbSource = new DuckDbDataSource(sp.GetRequiredService<DuckDbDataSourceOptions>());

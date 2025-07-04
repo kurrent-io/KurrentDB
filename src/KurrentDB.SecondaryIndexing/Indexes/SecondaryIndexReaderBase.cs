@@ -65,9 +65,9 @@ internal abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISe
 		if (msg.ValidationStreamVersion.HasValue && lastEventNumber == msg.ValidationStreamVersion)
 			return NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
 				msg.ValidationStreamVersion.Value);
-		if (lastEventNumber == 0)
+		if (lastEventNumber == -1)
 			return NoData(msg, ReadStreamResult.NoStream, lastIndexedPosition,
-				msg.ValidationStreamVersion ?? 0);
+				msg.ValidationStreamVersion ?? -1);
 
 		long endEventNumber = msg.FromEventNumber < 0 ? lastEventNumber : msg.FromEventNumber;
 		long startEventNumber = Math.Max(0L, endEventNumber - msg.MaxCount + 1);
