@@ -29,6 +29,7 @@ public class NoOpSecondaryIndexProgressTracker : ISecondaryIndexProgressTracker 
 	}
 
 	public void RecordCommit(Func<(long position, int batchSize)> callback) {
+		callback();
 	}
 
 	public void RecordError(Exception e) {

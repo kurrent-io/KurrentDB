@@ -27,7 +27,7 @@ namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 
 public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	[Fact]
-	public void CommittedMultipleEventsInMultipleStreams_AreIndexedCorrectly() {
+	public void CommittedMultipleEventsInMultipleStreams_AreIndexed() {
 		// Given
 		const string cat1 = "first";
 		const string cat2 = "second";
@@ -144,6 +144,79 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertGetStreamIdByNameQueryReturns(cat1Stream1, 0);
 		AssertGetStreamIdByNameQueryReturns(cat2Stream1, 1);
 		AssertGetStreamIdByNameQueryReturns(cat1Stream2, 2);
+	}
+
+
+	[Fact]
+	public void CommittedMultipleEventsToAStringWithoutCategory_AreIndexed() {
+		// Given
+		const string streamName = "hello";
+		string eventType1 = $"{Guid.NewGuid()}";
+		string eventType2 = $"{Guid.NewGuid()}";
+		string eventType3 = $"{Guid.NewGuid()}";
+
+		ResolvedEvent[] events = [
+			From(streamName, 0, 100, eventType1, []),
+			From(streamName, 1, 117, eventType2, []),
+			From(streamName, 2, 200, eventType3, []),
+		];
+
+		// When
+		foreach (var resolvedEvent in events) {
+			_processor.Index(resolvedEvent);
+		}
+
+		_processor.Commit();
+
+		// Then
+		// Default Index
+		AssertLastSequenceQueryReturns(2);
+		AssertLastLogPositionQueryReturns(200);
+
+		AssertDefaultIndexQueryReturns([
+			new AllRecord(0, 100),
+			new AllRecord(1, 117),
+			new AllRecord(2, 200)
+		]);
+
+		// Categories
+		AssertGetCategoriesQueryReturns([
+			new ReferenceRecord(0, "hello")
+		]);
+		AssertGetCategoriesMaxSequencesQueryReturns([
+			(0, 2)
+		]);
+		AssertCategoryIndexQueryReturns(0, [
+			new CategoryRecord(0, 100),
+			new CategoryRecord(1, 117),
+			new CategoryRecord(2, 200)
+		]);
+
+		// EventTypes
+		AssertGetAllEventTypesQueryReturns([
+			new ReferenceRecord(0, eventType1),
+			new ReferenceRecord(1, eventType2),
+			new ReferenceRecord(2, eventType3)
+		]);
+		AssertGetEventTypeMaxSequencesQueryReturns([
+			(0, 0),
+			(1, 0),
+			(2, 0)
+		]);
+		AssertReadEventTypeIndexQueryReturns(0, [
+			new EventTypeRecord(0, 100)
+		]);
+		AssertReadEventTypeIndexQueryReturns(1, [
+			new EventTypeRecord(0, 117)
+		]);
+		AssertReadEventTypeIndexQueryReturns(2, [
+			new EventTypeRecord(0, 200)
+		]);
+
+		// Streams
+		AssertGetStreamMaxSequencesQueryReturns(0);
+
+		AssertGetStreamIdByNameQueryReturns(streamName, 0);
 	}
 
 	[Fact]
