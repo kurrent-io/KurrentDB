@@ -11,7 +11,6 @@ using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Storage;
 using Serilog;
-using static KurrentDB.SecondaryIndexing.Indexes.Stream.StreamSql;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 

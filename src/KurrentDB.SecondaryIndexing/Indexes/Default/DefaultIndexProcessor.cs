@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using System.Diagnostics;
 using DotNext;
 using Kurrent.Quack;
 using KurrentDB.Core.Bus;
@@ -78,9 +77,9 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			if(commitPosition.HasValue && logPosition != commitPosition)
 				row.Append(commitPosition.Value);
 			else
-				row.AppendDefault();
+				row.Append(DBNull.Value);
 			row.Append(new DateTimeOffset(resolvedEvent.Event.TimeStamp).ToUnixTimeMilliseconds());
-			row.AppendDefault(); // expires
+			row.Append(DBNull.Value); // expires
 			row.Append(streamId);
 			row.Append(eventType.Id);
 			row.Append(eventType.Sequence);
@@ -118,9 +117,6 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private long? GetLastSequence() =>
 		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>()?.OrNull();
 
-
-	private readonly Stopwatch _sw = new();
-
 	public void Commit() {
 		if (IsDisposingOrDisposed)
 			return;
@@ -128,14 +124,10 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_streamIndexProcessor.Commit();
 
 		try {
-			_sw.Restart();
 			_progressTracker.RecordCommit(() => {
 				_appender.Flush();
 				return (LastSequence, _inFlightRecords.Count);
 			});
-			_sw.Stop();
-			Logger.Debug("Committed {Count} records to index at seq {Seq} ({Took} ms)", _inFlightRecords.Count,
-				LastSequence, _sw.ElapsedMilliseconds);
 
 		} catch (Exception e) {
 			Logger.Error(e, "Failed to commit {Count} records to index at sequence {Seq}", _inFlightRecords.Count,

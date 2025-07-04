@@ -12,7 +12,7 @@
     <PackageVersion Include="DotNext.Threading" Version="5.18.1" />
     <PackageVersion Include="DotNext.Unsafe" Version="5.18.0" />
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.10.59" />
-    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.0.13" />
+    <PackageVersion Include="Kurrent.Quack" Version="0.0.0-alpha.0.14" />
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.3.0" />
     <PackageVersion Include="EventStore.Client" Version="22.0.0" />
     <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="23.3.3" />

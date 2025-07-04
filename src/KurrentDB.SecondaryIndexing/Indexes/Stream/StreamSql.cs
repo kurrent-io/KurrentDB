@@ -5,7 +5,6 @@ using DotNext;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.Services;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
@@ -56,24 +55,21 @@ internal static class StreamSql {
 
 	public readonly record struct UpdateStreamMetadataParams(
 		string StreamName,
-		long MaxAge, // TODO: Make nullable after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
-		long MaxCount, // TODO: Make nullable after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+		long? MaxAge,
+		long? MaxCount,
 		bool IsDeleted,
-		long TruncateBefore, // TODO: Make nullable after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
-		string Acl // TODO: Make nullable after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+		long? TruncateBefore,
+		string? Acl
 	) {
 		public static UpdateStreamMetadataParams From(string streamName, StreamMetadata streamMetadata) =>
 			new(
 				streamName,
-				(long?)streamMetadata.MaxAge?.TotalSeconds ??
-				long.MinValue, // TODO: remove default value after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
-				streamMetadata.MaxCount ??
-				long.MinValue, // TODO: remove default value after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+				(long?)streamMetadata.MaxAge?.TotalSeconds,
+				streamMetadata.MaxCount,
 				streamMetadata.TruncateBefore == EventNumber.DeletedStream,
-				streamMetadata.TruncateBefore ??
-				long.MinValue, // TODO: remove default value after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+				streamMetadata.TruncateBefore,
 				streamMetadata.Acl == null || streamMetadata.Acl.ReadRoles.Length == 0
-					? "" // TODO: use null after merging: https://github.com/kurrent-io/Kurrent.Quack/pull/6
+					? null
 					: $"[${string.Join(",", streamMetadata.Acl.ReadRoles)}]"
 			);
 	}

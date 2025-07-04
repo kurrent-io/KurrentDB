@@ -5,16 +5,12 @@ using System.Diagnostics.CodeAnalysis;
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using KurrentDB.Core.Services.Transport.Enumerators;
-using KurrentDB.Core.Services.UserManagement;
 using KurrentDB.POC.IO.Core;
 using KurrentDB.SecondaryIndexing.Indexes;
-using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Subscriptions;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Position = KurrentDB.Core.Services.Transport.Common.Position;
 
 namespace KurrentDB.SecondaryIndexing.Builders;
 

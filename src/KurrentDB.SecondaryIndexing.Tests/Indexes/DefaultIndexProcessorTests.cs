@@ -243,11 +243,11 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 
 		Assert.NotNull(summary);
 		Assert.Equal(cat1Stream1, summary.Value.Name);
-		Assert.Equal(long.MinValue, summary.Value.MaxAge);
-		Assert.Equal(long.MinValue, summary.Value.MaxCount);
+		Assert.Null(summary.Value.MaxAge);
+		Assert.Null(summary.Value.MaxCount);
 		Assert.False(summary.Value.IsDeleted);
-		Assert.Equal(long.MinValue, summary.Value.TruncateBefore);
-		Assert.Equal("", summary.Value.Acl);
+		Assert.Null(summary.Value.TruncateBefore);
+		Assert.Null(summary.Value.Acl);
 	}
 
 	private static ResolvedEvent StreamMetadataChanged(
