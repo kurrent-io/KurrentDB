@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- It must be `TargetFrameworks` plural to work on macos -->
+    <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
+    <!--suppress MsbuildTargetFrameworkTagInspection-->
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <IncludeHttpRuleProtos>true</IncludeHttpRuleProtos>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Net.ClientFactory" />
+    <PackageReference Include="Grpc.StatusProto" />
+    <PackageReference Include="Grpc.Tools">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+		<!-- Required to remove conflicts -->
+    <PackageReference Include="Google.Api.CommonProtos"  PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- TODO: share the protos to avoid generating the server code here -->
+
+    <Protobuf
+        ProtoRoot="proto/kurrentdb/protocol/v2"
+        Include="proto/kurrentdb/protocol/v2/**/*.proto"
+        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="All"
+    />
+
+  </ItemGroup>
+</Project>

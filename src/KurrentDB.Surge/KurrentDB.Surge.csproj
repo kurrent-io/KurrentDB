@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net8.0</TargetFrameworks>
+		<LangVersion>preview</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<Deterministic>true</Deterministic>
+		<InvariantGlobalization>true</InvariantGlobalization>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Kurrent.Surge.Core" />
+		<PackageReference Include="Eventuous.Application" />
+		<PackageReference Include="Eventuous.Extensions.AspNetCore" />
+		<PackageReference Include="Eventuous.Extensions.DependencyInjection" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\KurrentDB.Core\KurrentDB.Core.csproj" />
+	</ItemGroup>
+</Project>

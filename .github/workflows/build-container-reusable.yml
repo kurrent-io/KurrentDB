@@ -86,22 +86,17 @@ jobs:
         --volume ${{ github.step_summary }}:/build/step-summary
         --rm
         --env GITHUB_STEP_SUMMARY=/build/step-summary
+        --env GITHUB_ACTIONS=true
         --env GITHUB_SERVER_URL=${{ github.server_url }}
         --env GITHUB_REPOSITORY=${{ github.repository }}
         --env GITHUB_WORKSPACE=${{ github.workspace }}
         --env GITHUB_SHA=${{ github.sha }}
         kurrentdb-test
-    -  
-      name: Publish Test Results (HTML)
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        path: test-results/test-results.html
-        name: test-results-${{ inputs.container-runtime }}.html
-    -  
+    -
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results-${{ inputs.container-runtime }}
-        path: test-results
+        path: |
+          test-results/**/*.trx
