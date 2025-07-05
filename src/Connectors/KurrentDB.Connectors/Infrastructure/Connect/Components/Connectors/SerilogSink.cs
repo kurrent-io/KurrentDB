@@ -9,6 +9,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors.Sinks;
+using Kurrent.Surge.Connectors.Sinks.Diagnostics.Metrics;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Core;
@@ -78,6 +79,8 @@ public class SerilogSink : ISink {
         Logger
             .ForContext("Record", context.Record, true)
             .Information("{RecordDescriptor}", context.Record.ToString());
+
+		SinkMetrics.TrackWrite(context.ConnectorId, MetricsLabel);
 
         return ValueTask.CompletedTask;
     }
