@@ -8,7 +8,7 @@ This page contains the release notes for EventStoreDB 24.10
 
 ## [24.10.6](https://github.com/kurrent-io/KurrentDB/releases/tag/v24.10.6)
 
-04 July 2025
+07 July 2025
 
 ### Added logging for significant garbage collections (PR [#5161](https://github.com/kurrent-io/KurrentDB/pull/5161))
 
