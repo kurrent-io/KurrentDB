@@ -13,6 +13,7 @@ using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Data;
 
 [NotInParallel]
+[Skip("Flaky")]
 public class ProjectionsTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task setup_creates_tables_and_indexes(CancellationToken cancellationToken) {

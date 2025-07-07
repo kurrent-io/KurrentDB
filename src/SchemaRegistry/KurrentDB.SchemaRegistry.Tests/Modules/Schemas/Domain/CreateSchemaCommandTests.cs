@@ -24,7 +24,7 @@ public class CreateSchemaCommandTests : SchemaApplicationTestFixture {
 			SchemaName = $"{nameof(PowerConsumption)}-{Identifiers.GenerateShortId()}",
 			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
 			Description = Faker.Lorem.Text(),
-			DataFormat = SchemaDataFormat.Json,
+			DataFormat = SchemaFormat.Json,
 			Compatibility = Faker.Random.Enum(CompatibilityMode.Unspecified),
 			Tags = {
 				new Dictionary<string, string> {

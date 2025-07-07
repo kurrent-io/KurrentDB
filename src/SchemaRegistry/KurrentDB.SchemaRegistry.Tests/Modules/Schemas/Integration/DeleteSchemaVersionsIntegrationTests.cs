@@ -12,7 +12,7 @@ using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class DeleteSchemaVersionsIntegrationTests : SchemaApplicationTestFixture {
-	[Test, Skip("True")]
+	[Test, Skip("Flaky")]
 	[Arguments(CompatibilityMode.None)]
 	[Arguments(CompatibilityMode.Backward)]
 	public async Task delete_versions_successfully(CompatibilityMode compatibility, CancellationToken cancellationToken) {

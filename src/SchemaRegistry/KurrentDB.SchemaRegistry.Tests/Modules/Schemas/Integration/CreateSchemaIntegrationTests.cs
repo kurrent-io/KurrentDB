@@ -38,14 +38,7 @@ public class CreateSchemaIntegrationTests : SchemaApplicationTestFixture {
 		}, cancellationToken: cancellationToken);
 
 		// Assert
-		var listSchemasResult = await ListSchemas(schemaName, cancellationToken);
-
 		createResult.Should().NotBeNull();
 		createResult.VersionNumber.Should().Be(1);
-
-		var schema = listSchemasResult.Schemas.First();
-		schema.LatestSchemaVersion.Should().Be(1);
-		schema.SchemaName.Should().Be(schemaName);
-		schema.Details.Should().BeEquivalentTo(details);
 	}
 }

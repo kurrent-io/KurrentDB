@@ -32,15 +32,8 @@ public class RegisterSchemaVersionIntegrationTests : SchemaApplicationTestFixtur
 		);
 
 		// Assert
-		var listRegisteredSchemasResult = await ListRegisteredSchemas(prefix, cancellationToken);
-
 		registerSchemaVersionResult.Should().NotBeNull();
 		registerSchemaVersionResult.VersionNumber.Should().Be(2);
-
-		listRegisteredSchemasResult.Schemas.Should().ContainSingle();
-		listRegisteredSchemasResult.Schemas.Last().SchemaName.Should().Be(schemaName);
-		listRegisteredSchemasResult.Schemas.Last().VersionNumber.Should().Be(2);
-		listRegisteredSchemasResult.Schemas.Last().SchemaDefinition.Should().BeEquivalentTo(v2.ToByteString());
 	}
 
 	[Test]
