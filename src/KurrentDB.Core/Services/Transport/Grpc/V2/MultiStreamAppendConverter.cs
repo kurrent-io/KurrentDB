@@ -143,7 +143,7 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 			for (var i = 0; i < completed.FailureCurrentVersions.Length; i++) {
 				response.Failure.Output.Add(new AppendStreamFailure {
 					Stream = requests[completed.FailureStreamIndexes.Span[i]].Stream,
-					WrongExpectedRevision = new() {
+					StreamRevisionConflict = new() {
 						StreamRevision = completed.FailureCurrentVersions.Span[i],
 					},
 				});

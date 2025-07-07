@@ -96,7 +96,7 @@ message AppendStreamFailure {
 	// The error details
 	oneof error {
 		// Failed because the actual stream revision didn't match the expected revision.
-		ErrorDetails.RevisionConflict wrong_expected_revision = 2;
+		ErrorDetails.StreamRevisionConflict stream_revision_conflict = 2;
 
 		// Failed because the client lacks sufficient permissions.
 		ErrorDetails.AccessDenied access_denied = 3;
@@ -166,7 +166,7 @@ message ErrorDetails {
 	}
 
 	// When the expected revision of the stream does not match the actual revision.
-	message RevisionConflict {
+	message StreamRevisionConflict {
 		// The actual revision of the stream.
 		int64 stream_revision = 1;
 	}

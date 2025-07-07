@@ -48,7 +48,7 @@ public class MSAResponseConverterTests {
 			result.Failure.Output,
 			x => {
 				Assert.Equal("stream-at-index-0", x.Stream);
-				Assert.Equal(10, x.WrongExpectedRevision.StreamRevision);
+				Assert.Equal(10, x.StreamRevisionConflict.StreamRevision);
 			});
 	}
 
@@ -77,7 +77,7 @@ public class MSAResponseConverterTests {
 			result.Failure.Output,
 			x => {
 				Assert.Equal("stream-at-index-1", x.Stream);
-				Assert.Equal(11, x.WrongExpectedRevision.StreamRevision);
+				Assert.Equal(11, x.StreamRevisionConflict.StreamRevision);
 			});
 	}
 
@@ -106,11 +106,11 @@ public class MSAResponseConverterTests {
 			result.Failure.Output,
 			x => {
 				Assert.Equal("stream-at-index-1", x.Stream);
-				Assert.Equal(11, x.WrongExpectedRevision.StreamRevision);
+				Assert.Equal(11, x.StreamRevisionConflict.StreamRevision);
 			},
 			x => {
 				Assert.Equal("stream-at-index-3", x.Stream);
-				Assert.Equal(13, x.WrongExpectedRevision.StreamRevision);
+				Assert.Equal(13, x.StreamRevisionConflict.StreamRevision);
 			});
 	}
 
