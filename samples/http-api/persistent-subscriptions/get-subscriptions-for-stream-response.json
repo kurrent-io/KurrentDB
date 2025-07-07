@@ -2,20 +2,22 @@
   {
     "links": [
       {
-        "href": "http://localhost:2113/subscriptions/newstream/competing_consumers_group1/info",
+        "href": "https://localhost:2113/subscriptions/teststream1/testgroup-1/info",
         "rel": "detail"
       }
     ],
-    "eventStreamId": "newstream",
-    "groupName": "competing_consumers_group1",
-    "parkedMessageUri": "http://localhost:2113/streams/$persistentsubscription-newstream::competing_consumers_group1-parked",
-    "getMessagesUri": "http://localhost:2113/subscriptions/newstream/competing_consumers_group1/1",
+    "eventStreamId": "teststream1",
+    "groupName": "testgroup-1",
+    "parkedMessageUri": "https://localhost:2113/streams/%24persistentsubscription-teststream1::testgroup-1-parked",
+    "getMessagesUri": "https://localhost:2113/subscriptions/teststream1/testgroup-1/1",
     "status": "Live",
     "averageItemsPerSecond": 0.0,
-    "totalItemsProcessed": 0,
-    "lastProcessedEventNumber": -1,
-    "lastKnownEventNumber": 5,
-    "connectionCount": 0,
+    "totalItemsProcessed": 5,
+    "lastProcessedEventNumber": 0,
+    "lastCheckpointedEventPosition": null,
+    "lastKnownEventNumber": 4,
+    "lastKnownEventPosition": "4",
+    "connectionCount": 1,
     "totalInFlightMessages": 0
   }
 ]
