@@ -56,8 +56,7 @@ public class ProtoJsonSerializer(JsonSerializerOptions? options = null) {
                 RemoveWhitespacesExceptInQuotes(JsonFormatter.Default.Format(message))
             );
 
-            // simply because protobuf is so stupid that it adds spaces
-            // between property names and values. absurd...
+            // simply because protobuf adds spaces between property names and values.
             static string RemoveWhitespacesExceptInQuotes(string json) {
                 var inQuotes = false;
                 var result   = new StringBuilder(json.Length);
@@ -85,8 +84,6 @@ public class ProtoJsonSerializer(JsonSerializerOptions? options = null) {
 		return value;
 
 		static object? DeserializeJsonToProto(ReadOnlyMemory<byte> jsonData, Type type) {
-			// var message = Messages.GetParser(type).ParseFrom(jsonData.Span);
-
 			return ProtoJsonParser.Parse(
 				Encoding.UTF8.GetString(jsonData.Span.ToArray()),
 				Messages.GetDescriptor(type)
