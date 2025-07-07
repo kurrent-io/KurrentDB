@@ -47,7 +47,7 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 	static readonly ErrorDetails.Types.StreamDeleted StreamDeletedError = new();
 
 	public ConvertedEvents ConvertToEvents(IReadOnlyList<AppendStreamRequest> requests) {
-		if (requests is [])
+		if (requests.Count == 0)
 			throw RpcExceptions.InvalidArgument("At least one AppendStreamRequest must be present");
 
 		// todo: in the future can we rent the memory from a pool?
