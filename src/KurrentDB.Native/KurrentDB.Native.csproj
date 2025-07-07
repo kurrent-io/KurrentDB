@@ -1,10 +1,10 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
+		<PackageReference Include="Mono.Posix.NETStandard" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" />

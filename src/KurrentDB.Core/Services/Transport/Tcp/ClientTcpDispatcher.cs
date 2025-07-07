@@ -11,7 +11,6 @@ using KurrentDB.Common.Utils;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
-using static KurrentDB.Core.Messages.ClientMessage;
 using CheckpointReached = EventStore.Client.Messages.CheckpointReached;
 using FilteredSubscribeToStream = EventStore.Client.Messages.FilteredSubscribeToStream;
 using IdentifyClient = EventStore.Client.Messages.IdentifyClient;
@@ -32,11 +31,17 @@ using UnsubscribeFromStream = EventStore.Client.Messages.UnsubscribeFromStream;
 namespace KurrentDB.Core.Services.Transport.Tcp;
 
 public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
-	public ClientTcpDispatcher(int writeTimeoutMs)
-		: this(TimeSpan.FromMilliseconds(writeTimeoutMs)) {
+	private readonly TimeSpan _readTimeout;
+
+	public ClientTcpDispatcher(int readTimeoutMs, int writeTimeoutMs)
+		: this(
+			TimeSpan.FromMilliseconds(readTimeoutMs),
+			TimeSpan.FromMilliseconds(writeTimeoutMs)) {
 	}
 
-	public ClientTcpDispatcher(TimeSpan writeTimeout) : base(writeTimeout) {
+	public ClientTcpDispatcher(TimeSpan readTimeout, TimeSpan writeTimeout) : base(writeTimeout) {
+		_readTimeout = readTimeout;
+
 		AddUnwrapper(TcpCommand.Ping, UnwrapPing, ClientVersion.V2);
 		AddWrapper<TcpMessage.PongMessage>(WrapPong, ClientVersion.V2);
 
@@ -46,20 +51,20 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		AddWrapper<ClientMessage.ReadEventCompleted>(WrapReadEventCompleted, ClientVersion.V2);
 
 		AddUnwrapper(TcpCommand.ReadStreamEventsForward, UnwrapReadStreamEventsForward, ClientVersion.V2);
-		AddWrapper<ReadStreamEventsForwardCompleted>(WrapReadStreamEventsForwardCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.ReadStreamEventsForwardCompleted>(WrapReadStreamEventsForwardCompleted, ClientVersion.V2);
 		AddUnwrapper(TcpCommand.ReadStreamEventsBackward, UnwrapReadStreamEventsBackward, ClientVersion.V2);
-		AddWrapper<ReadStreamEventsBackwardCompleted>(WrapReadStreamEventsBackwardCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.ReadStreamEventsBackwardCompleted>(WrapReadStreamEventsBackwardCompleted, ClientVersion.V2);
 
 		AddUnwrapper(TcpCommand.ReadAllEventsForward, UnwrapReadAllEventsForward, ClientVersion.V2);
-		AddWrapper<ReadAllEventsForwardCompleted>(WrapReadAllEventsForwardCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.ReadAllEventsForwardCompleted>(WrapReadAllEventsForwardCompleted, ClientVersion.V2);
 		AddUnwrapper(TcpCommand.ReadAllEventsBackward, UnwrapReadAllEventsBackward, ClientVersion.V2);
-		AddWrapper<ReadAllEventsBackwardCompleted>(WrapReadAllEventsBackwardCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.ReadAllEventsBackwardCompleted>(WrapReadAllEventsBackwardCompleted, ClientVersion.V2);
 
 		AddUnwrapper(TcpCommand.FilteredReadAllEventsForward, UnwrapFilteredReadAllEventsForward, ClientVersion.V2);
-		AddWrapper<FilteredReadAllEventsForwardCompleted>(WrapFilteredReadAllEventsForwardCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.FilteredReadAllEventsForwardCompleted>(WrapFilteredReadAllEventsForwardCompleted, ClientVersion.V2);
 
 		AddUnwrapper(TcpCommand.FilteredReadAllEventsBackward, UnwrapFilteredReadAllEventsBackward, ClientVersion.V2);
-		AddWrapper<FilteredReadAllEventsBackwardCompleted>(WrapFilteredReadAllEventsBackwardCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.FilteredReadAllEventsBackwardCompleted>(WrapFilteredReadAllEventsBackwardCompleted, ClientVersion.V2);
 
 		AddUnwrapper(TcpCommand.SubscribeToStream, UnwrapSubscribeToStream, ClientVersion.V2);
 		AddUnwrapper(TcpCommand.FilteredSubscribeToStream, UnwrapFilteredSubscribeToStream, ClientVersion.V2);
@@ -72,10 +77,10 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		AddWrapper<ClientMessage.SubscriptionDropped>(WrapSubscriptionDropped, ClientVersion.V2);
 		AddUnwrapper(TcpCommand.CreatePersistentSubscription, UnwrapCreatePersistentSubscription, ClientVersion.V2);
 		AddUnwrapper(TcpCommand.DeletePersistentSubscription, UnwrapDeletePersistentSubscription, ClientVersion.V2);
-		AddWrapper<CreatePersistentSubscriptionToStreamCompleted>(WrapCreatePersistentSubscriptionCompleted, ClientVersion.V2);
-		AddWrapper<DeletePersistentSubscriptionToStreamCompleted>(WrapDeletePersistentSubscriptionCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.CreatePersistentSubscriptionToStreamCompleted>(WrapCreatePersistentSubscriptionCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.DeletePersistentSubscriptionToStreamCompleted>(WrapDeletePersistentSubscriptionCompleted, ClientVersion.V2);
 		AddUnwrapper(TcpCommand.UpdatePersistentSubscription, UnwrapUpdatePersistentSubscription, ClientVersion.V2);
-		AddWrapper<UpdatePersistentSubscriptionToStreamCompleted>(WrapUpdatePersistentSubscriptionCompleted, ClientVersion.V2);
+		AddWrapper<ClientMessage.UpdatePersistentSubscriptionToStreamCompleted>(WrapUpdatePersistentSubscriptionCompleted, ClientVersion.V2);
 
 		AddUnwrapper(TcpCommand.ConnectToPersistentSubscription, UnwrapConnectToPersistentSubscription, ClientVersion.V2);
 		AddUnwrapper(TcpCommand.PersistentSubscriptionAckEvents, UnwrapPersistentSubscriptionAckEvents, ClientVersion.V2);
@@ -84,9 +89,9 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		AddWrapper<ClientMessage.PersistentSubscriptionStreamEventAppeared>(WrapPersistentSubscriptionStreamEventAppeared, ClientVersion.V2);
 
 		AddUnwrapper(TcpCommand.ScavengeDatabase, UnwrapScavengeDatabase, ClientVersion.V2);
-		AddWrapper<ScavengeDatabaseInProgressResponse>(WrapScavengeDatabaseResponse, ClientVersion.V2);
-		AddWrapper<ScavengeDatabaseStartedResponse>(WrapScavengeDatabaseResponse, ClientVersion.V2);
-		AddWrapper<ScavengeDatabaseUnauthorizedResponse>(WrapScavengeDatabaseResponse, ClientVersion.V2);
+		AddWrapper<ClientMessage.ScavengeDatabaseInProgressResponse>(WrapScavengeDatabaseResponse, ClientVersion.V2);
+		AddWrapper<ClientMessage.ScavengeDatabaseStartedResponse>(WrapScavengeDatabaseResponse, ClientVersion.V2);
+		AddWrapper<ClientMessage.ScavengeDatabaseUnauthorizedResponse>(WrapScavengeDatabaseResponse, ClientVersion.V2);
 
 		AddWrapper<ClientMessage.NotHandled>(WrapNotHandled, ClientVersion.V2);
 		AddUnwrapper(TcpCommand.NotHandled, UnwrapNotHandled, ClientVersion.V2);
@@ -118,11 +123,12 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(TcpCommand.Pong, message.CorrelationId, message.Payload);
 	}
 
-	private static ClientMessage.ReadEvent UnwrapReadEvent(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
+	private ClientMessage.ReadEvent UnwrapReadEvent(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<ReadEvent>();
 		if (dto == null)
 			return null;
-		return new(Guid.NewGuid(), package.CorrelationId, envelope, dto.EventStreamId, dto.EventNumber, dto.ResolveLinkTos, dto.RequireLeader, user);
+		return new(Guid.NewGuid(), package.CorrelationId, envelope, dto.EventStreamId, dto.EventNumber, dto.ResolveLinkTos, dto.RequireLeader, user,
+			expires: DateTime.UtcNow + _readTimeout);
 	}
 
 	private static TcpPackage WrapReadEventCompleted(ClientMessage.ReadEventCompleted msg) {
@@ -130,17 +136,18 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(TcpCommand.ReadEventCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
-	private static ReadStreamEventsForward UnwrapReadStreamEventsForward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
+	private ClientMessage.ReadStreamEventsForward UnwrapReadStreamEventsForward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<ReadStreamEvents>();
 		if (dto == null)
 			return null;
 		return new(Guid.NewGuid(), package.CorrelationId, envelope,
 			dto.EventStreamId, dto.FromEventNumber, dto.MaxCount,
 			dto.ResolveLinkTos, dto.RequireLeader, null, user,
-			replyOnExpired: false);
+			replyOnExpired: false,
+			expires: DateTime.UtcNow + _readTimeout);
 	}
 
-	private static TcpPackage WrapReadStreamEventsForwardCompleted(ReadStreamEventsForwardCompleted msg) {
+	private static TcpPackage WrapReadStreamEventsForwardCompleted(ClientMessage.ReadStreamEventsForwardCompleted msg) {
 		var dto = new ReadStreamEventsCompleted(
 			ConvertToResolvedIndexedEvents(msg.Events),
 			(ReadStreamEventsCompleted.Types.ReadStreamResult)msg.Result,
@@ -148,16 +155,17 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(TcpCommand.ReadStreamEventsForwardCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
-	private static ReadStreamEventsBackward UnwrapReadStreamEventsBackward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
+	private ClientMessage.ReadStreamEventsBackward UnwrapReadStreamEventsBackward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<ReadStreamEvents>();
 		if (dto == null)
 			return null;
 		return new(Guid.NewGuid(), package.CorrelationId, envelope,
 			dto.EventStreamId, dto.FromEventNumber, dto.MaxCount,
-			dto.ResolveLinkTos, dto.RequireLeader, null, user);
+			dto.ResolveLinkTos, dto.RequireLeader, null, user,
+			expires: DateTime.UtcNow + _readTimeout);
 	}
 
-	private static TcpPackage WrapReadStreamEventsBackwardCompleted(ReadStreamEventsBackwardCompleted msg) {
+	private static TcpPackage WrapReadStreamEventsBackwardCompleted(ClientMessage.ReadStreamEventsBackwardCompleted msg) {
 		var dto = new ReadStreamEventsCompleted(
 			ConvertToResolvedIndexedEvents(msg.Events),
 			(ReadStreamEventsCompleted.Types.ReadStreamResult)msg.Result,
@@ -174,7 +182,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return result;
 	}
 
-	private static ReadAllEventsForward UnwrapReadAllEventsForward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
+	private ClientMessage.ReadAllEventsForward UnwrapReadAllEventsForward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<ReadAllEvents>();
 		if (dto == null)
 			return null;
@@ -183,10 +191,11 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 			dto.CommitPosition, dto.PreparePosition, dto.MaxCount,
 			dto.ResolveLinkTos, dto.RequireLeader, null, user,
 			replyOnExpired: false,
-			longPollTimeout: null);
+			longPollTimeout: null,
+			expires: DateTime.UtcNow + _readTimeout);
 	}
 
-	private static TcpPackage WrapReadAllEventsForwardCompleted(ReadAllEventsForwardCompleted msg) {
+	private static TcpPackage WrapReadAllEventsForwardCompleted(ClientMessage.ReadAllEventsForwardCompleted msg) {
 		var dto = new ReadAllEventsCompleted(
 			msg.CurrentPos.CommitPosition, msg.CurrentPos.PreparePosition, ConvertToResolvedEvents(msg.Events),
 			msg.NextPos.CommitPosition, msg.NextPos.PreparePosition,
@@ -194,16 +203,17 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(TcpCommand.ReadAllEventsForwardCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
-	private static ReadAllEventsBackward UnwrapReadAllEventsBackward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
+	private ClientMessage.ReadAllEventsBackward UnwrapReadAllEventsBackward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<ReadAllEvents>();
 		if (dto == null)
 			return null;
 		return new(Guid.NewGuid(), package.CorrelationId, envelope,
 			dto.CommitPosition, dto.PreparePosition, dto.MaxCount,
-			dto.ResolveLinkTos, dto.RequireLeader, null, user);
+			dto.ResolveLinkTos, dto.RequireLeader, null, user,
+			expires: DateTime.UtcNow + _readTimeout);
 	}
 
-	private static TcpPackage WrapReadAllEventsBackwardCompleted(ReadAllEventsBackwardCompleted msg) {
+	private static TcpPackage WrapReadAllEventsBackwardCompleted(ClientMessage.ReadAllEventsBackwardCompleted msg) {
 		var dto = new ReadAllEventsCompleted(
 			msg.CurrentPos.CommitPosition, msg.CurrentPos.PreparePosition, ConvertToResolvedEvents(msg.Events),
 			msg.NextPos.CommitPosition, msg.NextPos.PreparePosition,
@@ -211,7 +221,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(TcpCommand.ReadAllEventsBackwardCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
-	private static FilteredReadAllEventsForward UnwrapFilteredReadAllEventsForward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
+	private ClientMessage.FilteredReadAllEventsForward UnwrapFilteredReadAllEventsForward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<FilteredReadAllEvents>();
 		if (dto == null)
 			return null;
@@ -226,10 +236,11 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 			dto.CommitPosition, dto.PreparePosition, dto.MaxCount,
 			dto.ResolveLinkTos, dto.RequireLeader, maxSearchWindow, null, eventFilter, user,
 			replyOnExpired: false,
-			longPollTimeout: null);
+			longPollTimeout: null,
+			expires: DateTime.UtcNow + _readTimeout);
 	}
 
-	private static TcpPackage WrapFilteredReadAllEventsForwardCompleted(FilteredReadAllEventsForwardCompleted msg) {
+	private static TcpPackage WrapFilteredReadAllEventsForwardCompleted(ClientMessage.FilteredReadAllEventsForwardCompleted msg) {
 		var dto = new FilteredReadAllEventsCompleted(
 			msg.CurrentPos.CommitPosition, msg.CurrentPos.PreparePosition, ConvertToResolvedEvents(msg.Events),
 			msg.NextPos.CommitPosition, msg.NextPos.PreparePosition, msg.IsEndOfStream,
@@ -246,7 +257,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return result;
 	}
 
-	private static FilteredReadAllEventsBackward UnwrapFilteredReadAllEventsBackward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
+	private ClientMessage.FilteredReadAllEventsBackward UnwrapFilteredReadAllEventsBackward(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user) {
 		var dto = package.Data.Deserialize<FilteredReadAllEvents>();
 		if (dto == null)
 			return null;
@@ -259,11 +270,13 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 
 		return new(Guid.NewGuid(), package.CorrelationId, envelope,
 			dto.CommitPosition, dto.PreparePosition, dto.MaxCount,
-			dto.ResolveLinkTos, dto.RequireLeader, maxSearchWindow, null, eventFilter, user, null);
+			dto.ResolveLinkTos, dto.RequireLeader, maxSearchWindow, null, eventFilter, user,
+			longPollTimeout: null,
+			expires: DateTime.UtcNow + _readTimeout);
 	}
 
 	private static TcpPackage WrapFilteredReadAllEventsBackwardCompleted(
-		FilteredReadAllEventsBackwardCompleted msg) {
+		ClientMessage.FilteredReadAllEventsBackwardCompleted msg) {
 		var dto = new FilteredReadAllEventsCompleted(
 			msg.CurrentPos.CommitPosition, msg.CurrentPos.PreparePosition, ConvertToResolvedEvents(msg.Events),
 			msg.NextPos.CommitPosition, msg.NextPos.PreparePosition, msg.IsEndOfStream,
@@ -308,7 +321,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		return new(TcpCommand.SubscriptionConfirmation, msg.CorrelationId, dto.Serialize());
 	}
 
-	private static CreatePersistentSubscriptionToStream UnwrapCreatePersistentSubscription(
+	private static ClientMessage.CreatePersistentSubscriptionToStream UnwrapCreatePersistentSubscription(
 		TcpPackage package, IEnvelope envelope, ClaimsPrincipal user, TcpConnectionManager connection) {
 		var dto = package.Data.Deserialize<CreatePersistentSubscription>();
 		if (dto == null)
@@ -328,7 +341,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 			user);
 	}
 
-	private static UpdatePersistentSubscriptionToStream UnwrapUpdatePersistentSubscription(
+	private static ClientMessage.UpdatePersistentSubscriptionToStream UnwrapUpdatePersistentSubscription(
 		TcpPackage package, IEnvelope envelope, ClaimsPrincipal user, TcpConnectionManager connection) {
 		var dto = package.Data.Deserialize<UpdatePersistentSubscription>();
 		if (dto == null)
@@ -348,7 +361,7 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 			user);
 	}
 
-	private static DeletePersistentSubscriptionToStream UnwrapDeletePersistentSubscription(
+	private static ClientMessage.DeletePersistentSubscriptionToStream UnwrapDeletePersistentSubscription(
 		TcpPackage package, IEnvelope envelope, ClaimsPrincipal user, TcpConnectionManager connection) {
 		var dto = package.Data.Deserialize<CreatePersistentSubscription>();
 		if (dto == null)
@@ -357,22 +370,22 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 			dto.EventStreamId, dto.SubscriptionGroupName, user);
 	}
 
-	private static TcpPackage WrapDeletePersistentSubscriptionCompleted(DeletePersistentSubscriptionToStreamCompleted msg) {
+	private static TcpPackage WrapDeletePersistentSubscriptionCompleted(ClientMessage.DeletePersistentSubscriptionToStreamCompleted msg) {
 		var dto = new DeletePersistentSubscriptionCompleted((DeletePersistentSubscriptionCompleted.Types.DeletePersistentSubscriptionResult)msg.Result, msg.Reason);
 		return new(TcpCommand.DeletePersistentSubscriptionCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
-	private static TcpPackage WrapCreatePersistentSubscriptionCompleted(CreatePersistentSubscriptionToStreamCompleted msg) {
+	private static TcpPackage WrapCreatePersistentSubscriptionCompleted(ClientMessage.CreatePersistentSubscriptionToStreamCompleted msg) {
 		var dto = new CreatePersistentSubscriptionCompleted((CreatePersistentSubscriptionCompleted.Types.CreatePersistentSubscriptionResult)msg.Result, msg.Reason);
 		return new(TcpCommand.CreatePersistentSubscriptionCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
-	private static TcpPackage WrapUpdatePersistentSubscriptionCompleted(UpdatePersistentSubscriptionToStreamCompleted msg) {
+	private static TcpPackage WrapUpdatePersistentSubscriptionCompleted(ClientMessage.UpdatePersistentSubscriptionToStreamCompleted msg) {
 		var dto = new UpdatePersistentSubscriptionCompleted((UpdatePersistentSubscriptionCompleted.Types.UpdatePersistentSubscriptionResult)msg.Result, msg.Reason);
 		return new(TcpCommand.UpdatePersistentSubscriptionCompleted, msg.CorrelationId, dto.Serialize());
 	}
 
-	private static ConnectToPersistentSubscriptionToStream UnwrapConnectToPersistentSubscription(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user, TcpConnectionManager connection) {
+	private static ClientMessage.ConnectToPersistentSubscriptionToStream UnwrapConnectToPersistentSubscription(TcpPackage package, IEnvelope envelope, ClaimsPrincipal user, TcpConnectionManager connection) {
 		var dto = package.Data.Deserialize<ConnectToPersistentSubscription>();
 		if (dto == null)
 			return null;
@@ -391,14 +404,14 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 			dto.ProcessedEventIds.Select(x => new Guid(x.ToByteArray())).ToArray(), user);
 	}
 
-	private static PersistentSubscriptionNackEvents UnwrapPersistentSubscriptionNackEvents(
+	private static ClientMessage.PersistentSubscriptionNackEvents UnwrapPersistentSubscriptionNackEvents(
 		TcpPackage package, IEnvelope envelope, ClaimsPrincipal user, TcpConnectionManager connection) {
 		var dto = package.Data.Deserialize<PersistentSubscriptionNakEvents>();
 		if (dto == null)
 			return null;
 		return new(
 			Guid.NewGuid(), package.CorrelationId, envelope, dto.SubscriptionId,
-			dto.Message, (PersistentSubscriptionNackEvents.NakAction)dto.Action,
+			dto.Message, (ClientMessage.PersistentSubscriptionNackEvents.NakAction)dto.Action,
 			dto.ProcessedEventIds.Select(x => new Guid(x.ToByteArray())).ToArray(), user);
 	}
 
@@ -433,17 +446,17 @@ public class ClientTcpDispatcher : ClientWriteTcpDispatcher {
 		Guid correlationId;
 
 		switch (msg) {
-			case ScavengeDatabaseStartedResponse startedResponse:
+			case ClientMessage.ScavengeDatabaseStartedResponse startedResponse:
 				result = ScavengeDatabaseResponse.Types.ScavengeResult.Started;
 				scavengeId = startedResponse.ScavengeId;
 				correlationId = startedResponse.CorrelationId;
 				break;
-			case ScavengeDatabaseInProgressResponse inProgressResponse:
+			case ClientMessage.ScavengeDatabaseInProgressResponse inProgressResponse:
 				result = ScavengeDatabaseResponse.Types.ScavengeResult.InProgress;
 				scavengeId = inProgressResponse.ScavengeId;
 				correlationId = inProgressResponse.CorrelationId;
 				break;
-			case ScavengeDatabaseUnauthorizedResponse unauthorizedResponse:
+			case ClientMessage.ScavengeDatabaseUnauthorizedResponse unauthorizedResponse:
 				result = ScavengeDatabaseResponse.Types.ScavengeResult.Unauthorized;
 				scavengeId = unauthorizedResponse.ScavengeId;
 				correlationId = unauthorizedResponse.CorrelationId;

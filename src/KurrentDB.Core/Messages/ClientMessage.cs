@@ -84,7 +84,10 @@ public static partial class ClientMessage {
 
 		public readonly ClaimsPrincipal User;
 
+		public readonly DateTime Created;
 		public readonly DateTime Expires;
+
+		public TimeSpan Lifetime => Expires - Created;
 
 		protected ReadRequestMessage(Guid internalCorrId, Guid correlationId, IEnvelope envelope,
 			ClaimsPrincipal user, DateTime? expires,
@@ -98,7 +101,8 @@ public static partial class ClientMessage {
 			Envelope = envelope;
 
 			User = user;
-			Expires = expires ?? DateTime.UtcNow.AddMilliseconds(ESConsts.ReadRequestTimeout);
+			Created = DateTime.UtcNow;
+			Expires = expires ?? Created.AddMilliseconds(ESConsts.ReadRequestTimeout);
 		}
 
 		public override string ToString() =>

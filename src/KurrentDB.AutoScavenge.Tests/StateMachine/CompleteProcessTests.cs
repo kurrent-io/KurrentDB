@@ -43,7 +43,7 @@ public class CompleteProcessTests {
 			Matches.MatchEvent<Events.ClusterScavengeStarted>((@event, snapshot) => {
 				Assert.NotEqual(snapshot.PrevState.ClusterScavengeId, snapshot.NewState.ClusterScavengeId);
 				Assert.Equal(@event.ClusterScavengeId, snapshot.NewState.ClusterScavengeId);
-				Assert.Equal(@event.Members, snapshot.NewState.ClusterMembers);
+				Assert.Equal(@event.Members.ToHashSet(), snapshot.NewState.ClusterMembers);
 				Assert.Equal(@event.StartedAt, snapshot.Time);
 				Assert.Equal(AutoScavengeStatus.ContinuingClusterScavenge, snapshot.NewState.Status);
 
@@ -301,7 +301,7 @@ public class CompleteProcessTests {
 			Matches.MatchEvent<Events.ClusterScavengeStarted>((@event, snapshot) => {
 				Assert.NotEqual(snapshot.PrevState.ClusterScavengeId, snapshot.NewState.ClusterScavengeId);
 				Assert.Equal(@event.ClusterScavengeId, snapshot.NewState.ClusterScavengeId);
-				Assert.Equal(@event.Members, snapshot.NewState.ClusterMembers);
+				Assert.Equal(@event.Members.ToHashSet(), snapshot.NewState.ClusterMembers);
 				Assert.Equal(@event.StartedAt, snapshot.Time);
 				Assert.Equal(AutoScavengeStatus.ContinuingClusterScavenge, snapshot.NewState.Status);
 
