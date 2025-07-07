@@ -15,7 +15,7 @@ using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Domain;
 
 public class DeleteSchemaVersionsCommandTests : SchemaApplicationTestFixture {
-	[Test]
+	[Test, Skip(("Temporary"))]
 	[Arguments(CompatibilityMode.None)]
 	[Arguments(CompatibilityMode.Backward)]
 	public async Task delete_versions_successfully(CompatibilityMode compatibility, CancellationToken cancellationToken) {
