@@ -85,8 +85,6 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 			}
 		}
 
-		// Successfully converted all requests to events.
-
 		return new(
 			events.ToImmutable(),
 			streamIds.ToImmutable(),
@@ -186,9 +184,6 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 
 		var properties = new Properties { PropertiesValues = { appendRecord.Properties } };
 
-		var metadataBytes = ProtoJsonSerializer.Default
-			.Serialize(appendRecord.Properties.MapToDictionary());
-
 		var isJson = schemaDataFormat
 			.Equals(Constants.Properties.DataFormats.Json, OrdinalIgnoreCase);
 
@@ -197,14 +192,14 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 			eventType: schemaName,
 			isJson: isJson,
 			data: appendRecord.Data.ToByteArray(),
-			metadata: metadataBytes.ToArray(),
+			metadata: [],
 			properties: properties.ToByteArray()
 		);
 
 		static Guid GetRecordId(AppendRecord appendRecord) {
 			return appendRecord.HasRecordId
 				? !Guid.TryParse(appendRecord.RecordId, out var id)
-					? throw RpcExceptions.InvalidArgument($"Could not parse RecordId \"{appendRecord.RecordId}\" to GUID")
+					? throw RpcExceptions.InvalidArgument($"Could not parse RecordId '{appendRecord.RecordId}' to GUID")
 					: id
 				: Guid.NewGuid();
 		}

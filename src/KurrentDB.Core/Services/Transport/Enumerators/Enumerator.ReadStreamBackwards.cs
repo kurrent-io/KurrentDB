@@ -124,7 +124,7 @@ partial class Enumerator {
 						_channel.Writer.TryComplete(new ReadResponseException.AccessDenied());
 						return;
 					default:
-						_channel.Writer.TryComplete(ReadResponseException.UnknownError.Create(completed.Result));
+						_channel.Writer.TryComplete(ReadResponseException.UnknownError.Create(completed.Result, completed.Error));
 						return;
 				}
 			}

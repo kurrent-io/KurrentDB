@@ -340,7 +340,7 @@ public static class ResponseConverter {
 			case ReadResponseException.UnknownMessage unknownMessage:
 				throw RpcExceptions.UnknownMessage(unknownMessage.UnknownMessageType, unknownMessage.ExpectedMessageType);
 			case ReadResponseException.UnknownError unknown:
-				throw RpcExceptions.UnknownError(unknown.ResultType, unknown.Result);
+				throw RpcExceptions.UnknownError(unknown.ResultType, unknown.Result, unknown.ErrorMessage);
 			default:
 				throw new ArgumentException($"Unknown read response exception type: {readResponseEx.GetType().Name}", nameof(readResponseEx));
 		}
@@ -352,26 +352,6 @@ public static class ResponseConverter {
 		if (e == null)
 			return null;
 		var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
-
-		//var metadataBytes = ByteString.CopyFrom(!e.Metadata.Span.IsEmpty ? e.Metadata.Span : e.Properties.Span);
-
-		var properties = Properties.Parser.ParseFrom(e.Properties.Span).PropertiesValues;
-
-		// serialize to json bytes and return as metadata
-		var metadata = new MapField<string, string>();
-		foreach (var (key, value) in properties) {
-			if (value.HasBytesValue) {
-				metadata[key] = value.BytesValue.ToStringUtf8();
-			} else if (value.HasStringValue) {
-				metadata[key] = value.StringValue;
-			} else if (value.HasInt64Value) {
-				metadata[key] = value.Int64Value.ToString();
-			} else if (value.HasDoubleValue) {
-				metadata[key] = value.DoubleValue.ToString(CultureInfo.InvariantCulture);
-			} else if (value.HasBooleanValue) {
-				metadata[key] = value.BooleanValue.ToString();
-			}
-		}
 
 		var result = new ReadEvent.Types.RecordedEvent {
 			Id = uuidOption.ContentCase switch {

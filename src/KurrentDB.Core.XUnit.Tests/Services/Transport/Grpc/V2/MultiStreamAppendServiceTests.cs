@@ -44,9 +44,9 @@ public class MultiStreamAppendServiceTests {
 	}
 
 	[Fact]
-	public async Task when_successfully_appending_multiple_events_to_multiple_streams() {
-		// write event 2 to stream-a
-		// write events 5 & 6 to stream-b
+	public async Task when_successfully_appending_multiple_messages_to_multiple_streams() {
+		// write message 2 to stream-a
+		// write messages 5 & 6 to stream-b
 		// given
 		var event2Id = Guid.NewGuid();
 		var event5Id = Guid.NewGuid();
@@ -59,11 +59,11 @@ public class MultiStreamAppendServiceTests {
 					ExpectedRevision = 1,
 					Records = {
 						new AppendRecord {
-							Data = ByteString.CopyFromUtf8("event-2"),
+							Data = ByteString.CopyFromUtf8("message-2"),
 							RecordId = event2Id.ToString(),
 							Properties = {
-								{ Constants.Properties.EventType, new() { BytesValue = ByteString.CopyFromUtf8("event-2-type") } },
-								{ Constants.Properties.DataFormat, new() { BytesValue = ByteString.CopyFromUtf8("json") } },
+								{ Constants.Properties.EventType, new() { StringValue = "message-2-type" } },
+								{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 							},
 						},
 					},
@@ -73,19 +73,19 @@ public class MultiStreamAppendServiceTests {
 					ExpectedRevision = -2,
 					Records = {
 						new AppendRecord {
-							Data = ByteString.CopyFromUtf8("event-5"),
+							Data = ByteString.CopyFromUtf8("message-5"),
 							RecordId = event5Id.ToString(),
 							Properties = {
-								{ Constants.Properties.EventType, new() { BytesValue = ByteString.CopyFromUtf8("event-5-type") } },
-								{ Constants.Properties.DataFormat, new() { BytesValue = ByteString.CopyFromUtf8("json") } },
+								{ Constants.Properties.EventType, new() { StringValue = "message-5-type" } },
+								{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 							},
 						},
 						new AppendRecord {
-							Data = ByteString.CopyFromUtf8("event-6"),
+							Data = ByteString.CopyFromUtf8("message-6"),
 							RecordId = event6Id.ToString(),
 							Properties = {
-								{ Constants.Properties.EventType, new() { BytesValue = ByteString.CopyFromUtf8("event-6-type") } },
-								{ Constants.Properties.DataFormat, new() { BytesValue = ByteString.CopyFromUtf8("avro") } },
+								{ Constants.Properties.EventType, new() { StringValue = "message-6-type" } },
+								{ Constants.Properties.DataFormat, new() { StringValue = "avro" } },
 							},
 						},
 					},
@@ -101,23 +101,23 @@ public class MultiStreamAppendServiceTests {
 			Assert.Equal([0, 1, 1], writeEvents.EventStreamIndexes.Span);
 			Assert.Equal(3, writeEvents.Events.Length);
 
-			var proposedEvent2 = writeEvents.Events.Span[0];
-			Assert.Equal(event2Id, proposedEvent2.EventId);
-			Assert.Equal("event-2-type", proposedEvent2.EventType);
-			Assert.True(proposedEvent2.IsJson);
-			Assert.Equal(Encoding.UTF8.GetBytes("event-2"), proposedEvent2.Data);
+			var proposedMessage2 = writeEvents.Events.Span[0];
+			Assert.Equal(event2Id, proposedMessage2.EventId);
+			Assert.Equal("message-2-type", proposedMessage2.EventType);
+			Assert.True(proposedMessage2.IsJson);
+			Assert.Equal(Encoding.UTF8.GetBytes("message-2"), proposedMessage2.Data);
 
-			var proposedEvent5 = writeEvents.Events.Span[1];
-			Assert.Equal(event5Id, proposedEvent5.EventId);
-			Assert.Equal("event-5-type", proposedEvent5.EventType);
-			Assert.True(proposedEvent5.IsJson);
-			Assert.Equal(Encoding.UTF8.GetBytes("event-5"), proposedEvent5.Data);
+			var proposedMessage5 = writeEvents.Events.Span[1];
+			Assert.Equal(event5Id, proposedMessage5.EventId);
+			Assert.Equal("message-5-type", proposedMessage5.EventType);
+			Assert.True(proposedMessage5.IsJson);
+			Assert.Equal(Encoding.UTF8.GetBytes("message-5"), proposedMessage5.Data);
 
-			var proposedEvent6 = writeEvents.Events.Span[2];
-			Assert.Equal(event6Id, proposedEvent6.EventId);
-			Assert.Equal("event-6-type", proposedEvent6.EventType);
-			Assert.False(proposedEvent6.IsJson);
-			Assert.Equal(Encoding.UTF8.GetBytes("event-6"), proposedEvent6.Data);
+			var proposedMessage6 = writeEvents.Events.Span[2];
+			Assert.Equal(event6Id, proposedMessage6.EventId);
+			Assert.Equal("message-6-type", proposedMessage6.EventType);
+			Assert.False(proposedMessage6.IsJson);
+			Assert.Equal(Encoding.UTF8.GetBytes("message-6"), proposedMessage6.Data);
 
 			// send the response so that we can check that it is processed correctly
 			writeEvents.Envelope.ReplyWith(new ClientMessage.WriteEventsCompleted(
@@ -168,9 +168,29 @@ public class MultiStreamAppendServiceTests {
 				Input = {
 					new AppendStreamRequest {
 						Stream = "stream-allowed",
+						Records = {
+							new AppendRecord {
+								Data = ByteString.CopyFromUtf8("message-1"),
+								RecordId = Guid.NewGuid().ToString(),
+								Properties = {
+									{ Constants.Properties.EventType, new() { StringValue = "message-1-type" } },
+									{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+								},
+							},
+						},
 					},
 					new AppendStreamRequest {
 						Stream = "stream-denied",
+						Records = {
+							new AppendRecord {
+								Data = ByteString.CopyFromUtf8("message-2"),
+								RecordId = Guid.NewGuid().ToString(),
+								Properties = {
+									{ Constants.Properties.EventType, new() { StringValue = "message-2-type" } },
+									{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+								},
+							},
+						},
 					},
 				},
 			},
@@ -195,8 +215,8 @@ public class MultiStreamAppendServiceTests {
 					Records = {
 						new AppendRecord {
 							Properties = {
-								{ Constants.Properties.EventType, new() { BytesValue = ByteString.CopyFromUtf8("my-event-type") } },
-								{ Constants.Properties.DataFormat, new() { BytesValue = ByteString.CopyFromUtf8("json") } },
+								{ Constants.Properties.EventType, new() { StringValue = "my-message-type" } },
+								{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 							}
 						}
 					}
@@ -234,8 +254,8 @@ public class MultiStreamAppendServiceTests {
 						Data = ByteString.CopyFromUtf8("data"),
 						RecordId = Guid.NewGuid().ToString(),
 						Properties = {
-							{ Constants.Properties.EventType, new() { BytesValue = ByteString.CopyFromUtf8("the-type") } },
-							{ Constants.Properties.DataFormat, new() { BytesValue = ByteString.CopyFromUtf8("json") } },
+							{ Constants.Properties.EventType, new() { StringValue = "the-type" } },
+							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 						},
 					},
 				},
@@ -248,8 +268,8 @@ public class MultiStreamAppendServiceTests {
 						Data = ByteString.CopyFromUtf8("data"),
 						RecordId = Guid.NewGuid().ToString(),
 						Properties = {
-							{ Constants.Properties.EventType, new() { BytesValue = ByteString.CopyFromUtf8("the-type") } },
-							{ Constants.Properties.DataFormat, new() { BytesValue = ByteString.CopyFromUtf8("json") } },
+							{ Constants.Properties.EventType, new() { StringValue = "the-type" } },
+							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 						},
 					},
 				},

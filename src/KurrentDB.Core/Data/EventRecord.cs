@@ -1,18 +1,19 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
+#nullable enable
+
 using System;
-using System.Text;
+using System.Threading;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Services.Transport.Grpc.V2.Utils;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using static KurrentDB.Protobuf.Server.Properties;
 
 namespace KurrentDB.Core.Data;
 
 public class EventRecord : IEquatable<EventRecord> {
-	public bool IsJson {
-		get { return (Flags & PrepareFlags.IsJson) == PrepareFlags.IsJson; }
-	}
-
+	public bool IsJson => (Flags & PrepareFlags.IsJson) == PrepareFlags.IsJson;
 	public bool IsSelfCommitted => Flags.HasAnyOf(PrepareFlags.IsCommitted);
 
 	public readonly long EventNumber;
@@ -27,12 +28,25 @@ public class EventRecord : IEquatable<EventRecord> {
 	public readonly PrepareFlags Flags;
 	public readonly string EventType;
 	public readonly ReadOnlyMemory<byte> Data;
-	public readonly ReadOnlyMemory<byte> Metadata;
 	public readonly ReadOnlyMemory<byte> Properties;
 
-	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string eventType) {
-		Ensure.Nonnegative(eventNumber, "eventNumber");
-		Ensure.NotNull(eventStreamId, "eventStreamId");
+	// Lazy initialization backing fields
+	ReadOnlyMemory<byte> _metadata;
+	bool _metadataInitialized;
+	object _metadataLock = new();
+
+	public ReadOnlyMemory<byte> Metadata {
+		get => LazyInitializer.EnsureInitialized(
+			ref _metadata,
+			ref _metadataInitialized,
+			ref _metadataLock,
+			() => ProtoJsonSerializer.Default.Serialize(
+				Parser.ParseFrom(Properties.Span).PropertiesValues.MapToDictionary()));
+	}
+
+	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType = null) {
+		Ensure.Nonnegative(eventNumber);
+		Ensure.NotNull(eventStreamId);
 
 		EventNumber = eventNumber;
 		LogPosition = prepare.LogPosition;
@@ -45,35 +59,30 @@ public class EventRecord : IEquatable<EventRecord> {
 		TimeStamp = prepare.TimeStamp;
 
 		Flags = prepare.Flags;
-		EventType = eventType ?? string.Empty;
+		EventType = eventType ?? "";
 		Data = prepare.Data;
-		Metadata = prepare.Metadata;
 		Properties = prepare.Properties;
+
+		_metadata = prepare.Metadata;
+		_metadataInitialized = !_metadata.IsEmpty;
 	}
 
 	// called from tests only
-	public EventRecord(long eventNumber,
-		long logPosition,
-		Guid correlationId,
-		Guid eventId,
-		long transactionPosition,
-		int transactionOffset,
-		string eventStreamId,
-		long expectedVersion,
-		DateTime timeStamp,
-		PrepareFlags flags,
-		string eventType,
-		byte[] data,
-		byte[] metadata,
-		byte[] properties) {
-		Ensure.Nonnegative(logPosition, "logPosition");
-		Ensure.Nonnegative(transactionPosition, "transactionPosition");
-		if (transactionOffset < -1)
-			throw new ArgumentOutOfRangeException("transactionOffset");
-		Ensure.NotNull(eventStreamId, "eventStreamId");
-		Ensure.Nonnegative(eventNumber, "eventNumber");
-		Ensure.NotEmptyGuid(eventId, "eventId");
-		Ensure.NotNull(data, "data");
+	public EventRecord(
+		long eventNumber, long logPosition,
+		Guid correlationId, Guid eventId,
+		long transactionPosition, int transactionOffset,
+		string eventStreamId, long expectedVersion,
+		DateTime timeStamp, PrepareFlags flags,
+		string? eventType = null, byte[]? data = null,
+		byte[]? metadata = null, byte[]? properties = null) {
+		Ensure.Nonnegative(logPosition);
+		Ensure.Nonnegative(transactionPosition);
+		ArgumentOutOfRangeException.ThrowIfLessThan(-1, transactionOffset);
+		Ensure.NotNull(eventStreamId);
+		Ensure.Nonnegative(eventNumber);
+		Ensure.NotEmptyGuid(eventId);
+		Ensure.NotNull(data);
 
 		EventNumber = eventNumber;
 		LogPosition = logPosition;
@@ -84,43 +93,36 @@ public class EventRecord : IEquatable<EventRecord> {
 		EventStreamId = eventStreamId;
 		ExpectedVersion = expectedVersion;
 		TimeStamp = timeStamp;
+
 		Flags = flags;
-		EventType = eventType ?? string.Empty;
-		Data = data ?? Empty.ByteArray;
-		Metadata = metadata ?? Empty.ByteArray;
-		Properties = properties ?? Empty.ByteArray;
+		EventType = eventType ?? "";
+		Data = data!;
+		Properties = properties ?? [];
+
+		_metadata = metadata ?? [];
+		_metadataInitialized = !_metadata.IsEmpty;
 	}
 
-	public bool Equals(EventRecord other) {
-		if (ReferenceEquals(null, other))
-			return false;
-		if (ReferenceEquals(this, other))
-			return true;
-		return EventNumber == other.EventNumber
-			   && LogPosition == other.LogPosition
-			   && CorrelationId.Equals(other.CorrelationId)
-			   && EventId.Equals(other.EventId)
-			   && TransactionPosition == other.TransactionPosition
-			   && TransactionOffset == other.TransactionOffset
-			   && string.Equals(EventStreamId, other.EventStreamId)
-			   && ExpectedVersion == other.ExpectedVersion
-			   && TimeStamp.Equals(other.TimeStamp)
-			   && Flags.Equals(other.Flags)
-			   && string.Equals(EventType, other.EventType)
-			   && Data.Span.SequenceEqual(other.Data.Span)
-			   && Metadata.Span.SequenceEqual(other.Metadata.Span)
-			   && Properties.Span.SequenceEqual(other.Properties.Span);
+	public bool Equals(EventRecord? other) {
+		return !ReferenceEquals(null, other) && (ReferenceEquals(this, other) || EventNumber == other.EventNumber
+			&& LogPosition == other.LogPosition
+			&& CorrelationId.Equals(other.CorrelationId)
+			&& EventId.Equals(other.EventId)
+			&& TransactionPosition == other.TransactionPosition
+			&& TransactionOffset == other.TransactionOffset
+			&& string.Equals(EventStreamId, other.EventStreamId)
+			&& ExpectedVersion == other.ExpectedVersion
+			&& TimeStamp.Equals(other.TimeStamp)
+			&& Flags.Equals(other.Flags)
+			&& string.Equals(EventType, other.EventType)
+			&& Data.Span.SequenceEqual(other.Data.Span)
+			&& Metadata.Span.SequenceEqual(other.Metadata.Span)
+			&& Properties.Span.SequenceEqual(other.Properties.Span));
 	}
 
-	public override bool Equals(object obj) {
-		if (ReferenceEquals(null, obj))
-			return false;
-		if (ReferenceEquals(this, obj))
-			return true;
-		if (obj.GetType() != GetType())
-			return false;
-		return Equals((EventRecord)obj);
-	}
+	public override bool Equals(object? obj) =>
+		!ReferenceEquals(null, obj) &&
+		(ReferenceEquals(this, obj) || obj.GetType() == GetType() && Equals((EventRecord)obj));
 
 	public override int GetHashCode() {
 		unchecked {
@@ -142,46 +144,30 @@ public class EventRecord : IEquatable<EventRecord> {
 		}
 	}
 
-	public static bool operator ==(EventRecord left, EventRecord right) {
-		return Equals(left, right);
-	}
-
-	public static bool operator !=(EventRecord left, EventRecord right) {
-		return !Equals(left, right);
-	}
+	public static bool operator ==(EventRecord left, EventRecord right) => Equals(left, right);
+	public static bool operator !=(EventRecord left, EventRecord right) => !Equals(left, right);
 
 	public override string ToString() {
-		return string.Format("EventNumber: {0}, "
-							 + "LogPosition: {1}, "
-							 + "CorrelationId: {2}, "
-							 + "EventId: {3}, "
-							 + "TransactionPosition: {4}, "
-							 + "TransactionOffset: {5}, "
-							 + "EventStreamId: {6}, "
-							 + "ExpectedVersion: {7}, "
-							 + "TimeStamp: {8}, "
-							 + "Flags: {9}, "
-							 + "EventType: {10}",
-			EventNumber,
-			LogPosition,
-			CorrelationId,
-			EventId,
-			TransactionPosition,
-			TransactionOffset,
-			EventStreamId,
-			ExpectedVersion,
-			TimeStamp,
-			Flags,
-			EventType);
+		return $"EventNumber: {EventNumber}, " +
+		       $"LogPosition: {LogPosition}, " +
+		       $"CorrelationId: {CorrelationId}, " +
+		       $"EventId: {EventId}, " +
+		       $"TransactionPosition: {TransactionPosition}, " +
+		       $"TransactionOffset: {TransactionOffset}, " +
+		       $"EventStreamId: {EventStreamId}, " +
+		       $"ExpectedVersion: {ExpectedVersion}, " +
+		       $"TimeStamp: {TimeStamp}, " +
+		       $"Flags: {Flags}, " +
+		       $"EventType: {EventType}";
 	}
 
 #if DEBUG
 	public string DebugDataView {
-		get { return Encoding.UTF8.GetString(Data.Span); }
+		get => Encoding.UTF8.GetString(Data.Span);
 	}
 
 	public string DebugMetadataView {
-		get { return Encoding.UTF8.GetString(Metadata.Span); }
+		get => Encoding.UTF8.GetString(Metadata.Span);
 	}
 #endif
 }

@@ -32,10 +32,10 @@ public class MultiStreamAppendService : StreamsService.StreamsServiceBase {
 		int maxAppendSize,
 		int maxAppendEventSize,
 		int chunkSize) {
-		_publisher             = publisher;
+		_publisher = publisher;
 		_authorizationProvider = authorizationProvider;
-		_appendTracker         = appendTracker;
-		_converter             = new(chunkSize, maxAppendSize, maxAppendEventSize);
+		_appendTracker = appendTracker;
+		_converter = new(chunkSize, maxAppendSize, maxAppendEventSize);
 	}
 
 	public override Task<MultiStreamAppendResponse> MultiStreamAppend(MultiStreamAppendRequest request, ServerCallContext context) =>
@@ -50,23 +50,22 @@ public class MultiStreamAppendService : StreamsService.StreamsServiceBase {
 		using var duration = _appendTracker.Start();
 
 		var user = context.GetHttpContext().User;
-
 		var requests = new List<AppendStreamRequest>();
 		var seenStreams = new HashSet<string>();
 
 		await foreach (var request in requestStream) {
 			if (request.Records is [])
-				throw RpcExceptions.InvalidArgument($"Write to stream \"{request.Stream}\" does not have any records");
+				throw RpcExceptions.InvalidArgument($"Write to stream '{request.Stream}' does not have any records");
 
 			// temporary limitation
 			if (!seenStreams.Add(request.Stream))
 				throw RpcExceptions.InvalidArgument("Two AppendStreamRequests for one stream is not currently supported: " +
-				                                    $"\"{request.Stream}\" is already in the request list");
+				                                    $"'{request.Stream}' is already in the request list");
 
 			var accessGranted = await CheckStreamAccess(request.Stream);
 			if (!accessGranted) {
 				var failure = new AppendStreamFailure {
-					Stream       = request.Stream,
+					Stream = request.Stream,
 					AccessDenied = AccessDenied,
 				};
 				return new() { Failure = new() { Output = { failure } } }; // fail fast if any request is unauthorized
@@ -113,9 +112,9 @@ public class MultiStreamAppendService : StreamsService.StreamsServiceBase {
 			throw;
 		}
 
-		async ValueTask<bool> CheckStreamAccess(string stream) {
+		ValueTask<bool> CheckStreamAccess(string stream) {
 			var op = WriteOperation.WithParameter(Operations.Streams.Parameters.StreamId(stream));
-			return await _authorizationProvider.CheckAccessAsync(user, op, context.CancellationToken).ConfigureAwait(false);
+			return _authorizationProvider.CheckAccessAsync(user, op, context.CancellationToken);
 		}
 	}
 

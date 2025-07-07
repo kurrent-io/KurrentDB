@@ -285,7 +285,13 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		// gRPC
 		services
 			.AddSingleton<RetryInterceptor>()
-			.AddGrpc(options => options.Interceptors.Add<RetryInterceptor>())
+			.AddGrpc(options => {
+				#if DEBUG
+				options.EnableDetailedErrors = true;
+				#endif
+
+				options.Interceptors.Add<RetryInterceptor>();
+			})
 			.AddServiceOptions<Streams<TStreamId>>(options => options.MaxReceiveMessageSize = TFConsts.EffectiveMaxLogRecordSize);
 
 		// Ask the node itself to add DI registrations

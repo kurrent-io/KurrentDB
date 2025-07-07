@@ -8,7 +8,6 @@ using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Grpc.V2;
-using KurrentDB.Core.Services.Transport.Grpc.V2.Utils;
 using KurrentDB.Protobuf.Server;
 using KurrentDB.Protocol.V2;
 using Xunit;
@@ -35,7 +34,7 @@ public class MSARequestConverterTests {
 					new AppendRecord {
 						RecordId = event1Id.ToString(),
 						Properties = {
-							{ Constants.Properties.EventType, new() { StringValue  = "my-event-type" } },
+							{ Constants.Properties.EventType, new() { StringValue = "my-event-type" } },
 							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 						}
 					},
@@ -47,7 +46,7 @@ public class MSARequestConverterTests {
 					new AppendRecord {
 						RecordId = event2Id.ToString(),
 						Properties = {
-							{ Constants.Properties.EventType, new() { StringValue  = "my-event-type" } },
+							{ Constants.Properties.EventType, new() { StringValue = "my-event-type" } },
 							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 						}
 					},
@@ -83,7 +82,7 @@ public class MSARequestConverterTests {
 				Records = {
 					new AppendRecord {
 						Properties = {
-							{ Constants.Properties.EventType, new() { StringValue  = "the-type" } },
+							{ Constants.Properties.EventType, new() { StringValue = "the-type" } },
 							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 						},
 					},
@@ -119,21 +118,6 @@ public class MSARequestConverterTests {
 		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
 	}
 
-	// [Fact]
-	// public void ConvertRequests_throws_when_AppendStreamRequest_has_no_events() {
-	// 	// given
-	// 	var input = new AppendStreamRequest[] {
-	// 		new() { Stream = "stream-a" },
-	// 	};
-	//
-	// 	// when
-	// 	var ex = Assert.Throws<RpcException>(() => Sut.ConvertToEvents(requests: input));
-	//
-	// 	// then
-	// 	Assert.Equal("Write to stream \"stream-a\" does not have any records", ex.Status.Detail);
-	// 	Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
-	// }
-
 	[Fact]
 	public void ConvertRequests_throws_when_max_append_event_size_is_exceeded() {
 		// given
@@ -144,9 +128,9 @@ public class MSARequestConverterTests {
 				Records = {
 					new AppendRecord {
 						RecordId = eventId.ToString(),
-						Data     = ByteString.CopyFrom(new byte[TestMaxAppendEventSize]),
+						Data = ByteString.CopyFrom(new byte[TestMaxAppendEventSize]),
 						Properties = {
-							{ Constants.Properties.EventType, new() { StringValue  = "the-type" } },
+							{ Constants.Properties.EventType, new() { StringValue = "the-type" } },
 							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 						},
 					}
@@ -173,7 +157,7 @@ public class MSARequestConverterTests {
 					new AppendRecord {
 						Data = ByteString.CopyFrom(new byte[TestMaxAppendSize / 2]),
 						Properties = {
-							{ Constants.Properties.EventType, new() { StringValue  = "the-type" } },
+							{ Constants.Properties.EventType, new() { StringValue = "the-type" } },
 							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 						},
 					}
@@ -185,7 +169,7 @@ public class MSARequestConverterTests {
 					new AppendRecord {
 						Data = ByteString.CopyFrom(new byte[TestMaxAppendSize / 2]),
 						Properties = {
-							{ Constants.Properties.EventType, new() { StringValue  = "the-type" } },
+							{ Constants.Properties.EventType, new() { StringValue = "the-type" } },
 							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 						},
 					}
@@ -240,17 +224,15 @@ public class MSARequestConverterTests {
 		var recordId = Guid.NewGuid();
 		var input = new AppendRecord {
 			RecordId = recordId.ToString(),
-			Data     = ByteString.CopyFromUtf8("the-data"),
+			Data = ByteString.CopyFromUtf8("the-data"),
 			Properties = {
-				{ Constants.Properties.EventType, new() { StringValue  = "my-event-type" } },
+				{ Constants.Properties.EventType, new() { StringValue = "my-event-type" } },
 				{ Constants.Properties.DataFormat, new() { StringValue = dataFormat } },
-				{ "property1", new() { BooleanValue                    = true } },
-				{ "property2", new() { StringValue                     = "test" } },
-				{ "property3", new() { Int32Value                      = 1234 } },
+				{ "property1", new() { BooleanValue = true } },
+				{ "property2", new() { StringValue = "test" } },
+				{ "property3", new() { Int32Value = 1234 } },
 			},
 		};
-
-		var expectedMetadata = ProtoJsonSerializer.Default.Serialize(new Properties { PropertiesValues = { input.Properties } }).ToArray();
 
 		// when
 		var output = MultiStreamAppendConverter.ConvertToEvent(input);
@@ -260,7 +242,7 @@ public class MSARequestConverterTests {
 		Assert.Equal("my-event-type", output.EventType);
 		Assert.Equal(expectedIsJson, output.IsJson);
 		Assert.Equal("the-data"u8.ToArray(), output.Data);
-		Assert.Equal(expectedMetadata, output.Metadata);
+		Assert.Equal([], output.Metadata);
 
 		var properties = Properties.Parser.ParseFrom(output.Properties);
 
@@ -282,13 +264,12 @@ public class MSARequestConverterTests {
 		// given
 		var input = new AppendRecord {
 			Properties = {
-				{ Constants.Properties.EventType, new() { StringValue  = "my-event-type" } },
+				{ Constants.Properties.EventType, new() { StringValue = "my-event-type" } },
 				{ Constants.Properties.DataFormat, new() { StringValue = "avro" } },
 			},
 		};
 
-		var expectedMetadata = ProtoJsonSerializer.Default.Serialize(new Properties { PropertiesValues = { input.Properties } }).ToArray();
-
+		// var expectedMetadata = ProtoJsonSerializer.Default.Serialize(new Properties { PropertiesValues = { input.Properties } }).ToArray();
 
 		// when
 		var output = MultiStreamAppendConverter.ConvertToEvent(input);
@@ -298,7 +279,7 @@ public class MSARequestConverterTests {
 		Assert.Equal("my-event-type", output.EventType);
 		Assert.False(output.IsJson);
 		Assert.Empty(output.Data);
-		Assert.Equal(expectedMetadata, output.Metadata);
+		Assert.Equal([],output.Metadata);
 	}
 
 	[Theory]
@@ -309,7 +290,7 @@ public class MSARequestConverterTests {
 		var input = new AppendRecord {
 			RecordId = recordId,
 			Properties = {
-				{ Constants.Properties.EventType, new() { StringValue  = "my-event-type" } },
+				{ Constants.Properties.EventType, new() { StringValue = "my-event-type" } },
 				{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 			},
 		};
@@ -318,7 +299,7 @@ public class MSARequestConverterTests {
 		var ex = Assert.Throws<RpcException>(() => MultiStreamAppendConverter.ConvertToEvent(input));
 
 		// then
-		Assert.Equal($"Could not parse RecordId \"{recordId}\" to GUID", ex.Status.Detail);
+		Assert.Equal($"Could not parse RecordId '{recordId}' to GUID", ex.Status.Detail);
 		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
 		Assert.Empty(ex.Trailers);
 	}
@@ -330,7 +311,7 @@ public class MSARequestConverterTests {
 		// given
 		var input = new AppendRecord {
 			Properties = {
-				{ Constants.Properties.EventType, new() { StringValue  = "my-event-type" } },
+				{ Constants.Properties.EventType, new() { StringValue = "my-event-type" } },
 				{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 			},
 		};
@@ -362,7 +343,7 @@ public class MSARequestConverterTests {
 		// given
 		var input = new AppendRecord {
 			Properties = {
-				{ Constants.Properties.EventType, new() { StringValue  = "my-event-type" } },
+				{ Constants.Properties.EventType, new() { StringValue = "my-event-type" } },
 				{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
 			},
 		};

@@ -266,7 +266,7 @@ ReadLoop:
 						case ReadAllResult.InvalidPosition:
 							throw new ReadResponseException.InvalidPosition();
 						default:
-							throw ReadResponseException.UnknownError.Create(completed.Result);
+							throw ReadResponseException.UnknownError.Create(completed.Result, completed.Error);
 					}
 				} catch (Exception exception) {
 					catchupCompletionTcs.TrySetException(exception);
