@@ -1,43 +1,60 @@
 {
   "links": [
     {
-      "href": "http://localhost:2113/subscriptions/newstream/competing_consumers_group1/info",
+      "href": "https://localhost:2113/subscriptions/teststream1/testgroup-1/info",
       "rel": "detail"
     },
     {
-      "href": "http://localhost:2113/subscriptions/newstream/competing_consumers_group1/replayParked",
+      "href": "https://localhost:2113/subscriptions/teststream1/testgroup-1/replayParked",
       "rel": "replayParked"
     }
   ],
   "config": {
     "resolveLinktos": false,
     "startFrom": 0,
-    "messageTimeoutMilliseconds": 10000,
+    "startPosition": "0",
+    "messageTimeoutMilliseconds": 30000,
     "extraStatistics": false,
     "maxRetryCount": 10,
     "liveBufferSize": 500,
     "bufferSize": 500,
     "readBatchSize": 20,
     "preferRoundRobin": true,
-    "checkPointAfterMilliseconds": 1000,
+    "checkPointAfterMilliseconds": 2000,
     "minCheckPointCount": 10,
-    "maxCheckPointCount": 500,
-    "maxSubscriberCount": 10,
+    "maxCheckPointCount": 1000,
+    "maxSubscriberCount": 0,
     "namedConsumerStrategy": "RoundRobin"
   },
-  "eventStreamId": "newstream",
-  "groupName": "competing_consumers_group1",
+  "eventStreamId": "teststream1",
+  "groupName": "testgroup-1",
   "status": "Live",
   "averageItemsPerSecond": 0.0,
-  "parkedMessageUri": "http://localhost:2113/streams/$persistentsubscription-newstream::competing_consumers_group1-parked",
-  "getMessagesUri": "http://localhost:2113/subscriptions/newstream/competing_consumers_group1/1",
-  "totalItemsProcessed": 0,
+  "parkedMessageUri": "https://localhost:2113/streams/%24persistentsubscription-teststream1::testgroup-1-parked",
+  "getMessagesUri": "https://localhost:2113/subscriptions/teststream1/testgroup-1/1",
+  "totalItemsProcessed": 5,
   "countSinceLastMeasurement": 0,
-  "lastProcessedEventNumber": -1,
-  "lastKnownEventNumber": 5,
-  "readBufferCount": 6,
+  "lastProcessedEventNumber": 0,
+  "lastCheckpointedEventPosition": null,
+  "lastKnownEventNumber": 4,
+  "lastKnownEventPosition": "4",
+  "readBufferCount": 0,
   "liveBufferCount": 5,
   "retryBufferCount": 0,
   "totalInFlightMessages": 0,
-  "connections": []
+  "outstandingMessagesCount": 0,
+  "connections": [
+    {
+      "from": "",
+      "username": "admin",
+      "averageItemsPerSecond": 0.0,
+      "totalItemsProcessed": 5,
+      "countSinceLastMeasurement": 0,
+      "extraStatistics": [],
+      "availableSlots": 10,
+      "inFlightMessages": 0,
+      "connectionName": "ES-2f31191f-7741-42e4-958c-7594ed473c47"
+    }
+  ],
+  "parkedMessageCount": 0
 }
