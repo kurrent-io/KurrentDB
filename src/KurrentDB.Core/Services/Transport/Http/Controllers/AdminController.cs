@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime;
 using System.Security.Claims;
 using System.Text;
 using EventStore.Plugins.Authorization;
@@ -49,6 +50,9 @@ public class AdminController : CommunicationController {
 		service.RegisterAction(
 			new ControllerAction("/admin/shutdown", HttpMethod.Post, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Shutdown)),
 			OnPostShutdown);
+		service.RegisterAction(
+			new ControllerAction("/admin/gc?compactLoh={compactLoh}", HttpMethod.Post, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.Shutdown)),
+			OnPostGc);
 		service.RegisterAction(
 			new ControllerAction("/admin/reloadconfig", HttpMethod.Post, Codec.NoCodecs, SupportedCodecs, new Operation(Operations.Node.ReloadConfiguration)),
 			OnPostReloadConfig);
@@ -103,6 +107,34 @@ public class AdminController : CommunicationController {
 			(entity.User.LegacyRoleCheck(SystemRoles.Admins) || entity.User.LegacyRoleCheck(SystemRoles.Operations))) {
 			Log.Information("Request shut down of node because shutdown command has been received.");
 			Publish(new ClientMessage.RequestShutdown(exitProcess: true, shutdownHttp: true));
+			entity.ReplyStatus(HttpStatusCode.OK, "OK", LogReplyError);
+		} else {
+			entity.ReplyStatus(HttpStatusCode.Unauthorized, "Unauthorized", LogReplyError);
+		}
+	}
+
+	private void OnPostGc(HttpEntityManager entity, UriTemplateMatch match) {
+		if (entity.User != null &&
+			(entity.User.LegacyRoleCheck(SystemRoles.Admins) || entity.User.LegacyRoleCheck(SystemRoles.Operations))) {
+
+			var compactLoh = false;
+			var compactLohVariable = match.BoundVariables["compactLoh"];
+			if (compactLohVariable != null) {
+				if (!bool.TryParse(compactLohVariable, out var x)) {
+					SendBadRequest(entity, "compactLoh must be a boolean");
+					return;
+				}
+
+				compactLoh = x;
+			}
+
+			Log.Information("Garbage collection requested via http. compactLoh: {compactLoh}", compactLoh);
+
+			if (compactLoh) {
+				GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+			}
+			GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
+
 			entity.ReplyStatus(HttpStatusCode.OK, "OK", LogReplyError);
 		} else {
 			entity.ReplyStatus(HttpStatusCode.Unauthorized, "Unauthorized", LogReplyError);

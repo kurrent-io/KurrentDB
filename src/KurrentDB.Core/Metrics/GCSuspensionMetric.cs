@@ -144,6 +144,7 @@ public class GcSuspensionMetric(DurationMaxTracker? tracker) : EventListener {
 
 			case GCRestartEEEnd: {
 				if (_suspendStarted is not { } started) {
+					// have seen this occur with debugger attached but not without.
 					Log.Warning(
 						"Unexpected garbage collection GCRestartEEEnd event. Started: {Started}. Reason: {Reason}",
 						_suspendStarted, _suspendReason);

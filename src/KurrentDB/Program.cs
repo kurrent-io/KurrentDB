@@ -9,6 +9,7 @@ using System.Runtime;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using KurrentDB;
 using KurrentDB.Common.DevCertificates;
@@ -39,10 +40,32 @@ using Serilog.Events;
 using _Imports = KurrentDB.UI._Imports;
 using RuntimeInformation = System.Runtime.RuntimeInformation;
 
+static async Task Fragment() {
+	Console.WriteLine("#################### STARTING MEMORY FRAGMENTER");
+	await Task.Yield();
+
+	var channel = Channel.CreateBounded<int[]>(new BoundedChannelOptions(capacity: 50) {
+		FullMode = BoundedChannelFullMode.DropOldest,
+	});
+
+	while (true) {
+		await Task.Delay(1);
+		for (int i = 0; i < 5; i++) {
+			var a = new int[Random.Shared.Next(30_000)];
+			channel.Writer.TryWrite(a);
+		}
+	}
+}
+
 var optionsWithLegacyDefaults = LocationOptionWithLegacyDefault.SupportedLegacyLocations;
 var configuration = KurrentConfiguration.Build(optionsWithLegacyDefaults, args);
 
 ThreadPool.SetMaxThreads(1000, 1000);
+var f = true;
+if (f) {
+	var _ = Fragment();
+}
+
 var exitCodeSource = new TaskCompletionSource<int>();
 
 Log.Logger = EventStoreLoggerConfiguration.ConsoleLog;
