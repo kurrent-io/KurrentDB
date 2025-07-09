@@ -14,7 +14,6 @@
     <PackageVersion Include="Ductus.FluentDocker.XUnit" Version="2.10.59" />
     <PackageVersion Include="EventStore.Client" Version="22.0.0" />
     <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="23.3.3" />
-    <PackageVersion Include="EventStore.Plugins" Version="25.2.6" />
     <PackageVersion Include="Eventuous.Application" Version="0.15.0" />
     <PackageVersion Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
     <PackageVersion Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
