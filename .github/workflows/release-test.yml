@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Download DEB package
         run: |
-          DEB_URL="https://packages.kurrent.io/public/kurrent-latest/deb/any-distro/pool/any-version/main/k/ku/kurrentdb_{{$github.event.inputs.kdb_version}}/kurrentdb-25.0.1-linux.x64-debian.deb"
+          DEB_URL="https://packages.kurrent.io/public/kurrent-latest/deb/any-distro/pool/any-version/main/k/ku/kurrentdb_{{$github.event.inputs.kdb_version}}/kurrentdb-{{$github.event.inputs.kdb_version}}-linux.x64-debian.deb"
           curl -L -o package.deb "$DEB_URL"
 
       - name: Install DEB package
