@@ -1,28 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<LangVersion>latest</LangVersion>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<InvariantGlobalization>true</InvariantGlobalization>
-		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FluentAssertions" Version="8.0.1" />
-		<PackageReference Include="FluentAssertions.Analyzers" Version="0.34.1">
+		<PackageReference Include="FluentAssertions" />
+		<PackageReference Include="FluentAssertions.Analyzers">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.2.0" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-		<PackageReference Include="GitHubActionsTestLogger" Version="2.4.1">
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" />
+		<PackageReference Include="GitHubActionsTestLogger">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="xunit" Version="2.9.3" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="3.0.2">
+		<PackageReference Include="xunit" />
+		<PackageReference Include="xunit.runner.visualstudio">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -35,7 +31,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\src\EventStore.Plugins\EventStore.Plugins.csproj" />
+	  <ProjectReference Include="..\..\src\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

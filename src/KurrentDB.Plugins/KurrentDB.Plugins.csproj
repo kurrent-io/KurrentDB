@@ -1,49 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<LangVersion>latest</LangVersion>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<InvariantGlobalization>true</InvariantGlobalization>
 	</PropertyGroup>
 	
-	<PropertyGroup>
-		<PackageId>EventStore.Plugins</PackageId>
-		<Authors>Event Store Ltd</Authors>
-		<PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-		<PackageProjectUrl>https://eventstore.com</PackageProjectUrl>
-		<PackageIcon>ouro.png</PackageIcon>
-		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-		<Description>The interfaces required to create plugins for Event Store. Get the open source or commercial versions of Event Store server from https://eventstore.com/</Description>
-		<PackageReleaseNotes>https://eventstore.com/blog/release-notes/</PackageReleaseNotes>
-		<Copyright>Copyright 2011-2024 Event Store Ltd</Copyright>
-		<PackageTags>eventstore plugins</PackageTags>
-	</PropertyGroup>
-	
 	<ItemGroup>
-		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.6.0" />
-		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.2" />
-		<PackageReference Include="YamlDotNet" Version="15.1.4" />
-		<PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
-		<PackageReference Include="System.Reactive" Version="6.0.1" />
+		<PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+		<PackageReference Include="System.Diagnostics.DiagnosticSource" />
+		<PackageReference Include="YamlDotNet" />
+		<PackageReference Include="System.Reactive" />
 	</ItemGroup>
 	
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
-	
-	<ItemGroup>
-		<None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
-		<None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
-	</ItemGroup>
 
 	<ItemGroup>
-		<Using Include="JetBrains.Annotations" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<InternalsVisibleTo Include="EventStore.Plugins.Tests" />
+		<InternalsVisibleTo Include="KurrentDB.Plugins.Tests" />
 	</ItemGroup>
 </Project>
