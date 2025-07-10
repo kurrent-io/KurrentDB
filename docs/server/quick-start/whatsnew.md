@@ -4,6 +4,16 @@ order: 2
 
 # What's New
 
+## New in 25.1
+
+These are the new features in KurrentDB 25.1:
+
+* [ServerGC](#server-garbage-collection)
+
+### Server Garbage Collection
+
+The .NET runtime Server Garbage Collection is now enabled by default, increasing the performance of the server. See [the documentation](../configuration/db-config.md#garbage-collection) for more information.
+
 ## New in 25.0
 
 These are the new features in KurrentDB 25.0:
