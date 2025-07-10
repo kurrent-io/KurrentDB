@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
 using Google.Protobuf;
+using Google.Protobuf.Collections;
 using Grpc.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Metrics;
@@ -18,6 +20,7 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.Transport.Grpc;
+using KurrentDB.Protobuf.Server;
 using static EventStore.Client.Streams.ReadResp.Types;
 using static EventStore.Plugins.Authorization.Operations.Streams;
 using CountOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.CountOptionOneofCase;
@@ -337,7 +340,7 @@ public static class ResponseConverter {
 			case ReadResponseException.UnknownMessage unknownMessage:
 				throw RpcExceptions.UnknownMessage(unknownMessage.UnknownMessageType, unknownMessage.ExpectedMessageType);
 			case ReadResponseException.UnknownError unknown:
-				throw RpcExceptions.UnknownError(unknown.ResultType, unknown.Result);
+				throw RpcExceptions.UnknownError(unknown.ResultType, unknown.Result, unknown.ErrorMessage);
 			default:
 				throw new ArgumentException($"Unknown read response exception type: {readResponseEx.GetType().Name}", nameof(readResponseEx));
 		}
@@ -349,6 +352,7 @@ public static class ResponseConverter {
 		if (e == null)
 			return null;
 		var position = Position.FromInt64(commitPosition ?? -1, preparePosition ?? -1);
+
 		var result = new ReadEvent.Types.RecordedEvent {
 			Id = uuidOption.ContentCase switch {
 				ReadReq.Types.Options.Types.UUIDOption.ContentOneofCase.String => new UUID {

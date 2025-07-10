@@ -275,7 +275,7 @@ ReadLoop:
 						case ReadStreamResult.AccessDenied:
 							throw new ReadResponseException.AccessDenied();
 						default:
-							throw ReadResponseException.UnknownError.Create(completed.Result);
+							throw ReadResponseException.UnknownError.Create(completed.Result, completed.Error);
 					}
 				} catch (Exception exception) {
 					catchupCompletionTcs.TrySetException(exception);
