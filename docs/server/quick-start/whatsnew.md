@@ -9,10 +9,19 @@ order: 2
 These are the new features in KurrentDB 25.1:
 
 * [ServerGC](#server-garbage-collection)
+* [StreamInfoCacheCapacity default](#streaminfocachecapacity-default)
 
 ### Server Garbage Collection
 
 The .NET runtime Server Garbage Collection is now enabled by default, increasing the performance of the server. See [the documentation](../configuration/db-config.md#garbage-collection) for more information.
+
+### StreamInfoCacheCapacity Default
+
+`StreamInfoCacheCapacity` is now `100,000` by default rather than `0` (dynamically sized).
+
+StreamInfoCache dynamic sizing was introduced introduced in v21.10 and enabled by default. It allows the StreamInfoCache to grow much larger, according to the amount of free memory which is reevaluated periodically. This is desirable for some workloads, but it comes with a tradeoff of very significantly increased managed memory usage, which in turn causes additional GC pressure and can lead to more frequent elections. On balance we have decided that a default of 100,000 (which is the value used before v21.10) is a better default, favouring its predictability and stability.
+
+Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCapacity to 0. Additional can be found in the [StreamInfoCache documentation](../configuration/README.md#streaminfocachecapacity)
 
 ## New in 25.0
 
