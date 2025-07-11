@@ -222,9 +222,9 @@ public class IndexReader<TStreamId> : IndexReader, IIndexReader<TStreamId> {
 
 		using (var reader = _backend.BorrowReader()) {
 			var lastEventNumber = await GetStreamLastEventNumberCached(reader, streamId, token);
-			var metadata = await GetStreamMetadataCached(reader, streamId, token);
 			if (lastEventNumber is EventNumber.DeletedStream)
 				return new(fromEventNumber, maxCount, ReadStreamResult.StreamDeleted, StreamMetadata.Empty, lastEventNumber);
+			var metadata = await GetStreamMetadataCached(reader, streamId, token);
 			if (lastEventNumber == ExpectedVersion.NoStream || metadata.TruncateBefore == EventNumber.DeletedStream)
 				return new(fromEventNumber, maxCount, ReadStreamResult.NoStream, metadata, lastEventNumber);
 			if (lastEventNumber == EventNumber.Invalid)
