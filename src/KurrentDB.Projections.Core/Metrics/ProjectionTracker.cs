@@ -105,4 +105,14 @@ public class ProjectionTracker : IProjectionTracker {
 			}
 		}
 	}
+
+	public IReadOnlyList<Measurement<int>> ObserveStateSizeBound() {
+		if (_currentStats is not [var x, ..])
+			return [];
+
+		return [
+			new(x.StateSizeThreshold, new KeyValuePair<string, object>("bound", "THRESHOLD")),
+			new(x.StateSizeLimit, new KeyValuePair<string, object>("bound", "LIMIT")),
+		];
+	}
 }

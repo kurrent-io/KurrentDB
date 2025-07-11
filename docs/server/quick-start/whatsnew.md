@@ -8,8 +8,29 @@ order: 2
 
 These are the new features in KurrentDB 25.1:
 
+* [Additional Projection Metrics](#additional-projection-metrics)
 * [ServerGC](#server-garbage-collection)
 * [StreamInfoCacheCapacity default](#streaminfocachecapacity-default)
+
+### Additional Projection Metrics
+
+Several new metrics have been added to track important properties of projections.
+
+- `kurrentdb_projection_state_size` contains the state size of projections and their state partitions that are over 50% of the state size limit (`MaxProjectionStateSize`).
+  This helps to show if any projections are in danger of reaching the limit.
+
+- `kurrentdb_projection_state_size_bound` contains the projection state size `LIMIT` (driven by `MaxProjectionStateSize`) and the `THRESHOLD` for displaying a projection or partition in `kurrentdb_projection_state_size` (50% of the limit).
+  This makes it easy to graph what the limit is and how close projections are to it.
+
+- `kurrentdb_projection_state_serialization_duration_max_seconds` contains the recent maximum time that each custom projection has taken to serialize its state.
+
+- `kurrentdb_projection_execution_duration_max_seconds` contains the recent maximum time that each custom projection has taken to execute an event.
+
+- `kurrentdb_projection_execution_duration_seconds_bucket` creates a histogram for each (Projection x Function) pair showing, for example, the distribution of how long each custom projection takes to process each event type.
+  This creates a lot of timeseries and is off by default. It can be enabled by setting `ProjectionExecutionByFunction` to true in `metricsconfig.json`.
+  Typically this would only be enabled in development environments.
+
+See [the documentation](../diagnostics/metrics.md#projections) for more information.
 
 ### Server Garbage Collection
 

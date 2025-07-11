@@ -75,6 +75,18 @@ public class ProjectionTrackerTests {
 		}
 	}
 
+	[Fact]
+	public void ObserveStateSizeBounds() {
+		_sut.OnNewStats([Stat("TestProjection", ProjectionMode.Continuous, ManagedProjectionState.Running, stateSizes: null)]);
+
+		var measurements = _sut.ObserveStateSizeBound();
+
+		var ms = measurements.ToArray();
+		Assert.Equal(2, ms.Length);
+		AssertMeasurement(500, new KeyValuePair<string, object>("bound", "THRESHOLD"))(ms[0]);
+		AssertMeasurement(900, new KeyValuePair<string, object>("bound", "LIMIT"))(ms[1]);
+	}
+
 	static Action<Measurement<T>> AssertMeasurement<T>(T expectedValue, params KeyValuePair<string, object>[] tags)
 		where T : struct =>
 
@@ -138,5 +150,7 @@ public class ProjectionTrackerTests {
 			Progress = 75,
 			EventsProcessedAfterRestart = 50,
 			StateSizes = stateSizes,
+			StateSizeThreshold = 500,
+			StateSizeLimit = 900,
 		};
 }

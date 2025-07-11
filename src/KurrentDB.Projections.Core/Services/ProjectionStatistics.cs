@@ -57,6 +57,10 @@ public class ProjectionStatistics {
 
 	public Dictionary<string, int> StateSizes { get; set; }
 
+	public int StateSizeThreshold { get; set; }
+
+	public int StateSizeLimit { get; set; }
+
 	public ProjectionStatistics Clone() {
 		return (ProjectionStatistics)MemberwiseClone();
 	}
