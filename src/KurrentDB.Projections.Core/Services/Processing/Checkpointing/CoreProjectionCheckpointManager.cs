@@ -82,7 +82,7 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		_requestedCheckpointState = new PartitionState("", null, _zeroTag);
 		_currentProjectionState = new PartitionState("", null, _zeroTag);
 		_maxProjectionStateSize = maxProjectionStateSize;
-		_maxProjectionStateSizeThreshold = (int)(0.80 * _maxProjectionStateSize);
+		_maxProjectionStateSizeThreshold = (int)(0.50 * _maxProjectionStateSize);
 	}
 
 	protected abstract ProjectionCheckpoint CreateProjectionCheckpoint(CheckpointTag checkpointPosition);
@@ -186,9 +186,12 @@ public abstract class CoreProjectionCheckpointManager : IProjectionCheckpointMan
 		info.CheckpointStatus = _inCheckpoint ? "Requested" : "";
 
 		foreach (var (partition, stateSize) in _stateSizeByPartition) {
-			info.StateSizes ??= new();
+			info.StateSizes ??= [];
 			info.StateSizes[partition] = stateSize;
 		}
+
+		info.StateSizeThreshold = _maxProjectionStateSizeThreshold;
+		info.StateSizeLimit = _maxProjectionStateSize;
 	}
 
 	public void StateUpdated(
