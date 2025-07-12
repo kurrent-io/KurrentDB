@@ -9,7 +9,7 @@ import {linkCheckPlugin} from "./markdown/linkCheck";
 import {replaceLinkPlugin} from "./markdown/replaceLink";
 import {importCodePlugin} from "./markdown/xode/importCodePlugin";
 
-const projectionSamplesPath = "https://raw.githubusercontent.com/EventStore/EventStore/53f84e55ea56ccfb981aff0e432581d72c23fbf6/samples/http-api/data/";
+const projectionSamplesPath = "https://raw.githubusercontent.com/kurrent-io/KurrentDB/53f84e55ea56ccfb981aff0e432581d72c23fbf6/samples/http-api/data/";
 
 export default defineUserConfig({
     base: "/",
@@ -26,8 +26,6 @@ export default defineUserConfig({
         md.use(replaceLinkPlugin, {
             replaceLink: (link: string, _) => link
                 .replace("@server", "/server")
-                .replace("@clients/http-api/", "/http-api/")
-                .replace("@clients/httpapi/", "/http-api/")
                 .replace("@httpapi/data/", projectionSamplesPath)
                 .replace("@httpapi", "/http-api")
         });
@@ -40,17 +38,12 @@ export default defineUserConfig({
         toc: true,
         sidebar: {
             "/server/": "structure",
-            "/http-api/": "structure"
         },
         navbar: [
             {
                 text: "Server",
                 link: "/server/quick-start/",
             },
-            {
-                text: "HTTP API",
-                link: "/http-api/"
-            }
         ],
         markdown: {
             figure: true,

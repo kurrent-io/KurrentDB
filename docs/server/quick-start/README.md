@@ -82,7 +82,7 @@ The current AtomPub-based HTTP application API is disabled by default. You can e
 You need to enable the AtomPub protocol to have a fully functioning database user interface.
 :::
 
-Learn more about the KurrentDB HTTP interface in the [HTTP documentation](@clients/http-api/README.md). 
+Learn more about the KurrentDB HTTP interface in the [HTTP documentation](@httpapi/README.md). 
 
 #### Community-developed clients
 
