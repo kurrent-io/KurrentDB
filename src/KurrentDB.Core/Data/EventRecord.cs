@@ -45,7 +45,7 @@ public class EventRecord : IEquatable<EventRecord> {
 				Parser.ParseFrom(Properties.Span).PropertiesValues.MapToDictionary()));
 	}
 
-	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType = null) {
+	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType) {
 		Ensure.Nonnegative(eventNumber);
 		Ensure.NotNull(eventStreamId);
 
@@ -80,10 +80,10 @@ public class EventRecord : IEquatable<EventRecord> {
 		long expectedVersion,
 		DateTime timeStamp,
 		PrepareFlags flags,
-		string? eventType = null,
-		byte[]? data = null,
-		byte[]? metadata = null,
-		byte[]? properties = null) {
+		string? eventType,
+		byte[] data,
+		byte[]? metadata,
+		byte[]? properties) {
 		Ensure.Nonnegative(logPosition);
 		Ensure.Nonnegative(transactionPosition);
 		ArgumentOutOfRangeException.ThrowIfLessThan(-1, transactionOffset);
