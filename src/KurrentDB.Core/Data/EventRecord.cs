@@ -86,7 +86,7 @@ public class EventRecord : IEquatable<EventRecord> {
 		byte[]? properties) {
 		Ensure.Nonnegative(logPosition);
 		Ensure.Nonnegative(transactionPosition);
-		ArgumentOutOfRangeException.ThrowIfLessThan(-1, transactionOffset);
+		ArgumentOutOfRangeException.ThrowIfLessThan(transactionOffset, -1);
 		Ensure.NotNull(eventStreamId);
 		Ensure.Nonnegative(eventNumber);
 		Ensure.NotEmptyGuid(eventId);
