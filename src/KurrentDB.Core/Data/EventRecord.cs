@@ -4,6 +4,7 @@
 #nullable enable
 
 using System;
+using System.Text;
 using System.Threading;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services.Transport.Grpc.V2.Utils;
