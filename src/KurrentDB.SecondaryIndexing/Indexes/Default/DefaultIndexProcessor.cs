@@ -53,6 +53,9 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		var lastSequence = GetLastSequence();
 		Logger.Information("Last known global sequence: {Seq}", lastSequence);
 		LastSequence = lastSequence ?? -1;
+		var lastPosition = GetLastPosition();
+		Logger.Information("Last known log position: {Position}", lastPosition);
+		LastIndexedPosition = lastPosition ?? -1;
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {

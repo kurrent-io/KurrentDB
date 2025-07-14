@@ -26,6 +26,12 @@ namespace KurrentDB.SecondaryIndexing.Tests.Indexes;
 
 public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	[Fact]
+	public void WhenNoEventsProcessedYet_HasDefaultValues() {
+		Assert.Equal(-1, _processor.LastSequence);
+		Assert.Equal(-1, _processor.LastIndexedPosition);
+	}
+
+	[Fact]
 	public void CommittedMultipleEventsInMultipleStreams_AreIndexed() {
 		// Given
 		const string cat1 = "first";
