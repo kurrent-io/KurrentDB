@@ -36,6 +36,8 @@ public class EventRecord : IEquatable<EventRecord> {
 	bool _metadataInitialized;
 	object _metadataLock = new();
 
+	// Metadata can come directly from the log record, or be synthesized from the LogRecordProperties.
+	// Log records cannot contain both Metadata and LogRecordProperties.
 	public ReadOnlyMemory<byte> Metadata {
 		get => LazyInitializer.EnsureInitialized(
 			ref _metadata,
@@ -68,7 +70,7 @@ public class EventRecord : IEquatable<EventRecord> {
 		Properties = prepare.Properties;
 
 		_metadata = prepare.Metadata;
-		_metadataInitialized = !_metadata.IsEmpty;
+		_metadataInitialized = !_metadata.IsEmpty || Properties.IsEmpty;
 	}
 
 	// called from tests only
@@ -111,7 +113,7 @@ public class EventRecord : IEquatable<EventRecord> {
 		Properties = properties ?? [];
 
 		_metadata = metadata ?? [];
-		_metadataInitialized = !_metadata.IsEmpty;
+		_metadataInitialized = !_metadata.IsEmpty || Properties.IsEmpty;
 	}
 
 	public bool Equals(EventRecord? other) {
