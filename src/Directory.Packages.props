@@ -15,13 +15,13 @@
     <PackageVersion Include="DuckDB.NET.Data.Full" Version="1.3.0" />
     <PackageVersion Include="EventStore.Client" Version="22.0.0" />
     <PackageVersion Include="EventStore.Client.Grpc.Streams" Version="23.3.3" />
-    <PackageVersion Include="EventStore.Plugins" Version="25.2.6" />
     <PackageVersion Include="Eventuous.Application" Version="0.15.0" />
     <PackageVersion Include="Eventuous.Extensions.AspNetCore" Version="0.15.0" />
     <PackageVersion Include="Eventuous.Extensions.DependencyInjection" Version="0.15.0" />
     <PackageVersion Include="Eventuous.Testing" Version="0.15.0" />
     <PackageVersion Include="Extensions.MudBlazor.StaticInput" Version="3.2.0" />
     <PackageVersion Include="FluentAssertions" Version="6.12.2" />
+    <PackageVersion Include="FluentAssertions.Analyzers" Version="0.34.1" />
     <PackageVersion Include="FluentStorage" Version="5.6.0" />
     <PackageVersion Include="FluentStorage.AWS" Version="5.5.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="11.10.0" />
@@ -73,7 +73,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.CommandLine" Version="9.0.6" />
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.6"/>
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.AutoActivation" Version="9.6.0"/>
-    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.1.0" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.2.0" />
     <PackageVersion Include="Microsoft.Extensions.FileProviders.Composite" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.4" />
@@ -82,6 +82,7 @@
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.2" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="9.4.0" />
     <PackageVersion Include="Microsoft.FASTER.Core" Version="1.9.16" />
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="7.6.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.6.0" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.6.0" />
     <PackageVersion Include="Microsoft.Net.Http.Headers" Version="8.0.0" />
@@ -163,6 +164,6 @@
 		<PackageVersion Include="TUnit.Core" Version="0.25.21" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
-    <PackageVersion Include="YamlDotnet" Version="13.7.1" />
+    <PackageVersion Include="YamlDotnet" Version="15.1.4" />
 	</ItemGroup>
 </Project>

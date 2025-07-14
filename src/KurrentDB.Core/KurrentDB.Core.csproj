@@ -7,7 +7,6 @@
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" />
 		<PackageReference Include="FluentStorage" />
 		<PackageReference Include="FluentStorage.AWS" />
 		<PackageReference Include="Google.Protobuf" />
@@ -45,6 +44,7 @@
 		<ProjectReference Include="..\KurrentDB.Licensing\KurrentDB.Licensing.csproj" />
 		<ProjectReference Include="..\KurrentDB.LogV3\KurrentDB.LogV3.csproj" />
 		<ProjectReference Include="..\KurrentDB.Native\KurrentDB.Native.csproj" />
+		<ProjectReference Include="..\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Http\KurrentDB.Transport.Http.csproj" />
 		<ProjectReference Include="..\KurrentDB.Transport.Tcp\KurrentDB.Transport.Tcp.csproj" />
 		<ProjectReference Include="..\KurrentDB.NETCore.Compatibility\KurrentDB.NETCore.Compatibility.csproj" />

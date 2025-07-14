@@ -281,8 +281,8 @@ public partial record ClusterVNodeOptions {
 
 	[Description("Cluster Options")]
 	public record ClusterOptions {
-		[Description("The maximum number of entries to keep in the stream info cache. Set to '0' to scale automatically (Default)")]
-		public int StreamInfoCacheCapacity { get; init; } = 0;
+		[Description("The maximum number of entries to keep in the stream info cache.")]
+		public int StreamInfoCacheCapacity { get; init; } = 100_000;
 
 		[Description("The number of nodes in the cluster.")]
 		public int ClusterSize { get; init; } = 1;

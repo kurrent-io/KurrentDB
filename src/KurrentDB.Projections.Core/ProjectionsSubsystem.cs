@@ -212,6 +212,7 @@ public sealed class ProjectionsSubsystem : ISubsystem,
 			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-running", tracker.ObserveRunning);
 			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-status", tracker.ObserveStatus);
 			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size", tracker.ObserveStateSize);
+			projectionMeter.CreateObservableUpDownCounter($"{serviceName}-projection-state-size-bound", tracker.ObserveStateSizeBound);
 
 			serializationTrackerFactory = name =>
 				new ProjectionStateSerializationTracker(

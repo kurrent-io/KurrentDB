@@ -26,6 +26,10 @@
 		<None Include="$(MSBuildThisFileDirectory)..\ouro.png" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
+	<ItemGroup Condition="'$(IsPlugin)' == 'true'">
+		<ProjectReference Include="$(MSBuildThisFileDirectory)\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
+	</ItemGroup>
+
 	<ItemGroup Condition="'$(IsPluginsTestProject)' == 'true'">
 		<ProjectReference Include="..\KurrentDB.Plugins.TestHelpers\KurrentDB.Plugins.TestHelpers.csproj" />
 	</ItemGroup>

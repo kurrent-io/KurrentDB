@@ -2,10 +2,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<Nullable>enable</Nullable>
+		<IsPlugin>true</IsPlugin>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" />
 		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
 		<PackageReference Include="OpenTelemetry.Extensions.Hosting" />
 		<PackageReference Include="Serilog" />
