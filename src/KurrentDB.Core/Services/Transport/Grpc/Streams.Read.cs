@@ -3,7 +3,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading;
@@ -11,7 +10,6 @@ using System.Threading.Tasks;
 using EventStore.Client;
 using EventStore.Client.Streams;
 using Google.Protobuf;
-using Google.Protobuf.Collections;
 using Grpc.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Metrics;
@@ -20,7 +18,6 @@ using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.Transport.Grpc;
-using KurrentDB.Protobuf.Server;
 using static EventStore.Client.Streams.ReadResp.Types;
 using static EventStore.Plugins.Authorization.Operations.Streams;
 using CountOptionOneofCase = EventStore.Client.Streams.ReadReq.Types.Options.CountOptionOneofCase;
