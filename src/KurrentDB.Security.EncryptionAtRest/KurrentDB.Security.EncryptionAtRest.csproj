@@ -5,6 +5,7 @@
 		<OutputType>Library</OutputType>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+		<IsPlugin>true</IsPlugin>
 	</PropertyGroup>
 	<PropertyGroup>
 		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -13,7 +14,6 @@
 	  <DebugSymbols>true</DebugSymbols>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" />
 		<PackageReference Include="Scrutor" />
 		<PackageReference Include="Serilog" />
 	</ItemGroup>

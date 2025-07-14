@@ -146,6 +146,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SecondaryIndexing
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SecondaryIndexing.Tests", "KurrentDB.SecondaryIndexing.Tests\KurrentDB.SecondaryIndexing.Tests.csproj", "{E7DA8388-C6DF-4013-830C-AC08C40B2A71}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Plugins.Tests", "KurrentDB.Plugins.Tests\KurrentDB.Plugins.Tests.csproj", "{7D9C74E0-2F0E-4B41-A741-694D566739D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Plugins", "KurrentDB.Plugins\KurrentDB.Plugins.csproj", "{B697AE2D-DD63-48D5-B449-FB325EC41556}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.SecondaryIndexing.LoadTesting", "KurrentDB.SecondaryIndexing.LoadTesting\KurrentDB.SecondaryIndexing.LoadTesting.csproj", "{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}"
 EndProject
 Global
@@ -890,18 +894,6 @@ Global
 		{E7DA8388-C6DF-4013-830C-AC08C40B2A71}.Release|ARM64.Build.0 = Release|ARM64
 		{E7DA8388-C6DF-4013-830C-AC08C40B2A71}.Release|x64.ActiveCfg = Release|x64
 		{E7DA8388-C6DF-4013-830C-AC08C40B2A71}.Release|x64.Build.0 = Release|x64
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Debug|ARM64.ActiveCfg = Debug|ARM64
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Debug|ARM64.Build.0 = Debug|ARM64
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Debug|x64.ActiveCfg = Debug|x64
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Debug|x64.Build.0 = Debug|x64
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Release|ARM64.ActiveCfg = Release|ARM64
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Release|ARM64.Build.0 = Release|ARM64
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Release|x64.ActiveCfg = Release|x64
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -951,7 +943,6 @@ Global
 		{ECDC12A9-73C7-456F-8C28-5674CFD73C6B} = {10D69000-82BA-4C61-A4BD-ED8EB5D7B0A7}
 		{16280B68-F7E2-4CF3-AE96-42F4C243926A} = {C60E0774-AB19-49D0-AAB4-D804E5EF1C3F}
 		{E7DA8388-C6DF-4013-830C-AC08C40B2A71} = {C60E0774-AB19-49D0-AAB4-D804E5EF1C3F}
-		{5F23DE2B-A471-401D-BBB9-AFC18A4052B5} = {C60E0774-AB19-49D0-AAB4-D804E5EF1C3F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CD63E89D-F4FA-42A7-A10B-50CF854078FA}
