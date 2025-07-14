@@ -70,13 +70,20 @@ public class EventRecord : IEquatable<EventRecord> {
 
 	// called from tests only
 	public EventRecord(
-		long eventNumber, long logPosition,
-		Guid correlationId, Guid eventId,
-		long transactionPosition, int transactionOffset,
-		string eventStreamId, long expectedVersion,
-		DateTime timeStamp, PrepareFlags flags,
-		string? eventType = null, byte[]? data = null,
-		byte[]? metadata = null, byte[]? properties = null) {
+		long eventNumber,
+		long logPosition,
+		Guid correlationId,
+		Guid eventId,
+		long transactionPosition,
+		int transactionOffset,
+		string eventStreamId,
+		long expectedVersion,
+		DateTime timeStamp,
+		PrepareFlags flags,
+		string? eventType = null,
+		byte[]? data = null,
+		byte[]? metadata = null,
+		byte[]? properties = null) {
 		Ensure.Nonnegative(logPosition);
 		Ensure.Nonnegative(transactionPosition);
 		ArgumentOutOfRangeException.ThrowIfLessThan(-1, transactionOffset);
