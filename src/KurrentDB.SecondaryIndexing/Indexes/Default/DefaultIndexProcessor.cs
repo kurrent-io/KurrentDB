@@ -52,7 +52,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 
 		var lastSequence = GetLastSequence();
 		Logger.Information("Last known global sequence: {Seq}", lastSequence);
-		LastSequence = lastSequence.HasValue ? lastSequence.Value + 1 : 0;
+		LastSequence = lastSequence ?? -1;
 	}
 
 	public void Index(ResolvedEvent resolvedEvent) {
@@ -66,7 +66,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 			return;
 		}
 
-		var sequence = LastSequence++;
+		var sequence = ++LastSequence;
 		var logPosition = resolvedEvent.Event.LogPosition;
 		var commitPosition = resolvedEvent.EventPosition?.CommitPosition;
 		var eventNumber = resolvedEvent.Event.EventNumber;
