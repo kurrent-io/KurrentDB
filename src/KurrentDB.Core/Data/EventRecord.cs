@@ -41,8 +41,11 @@ public class EventRecord : IEquatable<EventRecord> {
 			ref _metadata,
 			ref _metadataInitialized,
 			ref _metadataLock,
-			() => ProtoJsonSerializer.Default.Serialize(
-				Parser.ParseFrom(Properties.Span).PropertiesValues.MapToDictionary()));
+			() => Properties.IsEmpty
+				? ReadOnlyMemory<byte>.Empty
+				: ProtoJsonSerializer.Default.Serialize(
+					Parser.ParseFrom(Properties.Span).PropertiesValues.MapToDictionary())
+				);
 	}
 
 	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType) {
