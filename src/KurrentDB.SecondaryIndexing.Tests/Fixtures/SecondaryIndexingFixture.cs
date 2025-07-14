@@ -17,12 +17,6 @@ namespace KurrentDB.SecondaryIndexing.Tests.Fixtures;
 
 using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
 
-[CollectionDefinition("SecondaryIndexingPluginDisabled")]
-public sealed class SecondaryIndexingPluginDisabledDefinition : ICollectionFixture<SecondaryIndexingDisabledFixture>;
-
-[CollectionDefinition("SecondaryIndexingPluginEnabled")]
-public sealed class SecondaryIndexingPluginEnabledDefinition : ICollectionFixture<SecondaryIndexingEnabledFixture>;
-
 [UsedImplicitly]
 public class SecondaryIndexingEnabledFixture() : SecondaryIndexingFixture(true);
 
@@ -43,7 +37,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 
 		Configuration = new() {
 			{ $"{PluginConfigPrefix}:Enabled", "true" },
-			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", "2" },
+			{ $"{OptionsConfigPrefix}:{nameof(SecondaryIndexingPluginOptions.CommitBatchSize)}", "500" },
 			{ DatabasePathConfig, PathName }
 		};
 

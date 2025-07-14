@@ -9,17 +9,17 @@ using Xunit.Abstractions;
 namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
-[Collection("SecondaryIndexingPluginDisabled")]
 public class IndexingDisabledTests(
 	SecondaryIndexingDisabledFixture fixture,
 	ITestOutputHelper output
-) : SecondaryIndexingTestBase(fixture, output) {
+) : SecondaryIndexingTest<SecondaryIndexingDisabledFixture>(fixture, output), IClassFixture<SecondaryIndexingDisabledFixture> {
+
 	[Fact]
 	public async Task Index_streams_should_not_be_found() {
-		await fixture.AppendToStream(RandomStreamName(), """{"test":"123"}""", """{"test":"321"}""");
+		await Fixture.AppendToStream(RandomStreamName(), """{"test":"123"}""", """{"test":"321"}""");
 
 		await Assert.ThrowsAsync<ReadResponseException.StreamNotFound>(async () =>
-			await fixture.ReadUntil(DefaultIndex.Name, 2, TimeSpan.FromMilliseconds(500))
+			await Fixture.ReadUntil(DefaultIndex.Name, 2, TimeSpan.FromMilliseconds(500))
 		);
 	}
 }

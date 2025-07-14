@@ -12,85 +12,58 @@ using Xunit.Abstractions;
 namespace KurrentDB.SecondaryIndexing.Tests.IntegrationTests;
 
 [Trait("Category", "Integration")]
-[Collection("SecondaryIndexingPluginEnabled")]
 public class DeletingStreamsTests(
-	SecondaryIndexingEnabledFixture fixture,
+	DeletingStreamsFixture fixture,
 	ITestOutputHelper output
-) : SecondaryIndexingTestBase(fixture, output) {
-	private readonly MessageGenerator _messageGenerator = new();
-
-	private readonly LoadTestPartitionConfig _config = new(
-		PartitionId: 1,
-		StartCategoryIndex: 0,
-		CategoriesCount: 5,
-		MaxStreamsPerCategory: 100,
-		MessageTypesCount: 10,
-		MessageSize: 10,
-		MaxBatchSize: 2,
-		TotalMessagesCount: 10
-	);
-
-	private static string DeletedStreamName = null!;
-
-	public override async Task BeforeAll() {
-		await foreach (var batch in _messageGenerator.GenerateBatches(_config)) {
-			var messages = batch.Messages.Select(m => m.ToEventData()).ToArray();
-			await fixture.AppendToStream(batch.StreamName, messages);
-			AppendedBatches.Add(batch);
-		}
-
-		DeletedStreamName = GetRandomStreamNameFromAppended();
-		await fixture.DeleteStream(DeletedStreamName);
-	}
-
+) : SecondaryIndexingTest<DeletingStreamsFixture>(fixture, output) {
 	[Fact(Skip = "For now")]
 	public Task ReadsAllEventsFromDefaultIndex() =>
-		ValidateRead(DefaultIndex.Name, ExpectedBatches.ToDefaultIndexResolvedEvents());
+		ValidateRead(DefaultIndex.Name, Fixture.ExpectedBatches.ToDefaultIndexResolvedEvents());
 
 	[Fact(Skip = "For now")]
 	public async Task ReadsAllEventsFromCategoryIndex() {
-		foreach (var category in Categories) {
-			var expectedEvents = ExpectedBatches.ToCategoryIndexResolvedEvents(category);
+		foreach (var category in Fixture.Categories) {
+			var expectedEvents = Fixture.ExpectedBatches.ToCategoryIndexResolvedEvents(category);
 			await ValidateRead(CategoryIndex.Name(category), expectedEvents);
 		}
 	}
 
 	[Fact(Skip = "For now")]
 	public async Task ReadsAllEventsFromEventTypeIndex() {
-		foreach (var eventType in EventTypes) {
-			var expectedEvents = ExpectedBatches.ToEventTypeIndexResolvedEvents(eventType);
+		foreach (var eventType in Fixture.EventTypes) {
+			var expectedEvents = Fixture.ExpectedBatches.ToEventTypeIndexResolvedEvents(eventType);
 			await ValidateRead(EventTypeIndex.Name(eventType), expectedEvents);
 		}
 	}
 
 	[Fact(Skip = "For now")]
 	public Task SubscriptionReturnsAllEventsFromDefaultIndex() =>
-		ValidateSubscription(DefaultIndex.Name, ExpectedBatches.ToDefaultIndexResolvedEvents());
+		ValidateSubscription(DefaultIndex.Name, Fixture.ExpectedBatches.ToDefaultIndexResolvedEvents());
 
 	[Fact(Skip = "For now")]
 	public async Task SubscriptionReturnsAllEventsFromCategoryIndex() {
-		foreach (var category in Categories) {
-			var expectedEvents = ExpectedBatches.ToCategoryIndexResolvedEvents(category);
+		foreach (var category in Fixture.Categories) {
+			var expectedEvents = Fixture.ExpectedBatches.ToCategoryIndexResolvedEvents(category);
 			await ValidateSubscription(CategoryIndex.Name(category), expectedEvents);
 		}
 	}
 
 	[Fact(Skip = "For now")]
 	public async Task SubscriptionReturnsAllEventsFromEventTypeIndex() {
-		foreach (var eventType in EventTypes) {
-			var expectedEvents = ExpectedBatches.ToEventTypeIndexResolvedEvents(eventType);
+		foreach (var eventType in Fixture.EventTypes) {
+			var expectedEvents = Fixture.ExpectedBatches.ToEventTypeIndexResolvedEvents(eventType);
 			await ValidateSubscription(EventTypeIndex.Name(eventType), expectedEvents);
 		}
 	}
 
 	private async Task ValidateRead(string indexStreamName, ResolvedEvent[] expectedEvents) {
-		var results = await fixture.ReadUntil(indexStreamName, expectedEvents.Length);
+		var results = await Fixture.ReadUntil(indexStreamName, expectedEvents.Length);
 
 		AssertResolvedEventsMatch(indexStreamName, results, expectedEvents);
 	}
 
 	private async Task ValidateSubscription(string indexStreamName, ResolvedEvent[] expectedEvents) {
-		var results = await fixture.SubscribeUntil(indexStreamName, expectedEvents.Length);
+		var results = await Fixture.SubscribeUntil(indexStreamName, expectedEvents.Length);
 
 		AssertResolvedEventsMatch(indexStreamName, results, expectedEvents);
 	}
@@ -160,17 +133,48 @@ public class DeletingStreamsTests(
 			Assert.Equal(ReadEventResult.Success, actual.ResolveResult);
 		}
 	}
+}
 
-	private static readonly List<TestMessageBatch> AppendedBatches = [];
-	private static List<TestMessageBatch> ExpectedBatches =>
-		AppendedBatches.Where(b => b.StreamName != DeletedStreamName).ToList();
+public class DeletingStreamsFixture : SecondaryIndexingEnabledFixture {
+	private readonly LoadTestPartitionConfig _config = new(
+		PartitionId: 1,
+		StartCategoryIndex: 0,
+		CategoriesCount: 5,
+		MaxStreamsPerCategory: 100,
+		MessageTypesCount: 10,
+		MessageSize: 10,
+		MaxBatchSize: 2,
+		TotalMessagesCount: 10
+	);
 
-	private static string GetRandomStreamNameFromAppended() =>
-		AppendedBatches.Select(b => b.StreamName).Distinct().ToList().RandomElement();
+	private readonly MessageGenerator _messageGenerator = new();
 
-	private static string[] Categories =>
-		AppendedBatches.Select(b => b.CategoryName).Distinct().ToArray();
+	public DeletingStreamsFixture() {
+		OnSetup = async () => {
+			await foreach (var batch in _messageGenerator.GenerateBatches(_config)) {
+				var messages = batch.Messages.Select(m => m.ToEventData()).ToArray();
+				await AppendToStream(batch.StreamName, messages);
+				_appendedBatches.Add(batch);
+			}
 
-	private static string[] EventTypes =>
-		AppendedBatches.SelectMany(b => b.Messages.Select(m => m.EventType)).Distinct().ToArray();
+			DeletedStreamName = GetRandomStreamNameFromAppended();
+			await DeleteStream(DeletedStreamName);
+		};
+	}
+
+	private static string DeletedStreamName = null!;
+
+	private readonly List<TestMessageBatch> _appendedBatches = [];
+
+	public List<TestMessageBatch> ExpectedBatches =>
+		_appendedBatches.Where(b => b.StreamName != DeletedStreamName).ToList();
+
+	private string GetRandomStreamNameFromAppended() =>
+		_appendedBatches.Select(b => b.StreamName).Distinct().ToList().RandomElement();
+
+	public string[] Categories =>
+		_appendedBatches.Select(b => b.CategoryName).Distinct().ToArray();
+
+	public string[] EventTypes =>
+		_appendedBatches.SelectMany(b => b.Messages.Select(m => m.EventType)).Distinct().ToArray();
 }
