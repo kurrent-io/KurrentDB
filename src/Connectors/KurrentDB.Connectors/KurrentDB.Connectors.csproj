@@ -5,6 +5,7 @@
 		<ImplicitUsings>true</ImplicitUsings>
 		<LangVersion>preview</LangVersion>
 		<IsPackable>false</IsPackable>
+		<IsPlugin>true</IsPlugin>
 		<Deterministic>true</Deterministic>
 		<InvariantGlobalization>true</InvariantGlobalization>
 		<OutputType>library</OutputType>
@@ -19,7 +20,7 @@
 		<ProjectReference Include="..\..\KurrentDB.Core\KurrentDB.Core.csproj" ExcludeAssets="all" Private="false" />
 		<ProjectReference Include="..\..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" ExcludeAssets="all" Private="false" />
 		<ProjectReference Include="..\KurrentDB.Connectors.Contracts\KurrentDB.Connectors.Contracts.csproj" />
-  </ItemGroup>
+	</ItemGroup>
 
 	<!-- Required packages -->
 	<ItemGroup>
@@ -53,11 +54,6 @@
 		<PackageReference Include="Serilog.Sinks.Debug" />
 		<PackageReference Include="Serilog.Sinks.Seq" />
 		<PackageReference Include="Serilog.Enrichers.Environment" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<!-- Contains Plugin and License components -->
-		<PackageReference Include="EventStore.Plugins" ExcludeAssets="runtime" />
 	</ItemGroup>
 
   <ItemGroup>

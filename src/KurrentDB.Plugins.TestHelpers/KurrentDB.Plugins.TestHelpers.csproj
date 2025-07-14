@@ -5,6 +5,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" />
+		<ProjectReference Include="..\KurrentDB.Plugins\KurrentDB.Plugins.csproj" />
 	</ItemGroup>
 </Project>

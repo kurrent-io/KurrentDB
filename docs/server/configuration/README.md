@@ -327,14 +327,14 @@ And will output on `stdout`
 only: _Error while parsing options: The option UnknownConfig is not a known option. (Parameter 'UnknownConfig')_.
 :::
 
-## Autoconfigured options
+## Auto-configured options
 
-Some options are configured at startup to make better use of the available resources on larger instances or
+Some options can be auto-configured at startup to make better use of the available resources on larger instances or
 machines.
 
-These options are `StreamInfoCacheCapacity`, `ReaderThreadsCount`, and `WorkerThreads`.
+By default `ReaderThreadsCount` and `WorkerThreads` are auto-configured, and since v25.1 `StreamInfoCacheCapacity` is not.
 
-Autoconfiguration does not apply in containerized environments.
+Auto-configuration does not apply in containerized environments.
 
 ### StreamInfoCacheCapacity
 
@@ -342,19 +342,19 @@ This option sets the maximum number of entries in the stream info cache. This lo
 any stream that has recently been read or written. Having entries in this cache significantly improves the write 
 and read performance to cached streams on larger databases.
 
-By default, the cache dynamically resizes based on the amount of free memory. The minimum it can be set to is 100,000 entries.
-
 | Format               | Syntax                                  |
 |:---------------------|:----------------------------------------|
 | Command line         | `--stream-info-cache-capacity`          |
 | YAML                 | `StreamInfoCacheCapacity`               |
 | Environment variable | `KURRENTDB_STREAM_INFO_CACHE_CAPACITY`  |
 
-The option is set to 0 by default, which enables dynamic resizing. The default on previous versions of
-KurrentDB was 100,000 entries.
+In v25.1 onwards the option is set to 100000 by default.
+Between 21.0 and 25.0 the default was 0 which enables dynamic resizing.
 
 ::: note
-The default value of 0 for `StreamInfoCacheCapacity` might not always be the best value for optimal performance. Ideally, it should be set to double the number of streams in the anticipated working set.
+Dynamically sizing `StreamInfoCacheCapacity` might not always be the best value for optimal performance. Ideally, it should be set to double the number of streams in the anticipated working set.
+
+The disadvantage of setting it too large is that it increases managed memory usage, which increases load on the garbage collector and can cause leader elections to occur more frequently.
 
 Check the event count in the `$streams` system stream to obtain the total number of streams. This stream is created by the [$streams system projection](../features/projections/system.md#streams-projection).
 

@@ -174,3 +174,61 @@ The size of read operations is dependent on the size of the events appended, not
 A higher reader count can be useful, if disks are able to support more concurrent operations. Context switching incurs additional costs in terms of performance. If disks are already saturated, adding more reader threads can exacerbate that issue and lead to more failed requests.
 
 Increasing the count of reader threads can improve performance up to a point, but it is likely to rapidly tail off once that limit is reached.
+
+## Runtime
+
+### Garbage Collection
+
+The .NET runtime has two strategies for garbage collection. Workstation GC and Server GC. In KurrentDB 25.1, Server GC is now enabled by default, with a `HeapHardLimitPercent` of 60%. This increases the overall performance of KurrentDB by reducing contention, and reduces time spent in garbage collection by using multiple threads.
+
+#### Configuration
+
+The GC configuration is logged on startup
+
+```
+[107584, 1,13:11:28.780,INF] KurrentDB GC Configuration settings:
+    ServerGC: True
+    ConcurrentGC: True
+    RetainVM: False
+    NoAffinitize: False
+    GCCpuGroup: False
+    GCLargePages: False
+    HeapCount: 24
+    MaxHeapCount: 0
+    GCHeapAffinitizeMask: 0
+    GCHeapAffinitizeRanges:
+    GCHighMemPercent: 0
+    GCHeapHardLimit: 0
+    GCHeapHardLimitPercent: 0
+    GCHeapHardLimitSOH: 0
+    GCHeapHardLimitLOH: 0
+    GCHeapHardLimitPOH: 0
+    GCHeapHardLimitSOHPercent: 0
+    GCHeapHardLimitLOHPercent: 0
+    GCHeapHardLimitPOHPercent: 0
+    GCConserveMem: 0
+    GCName:
+    GCDynamicAdaptationMode: 0
+```
+
+Server GC can be disabled by setting the environment variable `DOTNET_gcServer`:
+- `0` for `WorkstationGC`.
+- `1` for `ServerGC`.
+
+See the [.NET runtime documentation](https://learn.microsoft.com/en-us/dotnet/core/runtime-config/garbage-collector#workstation-vs-server) for other ways of setting this value, and other GC values that can be set. Be aware that often the values are specified in Hexadecimal.
+
+##### HeapHardLimitPercent 
+
+- KurrentDB now has `HeapHardLimitPercent` set this to 60% by default. The runtime default is unlimited for normal deployments and 75% for containerized environments.
+- Server GC is less eager to run collections than Workstation GC. The 60% default helps to prevent the heap from ever growing too big, leaving little room for the page cache.
+- The dynamic cache resizing (`StreamInfoCacheCapacity = 0`) takes the heap limits into account.
+
+##### Virtual/Physical Environments
+
+The defaults are designed for when KurrentDB is the main process on the machine. If the machine is running other important, resource-intensive processes then:
+- Consider disabling `ServerGC`. When ServerGC collects, it uses all cores by default, which can affect other processes.
+- Consider reducing `HeapHardLimitPercent` (applicable to both GC modes) if memory usage is too high. The other important settings for memory consumption are `StreamInfoCacheCapacity` and `CachedChunks`/`ChunksCacheSize`
+
+###### Containerized Environments
+
+- Set appropriate resource limits for the container.

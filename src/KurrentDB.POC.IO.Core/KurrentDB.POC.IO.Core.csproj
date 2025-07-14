@@ -2,8 +2,6 @@
 	<PropertyGroup>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<Nullable>enable</Nullable>
+		<IsPlugin>true</IsPlugin>
 	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" />
-	</ItemGroup>
 </Project>

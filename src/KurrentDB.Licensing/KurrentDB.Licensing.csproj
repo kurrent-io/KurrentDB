@@ -3,6 +3,7 @@
 	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<IsPlugin>true</IsPlugin>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -10,7 +11,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="EventStore.Plugins" />
 		<PackageReference Include="RestSharp" />
 		<PackageReference Include="Serilog" />
 	</ItemGroup>

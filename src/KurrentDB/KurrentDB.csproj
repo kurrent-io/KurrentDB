@@ -4,8 +4,11 @@
 		<OutputType>Exe</OutputType>
 		<ApplicationIcon>app2.ico</ApplicationIcon>
 		<GenerateSupportedRuntime>false</GenerateSupportedRuntime>
-		<ServerGarbageCollection>false</ServerGarbageCollection>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
 	</PropertyGroup>
+	<ItemGroup>
+		<RuntimeHostConfigurationOption Include="System.GC.HeapHardLimitPercent" Value="60" />
+	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Extensions.MudBlazor.StaticInput" />
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
