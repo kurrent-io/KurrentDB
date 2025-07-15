@@ -45,36 +45,35 @@ public class MultiStreamAppendService : StreamsService.StreamsServiceBase {
 		MultiStreamAppendCore(requestStream.ReadAllAsync(), context);
 
 	async Task<MultiStreamAppendResponse> MultiStreamAppendCore(IAsyncEnumerable<AppendStreamRequest> requestStream, ServerCallContext context) {
-		EnsureLeaderConstraint(context);
-
 		using var duration = _appendTracker.Start();
+		try {
+			EnsureLeaderConstraint(context);
 
-		var user = context.GetHttpContext().User;
-		var requests = new List<AppendStreamRequest>();
-		var seenStreams = new HashSet<string>();
+			var user = context.GetHttpContext().User;
+			var requests = new List<AppendStreamRequest>();
+			var seenStreams = new HashSet<string>();
 
-		await foreach (var request in requestStream) {
-			if (request.Records is [])
-				throw RpcExceptions.InvalidArgument($"Write to stream '{request.Stream}' does not have any records");
+			await foreach (var request in requestStream) {
+				if (request.Records is [])
+					throw RpcExceptions.InvalidArgument($"Write to stream '{request.Stream}' does not have any records");
 
-			// temporary limitation
-			if (!seenStreams.Add(request.Stream))
-				throw RpcExceptions.InvalidArgument("Two AppendStreamRequests for one stream is not currently supported: " +
-				                                    $"'{request.Stream}' is already in the request list");
+				// temporary limitation
+				if (!seenStreams.Add(request.Stream))
+					throw RpcExceptions.InvalidArgument("Two AppendStreamRequests for one stream is not currently supported: " +
+														$"'{request.Stream}' is already in the request list");
 
-			var accessGranted = await CheckStreamAccess(request.Stream);
-			if (!accessGranted) {
-				var failure = new AppendStreamFailure {
-					Stream = request.Stream,
-					AccessDenied = AccessDenied,
-				};
-				return new() { Failure = new() { Output = { failure } } }; // fail fast if any request is unauthorized
+				var accessGranted = await CheckStreamAccess(request.Stream);
+				if (!accessGranted) {
+					var failure = new AppendStreamFailure {
+						Stream = request.Stream,
+						AccessDenied = AccessDenied,
+					};
+					return new() { Failure = new() { Output = { failure } } }; // fail fast if any request is unauthorized
+				}
+
+				requests.Add(request);
 			}
 
-			requests.Add(request);
-		}
-
-		try {
 			var convertedEvents = _converter.ConvertToEvents(requests);
 
 			var completionSource = new TaskCompletionSource<MultiStreamAppendResponse>(RunContinuationsAsynchronously);
@@ -107,14 +106,14 @@ public class MultiStreamAppendService : StreamsService.StreamsServiceBase {
 			_publisher.Publish(writeEventsCommand);
 
 			return await completionSource.Task;
+
+			ValueTask<bool> CheckStreamAccess(string stream) {
+				var op = WriteOperation.WithParameter(Operations.Streams.Parameters.StreamId(stream));
+				return _authorizationProvider.CheckAccessAsync(user, op, context.CancellationToken);
+			}
 		} catch (Exception ex) {
 			duration.SetException(ex);
 			throw;
-		}
-
-		ValueTask<bool> CheckStreamAccess(string stream) {
-			var op = WriteOperation.WithParameter(Operations.Streams.Parameters.StreamId(stream));
-			return _authorizationProvider.CheckAccessAsync(user, op, context.CancellationToken);
 		}
 	}
 
