@@ -26,12 +26,12 @@ namespace KurrentDB.SecondaryIndexing.Tests.Indexes.DefaultIndexReaderTests;
 public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 	[Fact]
 	public async Task ReadForwards_WhenNonExistentStream_ReturnsNoStream() {
-		// Arrange - no events indexed
+		// Given - no events indexed
 
-		// Act
+		// When
 		var result = await ReadForwards();
 
-		// Assert
+		// Then
 		AssertEqual(
 			ReadStreamEventsForwardCompleted(
 				result: ReadStreamResult.NoStream,
@@ -47,14 +47,14 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 
 	[Fact]
 	public async Task ReadForwards_WhenValidationVersionMatches_ReturnsNotModified() {
-		// Arrange
+		// Given
 		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
 		IndexEvents(events);
 
-		// Act
+		// When
 		var result = await ReadForwards(validationStreamVersion: 0);
 
-		// Assert
+		// Then
 		AssertEqual(
 			ReadStreamEventsForwardCompleted(
 				result: ReadStreamResult.NotModified,
@@ -70,17 +70,17 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 
 	[Fact]
 	public async Task ReadForwards_WhenFromEventNumberIsNegative_DefaultsToZero() {
-		// Arrange
+		// Given
 		var events = new[] {
 			From("test-stream", 0, 100, "TestEvent", []),
 			From("test-stream", 1, 200, "TestEvent", [])
 		};
 		IndexEvents(events);
 
-		// Act
+		// When
 		var result = await ReadForwards(fromEventNumber: -1, maxCount: 10);
 
-		// Assert
+		// Then
 		AssertEqual(
 			ReadStreamEventsForwardCompleted(
 				result: ReadStreamResult.Success,
@@ -95,6 +95,172 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 		);
 	}
 
+
+
+	[Fact]
+	public async Task ReadForwards_WhenMaxCountOverflow_HandlesCorrectly()
+	{
+		// Given
+		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
+		IndexEvents(events);
+
+		// When
+		var result = await ReadForwards(fromEventNumber: long.MaxValue - 5, maxCount: 10);
+
+		// Then
+		AssertEqual(
+			ReadStreamEventsForwardCompleted(
+				result: ReadStreamResult.Success,
+				events: [],
+				fromEventNumber: long.MaxValue - 5,
+				maxCount: 10,
+				nextEventNumber: -1,
+				tfLastCommitPosition: 100,
+				lastEventNumber: 0L,
+				isEndOfStream: true
+			),
+			result
+		);
+	}
+
+    [Fact]
+    public async Task ReadForwards_WhenRequestBeyondExistingSet_ReturnsSuccessWithNoEvents()
+    {
+        // Given
+        var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
+        IndexEvents(events);
+
+        // When
+        var result = await ReadForwards(fromEventNumber: 5, maxCount: 10);
+
+        // Then
+        AssertEqual(
+            ReadStreamEventsForwardCompleted(
+                result: ReadStreamResult.Success,
+                events: [],
+                fromEventNumber: 5,
+                maxCount: 10,
+                nextEventNumber: -1,
+                tfLastCommitPosition: 100,
+                lastEventNumber: 0L,
+                isEndOfStream: true
+            ),
+            result
+        );
+    }
+
+    [Fact]
+    public async Task ReadForwards_WhenRequestBeyondExistingSetWithValidationVersion_UsesValidationVersion()
+    {
+        // Given
+        var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
+        IndexEvents(events);
+
+        // When
+        var result = await ReadForwards(fromEventNumber: 5, maxCount: 10, validationStreamVersion: 7);
+
+        // Then
+        AssertEqual(
+            ReadStreamEventsForwardCompleted(
+                result: ReadStreamResult.Success,
+                events: [],
+                fromEventNumber: 5,
+                maxCount: 10,
+                nextEventNumber: -1,
+                tfLastCommitPosition: 100,
+                lastEventNumber: 7L, // Should use ValidationStreamVersion
+                isEndOfStream: true
+            ),
+            result
+        );
+    }
+
+    [Fact]
+    public async Task ReadForwards_WhenSuccessfullyReadingWithMoreEventsAvailable_ReturnsCorrectResult()
+    {
+        // Given
+        var events = new[] {
+            From("test-stream", 0, 100, "TestEvent", []),
+            From("test-stream", 1, 200, "TestEvent", []),
+            From("test-stream", 2, 300, "TestEvent", [])
+        };
+        IndexEvents(events);
+
+        // When
+        var result = await ReadForwards(maxCount: 2);
+
+        // Then
+        AssertEqual(
+            ReadStreamEventsForwardCompleted(
+                result: ReadStreamResult.Success,
+                events: events.Take(2).ToArray(),
+                maxCount: 2,
+                nextEventNumber: 2L,
+                tfLastCommitPosition: 300,
+                lastEventNumber: 2L,
+                isEndOfStream: false
+            ),
+            result
+        );
+    }
+
+    [Fact]
+    public async Task ReadForwards_WhenAtEndOfStream_ReturnsCorrectResult()
+    {
+        // Given
+        var events = new[] {
+            From("test-stream", 0, 100, "TestEvent", []),
+            From("test-stream", 1, 200, "TestEvent", [])
+        };
+        IndexEvents(events);
+
+        // When
+        var result = await ReadForwards(fromEventNumber: 1, maxCount: 10);
+
+        // Then
+        AssertEqual(
+            ReadStreamEventsForwardCompleted(
+                result: ReadStreamResult.Success,
+                events: [events[1]],
+                fromEventNumber: 1,
+                maxCount: 10,
+                nextEventNumber: 2L,
+                tfLastCommitPosition: 200,
+                lastEventNumber: 1L,
+                isEndOfStream: true
+            ),
+            result
+        );
+    }
+
+    [Fact]
+    public async Task ReadForwards_WhenEventsExist_SetsNextEventNumberFromLastEvent()
+    {
+        // Given
+        var events = new[] {
+            From("test-stream", 0, 100, "TestEvent", []),
+            From("test-stream", 1, 200, "TestEvent", []),
+            From("test-stream", 2, 300, "TestEvent", [])
+        };
+        IndexEvents(events);
+
+        // When
+        var result = await ReadForwards(maxCount: 3);
+
+        // Then
+        AssertEqual(
+            ReadStreamEventsForwardCompleted(
+                result: ReadStreamResult.Success,
+                events: events,
+                maxCount: 3,
+                nextEventNumber: 3L, // Last event number (2) + 1
+                tfLastCommitPosition: 300,
+                lastEventNumber: 2L,
+                isEndOfStream: true
+            ),
+            result
+        );
+    }
 
 	private void IndexEvents(ResolvedEvent[] events) {
 		foreach (var resolvedEvent in events) {
@@ -214,7 +380,7 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 		Assert.Equal(expected.MaxCount, actual.MaxCount);
 		Assert.Equal(expected.Result, actual.Result);
 		Assert.Equivalent(expected.Events.Select(e => e.Event), actual.Events.Select(e => e.Event).ToList());
-		// Assert.Equal(expected.StreamMetadata, actual.StreamMetadata);
+		// Then.Equal(expected.StreamMetadata, actual.StreamMetadata);
 		Assert.Equal(expected.IsCachePublic, actual.IsCachePublic);
 		Assert.Equal(expected.Error, actual.Error);
 		Assert.Equal(expected.NextEventNumber, actual.NextEventNumber);
