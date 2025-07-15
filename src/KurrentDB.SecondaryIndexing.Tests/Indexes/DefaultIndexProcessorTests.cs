@@ -415,7 +415,7 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 	private readonly DefaultIndexProcessor _processor;
 
 	public DefaultIndexProcessorTests() {
-		var reader = new DummyReadIndex();
+		var reader = ReadIndexStub.Build();
 
 		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
@@ -457,7 +457,7 @@ public class CleanUpTests {
 		var options = new DuckDbDataSourceOptions { ConnectionString = connectionString };
 
 		using (var dataSource = new DuckDbDataSource(options)) {
-			var reader = new DummyReadIndex();
+			var reader = ReadIndexStub.Build();
 
 			const int commitBatchSize = 9;
 			var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());

@@ -3,21 +3,17 @@
 
 using System.Security.Claims;
 using KurrentDB.Core.Data;
-using KurrentDB.Core.DataStructures;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Tests.Fakes;
-using KurrentDB.Core.TransactionLog;
-using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.SecondaryIndexing.Indexes.Category;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
 using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Indexes.EventType;
 using KurrentDB.SecondaryIndexing.Indexes.Stream;
+using KurrentDB.SecondaryIndexing.Tests.Fakes;
 using KurrentDB.SecondaryIndexing.Tests.Fixtures;
-using NSubstitute;
 using static KurrentDB.SecondaryIndexing.Tests.Fakes.TestResolvedEventFactory;
 using ReadStreamResult = KurrentDB.Core.Data.ReadStreamResult;
 
@@ -269,36 +265,7 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 
 		_processor.Commit();
 
-		_transactionalFileReader.TryReadAt(default, default, default).ReturnsForAnyArgs(x => {
-			var logPosition = x.ArgAt<long>(0);
-
-			if (!events.Any(e => e.Event.LogPosition == logPosition))
-				return new RecordReadResult();
-
-			var evnt = events.Single(e => e.Event.LogPosition == logPosition).Event;
-
-			var prepare = new PrepareLogRecord(
-				logPosition,
-				evnt.CorrelationId,
-				evnt.EventId,
-				evnt.TransactionPosition,
-				evnt.TransactionOffset,
-				evnt.EventStreamId,
-				null,
-				evnt.ExpectedVersion,
-				evnt.TimeStamp,
-				evnt.Flags,
-				evnt.EventType,
-				null,
-				evnt.Data,
-				evnt.Metadata,
-				evnt.Properties
-			);
-
-			return new RecordReadResult(true, -1, prepare, evnt.Data.Length);
-		});
-
-		_readIndex.LastIndexedPosition.Returns(events.Last().Event.LogPosition);
+		_readIndexStub.IndexEvents(events);
 	}
 
 	private async Task<ClientMessage.ReadStreamEventsForwardCompleted> ReadForwards(
@@ -391,27 +358,12 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 
 	private readonly DefaultIndexProcessor _processor;
 	private readonly DefaultIndexReader _sut;
-	private readonly IReadIndex<string> _readIndex;
 	private readonly Guid _internalCorrId = Guid.NewGuid();
 	private readonly Guid _correlationId = Guid.NewGuid();
 	private const string EventStreamId = DefaultIndex.Name;
-	private readonly ITransactionFileReader _transactionalFileReader;
+	private readonly ReadIndexStub _readIndexStub = new();
 
 	public DefaultIndexReaderTests() {
-		_transactionalFileReader = Substitute.For<ITransactionFileReader>();
-
-		var lease = new TFReaderLease(
-			new ObjectPool<ITransactionFileReader>("dummy", 1, 1, () => _transactionalFileReader));
-
-		var backend = Substitute.For<IIndexBackend<string>>();
-
-		var indexReader = Substitute.For<IIndexReader<string>>();
-		indexReader.Backend.Returns(backend);
-		indexReader.BorrowReader().Returns(lease);
-
-		_readIndex = Substitute.For<IReadIndex<string>>();
-		_readIndex.IndexReader.Returns(indexReader);
-
 		const int commitBatchSize = 9;
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
 		var inFlightRecords = new DefaultIndexInFlightRecords(
@@ -420,7 +372,7 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 		var publisher = new FakePublisher();
 		var categoryIndexProcessor = new CategoryIndexProcessor(DuckDb, publisher);
 		var eventTypeIndexProcessor = new EventTypeIndexProcessor(DuckDb, publisher);
-		var streamIndexProcessor = new StreamIndexProcessor(DuckDb, _readIndex.IndexReader.Backend, hasher);
+		var streamIndexProcessor = new StreamIndexProcessor(DuckDb, _readIndexStub.ReadIndex.IndexReader.Backend, hasher);
 
 		_processor = new DefaultIndexProcessor(
 			DuckDb,
@@ -432,6 +384,6 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 			publisher
 		);
 
-		_sut = new DefaultIndexReader(DuckDb, _processor, inFlightRecords, _readIndex);
+		_sut = new DefaultIndexReader(DuckDb, _processor, inFlightRecords, _readIndexStub.ReadIndex);
 	}
 }
