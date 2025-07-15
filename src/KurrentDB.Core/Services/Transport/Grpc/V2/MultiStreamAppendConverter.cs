@@ -152,7 +152,6 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 			return response;
 		}
 
-		// this is not a possible case on the gRPC paths, but we handle it anyway
 		static MultiStreamAppendResponse OnStreamDeleted(ClientMessage.WriteEventsCompleted completed, IReadOnlyList<AppendStreamRequest> requests) {
 			var failure = new AppendStreamFailure {
 				Stream        = completed.FailureStreamIndexes.Span is [var streamIndex, ..] ? requests[streamIndex].Stream : "<unknown>",
@@ -161,6 +160,7 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 			return new() { Failure = new() { Output = { failure } } };
 		}
 
+		// this is not a possible case on the gRPC paths, but we handle it anyway
 		static MultiStreamAppendResponse OnAccessDenied() {
 			var failure = new AppendStreamFailure {
 				Stream       = "<unknown>",
