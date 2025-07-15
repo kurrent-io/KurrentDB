@@ -22,7 +22,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 
 	public IndexMessageBatchAppender(DuckDbDataSource dbDataSource, int commitSize) {
 		_commitSize = commitSize;
-		var reader = new DummyReadIndex();
+		var reader = ReadIndexStub.Build();
 		var hasher = new CompositeHasher<string>(new XXHashUnsafe(), new Murmur3AUnsafe());
 		var inflightRecordsCache =
 			new DefaultIndexInFlightRecords(new SecondaryIndexingPluginOptions { CommitBatchSize = commitSize });
