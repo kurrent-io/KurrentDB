@@ -151,7 +151,6 @@ public class DefaultIndexProcessorTests : DuckDbIntegrationTest {
 		AssertGetStreamIdByNameQueryReturns(cat1Stream2, 2);
 	}
 
-
 	[Fact]
 	public void CommittedMultipleEventsToAStringWithoutCategory_AreIndexed() {
 		// Given
@@ -503,7 +502,6 @@ public class CleanUpTests {
 			Assert.Null(actual?.OrNull());
 		}
 	}
-
 
 	[Fact]
 	public void DisposingAndDroppingDatabaseCleansAllResourcesRawQuack() {

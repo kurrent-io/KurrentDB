@@ -17,13 +17,11 @@ public static class TestResolvedEventFactory {
 		byte[] data
 	) {
 		var recordFactory = LogFormatHelper<LogFormat.V2, string>.RecordFactory;
-		var streamIdIgnored = LogFormatHelper<LogFormat.V2, string>.StreamId;
-		var eventTypeIdIgnored = LogFormatHelper<LogFormat.V2, string>.EventTypeId;
 
 		var record = new EventRecord(
 			streamPosition,
 			LogRecord.Prepare(recordFactory, logPosition, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
-				streamIdIgnored, streamPosition, PrepareFlags.None, eventTypeIdIgnored, data,
+				streamName, streamPosition - 1, PrepareFlags.None, eventType, data,
 				Encoding.UTF8.GetBytes("")
 			),
 			streamName,

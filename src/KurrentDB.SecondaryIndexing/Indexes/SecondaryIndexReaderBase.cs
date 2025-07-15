@@ -100,6 +100,9 @@ internal abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISe
 		if (msg.ValidationStreamVersion.HasValue && lastEventNumber == msg.ValidationStreamVersion)
 			return NoData(msg, ReadStreamResult.NotModified, lastIndexedPosition,
 				msg.ValidationStreamVersion.Value);
+		if (lastEventNumber == -1)
+			return NoData(msg, ReadStreamResult.NoStream, lastIndexedPosition,
+				msg.ValidationStreamVersion ?? -1);
 
 		var fromEventNumber = msg.FromEventNumber < 0 ? 0 : msg.FromEventNumber;
 		var maxCount = msg.MaxCount;
