@@ -186,36 +186,6 @@ public class MSARequestConverterTests {
 		Assert.Equal(TestMaxAppendSize.ToString(), ex.Trailers.Get(Constants.Exceptions.MaximumAppendSize)?.Value);
 	}
 
-	// // note this as a current limitation, not necessarily permanent.
-	// // the core supports this already, the grpc service needs additional work to
-	// // 1. make sure there are as many AppendStreamResponses as AppendStreamRequests on success
-	// // 2. check for internal consistency of expected versions in the request
-	// // 3. find a way of handling if the request has expected version any for the first occurrence
-	// //    of a stream and then expected version specific for a later occurrence.
-	// [Fact]
-	// public void ConvertRequests_throws_when_stream_present_twice() {
-	// 	// given
-	// 	static AppendRecord CreateRecord() => new() {
-	// 		Properties = {
-	// 			{ Constants.Properties.EventType, new() { StringValue  = "the-type" } },
-	// 			{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
-	// 		},
-	// 	};
-	//
-	// 	var input = new AppendStreamRequest[] {
-	// 		new() { Stream = "stream-a", Records = { CreateRecord() } },
-	// 		new() { Stream = "stream-b", Records = { CreateRecord() } },
-	// 		new() { Stream = "stream-a", Records = { CreateRecord() } },
-	// 	};
-	//
-	// 	// when
-	// 	var ex = Assert.Throws<RpcException>(() => Sut.ConvertToEvents(requests: input));
-	//
-	// 	// then
-	// 	Assert.Equal("Two AppendStreamRequests for one stream is not currently supported", ex.Status.Detail);
-	// 	Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
-	// }
-
 	[Theory]
 	[InlineData("json", true)]
 	[InlineData("avro", false)]
