@@ -95,12 +95,12 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 
 	public MultiStreamAppendResponse ConvertToResponse(Message message, IReadOnlyList<AppendStreamRequest> requests) {
 		return message switch {
-			ClientMessage.NotHandled evt when RpcExceptions.TryHandleNotHandled(evt, out var ex) => throw ex,
+			ClientMessage.NotHandled msg when RpcExceptions.TryHandleNotHandled(msg, out var ex) => throw ex,
 			not ClientMessage.WriteEventsCompleted => throw RpcExceptions.UnknownMessage<ClientMessage.WriteEventsCompleted>(message),
 
-			ClientMessage.WriteEventsCompleted { Result: OperationResult.Success } evt              => OnSuccess(evt, requests),
-			ClientMessage.WriteEventsCompleted { Result: OperationResult.WrongExpectedVersion } evt => OnWrongExpectedVersion(evt, requests),
-			ClientMessage.WriteEventsCompleted { Result: OperationResult.StreamDeleted } evt        => OnStreamDeleted(evt, requests),
+			ClientMessage.WriteEventsCompleted { Result: OperationResult.Success } msg              => OnSuccess(msg, requests),
+			ClientMessage.WriteEventsCompleted { Result: OperationResult.WrongExpectedVersion } msg => OnWrongExpectedVersion(msg, requests),
+			ClientMessage.WriteEventsCompleted { Result: OperationResult.StreamDeleted } msg        => OnStreamDeleted(msg, requests),
 			ClientMessage.WriteEventsCompleted { Result: OperationResult.AccessDenied }             => OnAccessDenied(),
 			ClientMessage.WriteEventsCompleted { Result: OperationResult.InvalidTransaction }       => OnInvalidTransaction(chunkSize),
 
@@ -108,9 +108,9 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 				OperationResult.PrepareTimeout or
 				OperationResult.CommitTimeout or
 				OperationResult.ForwardTimeout
-			} evt => throw RpcExceptions.Timeout(evt.Message),
+			} msg => throw RpcExceptions.Timeout(msg.Message),
 
-			ClientMessage.WriteEventsCompleted evt => throw RpcExceptions.UnknownError(evt.Result)
+			ClientMessage.WriteEventsCompleted msg => throw RpcExceptions.UnknownError(msg.Result)
 		};
 
 		static MultiStreamAppendResponse OnSuccess(ClientMessage.WriteEventsCompleted completed, IReadOnlyList<AppendStreamRequest> requests) {
