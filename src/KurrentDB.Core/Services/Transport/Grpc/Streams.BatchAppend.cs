@@ -305,14 +305,14 @@ partial class Streams<TStreamId> {
 						: new ValueTask(Task.CompletedTask), cancellationToken);
 
 			static Event FromProposedMessage(ProposedMessage proposedMessage) {
-				var (isJson, eventType, properties) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
+				var (isJson, eventType) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
 
 				return new(Uuid.FromDto(proposedMessage.Id).ToGuid(),
 					eventType: eventType,
 					isJson: isJson,
 					data: proposedMessage.Data.ToByteArray(),
 					metadata: proposedMessage.CustomMetadata.ToByteArray(),
-					properties: properties);
+					properties: []);
 			}
 
 			static ClientMessage.WriteEvents ToInternalMessage(ClientWriteRequest request, IEnvelope envelope,
