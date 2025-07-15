@@ -275,6 +275,21 @@ public class MultiStreamAppendServiceTests {
 	}
 
 	[Fact]
+	public async Task throws_when_AppendStreamRequest_has_no_events() {
+		// given
+		var input = new AppendStreamRequest[] {
+			new() { Stream = "stream-a" },
+		};
+
+		// when
+		var ex = await Assert.ThrowsAsync<RpcException>(() => _sut.MultiStreamAppend(new() { Input = { input } }, _context));
+
+		// then
+		Assert.Equal("Write to stream 'stream-a' does not have any records", ex.Status.Detail);
+		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
+	}
+
+	[Fact]
 	public async Task can_call_MultiStreamAppendSession() {
 		// logic mostly shared with MultiStreamAppend non-streaming version.
 		// given
