@@ -211,7 +211,7 @@ public class StreamBasedAuthorizationPolicyRegistry :
 		ulong? checkpoint = null;
 		try {
 			await using var read = new Enumerator.ReadStreamBackwards(_publisher, _stream,
-				StreamRevision.End, ulong.MaxValue, false, SystemAccounts.System, false, DateTime.MaxValue, 1, ct);
+				StreamRevision.End, ulong.MaxValue, false, SystemAccounts.System, false, DateTime.MaxValue, 1, cancellationToken: ct);
 			while (await read.MoveNextAsync()) {
 				var readResponse = read.Current;
 				switch (readResponse) {

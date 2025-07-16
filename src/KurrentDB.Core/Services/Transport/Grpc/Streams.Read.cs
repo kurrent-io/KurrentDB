@@ -106,6 +106,12 @@ internal partial class Streams<TStreamId> {
 		FilterOptionOneofCase filterOptionsCase,
 		DateTime deadline,
 		CancellationToken cancellationToken) {
+		int readBatchSize = streamOptionsCase switch {
+			StreamOptionOneofCase.All => Enumerator.DefaultReadBatchSize,
+			StreamOptionOneofCase.Stream => SystemStreams.IsIndexStream(request.Options.Stream.StreamIdentifier) ? 2000 : Enumerator.DefaultReadBatchSize,
+			StreamOptionOneofCase.None => Enumerator.DefaultReadBatchSize,
+			_ => throw RpcExceptions.InvalidArgument(streamOptionsCase)
+		};
 		return (streamOptionsCase, countOptionsCase, readDirection, filterOptionsCase) switch {
 			(StreamOptionOneofCase.Stream,
 				CountOptionOneofCase.Count,
@@ -120,6 +126,7 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					deadline,
 					compatibility,
+					readBatchSize,
 					cancellationToken),
 			(StreamOptionOneofCase.Stream,
 				CountOptionOneofCase.Count,
@@ -134,6 +141,7 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					deadline,
 					compatibility,
+					readBatchSize,
 					cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Count,
@@ -191,8 +199,7 @@ internal partial class Streams<TStreamId> {
 					requiresLeader,
 					request.Options.Filter.WindowCase switch {
 						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Count => null,
-						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter
-							.Max,
+						ReadReq.Types.Options.Types.FilterOptions.WindowOneofCase.Max => request.Options.Filter.Max,
 						_ => throw RpcExceptions.InvalidArgument(request.Options.Filter.WindowCase)
 					},
 					deadline,
@@ -208,7 +215,10 @@ internal partial class Streams<TStreamId> {
 					request.Options.ResolveLinks,
 					user,
 					requiresLeader,
-					cancellationToken),
+					// TODO: temp hack, it should be part of the client message in the future
+					readBatchSize: (int)readBatchSize,
+					catchUpBufferSize: (int)readBatchSize,
+					cancellationToken: cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Subscription,
 				ReadDirection.Forwards,
@@ -219,7 +229,7 @@ internal partial class Streams<TStreamId> {
 					request.Options.ResolveLinks,
 					user,
 					requiresLeader,
-					cancellationToken),
+					cancellationToken: cancellationToken),
 			(StreamOptionOneofCase.All,
 				CountOptionOneofCase.Subscription,
 				ReadDirection.Forwards,

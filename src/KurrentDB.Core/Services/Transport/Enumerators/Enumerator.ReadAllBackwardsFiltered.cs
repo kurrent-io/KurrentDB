@@ -32,7 +32,7 @@ partial class Enumerator {
 		private readonly uint _maxSearchWindow;
 		private readonly CancellationToken _cancellationToken;
 		private readonly SemaphoreSlim _semaphore = new(1, 1);
-		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(BoundedChannelOptions);
+		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
 
 		private ReadResponse _current;
 
@@ -54,7 +54,7 @@ partial class Enumerator {
 			_eventFilter = Ensure.NotNull(eventFilter);
 			_user = user;
 			_requiresLeader = requiresLeader;
-			_maxSearchWindow = maxSearchWindow ?? ReadBatchSize;
+			_maxSearchWindow = maxSearchWindow ?? DefaultReadBatchSize;
 			_deadline = deadline;
 			_cancellationToken = cancellationToken;
 
@@ -83,7 +83,7 @@ partial class Enumerator {
 
 			_bus.Publish(new ClientMessage.FilteredReadAllEventsBackward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
-				commitPosition, preparePosition, (int)Math.Min(ReadBatchSize, _maxCount), _resolveLinks,
+				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
 				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user, expires: _deadline,
 				cancellationToken: _cancellationToken));
 
