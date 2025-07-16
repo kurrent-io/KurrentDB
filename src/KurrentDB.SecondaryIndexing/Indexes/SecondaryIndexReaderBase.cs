@@ -69,19 +69,21 @@ internal abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISe
 			return NoData(msg, ReadStreamResult.NoStream, lastIndexedPosition,
 				msg.ValidationStreamVersion ?? -1);
 
-		long endEventNumber = msg.FromEventNumber < 0 ? lastEventNumber : msg.FromEventNumber;
+		long endEventNumber = msg.FromEventNumber < 0 || msg.FromEventNumber > lastEventNumber
+			? lastEventNumber
+			: msg.FromEventNumber;
 		long startEventNumber = Math.Max(0L, endEventNumber - msg.MaxCount + 1);
 		var resolved = await GetEvents(reader, msg.EventStreamId, id, startEventNumber, endEventNumber, token);
-
-		if (resolved.Count == 0)
-			return NoData(msg, ReadStreamResult.Success, lastIndexedPosition,
-				msg.ValidationStreamVersion ?? 0);
 
 		var records = resolved.OrderByDescending(x => x.OriginalEvent.EventNumber).ToArray();
 		var isEndOfStream = startEventNumber == 0 || (startEventNumber <= lastEventNumber &&
 		                                              (records.Length is 0 || records[^1].OriginalEventNumber !=
 			                                              startEventNumber));
 		long nextEventNumber = isEndOfStream ? -1 : Math.Min(startEventNumber - 1, lastEventNumber);
+
+		if (resolved.Count == 0)
+			return NoData(msg, ReadStreamResult.Success, lastIndexedPosition,
+				msg.ValidationStreamVersion ?? lastEventNumber, nextEventNumber);
 
 		return new(msg.CorrelationId, msg.EventStreamId, endEventNumber, msg.MaxCount,
 			ReadStreamResult.Success, records, StreamMetadata.Empty, false, string.Empty,
@@ -111,13 +113,14 @@ internal abstract class SecondaryIndexReaderBase(IReadIndex<string> index) : ISe
 			: fromEventNumber + maxCount - 1;
 		var resolved = await GetEvents(reader, msg.EventStreamId, id, fromEventNumber, endEventNumber, token);
 
+		long nextEventNumber = resolved.Count > 0
+			? resolved[^1].OriginalEventNumber + 1
+			: Math.Min(endEventNumber < long.MaxValue ? endEventNumber + 1 : long.MaxValue, lastEventNumber + 1);
+
 		if (resolved.Count == 0)
 			return NoData(msg, ReadStreamResult.Success, lastIndexedPosition,
-				msg.ValidationStreamVersion ?? 0);
+				msg.ValidationStreamVersion ?? lastEventNumber, nextEventNumber);
 
-		long nextEventNumber = Math.Min(endEventNumber + 1, lastEventNumber + 1);
-		if (resolved.Count > 0)
-			nextEventNumber = resolved[^1].OriginalEventNumber + 1;
 		var isEndOfStream = endEventNumber >= lastEventNumber;
 
 		return new(msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount,

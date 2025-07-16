@@ -596,17 +596,17 @@ public class StorageReaderWorker<TStreamId> :
 	}
 
 	public static ClientMessage.ReadStreamEventsForwardCompleted NoData(ClientMessage.ReadStreamEventsForward msg,
-		ReadStreamResult result, long lastIndexedPosition, long lastEventNumber = -1, string error = null) {
+		ReadStreamResult result, long lastIndexedPosition, long lastEventNumber = -1, long nextEventNumber = -1, string error = null) {
 		return new(
 			msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, result,
-			EmptyRecords, null, false, error ?? string.Empty, -1, lastEventNumber, true, lastIndexedPosition);
+			EmptyRecords, null, false, error ?? string.Empty, nextEventNumber, lastEventNumber, true, lastIndexedPosition);
 	}
 
 	public static ClientMessage.ReadStreamEventsBackwardCompleted NoData(ClientMessage.ReadStreamEventsBackward msg, ReadStreamResult result, long lastIndexedPosition,
-		long lastEventNumber = -1, string error = null) {
+		long lastEventNumber = -1, long nextEventNumber = -1, string error = null) {
 		return new(
 			msg.CorrelationId, msg.EventStreamId, msg.FromEventNumber, msg.MaxCount, result,
-			EmptyRecords, null, false, error ?? string.Empty, -1, lastEventNumber, true, lastIndexedPosition);
+			EmptyRecords, null, false, error ?? string.Empty, nextEventNumber, lastEventNumber, true, lastIndexedPosition);
 	}
 
 	private static ClientMessage.ReadAllEventsForwardCompleted NoData(ClientMessage.ReadAllEventsForward msg,

@@ -113,7 +113,7 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 				events: [],
 				fromEventNumber: long.MaxValue - 5,
 				maxCount: 10,
-				nextEventNumber: -1,
+				nextEventNumber: 1,
 				tfLastCommitPosition: 100,
 				lastEventNumber: 0L,
 				isEndOfStream: true
@@ -140,7 +140,7 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 				events: [],
 				fromEventNumber: 5,
 				maxCount: 10,
-				nextEventNumber: -1,
+				nextEventNumber: 1,
 				tfLastCommitPosition: 100,
 				lastEventNumber: 0L,
 				isEndOfStream: true
@@ -167,7 +167,7 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 				events: [],
 				fromEventNumber: 5,
 				maxCount: 10,
-				nextEventNumber: -1,
+				nextEventNumber: 1,
 				tfLastCommitPosition: 100,
 				lastEventNumber: 7L, // Should use ValidationStreamVersion
 				isEndOfStream: true
@@ -257,6 +257,39 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 				result: ReadStreamResult.Success,
 				events: events,
 				maxCount: 3,
+				nextEventNumber: 3L, // Last event number (2) + 1
+				tfLastCommitPosition: 300,
+				lastEventNumber: 2L,
+				isEndOfStream: true
+			),
+			result
+		);
+	}
+
+
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task ReadForwards_WhenOverTheEnd_ReturnsEmptyResult(bool shouldCommit) {
+		// Given
+		var events = new[] {
+			From("test-stream", 0, 100, "TestEvent", []),
+			From("test-stream", 1, 200, "TestEvent", []),
+			From("test-stream", 2, 300, "TestEvent", [])
+		};
+		IndexEvents(events, shouldCommit);
+
+		// When
+		var result = await ReadForwards(fromEventNumber: long.MaxValue, maxCount: 1000);
+
+		// Then
+		AssertEqual(
+			ReadStreamEventsForwardCompleted(
+				result: ReadStreamResult.Success,
+				events: [],
+				maxCount: 1000,
+				fromEventNumber: long.MaxValue,
 				nextEventNumber: 3L, // Last event number (2) + 1
 				tfLastCommitPosition: 300,
 				lastEventNumber: 2L,
@@ -359,7 +392,7 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 			ReadStreamEventsBackwardCompleted(
 				result: ReadStreamResult.Success,
 				events: [],
-				fromEventNumber: 5,
+				fromEventNumber: 0,
 				maxCount: 5,
 				nextEventNumber: -1,
 				tfLastCommitPosition: 100,
@@ -370,6 +403,8 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 		);
 	}
 
+
+
 	[Theory]
 	[InlineData(true)]
 	[InlineData(false)]
@@ -379,18 +414,45 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 		IndexEvents(events, shouldCommit);
 
 		// When
-		var result = await ReadBackwards(fromEventNumber: 5, maxCount: 5, validationStreamVersion: 3);
+		var result = await ReadBackwards(fromEventNumber: 3, maxCount: 5, validationStreamVersion: 3);
 
 		// Then
 		AssertEqual(
 			ReadStreamEventsBackwardCompleted(
 				result: ReadStreamResult.Success,
 				events: [],
-				fromEventNumber: 5,
+				fromEventNumber: 0,
 				maxCount: 5,
 				nextEventNumber: -1,
 				tfLastCommitPosition: 100,
-				lastEventNumber: 3L, // Should use ValidationStreamVersion
+				lastEventNumber: 0,
+				isEndOfStream: true
+			),
+			result
+		);
+	}
+
+	[Theory]
+	[InlineData(true)]
+	[InlineData(false)]
+	public async Task ReadBackwards_WhenEmptyNegativeFromEventNumber_UsesValidationVersion(bool shouldCommit) {
+		// Given
+		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
+		IndexEvents(events, shouldCommit);
+
+		// When
+		var result = await ReadBackwards(fromEventNumber: -1, maxCount: 5, validationStreamVersion: 3);
+
+		// Then
+		AssertEqual(
+			ReadStreamEventsBackwardCompleted(
+				result: ReadStreamResult.Success,
+				events: [],
+				fromEventNumber: 0,
+				maxCount: 5,
+				nextEventNumber: -1,
+				tfLastCommitPosition: 100,
+				lastEventNumber: 0,
 				isEndOfStream: true
 			),
 			result
@@ -449,7 +511,7 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 		AssertEqual(
 			ReadStreamEventsBackwardCompleted(
 				result: ReadStreamResult.Success,
-				events: new[] { events[4], events[3] }, // Last 2 events in descending order
+				events: [events[4], events[3]], // Last 2 events in descending order
 				fromEventNumber: 4,
 				maxCount: 2,
 				nextEventNumber: 2L, // startEventNumber - 1 = 3 - 1 = 2
@@ -464,24 +526,28 @@ public class DefaultIndexReaderTests : DuckDbIntegrationTest {
 	[Theory]
 	[InlineData(true)]
 	[InlineData(false)]
-	public async Task ReadBackwards_WhenRecordsLengthIsZero_IsEndOfStreamTrue(bool shouldCommit) {
+	public async Task ReadBackwards_WhenRequestingMoreEventsThanInTheStream(bool shouldCommit) {
 		// Given
-		var events = new[] { From("test-stream", 0, 100, "TestEvent", []) };
+		var events = new[] {
+			From("test-stream", 0, 100, "TestEvent", []),
+			From("test-stream", 1, 200, "TestEvent", []),
+			From("test-stream", 2, 300, "TestEvent", [])
+		};
 		IndexEvents(events, shouldCommit);
 
 		// When - request events that don't exist
-		var result = await ReadBackwards(fromEventNumber: 5, maxCount: 2);
+		var result = await ReadBackwards(fromEventNumber: long.MaxValue, maxCount: 1000);
 
 		// Then
 		AssertEqual(
 			ReadStreamEventsBackwardCompleted(
 				result: ReadStreamResult.Success,
-				events: [], // records.Length is 0
-				fromEventNumber: 5,
-				maxCount: 2,
+				events: [],
+				fromEventNumber: 2,
+				maxCount: 1000,
 				nextEventNumber: -1,
-				tfLastCommitPosition: 100,
-				lastEventNumber: 0L,
+				tfLastCommitPosition: 300,
+				lastEventNumber: 2L,
 				isEndOfStream: true
 			),
 			result
