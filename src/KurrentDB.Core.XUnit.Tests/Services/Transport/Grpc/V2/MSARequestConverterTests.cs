@@ -12,7 +12,7 @@ using KurrentDB.Protobuf.Server;
 using KurrentDB.Protocol.V2;
 using Xunit;
 
-namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Grpc;
+namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Grpc.V2;
 
 public class MSARequestConverterTests {
 	const int TestChunkSize = 10_000;
@@ -187,9 +187,11 @@ public class MSARequestConverterTests {
 	}
 
 	[Theory]
-	[InlineData("json", true)]
-	[InlineData("avro", false)]
-	public void can_ConvertRecord(string dataFormat, bool expectedIsJson) {
+	[InlineData("json", true, false)]
+	[InlineData("bytes", false, false)]
+	[InlineData("avro", false, true)]
+	[InlineData("protobuf", false, true)]
+	public void can_ConvertToEvent(string dataFormat, bool expectedIsJson, bool storedInProperties) {
 		// given
 		var recordId = Guid.NewGuid();
 		var input = new AppendRecord {
@@ -216,7 +218,13 @@ public class MSARequestConverterTests {
 
 		var properties = Properties.Parser.ParseFrom(output.Properties);
 
-		Assert.Equal(5, properties.PropertiesValues.Count);
+		if (storedInProperties) {
+			Assert.Equal(4, properties.PropertiesValues.Count);
+			properties.PropertiesValues.TryGetValue(Constants.Properties.DataFormat, out var prop);
+			Assert.Equal(dataFormat, prop!.StringValue);
+		} else {
+			Assert.Equal(3, properties.PropertiesValues.Count);
+		}
 
 		properties.PropertiesValues.TryGetValue("property1", out var property1);
 		Assert.True(property1!.BooleanValue);
@@ -229,7 +237,7 @@ public class MSARequestConverterTests {
 	}
 
 	[Fact]
-	public void can_ConvertRecord_with_minimal_fields() {
+	public void can_ConvertToEvent_with_minimal_fields() {
 		// data and metadata can be blank
 		// given
 		var input = new AppendRecord {
@@ -239,8 +247,6 @@ public class MSARequestConverterTests {
 			},
 		};
 
-		// var expectedMetadata = ProtoJsonSerializer.Default.Serialize(new Properties { PropertiesValues = { input.Properties } }).ToArray();
-
 		// when
 		var output = MultiStreamAppendConverter.ConvertToEvent(input);
 
@@ -249,13 +255,13 @@ public class MSARequestConverterTests {
 		Assert.Equal("my-event-type", output.EventType);
 		Assert.False(output.IsJson);
 		Assert.Empty(output.Data);
-		Assert.Equal([],output.Metadata);
+		Assert.Equal([], output.Metadata);
 	}
 
 	[Theory]
 	[InlineData("")]
 	[InlineData("junk")]
-	public void ConvertRecord_throws_when_record_has_invalid_id(string recordId) {
+	public void ConvertToEvent_throws_when_record_has_invalid_id(string recordId) {
 		// given
 		var input = new AppendRecord {
 			RecordId = recordId,
@@ -274,10 +280,30 @@ public class MSARequestConverterTests {
 		Assert.Empty(ex.Trailers);
 	}
 
+	[Fact]
+	public void ConvertToEvent_throws_when_record_has_invalid_data_format() {
+		// given
+		var input = new AppendRecord {
+			RecordId = Guid.NewGuid().ToString(),
+			Properties = {
+				{ Constants.Properties.EventType, new() { StringValue = "my-event-type" } },
+				{ Constants.Properties.DataFormat, new() { StringValue = "a-different-data-format" } },
+			},
+		};
+
+		// when
+		var ex = Assert.Throws<RpcException>(() => MultiStreamAppendConverter.ConvertToEvent(input));
+
+		// then
+		Assert.Equal($"Data format 'a-different-data-format' is not supported", ex.Status.Detail);
+		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
+		Assert.Empty(ex.Trailers);
+	}
+
 	[Theory]
 	[InlineData(Constants.Properties.EventType)]
 	[InlineData(Constants.Properties.DataFormat)]
-	public void ConvertRecord_throws_when_record_has_missing_required_property(string missingProperty) {
+	public void ConvertToEvent_throws_when_record_has_missing_required_property(string missingProperty) {
 		// given
 		var input = new AppendRecord {
 			Properties = {
@@ -309,7 +335,7 @@ public class MSARequestConverterTests {
 	[Theory]
 	[InlineData(Constants.Properties.EventType)]
 	[InlineData(Constants.Properties.DataFormat)]
-	public void ConvertRecord_throws_when_record_has_required_property_with_wrong_type(string wrongProperty) {
+	public void ConvertToEvent_throws_when_record_has_required_property_with_wrong_type(string wrongProperty) {
 		// given
 		var input = new AppendRecord {
 			Properties = {

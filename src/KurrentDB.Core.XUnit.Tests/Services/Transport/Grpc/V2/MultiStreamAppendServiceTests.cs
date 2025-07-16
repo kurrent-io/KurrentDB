@@ -24,7 +24,7 @@ using KurrentDB.Protocol.V2;
 using Microsoft.AspNetCore.Http;
 using Xunit;
 
-namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Grpc;
+namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Grpc.V2;
 
 public class MultiStreamAppendServiceTests {
 	readonly AdHocPublisher _mainQueue = new();

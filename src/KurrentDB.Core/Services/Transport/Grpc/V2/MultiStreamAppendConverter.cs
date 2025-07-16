@@ -182,7 +182,31 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 		var schemaName = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.EventType);
 		var schemaDataFormat = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.DataFormat);
 
-		var properties = new Properties { PropertiesValues = { appendRecord.Properties } };
+		Properties? properties = null;
+		foreach (var property in appendRecord.Properties) {
+			if (property.Key is Constants.Properties.EventType) {
+				continue;
+			}
+
+			if (property.Key is Constants.Properties.DataFormat) {
+				if (schemaDataFormat
+					is Constants.Properties.DataFormats.Json
+					or Constants.Properties.DataFormats.Bytes) {
+
+					continue;
+				}
+
+				if (schemaDataFormat
+					is not Constants.Properties.DataFormats.Avro
+					and not Constants.Properties.DataFormats.Protobuf) {
+
+					throw RpcExceptions.InvalidArgument($"Data format '{schemaDataFormat}' is not supported");
+				}
+			}
+
+			properties ??= new Properties();
+			properties.PropertiesValues.Add(property.Key, property.Value);
+		}
 
 		var isJson = schemaDataFormat
 			.Equals(Constants.Properties.DataFormats.Json, OrdinalIgnoreCase);
@@ -193,7 +217,7 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 			isJson: isJson,
 			data: appendRecord.Data.ToByteArray(),
 			metadata: [],
-			properties: properties.ToByteArray()
+			properties: properties?.ToByteArray() ?? []
 		);
 
 		static Guid GetRecordId(AppendRecord appendRecord) {

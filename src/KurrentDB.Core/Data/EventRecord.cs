@@ -5,8 +5,8 @@
 
 using System;
 using System.Text;
-using System.Threading;
 using KurrentDB.Common.Utils;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.Services.Transport.Grpc.V2.Utils;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using static KurrentDB.Protobuf.Server.Properties;
@@ -33,21 +33,43 @@ public class EventRecord : IEquatable<EventRecord> {
 
 	// Lazy initialization backing fields
 	ReadOnlyMemory<byte> _metadata;
-	bool _metadataInitialized;
-	object _metadataLock = new();
+	volatile bool _metadataInitialized;
+	readonly object _metadataLock = new();
 
 	// Metadata can come directly from the log record, or be synthesized from the LogRecordProperties.
 	// Log records cannot contain both Metadata and LogRecordProperties.
 	public ReadOnlyMemory<byte> Metadata {
-		get => LazyInitializer.EnsureInitialized(
-			ref _metadata,
-			ref _metadataInitialized,
-			ref _metadataLock,
-			() => Properties.IsEmpty
-				? ReadOnlyMemory<byte>.Empty
-				: ProtoJsonSerializer.Default.Serialize(
-					Parser.ParseFrom(Properties.Span).PropertiesValues.MapToDictionary())
-				);
+		get {
+			if (_metadataInitialized) {
+				return _metadata;
+			}
+
+			lock (_metadataLock) {
+				if (!_metadataInitialized) {
+					_metadata = SynthesizeMetadataFromProperties();
+					_metadataInitialized = true;
+				}
+			}
+
+			return _metadata;
+		}
+	}
+
+	private ReadOnlyMemory<byte> SynthesizeMetadataFromProperties() {
+		if (Properties.IsEmpty)
+			return ReadOnlyMemory<byte>.Empty;
+
+		var propertyDictionary = Parser.ParseFrom(Properties.Span).PropertiesValues.MapToDictionary();
+
+		if (!propertyDictionary.ContainsKey(Constants.Properties.DataFormat)) {
+			propertyDictionary[Constants.Properties.DataFormat] = IsJson
+				? Constants.Properties.DataFormats.Json
+				: Constants.Properties.DataFormats.Bytes;
+		}
+
+		propertyDictionary[Constants.Properties.EventType] = EventType;
+
+		return ProtoJsonSerializer.Default.Serialize(propertyDictionary);
 	}
 
 	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType) {

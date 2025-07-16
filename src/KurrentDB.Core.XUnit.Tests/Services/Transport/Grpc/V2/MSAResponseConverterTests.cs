@@ -14,7 +14,7 @@ using KurrentDB.Core.Services.Transport.Grpc.V2;
 using KurrentDB.Protocol.V2;
 using Xunit;
 
-namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Grpc;
+namespace KurrentDB.Core.XUnit.Tests.Services.Transport.Grpc.V2;
 
 public class MSAResponseConverterTests {
 	const int TestChunkSize = 10_000;
@@ -41,7 +41,7 @@ public class MSAResponseConverterTests {
 			failureCurrentVersions: new long[] { 10 });
 
 		// when
-		var result = Sut.ConvertToResponse(input,requests);
+		var result = Sut.ConvertToResponse(input, requests);
 
 		// then
 		Assert.Collection(
@@ -70,7 +70,7 @@ public class MSAResponseConverterTests {
 			failureCurrentVersions: new long[] { 11 });
 
 		// when
-		var result = Sut.ConvertToResponse(input,requests);
+		var result = Sut.ConvertToResponse(input, requests);
 
 		// then
 		Assert.Collection(
@@ -99,7 +99,7 @@ public class MSAResponseConverterTests {
 			failureCurrentVersions: new long[] { 11, 13 });
 
 		// when
-		var result = Sut.ConvertToResponse(input,requests);
+		var result = Sut.ConvertToResponse(input, requests);
 
 		// then
 		Assert.Collection(
@@ -134,7 +134,7 @@ public class MSAResponseConverterTests {
 			failureCurrentVersions: isStreamKnown ? [11] : []);
 
 		// when
-		var result = Sut.ConvertToResponse(input,requests);
+		var result = Sut.ConvertToResponse(input, requests);
 
 		// then
 		Assert.Collection(
