@@ -6188,8 +6188,8 @@
               },
               {
                 "id": 2,
-                "name": "wrong_expected_revision",
-                "type": "ErrorDetails.WrongExpectedRevision"
+                "name": "stream_revision_conflict",
+                "type": "ErrorDetails.StreamRevisionConflict"
               },
               {
                 "id": 3,
@@ -6287,10 +6287,27 @@
                 ]
               },
               {
-                "name": "StreamDeleted"
+                "name": "StreamDeleted",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "stream",
+                    "type": "string"
+                  }
+                ]
               },
               {
-                "name": "WrongExpectedRevision",
+                "name": "StreamNotFound",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "stream",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "StreamRevisionConflict",
                 "fields": [
                   {
                     "id": 1,
@@ -6809,14 +6826,38 @@
                 "type": "google.protobuf.Duration"
               }
             ]
+          },
+          {
+            "name": "DynamicValueList",
+            "fields": [
+              {
+                "id": 1,
+                "name": "values",
+                "type": "DynamicValue",
+                "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "DynamicValueMap",
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 1,
+                  "name": "values",
+                  "type": "DynamicValue"
+                }
+              }
+            ]
           }
         ],
         "imports": [
           {
-            "path": "google/protobuf/duration.proto"
+            "path": "google/protobuf/timestamp.proto"
           },
           {
-            "path": "google/protobuf/timestamp.proto"
+            "path": "google/protobuf/duration.proto"
           },
           {
             "path": "google/protobuf/struct.proto"
