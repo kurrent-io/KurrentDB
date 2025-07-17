@@ -16,7 +16,9 @@ public class SizeOnDiskTests {
 			CreatePrepareLogRecord(127), // just before needing an extra byte for the 7bit encoding
 			CreatePrepareLogRecord(128), // just after
 			CreatePrepareLogRecord(100_000),
-			..(Enumerable.Range(0, 200).Select(CreateV2PrepareLogRecord)),
+			..(Enumerable.Range(0, 200).Select(x => CreateV2PrepareLogRecord(
+				x % 2 == 0 ? x : 0,
+				x % 2 == 1 ? x : 0))),
 			CreateCommitLogRecord(),
 			CreateSystemLogRecord()
 		];
@@ -43,7 +45,7 @@ public class SizeOnDiskTests {
 				prepareRecordVersion: 1);
 		}
 
-		static PrepareLogRecord CreateV2PrepareLogRecord(int propertiesBytesLength) {
+		static PrepareLogRecord CreateV2PrepareLogRecord(int metadataBytesLength, int propertiesBytesLength) {
 			return new(
 				logPosition: 123,
 				correlationId: Guid.NewGuid(),
@@ -58,7 +60,7 @@ public class SizeOnDiskTests {
 				eventType: "my-event-type",
 				eventTypeSize: null,
 				data: new byte[] { 0xDE, 0XAD, 0xC0, 0XDE },
-				metadata: new byte[] { 0XC0, 0xDE },
+				metadata: new byte[metadataBytesLength],
 				properties: new byte[propertiesBytesLength],
 				prepareRecordVersion: 2);
 		}

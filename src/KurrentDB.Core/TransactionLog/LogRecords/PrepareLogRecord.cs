@@ -186,6 +186,9 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			throw new ArgumentException($"Prepare record version '{prepareRecordVersion}' is not a version that supports properties, " +
 										$"but {nameof(properties)} is not empty");
 		}
+		if (!metadata.IsEmpty && !properties.IsEmpty) {
+			throw new ArgumentException($"Prepare record may not have both metadata and properties. Stream: \"{eventStreamId}\". EventType: \"{eventType}\"");
+		}
 
 		Flags = flags;
 		TransactionPosition = transactionPosition;
