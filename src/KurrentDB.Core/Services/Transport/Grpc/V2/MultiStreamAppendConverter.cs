@@ -13,7 +13,6 @@ using Google.Protobuf.Collections;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
 using KurrentDB.Core.Messaging;
-using KurrentDB.Core.Services.Transport.Grpc.V2.Utils;
 using KurrentDB.Protobuf;
 using KurrentDB.Protobuf.Server;
 using KurrentDB.Protocol.V2;
@@ -179,8 +178,8 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 
 	public static Event ConvertToEvent(AppendRecord appendRecord) {
 		var recordId = GetRecordId(appendRecord);
-		var schemaName = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.EventType);
-		var schemaDataFormat = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.DataFormat);
+		var schemaName = GetRequiredStringProperty(appendRecord.Properties, Constants.Properties.EventType);
+		var schemaDataFormat = GetRequiredStringProperty(appendRecord.Properties, Constants.Properties.DataFormat);
 
 		Properties? properties = null;
 		foreach (var property in appendRecord.Properties) {
@@ -228,7 +227,9 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 				: Guid.NewGuid();
 		}
 
-		static T GetRequiredProperty<T>(MapField<string, DynamicValue> source, string key) =>
-			(source.TryGetValue<T>(key, out var value) ? value : throw RpcExceptions.RequiredPropertyMissing(key))!;
+		static string GetRequiredStringProperty(MapField<string, DynamicValue> source, string key) =>
+			source.TryGetValue(key, out var value) && value.KindCase is DynamicValue.KindOneofCase.StringValue
+				? value.StringValue
+				: throw RpcExceptions.RequiredPropertyMissing(key);
 	}
 }

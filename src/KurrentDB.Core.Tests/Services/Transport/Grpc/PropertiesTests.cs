@@ -172,22 +172,18 @@ public class PropertiesTests : GrpcSpecification<LogFormat.V2, string> {
 		Assert.AreEqual("test-type", protocolMetadata[MetadataConstants.Type]);
 		Assert.AreEqual(expectedContentType, protocolMetadata[MetadataConstants.ContentType]);
 
-		// todo: should probably prefer non strings for the numbers and bool.
-		// todo: doubt the timestamp formatting including \u002B is correct
-		// todo: consider formatting timestamp like this since it doesn't have any timezone info: "2025-07-14T05:05:05.0000000Z"
-
 		// log record metadata contains the properties
 		var expectedMetadata = $$"""
 			{
 			  "my-null":             null,
-			  "my-int32":            "32",
-			  "my-int64":            "64",
+			  "my-int32":            32,
+			  "my-int64":            64,
 			  "my-bytes":            "{{Convert.ToBase64String(Encoding.UTF8.GetBytes("utf8-bytes"))}}",
-			  "my-double":           "123.4",
-			  "my-float":            "567.8",
+			  "my-double":           123.4,
+			  "my-float":            567.8,
 			  "my-string":           "hello-world",
-			  "my-boolean":          "True",
-			  "my-timestamp":        "2025-07-14T05:05:05.0000000\u002B00:00",
+			  "my-boolean":          true,
+			  "my-timestamp":        "2025-07-14T05:05:05Z",
 			  "my-duration":         "00:02:01",
 			  "$schema.data-format": "{{dataFormat}}",
 			  "$schema.name":        "test-type"

@@ -70,7 +70,6 @@ public static class Constants {
 		public const string LegacyMetadata = "$legacy-metadata";
 
 		public static class DataFormats {
-			// can be others (protobuf, avro, ...) but json is the only one the server cares about
 			public const string Json = "json";
 			public const string Bytes = "bytes";
 			public const string Avro = "avro";
