@@ -110,14 +110,14 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 				return;
 			}
 
-			var currentLasLogPosition = Interlocked.Read(ref _lastLogPosition);
+			var currentLastLogPosition = Interlocked.Read(ref _lastLogPosition);
 
 			// Just in case we have some race condition between reading last event and getting a newly appended notification
-			if (currentLasLogPosition >= logPosition)
+			if (currentLastLogPosition >= logPosition)
 				return;
 
-			if (Interlocked.CompareExchange(ref _lastLogPosition, logPosition, currentLasLogPosition) ==
-			    currentLasLogPosition) {
+			if (Interlocked.CompareExchange(ref _lastLogPosition, logPosition, currentLastLogPosition) ==
+			    currentLastLogPosition) {
 				Interlocked.Exchange(ref _lastAppendedAt, timestampTicks);
 			}
 		} catch (Exception exc) {
