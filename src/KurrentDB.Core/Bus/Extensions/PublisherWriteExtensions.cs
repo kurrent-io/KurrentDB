@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
@@ -50,6 +51,8 @@ public static class PublisherWriteExtensions {
 
         static void OnResult((TaskCompletionSource<WriteEventsResult> Operation, string Stream, long ExpectedRevision) arg, Message message) {
             if (message is ClientMessage.WriteEventsCompleted { Result: OperationResult.Success } completed) {
+                Debug.Assert(completed.CommitPosition >= 0);
+                Debug.Assert(completed.PreparePosition >= 0);
                 var position       = new Position((ulong)completed.CommitPosition, (ulong)completed.PreparePosition);
                 var streamRevision = StreamRevision.FromInt64(completed.LastEventNumbers.Single);
                 arg.Operation.TrySetResult(new(position, streamRevision));
