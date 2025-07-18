@@ -3,10 +3,6 @@
 
 // ReSharper disable CheckNamespace
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using DotNext.Collections.Generic;
 using KurrentDB.Core.Messaging;
 
