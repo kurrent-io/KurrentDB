@@ -22,10 +22,10 @@ using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
 
 [PublicAPI]
 public static class PublisherWriteExtensions {
-    static Task WriteEvents(
+    static void WriteEvents(
         this IPublisher publisher,
         string stream, Event[] events, long expectedRevision,
-        Func<(Position? Position, StreamRevision? StreamRevision, Exception? Exception), Task> onResult,
+        TaskCompletionSource<WriteEventsResult> operation,
         CancellationToken cancellationToken = default
     ) {
         var cid = Guid.NewGuid();
@@ -34,7 +34,7 @@ public static class PublisherWriteExtensions {
             var command = ClientMessage.WriteEvents.ForSingleStream(
                 internalCorrId: cid,
                 correlationId: cid,
-                envelope: AsyncCallbackEnvelope.Create(OnResult),
+                envelope: new CallbackEnvelope<(TaskCompletionSource<WriteEventsResult>, string, long)>((operation, stream, expectedRevision), OnResult),
                 requireLeader: false,
                 eventStreamId: stream,
                 expectedVersion: expectedRevision,
@@ -48,19 +48,17 @@ public static class PublisherWriteExtensions {
             throw new($"{nameof(WriteEvents)}: Unable to execute request!", ex);
         }
 
-        return Task.CompletedTask;
-
-        async Task OnResult(Message message) {
+        static void OnResult((TaskCompletionSource<WriteEventsResult> Operation, string Stream, long ExpectedRevision) arg, Message message) {
             if (message is ClientMessage.WriteEventsCompleted { Result: OperationResult.Success } completed) {
                 var position       = new Position((ulong)completed.CommitPosition, (ulong)completed.PreparePosition);
                 var streamRevision = StreamRevision.FromInt64(completed.LastEventNumbers.Single);
-                await onResult((position, streamRevision, null)).ConfigureAwait(false);
+                arg.Operation.TrySetResult(new(position, streamRevision));
             } else {
-                await onResult((null, null, MapToError(message))).ConfigureAwait(false);
+                arg.Operation.TrySetException(MapToError(arg.Stream, arg.ExpectedRevision, message));
             }
         }
 
-        ReadResponseException MapToError(Message message) {
+        static ReadResponseException MapToError(string stream, long expectedRevision, Message message) {
             return message switch {
                 ClientMessage.WriteEventsCompleted completed => completed.Result switch {
                     OperationResult.PrepareTimeout       => new ReadResponseException.Timeout($"{completed.Result}"),
@@ -78,26 +76,23 @@ public static class PublisherWriteExtensions {
         }
     }
 
-    public static async Task<WriteEventsResult> WriteEvents(
+    public static Task<WriteEventsResult> WriteEvents(
         this IPublisher publisher,
         string stream, Event[] events, long expectedRevision = ExpectedVersion.Any,
         CancellationToken cancellationToken = default
     ) {
-        var operation = new TaskCompletionSource<WriteEventsResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        try {
+            var operation = new TaskCompletionSource<WriteEventsResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        await publisher.WriteEvents(
-            stream, events, expectedRevision,
-            onResult: response => {
-                if (response.Exception is null)
-                    operation.TrySetResult(new(response.Position!.Value, response.StreamRevision!.Value));
-                else
-                    operation.TrySetException(response.Exception!);
+            publisher.WriteEvents(
+                stream, events, expectedRevision,
+                operation,
+                cancellationToken
+            );
 
-                return Task.CompletedTask;
-            },
-            cancellationToken
-        );
-
-        return await operation.Task;
+            return operation.Task;
+        } catch (Exception ex) {
+            return Task.FromException<WriteEventsResult>(ex);
+        }
     }
 }
