@@ -163,7 +163,7 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		if(lastAppendedAt == -1 || lastIndexedAt == -1)
 			yield break;
 
-		var lag = (lastAppendedAt - lastIndexedAt) / 1000;
+		var lag = (long) new TimeSpan(lastIndexedAt - lastAppendedAt).TotalMilliseconds;
 
 		yield return new Measurement<long>(lag);
 	}
