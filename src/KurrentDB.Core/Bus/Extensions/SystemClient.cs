@@ -156,7 +156,7 @@ public class SystemClient : ISystemClient {
 
     public record ReadOperations(IPublisher Publisher, ILogger Logger) : IReadOperations {
         public IAsyncEnumerable<ResolvedEvent> Read(Position startPosition, IEventFilter filter, long maxCount, bool forwards = true, CancellationToken cancellationToken = default) =>
-            Publisher.Read(startPosition, maxCount, forwards, cancellationToken);
+            Publisher.Read(startPosition, filter, maxCount, forwards, cancellationToken);
 
         public IAsyncEnumerable<ResolvedEvent> ReadForwards(Position startPosition, IEventFilter filter, long maxCount, CancellationToken cancellationToken = default) =>
             Publisher.Read(startPosition, filter, maxCount, true, cancellationToken);
