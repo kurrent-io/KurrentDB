@@ -8,7 +8,6 @@ using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
 using KurrentDB.Connectors.Planes.Control;
 using KurrentDB.Core;
-using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
@@ -19,7 +18,7 @@ namespace KurrentDB.Connectors.Planes.Management.Migrations;
 
 public class FixConnectorsControlRegistryStreamName : ISystemStartupTask {
 public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider serviceProvider, CancellationToken cancellationToken) {
-        var publisher          = serviceProvider.GetRequiredService<IPublisher>();
+        var client             = serviceProvider.GetRequiredService<ISystemClient>();
         var logger             = serviceProvider.GetRequiredService<ILogger<SystemStartupTaskService>>();
         var getReaderBuilder   = serviceProvider.GetRequiredService<Func<SystemReaderBuilder>>();
         var getProducerBuilder = serviceProvider.GetRequiredService<Func<SystemProducerBuilder>>();
@@ -52,7 +51,7 @@ public async Task OnStartup(NodeSystemInfo nodeInfo, IServiceProvider servicePro
         logger.LogInformation("Successfully migrated pre-existing connector registry snapshot ");
 
         var unwantedRegularStreamName = options.SnapshotStreamId.Value[1..];
-        await publisher.SoftDeleteStream(unwantedRegularStreamName, ExpectedVersion.NoStream, cancellationToken)
+        await client.Management.SoftDeleteStream(unwantedRegularStreamName, ExpectedVersion.NoStream, cancellationToken)
             .OnError(ex => logger.LogWarning("Did not delete incorrect connector registry stream: {Error}", ex));
 
         logger.LogInformation("Migration of incorrect connector registry stream completed.");

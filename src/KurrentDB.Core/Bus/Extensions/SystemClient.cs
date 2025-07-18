@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
+using KurrentDB.Core.ClientPublisher;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.Core.Services.Transport.Common;
@@ -40,6 +41,7 @@ public interface IManagementOperations {
     Task<bool> StreamExists(string stream, CancellationToken cancellationToken = default);
     Task TruncateStream(string stream, long beforeRevision, CancellationToken cancellationToken = default);
     Task TruncateStream(string stream, CancellationToken cancellationToken = default);
+    Task<StreamRevision> GetStreamRevision(Position position, CancellationToken cancellationToken = default);
 }
 
 public interface IReadOperations {
@@ -67,6 +69,7 @@ public interface IWriteOperations {
 
 public interface ISubscriptionsOperations {
     Task SubscribeToAll(Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
+    Task SubscribeToStream(StreamRevision? revision, string stream, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken);
 }
 
 [PublicAPI]
@@ -143,6 +146,8 @@ public class SystemClient : ISystemClient {
     public record SubscriptionsOperations(IPublisher Publisher, ILogger Logger) : ISubscriptionsOperations {
 		public Task SubscribeToAll(Position? position, IEventFilter filter, uint maxSearchWindow, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) =>
 			Publisher.SubscribeToAll(position, filter, maxSearchWindow, channel, resiliencePipeline, cancellationToken);
+		public Task SubscribeToStream(StreamRevision? revision, string stream, Channel<ReadResponse> channel, ResiliencePipeline resiliencePipeline, CancellationToken cancellationToken) =>
+			Publisher.SubscribeToStream(revision, stream, channel, resiliencePipeline, cancellationToken);
 	}
 
 	#endregion . Subscriptions .
@@ -151,7 +156,7 @@ public class SystemClient : ISystemClient {
 
     public record ReadOperations(IPublisher Publisher, ILogger Logger) : IReadOperations {
         public IAsyncEnumerable<ResolvedEvent> Read(Position startPosition, IEventFilter filter, long maxCount, bool forwards = true, CancellationToken cancellationToken = default) =>
-            Publisher.Read(startPosition, maxCount, forwards, cancellationToken);
+            Publisher.Read(startPosition, filter, maxCount, forwards, cancellationToken);
 
         public IAsyncEnumerable<ResolvedEvent> ReadForwards(Position startPosition, IEventFilter filter, long maxCount, CancellationToken cancellationToken = default) =>
             Publisher.Read(startPosition, filter, maxCount, true, cancellationToken);

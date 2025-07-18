@@ -240,6 +240,7 @@ public class ClusterVNodeStartup<TStreamId> : IInternalStartup, IHandle<SystemMe
 		services
 			.AddSingleton<ISubscriber>(_mainBus)
 			.AddSingleton<IPublisher>(_mainQueue)
+			.AddSingleton<ISystemClient, SystemClient>()
 			.AddSingleton(new Streams<TStreamId>(_mainQueue,
 				Ensure.Positive(_options.Application.MaxAppendSize),
 				Ensure.Positive(_options.Application.MaxAppendEventSize),

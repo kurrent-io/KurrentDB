@@ -16,7 +16,6 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="librdkafka.redist" />
-    <PackageReference Include="DuckDB.NET.Data.Full" />
 		<PackageReference Include="Microsoft.FASTER.Core" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
 		<PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />

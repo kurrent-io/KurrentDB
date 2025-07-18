@@ -106,7 +106,7 @@ public class ScavengeCheckpointJsonPersistence<TStreamId> {
 		try {
 			var dto = JsonConvert.DeserializeObject<ScavengeCheckpointJsonPersistence<TStreamId>>(
 				input,
-				KurrentDB.Common.Utils.Json.JsonSettings);
+				Common.Utils.Json.JsonSettings);
 			checkpoint = dto.ToDomain();
 			return checkpoint != null;
 		} catch {
@@ -119,6 +119,6 @@ public class ScavengeCheckpointJsonPersistence<TStreamId> {
 
 	public static string Serialize(ScavengeCheckpoint checkpoint) {
 		var dto = ToDto(checkpoint);
-		return JsonConvert.SerializeObject(dto, KurrentDB.Common.Utils.Json.JsonSettings);
+		return JsonConvert.SerializeObject(dto, Common.Utils.Json.JsonSettings);
 	}
 }
