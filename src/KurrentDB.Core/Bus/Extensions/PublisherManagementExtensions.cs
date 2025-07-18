@@ -22,7 +22,8 @@ using WriteEventsResult = (Position Position, StreamRevision Revision);
 [PublicAPI]
 public static class PublisherManagementExtensions {
 	public static Task<WriteEventsResult> DeleteStream(this IPublisher publisher, string stream, long expectedRevision = -2, bool hardDelete = false, CancellationToken cancellationToken = default) {
-		cancellationToken.ThrowIfCancellationRequested();
+		if (cancellationToken.IsCancellationRequested)
+			return Task.FromCanceled<WriteEventsResult>(cancellationToken);
 
 		var operation = new TaskCompletionSource<WriteEventsResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 
