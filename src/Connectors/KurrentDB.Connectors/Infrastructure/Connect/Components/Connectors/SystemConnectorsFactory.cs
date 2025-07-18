@@ -4,7 +4,6 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable CheckNamespace
 
-using KurrentDB.Core.Bus;
 using Kurrent.Surge.Connectors.Sinks;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors;
@@ -19,6 +18,7 @@ using Kurrent.Surge.Transformers;
 
 using KurrentDB.Connectors.Infrastructure.Connect.Components.Connectors;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core;
 using KurrentDB.Surge.Processors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,7 +80,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
     }
 
     IProcessor ConfigureProcessor(ConnectorId connectorId, LinkedList<InterceptorModule> interceptors, SinkOptions sinkOptions, SinkProxy sinkProxy) {
-        var publisher      = Services.GetRequiredService<IPublisher>();
+        var client         = Services.GetRequiredService<ISystemClient>();
         var loggerFactory  = Services.GetRequiredService<ILoggerFactory>();
         var schemaRegistry = Services.GetRequiredService<Kurrent.Surge.Schema.SchemaRegistry>();
         var stateStore     = Services.GetRequiredService<IStateStore>();
@@ -125,7 +125,7 @@ public class SystemConnectorsFactory(SystemConnectorsFactoryOptions options, ISe
 
         var builder = SystemProcessor.Builder
             .ProcessorId(connectorId)
-            .Publisher(publisher)
+            .Client(client)
             .StateStore(stateStore)
             .SchemaRegistry(schemaRegistry)
             .InitialPosition(sinkOptions.Subscription.InitialPosition)

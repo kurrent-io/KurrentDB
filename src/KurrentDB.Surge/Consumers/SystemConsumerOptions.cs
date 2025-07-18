@@ -4,7 +4,7 @@
 using Kurrent.Surge.Configuration;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Configuration;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 
 namespace KurrentDB.Surge.Consumers;
 
@@ -17,5 +17,5 @@ public record SystemConsumerOptions : ConsumerOptions {
         Filter = ConsumeFilter.ExcludeSystemEvents();
     }
 
-    public IPublisher Publisher { get; init; } = null!;
+    public ISystemClient Client { get; init; } = null!;
 }

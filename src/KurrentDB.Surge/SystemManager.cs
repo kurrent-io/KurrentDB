@@ -3,7 +3,6 @@
 
 using Kurrent.Surge;
 using KurrentDB.Core;
-using KurrentDB.Core.Bus;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using ResolvedEvent = KurrentDB.Core.Data.ResolvedEvent;
 using StreamMetadata = Kurrent.Surge.StreamMetadata;
@@ -12,13 +11,13 @@ using StreamRevision = Kurrent.Surge.StreamRevision;
 namespace KurrentDB.Surge;
 
 public class SystemManager : IManager {
-    public SystemManager(IPublisher publisher) => Client = publisher;
+    public SystemManager(ISystemClient client) => Client = client;
 
-    IPublisher Client { get; }
+    ISystemClient Client { get; }
 
     public async ValueTask<bool> StreamExists(StreamId stream, CancellationToken cancellationToken) {
         try {
-            var read = Client.ReadStreamBackwards(stream: stream,
+            var read = Client.Reading.ReadStreamBackwards(stream: stream,
                     startRevision: Core.Services.Transport.Common.StreamRevision.End,
                     maxCount: 1,
                     cancellationToken: cancellationToken)
@@ -32,7 +31,7 @@ public class SystemManager : IManager {
 
     public async ValueTask<DeleteStreamResult> DeleteStream(StreamId stream, CancellationToken cancellationToken) {
         try {
-            var result = await Client.SoftDeleteStream(stream, expectedRevision: (int)StreamState.Exists, cancellationToken);
+            var result = await Client.Management.SoftDeleteStream(stream, expectedRevision: (int)StreamState.Exists, cancellationToken);
             return LogPosition.From(result.Position.CommitPosition);
         } catch (ReadResponseException.WrongExpectedRevision) {
             return new StreamNotFoundError(stream);
@@ -46,6 +45,7 @@ public class SystemManager : IManager {
     public async ValueTask<DeleteStreamResult> DeleteStream(StreamId stream, StreamRevision expectedStreamRevision, CancellationToken cancellationToken) {
         try {
             var result = await Client
+                .Management
                 .DeleteStream(stream, expectedStreamRevision, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -98,7 +98,7 @@ public class SystemManager : IManager {
                 : null);
 
         if (expectedRevision == StreamRevision.Unset) {
-            var result = await Client.SetStreamMetadata(stream,
+            var result = await Client.Management.SetStreamMetadata(stream,
                 metadata: meta,
                 expectedRevision: -1,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -106,7 +106,7 @@ public class SystemManager : IManager {
             return (metadata, StreamRevision.From(result.Revision));
         } else {
             var metaRevision = KurrentDB.Core.Services.Transport.Common.StreamRevision.FromInt64(expectedRevision);
-            var result       = await Client.SetStreamMetadata(stream, meta, metaRevision.ToInt64(), cancellationToken: cancellationToken).ConfigureAwait(false);
+            var result       = await Client.Management.SetStreamMetadata(stream, meta, metaRevision.ToInt64(), cancellationToken: cancellationToken).ConfigureAwait(false);
             return (metadata, StreamRevision.From(result.Revision));
         }
     }
@@ -114,7 +114,7 @@ public class SystemManager : IManager {
     async ValueTask<(StreamMetadata Metadata, StreamRevision MetadataRevision)> GetStreamMetadataInternal(
         StreamId stream, CancellationToken cancellationToken = default
     ) {
-        var result = await Client.GetStreamMetadata(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
+        var result = await Client.Management.GetStreamMetadata(stream, cancellationToken: cancellationToken).ConfigureAwait(false);
 
         var meta = new StreamMetadata {
             MaxCount       = result.Metadata.MaxCount,
@@ -152,6 +152,7 @@ public class SystemManager : IManager {
                 position.PreparePosition.GetValueOrDefault());
 
         ResolvedEvent? re = await Client
+            .Reading
             .ReadForwards(kdbPosition, maxCount: 1, cancellationToken: cancellationToken)
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);

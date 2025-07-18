@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Readers;
-using KurrentDB.Core;
 using KurrentDB.Surge.Testing.Fixtures;
 using KurrentDB.Surge.Testing.Xunit;
 using Shouldly;
@@ -169,7 +168,7 @@ public class SystemReaderTests(ITestOutputHelper output, SystemComponentsAssembl
 
             await Fixture.ProduceTestEvents(streamId, 1);
 
-            await Fixture.Publisher.SetStreamMetadata(streamId,
+            await Fixture.Client.Management.SetStreamMetadata(streamId,
                 new StreamMetadata(truncateBefore: int.MaxValue),
                 cancellationToken: ct.Token);
 
@@ -193,7 +192,7 @@ public class SystemReaderTests(ITestOutputHelper output, SystemComponentsAssembl
             var requests     = await Fixture.ProduceTestEvents(streamId, 1, 1);
             var streamRecord = requests.First();
 
-            await Fixture.Publisher.SoftDeleteStream(streamId,
+            await Fixture.Client.Management.SoftDeleteStream(streamId,
                 streamRecord.Position.StreamRevision.Value,
                 cancellationToken: ct.Token);
 

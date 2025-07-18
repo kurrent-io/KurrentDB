@@ -25,7 +25,7 @@ using KurrentDB.Connectors.Planes.Management.Domain;
 using KurrentDB.Connectors.Planes.Management.Migrations;
 using KurrentDB.Connectors.Planes.Management.Projectors;
 using KurrentDB.Connectors.Planes.Management.Queries;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
 using Microsoft.AspNetCore.Builder;
@@ -98,7 +98,7 @@ public static class ManagementPlaneWireUp {
 
             return new ConnectorsStreamSupervisor(
                 options,
-                ctx.GetRequiredService<IPublisher>(),
+                ctx.GetRequiredService<ISystemClient>(),
                 ctx.GetRequiredService<IDataProtector>(),
                 ctx.GetRequiredService<ILogger<ConnectorsStreamSupervisor>>()
             );

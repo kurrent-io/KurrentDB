@@ -3,7 +3,7 @@
 
 using Kurrent.Surge.Producers.Configuration;
 using Kurrent.Surge.Resilience;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 
 namespace KurrentDB.Surge.Producers;
 
@@ -16,5 +16,5 @@ public record SystemProducerOptions : ProducerOptions {
         ResiliencePipelineBuilder = DefaultRetryPolicies.ExponentialBackoffPipelineBuilder();
     }
 
-    public IPublisher Publisher { get; init; } = null!;
+    public ISystemClient Client { get; init; } = null!;
 }

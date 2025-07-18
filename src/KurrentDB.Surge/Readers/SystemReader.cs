@@ -10,7 +10,6 @@ using Kurrent.Surge.Readers;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Connect.Consumers;
 using KurrentDB.Core;
-using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -25,7 +24,7 @@ public class SystemReader : IReader {
 
 	public SystemReader(SystemReaderOptions options) {
         Options = options;
-        Client  = options.Publisher;
+        Client  = options.Client;
 
 		Deserialize = Options.SkipDecoding
 			? (_, _) => ValueTask.FromResult<object?>(null)
@@ -45,7 +44,7 @@ public class SystemReader : IReader {
 
     internal SystemReaderOptions Options { get; }
 
-    IPublisher         Client             { get; }
+    ISystemClient      Client             { get; }
     ResiliencePipeline ResiliencePipeline { get; }
     Deserialize        Deserialize        { get; }
 
@@ -75,9 +74,9 @@ public class SystemReader : IReader {
         IAsyncEnumerable<ResolvedEvent> events;
 
         if (filter.IsStreamIdFilter) {
-            var startRevision = await Client.GetStreamRevision(startPosition, cancellator.Token);
+            var startRevision = await Client.Management.GetStreamRevision(startPosition, cancellator.Token);
 
-            events = Client.ReadStream(
+            events = Client.Reading.ReadStream(
                 filter.Expression,
                 startRevision,
                 maxCount,
@@ -86,7 +85,7 @@ public class SystemReader : IReader {
             );
         }
         else {
-            events = Client.Read(
+            events = Client.Reading.Read(
                 startPosition,
                 ConsumeFilterExtensions.ToEventFilter(filter),
                 maxCount,
@@ -135,7 +134,7 @@ public class SystemReader : IReader {
 
     public async ValueTask<SurgeRecord> ReadLastStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
         try {
-            var result = await Client.ReadStreamLastEvent(stream, cancellationToken);
+            var result = await Client.Reading.ReadStreamLastEvent(stream, cancellationToken);
 
             return result is not null
                 ? await result.Value.ToRecord(Deserialize, () => SequenceId.From(1))
@@ -147,7 +146,7 @@ public class SystemReader : IReader {
 
     public async ValueTask<SurgeRecord> ReadFirstStreamRecord(StreamId stream, CancellationToken cancellationToken = default) {
         try {
-            var result = await Client.ReadStreamFirstEvent(stream, cancellationToken);
+            var result = await Client.Reading.ReadStreamFirstEvent(stream, cancellationToken);
 
             return result is not null
                 ? await result.Value.ToRecord(Deserialize, () => SequenceId.From(1))
@@ -166,7 +165,7 @@ public class SystemReader : IReader {
                     position.PreparePosition.GetValueOrDefault()
                 );
 
-            var result = await Client.ReadEvent(esdbPosition, cancellationToken);
+            var result = await Client.Reading.ReadEvent(esdbPosition, cancellationToken);
 
             return !result.Equals(ResolvedEvent.EmptyEvent)
                 ? await result.ToRecord(Deserialize, () => SequenceId.From(1))

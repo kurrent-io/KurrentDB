@@ -16,7 +16,7 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 
-namespace KurrentDB.Core;
+namespace KurrentDB.Core.ClientPublisher;
 
 using WriteEventsResult = (Position Position, StreamRevision StreamRevision);
 

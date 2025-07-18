@@ -4,7 +4,6 @@
 using Kurrent.Surge;
 using Kurrent.Surge.Producers;
 using KurrentDB.Connect.Consumers;
-using KurrentDB.Core;
 using KurrentDB.Surge.Testing.Fixtures;
 
 namespace KurrentDB.Surge.Tests.Components.Producers;
@@ -42,7 +41,7 @@ public class SystemProducerTests(ITestOutputHelper output, SystemComponentsAssem
 
 		var lastPosition = results.Last().Position;
 
-		var actualEvents = await Fixture.Publisher.ReadFullStream(streamId).ToListAsync();
+		var actualEvents = await Fixture.Client.Reading.ReadFullStream(streamId).ToListAsync();
 
 		actualEvents.Should().HaveCount(numberOfMessages, "because there should be one event for each message sent");
 

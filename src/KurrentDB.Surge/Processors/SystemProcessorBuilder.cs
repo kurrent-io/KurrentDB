@@ -8,7 +8,7 @@ using Kurrent.Surge.Leases;
 using Kurrent.Surge.Processors;
 using Kurrent.Surge.Processors.Configuration;
 using Kurrent.Surge.Processors.Locks;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 using KurrentDB.Surge.Consumers;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
@@ -19,11 +19,11 @@ namespace KurrentDB.Surge.Processors;
 
 [PublicAPI]
 public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, SystemProcessorOptions> {
-    public SystemProcessorBuilder Publisher(IPublisher publisher) {
-		Ensure.NotNull(publisher);
+    public SystemProcessorBuilder Client(ISystemClient client) {
+		Ensure.NotNull(client);
 		return new() {
 			Options = Options with {
-				Publisher = publisher
+				Client = client
 			}
 		};
 	}
@@ -33,7 +33,7 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
 		Ensure.NotNullOrWhiteSpace(Options.ProcessorId);
 		Ensure.NotNullOrWhiteSpace(Options.SubscriptionName);
         Ensure.NotNullOrEmpty(Options.RouterRegistry.Endpoints);
-		Ensure.NotNull(Options.Publisher);
+		Ensure.NotNull(Options.Client);
 
 		var options = Options with { };
 
@@ -44,14 +44,14 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
 
         var leaseManager = new LeaseManager(
             SystemReader.Builder
-                .Publisher(options.Publisher)
+                .Client(options.Client)
                 .ReaderId($"leases-{options.ProcessorId}")
                 .SchemaRegistry(options.SchemaRegistry)
                 .Logging(loggingOptions with { Enabled = false, LogName = "LeaseManagerSystemReader" })
                 // .ResiliencePipeline(new ResiliencePipelineBuilder().AddPipeline(ResiliencePipeline.Empty))
                 .Create(),
             SystemProducer.Builder
-                .Publisher(options.Publisher)
+                .Client(options.Client)
                 .ProducerId($"leases-{options.ProcessorId}")
                 .SchemaRegistry(options.SchemaRegistry)
                 .Logging(loggingOptions with { Enabled = false, LogName = "LeaseManagerSystemProducer" })
@@ -73,7 +73,7 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
 
         options = Options with {
             GetConsumer = () => SystemConsumer.Builder
-                .Publisher(options.Publisher)
+                .Client(options.Client)
                 .ConsumerId(options.ProcessorId)
                 .SubscriptionName(options.SubscriptionName)
                 .Filter(options.Filter)
@@ -87,7 +87,7 @@ public record SystemProcessorBuilder : ProcessorBuilder<SystemProcessorBuilder, 
                 .Create(),
 
             GetProducer = () => SystemProducer.Builder
-                .Publisher(options.Publisher)
+                .Client(options.Client)
                 .ProducerId(options.ProcessorId)
                 .SchemaRegistry(options.SchemaRegistry)
                 .Logging(loggingOptions)
