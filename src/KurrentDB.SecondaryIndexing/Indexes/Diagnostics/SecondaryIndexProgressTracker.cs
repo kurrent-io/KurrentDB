@@ -54,7 +54,7 @@ public class SecondaryIndexProgressTracker : ISecondaryIndexProgressTracker {
 		meter.CreateObservableGauge(
 			$"{meterPrefix}.subscription.gap",
 			ObserveGap,
-			"events",
+			"bytes",
 			"Gap between last indexed and current last event log position"
 		);
 
