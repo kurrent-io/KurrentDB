@@ -15,7 +15,7 @@ using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Connect.Consumers;
 using KurrentDB.Core;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Surge.Producers;
 using KurrentDB.Surge.Readers;
@@ -35,7 +35,7 @@ public class SystemConsumer : IConsumer {
 
 		var logger = Options.Logging.LoggerFactory.CreateLogger(GetType().FullName!);
 
-		Client  = options.Publisher;
+		Client  = options.Client;
 
         Deserialize = Options.SkipDecoding
             ? (_, _) => ValueTask.FromResult<object?>(null)
@@ -62,8 +62,8 @@ public class SystemConsumer : IConsumer {
 
         CheckpointStore = new CheckpointStore(
             Options.ConsumerId,
-            SystemProducer.Builder.Publisher(Options.Publisher).ProducerId(Options.ConsumerId).Create(),
-            SystemReader.Builder.Publisher(Options.Publisher).ReaderId(Options.ConsumerId).Create(),
+            SystemProducer.Builder.Client(Options.Client).ProducerId(Options.ConsumerId).Create(),
+            SystemReader.Builder.Client(Options.Client).ReaderId(Options.ConsumerId).Create(),
             TimeProvider.System,
             options.AutoCommit.StreamTemplate.GetStream(Options.ConsumerId)
         );
@@ -98,7 +98,7 @@ public class SystemConsumer : IConsumer {
 
 	internal SystemConsumerOptions Options { get; }
 
-    IPublisher                         Client               { get; }
+    ISystemClient                      Client               { get; }
     ResiliencePipeline                 ResiliencePipeline   { get; }
     Deserialize                        Deserialize          { get; }
     CheckpointController               CheckpointController { get; }
@@ -131,9 +131,9 @@ public class SystemConsumer : IConsumer {
             .ResolveStartPosition(Options.StartPosition, Options.InitialPosition, cancellatorToken);
 
         if (Options.Filter.IsStreamIdFilter) {
-            var startRevision = await Client.GetStreamRevision(StartPosition.ToPosition(), stoppingToken);
+            var startRevision = await Client.Management.GetStreamRevision(StartPosition.ToPosition() ?? Position.Start, stoppingToken);
 
-            await Client.SubscribeToStream(
+            await Client.Subscriptions.SubscribeToStream(
 	            startRevision,
                 Options.Filter.Expression,
                 InboundChannel,
@@ -141,7 +141,7 @@ public class SystemConsumer : IConsumer {
                 cancellatorToken
 	        );
         } else {
-            await Client.SubscribeToAll(
+            await Client.Subscriptions.SubscribeToAll(
 	            StartPosition.ToPosition(),
                 Options.Filter.ToEventFilter(),
 	            (uint)Options.AutoCommit.RecordsThreshold,

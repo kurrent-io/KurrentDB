@@ -3,7 +3,7 @@
 
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers.Configuration;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 using Microsoft.Extensions.Logging;
 using Polly.Telemetry;
 
@@ -11,11 +11,11 @@ namespace KurrentDB.Surge.Consumers;
 
 [PublicAPI]
 public record SystemConsumerBuilder : ConsumerBuilder<SystemConsumerBuilder, SystemConsumerOptions> {
-    public SystemConsumerBuilder Publisher(IPublisher publisher) {
-        Ensure.NotNull(publisher);
+    public SystemConsumerBuilder Client(ISystemClient client) {
+        Ensure.NotNull(client);
         return new() {
             Options = Options with {
-                Publisher = publisher
+                Client = client
             }
         };
     }
@@ -23,7 +23,7 @@ public record SystemConsumerBuilder : ConsumerBuilder<SystemConsumerBuilder, Sys
     public override SystemConsumer Create() {
         Ensure.NotNullOrWhiteSpace(Options.ConsumerId);
         Ensure.NotNullOrWhiteSpace(Options.SubscriptionName);
-        Ensure.NotNull(Options.Publisher);
+        Ensure.NotNull(Options.Client);
 
         return new(Options with {});
 

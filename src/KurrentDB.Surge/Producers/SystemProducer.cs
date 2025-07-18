@@ -9,7 +9,6 @@ using Kurrent.Surge.Producers.Interceptors;
 using Kurrent.Surge.Producers.LifecycleEvents;
 using Kurrent.Surge.Schema.Serializers;
 using KurrentDB.Core;
-using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using Polly;
 
@@ -26,7 +25,7 @@ public class SystemProducer : IProducer {
 
         var logger = Options.Logging.LoggerFactory.CreateLogger(GetType().FullName!);
 
-        Client  = options.Publisher;
+        Client  = options.Client;
 
         Serialize = (value, headers) => Options.SchemaRegistry.As<ISchemaSerializer>().Serialize(value, headers);
 
@@ -47,7 +46,7 @@ public class SystemProducer : IProducer {
     }
 
     SystemProducerOptions              Options            { get; }
-    IPublisher                         Client             { get; }
+    ISystemClient                      Client             { get; }
     Serialize                          Serialize          { get; }
     ManualResetEventSlim               Flushing           { get; }
     InterceptorController              Interceptors       { get; }
@@ -115,7 +114,7 @@ public class SystemProducer : IProducer {
 
         return;
 
-        static async Task<ProduceResult> WriteEvents(IPublisher client, ProduceRequest request, Event[] events, long expectedRevision, ResiliencePipeline resiliencePipeline) {
+        static async Task<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, ResiliencePipeline resiliencePipeline) {
             var state = (Client: client, Request: request, Events: events, ExpectedRevision: expectedRevision);
 
             try {
@@ -128,6 +127,7 @@ public class SystemProducer : IProducer {
                         // Therefore, we can retry immediately
                         if (state.Request.ExpectedStreamState == StreamState.Missing && result.Error is ExpectedStreamRevisionError revisionError) {
                             result = await state.Client
+                                .Reading
                                 .ReadStreamLastEvent(state.Request.Stream, CancellationToken.None)
                                 .Then(async re => re is null || re == ResolvedEvent.EmptyEvent
                                     ? await WriteEvents(state.Client, state.Request, state.Events, revisionError.ActualStreamRevision, token)
@@ -143,9 +143,9 @@ public class SystemProducer : IProducer {
                 return ProduceResult.Failed(request, err);
             }
 
-            static async Task<ProduceResult> WriteEvents(IPublisher client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
+            static async Task<ProduceResult> WriteEvents(ISystemClient client, ProduceRequest request, Event[] events, long expectedRevision, CancellationToken cancellationToken) {
                 try {
-                    var (position, streamRevision) = await client.WriteEvents(request.Stream, events, expectedRevision, cancellationToken);
+                    var (position, streamRevision) = await client.Writing.WriteEvents(request.Stream, events, expectedRevision, cancellationToken);
 
                     var recordPosition = RecordPosition.ForStream(
                         StreamId.From(request.Stream),

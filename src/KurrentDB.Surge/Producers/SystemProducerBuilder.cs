@@ -3,24 +3,24 @@
 
 using Kurrent.Surge;
 using Kurrent.Surge.Producers.Configuration;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 
 namespace KurrentDB.Surge.Producers;
 
 [PublicAPI]
 public record SystemProducerBuilder : ProducerBuilder<SystemProducerBuilder, SystemProducerOptions> {
-	public SystemProducerBuilder Publisher(IPublisher publisher) {
-		Ensure.NotNull(publisher);
+	public SystemProducerBuilder Client(ISystemClient client) {
+		Ensure.NotNull(client);
 		return new() {
 			Options = Options with {
-				Publisher = publisher
+				Client = client
 			}
 		};
 	}
 
 	public override SystemProducer Create() {
 		Ensure.NotNullOrWhiteSpace(Options.ProducerId);
-		Ensure.NotNull(Options.Publisher);
+		Ensure.NotNull(Options.Client);
 
         return new(Options with {});
 

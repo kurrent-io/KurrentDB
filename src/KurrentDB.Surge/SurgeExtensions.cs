@@ -2,13 +2,13 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Surge.Consumers.Configuration;
-using KurrentDB.Core.Bus;
 using Kurrent.Surge.Persistence.State;
 using Kurrent.Surge.Processors.Configuration;
 using Kurrent.Surge.Producers.Configuration;
 using Kurrent.Surge.Readers.Configuration;
 using Kurrent.Surge.Schema;
 using Kurrent.Surge.Schema.Serializers;
+using KurrentDB.Core;
 using KurrentDB.Surge.Consumers;
 using KurrentDB.Surge.Processors;
 using KurrentDB.Surge.Producers;
@@ -25,10 +25,10 @@ public static class SurgeExtensions {
         services.AddSingleton<IReaderBuilder, SystemReaderBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var client         = ctx.GetRequiredService<ISystemClient>();
 
             return SystemReader.Builder
-	            .Publisher(publisher)
+	            .Client(client)
                 .SchemaRegistry(schemaRegistry)
                 .LoggerFactory(loggerFactory)
                 .DisableResiliencePipeline();
@@ -37,10 +37,10 @@ public static class SurgeExtensions {
         services.AddSingleton<IConsumerBuilder, SystemConsumerBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var client         = ctx.GetRequiredService<ISystemClient>();
 
             return SystemConsumer.Builder
-	            .Publisher(publisher)
+	            .Client(client)
                 .SchemaRegistry(schemaRegistry)
                 .LoggerFactory(loggerFactory)
                 .DisableResiliencePipeline();
@@ -49,10 +49,10 @@ public static class SurgeExtensions {
         services.AddSingleton<IProducerBuilder, SystemProducerBuilder>(ctx => {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var client         = ctx.GetRequiredService<ISystemClient>();
 
             return SystemProducer.Builder
-                .Publisher(publisher)
+                .Client(client)
                 .SchemaRegistry(schemaRegistry)
                 .LoggerFactory(loggerFactory)
                 .DisableResiliencePipeline();
@@ -62,16 +62,16 @@ public static class SurgeExtensions {
             var loggerFactory  = ctx.GetRequiredService<ILoggerFactory>();
             var schemaRegistry = ctx.GetRequiredService<SchemaRegistry>();
             var stateStore     = ctx.GetRequiredService<IStateStore>();
-            var publisher      = ctx.GetRequiredService<IPublisher>();
+            var client         = ctx.GetRequiredService<ISystemClient>();
 
             return SystemProcessor.Builder
-                .Publisher(publisher)
+                .Client(client)
                 .SchemaRegistry(schemaRegistry)
                 .StateStore(stateStore)
                 .LoggerFactory(loggerFactory);
         });
 
-        services.AddSingleton<SystemManager>(ctx => new SystemManager(ctx.GetRequiredService<IPublisher>()));
+        services.AddSingleton<SystemManager>(ctx => new SystemManager(ctx.GetRequiredService<ISystemClient>()));
 
         return services;
     }

@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Text;
-using KurrentDB.Core;
 using KurrentDB.Core.Configuration.Sources;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Enumerators;
@@ -49,7 +48,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	}
 
 	public IAsyncEnumerable<ResolvedEvent> ReadStream(string streamName, CancellationToken ct = default) =>
-		Publisher.ReadStream(streamName, StreamRevision.Start, long.MaxValue, true, cancellationToken: ct);
+		Client.Reading.ReadStream(streamName, StreamRevision.Start, long.MaxValue, true, cancellationToken: ct);
 
 	public async Task<List<ResolvedEvent>> ReadUntil(
 		string streamName,
@@ -82,7 +81,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 	}
 
 	public Task<WriteEventsResult> AppendToStream(string stream, params Event[] events) =>
-		Publisher.WriteEvents(stream, events);
+		Client.Writing.WriteEvents(stream, events);
 
 	public Task<WriteEventsResult> AppendToStream(string stream, params string[] eventData) =>
 		AppendToStream(stream, eventData.Select(ToEventData).ToArray());

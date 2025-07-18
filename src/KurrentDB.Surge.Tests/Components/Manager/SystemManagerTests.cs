@@ -2,7 +2,6 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using Kurrent.Surge;
-using KurrentDB.Core;
 using KurrentDB.Surge.Testing.Fixtures;
 using Exception = System.Exception;
 using StreamMetadata = KurrentDB.Core.Data.StreamMetadata;
@@ -108,7 +107,7 @@ public class SystemManagerTests(ITestOutputHelper output, SystemComponentsAssemb
         // Arrange
         var streamId = Fixture.NewStreamId();
         await Fixture.ProduceTestEvents(streamId);
-        await Fixture.Publisher.SetStreamMetadata(streamId, StreamMetadata.Empty, cancellationToken: ct.Token);
+        await Fixture.Client.Management.SetStreamMetadata(streamId, StreamMetadata.Empty, cancellationToken: ct.Token);
         const int newMaxCount = 100;
 
         // Act
@@ -129,7 +128,7 @@ public class SystemManagerTests(ITestOutputHelper output, SystemComponentsAssemb
         // Arrange
         var streamId = Fixture.NewStreamId();
         await Fixture.ProduceTestEvents(streamId);
-        await Fixture.Publisher.SetStreamMetadata(streamId, StreamMetadata.Empty, cancellationToken: ct.Token);
+        await Fixture.Client.Management.SetStreamMetadata(streamId, StreamMetadata.Empty, cancellationToken: ct.Token);
         var initialMetadata = await Fixture.Manager.GetStreamMetadata(streamId, ct.Token);
 
         // Act
@@ -144,7 +143,7 @@ public class SystemManagerTests(ITestOutputHelper output, SystemComponentsAssemb
         // Arrange
         var streamId = Fixture.NewStreamId();
         await Fixture.ProduceTestEvents(streamId);
-        await Fixture.Publisher.SetStreamMetadata(streamId, StreamMetadata.Empty, cancellationToken: ct.Token);
+        await Fixture.Client.Management.SetStreamMetadata(streamId, StreamMetadata.Empty, cancellationToken: ct.Token);
         const int maxCount = 100;
 
         await Fixture.Manager.ConfigureStream(streamId,
@@ -181,7 +180,7 @@ public class SystemManagerTests(ITestOutputHelper output, SystemComponentsAssemb
         // Arrange
         var streamId = Fixture.NewStreamId();
         await Fixture.ProduceTestEvents(streamId);
-        await Fixture.Publisher.SetStreamMetadata(streamId, StreamMetadata.Empty, cancellationToken: ct.Token);
+        await Fixture.Client.Management.SetStreamMetadata(streamId, StreamMetadata.Empty, cancellationToken: ct.Token);
 
         var acl = new Kurrent.Surge.StreamMetadata.StreamAcl {
             ReadRoles  = ["admin"],
