@@ -17,12 +17,14 @@ using KurrentDB.Core.Services.UserManagement;
 
 namespace KurrentDB.Core.ClientPublisher;
 
+using WriteEventsResult = (Position Position, StreamRevision Revision);
+
 [PublicAPI]
 public static class PublisherManagementExtensions {
-	public static Task<(Position Position, StreamRevision Revision)> DeleteStream(this IPublisher publisher, string stream, long expectedRevision = -2, bool hardDelete = false, CancellationToken cancellationToken = default) {
+	public static Task<WriteEventsResult> DeleteStream(this IPublisher publisher, string stream, long expectedRevision = -2, bool hardDelete = false, CancellationToken cancellationToken = default) {
 		cancellationToken.ThrowIfCancellationRequested();
 
-		var operation = new TaskCompletionSource<(Position Position, StreamRevision StreamRevision)>(TaskCreationOptions.RunContinuationsAsynchronously);
+		var operation = new TaskCompletionSource<WriteEventsResult>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 		var cid = Guid.NewGuid();
 
@@ -30,7 +32,7 @@ public static class PublisherManagementExtensions {
 			var command = new ClientMessage.DeleteStream(
 				internalCorrId: cid,
 				correlationId: cid,
-				envelope: new CallbackEnvelope(Callback),
+				envelope: new CallbackEnvelope<(TaskCompletionSource<WriteEventsResult>, string, long)>((operation, stream, expectedRevision), Callback),
 				requireLeader: false,
 				eventStreamId: stream,
 				expectedVersion: expectedRevision,
@@ -47,18 +49,18 @@ public static class PublisherManagementExtensions {
 
 		return operation.Task;
 
-		void Callback(Message message) {
+		static void Callback((TaskCompletionSource<WriteEventsResult> Operation, string Stream, long ExpectedRevision) arg, Message message) {
 			if (message is ClientMessage.DeleteStreamCompleted { Result: OperationResult.Success } completed) {
 				var position = new Position((ulong)completed.CommitPosition, (ulong)completed.PreparePosition);
 				var streamRevision = StreamRevision.FromInt64(completed.CurrentVersion);
 
-				operation.TrySetResult(new(position, streamRevision));
+				arg.Operation.TrySetResult(new(position, streamRevision));
 			}
 			else
-				operation.TrySetException(MapToError(message));
+				arg.Operation.TrySetException(MapToError(arg.Stream, arg.ExpectedRevision, message));
 		}
 
-		ReadResponseException MapToError(Message message) {
+		static ReadResponseException MapToError(string stream, long expectedRevision, Message message) {
 			return message switch {
 				ClientMessage.DeleteStreamCompleted completed => completed.Result switch {
 					OperationResult.PrepareTimeout       => new ReadResponseException.Timeout($"{completed.Result}"),
@@ -75,15 +77,15 @@ public static class PublisherManagementExtensions {
 		}
 	}
 
-	public static Task<(Position Position, StreamRevision Revision)> SoftDeleteStream(
+	public static Task<WriteEventsResult> SoftDeleteStream(
 		this IPublisher publisher, string stream, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
 		publisher.DeleteStream(stream, expectedRevision, false, cancellationToken);
 
-    public static Task<(Position Position, StreamRevision Revision)> SoftDeleteStream(
+    public static Task<WriteEventsResult> SoftDeleteStream(
         this IPublisher publisher, string stream, CancellationToken cancellationToken = default) =>
         publisher.DeleteStream(stream, -2, false, cancellationToken);
 
-	public static Task<(Position Position, StreamRevision Revision)> HardDeleteStream(
+	public static Task<WriteEventsResult> HardDeleteStream(
 		this IPublisher publisher, string stream, long expectedRevision = -2, CancellationToken cancellationToken = default) =>
 		publisher.DeleteStream(stream, expectedRevision, true, cancellationToken);
 
