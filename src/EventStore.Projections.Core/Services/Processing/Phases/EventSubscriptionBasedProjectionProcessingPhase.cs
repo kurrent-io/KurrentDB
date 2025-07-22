@@ -152,7 +152,7 @@ public abstract partial class EventSubscriptionBasedProjectionProcessingPhase : 
 			TimerMessage.Schedule.Create(
 				_updateInterval,
 				_inutQueueEnvelope,
-				new UnwrapEnvelopeMessage(MarkTicketReceivedAndUpdateStatistics)));
+				new UnwrapEnvelopeMessage(MarkTicketReceivedAndUpdateStatistics, nameof(MarkTicketReceivedAndUpdateStatistics))));
 	}
 
 	private void MarkTicketReceivedAndUpdateStatistics() {
