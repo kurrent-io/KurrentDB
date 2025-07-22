@@ -31,7 +31,7 @@ public abstract class queued_handler_should : QueuedHandlerTestWithNoopConsumer 
 [TestFixture]
 public class queued_handler_threadpool_should : queued_handler_should {
 	public queued_handler_threadpool_should()
-		: base((consumer, name, timeout) =>
+		: base(static (consumer, name, timeout) =>
 			new QueuedHandlerThreadPool(consumer, name, new QueueStatsManager(), new(), false, null, timeout)) {
 	}
 }
