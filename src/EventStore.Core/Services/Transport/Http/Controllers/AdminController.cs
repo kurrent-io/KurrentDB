@@ -250,7 +250,7 @@ public class AdminController : CommunicationController {
 	}
 
 	private void OnGetCurrentScavenge(HttpEntityManager entity, UriTemplateMatch match) {
-		Log.Information("/admin/scavenge/current GET request has been received.");
+		Log.Verbose("/admin/scavenge/current GET request has been received.");
 
 		var envelope = new SendToHttpEnvelope<ClientMessage.ScavengeDatabaseGetCurrentResponse>(
 			_networkSendQueue,
@@ -277,7 +277,7 @@ public class AdminController : CommunicationController {
 	}
 
 	private void OnGetLastScavenge(HttpEntityManager entity, UriTemplateMatch match) {
-		Log.Information("/admin/scavenge/last GET request has been received.");
+		Log.Verbose("/admin/scavenge/last GET request has been received.");
 
 		var envelope = new SendToHttpEnvelope<ClientMessage.ScavengeDatabaseGetLastResponse>(
 			_networkSendQueue,
