@@ -349,7 +349,7 @@ You can use Docker Compose to run KurrentDB in the same setup as the `docker run
 
 Create a file `docker-compose.yaml` with the following content:
 
-@[code{curl}](@samples/docker-compose.yaml)
+@[code{curl}](@samples/server/docker-compose.yaml)
 
 Run the instance:
 
@@ -370,12 +370,12 @@ something you'd expect to use in production.
 
 Create file `docker-compose.yaml` with following content:
 
-@[code{curl}](@samples/docker-compose-cluster.yaml)
+@[code{curl}](@samples/server/docker-compose-cluster.yaml)
 
 Quite a few settings are shared between the nodes and we use the `env` file to avoid repeating those settings.
 So, add the `vars.env` file to the same location:
 
-@[code{curl}](@samples/vars.env)
+@[code{curl}](@samples/server/vars.env)
 
 Containers will use the shared volume using the local `./certs` directory for certificates. However, if you
 let Docker create the directory on startup, the container won't be able to get write access to it.

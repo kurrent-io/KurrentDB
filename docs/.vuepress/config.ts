@@ -27,7 +27,6 @@ export default defineUserConfig({
             replaceLink: (link: string, _) => link
                 .replace("@server", "/server")
                 .replace("@httpapi/data/", projectionSamplesPath)
-                .replace("@httpapi", "/http-api")
         });
         md.use(dl);
     },
