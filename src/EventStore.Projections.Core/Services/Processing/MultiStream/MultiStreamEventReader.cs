@@ -88,7 +88,7 @@ public class MultiStreamEventReader : EventReader,
 			_publisher.Publish(
 				TimerMessage.Schedule.Create(
 					TimeSpan.FromMilliseconds(250), _publisher,
-					new UnwrapEnvelopeMessage(ProcessBuffers2)));
+					new UnwrapEnvelopeMessage(ProcessBuffers2, nameof(ProcessBuffers2))));
 		foreach (var stream in _streams)
 			RequestEvents(stream, delay: _eofs[stream]);
 	}
