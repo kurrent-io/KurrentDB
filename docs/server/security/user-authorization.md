@@ -1,6 +1,6 @@
 ---
 title: User authorization
-order: 3
+order: 4
 ---
 
 # Authorization

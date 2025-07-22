@@ -1,4 +1,6 @@
 ---
+dir:
+  text: HTTP API
 index: false
 ---
 

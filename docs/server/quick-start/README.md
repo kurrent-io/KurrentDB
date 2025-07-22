@@ -35,7 +35,7 @@ Users of KurrentDB can use the [community forum](https://www.kurrent.io/communit
 
 ### Enterprise customers
 
-Customers with a paid subscription can open tickets using the [support portal](https://eventstore.freshdesk.com). For additional information on supported versions, users can access KurrentDB's [release and support schedule](../release-schedule/).
+Customers with a paid subscription can open tickets using the [support portal](https://eventstore.freshdesk.com). For additional information on supported versions, users can access KurrentDB's [release and support schedule](../release-schedule/README.md).
 
 ### Issues
 
@@ -82,7 +82,7 @@ The current AtomPub-based HTTP application API is disabled by default. You can e
 You need to enable the AtomPub protocol to have a fully functioning database user interface.
 :::
 
-Learn more about the KurrentDB HTTP interface in the [HTTP documentation](@httpapi/README.md). 
+Learn more about the KurrentDB HTTP interface in the [HTTP documentation](../http-api/README.md). 
 
 #### Community-developed clients
 
