@@ -1,6 +1,5 @@
 import { dl } from "@mdit/plugin-dl";
 import viteBundler from "@vuepress/bundler-vite";
-import vueDevTools from 'vite-plugin-vue-devtools'
 import {defineUserConfig} from "vuepress";
 import {fs} from "vuepress/utils";
 import {hopeTheme} from "vuepress-theme-hope";
@@ -16,7 +15,7 @@ export default defineUserConfig({
     dest: "public",
     title: "KurrentDB Docs",
     description: "Event-native database",
-    bundler: viteBundler({viteOptions: {plugins: [vueDevTools(),],}}),
+    bundler: viteBundler(),
     markdown: {importCode: false},
     extendsMarkdown: md => {
         md.use(importCodePlugin, {
