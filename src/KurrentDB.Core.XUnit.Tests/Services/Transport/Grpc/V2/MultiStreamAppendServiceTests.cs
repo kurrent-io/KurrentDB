@@ -62,8 +62,8 @@ public class MultiStreamAppendServiceTests {
 							Data = ByteString.CopyFromUtf8("message-2"),
 							RecordId = event2Id.ToString(),
 							Properties = {
-								{ Constants.Properties.EventType, new() { StringValue = "message-2-type" } },
-								{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+								{ Constants.Properties.EventTypeKey, new() { StringValue = "message-2-type" } },
+								{ Constants.Properties.DataFormatKey, new() { StringValue = "json" } },
 							},
 						},
 					},
@@ -76,16 +76,16 @@ public class MultiStreamAppendServiceTests {
 							Data = ByteString.CopyFromUtf8("message-5"),
 							RecordId = event5Id.ToString(),
 							Properties = {
-								{ Constants.Properties.EventType, new() { StringValue = "message-5-type" } },
-								{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+								{ Constants.Properties.EventTypeKey, new() { StringValue = "message-5-type" } },
+								{ Constants.Properties.DataFormatKey, new() { StringValue = "json" } },
 							},
 						},
 						new AppendRecord {
 							Data = ByteString.CopyFromUtf8("message-6"),
 							RecordId = event6Id.ToString(),
 							Properties = {
-								{ Constants.Properties.EventType, new() { StringValue = "message-6-type" } },
-								{ Constants.Properties.DataFormat, new() { StringValue = "avro" } },
+								{ Constants.Properties.EventTypeKey, new() { StringValue = "message-6-type" } },
+								{ Constants.Properties.DataFormatKey, new() { StringValue = "avro" } },
 							},
 						},
 					},
@@ -173,8 +173,8 @@ public class MultiStreamAppendServiceTests {
 								Data = ByteString.CopyFromUtf8("message-1"),
 								RecordId = Guid.NewGuid().ToString(),
 								Properties = {
-									{ Constants.Properties.EventType, new() { StringValue = "message-1-type" } },
-									{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+									{ Constants.Properties.EventTypeKey, new() { StringValue = "message-1-type" } },
+									{ Constants.Properties.DataFormatKey, new() { StringValue = "json" } },
 								},
 							},
 						},
@@ -186,8 +186,8 @@ public class MultiStreamAppendServiceTests {
 								Data = ByteString.CopyFromUtf8("message-2"),
 								RecordId = Guid.NewGuid().ToString(),
 								Properties = {
-									{ Constants.Properties.EventType, new() { StringValue = "message-2-type" } },
-									{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+									{ Constants.Properties.EventTypeKey, new() { StringValue = "message-2-type" } },
+									{ Constants.Properties.DataFormatKey, new() { StringValue = "json" } },
 								},
 							},
 						},
@@ -215,8 +215,8 @@ public class MultiStreamAppendServiceTests {
 					Records = {
 						new AppendRecord {
 							Properties = {
-								{ Constants.Properties.EventType, new() { StringValue = "my-message-type" } },
-								{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+								{ Constants.Properties.EventTypeKey, new() { StringValue = "my-message-type" } },
+								{ Constants.Properties.DataFormatKey, new() { StringValue = "json" } },
 							}
 						}
 					}
@@ -253,8 +253,8 @@ public class MultiStreamAppendServiceTests {
 		// given
 		static AppendRecord CreateRecord() => new() {
 			Properties = {
-	 			{ Constants.Properties.EventType, new() { StringValue  = "the-type" } },
-	 			{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+	 			{ Constants.Properties.EventTypeKey, new() { StringValue  = "the-type" } },
+	 			{ Constants.Properties.DataFormatKey, new() { StringValue = "json" } },
 	 		},
 		};
 
@@ -301,8 +301,8 @@ public class MultiStreamAppendServiceTests {
 						Data = ByteString.CopyFromUtf8("data"),
 						RecordId = Guid.NewGuid().ToString(),
 						Properties = {
-							{ Constants.Properties.EventType, new() { StringValue = "the-type" } },
-							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+							{ Constants.Properties.EventTypeKey, new() { StringValue = "the-type" } },
+							{ Constants.Properties.DataFormatKey, new() { StringValue = "json" } },
 						},
 					},
 				},
@@ -315,8 +315,8 @@ public class MultiStreamAppendServiceTests {
 						Data = ByteString.CopyFromUtf8("data"),
 						RecordId = Guid.NewGuid().ToString(),
 						Properties = {
-							{ Constants.Properties.EventType, new() { StringValue = "the-type" } },
-							{ Constants.Properties.DataFormat, new() { StringValue = "json" } },
+							{ Constants.Properties.EventTypeKey, new() { StringValue = "the-type" } },
+							{ Constants.Properties.DataFormatKey, new() { StringValue = "json" } },
 						},
 					},
 				},

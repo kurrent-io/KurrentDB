@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using KurrentDB.Core.Data;
@@ -179,37 +180,22 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 
 	public static Event ConvertToEvent(AppendRecord appendRecord) {
 		var recordId = GetRecordId(appendRecord);
-		var schemaName = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.EventType);
-		var schemaDataFormat = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.DataFormat);
-
-		Properties? properties = null;
-		foreach (var property in appendRecord.Properties) {
-			if (property.Key is Constants.Properties.EventType) {
-				continue;
-			}
-
-			if (property.Key is Constants.Properties.DataFormat) {
-				if (schemaDataFormat
-					is Constants.Properties.DataFormats.Json
-					or Constants.Properties.DataFormats.Bytes) {
-
-					continue;
-				}
-
-				if (schemaDataFormat
-					is not Constants.Properties.DataFormats.Avro
-					and not Constants.Properties.DataFormats.Protobuf) {
-
-					throw RpcExceptions.InvalidArgument($"Data format '{schemaDataFormat}' is not supported");
-				}
-			}
-
-			properties ??= new Properties();
-			properties.PropertiesValues.Add(property.Key, property.Value);
-		}
+		var schemaName = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.EventTypeKey);
+		var schemaDataFormat = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.DataFormatKey);
 
 		var isJson = schemaDataFormat
 			.Equals(Constants.Properties.DataFormats.Json, OrdinalIgnoreCase);
+
+		var isBytes = schemaDataFormat
+			.Equals(Constants.Properties.DataFormats.Bytes, OrdinalIgnoreCase);
+
+		// remove the properties that are not needed
+		appendRecord.Properties.Remove(Constants.Properties.EventTypeKey);
+
+		if (isJson || isBytes)
+			appendRecord.Properties.Remove(Constants.Properties.DataFormatKey);
+
+		var properties = new Properties { PropertiesValues = { appendRecord.Properties } };
 
 		return new(
 			eventId: recordId,
@@ -217,7 +203,7 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 			isJson: isJson,
 			data: appendRecord.Data.ToByteArray(),
 			metadata: [],
-			properties: properties?.ToByteArray() ?? []
+			properties: properties.ToByteArray()
 		);
 
 		static Guid GetRecordId(AppendRecord appendRecord) {

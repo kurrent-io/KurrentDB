@@ -7,8 +7,8 @@ using System;
 using System.Text;
 using KurrentDB.Common.Utils;
 using KurrentDB.Core.Services.Transport.Grpc;
-using KurrentDB.Core.Services.Transport.Grpc.V2.Utils;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Protobuf;
 using static KurrentDB.Protobuf.Server.Properties;
 
 namespace KurrentDB.Core.Data;
@@ -55,21 +55,20 @@ public class EventRecord : IEquatable<EventRecord> {
 		}
 	}
 
-	private ReadOnlyMemory<byte> SynthesizeMetadataFromProperties() {
-		if (Properties.IsEmpty)
-			return ReadOnlyMemory<byte>.Empty;
+	static readonly DynamicValue JsonDataFormatDynamicValue  = new() { StringValue = Constants.Properties.DataFormats.Json };
+	static readonly DynamicValue BytesDataFormatDynamicValue = new() { StringValue =  Constants.Properties.DataFormats.Bytes };
 
-		var propertyDictionary = Parser.ParseFrom(Properties.Span).PropertiesValues.MapToDictionary();
+	ReadOnlyMemory<byte> SynthesizeMetadataFromProperties() {
+		var props = Parser.ParseFrom(Properties.Span);
 
-		if (!propertyDictionary.ContainsKey(Constants.Properties.DataFormat)) {
-			propertyDictionary[Constants.Properties.DataFormat] = IsJson
-				? Constants.Properties.DataFormats.Json
-				: Constants.Properties.DataFormats.Bytes;
-		}
+		if (IsJson)
+			props.PropertiesValues[Constants.Properties.DataFormatKey] = JsonDataFormatDynamicValue;
+		else if (!props.PropertiesValues.ContainsKey(Constants.Properties.DataFormatKey))
+			props.PropertiesValues[Constants.Properties.DataFormatKey] = BytesDataFormatDynamicValue;
 
-		propertyDictionary[Constants.Properties.EventType] = EventType;
+		props.PropertiesValues[Constants.Properties.EventTypeKey] = new() { StringValue = EventType };
 
-		return ProtoJsonSerializer.Default.Serialize(propertyDictionary);
+		return props.SerializeToBytes();
 	}
 
 	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType) {

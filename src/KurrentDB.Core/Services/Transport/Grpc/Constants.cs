@@ -64,23 +64,22 @@ public static class Constants {
 	}
 
 	public static class Properties {
-		public const string EventType = "$schema.name";
-		public const string DataFormat = "$schema.data-format";
-		public const string Created = "$record.timestamp";
-		public const string LegacyMetadata = "$legacy-metadata";
+		public const string EventTypeKey = "$schema.name";
+		public const string DataFormatKey = "$schema.data-format";
+		public const string CreatedKey = "$record.timestamp";
+		public const string LegacyMetadataKey = "$legacy-metadata";
 
 		public static class DataFormats {
-			// can be others (protobuf, avro, ...) but json is the only one the server cares about
-			public const string Json = "json";
-			public const string Bytes = "bytes";
-			public const string Avro = "avro";
-			public const string Protobuf = "protobuf";
+			public const string Json = "Json";
+			public const string Bytes = "Bytes";
+			public const string Avro = "Avro";
+			public const string Protobuf = "Protobuf";
 		}
 
 		// for write
 		public const string RequiredProperties =
-			$"{EventType} (bytes), " +
-			$"{DataFormat} (bytes)";
+			$"{EventTypeKey} (bytes), " +
+			$"{DataFormatKey} (bytes)";
 	}
 
 	public static class Headers {

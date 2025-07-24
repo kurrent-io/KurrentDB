@@ -57,8 +57,8 @@ public class PropertiesTests : GrpcSpecification<LogFormat.V2, string> {
 	async Task AppendV2(string stream, string dataFormat, MapField<string, Protobuf.DynamicValue> extraProperties) {
 		MapField<string, Protobuf.DynamicValue> properties = new() {
 			extraProperties,
-			{ PropertiesConstants.EventType, new() { StringValue = "test-type" } },
-			{ PropertiesConstants.DataFormat, new() { StringValue = dataFormat } },
+			{ PropertiesConstants.EventTypeKey, new() { StringValue = "test-type" } },
+			{ PropertiesConstants.DataFormatKey, new() { StringValue = dataFormat } },
 		};
 
 		var request = new MultiStreamAppendRequest() {
