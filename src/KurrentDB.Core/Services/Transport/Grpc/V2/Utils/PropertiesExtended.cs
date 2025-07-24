@@ -16,8 +16,9 @@ namespace KurrentDB.Protobuf.Server;
 
 public sealed partial class Properties {
 	static readonly JsonSerializerOptions DefaultJsonSerializerOptions = new(JsonSerializerOptions.Default) {
-		NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals,
-		Converters = { new DynamicValueJsonConverter() }
+		NumberHandling         = JsonNumberHandling.AllowNamedFloatingPointLiterals,
+		DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+		Converters             = { new DynamicValueJsonConverter() }
 	};
 
 	public ReadOnlyMemory<byte> SerializeToBytes() =>
