@@ -17,7 +17,6 @@ namespace KurrentDB.Protobuf.Server;
 public sealed partial class Properties {
 	static readonly JsonSerializerOptions DefaultJsonSerializerOptions = new(JsonSerializerOptions.Default) {
 		NumberHandling         = JsonNumberHandling.AllowNamedFloatingPointLiterals,
-		DefaultIgnoreCondition = JsonIgnoreCondition.Never,
 		Converters             = { new DynamicValueJsonConverter() }
 	};
 
@@ -32,7 +31,9 @@ public sealed partial class Properties {
 			switch (value.KindCase) {
 				case StringValue:    Serialize(writer, value.StringValue, options); break;
 				case BooleanValue:   Serialize(writer, value.BooleanValue, options); break;
+				case Int32Value:     Serialize(writer, value.Int32Value, options); break;
 				case Int64Value:     Serialize(writer, value.Int64Value, options); break;
+				case FloatValue:     Serialize(writer, value.FloatValue, options); break;
 				case DoubleValue:    Serialize(writer, value.DoubleValue, options); break;
 				case TimestampValue: Serialize(writer, value.TimestampValue.ToDateTime(), options); break;
 				case DurationValue:  Serialize(writer, value.DurationValue.ToTimeSpan(), options); break;
