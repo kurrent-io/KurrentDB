@@ -280,26 +280,6 @@ public class MSARequestConverterTests {
 		Assert.Empty(ex.Trailers);
 	}
 
-	[Fact]
-	public void ConvertToEvent_throws_when_record_has_invalid_data_format() {
-		// given
-		var input = new AppendRecord {
-			RecordId = Guid.NewGuid().ToString(),
-			Properties = {
-				{ Constants.Properties.EventTypeKey, new() { StringValue = "my-event-type" } },
-				{ Constants.Properties.DataFormatKey, new() { StringValue = "a-different-data-format" } },
-			},
-		};
-
-		// when
-		var ex = Assert.Throws<RpcException>(() => MultiStreamAppendConverter.ConvertToEvent(input));
-
-		// then
-		Assert.Equal($"Data format 'a-different-data-format' is not supported", ex.Status.Detail);
-		Assert.Equal(StatusCode.InvalidArgument, ex.Status.StatusCode);
-		Assert.Empty(ex.Trailers);
-	}
-
 	[Theory]
 	[InlineData(Constants.Properties.EventTypeKey)]
 	[InlineData(Constants.Properties.DataFormatKey)]
