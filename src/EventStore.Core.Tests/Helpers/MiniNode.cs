@@ -178,8 +178,8 @@ namespace EventStore.Core.Tests.Helpers {
 			_kestrelTestServer = new TestServer(new WebHostBuilder()
 				.UseKestrel()
 				.UseStartup(Node.Startup));
-			_started = new TaskCompletionSource<bool>();
-			_adminUserCreated = new TaskCompletionSource<bool>();
+			_started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+			_adminUserCreated = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 			HttpMessageHandler = _kestrelTestServer.CreateHandler();
 			HttpClient = new HttpClient(HttpMessageHandler) {
 				BaseAddress = new UriBuilder {
