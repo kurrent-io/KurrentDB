@@ -195,7 +195,9 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 		if (isJson || isBytes)
 			appendRecord.Properties.Remove(Constants.Properties.DataFormatKey);
 
-		var properties = new Properties { PropertiesValues = { appendRecord.Properties } };
+		var properties = appendRecord.Properties.Count == 0
+			? []
+			: new Properties { PropertiesValues = { appendRecord.Properties } }.ToByteArray();
 
 		return new(
 			eventId: recordId,
@@ -203,7 +205,7 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 			isJson: isJson,
 			data: appendRecord.Data.ToByteArray(),
 			metadata: [],
-			properties: properties.ToByteArray()
+			properties: properties
 		);
 
 		static Guid GetRecordId(AppendRecord appendRecord) {
