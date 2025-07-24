@@ -90,10 +90,7 @@ public static class PublisherManagementExtensions {
 				eventId: Guid.NewGuid(),
 				eventType: SystemEventTypes.StreamMetadata,
 				isJson: true,
-				data: metadata.ToJsonBytes(),
-				metadata: null,
-				properties: []
-			)
+				data: metadata.ToJsonBytes())
 		};
 
 		var (position, streamRevision) = await publisher.WriteEvents(SystemStreams.MetastreamOf(stream), events, expectedRevision, cancellationToken);

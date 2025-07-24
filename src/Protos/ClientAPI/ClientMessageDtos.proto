@@ -21,7 +21,6 @@ message NewEvent {
 	int32 metadata_content_type = 4;
 	bytes data = 5;
 	bytes metadata = 6;
-	bytes properties = 7;
 }
 
 message EventRecord {
@@ -35,7 +34,6 @@ message EventRecord {
 	bytes metadata = 8;
 	int64 created = 9;
 	int64 created_epoch = 10;
-	bytes properties = 11;
 }
 
 message ResolvedIndexedEvent {

@@ -385,8 +385,7 @@ public class EpochManager<TStreamId> : IEpochManager {
 			flags: PrepareFlags.SingleWrite | PrepareFlags.IsCommitted | PrepareFlags.IsJson,
 			eventType: GetEpochInformationEventType(),
 			data: epoch.AsSerialized(),
-			metadata: Empty.ByteArray,
-			properties: Empty.ByteArray);
+			metadata: Empty.ByteArray);
 
 		var (written, retryLogPosition) = await _writer.Write(epochInformation, token);
 		if (written)

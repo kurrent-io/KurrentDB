@@ -17,7 +17,7 @@ public class when_a_write_completes<TLogFormat, TStreamId> : TestFixtureWithExis
 		AllWritesQueueUp();
 
 		_ioDispatcher.QueueWriteEvents(Guid.NewGuid(), $"stream-{Guid.NewGuid()}", ExpectedVersion.Any,
-			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty, []) },
+			new Event[] { new Event(Guid.NewGuid(), "event-type", false, string.Empty, string.Empty) },
 			SystemAccounts.System, (msg) => { _completed = true; });
 		OneWriteCompletes();
 	}

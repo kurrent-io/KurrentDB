@@ -63,7 +63,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 			truncateBefore: tb,
 			acl: acl);
 		var dataBytes = metadata.ToJsonBytes();
-		return new Event(eventId, SystemEventTypes.StreamMetadata, isJson: true, data: dataBytes, metadata: null, properties: null);
+		return new Event(eventId, SystemEventTypes.StreamMetadata, isJson: true, data: dataBytes);
 	}
 
 	private void WriteStateCompleted(Action<ResolvedEvent, OperationResult> completed, ResolvedEvent ev,
@@ -92,7 +92,7 @@ public class PersistentSubscriptionMessageParker : IPersistentSubscriptionMessag
 
 		string data = GetLinkToFor(ev);
 
-		var parkedEvent = new Event(Guid.NewGuid(), SystemEventTypes.LinkTo, false, data, metadata.ToJson(), null);
+		var parkedEvent = new Event(Guid.NewGuid(), SystemEventTypes.LinkTo, false, data, metadata.ToJson());
 
 		_ioDispatcher.WriteEvent(ParkedStreamId, ExpectedVersion.Any, parkedEvent, SystemAccounts.System,
 			x => WriteStateCompleted(completed, ev, x,

@@ -165,7 +165,7 @@ public sealed class TFChunkTrackerTests : IDisposable {
 
 	private static PrepareLogRecord CreatePrepare(byte[] data, byte[] meta, long logPosition = 42) {
 		return new PrepareLogRecord(logPosition, Guid.NewGuid(), Guid.NewGuid(), 42, 42, "tests", null, 42, DateTime.Now,
-			PrepareFlags.Data, "type-test", null, data, meta, ReadOnlyMemory<byte>.Empty);
+			PrepareFlags.Data, "type-test", null, data, meta);
 	}
 
 	private static SystemLogRecord CreateSystemRecord() {

@@ -67,7 +67,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_using_transaction
 		long expectedVersion, CancellationToken token) {
 		var prepare = new PrepareLogRecord(logPosition, id, Guid.NewGuid(), logPosition, -1,
 			eventStreamId, null, expectedVersion,
-			DateTime.UtcNow, PrepareFlags.TransactionBegin, null, null, new byte[0], new byte[0], new byte[0],
+			DateTime.UtcNow, PrepareFlags.TransactionBegin, null, null, new byte[0], new byte[0],
 			LogRecordVersion.LogRecordV0);
 
 		Assert.IsTrue(await Writer.Write(prepare, token) is (true, _));
@@ -80,7 +80,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_using_transaction
 		var prepare = new PrepareLogRecord(logPosition, correlationId, Guid.NewGuid(), transactionPosition,
 			transactionOffset,
 			eventStreamId, null, ExpectedVersion.Any, DateTime.UtcNow, flags,
-			"testEventType", null, Encoding.UTF8.GetBytes(eventData), new byte[0], new byte[0],
+			"testEventType", null, Encoding.UTF8.GetBytes(eventData), new byte[0],
 			LogRecordVersion.LogRecordV0);
 
 		await Writer.Write(prepare, token);
@@ -91,7 +91,7 @@ public class when_scavenging_tfchunk_with_version0_log_records_using_transaction
 		string eventStreamId, CancellationToken token) {
 		var prepare = new PrepareLogRecord(logPosition, correlationId, Guid.NewGuid(), transactionId, -1,
 			eventStreamId, null, ExpectedVersion.Any,
-			DateTime.UtcNow, PrepareFlags.TransactionEnd, null, null, new byte[0], new byte[0], new byte[0],
+			DateTime.UtcNow, PrepareFlags.TransactionEnd, null, null, new byte[0], new byte[0],
 			LogRecordVersion.LogRecordV0);
 
 		await Writer.Write(prepare, token);

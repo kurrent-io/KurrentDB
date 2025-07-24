@@ -49,8 +49,7 @@ public class when_writing_prepare_record_to_file<TLogFormat, TStreamId> : Specif
 			flags: PrepareFlags.SingleWrite,
 			eventType: eventTypeId,
 			data: new byte[] { 1, 2, 3, 4, 5 },
-			metadata: new byte[] { 7, 17 },
-			properties: Array.Empty<byte>());
+			metadata: new byte[] { 7, 17 });
 
 		await _writer.Write(_record, CancellationToken.None);
 		await _writer.Flush(CancellationToken.None);

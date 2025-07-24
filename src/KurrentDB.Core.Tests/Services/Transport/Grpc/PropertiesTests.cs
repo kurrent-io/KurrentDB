@@ -142,6 +142,31 @@ public class PropertiesTests : GrpcSpecification<LogFormat.V2, string> {
 		Assert.AreEqual(logRecordMetadataJson, evt.CustomMetadata.ToStringUtf8());
 	}
 
+	[TestCase(MetadataConstants.ContentTypes.ApplicationJson)]
+	[TestCase(MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	public async Task write_minimal_metadata_with_v1_then_read_with_v1(string contentType) {
+		var stream = $"write_minimal_metadata_with_v1_then_read_with_v1{contentType}-{Guid.NewGuid()}";
+
+		var logRecordMetadataJson = "";
+
+		await AppendV1(
+			stream: stream,
+			contentType: contentType,
+			metadataJson: logRecordMetadataJson);
+
+		var evt = (await ReadSingleEventV1(stream)).Event.Event;
+
+		// content-type is preserved
+		var protocolMetadata = evt.Metadata;
+		Assert.AreEqual(3, protocolMetadata.Count);
+		Assert.True(protocolMetadata.TryGetValue(MetadataConstants.Created, out _));
+		Assert.AreEqual("test-type", protocolMetadata[MetadataConstants.Type]);
+		Assert.AreEqual(contentType, protocolMetadata[MetadataConstants.ContentType]);
+
+		// log record metadata comes out the same as it went in
+		Assert.AreEqual(logRecordMetadataJson, evt.CustomMetadata.ToStringUtf8());
+	}
+
 	[TestCase(PropertiesConstants.DataFormats.Json, MetadataConstants.ContentTypes.ApplicationJson)]
 	[TestCase(PropertiesConstants.DataFormats.Avro, MetadataConstants.ContentTypes.ApplicationOctetStream)]
 	[TestCase(PropertiesConstants.DataFormats.Bytes, MetadataConstants.ContentTypes.ApplicationOctetStream)]
@@ -185,6 +210,36 @@ public class PropertiesTests : GrpcSpecification<LogFormat.V2, string> {
 			  "my-boolean":          true,
 			  "my-timestamp":        "2025-07-14T05:05:05Z",
 			  "my-duration":         "00:02:01",
+			  "$schema.data-format": "{{dataFormat}}",
+			  "$schema.name":        "test-type"
+			}
+			""".Replace(" ", "").Replace(Environment.NewLine, "");
+
+		var actual = evt.CustomMetadata.ToStringUtf8();
+		Assert.AreEqual(expectedMetadata, actual);
+	}
+
+	[TestCase(PropertiesConstants.DataFormats.Json, MetadataConstants.ContentTypes.ApplicationJson)]
+	[TestCase(PropertiesConstants.DataFormats.Avro, MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	[TestCase(PropertiesConstants.DataFormats.Bytes, MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	[TestCase(PropertiesConstants.DataFormats.Protobuf, MetadataConstants.ContentTypes.ApplicationOctetStream)]
+	public async Task write_minimal_properties_with_v2_then_read_with_v1(string dataFormat, string expectedContentType) {
+		var stream = $"write_minimal_properties_with_v2_then_read_with_v1{dataFormat}-{Guid.NewGuid()}";
+
+		await AppendV2(stream, dataFormat, []);
+
+		var evt = (await ReadSingleEventV1(stream)).Event.Event;
+
+		// dataFormat is translated to correct content-type
+		var protocolMetadata = evt.Metadata;
+		Assert.AreEqual(3, protocolMetadata.Count);
+		Assert.True(protocolMetadata.TryGetValue(MetadataConstants.Created, out _));
+		Assert.AreEqual("test-type", protocolMetadata[MetadataConstants.Type]);
+		Assert.AreEqual(expectedContentType, protocolMetadata[MetadataConstants.ContentType]);
+
+		// log record metadata contains the properties
+		var expectedMetadata = $$"""
+			{
 			  "$schema.data-format": "{{dataFormat}}",
 			  "$schema.name":        "test-type"
 			}
