@@ -25,10 +25,7 @@ export default defineUserConfig({
         md.use(replaceLinkPlugin, {
             replaceLink: (link: string, _) => link
                 .replace("@server", "/server")
-                .replace("@clients/http-api/", "/http-api/")
-                .replace("@clients/httpapi/", "/http-api/")
                 .replace("@httpapi/data/", projectionSamplesPath)
-                .replace("@httpapi", "/http-api")
         });
         md.use(dl);
     },
@@ -39,17 +36,12 @@ export default defineUserConfig({
         toc: true,
         sidebar: {
             "/server/": "structure",
-            "/http-api/": "structure"
         },
         navbar: [
             {
                 text: "Server",
                 link: "/server/quick-start/",
             },
-            {
-                text: "HTTP API",
-                link: "/http-api/"
-            }
         ],
         iconAssets: "iconify",
         plugins: {
