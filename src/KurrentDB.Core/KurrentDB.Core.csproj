@@ -24,7 +24,6 @@
 		<PackageReference Include="Polly.Core" />
 		<PackageReference Include="Quickenshtein" />
 		<PackageReference Include="System.Diagnostics.DiagnosticSource" />
-		<PackageReference Include="Serilog.Sinks.Seq" Version="8.0.0" />
 		<PackageReference Include="System.Diagnostics.PerformanceCounter" />
 		<PackageReference Include="System.IO.Pipelines" />
 		<PackageReference Include="System.Linq.Async" />
