@@ -1,6 +1,6 @@
 ---
 title: Protocol security
-order: 1
+order: 2
 ---
 
 # Protocol security

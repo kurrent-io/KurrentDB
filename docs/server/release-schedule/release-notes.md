@@ -6,7 +6,7 @@ order: 1
 
 This page contains the release notes for KurrentDB 25.0
 
-## [25.0.1](https://github.com/EventStore/EventStore/releases/tag/v25.0.1)
+## [25.0.1](https://github.com/kurrent-io/KurrentDB/releases/tag/v25.0.1)
 
 20 May 2025
 
@@ -75,7 +75,7 @@ A system stream for connectors was incorrectly named `$$connectors-ctrl/registry
 
 This has been renamed, and the empty `connectors-ctrl/registry-snapshots` stream will be deleted when upgrading from older versions of 24.10 to remove the incorrect metadata stream.
 
-## [25.0.0](https://github.com/EventStore/EventStore/releases/tag/v25.0.0)
+## [25.0.0](https://github.com/kurrent-io/KurrentDB/releases/tag/v25.0.0)
 
 25 March 2025
 

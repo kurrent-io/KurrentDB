@@ -1,6 +1,5 @@
 import { dl } from "@mdit/plugin-dl";
 import viteBundler from "@vuepress/bundler-vite";
-import vueDevTools from 'vite-plugin-vue-devtools'
 import {defineUserConfig} from "vuepress";
 import {fs} from "vuepress/utils";
 import {hopeTheme} from "vuepress-theme-hope";
@@ -9,14 +8,14 @@ import {linkCheckPlugin} from "./markdown/linkCheck";
 import {replaceLinkPlugin} from "./markdown/replaceLink";
 import {importCodePlugin} from "./markdown/xode/importCodePlugin";
 
-const projectionSamplesPath = "https://raw.githubusercontent.com/EventStore/EventStore/53f84e55ea56ccfb981aff0e432581d72c23fbf6/samples/http-api/data/";
+const projectionSamplesPath = "https://raw.githubusercontent.com/kurrent-io/KurrentDB/53f84e55ea56ccfb981aff0e432581d72c23fbf6/samples/http-api/data/";
 
 export default defineUserConfig({
     base: "/",
     dest: "public",
     title: "KurrentDB Docs",
     description: "Event-native database",
-    bundler: viteBundler({viteOptions: {plugins: [vueDevTools(),],}}),
+    bundler: viteBundler(),
     markdown: {importCode: false},
     extendsMarkdown: md => {
         md.use(importCodePlugin, {
@@ -26,10 +25,7 @@ export default defineUserConfig({
         md.use(replaceLinkPlugin, {
             replaceLink: (link: string, _) => link
                 .replace("@server", "/server")
-                .replace("@clients/http-api/", "/http-api/")
-                .replace("@clients/httpapi/", "/http-api/")
                 .replace("@httpapi/data/", projectionSamplesPath)
-                .replace("@httpapi", "/http-api")
         });
         md.use(dl);
     },
@@ -40,17 +36,12 @@ export default defineUserConfig({
         toc: true,
         sidebar: {
             "/server/": "structure",
-            "/http-api/": "structure"
         },
         navbar: [
             {
                 text: "Server",
                 link: "/server/quick-start/",
             },
-            {
-                text: "HTTP API",
-                link: "/http-api/"
-            }
         ],
         markdown: {
             figure: true,
