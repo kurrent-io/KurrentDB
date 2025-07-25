@@ -36,4 +36,7 @@
 		<Using Include="FluentAssertions"/>
 		<Using Include="TUnit"/>
 	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="KurrentDB.SchemaRegistry.Tests.csproj.DotSettings" />
+	</ItemGroup>
 </Project>

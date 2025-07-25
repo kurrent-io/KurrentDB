@@ -32,4 +32,8 @@
     <Using Include="Microsoft.Extensions.Logging" />
     <Using Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="KurrentDB.SchemaRegistry.csproj.DotSettings" />
+  </ItemGroup>
 </Project>
