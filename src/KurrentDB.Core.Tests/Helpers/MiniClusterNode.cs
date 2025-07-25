@@ -104,6 +104,8 @@ public class MiniClusterNode<TLogFormat, TStreamId> {
 				AllowAnonymousEndpointAccess = true,
 				AllowAnonymousStreamAccess = true,
 				Insecure = !useHttps,
+				LogFailedAuthenticationAttempts = true,
+				LogHttpRequests = true,
 				WorkerThreads = 1,
 				StatsPeriodSec = (int)TimeSpan.FromHours(1).TotalSeconds
 			},
