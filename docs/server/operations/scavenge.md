@@ -22,7 +22,7 @@ Scavenging is destructive. Once a scavenge has run, you cannot recover any delet
 Start a scavenge by issuing an empty `POST` request to the HTTP API with the credentials of an `admin`
 or `ops` user:
 
-@[code{curl}](@samples/scavenge.sh)
+@[code{curl}](@samples/server/scavenge.sh)
 
 Scavenges can also be started from the _Admin_ page of the Admin UI.
 
