@@ -55,8 +55,7 @@ public class when_handling_deleted_streams<TLogFormat, TStreamId> : TestFixtureW
 						eventNumber, 50 * (eventNumber + 1), Guid.NewGuid(), Guid.NewGuid(), 50 * (eventNumber + 1),
 						0, stream, ExpectedVersion.Any, DateTime.UtcNow,
 						PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-						eventType, new byte[] { 0 }, new byte[] { 0 }, new byte[] { 0 }
-					)
+						eventType, new byte[] { 0 }, new byte[] { 0 })
 				)
 			);
 		}

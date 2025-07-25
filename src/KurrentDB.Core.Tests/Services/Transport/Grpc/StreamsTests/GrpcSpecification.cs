@@ -28,6 +28,7 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 	protected GrpcChannel Channel;
 	private readonly MiniNode<TLogFormat, TStreamId> _node;
 	internal Streams.StreamsClient StreamsClient { get; set; }
+	internal Protocol.V2.StreamsService.StreamsServiceClient StreamsClientV2 { get; set; }
 	internal PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptionsClient { get; set; }
 	private BatchAppender _batchAppender;
 
@@ -55,6 +56,7 @@ public abstract class GrpcSpecification<TLogFormat, TStreamId> {
 				DisposeHttpClient = false,
 			});
 		StreamsClient = new(Channel);
+		StreamsClientV2 = new(Channel);
 		PersistentSubscriptionsClient = new(Channel);
 		_batchAppender = new(StreamsClient);
 		_batchAppender.Start();

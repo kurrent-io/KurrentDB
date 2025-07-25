@@ -69,7 +69,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 			try {
 				events = await ReadStream(streamName, ct).ToListAsync(ct);
 
-				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition <= (long)position.CommitPosition;
+				reachedPosition = events.Count != 0 && events.Last().Event.LogPosition >= (long)position.CommitPosition;
 			} catch (ReadResponseException.StreamNotFound ex) {
 				streamNotFound = ex;
 			}
@@ -88,7 +88,7 @@ public abstract class SecondaryIndexingFixture : ClusterVNodeFixture {
 		AppendToStream(stream, eventData.Select(ToEventData).ToArray());
 
 	public static Event ToEventData(string data) =>
-		new(Guid.NewGuid(), "test", false, data, null, null);
+		new(Guid.NewGuid(), "test", false, data, null);
 
 	public static ResolvedEvent ToResolvedEvent<TLogFormat, TStreamId>(
 		string stream,

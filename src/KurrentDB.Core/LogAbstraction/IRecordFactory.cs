@@ -42,6 +42,5 @@ public interface IRecordFactory<TStreamId> : IRecordFactory {
 		PrepareFlags flags,
 		TStreamId eventType,
 		ReadOnlyMemory<byte> data,
-		ReadOnlyMemory<byte> metadata,
-		ReadOnlyMemory<byte> properties);
+		ReadOnlyMemory<byte> metadata);
 }

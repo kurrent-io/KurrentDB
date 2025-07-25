@@ -35,7 +35,7 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
 
     public async ValueTask<bool> ConfigureConnectorStreams(string connectorId, CancellationToken ct) {
         await Task.WhenAll(
-            TryConfigureStream(GetLeasesStream(connectorId), LeasesMetadata),
+            // TryConfigureStream(GetLeasesStream(connectorId), LeasesMetadata),
             TryConfigureStream(GetCheckpointsStream(connectorId), CheckpointsMetadata)
         );
 
@@ -52,7 +52,7 @@ public class ConnectorsStreamSupervisor(ConnectorsStreamSupervisorOptions option
 
     public async ValueTask<bool> DeleteConnectorStreams(string connectorId, RecordPosition expectedPosition, CancellationToken ct) {
         await Task.WhenAll(
-            TryDeleteStream(GetLeasesStream(connectorId)),
+            // TryDeleteStream(GetLeasesStream(connectorId)),
             TryDeleteStream(GetCheckpointsStream(connectorId))
 
             // we found a last minute bug here before releasing v25.0.0

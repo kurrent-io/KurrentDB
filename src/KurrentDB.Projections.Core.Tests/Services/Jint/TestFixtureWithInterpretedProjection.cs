@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services;
 using KurrentDB.Projections.Core.Services.Management;
 using NUnit.Framework;
@@ -28,7 +29,7 @@ public abstract class TestFixtureWithInterpretedProjection {
 		Given();
 		_logged = new List<string>();
 		_stateHandlerFactory =
-			new ProjectionStateHandlerFactory(CompilationTimeout, ExecutionTimeout);
+			new ProjectionStateHandlerFactory(CompilationTimeout, ExecutionTimeout, ProjectionTrackers.NoOp);
 		_stateHandler = CreateStateHandler();
 		_source = _stateHandler.GetSourceDefinition();
 
@@ -46,7 +47,7 @@ public abstract class TestFixtureWithInterpretedProjection {
 
 	protected virtual IProjectionStateHandler CreateStateHandler() {
 		return _stateHandlerFactory.Create(
-			_projectionType, _projection, true, null, logger: (s, _) => {
+			"projection", _projectionType, _projection, true, null, logger: (s, _) => {
 				if (s.StartsWith("P:"))
 					Console.WriteLine(s);
 				else

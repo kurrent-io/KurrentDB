@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.TransactionLog.LogRecords;
 using KurrentDB.Projections.Core.Messages;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Interpreted;
 using KurrentDB.Projections.Core.Services.Processing;
 using KurrentDB.Projections.Core.Services.Processing.Checkpointing;
@@ -200,7 +201,9 @@ public class SpecRunner {
 			yield return WithOutput($"{projection} compiles", o => {
 				runner = new JintProjectionStateHandler(source, true,
 					compilationTimeout: TimeSpan.FromMilliseconds(200),
-					executionTimeout: TimeSpan.FromMilliseconds(200));
+					executionTimeout: TimeSpan.FromMilliseconds(200),
+					jsFunctionCaller: new(IProjectionExecutionTracker.NoOp),
+					jsSerializer: new(IProjectionStateSerializationTracker.NoOp));
 			});
 
 			yield return For($"{projection} getDefinition", () => { definition = runner.GetSourceDefinition(); });
@@ -263,7 +266,7 @@ public class SpecRunner {
 					var er = new EventRecord(
 						revision[sequence.Stream], logPosition, Guid.NewGuid(), @event.EventId, i, j,
 						sequence.Stream, i, DateTime.Now, flags, @event.EventType,
-						Utf8NoBom.GetBytes(body), metadata, []);
+						Utf8NoBom.GetBytes(body), metadata);
 					var e = new ResolvedEvent(KurrentDB.Core.Data.ResolvedEvent.ForUnresolvedEvent(er, logPosition), Array.Empty<byte>());
 					if (@event.Skip) {
 						yield return For($"{projection} skips {er.EventNumber}@{sequence.Stream}",

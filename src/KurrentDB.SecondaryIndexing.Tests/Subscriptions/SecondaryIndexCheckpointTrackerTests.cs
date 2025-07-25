@@ -25,7 +25,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 			tracker.Increment();
 		}
 
-		var committed = commitSignal.Wait(HalfOfASecond);
+		var committed = commitSignal.Wait(CommitSignalTimeout);
 		await tracker.DisposeAsync();
 
 		// Then
@@ -48,7 +48,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 
 		// When
 		tracker.Increment();
-		var committed = commitSignal.Wait(HalfOfASecond);
+		var committed = commitSignal.Wait(CommitSignalTimeout);
 		await tracker.DisposeAsync();
 
 		// Then
@@ -115,7 +115,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 		// When
 		for (int i = 0; i < 3; i++) tracker.Increment();
 
-		Assert.True(commitInProgress.Wait(HalfOfASecond));
+		Assert.True(commitInProgress.Wait(CommitSignalTimeout));
 
 		for (int i = 0; i < 3; i++) tracker.Increment();
 
@@ -146,7 +146,7 @@ public class SecondaryIndexCheckpointTrackerTests {
 
 		await Task.WhenAll(tasks);
 
-		var committed = commitSignal.Wait(HalfOfASecond);
+		var committed = commitSignal.Wait(CommitSignalTimeout);
 		await tracker.DisposeAsync();
 
 		// Then
@@ -290,5 +290,5 @@ public class SecondaryIndexCheckpointTrackerTests {
 		Assert.True(commitCompleted);
 	}
 
-	private static readonly TimeSpan HalfOfASecond = TimeSpan.FromMilliseconds(500);
+	private static readonly TimeSpan CommitSignalTimeout = TimeSpan.FromSeconds(5);
 }

@@ -32,7 +32,7 @@ public class when_hard_deleting_stream_with_log_version_0<TLogFormat, TStreamId>
 			int.MaxValue - 1, DateTime.UtcNow,
 			PrepareFlags.StreamDelete | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
 			SystemEventTypes.StreamDeleted, null,
-			new byte[0], new byte[0], new byte[0],
+			new byte[0], new byte[0],
 			prepareRecordVersion: LogRecordVersion.LogRecordV0);
 		var (_, pos) = await Writer.Write(prepare, token);
 

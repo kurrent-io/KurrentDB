@@ -734,8 +734,7 @@ public class ManagedProjection : IDisposable {
 	private ClientMessage.WriteEvents CreatePersistedStateEvent(Guid correlationId, PersistedState persistedState,
 		string eventStreamId) {
 		return ClientMessage.WriteEvents.ForSingleEvent(correlationId, correlationId, _writeDispatcher.Envelope, true, eventStreamId, ExpectedVersion.Any,
-			new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionUpdated, true, persistedState.ToJsonBytes(),
-				Empty.ByteArray, Empty.ByteArray),
+			new Event(Guid.NewGuid(), ProjectionEventTypes.ProjectionUpdated, true, persistedState.ToJsonBytes()),
 			SystemAccounts.System);
 	}
 

@@ -395,12 +395,17 @@ kurrentdb_gc_pause_duration_max_seconds{range="16-20 seconds"} 0.0485873 1688147
 
 Projection metrics track the statistics for projections.
 
-| Time series                                                                                      | Type                     | Description                                                      |
-|:-------------------------------------------------------------------------------------------------|:-------------------------|:-----------------------------------------------------------------|
-| `kurrentdb_projection_events_processed_after_restart_total`<br/>`{projection=<PROJECTION_NAME>}` | [Counter](#common-types) | Projection event processed count after restart                   |
-| `kurrentdb_projection_progress{projection=<PROJECTION_NAME>}`                                    | [Gauge](#common-types)   | Projection progress 0 - 1, where 1 = projection progress at 100% |
-| `kurrentdb_projection_running{projection=<PROJECTION_NAME>}`                                     | [Gauge](#common-types)   | If 1, projection is in 'Running' state                           |
-| `kurrentdb_projection_status{projection=<PROJECTION_NAME>,status=<PROJECTION_STATUS>}`           | [Gauge](#common-types)   | If 1, projection is in specified state                           |
+| Time series                                                                                                                                               | Type                       | Description                                                      |
+|:----------------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------|:-----------------------------------------------------------------|
+| `kurrentdb_projection_`<br/>`events_processed_after_restart_total{`<br/>`projection=<PROJECTION_NAME>}`                                                   | [Counter](#common-types)   | Projection event processed count after restart                   |
+| `kurrentdb_projection_`<br/>`progress{`<br/>`projection=<PROJECTION_NAME>}`                                                                               | [Gauge](#common-types)     | Projection progress 0 - 1, where 1 = projection progress at 100% |
+| `kurrentdb_projection_`<br/>`running{`<br/>`projection=<PROJECTION_NAME>}`                                                                                | [Gauge](#common-types)     | If 1, projection is in 'Running' state                           |
+| `kurrentdb_projection_`<br/>`status{`<br/>`projection=<PROJECTION_NAME>,`<br/>`status=<PROJECTION_STATUS>}`                                               | [Gauge](#common-types)     | If 1, projection is in specified state                           |
+| `kurrentdb_projection_`<br/>`state_size{`<br/>`projection=<PROJECTION_NAME>,`<br/>`partition=<PARTITION>}`                                                | [Gauge](#common-types)     | State sizes of projections/partitions that are more than 50% of the size limit |
+| `kurrentdb_projection_`<br/>`state_size_bound{`<br/>`bound=<"THRESHOLD"\|"LIMIT">}`                                                                       | [Gauge](#common-types)     | `THRESHOLD` is the size at which a large state will appear in the metrics, which is half of the limit. `LIMIT` is the `MaxProjectionStateSize` option |
+| `kurrentdb_projection_`<br/>`state_serialization_duration_max_seconds{`<br/>`name=<PROJECTION_NAME>,`<br/>`range=<RANGE>}`                                | [RecentMax](#recentmax)    | Recent maximum time in seconds for custom projection to serialize its state |
+| `kurrentdb_projection_`<br/>`execution_duration_max_seconds{`<br/>`name=<PROJECTION_NAME>,`<br/>`range=<RANGE>}`                                          | [RecentMax](#recentmax)    | Recent maximum time in seconds for custom projection to execute an event |
+| `kurrentdb_projection_`<br/>`execution_duration_seconds_bucket{`<br/>`projection=<PROJECTION_NAME>,`<br/>`jsFunction=<JS_FUNCTION>,`<br/>`le=<DURATION>}` | [Histogram](#common-types) | Number of events executed by JS_FUNCTION of custom projection PROJECTION_NAME that took less than or equal to DURATION seconds. |
 
 `Status` can have one of the following statuses:
 
@@ -412,6 +417,12 @@ Example configuration:
 
 ```json
 "ProjectionStats": true
+
+// This enables kurrentdb_projection_execution_duration_max_seconds
+"ProjectionExecution": true,
+
+// This enables kurrentdb_projection_execution_duration_seconds_bucket
+"ProjectionExecutionByFunction": false,
 ```
 
 Example output:
@@ -431,6 +442,19 @@ kurrentdb_projection_status{projection="$by_category",status="Running"} 1 171952
 kurrentdb_projection_status{projection="$by_category",status="Faulted"} 0 1719526306309
 kurrentdb_projection_status{projection="$by_category",status="Stopped"} 0 1719526306309
 ```
+
+`kurrentdb_projection_execution_duration_seconds_bucket` is a set of execution histograms, one for each (projection * function) pair.
+It is intended for non-production environments and is off by default.
+Enable this to help identify which functions of which projections are commonly taking a long time. The JS_FUNCTIONs are:
+- `$any`
+- `$created`
+- `$deleted`
+- `$init`
+- `$initShared`
+- `filterBy`
+- `partitionBy`
+- `transformBy`
+- `<event-type>` (one per handler)
 
 ### Queues
 

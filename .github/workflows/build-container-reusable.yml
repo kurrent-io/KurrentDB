@@ -9,28 +9,32 @@ on:
 
 jobs:
   build-container:
-    strategy:
-      fail-fast: false
     runs-on: ubuntu-latest
     name: ci/github/build-${{ inputs.container-runtime }}
     steps:
-    - name: Checkout
+    -  
+      name: Checkout
       uses: actions/checkout@v4
-    - name: Install net8.0
+    -  
+      name: Install net8.0
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
-    - name: Setup QEMU
+    -  
+      name: Setup QEMU
       uses: docker/setup-qemu-action@v2
-    - name: Set up Docker Buildx
+    -  
+      name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
-    - name: Login to GitHub Container Registry
+    -  
+      name: Login to GitHub Container Registry
       uses: docker/login-action@v2
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Setup Variables
+    -  
+      name: Setup Variables
       id: variables
       uses: kanga333/variable-mapper@master
       with:
@@ -48,7 +52,8 @@ jobs:
             }
           }
         export_to: output
-    - name: Build
+    -  
+      name: Build
       uses: docker/build-push-action@v4
       with:
         context: .
@@ -57,10 +62,12 @@ jobs:
         build-args: |
           CONTAINER_RUNTIME=${{ inputs.container-runtime }}
           RUNTIME=${{ steps.variables.outputs.runtime }}
-    - name: Verify Build
+    -  
+      name: Verify Build
       run: |
         docker run --rm kurrentdb --insecure --what-if
-    - name: Build Test Container
+    -  
+      name: Build Test Container
       uses: docker/build-push-action@v4
       with:
         context: .
@@ -71,7 +78,8 @@ jobs:
           CONTAINER_RUNTIME=${{ inputs.container-runtime }}
           RUNTIME=${{ steps.variables.outputs.runtime }}
     # pass env vars so that GitHubActionsTestLogger can populate GitHub job summary 
-    - name: Run Tests
+    -  
+      name: Run Tests
       run: >
         docker run
         --volume $(pwd)/test-results:/build/test-results
@@ -83,13 +91,15 @@ jobs:
         --env GITHUB_WORKSPACE=${{ github.workspace }}
         --env GITHUB_SHA=${{ github.sha }}
         kurrentdb-test
-    - name: Publish Test Results (HTML)
+    -  
+      name: Publish Test Results (HTML)
       uses: actions/upload-artifact@v4
       if: always()
       with:
         path: test-results/test-results.html
         name: test-results-${{ inputs.container-runtime }}.html
-    - name: Publish Test Results (All)
+    -  
+      name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
       if: always()
       with:

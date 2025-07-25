@@ -15,12 +15,11 @@ public sealed class SecondaryIndexCheckpointTracker : IAsyncDisposable {
 	private readonly int _batchSize;
 	private readonly TimeSpan _timeout;
 	private readonly Func<CancellationToken, ValueTask> _commitAction;
-	private readonly AsyncManualResetEvent _signal = new(initialState: false);
-	private readonly CancellationTokenSource _cts;
+	private readonly AsyncAutoResetEvent _signal = new(initialState: false);
+	private volatile CancellationTokenSource? _cts; // null if disposed
 	private readonly Task _loopTask;
 
-	private int _counter;
-	private bool _disposed;
+	private volatile int _counter;
 
 	public SecondaryIndexCheckpointTracker(
 		int batchSize,
@@ -36,23 +35,36 @@ public sealed class SecondaryIndexCheckpointTracker : IAsyncDisposable {
 		_loopTask = Loop(_cts.Token);
 	}
 
-	public async ValueTask DisposeAsync() {
-		if (_disposed) {
-			return;
+	public ValueTask DisposeAsync() {
+		// dispose CTS once to deal with the concurrent call to the current method
+		if (Interlocked.Exchange(ref _cts, null) is not { } cts)
+			return ValueTask.CompletedTask;
+
+		using (cts) {
+			cts.Cancel();
 		}
 
-		_disposed = true;
-		using (_cts) {
-			await _cts.CancelAsync();
-		}
-		await _loopTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+		return DisposeCoreAsync();
+	}
+
+	private async ValueTask DisposeCoreAsync() {
+		// use ContinueOnCapturedContext for consistency with the rest of the code
+		// in the project, since we don't use explicit ConfigureAwait call
+		await _loopTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing |
+		                               ConfigureAwaitOptions.ContinueOnCapturedContext);
+
 		_signal.Dispose();
 	}
 
-	public void Increment() {
-		ObjectDisposedException.ThrowIf(_disposed, this);
+	private bool IsDisposed => _cts is null;
 
-		if (Interlocked.Increment(ref _counter) >= _batchSize) {
+	public void Increment() {
+		ObjectDisposedException.ThrowIf(IsDisposed, this);
+
+		// Trigger the loop once when overflow detected, this allows avoiding
+		// multiple calls to Set. The loop sets the counter to zero
+		// in case of any overflow (even if it's more than 1 multiple of the batch size).
+		if (Interlocked.Increment(ref _counter) == _batchSize) {
 			_signal.Set();
 		}
 	}
@@ -65,16 +77,14 @@ public sealed class SecondaryIndexCheckpointTracker : IAsyncDisposable {
 			// either signalled or timed out
 			var count = Interlocked.Exchange(ref _counter, 0);
 
-			// reset the signal after clearing the _counter to avoid premature setting
-			_signal.Reset();
-
-			if (count == 0)
+			if (count is 0)
 				continue;
 
 			try {
 				await _commitAction(ct);
-			} catch (OperationCanceledException) {
+			} catch (OperationCanceledException e) when (e.CancellationToken == ct) {
 				// expected
+				break;
 			} catch (Exception ex) {
 				Log.Error(ex, "Error during checkpoint commit");
 			}

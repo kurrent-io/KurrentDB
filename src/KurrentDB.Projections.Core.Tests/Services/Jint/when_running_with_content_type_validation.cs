@@ -24,7 +24,7 @@ public class when_running_with_content_type_validation {
 
 		protected override IProjectionStateHandler CreateStateHandler() {
 			return _stateHandlerFactory.Create(
-				_projectionType, _projection,
+				"projection", _projectionType, _projection,
 				enableContentTypeValidation: true,
 				null,
 				logger: (s, _) => {
@@ -77,7 +77,7 @@ public class when_running_with_content_type_validation {
 
 		protected override IProjectionStateHandler CreateStateHandler() {
 			return _stateHandlerFactory.Create(
-				_projectionType, _projection,
+				"projection", _projectionType, _projection,
 				enableContentTypeValidation: false,
 				projectionExecutionTimeout: null,
 				logger: (s, _) => {

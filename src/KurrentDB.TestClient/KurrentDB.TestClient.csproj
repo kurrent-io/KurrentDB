@@ -8,15 +8,15 @@
 		<NoWarn>1701;1702;1591</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="EventStore.Client" Version="21.2.0" />
-		<PackageReference Include="EventStore.Client.Grpc.Streams" Version="23.3.3" />
-		<PackageReference Include="Google.Protobuf" Version="3.27.2" />
-		<PackageReference Include="Grpc.Net.Client" Version="2.64.0" />
-		<PackageReference Include="Grpc.Tools" Version="2.65.0">
+		<PackageReference Include="EventStore.Client" />
+		<PackageReference Include="EventStore.Client.Grpc.Streams" />
+		<PackageReference Include="Google.Protobuf" />
+		<PackageReference Include="Grpc.Net.Client" />
+		<PackageReference Include="Grpc.Tools">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="System.CommandLine.DragonFruit" Version="0.3.0-alpha.21216.1" />
+		<PackageReference Include="System.CommandLine.DragonFruit" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\KurrentDB.BufferManagement\KurrentDB.BufferManagement.csproj" />

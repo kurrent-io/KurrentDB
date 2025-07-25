@@ -50,7 +50,7 @@ public class InternalClient : IClient {
 		var metadata = new StreamMetadata(maxCount: 3);
 		var data = metadata.ToJsonBytes();
 		var eventToWrite = new EventToWrite(Guid.NewGuid(), SystemEventTypes.StreamMetadata, "application/json", data,
-			null);
+			isPropertyMetadata: false, null);
 
 		await WriteAsync(SystemStreams.MetastreamOf(stream), new[] { eventToWrite }, -2, cancellationToken);
 	}
@@ -60,8 +60,7 @@ public class InternalClient : IClient {
 		var appendResponseSource = new TaskCompletionSource<long>(TaskCreationOptions.RunContinuationsAsynchronously);
 		var envelope = new CallbackEnvelope(HandleWriteEventsCompleted);
 
-		//qq consider all the args
-		var correlationId = Guid.NewGuid(); //qq
+		var correlationId = Guid.NewGuid();
 		_publisher.Publish(ClientMessage.WriteEvents.ForSingleStream(
 			correlationId,
 			correlationId,
@@ -73,8 +72,8 @@ public class InternalClient : IClient {
 				new Core.Data.Event(
 					evt.EventId, evt.EventType, isJson: evt.ContentType == "application/json",
 					evt.Data.ToArray(),
-					evt.Metadata.ToArray(),
-					properties: null)).ToArray(),
+					evt.IsPropertyMetadata,
+					evt.Metadata.ToArray())).ToArray(),
 			SystemAccounts.System,
 			cancellationToken: cancellationToken));
 
@@ -98,7 +97,6 @@ public class InternalClient : IClient {
 				return;
 			}
 
-			//qqqqqqqq
 			switch (completed.Result) {
 				case OperationResult.Success:
 					appendResponseSource.TrySetResult(completed.LastEventNumbers.Single);
@@ -109,7 +107,6 @@ public class InternalClient : IClient {
 					appendResponseSource.TrySetException(new ResponseException.Timeout(completed.Message));
 					return;
 				case OperationResult.WrongExpectedVersion:
-					//qq irl this is much more complicated see Streams.Append.cs
 					appendResponseSource.TrySetException(new ResponseException.WrongExpectedVersion(completed.Message));
 					return;
 				case OperationResult.StreamDeleted:
@@ -141,7 +138,6 @@ public class InternalClient : IClient {
 		new(position.CommitPosition, position.PreparePosition);
 
 	public IAsyncEnumerable<Event> SubscribeToAll(FromAll start, CancellationToken token) =>
-		//qq consider all these options
 		Create(
 			"SUBSCRIPTION TO $all",
 			() => new Enumerator.AllSubscription(

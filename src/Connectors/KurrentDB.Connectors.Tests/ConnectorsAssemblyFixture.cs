@@ -26,6 +26,7 @@ using KurrentDB.Connectors.Tests;
 using KurrentDB.System.Testing;
 using KurrentDB.Surge.Testing.Xunit.Extensions.AssemblyFixture;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using FakeTimeProvider = Microsoft.Extensions.Time.Testing.FakeTimeProvider;
 using WithExtension = KurrentDB.Surge.Testing.Extensions.WithExtension;
 

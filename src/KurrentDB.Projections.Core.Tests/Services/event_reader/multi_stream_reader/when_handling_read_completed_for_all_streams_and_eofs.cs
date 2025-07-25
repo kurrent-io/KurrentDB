@@ -59,13 +59,13 @@ public class when_handling_read_completed_for_all_streams_and_eofs<TLogFormat, T
 						new EventRecord(
 							1, 50, Guid.NewGuid(), _firstEventId, 50, 0, "a", ExpectedVersion.Any, DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2}, [])),
+							"event_type1", new byte[] {1}, new byte[] {2})),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							2, 150, Guid.NewGuid(), _secondEventId, 150, 0, "a", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {3}, new byte[] {4}, []))
+							"event_type2", new byte[] {3}, new byte[] {4}))
 				}, null, false, "", 3, 2, true, 200));
 		correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
 			.Last(x => x.EventStreamId == "a").CorrelationId;
@@ -78,13 +78,13 @@ public class when_handling_read_completed_for_all_streams_and_eofs<TLogFormat, T
 							2, 100, Guid.NewGuid(), _thirdEventId, 100, 0, "b", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2}, [])),
+							"event_type1", new byte[] {1}, new byte[] {2})),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							3, 200, Guid.NewGuid(), _fourthEventId, 200, 0, "b", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type2", new byte[] {3}, new byte[] {4}, []))
+							"event_type2", new byte[] {3}, new byte[] {4}))
 				}, null, false, "", 4, 3, true, 200));
 		correlationId = _consumer.HandledMessages.OfType<ClientMessage.ReadStreamEventsForward>()
 			.Last(x => x.EventStreamId == "a").CorrelationId;

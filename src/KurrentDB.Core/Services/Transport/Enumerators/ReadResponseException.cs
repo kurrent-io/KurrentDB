@@ -39,11 +39,12 @@ public abstract class ReadResponseException : Exception {
 		public static UnknownMessage Create<T>(Message message) where T : Message => new(message.GetType(), typeof(T));
 	}
 
-	public class UnknownError(Type resultType, object result) : ReadResponseException {
+	public class UnknownError(Type resultType, object result, [CanBeNull] string errorMessage = null) : ReadResponseException {
 		public readonly Type ResultType = resultType;
 		public readonly object Result = result;
+		public readonly string ErrorMessage = errorMessage ?? "";
 
-		public static UnknownError Create<T>(T result) => new(typeof(T), result);
+		public static UnknownError Create<T>(T result, [CanBeNull] string errorMessage = null) => new(typeof(T), result, errorMessage);
 	}
 
 	public abstract class NotHandled {

@@ -2,6 +2,8 @@
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
 using System.Net;
+using KurrentDB.Core;
+using KurrentDB.Core.Settings;
 
 namespace KurrentDB.TcpPlugin;
 
@@ -13,10 +15,9 @@ public class EventStoreOptions {
 	public IPAddress NodeIp { get; init; } = IPAddress.Loopback;
 	public TcpPluginOptions TcpPlugin { get; init; } = new();
 
-	public class TcpPluginOptions {
-		public bool EnableExternalTcp { get; init; }
-		public int NodeTcpPort { get; init; } = 1113;
+	public class TcpPluginOptions : NodeTcpOptions {
 		public int NodeHeartbeatInterval { get; init; } = 2_000;
 		public int NodeHeartbeatTimeout { get; init; } = 1_000;
+		public int TcpReadTimeoutMs { get; init; } = ESConsts.ReadRequestTimeout;
 	}
 }

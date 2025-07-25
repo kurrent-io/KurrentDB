@@ -11,13 +11,13 @@ namespace System.Diagnostics.Interop;
 
 public static partial class OsxNative {
 	public static partial class IO {
-		public static DiskIoData GetDiskIo(int processId) {
+		public static DiskIoData GetDiskIo() {
 			const int PROC_PID_RUSAGE = 2;
 			const int PROC_PID_RUSAGE_SIZE = 232;
 
 			var buffer = Marshal.AllocHGlobal(PROC_PID_RUSAGE_SIZE);
 			try {
-				if (proc_pidinfo(processId, PROC_PID_RUSAGE, 0, buffer, PROC_PID_RUSAGE_SIZE) != PROC_PID_RUSAGE_SIZE)
+				if (proc_pidinfo(Environment.ProcessId, PROC_PID_RUSAGE, 0, buffer, PROC_PID_RUSAGE_SIZE) != PROC_PID_RUSAGE_SIZE)
 					throw GetLastExternalException($"Failed to get {RuntimeOSPlatform.OSX} usage info to extract disk I/O");
 
 				var info = Marshal.PtrToStructure<rusage_info_v4>(buffer);

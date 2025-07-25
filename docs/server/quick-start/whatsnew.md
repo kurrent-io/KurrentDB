@@ -4,6 +4,46 @@ order: 2
 
 # What's New
 
+## New in 25.1
+
+These are the new features in KurrentDB 25.1:
+
+* [Additional Projection Metrics](#additional-projection-metrics)
+* [ServerGC](#server-garbage-collection)
+* [StreamInfoCacheCapacity default](#streaminfocachecapacity-default)
+
+### Additional Projection Metrics
+
+Several new metrics have been added to track important properties of projections.
+
+- `kurrentdb_projection_state_size` contains the state size of projections and their state partitions that are over 50% of the state size limit (`MaxProjectionStateSize`).
+  This helps to show if any projections are in danger of reaching the limit.
+
+- `kurrentdb_projection_state_size_bound` contains the projection state size `LIMIT` (driven by `MaxProjectionStateSize`) and the `THRESHOLD` for displaying a projection or partition in `kurrentdb_projection_state_size` (50% of the limit).
+  This makes it easy to graph what the limit is and how close projections are to it.
+
+- `kurrentdb_projection_state_serialization_duration_max_seconds` contains the recent maximum time that each custom projection has taken to serialize its state.
+
+- `kurrentdb_projection_execution_duration_max_seconds` contains the recent maximum time that each custom projection has taken to execute an event.
+
+- `kurrentdb_projection_execution_duration_seconds_bucket` creates a histogram for each (Projection x Function) pair showing, for example, the distribution of how long each custom projection takes to process each event type.
+  This creates a lot of timeseries and is off by default. It can be enabled by setting `ProjectionExecutionByFunction` to true in `metricsconfig.json`.
+  Typically this would only be enabled in development environments.
+
+See [the documentation](../diagnostics/metrics.md#projections) for more information.
+
+### Server Garbage Collection
+
+The .NET runtime Server Garbage Collection is now enabled by default, increasing the performance of the server. See [the documentation](../configuration/db-config.md#garbage-collection) for more information.
+
+### StreamInfoCacheCapacity Default
+
+`StreamInfoCacheCapacity` is now `100,000` by default rather than `0` (dynamically sized).
+
+StreamInfoCache dynamic sizing was introduced introduced in v21.10 and enabled by default. It allows the StreamInfoCache to grow much larger, according to the amount of free memory which is reevaluated periodically. This is desirable for some workloads, but it comes with a tradeoff of very significantly increased managed memory usage, which in turn causes additional GC pressure and can lead to more frequent elections. On balance we have decided that a default of 100,000 (which is the value used before v21.10) is a better default, favouring its predictability and stability.
+
+Users wishing to keep dynamic sizing can enable it by setting StreamInfoCacheCapacity to 0. Additional can be found in the [StreamInfoCache documentation](../configuration/README.md#streaminfocachecapacity)
+
 ## New in 25.0
 
 These are the new features in KurrentDB 25.0:

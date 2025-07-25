@@ -29,6 +29,11 @@ public enum PrepareFlags : ushort {
 	IsJson = 0x100, // indicates data & metadata are valid json
 	IsRedacted = 0x200,
 
+	// Determines the style of log record metadata
+	// False is the old style: byte array provided by the client, supposed to be json formatted but nothing ensures this
+	// True is the new style: Properties provided by the client, stored as a proto message
+	IsPropertyMetadata = 0x400,
+
 	// aggregate flag set
 	// unused and easily confused with StreamDelete:  DeleteTombstone = TransactionBegin | TransactionEnd | StreamDelete,
 	SingleWrite = Data | TransactionBegin | TransactionEnd
@@ -49,7 +54,7 @@ public static class PrepareFlagsExtensions {
 }
 
 public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, IPrepareLogRecord<string> {
-	public const byte PrepareRecordVersion = PrepareLogRecordVersion.V2;
+	public const byte PrepareRecordVersion = PrepareLogRecordVersion.V1;
 
 	public PrepareFlags Flags { get; }
 	public long TransactionPosition { get; }
@@ -65,7 +70,6 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 	public ReadOnlyMemory<byte> Data => Flags.HasFlag(PrepareFlags.IsRedacted) ? NoData : _dataOnDisk;
 	private readonly ReadOnlyMemory<byte> _dataOnDisk;
 	public ReadOnlyMemory<byte> Metadata { get; }
-	public ReadOnlyMemory<byte> Properties { get; }
 
 	private int? _sizeOnDisk;
 
@@ -84,8 +88,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 				+ 8
 				+ IntPtr.Size + EventType.Length * 2
 				+ IntPtr.Size + _dataOnDisk.Length
-				+ IntPtr.Size + Metadata.Length
-				+ IntPtr.Size + Properties.Length;
+				+ IntPtr.Size + Metadata.Length;
 		}
 	}
 
@@ -110,8 +113,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			+ _dataOnDisk.Length /* Data */
 			+ sizeof(int) /* Metadata length */
 			+ Metadata.Length /* Metadata */
-			+ (Version >= PrepareLogRecordVersion.V2
-				? StringSizeWithLengthPrefix(Properties.Length) : 0); /* Properties */
+			;
 
 		// when written to disk, a string is prefixed with its length which is written as ULEB128
 		static int StringSizeWithLengthPrefix(int stringSize) {
@@ -135,44 +137,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		int? eventTypeSize,
 		ReadOnlyMemory<byte> data,
 		ReadOnlyMemory<byte> metadata,
-		ReadOnlyMemory<byte> properties)
-		: this(logPosition,
-			correlationId,
-			eventId,
-			transactionPosition,
-			transactionOffset,
-			eventStreamId,
-			eventStreamIdSize,
-			expectedVersion,
-			timeStamp,
-			flags,
-			eventType,
-			eventTypeSize,
-			data,
-			metadata,
-			properties,
-			properties.Length == 0
-				? PrepareLogRecordVersion.V1
-				: PrepareLogRecordVersion.V2
-		) {
-	}
-
-	public PrepareLogRecord(long logPosition,
-		Guid correlationId,
-		Guid eventId,
-		long transactionPosition,
-		int transactionOffset,
-		string eventStreamId,
-		int? eventStreamIdSize,
-		long expectedVersion,
-		DateTime timeStamp,
-		PrepareFlags flags,
-		string eventType,
-		int? eventTypeSize,
-		ReadOnlyMemory<byte> data,
-		ReadOnlyMemory<byte> metadata,
-		ReadOnlyMemory<byte> properties,
-		byte prepareRecordVersion)
+		byte prepareRecordVersion = PrepareRecordVersion)
 		: base(LogRecordType.Prepare, prepareRecordVersion, logPosition) {
 		Ensure.NotEmptyGuid(correlationId, "correlationId");
 		Ensure.NotEmptyGuid(eventId, "eventId");
@@ -182,10 +147,6 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		Ensure.NotNullOrEmpty(eventStreamId, "eventStreamId");
 		if (expectedVersion < Core.Data.ExpectedVersion.Any)
 			throw new ArgumentOutOfRangeException("expectedVersion");
-		if (properties.Length > 0 && prepareRecordVersion < PrepareLogRecordVersion.V2) {
-			throw new ArgumentException($"Prepare record version '{prepareRecordVersion}' is not a version that supports properties, " +
-										$"but {nameof(properties)} is not empty");
-		}
 
 		Flags = flags;
 		TransactionPosition = transactionPosition;
@@ -201,14 +162,13 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 		_eventTypeSize = eventTypeSize;
 		_dataOnDisk = data;
 		Metadata = metadata;
-		Properties = properties;
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
 			throw new Exception("Record too large.");
 	}
 
 	internal PrepareLogRecord(ref SequenceReader reader, byte version, long logPosition)
 		: base(LogRecordType.Prepare, version, logPosition) {
-		if (version > PrepareLogRecordVersion.V2)
+		if (version > PrepareRecordVersion)
 			throw new ArgumentException(
 				$"PrepareRecord version {version} is incorrect. Supported version: {PrepareRecordVersion}.");
 
@@ -230,9 +190,6 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			: NoData;
 		Metadata = reader.ReadLittleEndian<int>() is var metadataCount && metadataCount > 0
 			? reader.Read(metadataCount).ToArray()
-			: NoData;
-		Properties = Version >= PrepareLogRecordVersion.V2
-			? reader.ReadBlock(LengthFormat.Compressed).ToArray()
 			: NoData;
 
 		if (InMemorySize > TFConsts.MaxLogRecordSize)
@@ -263,7 +220,6 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			eventTypeSize: _eventTypeSize,
 			data: _dataOnDisk,
 			metadata: Metadata,
-			properties: Properties,
 			prepareRecordVersion: Version
 		);
 	}
@@ -306,9 +262,6 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 
 		writer.Write(_dataOnDisk.Span, LengthFormat.LittleEndian);
 		writer.Write(Metadata.Span, LengthFormat.LittleEndian);
-		if (Version >= PrepareLogRecordVersion.V2) {
-			writer.Write(Properties.Span, LengthFormat.Compressed);
-		}
 	}
 
 	public override int GetSizeWithLengthPrefixAndSuffix()
@@ -332,7 +285,7 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			   && other.Data.Span.SequenceEqual(Data.Span)
 			   && other._dataOnDisk.Span.SequenceEqual(_dataOnDisk.Span)
 			   && other.Metadata.Span.SequenceEqual(Metadata.Span)
-			   && other.Properties.Span.SequenceEqual(Properties.Span);
+			   ;
 	}
 
 	public override bool Equals(object obj) {
@@ -360,7 +313,6 @@ public sealed class PrepareLogRecord : LogRecord, IEquatable<PrepareLogRecord>, 
 			result = (result * 397) ^ EventType.GetHashCode();
 			result = (result * 397) ^ _dataOnDisk.GetHashCode();
 			result = (result * 397) ^ Metadata.GetHashCode();
-			result = (result * 397) ^ Properties.GetHashCode();
 			return result;
 		}
 	}

@@ -41,10 +41,6 @@ public static class ExpectedVersion {
 }
 
 public interface IClient {
-	//qq consider what api we actually want here
-	// and clearly define the semantics such that we get the same behaviour from internal and external
-	// wrt exception handling etc.
-
 	Task WriteMetaDataMaxCountAsync(string stream, CancellationToken cancellationToken);
 	Task<long> WriteAsync(string stream, EventToWrite[] events, long expectedVersion, CancellationToken cancellationToken);
 	IAsyncEnumerable<Event> SubscribeToAll(FromAll start, CancellationToken cancellationToken);

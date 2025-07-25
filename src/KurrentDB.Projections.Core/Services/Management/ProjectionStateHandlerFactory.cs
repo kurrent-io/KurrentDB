@@ -3,21 +3,26 @@
 
 using System;
 using System.Linq;
+using KurrentDB.Projections.Core.Metrics;
 using KurrentDB.Projections.Core.Services.Interpreted;
 
 namespace KurrentDB.Projections.Core.Services.Management;
 
-
-
 public class ProjectionStateHandlerFactory {
 	private readonly TimeSpan _javascriptCompilationTimeout;
 	private readonly TimeSpan _javascriptExecutionTimeout;
+	private readonly ProjectionTrackers _trackers;
 
-	public ProjectionStateHandlerFactory(TimeSpan javascriptCompilationTimeout, TimeSpan javascriptExecutionTimeout) {
+	public ProjectionStateHandlerFactory(
+		TimeSpan javascriptCompilationTimeout,
+		TimeSpan javascriptExecutionTimeout,
+		ProjectionTrackers trackers) {
 		_javascriptCompilationTimeout = javascriptCompilationTimeout;
 		_javascriptExecutionTimeout = javascriptExecutionTimeout;
+		_trackers = trackers;
 	}
 	public IProjectionStateHandler Create(
+		string projectionName,
 		string factoryType, string source,
 		bool enableContentTypeValidation,
 		int? projectionExecutionTimeout,
@@ -39,7 +44,9 @@ public class ProjectionStateHandlerFactory {
 		switch (kind.ToLowerInvariant()) {
 			case "js":
 				result = new JintProjectionStateHandler(source, enableContentTypeValidation,
-					_javascriptCompilationTimeout, executionTimeout);
+					_javascriptCompilationTimeout, executionTimeout,
+					new(_trackers.GetExecutionTrackerForProjection(projectionName)),
+					new(_trackers.GetSerializationTrackerForProjection(projectionName)));
 				break;
 			case "native":
 				// Allow loading native projections from previous versions

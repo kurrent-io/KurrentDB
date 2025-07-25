@@ -29,7 +29,7 @@ public class FakeIndexReader : ITransactionFileReader {
 	public ValueTask<RecordReadResult> TryReadAt(long position, bool couldBeScavenged, CancellationToken token) {
 		var record = (LogRecord)new PrepareLogRecord(position, Guid.NewGuid(), Guid.NewGuid(), 0, 0,
 			position.ToString(), null, -1, DateTime.UtcNow, PrepareFlags.None, "type", null,
-			Array.Empty<byte>(), null, null);
+			Array.Empty<byte>(), null);
 		return new(new RecordReadResult(true, position + 1, record, 1));
 	}
 
