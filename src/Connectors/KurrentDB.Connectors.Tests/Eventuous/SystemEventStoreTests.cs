@@ -6,6 +6,7 @@
 using Eventuous;
 using Kurrent.Surge;
 using KurrentDB.Connectors.Infrastructure.Eventuous;
+using KurrentDB.Surge.Testing.Fixtures;
 using Shouldly;
 
 namespace KurrentDB.Connectors.Tests.Eventuous;

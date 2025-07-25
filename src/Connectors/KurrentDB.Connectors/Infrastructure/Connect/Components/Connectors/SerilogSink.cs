@@ -9,6 +9,7 @@ using FluentValidation;
 using FluentValidation.Results;
 using Kurrent.Surge;
 using Kurrent.Surge.Connectors.Sinks;
+
 using Kurrent.Surge.Connectors.Sinks.Diagnostics.Metrics;
 using Microsoft.Extensions.Configuration;
 using Serilog;

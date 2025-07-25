@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package kurrentdb.surge.testing.messages;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+option csharp_namespace = "KurrentDB.Surge.Testing.Messages.Telemetry";
+
+message PowerConsumption {
+    string                      device_id = 1;
+    string                      unit      = 2;
+    google.protobuf.DoubleValue value     = 3;
+    google.protobuf.Timestamp   timestamp = 4;
+}
+
+message DeviceTelemetry {
+    string                    device_id = 1;
+    string                    data_type = 2;
+    google.protobuf.Struct    data      = 3;
+    google.protobuf.Timestamp timestamp = 4;
+}

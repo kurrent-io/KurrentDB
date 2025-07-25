@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- It must be `TargetFrameworks` plural to work on macos -->
+    <!-- Error MSB6004 : The specified task executable location "/macosx_x64/protoc" is invalid. -->
+    <!--suppress MsbuildTargetFrameworkTagInspection-->
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="Grpc.AspNetCore" />
+    <PackageReference Include="Kurrent.Quack" />
+    <PackageReference Include="Kurrent.Surge.DuckDB" />
+    <PackageReference Include="Kurrent.Surge.Core" />
+    <PackageReference Include="NJsonSchema" />
+
+		<!-- Required to remove conflicts -->
+    <PackageReference Include="Google.Api.CommonProtos" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\KurrentDB.Surge\KurrentDB.Surge.csproj" />
+    <ProjectReference Include="..\KurrentDB.SchemaRegistry.Protocol\KurrentDB.SchemaRegistry.Protocol.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Kurrent.Surge" />
+    <Using Include="Microsoft.Extensions.Logging" />
+    <Using Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="KurrentDB.SchemaRegistry.csproj.DotSettings" />
+  </ItemGroup>
+</Project>

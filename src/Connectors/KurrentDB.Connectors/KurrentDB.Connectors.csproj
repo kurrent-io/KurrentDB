@@ -18,6 +18,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\KurrentDB.Common\KurrentDB.Common.csproj" ExcludeAssets="all" Private="false" />
 		<ProjectReference Include="..\..\KurrentDB.Core\KurrentDB.Core.csproj" ExcludeAssets="all" Private="false" />
+		<ProjectReference Include="..\..\KurrentDB.Surge\KurrentDB.Surge.csproj" />
 		<ProjectReference Include="..\..\KurrentDB.SystemRuntime\KurrentDB.SystemRuntime.csproj" ExcludeAssets="all" Private="false" />
 		<ProjectReference Include="..\KurrentDB.Connectors.Contracts\KurrentDB.Connectors.Contracts.csproj" />
 	</ItemGroup>
@@ -63,5 +64,9 @@
 
 	<ItemGroup>
 		<None Remove="KurrentDB.Extensions.Connectors.csproj.DotSettings" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Infrastructure\Connect\Components\Producers\" />
 	</ItemGroup>
 </Project>

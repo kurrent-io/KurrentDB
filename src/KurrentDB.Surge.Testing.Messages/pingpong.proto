@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package kurrentdb.surge.testing.messages;
+
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "KurrentDB.Surge.Testing.Messages.PingPong";
+
+message Ping {
+    string                    ping_id   = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}
+
+message Pong {
+    string                    pong_id   = 1;
+    google.protobuf.Timestamp timestamp = 2;
+}

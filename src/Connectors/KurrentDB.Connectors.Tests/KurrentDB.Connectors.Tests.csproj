@@ -3,10 +3,10 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
-<!--		<Deterministic>true</Deterministic>-->
 		<NoWarn>xUnit1041</NoWarn>
 		<IsTestProject>true</IsTestProject>
 		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -20,14 +20,12 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
 		</PackageReference>
-<!--		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.15" />-->
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\KurrentDB\KurrentDB.csproj" />
 		<ProjectReference Include="..\KurrentDB.Connectors\KurrentDB.Connectors.csproj" />
-<!--		<ProjectReference Include="..\KurrentDB.Connectors.TestServer\KurrentDB.Connectors.TestServer.csproj" />-->
-		<ProjectReference Include="..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
+		<ProjectReference Include="..\..\KurrentDB.Surge.Testing\KurrentDB.Surge.Testing.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
