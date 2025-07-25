@@ -179,8 +179,8 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 
 	public static Event ConvertToEvent(AppendRecord appendRecord) {
 		var recordId = GetRecordId(appendRecord);
-		var schemaName = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.EventTypeKey);
-		var schemaDataFormat = GetRequiredProperty<string>(appendRecord.Properties, Constants.Properties.DataFormatKey);
+		var schemaName = GetSchemaName(appendRecord.Properties);
+		var schemaDataFormat = GetSchemaDataFormat(appendRecord.Properties);
 
 		var isJson = schemaDataFormat
 			.Equals(Constants.Properties.DataFormats.Json, OrdinalIgnoreCase);
@@ -194,9 +194,9 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 		if (isJson || isBytes)
 			appendRecord.Properties.Remove(Constants.Properties.DataFormatKey);
 
-		var properties = appendRecord.Properties.Count == 0
-			? []
-			: new Properties { PropertiesValues = { appendRecord.Properties } }.ToByteArray();
+		var properties = appendRecord.Properties.Count > 0
+			? new Properties { PropertiesValues = { appendRecord.Properties } }.ToByteArray()
+			: [];
 
 		return new(
 			eventId: recordId,
@@ -215,7 +215,12 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 				: Guid.NewGuid();
 		}
 
-		static T GetRequiredProperty<T>(MapField<string, DynamicValue> source, string key) =>
-			(source.TryGetValue<T>(key, out var value) ? value : throw RpcExceptions.RequiredPropertyMissing(key))!;
+		static string GetSchemaName(MapField<string, DynamicValue> source) =>
+			source.TryGetValue<string>(Constants.Properties.EventTypeKey, out var value) && !string.IsNullOrWhiteSpace(value)
+				? value : throw RpcExceptions.RequiredPropertyMissing(Constants.Properties.EventTypeKey);
+
+		static string GetSchemaDataFormat(MapField<string, DynamicValue> source) =>
+			source.TryGetValue<string>(Constants.Properties.DataFormatKey, out var value) && !string.IsNullOrWhiteSpace(value)
+				? value : throw RpcExceptions.RequiredPropertyMissing(Constants.Properties.DataFormatKey);
 	}
 }
