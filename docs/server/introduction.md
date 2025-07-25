@@ -70,7 +70,7 @@ EventStoreDB also offers an HTTP-based interface, based specifically on the [Ato
 
 #### EventStoreDB supported clients
 
--   [HTTP API](@clients/http-api/README.md)
+-   [HTTP API](./http-api/introduction.md)
 
 #### Community developed clients
 
