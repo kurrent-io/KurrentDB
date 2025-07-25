@@ -163,7 +163,7 @@
 		<PackageVersion Include="TUnit" Version="0.25.21"/>
 		<PackageVersion Include="TUnit.Core" Version="0.25.21" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.2" />
     <PackageVersion Include="YamlDotnet" Version="15.1.4" />
 	</ItemGroup>
 </Project>

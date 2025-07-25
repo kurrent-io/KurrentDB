@@ -5,10 +5,10 @@
 
 using System;
 using System.Text;
-using System.Threading;
 using KurrentDB.Common.Utils;
-using KurrentDB.Core.Services.Transport.Grpc.V2.Utils;
+using KurrentDB.Core.Services.Transport.Grpc;
 using KurrentDB.Core.TransactionLog.LogRecords;
+using KurrentDB.Protobuf;
 using static KurrentDB.Protobuf.Server.Properties;
 
 namespace KurrentDB.Core.Data;
@@ -33,21 +33,42 @@ public class EventRecord : IEquatable<EventRecord> {
 
 	// Lazy initialization backing fields
 	ReadOnlyMemory<byte> _metadata;
-	bool _metadataInitialized;
-	object _metadataLock = new();
+	volatile bool _metadataInitialized;
+	readonly object _metadataLock = new();
 
 	// Metadata can come directly from the log record, or be synthesized from the LogRecordProperties.
 	// Log records cannot contain both Metadata and LogRecordProperties.
 	public ReadOnlyMemory<byte> Metadata {
-		get => LazyInitializer.EnsureInitialized(
-			ref _metadata,
-			ref _metadataInitialized,
-			ref _metadataLock,
-			() => Properties.IsEmpty
-				? ReadOnlyMemory<byte>.Empty
-				: ProtoJsonSerializer.Default.Serialize(
-					Parser.ParseFrom(Properties.Span).PropertiesValues.MapToDictionary())
-				);
+		get {
+			if (_metadataInitialized) {
+				return _metadata;
+			}
+
+			lock (_metadataLock) {
+				if (!_metadataInitialized) {
+					_metadata = SynthesizeMetadataFromProperties();
+					_metadataInitialized = true;
+				}
+			}
+
+			return _metadata;
+		}
+	}
+
+	static readonly DynamicValue JsonDataFormatDynamicValue  = new() { StringValue = Constants.Properties.DataFormats.Json };
+	static readonly DynamicValue BytesDataFormatDynamicValue = new() { StringValue =  Constants.Properties.DataFormats.Bytes };
+
+	ReadOnlyMemory<byte> SynthesizeMetadataFromProperties() {
+		var props = Parser.ParseFrom(Properties.Span);
+
+		if (IsJson)
+			props.PropertiesValues[Constants.Properties.DataFormatKey] = JsonDataFormatDynamicValue;
+		else if (!props.PropertiesValues.ContainsKey(Constants.Properties.DataFormatKey))
+			props.PropertiesValues[Constants.Properties.DataFormatKey] = BytesDataFormatDynamicValue;
+
+		props.PropertiesValues[Constants.Properties.EventTypeKey] = new() { StringValue = EventType };
+
+		return props.SerializeToBytes();
 	}
 
 	public EventRecord(long eventNumber, IPrepareLogRecord prepare, string eventStreamId, string? eventType) {

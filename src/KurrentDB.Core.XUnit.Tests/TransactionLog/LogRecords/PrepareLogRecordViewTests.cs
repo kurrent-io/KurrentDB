@@ -21,9 +21,8 @@ public class PrepareLogRecordViewTests {
 	private readonly DateTime _timestamp = DateTime.Now;
 	private const string EventType = "test_event_type";
 	private readonly byte[] _data = { 0xDE, 0XAD, 0xC0, 0XDE };
-	private readonly byte[] _metadata = { 0XC0, 0xDE };
 
-	private PrepareLogRecord CreatePrepareLogRecord(byte version, byte[] properties) {
+	private PrepareLogRecord CreatePrepareLogRecord(byte version, byte[] metadata, byte[] properties) {
 		return new PrepareLogRecord(
 			LogPosition,
 			_correlationId,
@@ -38,16 +37,16 @@ public class PrepareLogRecordViewTests {
 			EventType,
 			null,
 			_data,
-			_metadata,
+			metadata,
 			properties,
 			version);
 	}
 
 	[Theory]
-	[InlineData(PrepareLogRecordVersion.V1, new byte[] { })]
-	[InlineData(PrepareLogRecordVersion.V2, new byte[] { 0xDE, 0XAD })]
-	public void should_have_correct_properties(byte expectedVersion, byte[] properties) {
-		var prepareLogRecord = CreatePrepareLogRecord(expectedVersion, properties);
+	[InlineData(PrepareLogRecordVersion.V1, new byte[] { 0XC0, 0xDE }, new byte[] { })]
+	[InlineData(PrepareLogRecordVersion.V2, new byte[] { }, new byte[] { 0xDE, 0XAD })]
+	public void should_have_correct_properties(byte expectedVersion, byte[] metadata, byte[] properties) {
+		var prepareLogRecord = CreatePrepareLogRecord(expectedVersion, metadata, properties);
 		var writer = new BufferWriterSlim<byte>();
 		prepareLogRecord.WriteTo(ref writer);
 
@@ -66,7 +65,7 @@ public class PrepareLogRecordViewTests {
 		Assert.Equal(_timestamp, prepare.TimeStamp);
 		Assert.Equal(PrepareFlags.SingleWrite, prepare.Flags);
 		Assert.True(prepare.Data.SequenceEqual(_data));
-		Assert.True(prepare.Metadata.SequenceEqual(_metadata));
+		Assert.True(prepare.Metadata.SequenceEqual(metadata));
 		Assert.True(prepare.Properties.SequenceEqual(properties));
 		Assert.Equal(expectedVersion, prepare.Version);
 	}
