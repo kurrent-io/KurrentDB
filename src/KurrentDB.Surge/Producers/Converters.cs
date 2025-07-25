@@ -31,8 +31,8 @@ public static class ProduceRequestExtensions {
                 schema.SchemaName,
                 isJson,
                 data.ToArray(),
-                metadata.ToArray(),
-                properties: []
+                isPropertyMetadata: false,
+                metadata.ToArray()
             );
         }
     }

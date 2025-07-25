@@ -160,8 +160,7 @@ internal class WriteLongTermProcessor : ICmdProcessor {
 								0, 0,
 								Helper.UTF8NoBom.GetBytes(
 									"DATA" + dataSize.ToString(" 00000 ") + new string('*', dataSize)),
-								Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', 100)),
-								[])
+								Helper.UTF8NoBom.GetBytes("METADATA" + new string('$', 100)))
 						},
 						false);
 					var package = new TcpPackage(TcpCommand.WriteEvents, Guid.NewGuid(), write.Serialize());

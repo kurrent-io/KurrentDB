@@ -48,14 +48,14 @@ public class when_handling_read_completed_stream_event_reader<TLogFormat, TStrea
 							10, 50, Guid.NewGuid(), _firstEventId, 50, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type1", new byte[] {1}, new byte[] {2}, [])),
+							"event_type1", new byte[] {1}, new byte[] {2})),
 					ResolvedEvent.ForUnresolvedEvent(
 						new EventRecord(
 							11, 100, Guid.NewGuid(), _secondEventId, 100, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd |
 							PrepareFlags.IsJson,
-							"event_type2", new byte[] {3}, new byte[] {4}, []))
+							"event_type2", new byte[] {3}, new byte[] {4}))
 				}, null, false, "", 12, 11, true, 200));
 	}
 
@@ -127,7 +127,7 @@ public class when_handling_read_completed_stream_event_reader<TLogFormat, TStrea
 							10, 50, Guid.NewGuid(), Guid.NewGuid(), 50, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type", new byte[0], new byte[0], new byte[0]))
+							"event_type", new byte[0], new byte[0]))
 				}, null, false, "", 11, 10, true, 100));
 		Assert.AreEqual(1, HandledMessages.OfType<ReaderSubscriptionMessage.Faulted>().Count());
 	}
@@ -145,7 +145,7 @@ public class when_handling_read_completed_stream_event_reader<TLogFormat, TStrea
 							12, 250, Guid.NewGuid(), Guid.NewGuid(), 250, 0, "stream", ExpectedVersion.Any,
 							DateTime.UtcNow,
 							PrepareFlags.SingleWrite | PrepareFlags.TransactionBegin | PrepareFlags.TransactionEnd,
-							"event_type", new byte[0], new byte[0], new byte[0]))
+							"event_type", new byte[0], new byte[0]))
 				}, null, false, "", 13, 11, true, 300));
 	}
 }

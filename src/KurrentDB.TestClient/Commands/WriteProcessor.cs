@@ -59,8 +59,7 @@ internal class WriteProcessor : ICmdProcessor {
 							"TakeSomeSpaceEvent",
 							isJson ? 1 : 0, 0,
 							Helper.UTF8NoBom.GetBytes(data),
-							Helper.UTF8NoBom.GetBytes(metadata ?? string.Empty),
-							[])
+							Helper.UTF8NoBom.GetBytes(metadata ?? string.Empty))
 					},
 					false);
 				var package = new TcpPackage(TcpCommand.WriteEvents,

@@ -88,10 +88,14 @@ public class EventRecord : IEquatable<EventRecord> {
 		Flags = prepare.Flags;
 		EventType = eventType ?? "";
 		Data = prepare.Data;
-		Properties = prepare.Properties;
 
-		_metadata = prepare.Metadata;
-		_metadataInitialized = !_metadata.IsEmpty || Properties.IsEmpty;
+		if (prepare.Flags.HasAllOf(PrepareFlags.IsPropertyMetadata)) {
+			Properties = prepare.Metadata;
+			_metadataInitialized = false;
+		} else {
+			_metadata = prepare.Metadata;
+			_metadataInitialized = true;
+		}
 	}
 
 	// called from tests only
@@ -108,8 +112,7 @@ public class EventRecord : IEquatable<EventRecord> {
 		PrepareFlags flags,
 		string? eventType,
 		byte[] data,
-		byte[]? metadata,
-		byte[]? properties) {
+		byte[]? metadata) {
 		Ensure.Nonnegative(logPosition);
 		Ensure.Nonnegative(transactionPosition);
 		ArgumentOutOfRangeException.ThrowIfLessThan(transactionOffset, -1);
@@ -131,10 +134,14 @@ public class EventRecord : IEquatable<EventRecord> {
 		Flags = flags;
 		EventType = eventType ?? "";
 		Data = data!;
-		Properties = properties ?? [];
 
-		_metadata = metadata ?? [];
-		_metadataInitialized = !_metadata.IsEmpty || Properties.IsEmpty;
+		if (flags.HasAllOf(PrepareFlags.IsPropertyMetadata)) {
+			Properties = metadata ?? [];
+			_metadataInitialized = false;
+		} else {
+			_metadata = metadata ?? [];
+			_metadataInitialized = true;
+		}
 	}
 
 	public bool Equals(EventRecord? other) {

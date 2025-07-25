@@ -1239,7 +1239,7 @@ public class PersistentSubscriptionService<TStreamId> :
 	private void SaveConfiguration(Action continueWith) {
 		Log.Debug("Saving persistent subscription configuration");
 		var data = _config.GetSerializedForm();
-		var ev = new Event(Guid.NewGuid(), SystemEventTypes.PersistentSubscriptionConfig, true, data, [], []);
+		var ev = new Event(Guid.NewGuid(), SystemEventTypes.PersistentSubscriptionConfig, true, data);
 		var metadata = new StreamMetadata(maxCount: 2);
 		Lazy<StreamMetadata> streamMetadata = new Lazy<StreamMetadata>(() => metadata);
 		Event[] events = new Event[] { ev };

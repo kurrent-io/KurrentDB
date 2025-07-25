@@ -5,7 +5,6 @@ using System;
 using System.Text;
 using DotNext.Buffers;
 using KurrentDB.Core.TransactionLog.LogRecords;
-using KurrentDB.LogCommon;
 using Xunit;
 
 namespace KurrentDB.Core.XUnit.Tests.TransactionLog.LogRecords;
@@ -21,8 +20,10 @@ public class PrepareLogRecordViewTests {
 	private readonly DateTime _timestamp = DateTime.Now;
 	private const string EventType = "test_event_type";
 	private readonly byte[] _data = { 0xDE, 0XAD, 0xC0, 0XDE };
+	private readonly byte[] _metadata = { 0XC0, 0xDE };
+	private const byte Version = 1;
 
-	private PrepareLogRecord CreatePrepareLogRecord(byte version, byte[] metadata, byte[] properties) {
+	private PrepareLogRecord CreatePrepareLogRecord() {
 		return new PrepareLogRecord(
 			LogPosition,
 			_correlationId,
@@ -37,16 +38,13 @@ public class PrepareLogRecordViewTests {
 			EventType,
 			null,
 			_data,
-			metadata,
-			properties,
-			version);
+			_metadata,
+			Version);
 	}
 
-	[Theory]
-	[InlineData(PrepareLogRecordVersion.V1, new byte[] { 0XC0, 0xDE }, new byte[] { })]
-	[InlineData(PrepareLogRecordVersion.V2, new byte[] { }, new byte[] { 0xDE, 0XAD })]
-	public void should_have_correct_properties(byte expectedVersion, byte[] metadata, byte[] properties) {
-		var prepareLogRecord = CreatePrepareLogRecord(expectedVersion, metadata, properties);
+	[Fact]
+	public void should_have_correct_properties() {
+		var prepareLogRecord = CreatePrepareLogRecord();
 		var writer = new BufferWriterSlim<byte>();
 		prepareLogRecord.WriteTo(ref writer);
 
@@ -65,8 +63,7 @@ public class PrepareLogRecordViewTests {
 		Assert.Equal(_timestamp, prepare.TimeStamp);
 		Assert.Equal(PrepareFlags.SingleWrite, prepare.Flags);
 		Assert.True(prepare.Data.SequenceEqual(_data));
-		Assert.True(prepare.Metadata.SequenceEqual(metadata));
-		Assert.True(prepare.Properties.SequenceEqual(properties));
-		Assert.Equal(expectedVersion, prepare.Version);
+		Assert.True(prepare.Metadata.SequenceEqual(_metadata));
+		Assert.Equal(Version, prepare.Version);
 	}
 }

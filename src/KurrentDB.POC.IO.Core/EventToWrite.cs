@@ -10,6 +10,7 @@ public class EventToWrite {
 	public string EventType { get; init; }
 	public string ContentType { get; init; }
 	public ReadOnlyMemory<byte> Data { get; init; }
+	public bool IsPropertyMetadata { get; init; }
 	public ReadOnlyMemory<byte> Metadata { get; init; }
 
 	public EventToWrite(
@@ -17,12 +18,14 @@ public class EventToWrite {
 		string eventType,
 		string contentType,
 		ReadOnlyMemory<byte> data,
+		bool isPropertyMetadata,
 		ReadOnlyMemory<byte> metadata) {
 
 		EventId = eventId;
 		EventType = eventType;
 		ContentType = contentType;
 		Data = data;
+		IsPropertyMetadata = isPropertyMetadata;
 		Metadata = metadata;
 	}
 }

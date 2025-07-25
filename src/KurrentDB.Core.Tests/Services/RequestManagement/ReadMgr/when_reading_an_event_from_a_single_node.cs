@@ -49,7 +49,7 @@ public class when_reading_an_event_from_a_single_node<TLogFormat, TStreamId> : s
 		_liveNode = GetLeader();
 		Assert.IsNotNull(_liveNode, "Could not get leader node");
 
-		var events = new Event[] { new Event(Guid.NewGuid(), "test-type", false, new byte[10], [], []) };
+		var events = new Event[] { new Event(Guid.NewGuid(), "test-type", false, new byte[10]) };
 		var writeResult = ReplicationTestHelper.WriteEvent(_liveNode, events, _streamId);
 		Assert.AreEqual(OperationResult.Success, writeResult.Result);
 		_commitPosition = writeResult.CommitPosition;

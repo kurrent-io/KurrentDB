@@ -214,9 +214,9 @@ public class MSARequestConverterTests {
 		Assert.Equal("my-event-type", output.EventType);
 		Assert.Equal(expectedIsJson, output.IsJson);
 		Assert.Equal("the-data"u8.ToArray(), output.Data);
-		Assert.Equal([], output.Metadata);
+		Assert.True(output.IsPropertyMetadata);
 
-		var properties = Properties.Parser.ParseFrom(output.Properties);
+		var properties = Properties.Parser.ParseFrom(output.Metadata);
 
 		if (storedInProperties) {
 			Assert.Equal(4, properties.PropertiesValues.Count);
@@ -243,7 +243,7 @@ public class MSARequestConverterTests {
 		var input = new AppendRecord {
 			Properties = {
 				{ Constants.Properties.EventTypeKey, new() { StringValue = "my-event-type" } },
-				{ Constants.Properties.DataFormatKey, new() { StringValue = "avro" } },
+				{ Constants.Properties.DataFormatKey, new() { StringValue = "bytes" } },
 			},
 		};
 
@@ -255,6 +255,7 @@ public class MSARequestConverterTests {
 		Assert.Equal("my-event-type", output.EventType);
 		Assert.False(output.IsJson);
 		Assert.Empty(output.Data);
+		Assert.True(output.IsPropertyMetadata);
 		Assert.Equal([], output.Metadata);
 	}
 

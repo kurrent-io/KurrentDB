@@ -61,7 +61,7 @@ internal partial class Streams<TStreamId> {
 
 				var (isJson, eventType) = MetadataHelpers.ParseGrpcMetadata(proposedMessage.Metadata);
 
-				var eventSize = Event.SizeOnDisk(eventType, data, metadata, properties: []);
+				var eventSize = Event.SizeOnDisk(eventType, data, metadata);
 				if (eventSize > _maxAppendEventSize) {
 					throw RpcExceptions.MaxAppendEventSizeExceeded(proposedMessage.Id.ToString(), eventSize, _maxAppendEventSize);
 				}
@@ -77,8 +77,8 @@ internal partial class Streams<TStreamId> {
 					eventType: eventType,
 					isJson: isJson,
 					data: data,
-					metadata: metadata,
-					properties: [])
+					isPropertyMetadata: false,
+					metadata: metadata)
 				);
 			}
 

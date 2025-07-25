@@ -63,7 +63,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 			var e = dto.Events[i];
 			// ReSharper restore PossibleNullReferenceException
 			events[i] = new Event(new Guid(e.EventId.ToByteArray()), e.EventType, e.DataContentType == 1,
-				e.Data.ToByteArray(), e.Metadata.ToByteArray(), e.Properties.ToByteArray());
+				e.Data.ToByteArray(), false, e.Metadata.ToByteArray());
 		}
 
 		var cts = new CancellationTokenSource();
@@ -87,8 +87,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 				e.EventType,
 				e.IsJson ? 1 : 0,
 				0, e.Data,
-				e.Metadata,
-				e.Properties);
+				e.Metadata);
 		}
 
 		if (msg.EventStreamIds.Length > 1)
@@ -203,7 +202,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 			var e = dto.Events[i];
 			// ReSharper restore PossibleNullReferenceException
 			events[i] = new Event(new Guid(e.EventId.ToByteArray()), e.EventType, e.DataContentType == 1,
-				e.Data.ToByteArray(), e.Metadata.ToByteArray(), e.Properties.ToByteArray());
+				e.Data.ToByteArray(), false, e.Metadata.ToByteArray());
 		}
 
 		return new(Guid.NewGuid(), package.CorrelationId, envelope, dto.RequireLeader, dto.TransactionId, events, user, package.Tokens);
@@ -213,7 +212,7 @@ public class ClientWriteTcpDispatcher : TcpDispatcher {
 		var events = new NewEvent[msg.Events.Length];
 		for (int i = 0; i < events.Length; ++i) {
 			var e = msg.Events[i];
-			events[i] = new(e.EventId.ToByteArray(), e.EventType, e.IsJson ? 1 : 0, 0, e.Data, e.Metadata, e.Properties);
+			events[i] = new(e.EventId.ToByteArray(), e.EventType, e.IsJson ? 1 : 0, 0, e.Data, e.Metadata);
 		}
 
 		var dto = new TransactionWrite(msg.TransactionId, events, msg.RequireLeader);

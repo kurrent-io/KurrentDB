@@ -23,7 +23,7 @@ public class MetadataHelpersTests {
 			? PrepareFlags.IsJson | PrepareFlags.SingleWrite
 			: PrepareFlags.SingleWrite;
 		return new EventRecord(0, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, _streamName, -1, _timeStamp,
-			flags, _eventType, "{\"foo\":\"bar\"}"u8.ToArray(), "test-metadata"u8.ToArray(), properties: []);
+			flags, _eventType, "{\"foo\":\"bar\"}"u8.ToArray(), "test-metadata"u8.ToArray());
 	}
 
 	[Theory]

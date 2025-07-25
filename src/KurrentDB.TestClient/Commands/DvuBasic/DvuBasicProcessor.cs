@@ -273,7 +273,7 @@ internal class DvuBasicProcessor : ICmdProcessor {
 				head,
 				new[] {
 					new NewEvent(evnt.EventId.ToByteArray(), evnt.EventType,
-						evnt.IsJson ? 1 : 0, 0, evnt.Data, evnt.Metadata, evnt.Properties)
+						evnt.IsJson ? 1 : 0, 0, evnt.Data, evnt.Metadata)
 				},
 				false);
 

@@ -73,7 +73,7 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 				var evt = ConvertToEvent(appendRecord);
 
 				// todo: consider if these two size related exceptions ought to be non-exceptional
-				var eventSize = Event.SizeOnDisk(evt.EventType, evt.Data, evt.Metadata, evt.Properties);
+				var eventSize = Event.SizeOnDisk(evt.EventType, evt.Data, evt.Metadata);
 				if (eventSize > maxAppendEventSize)
 					throw RpcExceptions.MaxAppendEventSizeExceeded(evt.EventId.ToString(), eventSize, maxAppendEventSize);
 
@@ -203,9 +203,8 @@ public class MultiStreamAppendConverter(int chunkSize, int maxAppendSize, int ma
 			eventType: schemaName,
 			isJson: isJson,
 			data: appendRecord.Data.ToByteArray(),
-			metadata: [],
-			properties: properties
-		);
+			isPropertyMetadata: true,
+			metadata: properties);
 
 		static Guid GetRecordId(AppendRecord appendRecord) {
 			return appendRecord.HasRecordId

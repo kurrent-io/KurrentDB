@@ -62,13 +62,13 @@ public class TcpConnectionManagerTests {
 	public void when_handling_trusted_write_on_internal_service() {
 		ManualResetEvent waiter = new ManualResetEvent(false);
 		ClientMessage.WriteEvents publishedWrite = null;
-		var evnt = new Event(Guid.NewGuid(), "TestEventType", true, new byte[] { }, [], []);
+		var evnt = new Event(Guid.NewGuid(), "TestEventType", true, new byte[] { });
 		var write = new WriteEvents(
 			Guid.NewGuid().ToString(),
 			ExpectedVersion.Any,
 			new[] {
 				new NewEvent(evnt.EventId.ToByteArray(), evnt.EventType, evnt.IsJson ? 1 : 0, 0,
-					evnt.Data, evnt.Metadata, evnt.Properties)
+					evnt.Data, evnt.Metadata)
 			},
 			false);
 
@@ -108,7 +108,7 @@ public class TcpConnectionManagerTests {
 
 		var messageSize = _connectionPendingSendBytesThreshold / 2;
 		var evnt = new EventRecord(0, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, "testStream", 0, DateTime.Now,
-			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0], new byte[0]);
+			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0]);
 		var record = ResolvedEvent.ForUnresolvedEvent(evnt, null);
 		var message = new ClientMessage.ReadEventCompleted(Guid.NewGuid(), "testStream", ReadEventResult.Success,
 			record, StreamMetadata.Empty, false, "");
@@ -138,7 +138,7 @@ public class TcpConnectionManagerTests {
 		when_limit_pending_and_sending_message_larger_than_pending_bytes_threshold_but_no_bytes_pending_should_not_close_connection() {
 		var messageSize = _connectionPendingSendBytesThreshold + 1000;
 		var evnt = new EventRecord(0, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, "testStream", 0, DateTime.Now,
-			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0], new byte[0]);
+			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0]);
 		var record = ResolvedEvent.ForUnresolvedEvent(evnt, null);
 		var message = new ClientMessage.ReadEventCompleted(Guid.NewGuid(), "testStream", ReadEventResult.Success,
 			record, StreamMetadata.Empty, false, "");
@@ -171,7 +171,7 @@ public class TcpConnectionManagerTests {
 
 		var messageSize = _connectionPendingSendBytesThreshold / 2;
 		var evnt = new EventRecord(0, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, "testStream", 0, DateTime.Now,
-			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0], new byte[0]);
+			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0]);
 		var record = ResolvedEvent.ForUnresolvedEvent(evnt, null);
 		var message = new ClientMessage.ReadEventCompleted(Guid.NewGuid(), "testStream", ReadEventResult.Success,
 			record, StreamMetadata.Empty, false, "");
@@ -204,7 +204,7 @@ public class TcpConnectionManagerTests {
 
 		var messageSize = _connectionPendingSendBytesThreshold;
 		var evnt = new EventRecord(0, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, "testStream", 0, DateTime.Now,
-			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0], new byte[0]);
+			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0]);
 		var record = ResolvedEvent.ForUnresolvedEvent(evnt, null);
 		var message = new ClientMessage.ReadEventCompleted(Guid.NewGuid(), "testStream", ReadEventResult.Success,
 			record, StreamMetadata.Empty, false, "");
@@ -237,7 +237,7 @@ public class TcpConnectionManagerTests {
 
 		var messageSize = _connectionPendingSendBytesThreshold;
 		var evnt = new EventRecord(0, 0, Guid.NewGuid(), Guid.NewGuid(), 0, 0, "testStream", 0, DateTime.Now,
-			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0], new byte[0]);
+			PrepareFlags.None, "eventType", new byte[messageSize], new byte[0]);
 		var record = ResolvedEvent.ForUnresolvedEvent(evnt, null);
 		var message = new ClientMessage.ReadEventCompleted(Guid.NewGuid(), "testStream", ReadEventResult.Success,
 			record, StreamMetadata.Empty, false, "");

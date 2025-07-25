@@ -338,11 +338,6 @@
                 "id": 6,
                 "name": "metadata",
                 "type": "bytes"
-              },
-              {
-                "id": 7,
-                "name": "properties",
-                "type": "bytes"
               }
             ]
           },
@@ -398,11 +393,6 @@
                 "id": 10,
                 "name": "created_epoch",
                 "type": "int64"
-              },
-              {
-                "id": 11,
-                "name": "properties",
-                "type": "bytes"
               }
             ]
           },
