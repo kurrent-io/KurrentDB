@@ -32,5 +32,16 @@ module.exports = [
             "operations.md",
             "diagnostics.md",
         ]
+    },
+    {
+        text: "HTTP API",
+        children: [
+            "http-api/introduction.md",
+            "http-api/security.md",
+            "http-api/persistent.md",
+            "http-api/projections.md",
+            "http-api/optional-http-headers.md",
+            "http-api/api.md"
+        ]
     }
 ];

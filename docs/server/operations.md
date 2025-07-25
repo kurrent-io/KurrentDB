@@ -35,14 +35,14 @@ You start a scavenge by issuing an empty `POST` request to the HTTP API with the
 
 :::: tabs
 @tab Request
-@[code{curl}](@samples/scavenge.sh)
+@[code{curl}](@samples/server/scavenge.sh)
 
 ::: tip
 Scavenge operations have other options you can set to improve performance. For example, you can set the number of threads to use. Check [the API docs](@clients/http-api/api.md#scavenge-a-node) for more details.
 :::
 
 @tab Response
-@[code{response}](@samples/scavenge.sh)
+@[code{response}](@samples/server/scavenge.sh)
 ::::
 
 ::: tip

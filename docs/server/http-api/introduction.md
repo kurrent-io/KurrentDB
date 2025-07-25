@@ -83,15 +83,15 @@ The format represents data with the following jschema (`eventId` must be a UUID)
 
 If you issue a `POST` request with data to a stream and the correct content type set it appends the event to the stream, and generates a `201` response from the server, giving you the location of the event. Using the following event, which [you can also download as a file](https://raw.githubusercontent.com/EventStore/EventStore/c948d32302414b456b42a73e0ce212f264ccb30a/samples/http-api/event.json):
 
-@[code](@httpapi/event.json)
+@[code](@samples/http-api/event.json)
 
 `POST` the following request to create a stream and add an event to it:
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-to-new-stream.sh)
+@[code{curl}](@samples/http-api/append-event-to-new-stream.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-to-new-stream.sh)
+@[code{response}](@samples/http-api/append-event-to-new-stream.sh)
 :::
 
 Some clients may not be able to generate a unique identifier (or may not want to) for the event ID. You need this ID for idempotence purposes and EventStoreDB can generate it for you.
@@ -100,18 +100,18 @@ If you leave off the `ES-EventId` header you see different behavior:
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-no-id.sh)
+@[code{curl}](@samples/http-api/append-event-no-id.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-no-id.sh)
+@[code{response}](@samples/http-api/append-event-no-id.sh)
 :::
 
 In this case EventStoreDB has responded with a `307 Temporary Redirect`. The location points to another URI that you can post the event to. This new URI is idempotent for posting, even without an event ID.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-follow.sh)
+@[code{curl}](@samples/http-api/append-event-follow.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-follow.sh)
+@[code{response}](@samples/http-api/append-event-follow.sh)
 :::
 
 It's generally recommended to include an event ID if possible as it results in fewer round trips between the client and the server.
@@ -120,9 +120,9 @@ When posting to either the stream or to the returned redirect, clients must incl
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-no-type.sh)
+@[code{curl}](@samples/http-api/append-event-no-type.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-no-type.sh)
+@[code{response}](@samples/http-api/append-event-no-type.sh)
 :::
 
 ### Batch append operation
@@ -131,28 +131,28 @@ You can append more than one event in a single post by placing multiple events i
 
 For example, the below has two events:
 
-@[code](@httpapi/multiple-events.json)
+@[code](@samples/http-api/multiple-events.json)
 
 When you append multiple events in a single post, EventStoreDB treats them as one transaction, it appends all events together or fails.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-multiple-events.sh)
+@[code{curl}](@samples/http-api/append-multiple-events.sh)
 @tab Response
-@[code{response}](@httpapi/append-multiple-events.sh)
+@[code{response}](@samples/http-api/append-multiple-events.sh)
 :::
 
 #### Appending events
 
 To append events, issue a `POST` request to the same resource with a new `eventId`:
 
-@[code](@httpapi/event-append.json)
+@[code](@samples/http-api/event-append.json)
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event.sh)
+@[code{curl}](@samples/http-api/append-event.sh)
 @tab Response
-@[code{response}](@httpapi/append-event.sh)
+@[code{response}](@samples/http-api/append-event.sh)
 :::
 
 ### Data-only events
@@ -161,9 +161,9 @@ Version 3.7.0 of EventStoreDB added support for the `application/octet-stream` c
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-data-event.sh)
+@[code{curl}](@samples/http-api/append-data-event.sh)
 @tab Response
-@[code{response}](@httpapi/append-data-event.sh)
+@[code{response}](@samples/http-api/append-data-event.sh)
 :::
 
 ### Expected version header
@@ -180,22 +180,22 @@ See the idempotence section below, if you post the same event twice it is idempo
 
 First append an event to a stream, setting a version:
 
-@[code](@httpapi/event-version.json)
+@[code](@samples/http-api/event-version.json)
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-version.sh)
+@[code{curl}](@samples/http-api/append-event-version.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-version.sh)
+@[code{response}](@samples/http-api/append-event-version.sh)
 :::
 
 If you now append to the stream with the incorrect version, you receive an HTTP status code 400 error.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-wrong-version.sh)
+@[code{curl}](@samples/http-api/append-event-wrong-version.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-wrong-version.sh)
+@[code{response}](@samples/http-api/append-event-wrong-version.sh)
 :::
 
 There are special values you can use in the expected version header:
@@ -220,9 +220,9 @@ EventStoreDB exposes streams as a resource located at `http(s)://{yourdomain.com
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-stream.sh)
+@[code{curl}](@samples/http-api/read-stream.sh)
 @tab Response
-@[code{response}](@httpapi/read-stream.sh)
+@[code{response}](@samples/http-api/read-stream.sh)
 :::
 
 ### Reading an event from a stream
@@ -244,9 +244,9 @@ The non-atom version of the event has fewer details about the event.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-event.sh)
+@[code{curl}](@samples/http-api/read-event.sh)
 @tab Response
-@[code{response}](@httpapi/read-event.sh)
+@[code{response}](@samples/http-api/read-event.sh)
 :::
 
 ### Feed paging
@@ -257,9 +257,9 @@ In the example above the server returned the following `links` as part of its re
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-stream.sh)
+@[code{curl}](@samples/http-api/read-stream.sh)
 @tab Response
-@[code{response}](@httpapi/read-stream.sh)
+@[code{response}](@samples/http-api/read-stream.sh)
 :::
 
 This shows that there is not a `next` URL as all the information is in this request and that the URL requested is the first link. When dealing with these URLs, there are two ways of reading the data in the stream.
@@ -271,9 +271,9 @@ If you want to follow a live stream, then you keep following the `previous` link
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-stream-forwards.sh)
+@[code{curl}](@samples/http-api/read-stream-forwards.sh)
 @tab Response
-@[code{response}](@httpapi/read-stream-forwards.sh)
+@[code{response}](@samples/http-api/read-stream-forwards.sh)
 :::
 
 When parsing an atom subscription, the IDs of events always stay the same. This is important for figuring out if you are referring to the same event.
@@ -284,18 +284,18 @@ Let's now try an example with more than a single page. First create the multiple
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-paging-events.sh)
+@[code{curl}](@samples/http-api/append-paging-events.sh)
 @tab Response
-@[code{response}](@httpapi/append-paging-events.sh)
+@[code{response}](@samples/http-api/append-paging-events.sh)
 :::
 
 If you request the stream of events, you see a series of links above the events:
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/request-paging-events.sh)
+@[code{curl}](@samples/http-api/request-paging-events.sh)
 @tab Response
-@[code{response}](@httpapi/request-paging-events.sh)
+@[code{response}](@samples/http-api/request-paging-events.sh)
 :::
 
 Using the links in the stream of events, you can traverse through all the events in the stream by going to the `last` URL and following `previous` links, or by following `next` links from the `first` link.
@@ -304,9 +304,9 @@ For example, if you request the `last` link from above:
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/request-last-link.sh)
+@[code{curl}](@samples/http-api/request-last-link.sh)
 @tab Response
-@[code{response}](@httpapi/request-last-link.sh)
+@[code{response}](@samples/http-api/request-last-link.sh)
 :::
 
 You then follow `previous` links until you are back to the head of the stream, where you can continue reading events in real time by polling the `previous` link.
@@ -325,24 +325,24 @@ To access the `$all` stream, you must use admin details. Find more information o
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-all-events.sh)
+@[code{curl}](@samples/http-api/read-all-events.sh)
 @tab Response
-@[code{response}](@httpapi/read-all-events.sh)
+@[code{response}](@samples/http-api/read-all-events.sh)
 :::
 
 ### Conditional GETs
 
 The head link supports conditional `GET`s with the use of [ETAGS](http://en.wikipedia.org/wiki/HTTP_ETag), a well-known HTTP construct. You can include the ETAG of your last request and issue a conditional `GET` to the server. If nothing has changed, it won't return the full feed. For example the earlier response has an ETAG:
 
-@[code{responseHeader}](@httpapi/request-paging-events.sh)
+@[code{responseHeader}](@samples/http-api/request-paging-events.sh)
 
 You can use this in your next request when polling the stream for changes by putting it in the `If-None-Match` header. This tells the server to check if the response is the one you already know and returning a '304 not modified' response. If the tags have changed, the server returns a '200 OK' response. You can use this method to optimise your application by not sending large streams if there are no changes.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/request-etag.sh)
+@[code{curl}](@samples/http-api/request-etag.sh)
 @tab Response
-@[code{response}](@httpapi/request-etag.sh)
+@[code{response}](@samples/http-api/request-etag.sh)
 :::
 
 ::: tip
@@ -364,9 +364,9 @@ The `rich` embed mode returns more properties about the event (`eventtype`, `str
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-stream-rich.sh)
+@[code{curl}](@samples/http-api/read-stream-rich.sh)
 @tab Response
-@[code{response}](@httpapi/read-stream-rich.sh)
+@[code{response}](@samples/http-api/read-stream-rich.sh)
 :::
 
 #### Body embed mode
@@ -375,9 +375,9 @@ The `body` embed mode returns the JSON/XML body of the events into the feed as w
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-stream-body.sh)
+@[code{curl}](@samples/http-api/read-stream-body.sh)
 @tab Response
-@[code{response}](@httpapi/read-stream-body.sh)
+@[code{response}](@samples/http-api/read-stream-body.sh)
 :::
 
 ##### Variants of body embed mode
@@ -395,27 +395,27 @@ To delete a stream over the Atom interface, issue a `DELETE` request to the reso
 
 ::: tabs
 @tab Request
-@[code](@httpapi/delete-stream/delete-stream.sh)
+@[code](@samples/http-api/delete-stream/delete-stream.sh)
 @tab Response
-@[code](@httpapi/delete-stream/delete-stream-response.http)
+@[code](@samples/http-api/delete-stream/delete-stream-response.http)
 :::
 
 By default, when you delete a stream, EventStoreDB soft deletes it. This means you can recreate it later by setting the `$tb` metadata section in the stream. If you try to `GET` a soft deleted stream you receive a 404 response:
 
 ::: tabs
 @tab Request
-@[code](@httpapi/delete-stream/get-deleted-stream.sh)
+@[code](@samples/http-api/delete-stream/get-deleted-stream.sh)
 @tab Response
-@[code](@httpapi/delete-stream/get-deleted-stream-response.http)
+@[code](@samples/http-api/delete-stream/get-deleted-stream-response.http)
 :::
 
 You can recreate the stream by appending new events to it (like creating a new stream):
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event.sh)
+@[code{curl}](@samples/http-api/append-event.sh)
 @tab Response
-@[code](@httpapi/append-event.http)
+@[code](@samples/http-api/append-event.http)
 :::
 
 The version numbers do not start at zero but at where you soft deleted the stream from
@@ -432,27 +432,27 @@ Issue the `DELETE` as before but with the permanent delete header:
 
 ::: tabs
 @tab Request
-@[code](@httpapi/delete-stream/hard-delete-stream.sh)
+@[code](@samples/http-api/delete-stream/hard-delete-stream.sh)
 @tab Response
-@[code](@httpapi/delete-stream/hard-delete-stream.http)
+@[code](@samples/http-api/delete-stream/hard-delete-stream.http)
 :::
 
 The stream is now permanently deleted, and now the response is a `410`.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/delete-stream/get-deleted-stream.sh)
+@[code{curl}](@samples/http-api/delete-stream/get-deleted-stream.sh)
 @tab Response
-@[code](@httpapi/delete-stream/get-deleted-stream-response.http)
+@[code](@samples/http-api/delete-stream/get-deleted-stream-response.http)
 :::
 
 If you try to recreate the stream as in the above example you also receive a `410` response.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/delete-stream/append-event-deleted.sh)
+@[code{curl}](@samples/http-api/delete-stream/append-event-deleted.sh)
 @tab Response
-@[code{response}](@httpapi/delete-stream/append-event-deleted.http)
+@[code{response}](@samples/http-api/delete-stream/append-event-deleted.http)
 :::
 
 ## Description document
@@ -478,9 +478,9 @@ The client is able to request the description document by passing `application/v
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/get-dd.sh)
+@[code{curl}](@samples/http-api/get-dd.sh)
 @tab Response
-@[code{response}](@httpapi/get-dd.sh)
+@[code{response}](@samples/http-api/get-dd.sh)
 :::
 
 In the example above, the client requested the description document for the stream called `newstream` which has a set of links describing the supported methods and content types. The document also includes additional methods available such as the `streamSubscription`. If there are no subscriptions to the `newstream`, the `streamSubscription` key is absent.
@@ -637,9 +637,9 @@ You should not access metadata by constructing this URL yourself, as the right t
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-metadata.sh)
+@[code{curl}](@samples/http-api/read-metadata.sh)
 @tab Response
-@[code{response}](@httpapi/read-metadata.sh)
+@[code{response}](@samples/http-api/read-metadata.sh)
 :::
 
 Once you have the URI of the metadata stream, issue a `GET` request to retrieve the metadata:
@@ -652,9 +652,9 @@ If you have security enabled, reading metadata may require that you pass credent
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/missing-credentials.sh)
+@[code{curl}](@samples/http-api/missing-credentials.sh)
 @tab Response
-@[code{response}](@httpapi/missing-credentials.sh)
+@[code{response}](@samples/http-api/missing-credentials.sh)
 :::
 
 ### Writing metadata
@@ -663,7 +663,7 @@ To update the metadata for a stream, issue a `POST` request to the metadata reso
 
 Inside a file named _metadata.json_:
 
-@[code](@httpapi/metadata.json)
+@[code](@samples/http-api/metadata.json)
 
 You can also add user-specified metadata here. Some examples user-specified metadata are:
 
@@ -675,9 +675,9 @@ You then post this information is then posted to the stream:
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/update-metadata.sh)
+@[code{curl}](@samples/http-api/update-metadata.sh)
 @tab Response
-@[code{response}](@httpapi/update-metadata.sh)
+@[code{response}](@samples/http-api/update-metadata.sh)
 :::
 
 If the specified user does not have permissions to write to the stream metadata, you receive a '401 Unauthorized' response.

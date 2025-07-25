@@ -106,7 +106,7 @@ Read [Reading Streams](introduction.md#reading-streams-and-events) for informati
 
 ### Response
 
-@[code](@httpapi/persistent-subscriptions/read-stream-response.json)
+@[code](@samples/http-api/persistent-subscriptions/read-stream-response.json)
 
 ## Acknowledgements
 
@@ -186,7 +186,7 @@ For example:
 
 ### Response
 
-@[code](@httpapi/persistent-subscriptions/get-all-subscriptions-response.json)
+@[code](@samples/http-api/persistent-subscriptions/get-all-subscriptions-response.json)
 
 ## Get subscriptions for a stream
 
@@ -196,7 +196,7 @@ For example:
 
 ### Response
 
-@[code](@httpapi/persistent-subscriptions/get-subscriptions-for-stream-response.json)
+@[code](@samples/http-api/persistent-subscriptions/get-subscriptions-for-stream-response.json)
 
 ## Getting a specific subscription
 
@@ -206,7 +206,7 @@ For example:
 
 ### Response
 
-@[code](@httpapi/persistent-subscriptions/get-subscription-response.json)
+@[code](@samples/http-api/persistent-subscriptions/get-subscription-response.json)
 
 <!-- TODO: Is this better as a general subscriptions page? -->
 <!-- TODO: Somehow get this better integrated with API docs -->
