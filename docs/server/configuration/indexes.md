@@ -1,6 +1,6 @@
 ---
 title: "Indexing"
-order: 4
+order: 5
 ---
 
 KurrentDB stores indexes separately from the main data files, accessing records by stream name.

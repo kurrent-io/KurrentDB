@@ -1,6 +1,6 @@
 ---
 title: Networking
-order: 2
+order: 3
 ---
 
 KurrentDB provides two interfaces:

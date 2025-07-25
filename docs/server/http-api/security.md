@@ -14,13 +14,13 @@ KurrentDB supports basic HTTP authentication to internal users. You create these
 
 When using the HTTP API, you can send the following JSON payload to the server:
 
-@[code](@httpapi/new-user.json)
+@[code](@samples/http-api/new-user.json)
 
 ::: tabs
 @tab Request
-@[code](@httpapi/new-user.sh)
+@[code](@samples/http-api/new-user.sh)
 @tab Response
-@[code](@httpapi/new-user.http)
+@[code](@samples/http-api/new-user.http)
 :::
 
 Once you have added users, you can use their details with requests.
@@ -29,9 +29,9 @@ If you were to use the wrong user or no user when a request requires one, you re
 
 ::: tabs
 @tab Request
-@[code](@httpapi/incorrect-user.sh)
+@[code](@samples/http-api/incorrect-user.sh)
 @tab Response
-@[code](@httpapi/incorrect-user.http)
+@[code](@samples/http-api/incorrect-user.http)
 :::
 
 As you pass the username and password in the request we recommend you to enable SSL to encrypt the user information. [Read this guide for instructions](@server/security/README.md).
@@ -48,15 +48,15 @@ The ACL below gives `writer` read and write permission on the stream, while `rea
 
 The request body placed in the file named _metadata.json_:
 
-@[code](@httpapi/metadata.json)
+@[code](@samples/http-api/metadata.json)
 
 Then, when you execute HTTP request as follows:
 
-@[code{curl}](@httpapi/update-acl.sh)
+@[code{curl}](@samples/http-api/update-acl.sh)
 
 You get a confirmation from the server:
 
-@[code{response}](@httpapi/update-acl.sh)
+@[code{response}](@samples/http-api/update-acl.sh)
 
 ## Default ACL
 
