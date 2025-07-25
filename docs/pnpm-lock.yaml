@@ -96,9 +96,6 @@ importers:
       shx:
         specifier: 0.3.3
         version: 0.3.3
-      stylus:
-        specifier: ^0.56.0
-        version: 0.56.0
       tsconfig-vuepress:
         specifier: ^4.5.0
         version: 4.5.0
@@ -7099,7 +7096,8 @@ snapshots:
       is-array-buffer: 3.0.4
       is-shared-array-buffer: 1.0.3
 
-  atob@2.1.2: {}
+  atob@2.1.2:
+    optional: true
 
   autoprefixer@10.4.20(postcss@8.5.2):
     dependencies:
@@ -7370,6 +7368,7 @@ snapshots:
       inherits: 2.0.4
       source-map: 0.6.1
       source-map-resolve: 0.6.0
+    optional: true
 
   cssesc@3.0.0: {}
 
@@ -7599,7 +7598,8 @@ snapshots:
 
   decamelize@1.2.0: {}
 
-  decode-uri-component@0.2.2: {}
+  decode-uri-component@0.2.2:
+    optional: true
 
   deep-is@0.1.4: {}
 
@@ -9132,7 +9132,8 @@ snapshots:
     optionalDependencies:
       '@parcel/watcher': 2.5.1
 
-  sax@1.2.4: {}
+  sax@1.2.4:
+    optional: true
 
   sax@1.4.1: {}
 
@@ -9229,10 +9230,13 @@ snapshots:
     dependencies:
       atob: 2.1.2
       decode-uri-component: 0.2.2
+    optional: true
 
-  source-map@0.6.1: {}
+  source-map@0.6.1:
+    optional: true
 
-  source-map@0.7.4: {}
+  source-map@0.7.4:
+    optional: true
 
   space-separated-tokens@2.0.2: {}
 
@@ -9308,6 +9312,7 @@ snapshots:
       source-map: 0.7.4
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   superjson@2.2.1:
     dependencies:
