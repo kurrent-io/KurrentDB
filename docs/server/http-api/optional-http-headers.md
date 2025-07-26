@@ -10,16 +10,16 @@ KurrentDB supports custom HTTP headers for requests in the form `Kurrent-*`.
 
 The headers supported are:
 
-| Header                                                                   | Description                                                                                        |
-|--------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| [Kurrent-ExpectedVersion](#expected-version)                                  | The expected version of the stream (allows optimistic concurrency)                                 |
-| [Kurrent-ResolveLinkTo](#resolve-linkto)                                      | Whether to resolve `linkTos` in stream                                                             |
-| [Kurrent-RequireLeader](#require-leader)                                    | Whether this operation needs to run on the leader node                                             |
-| [Kurrent-TrustedAuth](@server/security/user-authentication.md#externalised-authentication) | Allows a trusted intermediary to handle authentication                                             |
-| [Kurrent-LongPoll](#longpoll)                                                 | Instructs the server to do a long poll operation on a stream read                                  |
-| [Kurrent-HardDelete](#harddelete)                                             | Instructs the server to hard delete the stream when deleting as opposed to the default soft delete |
-| [Kurrent-EventType](#eventtype)                                               | Instructs the server the event type associated to a posted body                                    |
-| [Kurrent-EventId](#eventid)                                                   | Instructs the server the event id associated to a posted body                                      |
+| Header                                                                                | Description                                                                                        |
+|---------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| [Kurrent-ExpectedVersion](#expected-version)                                          | The expected version of the stream (allows optimistic concurrency)                                 |
+| [Kurrent-ResolveLinkTo](#resolve-linkto)                                              | Whether to resolve `linkTos` in stream                                                             |
+| [Kurrent-RequireLeader](#require-leader)                                              | Whether this operation needs to run on the leader node                                             |
+| [Kurrent-TrustedAuth](../security/user-authentication.md#externalised-authentication) | Allows a trusted intermediary to handle authentication                                             |
+| [Kurrent-LongPoll](#longpoll)                                                         | Instructs the server to do a long poll operation on a stream read                                  |
+| [Kurrent-HardDelete](#harddelete)                                                     | Instructs the server to hard delete the stream when deleting as opposed to the default soft delete |
+| [Kurrent-EventType](#eventtype)                                                       | Instructs the server the event type associated to a posted body                                    |
+| [Kurrent-EventId](#eventid)                                                           | Instructs the server the event id associated to a posted body                                      |
 
 ## EventID
 
