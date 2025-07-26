@@ -25,14 +25,9 @@ export function resolveSamplesPath(src: string, srcCat: string | undefined) {
     if (!includesCat && srcCat === undefined) return def(src);
 
     const cats = {
-        "@httpapi": {
-            "default": {
-                path: "../../samples/http-api"
-            }
-        },
         "@samples": {
             "default": {
-                path: "../../samples/server"
+                path: "../../samples"
             }
         },
         "@grpc": {
