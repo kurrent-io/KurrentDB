@@ -34,7 +34,7 @@ If you were to use the wrong user or no user when a request requires one, you re
 @[code](@samples/http-api/incorrect-user.http)
 :::
 
-As you pass the username and password in the request we recommend you to enable SSL to encrypt the user information. [Read this guide for instructions](@server/security/README.md).
+As you pass the username and password in the request we recommend you to enable SSL to encrypt the user information. [Read this guide for instructions](../security/protocol-security.md).
 
 ## Access control lists
 
