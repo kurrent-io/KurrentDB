@@ -38,9 +38,9 @@ The buttons on the top right when you are viewing an event stream are:
 - _Pause_: Stop showing events arriving into this stream.
 - _Resume_: Resume showing events arriving into this stream.
 - _Edit ACL_: Edit [the access control lists](../configuration/security.md#access-control-lists) for a stream.
-- _Add Event_: [Add a new event](@clients/http-api/README.md#appending-events) to the stream.
-- _Delete_: [Delete a stream](@clients/http-api/README.md#deleting-a-stream) to the stream.
-- _Query_:
+- _Add Event_: Add a new event to the stream.
+- _Delete_: Delete a stream.
+- _Query_: Create a transient projection to query the stream.
 
 The buttons on the left above the events when you are viewing an event stream are:
 
