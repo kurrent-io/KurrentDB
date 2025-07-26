@@ -32,6 +32,7 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 	[TestFixture(typeof(LogFormat.V3), typeof(uint))]
 	public class via_http_should : authenticated_requests_made_from_a_follower<TLogFormat, TStreamId> {
 		private HttpStatusCode _statusCode;
+		private string _responseReason;
 
 		protected override async Task Given() {
 			var node = GetFollowers()[0];
@@ -63,12 +64,12 @@ public abstract class authenticated_requests_made_from_a_follower<TLogFormat, TS
 					Headers = { ContentType = new MediaTypeHeaderValue(ContentType.EventsJson) }
 				});
 
+			_responseReason = response.ReasonPhrase;
 			_statusCode = response.StatusCode;
 		}
 
 		[Test]
-		[Retry(5)]
-		public void work() => Assert.AreEqual(HttpStatusCode.Created, _statusCode);
+		public void work() => Assert.AreEqual(HttpStatusCode.Created, _statusCode, $"Reason: {_responseReason}");
 	}
 
 	[TestFixture(typeof(LogFormat.V2), typeof(string))]

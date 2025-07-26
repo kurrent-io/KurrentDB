@@ -12,6 +12,7 @@ using EventStore.Plugins.Subsystems;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Tests.Helpers;
 using NUnit.Framework;
+using NUnit.Framework.Interfaces;
 
 namespace KurrentDB.Core.Tests.Integration;
 
@@ -153,6 +154,14 @@ public abstract class specification_with_cluster<TLogFormat, TStreamId> : Specif
 		PathName, index, endpoints.InternalTcp,
 		endpoints.ExternalTcp, endpoints.HttpEndPoint,
 		subsystems: Array.Empty<ISubsystem>(), gossipSeeds: gossipSeeds, inMemDb: false);
+
+	[TearDown]
+	public void AfterEachTest() {
+		if (TestContext.CurrentContext.Result.Outcome.Status is TestStatus.Failed) {
+			MiniNodeLogging.WriteLogs();
+			MiniNodeLogging.Clear();
+		}
+	}
 
 	[OneTimeTearDown]
 	public override async Task TestFixtureTearDown() {
