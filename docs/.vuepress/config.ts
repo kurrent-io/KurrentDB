@@ -25,10 +25,7 @@ export default defineUserConfig({
         md.use(replaceLinkPlugin, {
             replaceLink: (link: string, _) => link
                 .replace("@server", "/server")
-                .replace("@clients/http-api/", "/http-api/")
-                .replace("@clients/httpapi/", "/http-api/")
                 .replace("@httpapi/data/", projectionSamplesPath)
-                .replace("@httpapi", "/http-api")
         });
         md.use(dl);
     },
@@ -46,10 +43,6 @@ export default defineUserConfig({
                 text: "Server",
                 link: "/server/",
             },
-            {
-                text: "HTTP API",
-                link: "/http-api/"
-            }
         ],
         iconAssets: "iconify",
         plugins: {
