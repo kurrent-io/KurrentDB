@@ -4,7 +4,7 @@ order: 3
 
 # Persistent subscriptions
 
-This document explains how to use HTTP API for setting up and consuming persistent subscriptions and competing consumer subscription groups. For an overview on competing consumers and how they relate to other subscription types please see our [getting started guide](@server/features/persistent-subscriptions.md).
+This document explains how to use HTTP API for setting up and consuming persistent subscriptions and competing consumer subscription groups. For an overview on competing consumers and how they relate to other subscription types please see our [getting started guide](../server/features/persistent-subscriptions.md).
 
 ::: tip
 The Administration UI includes a _Persistent Subscriptions_ section where you are able to create, update, delete and view subscriptions and their statuses.
