@@ -106,7 +106,7 @@ Then send the update to the projection:
 @[code](@samples/http-api/projections/update-projection-options.sh)
 
 ::: tip
-You can find all the options available in the [user-defined projections guide](@server/projections.md#user-defined-projections).
+You can find all the options available in the [user-defined projections guide](../projections.md#user-defined-projections).
 :::
 
 Now you can read the result as above, but use the new stream name:

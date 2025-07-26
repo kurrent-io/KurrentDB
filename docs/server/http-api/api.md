@@ -738,7 +738,7 @@ curl -X PUT https://eventstore.com/subscriptions/{stream}/{subscription} \
  `PUT /subscriptions/{stream}/{subscription}`
 *Create a persistent subscription*
 
-Before interacting with a subscription group, you need to create one. You will receive an error if you attempt to create a subscription group more than once. This requires [admin permissions](@server/security.md#access-control-lists).
+Before interacting with a subscription group, you need to create one. You will receive an error if you attempt to create a subscription group more than once. This requires [admin permissions](../security.md#access-control-lists).
 
 > Body parameter
 
