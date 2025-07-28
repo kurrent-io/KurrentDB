@@ -1,4 +1,3 @@
-<!-- Generator: Widdershins v4.0.1 -->
 ---
 order: 6
 ---
