@@ -365,7 +365,7 @@ You create Etags using the version of the stream and the media type of the strea
 
 So far in this guide, the feeds returned have contained links that refer to the actual event data. This is normally a preferable mechanism for several reasons:
 
-- They can be in a different media type than the feed, and you can negotiate them separately from the feed itself (for example, the feed in JSON, the event in XML). You can cache the event data separately from the feed, and you can point it to different feeds. If you use a `linkTo()` in your [projection](@server/features/projections/custom.md) this is what happens in your atom feeds.
+- They can be in a different media type than the feed, and you can negotiate them separately from the feed itself (for example, the feed in JSON, the event in XML). You can cache the event data separately from the feed, and you can point it to different feeds. If you use a `linkTo()` in your [projection](../features/projections/custom.md) this is what happens in your atom feeds.
 - If you are using JSON, you can embed the events into the atom feed events. This can help cut down on the number of requests in some situations, but the messages are larger.
 
 There are ways of embedding events and further metadata into your stream by using the `embed` parameter.
