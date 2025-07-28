@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
@@ -66,6 +67,8 @@ class WriteEventsOperation(string stream, long expectedRevision) : IEnvelope {
 		return;
 
 		static WriteEventsResult MapToResult(ClientMessage.WriteEventsCompleted completed) {
+			Debug.Assert(completed.CommitPosition >= 0);
+			Debug.Assert(completed.PreparePosition >= 0);
 			var position       = Position.FromInt64(completed.CommitPosition, completed.PreparePosition);
 			var streamRevision = StreamRevision.FromInt64(completed.LastEventNumbers.Single);
 			return new(position, streamRevision);

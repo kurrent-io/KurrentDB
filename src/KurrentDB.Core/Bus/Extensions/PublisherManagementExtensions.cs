@@ -4,6 +4,7 @@
 // ReSharper disable CheckNamespace
 
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using KurrentDB.Core.Bus;
@@ -49,6 +50,8 @@ public static class PublisherManagementExtensions {
 
 		void Callback(Message message) {
 			if (message is ClientMessage.DeleteStreamCompleted { Result: OperationResult.Success } completed) {
+				Debug.Assert(completed.CommitPosition >= 0);
+				Debug.Assert(completed.PreparePosition >= 0);
 				var position = new Position((ulong)completed.CommitPosition, (ulong)completed.PreparePosition);
 				var streamRevision = StreamRevision.FromInt64(completed.CurrentVersion);
 
