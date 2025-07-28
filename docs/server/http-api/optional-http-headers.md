@@ -10,16 +10,16 @@ EventStoreDB supports custom HTTP headers for requests. The headers were previou
 
 The headers supported are:
 
-| Header                                                                   | Description                                                                                        |
-|--------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| [ES-ExpectedVersion](#expected-version)                                  | The expected version of the stream (allows optimistic concurrency)                                 |
-| [ES-ResolveLinkTo](#resolve-linkto)                                      | Whether to resolve `linkTos` in stream                                                             |
-| [ES-RequiresMaster](#requires-master)                                    | Whether this operation needs to run on the master node                                             |
-| [ES-TrustedAuth](@server/security/user-authentication.md#externalised-authentication) | Allows a trusted intermediary to handle authentication                                             |
-| [ES-LongPoll](#longpoll)                                                 | Instructs the server to do a long poll operation on a stream read                                  |
-| [ES-HardDelete](#harddelete)                                             | Instructs the server to hard delete the stream when deleting as opposed to the default soft delete |
-| [ES-EventType](#eventtype)                                               | Instructs the server the event type associated to a posted body                                    |
-| [ES-EventId](#eventid)                                                   | Instructs the server the event id associated to a posted body                                      |
+| Header                                                                           | Description                                                                                        |
+|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| [ES-ExpectedVersion](#expected-version)                                          | The expected version of the stream (allows optimistic concurrency)                                 |
+| [ES-ResolveLinkTo](#resolve-linkto)                                              | Whether to resolve `linkTos` in stream                                                             |
+| [ES-RequiresMaster](#requires-master)                                            | Whether this operation needs to run on the master node                                             |
+| [ES-TrustedAuth](../security/user-authentication.md#externalised-authentication) | Allows a trusted intermediary to handle authentication                                             |
+| [ES-LongPoll](#longpoll)                                                         | Instructs the server to do a long poll operation on a stream read                                  |
+| [ES-HardDelete](#harddelete)                                                     | Instructs the server to hard delete the stream when deleting as opposed to the default soft delete |
+| [ES-EventType](#eventtype)                                                       | Instructs the server the event type associated to a posted body                                    |
+| [ES-EventId](#eventid)                                                           | Instructs the server the event id associated to a posted body                                      |
 
 ## EventID
 
