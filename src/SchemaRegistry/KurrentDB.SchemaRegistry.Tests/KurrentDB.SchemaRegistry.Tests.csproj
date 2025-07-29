@@ -38,5 +38,12 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <None Remove="KurrentDB.SchemaRegistry.Tests.csproj.DotSettings" />
+	  <None Remove="Modules\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Compile Remove="Modules\**" />
+	</ItemGroup>
+	<ItemGroup>
+	  <EmbeddedResource Remove="Modules\**" />
 	</ItemGroup>
 </Project>

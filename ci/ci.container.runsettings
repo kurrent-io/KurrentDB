@@ -13,7 +13,6 @@
 			&amp; (FullyQualifiedName!~KurrentDB.Auth.OAuth.Tests)
 			&amp; (FullyQualifiedName!~KurrentDB.Auth.UserCertificates.Tests)
 			&amp; (FullyQualifiedName!~KurrentDB.Diagnostics.LogsEndpointPlugin.Tests)
-			&amp; (FullyQualifiedName!~KurrentDB.SchemaRegistry.Tests)
 		</TestCaseFilter>
 	</RunConfiguration>
 </RunSettings>
