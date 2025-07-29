@@ -25,6 +25,7 @@
 		<PackageReference Include="Serilog.Settings.Configuration" />
 		<PackageReference Include="Serilog.Sinks.Async" />
 		<PackageReference Include="Serilog.Sinks.File" />
+		<PackageReference Include="Serilog.Sinks.Seq" />
 		<PackageReference Include="Serilog.Sinks.Console" />
 
 		<PackageReference Include="System.Security.Cryptography.Pkcs" />

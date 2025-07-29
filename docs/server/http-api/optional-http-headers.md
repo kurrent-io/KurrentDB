@@ -29,18 +29,18 @@ You can include an event ID on an event by specifying this header.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-to-new-stream.sh)
+@[code{curl}](@samples/http-api/append-event-to-new-stream.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-to-new-stream.sh)
+@[code{response}](@samples/http-api/append-event-to-new-stream.sh)
 :::
 
 If you don't add an `Kurrent-EventId` header on an append where the body is considered the actual event (e.g., not using `application/vnd.kurrent.events+json`) KurrentDB generates a unique identifier for you and redirects you to an idempotent URI where you can post your event. If you can create a UUID then you shouldn't use this feature, but it's useful when you cannot create a UUID.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-no-id.sh)
+@[code{curl}](@samples/http-api/append-event-no-id.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-no-id.sh)
+@[code{response}](@samples/http-api/append-event-no-id.sh)
 :::
 
 KurrentDB returned a `307 Temporary Redirect` with a location header that points to a generated URI that is idempotent for purposes of retrying the post.
@@ -53,9 +53,9 @@ You use the `Kurrent-EventType` header as follows.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-to-new-stream.sh)
+@[code{curl}](@samples/http-api/append-event-to-new-stream.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-to-new-stream.sh)
+@[code{response}](@samples/http-api/append-event-to-new-stream.sh)
 :::
 
 If you view the event in the UI or with cURL it has the `EventType` of `SomeEvent`:
@@ -64,9 +64,9 @@ If you view the event in the UI or with cURL it has the `EventType` of `SomeEven
 
 ::: tabs
 @tab Request
-@[code](@httpapi/read-event.sh)
+@[code](@samples/http-api/read-event.sh)
 @tab Response
-@[code](@httpapi/read-event.json)
+@[code](@samples/http-api/read-event.json)
 :::
 
 ## Expected Version
@@ -88,27 +88,27 @@ In the following cURL command `ExpectedVersion` is not set, and it appends or cr
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-to-new-stream.sh)
+@[code{curl}](@samples/http-api/append-event-to-new-stream.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-to-new-stream.sh)
+@[code{response}](@samples/http-api/append-event-to-new-stream.sh)
 :::
 
 The stream `newstream` has one event. If you append with an expected version of `3`, you receive an error.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-wrong-version.sh)
+@[code{curl}](@samples/http-api/append-event-wrong-version.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-wrong-version.sh)
+@[code{response}](@samples/http-api/append-event-wrong-version.sh)
 :::
 
 You can see from the `Kurrent-CurrentVersion` header above that the stream is at version 0. Appending with an expected version of 0 works. The expected version is always the version of the last event known in the stream.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/append-event-version.sh)
+@[code{curl}](@samples/http-api/append-event-version.sh)
 @tab Response
-@[code{response}](@httpapi/append-event-version.sh)
+@[code{response}](@samples/http-api/append-event-version.sh)
 :::
 
 ## HardDelete
@@ -117,9 +117,9 @@ The `Kurrent-HardDelete` header controls deleting a stream. By default KurrentDB
 
 ::: tabs
 @tab Request
-@[code](@httpapi/delete-stream/hard-delete-stream.sh)
+@[code](@samples/http-api/delete-stream/hard-delete-stream.sh)
 @tab Response
-@[code](@httpapi/delete-stream/hard-delete-stream.http)
+@[code](@samples/http-api/delete-stream/hard-delete-stream.http)
 :::
 
 This changes the general behaviour from returning a `404` and the stream to be recreated (soft-delete) to the stream now return a `410 Deleted` response.
@@ -138,23 +138,23 @@ First go to the head of the stream.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/read-stream.sh)
+@[code{curl}](@samples/http-api/read-stream.sh)
 @tab Response
-@[code{response}](@httpapi/read-stream.sh)
+@[code{response}](@samples/http-api/read-stream.sh)
 :::
 
 Then fetch the previous `rel` link `http://127.0.0.1:2113/streams/newstream/2/forward/20` and try it. It returns an empty feed.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/get-forward-link.sh)
+@[code{curl}](@samples/http-api/get-forward-link.sh)
 @tab Response
-@[code{response}](@httpapi/get-forward-link.sh)
+@[code{response}](@samples/http-api/get-forward-link.sh)
 :::
 
 The entries section is empty (there is no further data to provide). Now try the same URI with a long poll header.
 
-@[code](@httpapi/longpoll.sh)
+@[code](@samples/http-api/longpoll.sh)
 
 If you do not insert any events into the stream while this is running it takes 10 seconds for the HTTP request to finish. If you append an event to the stream while its running you see the result for that request when you append the event.
 
@@ -271,9 +271,9 @@ You can see the differences in behaviour in the following cURL commands.
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/resolve-links.sh)
+@[code{curl}](@samples/http-api/resolve-links.sh)
 @tab Response
-@[code{response}](@httpapi/resolve-links.sh)
+@[code{response}](@samples/http-api/resolve-links.sh)
 :::
 
 ::: tip
@@ -282,7 +282,7 @@ The content links are pointing to the original projection stream. The linked eve
 
 ::: tabs
 @tab Request
-@[code{curl}](@httpapi/resolve-links-false.sh)
+@[code{curl}](@samples/http-api/resolve-links-false.sh)
 @tab Response
-@[code{response}](@httpapi/resolve-links-false.sh)
+@[code{response}](@samples/http-api/resolve-links-false.sh)
 :::
