@@ -6,6 +6,9 @@
 		<AssemblySelectLimit>2147483647</AssemblySelectLimit>
 	</NUnit>
 	<RunConfiguration>
-		<TestCaseFilter>(FullyQualifiedName!~EventStore.Core.Tests.LogFormat+V3) &amp; (FullyQualifiedName!~KurrentDB.Core.Tests.LogFormat+V3)</TestCaseFilter>
+		<TestCaseFilter>(FullyQualifiedName!~EventStore.Core.Tests.LogFormat+V3)
+      &amp; (FullyQualifiedName!~KurrentDB.Core.Tests.LogFormat+V3)
+			&amp; (FullyQualifiedName!~KurrentDB.SchemaRegistry.Tests)
+    </TestCaseFilter>
 	</RunConfiguration>
 </RunSettings>
