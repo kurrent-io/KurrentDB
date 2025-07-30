@@ -85,7 +85,8 @@ jobs:
         --logger:"console;verbosity=normal"
         --results-directory $(pwd)/test-results
         src/KurrentDB.sln
-    -  
+        -- --report-trx --results-directory $(pwd)/test-results
+    -
       name: Publish Test Results (All)
       uses: actions/upload-artifact@v4
       if: always()

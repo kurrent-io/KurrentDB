@@ -13,8 +13,31 @@
 			&amp; (FullyQualifiedName!~KurrentDB.Auth.OAuth.Tests)
 			&amp; (FullyQualifiedName!~KurrentDB.Auth.UserCertificates.Tests)
 			&amp; (FullyQualifiedName!~KurrentDB.Diagnostics.LogsEndpointPlugin.Tests)
+			&amp; (FullyQualifiedName!~KurrentDB.Auth.LegacyAuthorizationWithStreamAuthorizationDisabled.Tests)
+			&amp; (FullyQualifiedName!~KurrentDB.Auth.UserCertificates.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Auth.Ldaps.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.SourceGenerators.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Diagnostics.LogsEndpointPlugin.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Plugins.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Security.EncryptionAtRest.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Auth.OAuth.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Common.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.BufferManagement.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.LogV3.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.OtlpExporterPlugin.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.SystemRuntime.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Projections.Core.Javascript.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Core.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Core.XUnit.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Licensing.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Projections.Core.XUnit.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Auth.StreamPolicyPlugin.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.TcpPlugin.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.AutoScavenge.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Projections.Core.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Connectors.Tests)
+            &amp; (FullyQualifiedName!~KurrentDB.Surge.Tests)
+            &amp; (KurrentDB.SecondaryIndexing.Tests)
 		</TestCaseFilter>
 	</RunConfiguration>
 </RunSettings>
-
-

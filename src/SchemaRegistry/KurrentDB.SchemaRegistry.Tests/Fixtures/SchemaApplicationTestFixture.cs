@@ -18,7 +18,6 @@ using KurrentDB.Surge.Eventuous;
 using Microsoft.Extensions.DependencyInjection;
 using NJsonSchema;
 using Polly;
-using Shouldly;
 using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 
@@ -59,35 +58,8 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		};
 	}
 
-	// async ValueTask<bool> WaitUntilCaughtUp(ulong position) {
-	// 	const string sql =
-	// 		"""
-	// 		SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
-	// 		    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
-	// 		""";
-	//
-	// 	var connection = DuckDbConnectionProvider.GetConnection();
-	//
-	// 	var parameters = new { checkpoint = position };
-	//
-	// 	var foreverRetryOnResult = Policy
-	// 		.HandleResult<bool>(exists => !exists)
-	// 		.WaitAndRetryForeverAsync(_ => TimeSpan.FromMilliseconds(100));
-	//
-	// 	var retryOnException = Policy<bool>
-	// 		.Handle<DuckDBException>()
-	// 		.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100));
-	//
-	// 	var retryPolicy = Policy.WrapAsync(foreverRetryOnResult, retryOnException);
-	//
-	// 	var exists = await retryPolicy.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
-	//
-	// 	return exists;
-	// }
-
-	async Task WaitUntilCaughtUp(ulong position, CancellationToken ct = default)
-	{
-		await Wait.UntilAsserted(async () => {
+	async Task WaitUntilCaughtUp(ulong position, CancellationToken ct = default) =>
+		await Wait.Until(async () => {
 			const string sql =
 				"""
 				SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
@@ -95,14 +67,17 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 				""";
 
 			var connection = DuckDbConnectionProvider.GetConnection();
-
 			var parameters = new { checkpoint = position };
 
-			var exists = await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters);
+			var retryOnException = Policy<bool>
+				.Handle<DuckDBException>()
+				.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100));
 
-			exists.ShouldBeTrue();
+			var exists = await retryOnException.ExecuteAsync(async () =>
+				await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
+
+			return exists;
 		}, cancellationToken: ct);
-	}
 
 	#region commands
 

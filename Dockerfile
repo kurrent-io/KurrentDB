@@ -45,7 +45,8 @@ CMD dotnet test \
     --logger:"GitHubActions;report-warnings=false" \
     --logger:"console;verbosity=normal" \
     --results-directory "/build/test-results" \
-    /build/src/KurrentDB.sln
+    /build/src/KurrentDB.sln \
+    -- --report-trx --results-directory "/build/test-results"
 
 # "publish" image
 FROM build AS publish
