@@ -58,31 +58,24 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		};
 	}
 
-	async ValueTask<bool> WaitUntilCaughtUp(ulong position) {
-		const string sql =
-			"""
-			SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
-			    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
-			""";
+	async Task WaitUntilCaughtUp(ulong position, CancellationToken ct = default) =>
+		await Wait.Until(async () => {
+			const string sql =
+				"""
+				SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
+				    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
+				""";
 
-		var connection = DuckDbConnectionProvider.GetConnection();
+			var connection = DuckDbConnectionProvider.GetConnection();
+			var parameters = new { checkpoint = position };
 
-		var parameters = new { checkpoint = position };
+			var exists = await Policy<bool>
+				.Handle<DuckDBException>()
+				.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100))
+				.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
 
-		var foreverRetryOnResult = Policy
-			.HandleResult<bool>(exists => !exists)
-			.WaitAndRetryForeverAsync(_ => TimeSpan.FromMilliseconds(100));
-
-		var retryOnException = Policy<bool>
-			.Handle<DuckDBException>()
-			.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100));
-
-		var retryPolicy = Policy.WrapAsync(foreverRetryOnResult, retryOnException);
-
-		var exists = await retryPolicy.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
-
-		return exists;
-	}
+			return exists;
+		}, cancellationToken: ct);
 
 	#region commands
 
@@ -128,7 +121,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 
 		var applicationResult = await Apply(command, ct);
 		var evt = applicationResult.Changes.GetSingleEvent<SchemaCreated>();
-		await WaitUntilCaughtUp(applicationResult.StreamPosition);
+		await WaitUntilCaughtUp(applicationResult.StreamPosition, ct);
 		return new CreateSchemaResponse {
 			SchemaVersionId = evt.SchemaVersionId,
 			VersionNumber = evt.VersionNumber
@@ -146,7 +139,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 
 		var applicationResult = await Apply(command, ct);
 		var evt = applicationResult.Changes.GetSingleEvent<SchemaVersionRegistered>();
-		await WaitUntilCaughtUp(applicationResult.StreamPosition);
+		await WaitUntilCaughtUp(applicationResult.StreamPosition, ct);
 		return new RegisterSchemaVersionResponse {
 			SchemaVersionId = evt.SchemaVersionId,
 			VersionNumber = evt.VersionNumber

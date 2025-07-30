@@ -14,7 +14,6 @@ using TUnit.Core.Interfaces;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 
 [assembly: Timeout(20_000)]
-[assembly: NotInParallel]
 
 namespace KurrentDB.SchemaRegistry.Tests.Fixtures;
 
