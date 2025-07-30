@@ -40,15 +40,18 @@
 	  <Compile Remove="Modules\Schemas\Validation\**" />
 	  <Compile Remove="Modules\Schemas\Validators\**" />
 	  <Compile Remove="Modules\Schemas\Domain\**" />
+	  <Compile Remove="Modules\Schemas\Data\**" />
 	</ItemGroup>
 	<ItemGroup>
 	  <EmbeddedResource Remove="Modules\Schemas\Validation\**" />
 	  <EmbeddedResource Remove="Modules\Schemas\Validators\**" />
 	  <EmbeddedResource Remove="Modules\Schemas\Domain\**" />
+	  <EmbeddedResource Remove="Modules\Schemas\Data\**" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Remove="Modules\Schemas\Validation\**" />
 	  <None Remove="Modules\Schemas\Validators\**" />
 	  <None Remove="Modules\Schemas\Domain\**" />
+	  <None Remove="Modules\Schemas\Data\**" />
 	</ItemGroup>
 </Project>

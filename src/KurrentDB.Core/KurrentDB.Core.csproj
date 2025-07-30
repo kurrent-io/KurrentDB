@@ -35,6 +35,7 @@
 		<PackageReference Include="DotNext.IO" />
 		<PackageReference Include="DotNext.Threading" />
 		<PackageReference Include="DotNext.Unsafe" />
+		<PackageReference Include="System.Security.Cryptography.Pkcs" />
 		<PackageReference Include="System.Text.RegularExpressions" />
 		<PackageReference Include="System.Threading.Channels" />
 		<PackageReference Include="Scrutor" />
