@@ -82,7 +82,6 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 					connection = DuckDbConnectionProvider.GetConnection();
 				})
 				.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
-
 			return exists;
 		}, cancellationToken: ct);
 
