@@ -37,13 +37,18 @@
 		<Using Include="TUnit"/>
 	</ItemGroup>
 	<ItemGroup>
-	  <None Remove="KurrentDB.SchemaRegistry.Tests.csproj.DotSettings" />
-	  <None Remove="Modules\Schemas\Integration\**" />
+	  <Compile Remove="Modules\Schemas\Validation\**" />
+	  <Compile Remove="Modules\Schemas\Validators\**" />
+	  <Compile Remove="Modules\Schemas\Domain\**" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Compile Remove="Modules\Schemas\Integration\**" />
+	  <EmbeddedResource Remove="Modules\Schemas\Validation\**" />
+	  <EmbeddedResource Remove="Modules\Schemas\Validators\**" />
+	  <EmbeddedResource Remove="Modules\Schemas\Domain\**" />
 	</ItemGroup>
 	<ItemGroup>
-	  <EmbeddedResource Remove="Modules\Schemas\Integration\**" />
+	  <None Remove="Modules\Schemas\Validation\**" />
+	  <None Remove="Modules\Schemas\Validators\**" />
+	  <None Remove="Modules\Schemas\Domain\**" />
 	</ItemGroup>
 </Project>
