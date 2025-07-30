@@ -18,6 +18,7 @@ using KurrentDB.Surge.Eventuous;
 using Microsoft.Extensions.DependencyInjection;
 using NJsonSchema;
 using Polly;
+using Shouldly;
 using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 
@@ -58,30 +59,49 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		};
 	}
 
-	async ValueTask<bool> WaitUntilCaughtUp(ulong position) {
-		const string sql =
-			"""
-			SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
-			    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
-			""";
+	// async ValueTask<bool> WaitUntilCaughtUp(ulong position) {
+	// 	const string sql =
+	// 		"""
+	// 		SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
+	// 		    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
+	// 		""";
+	//
+	// 	var connection = DuckDbConnectionProvider.GetConnection();
+	//
+	// 	var parameters = new { checkpoint = position };
+	//
+	// 	var foreverRetryOnResult = Policy
+	// 		.HandleResult<bool>(exists => !exists)
+	// 		.WaitAndRetryForeverAsync(_ => TimeSpan.FromMilliseconds(100));
+	//
+	// 	var retryOnException = Policy<bool>
+	// 		.Handle<DuckDBException>()
+	// 		.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100));
+	//
+	// 	var retryPolicy = Policy.WrapAsync(foreverRetryOnResult, retryOnException);
+	//
+	// 	var exists = await retryPolicy.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
+	//
+	// 	return exists;
+	// }
 
-		var connection = DuckDbConnectionProvider.GetConnection();
+	async Task WaitUntilCaughtUp(ulong position, CancellationToken ct = default)
+	{
+		await Wait.UntilAsserted(async () => {
+			const string sql =
+				"""
+				SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
+				    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
+				""";
 
-		var parameters = new { checkpoint = position };
+			var connection = DuckDbConnectionProvider.GetConnection();
 
-		var foreverRetryOnResult = Policy
-			.HandleResult<bool>(exists => !exists)
-			.WaitAndRetryForeverAsync(_ => TimeSpan.FromMilliseconds(100));
+			var parameters = new { checkpoint = position };
 
-		var retryOnException = Policy<bool>
-			.Handle<DuckDBException>()
-			.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100));
+			var exists = await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters);
 
-		var retryPolicy = Policy.WrapAsync(foreverRetryOnResult, retryOnException);
-
-		var exists = await retryPolicy.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
-
-		return exists;
+			exists.ShouldBeTrue();
+		}, cancellationToken: ct);
 	}
 
 	#region commands
@@ -128,7 +148,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 
 		var applicationResult = await Apply(command, ct);
 		var evt = applicationResult.Changes.GetSingleEvent<SchemaCreated>();
-		await WaitUntilCaughtUp(applicationResult.StreamPosition);
+		await WaitUntilCaughtUp(applicationResult.StreamPosition, ct);
 		return new CreateSchemaResponse {
 			SchemaVersionId = evt.SchemaVersionId,
 			VersionNumber = evt.VersionNumber
@@ -146,7 +166,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 
 		var applicationResult = await Apply(command, ct);
 		var evt = applicationResult.Changes.GetSingleEvent<SchemaVersionRegistered>();
-		await WaitUntilCaughtUp(applicationResult.StreamPosition);
+		await WaitUntilCaughtUp(applicationResult.StreamPosition, ct);
 		return new RegisterSchemaVersionResponse {
 			SchemaVersionId = evt.SchemaVersionId,
 			VersionNumber = evt.VersionNumber
