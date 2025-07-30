@@ -35,8 +35,6 @@
             &amp; (FullyQualifiedName!~KurrentDB.TcpPlugin.Tests)
             &amp; (FullyQualifiedName!~KurrentDB.AutoScavenge.Tests)
             &amp; (FullyQualifiedName!~KurrentDB.Projections.Core.Tests)
-            &amp; (FullyQualifiedName!~KurrentDB.Connectors.Tests)
-            &amp; (FullyQualifiedName!~KurrentDB.Surge.Tests)
             &amp; (KurrentDB.SecondaryIndexing.Tests)
 		</TestCaseFilter>
 	</RunConfiguration>

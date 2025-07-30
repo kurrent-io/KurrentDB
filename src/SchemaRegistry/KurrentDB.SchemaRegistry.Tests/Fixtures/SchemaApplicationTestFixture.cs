@@ -71,16 +71,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 
 			var exists = await Policy<bool>
 				.Handle<DuckDBException>()
-				.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100), onRetry: (_, _, _, _) => {
-					try {
-						connection.ExecuteAsync("ROLLBACK").GetAwaiter().GetResult();
-					}
-					catch {
-						connection.Dispose();
-					}
-
-					connection = DuckDbConnectionProvider.GetConnection();
-				})
+				.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100))
 				.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
 			return exists;
 		}, cancellationToken: ct);
