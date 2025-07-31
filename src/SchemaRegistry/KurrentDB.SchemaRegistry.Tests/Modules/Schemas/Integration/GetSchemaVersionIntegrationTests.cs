@@ -1,7 +1,6 @@
 // Copyright (c) Kurrent, Inc and/or licensed to Kurrent, Inc under one or more agreements.
 // Kurrent, Inc licenses this file to you under the Kurrent License v1 (see LICENSE.md).
 
-using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
@@ -9,8 +8,6 @@ using KurrentDB.SchemaRegistry.Tests.Fixtures;
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class GetSchemaVersionIntegrationTests : SchemaApplicationTestFixture {
-
-
 	[Test]
 	public async Task get_schema_version(CancellationToken cancellationToken) {
 		// Arrange

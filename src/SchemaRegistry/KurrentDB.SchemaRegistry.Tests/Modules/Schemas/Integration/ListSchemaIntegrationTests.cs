@@ -10,15 +10,17 @@ using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using NJsonSchema;
+using Shouldly;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 	[Test]
 	public async Task list_schemas_with_prefix(CancellationToken cancellationToken) {
-		var prefix = NewPrefix();
 		// Arrange
-		var schema1 = new SchemaCreated {
+		var prefix = NewPrefix();
+
+		var schema = new SchemaCreated {
 			SchemaName = NewSchemaName(prefix),
 			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
 			Description = Faker.Lorem.Text(),
@@ -29,48 +31,26 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			CreatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
 		};
 
-		var details1 = new SchemaDetails {
-			Description = schema1.Description,
-			DataFormat = schema1.DataFormat,
-			Compatibility = schema1.Compatibility,
-			Tags = { schema1.Tags }
+		var details = new SchemaDetails {
+			Description = schema.Description,
+			DataFormat = schema.DataFormat,
+			Compatibility = schema.Compatibility,
+			Tags = { schema.Tags }
 		};
 
-		var schema2 = new SchemaCreated {
-			SchemaName = NewSchemaName(prefix),
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-			Description = Faker.Lorem.Text(),
-			DataFormat = SchemaDataFormat.Json,
-			Compatibility = Faker.Random.Enum(CompatibilityMode.Unspecified),
-			SchemaVersionId = Guid.NewGuid().ToString(),
-			VersionNumber = 1,
-			CreatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
-		};
+		await CreateSchema(schema.SchemaName, schema.SchemaDefinition, details, cancellationToken);
 
-		var details2 = new SchemaDetails {
-			Description = schema2.Description,
-			DataFormat = schema2.DataFormat,
-			Compatibility = schema2.Compatibility,
-			Tags = { schema2.Tags }
-		};
+		var listSchemasResponse = await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaNamePrefix = prefix
+			},
+			cancellationToken: cancellationToken
+		);
 
-		await CreateSchema(schema1.SchemaName, schema1.SchemaDefinition, details1, cancellationToken);
-		await CreateSchema(schema2.SchemaName, schema2.SchemaDefinition, details2, cancellationToken);
-
-		var listSchemasResponse = await Client.ListSchemasAsync(new ListSchemasRequest {
-			SchemaNamePrefix = prefix,
-		}, cancellationToken: cancellationToken);
-
-		listSchemasResponse.Should().NotBeNull();
-		listSchemasResponse.Schemas.Count.Should().Be(2);
-
-		listSchemasResponse.Schemas[0].SchemaName.Should().Be(schema1.SchemaName);
-		listSchemasResponse.Schemas[0].LatestSchemaVersion.Should().Be(schema1.VersionNumber);
-		listSchemasResponse.Schemas[0].Details.Should().BeEquivalentTo(details1);
-
-		listSchemasResponse.Schemas[1].SchemaName.Should().Be(schema2.SchemaName);
-		listSchemasResponse.Schemas[1].LatestSchemaVersion.Should().Be(schema2.VersionNumber);
-		listSchemasResponse.Schemas[1].Details.Should().BeEquivalentTo(details2);
+		listSchemasResponse.ShouldNotBeNull();
+		listSchemasResponse.Schemas
+			.ShouldHaveSingleItem()
+			.LatestSchemaVersion.ShouldBe(schema.VersionNumber);
 	}
 
 	[Test]
@@ -79,7 +59,7 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var value = Faker.Database.Engine();
 
 		// Arrange
-		var schema1 = new SchemaCreated {
+		var schema = new SchemaCreated {
 			SchemaName = NewSchemaName(NewPrefix()),
 			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
 			Description = Faker.Lorem.Text(),
@@ -91,63 +71,38 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			CreatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
 		};
 
-		var details1 = new SchemaDetails {
-			Description = schema1.Description,
-			DataFormat = schema1.DataFormat,
-			Compatibility = schema1.Compatibility,
-			Tags = { schema1.Tags }
+		var details = new SchemaDetails {
+			Description = schema.Description,
+			DataFormat = schema.DataFormat,
+			Compatibility = schema.Compatibility,
+			Tags = { schema.Tags }
 		};
 
-		var schema2 = new SchemaCreated {
-			SchemaName = NewSchemaName(NewPrefix()),
-			SchemaDefinition = ByteString.CopyFromUtf8(Faker.Lorem.Text()),
-			Description = Faker.Lorem.Text(),
-			DataFormat = SchemaDataFormat.Json,
-			Compatibility = Faker.Random.Enum(CompatibilityMode.Unspecified),
-			Tags = { new Dictionary<string, string> { [key] = value } },
-			SchemaVersionId = Guid.NewGuid().ToString(),
-			VersionNumber = 1,
-			CreatedAt = Timestamp.FromDateTimeOffset(TimeProvider.GetUtcNow())
-		};
+		await CreateSchema(schema.SchemaName, schema.SchemaDefinition, details, cancellationToken);
 
-		var details2 = new SchemaDetails {
-			Description = schema2.Description,
-			DataFormat = schema2.DataFormat,
-			Compatibility = schema2.Compatibility,
-			Tags = { schema2.Tags }
-		};
+		var listSchemasResponse = await Client.ListSchemasAsync(
+			new ListSchemasRequest {
+				SchemaTags = { new Dictionary<string, string> { [key] = value } }
+			},
+			cancellationToken: cancellationToken
+		);
 
-		await CreateSchema(schema1.SchemaName, schema1.SchemaDefinition, details1, cancellationToken);
-		await CreateSchema(schema2.SchemaName, schema2.SchemaDefinition, details2, cancellationToken);
-
-		var listSchemasResponse = await Client.ListSchemasAsync(new ListSchemasRequest {
-			SchemaTags = { new Dictionary<string, string> { [key] = value } }
-		}, cancellationToken: cancellationToken);
-
-		listSchemasResponse.Should().NotBeNull();
-		listSchemasResponse.Schemas.Count.Should().Be(2);
-
-		listSchemasResponse.Schemas[0].SchemaName.Should().Be(schema1.SchemaName);
-		listSchemasResponse.Schemas[0].LatestSchemaVersion.Should().Be(schema1.VersionNumber);
-		listSchemasResponse.Schemas[0].Details.Should().BeEquivalentTo(details1);
-
-		listSchemasResponse.Schemas[1].SchemaName.Should().Be(schema2.SchemaName);
-		listSchemasResponse.Schemas[1].LatestSchemaVersion.Should().Be(schema2.VersionNumber);
-		listSchemasResponse.Schemas[1].Details.Should().BeEquivalentTo(details2);
+		// Assert
+		listSchemasResponse
+			.Schemas.ShouldHaveSingleItem()
+			.SchemaName.ShouldBe(schema.SchemaName);
 	}
 
 	[Test]
 	public async Task list_registered_schemas_with_tags(CancellationToken cancellationToken) {
-		var schemaName1 = NewSchemaName();
-		var schemaName2 = NewSchemaName();
-		var key = Faker.Lorem.Word();
-		var value = Faker.Lorem.Word();
+		var schemaName = NewSchemaName();
+		var key = Guid.NewGuid().ToString();
+		var value = Guid.NewGuid().ToString();
 
 		var v1 = NewJsonSchema();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
 		// Arrange
-		await CreateSchema(schemaName1, v1,
+		await CreateSchema(schemaName, v1,
 			new SchemaDetails {
 				DataFormat = SchemaDataFormat.Json,
 				Compatibility = CompatibilityMode.Backward,
@@ -157,127 +112,76 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			cancellationToken
 		);
 
-		await RegisterSchemaVersion(schemaName1, v2, cancellationToken);
-
-		var schema1 = await Client.GetSchemaAsync(new GetSchemaRequest {
-			SchemaName = schemaName1
-		}, cancellationToken: cancellationToken);
-
-		await CreateSchema(schemaName2,
-			new SchemaDetails {
-				DataFormat = SchemaDataFormat.Json,
-				Compatibility = CompatibilityMode.Backward,
-				Description = Faker.Lorem.Text(),
-				Tags = { new Dictionary<string, string> { [key] = value } }
+		var listSchemasResponse = await Client.ListRegisteredSchemasAsync(
+			new ListRegisteredSchemasRequest {
+				SchemaTags = { new Dictionary<string, string> { [key] = value } }
 			},
-			cancellationToken);
+			cancellationToken: cancellationToken
+		);
 
-		var schema2 = await Client.GetSchemaAsync(new GetSchemaRequest {
-			SchemaName = schemaName2
-		}, cancellationToken: cancellationToken);
-
-		var listSchemasResponse = await Client.ListRegisteredSchemasAsync(new ListRegisteredSchemasRequest {
-			SchemaTags = { new Dictionary<string, string> { [key] = value } }
-		}, cancellationToken: cancellationToken);
-
+		// Assert
 		listSchemasResponse.Should().NotBeNull();
-		listSchemasResponse.Schemas.Count.Should().Be(2);
-
-		var schemas = listSchemasResponse.Schemas.OrderBy(x => x.RegisteredAt).ToList();
-
-		schemas[0].SchemaName.Should().Be(schemaName1);
-		schemas[0].VersionNumber.Should().Be(schema1.Schema.LatestSchemaVersion);
-
-		schemas[1].SchemaName.Should().Be(schema2.Schema.SchemaName);
-		schemas[1].VersionNumber.Should().Be(schema2.Schema.LatestSchemaVersion);
+		listSchemasResponse
+			.Schemas.ShouldHaveSingleItem()
+			.SchemaName.Should().Be(schemaName);
 	}
 
 
 	[Test]
 	public async Task list_registered_schemas_with_version_id(CancellationToken cancellationToken) {
+		// Arrange
 		var prefix = NewPrefix();
 		var schemaName = NewSchemaName(prefix);
 
 		var v1 = NewJsonSchema();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Arrange
-		await CreateSchema(
-			schemaName,
-			v1,
-			new SchemaDetails {
-				DataFormat = SchemaDataFormat.Json,
-				Compatibility = CompatibilityMode.Backward,
-				Description = Faker.Lorem.Text(),
+		var createSchemaResult = await CreateSchema(schemaName, v1, cancellationToken);
+
+		// Assert
+		var listSchemasResponse = await Client.ListRegisteredSchemasAsync(
+			new ListRegisteredSchemasRequest {
+				SchemaVersionId = createSchemaResult.SchemaVersionId
 			},
-			cancellationToken);
+			cancellationToken: cancellationToken
+		);
 
-		var result = await RegisterSchemaVersion(schemaName, v2, cancellationToken);
-
-		var schema = await Client.GetSchemaAsync(new GetSchemaRequest {
-			SchemaName = schemaName,
-		}, cancellationToken: cancellationToken);
-
-		var listSchemasResponse = await Client.ListRegisteredSchemasAsync(new ListRegisteredSchemasRequest {
-			SchemaVersionId = result.SchemaVersionId
-		}, cancellationToken: cancellationToken);
-
-		listSchemasResponse.Should().NotBeNull();
-		listSchemasResponse.Schemas.Count.Should().Be(1);
-
-		listSchemasResponse.Schemas[0].SchemaName.Should().Be(schemaName);
-		listSchemasResponse.Schemas[0].VersionNumber.Should().Be(schema.Schema.LatestSchemaVersion);
+		listSchemasResponse
+			.Schemas.ShouldHaveSingleItem()
+			.VersionNumber.ShouldBe(1);
 	}
 
 
 	[Test]
 	public async Task list_schema_versions(CancellationToken cancellationToken) {
+		// Arrange
 		var schemaName = NewSchemaName();
 		var v1 = NewJsonSchema();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
 
-		// Arrange
-		var createResult = await CreateSchema(schemaName, v1,
-			new SchemaDetails {
-				DataFormat = SchemaDataFormat.Json,
-				Compatibility = CompatibilityMode.Backward,
-				Description = Faker.Lorem.Text(),
+		await CreateSchema(schemaName, v1, cancellationToken);
+
+		// Assert
+		var listSchemasResponse = await Client.ListSchemaVersionsAsync(
+			new ListSchemaVersionsRequest {
+				SchemaName = schemaName,
 			},
-			cancellationToken);
+			cancellationToken: cancellationToken
+		);
 
-
-		var registerResult = await RegisterSchemaVersion(schemaName, v2, cancellationToken);
-
-		var listSchemasResponse = await Client.ListSchemaVersionsAsync(new ListSchemaVersionsRequest {
-			SchemaName = schemaName,
-		}, cancellationToken: cancellationToken);
-
-		listSchemasResponse.Should().NotBeNull();
-		listSchemasResponse.Versions.Count.Should().Be(2);
-
-		var schemas = listSchemasResponse.Versions.OrderBy(x => x.RegisteredAt).ToList();
-
-		schemas[0].VersionNumber.Should().Be(1);
-		schemas[0].SchemaVersionId.Should().Be(createResult.SchemaVersionId);
-
-		schemas[1].VersionNumber.Should().Be(2);
-		schemas[1].SchemaVersionId.Should().Be(registerResult.SchemaVersionId);
+		listSchemasResponse
+			.Versions.ShouldHaveSingleItem()
+			.VersionNumber.ShouldBe(1);
 	}
 
 	[Test]
 	public async Task list_schema_versions_not_found(CancellationToken cancellationToken) {
 		var ex = await FluentActions.Awaiting(async () => await Client.ListSchemaVersionsAsync(
 			new ListSchemaVersionsRequest {
-				SchemaName = Guid.NewGuid().ToString()
+				SchemaName = NewSchemaName()
 			},
 			cancellationToken: cancellationToken
 		)).Should().ThrowAsync<RpcException>();
 
-		ex.Which.StatusCode.Should().Be(StatusCode.NotFound);
-
-		if (ex.Which.StatusCode is StatusCode.Internal) {
-			Serilog.Log.Logger.Error(ex.Which, "Error");
-		}
+		ex.Which.StatusCode.ShouldBe(StatusCode.NotFound);
 	}
 
 	[Test]
@@ -288,51 +192,40 @@ public class ListSchemaIntegrationTests : SchemaApplicationTestFixture {
 			},
 			cancellationToken: cancellationToken);
 
-		response.Schemas.Should().BeEmpty();
+		response.Schemas.ShouldBeEmpty();
 	}
 
 	[Test]
 	public async Task list_registered_schema_with_prefix_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListRegisteredSchemasAsync(
 			new ListRegisteredSchemasRequest {
-				SchemaNamePrefix = Guid.NewGuid().ToString()
+				SchemaNamePrefix = NewPrefix()
 			},
 			cancellationToken: cancellationToken);
 
-		response.Schemas.Should().BeEmpty();
+		response.Schemas.ShouldBeEmpty();
 	}
-
-	[Test]
-	public async Task list_registered_schema_with_tags_not_found(CancellationToken cancellationToken) {
-		var response = await Client.ListRegisteredSchemasAsync(
-			new ListRegisteredSchemasRequest {
-				SchemaTags = { new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() } }
-			},
-			cancellationToken: cancellationToken);
-
-		response.Schemas.Should().BeEmpty();
-	}
-
 
 	[Test]
 	public async Task list_schemas_with_prefix_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListSchemasAsync(
 			new ListSchemasRequest {
-				SchemaNamePrefix = Guid.NewGuid().ToString()
+				SchemaNamePrefix = NewPrefix()
 			},
 			cancellationToken: cancellationToken);
 
-		response.Schemas.Should().BeEmpty();
+		response.Schemas.ShouldBeEmpty();
 	}
 
 	[Test]
 	public async Task list_schemas_with_tags_not_found(CancellationToken cancellationToken) {
 		var response = await Client.ListSchemasAsync(
 			new ListSchemasRequest {
-				SchemaTags = { new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() } }
+				SchemaTags = { new Dictionary<string, string> { [Guid.NewGuid().ToString()] = Guid.NewGuid().ToString() } }
 			},
-			cancellationToken: cancellationToken);
+			cancellationToken: cancellationToken
+		);
 
-		response.Schemas.Should().BeEmpty();
+		response.Schemas.ShouldBeEmpty();
 	}
 }

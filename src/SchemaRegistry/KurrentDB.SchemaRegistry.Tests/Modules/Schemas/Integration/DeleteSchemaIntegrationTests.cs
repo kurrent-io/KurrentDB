@@ -4,7 +4,6 @@
 // ReSharper disable ArrangeTypeMemberModifiers
 
 using Grpc.Core;
-using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using NJsonSchema;
 
@@ -23,14 +22,14 @@ public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var deleteSchemaResult = await DeleteSchema(schemaName, cancellationToken);
 
 		// Assert
-		var listSchemasResult = await ListSchemas(prefix, cancellationToken);
+		var listSchemasResult = await ListRegisteredSchemas(prefix, cancellationToken);
 
 		deleteSchemaResult.Should().NotBeNull();
 		listSchemasResult.Should().NotBeNull();
 		listSchemasResult.Schemas.Should().BeEmpty();
 	}
 
-	[Test, Skip("Flaky")]
+	[Test]
 	public async Task deletes_schema_with_multiple_versions_successfully(CancellationToken cancellationToken) {
 		// Arrange
 		var prefix = NewPrefix();
@@ -48,7 +47,7 @@ public class DeleteSchemaIntegrationTests : SchemaApplicationTestFixture {
 		var deleteSchemaResult = await DeleteSchema(schemaName, cancellationToken);
 
 		// Assert
-		var listSchemasResult = await ListSchemas(prefix, cancellationToken);
+		var listSchemasResult = await ListRegisteredSchemas(prefix, cancellationToken);
 
 		deleteSchemaResult.Should().NotBeNull();
 		listSchemasResult.Should().NotBeNull();

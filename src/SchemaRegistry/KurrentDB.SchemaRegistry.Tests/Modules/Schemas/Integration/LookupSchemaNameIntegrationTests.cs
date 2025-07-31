@@ -26,8 +26,6 @@ public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
 		// Act
 		var result = await CreateSchema(schemaName, schemaDefinition: v1, details, cancellationToken);
 
-		result.Should().NotBeNull();
-		result.SchemaVersionId.Should().NotBeEmpty();
 
 		// Assert
 		var lookupSchemaNameResponse = await Client.LookupSchemaNameAsync(
@@ -37,8 +35,9 @@ public class LookupSchemaNameIntegrationTests : SchemaApplicationTestFixture {
 			cancellationToken: cancellationToken
 		);
 
-		lookupSchemaNameResponse.Should().NotBeNull();
-		lookupSchemaNameResponse.SchemaName.Should().Be(schemaName);
+		result.ShouldNotBeNull();
+		result.SchemaVersionId.ShouldNotBeEmpty();
+		lookupSchemaNameResponse.SchemaName.ShouldBe(schemaName);
 	}
 
 	[Test]

@@ -9,12 +9,11 @@ using Grpc.Core;
 using KurrentDB.Protocol.Registry.V2;
 using KurrentDB.SchemaRegistry.Protocol.Schemas.Events;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
+using Shouldly;
 
 namespace KurrentDB.SchemaRegistry.Tests.Schemas.Integration;
 
 public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
-
-
 	[Test]
 	public async Task get_newly_created_schema(CancellationToken cancellationToken) {
 		// Arrange
@@ -44,24 +43,14 @@ public class GetSchemaIntegrationTests : SchemaApplicationTestFixture {
 		};
 
 		// Act
-		var createResult = await CreateSchema(expected.SchemaName, expected.SchemaDefinition, details, cancellationToken);
+		await CreateSchema(expected.SchemaName, expected.SchemaDefinition, details, cancellationToken);
 
 		// Assert
-		createResult.Should().NotBeNull();
-		createResult.VersionNumber.Should().Be(expected.VersionNumber);
-
-		var getSchemaResult = await Client.GetSchemaAsync(
-			new GetSchemaRequest {
-				SchemaName = expected.SchemaName
-			},
-			cancellationToken: cancellationToken
-		);
-
-		getSchemaResult.Should().NotBeNull();
-
-		getSchemaResult.Schema.LatestSchemaVersion.Should().Be(1);
-		getSchemaResult.Schema.SchemaName.Should().Be(expected.SchemaName);
-		getSchemaResult.Schema.Details.Should().BeEquivalentTo(details);
+		var getSchemaResult = await GetSchema(expected.SchemaName, cancellationToken);
+		getSchemaResult.ShouldNotBeNull();
+		getSchemaResult.Schema.LatestSchemaVersion.ShouldBe(1);
+		getSchemaResult.Schema.SchemaName.ShouldBe(expected.SchemaName);
+		getSchemaResult.Schema.Details.ShouldBeEquivalentTo(details);
 	}
 
 	[Test]

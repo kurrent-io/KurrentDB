@@ -58,41 +58,42 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		};
 	}
 
-	async Task WaitUntilCaughtUp(ulong position, CancellationToken ct = default) =>
-		await Wait.Until(async () => {
-			const string sql =
-				"""
-				SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
-				    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
-				""";
-
-			var connection = DuckDbConnectionProvider.GetConnection();
-			var parameters = new { checkpoint = position };
-
-			var exists = await Policy<bool>
-				.Handle<DuckDBException>()
-				.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100))
-				.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
-
-			return exists;
-		}, cancellationToken: ct);
+	// This causes issues with DuckDB. Transaction Rollback
+	// async ValueTask WaitUntilCaughtUp(ulong position, CancellationToken ct = default) =>
+	// 	await Wait.Until(async () => {
+	// 		const string sql =
+	// 			"""
+	// 			SELECT (SELECT EXISTS (FROM schemas WHERE checkpoint >= $checkpoint))
+	// 			    OR (SELECT EXISTS (FROM schema_versions WHERE checkpoint >= $checkpoint))
+	// 			""";
+	//
+	// 		var connection = DuckDbConnectionProvider.GetConnection();
+	// 		var parameters = new { checkpoint = position };
+	//
+	// 		var exists = await Policy<bool>
+	// 			.Handle<DuckDBException>()
+	// 			.WaitAndRetryAsync(5, _ => TimeSpan.FromMilliseconds(100))
+	// 			.ExecuteAsync(async () => await connection.QueryFirstOrDefaultAsync<bool>(sql, parameters));
+	//
+	// 		return exists;
+	// 	}, cancellationToken: ct);
 
 	#region commands
 
-	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, CancellationToken cancellationToken = default) =>
+	protected async ValueTask<CreateSchemaResponse> CreateSchema(string schemaName, CancellationToken cancellationToken = default) =>
 		await CreateSchema(schemaName, NewJsonSchema(), CompatibilityMode.None, SchemaFormat.Json, cancellationToken);
 
-	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, SchemaDetails details, CancellationToken ct = default) =>
+	protected async ValueTask<CreateSchemaResponse> CreateSchema(string schemaName, SchemaDetails details, CancellationToken ct = default) =>
 		await CreateSchema(schemaName, NewJsonSchema(), details, ct);
 
-	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, JsonSchema schemaDefinition, CancellationToken ct = default) =>
+	protected async ValueTask<CreateSchemaResponse> CreateSchema(string schemaName, JsonSchema schemaDefinition, CancellationToken ct = default) =>
 		await CreateSchema(schemaName, schemaDefinition, CompatibilityMode.None, SchemaFormat.Json, ct);
 
-	protected async Task<CreateSchemaResponse> CreateSchema(string schemaName, JsonSchema schemaDefinition, SchemaDetails details,
+	protected async ValueTask<CreateSchemaResponse> CreateSchema(string schemaName, JsonSchema schemaDefinition, SchemaDetails details,
 		CancellationToken ct = default) =>
 		await CreateSchema(schemaName, schemaDefinition.ToByteString(), details, ct);
 
-	protected async Task<CreateSchemaResponse> CreateSchema(
+	protected async ValueTask<CreateSchemaResponse> CreateSchema(
 		string schemaName, JsonSchema schemaDefinition, CompatibilityMode compatibility, SchemaFormat format, CancellationToken ct = default
 	) {
 		var tags = new Dictionary<string, string> {
@@ -110,7 +111,7 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 		return await CreateSchema(schemaName, schemaDefinition, details, ct);
 	}
 
-	protected async Task<CreateSchemaResponse> CreateSchema(
+	protected async ValueTask<CreateSchemaResponse> CreateSchema(
 		string schemaName, ByteString schemaDefinition, SchemaDetails details, CancellationToken ct = default
 	) {
 		var command = new CreateSchemaRequest {
@@ -119,13 +120,11 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 			Details = details
 		};
 
-		var applicationResult = await Apply(command, ct);
-		var evt = applicationResult.Changes.GetSingleEvent<SchemaCreated>();
-		await WaitUntilCaughtUp(applicationResult.StreamPosition, ct);
-		return new CreateSchemaResponse {
-			SchemaVersionId = evt.SchemaVersionId,
-			VersionNumber = evt.VersionNumber
-		};
+		var response = await Client.CreateSchemaAsync(command, cancellationToken: ct);
+
+		await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
+
+		return response;
 	}
 
 	protected async Task<RegisterSchemaVersionResponse> RegisterSchemaVersion(string schemaName, CancellationToken ct = default) =>
@@ -137,13 +136,11 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 			SchemaDefinition = schemaDefinition.ToByteString()
 		};
 
-		var applicationResult = await Apply(command, ct);
-		var evt = applicationResult.Changes.GetSingleEvent<SchemaVersionRegistered>();
-		await WaitUntilCaughtUp(applicationResult.StreamPosition, ct);
-		return new RegisterSchemaVersionResponse {
-			SchemaVersionId = evt.SchemaVersionId,
-			VersionNumber = evt.VersionNumber
-		};
+		var response = await Client.RegisterSchemaVersionAsync(command, cancellationToken: ct);
+
+		await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
+
+		return response;
 	}
 
 	protected async Task<DeleteSchemaResponse> DeleteSchema(string schemaName, CancellationToken ct = default) =>
@@ -158,8 +155,8 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 			cancellationToken: ct
 		);
 
-	protected async Task<UpdateSchemaResponse> UpdateSchema(string schemaName, SchemaDetails details, FieldMask mask, CancellationToken ct = default) =>
-		await Client.UpdateSchemaAsync(
+	protected async Task<UpdateSchemaResponse> UpdateSchema(string schemaName, SchemaDetails details, FieldMask mask, CancellationToken ct = default) {
+		var response = await Client.UpdateSchemaAsync(
 			new UpdateSchemaRequest {
 				SchemaName = schemaName,
 				Details = details,
@@ -167,6 +164,11 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 			},
 			cancellationToken: ct
 		);
+
+		await Task.Delay(TimeSpan.FromMilliseconds(200), ct);
+
+		return response;
+	}
 
 	#endregion
 
@@ -180,6 +182,14 @@ public abstract class SchemaApplicationTestFixture : SchemaRegistryServerTestFix
 				SchemaName = schemaName,
 				DataFormat = dataFormat,
 				Definition = definition.ToByteString()
+			},
+			cancellationToken: ct
+		);
+
+	protected async ValueTask<GetSchemaResponse> GetSchema(string schemaName, CancellationToken ct = default) =>
+		await Client.GetSchemaAsync(
+			new GetSchemaRequest {
+				SchemaName = schemaName
 			},
 			cancellationToken: ct
 		);

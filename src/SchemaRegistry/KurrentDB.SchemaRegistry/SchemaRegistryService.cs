@@ -42,7 +42,7 @@ public class SchemaRegistryService : SchemaRegistryServiceBase {
             var result = await Commands.Handle(req, ct);
 
             return result.Match(
-	             ok =>  {
+	             ok => {
                     var evt = ok.Changes.GetSingleEvent<SchemaCreated>();
                     return new CreateSchemaResponse {
 	                    SchemaVersionId = evt.SchemaVersionId,

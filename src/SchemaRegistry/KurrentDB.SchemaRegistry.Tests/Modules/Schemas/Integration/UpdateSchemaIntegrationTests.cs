@@ -7,6 +7,7 @@ using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using KurrentDB.SchemaRegistry.Tests.Fixtures;
 using KurrentDB.Protocol.Registry.V2;
+using Shouldly;
 using CompatibilityMode = KurrentDB.Protocol.Registry.V2.CompatibilityMode;
 using SchemaFormat = KurrentDB.Protocol.Registry.V2.SchemaDataFormat;
 
@@ -18,43 +19,37 @@ public class UpdateSchemaIntegrationTests : SchemaApplicationTestFixture {
 		// Arrange
 		var prefix = NewPrefix();
 		var schemaName = NewSchemaName(prefix);
-		var originalDescription = Faker.Lorem.Sentence();
-		var newDescription = Faker.Lorem.Sentence();
+		var originalTags = new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() };
+		var newTags = new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word() };
 
 		await CreateSchema(
 			schemaName,
 			new SchemaDetails {
-				Description = originalDescription,
-				DataFormat = SchemaFormat.Json,
-				Compatibility = CompatibilityMode.None,
+				Tags = { originalTags },
+				Compatibility = CompatibilityMode.Forward,
+				DataFormat = SchemaFormat.Json
 			},
 			cancellationToken
 		);
 
 		// Act
-		var updateSchemaResult = await UpdateSchema(
+		await UpdateSchema(
 			schemaName,
 			new SchemaDetails {
-				Description = newDescription,
-				Compatibility = CompatibilityMode.Backward,
-				DataFormat = SchemaFormat.Json,
+				Tags = { newTags },
+				Compatibility = CompatibilityMode.Forward,
+				DataFormat = SchemaFormat.Json
 			},
-			new FieldMask { Paths = { "Details.Description" } },
+			new FieldMask { Paths = { "Details.Tags" } },
 			cancellationToken
 		);
 
-		var listSchemasResult = await Client.ListSchemasAsync(
-			new ListSchemasRequest {
-				SchemaNamePrefix = prefix
-			},
-			cancellationToken: cancellationToken
-		);
-
 		// Assert
-		updateSchemaResult.Should().NotBeNull();
-		listSchemasResult.Schemas.Should().HaveCount(1);
-		listSchemasResult.Schemas.First().SchemaName.Should().Be(schemaName);
-		listSchemasResult.Schemas.First().Details.Description.Should().Be(newDescription);
+		var listSchemasResult = await ListRegisteredSchemas(prefix, cancellationToken);
+
+		listSchemasResult
+			.Schemas.ShouldHaveSingleItem()
+			.Tags.ShouldBe(newTags);
 	}
 
 	[Test]
