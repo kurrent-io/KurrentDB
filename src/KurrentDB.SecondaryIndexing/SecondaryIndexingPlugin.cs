@@ -45,10 +45,10 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton(options);
 
 		services.AddSingleton<DuckDbDataSourceOptions>(sp => {
-			var dbPath = options.DbPath ?? Path.Combine(sp.GetRequiredService<TFChunkDbConfig>().Path, "index.db");
-
+			var dbPath = GetDuckDbFilePath(sp);
 			return new DuckDbDataSourceOptions { ConnectionString = $"Data Source={dbPath};" };
 		});
+
 		services.AddSingleton<DuckDbDataSource>(sp => {
 			var dbSource = new DuckDbDataSource(sp.GetRequiredService<DuckDbDataSourceOptions>());
 			dbSource.InitDb();
@@ -73,6 +73,16 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 				"indexes.secondary"
 			)
 		);
+
+		services.AddSingleton<SecondaryIndexDuckDbMetrics>(sp =>
+			new SecondaryIndexDuckDbMetrics(
+				meter: coreMeter,
+				meterPrefix: "indexes.secondary.duckdb",
+				db: sp.GetRequiredService<DuckDbDataSource>(),
+				dbFile: GetDuckDbFilePath(sp)
+			)
+		);
+
 		services.AddSingleton<ISecondaryIndexProcessor>(sp => sp.GetRequiredService<DefaultIndexProcessor>());
 		services.AddSingleton<DefaultIndexProcessor>();
 		services.AddSingleton<CategoryIndexProcessor>();
@@ -82,6 +92,10 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		services.AddSingleton<ISecondaryIndexReader, DefaultIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, CategoryIndexReader>();
 		services.AddSingleton<ISecondaryIndexReader, EventTypeIndexReader>();
+		return;
+
+		string GetDuckDbFilePath(IServiceProvider sp) =>
+			options.DbPath ?? Path.Combine(sp.GetRequiredService<TFChunkDbConfig>().Path, "index.db");
 	}
 
 	public override void ConfigureApplication(IApplicationBuilder app, IConfiguration configuration) {
@@ -90,6 +104,8 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		var indexReaders = app.ApplicationServices.GetServices<ISecondaryIndexReader>();
 
 		virtualStreamReader.Register(indexReaders.ToArray<IVirtualStreamReader>());
+
+		app.ApplicationServices.GetService<SecondaryIndexDuckDbMetrics>();
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
