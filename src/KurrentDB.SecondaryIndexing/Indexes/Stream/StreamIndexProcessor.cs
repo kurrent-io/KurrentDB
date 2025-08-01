@@ -9,6 +9,7 @@ using KurrentDB.Core.Data;
 using KurrentDB.Core.Index.Hashes;
 using KurrentDB.Core.Services;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Storage;
 using Serilog;
 
@@ -19,6 +20,8 @@ internal class StreamIndexProcessor : Disposable {
 
 	private readonly IIndexBackend<string> _streamsCache;
 	private readonly ILongHasher<string> _hasher;
+	private readonly IQueryTracker _queryTracker;
+
 	private readonly DuckDBAdvancedConnection _connection;
 	private readonly Dictionary<string, long> _inFlightRecords = new();
 
@@ -27,12 +30,14 @@ internal class StreamIndexProcessor : Disposable {
 	private long _seq;
 	private Appender _appender;
 
-	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> streamsCache, ILongHasher<string> hasher) {
+	public StreamIndexProcessor(DuckDbDataSource db, IIndexBackend<string> streamsCache, ILongHasher<string> hasher, IQueryTracker queryTracker) {
 		_streamsCache = streamsCache;
 		_hasher = hasher;
+		_queryTracker = queryTracker;
+
 		_connection = db.OpenNewConnection();
 		_appender = new Appender(_connection, "streams"u8);
-		_seq = _connection.GetStreamMaxSequences() ?? -1;
+		_seq = _connection.GetStreamMaxSequences(queryTracker) ?? -1;
 	}
 
 	public long LastCommittedPosition { get; private set; }
@@ -51,7 +56,7 @@ internal class StreamIndexProcessor : Disposable {
 			return secondaryIndexId;
 		}
 
-		var fromDb = _connection.GetStreamIdByName(name);
+		var fromDb = _connection.GetStreamIdByName(name, _queryTracker);
 		if (fromDb.HasValue) {
 			_streamsCache.UpdateStreamSecondaryIndexId(1, name, fromDb.Value);
 			return fromDb.Value;

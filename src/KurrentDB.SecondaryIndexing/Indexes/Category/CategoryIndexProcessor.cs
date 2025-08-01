@@ -4,6 +4,7 @@
 using KurrentDB.Core.Bus;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Messages;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Readers;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
@@ -15,16 +16,18 @@ internal class CategoryIndexProcessor {
 	private readonly Dictionary<int, long> _categorySizes = new();
 	private readonly DuckDbDataSource _db;
 	private readonly IPublisher _publisher;
+	private readonly IQueryTracker _queryTracker;
 
 	private int _seq;
 	public long LastIndexedPosition { get; private set; }
 
-	public CategoryIndexProcessor(DuckDbDataSource db, IPublisher publisher) {
+	public CategoryIndexProcessor(DuckDbDataSource db, IPublisher publisher, IQueryTracker queryTracker) {
 		_db = db;
 		_publisher = publisher;
+		_queryTracker = queryTracker;
 
-		var ids = db.Pool.Query<ReferenceRecord, GetCategoriesQuery>();
-		var sequences = db.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>()
+		var ids = db.Pool.Query<ReferenceRecord, GetCategoriesQuery>(queryTracker);
+		var sequences = db.Pool.Query<(int Id, long Sequence), GetCategoriesMaxSequencesQuery>(queryTracker)
 			.ToDictionary(ks => ks.Id, vs => vs.Sequence);
 
 		_categories = ids.ToDictionary(x => x.Name, x => x.Id);
@@ -39,7 +42,7 @@ internal class CategoryIndexProcessor {
 		if (!_categories.TryGetValue(categoryName, out var categoryId)) {
 			categoryId = ++_seq;
 			_categories[categoryName] = categoryId;
-			_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new(categoryId, categoryName));
+			_db.Pool.ExecuteNonQuery<AddCategoryStatementArgs, AddCategoryStatement>(new(categoryId, categoryName), _queryTracker);
 		}
 
 		var nextCategorySequence = _categorySizes.GetValueOrDefault(categoryId, -1) + 1;

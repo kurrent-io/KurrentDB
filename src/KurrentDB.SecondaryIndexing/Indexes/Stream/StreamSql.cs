@@ -5,6 +5,7 @@ using DotNext;
 using Kurrent.Quack;
 using Kurrent.Quack.ConnectionPool;
 using KurrentDB.Core.Data;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
@@ -12,18 +13,22 @@ namespace KurrentDB.SecondaryIndexing.Indexes.Stream;
 internal static class StreamSql {
 	public static long? GetStreamIdByName(
 		this DuckDBAdvancedConnection connection,
-		string streamName
+		string streamName,
+		IQueryTracker tracker
 	) =>
 		connection.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(
-			new GetStreamIdByNameQueryArgs(streamName)
+			new GetStreamIdByNameQueryArgs(streamName),
+			tracker
 		);
 
 	public static long? GetStreamIdByName(
 		this DuckDBConnectionPool pool,
-		string streamName
+		string streamName,
+		IQueryTracker tracker
 	) =>
 		pool.QueryFirstOrDefault<GetStreamIdByNameQueryArgs, long, GetStreamIdByNameQuery>(
-			new GetStreamIdByNameQueryArgs(streamName)
+			new GetStreamIdByNameQueryArgs(streamName),
+			tracker
 		);
 
 	private record struct GetStreamIdByNameQueryArgs(string StreamName);
@@ -39,11 +44,11 @@ internal static class StreamSql {
 		public static long Parse(ref DataChunk.Row row) => row.ReadInt64();
 	}
 
-	public static long? GetStreamMaxSequences(this DuckDBAdvancedConnection connection) =>
-		connection.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>()?.OrNull();
+	public static long? GetStreamMaxSequences(this DuckDBAdvancedConnection connection, IQueryTracker tracker) =>
+		connection.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>(tracker)?.OrNull();
 
-	public static long? GetStreamMaxSequences(this DuckDBConnectionPool pool) =>
-		pool.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>()?.OrNull();
+	public static long? GetStreamMaxSequences(this DuckDBConnectionPool pool, IQueryTracker tracker) =>
+		pool.QueryFirstOrDefault<Optional<long>, GetStreamMaxSequencesQuery>(tracker)?.OrNull();
 
 	private struct GetStreamMaxSequencesQuery : IQuery<Optional<long>> {
 		public static ReadOnlySpan<byte> CommandText => "select max(id) from streams"u8;
@@ -122,9 +127,10 @@ internal static class StreamSql {
 
 	public static StreamSummary? GetStreamsSummary(
 		this DuckDBConnectionPool pool,
-		string streamName
+		string streamName,
+		IQueryTracker tracker
 	) =>
-		pool.Query<GetStreamSummaryArgs, StreamSummary, GetStreamSummaryQuery>(new GetStreamSummaryArgs(streamName))
+		pool.Query<GetStreamSummaryArgs, StreamSummary, GetStreamSummaryQuery>(new GetStreamSummaryArgs(streamName), tracker)
 			.FirstOrDefault();
 
 	private readonly record struct GetStreamSummaryArgs(string StreamName);

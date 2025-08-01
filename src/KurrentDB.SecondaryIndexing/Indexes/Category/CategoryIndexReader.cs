@@ -4,6 +4,7 @@
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Storage.ReaderIndex;
 using KurrentDB.SecondaryIndexing.Indexes.Default;
+using KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 using KurrentDB.SecondaryIndexing.Storage;
 using static KurrentDB.SecondaryIndexing.Indexes.Category.CategorySql;
 
@@ -15,7 +16,8 @@ internal class CategoryIndexReader(
 	DuckDbDataSource db,
 	CategoryIndexProcessor processor,
 	IReadIndex<string> index,
-	QueryInFlightRecords<CategoryRecord> queryInFlightRecords
+	QueryInFlightRecords<CategoryRecord> queryInFlightRecords,
+	IQueryTracker queryTracker
 ) : SecondaryIndexReaderBase(index) {
 	protected override long GetId(string streamName) =>
 		CategoryIndex.TryParseCategoryName(streamName, out var categoryName)
@@ -26,7 +28,7 @@ internal class CategoryIndexReader(
 
 	protected override IEnumerable<IndexedPrepare> GetIndexRecords(long id, long fromEventNumber, long toEventNumber) {
 		var range = db.Pool.Query<CategoryIndexQueryArgs, CategoryRecord, CategoryIndexQuery>(
-			new((int)id, fromEventNumber, toEventNumber));
+			new((int)id, fromEventNumber, toEventNumber), queryTracker);
 		if (range.Count < toEventNumber - fromEventNumber + 1) {
 			// events might be in flight
 			var inFlight = queryInFlightRecords(

@@ -28,9 +28,9 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 			new DefaultIndexInFlightRecords(new SecondaryIndexingPluginOptions { CommitBatchSize = commitSize });
 
 		var publisher = new FakePublisher();
-		var categoryIndexProcessor = new CategoryIndexProcessor(dbDataSource, publisher);
-		var eventTypeIndexProcessor = new EventTypeIndexProcessor(dbDataSource, publisher);
-		var streamIndexProcessor = new StreamIndexProcessor(dbDataSource, reader.IndexReader.Backend, hasher);
+		var categoryIndexProcessor = new CategoryIndexProcessor(dbDataSource, publisher, QueryTracker.NoOp);
+		var eventTypeIndexProcessor = new EventTypeIndexProcessor(dbDataSource, publisher, QueryTracker.NoOp);
+		var streamIndexProcessor = new StreamIndexProcessor(dbDataSource, reader.IndexReader.Backend, hasher, QueryTracker.NoOp);
 
 		_processor = new DefaultIndexProcessor(
 			dbDataSource,
@@ -39,6 +39,7 @@ public class IndexMessageBatchAppender : IMessageBatchAppender {
 			eventTypeIndexProcessor,
 			streamIndexProcessor,
 			new NoOpSecondaryIndexProgressTracker(), // TODO: Use the real one with metrics
+			QueryTracker.NoOp,
 			publisher
 		);
 	}

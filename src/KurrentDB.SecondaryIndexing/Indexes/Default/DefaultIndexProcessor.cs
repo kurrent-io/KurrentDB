@@ -23,6 +23,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	private readonly EventTypeIndexProcessor _eventTypeIndexProcessor;
 	private readonly StreamIndexProcessor _streamIndexProcessor;
 	private readonly ISecondaryIndexProgressTracker _progressTracker;
+	private readonly IQueryTracker _queryTracker;
 	private readonly IPublisher _publisher;
 	private Appender _appender;
 
@@ -38,6 +39,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		EventTypeIndexProcessor eventTypeIndexProcessor,
 		StreamIndexProcessor streamIndexProcessor,
 		ISecondaryIndexProgressTracker progressTracker,
+		IQueryTracker queryTracker,
 		IPublisher publisher
 	) {
 		_connection = db.OpenNewConnection();
@@ -48,6 +50,7 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 		_eventTypeIndexProcessor = eventTypeIndexProcessor;
 		_streamIndexProcessor = streamIndexProcessor;
 		_progressTracker = progressTracker;
+		_queryTracker = queryTracker;
 		_publisher = publisher;
 
 		var lastSequence = GetLastSequence();
@@ -114,11 +117,11 @@ internal class DefaultIndexProcessor : Disposable, ISecondaryIndexProcessor {
 	}
 
 	public long? GetLastPosition() =>
-		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>()?.OrNull();
+		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastLogPositionSql>(_queryTracker)?.OrNull();
 
 
 	private long? GetLastSequence() =>
-		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>()?.OrNull();
+		_connection.QueryFirstOrDefault<Optional<long>, DefaultSql.GetLastSequenceSql>(_queryTracker)?.OrNull();
 
 	public void Commit() {
 		if (IsDisposingOrDisposed)

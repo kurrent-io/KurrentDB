@@ -7,6 +7,7 @@ using EventStore.Plugins;
 using EventStore.Plugins.Subsystems;
 using KurrentDB.Common.Configuration;
 using KurrentDB.Core.Configuration.Sources;
+using KurrentDB.Core.Metrics;
 using KurrentDB.Core.Services.Storage.InMemory;
 using KurrentDB.Core.TransactionLog.Chunks;
 using KurrentDB.SecondaryIndexing.Builders;
@@ -73,6 +74,14 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 				"indexes.secondary"
 			)
 		);
+
+		var durationMaxMetric = new DurationMaxMetric(
+			coreMeter,
+			name: "indexes.secondary.duckdb.query.max",
+			legacyNames: conf.LegacyCoreNaming);
+
+		var queryTracker = new QueryTracker(durationMaxMetric, expectedScrapeInterval: 30);
+		services.AddSingleton<IQueryTracker>(queryTracker);
 
 		services.AddSingleton<SecondaryIndexDuckDbMetrics>(sp =>
 			new SecondaryIndexDuckDbMetrics(
