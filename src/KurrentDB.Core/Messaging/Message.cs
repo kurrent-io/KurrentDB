@@ -25,6 +25,7 @@ public class DerivedMessageAttribute : Attribute {
 [BaseMessage]
 public abstract partial class Message(CancellationToken token = default) {
 	internal static readonly object UnknownAffinity = new();
+	protected static readonly object StrongAffinity = new();
 
 	[JsonIgnore]
 	public CancellationToken CancellationToken => token;

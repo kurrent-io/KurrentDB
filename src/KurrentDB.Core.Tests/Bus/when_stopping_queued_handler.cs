@@ -78,7 +78,16 @@ public abstract class when_stopping_queued_handler : QueuedHandlerTestWithNoopCo
 [TestFixture]
 public class when_stopping_queued_handler_threadpool : when_stopping_queued_handler {
 	public when_stopping_queued_handler_threadpool()
-		: base((consumer, name, timeout) =>
+		: base(static (consumer, name, timeout) =>
 			new QueuedHandlerThreadPool(consumer, name, new QueueStatsManager(), new(), false, null, timeout)) {
+	}
+}
+
+[TestFixture]
+public class when_stopping_ThreadPoolMessageScheduler : when_stopping_queued_handler {
+	public when_stopping_ThreadPoolMessageScheduler()
+		: base(static (consumer, name, timeout) =>
+			new ThreadPoolMessageScheduler(consumer)
+				{ Name = name, StopTimeout = timeout, SynchronizeMessagesWithUnknownAffinity = true }) {
 	}
 }
