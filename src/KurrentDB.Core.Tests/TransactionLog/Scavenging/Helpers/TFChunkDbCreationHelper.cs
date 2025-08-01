@@ -83,7 +83,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 
 		var transactions = new Dictionary<int, TransactionInfo>();
 		var streams = new Dictionary<string, StreamInfo>();
-		var streamUncommitedVersion = new Dictionary<string, long>();
+		var streamUncommittedVersion = new Dictionary<string, long>();
 
 		// for each chunk i
 		for (int i = 0; i < _chunkRecs.Count; ++i) {
@@ -100,7 +100,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 					transactions[rec.Transaction] = transInfo = new TransactionInfo(rec.StreamId, rec.Id, rec.Id);
 
 					streams[rec.StreamId] = new StreamInfo(-1);
-					streamUncommitedVersion[rec.StreamId] = -1;
+					streamUncommittedVersion[rec.StreamId] = -1;
 				} else {
 					if (rec.Type == Rec.RecType.TransStart)
 						throw new Exception(string.Format("Unexpected record type: {0}.", rec.Type));
@@ -153,12 +153,12 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 					records[i].Add(eventTypeRecord);
 				}
 
-				long streamVersion = streamUncommitedVersion[rec.StreamId];
+				long streamVersion = streamUncommittedVersion[rec.StreamId];
 
 				if (rec.EventNumber.HasValue && rec.EventNumber > streamVersion + 1) {
 					// advance the stream
 					streamVersion = rec.EventNumber.Value - 1;
-					streamUncommitedVersion[rec.StreamId] = streamVersion;
+					streamUncommittedVersion[rec.StreamId] = streamVersion;
 				}
 
 				if (streamVersion == -1
@@ -195,7 +195,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 						if (SystemStreams.IsMetastream(rec.StreamId))
 							transInfo.StreamMetadata = rec.Metadata;
 
-						streamUncommitedVersion[rec.StreamId] += 1;
+						streamUncommittedVersion[rec.StreamId] += 1;
 						break;
 					}
 
@@ -216,7 +216,7 @@ public class TFChunkDbCreationHelper<TLogFormat, TStreamId> {
 
 						record = CreateLogRecord(rec, streamNumber, eventTypeNumber, transInfo, logPos, expectedVersion);
 
-						streamUncommitedVersion[rec.StreamId] = rec.Version == LogRecordVersion.LogRecordV0
+						streamUncommittedVersion[rec.StreamId] = rec.Version == LogRecordVersion.LogRecordV0
 							? int.MaxValue
 							: EventNumber.DeletedStream;
 						break;
