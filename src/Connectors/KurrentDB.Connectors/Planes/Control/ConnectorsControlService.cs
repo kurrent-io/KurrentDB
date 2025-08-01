@@ -8,6 +8,7 @@ using Kurrent.Surge.Connectors;
 
 using KurrentDB.Connectors.Infrastructure.System.Node;
 using KurrentDB.Connectors.Infrastructure.System.Node.NodeSystemInfo;
+using KurrentDB.Core;
 using KurrentDB.Core.Bus;
 using KurrentDB.Surge.Consumers;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,7 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
     public ConnectorsControlService(
         IPublisher publisher,
         ISubscriber subscriber,
+        ISystemClient client,
         ConnectorsActivator activator,
         GetActiveConnectors getActiveConnectors,
         GetNodeSystemInfo getNodeSystemInfo,
@@ -29,7 +31,7 @@ public class ConnectorsControlService : LeaderNodeBackgroundService {
 
         ConsumerBuilder = getConsumerBuilder()
             .ConsumerId("ConnectorsController")
-            .Publisher(publisher)
+            .Client(client)
             .Filter(ConnectorsFeatureConventions.Filters.ManagementFilter)
             .InitialPosition(SubscriptionInitialPosition.Latest)
             .DisableAutoCommit();

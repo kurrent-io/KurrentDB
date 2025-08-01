@@ -16,12 +16,13 @@ using KurrentDB.Core.Services.Transport.Common;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Core.Services.UserManagement;
 
-namespace KurrentDB.Core;
+namespace KurrentDB.Core.ClientPublisher;
 
 [PublicAPI]
 public static class PublisherManagementExtensions {
 	public static Task<(Position Position, StreamRevision Revision)> DeleteStream(this IPublisher publisher, string stream, long expectedRevision = -2, bool hardDelete = false, CancellationToken cancellationToken = default) {
-		cancellationToken.ThrowIfCancellationRequested();
+		if (cancellationToken.IsCancellationRequested)
+			return Task.FromCanceled<(Position Position, StreamRevision Revision)>(cancellationToken);
 
 		var operation = new TaskCompletionSource<(Position Position, StreamRevision StreamRevision)>(TaskCreationOptions.RunContinuationsAsynchronously);
 

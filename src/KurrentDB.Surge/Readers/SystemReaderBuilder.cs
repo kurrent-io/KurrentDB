@@ -3,24 +3,24 @@
 
 using Kurrent.Surge;
 using Kurrent.Surge.Readers.Configuration;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 
 namespace KurrentDB.Surge.Readers;
 
 [PublicAPI]
 public record SystemReaderBuilder : ReaderBuilder<SystemReaderBuilder, SystemReaderOptions> {
-    public SystemReaderBuilder Publisher(IPublisher publisher) {
-        Ensure.NotNull(publisher);
+    public SystemReaderBuilder Client(ISystemClient client) {
+        Ensure.NotNull(client);
         return new() {
             Options = Options with {
-                Publisher = publisher
+                Client = client
             }
         };
     }
 
 	public override SystemReader Create() {
         Ensure.NotNullOrWhiteSpace(Options.ReaderId);
-        Ensure.NotNull(Options.Publisher);
+        Ensure.NotNull(Options.Client);
 
         return new(Options with {});
 

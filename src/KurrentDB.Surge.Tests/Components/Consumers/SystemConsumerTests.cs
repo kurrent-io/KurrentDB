@@ -7,7 +7,6 @@ using System.Text.RegularExpressions;
 using Kurrent.Surge;
 using Kurrent.Surge.Consumers;
 using KurrentDB.Connect.Consumers;
-using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Surge.Testing.Fixtures;
 using KurrentDB.Surge.Testing.Xunit;
@@ -53,7 +52,7 @@ public class SystemConsumerTests(ITestOutputHelper output, SystemComponentsAssem
 		consumedRecords.Should()
 			.HaveCount(messages.Count, "because we consumed all the records in the stream");
 
-		var actualEvents = await Fixture.Publisher.ReadFullStream(streamId).ToListAsync();
+		var actualEvents = await Fixture.Client.Reading.ReadFullStream(streamId).ToListAsync();
 
 		var actualRecords = await Task.WhenAll(
 			actualEvents.Select((re, idx) => re.ToRecord((data, headers) => Fixture.SchemaSerializer.Deserialize(data, new(headers)), idx + 1).AsTask()).ToArray()

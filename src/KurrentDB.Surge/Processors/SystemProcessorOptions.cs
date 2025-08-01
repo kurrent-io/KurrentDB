@@ -3,7 +3,7 @@
 
 using Kurrent.Surge.Configuration;
 using Kurrent.Surge.Processors.Configuration;
-using KurrentDB.Core.Bus;
+using KurrentDB.Core;
 
 namespace KurrentDB.Surge.Processors;
 
@@ -15,5 +15,5 @@ public record SystemProcessorOptions : ProcessorOptions {
         };
     }
 
-    public IPublisher Publisher { get; init; } = null!;
+    public ISystemClient Client { get; init; } = null!;
 }

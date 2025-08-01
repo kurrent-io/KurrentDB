@@ -3,7 +3,6 @@
 
 // ReSharper disable ExplicitCallerInfoArgument
 
-using KurrentDB.Core;
 using KurrentDB.Core.Data;
 using KurrentDB.Core.Services.Transport.Common;
 
@@ -18,7 +17,7 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Connec
 		var expectedResult = (StreamMetadata.Empty, -2);
 
 		// Act
-		var result = await Fixture.Publisher.GetStreamMetadata(streamName);
+		var result = await Fixture.Client.Management.GetStreamMetadata(streamName);
 
 		// Assert
 		result.Should().BeEquivalentTo(expectedResult);
@@ -32,10 +31,10 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Connec
 
 		var expectedResult = (metadata, StreamRevision.Start.ToInt64());
 
-		await Fixture.Publisher.SetStreamMetadata(streamName, metadata);
+		await Fixture.Client.Management.SetStreamMetadata(streamName, metadata);
 
 		// Act
-		var result = await Fixture.Publisher.GetStreamMetadata(streamName);
+		var result = await Fixture.Client.Management.GetStreamMetadata(streamName);
 
 		// Assert
 		result.Should().BeEquivalentTo(expectedResult);
@@ -50,10 +49,10 @@ public class PublisherManagementExtensionsTests(ITestOutputHelper output, Connec
 		var expectedResult = (metadata, StreamRevision.Start.ToInt64());
 
 		// Act
-		await Fixture.Publisher.SetStreamMetadata(streamName, metadata);
+		await Fixture.Client.Management.SetStreamMetadata(streamName, metadata);
 
 		// Assert
-		var result = await Fixture.Publisher.GetStreamMetadata(streamName);
+		var result = await Fixture.Client.Management.GetStreamMetadata(streamName);
 
 		result.Should().BeEquivalentTo(expectedResult);
 	}

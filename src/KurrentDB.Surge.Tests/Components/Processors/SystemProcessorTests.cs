@@ -9,7 +9,6 @@ using Kurrent.Surge.Consumers;
 using Kurrent.Surge.Consumers.Checkpoints;
 using Kurrent.Surge.Processors;
 using KurrentDB.Connect.Consumers;
-using KurrentDB.Core;
 using KurrentDB.Core.Services.Transport.Enumerators;
 using KurrentDB.Surge.Testing.Fixtures;
 using Microsoft.Extensions.Logging;
@@ -55,7 +54,7 @@ public class SystemProcessorTests(ITestOutputHelper output, SystemComponentsAsse
             processedRecords.Should()
                 .HaveCount(numberOfMessages, "because there should be one record for each message sent");
 
-            var actualEvents = await Fixture.Publisher.ReadFullStream(streamId).ToListAsync();
+            var actualEvents = await Fixture.Client.Reading.ReadFullStream(streamId).ToListAsync();
 
             var actualRecords = await Task.WhenAll(actualEvents.Select((re, idx) => re.ToRecord((data, headers) => Fixture.SchemaSerializer.Deserialize(data, new(headers)), idx + 1).AsTask()));
 
