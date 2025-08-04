@@ -7,13 +7,13 @@ using KurrentDB.SecondaryIndexing.Storage;
 
 namespace KurrentDB.SecondaryIndexing.Indexes.Diagnostics;
 
-public class SecondaryIndexDuckDbMetrics {
+public class DuckDbSystemMetrics {
 	private readonly Meter _meter;
 	private readonly string _meterPrefix;
 	private readonly DuckDbDataSource _db;
 	private readonly string _dbFile;
 
-	public SecondaryIndexDuckDbMetrics(Meter meter, string meterPrefix, DuckDbDataSource db, string dbFile) {
+	public DuckDbSystemMetrics(Meter meter, string meterPrefix, DuckDbDataSource db, string dbFile) {
 		_meter = meter;
 		_meterPrefix = meterPrefix;
 		_db = db;

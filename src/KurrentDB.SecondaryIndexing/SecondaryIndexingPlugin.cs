@@ -83,8 +83,8 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 		var queryTracker = new QueryTracker(durationMaxMetric, expectedScrapeInterval: 30);
 		services.AddSingleton<IQueryTracker>(queryTracker);
 
-		services.AddSingleton<SecondaryIndexDuckDbMetrics>(sp =>
-			new SecondaryIndexDuckDbMetrics(
+		services.AddSingleton<DuckDbSystemMetrics>(sp =>
+			new DuckDbSystemMetrics(
 				meter: coreMeter,
 				meterPrefix: "indexes.secondary.duckdb",
 				db: sp.GetRequiredService<DuckDbDataSource>(),
@@ -114,7 +114,7 @@ internal class SecondaryIndexingPlugin(VirtualStreamReader virtualStreamReader)
 
 		virtualStreamReader.Register(indexReaders.ToArray<IVirtualStreamReader>());
 
-		app.ApplicationServices.GetService<SecondaryIndexDuckDbMetrics>();
+		app.ApplicationServices.GetService<DuckDbSystemMetrics>();
 	}
 
 	public override (bool Enabled, string EnableInstructions) IsEnabled(IConfiguration configuration) {
