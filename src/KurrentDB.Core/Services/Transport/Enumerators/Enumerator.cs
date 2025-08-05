@@ -26,7 +26,7 @@ file static class ChannelOptionsFactory {
 
 public static partial class Enumerator {
 	private const int DefaultLiveBufferSize = 32;
-	private const int DefaultCatchUpBufferSize = 32;
+	public const int DefaultCatchUpBufferSize = 32;
 	public const int DefaultReadBatchSize = 32; // TODO  JPB make this configurable
 
 	private static readonly BoundedChannelOptions DefaultCatchUpChannelOptions

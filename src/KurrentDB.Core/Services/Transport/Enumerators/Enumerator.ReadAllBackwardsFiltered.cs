@@ -20,8 +20,6 @@ namespace KurrentDB.Core.Services.Transport.Enumerators;
 
 partial class Enumerator {
 	public class ReadAllBackwardsFiltered : IAsyncEnumerator<ReadResponse> {
-		private static readonly ILogger Log = Serilog.Log.ForContext<ReadAllBackwardsFiltered>();
-
 		private readonly IPublisher _bus;
 		private readonly ulong _maxCount;
 		private readonly bool _resolveLinks;

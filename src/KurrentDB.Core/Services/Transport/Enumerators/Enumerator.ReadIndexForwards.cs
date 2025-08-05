@@ -19,40 +19,37 @@ using Serilog;
 namespace KurrentDB.Core.Services.Transport.Enumerators;
 
 partial class Enumerator {
-	public class ReadAllForwardsFiltered : IAsyncEnumerator<ReadResponse> {
-		private readonly IPublisher _bus;
-		private readonly ulong _maxCount;
-		private readonly bool _resolveLinks;
-		private readonly IEventFilter _eventFilter;
-		private readonly ClaimsPrincipal _user;
-		private readonly bool _requiresLeader;
-		private readonly DateTime _deadline;
-		private readonly uint _maxSearchWindow;
-		private readonly CancellationToken _cancellationToken;
-		private readonly SemaphoreSlim _semaphore = new(1, 1);
-		private readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
+	const int DefaultIndexReadSize = 2000;
 
-		private ReadResponse _current;
+	public sealed class ReadIndexForwards : IAsyncEnumerator<ReadResponse> {
+		readonly string _indexName;
+		readonly IPublisher _bus;
+		readonly ulong _maxCount;
+		readonly ClaimsPrincipal _user;
+		readonly bool _requiresLeader;
+		readonly DateTime _deadline;
+		readonly CancellationToken _cancellationToken;
+		readonly SemaphoreSlim _semaphore = new(1, 1);
+		readonly Channel<ReadResponse> _channel = Channel.CreateBounded<ReadResponse>(DefaultCatchUpChannelOptions);
+
+		ReadResponse _current;
 
 		public ReadResponse Current => _current;
 
-		public ReadAllForwardsFiltered(IPublisher bus,
+		public ReadIndexForwards(
+			IPublisher bus,
+			string indexName,
 			Position position,
 			ulong maxCount,
-			bool resolveLinks,
-			IEventFilter eventFilter,
 			ClaimsPrincipal user,
 			bool requiresLeader,
-			uint? maxSearchWindow,
 			DateTime deadline,
 			CancellationToken cancellationToken) {
 			_bus = Ensure.NotNull(bus);
+			_indexName = Ensure.NotNullOrEmpty(indexName);
 			_maxCount = maxCount;
-			_resolveLinks = resolveLinks;
-			_eventFilter = Ensure.NotNull(eventFilter);
 			_user = user;
 			_requiresLeader = requiresLeader;
-			_maxSearchWindow = maxSearchWindow ?? DefaultReadBatchSize;
 			_deadline = deadline;
 			_cancellationToken = cancellationToken;
 
@@ -61,7 +58,7 @@ partial class Enumerator {
 
 		public ValueTask DisposeAsync() {
 			_channel.Writer.TryComplete();
-			return new ValueTask(Task.CompletedTask);
+			return new(Task.CompletedTask);
 		}
 
 		public async ValueTask<bool> MoveNextAsync() {
@@ -76,13 +73,12 @@ partial class Enumerator {
 
 		private void ReadPage(Position startPosition, ulong readCount = 0) {
 			var correlationId = Guid.NewGuid();
-
 			var (commitPosition, preparePosition) = startPosition.ToInt64();
 
-			_bus.Publish(new ClientMessage.FilteredReadAllEventsForward(
+			_bus.Publish(new ClientMessage.ReadIndexEventsForward(
 				correlationId, correlationId, new ContinuationEnvelope(OnMessage, _semaphore, _cancellationToken),
-				commitPosition, preparePosition, (int)Math.Min(DefaultReadBatchSize, _maxCount), _resolveLinks,
-				_requiresLeader, (int)_maxSearchWindow, null, _eventFilter, _user,
+				_indexName, commitPosition, preparePosition, (int)Math.Min(DefaultIndexReadSize, _maxCount),
+				_requiresLeader, null, _user,
 				replyOnExpired: false,
 				expires: _deadline,
 				cancellationToken: _cancellationToken)
@@ -94,13 +90,13 @@ partial class Enumerator {
 					return;
 				}
 
-				if (message is not ClientMessage.FilteredReadAllEventsForwardCompleted completed) {
+				if (message is not ClientMessage.ReadIndexEventsForwardCompleted completed) {
 					_channel.Writer.TryComplete(ReadResponseException.UnknownMessage.Create<ClientMessage.FilteredReadAllEventsForwardCompleted>(message));
 					return;
 				}
 
 				switch (completed.Result) {
-					case FilteredReadAllResult.Success:
+					case ReadIndexResult.Success:
 						foreach (var @event in completed.Events) {
 							if (readCount >= _maxCount) {
 								_channel.Writer.TryComplete();
@@ -116,12 +112,7 @@ partial class Enumerator {
 							return;
 						}
 
-						ReadPage(Position.FromInt64(
-							completed.NextPos.CommitPosition,
-							completed.NextPos.PreparePosition), readCount);
-						return;
-					case FilteredReadAllResult.AccessDenied:
-						_channel.Writer.TryComplete(new ReadResponseException.AccessDenied());
+						ReadPage(Position.FromInt64(completed.NextPos.CommitPosition, completed.NextPos.PreparePosition), readCount);
 						return;
 					default:
 						_channel.Writer.TryComplete(ReadResponseException.UnknownError.Create(completed.Result, completed.Error));

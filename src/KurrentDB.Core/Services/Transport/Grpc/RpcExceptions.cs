@@ -252,7 +252,7 @@ public static class RpcExceptions {
 	public static RpcException InvalidArgument<T>(T argument) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{argument}' is not a valid {typeof(T)}"));
 
-	public static RpcException RequiredArgument<T>(string name, T argument) =>
+	public static RpcException RequiredArgument<T>(string name) =>
 		new(new Status(StatusCode.InvalidArgument, $"'{name}' is a required argument of type {typeof(T)}"));
 
 	public static RpcException InvalidCombination<T>(T combination) where T : ITuple

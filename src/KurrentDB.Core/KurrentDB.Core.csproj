@@ -137,5 +137,11 @@
 	  <Compile Update="Services\Storage\StorageReaderWorker.AllFiltered.cs">
 	    <DependentUpon>StorageReaderWorker.cs</DependentUpon>
 	  </Compile>
+	  <Compile Update="Services\Storage\StorageReaderWorker.Index.cs">
+	    <DependentUpon>StorageReaderWorker.cs</DependentUpon>
+	  </Compile>
+	  <Compile Update="Messages\ClientMessage.IndexReads.cs">
+	    <DependentUpon>ClientMessage.cs</DependentUpon>
+	  </Compile>
 	</ItemGroup>
 </Project>
